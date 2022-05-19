@@ -10,7 +10,7 @@ if VERSERAIN_ENV == "development":
 else:
     SITE_DOMAIN = "www.verserain.com"
     MAIL_DOMAIN = "verserain.com"
-    SITE_URL = "https://%s" % SITE_DOMAIN
+    SITE_URL = "http://%s" % SITE_DOMAIN
     SECURE_SITE_URL = SITE_URL.replace("http://","https://")
 
 ADMIN_EMAIL = "\"Verse Rain\" <admin@%s>" % MAIL_DOMAIN

@@ -45,7 +45,7 @@
 </tr></table>
 
 <div class="pad_bottom links pad_top">
-<a class="link" href="{{verseset.play_url()}}"><span>&#9658;</span> {{gt("challenge all verses")}}</a> 
+<a class="link" href="{{settings.SITE_URL}}{{verseset.play_url()}}"><span>&#9658;</span> {{gt("challenge all verses")}}</a> 
 
 {% if is_me %}
 | <a class="link" onclick="return vr.confirm_delete();" href="/verseset/remove/{{verseset._id}}">{{gt("remove")}}</a>
