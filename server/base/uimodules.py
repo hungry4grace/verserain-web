@@ -1,6 +1,7 @@
 import tornado.web
 from tornado.escape import *
 from verserain.translation.localization import *
+from verserain import settings
 
 class ProfilePhoto(tornado.web.UIModule):
     def render(self, user=None, current_user=None, gt=None, subscribe=True, link=True):
@@ -14,7 +15,7 @@ class PlayButton(tornado.web.UIModule):
         if verseset_id is None:
             verseset_id = verseset._id
 
-        return """<a class="play_button pure-button button-xsmall next" href="/verseset/play/%s" >&#9658</a>""" % verseset_id
+        return """<a class="play_button pure-button button-xsmall next" href="%s/verseset/play/%s" >&#9658</a>""" % (settings.SITE_URL, verseset_id)
 
 class UserLink(tornado.web.UIModule):
     def render(self, user=None, username=None):

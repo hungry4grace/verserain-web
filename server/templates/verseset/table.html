@@ -1,5 +1,6 @@
 {% from verserain.utils.date import pretty_date %}
 {% from verserain.verse import language %}
+{% from verserain import settings %}
 
 <table class="pure-table pure-table-bordered pad_bottom" style="width:100%;">
 
@@ -14,7 +15,7 @@
 <tbody>
 {% for verseset in versesets %}
 <tr>
-  <td>{% module VerseSetLink(verseset) %} <a style="float:right;" class="pure-button button-xsmall next" href="/verseset/play/{{verseset._id}}" >&#9658</a>
+  <td>{% module VerseSetLink(verseset) %} <a style="float:right;" class="pure-button button-xsmall next" href="{{settings.SITE_URL}}/verseset/play/{{verseset._id}}" >&#9658</a>
   </td>
 
   </td>
