@@ -97,7 +97,7 @@ class RegisterHandler(BaseHandler):
         confirm_password = self.get_argument("confirm_password")
         password = self.get_argument("password")
         email = self.get_argument("email")
-        username = self.get_argument("username").strip()
+        username = (self.get_argument("username") or '').strip()
         error_message = None
 
         user = User.collection.find_one({'email':email})
