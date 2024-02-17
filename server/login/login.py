@@ -54,7 +54,7 @@ class ForgotPasswordHandler(BaseHandler):
                     selected_nav="login")
 
     def post(self):
-        email = self.get_argument("email","").strip()
+        email = (self.get_argument("email") or "").strip()
         user = None
         error_message = None
         feedback_message = None
