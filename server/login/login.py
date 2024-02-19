@@ -156,7 +156,7 @@ class LoginHandler(BaseHandler):
     @require_secure
     def post(self):
         password = self.get_argument("password")
-        login_subject = self.get_argument("email").strip()
+        login_subject = (self.get_argument("email") or '').strip()
         username = None
         email = login_subject
         login_subject_desc = "email"
