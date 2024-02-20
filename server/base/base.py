@@ -41,7 +41,7 @@ class ContactHandler(BaseHandler):
         subject = self.get_argument('subject')
         
         message = self.get_argument('message')
-        message += "\n\nemail: %s" % self.current_user.get('email', '')
+        message += "\n\nemail: %s" % (self.current_user.get('email') or '')
         message += "\nuser info: %s" % self.current_user
         
         EmailQueue.queue_mail(from_email,to_email,subject,message,reply_to=reply_to_email)
