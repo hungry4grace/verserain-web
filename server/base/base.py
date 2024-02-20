@@ -38,9 +38,9 @@ class ContactHandler(BaseHandler):
         from_email = "admin@%s" % settings.MAIL_DOMAIN
         reply_to_email = self.get_argument("email")
         to_email = ["help@%s" % settings.MAIL_DOMAIN] # must be a list
-        subject = self.get_argument('subject')
+        subject = self.get_argument('subject', '')
         
-        message = self.get_argument('message')
+        message = self.get_argument('message', '')
         message += "\n\nemail: %s" % (self.current_user.get('email') or '')
         message += "\nuser info: %s" % self.current_user
         
