@@ -253,28 +253,20 @@ export default function App() {
     startGame();
   };
 
-  const spawnSquareBlocks = (targetSeq) => {
-    if (targetSeq >= activePhrasesRef.current.length) return;
+  const initSquareBlocks = () => {
     const phrases = activePhrasesRef.current;
-    
-    let candidates = Array.from({ length: phrases.length }, (_, i) => i).filter(i => i > targetSeq);
-    candidates.sort(() => Math.random() - 0.5);
-    
-    let chosenDistractorTexts = candidates.slice(0, 3).map(i => phrases[i]);
+    const initialCount = Math.min(4, phrases.length);
+    const initialIndices = Array.from({ length: initialCount }, (_, i) => i);
+    initialIndices.sort(() => Math.random() - 0.5);
 
-    const elementsToSpawn = [
-       { text: phrases[targetSeq], isCorrect: true, seqIndex: targetSeq },
-       ...chosenDistractorTexts.map(t => ({ text: t, isCorrect: false, seqIndex: -1 }))
-    ].sort(() => Math.random() - 0.5);
-    
-    const newBlocks = elementsToSpawn.map((p) => ({
+    const newBlocks = initialIndices.map((pIndex) => ({
       id: Math.random().toString(36).substr(2, 9),
-      text: p.text,
-      seqIndex: p.seqIndex,
-      isCorrect: p.isCorrect,
+      text: phrases[pIndex],
+      seqIndex: pIndex,
       isSquare: true,
       error: false,
-      correct: false
+      correct: false,
+      hidden: false
     }));
     
     setBlocks(newBlocks);
@@ -310,7 +302,7 @@ export default function App() {
 
     if (!isAuto) {
       if (playMode === 'square') {
-        spawnSquareBlocks(0);
+        initSquareBlocks();
       } else {
         setTimeout(spawnNextBlock, 100);
         setTimeout(spawnNextBlock, 1500);
@@ -527,9 +519,26 @@ export default function App() {
       
       if (gameState === 'playing') {
          if (playMode === 'square') {
-             if (nextSeq < activePhrases.length) {
-                 setTimeout(() => spawnSquareBlocks(nextSeq), 400); 
-             }
+             const nextSpawnIndex = block.seqIndex + 4;
+             setTimeout(() => {
+                setBlocks(prev => prev.map(b => {
+                   if (b.id !== block.id) return b;
+                   
+                   if (nextSpawnIndex < activePhrases.length) {
+                       return {
+                           id: Math.random().toString(36).substr(2, 9),
+                           text: activePhrases[nextSpawnIndex],
+                           seqIndex: nextSpawnIndex,
+                           isSquare: true,
+                           error: false,
+                           correct: false,
+                           hidden: false
+                       };
+                   } else {
+                       return { ...b, hidden: true };
+                   }
+                }));
+             }, 400); 
          } else {
              spawnNextBlock();
              setTimeout(() => {
@@ -845,8 +854,8 @@ export default function App() {
                       if (block.error) appliedClasses += ' error-shake';
                       if (block.correct) appliedClasses += ' success-flash';
                       return (
-                        <div key={block.id} className={appliedClasses} onClick={(e) => { e.stopPropagation(); handleBlockClick(block); }} style={{ cursor: 'pointer', padding: 'clamp(1.5rem, 4vw, 3rem)', fontSize: 'clamp(1.2rem, 4vw, 2.2rem)', display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '180px', wordBreak: 'break-word', hyphens: 'auto', textAlign: 'center' }}>
-                            {block.text}
+                        <div key={block.id} className={appliedClasses} onClick={(e) => { e.stopPropagation(); handleBlockClick(block); }} style={{ cursor: 'pointer', padding: 'clamp(1.5rem, 4vw, 3rem)', fontSize: 'clamp(1.2rem, 4vw, 2.2rem)', display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '180px', wordBreak: 'break-word', hyphens: 'auto', textAlign: 'center', visibility: block.hidden ? 'hidden' : 'visible' }}>
+                            {!block.hidden && block.text}
                         </div>
                       )
                    })}
