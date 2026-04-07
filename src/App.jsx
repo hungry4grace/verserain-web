@@ -179,7 +179,7 @@ export default function App() {
     // Dynamically scale animation speeds (10% increase compounding, or simply linear)
     // Here we compound by 10% every combo tier. 
     // Math.pow(1.1, 0) = 1.0; Math.pow(1.1, 1) = 1.1; Math.pow(1.1, 2) = 1.21
-    const rate = isAutoPlay ? 1.0 : Math.min(Math.pow(1.1, combo), 2.2); // Cap at 2.2x speed, lock to 1 for auto-play
+    const rate = Math.min(Math.pow(1.1, combo), 2.2); // Cap at 2.2x speed
     
     // Grab all actively falling blocks and adjust their native playback rate on the fly
     const wrappers = document.querySelectorAll('.falling-wrapper');
@@ -188,15 +188,10 @@ export default function App() {
       anims.forEach(anim => {
         if (anim.animationName === 'fall') {
             anim.playbackRate = rate;
-            if (isAutoPlay) {
-                anim.pause();
-            } else {
-                anim.play();
-            }
         }
       });
     });
-  }, [combo, blocks, isAutoPlay]);
+  }, [combo, blocks]);
 
   const spawnNextBlock = () => {
     setBlocks(prev => {
@@ -275,9 +270,7 @@ export default function App() {
       });
     }, 1000);
 
-    if (isAuto) {
-      setTimeout(spawnNextBlock, 100);
-    } else {
+    if (!isAuto) {
       setTimeout(spawnNextBlock, 100);
       setTimeout(spawnNextBlock, 1500);
       setTimeout(spawnNextBlock, 3000);
@@ -288,31 +281,34 @@ export default function App() {
   useEffect(() => {
     let cancelAutoPlay = false;
 
-    const processAutoPlay = async () => {
+    const runAutoPlayLoop = async () => {
       if (!isAutoPlay || gameState !== 'playing') return;
-      if (currentSeqIndex >= activePhrasesRef.current.length) return;
 
-      let targetBlock = blocks.find(b => b.seqIndex === currentSeqIndex);
-      
-      if (!targetBlock) {
-          setTimeout(() => { if (!cancelAutoPlay) processAutoPlay(); }, 300);
-          return;
+      for (let i = 0; i < activePhrasesRef.current.length; i++) {
+          if (cancelAutoPlay || gameStateRef.current !== 'playing') break;
+          
+          setCurrentSeqIndex(i);
+          currentSeqRef.current = i;
+          
+          const phraseToSpeak = activePhrasesRef.current[i];
+          const TTS_LANG = version === 'kjv' ? 'en-US' : 'zh-TW';
+          
+          speechRef.current = speakText(phraseToSpeak, 1.0, TTS_LANG);
+          await speechRef.current;
       }
 
-      if (!cancelAutoPlay && gameState === 'playing') {
-          if (speechRef.current) {
-              await speechRef.current; // Crucial: wait for previous reading to finish before clicking the next block securely
-          }
-          if (cancelAutoPlay || gameState !== 'playing') return;
-          handleBlockClick(targetBlock);
-      }
+      if (cancelAutoPlay || gameStateRef.current !== 'playing') return;
+
+      // Mark complete. The existing currentSeqIndex -> endGame hook will handle success transition!
+      setCurrentSeqIndex(activePhrasesRef.current.length);
+      currentSeqRef.current = activePhrasesRef.current.length;
     };
 
-    if (isAutoPlay && gameState === 'playing') {
-      processAutoPlay();
+    if (isAutoPlay && gameState === 'playing' && currentSeqIndex === 0) {
+      runAutoPlayLoop();
     }
     return () => { cancelAutoPlay = true; };
-  }, [currentSeqIndex, blocks, isAutoPlay, gameState]);
+  }, [isAutoPlay, gameState, version]);
 
   const triggerFireworks = () => {
     const duration = 4 * 1000;
@@ -709,33 +705,48 @@ export default function App() {
             </div>
           </div>
 
-          <div style={{ position: 'absolute', width: '100vw', height: '100vh', top: 0, left: 0, overflow: 'hidden', pointerEvents: 'none' }}>
-            {blocks.map((block) => {
-              let appliedClasses = 'falling-block-inner';
-              if (block.error) appliedClasses += ' error-shake';
-              if (block.correct) appliedClasses += ' success-flash';
-              
-              return (
-                <div 
-                  key={block.id}
-                  className="falling-wrapper"
-                  data-id={block.id}
-                  style={{
-                    position: 'absolute',
-                    top: '-30px',
-                    left: `${block.xPos}%`,
-                    animation: `fall ${block.duration}s linear forwards`,
-                    zIndex: block.seqIndex === currentSeqIndex ? 50 : 10
-                  }}
-                  onAnimationEnd={(e) => handleAnimationEnd(e, block.id)}
-                >
-                  <div className={appliedClasses}>
-                    {block.text}
-                  </div>
+          {isAutoPlay ? (
+             <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '6rem 5vw 2rem' }}>
+                <div className="hud-glass" style={{ padding: 'clamp(1.5rem, 4vw, 3rem)', textAlign: 'center', maxWidth: '1000px', width: '90%' }}>
+                    <div style={{ fontSize: 'clamp(1.5rem, 5vh, 3.5rem)', color: '#fff', lineHeight: '1.6', fontWeight: 'bold' }}>
+                        {activePhrases.map((phrase, idx) => {
+                             let color = '#cbd5e1'; 
+                             if (idx < currentSeqIndex) color = '#93c5fd'; 
+                             if (idx === currentSeqIndex) color = '#fbbf24'; 
+                             return <span key={idx} style={{ color, transition: 'color 0.3s' }}>{phrase}{" "}</span>;
+                        })}
+                    </div>
                 </div>
-              );
-            })}
-          </div>
+             </div>
+          ) : (
+            <div style={{ position: 'absolute', width: '100vw', height: '100vh', top: 0, left: 0, overflow: 'hidden', pointerEvents: 'none' }}>
+              {blocks.map((block) => {
+                let appliedClasses = 'falling-block-inner';
+                if (block.error) appliedClasses += ' error-shake';
+                if (block.correct) appliedClasses += ' success-flash';
+                
+                return (
+                  <div 
+                    key={block.id}
+                    className="falling-wrapper"
+                    data-id={block.id}
+                    style={{
+                      position: 'absolute',
+                      top: '-30px',
+                      left: `${block.xPos}%`,
+                      animation: `fall ${block.duration}s linear forwards`,
+                      zIndex: block.seqIndex === currentSeqIndex ? 50 : 10
+                    }}
+                    onAnimationEnd={(e) => handleAnimationEnd(e, block.id)}
+                  >
+                    <div className={appliedClasses}>
+                      {block.text}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       )}
 
