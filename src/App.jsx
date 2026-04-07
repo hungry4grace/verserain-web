@@ -342,12 +342,30 @@ export default function App() {
   }
 
   const endGame = () => {
-    setGameState('gameover');
-    setBlocks([]); // clear arena
     if (timerRef.current) clearInterval(timerRef.current);
 
-    // The undeniable source of truth for success is hitting the last verse piece
     const isSuccess = currentSeqRef.current >= activePhrases.length;
+
+    if (isAutoPlayRef.current) {
+       setTimeout(() => {
+           if (gameStateRef.current !== 'menu') {
+             if (campaignQueue !== null && campaignQueue.length > 0) {
+                 setActiveVerse(campaignQueue[0]);
+                 setCampaignQueue(campaignQueue.slice(1));
+                 startGame(true);
+             } else if (campaignQueue !== null && campaignQueue.length === 0) {
+                 setGameState('campaign-results');
+             } else {
+                 setGameState('menu');
+             }
+           }
+       }, 2000);
+       return;
+    }
+
+    setGameState('gameover');
+    setBlocks([]); // clear arena
+
     const failed = !isSuccess;
 
     const f = isSuccess && healthRef.current === 3;
@@ -398,23 +416,6 @@ export default function App() {
         }
         return prev;
     });
-
-    if (isAutoPlayRef.current && isSuccess) {
-       setTimeout(() => {
-           if (gameStateRef.current !== 'menu') {
-             if (campaignQueue !== null && campaignQueue.length > 0) {
-                 setActiveVerse(campaignQueue[0]);
-                 setCampaignQueue(campaignQueue.slice(1));
-                 startGame(true);
-             } else if (campaignQueue !== null && campaignQueue.length === 0) {
-                 setGameState('campaign-results');
-             } else {
-                 // For single play auto-play, just return to menu
-                 setGameState('menu');
-             }
-           }
-       }, 2000);
-    }
   };
 
   useEffect(() => {
@@ -673,41 +674,48 @@ export default function App() {
               >
                   <XCircle size={32} />
               </button>
-              <div className="hud-glass" style={{ padding: '0.75rem 1.5rem', display: 'flex', flexDirection: 'column', minWidth: '220px' }}>
-                <span style={{ fontSize: '1.25rem', fontWeight: 'bold', color: '#93c5fd' }}>{activeVerse.reference}</span>
-                <span style={{ fontSize: '0.85rem', color: '#cbd5e1', marginTop: '0.25rem' }}>
-                   Next: {currentSeqIndex < activePhrases.length ? activePhrases[currentSeqIndex] : "Complete!"}
-                </span>
-              </div>
+              {!isAutoPlay && (
+                <div className="hud-glass" style={{ padding: '0.75rem 1.5rem', display: 'flex', flexDirection: 'column', minWidth: '220px' }}>
+                  <span style={{ fontSize: '1.25rem', fontWeight: 'bold', color: '#93c5fd' }}>{activeVerse.reference}</span>
+                  <span style={{ fontSize: '0.85rem', color: '#cbd5e1', marginTop: '0.25rem' }}>
+                     Next: {currentSeqIndex < activePhrases.length ? activePhrases[currentSeqIndex] : "Complete!"}
+                  </span>
+                </div>
+              )}
             </div>
 
-            <div className="hud-glass" style={{ padding: '1rem 2rem', display: 'flex', gap: '2rem', alignItems: 'center' }}>
-               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#f87171' }}>
-                 {[...Array(3)].map((_, i) => (
-                   <Heart key={i} size={24} fill={i < health ? '#f87171' : 'transparent'} strokeWidth={i < health ? 0 : 2} />
-                 ))}
-               </div>
-               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1.5rem', fontWeight: 'bold', color: '#fbbf24' }}>
-                 <Zap size={24} fill="#fbbf24" strokeWidth={0} /> {combo}x
-               </div>
-            </div>
+            {!isAutoPlay && (
+              <>
+                <div className="hud-glass" style={{ padding: '1rem 2rem', display: 'flex', gap: '2rem', alignItems: 'center' }}>
+                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#f87171' }}>
+                     {[...Array(3)].map((_, i) => (
+                       <Heart key={i} size={24} fill={i < health ? '#f87171' : 'transparent'} strokeWidth={i < health ? 0 : 2} />
+                     ))}
+                   </div>
+                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1.5rem', fontWeight: 'bold', color: '#fbbf24' }}>
+                     <Zap size={24} fill="#fbbf24" strokeWidth={0} /> {combo}x
+                   </div>
+                </div>
 
-            <div className="hud-glass" style={{ padding: '0.75rem 1.5rem', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', minWidth: '150px', position: 'relative' }}>
-              <div style={{ position: 'absolute', top: '-10px', left: '10px', color: '#fbbf24', fontSize: '0.7rem', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                <Crown size={12} /> BEST {bestScore}
-              </div>
-              <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#fff', fontFamily: 'monospace' }}>
-                {String(score).padStart(6, '0')}
-              </div>
-              <div style={{ fontSize: '1.25rem', color: timeLeft <= 10 ? '#f87171' : '#cbd5e1', fontFamily: 'monospace' }}>
-                00:{String(timeLeft).padStart(2, '0')}
-              </div>
-            </div>
+                <div className="hud-glass" style={{ padding: '0.75rem 1.5rem', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', minWidth: '150px', position: 'relative' }}>
+                  <div style={{ position: 'absolute', top: '-10px', left: '10px', color: '#fbbf24', fontSize: '0.7rem', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <Crown size={12} /> BEST {bestScore}
+                  </div>
+                  <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#fff', fontFamily: 'monospace' }}>
+                    {String(score).padStart(6, '0')}
+                  </div>
+                  <div style={{ fontSize: '1.25rem', color: timeLeft <= 10 ? '#f87171' : '#cbd5e1', fontFamily: 'monospace' }}>
+                    00:{String(timeLeft).padStart(2, '0')}
+                  </div>
+                </div>
+              </>
+            )}
           </div>
 
           {isAutoPlay ? (
              <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '6rem 5vw 2rem' }}>
                 <div className="hud-glass" style={{ padding: 'clamp(1.5rem, 4vw, 3rem)', textAlign: 'center', maxWidth: '1000px', width: '90%' }}>
+                    <h2 style={{ fontSize: 'clamp(1.2rem, 3vh, 2rem)', color: '#93c5fd', marginBottom: '1rem', fontWeight: 'bold' }}>{activeVerse.reference}</h2>
                     <div style={{ fontSize: 'clamp(1.5rem, 5vh, 3.5rem)', color: '#fff', lineHeight: '1.6', fontWeight: 'bold' }}>
                         {activePhrases.map((phrase, idx) => {
                              let color = '#cbd5e1'; 
