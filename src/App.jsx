@@ -117,6 +117,7 @@ import { VERSES_DB_KJV as VERSES_KJV } from './verses_kjv';
 
 export default function App() {
   const [version, setVersion] = useState('cuv');
+  const [playMode, setPlayMode] = useState('rain');
   const VERSES_DB = version === 'cuv' ? VERSES_CUV : VERSES_KJV;
 
   const [activeVerse, setActiveVerse] = useState(VERSES_DB[0]);
@@ -252,6 +253,33 @@ export default function App() {
     startGame();
   };
 
+  const spawnSquareBlocks = React.useCallback((targetSeq) => {
+    if (targetSeq >= activePhrasesRef.current.length) return;
+    const phrases = activePhrasesRef.current;
+    
+    let candidates = Array.from({ length: phrases.length }, (_, i) => i).filter(i => i !== targetSeq);
+    candidates.sort(() => Math.random() - 0.5);
+    const chosenDistractors = candidates.slice(0, 3);
+    
+    while(chosenDistractors.length < 3) {
+      chosenDistractors.push(Math.floor(Math.random() * phrases.length));
+    }
+
+    const elementsToSpawn = [targetSeq, ...chosenDistractors].sort(() => Math.random() - 0.5);
+    
+    const newBlocks = elementsToSpawn.map((pIndex) => ({
+      id: Math.random().toString(36).substr(2, 9),
+      text: phrases[pIndex],
+      seqIndex: pIndex,
+      isCorrect: pIndex === targetSeq,
+      isSquare: true,
+      error: false,
+      correct: false
+    }));
+    
+    setBlocks(newBlocks);
+  }, []);
+
   const startGame = (isAuto = false) => {
     initAudio(); 
     setGameState('playing');
@@ -281,10 +309,14 @@ export default function App() {
     }, 1000);
 
     if (!isAuto) {
-      setTimeout(spawnNextBlock, 100);
-      setTimeout(spawnNextBlock, 1500);
-      setTimeout(spawnNextBlock, 3000);
-      setTimeout(spawnNextBlock, 4500);
+      if (playMode === 'square') {
+        spawnSquareBlocks(0);
+      } else {
+        setTimeout(spawnNextBlock, 100);
+        setTimeout(spawnNextBlock, 1500);
+        setTimeout(spawnNextBlock, 3000);
+        setTimeout(spawnNextBlock, 4500);
+      }
     }
   };
 
@@ -474,7 +506,7 @@ export default function App() {
       const nextSeq = currentSeqIndex + 1;
       const TTS_LANG = version === 'kjv' ? 'en-US' : 'zh-TW';
       
-      if (nextSeq === activePhrases.length - 1) {
+      if (nextSeq === activePhrases.length - 1 && playMode !== 'square') {
         // Only one final block remaining - auto-complete it to save a click
         // Concatenate both pieces together to say it completely
         const finalVoiceRate = isAutoPlayRef.current ? 1.0 : Math.min(Math.pow(1.1, combo + 1), 2.2);
@@ -493,12 +525,18 @@ export default function App() {
       
       setBlocks(prev => prev.map(b => b.id === block.id ? { ...b, correct: true } : b));
       
-      // Fire next spawn instantly, don't wait for the disappear timeout!
-      if (gameState === 'playing') spawnNextBlock();
-      
-      setTimeout(() => {
-        setBlocks(prev => prev.filter(b => b.id !== block.id));
-      }, 400);
+      if (gameState === 'playing') {
+         if (playMode === 'square') {
+             if (nextSeq < activePhrases.length) {
+                 setTimeout(() => spawnSquareBlocks(nextSeq), 400); 
+             }
+         } else {
+             spawnNextBlock();
+             setTimeout(() => {
+               setBlocks(prev => prev.filter(b => b.id !== block.id));
+             }, 400);
+         }
+      }
 
     } else {
       playBong();
@@ -569,37 +607,71 @@ export default function App() {
             Select a verse below. Catch the phrases as they fall in chronological order!
           </p>
 
-          <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', marginBottom: '2rem' }}>
-            <button 
-              onClick={() => setVersion('cuv')} 
-              style={{
-                background: version === 'cuv' ? '#3b82f6' : 'transparent',
-                color: version === 'cuv' ? 'white' : '#94a3b8',
-                border: version === 'cuv' ? 'none' : '1px solid #475569',
-                padding: '0.5rem 1.5rem',
-                borderRadius: '9999px',
-                cursor: 'pointer',
-                fontWeight: 'bold',
-                transition: 'all 0.2s'
-              }}
-            >
-              和合本
-            </button>
-            <button 
-              onClick={() => setVersion('kjv')} 
-              style={{
-                background: version === 'kjv' ? '#3b82f6' : 'transparent',
-                color: version === 'kjv' ? 'white' : '#94a3b8',
-                border: version === 'kjv' ? 'none' : '1px solid #475569',
-                padding: '0.5rem 1.5rem',
-                borderRadius: '9999px',
-                cursor: 'pointer',
-                fontWeight: 'bold',
-                transition: 'all 0.2s'
-              }}
-            >
-              KJV
-            </button>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', alignItems: 'center', marginBottom: '2rem' }}>
+            <div style={{ display: 'flex', gap: '1rem' }}>
+                <button 
+                  onClick={() => setVersion('cuv')} 
+                  style={{
+                    background: version === 'cuv' ? '#3b82f6' : 'transparent',
+                    color: version === 'cuv' ? 'white' : '#94a3b8',
+                    border: version === 'cuv' ? 'none' : '1px solid #475569',
+                    padding: '0.5rem 1.5rem',
+                    borderRadius: '9999px',
+                    cursor: 'pointer',
+                    fontWeight: 'bold',
+                    transition: 'all 0.2s'
+                  }}
+                >
+                  和合本
+                </button>
+                <button 
+                  onClick={() => setVersion('kjv')} 
+                  style={{
+                    background: version === 'kjv' ? '#3b82f6' : 'transparent',
+                    color: version === 'kjv' ? 'white' : '#94a3b8',
+                    border: version === 'kjv' ? 'none' : '1px solid #475569',
+                    padding: '0.5rem 1.5rem',
+                    borderRadius: '9999px',
+                    cursor: 'pointer',
+                    fontWeight: 'bold',
+                    transition: 'all 0.2s'
+                  }}
+                >
+                  KJV
+                </button>
+            </div>
+            <div style={{ display: 'flex', gap: '1rem' }}>
+                <button 
+                  onClick={() => setPlayMode('rain')} 
+                  style={{
+                    background: playMode === 'rain' ? '#10b981' : 'transparent',
+                    color: playMode === 'rain' ? 'white' : '#94a3b8',
+                    border: playMode === 'rain' ? 'none' : '1px solid #475569',
+                    padding: '0.5rem 1.5rem',
+                    borderRadius: '9999px',
+                    cursor: 'pointer',
+                    fontWeight: 'bold',
+                    transition: 'all 0.2s'
+                  }}
+                >
+                  Verse Rain
+                </button>
+                <button 
+                  onClick={() => setPlayMode('square')} 
+                  style={{
+                    background: playMode === 'square' ? '#10b981' : 'transparent',
+                    color: playMode === 'square' ? 'white' : '#94a3b8',
+                    border: playMode === 'square' ? 'none' : '1px solid #475569',
+                    padding: '0.5rem 1.5rem',
+                    borderRadius: '9999px',
+                    cursor: 'pointer',
+                    fontWeight: 'bold',
+                    transition: 'all 0.2s'
+                  }}
+                >
+                  Verse Square
+                </button>
+            </div>
           </div>
 
           <div style={{ display: 'flex', gap: '1rem', width: '100%', maxWidth: '600px', justifyContent: 'center', flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', marginBottom: '2rem' }}>
@@ -763,6 +835,21 @@ export default function App() {
                              return <span key={idx} style={{ color, transition: 'color 0.3s' }}>{phrase}{" "}</span>;
                         })}
                     </div>
+                </div>
+              </div>
+           ) : playMode === 'square' ? (
+             <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '5rem 0 0 0', pointerEvents: 'none' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)', gap: '1rem', width: '90%', maxWidth: '750px', pointerEvents: 'auto' }}>
+                   {blocks.map(block => {
+                      let appliedClasses = 'falling-block-inner';
+                      if (block.error) appliedClasses += ' error-shake';
+                      if (block.correct) appliedClasses += ' success-flash';
+                      return (
+                        <div key={block.id} className={appliedClasses} onClick={(e) => { e.stopPropagation(); handleBlockClick(block); }} style={{ cursor: 'pointer', padding: 'clamp(1.5rem, 4vw, 3rem)', fontSize: 'clamp(1.2rem, 4vw, 2.2rem)', display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '180px', wordBreak: 'break-word', hyphens: 'auto', textAlign: 'center' }}>
+                            {block.text}
+                        </div>
+                      )
+                   })}
                 </div>
              </div>
           ) : (
