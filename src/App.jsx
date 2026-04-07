@@ -261,16 +261,6 @@ export default function App() {
     candidates.sort(() => Math.random() - 0.5);
     
     let chosenDistractorTexts = candidates.slice(0, 3).map(i => phrases[i]);
-    
-    if (chosenDistractorTexts.length < 3) {
-       const allOtherTexts = VERSES_DB.flatMap(v => v.text.split(/[,，。；：「」、;:\.\?]/).map(p => p.trim()).filter(Boolean));
-       const validOtherTexts = allOtherTexts.filter(t => t !== phrases[targetSeq] && !chosenDistractorTexts.includes(t) && t.length > 0);
-       validOtherTexts.sort(() => Math.random() - 0.5);
-       
-       while(chosenDistractorTexts.length < 3 && validOtherTexts.length > 0) {
-          chosenDistractorTexts.push(validOtherTexts.pop());
-       }
-    }
 
     const elementsToSpawn = [
        { text: phrases[targetSeq], isCorrect: true, seqIndex: targetSeq },
