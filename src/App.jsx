@@ -14,12 +14,12 @@ function initAudio() {
   }
 }
 
-function speakText(text, rate = 1.0) {
+function speakText(text, rate = 1.0, lang = 'zh-TW') {
   return new Promise(resolve => {
     if ('speechSynthesis' in window) {
       window.speechSynthesis.cancel();
       const utterance = new SpeechSynthesisUtterance(text);
-      utterance.lang = 'zh-TW'; 
+      utterance.lang = lang; 
       utterance.rate = rate;
 
       let resolved = false;
@@ -104,11 +104,20 @@ function playFireworksSound() {
   osc.stop(audioCtx.currentTime + 0.5);
 }
 
-import { VERSES_DB } from './verses';
+import { VERSES_DB as VERSES_CUV } from './verses';
+import { VERSES_DB_KJV as VERSES_KJV } from './verses_kjv';
 
 export default function App() {
+  const [version, setVersion] = useState('cuv');
+  const VERSES_DB = version === 'cuv' ? VERSES_CUV : VERSES_KJV;
+
   const [activeVerse, setActiveVerse] = useState(VERSES_DB[0]);
   const [selectedVerseRefs, setSelectedVerseRefs] = useState([VERSES_DB[0].reference]);
+
+  useEffect(() => {
+    setActiveVerse(VERSES_DB[0]);
+    setSelectedVerseRefs([VERSES_DB[0].reference]);
+  }, [version]);
 
   const toggleSelection = (ref) => {
     setSelectedVerseRefs(prev => 
@@ -120,7 +129,7 @@ export default function App() {
 
   
   const activePhrases = React.useMemo(() => {
-    return activeVerse.text.split(/[,，。；：「」、]/).map(p => p.trim()).filter(Boolean);
+    return activeVerse.text.split(/[,，。；：「」、;:\.\?]/).map(p => p.trim()).filter(Boolean);
   }, [activeVerse]);
 
   const activePhrasesRef = useRef([]);
@@ -375,20 +384,21 @@ export default function App() {
       setCombo(c => c + 1);
       
       const nextSeq = currentSeqIndex + 1;
+      const TTS_LANG = version === 'kjv' ? 'en-US' : 'zh-TW';
       
       if (nextSeq === activePhrases.length - 1) {
         // Only one final block remaining - auto-complete it to save a click
         // Concatenate both pieces together to say it completely
         const finalVoiceRate = Math.min(Math.pow(1.2, combo + 1), 2.2);
-        const combinedText = block.text + "，" + activePhrases[nextSeq];
-        speechRef.current = speakText(combinedText, finalVoiceRate);
+        const combinedText = block.text + (version === 'kjv' ? ". " : "，") + activePhrases[nextSeq];
+        speechRef.current = speakText(combinedText, finalVoiceRate, TTS_LANG);
 
         setScore(s => s + 100 + ((combo + 1) * 50));
         setCombo(c => c + 1);
         setCurrentSeqIndex(activePhrases.length);
         currentSeqRef.current = activePhrases.length;
       } else {
-        speechRef.current = speakText(block.text, voiceRate);
+        speechRef.current = speakText(block.text, voiceRate, TTS_LANG);
         setCurrentSeqIndex(nextSeq);
         currentSeqRef.current = nextSeq; // Update instantly before useEffect triggers
       }
@@ -470,6 +480,40 @@ export default function App() {
           <p style={{ fontSize: '1.1rem', color: '#cbd5e1', marginBottom: '2rem', textAlign: 'center', maxWidth: '600px' }}>
             Select a verse below. Catch the phrases as they fall in chronological order!
           </p>
+
+          <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', marginBottom: '2rem' }}>
+            <button 
+              onClick={() => setVersion('cuv')} 
+              style={{
+                background: version === 'cuv' ? '#3b82f6' : 'transparent',
+                color: version === 'cuv' ? 'white' : '#94a3b8',
+                border: version === 'cuv' ? 'none' : '1px solid #475569',
+                padding: '0.5rem 1.5rem',
+                borderRadius: '9999px',
+                cursor: 'pointer',
+                fontWeight: 'bold',
+                transition: 'all 0.2s'
+              }}
+            >
+              和合本
+            </button>
+            <button 
+              onClick={() => setVersion('kjv')} 
+              style={{
+                background: version === 'kjv' ? '#3b82f6' : 'transparent',
+                color: version === 'kjv' ? 'white' : '#94a3b8',
+                border: version === 'kjv' ? 'none' : '1px solid #475569',
+                padding: '0.5rem 1.5rem',
+                borderRadius: '9999px',
+                cursor: 'pointer',
+                fontWeight: 'bold',
+                transition: 'all 0.2s'
+              }}
+            >
+              KJV
+            </button>
+          </div>
+
           <div style={{ display: 'flex', gap: '1rem', width: '100%', maxWidth: '600px', justifyContent: 'center', flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', marginBottom: '2rem' }}>
             <button 
               onClick={() => {

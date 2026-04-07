@@ -1,0 +1,152 @@
+export const VERSES_DB_KJV = [
+  {
+    reference: "Genesis 1:26–28",
+    title: "The Image of God & Stewardship Mandate",
+    text: "And God said, Let us make man in our image, after our likeness: and let them have dominion over the fish of the sea, and over the fowl of the air, and over the cattle, and over all the earth, and over every creeping thing that creepeth upon the earth. So God created man in his own image, in the image of God created he him; male and female created he them. And God blessed them, and God said unto them, Be fruitful, and multiply, and replenish the earth, and subdue it: and have dominion over the fish of the sea, and over the fowl of the air, and over every living thing that moveth upon the earth."
+  },
+  {
+    reference: "Leviticus 25:10, 23",
+    title: "Jubilee & The Reset Mechanism",
+    text: "And ye shall hallow the fiftieth year, and proclaim liberty throughout all the land unto all the inhabitants thereof: it shall be a jubile unto you; and ye shall return every man unto his possession, and ye shall return every man unto his family. The land shall not be sold for ever: for the land is mine; for ye are strangers and sojourners with me."
+  },
+  {
+    reference: "Matthew 6:33",
+    title: "The Priority Protocol",
+    text: "But seek ye first the kingdom of God, and his righteousness; and all these things shall be added unto you."
+  },
+  {
+    reference: "John 14:21",
+    title: "The Economy as a Rewards System",
+    text: "He that hath my commandments, and keepeth them, he it is that loveth me: and he that loveth me shall be loved of my Father, and I will love him, and will manifest myself to him."
+  },
+  {
+    reference: "Matthew 13:23",
+    title: "CROP Growth & Multiplication",
+    text: "But he that received seed into the good ground is he that heareth the word, and understandeth it; which also beareth fruit, and bringeth forth, some an hundredfold, some sixty, some thirty."
+  },
+  {
+    reference: "Malachi 3:10",
+    title: "The Invitation to Test the System",
+    text: "Bring ye all the tithes into the storehouse, that there may be meat in mine house, and prove me now herewith, saith the LORD of hosts, if I will not open you the windows of heaven, and pour you out a blessing, that there shall not be room enough to receive it."
+  },
+  {
+    reference: "Luke 18:29–30",
+    title: "Loyalty Program Rewards",
+    text: "And he said unto them, Verily I say unto you, There is no man that hath left house, or parents, or brethren, or wife, or children, for the kingdom of God's sake, who shall not receive manifold more in this present time, and in the world to come life everlasting."
+  },
+  {
+    reference: "Proverbs 11:24–25",
+    title: "Distributed Growth (Network Effects)",
+    text: "There is that scattereth, and yet increaseth; and there is that withholdeth more than is meet, but it tendeth to poverty. The liberal soul shall be made fat: and he that watereth shall be watered also himself."
+  },
+  {
+    reference: "Matthew 20:26–27",
+    title: "Decentralized Leadership",
+    text: "But it shall not be so among you: but whosoever will be great among you, let him be your minister; and whosoever will be chief among you, let him be your servant."
+  },
+  {
+    reference: "Matthew 25:21",
+    title: "Unlocking Greater Authority",
+    text: "His lord said unto him, Well done, thou good and faithful servant: thou hast been faithful over a few things, I will make thee ruler over many things: enter thou into the joy of thy lord."
+  },
+  {
+    reference: "Matthew 7:12",
+    title: "The Golden Rule of Reciprocity",
+    text: "Therefore all things whatsoever ye would that men should do to you, do ye even so to them: for this is the law and the prophets."
+  },
+  {
+    reference: "Leviticus 25:35–37",
+    title: "The Interest-Free Lending Protocol",
+    text: "And if thy brother be waxen poor, and fallen in decay with thee; then thou shalt relieve him: yea, though he be a stranger, or a sojourner; that he may live with thee. Take thou no usury of him, or increase: but fear thy God; that thy brother may live with thee. Thou shalt not give him thy money upon usury, nor lend him thy victuals for increase."
+  },
+  {
+    reference: "Deuteronomy 15:1–2",
+    title: "The Debt Forgiveness Mechanism",
+    text: "At the end of every seven years thou shalt make a release. And this is the manner of the release: Every creditor that lendeth ought unto his neighbour shall release it; he shall not exact it of his neighbour, or of his brother; because it is called the LORD's release."
+  },
+  {
+    reference: "Exodus 20:8–11",
+    title: "The Sabbath Protocol",
+    text: "Remember the sabbath day, to keep it holy. Six days shalt thou labour, and do all thy work: but the seventh day is the sabbath of the LORD thy God: in it thou shalt not do any work, thou, nor thy son, nor thy daughter, thy manservant, nor thy maidservant, nor thy cattle, nor thy stranger that is within thy gates: for in six days the LORD made heaven and earth, the sea, and all that in them is, and rested the seventh day: wherefore the LORD blessed the sabbath day, and hallowed it."
+  },
+  {
+    reference: "Acts 2:44–45",
+    title: "Ekklesia Shared Economy",
+    text: "And all that believed were together, and had all things common; and sold their possessions and goods, and parted them to all men, as every man had need."
+  },
+  {
+    reference: "Psalm 24:1",
+    title: "God's Absolute Ownership",
+    text: "The earth is the LORD's, and the fulness thereof; the world, and they that dwell therein."
+  },
+  {
+    reference: "Proverbs 3:9–10",
+    title: "The Firstfruits Principle",
+    text: "Honour the LORD with thy substance, and with the firstfruits of all thine increase: so shall thy barns be filled with plenty, and thy presses shall burst out with new wine."
+  },
+  {
+    reference: "2 Corinthians 9:7",
+    title: "Cheerful Giving & Heart-Driven Economy",
+    text: "Every man according as he purposeth in his heart, so let him give; not grudgingly, or of necessity: for God loveth a cheerful giver."
+  },
+  {
+    reference: "Isaiah 58:6–12",
+    title: "Social Justice & Restoration",
+    text: "Is not this the fast that I have chosen? to loose the bands of wickedness, to undo the heavy burdens, and to let the oppressed go free, and that ye break every yoke? Is it not to deal thy bread to the hungry, and that thou bring the poor that are cast out to thy house? when thou seest the naked, that thou cover him; and that thou hide not thyself from thine own flesh? Then shall thy light break forth as the morning, and thine health shall spring forth speedily: and thy righteousness shall go before thee; the glory of the LORD shall be thy rearward. Then shalt thou call, and the LORD shall answer; thou shalt cry, and he shall say, Here I am. If thou take away from the midst of thee the yoke, the putting forth of the finger, and speaking vanity; and if thou draw out thy soul to the hungry, and satisfy the afflicted soul; then shall thy light rise in obscurity, and thy darkness be as the noonday: And the LORD shall guide thee continually, and satisfy thy soul in drought, and make fat thy bones: and thou shalt be like a watered garden, and like a spring of water, whose waters fail not. And they that shall be of thee shall build the old waste places: thou shalt raise up the foundations of many generations; and thou shalt be called, The repairer of the breach, The restorer of paths to dwell in."
+  },
+  {
+    reference: "Revelation 18:4",
+    title: "The Call to Leave Babylon",
+    text: "And I heard another voice from heaven, saying, Come out of her, my people, that ye be not partakers of her sins, and that ye receive not of her plagues."
+  },
+  {
+    reference: "Luke 12:15",
+    title: "Warning Against Babylonian Logic",
+    text: "And he said unto them, Take heed, and beware of covetousness: for a man's life consisteth not in the abundance of the things which he possesseth."
+  },
+  {
+    reference: "1 Timothy 6:6–10",
+    title: "Godliness with Contentment",
+    text: "But godliness with contentment is great gain. For we brought nothing into this world, and it is certain we can carry nothing out. And having food and raiment let us be therewith content. But they that will be rich fall into temptation and a snare, and into many foolish and hurtful lusts, which drown men in destruction and perdition. For the love of money is the root of all evil: which while some coveted after, they have erred from the faith, and pierced themselves through with many sorrows."
+  },
+  {
+    reference: "Proverbs 19:17",
+    title: "Compassion as Investment",
+    text: "He that hath pity upon the poor lendeth unto the LORD; and that which he hath given will he pay him again."
+  },
+  {
+    reference: "Ephesians 4:28",
+    title: "The True Purpose of Work",
+    text: "Let him that stole steal no more: but rather let him labour, working with his hands the thing which is good, that he may have to give to him that needeth."
+  },
+  {
+    reference: "Colossians 3:23–24",
+    title: "Workplace as Ministry",
+    text: "And whatsoever ye do, do it heartily, as to the Lord, and not unto men; knowing that of the Lord ye shall receive the reward of the inheritance: for ye serve the Lord Christ."
+  },
+  {
+    reference: "1 Peter 4:10",
+    title: "Faithful Stewards of Gifts",
+    text: "As every man hath received the gift, even so minister the same one to another, as good stewards of the manifold grace of God."
+  },
+  {
+    reference: "2 Corinthians 8:9",
+    title: "The Abundance Exchange Principle",
+    text: "For ye know the grace of our Lord Jesus Christ, that, though he was rich, yet for your sakes he became poor, that ye through his poverty might be rich."
+  },
+  {
+    reference: "Galatians 5:1",
+    title: "The Call to Financial Freedom",
+    text: "Stand fast therefore in the liberty wherewith Christ hath made us free, and be not entangled again with the yoke of bondage."
+  },
+  {
+    reference: "Matthew 10:8",
+    title: "Freely Received, Freely Given",
+    text: "Heal the sick, cleanse the lepers, raise the dead, cast out devils: freely ye have received, freely give."
+  },
+  {
+    reference: "James 2:14–17",
+    title: "Faith & Economic Action",
+    text: "What doth it profit, my brethren, though a man say he hath faith, and have not works? can faith save him? If a brother or sister be naked, and destitute of daily food, and one of you say unto them, Depart in peace, be ye warmed and filled; notwithstanding ye give them not those things which are needful to the body; what doth it profit? Even so faith, if it hath not works, is dead, being alone."
+  }
+];
