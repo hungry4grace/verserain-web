@@ -12,6 +12,14 @@ function initAudio() {
   if (audioCtx.state === 'suspended') {
     audioCtx.resume();
   }
+  // iOS Safari requires SpeechSynthesis to be touched directly in user event
+  if ('speechSynthesis' in window && !window.__speechUnlocked) {
+     const dummy = new SpeechSynthesisUtterance(' ');
+     dummy.volume = 0;
+     dummy.rate = 2; // finish fast
+     window.speechSynthesis.speak(dummy);
+     window.__speechUnlocked = true;
+  }
 }
 
 function speakText(text, rate = 1.0, lang = 'zh-TW') {
@@ -575,6 +583,7 @@ export default function App() {
             <button 
               onClick={() => {
                 if (selectedVerseRefs.length === 0) return;
+                initAudio();
                 const queue = VERSES_DB.filter(v => selectedVerseRefs.includes(v.reference));
                 const sortedQueue = [...queue];
                 setCampaignQueue(sortedQueue.slice(1));
@@ -593,6 +602,7 @@ export default function App() {
             <button 
               onClick={() => {
                 if (selectedVerseRefs.length === 0) return;
+                initAudio();
                 const queue = VERSES_DB.filter(v => selectedVerseRefs.includes(v.reference));
                 if (queue.length === 1) {
                   setActiveVerse(queue[0]);
@@ -617,6 +627,7 @@ export default function App() {
             </button>
             <button 
               onClick={() => {
+                  initAudio();
                   const shuffled = [...VERSES_DB].sort(() => Math.random() - 0.5);
                   setCampaignQueue(shuffled.slice(1));
                   setCampaignResults([]);
@@ -677,9 +688,6 @@ export default function App() {
               {!isAutoPlay && (
                 <div className="hud-glass" style={{ padding: '0.75rem 1.5rem', display: 'flex', flexDirection: 'column', minWidth: '220px' }}>
                   <span style={{ fontSize: '1.25rem', fontWeight: 'bold', color: '#93c5fd' }}>{activeVerse.reference}</span>
-                  <span style={{ fontSize: '0.85rem', color: '#cbd5e1', marginTop: '0.25rem' }}>
-                     Next: {currentSeqIndex < activePhrases.length ? activePhrases[currentSeqIndex] : "Complete!"}
-                  </span>
                 </div>
               )}
             </div>
@@ -714,9 +722,9 @@ export default function App() {
 
           {isAutoPlay ? (
              <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '6rem 5vw 2rem' }}>
-                <div className="hud-glass" style={{ padding: 'clamp(1.5rem, 4vw, 3rem)', textAlign: 'center', maxWidth: '1000px', width: '90%' }}>
+                <div className="hud-glass" style={{ padding: 'clamp(1.5rem, 4vw, 3rem)', textAlign: 'center', maxWidth: '1000px', width: '90%', maxHeight: '85vh', overflowY: 'auto' }}>
                     <h2 style={{ fontSize: 'clamp(1.2rem, 3vh, 2rem)', color: '#93c5fd', marginBottom: '1rem', fontWeight: 'bold' }}>{activeVerse.reference}</h2>
-                    <div style={{ fontSize: 'clamp(1.5rem, 5vh, 3.5rem)', color: '#fff', lineHeight: '1.6', fontWeight: 'bold' }}>
+                    <div style={{ fontSize: 'clamp(1rem, 3.5vh, 2.5rem)', color: '#fff', lineHeight: '1.6', fontWeight: 'bold' }}>
                         {activePhrases.map((phrase, idx) => {
                              let color = '#cbd5e1'; 
                              if (idx < currentSeqIndex) color = '#93c5fd'; 
