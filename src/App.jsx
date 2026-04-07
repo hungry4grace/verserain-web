@@ -775,7 +775,7 @@ export default function App() {
           onClick={handleGlobalClick}
           style={{ position: 'absolute', width: '100vw', height: '100vh', top: 0, left: 0, overflow: 'hidden' }}
         >
-          <div style={{ position: 'absolute', top: 0, left: 0, right: 0, padding: 'clamp(0.5rem, 2vw, 1.5rem)', display: 'flex', flexWrap: 'wrap', gap: '0.75rem', justifyContent: 'flex-start', alignItems: 'flex-start', zIndex: 10 }}>
+          <div style={{ position: 'absolute', top: 0, left: 0, padding: 'clamp(0.5rem, 2vw, 1.5rem)', display: 'flex', flexDirection: 'column', gap: '0.75rem', alignItems: 'flex-start', zIndex: 10 }}>
             <div style={{ display: 'flex', gap: '0.75rem' }}>
               <button 
                   className="hud-glass"
