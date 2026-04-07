@@ -122,11 +122,99 @@ export default function App() {
 
   const [activeVerse, setActiveVerse] = useState(VERSES_DB[0]);
   const [selectedVerseRefs, setSelectedVerseRefs] = useState([VERSES_DB[0].reference]);
+  
+  const [hasInitializedUrl, setHasInitializedUrl] = useState(false);
+  const [initAutoStart, setInitAutoStart] = useState(null);
 
   useEffect(() => {
-    setActiveVerse(VERSES_DB[0]);
-    setSelectedVerseRefs([VERSES_DB[0].reference]);
-  }, [version]);
+    if (hasInitializedUrl) {
+       setActiveVerse(VERSES_DB[0]);
+       setSelectedVerseRefs([VERSES_DB[0].reference]);
+       setCampaignQueue(null);
+    }
+  }, [version, hasInitializedUrl]);
+
+  useEffect(() => {
+    const parseUrlArgs = async () => {
+      const params = new URLSearchParams(window.location.search);
+      const mParam = params.get('m');
+      const vParam = params.get('v');
+
+      let shouldAutoPlay = false;
+      let loadedVerses = [];
+      let overrideVersion = null;
+
+      if (mParam) {
+         const cleanM = mParam.replace(/['"]/gi, '').toLowerCase();
+         if (cleanM === 'verse square') {
+            setPlayMode('square');
+         } else if (cleanM === 'auto-played' || cleanM === 'auto-play') {
+            shouldAutoPlay = true;
+         }
+      }
+
+      if (vParam) {
+         const cleanV = vParam.replace(/['"]/gi, '');
+         const refs = cleanV.split(';').map(s => s.trim()).filter(Boolean);
+         
+         for (let r of refs) {
+            let foundCuv = VERSES_CUV.find(v => v.reference.toLowerCase().includes(r.toLowerCase()));
+            if (foundCuv) {
+               loadedVerses.push(foundCuv);
+               if (!overrideVersion) overrideVersion = 'cuv';
+               continue;
+            }
+            let foundKjv = VERSES_KJV.find(v => v.reference.toLowerCase().includes(r.toLowerCase()));
+            if (foundKjv) {
+               loadedVerses.push(foundKjv);
+               if (!overrideVersion) overrideVersion = 'kjv';
+               continue;
+            }
+
+            // Dynamic fetch fallback for English verses not in DB
+            try {
+                const res = await fetch(`https://bible-api.com/${encodeURIComponent(r)}?translation=kjv`);
+                if (res.ok) {
+                   const data = await res.json();
+                   loadedVerses.push({
+                       reference: data.reference,
+                       title: "Custom Selection",
+                       text: data.text.replace(/\n/g, ' ').trim()
+                   });
+                   if (!overrideVersion) overrideVersion = 'kjv';
+                }
+            } catch (e) {
+                console.error("Fetch failed", r, e);
+            }
+         }
+         
+         if (loadedVerses.length > 0) {
+             if (overrideVersion && overrideVersion !== version) {
+                 setVersion(overrideVersion);
+             }
+             setActiveVerse(loadedVerses[0]);
+             setSelectedVerseRefs(loadedVerses.map(v => v.reference));
+             
+             if (loadedVerses.length > 1) {
+                 setCampaignQueue(loadedVerses.slice(1));
+             } else {
+                 setCampaignQueue(null);
+             }
+             setCampaignResults([]);
+         }
+      }
+
+      setHasInitializedUrl(true);
+
+      // Trigger automatic start if requested by URL
+      if (vParam || shouldAutoPlay) {
+         setTimeout(() => {
+             setInitAutoStart({ trigger: true, isAuto: shouldAutoPlay });
+         }, 500); 
+      }
+    };
+    parseUrlArgs();
+  }, []); // Run strictly once on mount
 
   const toggleSelection = (ref) => {
     setSelectedVerseRefs(prev => 
@@ -252,6 +340,13 @@ export default function App() {
     setCampaignResults([]);
     startGame();
   };
+
+  useEffect(() => {
+    if (initAutoStart?.trigger) {
+       startGame(initAutoStart.isAuto);
+       setInitAutoStart(null);
+    }
+  }, [initAutoStart]);
 
   const initSquareBlocks = () => {
     const phrases = activePhrasesRef.current;
