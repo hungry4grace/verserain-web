@@ -724,7 +724,15 @@ export default function App() {
              <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '6rem 5vw 2rem' }}>
                 <div className="hud-glass" style={{ padding: 'clamp(1.5rem, 4vw, 3rem)', textAlign: 'center', maxWidth: '1000px', width: '90%', maxHeight: '85vh', overflowY: 'auto' }}>
                     <h2 style={{ fontSize: 'clamp(1.2rem, 3vh, 2rem)', color: '#93c5fd', marginBottom: '1rem', fontWeight: 'bold' }}>{activeVerse.reference}</h2>
-                    <div style={{ fontSize: 'clamp(1rem, 3.5vh, 2.5rem)', color: '#fff', lineHeight: '1.6', fontWeight: 'bold' }}>
+                    <div style={{ 
+                        fontSize: (() => {
+                            const lengthWeight = version === 'kjv' ? activeVerse.text.length / 2.5 : activeVerse.text.length;
+                            if (lengthWeight > 120) return 'clamp(1rem, min(4.5vw, 3vh), 1.5rem)';
+                            if (lengthWeight > 70) return 'clamp(1.2rem, min(5vw, 3.5vh), 2rem)';
+                            return 'clamp(1.5rem, min(6vw, 4vh), 3rem)';
+                        })(), 
+                        color: '#fff', lineHeight: '1.6', fontWeight: 'bold' 
+                    }}>
                         {activePhrases.map((phrase, idx) => {
                              let color = '#cbd5e1'; 
                              if (idx < currentSeqIndex) color = '#93c5fd'; 
