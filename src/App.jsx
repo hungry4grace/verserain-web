@@ -316,7 +316,7 @@ export default function App() {
       runAutoPlayLoop();
     }
     return () => { cancelAutoPlay = true; };
-  }, [isAutoPlay, gameState, version]);
+  }, [isAutoPlay, gameState, version, activeVerse.reference]);
 
   const triggerFireworks = () => {
     const duration = 4 * 1000;
