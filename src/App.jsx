@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Play, RotateCcw, Heart, Zap, Trophy, Crown, Star, Home } from 'lucide-react';
+import { Play, RotateCcw, Heart, Zap, Trophy, Crown, Star, Home, XCircle, Headphones } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import './index.css';
 
@@ -139,6 +139,10 @@ export default function App() {
   const gameStateRef = useRef('menu');
   useEffect(() => { gameStateRef.current = gameState; }, [gameState]);
 
+  const [isAutoPlay, setIsAutoPlay] = useState(false);
+  const isAutoPlayRef = useRef(false);
+  useEffect(() => { isAutoPlayRef.current = isAutoPlay; }, [isAutoPlay]);
+
   const [blocks, setBlocks] = useState([]);
   
   const [currentSeqIndex, setCurrentSeqIndex] = useState(0);
@@ -175,7 +179,7 @@ export default function App() {
     // Dynamically scale animation speeds (10% increase compounding, or simply linear)
     // Here we compound by 10% every combo tier. 
     // Math.pow(1.1, 0) = 1.0; Math.pow(1.1, 1) = 1.1; Math.pow(1.1, 2) = 1.21
-    const rate = Math.min(Math.pow(1.1, combo), 2.2); // Cap at 2.2x speed
+    const rate = isAutoPlay ? 1.0 : Math.min(Math.pow(1.1, combo), 2.2); // Cap at 2.2x speed, lock to 1 for auto-play
     
     // Grab all actively falling blocks and adjust their native playback rate on the fly
     const wrappers = document.querySelectorAll('.falling-wrapper');
@@ -184,10 +188,11 @@ export default function App() {
       anims.forEach(anim => {
         if (anim.animationName === 'fall') {
             anim.playbackRate = rate;
+            anim.playState = isAutoPlay ? 'paused' : 'running'; // Auto play blocks wait at the top visually
         }
       });
     });
-  }, [combo, blocks]);
+  }, [combo, blocks, isAutoPlay]);
 
   const spawnNextBlock = () => {
     setBlocks(prev => {
@@ -238,9 +243,10 @@ export default function App() {
     startGame();
   };
 
-  const startGame = () => {
+  const startGame = (isAuto = false) => {
     initAudio(); 
     setGameState('playing');
+    setIsAutoPlay(isAuto);
     setScore(0);
     setCombo(0);
     setHealth(3);
@@ -257,19 +263,52 @@ export default function App() {
     
     timerRef.current = setInterval(() => {
       setTimeLeft(t => {
-        if (t <= 1) {
+        if (t <= 1 && !isAutoPlayRef.current) {
           endGame();
           return 0;
         }
-        return t - 1;
+        return Math.max(0, t - 1);
       });
     }, 1000);
 
-    setTimeout(spawnNextBlock, 100);
-    setTimeout(spawnNextBlock, 1500);
-    setTimeout(spawnNextBlock, 3000);
-    setTimeout(spawnNextBlock, 4500);
+    if (isAuto) {
+      setTimeout(spawnNextBlock, 100);
+    } else {
+      setTimeout(spawnNextBlock, 100);
+      setTimeout(spawnNextBlock, 1500);
+      setTimeout(spawnNextBlock, 3000);
+      setTimeout(spawnNextBlock, 4500);
+    }
   };
+
+  useEffect(() => {
+    let cancelAutoPlay = false;
+
+    const processAutoPlay = async () => {
+      if (!isAutoPlay || gameState !== 'playing') return;
+      if (currentSeqIndex >= activePhrasesRef.current.length) return;
+
+      let targetBlock = blocks.find(b => b.seqIndex === currentSeqIndex);
+      
+      if (!targetBlock) {
+          setTimeout(() => { if (!cancelAutoPlay) processAutoPlay(); }, 300);
+          return;
+      }
+
+      if (!cancelAutoPlay && gameState === 'playing') {
+          if (speechRef.current) {
+              await speechRef.current; // Crucial: wait for previous reading to finish before clicking the next block securely
+          }
+          if (cancelAutoPlay || gameState !== 'playing') return;
+          handleBlockClick(targetBlock);
+      }
+    };
+
+    if (isAutoPlay && gameState === 'playing') {
+      processAutoPlay();
+    }
+    return () => { cancelAutoPlay = true; };
+  }, [currentSeqIndex, blocks, isAutoPlay, gameState]);
 
   const triggerFireworks = () => {
     const duration = 4 * 1000;
@@ -359,6 +398,23 @@ export default function App() {
         }
         return prev;
     });
+
+    if (isAutoPlayRef.current && isSuccess) {
+       setTimeout(() => {
+           if (gameStateRef.current !== 'menu') {
+             if (campaignQueue !== null && campaignQueue.length > 0) {
+                 setActiveVerse(campaignQueue[0]);
+                 setCampaignQueue(campaignQueue.slice(1));
+                 startGame(true);
+             } else if (campaignQueue !== null && campaignQueue.length === 0) {
+                 setGameState('campaign-results');
+             } else {
+                 // For single play auto-play, just return to menu
+                 setGameState('menu');
+             }
+           }
+       }, 2000);
+    }
   };
 
   useEffect(() => {
@@ -378,7 +434,7 @@ export default function App() {
     if (block.correct || block.error) return; 
 
     if (block.seqIndex === currentSeqIndex) {
-      const voiceRate = Math.min(Math.pow(1.1, combo), 2.2);
+      const voiceRate = isAutoPlayRef.current ? 1.0 : Math.min(Math.pow(1.1, combo), 2.2);
 
       setScore(s => s + 100 + (combo * 50));
       setCombo(c => c + 1);
@@ -389,7 +445,7 @@ export default function App() {
       if (nextSeq === activePhrases.length - 1) {
         // Only one final block remaining - auto-complete it to save a click
         // Concatenate both pieces together to say it completely
-        const finalVoiceRate = Math.min(Math.pow(1.1, combo + 1), 2.2);
+        const finalVoiceRate = isAutoPlayRef.current ? 1.0 : Math.min(Math.pow(1.1, combo + 1), 2.2);
         const combinedText = block.text + (version === 'kjv' ? ". " : "，") + activePhrases[nextSeq];
         speechRef.current = speakText(combinedText, finalVoiceRate, TTS_LANG);
 
@@ -519,17 +575,35 @@ export default function App() {
               onClick={() => {
                 if (selectedVerseRefs.length === 0) return;
                 const queue = VERSES_DB.filter(v => selectedVerseRefs.includes(v.reference));
+                const sortedQueue = [...queue];
+                setCampaignQueue(sortedQueue.slice(1));
+                setCampaignResults([]);
+                setActiveVerse(sortedQueue[0]);
+                setTimeout(() => startGame(true), 50);
+              }}
+              className="play-btn"
+              style={{
+                background: selectedVerseRefs.length === 0 ? '#94a3b8' : '#10b981', color: 'white', border: 'none', padding: '1rem 2rem', flex: '1 1 200px',
+                fontSize: '1.2rem', fontWeight: 'bold', borderRadius: '9999px', cursor: selectedVerseRefs.length === 0 ? 'not-allowed' : 'pointer', display: 'inline-flex', alignItems: 'center', gap: '0.5rem', boxShadow: selectedVerseRefs.length === 0 ? 'none' : '0 0 20px rgba(16, 185, 129, 0.5)', transition: 'all 0.2s', justifyContent: 'center'
+              }}
+            >
+              <Headphones fill="white" size={20} /> Auto-Play
+            </button>
+            <button 
+              onClick={() => {
+                if (selectedVerseRefs.length === 0) return;
+                const queue = VERSES_DB.filter(v => selectedVerseRefs.includes(v.reference));
                 if (queue.length === 1) {
                   setActiveVerse(queue[0]);
                   setCampaignQueue(null);
                   setCampaignResults([]);
-                  setTimeout(startGame, 50);
+                  setTimeout(() => startGame(false), 50);
                 } else {
                   const shuffled = [...queue].sort(() => Math.random() - 0.5);
                   setCampaignQueue(shuffled.slice(1));
                   setCampaignResults([]);
                   setActiveVerse(shuffled[0]);
-                  setTimeout(startGame, 50);
+                  setTimeout(() => startGame(false), 50);
                 }
               }}
               className="play-btn"
@@ -546,7 +620,7 @@ export default function App() {
                   setCampaignQueue(shuffled.slice(1));
                   setCampaignResults([]);
                   setActiveVerse(shuffled[0]);
-                  setTimeout(startGame, 50);
+                  setTimeout(() => startGame(false), 50);
               }}
               className="play-btn"
               style={{
@@ -586,11 +660,25 @@ export default function App() {
           style={{ position: 'absolute', width: '100vw', height: '100vh', top: 0, left: 0, overflow: 'hidden' }}
         >
           <div style={{ position: 'absolute', top: 0, left: 0, right: 0, padding: '1.5rem', display: 'flex', justifyContent: 'space-between', zIndex: 10 }}>
-            <div className="hud-glass" style={{ padding: '0.75rem 1.5rem', display: 'flex', flexDirection: 'column', minWidth: '220px' }}>
-              <span style={{ fontSize: '1.25rem', fontWeight: 'bold', color: '#93c5fd' }}>{activeVerse.reference}</span>
-              <span style={{ fontSize: '0.85rem', color: '#cbd5e1', marginTop: '0.25rem' }}>
-                 Next: {currentSeqIndex < activePhrases.length ? activePhrases[currentSeqIndex] : "Complete!"}
-              </span>
+            <div style={{ display: 'flex', gap: '1rem' }}>
+              <button 
+                  className="hud-glass"
+                  onClick={(e) => {
+                     e.stopPropagation();
+                     if (timerRef.current) clearInterval(timerRef.current);
+                     if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+                     setGameState('menu');
+                  }}
+                  style={{ padding: '0.75rem', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#f87171' }}
+              >
+                  <XCircle size={32} />
+              </button>
+              <div className="hud-glass" style={{ padding: '0.75rem 1.5rem', display: 'flex', flexDirection: 'column', minWidth: '220px' }}>
+                <span style={{ fontSize: '1.25rem', fontWeight: 'bold', color: '#93c5fd' }}>{activeVerse.reference}</span>
+                <span style={{ fontSize: '0.85rem', color: '#cbd5e1', marginTop: '0.25rem' }}>
+                   Next: {currentSeqIndex < activePhrases.length ? activePhrases[currentSeqIndex] : "Complete!"}
+                </span>
+              </div>
             </div>
 
             <div className="hud-glass" style={{ padding: '1rem 2rem', display: 'flex', gap: '2rem', alignItems: 'center' }}>
