@@ -728,7 +728,7 @@ export default function App() {
             VerseRain
           </h1>
           <p style={{ fontSize: '1.1rem', color: '#cbd5e1', marginBottom: '2rem', textAlign: 'center', maxWidth: '600px' }}>
-            Select a verse below. Catch the phrases as they fall in chronological order!
+            在下方選擇一段經文。依照順序接住落下的詞句！
           </p>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', alignItems: 'center', marginBottom: '2rem' }}>
@@ -816,7 +816,7 @@ export default function App() {
                 fontSize: '1.2rem', fontWeight: 'bold', borderRadius: '9999px', cursor: selectedVerseRefs.length === 0 ? 'not-allowed' : 'pointer', display: 'inline-flex', alignItems: 'center', gap: '0.5rem', boxShadow: selectedVerseRefs.length === 0 ? 'none' : '0 0 20px rgba(16, 185, 129, 0.5)', transition: 'all 0.2s', justifyContent: 'center'
               }}
             >
-              <Headphones fill="white" size={20} /> Auto-Play
+              <Headphones fill="white" size={20} /> 自動播放
             </button>
             <button 
               onClick={() => {
@@ -842,7 +842,7 @@ export default function App() {
                 fontSize: '1.2rem', fontWeight: 'bold', borderRadius: '9999px', cursor: selectedVerseRefs.length === 0 ? 'not-allowed' : 'pointer', display: 'inline-flex', alignItems: 'center', gap: '0.5rem', boxShadow: selectedVerseRefs.length === 0 ? 'none' : '0 0 20px rgba(59, 130, 246, 0.5)', transition: 'all 0.2s', justifyContent: 'center'
               }}
             >
-              <Play fill="white" size={20} /> Play Selected
+              <Play fill="white" size={20} /> 開始遊戲
             </button>
             <button 
               onClick={() => {
@@ -859,7 +859,7 @@ export default function App() {
                 fontSize: '1.2rem', fontWeight: 'bold', borderRadius: '9999px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '0.5rem', boxShadow: '0 0 20px rgba(139, 92, 246, 0.5)', transition: 'all 0.2s', justifyContent: 'center'
               }}
             >
-              <Star fill="white" size={20} /> Play All (Campaign)
+              <Star fill="white" size={20} /> 全部連播
             </button>
           </div>
 
@@ -877,7 +877,7 @@ export default function App() {
                       <h3 style={{ color: '#93c5fd', marginBottom: '0.2rem', fontSize: '1.2rem' }}>{v.reference}</h3>
                       <div style={{ color: '#fbbf24', fontSize: '0.9rem', marginBottom: '1rem', fontWeight: 'bold' }}>{v.title}</div>
                       <p style={{ color: '#cbd5e1', fontSize: '0.9rem', flex: 1, maxHeight: '100px', overflowY: 'auto', paddingRight: '0.5rem', lineHeight: '1.5' }}>{v.text}</p>
-                      {vBest > 0 && <div style={{ marginTop: '1rem', color: '#fbbf24', fontSize: '0.8rem', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '4px' }}><Crown size={14}/> Best: {vBest}</div>}
+                      {vBest > 0 && <div style={{ marginTop: '1rem', color: '#fbbf24', fontSize: '0.8rem', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '4px' }}><Crown size={14}/> 最高分: {vBest}</div>}
                   </div>
                )
             })}
@@ -927,7 +927,7 @@ export default function App() {
             {!isAutoPlay && (
                 <div className="hud-glass" style={{ padding: '0.5rem 1rem', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', minWidth: '120px', position: 'relative' }}>
                   <div style={{ position: 'absolute', top: '-10px', left: '10px', color: '#fbbf24', fontSize: '0.7rem', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                    <Crown size={12} /> BEST {bestScore}
+                    <Crown size={12} /> 最高分 {bestScore}
                   </div>
                   <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: '#fff', fontFamily: 'monospace' }}>
                     {String(score).padStart(6, '0')}
@@ -1012,7 +1012,7 @@ export default function App() {
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100dvh', zIndex: 20, position: 'relative' }}>
           {isFailed ? (
             <div className="hud-glass" style={{ padding: 'clamp(1.5rem, 4vw, 3rem)', textAlign: 'center', width: '90%', maxWidth: '900px', border: '1px solid #f87171', maxHeight: '95dvh', display: 'flex', flexDirection: 'column' }}>
-              <h2 style={{ fontSize: 'clamp(2rem, 5vh, 3rem)', color: '#f87171', marginBottom: 'clamp(0.5rem, 2vh, 1rem)' }}>Keep Trying!</h2>
+              <h2 style={{ fontSize: 'clamp(2rem, 5vh, 3rem)', color: '#f87171', marginBottom: 'clamp(0.5rem, 2vh, 1rem)' }}>再接再厲！</h2>
               <div style={{ background: 'rgba(0,0,0,0.5)', padding: 'clamp(1rem, 3vw, 2.5rem)', borderRadius: '16px', marginBottom: 'clamp(1rem, 3vh, 2.5rem)', overflowY: 'auto', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
                   <p style={{ fontSize: 'clamp(0.9rem, 2vh, 1.2rem)', color: '#cbd5e1', marginBottom: 'clamp(0.5rem, 2vh, 1.5rem)', textTransform: 'uppercase', letterSpacing: '2px' }}>{activeVerse.reference}</p>
                   <div style={{ fontSize: 'clamp(1.2rem, 3.5vh, 2.2rem)', color: '#fff', lineHeight: '1.6', fontWeight: 'bold' }}>
@@ -1031,7 +1031,7 @@ export default function App() {
                   boxShadow: '0 0 15px rgba(59, 130, 246, 0.5)', transition: 'all 0.2s', margin: '0 auto', flexShrink: 0
                 }}
               >
-                <RotateCcw size={24} /> Play Again
+                <RotateCcw size={24} /> 再玩一次
               </button>
             </div>
           ) : (
@@ -1047,12 +1047,12 @@ export default function App() {
                 )}
     
                 <h2 style={{ fontSize: 'clamp(1.8rem, 4vh, 2.5rem)', marginBottom: '0.5rem', color: '#fff' }}>
-                   {isNewHighScore ? "New High Score!" : isFlawless ? "Flawless Setup!" : "Round Over"}
+                   {isNewHighScore ? "新高分！" : isFlawless ? "完美無瑕！" : ""}
                 </h2>
     
                 {isFlawless && !isNewHighScore && (
                    <div style={{ color: '#34d399', fontSize: 'clamp(1rem, 2vh, 1.2rem)', marginBottom: 'clamp(0.5rem, 2vh, 1rem)', fontWeight: 'bold' }}>
-                     Perfect Sequence!
+                     完美的順序！
                    </div>
                 )}
               </div>
@@ -1069,11 +1069,11 @@ export default function App() {
               <div style={{ flexShrink: 0 }}>
                 {timeBonus > 0 && (
                   <div style={{ fontSize: 'clamp(0.9rem, 2vh, 1.1rem)', color: '#34d399', marginBottom: 'clamp(0.2rem, 1vh, 0.5rem)', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px' }}>
-                    Time Bonus: {timeLeft}s × 50 = +{timeBonus}
+                    時間加成: {timeLeft}s × 50 = +{timeBonus}
                   </div>
                 )}
                 <div style={{ fontSize: 'clamp(1rem, 2.5vh, 1.25rem)', color: '#cbd5e1', marginBottom: 'clamp(0.5rem, 2vh, 1rem)' }}>
-                  Final Score: <strong style={{ color: isNewHighScore ? '#fbbf24' : '#fff', fontSize: 'clamp(2rem, 5vh, 2.5rem)', display: 'block', marginTop: '0.2rem' }}>{score}</strong>
+                  最終得分: <strong style={{ color: isNewHighScore ? '#fbbf24' : '#fff', fontSize: 'clamp(2rem, 5vh, 2.5rem)', display: 'block', marginTop: '0.2rem' }}>{score}</strong>
                 </div>
     
                 {campaignQueue !== null ? (
@@ -1090,7 +1090,7 @@ export default function App() {
                             fontSize: 'clamp(1.1rem, 2.5vh, 1.2rem)', fontWeight: 'bold', borderRadius: '12px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', boxShadow: '0 0 15px rgba(59, 130, 246, 0.5)', transition: 'all 0.2s', margin: '0 auto'
                           }}
                         >
-                          Next Sequence
+                          下一回合
                         </button>
                     ) : (
                         <button 
@@ -1101,7 +1101,7 @@ export default function App() {
                             fontSize: 'clamp(1.1rem, 2.5vh, 1.2rem)', fontWeight: 'bold', borderRadius: '12px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', boxShadow: '0 0 15px rgba(139, 92, 246, 0.5)', transition: 'all 0.2s', margin: '0 auto'
                           }}
                         >
-                          View Final Results
+                          查看最終成績
                         </button>
                     )
                 ) : (
@@ -1113,7 +1113,7 @@ export default function App() {
                         fontSize: 'clamp(1.1rem, 2.5vh, 1.2rem)', fontWeight: 'bold', borderRadius: '12px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', boxShadow: '0 0 15px rgba(59, 130, 246, 0.5)', transition: 'all 0.2s', margin: '0 auto'
                       }}
                     >
-                      <Home size={20} /> Back to Menu
+                      <Home size={20} /> 回到主頁
                     </button>
                 )}
               </div>
@@ -1126,14 +1126,14 @@ export default function App() {
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100dvh', width: '100vw', overflowY: 'auto', WebkitOverflowScrolling: 'touch', padding: 'calc(env(safe-area-inset-top) + 2rem) 1rem 4rem' }}>
            <div className="hud-glass" style={{ padding: 'clamp(1.5rem, 4vw, 3rem)', textAlign: 'center', width: '90%', maxWidth: '800px', display: 'flex', flexDirection: 'column', animation: 'flashSuccess 1s ease-out' }}>
              <Trophy size={48} color="#fbbf24" style={{ margin: '0 auto 1rem' }} />
-             <h2 style={{ fontSize: 'clamp(2rem, 4vh, 2.5rem)', color: '#fff', marginBottom: '1.5rem' }}>Campaign Complete!</h2>
+             <h2 style={{ fontSize: 'clamp(2rem, 4vh, 2.5rem)', color: '#fff', marginBottom: '1.5rem' }}>所有關卡完成！</h2>
              
              <div style={{ background: 'rgba(0,0,0,0.3)', borderRadius: '16px', padding: '1.5rem', overflowY: 'auto', maxHeight: '50vh', marginBottom: '2rem' }}>
                 {campaignResults.map((result, i) => (
                     <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem', borderBottom: i < campaignResults.length - 1 ? '1px solid rgba(255,255,255,0.1)' : 'none' }}>
                        <div style={{ textAlign: 'left' }}>
                          <div style={{ color: '#93c5fd', fontWeight: 'bold', fontSize: '1.1rem' }}>{result.verse.reference}</div>
-                         <div style={{ color: result.score > 0 ? '#34d399' : '#f87171', fontSize: '0.9rem' }}>{result.score > 0 ? (result.flawless ? 'Flawless' : 'Cleared') : 'Failed'}</div>
+                         <div style={{ color: result.score > 0 ? '#34d399' : '#f87171', fontSize: '0.9rem' }}>{result.score > 0 ? (result.flawless ? '完美' : '過關') : '失敗'}</div>
                        </div>
                        <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: result.score > 0 ? '#fbbf24' : '#64748b' }}>{result.score}</div>
                     </div>
@@ -1141,7 +1141,7 @@ export default function App() {
              </div>
              
              <div style={{ fontSize: '1.5rem', color: '#cbd5e1', marginBottom: '2rem' }}>
-                Grand Total: <strong style={{ color: '#fbbf24', fontSize: '3rem', display: 'block', marginTop: '0.5rem' }}>{campaignResults.reduce((sum, r) => sum + r.score, 0)}</strong>
+                總計得分: <strong style={{ color: '#fbbf24', fontSize: '3rem', display: 'block', marginTop: '0.5rem' }}>{campaignResults.reduce((sum, r) => sum + r.score, 0)}</strong>
              </div>
 
              <button 
@@ -1151,7 +1151,7 @@ export default function App() {
                 background: '#3b82f6', color: 'white', border: 'none', padding: '1rem',
                 fontSize: '1.2rem', fontWeight: 'bold', borderRadius: '12px', cursor: 'pointer', margin: '0 auto', maxWidth: '300px', width: '100%'
               }}
-             >Return to Menu</button>
+             >回到主頁</button>
            </div>
         </div>
       )}
