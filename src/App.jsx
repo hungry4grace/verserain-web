@@ -775,8 +775,8 @@ export default function App() {
           onClick={handleGlobalClick}
           style={{ position: 'absolute', width: '100vw', height: '100vh', top: 0, left: 0, overflow: 'hidden' }}
         >
-          <div style={{ position: 'absolute', top: 0, left: 0, right: 0, padding: '1.5rem', display: 'flex', justifyContent: 'space-between', zIndex: 10 }}>
-            <div style={{ display: 'flex', gap: '1rem' }}>
+          <div style={{ position: 'absolute', top: 0, left: 0, right: 0, padding: 'clamp(0.5rem, 2vw, 1.5rem)', display: 'flex', flexWrap: 'wrap', gap: '0.75rem', justifyContent: 'flex-start', alignItems: 'flex-start', zIndex: 10 }}>
+            <div style={{ display: 'flex', gap: '0.75rem' }}>
               <button 
                   className="hud-glass"
                   onClick={(e) => {
@@ -787,40 +787,40 @@ export default function App() {
                   }}
                   style={{ padding: '0.75rem', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#f87171' }}
               >
-                  <XCircle size={32} />
+                  <XCircle size={28} />
               </button>
               {!isAutoPlay && (
-                <div className="hud-glass" style={{ padding: '0.75rem 1.5rem', display: 'flex', flexDirection: 'column', minWidth: '220px' }}>
-                  <span style={{ fontSize: '1.25rem', fontWeight: 'bold', color: '#93c5fd' }}>{activeVerse.reference}</span>
+                <div className="hud-glass" style={{ padding: '0.5rem 1rem', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                  <span style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#93c5fd' }}>{activeVerse.reference}</span>
                 </div>
               )}
             </div>
 
             {!isAutoPlay && (
-              <>
-                <div className="hud-glass" style={{ padding: '1rem 2rem', display: 'flex', gap: '2rem', alignItems: 'center' }}>
-                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#f87171' }}>
+                <div className="hud-glass" style={{ padding: '0.5rem 1rem', display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.2rem', color: '#f87171' }}>
                      {[...Array(3)].map((_, i) => (
-                       <Heart key={i} size={24} fill={i < health ? '#f87171' : 'transparent'} strokeWidth={i < health ? 0 : 2} />
+                       <Heart key={i} size={20} fill={i < health ? '#f87171' : 'transparent'} strokeWidth={i < health ? 0 : 2} />
                      ))}
                    </div>
-                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1.5rem', fontWeight: 'bold', color: '#fbbf24' }}>
-                     <Zap size={24} fill="#fbbf24" strokeWidth={0} /> {combo}x
+                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.2rem', fontSize: '1.2rem', fontWeight: 'bold', color: '#fbbf24' }}>
+                     <Zap size={20} fill="#fbbf24" strokeWidth={0} /> {combo}x
                    </div>
                 </div>
-
-                <div className="hud-glass" style={{ padding: '0.75rem 1.5rem', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', minWidth: '150px', position: 'relative' }}>
+            )}
+            
+            {!isAutoPlay && (
+                <div className="hud-glass" style={{ padding: '0.5rem 1rem', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', minWidth: '120px', position: 'relative' }}>
                   <div style={{ position: 'absolute', top: '-10px', left: '10px', color: '#fbbf24', fontSize: '0.7rem', display: 'flex', alignItems: 'center', gap: '4px' }}>
                     <Crown size={12} /> BEST {bestScore}
                   </div>
-                  <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#fff', fontFamily: 'monospace' }}>
+                  <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: '#fff', fontFamily: 'monospace' }}>
                     {String(score).padStart(6, '0')}
                   </div>
-                  <div style={{ fontSize: '1.25rem', color: timeLeft <= 10 ? '#f87171' : '#cbd5e1', fontFamily: 'monospace' }}>
+                  <div style={{ fontSize: '1rem', color: timeLeft <= 10 ? '#f87171' : '#cbd5e1', fontFamily: 'monospace' }}>
                     00:{String(timeLeft).padStart(2, '0')}
                   </div>
                 </div>
-              </>
             )}
           </div>
 
