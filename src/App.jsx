@@ -656,7 +656,7 @@ export default function App() {
                   <p style={{ fontSize: 'clamp(0.9rem, 2vh, 1.2rem)', color: '#cbd5e1', marginBottom: 'clamp(0.5rem, 2vh, 1.5rem)', textTransform: 'uppercase', letterSpacing: '2px' }}>Review the correct sequence:</p>
                   <div style={{ fontSize: 'clamp(1.2rem, 3.5vh, 2.2rem)', color: '#fff', lineHeight: '1.6', fontWeight: 'bold' }}>
                     {activePhrases.map((phrase, idx) => (
-                        <span key={idx} style={{ color: idx % 2 === 0 ? '#93c5fd' : '#cbd5e1' }}>{phrase}</span>
+                        <span key={idx} style={{ color: idx % 2 === 0 ? '#93c5fd' : '#cbd5e1' }}>{phrase}{" "}</span>
                     ))}
                   </div>
               </div>
@@ -700,7 +700,7 @@ export default function App() {
                   <p style={{ fontSize: 'clamp(0.9rem, 2vh, 1.1rem)', color: '#cbd5e1', marginBottom: 'clamp(0.5rem, 2vh, 1rem)', textTransform: 'uppercase', letterSpacing: '1px' }}>The Correct Sequence:</p>
                   <div style={{ fontSize: 'clamp(1.1rem, 3vh, 2rem)', color: '#fff', lineHeight: '1.5', fontWeight: 'bold' }}>
                     {activePhrases.map((phrase, idx) => (
-                        <span key={idx} style={{ color: idx % 2 === 0 ? '#93c5fd' : '#cbd5e1' }}>{phrase}</span>
+                        <span key={idx} style={{ color: idx % 2 === 0 ? '#93c5fd' : '#cbd5e1' }}>{phrase}{" "}</span>
                     ))}
                   </div>
               </div>
