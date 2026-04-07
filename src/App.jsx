@@ -253,32 +253,42 @@ export default function App() {
     startGame();
   };
 
-  const spawnSquareBlocks = React.useCallback((targetSeq) => {
+  const spawnSquareBlocks = (targetSeq) => {
     if (targetSeq >= activePhrasesRef.current.length) return;
     const phrases = activePhrasesRef.current;
     
-    let candidates = Array.from({ length: phrases.length }, (_, i) => i).filter(i => i !== targetSeq);
+    let candidates = Array.from({ length: phrases.length }, (_, i) => i).filter(i => i > targetSeq);
     candidates.sort(() => Math.random() - 0.5);
-    const chosenDistractors = candidates.slice(0, 3);
     
-    while(chosenDistractors.length < 3) {
-      chosenDistractors.push(Math.floor(Math.random() * phrases.length));
+    let chosenDistractorTexts = candidates.slice(0, 3).map(i => phrases[i]);
+    
+    if (chosenDistractorTexts.length < 3) {
+       const allOtherTexts = VERSES_DB.flatMap(v => v.text.split(/[,，。；：「」、;:\.\?]/).map(p => p.trim()).filter(Boolean));
+       const validOtherTexts = allOtherTexts.filter(t => t !== phrases[targetSeq] && !chosenDistractorTexts.includes(t) && t.length > 0);
+       validOtherTexts.sort(() => Math.random() - 0.5);
+       
+       while(chosenDistractorTexts.length < 3 && validOtherTexts.length > 0) {
+          chosenDistractorTexts.push(validOtherTexts.pop());
+       }
     }
 
-    const elementsToSpawn = [targetSeq, ...chosenDistractors].sort(() => Math.random() - 0.5);
+    const elementsToSpawn = [
+       { text: phrases[targetSeq], isCorrect: true, seqIndex: targetSeq },
+       ...chosenDistractorTexts.map(t => ({ text: t, isCorrect: false, seqIndex: -1 }))
+    ].sort(() => Math.random() - 0.5);
     
-    const newBlocks = elementsToSpawn.map((pIndex) => ({
+    const newBlocks = elementsToSpawn.map((p) => ({
       id: Math.random().toString(36).substr(2, 9),
-      text: phrases[pIndex],
-      seqIndex: pIndex,
-      isCorrect: pIndex === targetSeq,
+      text: p.text,
+      seqIndex: p.seqIndex,
+      isCorrect: p.isCorrect,
       isSquare: true,
       error: false,
       correct: false
     }));
     
     setBlocks(newBlocks);
-  }, []);
+  };
 
   const startGame = (isAuto = false) => {
     initAudio(); 
