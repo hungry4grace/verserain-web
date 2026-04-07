@@ -188,7 +188,11 @@ export default function App() {
       anims.forEach(anim => {
         if (anim.animationName === 'fall') {
             anim.playbackRate = rate;
-            anim.playState = isAutoPlay ? 'paused' : 'running'; // Auto play blocks wait at the top visually
+            if (isAutoPlay) {
+                anim.pause();
+            } else {
+                anim.play();
+            }
         }
       });
     });
