@@ -151,6 +151,8 @@ export default function App() {
   const isAutoPlayRef = useRef(false);
   useEffect(() => { isAutoPlayRef.current = isAutoPlay; }, [isAutoPlay]);
 
+  const [speakingTitle, setSpeakingTitle] = useState(false);
+
   const [blocks, setBlocks] = useState([]);
   
   const [currentSeqIndex, setCurrentSeqIndex] = useState(0);
@@ -292,6 +294,30 @@ export default function App() {
     const runAutoPlayLoop = async () => {
       if (!isAutoPlay || gameState !== 'playing') return;
 
+      const TTS_LANG = version === 'kjv' ? 'en-US' : 'zh-TW';
+
+      const formatRef = (ref) => {
+        const match = ref.match(/(.+?)\s*(\d+)\s*:\s*([\d,\s\-–]+)/);
+        if (!match) return ref;
+        const book = match[1].trim();
+        const chapter = match[2];
+        const versesStr = match[3].replace(/-/g, version === 'kjv' ? ' to ' : '到 ').replace(/–/g, version === 'kjv' ? ' to ' : '到 ').trim();
+        if (version === 'kjv') {
+          const isPlural = versesStr.includes('to') || versesStr.includes(',');
+          return `${book} chapter ${chapter}, verse${isPlural ? 's' : ''} ${versesStr}`;
+        } else {
+          return `${book} ${chapter}章 ${versesStr}節`;
+        }
+      };
+
+      if (!cancelAutoPlay && gameStateRef.current === 'playing') {
+          setSpeakingTitle(true);
+          speechRef.current = speakText(formatRef(activeVerse.reference), 1.0, TTS_LANG);
+          await speechRef.current;
+          setSpeakingTitle(false);
+          await new Promise(r => setTimeout(r, 400));
+      }
+
       for (let i = 0; i < activePhrasesRef.current.length; i++) {
           if (cancelAutoPlay || gameStateRef.current !== 'playing') break;
           
@@ -299,7 +325,6 @@ export default function App() {
           currentSeqRef.current = i;
           
           const phraseToSpeak = activePhrasesRef.current[i];
-          const TTS_LANG = version === 'kjv' ? 'en-US' : 'zh-TW';
           
           speechRef.current = speakText(phraseToSpeak, 1.0, TTS_LANG);
           await speechRef.current;
@@ -721,7 +746,7 @@ export default function App() {
           {isAutoPlay ? (
              <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '6rem 5vw 2rem' }}>
                 <div className="hud-glass" style={{ padding: 'clamp(1.5rem, 4vw, 3rem)', textAlign: 'center', maxWidth: '1000px', width: '90%', maxHeight: '85vh', overflowY: 'auto' }}>
-                    <h2 style={{ fontSize: 'clamp(1.2rem, 3vh, 2rem)', color: '#93c5fd', marginBottom: '1rem', fontWeight: 'bold' }}>{activeVerse.reference}</h2>
+                    <h2 style={{ fontSize: 'clamp(1.2rem, 3vh, 2rem)', color: speakingTitle ? '#fbbf24' : '#93c5fd', transition: 'color 0.3s', marginBottom: '1rem', fontWeight: 'bold' }}>{activeVerse.reference}</h2>
                     <div style={{ 
                         fontSize: (() => {
                             const lengthWeight = version === 'kjv' ? activeVerse.text.length / 2.5 : activeVerse.text.length;
@@ -734,7 +759,7 @@ export default function App() {
                         {activePhrases.map((phrase, idx) => {
                              let color = '#cbd5e1'; 
                              if (idx < currentSeqIndex) color = '#93c5fd'; 
-                             if (idx === currentSeqIndex) color = '#fbbf24'; 
+                             if (idx === currentSeqIndex && !speakingTitle) color = '#fbbf24'; 
                              return <span key={idx} style={{ color, transition: 'color 0.3s' }}>{phrase}{" "}</span>;
                         })}
                     </div>
