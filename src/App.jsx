@@ -123,16 +123,15 @@ export default function App() {
   const [activeVerse, setActiveVerse] = useState(VERSES_DB[0]);
   const [selectedVerseRefs, setSelectedVerseRefs] = useState([VERSES_DB[0].reference]);
   
-  const [hasInitializedUrl, setHasInitializedUrl] = useState(false);
   const [initAutoStart, setInitAutoStart] = useState(null);
 
-  useEffect(() => {
-    if (hasInitializedUrl) {
-       setActiveVerse(VERSES_DB[0]);
-       setSelectedVerseRefs([VERSES_DB[0].reference]);
-       setCampaignQueue(null);
-    }
-  }, [version, hasInitializedUrl]);
+  const handleVersionChange = (newVer) => {
+      setVersion(newVer);
+      const targetDB = newVer === 'cuv' ? VERSES_CUV : VERSES_KJV;
+      setActiveVerse(targetDB[0]);
+      setSelectedVerseRefs([targetDB[0].reference]);
+      setCampaignQueue(null);
+  };
 
   useEffect(() => {
     const parseUrlArgs = async () => {
@@ -226,8 +225,6 @@ export default function App() {
              setCampaignResults([]);
          }
       }
-
-      setHasInitializedUrl(true);
 
       // Trigger automatic start if requested by URL
       if (textParam || vParam || shouldAutoPlay) {
@@ -737,7 +734,7 @@ export default function App() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', alignItems: 'center', marginBottom: '2rem' }}>
             <div style={{ display: 'flex', gap: '1rem' }}>
                 <button 
-                  onClick={() => setVersion('cuv')} 
+                  onClick={() => handleVersionChange('cuv')} 
                   style={{
                     background: version === 'cuv' ? '#3b82f6' : 'transparent',
                     color: version === 'cuv' ? 'white' : '#94a3b8',
@@ -752,7 +749,7 @@ export default function App() {
                   和合本
                 </button>
                 <button 
-                  onClick={() => setVersion('kjv')} 
+                  onClick={() => handleVersionChange('kjv')} 
                   style={{
                     background: version === 'kjv' ? '#3b82f6' : 'transparent',
                     color: version === 'kjv' ? 'white' : '#94a3b8',
