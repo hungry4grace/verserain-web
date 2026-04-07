@@ -255,7 +255,7 @@ export default function App() {
 
   const initSquareBlocks = () => {
     const phrases = activePhrasesRef.current;
-    const initialCount = Math.min(4, phrases.length);
+    const initialCount = Math.min(9, phrases.length);
     const initialIndices = Array.from({ length: initialCount }, (_, i) => i);
     initialIndices.sort(() => Math.random() - 0.5);
 
@@ -519,7 +519,7 @@ export default function App() {
       
       if (gameState === 'playing') {
          if (playMode === 'square') {
-             const nextSpawnIndex = block.seqIndex + 4;
+             const nextSpawnIndex = block.seqIndex + 9;
              setTimeout(() => {
                 setBlocks(prev => prev.map(b => {
                    if (b.id !== block.id) return b;
@@ -848,13 +848,13 @@ export default function App() {
               </div>
            ) : playMode === 'square' ? (
              <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '5rem 0 0 0', pointerEvents: 'none' }}>
-                <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)', gap: '1rem', width: '90%', maxWidth: '750px', pointerEvents: 'auto' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: '0.75rem', width: '95%', maxWidth: '900px', pointerEvents: 'auto' }}>
                    {blocks.map(block => {
                       let appliedClasses = 'falling-block-inner';
                       if (block.error) appliedClasses += ' error-shake';
                       if (block.correct) appliedClasses += ' success-flash';
                       return (
-                        <div key={block.id} className={appliedClasses} onClick={(e) => { e.stopPropagation(); handleBlockClick(block); }} style={{ cursor: 'pointer', padding: 'clamp(1.5rem, 4vw, 3rem)', fontSize: 'clamp(1.2rem, 4vw, 2.2rem)', display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '180px', wordBreak: 'break-word', hyphens: 'auto', textAlign: 'center', visibility: block.hidden ? 'hidden' : 'visible' }}>
+                        <div key={block.id} className={appliedClasses} onClick={(e) => { e.stopPropagation(); handleBlockClick(block); }} style={{ cursor: 'pointer', padding: 'clamp(0.5rem, 2vw, 1.5rem)', fontSize: 'clamp(0.9rem, 2.5vw, 1.5rem)', display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100px', wordBreak: 'break-word', hyphens: 'auto', textAlign: 'center', visibility: block.hidden ? 'hidden' : 'visible' }}>
                             {!block.hidden && block.text}
                         </div>
                       )
