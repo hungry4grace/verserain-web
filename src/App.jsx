@@ -139,6 +139,7 @@ export default function App() {
       const params = new URLSearchParams(window.location.search);
       const mParam = params.get('m');
       const vParam = params.get('v');
+      const textParam = params.get('text');
 
       let shouldAutoPlay = false;
       let loadedVerses = [];
@@ -153,7 +154,29 @@ export default function App() {
          }
       }
 
-      if (vParam) {
+      if (textParam) {
+         let cleanText = textParam.replace(/['"]/g, '').trim();
+         let title = "Custom Verse";
+         
+         const match = cleanText.match(/^([^\s「"]+)\s+([\d:,-]+)\s+([「"]?)(.*)/);
+         if (match) {
+            title = match[1] + " " + match[2];
+            cleanText = match[4].replace(/[」"]$/, '').trim();
+         }
+         
+         const isEnglish = /^[a-zA-Z\s.,:;'"]+$/.test(cleanText.substring(0, 50));
+         setVersion(isEnglish ? 'kjv' : 'cuv');
+         
+         setActiveVerse({
+             reference: title,
+             title: "Custom Text",
+             text: cleanText.replace(/\n/g, ' ').trim()
+         });
+         setSelectedVerseRefs([title]);
+         setCampaignQueue(null);
+         setCampaignResults([]);
+
+      } else if (vParam) {
          const cleanV = vParam.replace(/['"]/gi, '');
          const refs = cleanV.split(';').map(s => s.trim()).filter(Boolean);
          
@@ -207,7 +230,7 @@ export default function App() {
       setHasInitializedUrl(true);
 
       // Trigger automatic start if requested by URL
-      if (vParam || shouldAutoPlay) {
+      if (textParam || vParam || shouldAutoPlay) {
          setTimeout(() => {
              setInitAutoStart({ trigger: true, isAuto: shouldAutoPlay });
          }, 500); 
