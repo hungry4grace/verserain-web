@@ -907,7 +907,7 @@ export default function App() {
                   </div>
               </div>
               <button 
-                onClick={startGame}
+                onClick={() => startGame()}
                 className="play-btn"
                 style={{
                   width: '100%', maxWidth: '400px', background: '#3b82f6', color: 'white', border: 'none', padding: 'clamp(0.8rem, 2vh, 1.2rem)',
