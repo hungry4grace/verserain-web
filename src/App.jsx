@@ -361,8 +361,6 @@ export default function App() {
                  setActiveVerse(campaignQueue[0]);
                  setCampaignQueue(campaignQueue.slice(1));
                  startGame(true);
-             } else if (campaignQueue !== null && campaignQueue.length === 0) {
-                 setGameState('campaign-results');
              } else {
                  setGameState('menu');
              }
