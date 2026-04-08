@@ -337,13 +337,21 @@ export default function App() {
     });
   }, [combo, blocks]);
 
-  const spawnNextBlock = () => {
+  const spawnNextBlock = (expiredBlockId = null) => {
     setBlocks(prev => {
+      let expiredBlock = null;
+      let remainingBlocks = prev;
+      
+      if (expiredBlockId) {
+         expiredBlock = prev.find(b => b.id === expiredBlockId);
+         remainingBlocks = prev.filter(b => b.id !== expiredBlockId);
+      }
+
       const phrases = activePhrasesRef.current;
       const targetSeq = currentSeqRef.current;
-      if (targetSeq >= phrases.length) return prev;
+      if (targetSeq >= phrases.length) return remainingBlocks;
       
-      const onScreenIndices = prev.map(b => b.seqIndex);
+      const onScreenIndices = remainingBlocks.map(b => b.seqIndex);
       const candidates = [];
       for (let i = targetSeq; i < phrases.length; i++) {
         if (!onScreenIndices.includes(i)) {
@@ -351,7 +359,7 @@ export default function App() {
         }
       }
       
-      if (candidates.length === 0) return prev; 
+      if (candidates.length === 0) return remainingBlocks; 
 
       let seqToSpawn = -1;
       if (candidates.includes(targetSeq)) {
@@ -362,9 +370,14 @@ export default function App() {
           seqToSpawn = nextImmediateCandidates[Math.floor(Math.random() * nextImmediateCandidates.length)];
       }
       
-      const lanes = [5, 35, 65];
-      const assignedLane = Math.floor(Math.random() * 3);
-      const xPos = lanes[assignedLane] + Math.random() * 10;
+      let xPos;
+      if (expiredBlock && expiredBlock.seqIndex === seqToSpawn) {
+          xPos = expiredBlock.xPos; // Inherit position so gamer knows where to look!
+      } else {
+          const lanes = [5, 35, 65];
+          const assignedLane = Math.floor(Math.random() * 3);
+          xPos = lanes[assignedLane] + Math.random() * 10;
+      }
       
       const newBlock = {
         id: Math.random().toString(36).substr(2, 9),
@@ -376,7 +389,7 @@ export default function App() {
         correct: false
       };
       
-      return [...prev, newBlock];
+      return [...remainingBlocks, newBlock];
     });
   };
 
@@ -621,8 +634,11 @@ export default function App() {
 
   const handleAnimationEnd = (e, id) => {
     if (e.animationName === 'fall') {
-      setBlocks(prev => prev.filter(b => b.id !== id));
-      if (gameState === 'playing') spawnNextBlock();
+      if (gameState === 'playing') {
+        spawnNextBlock(id);
+      } else {
+        setBlocks(prev => prev.filter(b => b.id !== id));
+      }
     }
   };
 
