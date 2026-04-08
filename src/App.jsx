@@ -381,6 +381,7 @@ export default function App() {
   const [isNewHighScore, setIsNewHighScore] = useState(false);
   const [isFailed, setIsFailed] = useState(false);
   const [timeBonus, setTimeBonus] = useState(0);
+  const [pureBaseScore, setPureBaseScore] = useState(0);
   const [campaignQueue, setCampaignQueue] = useState(null);
   const [campaignResults, setCampaignResults] = useState([]);
 
@@ -720,6 +721,7 @@ export default function App() {
     let finalCalculatedScore = scoreRef.current;
     
     if (isSuccess) {
+        setPureBaseScore(finalCalculatedScore);
         const calculatedTimeBonus = Math.floor(Math.max(0, timeLeft) * 0.5);
         setTimeBonus(calculatedTimeBonus);
         finalCalculatedScore += calculatedTimeBonus;
@@ -731,6 +733,7 @@ export default function App() {
         setScore(finalCalculatedScore);
         scoreRef.current = finalCalculatedScore;
     } else {
+        setPureBaseScore(finalCalculatedScore);
         setTimeBonus(0);
     }
 
@@ -1382,9 +1385,12 @@ export default function App() {
                   </div>
               </div>
   
-              <div style={{ flexShrink: 0 }}>
+               <div style={{ flexShrink: 0 }}>
+                <div style={{ fontSize: 'clamp(0.9rem, 2vh, 1.1rem)', color: '#93c5fd', marginBottom: 'clamp(0.2rem, 1vh, 0.5rem)', fontWeight: 'bold' }}>
+                  {t("通關基礎分", "Base Score")}: {pureBaseScore}
+                </div>
                 {timeBonus > 0 && (
-                  <div style={{ fontSize: 'clamp(0.9rem, 2vh, 1.1rem)', color: '#34d399', marginBottom: 'clamp(0.2rem, 1vh, 0.5rem)', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px' }}>
+                  <div style={{ fontSize: 'clamp(0.9rem, 2vh, 1.1rem)', color: '#34d399', marginBottom: 'clamp(0.2rem, 1vh, 0.5rem)', fontWeight: 'bold' }}>
                     {t("時間加成", "Time Bonus")}: {(timeLeft / 100).toFixed(2)}s × 50 = +{timeBonus}
                   </div>
                 )}
@@ -1393,7 +1399,7 @@ export default function App() {
                     {t("難度加成", "Difficulty Multiplier")}: × {(1 + distractionLevel * 0.1).toFixed(1)} {t(`(難度 ${distractionLevel})`, `(Lv ${distractionLevel})`)}
                   </div>
                 )}
-                <div style={{ fontSize: 'clamp(1rem, 2.5vh, 1.25rem)', color: '#cbd5e1', marginBottom: 'clamp(0.5rem, 2vh, 1rem)' }}>
+                <div style={{ fontSize: 'clamp(1rem, 2.5vh, 1.25rem)', color: '#cbd5e1', marginBottom: 'clamp(0.5rem, 2vh, 1rem)', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '0.5rem', marginTop: '0.5rem' }}>
                   {t("最終得分", "Final Score")}: <strong style={{ color: isNewHighScore ? '#fbbf24' : '#fff', fontSize: 'clamp(2rem, 5vh, 2.5rem)', display: 'block', marginTop: '0.2rem' }}>{score}</strong>
                 </div>
 
