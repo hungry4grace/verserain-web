@@ -472,21 +472,20 @@ export default function App() {
 
       let seqToSpawn = -1;
       let isFake = false;
-      
       const fakesOnScreen = remainingBlocks.filter(b => b.isFake).length;
       let maxFakesAllowed = 0;
-      if (distractionLevel === 3) maxFakesAllowed = 2; // out of 5 total blocks, max 2 are fake (so strictly <= real blocks)
-      if (distractionLevel === 2) maxFakesAllowed = 1; // lower max cap
-      if (distractionLevel === 1) maxFakesAllowed = 1; // even lower probability below
+      if (distractionLevel === 3) maxFakesAllowed = 2; 
+      if (distractionLevel === 2) maxFakesAllowed = 1; 
+      if (distractionLevel === 1) maxFakesAllowed = 1; 
 
-      let spawnFake = distractionLevel > 0 && Math.random() < (distractionLevel * 0.3); // 30%, 60%, 90% chance to *try* spawning
-      if (fakesOnScreen >= maxFakesAllowed) spawnFake = false; // Rigid cap
+      let spawnFake = distractionLevel > 0 && Math.random() < (distractionLevel * 0.3); 
+      if (fakesOnScreen >= maxFakesAllowed) spawnFake = false; 
 
-      if (spawnFake && playMode !== 'square') {
+      if (candidates.includes(targetSeq)) {
+          seqToSpawn = targetSeq; // Absolute guarantee the required phrase is spawned
+      } else if (spawnFake && playMode !== 'square') {
           isFake = true;
           seqToSpawn = -1;
-      } else if (candidates.includes(targetSeq)) {
-          seqToSpawn = targetSeq; 
       } else {
           const nextImmediateCandidates = candidates.slice(0, 3);
           seqToSpawn = nextImmediateCandidates[Math.floor(Math.random() * nextImmediateCandidates.length)];
