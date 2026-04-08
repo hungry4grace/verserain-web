@@ -1008,7 +1008,6 @@ export default function App() {
                   Verse Square
                 </button>
             </div>
-            </div>
           </div>
 
           <div style={{ display: 'flex', gap: '1rem', width: '100%', maxWidth: '600px', justifyContent: 'center', flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', marginBottom: '2rem' }}>
