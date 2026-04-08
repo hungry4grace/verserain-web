@@ -15,7 +15,7 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { name, score, verseRef } = req.body;
+  const { name, score, verseRef, mode } = req.body;
 
   if (!name || typeof score !== 'number' || !verseRef) {
     return res.status(400).json({ error: 'Missing required fields' });
@@ -46,6 +46,9 @@ export default async function handler(req, res) {
         const currentScore = await redis.zscore(key, name);
         if (currentScore === null || score > parseFloat(currentScore)) {
             await redis.zadd(key, { score: score, member: name });
+            if (mode) {
+               await redis.hset(`leaderboard_meta:${verseRef}`, { [name]: mode });
+            }
         }
     }
 

@@ -42,14 +42,16 @@ export default async function handler(req, res) {
     const monthlyKey = `leaderboard:monthly:${month}:${verseRef}`;
     const dailyKey = `leaderboard:daily:${today}:${verseRef}`;
 
+    const metas = await redis.hgetall(`leaderboard_meta:${verseRef}`) || {};
+
     async function getFormatted(key) {
       const elements = await redis.zrange(key, 0, 9, { rev: true, withScores: true });
       const result = [];
       if (elements.length > 0 && typeof elements[0] === 'object') {
-         elements.forEach(el => result.push({ name: el.member, score: el.score }));
+         elements.forEach(el => result.push({ name: el.member, score: el.score, mode: metas[el.member] || 'rain' }));
       } else {
          for (let i = 0; i < elements.length; i += 2) {
-           result.push({ name: elements[i], score: elements[i + 1] });
+           result.push({ name: elements[i], score: elements[i + 1], mode: metas[elements[i]] || 'rain' });
          }
       }
       return result;

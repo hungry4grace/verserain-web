@@ -716,7 +716,7 @@ export default function App() {
         fetch('/api/submit-score', {
            method: 'POST',
            headers: {'Content-Type': 'application/json'},
-           body: JSON.stringify({ name: playerName, score: finalCalculatedScore, verseRef: activeVerse.reference })
+           body: JSON.stringify({ name: playerName, score: finalCalculatedScore, verseRef: activeVerse.reference, mode: playMode })
         }).then(() => {
            return fetch(`/api/get-scores?verseRef=${encodeURIComponent(activeVerse.reference)}`);
         }).then(res => res.json())
@@ -1339,7 +1339,7 @@ export default function App() {
                                fetch('/api/submit-score', {
                                   method: 'POST',
                                   headers: {'Content-Type': 'application/json'},
-                                  body: JSON.stringify({ name: name, score: score, verseRef: activeVerse.reference })
+                                  body: JSON.stringify({ name: name, score: score, verseRef: activeVerse.reference, mode: playMode })
                                }).then(() => fetch(`/api/get-scores?verseRef=${encodeURIComponent(activeVerse.reference)}`))
                                  .then(res => res.json())
                                  .then(data => setLeaderboard(data && Array.isArray(data.alltime) ? data : { alltime: Array.isArray(data) ? data : [], monthly: [], daily: [] }))
@@ -1371,7 +1371,11 @@ export default function App() {
                                leaderboard[leaderboardTab].map((entry, i) => (
                                  <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '0.35rem 0', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
                                    <span style={{ color: i === 0 ? '#fbbf24' : i === 1 ? '#e2e8f0' : i === 2 ? '#b45309' : '#94a3b8', fontWeight: i < 3 ? 'bold' : 'normal', display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-                                     <span style={{ width: '16px', textAlign: 'right' }}>{i + 1}.</span> <span>{entry.name}</span>
+                                     <span style={{ width: '16px', textAlign: 'right' }}>{i + 1}.</span> 
+                                     <span style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                                       <span>{entry.name}</span>
+                                       <span style={{ fontSize: '0.65rem', padding: '0.1rem 0.3rem', background: entry.mode === 'square' ? 'rgba(139, 92, 246, 0.4)' : 'rgba(59, 130, 246, 0.4)', borderRadius: '4px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{entry.mode || 'rain'}</span>
+                                     </span>
                                    </span>
                                    <span style={{ color: '#cbd5e1', fontWeight: 'bold' }}>{entry.score}</span>
                                  </div>
@@ -1496,7 +1500,10 @@ export default function App() {
                                <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '0.75rem', background: 'rgba(255,255,255,0.03)', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)' }}>
                                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                                        <span style={{ fontSize: '1.2rem', fontWeight: 'bold', width: '24px', textAlign: 'center', color: i === 0 ? '#fbbf24' : i === 1 ? '#e2e8f0' : i === 2 ? '#b45309' : '#94a3b8' }}>{i + 1}</span>
-                                       <span style={{ color: '#fff', fontSize: '1.1rem', fontWeight: i < 3 ? 'bold' : 'normal' }}>{entry.name}</span>
+                                       <span style={{ color: '#fff', fontSize: '1.1rem', fontWeight: i < 3 ? 'bold' : 'normal', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                           <span>{entry.name}</span>
+                                           <span style={{ fontSize: '0.7rem', padding: '0.1rem 0.4rem', background: entry.mode === 'square' ? 'rgba(139, 92, 246, 0.4)' : 'rgba(59, 130, 246, 0.4)', borderRadius: '4px', textTransform: 'uppercase', letterSpacing: '0.5px', color: '#93c5fd' }}>{entry.mode || 'rain'}</span>
+                                       </span>
                                    </div>
                                    <span style={{ color: '#3b82f6', fontWeight: 'bold', fontSize: '1.1rem' }}>{entry.score}</span>
                                </div>
