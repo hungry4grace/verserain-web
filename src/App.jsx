@@ -167,8 +167,9 @@ export default function App() {
   
   const [initAutoStart, setInitAutoStart] = useState(null);
 
-  const [isMusicPlaying, setIsMusicPlaying] = useState(false);
+  const [isMusicPlaying, setIsMusicPlaying] = useState(true);
   const bgmAudioRef = useRef(null);
+  const [autoplayBlocked, setAutoplayBlocked] = useState(false);
 
   useEffect(() => {
     if (!bgmAudioRef.current) {
@@ -177,14 +178,35 @@ export default function App() {
         bgmAudioRef.current.volume = 0.4;
     }
     if (isMusicPlaying) {
-        bgmAudioRef.current.play().catch(e => {
-           console.log('Autoplay prevented, requires interaction');
-           setIsMusicPlaying(false);
-        });
+        const playPromise = bgmAudioRef.current.play();
+        if (playPromise !== undefined) {
+             playPromise.catch(e => {
+                 console.log('Autoplay prevented, will play on interaction');
+                 setAutoplayBlocked(true);
+                 setIsMusicPlaying(false);
+             });
+        }
     } else {
         bgmAudioRef.current.pause();
     }
   }, [isMusicPlaying]);
+
+  useEffect(() => {
+      const unlockAutoplay = () => {
+          if (autoplayBlocked) {
+              setAutoplayBlocked(false);
+              setIsMusicPlaying(true);
+          }
+      };
+      if (autoplayBlocked) {
+          window.addEventListener('click', unlockAutoplay);
+          window.addEventListener('touchstart', unlockAutoplay);
+      }
+      return () => {
+          window.removeEventListener('click', unlockAutoplay);
+          window.removeEventListener('touchstart', unlockAutoplay);
+      };
+  }, [autoplayBlocked]);
 
   const handleVersionChange = (newVer) => {
       setVersion(newVer);
