@@ -472,7 +472,15 @@ export default function App() {
 
       let seqToSpawn = -1;
       let isFake = false;
-      const spawnFake = distractionLevel > 0 && Math.random() < (distractionLevel * 0.20); // 20%, 40%, 60% chance
+      
+      const fakesOnScreen = remainingBlocks.filter(b => b.isFake).length;
+      let maxFakesAllowed = 0;
+      if (distractionLevel === 3) maxFakesAllowed = 2; // out of 5 total blocks, max 2 are fake (so strictly <= real blocks)
+      if (distractionLevel === 2) maxFakesAllowed = 1; // lower max cap
+      if (distractionLevel === 1) maxFakesAllowed = 1; // even lower probability below
+
+      let spawnFake = distractionLevel > 0 && Math.random() < (distractionLevel * 0.3); // 30%, 60%, 90% chance to *try* spawning
+      if (fakesOnScreen >= maxFakesAllowed) spawnFake = false; // Rigid cap
 
       if (spawnFake && playMode !== 'square') {
           isFake = true;
@@ -800,22 +808,9 @@ export default function App() {
       const nextSeq = currentSeqIndex + 1;
       const TTS_LANG = version === 'kjv' ? 'en-US' : 'zh-TW';
       
-      if (nextSeq === activePhrases.length - 1 && playMode !== 'square') {
-        // Only one final block remaining - auto-complete it to save a click
-        // Concatenate both pieces together to say it completely
-        const finalVoiceRate = isAutoPlayRef.current ? 1.0 : Math.min(Math.pow(1.05, combo + 1), 2.2);
-        const combinedText = block.text + (version === 'kjv' ? ". " : "，") + activePhrases[nextSeq];
-        speechRef.current = speakText(combinedText, finalVoiceRate, TTS_LANG);
-
-        setScore(s => s + 100 + ((combo + 1) * 50));
-        setCombo(c => c + 1);
-        setCurrentSeqIndex(activePhrases.length);
-        currentSeqRef.current = activePhrases.length;
-      } else {
-        speechRef.current = speakText(block.text, voiceRate, TTS_LANG);
-        setCurrentSeqIndex(nextSeq);
-        currentSeqRef.current = nextSeq; // Update instantly before useEffect triggers
-      }
+      speechRef.current = speakText(block.text, voiceRate, TTS_LANG);
+      setCurrentSeqIndex(nextSeq);
+      currentSeqRef.current = nextSeq; // Update instantly before useEffect triggers
       
       setBlocks(prev => prev.map(b => b.id === block.id ? { ...b, correct: true } : b));
       
