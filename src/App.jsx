@@ -543,7 +543,24 @@ export default function App() {
       correct: false,
       hidden: false
     }));
+
+    if (distractionLevel > 0) {
+        let fakesCount = distractionLevel; 
+        for (let i = 0; i < fakesCount; i++) {
+           newBlocks.push({
+               id: Math.random().toString(36).substr(2, 9),
+               text: getRandomFakePhrase(version),
+               seqIndex: -1,
+               isSquare: true,
+               error: false,
+               correct: false,
+               hidden: false,
+               isFake: true
+           });
+        }
+    }
     
+    newBlocks.sort(() => Math.random() - 0.5);
     setBlocks(newBlocks);
   };
 
@@ -707,7 +724,7 @@ export default function App() {
         setTimeBonus(calculatedTimeBonus);
         finalCalculatedScore += calculatedTimeBonus;
         
-        if (playMode === 'rain' && distractionLevel > 0) {
+        if (distractionLevel > 0) {
             finalCalculatedScore = Math.floor(finalCalculatedScore * (1 + distractionLevel * 0.1));
         }
         
@@ -733,7 +750,7 @@ export default function App() {
       // If user is already identified, auto-submit their score behind the scenes
       if (playerName && finalCalculatedScore > 0) {
         setIsSubmittingScore(true);
-        const actualModeName = playMode === 'rain' && distractionLevel > 0 ? `rain-dx${distractionLevel}` : playMode;
+        const actualModeName = distractionLevel > 0 ? `${playMode}-dx${distractionLevel}` : playMode;
         
         setIsSubmittingScore(true);
         fetch('/api/submit-score', {
@@ -817,23 +834,41 @@ export default function App() {
          if (playMode === 'square') {
              const nextSpawnIndex = block.seqIndex + 9;
              setTimeout(() => {
-                setBlocks(prev => prev.map(b => {
-                   if (b.id !== block.id) return b;
-                   
-                   if (nextSpawnIndex < activePhrases.length) {
-                       return {
-                           id: Math.random().toString(36).substr(2, 9),
-                           text: activePhrases[nextSpawnIndex],
-                           seqIndex: nextSpawnIndex,
-                           isSquare: true,
-                           error: false,
-                           correct: false,
-                           hidden: false
-                       };
-                   } else {
-                       return { ...b, hidden: true };
-                   }
-                }));
+                setBlocks(prev => {
+                    const fakesOnScreen = prev.filter(b => b.isFake && !b.hidden).length;
+                    let spawnFake = distractionLevel > 0 && fakesOnScreen < distractionLevel && Math.random() < 0.5;
+                    
+                    let updated = prev.map(b => {
+                       if (b.id !== block.id) return b;
+                       
+                       if (nextSpawnIndex < activePhrases.length) {
+                           return {
+                               id: Math.random().toString(36).substr(2, 9),
+                               text: activePhrases[nextSpawnIndex],
+                               seqIndex: nextSpawnIndex,
+                               isSquare: true,
+                               error: false,
+                               correct: false,
+                               hidden: false
+                           };
+                       } else {
+                           return { ...b, hidden: true };
+                       }
+                    });
+
+                    if (spawnFake) {
+                        const newFake = {
+                            id: Math.random().toString(36).substr(2, 9),
+                            text: getRandomFakePhrase(version),
+                            seqIndex: -1,
+                            isSquare: true, error: false, correct: false, hidden: false, isFake: true
+                        };
+                        // Insert fake block at a random position to shift the grid and challenge memory
+                        const insertPos = Math.floor(Math.random() * (updated.length + 1));
+                        updated.splice(insertPos, 0, newFake);
+                    }
+                    return updated;
+                });
              }, 400); 
          } else {
              spawnNextBlock();
@@ -863,7 +898,12 @@ export default function App() {
       
       setBlocks(prev => prev.map(b => b.id === block.id ? { ...b, error: true } : b));
       setTimeout(() => {
-        setBlocks(prev => prev.map(b => b.id === block.id ? { ...b, error: false } : b));
+        setBlocks(prev => {
+            if (playMode === 'square' && block.seqIndex === -1) {
+                return prev.filter(b => b.id !== block.id);
+            }
+            return prev.map(b => b.id === block.id ? { ...b, error: false } : b);
+        });
       }, 400);
     }
   };
@@ -1083,7 +1123,6 @@ export default function App() {
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                           <h3 style={{ color: '#93c5fd', marginBottom: '0.2rem', fontSize: '1.2rem', paddingRight: '10px' }}>{v.reference}</h3>
                           <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
-                             {playMode === 'rain' && (
                                <select 
                                   onClick={(e) => e.stopPropagation()}
                                   onChange={(e) => setDistractionLevel(Number(e.target.value))}
@@ -1095,7 +1134,6 @@ export default function App() {
                                   <option value={2}>{t("難度 2", "Diff 2")}</option>
                                   <option value={3}>{t("難度 3", "Diff 3")}</option>
                                </select>
-                             )}
                              <button
                                 onClick={(e) => {
                                     e.stopPropagation();
@@ -1333,7 +1371,7 @@ export default function App() {
                     {t("時間加成", "Time Bonus")}: {(timeLeft / 100).toFixed(2)}s × 50 = +{timeBonus}
                   </div>
                 )}
-                {playMode === 'rain' && distractionLevel > 0 && !isFailed && (
+                {distractionLevel > 0 && !isFailed && (
                   <div style={{ fontSize: 'clamp(0.9rem, 2vh, 1.1rem)', color: '#f59e0b', marginBottom: 'clamp(0.5rem, 2vh, 1rem)', fontWeight: 'bold' }}>
                     {t("難度加成", "Difficulty Multiplier")}: × {(1 + distractionLevel * 0.1).toFixed(1)} {t(`(難度 ${distractionLevel})`, `(Lv ${distractionLevel})`)}
                   </div>
@@ -1366,7 +1404,7 @@ export default function App() {
                                setPlayerName(name);
                                localStorage.setItem('verserain_player_name', name);
                                setIsSubmittingScore(true);
-                               const actualModeName = playMode === 'rain' && distractionLevel > 0 ? `rain-dx${distractionLevel}` : playMode;
+                               const actualModeName = distractionLevel > 0 ? `${playMode}-dx${distractionLevel}` : playMode;
                                fetch('/api/submit-score', {
                                   method: 'POST',
                                   headers: {'Content-Type': 'application/json'},
