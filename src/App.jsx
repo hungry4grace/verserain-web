@@ -70,6 +70,48 @@ function playBong() {
   osc.stop(audioCtx.currentTime + 0.5);
 }
 
+function playThunder(type = 'light') {
+  initAudio();
+  const isHeavy = type === 'heavy';
+  const duration = isHeavy ? 4.0 : 1.5;
+  const bufferSize = audioCtx.sampleRate * duration;
+  const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+  const data = buffer.getChannelData(0);
+
+  // Generate brown noise
+  let lastOut = 0;
+  for (let i = 0; i < bufferSize; i++) {
+    const white = Math.random() * 2 - 1;
+    data[i] = (lastOut + (0.02 * white)) / 1.02;
+    lastOut = data[i];
+    data[i] *= 4.0;
+  }
+
+  const noiseSource = audioCtx.createBufferSource();
+  noiseSource.buffer = buffer;
+
+  const filter = audioCtx.createBiquadFilter();
+  filter.type = 'lowpass';
+  filter.frequency.setValueAtTime(isHeavy ? 300 : 500, audioCtx.currentTime);
+  filter.frequency.exponentialRampToValueAtTime(50, audioCtx.currentTime + duration);
+
+  const gain = audioCtx.createGain();
+  gain.gain.setValueAtTime(0, audioCtx.currentTime);
+  gain.gain.linearRampToValueAtTime(isHeavy ? 1.5 : 0.6, audioCtx.currentTime + 0.1);
+  if (isHeavy) {
+    gain.gain.setValueAtTime(1.5, audioCtx.currentTime + 0.3);
+    gain.gain.linearRampToValueAtTime(0.8, audioCtx.currentTime + 0.5);
+    gain.gain.linearRampToValueAtTime(1.2, audioCtx.currentTime + 0.7);
+  }
+  gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+
+  noiseSource.connect(filter);
+  filter.connect(gain);
+  gain.connect(audioCtx.destination);
+  
+  noiseSource.start();
+}
+
 function playTada() {
   initAudio();
   const notes = [440, 554.37, 659.25, 880]; // A4, C#5, E5, A5 Arpeggio
@@ -315,6 +357,35 @@ export default function App() {
   const [timeBonus, setTimeBonus] = useState(0);
   const [campaignQueue, setCampaignQueue] = useState(null);
   const [campaignResults, setCampaignResults] = useState([]);
+
+  const [lightningActive, setLightningActive] = useState(null);
+  const [lightningKey, setLightningKey] = useState(0);
+
+  const triggerLightning = React.useCallback((type) => {
+    setLightningActive(type);
+    setLightningKey(k => k + 1);
+  }, []);
+
+  useEffect(() => {
+    let timeoutId;
+    const scheduleLightning = () => {
+      const randTime = Math.random() * 8000 + 4000; 
+      timeoutId = setTimeout(() => {
+         // Occasional visual lightning with no audio
+         if (Math.random() > 0.4) {
+            triggerLightning('light');
+         }
+         scheduleLightning();
+      }, randTime);
+    };
+
+    if (gameState === 'playing') {
+       scheduleLightning();
+    } else {
+       setLightningActive(null);
+    }
+    return () => clearTimeout(timeoutId);
+  }, [gameState, triggerLightning]);
 
   // Leaderboard specific state
   const [playerName, setPlayerName] = useState(() => localStorage.getItem('verserain_player_name') || "");
@@ -743,11 +814,17 @@ export default function App() {
       setCombo(0);
       setScore(s => Math.max(0, s - 100)); // Apply mistake penalty, preventing negative score
       setHealth(h => {
-        if (h - 1 <= 0) {
+        const newHealth = h - 1;
+        if (newHealth === 2) {
+          playThunder('light');
+          triggerLightning('light');
+        } else if (newHealth <= 0) {
+          playThunder('heavy');
+          triggerLightning('heavy');
           endGame();
           return 0;
         }
-        return h - 1;
+        return newHealth;
       });
       
       setBlocks(prev => prev.map(b => b.id === block.id ? { ...b, error: true } : b));
@@ -797,6 +874,10 @@ export default function App() {
   return (
     <>
       <div className="bg-layer" />
+      <div className="rain-container" />
+      {lightningActive && (
+        <div key={lightningKey} className={`lightning-flash ${lightningActive === 'heavy' ? 'heavy' : 'active'}`} />
+      )}
       
       {/* Global Music Toggle */}
       <button

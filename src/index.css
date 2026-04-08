@@ -107,3 +107,57 @@ body {
 .success-flash {
   animation: flashSuccess 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards !important;
 }
+
+/* Rain Effect */
+.rain-container {
+  position: absolute;
+  top: -100%; left: -100%; width: 300%; height: 300%;
+  pointer-events: none;
+  z-index: -2;
+  background-image: 
+    url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="90" height="90"><rect x="15" y="0" width="1" height="20" fill="rgba(255,255,255,0.2)"/><rect x="60" y="40" width="1" height="15" fill="rgba(255,255,255,0.3)"/></svg>');
+  background-size: 80px 80px;
+  animation: rainDrop 0.4s linear infinite;
+  opacity: 0.8;
+}
+
+@keyframes rainDrop {
+  0% { transform: translate3d(0, 0, 0) rotate(10deg); }
+  100% { transform: translate3d(-14px, 80px, 0) rotate(10deg); }
+}
+
+/* Lightning */
+.lightning-flash {
+  position: fixed;
+  top: 0; left: 0; width: 100vw; height: 100vh;
+  background: white;
+  pointer-events: none;
+  z-index: 999;
+  opacity: 0;
+}
+
+.lightning-flash.active {
+  animation: lightning 0.5s ease-out forwards;
+}
+
+@keyframes lightning {
+  0% { opacity: 0; }
+  10% { opacity: 0.8; }
+  20% { opacity: 0; }
+  35% { opacity: 0.6; }
+  100% { opacity: 0; }
+}
+
+.lightning-flash.heavy {
+  animation: lightningHeavy 1.2s ease-out forwards;
+}
+
+@keyframes lightningHeavy {
+  0% { opacity: 0; }
+  5% { opacity: 0.9; }
+  10% { opacity: 0; }
+  15% { opacity: 1; }
+  25% { opacity: 0; }
+  30% { opacity: 0.8; }
+  100% { opacity: 0; }
+}
