@@ -156,10 +156,12 @@ function playFireworksSound() {
 
 import { VERSES_DB as VERSES_CUV } from './verses';
 import { VERSES_DB_KJV as VERSES_KJV } from './verses_kjv';
+import { getRandomFakePhrase } from './fakeLogic';
 
 export default function App() {
   const [version, setVersion] = useState('cuv');
   const [playMode, setPlayMode] = useState('rain');
+  const [distractionLevel, setDistractionLevel] = useState(0);
   const VERSES_DB = version === 'cuv' ? VERSES_CUV : VERSES_KJV;
 
   const [activeVerse, setActiveVerse] = useState(VERSES_DB[0]);
@@ -469,17 +471,22 @@ export default function App() {
       if (candidates.length === 0) return remainingBlocks; 
 
       let seqToSpawn = -1;
-      if (candidates.includes(targetSeq)) {
-          seqToSpawn = targetSeq; // Absolute guarantee the required phrase is spawned if missing
+      let isFake = false;
+      const spawnFake = distractionLevel > 0 && Math.random() < (distractionLevel * 0.20); // 20%, 40%, 60% chance
+
+      if (spawnFake && playMode !== 'square') {
+          isFake = true;
+          seqToSpawn = -1;
+      } else if (candidates.includes(targetSeq)) {
+          seqToSpawn = targetSeq; 
       } else {
-          // Preload an upcoming contiguous future block so it's already on screen
           const nextImmediateCandidates = candidates.slice(0, 3);
           seqToSpawn = nextImmediateCandidates[Math.floor(Math.random() * nextImmediateCandidates.length)];
       }
       
       let xPos;
-      if (expiredBlock && expiredBlock.seqIndex === seqToSpawn) {
-          xPos = expiredBlock.xPos; // Inherit position so gamer knows where to look!
+      if (expiredBlock && !isFake && expiredBlock.seqIndex === seqToSpawn) {
+          xPos = expiredBlock.xPos; 
       } else {
           const lanes = [5, 35, 65];
           const assignedLane = Math.floor(Math.random() * 3);
@@ -488,12 +495,13 @@ export default function App() {
       
       const newBlock = {
         id: Math.random().toString(36).substr(2, 9),
-        text: phrases[seqToSpawn],
+        text: isFake ? getRandomFakePhrase(version) : phrases[seqToSpawn],
         seqIndex: seqToSpawn,
         xPos: xPos,
-        duration: 7.5 + Math.random() * 3, // Faster fall rate
+        duration: 7.5 + Math.random() * 3, 
         error: false,
-        correct: false
+        correct: false,
+        isFake: isFake
       };
       
       return [...remainingBlocks, newBlock];
@@ -713,10 +721,13 @@ export default function App() {
       // If user is already identified, auto-submit their score behind the scenes
       if (playerName && finalCalculatedScore > 0) {
         setIsSubmittingScore(true);
+        const actualModeName = playMode === 'rain' && distractionLevel > 0 ? `rain-dx${distractionLevel}` : playMode;
+        
+        setIsSubmittingScore(true);
         fetch('/api/submit-score', {
            method: 'POST',
            headers: {'Content-Type': 'application/json'},
-           body: JSON.stringify({ name: playerName, score: finalCalculatedScore, verseRef: activeVerse.reference, mode: playMode })
+           body: JSON.stringify({ name: playerName, score: finalCalculatedScore, verseRef: activeVerse.reference, mode: actualModeName })
         }).then(() => {
            return fetch(`/api/get-scores?verseRef=${encodeURIComponent(activeVerse.reference)}`);
         }).then(res => res.json())
@@ -992,6 +1003,25 @@ export default function App() {
                   Verse Square
                 </button>
             </div>
+            
+            {playMode === 'rain' && (
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.8rem', marginTop: '1rem', width: '100%', padding: '1rem', background: 'rgba(0,0,0,0.3)', borderRadius: '12px' }}>
+                  <div style={{ color: '#fff', fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 'bold' }}>
+                    <Zap size={18} color={distractionLevel > 0 ? '#f59e0b' : '#94a3b8'} /> 
+                    {t("流星雨干擾模式", "Meteor Distraction")}: {distractionLevel === 0 ? t("關閉", "Off") : `Lv ${distractionLevel}`}
+                  </div>
+                  <input 
+                    type="range" 
+                    min="0" max="3" 
+                    value={distractionLevel}
+                    onChange={(e) => setDistractionLevel(Number(e.target.value))}
+                    style={{ width: '250px', cursor: 'pointer', accentColor: '#10b981' }}
+                  />
+                  <div style={{ fontSize: '0.8rem', color: '#94a3b8', textAlign: 'center', maxWidth: '300px' }}>
+                    {distractionLevel > 0 ? t("會有假方塊從天上掉下來干擾你的判斷！千萬別點到它們。", "Fake blocks will fall from the sky to test your memory! Don't click them.") : ""}
+                  </div>
+              </div>
+            )}
           </div>
 
           <div style={{ display: 'flex', gap: '1rem', width: '100%', maxWidth: '600px', justifyContent: 'center', flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', marginBottom: '2rem' }}>
@@ -1336,10 +1366,11 @@ export default function App() {
                                setPlayerName(name);
                                localStorage.setItem('verserain_player_name', name);
                                setIsSubmittingScore(true);
+                               const actualModeName = playMode === 'rain' && distractionLevel > 0 ? `rain-dx${distractionLevel}` : playMode;
                                fetch('/api/submit-score', {
                                   method: 'POST',
                                   headers: {'Content-Type': 'application/json'},
-                                  body: JSON.stringify({ name: name, score: score, verseRef: activeVerse.reference, mode: playMode })
+                                  body: JSON.stringify({ name: name, score: score, verseRef: activeVerse.reference, mode: actualModeName })
                                }).then(() => fetch(`/api/get-scores?verseRef=${encodeURIComponent(activeVerse.reference)}`))
                                  .then(res => res.json())
                                  .then(data => setLeaderboard(data && Array.isArray(data.alltime) ? data : { alltime: Array.isArray(data) ? data : [], monthly: [], daily: [] }))
