@@ -335,7 +335,9 @@ export default function App() {
 
   
   const activePhrases = React.useMemo(() => {
-    return activeVerse.text.split(/[,，。；：「」、;:\.\?]/).map(p => p.trim()).filter(Boolean);
+    const isEnglish = /^[a-zA-Z\s.,:;'"]+$/.test(activeVerse.text.substring(0, 50));
+    const regex = isEnglish ? /[,，。；：「」、;:\.\?!]/ : /[\s,，。；：「」、;:\.\?!！]/;
+    return activeVerse.text.split(regex).map(p => p.trim()).filter(Boolean);
   }, [activeVerse]);
 
   const activePhrasesRef = useRef([]);
