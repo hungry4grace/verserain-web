@@ -1050,6 +1050,14 @@ export default function App() {
                 if (selectedVerseRefs.length === 0) return;
                 initAudio();
                 const queue = VERSES_DB.filter(v => selectedVerseRefs.includes(v.reference));
+                if (queue.length === 0) {
+                    if (activeVerse && activeVerse.text) {
+                       setCampaignQueue(null);
+                       setCampaignResults([]);
+                       setTimeout(() => startGame(true), 50);
+                    }
+                    return;
+                }
                 const sortedQueue = [...queue];
                 setCampaignQueue(sortedQueue.slice(1));
                 setCampaignResults([]);
@@ -1069,6 +1077,15 @@ export default function App() {
                 if (selectedVerseRefs.length === 0) return;
                 initAudio();
                 const queue = VERSES_DB.filter(v => selectedVerseRefs.includes(v.reference));
+                if (queue.length === 0) {
+                    if (activeVerse && activeVerse.text) {
+                       setCampaignQueue(null);
+                       setCampaignResults([]);
+                       setTimeout(() => startGame(false), 50);
+                    }
+                    return;
+                }
+                
                 if (queue.length === 1) {
                   setActiveVerse(queue[0]);
                   setCampaignQueue(null);
