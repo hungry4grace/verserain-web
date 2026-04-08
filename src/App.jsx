@@ -950,9 +950,26 @@ export default function App() {
                      key={i} 
                      className="hud-glass verse-card" 
                      onClick={() => toggleSelection(v.reference)}
-                     style={{ cursor: 'pointer', padding: '1.5rem', transition: 'all 0.2s', border: isSelected ? '2px solid #3b82f6' : '1px solid rgba(255,255,255,0.1)', transform: isSelected ? 'scale(1.02)' : 'scale(1)', textAlign: 'left', display: 'flex', flexDirection: 'column' }}
+                     style={{ cursor: 'pointer', padding: '1.5rem', transition: 'all 0.2s', border: isSelected ? '2px solid #3b82f6' : '1px solid rgba(255,255,255,0.1)', transform: isSelected ? 'scale(1.02)' : 'scale(1)', textAlign: 'left', display: 'flex', flexDirection: 'column', position: 'relative' }}
                   >
-                      <h3 style={{ color: '#93c5fd', marginBottom: '0.2rem', fontSize: '1.2rem' }}>{v.reference}</h3>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                          <h3 style={{ color: '#93c5fd', marginBottom: '0.2rem', fontSize: '1.2rem', paddingRight: '10px' }}>{v.reference}</h3>
+                          <button
+                             onClick={(e) => {
+                                 e.stopPropagation();
+                                 initAudio();
+                                 setCampaignQueue(null);
+                                 setCampaignResults([]);
+                                 setActiveVerse(v);
+                                 setTimeout(() => startGame(false), 50);
+                             }}
+                             style={{ background: '#3b82f6', color: 'white', border: 'none', padding: '0.4rem 0.8rem', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.3rem', transition: 'background 0.2s', zIndex: 2 }}
+                             onMouseOver={(e) => e.target.style.background = '#2563eb'}
+                             onMouseOut={(e) => e.target.style.background = '#3b82f6'}
+                          >
+                             <Play size={12} fill="white" /> 挑戰
+                          </button>
+                      </div>
                       <div style={{ color: '#fbbf24', fontSize: '0.9rem', marginBottom: '1rem', fontWeight: 'bold' }}>{v.title}</div>
                       <p style={{ color: '#cbd5e1', fontSize: '0.9rem', flex: 1, maxHeight: '100px', overflowY: 'auto', paddingRight: '0.5rem', lineHeight: '1.5' }}>{v.text}</p>
                       {vBest > 0 && <div style={{ marginTop: '1rem', color: '#fbbf24', fontSize: '0.8rem', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '4px' }}><Crown size={14}/> 最高分: {vBest}</div>}
