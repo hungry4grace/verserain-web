@@ -895,6 +895,8 @@ export default function App() {
     }
   };
 
+  const t = (zh, en) => version === 'kjv' ? en : zh;
+
   return (
     <>
       <div className="bg-layer" />
@@ -922,7 +924,7 @@ export default function App() {
             VerseRain
           </h1>
           <p style={{ fontSize: '1.1rem', color: '#cbd5e1', marginBottom: '2rem', textAlign: 'center', maxWidth: '600px' }}>
-            在下方選擇一段經文。依照順序接住落下的詞句！
+            {t("在下方選擇一段經文。依照順序接住落下的詞句！", "Select a verse below. Catch the falling phrases in order!")}
           </p>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', alignItems: 'center', marginBottom: '2rem' }}>
@@ -940,7 +942,7 @@ export default function App() {
                     transition: 'all 0.2s'
                   }}
                 >
-                  和合本
+                  {t("和合本", "CUV")}
                 </button>
                 <button 
                   onClick={() => handleVersionChange('kjv')} 
@@ -1010,7 +1012,7 @@ export default function App() {
                 fontSize: '1.2rem', fontWeight: 'bold', borderRadius: '9999px', cursor: selectedVerseRefs.length === 0 ? 'not-allowed' : 'pointer', display: 'inline-flex', alignItems: 'center', gap: '0.5rem', boxShadow: selectedVerseRefs.length === 0 ? 'none' : '0 0 20px rgba(16, 185, 129, 0.5)', transition: 'all 0.2s', justifyContent: 'center'
               }}
             >
-              <Headphones fill="white" size={20} /> 自動播放
+              <Headphones fill="white" size={20} /> {t("自動播放", "Auto Play")}
             </button>
             <button 
               onClick={() => {
@@ -1036,7 +1038,7 @@ export default function App() {
                 fontSize: '1.2rem', fontWeight: 'bold', borderRadius: '9999px', cursor: selectedVerseRefs.length === 0 ? 'not-allowed' : 'pointer', display: 'inline-flex', alignItems: 'center', gap: '0.5rem', boxShadow: selectedVerseRefs.length === 0 ? 'none' : '0 0 20px rgba(59, 130, 246, 0.5)', transition: 'all 0.2s', justifyContent: 'center'
               }}
             >
-              <Play fill="white" size={20} /> 開始遊戲
+              <Play fill="white" size={20} /> {t("開始遊戲", "Play")}
             </button>
             <button 
               onClick={() => {
@@ -1053,7 +1055,7 @@ export default function App() {
                 fontSize: '1.2rem', fontWeight: 'bold', borderRadius: '9999px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '0.5rem', boxShadow: '0 0 20px rgba(139, 92, 246, 0.5)', transition: 'all 0.2s', justifyContent: 'center'
               }}
             >
-              <Star fill="white" size={20} /> 全部連播
+              <Star fill="white" size={20} /> {t("全部連播", "Play All")}
             </button>
           </div>
 
@@ -1083,7 +1085,7 @@ export default function App() {
                              onMouseOver={(e) => e.target.style.background = '#2563eb'}
                              onMouseOut={(e) => e.target.style.background = '#3b82f6'}
                           >
-                             <Play size={12} fill="white" /> 挑戰
+                             <Play size={12} fill="white" /> {t("挑戰", "Play")}
                           </button>
                       </div>
                       <div style={{ color: '#fbbf24', fontSize: '0.9rem', marginBottom: '1rem', fontWeight: 'bold' }}>{v.title}</div>
@@ -1107,7 +1109,7 @@ export default function App() {
                                 .finally(() => setIsFetchingLeaderboard(false));
                           }}
                       >
-                         <Trophy size={14}/> {vBest > 0 ? `最高分: ${vBest} / 排行榜` : `查看排行榜`}
+                         <Trophy size={14}/> {vBest > 0 ? t(`最高分: ${vBest} / 排行榜`, `Best: ${vBest} / Leaderboard`) : t(`查看排行榜`, `Leaderboard`)}
                       </button>
                   </div>
                )
@@ -1158,7 +1160,7 @@ export default function App() {
             {!isAutoPlay && (
                 <div className="hud-glass" style={{ padding: '0.5rem 1rem', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', minWidth: '120px', position: 'relative' }}>
                   <div style={{ position: 'absolute', top: '-10px', left: '10px', color: '#fbbf24', fontSize: '0.7rem', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                    <Crown size={12} /> 最高分 {bestScore}
+                    <Crown size={12} /> {t("最高分", "Best")} {bestScore}
                   </div>
                   <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: '#fff', fontFamily: 'monospace', marginBottom: '0.2rem' }}>
                     {String(score).padStart(6, '0')}
@@ -1246,7 +1248,7 @@ export default function App() {
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100dvh', zIndex: 20, position: 'relative' }}>
           {isFailed ? (
             <div className="hud-glass" style={{ padding: 'clamp(1.5rem, 4vw, 3rem)', textAlign: 'center', width: '90%', maxWidth: '900px', border: '1px solid #f87171', maxHeight: '95dvh', display: 'flex', flexDirection: 'column' }}>
-              <h2 style={{ fontSize: 'clamp(1.2rem, 3vh, 1.8rem)', color: '#f87171', marginBottom: 'clamp(0.5rem, 2vh, 1rem)' }}>再接再厲！</h2>
+              <h2 style={{ fontSize: 'clamp(1.2rem, 3vh, 1.8rem)', color: '#f87171', marginBottom: 'clamp(0.5rem, 2vh, 1rem)' }}>{t("再接再厲！", "Try Again!")}</h2>
               <div style={{ background: 'rgba(0,0,0,0.5)', padding: 'clamp(1rem, 3vw, 2.5rem)', borderRadius: '16px', marginBottom: 'clamp(1rem, 3vh, 2.5rem)', overflowY: 'auto', flex: 1 }}>
                   <p style={{ fontSize: 'clamp(1.2rem, 3.5vh, 2.2rem)', color: '#fff', fontWeight: 'bold', marginBottom: 'clamp(0.5rem, 2vh, 1.5rem)', textTransform: 'uppercase', letterSpacing: '2px' }}>{activeVerse.reference}</p>
                   <div style={{ fontSize: 'clamp(1.2rem, 3.5vh, 2.2rem)', color: '#fff', lineHeight: '1.6', fontWeight: 'bold' }}>
@@ -1265,7 +1267,7 @@ export default function App() {
                   boxShadow: '0 0 15px rgba(59, 130, 246, 0.5)', transition: 'all 0.2s', margin: '0 auto', flexShrink: 0
                 }}
               >
-                <RotateCcw size={24} /> 再玩一次
+                <RotateCcw size={24} /> {t("再玩一次", "Play Again")}
               </button>
             </div>
           ) : (
@@ -1281,12 +1283,12 @@ export default function App() {
                 )}
     
                 <h2 style={{ fontSize: 'clamp(1.8rem, 4vh, 2.5rem)', marginBottom: '0.5rem', color: '#fff' }}>
-                   {isNewHighScore ? "新高分！" : isFlawless ? "完美無瑕！" : ""}
+                   {isNewHighScore ? t("新高分！", "New High Score!") : isFlawless ? t("完美無瑕！", "Flawless!") : ""}
                 </h2>
     
                 {isFlawless && !isNewHighScore && (
                    <div style={{ color: '#34d399', fontSize: 'clamp(1rem, 2vh, 1.2rem)', marginBottom: 'clamp(0.5rem, 2vh, 1rem)', fontWeight: 'bold' }}>
-                     完美的順序！
+                     {t("完美的順序！", "Perfect Sequence!")}
                    </div>
                 )}
               </div>
@@ -1303,26 +1305,26 @@ export default function App() {
               <div style={{ flexShrink: 0 }}>
                 {timeBonus > 0 && (
                   <div style={{ fontSize: 'clamp(0.9rem, 2vh, 1.1rem)', color: '#34d399', marginBottom: 'clamp(0.2rem, 1vh, 0.5rem)', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px' }}>
-                    時間加成: {(timeLeft / 100).toFixed(2)}s × 50 = +{timeBonus}
+                    {t("時間加成", "Time Bonus")}: {(timeLeft / 100).toFixed(2)}s × 50 = +{timeBonus}
                   </div>
                 )}
                 <div style={{ fontSize: 'clamp(1rem, 2.5vh, 1.25rem)', color: '#cbd5e1', marginBottom: 'clamp(0.5rem, 2vh, 1rem)' }}>
-                  最終得分: <strong style={{ color: isNewHighScore ? '#fbbf24' : '#fff', fontSize: 'clamp(2rem, 5vh, 2.5rem)', display: 'block', marginTop: '0.2rem' }}>{score}</strong>
+                  {t("最終得分", "Final Score")}: <strong style={{ color: isNewHighScore ? '#fbbf24' : '#fff', fontSize: 'clamp(2rem, 5vh, 2.5rem)', display: 'block', marginTop: '0.2rem' }}>{score}</strong>
                 </div>
 
                 {!isAutoPlayRef.current && playMode !== 'square' && (
                   <div style={{ background: 'rgba(0,0,0,0.4)', borderRadius: '12px', padding: '1rem', marginTop: '1rem', marginBottom: '1.5rem', border: '1px solid rgba(255,255,255,0.1)' }}>
                     <h3 style={{ margin: '0 0 1rem 0', color: '#fbbf24', fontSize: '1.2rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
-                      <Trophy size={18} /> 全域英雄榜
+                      <Trophy size={18} /> {t("全域英雄榜", "Global Leaderboard")}
                     </h3>
                     
                     {!playerName ? (
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                         <p style={{ margin: 0, fontSize: '0.9rem', color: '#94a3b8' }}>想要將神聖高分刻在群組榜單上嗎？</p>
+                         <p style={{ margin: 0, fontSize: '0.9rem', color: '#94a3b8' }}>{t("想要將神聖高分刻在群組榜單上嗎？", "Want to carve your sacred high score on the universal leaderboard?")}</p>
                          <div style={{ display: 'flex', gap: '0.5rem' }}>
                            <input 
                               type="text" 
-                              placeholder="您的 Skool 暱稱" 
+                              placeholder={t("您的 Skool 暱稱", "Your Nickname")}
                               id="playerNameInput"
                               style={{ flex: 1, padding: '0.5rem', borderRadius: '6px', border: 'none', outline: 'none' }} 
                            />
@@ -1345,14 +1347,14 @@ export default function App() {
                                  .finally(() => setIsSubmittingScore(false));
                              }}
                            >
-                             送出
+                             {t("送出", "Submit")}
                            </button>
                          </div>
                       </div>
                     ) : (
                       <div style={{ fontSize: '0.9rem', textAlign: 'left', display: 'flex', flexDirection: 'column' }}>
                          <div style={{ display: 'flex', borderBottom: '1px solid rgba(255,255,255,0.1)', marginBottom: '0.5rem' }}>
-                            {[ {id: 'daily', label: '今天'}, {id: 'monthly', label: '30天 (本月)'}, {id: 'alltime', label: '歷史'} ].map(tab => (
+                            {[ {id: 'daily', label: t('今天', 'Today')}, {id: 'monthly', label: t('30天 (本月)', '30 days (Month)')}, {id: 'alltime', label: t('歷史', 'All-Time')} ].map(tab => (
                                <button
                                    key={tab.id}
                                    onClick={() => setLeaderboardTab(tab.id)}
@@ -1364,7 +1366,7 @@ export default function App() {
                          </div>
                          <div style={{ maxHeight: '130px', overflowY: 'auto', paddingRight: '0.2rem' }}>
                              {isSubmittingScore ? (
-                               <div style={{ color: '#94a3b8', textAlign: 'center', padding: '1rem 0' }}>上傳分數中...</div>
+                               <div style={{ color: '#94a3b8', textAlign: 'center', padding: '1rem 0' }}>{t("上傳分數中...", "Submitting...")}</div>
                              ) : leaderboard && Array.isArray(leaderboard[leaderboardTab]) && leaderboard[leaderboardTab].length > 0 ? (
                                leaderboard[leaderboardTab].map((entry, i) => (
                                  <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '0.35rem 0', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
@@ -1375,7 +1377,7 @@ export default function App() {
                                  </div>
                                ))
                              ) : (
-                               <div style={{ color: '#94a3b8', textAlign: 'center', padding: '1rem 0' }}>尚無排行紀錄，您是第一位！</div>
+                               <div style={{ color: '#94a3b8', textAlign: 'center', padding: '1rem 0' }}>{t("尚無排行紀錄，您是第一位！", "No records yet. Be the first!")}</div>
                              )}
                          </div>
                       </div>
@@ -1397,7 +1399,7 @@ export default function App() {
                             fontSize: 'clamp(1.1rem, 2.5vh, 1.2rem)', fontWeight: 'bold', borderRadius: '12px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', boxShadow: '0 0 15px rgba(59, 130, 246, 0.5)', transition: 'all 0.2s', margin: '0 auto'
                           }}
                         >
-                          下一回合
+                          {t("下一回合", "Next Round")}
                         </button>
                     ) : (
                         <button 
@@ -1408,7 +1410,7 @@ export default function App() {
                             fontSize: 'clamp(1.1rem, 2.5vh, 1.2rem)', fontWeight: 'bold', borderRadius: '12px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', boxShadow: '0 0 15px rgba(139, 92, 246, 0.5)', transition: 'all 0.2s', margin: '0 auto'
                           }}
                         >
-                          查看最終成績
+                          {t("查看最終成績", "View Final Results")}
                         </button>
                     )
                 ) : (
@@ -1420,7 +1422,7 @@ export default function App() {
                         fontSize: 'clamp(1.1rem, 2.5vh, 1.2rem)', fontWeight: 'bold', borderRadius: '12px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', boxShadow: '0 0 15px rgba(59, 130, 246, 0.5)', transition: 'all 0.2s', margin: '0 auto'
                       }}
                     >
-                      <Home size={20} /> 回到主頁
+                      <Home size={20} /> {t("回到主頁", "Home")}
                     </button>
                 )}
               </div>
@@ -1433,14 +1435,14 @@ export default function App() {
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100dvh', width: '100vw', overflowY: 'auto', WebkitOverflowScrolling: 'touch', padding: 'calc(env(safe-area-inset-top) + 2rem) 1rem 4rem' }}>
            <div className="hud-glass" style={{ padding: 'clamp(1.5rem, 4vw, 3rem)', textAlign: 'center', width: '90%', maxWidth: '800px', display: 'flex', flexDirection: 'column', animation: 'flashSuccess 1s ease-out' }}>
              <Trophy size={48} color="#fbbf24" style={{ margin: '0 auto 1rem' }} />
-             <h2 style={{ fontSize: 'clamp(2rem, 4vh, 2.5rem)', color: '#fff', marginBottom: '1.5rem' }}>所有關卡完成！</h2>
+             <h2 style={{ fontSize: 'clamp(2rem, 4vh, 2.5rem)', color: '#fff', marginBottom: '1.5rem' }}>{t("所有關卡完成！", "All Rounds Conquered!")}</h2>
              
              <div style={{ background: 'rgba(0,0,0,0.3)', borderRadius: '16px', padding: '1.5rem', overflowY: 'auto', maxHeight: '50vh', marginBottom: '2rem' }}>
                 {campaignResults.map((result, i) => (
                     <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem', borderBottom: i < campaignResults.length - 1 ? '1px solid rgba(255,255,255,0.1)' : 'none' }}>
                        <div style={{ textAlign: 'left' }}>
                          <div style={{ color: '#93c5fd', fontWeight: 'bold', fontSize: '1.1rem' }}>{result.verse.reference}</div>
-                         <div style={{ color: result.score > 0 ? '#34d399' : '#f87171', fontSize: '0.9rem' }}>{result.score > 0 ? (result.flawless ? '完美' : '過關') : '失敗'}</div>
+                         <div style={{ color: result.score > 0 ? '#34d399' : '#f87171', fontSize: '0.9rem' }}>{result.score > 0 ? (result.flawless ? t('完美', 'Perfect') : t('過關', 'Cleared')) : t('失敗', 'Failed')}</div>
                        </div>
                        <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: result.score > 0 ? '#fbbf24' : '#64748b' }}>{result.score}</div>
                     </div>
@@ -1448,7 +1450,7 @@ export default function App() {
              </div>
              
              <div style={{ fontSize: '1.5rem', color: '#cbd5e1', marginBottom: '2rem' }}>
-                總計得分: <strong style={{ color: '#fbbf24', fontSize: '3rem', display: 'block', marginTop: '0.5rem' }}>{campaignResults.reduce((sum, r) => sum + r.score, 0)}</strong>
+                {t("總計得分", "Total Score")}: <strong style={{ color: '#fbbf24', fontSize: '3rem', display: 'block', marginTop: '0.5rem' }}>{campaignResults.reduce((sum, r) => sum + r.score, 0)}</strong>
              </div>
 
              <button 
@@ -1458,7 +1460,7 @@ export default function App() {
                 background: '#3b82f6', color: 'white', border: 'none', padding: '1rem',
                 fontSize: '1.2rem', fontWeight: 'bold', borderRadius: '12px', cursor: 'pointer', margin: '0 auto', maxWidth: '300px', width: '100%'
               }}
-             >回到主頁</button>
+             >{t("回到主頁", "Back to Home")}</button>
            </div>
         </div>
       )}
@@ -1467,14 +1469,14 @@ export default function App() {
            <div className="hud-glass" style={{ width: '100%', maxWidth: '500px', maxHeight: '90vh', display: 'flex', flexDirection: 'column', background: 'rgba(15, 23, 42, 0.95)', border: '1px solid rgba(59, 130, 246, 0.3)' }} onClick={e => e.stopPropagation()}>
                <div style={{ padding: '1.5rem', borderBottom: '1px solid rgba(255,255,255,0.1)', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                   <div>
-                      <h2 style={{ fontSize: '1.5rem', color: '#93c5fd', marginBottom: '0.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Trophy size={20}/> 英雄榜</h2>
+                      <h2 style={{ fontSize: '1.5rem', color: '#93c5fd', marginBottom: '0.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Trophy size={20}/> {t("英雄榜", "Leaderboard")}</h2>
                       <div style={{ color: '#cbd5e1' }}>{leaderboardModalVerse.reference}</div>
                   </div>
                   <button onClick={() => setLeaderboardModalVerse(null)} style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer', padding: '0.25rem' }}><XCircle size={24} /></button>
                </div>
                
                <div style={{ display: 'flex', borderBottom: '1px solid rgba(255,255,255,0.1)', background: 'rgba(0,0,0,0.2)' }}>
-                   {[ {id: 'daily', label: '今天'}, {id: 'monthly', label: '30天 (本月)'}, {id: 'alltime', label: '歷史'} ].map(tab => (
+                   {[ {id: 'daily', label: t('今天', 'Today')}, {id: 'monthly', label: t('30天 (本月)', '30 days (Month)')}, {id: 'alltime', label: t('歷史', 'All-Time')} ].map(tab => (
                        <button
                            key={tab.id}
                            onClick={() => setLeaderboardModalTab(tab.id)}
@@ -1487,7 +1489,7 @@ export default function App() {
 
                <div style={{ padding: '1.5rem', overflowY: 'auto', flex: 1, minHeight: '300px' }}>
                    {isFetchingLeaderboard ? (
-                       <div style={{ color: '#94a3b8', textAlign: 'center', margin: '2rem 0' }}>載入排行榜中...</div>
+                       <div style={{ color: '#94a3b8', textAlign: 'center', margin: '2rem 0' }}>{t("載入排行榜中...", "Loading Leaderboard...")}</div>
                    ) : leaderboardModalData && Array.isArray(leaderboardModalData[leaderboardModalTab]) && leaderboardModalData[leaderboardModalTab].length > 0 ? (
                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                            {leaderboardModalData[leaderboardModalTab].map((entry, i) => (
@@ -1501,7 +1503,7 @@ export default function App() {
                            ))}
                        </div>
                    ) : (
-                       <div style={{ color: '#94a3b8', textAlign: 'center', margin: '2rem 0' }}>尚無排行紀錄，趕緊成為第一位吧！</div>
+                       <div style={{ color: '#94a3b8', textAlign: 'center', margin: '2rem 0' }}>{t("尚無排行紀錄，趕緊成為第一位吧！", "No records yet. Be the first!")}</div>
                    )}
                </div>
            </div>
