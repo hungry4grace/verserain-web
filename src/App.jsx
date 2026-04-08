@@ -699,6 +699,11 @@ export default function App() {
         const calculatedTimeBonus = Math.floor(Math.max(0, timeLeft) * 0.5);
         setTimeBonus(calculatedTimeBonus);
         finalCalculatedScore += calculatedTimeBonus;
+        
+        if (playMode === 'rain' && distractionLevel > 0) {
+            finalCalculatedScore = Math.floor(finalCalculatedScore * (1 + distractionLevel * 0.1));
+        }
+        
         setScore(finalCalculatedScore);
         scoreRef.current = finalCalculatedScore;
     } else {
@@ -1003,25 +1008,7 @@ export default function App() {
                   Verse Square
                 </button>
             </div>
-            
-            {playMode === 'rain' && (
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.8rem', marginTop: '1rem', width: '100%', padding: '1rem', background: 'rgba(0,0,0,0.3)', borderRadius: '12px' }}>
-                  <div style={{ color: '#fff', fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 'bold' }}>
-                    <Zap size={18} color={distractionLevel > 0 ? '#f59e0b' : '#94a3b8'} /> 
-                    {t("流星雨干擾模式", "Meteor Distraction")}: {distractionLevel === 0 ? t("關閉", "Off") : `Lv ${distractionLevel}`}
-                  </div>
-                  <input 
-                    type="range" 
-                    min="0" max="3" 
-                    value={distractionLevel}
-                    onChange={(e) => setDistractionLevel(Number(e.target.value))}
-                    style={{ width: '250px', cursor: 'pointer', accentColor: '#10b981' }}
-                  />
-                  <div style={{ fontSize: '0.8rem', color: '#94a3b8', textAlign: 'center', maxWidth: '300px' }}>
-                    {distractionLevel > 0 ? t("會有假方塊從天上掉下來干擾你的判斷！千萬別點到它們。", "Fake blocks will fall from the sky to test your memory! Don't click them.") : ""}
-                  </div>
-              </div>
-            )}
+            </div>
           </div>
 
           <div style={{ display: 'flex', gap: '1rem', width: '100%', maxWidth: '600px', justifyContent: 'center', flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', marginBottom: '2rem' }}>
@@ -1102,21 +1089,36 @@ export default function App() {
                   >
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                           <h3 style={{ color: '#93c5fd', marginBottom: '0.2rem', fontSize: '1.2rem', paddingRight: '10px' }}>{v.reference}</h3>
-                          <button
-                             onClick={(e) => {
-                                 e.stopPropagation();
-                                 initAudio();
-                                 setCampaignQueue(null);
-                                 setCampaignResults([]);
-                                 setActiveVerse(v);
-                                 setTimeout(() => startGame(false), 50);
-                             }}
-                             style={{ background: '#3b82f6', color: 'white', border: 'none', padding: '0.4rem 0.8rem', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.3rem', transition: 'background 0.2s', zIndex: 2 }}
-                             onMouseOver={(e) => e.target.style.background = '#2563eb'}
-                             onMouseOut={(e) => e.target.style.background = '#3b82f6'}
-                          >
-                             <Play size={12} fill="white" /> {t("挑戰", "Play")}
-                          </button>
+                          <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
+                             {playMode === 'rain' && (
+                               <select 
+                                  onClick={(e) => e.stopPropagation()}
+                                  onChange={(e) => setDistractionLevel(Number(e.target.value))}
+                                  value={distractionLevel}
+                                  style={{ background: 'rgba(0,0,0,0.5)', color: '#94a3b8', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '6px', padding: '0.3rem 0.5rem', fontSize: '0.85rem', cursor: 'pointer', zIndex: 2, outline: 'none' }}
+                               >
+                                  <option value={0}>{t("難度 0", "Diff 0")}</option>
+                                  <option value={1}>{t("難度 1", "Diff 1")}</option>
+                                  <option value={2}>{t("難度 2", "Diff 2")}</option>
+                                  <option value={3}>{t("難度 3", "Diff 3")}</option>
+                               </select>
+                             )}
+                             <button
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    initAudio();
+                                    setCampaignQueue(null);
+                                    setCampaignResults([]);
+                                    setActiveVerse(v);
+                                    setTimeout(() => startGame(false), 50);
+                                }}
+                                style={{ background: '#3b82f6', color: 'white', border: 'none', padding: '0.4rem 0.8rem', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.3rem', transition: 'background 0.2s', zIndex: 2 }}
+                                onMouseOver={(e) => e.target.style.background = '#2563eb'}
+                                onMouseOut={(e) => e.target.style.background = '#3b82f6'}
+                             >
+                                <Play size={12} fill="white" /> {t("挑戰", "Play")}
+                             </button>
+                          </div>
                       </div>
                       <div style={{ color: '#fbbf24', fontSize: '0.9rem', marginBottom: '1rem', fontWeight: 'bold' }}>{v.title}</div>
                       <p style={{ color: '#cbd5e1', fontSize: '0.9rem', flex: 1, maxHeight: '100px', overflowY: 'auto', paddingRight: '0.5rem', lineHeight: '1.5' }}>{v.text}</p>
