@@ -321,9 +321,9 @@ export default function App() {
 
   useEffect(() => {
     // Dynamically scale animation speeds (10% increase compounding, or simply linear)
-    // Here we compound by 10% every combo tier. 
-    // Math.pow(1.1, 0) = 1.0; Math.pow(1.1, 1) = 1.1; Math.pow(1.1, 2) = 1.21
-    const rate = Math.min(Math.pow(1.1, combo), 2.2); // Cap at 2.2x speed
+    // Here we compound by 5% every combo tier. 
+    // Math.pow(1.05, 0) = 1.0; Math.pow(1.05, 1) = 1.05; Math.pow(1.05, 2) = 1.1025
+    const rate = Math.min(Math.pow(1.05, combo), 2.2); // Cap at 2.2x speed
     
     // Grab all actively falling blocks and adjust their native playback rate on the fly
     const wrappers = document.querySelectorAll('.falling-wrapper');
@@ -433,8 +433,7 @@ export default function App() {
     timerRef.current = setInterval(() => {
       setTimeLeft(t => {
         if (t <= 1 && !isAutoPlayRef.current) {
-          endGame();
-          return 0;
+          return 0; // The game now allows users to keep going past the time limit
         }
         return Math.max(0, t - 1);
       });
@@ -631,7 +630,7 @@ export default function App() {
     if (block.correct || block.error) return; 
 
     if (block.seqIndex === currentSeqIndex) {
-      const voiceRate = isAutoPlayRef.current ? 1.0 : Math.min(Math.pow(1.1, combo), 2.2);
+      const voiceRate = isAutoPlayRef.current ? 1.0 : Math.min(Math.pow(1.05, combo), 2.2);
 
       setScore(s => s + 100 + (combo * 50));
       setCombo(c => c + 1);
@@ -642,7 +641,7 @@ export default function App() {
       if (nextSeq === activePhrases.length - 1 && playMode !== 'square') {
         // Only one final block remaining - auto-complete it to save a click
         // Concatenate both pieces together to say it completely
-        const finalVoiceRate = isAutoPlayRef.current ? 1.0 : Math.min(Math.pow(1.1, combo + 1), 2.2);
+        const finalVoiceRate = isAutoPlayRef.current ? 1.0 : Math.min(Math.pow(1.05, combo + 1), 2.2);
         const combinedText = block.text + (version === 'kjv' ? ". " : "，") + activePhrases[nextSeq];
         speechRef.current = speakText(combinedText, finalVoiceRate, TTS_LANG);
 
