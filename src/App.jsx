@@ -316,6 +316,11 @@ export default function App() {
   const [campaignQueue, setCampaignQueue] = useState(null);
   const [campaignResults, setCampaignResults] = useState([]);
 
+  // Leaderboard specific state
+  const [playerName, setPlayerName] = useState(() => localStorage.getItem('verserain_player_name') || "");
+  const [leaderboard, setLeaderboard] = useState(null);
+  const [isSubmittingScore, setIsSubmittingScore] = useState(false);
+
   const timerRef = useRef(null);
   const speechRef = useRef(null);
 
@@ -595,6 +600,29 @@ export default function App() {
     setIsFlawless(f);
     setIsNewHighScore(hs);
     setIsFailed(failed);
+
+    if (isSuccess && playMode !== 'square' && !isAuto) {
+      // Load current leaderboard initially
+      fetch(`/api/get-scores?verseRef=${encodeURIComponent(activeVerse.reference)}`)
+        .then(res => res.json())
+        .then(data => setLeaderboard(data))
+        .catch(err => console.log("Leaderboard not ready or fetch failed"));
+
+      // If user is already identified, auto-submit their score behind the scenes
+      if (playerName && finalCalculatedScore > 0) {
+        setIsSubmittingScore(true);
+        fetch('/api/submit-score', {
+           method: 'POST',
+           headers: {'Content-Type': 'application/json'},
+           body: JSON.stringify({ name: playerName, score: finalCalculatedScore, verseRef: activeVerse.reference })
+        }).then(() => {
+           return fetch(`/api/get-scores?verseRef=${encodeURIComponent(activeVerse.reference)}`);
+        }).then(res => res.json())
+          .then(data => setLeaderboard(data))
+          .catch(e => console.log(e))
+          .finally(() => setIsSubmittingScore(false));
+      }
+    }
 
     if (hs) {
       setBestScore(finalCalculatedScore);
@@ -1125,6 +1153,65 @@ export default function App() {
                 <div style={{ fontSize: 'clamp(1rem, 2.5vh, 1.25rem)', color: '#cbd5e1', marginBottom: 'clamp(0.5rem, 2vh, 1rem)' }}>
                   最終得分: <strong style={{ color: isNewHighScore ? '#fbbf24' : '#fff', fontSize: 'clamp(2rem, 5vh, 2.5rem)', display: 'block', marginTop: '0.2rem' }}>{score}</strong>
                 </div>
+
+                {!isAuto && playMode !== 'square' && (
+                  <div style={{ background: 'rgba(0,0,0,0.4)', borderRadius: '12px', padding: '1rem', marginTop: '1rem', marginBottom: '1.5rem', border: '1px solid rgba(255,255,255,0.1)' }}>
+                    <h3 style={{ margin: '0 0 1rem 0', color: '#fbbf24', fontSize: '1.2rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
+                      <Trophy size={18} /> 全域英雄榜
+                    </h3>
+                    
+                    {!playerName ? (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                         <p style={{ margin: 0, fontSize: '0.9rem', color: '#94a3b8' }}>想要將神聖高分刻在群組榜單上嗎？</p>
+                         <div style={{ display: 'flex', gap: '0.5rem' }}>
+                           <input 
+                              type="text" 
+                              placeholder="您的 Skool 暱稱" 
+                              id="playerNameInput"
+                              style={{ flex: 1, padding: '0.5rem', borderRadius: '6px', border: 'none', outline: 'none' }} 
+                           />
+                           <button 
+                             style={{ background: '#3b82f6', color: 'white', border: 'none', padding: '0.5rem 1rem', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer' }}
+                             onClick={() => {
+                               const name = document.getElementById('playerNameInput').value.trim();
+                               if (!name) return;
+                               setPlayerName(name);
+                               localStorage.setItem('verserain_player_name', name);
+                               setIsSubmittingScore(true);
+                               fetch('/api/submit-score', {
+                                  method: 'POST',
+                                  headers: {'Content-Type': 'application/json'},
+                                  body: JSON.stringify({ name: name, score: score, verseRef: activeVerse.reference })
+                               }).then(() => fetch(`/api/get-scores?verseRef=${encodeURIComponent(activeVerse.reference)}`))
+                                 .then(res => res.json())
+                                 .then(data => setLeaderboard(data))
+                                 .finally(() => setIsSubmittingScore(false));
+                             }}
+                           >
+                             送出
+                           </button>
+                         </div>
+                      </div>
+                    ) : (
+                      <div style={{ fontSize: '0.9rem', textAlign: 'left', maxHeight: '120px', overflowY: 'auto' }}>
+                         {isSubmittingScore ? (
+                           <div style={{ color: '#94a3b8', textAlign: 'center' }}>上傳分數中...</div>
+                         ) : leaderboard && leaderboard.length > 0 ? (
+                           leaderboard.map((entry, i) => (
+                             <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '0.25rem 0', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                               <span style={{ color: i === 0 ? '#fbbf24' : i === 1 ? '#e2e8f0' : i === 2 ? '#b45309' : '#94a3b8', fontWeight: i < 3 ? 'bold' : 'normal' }}>
+                                 {i + 1}. {entry.name}
+                               </span>
+                               <span style={{ color: '#cbd5e1', fontWeight: 'bold' }}>{entry.score}</span>
+                             </div>
+                           ))
+                         ) : (
+                           <div style={{ color: '#94a3b8', textAlign: 'center' }}>尚無排行紀錄，您是第一位！</div>
+                         )}
+                      </div>
+                    )}
+                  </div>
+                )}
     
                 {campaignQueue !== null ? (
                     campaignQueue.length > 0 ? (
