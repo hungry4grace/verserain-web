@@ -703,7 +703,7 @@ export default function App() {
     setIsNewHighScore(hs);
     setIsFailed(failed);
 
-    if (isSuccess && playMode !== 'square' && !isAutoPlayRef.current) {
+    if (isSuccess && !isAutoPlayRef.current) {
       // Load current leaderboard initially
       fetch(`/api/get-scores?verseRef=${encodeURIComponent(activeVerse.reference)}`)
         .then(res => res.json())
@@ -1312,7 +1312,7 @@ export default function App() {
                   {t("最終得分", "Final Score")}: <strong style={{ color: isNewHighScore ? '#fbbf24' : '#fff', fontSize: 'clamp(2rem, 5vh, 2.5rem)', display: 'block', marginTop: '0.2rem' }}>{score}</strong>
                 </div>
 
-                {!isAutoPlayRef.current && playMode !== 'square' && (
+                {!isAutoPlayRef.current && (
                   <div style={{ background: 'rgba(0,0,0,0.4)', borderRadius: '12px', padding: '1rem', marginTop: '1rem', marginBottom: '1.5rem', border: '1px solid rgba(255,255,255,0.1)' }}>
                     <h3 style={{ margin: '0 0 1rem 0', color: '#fbbf24', fontSize: '1.2rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
                       <Trophy size={18} /> {t("全域英雄榜", "Global Leaderboard")}
