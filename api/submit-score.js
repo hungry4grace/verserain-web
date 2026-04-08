@@ -35,17 +35,25 @@ export default async function handler(req, res) {
       token: redisToken,
     });
 
-    const leaderboardKey = `leaderboard:${verseRef}`;
-    
-    // Check if user already has a score for this verse
-    const currentScore = await redis.zscore(leaderboardKey, name);
-    
-    // Only update if new score is higher or if they don't have a score
-    if (currentScore === null || score > parseFloat(currentScore)) {
-        await redis.zadd(leaderboardKey, { score: score, member: name });
-        // Optional: keep leaderboard from growing infinitely, cap at 100 entries
-        // await redis.zremrangebyrank(leaderboardKey, 0, -101);
+    const today = new Date().toISOString().split('T')[0];
+    const month = today.slice(0, 7);
+
+    const allTimeKey = `leaderboard:${verseRef}`;
+    const monthlyKey = `leaderboard:monthly:${month}:${verseRef}`;
+    const dailyKey = `leaderboard:daily:${today}:${verseRef}`;
+
+    async function updateZset(key) {
+        const currentScore = await redis.zscore(key, name);
+        if (currentScore === null || score > parseFloat(currentScore)) {
+            await redis.zadd(key, { score: score, member: name });
+        }
     }
+
+    await Promise.all([
+        updateZset(allTimeKey),
+        updateZset(monthlyKey),
+        updateZset(dailyKey)
+    ]);
 
     res.status(200).json({ success: true });
   } catch (error) {

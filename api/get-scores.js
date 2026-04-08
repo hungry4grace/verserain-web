@@ -35,26 +35,33 @@ export default async function handler(req, res) {
       token: redisToken,
     });
 
-    const leaderboardKey = `leaderboard:${verseRef}`;
-    
-    // ZREVRANGE: get elements from sorted set with scores, highest first
-    // We get top 10 (indices 0 to 9)
-    const elements = await redis.zrange(leaderboardKey, 0, 9, { rev: true, withScores: true });
-    
-    // elements comes back as [ "David", 4500, "Mary", 4200, ... ]
-    // or [{member: "David", score: 4500}, ...] depending on library version. Upstash returns array by default.
-    const result = [];
-    
-    if (elements.length > 0 && typeof elements[0] === 'object') {
-       // It's possible it returns an array of objects
-       elements.forEach(el => result.push({ name: el.member, score: el.score }));
-    } else {
-       for (let i = 0; i < elements.length; i += 2) {
-         result.push({ name: elements[i], score: elements[i + 1] });
-       }
+    const today = new Date().toISOString().split('T')[0];
+    const month = today.slice(0, 7);
+
+    const allTimeKey = `leaderboard:${verseRef}`;
+    const monthlyKey = `leaderboard:monthly:${month}:${verseRef}`;
+    const dailyKey = `leaderboard:daily:${today}:${verseRef}`;
+
+    async function getFormatted(key) {
+      const elements = await redis.zrange(key, 0, 9, { rev: true, withScores: true });
+      const result = [];
+      if (elements.length > 0 && typeof elements[0] === 'object') {
+         elements.forEach(el => result.push({ name: el.member, score: el.score }));
+      } else {
+         for (let i = 0; i < elements.length; i += 2) {
+           result.push({ name: elements[i], score: elements[i + 1] });
+         }
+      }
+      return result;
     }
 
-    res.status(200).json(result);
+    const [alltime, monthly, daily] = await Promise.all([
+       getFormatted(allTimeKey),
+       getFormatted(monthlyKey),
+       getFormatted(dailyKey)
+    ]);
+
+    res.status(200).json({ alltime, monthly, daily });
   } catch (error) {
     console.error("Failed to get scores", error);
     res.status(500).json({ error: error.message });

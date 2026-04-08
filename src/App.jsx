@@ -318,8 +318,15 @@ export default function App() {
 
   // Leaderboard specific state
   const [playerName, setPlayerName] = useState(() => localStorage.getItem('verserain_player_name') || "");
-  const [leaderboard, setLeaderboard] = useState(null);
+  const [leaderboard, setLeaderboard] = useState({ alltime: [], monthly: [], daily: [] });
   const [isSubmittingScore, setIsSubmittingScore] = useState(false);
+  const [leaderboardTab, setLeaderboardTab] = useState('alltime');
+
+  // Menu Leaderboard Modal
+  const [leaderboardModalVerse, setLeaderboardModalVerse] = useState(null);
+  const [leaderboardModalData, setLeaderboardModalData] = useState({ alltime: [], monthly: [], daily: [] });
+  const [leaderboardModalTab, setLeaderboardModalTab] = useState('alltime'); // 'daily', 'monthly', 'alltime'
+  const [isFetchingLeaderboard, setIsFetchingLeaderboard] = useState(false);
 
   const timerRef = useRef(null);
   const speechRef = useRef(null);
@@ -605,7 +612,7 @@ export default function App() {
       // Load current leaderboard initially
       fetch(`/api/get-scores?verseRef=${encodeURIComponent(activeVerse.reference)}`)
         .then(res => res.json())
-        .then(data => setLeaderboard(Array.isArray(data) ? data : []))
+        .then(data => setLeaderboard(data && Array.isArray(data.alltime) ? data : { alltime: Array.isArray(data) ? data : [], monthly: [], daily: [] }))
         .catch(err => console.log("Leaderboard not ready or fetch failed"));
 
       // If user is already identified, auto-submit their score behind the scenes
@@ -618,7 +625,7 @@ export default function App() {
         }).then(() => {
            return fetch(`/api/get-scores?verseRef=${encodeURIComponent(activeVerse.reference)}`);
         }).then(res => res.json())
-          .then(data => setLeaderboard(Array.isArray(data) ? data : []))
+          .then(data => setLeaderboard(data && Array.isArray(data.alltime) ? data : { alltime: Array.isArray(data) ? data : [], monthly: [], daily: [] }))
           .catch(e => console.log(e))
           .finally(() => setIsSubmittingScore(false));
       }
@@ -972,7 +979,27 @@ export default function App() {
                       </div>
                       <div style={{ color: '#fbbf24', fontSize: '0.9rem', marginBottom: '1rem', fontWeight: 'bold' }}>{v.title}</div>
                       <p style={{ color: '#cbd5e1', fontSize: '0.9rem', flex: 1, maxHeight: '100px', overflowY: 'auto', paddingRight: '0.5rem', lineHeight: '1.5' }}>{v.text}</p>
-                      {vBest > 0 && <div style={{ marginTop: '1rem', color: '#fbbf24', fontSize: '0.8rem', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '4px' }}><Crown size={14}/> 最高分: {vBest}</div>}
+                      <button 
+                          style={{
+                              marginTop: '1rem', background: 'transparent', border: '1px solid rgba(251, 191, 36, 0.4)', color: '#fbbf24', fontSize: '0.85rem', fontWeight: 'bold', padding: '0.5rem 0.8rem', borderRadius: '6px', display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', transition: 'all 0.2s', width: 'fit-content'
+                          }}
+                          onMouseOver={(e) => { e.currentTarget.style.background = 'rgba(251, 191, 36, 0.1)'; e.currentTarget.style.borderColor = '#fbbf24'; }}
+                          onMouseOut={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.borderColor = 'rgba(251, 191, 36, 0.4)'; }}
+                          onClick={(e) => {
+                              e.stopPropagation();
+                              setLeaderboardModalVerse(v);
+                              setIsFetchingLeaderboard(true);
+                              fetch(`/api/get-scores?verseRef=${encodeURIComponent(v.reference)}`)
+                                .then(res => res.json())
+                                .then(data => {
+                                   setLeaderboardModalData(data && Array.isArray(data.alltime) ? data : { alltime: Array.isArray(data) ? data : [], monthly: [], daily: [] });
+                                })
+                                .catch(() => setLeaderboardModalData({ alltime: [], monthly: [], daily: [] }))
+                                .finally(() => setIsFetchingLeaderboard(false));
+                          }}
+                      >
+                         <Trophy size={14}/> {vBest > 0 ? `最高分: ${vBest} / 排行榜` : `查看排行榜`}
+                      </button>
                   </div>
                )
             })}
@@ -1201,7 +1228,7 @@ export default function App() {
                                   body: JSON.stringify({ name: name, score: score, verseRef: activeVerse.reference })
                                }).then(() => fetch(`/api/get-scores?verseRef=${encodeURIComponent(activeVerse.reference)}`))
                                  .then(res => res.json())
-                                 .then(data => setLeaderboard(Array.isArray(data) ? data : []))
+                                 .then(data => setLeaderboard(data && Array.isArray(data.alltime) ? data : { alltime: Array.isArray(data) ? data : [], monthly: [], daily: [] }))
                                  .catch(e => console.log(e))
                                  .finally(() => setIsSubmittingScore(false));
                              }}
@@ -1211,21 +1238,34 @@ export default function App() {
                          </div>
                       </div>
                     ) : (
-                      <div style={{ fontSize: '0.9rem', textAlign: 'left', maxHeight: '120px', overflowY: 'auto' }}>
-                         {isSubmittingScore ? (
-                           <div style={{ color: '#94a3b8', textAlign: 'center' }}>上傳分數中...</div>
-                         ) : Array.isArray(leaderboard) && leaderboard.length > 0 ? (
-                           leaderboard.map((entry, i) => (
-                             <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '0.25rem 0', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                               <span style={{ color: i === 0 ? '#fbbf24' : i === 1 ? '#e2e8f0' : i === 2 ? '#b45309' : '#94a3b8', fontWeight: i < 3 ? 'bold' : 'normal' }}>
-                                 {i + 1}. {entry.name}
-                               </span>
-                               <span style={{ color: '#cbd5e1', fontWeight: 'bold' }}>{entry.score}</span>
-                             </div>
-                           ))
-                         ) : (
-                           <div style={{ color: '#94a3b8', textAlign: 'center' }}>尚無排行紀錄，您是第一位！</div>
-                         )}
+                      <div style={{ fontSize: '0.9rem', textAlign: 'left', display: 'flex', flexDirection: 'column' }}>
+                         <div style={{ display: 'flex', borderBottom: '1px solid rgba(255,255,255,0.1)', marginBottom: '0.5rem' }}>
+                            {[ {id: 'daily', label: '今天'}, {id: 'monthly', label: '30天 (本月)'}, {id: 'alltime', label: '歷史'} ].map(tab => (
+                               <button
+                                   key={tab.id}
+                                   onClick={() => setLeaderboardTab(tab.id)}
+                                   style={{ flex: 1, padding: '0.4rem 0', background: leaderboardTab === tab.id ? 'rgba(59, 130, 246, 0.2)' : 'transparent', border: 'none', borderBottom: leaderboardTab === tab.id ? '2px solid #3b82f6' : '2px solid transparent', color: leaderboardTab === tab.id ? '#60a5fa' : '#94a3b8', fontWeight: leaderboardTab === tab.id ? 'bold' : 'normal', cursor: 'pointer', fontSize: '0.85rem', transition: 'all 0.2s' }}
+                               >
+                                   {tab.label}
+                               </button>
+                            ))}
+                         </div>
+                         <div style={{ maxHeight: '130px', overflowY: 'auto', paddingRight: '0.2rem' }}>
+                             {isSubmittingScore ? (
+                               <div style={{ color: '#94a3b8', textAlign: 'center', padding: '1rem 0' }}>上傳分數中...</div>
+                             ) : leaderboard && Array.isArray(leaderboard[leaderboardTab]) && leaderboard[leaderboardTab].length > 0 ? (
+                               leaderboard[leaderboardTab].map((entry, i) => (
+                                 <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '0.35rem 0', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                                   <span style={{ color: i === 0 ? '#fbbf24' : i === 1 ? '#e2e8f0' : i === 2 ? '#b45309' : '#94a3b8', fontWeight: i < 3 ? 'bold' : 'normal', display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                                     <span style={{ width: '16px', textAlign: 'right' }}>{i + 1}.</span> <span>{entry.name}</span>
+                                   </span>
+                                   <span style={{ color: '#cbd5e1', fontWeight: 'bold' }}>{entry.score}</span>
+                                 </div>
+                               ))
+                             ) : (
+                               <div style={{ color: '#94a3b8', textAlign: 'center', padding: '1rem 0' }}>尚無排行紀錄，您是第一位！</div>
+                             )}
+                         </div>
                       </div>
                     )}
                   </div>
@@ -1307,6 +1347,51 @@ export default function App() {
                 fontSize: '1.2rem', fontWeight: 'bold', borderRadius: '12px', cursor: 'pointer', margin: '0 auto', maxWidth: '300px', width: '100%'
               }}
              >回到主頁</button>
+           </div>
+        </div>
+      )}
+      {leaderboardModalVerse && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.85)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem', backdropFilter: 'blur(5px)' }} onClick={() => setLeaderboardModalVerse(null)}>
+           <div className="hud-glass" style={{ width: '100%', maxWidth: '500px', maxHeight: '90vh', display: 'flex', flexDirection: 'column', background: 'rgba(15, 23, 42, 0.95)', border: '1px solid rgba(59, 130, 246, 0.3)' }} onClick={e => e.stopPropagation()}>
+               <div style={{ padding: '1.5rem', borderBottom: '1px solid rgba(255,255,255,0.1)', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                  <div>
+                      <h2 style={{ fontSize: '1.5rem', color: '#93c5fd', marginBottom: '0.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Trophy size={20}/> 英雄榜</h2>
+                      <div style={{ color: '#cbd5e1' }}>{leaderboardModalVerse.reference}</div>
+                  </div>
+                  <button onClick={() => setLeaderboardModalVerse(null)} style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer', padding: '0.25rem' }}><XCircle size={24} /></button>
+               </div>
+               
+               <div style={{ display: 'flex', borderBottom: '1px solid rgba(255,255,255,0.1)', background: 'rgba(0,0,0,0.2)' }}>
+                   {[ {id: 'daily', label: '今天'}, {id: 'monthly', label: '30天 (本月)'}, {id: 'alltime', label: '歷史'} ].map(tab => (
+                       <button
+                           key={tab.id}
+                           onClick={() => setLeaderboardModalTab(tab.id)}
+                           style={{ flex: 1, padding: '1rem 0', background: leaderboardModalTab === tab.id ? 'rgba(59, 130, 246, 0.2)' : 'transparent', border: 'none', borderBottom: leaderboardModalTab === tab.id ? '2px solid #3b82f6' : '2px solid transparent', color: leaderboardModalTab === tab.id ? '#60a5fa' : '#94a3b8', fontWeight: leaderboardModalTab === tab.id ? 'bold' : 'normal', cursor: 'pointer', transition: 'all 0.2s', fontSize: '1rem' }}
+                       >
+                           {tab.label}
+                       </button>
+                   ))}
+               </div>
+
+               <div style={{ padding: '1.5rem', overflowY: 'auto', flex: 1, minHeight: '300px' }}>
+                   {isFetchingLeaderboard ? (
+                       <div style={{ color: '#94a3b8', textAlign: 'center', margin: '2rem 0' }}>載入排行榜中...</div>
+                   ) : leaderboardModalData && Array.isArray(leaderboardModalData[leaderboardModalTab]) && leaderboardModalData[leaderboardModalTab].length > 0 ? (
+                       <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                           {leaderboardModalData[leaderboardModalTab].map((entry, i) => (
+                               <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '0.75rem', background: 'rgba(255,255,255,0.03)', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                                   <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                                       <span style={{ fontSize: '1.2rem', fontWeight: 'bold', width: '24px', textAlign: 'center', color: i === 0 ? '#fbbf24' : i === 1 ? '#e2e8f0' : i === 2 ? '#b45309' : '#94a3b8' }}>{i + 1}</span>
+                                       <span style={{ color: '#fff', fontSize: '1.1rem', fontWeight: i < 3 ? 'bold' : 'normal' }}>{entry.name}</span>
+                                   </div>
+                                   <span style={{ color: '#3b82f6', fontWeight: 'bold', fontSize: '1.1rem' }}>{entry.score}</span>
+                               </div>
+                           ))}
+                       </div>
+                   ) : (
+                       <div style={{ color: '#94a3b8', textAlign: 'center', margin: '2rem 0' }}>尚無排行紀錄，趕緊成為第一位吧！</div>
+                   )}
+               </div>
            </div>
         </div>
       )}
