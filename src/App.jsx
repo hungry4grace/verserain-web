@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Play, RotateCcw, Heart, Zap, Trophy, Crown, Star, Home, XCircle, Headphones } from 'lucide-react';
+import { Play, RotateCcw, Heart, Zap, Trophy, Crown, Star, Home, XCircle, Headphones, Music, VolumeX } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import './index.css';
 
@@ -124,6 +124,25 @@ export default function App() {
   const [selectedVerseRefs, setSelectedVerseRefs] = useState([VERSES_DB[0].reference]);
   
   const [initAutoStart, setInitAutoStart] = useState(null);
+
+  const [isMusicPlaying, setIsMusicPlaying] = useState(false);
+  const bgmAudioRef = useRef(null);
+
+  useEffect(() => {
+    if (!bgmAudioRef.current) {
+        bgmAudioRef.current = new Audio('/bgm.mp3');
+        bgmAudioRef.current.loop = true;
+        bgmAudioRef.current.volume = 0.4;
+    }
+    if (isMusicPlaying) {
+        bgmAudioRef.current.play().catch(e => {
+           console.log('Autoplay prevented, requires interaction');
+           setIsMusicPlaying(false);
+        });
+    } else {
+        bgmAudioRef.current.pause();
+    }
+  }, [isMusicPlaying]);
 
   const handleVersionChange = (newVer) => {
       setVersion(newVer);
@@ -727,6 +746,15 @@ export default function App() {
   return (
     <>
       <div className="bg-layer" />
+      
+      {/* Global Music Toggle */}
+      <button
+          onClick={(e) => { e.stopPropagation(); setIsMusicPlaying(!isMusicPlaying); }}
+          className="hud-glass"
+          style={{ position: 'fixed', top: '1rem', right: '1rem', padding: '0.75rem', borderRadius: '50%', color: isMusicPlaying ? '#4ade80' : '#cbd5e1', cursor: 'pointer', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+      >
+          {isMusicPlaying ? <Music size={24} /> : <VolumeX size={24} />}
+      </button>
 
       {gameState === 'menu' && (
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', height: '100dvh', width: '100vw', overflowY: 'auto', WebkitOverflowScrolling: 'touch', padding: 'calc(env(safe-area-inset-top) + 2rem) 1rem 4rem' }}>
