@@ -157,10 +157,16 @@ export default function App() {
          let cleanText = textParam.replace(/['"]/g, '').trim();
          let title = "Custom Verse";
          
-         const match = cleanText.match(/^([^\s「"]+)\s+([\d:,-]+)\s+([「"]?)(.*)/);
+         const match = cleanText.match(/^([1-3]?\s*[a-zA-Z\u4e00-\u9fa5]+\s*\d+(?::\d+(?:-\d+)?)?:?)\s+([「"]?)(.*)/);
          if (match) {
-            title = match[1] + " " + match[2];
-            cleanText = match[4].replace(/[」"]$/, '').trim();
+            title = match[1].trim();
+            cleanText = match[3].replace(/[」"]$/, '').trim();
+         } else {
+            const match2 = cleanText.match(/^([^\s「"]+[\d:]+)\s+([「"]?)(.*)/);
+            if (match2) {
+               title = match2[1].trim();
+               cleanText = match2[3].replace(/[」"]$/, '').trim();
+            }
          }
          
          const isEnglish = /^[a-zA-Z\s.,:;'"]+$/.test(cleanText.substring(0, 50));
