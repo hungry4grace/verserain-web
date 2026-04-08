@@ -18,7 +18,10 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'verseRef query parameter is required' });
   }
 
-  if (!process.env.UPSTASH_REDIS_REST_URL || !process.env.UPSTASH_REDIS_REST_TOKEN) {
+  const redisUrl = process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL;
+  const redisToken = process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN;
+
+  if (!redisUrl || !redisToken) {
     console.log("Mocking scores because Upstash is not yet connected");
     return res.status(200).json([
       { name: "👑 虛位以待", score: 5000, date: Date.now() },
@@ -28,8 +31,8 @@ export default async function handler(req, res) {
 
   try {
     const redis = new Redis({
-      url: process.env.UPSTASH_REDIS_REST_URL,
-      token: process.env.UPSTASH_REDIS_REST_TOKEN,
+      url: redisUrl,
+      token: redisToken,
     });
 
     const leaderboardKey = `leaderboard:${verseRef}`;

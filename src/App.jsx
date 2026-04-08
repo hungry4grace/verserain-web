@@ -605,7 +605,7 @@ export default function App() {
       // Load current leaderboard initially
       fetch(`/api/get-scores?verseRef=${encodeURIComponent(activeVerse.reference)}`)
         .then(res => res.json())
-        .then(data => setLeaderboard(data))
+        .then(data => setLeaderboard(Array.isArray(data) ? data : []))
         .catch(err => console.log("Leaderboard not ready or fetch failed"));
 
       // If user is already identified, auto-submit their score behind the scenes
@@ -618,7 +618,7 @@ export default function App() {
         }).then(() => {
            return fetch(`/api/get-scores?verseRef=${encodeURIComponent(activeVerse.reference)}`);
         }).then(res => res.json())
-          .then(data => setLeaderboard(data))
+          .then(data => setLeaderboard(Array.isArray(data) ? data : []))
           .catch(e => console.log(e))
           .finally(() => setIsSubmittingScore(false));
       }
@@ -1184,7 +1184,8 @@ export default function App() {
                                   body: JSON.stringify({ name: name, score: score, verseRef: activeVerse.reference })
                                }).then(() => fetch(`/api/get-scores?verseRef=${encodeURIComponent(activeVerse.reference)}`))
                                  .then(res => res.json())
-                                 .then(data => setLeaderboard(data))
+                                 .then(data => setLeaderboard(Array.isArray(data) ? data : []))
+                                 .catch(e => console.log(e))
                                  .finally(() => setIsSubmittingScore(false));
                              }}
                            >
@@ -1196,7 +1197,7 @@ export default function App() {
                       <div style={{ fontSize: '0.9rem', textAlign: 'left', maxHeight: '120px', overflowY: 'auto' }}>
                          {isSubmittingScore ? (
                            <div style={{ color: '#94a3b8', textAlign: 'center' }}>上傳分數中...</div>
-                         ) : leaderboard && leaderboard.length > 0 ? (
+                         ) : Array.isArray(leaderboard) && leaderboard.length > 0 ? (
                            leaderboard.map((entry, i) => (
                              <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '0.25rem 0', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
                                <span style={{ color: i === 0 ? '#fbbf24' : i === 1 ? '#e2e8f0' : i === 2 ? '#b45309' : '#94a3b8', fontWeight: i < 3 ? 'bold' : 'normal' }}>
