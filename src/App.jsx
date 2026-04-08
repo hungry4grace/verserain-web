@@ -1333,7 +1333,7 @@ export default function App() {
                     {t("時間加成", "Time Bonus")}: {(timeLeft / 100).toFixed(2)}s × 50 = +{timeBonus}
                   </div>
                 )}
-                {playMode === 'rain' && distractionLevel > 0 && isSuccess && (
+                {playMode === 'rain' && distractionLevel > 0 && !isFailed && (
                   <div style={{ fontSize: 'clamp(0.9rem, 2vh, 1.1rem)', color: '#f59e0b', marginBottom: 'clamp(0.5rem, 2vh, 1rem)', fontWeight: 'bold' }}>
                     {t("難度加成", "Difficulty Multiplier")}: × {(1 + distractionLevel * 0.1).toFixed(1)} {t(`(難度 ${distractionLevel})`, `(Lv ${distractionLevel})`)}
                   </div>
