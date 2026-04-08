@@ -302,7 +302,7 @@ export default function App() {
   const healthRef = useRef(3);
   useEffect(() => { healthRef.current = health; }, [health]);
 
-  const [timeLeft, setTimeLeft] = useState(60);
+  const [timeLeft, setTimeLeft] = useState(6000); // 60.00 seconds
   
   const [bestScore, setBestScore] = useState(0);
   useEffect(() => {
@@ -444,7 +444,7 @@ export default function App() {
     setScore(0);
     setCombo(0);
     setHealth(3);
-    setTimeLeft(60);
+    setTimeLeft(6000);
     setCurrentSeqIndex(0);
     currentSeqRef.current = 0;
     setBlocks([]);
@@ -462,7 +462,7 @@ export default function App() {
         }
         return Math.max(0, t - 1);
       });
-    }, 1000);
+    }, 10);
 
     if (!isAuto) {
       if (playMode === 'square') {
@@ -593,7 +593,7 @@ export default function App() {
     let finalCalculatedScore = scoreRef.current;
     
     if (isSuccess) {
-        const calculatedTimeBonus = Math.max(0, timeLeft) * 50;
+        const calculatedTimeBonus = Math.floor(Math.max(0, timeLeft) * 0.5);
         setTimeBonus(calculatedTimeBonus);
         finalCalculatedScore += calculatedTimeBonus;
         setScore(finalCalculatedScore);
@@ -1051,11 +1051,14 @@ export default function App() {
                   <div style={{ position: 'absolute', top: '-10px', left: '10px', color: '#fbbf24', fontSize: '0.7rem', display: 'flex', alignItems: 'center', gap: '4px' }}>
                     <Crown size={12} /> 最高分 {bestScore}
                   </div>
-                  <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: '#fff', fontFamily: 'monospace' }}>
+                  <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: '#fff', fontFamily: 'monospace', marginBottom: '0.2rem' }}>
                     {String(score).padStart(6, '0')}
                   </div>
-                  <div style={{ fontSize: '1rem', color: timeLeft <= 10 ? '#f87171' : '#cbd5e1', fontFamily: 'monospace' }}>
-                    00:{String(timeLeft).padStart(2, '0')}
+                  <div style={{ padding: '0.25rem 0.75rem', background: 'rgba(0,0,0,0.5)', borderRadius: '9999px', display: 'flex', alignItems: 'center', gap: '0.5rem', border: '1px solid rgba(255,255,255,0.1)' }}>
+                    <div style={{ fontSize: '0.8rem', color: '#94a3b8' }}>TIME</div>
+                    <div style={{ fontSize: '1rem', color: timeLeft <= 1000 ? '#f87171' : '#cbd5e1', fontFamily: 'monospace' }}>
+                      00:{String(Math.floor(timeLeft / 100)).padStart(2, '0')}.{String(timeLeft % 100).padStart(2, '0')}
+                    </div>
                   </div>
                 </div>
             )}
@@ -1191,7 +1194,7 @@ export default function App() {
               <div style={{ flexShrink: 0 }}>
                 {timeBonus > 0 && (
                   <div style={{ fontSize: 'clamp(0.9rem, 2vh, 1.1rem)', color: '#34d399', marginBottom: 'clamp(0.2rem, 1vh, 0.5rem)', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px' }}>
-                    時間加成: {timeLeft}s × 50 = +{timeBonus}
+                    時間加成: {(timeLeft / 100).toFixed(2)}s × 50 = +{timeBonus}
                   </div>
                 )}
                 <div style={{ fontSize: 'clamp(1rem, 2.5vh, 1.25rem)', color: '#cbd5e1', marginBottom: 'clamp(0.5rem, 2vh, 1rem)' }}>
