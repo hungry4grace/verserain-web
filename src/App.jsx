@@ -336,7 +336,7 @@ export default function App() {
   
   const activePhrases = React.useMemo(() => {
     const isEnglish = /^[a-zA-Z\s.,:;'"]+$/.test(activeVerse.text.substring(0, 50));
-    const regex = isEnglish ? /[,，。；：「」、;:\.\?!]/ : /[\s,，。；：「」、;:\.\?!！]/;
+    const regex = isEnglish ? /[,，。；：「」、;:\.\?!]/ : /[\s,，。；：「」、;:\.\?!！？『』《》]/;
     return activeVerse.text.split(regex).map(p => p.trim()).filter(Boolean);
   }, [activeVerse]);
 
