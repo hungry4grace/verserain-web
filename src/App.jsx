@@ -371,7 +371,7 @@ export default function App() {
         text: phrases[seqToSpawn],
         seqIndex: seqToSpawn,
         xPos: xPos,
-        duration: 12 + Math.random() * 4,
+        duration: 7.5 + Math.random() * 3, // Faster fall rate
         error: false,
         correct: false
       };
@@ -445,9 +445,10 @@ export default function App() {
         initSquareBlocks();
       } else {
         setTimeout(spawnNextBlock, 100);
-        setTimeout(spawnNextBlock, 1500);
-        setTimeout(spawnNextBlock, 3000);
-        setTimeout(spawnNextBlock, 4500);
+        setTimeout(spawnNextBlock, 900);
+        setTimeout(spawnNextBlock, 1700);
+        setTimeout(spawnNextBlock, 2500);
+        setTimeout(spawnNextBlock, 3300);
       }
     }
   };
