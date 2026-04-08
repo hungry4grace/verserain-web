@@ -874,7 +874,11 @@ export default function App() {
   return (
     <>
       <div className="bg-layer" />
-      <div className="rain-container" />
+      <div className="rain-system">
+        <div className="rain-layer back" />
+        <div className="rain-layer mid" />
+        <div className="rain-layer front" />
+      </div>
       {lightningActive && (
         <div key={lightningKey} className={`lightning-flash ${lightningActive === 'heavy' ? 'heavy' : 'active'}`} />
       )}
