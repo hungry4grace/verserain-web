@@ -1424,11 +1424,16 @@ export default function App() {
                                       }
 
                                       if (targetVerse && targetVerse.text) {
+                                        // Clear everything first to prevent mode mixing
+                                        setBlocks([]);
+                                        setGameState('menu'); 
+                                        
                                         if (version !== targetVersion) setVersion(targetVersion);
                                         setPlayMode(modeType);
                                         setDistractionLevel(difficulty);
                                         setActiveVerse(targetVerse);
-                                        setTimeout(() => startGame(false), 50);
+                                        // Slight delay ensures state transitions are processed
+                                        setTimeout(() => startGame(false), 80);
                                       } else {
                                         alert(t("找不到該經文內容，無法挑戰。", "Verse content not found, cannot challenge."));
                                       }
@@ -1606,6 +1611,7 @@ export default function App() {
 
       {gameState === 'playing' && (
         <div
+          key={`${playMode}-${activeVerse.reference}-${distractionLevel}`}
           onClick={handleGlobalClick}
           style={{ position: 'absolute', width: '100vw', height: '100vh', top: 0, left: 0, overflow: 'hidden' }}
         >
