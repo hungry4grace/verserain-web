@@ -1083,7 +1083,7 @@ export default function App() {
               { id: 'leaderboard', label: t('排行榜 Leaderboard', 'Leaderboard') },
               { id: 'search', label: t('搜尋 Search', 'Search') },
               { id: 'about', label: t('有關 About', 'About') },
-              { id: 'donate', label: t('加入「互惠經濟」 Join Erom', 'Join Erom'), link: 'https://www.skool.com/ekklesia-asia/about' }
+              { id: 'donate', label: t('加入「互惠經濟」', 'Join EcoAwakening'), link: 'https://www.skool.com/EconomicAwakening/about' }
             ].map((item, idx) => (
               <div key={idx} onClick={() => {
                 if (item.link) {
@@ -1104,46 +1104,8 @@ export default function App() {
 
             {mainTab === 'versesets' && (
               <>
-                {/* Action Bar (Filters & Controls) */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#ffffff', padding: '1rem', borderTopLeftRadius: '8px', borderTopRightRadius: '8px', borderBottom: '1px solid #e2e8f0', flexWrap: 'wrap', gap: '1rem', border: '1px solid #cbd5e1' }}>
-                  <div style={{ display: 'flex', gap: '0.5rem' }}>
-                    <button style={{ backgroundColor: '#e2e8f0', border: '1px solid #cbd5e1', padding: '0.4rem 1rem', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', color: '#334155', fontSize: '0.9rem' }}>{t("最流行", "Popular")}</button>
-                    <button style={{ backgroundColor: 'transparent', border: 'none', padding: '0.4rem 1rem', cursor: 'pointer', color: '#64748b', fontSize: '0.9rem' }}>{t("最近", "Recent")}</button>
-                    <button style={{ backgroundColor: 'transparent', border: 'none', padding: '0.4rem 1rem', cursor: 'pointer', color: '#64748b', fontSize: '0.9rem' }}>{t("最高", "Top")}</button>
-                  </div>
-
-                  <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', flexWrap: 'wrap' }}>
-                    <select value={version} onChange={(e) => handleVersionChange(e.target.value)} style={{ padding: '0.4rem', borderRadius: '4px', border: '1px solid #cbd5e1', backgroundColor: '#f8fafc', color: '#334155', fontWeight: 'bold', fontSize: '0.9rem' }}>
-                      <option value="cuv">繁體中文 (CUV)</option>
-                      <option value="kjv">English (KJV)</option>
-                    </select>
-                    <select value={playMode} onChange={(e) => setPlayMode(e.target.value)} style={{ padding: '0.4rem', borderRadius: '4px', border: '1px solid #cbd5e1', backgroundColor: '#f8fafc', color: '#334155', fontWeight: 'bold', fontSize: '0.9rem' }}>
-                      <option value="rain">Mode: Verse Rain</option>
-                      <option value="square">Mode: Verse Square</option>
-                    </select>
-
-                    <button style={{ backgroundColor: '#3b82f6', color: 'white', border: 'none', padding: '0.4rem 1rem', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.85rem' }}>
-                      {t("自建經文組", "Create Verse Set")}
-                    </button>
-
-                    <button
-                      onClick={() => {
-                        initAudio();
-                        const shuffled = [...VERSES_DB].sort(() => Math.random() - 0.5);
-                        setCampaignQueue(shuffled.slice(1));
-                        setCampaignResults([]);
-                        setActiveVerse(shuffled[0]);
-                        setTimeout(() => startGame(false), 50);
-                      }}
-                      style={{ background: '#8b5cf6', color: 'white', border: 'none', padding: '0.4rem 1rem', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.85rem' }}
-                    >
-                      <Star size={14} style={{ display: 'inline', verticalAlign: 'middle', marginRight: '4px' }} />{t("全部隨機", "Random All")}
-                    </button>
-                  </div>
-                </div>
-
                 {/* The Verse Sets Table */}
-                <div style={{ backgroundColor: '#ffffff', overflowX: 'auto', borderBottomLeftRadius: '8px', borderBottomRightRadius: '8px', border: '1px solid #cbd5e1', borderTop: 'none', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+                <div style={{ backgroundColor: '#ffffff', overflowX: 'auto', borderRadius: '8px', border: '1px solid #cbd5e1', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
                   {selectedSetId === null ? (
                     <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
                       <thead>
@@ -1503,656 +1465,658 @@ export default function App() {
                 <p style={{ marginBottom: '1rem' }}>
                   一間華人教會使用 VerseRain 應用程式為會眾舉辦了「聖經背誦比賽」。家庭和小組中的所有年齡層都能參與。他們架設了四台投影機，讓四個隊伍能同時在相同的經文組上進行挑戰模式的比賽。
                 </p>
+                <iframe width="560" height="315" src="//www.youtube.com/embed/2tFxeesKISk" frameborder="0" allowfullscreen=""></iframe>
+
                 <p style={{ marginBottom: '1.5rem' }}>
                   一位四歲的男孩和三歲的妹妹急切地想展示他們能用中文背誦「主禱文」來遊玩 VerseRain。他們都是在美國出生的，卻能夠用中文閱讀並遊玩這款遊戲。
                 </p>
+                <iframe width="560" height="315" src="//www.youtube.com/embed/Tty82Gn1gvQ" frameborder="0" allowfullscreen=""></iframe>
+
                 <p style={{ marginBottom: '1.5rem' }}>
                   聖經經文的單字會從天而降，玩家只要按照正確的順序點擊經文就能獲得分數。經文被點擊時，會用語音朗讀出來，從視覺和語音的聽覺兩方面來加強您的記憶。
                 </p>
 
                 <ul style={{ paddingLeft: '1.5rem', marginBottom: '1.5rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                  <li>學習超過三十種語言的聖經經文！</li>
+                  <li>學習多種語言的聖經經文！</li>
                   <li>點擊單字時會有文字轉語音的朗讀功能，來加深您對經文背誦的印象。</li>
-                  <li>透過 verserain.com，能支援近乎無限多的經文、經文組以及多種聖經譯本可以使用。</li>
-                  <li>提供三種挑戰難度，無論是小孩還是成人都非常適合來挑戰自己的極限。</li>
+                  <li>透過 verserain，能支援近乎無限多的經文、經文組以及多種聖經譯本可以使用。</li>
+                  <li>提供多種挑戰難度，無論是小孩還是成人都非常適合來挑戰自己的極限。</li>
                   <li>挑戰模式有助於加強記憶同一個經文組中的多段相關經文。</li>
                   <li>線上排行榜能激勵會眾、青年團契和小組成員一起參與遊玩、共同精進！</li>
                 </ul>
 
-                <p style={{ marginBottom: '2rem' }}>
-                  我們鼓勵您建立專屬帳號，發布您最喜愛的經文組並與大眾朋友分享。Verse Rain 支援跨平台遊玩，您可以在所有網頁版、iOS App Store 以及 Android 裝置上免費使用並遊玩。
-                </p>
+
               </div>
             )}
 
             {/* Footer Elements */}
             <div style={{ marginTop: '2rem', display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap', color: '#64748b', fontSize: '0.85rem' }}>
-                <button style={{ background: '#e2e8f0', border: 'none', padding: '0.4rem 0.8rem', borderRadius: '4px', cursor: 'pointer', color: '#475569' }}>{t("選擇語言 (en) ▼", "Select Language (zh) ▼")}</button>
-                <button style={{ background: '#e2e8f0', border: 'none', padding: '0.4rem 0.8rem', borderRadius: '4px', cursor: 'pointer', color: '#475569' }}>Translate Verserain</button>
-                <a href="#" style={{ padding: '0.5rem', color: '#64748b', textDecoration: 'none' }}>{t("幫助", "Help")}</a>
-                <a href="#" style={{ padding: '0.5rem', color: '#64748b', textDecoration: 'none' }}>{t("隱私權", "Privacy")}</a>
-                <a href="#" style={{ padding: '0.5rem', color: '#64748b', textDecoration: 'none' }}>{t("信仰宣言", "Statement of Faith")}</a>
-                <a href="#" style={{ padding: '0.5rem', color: '#64748b', textDecoration: 'none' }}>{t("使用規則", "Terms of Use")}</a>
+              <button style={{ background: '#e2e8f0', border: 'none', padding: '0.4rem 0.8rem', borderRadius: '4px', cursor: 'pointer', color: '#475569' }}>{t("選擇語言 (en) ▼", "Select Language (zh) ▼")}</button>
+              <button style={{ background: '#e2e8f0', border: 'none', padding: '0.4rem 0.8rem', borderRadius: '4px', cursor: 'pointer', color: '#475569' }}>Translate Verserain</button>
+              <a href="#" style={{ padding: '0.5rem', color: '#64748b', textDecoration: 'none' }}>{t("幫助", "Help")}</a>
+              <a href="#" style={{ padding: '0.5rem', color: '#64748b', textDecoration: 'none' }}>{t("隱私權", "Privacy")}</a>
+              <a href="#" style={{ padding: '0.5rem', color: '#64748b', textDecoration: 'none' }}>{t("信仰宣言", "Statement of Faith")}</a>
+              <a href="#" style={{ padding: '0.5rem', color: '#64748b', textDecoration: 'none' }}>{t("使用規則", "Terms of Use")}</a>
             </div>
             <div style={{ textAlign: 'center', marginTop: '1rem', color: '#94a3b8', fontSize: '0.75rem', paddingBottom: '3rem' }}>
-                © 2026 Hope of Glory Publishing LLC.
+              © 2026 Hope of Glory Publishing LLC.
             </div>
 
           </div>
         </div>
       )}
 
-          {gameState === 'playing' && (
-            <div
-              onClick={handleGlobalClick}
-              style={{ position: 'absolute', width: '100vw', height: '100vh', top: 0, left: 0, overflow: 'hidden' }}
-            >
-              <div style={{ position: 'absolute', top: 0, left: 0, padding: 'clamp(0.5rem, 2vw, 1.5rem)', display: 'flex', flexDirection: 'column', gap: '0.75rem', alignItems: 'flex-start', zIndex: 10 }}>
-                <div style={{ display: 'flex', gap: '0.75rem' }}>
-                  <button
-                    className="hud-glass"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      if (timerRef.current) clearInterval(timerRef.current);
-                      if ('speechSynthesis' in window) window.speechSynthesis.cancel();
-                      setGameState('menu');
-                    }}
-                    style={{ padding: '0.75rem', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#f87171' }}
-                  >
-                    <XCircle size={28} />
-                  </button>
-                  {!isAutoPlay && (
-                    <div className="hud-glass" style={{ padding: '0.5rem 1rem', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                      <span style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#93c5fd' }}>{activeVerse.reference}</span>
-                    </div>
-                  )}
+      {gameState === 'playing' && (
+        <div
+          onClick={handleGlobalClick}
+          style={{ position: 'absolute', width: '100vw', height: '100vh', top: 0, left: 0, overflow: 'hidden' }}
+        >
+          <div style={{ position: 'absolute', top: 0, left: 0, padding: 'clamp(0.5rem, 2vw, 1.5rem)', display: 'flex', flexDirection: 'column', gap: '0.75rem', alignItems: 'flex-start', zIndex: 10 }}>
+            <div style={{ display: 'flex', gap: '0.75rem' }}>
+              <button
+                className="hud-glass"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (timerRef.current) clearInterval(timerRef.current);
+                  if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+                  setGameState('menu');
+                }}
+                style={{ padding: '0.75rem', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#f87171' }}
+              >
+                <XCircle size={28} />
+              </button>
+              {!isAutoPlay && (
+                <div className="hud-glass" style={{ padding: '0.5rem 1rem', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                  <span style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#93c5fd' }}>{activeVerse.reference}</span>
                 </div>
+              )}
+            </div>
 
-                {!isAutoPlay && (
-                  <div className="hud-glass" style={{ padding: '0.5rem 1rem', display: 'flex', gap: '1rem', alignItems: 'center' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.2rem', color: '#f87171' }}>
-                      {[...Array(3)].map((_, i) => (
-                        <Heart key={i} size={20} fill={i < health ? '#f87171' : 'transparent'} strokeWidth={i < health ? 0 : 2} />
-                      ))}
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.2rem', fontSize: '1.2rem', fontWeight: 'bold', color: '#fbbf24' }}>
-                      <Zap size={20} fill="#fbbf24" strokeWidth={0} /> {combo}x
-                    </div>
-                  </div>
-                )}
-
-                {!isAutoPlay && (
-                  <div className="hud-glass" style={{ padding: '0.5rem 1rem', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', minWidth: '120px', position: 'relative' }}>
-                    <div style={{ position: 'absolute', top: '-10px', left: '10px', color: '#fbbf24', fontSize: '0.7rem', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                      <Crown size={12} /> {t("最高分", "Best")} {bestScore}
-                    </div>
-                    <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: '#fff', fontFamily: 'monospace', marginBottom: '0.2rem' }}>
-                      {String(score).padStart(6, '0')}
-                    </div>
-                    <div style={{ padding: '0.25rem 0.75rem', background: 'rgba(0,0,0,0.5)', borderRadius: '9999px', display: 'flex', alignItems: 'center', gap: '0.5rem', border: '1px solid rgba(255,255,255,0.1)' }}>
-                      <div style={{ fontSize: '0.8rem', color: '#94a3b8' }}>TIME</div>
-                      <div style={{ fontSize: '1rem', color: timeLeft <= 1000 ? '#f87171' : '#cbd5e1', fontFamily: 'monospace' }}>
-                        00:{String(Math.floor(timeLeft / 100)).padStart(2, '0')}.{String(timeLeft % 100).padStart(2, '0')}
-                      </div>
-                    </div>
-                  </div>
-                )}
+            {!isAutoPlay && (
+              <div className="hud-glass" style={{ padding: '0.5rem 1rem', display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.2rem', color: '#f87171' }}>
+                  {[...Array(3)].map((_, i) => (
+                    <Heart key={i} size={20} fill={i < health ? '#f87171' : 'transparent'} strokeWidth={i < health ? 0 : 2} />
+                  ))}
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.2rem', fontSize: '1.2rem', fontWeight: 'bold', color: '#fbbf24' }}>
+                  <Zap size={20} fill="#fbbf24" strokeWidth={0} /> {combo}x
+                </div>
               </div>
+            )}
 
-              {isAutoPlay ? (
-                <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '6rem 5vw 2rem' }}>
-                  <div className="hud-glass" style={{ padding: 'clamp(1.5rem, 4vw, 3rem)', textAlign: 'center', maxWidth: '1000px', width: '90%', maxHeight: '85vh', overflowY: 'auto' }}>
-                    <h2 style={{ fontSize: 'clamp(1.2rem, 3vh, 2rem)', color: speakingTitle ? '#fbbf24' : '#93c5fd', transition: 'color 0.3s', marginBottom: '1rem', fontWeight: 'bold' }}>{activeVerse.reference}</h2>
-                    <div style={{
-                      fontSize: (() => {
-                        const lengthWeight = version === 'kjv' ? activeVerse.text.length / 2.5 : activeVerse.text.length;
-                        if (lengthWeight > 120) return 'clamp(1rem, min(4.5vw, 3vh), 1.5rem)';
-                        if (lengthWeight > 70) return 'clamp(1.2rem, min(5vw, 3.5vh), 2rem)';
-                        return 'clamp(1.5rem, min(6vw, 4vh), 3rem)';
-                      })(),
-                      color: '#fff', lineHeight: '1.6', fontWeight: 'bold'
-                    }}>
-                      {activePhrases.map((phrase, idx) => {
-                        let color = '#cbd5e1';
-                        if (idx < currentSeqIndex) color = '#93c5fd';
-                        if (idx === currentSeqIndex && !speakingTitle) color = '#fbbf24';
-                        return <span key={idx} style={{ color, transition: 'color 0.3s' }}>{phrase}{" "}</span>;
-                      })}
-                    </div>
+            {!isAutoPlay && (
+              <div className="hud-glass" style={{ padding: '0.5rem 1rem', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', minWidth: '120px', position: 'relative' }}>
+                <div style={{ position: 'absolute', top: '-10px', left: '10px', color: '#fbbf24', fontSize: '0.7rem', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  <Crown size={12} /> {t("最高分", "Best")} {bestScore}
+                </div>
+                <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: '#fff', fontFamily: 'monospace', marginBottom: '0.2rem' }}>
+                  {String(score).padStart(6, '0')}
+                </div>
+                <div style={{ padding: '0.25rem 0.75rem', background: 'rgba(0,0,0,0.5)', borderRadius: '9999px', display: 'flex', alignItems: 'center', gap: '0.5rem', border: '1px solid rgba(255,255,255,0.1)' }}>
+                  <div style={{ fontSize: '0.8rem', color: '#94a3b8' }}>TIME</div>
+                  <div style={{ fontSize: '1rem', color: timeLeft <= 1000 ? '#f87171' : '#cbd5e1', fontFamily: 'monospace' }}>
+                    00:{String(Math.floor(timeLeft / 100)).padStart(2, '0')}.{String(timeLeft % 100).padStart(2, '0')}
                   </div>
                 </div>
-              ) : playMode === 'square' ? (
-                <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '5rem 0 0 0', pointerEvents: 'none' }}>
-                  <div style={{ display: 'grid', gridTemplateColumns: `repeat(${distractionLevel <= 1 ? 2 : 3}, minmax(0, 1fr))`, gap: '0.75rem', width: '95%', maxWidth: distractionLevel <= 1 ? '600px' : '900px', pointerEvents: 'auto' }}>
-                    {blocks.map(block => {
-                      let appliedClasses = 'falling-block-inner';
-                      if (block.error) appliedClasses += ' error-shake';
-                      if (block.correct) appliedClasses += ' success-flash';
-                      return (
-                        <div key={block.id} className={appliedClasses} onClick={(e) => { e.stopPropagation(); handleBlockClick(block); }} style={{ cursor: 'pointer', padding: 'clamp(0.5rem, 2vw, 1.5rem)', fontSize: 'clamp(0.9rem, 2.5vw, 1.5rem)', display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100px', wordBreak: 'break-word', hyphens: 'auto', textAlign: 'center', visibility: block.hidden ? 'hidden' : 'visible' }}>
-                          {!block.hidden && block.text}
-                        </div>
-                      )
-                    })}
-                  </div>
-                </div>
-              ) : (
-                <div style={{ position: 'absolute', width: '100vw', height: '100vh', top: 0, left: 0, overflow: 'hidden', pointerEvents: 'none' }}>
-                  {blocks.map((block) => {
-                    let appliedClasses = 'falling-block-inner';
-                    if (block.error) appliedClasses += ' error-shake';
-                    if (block.correct) appliedClasses += ' success-flash';
+              </div>
+            )}
+          </div>
 
-                    return (
-                      <div
-                        key={block.id}
-                        className="falling-wrapper"
-                        data-id={block.id}
-                        style={{
-                          position: 'absolute',
-                          top: '-30px',
-                          left: `${block.xPos}%`,
-                          animation: `fall ${block.duration}s linear forwards`,
-                          zIndex: block.seqIndex === currentSeqIndex ? 50 : 10
-                        }}
-                        onAnimationEnd={(e) => handleAnimationEnd(e, block.id)}
-                      >
-                        <div className={appliedClasses}>
-                          {block.text}
-                        </div>
-                      </div>
-                    );
+          {isAutoPlay ? (
+            <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '6rem 5vw 2rem' }}>
+              <div className="hud-glass" style={{ padding: 'clamp(1.5rem, 4vw, 3rem)', textAlign: 'center', maxWidth: '1000px', width: '90%', maxHeight: '85vh', overflowY: 'auto' }}>
+                <h2 style={{ fontSize: 'clamp(1.2rem, 3vh, 2rem)', color: speakingTitle ? '#fbbf24' : '#93c5fd', transition: 'color 0.3s', marginBottom: '1rem', fontWeight: 'bold' }}>{activeVerse.reference}</h2>
+                <div style={{
+                  fontSize: (() => {
+                    const lengthWeight = version === 'kjv' ? activeVerse.text.length / 2.5 : activeVerse.text.length;
+                    if (lengthWeight > 120) return 'clamp(1rem, min(4.5vw, 3vh), 1.5rem)';
+                    if (lengthWeight > 70) return 'clamp(1.2rem, min(5vw, 3.5vh), 2rem)';
+                    return 'clamp(1.5rem, min(6vw, 4vh), 3rem)';
+                  })(),
+                  color: '#fff', lineHeight: '1.6', fontWeight: 'bold'
+                }}>
+                  {activePhrases.map((phrase, idx) => {
+                    let color = '#cbd5e1';
+                    if (idx < currentSeqIndex) color = '#93c5fd';
+                    if (idx === currentSeqIndex && !speakingTitle) color = '#fbbf24';
+                    return <span key={idx} style={{ color, transition: 'color 0.3s' }}>{phrase}{" "}</span>;
                   })}
                 </div>
-              )}
+              </div>
             </div>
-          )}
-
-          {gameState === 'gameover' && (
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100dvh', zIndex: 20, position: 'relative' }}>
-              {isFailed ? (
-                <div className="hud-glass" style={{ padding: 'clamp(1.5rem, 4vw, 3rem)', textAlign: 'center', width: '90%', maxWidth: '900px', border: '1px solid #f87171', maxHeight: '95dvh', display: 'flex', flexDirection: 'column' }}>
-                  <h2 style={{ fontSize: 'clamp(1.2rem, 3vh, 1.8rem)', color: '#f87171', marginBottom: 'clamp(0.5rem, 2vh, 1rem)' }}>{t("再接再厲！", "Try Again!")}</h2>
-                  <div style={{ background: 'rgba(0,0,0,0.5)', padding: 'clamp(1rem, 3vw, 2.5rem)', borderRadius: '16px', marginBottom: 'clamp(1rem, 3vh, 2.5rem)', overflowY: 'auto', flex: 1 }}>
-                    <p style={{ fontSize: 'clamp(1.2rem, 3.5vh, 2.2rem)', color: '#fff', fontWeight: 'bold', marginBottom: 'clamp(0.5rem, 2vh, 1.5rem)', textTransform: 'uppercase', letterSpacing: '2px' }}>{activeVerse.reference}</p>
-                    <div style={{ fontSize: 'clamp(1.2rem, 3.5vh, 2.2rem)', color: '#fff', lineHeight: '1.6', fontWeight: 'bold' }}>
-                      {activePhrases.map((phrase, idx) => (
-                        <span key={idx} style={{ color: idx % 2 === 0 ? '#93c5fd' : '#cbd5e1' }}>{phrase}{" "}</span>
-                      ))}
+          ) : playMode === 'square' ? (
+            <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '5rem 0 0 0', pointerEvents: 'none' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: `repeat(${distractionLevel <= 1 ? 2 : 3}, minmax(0, 1fr))`, gap: '0.75rem', width: '95%', maxWidth: distractionLevel <= 1 ? '600px' : '900px', pointerEvents: 'auto' }}>
+                {blocks.map(block => {
+                  let appliedClasses = 'falling-block-inner';
+                  if (block.error) appliedClasses += ' error-shake';
+                  if (block.correct) appliedClasses += ' success-flash';
+                  return (
+                    <div key={block.id} className={appliedClasses} onClick={(e) => { e.stopPropagation(); handleBlockClick(block); }} style={{ cursor: 'pointer', padding: 'clamp(0.5rem, 2vw, 1.5rem)', fontSize: 'clamp(0.9rem, 2.5vw, 1.5rem)', display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100px', wordBreak: 'break-word', hyphens: 'auto', textAlign: 'center', visibility: block.hidden ? 'hidden' : 'visible' }}>
+                      {!block.hidden && block.text}
                     </div>
-                  </div>
-                  <button
-                    onClick={() => startGame()}
-                    className="play-btn"
+                  )
+                })}
+              </div>
+            </div>
+          ) : (
+            <div style={{ position: 'absolute', width: '100vw', height: '100vh', top: 0, left: 0, overflow: 'hidden', pointerEvents: 'none' }}>
+              {blocks.map((block) => {
+                let appliedClasses = 'falling-block-inner';
+                if (block.error) appliedClasses += ' error-shake';
+                if (block.correct) appliedClasses += ' success-flash';
+
+                return (
+                  <div
+                    key={block.id}
+                    className="falling-wrapper"
+                    data-id={block.id}
                     style={{
-                      width: '100%', maxWidth: '400px', background: '#3b82f6', color: 'white', border: 'none', padding: 'clamp(0.8rem, 2vh, 1.2rem)',
-                      fontSize: 'clamp(1.1rem, 2.5vh, 1.3rem)', fontWeight: 'bold', borderRadius: '12px', cursor: 'pointer',
-                      display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '0.75rem',
-                      boxShadow: '0 0 15px rgba(59, 130, 246, 0.5)', transition: 'all 0.2s', margin: '0 auto', flexShrink: 0
+                      position: 'absolute',
+                      top: '-30px',
+                      left: `${block.xPos}%`,
+                      animation: `fall ${block.duration}s linear forwards`,
+                      zIndex: block.seqIndex === currentSeqIndex ? 50 : 10
                     }}
+                    onAnimationEnd={(e) => handleAnimationEnd(e, block.id)}
                   >
-                    <RotateCcw size={24} /> {t("再玩一次", "Play Again")}
-                  </button>
-                </div>
-              ) : (
-                <div className="hud-glass" style={{ padding: 'clamp(1.5rem, 4vw, 3rem)', textAlign: 'center', width: '90%', maxWidth: '800px', maxHeight: '95dvh', display: 'flex', flexDirection: 'column', justifyContent: 'center', animation: isNewHighScore || isFlawless ? 'flashSuccess 1s ease-out' : 'none' }}>
-
-                  <div style={{ flexShrink: 0 }}>
-                    {isNewHighScore ? (
-                      <Crown size={48} color="#fbbf24" style={{ margin: '0 auto clamp(0.5rem, 2vh, 1.5rem)', animation: 'bounce 1s infinite' }} />
-                    ) : isFlawless ? (
-                      <Star size={48} color="#34d399" style={{ margin: '0 auto clamp(0.5rem, 2vh, 1.5rem)' }} />
-                    ) : (
-                      <Trophy size={48} color="#fbbf24" style={{ margin: '0 auto clamp(0.5rem, 2vh, 1.5rem)' }} />
-                    )}
-
-                    <h2 style={{ fontSize: 'clamp(1.8rem, 4vh, 2.5rem)', marginBottom: '0.5rem', color: '#fff' }}>
-                      {isNewHighScore ? t("新高分！", "New High Score!") : isFlawless ? t("完美無瑕！", "Flawless!") : ""}
-                    </h2>
-
-                    {isFlawless && !isNewHighScore && (
-                      <div style={{ color: '#34d399', fontSize: 'clamp(1rem, 2vh, 1.2rem)', marginBottom: 'clamp(0.5rem, 2vh, 1rem)', fontWeight: 'bold' }}>
-                        {t("完美的順序！", "Perfect Sequence!")}
-                      </div>
-                    )}
-                  </div>
-
-                  <div style={{ background: 'rgba(0,0,0,0.3)', padding: 'clamp(1rem, 3vw, 2rem)', borderRadius: '16px', margin: 'clamp(0.5rem, 2vh, 2rem) 0', overflowY: 'auto', flex: 1 }}>
-                    <p style={{ fontSize: 'clamp(1.1rem, 3vh, 2rem)', color: '#fff', fontWeight: 'bold', marginBottom: 'clamp(0.5rem, 2vh, 1rem)', textTransform: 'uppercase', letterSpacing: '1px' }}>{activeVerse.reference}</p>
-                    <div style={{ fontSize: 'clamp(1.1rem, 3vh, 2rem)', color: '#fff', lineHeight: '1.5', fontWeight: 'bold' }}>
-                      {activePhrases.map((phrase, idx) => (
-                        <span key={idx} style={{ color: idx % 2 === 0 ? '#93c5fd' : '#cbd5e1' }}>{phrase}{" "}</span>
-                      ))}
+                    <div className={appliedClasses}>
+                      {block.text}
                     </div>
                   </div>
-
-                  <div style={{ flexShrink: 0 }}>
-                    <div style={{ fontSize: 'clamp(0.9rem, 2vh, 1.1rem)', color: '#93c5fd', marginBottom: 'clamp(0.2rem, 1vh, 0.5rem)', fontWeight: 'bold' }}>
-                      {t("通關基礎分", "Base Score")}: {pureBaseScore}
-                    </div>
-                    {timeBonus > 0 && (
-                      <div style={{ fontSize: 'clamp(0.9rem, 2vh, 1.1rem)', color: '#34d399', marginBottom: 'clamp(0.2rem, 1vh, 0.5rem)', fontWeight: 'bold' }}>
-                        {t("時間加成", "Time Bonus")}: {(timeLeft / 100).toFixed(2)}s × 50 = +{timeBonus}
-                      </div>
-                    )}
-                    {distractionLevel > 0 && !isFailed && (
-                      <div style={{ fontSize: 'clamp(0.9rem, 2vh, 1.1rem)', color: '#f59e0b', marginBottom: 'clamp(0.5rem, 2vh, 1rem)', fontWeight: 'bold' }}>
-                        {t("難度加成", "Difficulty Multiplier")}: × {(1 + distractionLevel * 0.1).toFixed(1)} {t(`(難度 ${distractionLevel})`, `(Lv ${distractionLevel})`)}
-                      </div>
-                    )}
-                    <div style={{ fontSize: 'clamp(1rem, 2.5vh, 1.25rem)', color: '#cbd5e1', marginBottom: 'clamp(0.5rem, 2vh, 1rem)', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '0.5rem', marginTop: '0.5rem' }}>
-                      {t("最終得分", "Final Score")}: <strong style={{ color: isNewHighScore ? '#fbbf24' : '#fff', fontSize: 'clamp(2rem, 5vh, 2.5rem)', display: 'block', marginTop: '0.2rem' }}>{score}</strong>
-                    </div>
-
-                    {!isAutoPlayRef.current && (
-                      <div style={{ background: 'rgba(0,0,0,0.4)', borderRadius: '12px', padding: '1rem', marginTop: '1rem', marginBottom: '1.5rem', border: '1px solid rgba(255,255,255,0.1)' }}>
-                        <h3 style={{ margin: '0 0 1rem 0', color: '#fbbf24', fontSize: '1.2rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
-                          <Trophy size={18} /> {t("全域英雄榜", "Global Leaderboard")}
-                        </h3>
-
-                        {!playerName ? (
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                            <p style={{ margin: 0, fontSize: '0.9rem', color: '#94a3b8' }}>{t("想要將神聖高分刻在群組榜單上嗎？", "Want to carve your sacred high score on the universal leaderboard?")}</p>
-                            <div style={{ display: 'flex', gap: '0.5rem' }}>
-                              <input
-                                type="text"
-                                placeholder={t("您的 Skool 暱稱", "Your Nickname")}
-                                id="playerNameInput"
-                                style={{ flex: 1, padding: '0.5rem', borderRadius: '6px', border: 'none', outline: 'none' }}
-                              />
-                              <button
-                                style={{ background: '#3b82f6', color: 'white', border: 'none', padding: '0.5rem 1rem', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer' }}
-                                onClick={() => {
-                                  const name = document.getElementById('playerNameInput').value.trim();
-                                  if (!name) return;
-                                  setPlayerName(name);
-                                  localStorage.setItem('verserain_player_name', name);
-                                  setIsSubmittingScore(true);
-                                  const actualModeName = distractionLevel > 0 ? `${playMode}-dx${distractionLevel}` : playMode;
-                                  fetch('/api/submit-score', {
-                                    method: 'POST',
-                                    headers: { 'Content-Type': 'application/json' },
-                                    body: JSON.stringify({ name: name, score: score, verseRef: activeVerse.reference, mode: actualModeName })
-                                  }).then(() => fetch(`/api/get-scores?verseRef=${encodeURIComponent(activeVerse.reference)}`))
-                                    .then(res => res.json())
-                                    .then(data => setLeaderboard(data && Array.isArray(data.alltime) ? data : { alltime: Array.isArray(data) ? data : [], monthly: [], daily: [] }))
-                                    .catch(e => console.log(e))
-                                    .finally(() => setIsSubmittingScore(false));
-                                }}
-                              >
-                                {t("送出", "Submit")}
-                              </button>
-                            </div>
-                          </div>
-                        ) : (
-                          <div style={{ fontSize: '0.9rem', textAlign: 'left', display: 'flex', flexDirection: 'column' }}>
-                            <div style={{ display: 'flex', borderBottom: '1px solid rgba(255,255,255,0.1)', marginBottom: '0.5rem' }}>
-                              {[{ id: 'daily', label: t('今天', 'Today') }, { id: 'monthly', label: t('30天 (本月)', '30 days (Month)') }, { id: 'alltime', label: t('歷史', 'All-Time') }].map(tab => (
-                                <button
-                                  key={tab.id}
-                                  onClick={() => setLeaderboardTab(tab.id)}
-                                  style={{ flex: 1, padding: '0.4rem 0', background: leaderboardTab === tab.id ? 'rgba(59, 130, 246, 0.2)' : 'transparent', border: 'none', borderBottom: leaderboardTab === tab.id ? '2px solid #3b82f6' : '2px solid transparent', color: leaderboardTab === tab.id ? '#60a5fa' : '#94a3b8', fontWeight: leaderboardTab === tab.id ? 'bold' : 'normal', cursor: 'pointer', fontSize: '0.85rem', transition: 'all 0.2s' }}
-                                >
-                                  {tab.label}
-                                </button>
-                              ))}
-                            </div>
-                            <div style={{ maxHeight: '130px', overflowY: 'auto', paddingRight: '0.2rem' }}>
-                              {isSubmittingScore ? (
-                                <div style={{ color: '#94a3b8', textAlign: 'center', padding: '1rem 0' }}>{t("上傳分數中...", "Submitting...")}</div>
-                              ) : leaderboard && Array.isArray(leaderboard[leaderboardTab]) && leaderboard[leaderboardTab].length > 0 ? (
-                                leaderboard[leaderboardTab].map((entry, i) => (
-                                  <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '0.35rem 0', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                                    <span style={{ color: i === 0 ? '#fbbf24' : i === 1 ? '#e2e8f0' : i === 2 ? '#b45309' : '#94a3b8', fontWeight: i < 3 ? 'bold' : 'normal', display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-                                      <span style={{ width: '16px', textAlign: 'right' }}>{i + 1}.</span>
-                                      <span style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-                                        <span>{entry.name}</span>
-                                        <span style={{ fontSize: '0.65rem', padding: '0.1rem 0.3rem', background: entry.mode === 'square' ? 'rgba(139, 92, 246, 0.4)' : 'rgba(59, 130, 246, 0.4)', borderRadius: '4px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{entry.mode || 'rain'}</span>
-                                      </span>
-                                    </span>
-                                    <span style={{ color: '#cbd5e1', fontWeight: 'bold' }}>{entry.score}</span>
-                                  </div>
-                                ))
-                              ) : (
-                                <div style={{ color: '#94a3b8', textAlign: 'center', padding: '1rem 0' }}>{t("尚無排行紀錄，您是第一位！", "No records yet. Be the first!")}</div>
-                              )}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    )}
-
-                    {campaignQueue !== null ? (
-                      campaignQueue.length > 0 ? (
-                        <button
-                          onClick={() => {
-                            setActiveVerse(campaignQueue[0]);
-                            setCampaignQueue(campaignQueue.slice(1));
-                            setTimeout(startGame, 50);
-                          }}
-                          className="play-btn"
-                          style={{
-                            width: '100%', maxWidth: '300px', background: '#3b82f6', color: 'white', border: 'none', padding: 'clamp(0.8rem, 2vh, 1rem)',
-                            fontSize: 'clamp(1.1rem, 2.5vh, 1.2rem)', fontWeight: 'bold', borderRadius: '12px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', boxShadow: '0 0 15px rgba(59, 130, 246, 0.5)', transition: 'all 0.2s', margin: '0 auto'
-                          }}
-                        >
-                          {t("下一回合", "Next Round")}
-                        </button>
-                      ) : (
-                        <button
-                          onClick={() => setGameState('campaign-results')}
-                          className="play-btn"
-                          style={{
-                            width: '100%', maxWidth: '300px', background: '#8b5cf6', color: 'white', border: 'none', padding: 'clamp(0.8rem, 2vh, 1rem)',
-                            fontSize: 'clamp(1.1rem, 2.5vh, 1.2rem)', fontWeight: 'bold', borderRadius: '12px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', boxShadow: '0 0 15px rgba(139, 92, 246, 0.5)', transition: 'all 0.2s', margin: '0 auto'
-                          }}
-                        >
-                          {t("查看最終成績", "View Final Results")}
-                        </button>
-                      )
-                    ) : (
-                      <button
-                        onClick={() => setGameState('menu')}
-                        className="play-btn"
-                        style={{
-                          width: '100%', maxWidth: '300px', background: '#3b82f6', color: 'white', border: 'none', padding: 'clamp(0.8rem, 2vh, 1rem)',
-                          fontSize: 'clamp(1.1rem, 2.5vh, 1.2rem)', fontWeight: 'bold', borderRadius: '12px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', boxShadow: '0 0 15px rgba(59, 130, 246, 0.5)', transition: 'all 0.2s', margin: '0 auto'
-                        }}
-                      >
-                        <Home size={20} /> {t("回到主頁", "Home")}
-                      </button>
-                    )}
-                  </div>
-                </div>
-              )}
+                );
+              })}
             </div>
           )}
+        </div>
+      )}
 
-          {gameState === 'campaign-results' && (
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100dvh', width: '100vw', overflowY: 'auto', WebkitOverflowScrolling: 'touch', padding: 'calc(env(safe-area-inset-top) + 2rem) 1rem 4rem' }}>
-              <div className="hud-glass" style={{ padding: 'clamp(1.5rem, 4vw, 3rem)', textAlign: 'center', width: '90%', maxWidth: '800px', display: 'flex', flexDirection: 'column', animation: 'flashSuccess 1s ease-out' }}>
-                <Trophy size={48} color="#fbbf24" style={{ margin: '0 auto 1rem' }} />
-                <h2 style={{ fontSize: 'clamp(2rem, 4vh, 2.5rem)', color: '#fff', marginBottom: '1.5rem' }}>{t("所有關卡完成！", "All Rounds Conquered!")}</h2>
-
-                <div style={{ background: 'rgba(0,0,0,0.3)', borderRadius: '16px', padding: '1.5rem', overflowY: 'auto', maxHeight: '50vh', marginBottom: '2rem' }}>
-                  {campaignResults.map((result, i) => (
-                    <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem', borderBottom: i < campaignResults.length - 1 ? '1px solid rgba(255,255,255,0.1)' : 'none' }}>
-                      <div style={{ textAlign: 'left' }}>
-                        <div style={{ color: '#93c5fd', fontWeight: 'bold', fontSize: '1.1rem' }}>{result.verse.reference}</div>
-                        <div style={{ color: result.score > 0 ? '#34d399' : '#f87171', fontSize: '0.9rem' }}>{result.score > 0 ? (result.flawless ? t('完美', 'Perfect') : t('過關', 'Cleared')) : t('失敗', 'Failed')}</div>
-                      </div>
-                      <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: result.score > 0 ? '#fbbf24' : '#64748b' }}>{result.score}</div>
-                    </div>
+      {gameState === 'gameover' && (
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100dvh', zIndex: 20, position: 'relative' }}>
+          {isFailed ? (
+            <div className="hud-glass" style={{ padding: 'clamp(1.5rem, 4vw, 3rem)', textAlign: 'center', width: '90%', maxWidth: '900px', border: '1px solid #f87171', maxHeight: '95dvh', display: 'flex', flexDirection: 'column' }}>
+              <h2 style={{ fontSize: 'clamp(1.2rem, 3vh, 1.8rem)', color: '#f87171', marginBottom: 'clamp(0.5rem, 2vh, 1rem)' }}>{t("再接再厲！", "Try Again!")}</h2>
+              <div style={{ background: 'rgba(0,0,0,0.5)', padding: 'clamp(1rem, 3vw, 2.5rem)', borderRadius: '16px', marginBottom: 'clamp(1rem, 3vh, 2.5rem)', overflowY: 'auto', flex: 1 }}>
+                <p style={{ fontSize: 'clamp(1.2rem, 3.5vh, 2.2rem)', color: '#fff', fontWeight: 'bold', marginBottom: 'clamp(0.5rem, 2vh, 1.5rem)', textTransform: 'uppercase', letterSpacing: '2px' }}>{activeVerse.reference}</p>
+                <div style={{ fontSize: 'clamp(1.2rem, 3.5vh, 2.2rem)', color: '#fff', lineHeight: '1.6', fontWeight: 'bold' }}>
+                  {activePhrases.map((phrase, idx) => (
+                    <span key={idx} style={{ color: idx % 2 === 0 ? '#93c5fd' : '#cbd5e1' }}>{phrase}{" "}</span>
                   ))}
                 </div>
-
-                <div style={{ fontSize: '1.5rem', color: '#cbd5e1', marginBottom: '2rem' }}>
-                  {t("總計得分", "Total Score")}: <strong style={{ color: '#fbbf24', fontSize: '3rem', display: 'block', marginTop: '0.5rem' }}>{campaignResults.reduce((sum, r) => sum + r.score, 0)}</strong>
-                </div>
-
-                <button
-                  onClick={() => setGameState('menu')}
-                  className="play-btn"
-                  style={{
-                    background: '#3b82f6', color: 'white', border: 'none', padding: '1rem',
-                    fontSize: '1.2rem', fontWeight: 'bold', borderRadius: '12px', cursor: 'pointer', margin: '0 auto', maxWidth: '300px', width: '100%'
-                  }}
-                >{t("回到主頁", "Back to Home")}</button>
               </div>
+              <button
+                onClick={() => startGame()}
+                className="play-btn"
+                style={{
+                  width: '100%', maxWidth: '400px', background: '#3b82f6', color: 'white', border: 'none', padding: 'clamp(0.8rem, 2vh, 1.2rem)',
+                  fontSize: 'clamp(1.1rem, 2.5vh, 1.3rem)', fontWeight: 'bold', borderRadius: '12px', cursor: 'pointer',
+                  display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '0.75rem',
+                  boxShadow: '0 0 15px rgba(59, 130, 246, 0.5)', transition: 'all 0.2s', margin: '0 auto', flexShrink: 0
+                }}
+              >
+                <RotateCcw size={24} /> {t("再玩一次", "Play Again")}
+              </button>
             </div>
-          )}
-          {leaderboardModalVerse && (
-            <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.85)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem', backdropFilter: 'blur(5px)' }} onClick={() => setLeaderboardModalVerse(null)}>
-              <div className="hud-glass" style={{ width: '100%', maxWidth: '500px', maxHeight: '90vh', display: 'flex', flexDirection: 'column', background: 'rgba(15, 23, 42, 0.95)', border: '1px solid rgba(59, 130, 246, 0.3)' }} onClick={e => e.stopPropagation()}>
-                <div style={{ padding: '1.5rem', borderBottom: '1px solid rgba(255,255,255,0.1)', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                  <div>
-                    <h2 style={{ fontSize: '1.5rem', color: '#93c5fd', marginBottom: '0.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Trophy size={20} /> {t("英雄榜", "Leaderboard")}</h2>
-                    <div style={{ color: '#cbd5e1' }}>{leaderboardModalVerse.reference}</div>
-                  </div>
-                  <button onClick={() => setLeaderboardModalVerse(null)} style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer', padding: '0.25rem' }}><XCircle size={24} /></button>
-                </div>
+          ) : (
+            <div className="hud-glass" style={{ padding: 'clamp(1.5rem, 4vw, 3rem)', textAlign: 'center', width: '90%', maxWidth: '800px', maxHeight: '95dvh', display: 'flex', flexDirection: 'column', justifyContent: 'center', animation: isNewHighScore || isFlawless ? 'flashSuccess 1s ease-out' : 'none' }}>
 
-                <div style={{ display: 'flex', borderBottom: '1px solid rgba(255,255,255,0.1)', background: 'rgba(0,0,0,0.2)' }}>
-                  {[{ id: 'daily', label: t('今天', 'Today') }, { id: 'monthly', label: t('30天 (本月)', '30 days (Month)') }, { id: 'alltime', label: t('歷史', 'All-Time') }].map(tab => (
-                    <button
-                      key={tab.id}
-                      onClick={() => setLeaderboardModalTab(tab.id)}
-                      style={{ flex: 1, padding: '1rem 0', background: leaderboardModalTab === tab.id ? 'rgba(59, 130, 246, 0.2)' : 'transparent', border: 'none', borderBottom: leaderboardModalTab === tab.id ? '2px solid #3b82f6' : '2px solid transparent', color: leaderboardModalTab === tab.id ? '#60a5fa' : '#94a3b8', fontWeight: leaderboardModalTab === tab.id ? 'bold' : 'normal', cursor: 'pointer', transition: 'all 0.2s', fontSize: '1rem' }}
-                    >
-                      {tab.label}
-                    </button>
+              <div style={{ flexShrink: 0 }}>
+                {isNewHighScore ? (
+                  <Crown size={48} color="#fbbf24" style={{ margin: '0 auto clamp(0.5rem, 2vh, 1.5rem)', animation: 'bounce 1s infinite' }} />
+                ) : isFlawless ? (
+                  <Star size={48} color="#34d399" style={{ margin: '0 auto clamp(0.5rem, 2vh, 1.5rem)' }} />
+                ) : (
+                  <Trophy size={48} color="#fbbf24" style={{ margin: '0 auto clamp(0.5rem, 2vh, 1.5rem)' }} />
+                )}
+
+                <h2 style={{ fontSize: 'clamp(1.8rem, 4vh, 2.5rem)', marginBottom: '0.5rem', color: '#fff' }}>
+                  {isNewHighScore ? t("新高分！", "New High Score!") : isFlawless ? t("完美無瑕！", "Flawless!") : ""}
+                </h2>
+
+                {isFlawless && !isNewHighScore && (
+                  <div style={{ color: '#34d399', fontSize: 'clamp(1rem, 2vh, 1.2rem)', marginBottom: 'clamp(0.5rem, 2vh, 1rem)', fontWeight: 'bold' }}>
+                    {t("完美的順序！", "Perfect Sequence!")}
+                  </div>
+                )}
+              </div>
+
+              <div style={{ background: 'rgba(0,0,0,0.3)', padding: 'clamp(1rem, 3vw, 2rem)', borderRadius: '16px', margin: 'clamp(0.5rem, 2vh, 2rem) 0', overflowY: 'auto', flex: 1 }}>
+                <p style={{ fontSize: 'clamp(1.1rem, 3vh, 2rem)', color: '#fff', fontWeight: 'bold', marginBottom: 'clamp(0.5rem, 2vh, 1rem)', textTransform: 'uppercase', letterSpacing: '1px' }}>{activeVerse.reference}</p>
+                <div style={{ fontSize: 'clamp(1.1rem, 3vh, 2rem)', color: '#fff', lineHeight: '1.5', fontWeight: 'bold' }}>
+                  {activePhrases.map((phrase, idx) => (
+                    <span key={idx} style={{ color: idx % 2 === 0 ? '#93c5fd' : '#cbd5e1' }}>{phrase}{" "}</span>
                   ))}
                 </div>
+              </div>
 
-                <div style={{ padding: '1.5rem', overflowY: 'auto', flex: 1, minHeight: '300px' }}>
-                  {isFetchingLeaderboard ? (
-                    <div style={{ color: '#94a3b8', textAlign: 'center', margin: '2rem 0' }}>{t("載入排行榜中...", "Loading Leaderboard...")}</div>
-                  ) : leaderboardModalData && Array.isArray(leaderboardModalData[leaderboardModalTab]) && leaderboardModalData[leaderboardModalTab].length > 0 ? (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                      {leaderboardModalData[leaderboardModalTab].map((entry, i) => (
-                        <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '0.75rem', background: 'rgba(255,255,255,0.03)', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                            <span style={{ fontSize: '1.2rem', fontWeight: 'bold', width: '24px', textAlign: 'center', color: i === 0 ? '#fbbf24' : i === 1 ? '#e2e8f0' : i === 2 ? '#b45309' : '#94a3b8' }}>{i + 1}</span>
-                            <span style={{ color: '#fff', fontSize: '1.1rem', fontWeight: i < 3 ? 'bold' : 'normal', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                              <span>{entry.name}</span>
-                              <span style={{ fontSize: '0.7rem', padding: '0.1rem 0.4rem', background: entry.mode === 'square' ? 'rgba(139, 92, 246, 0.4)' : 'rgba(59, 130, 246, 0.4)', borderRadius: '4px', textTransform: 'uppercase', letterSpacing: '0.5px', color: '#93c5fd' }}>{entry.mode || 'rain'}</span>
-                            </span>
-                          </div>
-                          <span style={{ color: '#3b82f6', fontWeight: 'bold', fontSize: '1.1rem' }}>{entry.score}</span>
+              <div style={{ flexShrink: 0 }}>
+                <div style={{ fontSize: 'clamp(0.9rem, 2vh, 1.1rem)', color: '#93c5fd', marginBottom: 'clamp(0.2rem, 1vh, 0.5rem)', fontWeight: 'bold' }}>
+                  {t("通關基礎分", "Base Score")}: {pureBaseScore}
+                </div>
+                {timeBonus > 0 && (
+                  <div style={{ fontSize: 'clamp(0.9rem, 2vh, 1.1rem)', color: '#34d399', marginBottom: 'clamp(0.2rem, 1vh, 0.5rem)', fontWeight: 'bold' }}>
+                    {t("時間加成", "Time Bonus")}: {(timeLeft / 100).toFixed(2)}s × 50 = +{timeBonus}
+                  </div>
+                )}
+                {distractionLevel > 0 && !isFailed && (
+                  <div style={{ fontSize: 'clamp(0.9rem, 2vh, 1.1rem)', color: '#f59e0b', marginBottom: 'clamp(0.5rem, 2vh, 1rem)', fontWeight: 'bold' }}>
+                    {t("難度加成", "Difficulty Multiplier")}: × {(1 + distractionLevel * 0.1).toFixed(1)} {t(`(難度 ${distractionLevel})`, `(Lv ${distractionLevel})`)}
+                  </div>
+                )}
+                <div style={{ fontSize: 'clamp(1rem, 2.5vh, 1.25rem)', color: '#cbd5e1', marginBottom: 'clamp(0.5rem, 2vh, 1rem)', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '0.5rem', marginTop: '0.5rem' }}>
+                  {t("最終得分", "Final Score")}: <strong style={{ color: isNewHighScore ? '#fbbf24' : '#fff', fontSize: 'clamp(2rem, 5vh, 2.5rem)', display: 'block', marginTop: '0.2rem' }}>{score}</strong>
+                </div>
+
+                {!isAutoPlayRef.current && (
+                  <div style={{ background: 'rgba(0,0,0,0.4)', borderRadius: '12px', padding: '1rem', marginTop: '1rem', marginBottom: '1.5rem', border: '1px solid rgba(255,255,255,0.1)' }}>
+                    <h3 style={{ margin: '0 0 1rem 0', color: '#fbbf24', fontSize: '1.2rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
+                      <Trophy size={18} /> {t("全域英雄榜", "Global Leaderboard")}
+                    </h3>
+
+                    {!playerName ? (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                        <p style={{ margin: 0, fontSize: '0.9rem', color: '#94a3b8' }}>{t("想要將神聖高分刻在群組榜單上嗎？", "Want to carve your sacred high score on the universal leaderboard?")}</p>
+                        <div style={{ display: 'flex', gap: '0.5rem' }}>
+                          <input
+                            type="text"
+                            placeholder={t("您的 Skool 暱稱", "Your Nickname")}
+                            id="playerNameInput"
+                            style={{ flex: 1, padding: '0.5rem', borderRadius: '6px', border: 'none', outline: 'none' }}
+                          />
+                          <button
+                            style={{ background: '#3b82f6', color: 'white', border: 'none', padding: '0.5rem 1rem', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer' }}
+                            onClick={() => {
+                              const name = document.getElementById('playerNameInput').value.trim();
+                              if (!name) return;
+                              setPlayerName(name);
+                              localStorage.setItem('verserain_player_name', name);
+                              setIsSubmittingScore(true);
+                              const actualModeName = distractionLevel > 0 ? `${playMode}-dx${distractionLevel}` : playMode;
+                              fetch('/api/submit-score', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ name: name, score: score, verseRef: activeVerse.reference, mode: actualModeName })
+                              }).then(() => fetch(`/api/get-scores?verseRef=${encodeURIComponent(activeVerse.reference)}`))
+                                .then(res => res.json())
+                                .then(data => setLeaderboard(data && Array.isArray(data.alltime) ? data : { alltime: Array.isArray(data) ? data : [], monthly: [], daily: [] }))
+                                .catch(e => console.log(e))
+                                .finally(() => setIsSubmittingScore(false));
+                            }}
+                          >
+                            {t("送出", "Submit")}
+                          </button>
                         </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div style={{ color: '#94a3b8', textAlign: 'center', margin: '2rem 0' }}>{t("尚無排行紀錄，趕緊成為第一位吧！", "No records yet. Be the first!")}</div>
-                  )}
-                </div>
-              </div>
-            </div>
-          )}
-          {/* Login Account Modal */}
-          {showLoginModal && (
-            <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.6)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000, padding: '1rem' }}>
-              <div style={{ background: '#ffffff', borderRadius: '12px', padding: '2rem', width: '100%', maxWidth: '400px', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)', display: 'flex', flexDirection: 'column', gap: '1.5rem', border: '1px solid #e2e8f0' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <h2 style={{ margin: 0, color: '#1e293b', fontSize: '1.5rem', fontWeight: 'bold' }}>
-                    {showLoginModal === 'signup' ? t("註冊新帳號", "Sign Up") : t("登入帳號", "Log In")}
-                  </h2>
-                  <button
-                    onClick={() => setShowLoginModal(null)}
-                    style={{ background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                  >
-                    <XCircle size={24} />
-                  </button>
-                </div>
+                      </div>
+                    ) : (
+                      <div style={{ fontSize: '0.9rem', textAlign: 'left', display: 'flex', flexDirection: 'column' }}>
+                        <div style={{ display: 'flex', borderBottom: '1px solid rgba(255,255,255,0.1)', marginBottom: '0.5rem' }}>
+                          {[{ id: 'daily', label: t('今天', 'Today') }, { id: 'monthly', label: t('30天 (本月)', '30 days (Month)') }, { id: 'alltime', label: t('歷史', 'All-Time') }].map(tab => (
+                            <button
+                              key={tab.id}
+                              onClick={() => setLeaderboardTab(tab.id)}
+                              style={{ flex: 1, padding: '0.4rem 0', background: leaderboardTab === tab.id ? 'rgba(59, 130, 246, 0.2)' : 'transparent', border: 'none', borderBottom: leaderboardTab === tab.id ? '2px solid #3b82f6' : '2px solid transparent', color: leaderboardTab === tab.id ? '#60a5fa' : '#94a3b8', fontWeight: leaderboardTab === tab.id ? 'bold' : 'normal', cursor: 'pointer', fontSize: '0.85rem', transition: 'all 0.2s' }}
+                            >
+                              {tab.label}
+                            </button>
+                          ))}
+                        </div>
+                        <div style={{ maxHeight: '130px', overflowY: 'auto', paddingRight: '0.2rem' }}>
+                          {isSubmittingScore ? (
+                            <div style={{ color: '#94a3b8', textAlign: 'center', padding: '1rem 0' }}>{t("上傳分數中...", "Submitting...")}</div>
+                          ) : leaderboard && Array.isArray(leaderboard[leaderboardTab]) && leaderboard[leaderboardTab].length > 0 ? (
+                            leaderboard[leaderboardTab].map((entry, i) => (
+                              <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '0.35rem 0', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                                <span style={{ color: i === 0 ? '#fbbf24' : i === 1 ? '#e2e8f0' : i === 2 ? '#b45309' : '#94a3b8', fontWeight: i < 3 ? 'bold' : 'normal', display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                                  <span style={{ width: '16px', textAlign: 'right' }}>{i + 1}.</span>
+                                  <span style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                                    <span>{entry.name}</span>
+                                    <span style={{ fontSize: '0.65rem', padding: '0.1rem 0.3rem', background: entry.mode === 'square' ? 'rgba(139, 92, 246, 0.4)' : 'rgba(59, 130, 246, 0.4)', borderRadius: '4px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{entry.mode || 'rain'}</span>
+                                  </span>
+                                </span>
+                                <span style={{ color: '#cbd5e1', fontWeight: 'bold' }}>{entry.score}</span>
+                              </div>
+                            ))
+                          ) : (
+                            <div style={{ color: '#94a3b8', textAlign: 'center', padding: '1rem 0' }}>{t("尚無排行紀錄，您是第一位！", "No records yet. Be the first!")}</div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
 
-                <button
-                  onClick={() => {
-                    const name = "Google P" + Math.floor(Math.random() * 999);
-                    setPlayerName(name);
-                    localStorage.setItem('verserain_player_name', name);
-                    setShowLoginModal(null);
-                  }}
-                  style={{ background: '#ffffff', border: '1px solid #cbd5e1', padding: '0.8rem', borderRadius: '6px', fontSize: '1rem', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', transition: 'background 0.2s', color: '#475569' }}
-                  onMouseOver={(e) => e.target.style.background = '#f8fafc'}
-                  onMouseOut={(e) => e.target.style.background = '#ffffff'}
-                >
-                  <svg viewBox="0 0 48 48" width="20" height="20">
-                    <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.7 17.74 9.5 24 9.5z" />
-                    <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z" />
-                    <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z" />
-                    <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z" />
-                  </svg>
-                  {t("使用 Google 繼續", "Continue with Google")}
-                </button>
-
-                <div style={{ display: 'flex', alignItems: 'center', margin: '0.5rem 0' }}>
-                  <div style={{ flex: 1, height: '1px', backgroundColor: '#e2e8f0' }}></div>
-                  <span style={{ padding: '0 1rem', color: '#94a3b8', fontSize: '0.9rem', fontWeight: 'bold' }}>{t("或", "OR")}</span>
-                  <div style={{ flex: 1, height: '1px', backgroundColor: '#e2e8f0' }}></div>
-                </div>
-
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                  <input
-                    id="modalEmailInput"
-                    type="email"
-                    placeholder={t("電子郵件 Email", "Email Address")}
-                    style={{ padding: '0.8rem', borderRadius: '6px', border: '1px solid #cbd5e1', background: '#f8fafc', color: '#1e293b', fontSize: '0.95rem', outline: 'none' }}
-                    onFocus={(e) => e.target.style.borderColor = '#3b82f6'}
-                    onBlur={(e) => e.target.style.borderColor = '#cbd5e1'}
-                  />
-
-                  <input
-                    id="modalPasswordInput"
-                    type="password"
-                    placeholder={t("密碼 Password", "Password")}
-                    style={{ padding: '0.8rem', borderRadius: '6px', border: '1px solid #cbd5e1', background: '#f8fafc', color: '#1e293b', fontSize: '0.95rem', outline: 'none' }}
-                    onFocus={(e) => e.target.style.borderColor = '#3b82f6'}
-                    onBlur={(e) => e.target.style.borderColor = '#cbd5e1'}
-                  />
-
-                  {showLoginModal === 'signup' && (
-                    <input
-                      id="modalPlayerNameInput"
-                      type="text"
-                      maxLength={20}
-                      defaultValue={playerName}
-                      placeholder={t("顯示暱稱 (Display Name)", "Display Name")}
-                      style={{ padding: '0.8rem', borderRadius: '6px', border: '1px solid #cbd5e1', background: '#f8fafc', color: '#1e293b', fontSize: '0.95rem', outline: 'none' }}
-                      onFocus={(e) => e.target.style.borderColor = '#3b82f6'}
-                      onBlur={(e) => e.target.style.borderColor = '#cbd5e1'}
-                    />
-                  )}
-                </div>
-
-                <button
-                  onClick={() => {
-                    const emailInput = document.getElementById('modalEmailInput');
-                    const email = emailInput ? emailInput.value.trim() : '';
-
-                    // Retrieve mock DB
-                    let mockDB = {};
-                    try {
-                      mockDB = JSON.parse(localStorage.getItem('verserain_mock_user_db')) || {};
-                    } catch (e) { }
-
-                    let nameToSet = playerName || "";
-
-                    if (showLoginModal === 'signup') {
-                      const nameInput = document.getElementById('modalPlayerNameInput');
-                      if (nameInput && nameInput.value.trim().length > 0) {
-                        nameToSet = nameInput.value.trim();
-                      } else if (email) {
-                        nameToSet = email.split('@')[0];
-                      }
-                      // Save to mock DB
-                      if (email && nameToSet) {
-                        mockDB[email] = nameToSet;
-                        localStorage.setItem('verserain_mock_user_db', JSON.stringify(mockDB));
-                      }
-                    } else {
-                      if (email && mockDB[email]) {
-                        // Found registered display name for this email!
-                        nameToSet = mockDB[email];
-                      } else if (email) {
-                        nameToSet = email.split('@')[0];
-                      }
-                    }
-
-                    if (!nameToSet) nameToSet = "Player" + Math.floor(Math.random() * 9999);
-
-                    setPlayerName(nameToSet);
-                    localStorage.setItem('verserain_player_name', nameToSet);
-                    setShowLoginModal(null);
-                  }}
-                  style={{ background: '#3b82f6', color: 'white', border: 'none', padding: '0.8rem', borderRadius: '6px', fontSize: '1rem', fontWeight: 'bold', cursor: 'pointer', transition: 'background 0.2s', marginTop: '0.5rem' }}
-                  onMouseOver={(e) => e.target.style.background = '#2563eb'}
-                  onMouseOut={(e) => e.target.style.background = '#3b82f6'}
-                >
-                  {showLoginModal === 'signup' ? t("建立新帳號", "Create Account") : t("登入", "Log In")}
-                </button>
-
-                <div style={{ textAlign: 'center', fontSize: '0.9rem', color: '#64748b', marginTop: '0.5rem' }}>
-                  {showLoginModal === 'signup' ? (
-                    <>
-                      {t("已經有帳號？", "Already have an account? ")}
-                      <span onClick={() => setShowLoginModal('login')} style={{ color: '#3b82f6', cursor: 'pointer', fontWeight: 'bold' }}>{t("在此登入", "Log in here")}</span>
-                    </>
-                  ) : (
-                    <>
-                      {t("還沒有帳號？", "Don't have an account? ")}
-                      <span onClick={() => setShowLoginModal('signup')} style={{ color: '#3b82f6', cursor: 'pointer', fontWeight: 'bold' }}>{t("立即註冊", "Sign up")}</span>
-                    </>
-                  )}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Verse View Modal */}
-          {verseViewModal && (
-            <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.6)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000, padding: '1rem' }} onClick={(e) => { if (e.target === e.currentTarget) { setVerseViewModal(null); if ('speechSynthesis' in window) window.speechSynthesis.cancel(); } }}>
-              <div style={{ background: '#ffffff', borderRadius: '12px', padding: '2rem', width: '100%', maxWidth: '600px', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)', display: 'flex', flexDirection: 'column', gap: '1.5rem', border: '1px solid #e2e8f0', maxHeight: '85vh' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #e2e8f0', paddingBottom: '1rem' }}>
-                  <h2 style={{ margin: 0, color: '#1e293b', fontSize: '1.6rem', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <span style={{ color: '#3b82f6' }}>{verseViewModal.reference}</span>
+                {campaignQueue !== null ? (
+                  campaignQueue.length > 0 ? (
                     <button
                       onClick={() => {
-                        speakText(verseViewModal.text);
+                        setActiveVerse(campaignQueue[0]);
+                        setCampaignQueue(campaignQueue.slice(1));
+                        setTimeout(startGame, 50);
                       }}
-                      title={t("朗讀經文", "Read aloud")}
-                      style={{ background: '#ecfdf5', color: '#10b981', border: '1px solid #a7f3d0', borderRadius: '50%', width: '38px', height: '38px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'all 0.2s', padding: 0 }}
-                      onMouseOver={(e) => { e.currentTarget.style.background = '#d1fae5'; e.currentTarget.style.transform = 'scale(1.05)'; }}
-                      onMouseOut={(e) => { e.currentTarget.style.background = '#ecfdf5'; e.currentTarget.style.transform = 'scale(1)'; }}
+                      className="play-btn"
+                      style={{
+                        width: '100%', maxWidth: '300px', background: '#3b82f6', color: 'white', border: 'none', padding: 'clamp(0.8rem, 2vh, 1rem)',
+                        fontSize: 'clamp(1.1rem, 2.5vh, 1.2rem)', fontWeight: 'bold', borderRadius: '12px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', boxShadow: '0 0 15px rgba(59, 130, 246, 0.5)', transition: 'all 0.2s', margin: '0 auto'
+                      }}
                     >
-                      <Headphones size={20} />
+                      {t("下一回合", "Next Round")}
                     </button>
-                  </h2>
+                  ) : (
+                    <button
+                      onClick={() => setGameState('campaign-results')}
+                      className="play-btn"
+                      style={{
+                        width: '100%', maxWidth: '300px', background: '#8b5cf6', color: 'white', border: 'none', padding: 'clamp(0.8rem, 2vh, 1rem)',
+                        fontSize: 'clamp(1.1rem, 2.5vh, 1.2rem)', fontWeight: 'bold', borderRadius: '12px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', boxShadow: '0 0 15px rgba(139, 92, 246, 0.5)', transition: 'all 0.2s', margin: '0 auto'
+                      }}
+                    >
+                      {t("查看最終成績", "View Final Results")}
+                    </button>
+                  )
+                ) : (
                   <button
-                    onClick={() => {
-                      if ('speechSynthesis' in window) window.speechSynthesis.cancel();
-                      setVerseViewModal(null);
+                    onClick={() => setGameState('menu')}
+                    className="play-btn"
+                    style={{
+                      width: '100%', maxWidth: '300px', background: '#3b82f6', color: 'white', border: 'none', padding: 'clamp(0.8rem, 2vh, 1rem)',
+                      fontSize: 'clamp(1.1rem, 2.5vh, 1.2rem)', fontWeight: 'bold', borderRadius: '12px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', boxShadow: '0 0 15px rgba(59, 130, 246, 0.5)', transition: 'all 0.2s', margin: '0 auto'
                     }}
-                    style={{ background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0 }}
                   >
-                    <XCircle size={26} />
+                    <Home size={20} /> {t("回到主頁", "Home")}
                   </button>
-                </div>
-
-                <div style={{ color: '#475569', fontSize: '1.2rem', lineHeight: '1.8', overflowY: 'auto', paddingRight: '1rem', fontWeight: '500', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
-                  {verseViewModal.text}
-                </div>
-
-                <div style={{ display: 'flex', justifyContent: 'flex-end', paddingTop: '1rem', borderTop: '1px solid #e2e8f0', gap: '1rem' }}>
-                  <button
-                    onClick={() => {
-                      setVerseViewModal(null);
-                      if ('speechSynthesis' in window) window.speechSynthesis.cancel();
-                    }}
-                    style={{ background: '#f1f5f9', color: '#64748b', border: '1px solid #cbd5e1', padding: '0.6rem 1.5rem', borderRadius: '6px', fontSize: '1rem', fontWeight: 'bold', cursor: 'pointer', transition: 'background 0.2s' }}
-                  >
-                    {t("關閉", "Close")}
-                  </button>
-                  <button
-                    onClick={() => {
-                      setVerseViewModal(null);
-                      if ('speechSynthesis' in window) window.speechSynthesis.cancel();
-                      initAudio();
-                      setCampaignQueue(null);
-                      setCampaignResults([]);
-                      setActiveVerse(verseViewModal);
-                      setTimeout(() => startGame(false), 50);
-                    }}
-                    style={{ background: '#3b82f6', color: 'white', border: 'none', padding: '0.6rem 1.5rem', borderRadius: '6px', fontSize: '1rem', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', transition: 'background 0.2s' }}
-                    onMouseOver={(e) => e.target.style.background = '#2563eb'}
-                    onMouseOut={(e) => e.target.style.background = '#3b82f6'}
-                  >
-                    <Play size={16} fill="white" /> {t("立刻挑戰", "Play Now")}
-                  </button>
-                </div>
+                )}
               </div>
             </div>
           )}
+        </div>
+      )}
 
-        </>
-      );
+      {gameState === 'campaign-results' && (
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100dvh', width: '100vw', overflowY: 'auto', WebkitOverflowScrolling: 'touch', padding: 'calc(env(safe-area-inset-top) + 2rem) 1rem 4rem' }}>
+          <div className="hud-glass" style={{ padding: 'clamp(1.5rem, 4vw, 3rem)', textAlign: 'center', width: '90%', maxWidth: '800px', display: 'flex', flexDirection: 'column', animation: 'flashSuccess 1s ease-out' }}>
+            <Trophy size={48} color="#fbbf24" style={{ margin: '0 auto 1rem' }} />
+            <h2 style={{ fontSize: 'clamp(2rem, 4vh, 2.5rem)', color: '#fff', marginBottom: '1.5rem' }}>{t("所有關卡完成！", "All Rounds Conquered!")}</h2>
+
+            <div style={{ background: 'rgba(0,0,0,0.3)', borderRadius: '16px', padding: '1.5rem', overflowY: 'auto', maxHeight: '50vh', marginBottom: '2rem' }}>
+              {campaignResults.map((result, i) => (
+                <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem', borderBottom: i < campaignResults.length - 1 ? '1px solid rgba(255,255,255,0.1)' : 'none' }}>
+                  <div style={{ textAlign: 'left' }}>
+                    <div style={{ color: '#93c5fd', fontWeight: 'bold', fontSize: '1.1rem' }}>{result.verse.reference}</div>
+                    <div style={{ color: result.score > 0 ? '#34d399' : '#f87171', fontSize: '0.9rem' }}>{result.score > 0 ? (result.flawless ? t('完美', 'Perfect') : t('過關', 'Cleared')) : t('失敗', 'Failed')}</div>
+                  </div>
+                  <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: result.score > 0 ? '#fbbf24' : '#64748b' }}>{result.score}</div>
+                </div>
+              ))}
+            </div>
+
+            <div style={{ fontSize: '1.5rem', color: '#cbd5e1', marginBottom: '2rem' }}>
+              {t("總計得分", "Total Score")}: <strong style={{ color: '#fbbf24', fontSize: '3rem', display: 'block', marginTop: '0.5rem' }}>{campaignResults.reduce((sum, r) => sum + r.score, 0)}</strong>
+            </div>
+
+            <button
+              onClick={() => setGameState('menu')}
+              className="play-btn"
+              style={{
+                background: '#3b82f6', color: 'white', border: 'none', padding: '1rem',
+                fontSize: '1.2rem', fontWeight: 'bold', borderRadius: '12px', cursor: 'pointer', margin: '0 auto', maxWidth: '300px', width: '100%'
+              }}
+            >{t("回到主頁", "Back to Home")}</button>
+          </div>
+        </div>
+      )}
+      {leaderboardModalVerse && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.85)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem', backdropFilter: 'blur(5px)' }} onClick={() => setLeaderboardModalVerse(null)}>
+          <div className="hud-glass" style={{ width: '100%', maxWidth: '500px', maxHeight: '90vh', display: 'flex', flexDirection: 'column', background: 'rgba(15, 23, 42, 0.95)', border: '1px solid rgba(59, 130, 246, 0.3)' }} onClick={e => e.stopPropagation()}>
+            <div style={{ padding: '1.5rem', borderBottom: '1px solid rgba(255,255,255,0.1)', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+              <div>
+                <h2 style={{ fontSize: '1.5rem', color: '#93c5fd', marginBottom: '0.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Trophy size={20} /> {t("英雄榜", "Leaderboard")}</h2>
+                <div style={{ color: '#cbd5e1' }}>{leaderboardModalVerse.reference}</div>
+              </div>
+              <button onClick={() => setLeaderboardModalVerse(null)} style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer', padding: '0.25rem' }}><XCircle size={24} /></button>
+            </div>
+
+            <div style={{ display: 'flex', borderBottom: '1px solid rgba(255,255,255,0.1)', background: 'rgba(0,0,0,0.2)' }}>
+              {[{ id: 'daily', label: t('今天', 'Today') }, { id: 'monthly', label: t('30天 (本月)', '30 days (Month)') }, { id: 'alltime', label: t('歷史', 'All-Time') }].map(tab => (
+                <button
+                  key={tab.id}
+                  onClick={() => setLeaderboardModalTab(tab.id)}
+                  style={{ flex: 1, padding: '1rem 0', background: leaderboardModalTab === tab.id ? 'rgba(59, 130, 246, 0.2)' : 'transparent', border: 'none', borderBottom: leaderboardModalTab === tab.id ? '2px solid #3b82f6' : '2px solid transparent', color: leaderboardModalTab === tab.id ? '#60a5fa' : '#94a3b8', fontWeight: leaderboardModalTab === tab.id ? 'bold' : 'normal', cursor: 'pointer', transition: 'all 0.2s', fontSize: '1rem' }}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+
+            <div style={{ padding: '1.5rem', overflowY: 'auto', flex: 1, minHeight: '300px' }}>
+              {isFetchingLeaderboard ? (
+                <div style={{ color: '#94a3b8', textAlign: 'center', margin: '2rem 0' }}>{t("載入排行榜中...", "Loading Leaderboard...")}</div>
+              ) : leaderboardModalData && Array.isArray(leaderboardModalData[leaderboardModalTab]) && leaderboardModalData[leaderboardModalTab].length > 0 ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                  {leaderboardModalData[leaderboardModalTab].map((entry, i) => (
+                    <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '0.75rem', background: 'rgba(255,255,255,0.03)', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                        <span style={{ fontSize: '1.2rem', fontWeight: 'bold', width: '24px', textAlign: 'center', color: i === 0 ? '#fbbf24' : i === 1 ? '#e2e8f0' : i === 2 ? '#b45309' : '#94a3b8' }}>{i + 1}</span>
+                        <span style={{ color: '#fff', fontSize: '1.1rem', fontWeight: i < 3 ? 'bold' : 'normal', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                          <span>{entry.name}</span>
+                          <span style={{ fontSize: '0.7rem', padding: '0.1rem 0.4rem', background: entry.mode === 'square' ? 'rgba(139, 92, 246, 0.4)' : 'rgba(59, 130, 246, 0.4)', borderRadius: '4px', textTransform: 'uppercase', letterSpacing: '0.5px', color: '#93c5fd' }}>{entry.mode || 'rain'}</span>
+                        </span>
+                      </div>
+                      <span style={{ color: '#3b82f6', fontWeight: 'bold', fontSize: '1.1rem' }}>{entry.score}</span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div style={{ color: '#94a3b8', textAlign: 'center', margin: '2rem 0' }}>{t("尚無排行紀錄，趕緊成為第一位吧！", "No records yet. Be the first!")}</div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Login Account Modal */}
+      {showLoginModal && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.6)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000, padding: '1rem' }}>
+          <div style={{ background: '#ffffff', borderRadius: '12px', padding: '2rem', width: '100%', maxWidth: '400px', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)', display: 'flex', flexDirection: 'column', gap: '1.5rem', border: '1px solid #e2e8f0' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <h2 style={{ margin: 0, color: '#1e293b', fontSize: '1.5rem', fontWeight: 'bold' }}>
+                {showLoginModal === 'signup' ? t("註冊新帳號", "Sign Up") : t("登入帳號", "Log In")}
+              </h2>
+              <button
+                onClick={() => setShowLoginModal(null)}
+                style={{ background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+              >
+                <XCircle size={24} />
+              </button>
+            </div>
+
+            <button
+              onClick={() => {
+                const name = "Google P" + Math.floor(Math.random() * 999);
+                setPlayerName(name);
+                localStorage.setItem('verserain_player_name', name);
+                setShowLoginModal(null);
+              }}
+              style={{ background: '#ffffff', border: '1px solid #cbd5e1', padding: '0.8rem', borderRadius: '6px', fontSize: '1rem', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', transition: 'background 0.2s', color: '#475569' }}
+              onMouseOver={(e) => e.target.style.background = '#f8fafc'}
+              onMouseOut={(e) => e.target.style.background = '#ffffff'}
+            >
+              <svg viewBox="0 0 48 48" width="20" height="20">
+                <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.7 17.74 9.5 24 9.5z" />
+                <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z" />
+                <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z" />
+                <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z" />
+              </svg>
+              {t("使用 Google 繼續", "Continue with Google")}
+            </button>
+
+            <div style={{ display: 'flex', alignItems: 'center', margin: '0.5rem 0' }}>
+              <div style={{ flex: 1, height: '1px', backgroundColor: '#e2e8f0' }}></div>
+              <span style={{ padding: '0 1rem', color: '#94a3b8', fontSize: '0.9rem', fontWeight: 'bold' }}>{t("或", "OR")}</span>
+              <div style={{ flex: 1, height: '1px', backgroundColor: '#e2e8f0' }}></div>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              <input
+                id="modalEmailInput"
+                type="email"
+                placeholder={t("電子郵件 Email", "Email Address")}
+                style={{ padding: '0.8rem', borderRadius: '6px', border: '1px solid #cbd5e1', background: '#f8fafc', color: '#1e293b', fontSize: '0.95rem', outline: 'none' }}
+                onFocus={(e) => e.target.style.borderColor = '#3b82f6'}
+                onBlur={(e) => e.target.style.borderColor = '#cbd5e1'}
+              />
+
+              <input
+                id="modalPasswordInput"
+                type="password"
+                placeholder={t("密碼 Password", "Password")}
+                style={{ padding: '0.8rem', borderRadius: '6px', border: '1px solid #cbd5e1', background: '#f8fafc', color: '#1e293b', fontSize: '0.95rem', outline: 'none' }}
+                onFocus={(e) => e.target.style.borderColor = '#3b82f6'}
+                onBlur={(e) => e.target.style.borderColor = '#cbd5e1'}
+              />
+
+              {showLoginModal === 'signup' && (
+                <input
+                  id="modalPlayerNameInput"
+                  type="text"
+                  maxLength={20}
+                  defaultValue={playerName}
+                  placeholder={t("顯示暱稱 (Display Name)", "Display Name")}
+                  style={{ padding: '0.8rem', borderRadius: '6px', border: '1px solid #cbd5e1', background: '#f8fafc', color: '#1e293b', fontSize: '0.95rem', outline: 'none' }}
+                  onFocus={(e) => e.target.style.borderColor = '#3b82f6'}
+                  onBlur={(e) => e.target.style.borderColor = '#cbd5e1'}
+                />
+              )}
+            </div>
+
+            <button
+              onClick={() => {
+                const emailInput = document.getElementById('modalEmailInput');
+                const email = emailInput ? emailInput.value.trim() : '';
+
+                // Retrieve mock DB
+                let mockDB = {};
+                try {
+                  mockDB = JSON.parse(localStorage.getItem('verserain_mock_user_db')) || {};
+                } catch (e) { }
+
+                let nameToSet = playerName || "";
+
+                if (showLoginModal === 'signup') {
+                  const nameInput = document.getElementById('modalPlayerNameInput');
+                  if (nameInput && nameInput.value.trim().length > 0) {
+                    nameToSet = nameInput.value.trim();
+                  } else if (email) {
+                    nameToSet = email.split('@')[0];
+                  }
+                  // Save to mock DB
+                  if (email && nameToSet) {
+                    mockDB[email] = nameToSet;
+                    localStorage.setItem('verserain_mock_user_db', JSON.stringify(mockDB));
+                  }
+                } else {
+                  if (email && mockDB[email]) {
+                    // Found registered display name for this email!
+                    nameToSet = mockDB[email];
+                  } else if (email) {
+                    nameToSet = email.split('@')[0];
+                  }
+                }
+
+                if (!nameToSet) nameToSet = "Player" + Math.floor(Math.random() * 9999);
+
+                setPlayerName(nameToSet);
+                localStorage.setItem('verserain_player_name', nameToSet);
+                setShowLoginModal(null);
+              }}
+              style={{ background: '#3b82f6', color: 'white', border: 'none', padding: '0.8rem', borderRadius: '6px', fontSize: '1rem', fontWeight: 'bold', cursor: 'pointer', transition: 'background 0.2s', marginTop: '0.5rem' }}
+              onMouseOver={(e) => e.target.style.background = '#2563eb'}
+              onMouseOut={(e) => e.target.style.background = '#3b82f6'}
+            >
+              {showLoginModal === 'signup' ? t("建立新帳號", "Create Account") : t("登入", "Log In")}
+            </button>
+
+            <div style={{ textAlign: 'center', fontSize: '0.9rem', color: '#64748b', marginTop: '0.5rem' }}>
+              {showLoginModal === 'signup' ? (
+                <>
+                  {t("已經有帳號？", "Already have an account? ")}
+                  <span onClick={() => setShowLoginModal('login')} style={{ color: '#3b82f6', cursor: 'pointer', fontWeight: 'bold' }}>{t("在此登入", "Log in here")}</span>
+                </>
+              ) : (
+                <>
+                  {t("還沒有帳號？", "Don't have an account? ")}
+                  <span onClick={() => setShowLoginModal('signup')} style={{ color: '#3b82f6', cursor: 'pointer', fontWeight: 'bold' }}>{t("立即註冊", "Sign up")}</span>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Verse View Modal */}
+      {verseViewModal && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.6)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000, padding: '1rem' }} onClick={(e) => { if (e.target === e.currentTarget) { setVerseViewModal(null); if ('speechSynthesis' in window) window.speechSynthesis.cancel(); } }}>
+          <div style={{ background: '#ffffff', borderRadius: '12px', padding: '2rem', width: '100%', maxWidth: '600px', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)', display: 'flex', flexDirection: 'column', gap: '1.5rem', border: '1px solid #e2e8f0', maxHeight: '85vh' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #e2e8f0', paddingBottom: '1rem' }}>
+              <h2 style={{ margin: 0, color: '#1e293b', fontSize: '1.6rem', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <span style={{ color: '#3b82f6' }}>{verseViewModal.reference}</span>
+                <button
+                  onClick={() => {
+                    speakText(verseViewModal.text);
+                  }}
+                  title={t("朗讀經文", "Read aloud")}
+                  style={{ background: '#ecfdf5', color: '#10b981', border: '1px solid #a7f3d0', borderRadius: '50%', width: '38px', height: '38px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'all 0.2s', padding: 0 }}
+                  onMouseOver={(e) => { e.currentTarget.style.background = '#d1fae5'; e.currentTarget.style.transform = 'scale(1.05)'; }}
+                  onMouseOut={(e) => { e.currentTarget.style.background = '#ecfdf5'; e.currentTarget.style.transform = 'scale(1)'; }}
+                >
+                  <Headphones size={20} />
+                </button>
+              </h2>
+              <button
+                onClick={() => {
+                  if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+                  setVerseViewModal(null);
+                }}
+                style={{ background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0 }}
+              >
+                <XCircle size={26} />
+              </button>
+            </div>
+
+            <div style={{ color: '#475569', fontSize: '1.2rem', lineHeight: '1.8', overflowY: 'auto', paddingRight: '1rem', fontWeight: '500', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
+              {verseViewModal.text}
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', paddingTop: '1rem', borderTop: '1px solid #e2e8f0', gap: '1rem' }}>
+              <button
+                onClick={() => {
+                  setVerseViewModal(null);
+                  if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+                }}
+                style={{ background: '#f1f5f9', color: '#64748b', border: '1px solid #cbd5e1', padding: '0.6rem 1.5rem', borderRadius: '6px', fontSize: '1rem', fontWeight: 'bold', cursor: 'pointer', transition: 'background 0.2s' }}
+              >
+                {t("關閉", "Close")}
+              </button>
+              <button
+                onClick={() => {
+                  setVerseViewModal(null);
+                  if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+                  initAudio();
+                  setCampaignQueue(null);
+                  setCampaignResults([]);
+                  setActiveVerse(verseViewModal);
+                  setTimeout(() => startGame(false), 50);
+                }}
+                style={{ background: '#3b82f6', color: 'white', border: 'none', padding: '0.6rem 1.5rem', borderRadius: '6px', fontSize: '1rem', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', transition: 'background 0.2s' }}
+                onMouseOver={(e) => e.target.style.background = '#2563eb'}
+                onMouseOut={(e) => e.target.style.background = '#3b82f6'}
+              >
+                <Play size={16} fill="white" /> {t("立刻挑戰", "Play Now")}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+    </>
+  );
 }
