@@ -972,231 +972,227 @@ export default function App() {
       </button>
 
       {gameState === 'menu' && (
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', height: '100dvh', width: '100vw', overflowY: 'auto', WebkitOverflowScrolling: 'touch', padding: 'calc(env(safe-area-inset-top) + 2rem) 1rem 4rem' }}>
-          <h1 style={{ fontSize: 'clamp(2.5rem, 8vw, 4rem)', marginBottom: '1.5rem', marginTop: '2rem', background: 'linear-gradient(to right, #60a5fa, #c084fc)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', textAlign: 'center' }}>
-            VerseRain
-          </h1>
-          <p style={{ fontSize: '1.1rem', color: '#cbd5e1', marginBottom: '2rem', textAlign: 'center', maxWidth: '600px' }}>
-            {t("在下方選擇一段經文。依照順序接住落下的詞句！", "Select a verse below. Catch the falling phrases in order!")}
-          </p>
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', alignItems: 'center', marginBottom: '2rem' }}>
-            <div style={{ display: 'flex', gap: '1rem' }}>
-                <button 
-                  onClick={() => handleVersionChange('cuv')} 
-                  style={{
-                    background: version === 'cuv' ? '#3b82f6' : 'transparent',
-                    color: version === 'cuv' ? 'white' : '#94a3b8',
-                    border: version === 'cuv' ? 'none' : '1px solid #475569',
-                    padding: '0.5rem 1.5rem',
-                    borderRadius: '9999px',
-                    cursor: 'pointer',
-                    fontWeight: 'bold',
-                    transition: 'all 0.2s'
-                  }}
-                >
-                  {t("和合本", "CUV")}
-                </button>
-                <button 
-                  onClick={() => handleVersionChange('kjv')} 
-                  style={{
-                    background: version === 'kjv' ? '#3b82f6' : 'transparent',
-                    color: version === 'kjv' ? 'white' : '#94a3b8',
-                    border: version === 'kjv' ? 'none' : '1px solid #475569',
-                    padding: '0.5rem 1.5rem',
-                    borderRadius: '9999px',
-                    cursor: 'pointer',
-                    fontWeight: 'bold',
-                    transition: 'all 0.2s'
-                  }}
-                >
-                  KJV
-                </button>
-            </div>
-            <div style={{ display: 'flex', gap: '1rem' }}>
-                <button 
-                  onClick={() => setPlayMode('rain')} 
-                  style={{
-                    background: playMode === 'rain' ? '#10b981' : 'transparent',
-                    color: playMode === 'rain' ? 'white' : '#94a3b8',
-                    border: playMode === 'rain' ? 'none' : '1px solid #475569',
-                    padding: '0.5rem 1.5rem',
-                    borderRadius: '9999px',
-                    cursor: 'pointer',
-                    fontWeight: 'bold',
-                    transition: 'all 0.2s'
-                  }}
-                >
-                  Verse Rain
-                </button>
-                <button 
-                  onClick={() => setPlayMode('square')} 
-                  style={{
-                    background: playMode === 'square' ? '#10b981' : 'transparent',
-                    color: playMode === 'square' ? 'white' : '#94a3b8',
-                    border: playMode === 'square' ? 'none' : '1px solid #475569',
-                    padding: '0.5rem 1.5rem',
-                    borderRadius: '9999px',
-                    cursor: 'pointer',
-                    fontWeight: 'bold',
-                    transition: 'all 0.2s'
-                  }}
-                >
-                  Verse Square
-                </button>
-            </div>
+        <div style={{ position: 'relative', width: '100vw', height: '100dvh', overflowY: 'auto', WebkitOverflowScrolling: 'touch', backgroundColor: '#f4f6f8', zIndex: 10, fontFamily: 'Arial, sans-serif' }}>
+          
+          {/* Header */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem 2rem', backgroundColor: '#ffffff', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
+             <div style={{ fontSize: '1.8rem', fontWeight: 'bold', color: '#3b82f6', fontFamily: 'cursive' }}>
+                verserain
+             </div>
+             <div style={{ display: 'flex', gap: '1rem' }}>
+                <a href="#" onClick={(e) => e.preventDefault()} style={{ color: '#0056b3', textDecoration: 'none', fontWeight: 'bold', fontSize: '0.95rem' }}>{t("登入", "Login")}</a>
+                <a href="#" onClick={(e) => e.preventDefault()} style={{ color: '#0056b3', textDecoration: 'none', fontWeight: 'bold', fontSize: '0.95rem' }}>{t("申請帳號", "Sign Up")}</a>
+             </div>
           </div>
 
-          <div style={{ display: 'flex', gap: '1rem', width: '100%', maxWidth: '600px', justifyContent: 'center', flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', marginBottom: '2rem' }}>
-            <button 
-              onClick={() => {
-                if (selectedVerseRefs.length === 0) return;
-                initAudio();
-                const queue = VERSES_DB.filter(v => selectedVerseRefs.includes(v.reference));
-                if (queue.length === 0) {
-                    if (activeVerse && activeVerse.text) {
-                       setCampaignQueue(null);
-                       setCampaignResults([]);
-                       setTimeout(() => startGame(true), 50);
-                    }
-                    return;
-                }
-                const sortedQueue = [...queue];
-                setCampaignQueue(sortedQueue.slice(1));
-                setCampaignResults([]);
-                setActiveVerse(sortedQueue[0]);
-                setTimeout(() => startGame(true), 50);
-              }}
-              className="play-btn"
-              style={{
-                background: selectedVerseRefs.length === 0 ? '#94a3b8' : '#10b981', color: 'white', border: 'none', padding: '1rem 2rem', flex: '1 1 200px',
-                fontSize: '1.2rem', fontWeight: 'bold', borderRadius: '9999px', cursor: selectedVerseRefs.length === 0 ? 'not-allowed' : 'pointer', display: 'inline-flex', alignItems: 'center', gap: '0.5rem', boxShadow: selectedVerseRefs.length === 0 ? 'none' : '0 0 20px rgba(16, 185, 129, 0.5)', transition: 'all 0.2s', justifyContent: 'center'
-              }}
-            >
-              <Headphones fill="white" size={20} /> {t("自動播放", "Auto Play")}
-            </button>
-            <button 
-              onClick={() => {
-                if (selectedVerseRefs.length === 0) return;
-                initAudio();
-                const queue = VERSES_DB.filter(v => selectedVerseRefs.includes(v.reference));
-                if (queue.length === 0) {
-                    if (activeVerse && activeVerse.text) {
-                       setCampaignQueue(null);
-                       setCampaignResults([]);
-                       setTimeout(() => startGame(false), 50);
-                    }
-                    return;
-                }
-                
-                if (queue.length === 1) {
-                  setActiveVerse(queue[0]);
-                  setCampaignQueue(null);
-                  setCampaignResults([]);
-                  setTimeout(() => startGame(false), 50);
-                } else {
-                  const shuffled = [...queue].sort(() => Math.random() - 0.5);
-                  setCampaignQueue(shuffled.slice(1));
-                  setCampaignResults([]);
-                  setActiveVerse(shuffled[0]);
-                  setTimeout(() => startGame(false), 50);
-                }
-              }}
-              className="play-btn"
-              style={{
-                background: selectedVerseRefs.length === 0 ? '#94a3b8' : '#3b82f6', color: 'white', border: 'none', padding: '1rem 2rem', flex: '1 1 200px',
-                fontSize: '1.2rem', fontWeight: 'bold', borderRadius: '9999px', cursor: selectedVerseRefs.length === 0 ? 'not-allowed' : 'pointer', display: 'inline-flex', alignItems: 'center', gap: '0.5rem', boxShadow: selectedVerseRefs.length === 0 ? 'none' : '0 0 20px rgba(59, 130, 246, 0.5)', transition: 'all 0.2s', justifyContent: 'center'
-              }}
-            >
-              <Play fill="white" size={20} /> {t("開始遊戲", "Play")}
-            </button>
-            <button 
-              onClick={() => {
-                  initAudio();
-                  const shuffled = [...VERSES_DB].sort(() => Math.random() - 0.5);
-                  setCampaignQueue(shuffled.slice(1));
-                  setCampaignResults([]);
-                  setActiveVerse(shuffled[0]);
-                  setTimeout(() => startGame(false), 50);
-              }}
-              className="play-btn"
-              style={{
-                background: '#8b5cf6', color: 'white', border: 'none', padding: '1rem 2rem', flex: '1 1 200px',
-                fontSize: '1.2rem', fontWeight: 'bold', borderRadius: '9999px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '0.5rem', boxShadow: '0 0 20px rgba(139, 92, 246, 0.5)', transition: 'all 0.2s', justifyContent: 'center'
-              }}
-            >
-              <Star fill="white" size={20} /> {t("全部連播", "Play All")}
-            </button>
+          {/* Navigation Bar */}
+          <div style={{ display: 'flex', backgroundColor: '#334155', color: 'white', padding: '0 1rem', overflowX: 'auto', borderBottom: '2px solid #1e293b' }}>
+             {[
+               { id: 'versesets', label: t('經文組 Verse Sets', 'Verse Sets') },
+               { id: 'leaderboard', label: t('排行榜 Leaderboard', 'Leaderboard') },
+               { id: 'play', label: t('遊玩 Play', 'Play') },
+               { id: 'search', label: t('搜尋 Search', 'Search') },
+               { id: 'about', label: t('有關 About', 'About') },
+               { id: 'donate', label: t('奉獻支持 Donate', 'Donate') }
+             ].map((item, idx) => (
+                <div key={idx} style={{ padding: '0.8rem 1.5rem', cursor: 'pointer', backgroundColor: idx === 0 ? '#3b82f6' : 'transparent', fontWeight: 'bold', whiteSpace: 'nowrap', transition: 'background 0.2s', fontSize: '0.95rem' }} onMouseOver={(e) => { if(idx !== 0) e.target.style.backgroundColor = '#475569'; }} onMouseOut={(e) => { if (idx !== 0) e.target.style.backgroundColor = 'transparent'; }}>
+                   {item.label}
+                </div>
+             ))}
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1rem', width: '100%', maxWidth: '900px', marginBottom: '2rem' }}>
-            {VERSES_DB.map((v, i) => {
-               const vBest = parseInt(localStorage.getItem(`verseRainBestScore_${v.reference}`)) || 0;
-               const isSelected = selectedVerseRefs.includes(v.reference);
-               return (
-                  <div 
-                     key={i} 
-                     className="hud-glass verse-card" 
-                     onClick={() => toggleSelection(v.reference)}
-                     style={{ cursor: 'pointer', padding: '1.5rem', transition: 'all 0.2s', border: isSelected ? '2px solid #3b82f6' : '1px solid rgba(255,255,255,0.1)', transform: isSelected ? 'scale(1.02)' : 'scale(1)', textAlign: 'left', display: 'flex', flexDirection: 'column', position: 'relative' }}
-                  >
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                          <h3 style={{ color: '#93c5fd', marginBottom: '0.2rem', fontSize: '1.2rem', paddingRight: '10px' }}>{v.reference}</h3>
-                          <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
-                               <select 
-                                  onClick={(e) => e.stopPropagation()}
-                                  onChange={(e) => setDistractionLevel(Number(e.target.value))}
-                                  value={distractionLevel}
-                                  style={{ background: 'rgba(0,0,0,0.5)', color: '#94a3b8', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '6px', padding: '0.3rem 0.5rem', fontSize: '0.85rem', cursor: 'pointer', zIndex: 2, outline: 'none' }}
-                               >
-                                  <option value={0}>{t("難度 0", "Diff 0")}</option>
-                                  <option value={1}>{t("難度 1", "Diff 1")}</option>
-                                  <option value={2}>{t("難度 2", "Diff 2")}</option>
-                                  <option value={3}>{t("難度 3", "Diff 3")}</option>
-                               </select>
-                             <button
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    initAudio();
-                                    setCampaignQueue(null);
-                                    setCampaignResults([]);
-                                    setActiveVerse(v);
-                                    setTimeout(() => startGame(false), 50);
-                                }}
-                                style={{ background: '#3b82f6', color: 'white', border: 'none', padding: '0.4rem 0.8rem', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.3rem', transition: 'background 0.2s', zIndex: 2 }}
-                                onMouseOver={(e) => e.target.style.background = '#2563eb'}
-                                onMouseOut={(e) => e.target.style.background = '#3b82f6'}
-                             >
-                                <Play size={12} fill="white" /> {t("挑戰", "Play")}
-                             </button>
-                          </div>
-                      </div>
-                      <div style={{ color: '#fbbf24', fontSize: '0.9rem', marginBottom: '1rem', fontWeight: 'bold' }}>{v.title}</div>
-                      <p style={{ color: '#cbd5e1', fontSize: '0.9rem', flex: 1, maxHeight: '100px', overflowY: 'auto', paddingRight: '0.5rem', lineHeight: '1.5' }}>{v.text}</p>
-                      <button 
-                          style={{
-                              marginTop: '1rem', background: 'transparent', border: '1px solid rgba(251, 191, 36, 0.4)', color: '#fbbf24', fontSize: '0.85rem', fontWeight: 'bold', padding: '0.5rem 0.8rem', borderRadius: '6px', display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', transition: 'all 0.2s', width: 'fit-content'
-                          }}
-                          onMouseOver={(e) => { e.currentTarget.style.background = 'rgba(251, 191, 36, 0.1)'; e.currentTarget.style.borderColor = '#fbbf24'; }}
-                          onMouseOut={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.borderColor = 'rgba(251, 191, 36, 0.4)'; }}
-                          onClick={(e) => {
-                              e.stopPropagation();
-                              setLeaderboardModalVerse(v);
-                              setIsFetchingLeaderboard(true);
-                              fetch(`/api/get-scores?verseRef=${encodeURIComponent(v.reference)}`)
-                                .then(res => res.json())
-                                .then(data => {
-                                   setLeaderboardModalData(data && Array.isArray(data.alltime) ? data : { alltime: Array.isArray(data) ? data : [], monthly: [], daily: [] });
-                                })
-                                .catch(() => setLeaderboardModalData({ alltime: [], monthly: [], daily: [] }))
-                                .finally(() => setIsFetchingLeaderboard(false));
-                          }}
-                      >
-                         <Trophy size={14}/> {vBest > 0 ? t(`最高分: ${vBest} / 排行榜`, `Best: ${vBest} / Leaderboard`) : t(`查看排行榜`, `Leaderboard`)}
-                      </button>
-                  </div>
-               )
-            })}
+          {/* Main Content Area */}
+          <div style={{ maxWidth: '1000px', margin: '2rem auto', padding: '0 1rem' }}>
+             
+             {/* Action Bar (Filters & Controls) */}
+             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#ffffff', padding: '1rem', borderTopLeftRadius: '8px', borderTopRightRadius: '8px', borderBottom: '1px solid #e2e8f0', flexWrap: 'wrap', gap: '1rem', border: '1px solid #cbd5e1' }}>
+                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                   <button style={{ backgroundColor: '#e2e8f0', border: '1px solid #cbd5e1', padding: '0.4rem 1rem', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', color: '#334155', fontSize: '0.9rem' }}>{t("最流行", "Popular")}</button>
+                   <button style={{ backgroundColor: 'transparent', border: 'none', padding: '0.4rem 1rem', cursor: 'pointer', color: '#64748b', fontSize: '0.9rem' }}>{t("最近", "Recent")}</button>
+                   <button style={{ backgroundColor: 'transparent', border: 'none', padding: '0.4rem 1rem', cursor: 'pointer', color: '#64748b', fontSize: '0.9rem' }}>{t("最高", "Top")}</button>
+                </div>
+
+                <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', flexWrap: 'wrap' }}>
+                    <select value={version} onChange={(e) => handleVersionChange(e.target.value)} style={{ padding: '0.4rem', borderRadius: '4px', border: '1px solid #cbd5e1', backgroundColor: '#f8fafc', color: '#334155', fontWeight: 'bold', fontSize: '0.9rem' }}>
+                       <option value="cuv">繁體中文 (CUV)</option>
+                       <option value="kjv">English (KJV)</option>
+                    </select>
+                    <select value={playMode} onChange={(e) => setPlayMode(e.target.value)} style={{ padding: '0.4rem', borderRadius: '4px', border: '1px solid #cbd5e1', backgroundColor: '#f8fafc', color: '#334155', fontWeight: 'bold', fontSize: '0.9rem' }}>
+                       <option value="rain">Mode: Verse Rain</option>
+                       <option value="square">Mode: Verse Square</option>
+                    </select>
+                    
+                    <button style={{ backgroundColor: '#3b82f6', color: 'white', border: 'none', padding: '0.4rem 1rem', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.85rem' }}>
+                       {t("自建經文組", "Create Verse Set")}
+                    </button>
+                    
+                    <button 
+                       onClick={() => {
+                          initAudio();
+                          const shuffled = [...VERSES_DB].sort(() => Math.random() - 0.5);
+                          setCampaignQueue(shuffled.slice(1));
+                          setCampaignResults([]);
+                          setActiveVerse(shuffled[0]);
+                          setTimeout(() => startGame(false), 50);
+                       }}
+                       style={{ background: '#8b5cf6', color: 'white', border: 'none', padding: '0.4rem 1rem', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.85rem' }}
+                    >
+                       <Star size={14} style={{ display: 'inline', verticalAlign: 'middle', marginRight: '4px' }}/>{t("全部隨機", "Random All")}
+                    </button>
+                </div>
+             </div>
+
+             {/* The Verse Sets Table */}
+             <div style={{ backgroundColor: '#ffffff', overflowX: 'auto', borderBottomLeftRadius: '8px', borderBottomRightRadius: '8px', border: '1px solid #cbd5e1', borderTop: 'none', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+                   <thead>
+                      <tr style={{ backgroundColor: '#f8fafc', color: '#475569', fontSize: '0.9rem' }}>
+                         <th style={{ padding: '1rem', borderBottom: '2px solid #e2e8f0', width: '50px' }}></th>
+                         <th style={{ padding: '1rem', borderBottom: '2px solid #e2e8f0' }}>{t("經文組", "Verse Set")}</th>
+                         <th style={{ padding: '1rem', borderBottom: '2px solid #e2e8f0', minWidth: '150px' }}>{t("經文簡介", "Reference")}</th>
+                         <th style={{ padding: '1rem', borderBottom: '2px solid #e2e8f0' }}>{t("作者", "Author")}</th>
+                         <th style={{ padding: '1rem', borderBottom: '2px solid #e2e8f0', textAlign: 'right' }}>{t("設定", "Settings")}</th>
+                      </tr>
+                   </thead>
+                   <tbody>
+                      {VERSES_DB.map((v, i) => {
+                         const vBest = parseInt(localStorage.getItem(`verseRainBestScore_${v.reference}`)) || 0;
+                         const isSelected = selectedVerseRefs.includes(v.reference);
+                         
+                         return (
+                            <tr key={i} style={{ borderBottom: '1px solid #e2e8f0', backgroundColor: isSelected ? '#eff6ff' : (i % 2 === 0 ? '#ffffff' : '#f8fafc'), transition: 'background 0.2s', cursor: 'pointer' }} onClick={() => toggleSelection(v.reference)}>
+                               <td style={{ padding: '0.8rem 1rem', textAlign: 'center' }}>
+                                   <button 
+                                      onClick={(e) => {
+                                          e.stopPropagation();
+                                          initAudio();
+                                          setCampaignQueue(null);
+                                          setCampaignResults([]);
+                                          setActiveVerse(v);
+                                          setTimeout(() => startGame(false), 50);
+                                      }}
+                                      style={{ backgroundColor: '#5cb85c', color: 'white', border: 'none', borderRadius: '4px', padding: '0.4rem 0.8rem', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', transition: 'background 0.2s' }}
+                                      onMouseOver={(e) => e.target.style.backgroundColor = '#4cae4c'}
+                                      onMouseOut={(e) => e.target.style.backgroundColor = '#5cb85c'}
+                                   >
+                                      ►
+                                   </button>
+                               </td>
+                               <td style={{ padding: '0.8rem 1rem', fontWeight: 'bold', color: '#337ab7', fontSize: '0.95rem' }}>{v.reference}</td>
+                               <td style={{ padding: '0.8rem 1rem', color: '#64748b', fontSize: '0.9rem' }}>{v.title}</td>
+                               <td style={{ padding: '0.8rem 1rem', color: '#337ab7', fontSize: '0.9rem' }}>{t("官方", "Official")}</td>
+                               <td style={{ padding: '0.8rem 1rem', textAlign: 'right' }} onClick={(e) => e.stopPropagation()}>
+                                   <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem', alignItems: 'center' }}>
+                                      <select 
+                                         onChange={(e) => setDistractionLevel(Number(e.target.value))}
+                                         value={distractionLevel}
+                                         style={{ padding: '0.2rem', borderRadius: '4px', border: '1px solid #cbd5e1', fontSize: '0.85rem', color: '#334155', backgroundColor: '#fff' }}
+                                      >
+                                         <option value={0}>{t("難度 0", "Diff 0")}</option>
+                                         <option value={1}>{t("難度 1", "Diff 1")}</option>
+                                         <option value={2}>{t("難度 2", "Diff 2")}</option>
+                                         <option value={3}>{t("難度 3", "Diff 3")}</option>
+                                      </select>
+                                      <button 
+                                          style={{ background: 'transparent', border: '1px solid #fbbf24', color: '#d97706', padding: '0.2rem 0.5rem', borderRadius: '4px', cursor: 'pointer', fontSize: '0.8rem', whiteSpace: 'nowrap' }}
+                                          onClick={(e) => {
+                                              e.stopPropagation();
+                                              setLeaderboardModalVerse(v);
+                                              setIsFetchingLeaderboard(true);
+                                              fetch(`/api/get-scores?verseRef=${encodeURIComponent(v.reference)}`)
+                                                .then(res => res.json())
+                                                .then(data => setLeaderboardModalData(data && Array.isArray(data.alltime) ? data : { alltime: Array.isArray(data) ? data : [], monthly: [], daily: [] }))
+                                                .catch(() => setLeaderboardModalData({ alltime: [], monthly: [], daily: [] }))
+                                                .finally(() => setIsFetchingLeaderboard(false));
+                                          }}
+                                      >
+                                          <Trophy size={11} style={{ display: 'inline', verticalAlign: 'middle', marginRight: '3px' }}/> {vBest > 0 ? vBest : t('榜單', 'Rank')}
+                                      </button>
+                                   </div>
+                               </td>
+                            </tr>
+                         )
+                      })}
+                   </tbody>
+                </table>
+             </div>
+             
+             {/* Auto Play Floating Bar */}
+             {selectedVerseRefs.length > 0 && (
+                 <div style={{ marginTop: '1rem', padding: '1rem', backgroundColor: '#f0f9ff', border: '1px solid #bae6fd', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+                    <span style={{ color: '#0369a1', fontWeight: 'bold', fontSize: '0.95rem' }}>
+                       {t(`已選擇 ${selectedVerseRefs.length} 個經文組`, `Selected ${selectedVerseRefs.length} verse sets`)}
+                    </span>
+                    <div style={{ display: 'flex', gap: '0.5rem' }}>
+                       <button 
+                         onClick={() => {
+                            initAudio();
+                            const queue = VERSES_DB.filter(v => selectedVerseRefs.includes(v.reference));
+                            if (queue.length === 0) {
+                                if (activeVerse && activeVerse.text) {
+                                   setCampaignQueue(null);
+                                   setCampaignResults([]);
+                                   setTimeout(() => startGame(false), 50);
+                                }
+                                return;
+                            }
+                            
+                            if (queue.length === 1) {
+                              setActiveVerse(queue[0]);
+                              setCampaignQueue(null);
+                              setCampaignResults([]);
+                              setTimeout(() => startGame(false), 50);
+                            } else {
+                              const shuffled = [...queue].sort(() => Math.random() - 0.5);
+                              setCampaignQueue(shuffled.slice(1));
+                              setCampaignResults([]);
+                              setActiveVerse(shuffled[0]);
+                              setTimeout(() => startGame(false), 50);
+                            }
+                         }}
+                         style={{ background: '#3b82f6', color: 'white', border: 'none', padding: '0.5rem 1rem', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.9rem' }}
+                       >
+                         {t("選取範圍開始", "Play Selected Range")}
+                       </button>
+                       <button 
+                         onClick={() => {
+                            initAudio();
+                            const queue = VERSES_DB.filter(v => selectedVerseRefs.includes(v.reference));
+                            if (queue.length === 0) {
+                                if (activeVerse && activeVerse.text) {
+                                   setCampaignQueue(null);
+                                   setCampaignResults([]);
+                                   setTimeout(() => startGame(true), 50);
+                                }
+                                return;
+                            }
+                            const sortedQueue = [...queue];
+                            setCampaignQueue(sortedQueue.slice(1));
+                            setCampaignResults([]);
+                            setActiveVerse(sortedQueue[0]);
+                            setTimeout(() => startGame(true), 50);
+                         }}
+                         style={{ background: '#10b981', color: 'white', border: 'none', padding: '0.5rem 1rem', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.9rem' }}
+                       >
+                         {t("連續自動播放", "Auto Play Selected")}
+                       </button>
+                    </div>
+                 </div>
+             )}
+
+             {/* Footer Elements */}
+             <div style={{ marginTop: '2rem', display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap', color: '#64748b', fontSize: '0.85rem' }}>
+                 <button style={{ background: '#e2e8f0', border: 'none', padding: '0.4rem 0.8rem', borderRadius: '4px', cursor: 'pointer', color: '#475569' }}>{t("選擇語言 (en) ▼", "Select Language (zh) ▼")}</button>
+                 <button style={{ background: '#e2e8f0', border: 'none', padding: '0.4rem 0.8rem', borderRadius: '4px', cursor: 'pointer', color: '#475569' }}>Translate Verserain</button>
+                 <a href="#" style={{ padding: '0.5rem', color: '#64748b', textDecoration: 'none' }}>{t("幫助", "Help")}</a>
+                 <a href="#" style={{ padding: '0.5rem', color: '#64748b', textDecoration: 'none' }}>{t("隱私權", "Privacy")}</a>
+                 <a href="#" style={{ padding: '0.5rem', color: '#64748b', textDecoration: 'none' }}>{t("信仰宣言", "Statement of Faith")}</a>
+                 <a href="#" style={{ padding: '0.5rem', color: '#64748b', textDecoration: 'none' }}>{t("使用規則", "Terms of Use")}</a>
+             </div>
+             <div style={{ textAlign: 'center', marginTop: '1rem', color: '#94a3b8', fontSize: '0.75rem', paddingBottom: '3rem' }}>
+                 © 2026 Hope of Glory Publishing LLC.
+             </div>
+
           </div>
         </div>
       )}
