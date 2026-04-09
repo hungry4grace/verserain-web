@@ -425,6 +425,7 @@ export default function App() {
   const [leaderboardModalData, setLeaderboardModalData] = useState({ alltime: [], monthly: [], daily: [] });
   const [leaderboardModalTab, setLeaderboardModalTab] = useState('alltime'); // 'daily', 'monthly', 'alltime'
   const [isFetchingLeaderboard, setIsFetchingLeaderboard] = useState(false);
+  const [showLoginModal, setShowLoginModal] = useState(false);
 
   const timerRef = useRef(null);
   const speechRef = useRef(null);
@@ -966,7 +967,7 @@ export default function App() {
       <button
           onClick={(e) => { e.stopPropagation(); setIsMusicPlaying(!isMusicPlaying); }}
           className="hud-glass"
-          style={{ position: 'fixed', top: '1rem', right: '1rem', padding: '0.75rem', borderRadius: '50%', color: isMusicPlaying ? '#4ade80' : '#cbd5e1', cursor: 'pointer', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+          style={{ position: 'fixed', bottom: '1.5rem', right: '1.5rem', padding: '0.75rem', borderRadius: '50%', color: isMusicPlaying ? '#4ade80' : '#cbd5e1', cursor: 'pointer', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
       >
           {isMusicPlaying ? <Music size={24} /> : <VolumeX size={24} />}
       </button>
@@ -979,9 +980,18 @@ export default function App() {
              <div style={{ fontSize: '1.8rem', fontWeight: 'bold', color: '#3b82f6', fontFamily: 'cursive' }}>
                 verserain
              </div>
-             <div style={{ display: 'flex', gap: '1rem' }}>
-                <a href="#" onClick={(e) => e.preventDefault()} style={{ color: '#0056b3', textDecoration: 'none', fontWeight: 'bold', fontSize: '0.95rem' }}>{t("登入", "Login")}</a>
-                <a href="#" onClick={(e) => e.preventDefault()} style={{ color: '#0056b3', textDecoration: 'none', fontWeight: 'bold', fontSize: '0.95rem' }}>{t("申請帳號", "Sign Up")}</a>
+             <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                {playerName ? (
+                   <>
+                     <span style={{ color: '#475569', fontWeight: 'bold', fontSize: '0.95rem' }}>{t("歡迎, ", "Welcome, ")}{playerName}</span>
+                     <button onClick={() => { setPlayerName(''); localStorage.removeItem('verserain_player_name'); }} style={{ background: 'transparent', border: '1px solid #cbd5e1', color: '#64748b', cursor: 'pointer', borderRadius: '4px', padding: '0.3rem 0.6rem', fontSize: '0.85rem' }}>{t("登出", "Logout")}</button>
+                   </>
+                ) : (
+                   <>
+                     <a href="#" onClick={(e) => { e.preventDefault(); setShowLoginModal(true); }} style={{ color: '#0056b3', textDecoration: 'none', fontWeight: 'bold', fontSize: '0.95rem' }}>{t("登入", "Login")}</a>
+                     <a href="#" onClick={(e) => { e.preventDefault(); setShowLoginModal(true); }} style={{ background: '#3b82f6', color: 'white', padding: '0.3rem 0.8rem', borderRadius: '4px', textDecoration: 'none', fontWeight: 'bold', fontSize: '0.95rem' }}>{t("申請帳號", "Sign Up")}</a>
+                   </>
+                )}
              </div>
           </div>
 
@@ -1604,6 +1614,64 @@ export default function App() {
            </div>
         </div>
       )}
+      {/* Login Account Modal */}
+      {showLoginModal && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.6)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000, padding: '1rem' }}>
+          <div style={{ background: '#ffffff', borderRadius: '12px', padding: '2rem', width: '100%', maxWidth: '400px', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)', display: 'flex', flexDirection: 'column', gap: '1.5rem', border: '1px solid #e2e8f0' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <h2 style={{ margin: 0, color: '#1e293b', fontSize: '1.5rem' }}>{t("帳號註冊 / 登入", "Account Registration / Login")}</h2>
+              <button 
+                onClick={() => setShowLoginModal(false)}
+                style={{ background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+              >
+                <XCircle size={24} />
+              </button>
+            </div>
+            
+            <div style={{ color: '#475569', fontSize: '0.95rem', lineHeight: '1.5' }}>
+              {t("為了將您的神聖高分刻在群組排行榜上，請建立您的玩家身分 (名字)：", "To carve your sacred high score onto the group leaderboard, please create your player identity (name):")}
+            </div>
+            
+            <input 
+              id="modalPlayerNameInput"
+              type="text" 
+              maxLength={20}
+              defaultValue={playerName}
+              placeholder={t("例如: David H.", "e.g., David H.")}
+              onKeyDown={(e) => {
+                 if (e.key === 'Enter') {
+                     const name = e.target.value.trim();
+                     if (name) {
+                         setPlayerName(name);
+                         localStorage.setItem('verserain_player_name', name);
+                         setShowLoginModal(false);
+                     }
+                 }
+              }}
+              style={{ padding: '0.8rem', borderRadius: '6px', border: '2px solid #cbd5e1', background: '#f8fafc', color: '#1e293b', fontSize: '1rem', outline: 'none', transition: 'border-color 0.2s' }}
+              onFocus={(e) => e.target.style.borderColor = '#3b82f6'}
+              onBlur={(e) => e.target.style.borderColor = '#cbd5e1'}
+            />
+            
+            <button 
+              onClick={() => {
+                 const name = document.getElementById('modalPlayerNameInput').value.trim();
+                 if (name) {
+                     setPlayerName(name);
+                     localStorage.setItem('verserain_player_name', name);
+                     setShowLoginModal(false);
+                 }
+              }}
+              style={{ background: '#3b82f6', color: 'white', border: 'none', padding: '0.8rem', borderRadius: '6px', fontSize: '1rem', fontWeight: 'bold', cursor: 'pointer', transition: 'background 0.2s', marginTop: '0.5rem' }}
+              onMouseOver={(e) => e.target.style.background = '#2563eb'}
+              onMouseOut={(e) => e.target.style.background = '#3b82f6'}
+            >
+              {t("確認進入", "Confirm")}
+            </button>
+          </div>
+        </div>
+      )}
+
     </>
   );
 }
