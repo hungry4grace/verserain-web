@@ -180,7 +180,7 @@ import { getRandomFakePhrase } from './fakeLogic';
 
 export default function App() {
   const [version, setVersion] = useState('cuv');
-  const [playMode, setPlayMode] = useState('rain');
+  const [playMode, setPlayMode] = useState('square');
   const [distractionLevel, setDistractionLevel] = useState(0);
   const [selectedSetId, setSelectedSetId] = useState(null);
 
@@ -1176,6 +1176,14 @@ export default function App() {
                               <td style={{ padding: '0.8rem 1rem', color: '#337ab7', fontSize: '0.9rem' }}>{t("官方", "Official")}</td>
                               <td style={{ padding: '0.8rem 1rem', textAlign: 'right' }} onClick={(e) => e.stopPropagation()}>
                                 <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem', alignItems: 'center' }}>
+                                  <select
+                                    onChange={(e) => setPlayMode(e.target.value)}
+                                    value={playMode}
+                                    style={{ padding: '0.2rem', borderRadius: '4px', border: '1px solid #cbd5e1', fontSize: '0.85rem', color: '#334155', backgroundColor: '#fff' }}
+                                  >
+                                    <option value="square">Verse Square</option>
+                                    <option value="rain">Verse Rain</option>
+                                  </select>
                                   <select
                                     onChange={(e) => setDistractionLevel(Number(e.target.value))}
                                     value={distractionLevel}
