@@ -425,7 +425,7 @@ export default function App() {
   const [leaderboardModalData, setLeaderboardModalData] = useState({ alltime: [], monthly: [], daily: [] });
   const [leaderboardModalTab, setLeaderboardModalTab] = useState('alltime'); // 'daily', 'monthly', 'alltime'
   const [isFetchingLeaderboard, setIsFetchingLeaderboard] = useState(false);
-  const [showLoginModal, setShowLoginModal] = useState(false);
+  const [showLoginModal, setShowLoginModal] = useState(null);
 
   const timerRef = useRef(null);
   const speechRef = useRef(null);
@@ -988,8 +988,8 @@ export default function App() {
                    </>
                 ) : (
                    <>
-                     <a href="#" onClick={(e) => { e.preventDefault(); setShowLoginModal(true); }} style={{ color: '#0056b3', textDecoration: 'none', fontWeight: 'bold', fontSize: '0.95rem' }}>{t("登入", "Login")}</a>
-                     <a href="#" onClick={(e) => { e.preventDefault(); setShowLoginModal(true); }} style={{ background: '#3b82f6', color: 'white', padding: '0.3rem 0.8rem', borderRadius: '4px', textDecoration: 'none', fontWeight: 'bold', fontSize: '0.95rem' }}>{t("申請帳號", "Sign Up")}</a>
+                     <a href="#" onClick={(e) => { e.preventDefault(); setShowLoginModal('login'); }} style={{ color: '#0056b3', textDecoration: 'none', fontWeight: 'bold', fontSize: '0.95rem' }}>{t("登入", "Login")}</a>
+                     <a href="#" onClick={(e) => { e.preventDefault(); setShowLoginModal('signup'); }} style={{ background: '#3b82f6', color: 'white', padding: '0.3rem 0.8rem', borderRadius: '4px', textDecoration: 'none', fontWeight: 'bold', fontSize: '0.95rem' }}>{t("申請帳號", "Sign Up")}</a>
                    </>
                 )}
              </div>
@@ -1619,55 +1619,123 @@ export default function App() {
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.6)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000, padding: '1rem' }}>
           <div style={{ background: '#ffffff', borderRadius: '12px', padding: '2rem', width: '100%', maxWidth: '400px', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)', display: 'flex', flexDirection: 'column', gap: '1.5rem', border: '1px solid #e2e8f0' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <h2 style={{ margin: 0, color: '#1e293b', fontSize: '1.5rem' }}>{t("帳號註冊 / 登入", "Account Registration / Login")}</h2>
+              <h2 style={{ margin: 0, color: '#1e293b', fontSize: '1.5rem', fontWeight: 'bold' }}>
+                 {showLoginModal === 'signup' ? t("註冊新帳號", "Sign Up") : t("登入帳號", "Log In")}
+              </h2>
               <button 
-                onClick={() => setShowLoginModal(false)}
+                onClick={() => setShowLoginModal(null)}
                 style={{ background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
               >
                 <XCircle size={24} />
               </button>
             </div>
-            
-            <div style={{ color: '#475569', fontSize: '0.95rem', lineHeight: '1.5' }}>
-              {t("為了將您的神聖高分刻在群組排行榜上，請建立您的玩家身分 (名字)：", "To carve your sacred high score onto the group leaderboard, please create your player identity (name):")}
-            </div>
-            
-            <input 
-              id="modalPlayerNameInput"
-              type="text" 
-              maxLength={20}
-              defaultValue={playerName}
-              placeholder={t("例如: David H.", "e.g., David H.")}
-              onKeyDown={(e) => {
-                 if (e.key === 'Enter') {
-                     const name = e.target.value.trim();
-                     if (name) {
-                         setPlayerName(name);
-                         localStorage.setItem('verserain_player_name', name);
-                         setShowLoginModal(false);
-                     }
-                 }
-              }}
-              style={{ padding: '0.8rem', borderRadius: '6px', border: '2px solid #cbd5e1', background: '#f8fafc', color: '#1e293b', fontSize: '1rem', outline: 'none', transition: 'border-color 0.2s' }}
-              onFocus={(e) => e.target.style.borderColor = '#3b82f6'}
-              onBlur={(e) => e.target.style.borderColor = '#cbd5e1'}
-            />
-            
+
             <button 
               onClick={() => {
-                 const name = document.getElementById('modalPlayerNameInput').value.trim();
-                 if (name) {
-                     setPlayerName(name);
-                     localStorage.setItem('verserain_player_name', name);
-                     setShowLoginModal(false);
+                 const name = "Google P" + Math.floor(Math.random() * 999);
+                 setPlayerName(name);
+                 localStorage.setItem('verserain_player_name', name);
+                 setShowLoginModal(null);
+              }}
+              style={{ background: '#ffffff', border: '1px solid #cbd5e1', padding: '0.8rem', borderRadius: '6px', fontSize: '1rem', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', transition: 'background 0.2s', color: '#475569' }}
+              onMouseOver={(e) => e.target.style.background = '#f8fafc'}
+              onMouseOut={(e) => e.target.style.background = '#ffffff'}
+            >
+              <svg viewBox="0 0 48 48" width="20" height="20">
+                 <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.7 17.74 9.5 24 9.5z"/>
+                 <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+                 <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+                 <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+              </svg>
+              {t("使用 Google 繼續", "Continue with Google")}
+            </button>
+            
+            <div style={{ display: 'flex', alignItems: 'center', margin: '0.5rem 0' }}>
+               <div style={{ flex: 1, height: '1px', backgroundColor: '#e2e8f0' }}></div>
+               <span style={{ padding: '0 1rem', color: '#94a3b8', fontSize: '0.9rem', fontWeight: 'bold' }}>{t("或", "OR")}</span>
+               <div style={{ flex: 1, height: '1px', backgroundColor: '#e2e8f0' }}></div>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                <input 
+                  id="modalEmailInput"
+                  type="email" 
+                  placeholder={t("電子郵件 Email", "Email Address")}
+                  style={{ padding: '0.8rem', borderRadius: '6px', border: '1px solid #cbd5e1', background: '#f8fafc', color: '#1e293b', fontSize: '0.95rem', outline: 'none' }}
+                  onFocus={(e) => e.target.style.borderColor = '#3b82f6'}
+                  onBlur={(e) => e.target.style.borderColor = '#cbd5e1'}
+                />
+
+                <input 
+                  id="modalPasswordInput"
+                  type="password" 
+                  placeholder={t("密碼 Password", "Password")}
+                  style={{ padding: '0.8rem', borderRadius: '6px', border: '1px solid #cbd5e1', background: '#f8fafc', color: '#1e293b', fontSize: '0.95rem', outline: 'none' }}
+                  onFocus={(e) => e.target.style.borderColor = '#3b82f6'}
+                  onBlur={(e) => e.target.style.borderColor = '#cbd5e1'}
+                />
+
+                {showLoginModal === 'signup' && (
+                    <input 
+                      id="modalPlayerNameInput"
+                      type="text" 
+                      maxLength={20}
+                      defaultValue={playerName}
+                      placeholder={t("顯示暱稱 (Display Name)", "Display Name")}
+                      style={{ padding: '0.8rem', borderRadius: '6px', border: '1px solid #cbd5e1', background: '#f8fafc', color: '#1e293b', fontSize: '0.95rem', outline: 'none' }}
+                      onFocus={(e) => e.target.style.borderColor = '#3b82f6'}
+                      onBlur={(e) => e.target.style.borderColor = '#cbd5e1'}
+                    />
+                )}
+            </div>
+
+            <button 
+              onClick={() => {
+                 let nameToSet = playerName;
+                 if (showLoginModal === 'signup') {
+                     const nameInput = document.getElementById('modalPlayerNameInput');
+                     if (nameInput && nameInput.value.trim().length > 0) {
+                         nameToSet = nameInput.value.trim();
+                     } else {
+                         // Default to email prefix if no name typed
+                         const emailInput = document.getElementById('modalEmailInput');
+                         if (emailInput && emailInput.value.trim().length > 0) {
+                             nameToSet = emailInput.value.trim().split('@')[0];
+                         }
+                     }
+                 } else {
+                     const emailInput = document.getElementById('modalEmailInput');
+                     if (emailInput && emailInput.value.trim().length > 0) {
+                         nameToSet = emailInput.value.trim().split('@')[0];
+                     }
                  }
+                 
+                 if (!nameToSet) nameToSet = "Player" + Math.floor(Math.random() * 9999);
+
+                 setPlayerName(nameToSet);
+                 localStorage.setItem('verserain_player_name', nameToSet);
+                 setShowLoginModal(null);
               }}
               style={{ background: '#3b82f6', color: 'white', border: 'none', padding: '0.8rem', borderRadius: '6px', fontSize: '1rem', fontWeight: 'bold', cursor: 'pointer', transition: 'background 0.2s', marginTop: '0.5rem' }}
               onMouseOver={(e) => e.target.style.background = '#2563eb'}
               onMouseOut={(e) => e.target.style.background = '#3b82f6'}
             >
-              {t("確認進入", "Confirm")}
+              {showLoginModal === 'signup' ? t("建立新帳號", "Create Account") : t("登入", "Log In")}
             </button>
+
+            <div style={{ textAlign: 'center', fontSize: '0.9rem', color: '#64748b', marginTop: '0.5rem' }}>
+              {showLoginModal === 'signup' ? (
+                 <>
+                   {t("已經有帳號？", "Already have an account? ")}
+                   <span onClick={() => setShowLoginModal('login')} style={{ color: '#3b82f6', cursor: 'pointer', fontWeight: 'bold' }}>{t("在此登入", "Log in here")}</span>
+                 </>
+              ) : (
+                 <>
+                   {t("還沒有帳號？", "Don't have an account? ")}
+                   <span onClick={() => setShowLoginModal('signup')} style={{ color: '#3b82f6', cursor: 'pointer', fontWeight: 'bold' }}>{t("立即註冊", "Sign up")}</span>
+                 </>
+              )}
+            </div>
           </div>
         </div>
       )}
