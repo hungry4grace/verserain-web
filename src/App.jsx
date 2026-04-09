@@ -1498,57 +1498,29 @@ export default function App() {
 
             {mainTab === 'about' && (
               <div style={{ backgroundColor: '#ffffff', borderRadius: '8px', border: '1px solid #cbd5e1', padding: '2rem', boxShadow: '0 1px 3px rgba(0,0,0,0.05)', color: '#334155', lineHeight: '1.6' }}>
-                <h2 style={{ color: '#1e293b', marginTop: 0, marginBottom: '1.5rem', borderBottom: '2px solid #e2e8f0', paddingBottom: '0.5rem', fontFamily: 'cursive', color: '#3b82f6' }}>Verse Rain makes memorizing bible verses fun!</h2>
+                <h2 style={{ color: '#1e293b', marginTop: 0, marginBottom: '1.5rem', borderBottom: '2px solid #e2e8f0', paddingBottom: '0.5rem', fontFamily: 'cursive', color: '#3b82f6' }}>Verse Rain 讓背記經文變得生動有趣！</h2>
 
                 <p style={{ marginBottom: '1rem' }}>
-                  A Chinese church uses VerseRain app to held a "Bible Bee Competition" for the congregation. All ages in each family and small groups are able to participate. Four projectors are set up for four teams to compete at the same time in the challenge mode for the same set of verses.
+                  一間華人教會使用 VerseRain 應用程式為會眾舉辦了「聖經背誦比賽」。家庭和小組中的所有年齡層都能參與。他們架設了四台投影機，讓四個隊伍能同時在相同的經文組上進行挑戰模式的比賽。
                 </p>
                 <p style={{ marginBottom: '1.5rem' }}>
-                  A four year old boy and his three year old sister are eager to show that they can play the VerseRain by reciting "The Lord's Prayer" in Chinese. Both of them are born in America, yet they are able to read and play the game in Chinese.
+                  一位四歲的男孩和三歲的妹妹急切地想展示他們能用中文背誦「主禱文」來遊玩 VerseRain。他們都是在美國出生的，卻能夠用中文閱讀並遊玩這款遊戲。
                 </p>
                 <p style={{ marginBottom: '1.5rem' }}>
-                  Bible verse words rain from the sky and players earn points as they tap words in correct order. Words are read aloud as they are tapped, reinforcing memorization both visually and audibly.
+                  聖經經文的單字會從天而降，玩家只要按照正確的順序點擊經文就能獲得分數。經文被點擊時，會用語音朗讀出來，從視覺和語音的聽覺兩方面來加強您的記憶。
                 </p>
 
                 <ul style={{ paddingLeft: '1.5rem', marginBottom: '1.5rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                  <li>Learn bible verses in more than thirty other languages!</li>
-                  <li>Text-to-speech capability speaks the words as they are tapped to reinforce learning</li>
-                  <li>Potentially unlimited number of verses, verse sets and bible versions supported through verserain.com</li>
-                  <li>Three levels of difficulties are supported, great for both children and adults</li>
-                  <li>Challenge mode reinforces memorizing of multiple verses in a related verse set</li>
-                  <li>Online leaderboard encourages congregations, youth groups and small groups to participate playing together!</li>
+                  <li>學習超過三十種語言的聖經經文！</li>
+                  <li>點擊單字時會有文字轉語音的朗讀功能，來加深您對經文背誦的印象。</li>
+                  <li>透過 verserain.com，能支援近乎無限多的經文、經文組以及多種聖經譯本可以使用。</li>
+                  <li>提供三種挑戰難度，無論是小孩還是成人都非常適合來挑戰自己的極限。</li>
+                  <li>挑戰模式有助於加強記憶同一個經文組中的多段相關經文。</li>
+                  <li>線上排行榜能激勵會眾、青年團契和小組成員一起參與遊玩、共同精進！</li>
                 </ul>
 
                 <p style={{ marginBottom: '2rem' }}>
-                  You are encouraged to create an account to post your own favorite verse sets and share them with your friends. Verse Rain is cross-platform and playable for free on the web, iOS App Store and also on Android devices.
-                </p>
-
-                <h3 style={{ color: '#1e293b', borderBottom: '1px solid #e2e8f0', paddingBottom: '0.5rem', marginBottom: '1rem' }}>How to delete a verse set that you created</h3>
-                <ol style={{ paddingLeft: '1.5rem', marginBottom: '2rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                  <li>Log in</li>
-                  <li>Go to "Profile"</li>
-                  <li>Go to "Verse Sets"</li>
-                  <li>Go to the Verse Set you want to edit or delete</li>
-                  <li>Look for the tab "challenges all verses | remove", and click on "remove" to delete the verse set.</li>
-                </ol>
-
-                <h3 style={{ color: '#1e293b', borderBottom: '1px solid #e2e8f0', paddingBottom: '0.5rem', marginBottom: '1rem' }}>How to reorder verses in a verse set</h3>
-                <ol style={{ paddingLeft: '1.5rem', marginBottom: '2rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                  <li>Log in</li>
-                  <li>Go to "Profile"</li>
-                  <li>Go to "Verse Sets"</li>
-                  <li>Go to the Verse Set you want to rearrange order</li>
-                  <li>Look for the tab "practice verse | edit | remove | ↓ " and click on the down arrow to move that verse downward.</li>
-                </ol>
-
-                <h3 style={{ color: '#1e293b', borderBottom: '1px solid #e2e8f0', paddingBottom: '0.5rem', marginBottom: '1rem' }}>Feedback</h3>
-                <p style={{ marginBottom: '2rem' }}>
-                  You are welcome to send us suggestions or bug report here: <a href="http://www.verserain.com/contact" target="_blank" rel="noreferrer" style={{ color: '#3b82f6' }}>http://www.verserain.com/contact</a>
-                </p>
-
-                <h3 style={{ color: '#1e293b', borderBottom: '1px solid #e2e8f0', paddingBottom: '0.5rem', marginBottom: '1rem' }}>Help Translate VerseRain Web and Game Interface</h3>
-                <p style={{ marginBottom: '1rem' }}>
-                  Please help us to translate this game to other languages so that more people can be reached to advance the Kingdom. To help translating to a language of you choice, you first need to log in, and also have your email verified, then go to the bottom of the page and click on "Translate Verserain". Fill in each blank in the target language, and that's it. Please help to promote the cause, and introduce VerseRain to your friends who speaks different languages.
+                  我們鼓勵您建立專屬帳號，發布您最喜愛的經文組並與大眾朋友分享。Verse Rain 支援跨平台遊玩，您可以在所有網頁版、iOS App Store 以及 Android 裝置上免費使用並遊玩。
                 </p>
               </div>
             )}
