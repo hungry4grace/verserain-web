@@ -1131,11 +1131,12 @@ export default function App() {
                     <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
                       <thead>
                         <tr style={{ backgroundColor: '#f8fafc', color: '#475569', fontSize: '0.9rem' }}>
-                          <th style={{ padding: '1rem', borderBottom: '2px solid #e2e8f0', width: '50px' }}></th>
+                          <th style={{ padding: '1rem', borderBottom: '2px solid #e2e8f0', width: '80px', textAlign: 'center' }}>{t("榜單", "Rank")}</th>
                           <th style={{ padding: '1rem', borderBottom: '2px solid #e2e8f0' }}>{t("經文組", "Verse Set")}</th>
                           <th style={{ padding: '1rem', borderBottom: '2px solid #e2e8f0', minWidth: '150px' }}>{t("經文簡介", "Reference")}</th>
                           <th style={{ padding: '1rem', borderBottom: '2px solid #e2e8f0' }}>{t("作者", "Author")}</th>
                           <th style={{ padding: '1rem', borderBottom: '2px solid #e2e8f0', textAlign: 'right' }}>{t("設定", "Settings")}</th>
+                          <th style={{ padding: '1rem', borderBottom: '2px solid #e2e8f0', width: '60px', textAlign: 'center' }}></th>
                         </tr>
                       </thead>
                       <tbody>
@@ -1145,22 +1146,22 @@ export default function App() {
 
                           return (
                             <tr key={i} style={{ borderBottom: '1px solid #e2e8f0', backgroundColor: isSelected ? '#eff6ff' : (i % 2 === 0 ? '#ffffff' : '#f8fafc'), transition: 'background 0.2s', cursor: 'pointer' }} onClick={() => toggleSelection(v.reference)}>
-                              <td style={{ padding: '0.8rem 1rem', textAlign: 'center' }}>
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    initAudio();
-                                    setCampaignQueue(null);
-                                    setCampaignResults([]);
-                                    setActiveVerse(v);
-                                    setTimeout(() => startGame(false), 50);
-                                  }}
-                                  style={{ backgroundColor: '#5cb85c', color: 'white', border: 'none', borderRadius: '4px', padding: '0.4rem 0.8rem', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', transition: 'background 0.2s' }}
-                                  onMouseOver={(e) => e.target.style.backgroundColor = '#4cae4c'}
-                                  onMouseOut={(e) => e.target.style.backgroundColor = '#5cb85c'}
-                                >
-                                  ►
-                                </button>
+                              <td style={{ padding: '0.8rem 1rem', textAlign: 'center' }} onClick={(e) => e.stopPropagation()}>
+                                  <button
+                                    style={{ background: 'transparent', border: '1px solid #fbbf24', color: '#d97706', padding: '0.2rem 0.5rem', borderRadius: '4px', cursor: 'pointer', fontSize: '0.8rem', whiteSpace: 'nowrap' }}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setLeaderboardModalVerse(v);
+                                      setIsFetchingLeaderboard(true);
+                                      fetch(`/api/get-scores?verseRef=${encodeURIComponent(v.reference)}`)
+                                        .then(res => res.json())
+                                        .then(data => setLeaderboardModalData(data && Array.isArray(data.alltime) ? data : { alltime: Array.isArray(data) ? data : [], monthly: [], daily: [] }))
+                                        .catch(() => setLeaderboardModalData({ alltime: [], monthly: [], daily: [] }))
+                                        .finally(() => setIsFetchingLeaderboard(false));
+                                    }}
+                                  >
+                                    <Trophy size={11} style={{ display: 'inline', verticalAlign: 'middle', marginRight: '3px' }} /> {vBest > 0 ? vBest : t('榜單', 'Rank')}
+                                  </button>
                               </td>
                               <td style={{ padding: '0.8rem 1rem' }}>
                                 <button
@@ -1194,22 +1195,24 @@ export default function App() {
                                     <option value={2}>{t("難度 2", "Diff 2")}</option>
                                     <option value={3}>{t("難度 3", "Diff 3")}</option>
                                   </select>
-                                  <button
-                                    style={{ background: 'transparent', border: '1px solid #fbbf24', color: '#d97706', padding: '0.2rem 0.5rem', borderRadius: '4px', cursor: 'pointer', fontSize: '0.8rem', whiteSpace: 'nowrap' }}
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      setLeaderboardModalVerse(v);
-                                      setIsFetchingLeaderboard(true);
-                                      fetch(`/api/get-scores?verseRef=${encodeURIComponent(v.reference)}`)
-                                        .then(res => res.json())
-                                        .then(data => setLeaderboardModalData(data && Array.isArray(data.alltime) ? data : { alltime: Array.isArray(data) ? data : [], monthly: [], daily: [] }))
-                                        .catch(() => setLeaderboardModalData({ alltime: [], monthly: [], daily: [] }))
-                                        .finally(() => setIsFetchingLeaderboard(false));
-                                    }}
-                                  >
-                                    <Trophy size={11} style={{ display: 'inline', verticalAlign: 'middle', marginRight: '3px' }} /> {vBest > 0 ? vBest : t('榜單', 'Rank')}
-                                  </button>
                                 </div>
+                              </td>
+                              <td style={{ padding: '0.8rem 1rem', textAlign: 'center' }}>
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    initAudio();
+                                    setCampaignQueue(null);
+                                    setCampaignResults([]);
+                                    setActiveVerse(v);
+                                    setTimeout(() => startGame(false), 50);
+                                  }}
+                                  style={{ backgroundColor: '#5cb85c', color: 'white', border: 'none', borderRadius: '4px', padding: '0.4rem 0.8rem', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', transition: 'background 0.2s' }}
+                                  onMouseOver={(e) => e.target.style.backgroundColor = '#4cae4c'}
+                                  onMouseOut={(e) => e.target.style.backgroundColor = '#5cb85c'}
+                                >
+                                  ►
+                                </button>
                               </td>
                             </tr>
                           )
