@@ -1,3 +1,5 @@
+import { PSALMS_1_41 } from './verses_psalms';
+
 export const VERSE_SETS = [
     {
         id: "mutualized-economics",
@@ -293,7 +295,8 @@ export const VERSE_SETS = [
     text: "所以神將他升為至高，又賜給他那超乎萬名之上的名，叫一切在天上的、地上的和地底下的，因耶穌的名無不屈膝，"
   }
 ]
-    }
+    },
+    PSALMS_1_41
 ];
 
 // Fallback for backwards compatibility
