@@ -455,6 +455,7 @@ export default function App() {
   const [globalLeaderboardData, setGlobalLeaderboardData] = useState({ alltime: [], monthly: [], daily: [] });
   const [isFetchingGlobalLeaderboard, setIsFetchingGlobalLeaderboard] = useState(false);
   const [globalLeaderboardTab, setGlobalLeaderboardTab] = useState('alltime');
+  const [globalLeaderboardPage, setGlobalLeaderboardPage] = useState(1);
 
   const fetchGlobalLeaderboard = () => {
     setIsFetchingGlobalLeaderboard(true);
@@ -1291,85 +1292,115 @@ export default function App() {
               <div style={{ backgroundColor: '#ffffff', borderRadius: '8px', border: '1px solid #cbd5e1', padding: '2rem', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
                 <h2 style={{ color: '#1e293b', marginTop: 0, marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '10px' }}><Trophy color="#d97706" /> {t("全服神射手總排行", "Global Leaderboard")}</h2>
                 <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem' }}>
-                  <button onClick={() => setGlobalLeaderboardTab('alltime')} style={{ padding: '0.5rem 1rem', border: 'none', background: globalLeaderboardTab === 'alltime' ? '#3b82f6' : '#e2e8f0', color: globalLeaderboardTab === 'alltime' ? 'white' : '#475569', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>{t("歷史總榜", "All Time")}</button>
-                  <button onClick={() => setGlobalLeaderboardTab('monthly')} style={{ padding: '0.5rem 1rem', border: 'none', background: globalLeaderboardTab === 'monthly' ? '#8b5cf6' : '#e2e8f0', color: globalLeaderboardTab === 'monthly' ? 'white' : '#475569', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>{t("本月排行", "Monthly")}</button>
-                  <button onClick={() => setGlobalLeaderboardTab('daily')} style={{ padding: '0.5rem 1rem', border: 'none', background: globalLeaderboardTab === 'daily' ? '#10b981' : '#e2e8f0', color: globalLeaderboardTab === 'daily' ? 'white' : '#475569', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>{t("本日排行", "Daily")}</button>
+                  <button onClick={() => { setGlobalLeaderboardTab('alltime'); setGlobalLeaderboardPage(1); }} style={{ padding: '0.5rem 1rem', border: 'none', background: globalLeaderboardTab === 'alltime' ? '#3b82f6' : '#e2e8f0', color: globalLeaderboardTab === 'alltime' ? 'white' : '#475569', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>{t("歷史總榜", "All Time")}</button>
+                  <button onClick={() => { setGlobalLeaderboardTab('monthly'); setGlobalLeaderboardPage(1); }} style={{ padding: '0.5rem 1rem', border: 'none', background: globalLeaderboardTab === 'monthly' ? '#8b5cf6' : '#e2e8f0', color: globalLeaderboardTab === 'monthly' ? 'white' : '#475569', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>{t("本月排行", "Monthly")}</button>
+                  <button onClick={() => { setGlobalLeaderboardTab('daily'); setGlobalLeaderboardPage(1); }} style={{ padding: '0.5rem 1rem', border: 'none', background: globalLeaderboardTab === 'daily' ? '#10b981' : '#e2e8f0', color: globalLeaderboardTab === 'daily' ? 'white' : '#475569', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>{t("本日排行", "Daily")}</button>
                 </div>
 
                 {isFetchingGlobalLeaderboard ? (
                   <div style={{ padding: '2rem', textAlign: 'center', color: '#64748b' }}>{t("載入中...", "Loading...")}</div>
-                ) : (
-                  <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
-                    <thead>
-                      <tr style={{ borderBottom: '2px solid #e2e8f0', color: '#64748b', fontSize: '0.9rem' }}>
-                        <th style={{ padding: '0.8rem 1rem' }}>#</th>
-                        <th style={{ padding: '0.8rem 1rem' }}>{t("經文出處", "Verse Reference")}</th>
-                        <th style={{ padding: '0.8rem 1rem' }}>{t("玩家", "Player")}</th>
-                        <th style={{ padding: '0.8rem 1rem', textAlign: 'right' }}>{t("最高分數", "Best Score")}</th>
-                        <th style={{ padding: '0.8rem 1rem', textAlign: 'center' }}>{t("突破模式", "Mode")}</th>
-                        <th style={{ padding: '0.8rem 1rem', textAlign: 'center' }}>{t("難度", "Difficulty")}</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {(() => {
-                        const rawData = globalLeaderboardData[globalLeaderboardTab] || [];
-                        if (rawData.length === 0) {
-                          return <tr><td colSpan="6" style={{ padding: '2rem', textAlign: 'center', color: '#94a3b8' }}>{t("目前還沒有紀錄", "No records yet")}</td></tr>;
-                        }
+                ) : (() => {
+                  const rawData = globalLeaderboardData[globalLeaderboardTab] || [];
+                  if (rawData.length === 0) {
+                    return <div style={{ padding: '2rem', textAlign: 'center', color: '#94a3b8' }}>{t("目前還沒有紀錄", "No records yet")}</div>;
+                  }
 
-                        const bestPerVerse = {};
-                        rawData.forEach(entry => {
-                          if (!bestPerVerse[entry.verseRef] || entry.score > bestPerVerse[entry.verseRef].score) {
-                            bestPerVerse[entry.verseRef] = entry;
-                          }
-                        });
-                        const uniqueEntries = Object.values(bestPerVerse).sort((a, b) => a.verseRef.localeCompare(b.verseRef));
+                  const bestPerVerse = {};
+                  rawData.forEach(entry => {
+                    if (!bestPerVerse[entry.verseRef] || entry.score > bestPerVerse[entry.verseRef].score) {
+                      bestPerVerse[entry.verseRef] = entry;
+                    }
+                  });
+                  const uniqueEntries = Object.values(bestPerVerse).sort((a, b) => a.verseRef.localeCompare(b.verseRef));
+                  const ITEMS_PER_PAGE = 10;
+                  const totalPages = Math.ceil(uniqueEntries.length / ITEMS_PER_PAGE);
+                  const startIndex = (globalLeaderboardPage - 1) * ITEMS_PER_PAGE;
+                  const pagedEntries = uniqueEntries.slice(startIndex, startIndex + ITEMS_PER_PAGE);
 
-                        return uniqueEntries.map((entry, idx) => {
-                          const parseMode = (modeStr) => {
-                            let modeType = modeStr || 'rain';
-                            let difficulty = 0;
-                            if (modeStr && modeStr.includes('-dx')) {
-                              const parts = modeStr.split('-dx');
-                              modeType = parts[0];
-                              difficulty = parseInt(parts[1], 10) || 0;
-                            }
-                            return { modeType, difficulty };
-                          };
-                          const { modeType, difficulty } = parseMode(entry.mode);
+                  return (
+                    <div>
+                      <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+                        <thead>
+                          <tr style={{ borderBottom: '2px solid #e2e8f0', color: '#64748b', fontSize: '0.9rem' }}>
+                            <th style={{ padding: '0.8rem 1rem' }}>#</th>
+                            <th style={{ padding: '0.8rem 1rem' }}>{t("經文出處", "Verse Reference")}</th>
+                            <th style={{ padding: '0.8rem 1rem' }}>{t("玩家", "Player")}</th>
+                            <th style={{ padding: '0.8rem 1rem', textAlign: 'right' }}>{t("最高分數", "Best Score")}</th>
+                            <th style={{ padding: '0.8rem 1rem', textAlign: 'center' }}>{t("突破模式", "Mode")}</th>
+                            <th style={{ padding: '0.8rem 1rem', textAlign: 'center' }}>{t("難度", "Difficulty")}</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {pagedEntries.map((entry, idx) => {
+                            const actualRank = startIndex + idx + 1;
+                            const parseMode = (modeStr) => {
+                              let modeType = modeStr || 'rain';
+                              let difficulty = 0;
+                              if (modeStr && modeStr.includes('-dx')) {
+                                const parts = modeStr.split('-dx');
+                                modeType = parts[0];
+                                difficulty = parseInt(parts[1], 10) || 0;
+                              }
+                              return { modeType, difficulty };
+                            };
+                            const { modeType, difficulty } = parseMode(entry.mode);
 
-                          return (
-                            <tr key={idx} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                              <td style={{ padding: '0.8rem 1rem', color: idx < 3 ? '#d97706' : '#64748b', fontWeight: 'bold' }}>{idx + 1}</td>
-                              <td style={{ padding: '0.8rem 1rem' }}>
-                                <button onClick={() => {
-                                  const fullVerse = activeVerseSets.flatMap(vs => vs.verses).find(v => v.reference === entry.verseRef) || { reference: entry.verseRef, title: "Custom" };
-                                  setLeaderboardModalVerse(fullVerse);
-                                  setIsFetchingLeaderboard(true);
-                                  fetch(`/api/get-scores?verseRef=${encodeURIComponent(entry.verseRef)}`)
-                                    .then(res => res.json())
-                                    .then(data => setLeaderboardModalData(data && Array.isArray(data.alltime) ? data : { alltime: Array.isArray(data) ? data : [], monthly: [], daily: [] }))
-                                    .catch(() => setLeaderboardModalData({ alltime: [], monthly: [], daily: [] }))
-                                    .finally(() => setIsFetchingLeaderboard(false));
-                                }} style={{ background: 'transparent', border: 'none', color: '#0369a1', fontWeight: 'bold', fontSize: '1rem', cursor: 'pointer', padding: 0, textAlign: 'left' }} onMouseOver={(e) => e.target.style.textDecoration = 'underline'} onMouseOut={(e) => e.target.style.textDecoration = 'none'}>
-                                  {entry.verseRef}
-                                </button>
-                              </td>
-                              <td style={{ padding: '0.8rem 1rem', fontWeight: 'bold', color: '#1e293b' }}>{entry.name}</td>
-                              <td style={{ padding: '0.8rem 1rem', textAlign: 'right', fontFamily: 'monospace', fontSize: '1.2rem', color: '#3b82f6' }}>{entry.score}</td>
-                              <td style={{ padding: '0.8rem 1rem', textAlign: 'center' }}>
-                                {modeType === 'square' ? <span style={{ background: '#fef3c7', color: '#d97706', padding: '0.2rem 0.5rem', borderRadius: '4px', fontSize: '0.8rem' }}>Square</span> : <span style={{ background: '#dbeafe', color: '#2563eb', padding: '0.2rem 0.5rem', borderRadius: '4px', fontSize: '0.8rem' }}>Rain</span>}
-                              </td>
-                              <td style={{ padding: '0.8rem 1rem', textAlign: 'center' }}>
-                                <span style={{ color: '#475569', fontWeight: 'bold' }}>Lv {difficulty}</span>
-                              </td>
-                            </tr>
-                          )
-                        })
-                      })()}
-                    </tbody>
-                  </table>
-                )}
+                            return (
+                              <tr key={idx} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                                <td style={{ padding: '0.8rem 1rem', color: actualRank <= 3 ? '#d97706' : '#64748b', fontWeight: 'bold' }}>{actualRank}</td>
+                                <td style={{ padding: '0.8rem 1rem' }}>
+                                  <button onClick={() => {
+                                    const fullVerse = activeVerseSets.flatMap(vs => vs.verses).find(v => v.reference === entry.verseRef) || { reference: entry.verseRef, title: "Custom" };
+                                    setLeaderboardModalVerse(fullVerse);
+                                    setIsFetchingLeaderboard(true);
+                                    fetch(`/api/get-scores?verseRef=${encodeURIComponent(entry.verseRef)}`)
+                                      .then(res => res.json())
+                                      .then(data => setLeaderboardModalData(data && Array.isArray(data.alltime) ? data : { alltime: Array.isArray(data) ? data : [], monthly: [], daily: [] }))
+                                      .catch(() => setLeaderboardModalData({ alltime: [], monthly: [], daily: [] }))
+                                      .finally(() => setIsFetchingLeaderboard(false));
+                                  }} style={{ background: 'transparent', border: 'none', color: '#0369a1', fontWeight: 'bold', fontSize: '1rem', cursor: 'pointer', padding: 0, textAlign: 'left' }} onMouseOver={(e) => e.target.style.textDecoration = 'underline'} onMouseOut={(e) => e.target.style.textDecoration = 'none'}>
+                                    {entry.verseRef}
+                                  </button>
+                                </td>
+                                <td style={{ padding: '0.8rem 1rem', fontWeight: 'bold', color: '#1e293b' }}>{entry.name}</td>
+                                <td style={{ padding: '0.8rem 1rem', textAlign: 'right', fontFamily: 'monospace', fontSize: '1.2rem', color: '#3b82f6' }}>{entry.score}</td>
+                                <td style={{ padding: '0.8rem 1rem', textAlign: 'center' }}>
+                                  {modeType === 'square' ? <span style={{ background: '#fef3c7', color: '#d97706', padding: '0.2rem 0.5rem', borderRadius: '4px', fontSize: '0.8rem' }}>Square</span> : <span style={{ background: '#dbeafe', color: '#2563eb', padding: '0.2rem 0.5rem', borderRadius: '4px', fontSize: '0.8rem' }}>Rain</span>}
+                                </td>
+                                <td style={{ padding: '0.8rem 1rem', textAlign: 'center' }}>
+                                  <span style={{ color: '#475569', fontWeight: 'bold' }}>Lv {difficulty}</span>
+                                </td>
+                              </tr>
+                            )
+                          })}
+                        </tbody>
+                      </table>
+
+                      {totalPages > 1 && (
+                        <div style={{ display: 'flex', justifyContent: 'center', gap: '0.5rem', marginTop: '1.5rem', flexWrap: 'wrap' }}>
+                          {Array.from({ length: totalPages }, (_, i) => i + 1).map(pageNum => (
+                            <button
+                              key={pageNum}
+                              onClick={() => setGlobalLeaderboardPage(pageNum)}
+                              style={{
+                                padding: '0.4rem 0.8rem',
+                                border: '1px solid #cbd5e1',
+                                background: globalLeaderboardPage === pageNum ? '#3b82f6' : '#ffffff',
+                                color: globalLeaderboardPage === pageNum ? 'white' : '#334155',
+                                borderRadius: '4px',
+                                cursor: 'pointer',
+                                fontWeight: 'bold',
+                                fontSize: '0.9rem'
+                              }}
+                            >
+                              {pageNum}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
               </div>
             )}
 
