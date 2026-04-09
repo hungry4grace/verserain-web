@@ -426,6 +426,7 @@ export default function App() {
   const [leaderboardModalTab, setLeaderboardModalTab] = useState('alltime'); // 'daily', 'monthly', 'alltime'
   const [isFetchingLeaderboard, setIsFetchingLeaderboard] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(null);
+  const [verseViewModal, setVerseViewModal] = useState(null);
 
   const timerRef = useRef(null);
   const speechRef = useRef(null);
@@ -1088,7 +1089,16 @@ export default function App() {
                                       ►
                                    </button>
                                </td>
-                               <td style={{ padding: '0.8rem 1rem', fontWeight: 'bold', color: '#337ab7', fontSize: '0.95rem' }}>{v.reference}</td>
+                               <td style={{ padding: '0.8rem 1rem' }}>
+                                   <button 
+                                      onClick={(e) => { e.stopPropagation(); setVerseViewModal(v); }}
+                                      style={{ background: 'transparent', border: 'none', color: '#337ab7', fontWeight: 'bold', fontSize: '1rem', cursor: 'pointer', padding: 0, textAlign: 'left' }}
+                                      onMouseOver={(e) => e.target.style.textDecoration = 'underline'}
+                                      onMouseOut={(e) => e.target.style.textDecoration = 'none'}
+                                   >
+                                       {v.reference}
+                                   </button>
+                               </td>
                                <td style={{ padding: '0.8rem 1rem', color: '#64748b', fontSize: '0.9rem' }}>{v.title}</td>
                                <td style={{ padding: '0.8rem 1rem', color: '#337ab7', fontSize: '0.9rem' }}>{t("官方", "Official")}</td>
                                <td style={{ padding: '0.8rem 1rem', textAlign: 'right' }} onClick={(e) => e.stopPropagation()}>
@@ -1748,6 +1758,71 @@ export default function App() {
                    <span onClick={() => setShowLoginModal('signup')} style={{ color: '#3b82f6', cursor: 'pointer', fontWeight: 'bold' }}>{t("立即註冊", "Sign up")}</span>
                  </>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Verse View Modal */}
+      {verseViewModal && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.6)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000, padding: '1rem' }} onClick={(e) => { if (e.target === e.currentTarget) { setVerseViewModal(null); if ('speechSynthesis' in window) window.speechSynthesis.cancel(); }}}>
+          <div style={{ background: '#ffffff', borderRadius: '12px', padding: '2rem', width: '100%', maxWidth: '600px', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)', display: 'flex', flexDirection: 'column', gap: '1.5rem', border: '1px solid #e2e8f0', maxHeight: '85vh' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #e2e8f0', paddingBottom: '1rem' }}>
+              <h2 style={{ margin: 0, color: '#1e293b', fontSize: '1.6rem', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                 <span style={{ color: '#3b82f6' }}>{verseViewModal.reference}</span>
+                 <button
+                    onClick={() => {
+                        speakText(verseViewModal.text);
+                    }}
+                    title={t("朗讀經文", "Read aloud")}
+                    style={{ background: '#ecfdf5', color: '#10b981', border: '1px solid #a7f3d0', borderRadius: '50%', width: '38px', height: '38px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'all 0.2s', padding: 0 }}
+                    onMouseOver={(e) => { e.currentTarget.style.background = '#d1fae5'; e.currentTarget.style.transform = 'scale(1.05)'; }}
+                    onMouseOut={(e) => { e.currentTarget.style.background = '#ecfdf5'; e.currentTarget.style.transform = 'scale(1)'; }}
+                 >
+                    <Headphones size={20} />
+                 </button>
+              </h2>
+              <button 
+                onClick={() => {
+                    if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+                    setVerseViewModal(null);
+                }}
+                style={{ background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0 }}
+              >
+                <XCircle size={26} />
+              </button>
+            </div>
+            
+            <div style={{ color: '#475569', fontSize: '1.2rem', lineHeight: '1.8', overflowY: 'auto', paddingRight: '1rem', fontWeight: '500', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
+               {verseViewModal.text}
+            </div>
+            
+            <div style={{ display: 'flex', justifyContent: 'flex-end', paddingTop: '1rem', borderTop: '1px solid #e2e8f0', gap: '1rem' }}>
+               <button 
+                 onClick={() => {
+                     setVerseViewModal(null);
+                     if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+                 }}
+                 style={{ background: '#f1f5f9', color: '#64748b', border: '1px solid #cbd5e1', padding: '0.6rem 1.5rem', borderRadius: '6px', fontSize: '1rem', fontWeight: 'bold', cursor: 'pointer', transition: 'background 0.2s' }}
+               >
+                 {t("關閉", "Close")}
+               </button>
+               <button 
+                 onClick={() => {
+                     setVerseViewModal(null);
+                     if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+                     initAudio();
+                     setCampaignQueue(null);
+                     setCampaignResults([]);
+                     setActiveVerse(verseViewModal);
+                     setTimeout(() => startGame(false), 50);
+                 }}
+                 style={{ background: '#3b82f6', color: 'white', border: 'none', padding: '0.6rem 1.5rem', borderRadius: '6px', fontSize: '1rem', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', transition: 'background 0.2s' }}
+                 onMouseOver={(e) => e.target.style.background = '#2563eb'}
+                 onMouseOut={(e) => e.target.style.background = '#3b82f6'}
+               >
+                 <Play size={16} fill="white" /> {t("立刻挑戰", "Play Now")}
+               </button>
             </div>
           </div>
         </div>
