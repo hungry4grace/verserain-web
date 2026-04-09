@@ -873,6 +873,12 @@ export default function App() {
                         const insertPos = Math.floor(Math.random() * (updated.length + 1));
                         updated.splice(insertPos, 0, newFake);
                     }
+
+                    if (distractionLevel >= 2) {
+                        // Scramble the whole grid on every correct click to significantly increase challenge
+                        updated.sort(() => Math.random() - 0.5);
+                    }
+
                     return updated;
                 });
              }, 400); 
@@ -905,10 +911,19 @@ export default function App() {
       setBlocks(prev => prev.map(b => b.id === block.id ? { ...b, error: true } : b));
       setTimeout(() => {
         setBlocks(prev => {
+            let updated = prev;
             if (playMode === 'square' && block.seqIndex === -1) {
-                return prev.filter(b => b.id !== block.id);
+                updated = prev.filter(b => b.id !== block.id);
+            } else {
+                updated = prev.map(b => b.id === block.id ? { ...b, error: false } : b);
             }
-            return prev.map(b => b.id === block.id ? { ...b, error: false } : b);
+
+            if (playMode === 'square' && distractionLevel >= 2) {
+                // Scramble the whole grid on every mistake too, making recovery harder
+                updated = [...updated].sort(() => Math.random() - 0.5);
+            }
+
+            return updated;
         });
       }, 400);
     }
