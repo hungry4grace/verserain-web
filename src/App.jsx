@@ -1083,13 +1083,17 @@ export default function App() {
                { id: 'leaderboard', label: t('排行榜 Leaderboard', 'Leaderboard') },
                { id: 'search', label: t('搜尋 Search', 'Search') },
                { id: 'about', label: t('有關 About', 'About') },
-               { id: 'donate', label: t('奉獻支持 Donate', 'Donate') }
+               { id: 'donate', label: t('加入「互惠經濟」 Join Erom', 'Join Erom'), link: 'https://www.skool.com/ekklesia-asia/about' }
              ].map((item, idx) => (
                 <div key={idx} onClick={() => { 
+                   if (item.link) {
+                       window.open(item.link, '_blank');
+                       return;
+                   }
                    setMainTab(item.id); 
                    if (item.id === 'versesets') setSelectedSetId(null); 
                    if (item.id === 'leaderboard') fetchGlobalLeaderboard(); 
-                }} style={{ padding: '0.8rem 1.5rem', cursor: 'pointer', backgroundColor: mainTab === item.id ? '#3b82f6' : 'transparent', fontWeight: 'bold', whiteSpace: 'nowrap', transition: 'background 0.2s', fontSize: '0.95rem' }} onMouseOver={(e) => { if(mainTab !== item.id) e.target.style.backgroundColor = '#475569'; }} onMouseOut={(e) => { if (mainTab !== item.id) e.target.style.backgroundColor = 'transparent'; }}>
+                }} style={{ padding: '0.8rem 1.5rem', cursor: 'pointer', backgroundColor: (!item.link && mainTab === item.id) ? '#3b82f6' : 'transparent', fontWeight: 'bold', whiteSpace: 'nowrap', transition: 'background 0.2s', fontSize: '0.95rem' }} onMouseOver={(e) => { if(item.link || mainTab !== item.id) e.target.style.backgroundColor = '#475569'; }} onMouseOut={(e) => { if (item.link || mainTab !== item.id) e.target.style.backgroundColor = 'transparent'; }}>
                    {item.label}
                 </div>
              ))}
