@@ -1083,7 +1083,7 @@ export default function App() {
               { id: 'leaderboard', label: t('排行榜 Leaderboard', 'Leaderboard') },
               { id: 'search', label: t('搜尋 Search', 'Search') },
               { id: 'about', label: t('有關 About', 'About') },
-              { id: 'donate', label: t('加入「互惠經濟」', 'Join EcoAwakening'), link: 'https://www.skool.com/EconomicAwakening/about' }
+              { id: 'donate', label: t('加入「互惠經濟」', 'Join EcoAwakening'), link: 'https://www.skool.com/mutualizedeconomy' }
             ].map((item, idx) => (
               <div key={idx} onClick={() => {
                 if (item.link) {
@@ -1488,19 +1488,6 @@ export default function App() {
 
               </div>
             )}
-
-            {/* Footer Elements */}
-            <div style={{ marginTop: '2rem', display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap', color: '#64748b', fontSize: '0.85rem' }}>
-              <button style={{ background: '#e2e8f0', border: 'none', padding: '0.4rem 0.8rem', borderRadius: '4px', cursor: 'pointer', color: '#475569' }}>{t("選擇語言 (en) ▼", "Select Language (zh) ▼")}</button>
-              <button style={{ background: '#e2e8f0', border: 'none', padding: '0.4rem 0.8rem', borderRadius: '4px', cursor: 'pointer', color: '#475569' }}>Translate Verserain</button>
-              <a href="#" style={{ padding: '0.5rem', color: '#64748b', textDecoration: 'none' }}>{t("幫助", "Help")}</a>
-              <a href="#" style={{ padding: '0.5rem', color: '#64748b', textDecoration: 'none' }}>{t("隱私權", "Privacy")}</a>
-              <a href="#" style={{ padding: '0.5rem', color: '#64748b', textDecoration: 'none' }}>{t("信仰宣言", "Statement of Faith")}</a>
-              <a href="#" style={{ padding: '0.5rem', color: '#64748b', textDecoration: 'none' }}>{t("使用規則", "Terms of Use")}</a>
-            </div>
-            <div style={{ textAlign: 'center', marginTop: '1rem', color: '#94a3b8', fontSize: '0.75rem', paddingBottom: '3rem' }}>
-              © 2026 Hope of Glory Publishing LLC.
-            </div>
 
           </div>
         </div>
