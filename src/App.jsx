@@ -179,6 +179,9 @@ import { VERSE_SETS_KJV } from './verses_kjv';
 import { getRandomFakePhrase } from './fakeLogic';
 
 export default function App() {
+  const VERSES_CUV = React.useMemo(() => VERSE_SETS_CUV.flatMap(s => s.verses), []);
+  const VERSES_KJV = React.useMemo(() => VERSE_SETS_KJV.flatMap(s => s.verses), []);
+
   const [version, setVersion] = useState('cuv');
   const [playMode, setPlayMode] = useState('square');
   const [distractionLevel, setDistractionLevel] = useState(0);
@@ -1105,6 +1108,20 @@ export default function App() {
 
             {mainTab === 'versesets' && (
               <>
+                <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '1rem', gap: '0.5rem' }}>
+                  <button
+                    onClick={() => handleVersionChange('cuv')}
+                    style={{ padding: '0.4rem 0.8rem', borderRadius: '4px', border: '1px solid #cbd5e1', background: version === 'cuv' ? '#3b82f6' : '#fff', color: version === 'cuv' ? '#fff' : '#475569', fontWeight: 'bold', cursor: 'pointer' }}
+                  >
+                    中文 CUV
+                  </button>
+                  <button
+                    onClick={() => handleVersionChange('kjv')}
+                    style={{ padding: '0.4rem 0.8rem', borderRadius: '4px', border: '1px solid #cbd5e1', background: version === 'kjv' ? '#3b82f6' : '#fff', color: version === 'kjv' ? '#fff' : '#475569', fontWeight: 'bold', cursor: 'pointer' }}
+                  >
+                    English KJV
+                  </button>
+                </div>
                 {/* The Verse Sets Table */}
                 <div style={{ backgroundColor: '#ffffff', overflowX: 'auto', borderRadius: '8px', border: '1px solid #cbd5e1', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
                   {selectedSetId === null ? (
