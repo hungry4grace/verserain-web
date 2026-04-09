@@ -174,15 +174,19 @@ function playFireworksSound() {
   osc.stop(audioCtx.currentTime + 0.5);
 }
 
-import { VERSES_DB as VERSES_CUV } from './verses';
-import { VERSES_DB_KJV as VERSES_KJV } from './verses_kjv';
+import { VERSE_SETS as VERSE_SETS_CUV } from './verses';
+import { VERSE_SETS_KJV } from './verses_kjv';
 import { getRandomFakePhrase } from './fakeLogic';
 
 export default function App() {
   const [version, setVersion] = useState('cuv');
   const [playMode, setPlayMode] = useState('rain');
   const [distractionLevel, setDistractionLevel] = useState(0);
-  const VERSES_DB = version === 'cuv' ? VERSES_CUV : VERSES_KJV;
+  const [selectedSetId, setSelectedSetId] = useState(null);
+
+  const activeVerseSets = version === 'cuv' ? VERSE_SETS_CUV : VERSE_SETS_KJV;
+  const currentSet = selectedSetId ? activeVerseSets.find(s => s.id === selectedSetId) : null;
+  const VERSES_DB = currentSet ? currentSet.verses : activeVerseSets[0].verses;
 
   const [activeVerse, setActiveVerse] = useState(VERSES_DB[0]);
   const [selectedVerseRefs, setSelectedVerseRefs] = useState([VERSES_DB[0].reference]);
@@ -1116,9 +1120,38 @@ export default function App() {
 
              {/* The Verse Sets Table */}
              <div style={{ backgroundColor: '#ffffff', overflowX: 'auto', borderBottomLeftRadius: '8px', borderBottomRightRadius: '8px', border: '1px solid #cbd5e1', borderTop: 'none', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
-                   <thead>
-                      <tr style={{ backgroundColor: '#f8fafc', color: '#475569', fontSize: '0.9rem' }}>
+                {selectedSetId === null ? (
+                    <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+                       <thead>
+                          <tr style={{ backgroundColor: '#f8fafc', color: '#475569', fontSize: '0.9rem' }}>
+                             <th style={{ padding: '1rem', borderBottom: '2px solid #e2e8f0', width: '50px' }}>📁</th>
+                             <th style={{ padding: '1rem', borderBottom: '2px solid #e2e8f0' }}>{t("經文組名稱", "Verse Set Name")}</th>
+                             <th style={{ padding: '1rem', borderBottom: '2px solid #e2e8f0' }}>{t("說明", "Description")}</th>
+                             <th style={{ padding: '1rem', borderBottom: '2px solid #e2e8f0', textAlign: 'right' }}>{t("經文數量", "Count")}</th>
+                          </tr>
+                       </thead>
+                       <tbody>
+                          {activeVerseSets.map((set, i) => (
+                             <tr key={i} style={{ borderBottom: '1px solid #e2e8f0', backgroundColor: i % 2 === 0 ? '#ffffff' : '#f8fafc', transition: 'background 0.2s', cursor: 'pointer' }} onClick={() => setSelectedSetId(set.id)} onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#eff6ff'} onMouseOut={(e) => e.currentTarget.style.backgroundColor = i % 2 === 0 ? '#ffffff' : '#f8fafc'}>
+                                <td style={{ padding: '1rem', textAlign: 'center', color: '#3b82f6', fontSize: '1.2rem' }}>📁</td>
+                                <td style={{ padding: '1rem', fontWeight: 'bold', color: '#1e293b', fontSize: '1.05rem' }}>{set.title}</td>
+                                <td style={{ padding: '1rem', color: '#64748b', fontSize: '0.9rem' }}>{set.description || ""}</td>
+                                <td style={{ padding: '1rem', textAlign: 'right', color: '#337ab7', fontWeight: 'bold' }}>{set.verses.length}</td>
+                             </tr>
+                          ))}
+                       </tbody>
+                    </table>
+                ) : (
+                    <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+                       <thead>
+                          <tr style={{ backgroundColor: '#eff6ff', borderBottom: '1px solid #bfdbfe' }}>
+                             <td colSpan="5" style={{ padding: '0.8rem 1rem' }}>
+                                 <button onClick={() => setSelectedSetId(null)} style={{ background: 'transparent', border: 'none', color: '#3b82f6', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                                    ← {t("返回經文組目錄", "Back to Folders")}
+                                 </button>
+                             </td>
+                          </tr>
+                          <tr style={{ backgroundColor: '#f8fafc', color: '#475569', fontSize: '0.9rem' }}>
                          <th style={{ padding: '1rem', borderBottom: '2px solid #e2e8f0', width: '50px' }}></th>
                          <th style={{ padding: '1rem', borderBottom: '2px solid #e2e8f0' }}>{t("經文組", "Verse Set")}</th>
                          <th style={{ padding: '1rem', borderBottom: '2px solid #e2e8f0', minWidth: '150px' }}>{t("經文簡介", "Reference")}</th>
@@ -1196,6 +1229,7 @@ export default function App() {
                       })}
                    </tbody>
                 </table>
+                )}
              </div>
              
              {/* Auto Play Floating Bar */}
