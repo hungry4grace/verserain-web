@@ -554,11 +554,13 @@ export default function App() {
   const initSquareBlocks = () => {
     const phrases = activePhrasesRef.current;
     
-    // Total blocks must always be exactly 9 for 3x3 grid
+    // Grid size depends on difficulty
+    const maxGridSize = distractionLevel <= 1 ? 4 : 9;
+    
     const fakesCount = distractionLevel > 0 ? distractionLevel : 0;
     const realBlocksAvailable = phrases.length;
     
-    const initialRealCount = Math.min(9 - fakesCount, realBlocksAvailable);
+    const initialRealCount = Math.min(maxGridSize - fakesCount, realBlocksAvailable);
     const initialIndices = Array.from({ length: initialRealCount }, (_, i) => i);
     
     const newBlocks = initialIndices.map((pIndex) => ({
@@ -586,9 +588,9 @@ export default function App() {
         }
     }
     
-    // Pad to exactly 9 blocks with hidden blocks if necessary to preserve grid
+    // Pad to exactly maxGridSize blocks with hidden blocks if necessary to preserve grid
     const currentLength = newBlocks.length;
-    for (let i = currentLength; i < 9; i++) {
+    for (let i = currentLength; i < maxGridSize; i++) {
         newBlocks.push({
            id: Math.random().toString(36).substr(2, 9),
            text: '',
@@ -875,8 +877,9 @@ export default function App() {
       
       if (gameState === 'playing') {
          if (playMode === 'square') {
+             const maxGridSize = distractionLevel <= 1 ? 4 : 9;
              const fakesCount = distractionLevel > 0 ? distractionLevel : 0;
-             const nextSpawnIndex = block.seqIndex + (9 - fakesCount);
+             const nextSpawnIndex = block.seqIndex + (maxGridSize - fakesCount);
              setTimeout(() => {
                 setBlocks(prev => {
                     const fakesOnScreen = prev.filter(b => b.isFake && !b.hidden).length;
@@ -1356,7 +1359,7 @@ export default function App() {
               </div>
            ) : playMode === 'square' ? (
              <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '5rem 0 0 0', pointerEvents: 'none' }}>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: '0.75rem', width: '95%', maxWidth: '900px', pointerEvents: 'auto' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: `repeat(${distractionLevel <= 1 ? 2 : 3}, minmax(0, 1fr))`, gap: '0.75rem', width: '95%', maxWidth: distractionLevel <= 1 ? '600px' : '900px', pointerEvents: 'auto' }}>
                    {blocks.map(block => {
                       let appliedClasses = 'falling-block-inner';
                       if (block.error) appliedClasses += ' error-shake';
