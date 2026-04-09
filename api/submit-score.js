@@ -42,20 +42,23 @@ export default async function handler(req, res) {
     const monthlyKey = `leaderboard:monthly:${month}:${verseRef}`;
     const dailyKey = `leaderboard:daily:${today}:${verseRef}`;
 
-    async function updateZset(key) {
+    async function updateZset(key, verseMetaKey) {
         const currentScore = await redis.zscore(key, name);
         if (currentScore === null || score > parseFloat(currentScore)) {
             await redis.zadd(key, { score: score, member: name });
             if (mode) {
-               await redis.hset(`leaderboard_meta:${verseRef}`, { [name]: mode });
+               await redis.hset(`leaderboard_meta:${verseMetaKey}`, { [name]: mode });
             }
         }
     }
 
     await Promise.all([
-        updateZset(allTimeKey),
-        updateZset(monthlyKey),
-        updateZset(dailyKey)
+        updateZset(allTimeKey, verseRef),
+        updateZset(monthlyKey, verseRef),
+        updateZset(dailyKey, verseRef),
+        updateZset("leaderboard:global", 'global'),
+        updateZset(`leaderboard:monthly:${month}:global`, 'global'),
+        updateZset(`leaderboard:daily:${today}:global`, 'global')
     ]);
 
     res.status(200).json({ success: true });

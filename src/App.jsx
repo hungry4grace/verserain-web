@@ -450,6 +450,19 @@ export default function App() {
   const [leaderboardModalData, setLeaderboardModalData] = useState({ alltime: [], monthly: [], daily: [] });
   const [leaderboardModalTab, setLeaderboardModalTab] = useState('alltime'); // 'daily', 'monthly', 'alltime'
   const [isFetchingLeaderboard, setIsFetchingLeaderboard] = useState(false);
+  const [mainTab, setMainTab] = useState('versesets');
+  const [globalLeaderboardData, setGlobalLeaderboardData] = useState({ alltime: [], monthly: [], daily: [] });
+  const [isFetchingGlobalLeaderboard, setIsFetchingGlobalLeaderboard] = useState(false);
+  const [globalLeaderboardTab, setGlobalLeaderboardTab] = useState('alltime');
+  
+  const fetchGlobalLeaderboard = () => {
+     setIsFetchingGlobalLeaderboard(true);
+     fetch(`/api/get-scores`)
+        .then(res => res.json())
+        .then(data => setGlobalLeaderboardData(data && Array.isArray(data.alltime) ? data : { alltime: Array.isArray(data) ? data : [], monthly: [], daily: [] }))
+        .catch(() => setGlobalLeaderboardData({ alltime: [], monthly: [], daily: [] }))
+        .finally(() => setIsFetchingGlobalLeaderboard(false));
+  };
   const [showLoginModal, setShowLoginModal] = useState(null);
   const [verseViewModal, setVerseViewModal] = useState(null);
 
@@ -1072,7 +1085,11 @@ export default function App() {
                { id: 'about', label: t('有關 About', 'About') },
                { id: 'donate', label: t('奉獻支持 Donate', 'Donate') }
              ].map((item, idx) => (
-                <div key={idx} onClick={() => { if (item.id === 'versesets') setSelectedSetId(null); }} style={{ padding: '0.8rem 1.5rem', cursor: 'pointer', backgroundColor: idx === 0 ? '#3b82f6' : 'transparent', fontWeight: 'bold', whiteSpace: 'nowrap', transition: 'background 0.2s', fontSize: '0.95rem' }} onMouseOver={(e) => { if(idx !== 0) e.target.style.backgroundColor = '#475569'; }} onMouseOut={(e) => { if (idx !== 0) e.target.style.backgroundColor = 'transparent'; }}>
+                <div key={idx} onClick={() => { 
+                   setMainTab(item.id); 
+                   if (item.id === 'versesets') setSelectedSetId(null); 
+                   if (item.id === 'leaderboard') fetchGlobalLeaderboard(); 
+                }} style={{ padding: '0.8rem 1.5rem', cursor: 'pointer', backgroundColor: mainTab === item.id ? '#3b82f6' : 'transparent', fontWeight: 'bold', whiteSpace: 'nowrap', transition: 'background 0.2s', fontSize: '0.95rem' }} onMouseOver={(e) => { if(mainTab !== item.id) e.target.style.backgroundColor = '#475569'; }} onMouseOut={(e) => { if (mainTab !== item.id) e.target.style.backgroundColor = 'transparent'; }}>
                    {item.label}
                 </div>
              ))}
@@ -1081,6 +1098,8 @@ export default function App() {
           {/* Main Content Area */}
           <div style={{ maxWidth: '1000px', margin: '2rem auto', padding: '0 1rem' }}>
              
+             {mainTab === 'versesets' && (
+               <>
              {/* Action Bar (Filters & Controls) */}
              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#ffffff', padding: '1rem', borderTopLeftRadius: '8px', borderTopRightRadius: '8px', borderBottom: '1px solid #e2e8f0', flexWrap: 'wrap', gap: '1rem', border: '1px solid #cbd5e1' }}>
                 <div style={{ display: 'flex', gap: '0.5rem' }}>
@@ -1285,7 +1304,51 @@ export default function App() {
                        >
                          {t("連續自動播放", "Auto Play Selected")}
                        </button>
+                     </div>
+                  </div>
+              )}
+               </>
+             )}
+
+             {mainTab === 'leaderboard' && (
+                 <div style={{ backgroundColor: '#ffffff', borderRadius: '8px', border: '1px solid #cbd5e1', padding: '2rem', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+                    <h2 style={{ color: '#1e293b', marginTop: 0, marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '10px' }}><Trophy color="#d97706" /> {t("全服神射手總排行", "Global Leaderboard")}</h2>
+                    <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem' }}>
+                       <button onClick={() => setGlobalLeaderboardTab('alltime')} style={{ padding: '0.5rem 1rem', border: 'none', background: globalLeaderboardTab === 'alltime' ? '#3b82f6' : '#e2e8f0', color: globalLeaderboardTab === 'alltime' ? 'white' : '#475569', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>{t("歷史總榜", "All Time")}</button>
+                       <button onClick={() => setGlobalLeaderboardTab('monthly')} style={{ padding: '0.5rem 1rem', border: 'none', background: globalLeaderboardTab === 'monthly' ? '#8b5cf6' : '#e2e8f0', color: globalLeaderboardTab === 'monthly' ? 'white' : '#475569', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>{t("本月排行", "Monthly")}</button>
+                       <button onClick={() => setGlobalLeaderboardTab('daily')} style={{ padding: '0.5rem 1rem', border: 'none', background: globalLeaderboardTab === 'daily' ? '#10b981' : '#e2e8f0', color: globalLeaderboardTab === 'daily' ? 'white' : '#475569', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>{t("本日排行", "Daily")}</button>
                     </div>
+
+                    {isFetchingGlobalLeaderboard ? (
+                       <div style={{ padding: '2rem', textAlign: 'center', color: '#64748b' }}>{t("載入中...", "Loading...")}</div>
+                    ) : (
+                       <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+                           <thead>
+                               <tr style={{ borderBottom: '2px solid #e2e8f0', color: '#64748b', fontSize: '0.9rem' }}>
+                                   <th style={{ padding: '0.8rem 1rem' }}>#</th>
+                                   <th style={{ padding: '0.8rem 1rem' }}>{t("玩家", "Player")}</th>
+                                   <th style={{ padding: '0.8rem 1rem', textAlign: 'right' }}>{t("最高分數", "Best Score")}</th>
+                                   <th style={{ padding: '0.8rem 1rem', textAlign: 'center' }}>{t("突破模式", "Mode")}</th>
+                               </tr>
+                           </thead>
+                           <tbody>
+                               {(globalLeaderboardData[globalLeaderboardTab] || []).length === 0 ? (
+                                   <tr><td colSpan="4" style={{ padding: '2rem', textAlign: 'center', color: '#94a3b8' }}>{t("目前還沒有紀錄", "No records yet")}</td></tr>
+                               ) : (
+                                   globalLeaderboardData[globalLeaderboardTab].map((entry, idx) => (
+                                     <tr key={idx} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                                         <td style={{ padding: '0.8rem 1rem', color: idx < 3 ? '#d97706' : '#64748b', fontWeight: 'bold' }}>{idx + 1}</td>
+                                         <td style={{ padding: '0.8rem 1rem', fontWeight: 'bold', color: '#1e293b' }}>{entry.name}</td>
+                                         <td style={{ padding: '0.8rem 1rem', textAlign: 'right', fontFamily: 'monospace', fontSize: '1.2rem', color: '#3b82f6' }}>{entry.score}</td>
+                                         <td style={{ padding: '0.8rem 1rem', textAlign: 'center' }}>
+                                             {entry.mode === 'square' ? <span style={{ background: '#fef3c7', color: '#d97706', padding: '0.2rem 0.5rem', borderRadius: '4px', fontSize: '0.8rem' }}>Square</span> : <span style={{ background: '#dbeafe', color: '#2563eb', padding: '0.2rem 0.5rem', borderRadius: '4px', fontSize: '0.8rem' }}>Rain</span>}
+                                         </td>
+                                     </tr>
+                                   ))
+                               )}
+                           </tbody>
+                       </table>
+                    )}
                  </div>
              )}
 

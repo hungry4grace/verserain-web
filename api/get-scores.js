@@ -12,11 +12,7 @@ export default async function handler(req, res) {
     return
   }
 
-  const { verseRef } = req.query;
-
-  if (!verseRef) {
-    return res.status(400).json({ error: 'verseRef query parameter is required' });
-  }
+  const verseRef = req.query.verseRef || 'global';
 
   const redisUrl = process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL;
   const redisToken = process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN;
