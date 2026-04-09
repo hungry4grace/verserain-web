@@ -1327,34 +1327,32 @@ export default function App() {
                   }
 
                   const bestPerVerse = {};
-                  rawData.forEach(entry => {
-                    if (!bestPerVerse[entry.verseRef] || entry.score > bestPerVerse[entry.verseRef].score) {
-                      bestPerVerse[entry.verseRef] = entry;
-                    }
-                  });
-                  const uniqueEntries = Object.values(bestPerVerse).sort((a, b) => a.verseRef.localeCompare(b.verseRef));
-                  const ITEMS_PER_PAGE = 10;
-                  const totalPages = Math.ceil(uniqueEntries.length / ITEMS_PER_PAGE);
-                  const startIndex = (globalLeaderboardPage - 1) * ITEMS_PER_PAGE;
-                  const pagedEntries = uniqueEntries.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+                    rawData.forEach(entry => {
+                      if (!bestPerVerse[entry.verseRef] || entry.score > bestPerVerse[entry.verseRef].score) {
+                        bestPerVerse[entry.verseRef] = entry;
+                      }
+                    });
+                    const uniqueEntries = Object.values(bestPerVerse).sort((a, b) => a.verseRef.localeCompare(b.verseRef));
+                    const ITEMS_PER_PAGE = 10;
+                    const totalPages = Math.ceil(uniqueEntries.length / ITEMS_PER_PAGE);
+                    const startIndex = (globalLeaderboardPage - 1) * ITEMS_PER_PAGE;
+                    const pagedEntries = uniqueEntries.slice(startIndex, startIndex + ITEMS_PER_PAGE);
 
-                  return (
-                    <div>
-                      <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
-                        <thead>
-                          <tr style={{ borderBottom: '2px solid #e2e8f0', color: '#64748b', fontSize: '0.9rem' }}>
-                            <th style={{ padding: '0.8rem 1rem' }}>#</th>
-                            <th style={{ padding: '0.8rem 1rem' }}>{t("經文出處", "Verse Reference")}</th>
+                    return (
+                      <div>
+                        <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+                          <thead>
+                            <tr style={{ borderBottom: '2px solid #e2e8f0', color: '#64748b', fontSize: '0.9rem' }}>
+                              <th style={{ padding: '0.8rem 1rem' }}>{t("經文出處", "Verse Reference")}</th>
                             <th style={{ padding: '0.8rem 1rem' }}>{t("玩家", "Player")}</th>
                             <th style={{ padding: '0.8rem 1rem', textAlign: 'right' }}>{t("最高分數", "Best Score")}</th>
-                            <th style={{ padding: '0.8rem 1rem', textAlign: 'center' }}>{t("突破模式", "Mode")}</th>
-                            <th style={{ padding: '0.8rem 1rem', textAlign: 'center' }}>{t("難度", "Difficulty")}</th>
-                            <th style={{ padding: '0.8rem 1rem', textAlign: 'center' }}>{t("挑戰", "Challenge")}</th>
+                            <th style={{ padding: '0.8rem 1rem', textAlign: 'center' }}>{t("模式/難度", "Mode/Lv")}</th>
+                            <th style={{ padding: '0.8rem 1rem', textAlign: 'center' }}>{t("查看排行榜", "Leaderboard")}</th>
+                            <th style={{ padding: '0.8rem 1rem', textAlign: 'center' }}>{t("直接挑戰", "Challenge")}</th>
                           </tr>
                         </thead>
                         <tbody>
                           {pagedEntries.map((entry, idx) => {
-                            const actualRank = startIndex + idx + 1;
                             const parseMode = (modeStr) => {
                               let modeType = modeStr || 'rain';
                               let difficulty = 0;
@@ -1369,28 +1367,47 @@ export default function App() {
 
                             return (
                               <tr key={idx} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                                <td style={{ padding: '0.8rem 1rem', color: actualRank <= 3 ? '#d97706' : '#64748b', fontWeight: 'bold' }}>{actualRank}</td>
                                 <td style={{ padding: '0.8rem 1rem' }}>
                                   <button onClick={() => {
-                                    const fullVerse = activeVerseSets.flatMap(vs => vs.verses).find(v => v.reference === entry.verseRef) || { reference: entry.verseRef, title: "Custom" };
-                                    setLeaderboardModalVerse(fullVerse);
-                                    setIsFetchingLeaderboard(true);
-                                    fetch(`/api/get-scores?verseRef=${encodeURIComponent(entry.verseRef)}`)
-                                      .then(res => res.json())
-                                      .then(data => setLeaderboardModalData(data && Array.isArray(data.alltime) ? data : { alltime: Array.isArray(data) ? data : [], monthly: [], daily: [] }))
-                                      .catch(() => setLeaderboardModalData({ alltime: [], monthly: [], daily: [] }))
-                                      .finally(() => setIsFetchingLeaderboard(false));
+                                    const fullVerse = VERSES_CUV.find(v => v.reference === entry.verseRef) || VERSES_KJV.find(v => v.reference === entry.verseRef);
+                                    if (fullVerse) {
+                                      setVerseViewModal(fullVerse);
+                                    } else {
+                                      fetch(`https://bible-api.com/${encodeURIComponent(entry.verseRef)}?translation=kjv`)
+                                        .then(res => res.json())
+                                        .then(data => setVerseViewModal({ reference: data.reference, title: "Bible", text: data.text.trim() }))
+                                        .catch(() => alert("Could not fetch verse preview"));
+                                    }
                                   }} style={{ background: 'transparent', border: 'none', color: '#0369a1', fontWeight: 'bold', fontSize: '1rem', cursor: 'pointer', padding: 0, textAlign: 'left' }} onMouseOver={(e) => e.target.style.textDecoration = 'underline'} onMouseOut={(e) => e.target.style.textDecoration = 'none'}>
                                     {entry.verseRef}
                                   </button>
                                 </td>
                                 <td style={{ padding: '0.8rem 1rem', fontWeight: 'bold', color: '#1e293b' }}>{entry.name}</td>
                                 <td style={{ padding: '0.8rem 1rem', textAlign: 'right', fontFamily: 'monospace', fontSize: '1.2rem', color: '#3b82f6' }}>{entry.score}</td>
-                                <td style={{ padding: '0.8rem 1rem', textAlign: 'center' }}>
-                                  {modeType === 'square' ? <span style={{ background: '#fef3c7', color: '#d97706', padding: '0.2rem 0.5rem', borderRadius: '4px', fontSize: '0.8rem' }}>Square</span> : <span style={{ background: '#dbeafe', color: '#2563eb', padding: '0.2rem 0.5rem', borderRadius: '4px', fontSize: '0.8rem' }}>Rain</span>}
+                                <td style={{ padding: '0.8rem 1rem', textAlign: 'center', fontSize: '0.85rem' }}>
+                                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px' }}>
+                                     {modeType === 'square' ? <span style={{ background: '#fef3c7', color: '#d97706', padding: '0.1rem 0.4rem', borderRadius: '4px' }}>Square</span> : <span style={{ background: '#dbeafe', color: '#2563eb', padding: '0.1rem 0.4rem', borderRadius: '4px' }}>Rain</span>}
+                                     <span style={{ color: '#64748b', fontWeight: 'bold' }}>Lv {difficulty}</span>
+                                  </div>
                                 </td>
                                 <td style={{ padding: '0.8rem 1rem', textAlign: 'center' }}>
-                                  <span style={{ color: '#475569', fontWeight: 'bold' }}>Lv {difficulty}</span>
+                                  <button 
+                                    onClick={() => {
+                                      const fullVerse = activeVerseSets.flatMap(vs => vs.verses).find(v => v.reference === entry.verseRef) || { reference: entry.verseRef, title: "Custom" };
+                                      setLeaderboardModalVerse(fullVerse);
+                                      setIsFetchingLeaderboard(true);
+                                      fetch(`/api/get-scores?verseRef=${encodeURIComponent(entry.verseRef)}`)
+                                        .then(res => res.json())
+                                        .then(data => setLeaderboardModalData(data && Array.isArray(data.alltime) ? data : { alltime: Array.isArray(data) ? data : [], monthly: [], daily: [] }))
+                                        .catch(() => setLeaderboardModalData({ alltime: [], monthly: [], daily: [] }))
+                                        .finally(() => setIsFetchingLeaderboard(false));
+                                    }}
+                                    style={{ background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '0.3rem 0.6rem', cursor: 'pointer', color: '#475569' }}
+                                    onMouseOver={(e) => e.target.style.background = '#e2e8f0'}
+                                    onMouseOut={(e) => e.target.style.background = '#f8fafc'}
+                                  >
+                                    🏆
+                                  </button>
                                 </td>
                                 <td style={{ padding: '0.8rem 1rem', textAlign: 'center' }}>
                                   <button
