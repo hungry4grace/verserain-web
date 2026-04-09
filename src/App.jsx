@@ -1432,8 +1432,9 @@ export default function App() {
                                         setPlayMode(modeType);
                                         setDistractionLevel(difficulty);
                                         setActiveVerse(targetVerse);
-                                        // Slight delay ensures state transitions are processed
-                                        setTimeout(() => startGame(false), 80);
+                                        
+                                        // Use the automatic start mechanism to ensure state convergence
+                                        setInitAutoStart({ trigger: true, isAuto: false });
                                       } else {
                                         alert(t("找不到該經文內容，無法挑戰。", "Verse content not found, cannot challenge."));
                                       }
