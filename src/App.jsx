@@ -1083,10 +1083,10 @@ export default function App() {
           {/* Navigation Bar */}
           <div style={{ display: 'flex', backgroundColor: '#334155', color: 'white', padding: '0 1rem', overflowX: 'auto', borderBottom: '2px solid #1e293b' }}>
             {[
-              { id: 'versesets', label: t('經文組 Verse Sets', 'Verse Sets') },
-              { id: 'leaderboard', label: t('排行榜 Leaderboard', 'Leaderboard') },
-              { id: 'search', label: t('搜尋 Search', 'Search') },
-              { id: 'about', label: t('有關 About', 'About') },
+              { id: 'versesets', label: t('經文組', 'Verse Sets') },
+              { id: 'leaderboard', label: t('排行榜', 'Leaderboard') },
+              { id: 'search', label: t('搜尋', 'Search') },
+              { id: 'about', label: t('有關', 'About') },
               { id: 'donate', label: t('加入「互惠經濟」', 'Join Mutualized Economy'), link: 'https://www.skool.com/mutualizedeconomy' }
             ].map((item, idx) => (
               <div key={idx} onClick={() => {
