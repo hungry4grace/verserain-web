@@ -1084,7 +1084,7 @@ export default function App() {
               { id: 'leaderboard', label: t('排行榜 Leaderboard', 'Leaderboard') },
               { id: 'search', label: t('搜尋 Search', 'Search') },
               { id: 'about', label: t('有關 About', 'About') },
-              { id: 'donate', label: t('加入「互惠經濟」', 'Join EcoAwakening'), link: 'https://www.skool.com/mutualizedeconomy' }
+              { id: 'donate', label: t('加入「互惠經濟」', 'Join Mutualized Economy'), link: 'https://www.skool.com/mutualizedeconomy' }
             ].map((item, idx) => (
               <div key={idx} onClick={() => {
                 if (item.link) {
@@ -1148,21 +1148,21 @@ export default function App() {
                           return (
                             <tr key={i} style={{ borderBottom: '1px solid #e2e8f0', backgroundColor: isSelected ? '#eff6ff' : (i % 2 === 0 ? '#ffffff' : '#f8fafc'), transition: 'background 0.2s', cursor: 'pointer' }} onClick={() => toggleSelection(v.reference)}>
                               <td style={{ padding: '0.8rem 1rem', textAlign: 'center' }} onClick={(e) => e.stopPropagation()}>
-                                  <button
-                                    style={{ background: 'transparent', border: '1px solid #fbbf24', color: '#d97706', padding: '0.2rem 0.5rem', borderRadius: '4px', cursor: 'pointer', fontSize: '0.8rem', whiteSpace: 'nowrap' }}
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      setLeaderboardModalVerse(v);
-                                      setIsFetchingLeaderboard(true);
-                                      fetch(`/api/get-scores?verseRef=${encodeURIComponent(v.reference)}`)
-                                        .then(res => res.json())
-                                        .then(data => setLeaderboardModalData(data && Array.isArray(data.alltime) ? data : { alltime: Array.isArray(data) ? data : [], monthly: [], daily: [] }))
-                                        .catch(() => setLeaderboardModalData({ alltime: [], monthly: [], daily: [] }))
-                                        .finally(() => setIsFetchingLeaderboard(false));
-                                    }}
-                                  >
-                                    <Trophy size={11} style={{ display: 'inline', verticalAlign: 'middle', marginRight: '3px' }} /> {vBest > 0 ? vBest : t('榜單', 'Rank')}
-                                  </button>
+                                <button
+                                  style={{ background: 'transparent', border: '1px solid #fbbf24', color: '#d97706', padding: '0.2rem 0.5rem', borderRadius: '4px', cursor: 'pointer', fontSize: '0.8rem', whiteSpace: 'nowrap' }}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setLeaderboardModalVerse(v);
+                                    setIsFetchingLeaderboard(true);
+                                    fetch(`/api/get-scores?verseRef=${encodeURIComponent(v.reference)}`)
+                                      .then(res => res.json())
+                                      .then(data => setLeaderboardModalData(data && Array.isArray(data.alltime) ? data : { alltime: Array.isArray(data) ? data : [], monthly: [], daily: [] }))
+                                      .catch(() => setLeaderboardModalData({ alltime: [], monthly: [], daily: [] }))
+                                      .finally(() => setIsFetchingLeaderboard(false));
+                                  }}
+                                >
+                                  <Trophy size={11} style={{ display: 'inline', verticalAlign: 'middle', marginRight: '3px' }} /> {vBest > 0 ? vBest : t('榜單', 'Rank')}
+                                </button>
                               </td>
                               <td style={{ padding: '0.8rem 1rem' }}>
                                 <button
@@ -1526,7 +1526,6 @@ export default function App() {
                   <li>挑戰模式有助於加強記憶同一個經文組中的多段相關經文。</li>
                   <li>線上排行榜能激勵會眾、青年團契和小組成員一起參與遊玩、共同精進！</li>
                 </ul>
-
 
               </div>
             )}
