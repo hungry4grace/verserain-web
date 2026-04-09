@@ -457,7 +457,7 @@ export default function App() {
   
   const fetchGlobalLeaderboard = () => {
      setIsFetchingGlobalLeaderboard(true);
-     fetch(`/api/get-scores`)
+     fetch(`/api/get-all-scores`)
         .then(res => res.json())
         .then(data => setGlobalLeaderboardData(data && Array.isArray(data.alltime) ? data : { alltime: Array.isArray(data) ? data : [], monthly: [], daily: [] }))
         .catch(() => setGlobalLeaderboardData({ alltime: [], monthly: [], daily: [] }))
@@ -1326,25 +1326,44 @@ export default function App() {
                            <thead>
                                <tr style={{ borderBottom: '2px solid #e2e8f0', color: '#64748b', fontSize: '0.9rem' }}>
                                    <th style={{ padding: '0.8rem 1rem' }}>#</th>
+                                   <th style={{ padding: '0.8rem 1rem' }}>{t("經文出處", "Verse Reference")}</th>
                                    <th style={{ padding: '0.8rem 1rem' }}>{t("玩家", "Player")}</th>
                                    <th style={{ padding: '0.8rem 1rem', textAlign: 'right' }}>{t("最高分數", "Best Score")}</th>
                                    <th style={{ padding: '0.8rem 1rem', textAlign: 'center' }}>{t("突破模式", "Mode")}</th>
+                                   <th style={{ padding: '0.8rem 1rem', textAlign: 'center' }}>{t("難度", "Difficulty")}</th>
                                </tr>
                            </thead>
                            <tbody>
                                {(globalLeaderboardData[globalLeaderboardTab] || []).length === 0 ? (
-                                   <tr><td colSpan="4" style={{ padding: '2rem', textAlign: 'center', color: '#94a3b8' }}>{t("目前還沒有紀錄", "No records yet")}</td></tr>
+                                   <tr><td colSpan="6" style={{ padding: '2rem', textAlign: 'center', color: '#94a3b8' }}>{t("目前還沒有紀錄", "No records yet")}</td></tr>
                                ) : (
-                                   globalLeaderboardData[globalLeaderboardTab].map((entry, idx) => (
+                                   globalLeaderboardData[globalLeaderboardTab].map((entry, idx) => {
+                                     const parseMode = (modeStr) => {
+                                         let modeType = modeStr || 'rain';
+                                         let difficulty = 0;
+                                         if (modeStr && modeStr.includes('-dx')) {
+                                             const parts = modeStr.split('-dx');
+                                             modeType = parts[0];
+                                             difficulty = parseInt(parts[1], 10) || 0;
+                                         }
+                                         return { modeType, difficulty };
+                                     };
+                                     const { modeType, difficulty } = parseMode(entry.mode);
+
+                                     return (
                                      <tr key={idx} style={{ borderBottom: '1px solid #f1f5f9' }}>
                                          <td style={{ padding: '0.8rem 1rem', color: idx < 3 ? '#d97706' : '#64748b', fontWeight: 'bold' }}>{idx + 1}</td>
+                                         <td style={{ padding: '0.8rem 1rem', fontWeight: 'bold', color: '#0369a1' }}>{entry.verseRef}</td>
                                          <td style={{ padding: '0.8rem 1rem', fontWeight: 'bold', color: '#1e293b' }}>{entry.name}</td>
                                          <td style={{ padding: '0.8rem 1rem', textAlign: 'right', fontFamily: 'monospace', fontSize: '1.2rem', color: '#3b82f6' }}>{entry.score}</td>
                                          <td style={{ padding: '0.8rem 1rem', textAlign: 'center' }}>
-                                             {entry.mode === 'square' ? <span style={{ background: '#fef3c7', color: '#d97706', padding: '0.2rem 0.5rem', borderRadius: '4px', fontSize: '0.8rem' }}>Square</span> : <span style={{ background: '#dbeafe', color: '#2563eb', padding: '0.2rem 0.5rem', borderRadius: '4px', fontSize: '0.8rem' }}>Rain</span>}
+                                             {modeType === 'square' ? <span style={{ background: '#fef3c7', color: '#d97706', padding: '0.2rem 0.5rem', borderRadius: '4px', fontSize: '0.8rem' }}>Square</span> : <span style={{ background: '#dbeafe', color: '#2563eb', padding: '0.2rem 0.5rem', borderRadius: '4px', fontSize: '0.8rem' }}>Rain</span>}
+                                         </td>
+                                         <td style={{ padding: '0.8rem 1rem', textAlign: 'center' }}>
+                                             <span style={{ color: '#475569', fontWeight: 'bold' }}>Lv {difficulty}</span>
                                          </td>
                                      </tr>
-                                   ))
+                                   )})
                                )}
                            </tbody>
                        </table>
