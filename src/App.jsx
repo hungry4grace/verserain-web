@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Play, RotateCcw, Heart, Zap, Trophy, Crown, Star, Home, XCircle, Headphones, Music, VolumeX } from 'lucide-react';
+import { Play, RotateCcw, Heart, Zap, Trophy, Crown, Star, Home, XCircle, Headphones, Music, VolumeX, Search } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import './index.css';
 
@@ -451,6 +451,7 @@ export default function App() {
   const [leaderboardModalTab, setLeaderboardModalTab] = useState('alltime'); // 'daily', 'monthly', 'alltime'
   const [isFetchingLeaderboard, setIsFetchingLeaderboard] = useState(false);
   const [mainTab, setMainTab] = useState('versesets');
+  const [searchQuery, setSearchQuery] = useState('');
   const [globalLeaderboardData, setGlobalLeaderboardData] = useState({ alltime: [], monthly: [], daily: [] });
   const [isFetchingGlobalLeaderboard, setIsFetchingGlobalLeaderboard] = useState(false);
   const [globalLeaderboardTab, setGlobalLeaderboardTab] = useState('alltime');
@@ -1080,7 +1081,6 @@ export default function App() {
              {[
                { id: 'versesets', label: t('經文組 Verse Sets', 'Verse Sets') },
                { id: 'leaderboard', label: t('排行榜 Leaderboard', 'Leaderboard') },
-               { id: 'play', label: t('遊玩 Play', 'Play') },
                { id: 'search', label: t('搜尋 Search', 'Search') },
                { id: 'about', label: t('有關 About', 'About') },
                { id: 'donate', label: t('奉獻支持 Donate', 'Donate') }
@@ -1391,7 +1391,103 @@ export default function App() {
                                })()}
                            </tbody>
                        </table>
-                    )}
+                     )}
+                 </div>
+             )}
+
+             {mainTab === 'search' && (
+                 <div style={{ backgroundColor: '#ffffff', borderRadius: '8px', border: '1px solid #cbd5e1', padding: '2rem', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+                    <h2 style={{ color: '#1e293b', marginTop: 0, marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '10px' }}><Search color="#0369a1" /> {t("搜尋經文", "Search Verses")}</h2>
+                    <input 
+                       type="text" 
+                       value={searchQuery}
+                       onChange={(e) => setSearchQuery(e.target.value)}
+                       placeholder={t("輸入關鍵字，例如「利未記」或「醫治」...", "Enter keyword...")}
+                       style={{ width: '100%', padding: '0.8rem 1rem', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '1rem', marginBottom: '2rem', boxSizing: 'border-box' }}
+                    />
+                    
+                    {(() => {
+                        if (!searchQuery.trim()) return <div style={{ color: '#64748b' }}>{t("請輸入關鍵字開始搜尋。", "Please enter a keyword to search.")}</div>;
+                        const query = searchQuery.trim().toLowerCase();
+                        
+                        // Search in sets
+                        const matchingSets = activeVerseSets.filter(s => s.title.toLowerCase().includes(query) || s.description.toLowerCase().includes(query));
+                        // Search in individual verses
+                        const matchingVerses = activeVerseSets.flatMap(s => s.verses.map(v => ({...v, setId: s.id, setName: s.title}))).filter(v => v.reference.toLowerCase().includes(query) || v.title.toLowerCase().includes(query) || v.text.toLowerCase().includes(query));
+
+                        return (
+                           <div>
+                              {matchingSets.length > 0 && (
+                                 <div style={{ marginBottom: '2rem' }}>
+                                    <h3 style={{ color: '#334155', borderBottom: '2px solid #e2e8f0', paddingBottom: '0.5rem' }}>{t("經文組資料夾", "Verse Sets")} ({matchingSets.length})</h3>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem', marginTop: '1rem' }}>
+                                        {matchingSets.map(set => (
+                                           <div key={set.id} onClick={() => { setSelectedSetId(set.id); setMainTab('versesets'); }} style={{ padding: '1.5rem', border: '1px solid #e2e8f0', borderRadius: '8px', cursor: 'pointer', backgroundColor: '#f8fafc', display: 'flex', alignItems: 'center', gap: '1rem', transition: 'background-color 0.2s' }} onMouseOver={(e) => e.currentTarget.style.backgroundColor='#eff6ff'} onMouseOut={(e) => e.currentTarget.style.backgroundColor='#f8fafc'}>
+                                              <div style={{ fontSize: '2rem' }}>📁</div>
+                                              <div>
+                                                <div style={{ fontWeight: 'bold', color: '#1e293b', fontSize: '1.1rem' }}>{set.title}</div>
+                                                <div style={{ color: '#64748b', fontSize: '0.9rem', marginTop: '0.3rem' }}>{set.description}</div>
+                                              </div>
+                                           </div>
+                                        ))}
+                                    </div>
+                                 </div>
+                              )}
+                              
+                              {matchingVerses.length > 0 && (
+                                 <div>
+                                    <h3 style={{ color: '#334155', borderBottom: '2px solid #e2e8f0', paddingBottom: '0.5rem', marginBottom: '1rem' }}>{t("單獨經文", "Individual Verses")} ({matchingVerses.length})</h3>
+                                    <div style={{ overflowX: 'auto' }}>
+                                    <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+                                       <thead>
+                                          <tr style={{ backgroundColor: '#f8fafc', color: '#475569', fontSize: '0.9rem' }}>
+                                             <th style={{ padding: '0.8rem 1rem', borderBottom: '2px solid #cbd5e1' }}>{t("所屬經文組", "From Set")}</th>
+                                             <th style={{ padding: '0.8rem 1rem', borderBottom: '2px solid #cbd5e1' }}>{t("經文出處", "Reference")}</th>
+                                             <th style={{ padding: '0.8rem 1rem', borderBottom: '2px solid #cbd5e1' }}>{t("內容片段", "Preview")}</th>
+                                             <th style={{ padding: '0.8rem 1rem', borderBottom: '2px solid #cbd5e1', textAlign: 'right' }}>{t("直接遊玩", "Play")}</th>
+                                          </tr>
+                                       </thead>
+                                       <tbody>
+                                          {matchingVerses.map((v, i) => (
+                                             <tr key={i} style={{ borderBottom: '1px solid #e2e8f0', transition: 'background-color 0.1s' }} onMouseOver={(e) => e.currentTarget.style.backgroundColor='#f8fafc'} onMouseOut={(e) => e.currentTarget.style.backgroundColor='transparent'}>
+                                                <td style={{ padding: '0.8rem 1rem', color: '#64748b', fontSize: '0.85rem' }}>{v.setName}</td>
+                                                <td style={{ padding: '0.8rem 1rem', fontWeight: 'bold', color: '#0369a1', fontSize: '0.95rem' }}>
+                                                    <button onClick={(e) => { e.stopPropagation(); setVerseViewModal(v); }} style={{ background: 'transparent', border: 'none', color: '#0ea5e9', fontWeight: 'bold', fontSize: '0.95rem', cursor: 'pointer', padding: 0, textAlign: 'left' }} onMouseOver={(e) => e.target.style.textDecoration = 'underline'} onMouseOut={(e) => e.target.style.textDecoration = 'none'}>
+                                                        {v.reference}
+                                                    </button>
+                                                </td>
+                                                <td style={{ padding: '0.8rem 1rem', color: '#475569', fontSize: '0.9rem' }}>{v.text.substring(0, 35)}...</td>
+                                                <td style={{ padding: '0.8rem 1rem', textAlign: 'right' }}>
+                                                  <button 
+                                                     onClick={() => {
+                                                         initAudio();
+                                                         setCampaignQueue(null);
+                                                         setCampaignResults([]);
+                                                         setActiveVerse(v);
+                                                         setTimeout(() => startGame(false), 50);
+                                                     }}
+                                                     title={t("遊玩這篇經文", "Play this verse")}
+                                                     style={{ backgroundColor: '#10b981', color: 'white', border: 'none', borderRadius: '50%', width: '32px', height: '32px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}
+                                                  >
+                                                     <Play size={16} fill="white" />
+                                                  </button>
+                                                </td>
+                                             </tr>
+                                          ))}
+                                       </tbody>
+                                    </table>
+                                    </div>
+                                 </div>
+                              )}
+                              
+                              {matchingSets.length === 0 && matchingVerses.length === 0 && (
+                                 <div style={{ padding: '2rem', textAlign: 'center', color: '#94a3b8', backgroundColor: '#f8fafc', borderRadius: '8px', marginTop: '1rem' }}>
+                                    {t("很抱歉，沒有找到符合條件的經文或群組。", "Sorry, no matching verses or sets found.")}
+                                 </div>
+                              )}
+                           </div>
+                        );
+                    })()}
                  </div>
              )}
 
