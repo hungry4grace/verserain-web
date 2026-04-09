@@ -1495,6 +1495,63 @@ export default function App() {
                  </div>
              )}
 
+             {mainTab === 'about' && (
+                 <div style={{ backgroundColor: '#ffffff', borderRadius: '8px', border: '1px solid #cbd5e1', padding: '2rem', boxShadow: '0 1px 3px rgba(0,0,0,0.05)', color: '#334155', lineHeight: '1.6' }}>
+                    <h2 style={{ color: '#1e293b', marginTop: 0, marginBottom: '1.5rem', borderBottom: '2px solid #e2e8f0', paddingBottom: '0.5rem', fontFamily: 'cursive', color: '#3b82f6' }}>Verse Rain makes memorizing bible verses fun!</h2>
+                    
+                    <p style={{ marginBottom: '1rem' }}>
+                    A Chinese church uses VerseRain app to held a "Bible Bee Competition" for the congregation. All ages in each family and small groups are able to participate. Four projectors are set up for four teams to compete at the same time in the challenge mode for the same set of verses.
+                    </p>
+                    <p style={{ marginBottom: '1.5rem' }}>
+                    A four year old boy and his three year old sister are eager to show that they can play the VerseRain by reciting "The Lord's Prayer" in Chinese. Both of them are born in America, yet they are able to read and play the game in Chinese.
+                    </p>
+                    <p style={{ marginBottom: '1.5rem' }}>
+                    Bible verse words rain from the sky and players earn points as they tap words in correct order. Words are read aloud as they are tapped, reinforcing memorization both visually and audibly.
+                    </p>
+
+                    <ul style={{ paddingLeft: '1.5rem', marginBottom: '1.5rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                        <li>Learn bible verses in more than thirty other languages!</li>
+                        <li>Text-to-speech capability speaks the words as they are tapped to reinforce learning</li>
+                        <li>Potentially unlimited number of verses, verse sets and bible versions supported through verserain.com</li>
+                        <li>Three levels of difficulties are supported, great for both children and adults</li>
+                        <li>Challenge mode reinforces memorizing of multiple verses in a related verse set</li>
+                        <li>Online leaderboard encourages congregations, youth groups and small groups to participate playing together!</li>
+                    </ul>
+
+                    <p style={{ marginBottom: '2rem' }}>
+                    You are encouraged to create an account to post your own favorite verse sets and share them with your friends. Verse Rain is cross-platform and playable for free on the web, iOS App Store and also on Android devices.
+                    </p>
+
+                    <h3 style={{ color: '#1e293b', borderBottom: '1px solid #e2e8f0', paddingBottom: '0.5rem', marginBottom: '1rem' }}>How to delete a verse set that you created</h3>
+                    <ol style={{ paddingLeft: '1.5rem', marginBottom: '2rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                        <li>Log in</li>
+                        <li>Go to "Profile"</li>
+                        <li>Go to "Verse Sets"</li>
+                        <li>Go to the Verse Set you want to edit or delete</li>
+                        <li>Look for the tab "challenges all verses | remove", and click on "remove" to delete the verse set.</li>
+                    </ol>
+
+                    <h3 style={{ color: '#1e293b', borderBottom: '1px solid #e2e8f0', paddingBottom: '0.5rem', marginBottom: '1rem' }}>How to reorder verses in a verse set</h3>
+                    <ol style={{ paddingLeft: '1.5rem', marginBottom: '2rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                        <li>Log in</li>
+                        <li>Go to "Profile"</li>
+                        <li>Go to "Verse Sets"</li>
+                        <li>Go to the Verse Set you want to rearrange order</li>
+                        <li>Look for the tab "practice verse | edit | remove | ↓ " and click on the down arrow to move that verse downward.</li>
+                    </ol>
+
+                    <h3 style={{ color: '#1e293b', borderBottom: '1px solid #e2e8f0', paddingBottom: '0.5rem', marginBottom: '1rem' }}>Feedback</h3>
+                    <p style={{ marginBottom: '2rem' }}>
+                    You are welcome to send us suggestions or bug report here: <a href="http://www.verserain.com/contact" target="_blank" rel="noreferrer" style={{ color: '#3b82f6' }}>http://www.verserain.com/contact</a>
+                    </p>
+
+                    <h3 style={{ color: '#1e293b', borderBottom: '1px solid #e2e8f0', paddingBottom: '0.5rem', marginBottom: '1rem' }}>Help Translate VerseRain Web and Game Interface</h3>
+                    <p style={{ marginBottom: '1rem' }}>
+                    Please help us to translate this game to other languages so that more people can be reached to advance the Kingdom. To help translating to a language of you choice, you first need to log in, and also have your email verified, then go to the bottom of the page and click on "Translate Verserain". Fill in each blank in the target language, and that's it. Please help to promote the cause, and introduce VerseRain to your friends who speaks different languages.
+                    </p>
+                 </div>
+             )}
+
              {/* Footer Elements */}
              <div style={{ marginTop: '2rem', display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap', color: '#64748b', fontSize: '0.85rem' }}>
                  <button style={{ background: '#e2e8f0', border: 'none', padding: '0.4rem 0.8rem', borderRadius: '4px', cursor: 'pointer', color: '#475569' }}>{t("選擇語言 (en) ▼", "Select Language (zh) ▼")}</button>
