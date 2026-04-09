@@ -821,7 +821,8 @@ export default function App() {
     if (block.correct || block.error) return; 
 
     if (block.seqIndex === currentSeqIndex) {
-      const voiceRate = isAutoPlayRef.current ? 1.0 : Math.min(Math.pow(1.05, combo), 2.2);
+      // Voice should remain at normal speed so the user doesn't get nervous
+      const voiceRate = 1.0;
 
       setScore(s => s + 100 + (combo * 50));
       setCombo(c => c + 1);
