@@ -1072,7 +1072,7 @@ export default function App() {
                { id: 'about', label: t('有關 About', 'About') },
                { id: 'donate', label: t('奉獻支持 Donate', 'Donate') }
              ].map((item, idx) => (
-                <div key={idx} style={{ padding: '0.8rem 1.5rem', cursor: 'pointer', backgroundColor: idx === 0 ? '#3b82f6' : 'transparent', fontWeight: 'bold', whiteSpace: 'nowrap', transition: 'background 0.2s', fontSize: '0.95rem' }} onMouseOver={(e) => { if(idx !== 0) e.target.style.backgroundColor = '#475569'; }} onMouseOut={(e) => { if (idx !== 0) e.target.style.backgroundColor = 'transparent'; }}>
+                <div key={idx} onClick={() => { if (item.id === 'versesets') setSelectedSetId(null); }} style={{ padding: '0.8rem 1.5rem', cursor: 'pointer', backgroundColor: idx === 0 ? '#3b82f6' : 'transparent', fontWeight: 'bold', whiteSpace: 'nowrap', transition: 'background 0.2s', fontSize: '0.95rem' }} onMouseOver={(e) => { if(idx !== 0) e.target.style.backgroundColor = '#475569'; }} onMouseOut={(e) => { if (idx !== 0) e.target.style.backgroundColor = 'transparent'; }}>
                    {item.label}
                 </div>
              ))}
@@ -1145,21 +1145,14 @@ export default function App() {
                 ) : (
                     <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
                        <thead>
-                          <tr style={{ backgroundColor: '#eff6ff', borderBottom: '1px solid #bfdbfe' }}>
-                             <td colSpan="5" style={{ padding: '0.8rem 1rem' }}>
-                                 <button onClick={() => setSelectedSetId(null)} style={{ background: 'transparent', border: 'none', color: '#3b82f6', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px' }}>
-                                    ← {t("返回經文組目錄", "Back to Folders")}
-                                 </button>
-                             </td>
-                          </tr>
                           <tr style={{ backgroundColor: '#f8fafc', color: '#475569', fontSize: '0.9rem' }}>
-                         <th style={{ padding: '1rem', borderBottom: '2px solid #e2e8f0', width: '50px' }}></th>
-                         <th style={{ padding: '1rem', borderBottom: '2px solid #e2e8f0' }}>{t("經文組", "Verse Set")}</th>
-                         <th style={{ padding: '1rem', borderBottom: '2px solid #e2e8f0', minWidth: '150px' }}>{t("經文簡介", "Reference")}</th>
-                         <th style={{ padding: '1rem', borderBottom: '2px solid #e2e8f0' }}>{t("作者", "Author")}</th>
-                         <th style={{ padding: '1rem', borderBottom: '2px solid #e2e8f0', textAlign: 'right' }}>{t("設定", "Settings")}</th>
-                      </tr>
-                   </thead>
+                             <th style={{ padding: '1rem', borderBottom: '2px solid #e2e8f0', width: '50px' }}></th>
+                             <th style={{ padding: '1rem', borderBottom: '2px solid #e2e8f0' }}>{t("經文組", "Verse Set")}</th>
+                             <th style={{ padding: '1rem', borderBottom: '2px solid #e2e8f0', minWidth: '150px' }}>{t("經文簡介", "Reference")}</th>
+                             <th style={{ padding: '1rem', borderBottom: '2px solid #e2e8f0' }}>{t("作者", "Author")}</th>
+                             <th style={{ padding: '1rem', borderBottom: '2px solid #e2e8f0', textAlign: 'right' }}>{t("設定", "Settings")}</th>
+                          </tr>
+                       </thead>
                    <tbody>
                       {VERSES_DB.map((v, i) => {
                          const vBest = parseInt(localStorage.getItem(`verseRainBestScore_${v.reference}`)) || 0;
