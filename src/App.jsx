@@ -485,12 +485,16 @@ export default function App() {
     wrappers.forEach(el => {
       const anims = el.getAnimations();
       anims.forEach(anim => {
-        if (anim.animationName === 'fall') {
-          anim.playbackRate = rate;
+        // Only target fall animation and ensure it's not paused
+        if (anim.effect && anim.effect.getComputedTiming && anim.effect.getComputedTiming().progress !== null) {
+           anim.playbackRate = rate;
+        } else {
+           // Fallback for newer blocks just added
+           anim.playbackRate = rate;
         }
       });
     });
-  }, [combo, blocks]);
+  }, [combo, blocks]); // We keep blocks here because when a new block is added, we want it to inherit the Current rate instantly
 
   const spawnNextBlock = (expiredBlockId = null) => {
     setBlocks(prev => {
@@ -1711,6 +1715,7 @@ export default function App() {
                       top: '-30px',
                       left: `${block.xPos}%`,
                       animation: `fall ${block.duration}s linear forwards`,
+                      animationPlayState: 'running',
                       zIndex: block.seqIndex === currentSeqIndex ? 50 : 10
                     }}
                     onAnimationEnd={(e) => handleAnimationEnd(e, block.id)}
