@@ -1691,22 +1691,35 @@ export default function App() {
 
             <button 
               onClick={() => {
-                 let nameToSet = playerName;
+                 const emailInput = document.getElementById('modalEmailInput');
+                 const email = emailInput ? emailInput.value.trim() : '';
+
+                 // Retrieve mock DB
+                 let mockDB = {};
+                 try {
+                     mockDB = JSON.parse(localStorage.getItem('verserain_mock_user_db')) || {};
+                 } catch (e) {}
+
+                 let nameToSet = playerName || "";
+
                  if (showLoginModal === 'signup') {
                      const nameInput = document.getElementById('modalPlayerNameInput');
                      if (nameInput && nameInput.value.trim().length > 0) {
                          nameToSet = nameInput.value.trim();
-                     } else {
-                         // Default to email prefix if no name typed
-                         const emailInput = document.getElementById('modalEmailInput');
-                         if (emailInput && emailInput.value.trim().length > 0) {
-                             nameToSet = emailInput.value.trim().split('@')[0];
-                         }
+                     } else if (email) {
+                         nameToSet = email.split('@')[0];
+                     }
+                     // Save to mock DB
+                     if (email && nameToSet) {
+                         mockDB[email] = nameToSet;
+                         localStorage.setItem('verserain_mock_user_db', JSON.stringify(mockDB));
                      }
                  } else {
-                     const emailInput = document.getElementById('modalEmailInput');
-                     if (emailInput && emailInput.value.trim().length > 0) {
-                         nameToSet = emailInput.value.trim().split('@')[0];
+                     if (email && mockDB[email]) {
+                         // Found registered display name for this email!
+                         nameToSet = mockDB[email];
+                     } else if (email) {
+                         nameToSet = email.split('@')[0];
                      }
                  }
                  
