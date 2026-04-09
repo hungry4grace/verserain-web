@@ -1345,6 +1345,7 @@ export default function App() {
                             <th style={{ padding: '0.8rem 1rem', textAlign: 'right' }}>{t("最高分數", "Best Score")}</th>
                             <th style={{ padding: '0.8rem 1rem', textAlign: 'center' }}>{t("突破模式", "Mode")}</th>
                             <th style={{ padding: '0.8rem 1rem', textAlign: 'center' }}>{t("難度", "Difficulty")}</th>
+                            <th style={{ padding: '0.8rem 1rem', textAlign: 'center' }}>{t("挑戰", "Challenge")}</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -1386,6 +1387,32 @@ export default function App() {
                                 </td>
                                 <td style={{ padding: '0.8rem 1rem', textAlign: 'center' }}>
                                   <span style={{ color: '#475569', fontWeight: 'bold' }}>Lv {difficulty}</span>
+                                </td>
+                                <td style={{ padding: '0.8rem 1rem', textAlign: 'center' }}>
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      initAudio();
+                                      const fullVerse = activeVerseSets.flatMap(vs => vs.verses).find(v => v.reference === entry.verseRef);
+                                      if (fullVerse) {
+                                        setPlayMode(modeType);
+                                        setDistractionLevel(difficulty);
+                                        setActiveVerse(fullVerse);
+                                        setTimeout(() => startGame(false), 50);
+                                      } else {
+                                        // Fallback if verse not found in local sets (unlikely but possible if database changed)
+                                        setPlayMode(modeType);
+                                        setDistractionLevel(difficulty);
+                                        setActiveVerse({ reference: entry.verseRef, title: "Custom", text: entry.text || "" });
+                                        setTimeout(() => startGame(false), 50);
+                                      }
+                                    }}
+                                    style={{ background: '#f59e0b', color: 'white', border: 'none', borderRadius: '4px', padding: '0.4rem 0.8rem', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.85rem' }}
+                                    onMouseOver={(e) => e.target.style.background = '#d97706'}
+                                    onMouseOut={(e) => e.target.style.background = '#f59e0b'}
+                                  >
+                                    {t("挑戰", "Challenge")}
+                                  </button>
                                 </td>
                               </tr>
                             )
