@@ -51,6 +51,26 @@ function speakText(text, rate = 1.0, lang = 'zh-TW') {
   });
 }
 
+function playShuffleSound() {
+  initAudio();
+  for (let i = 0; i < 4; i++) {
+     setTimeout(() => {
+        const osc = audioCtx.createOscillator();
+        const gainNode = audioCtx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(400 + Math.random() * 300, audioCtx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 0.08);
+        gainNode.gain.setValueAtTime(0, audioCtx.currentTime);
+        gainNode.gain.linearRampToValueAtTime(0.15, audioCtx.currentTime + 0.01);
+        gainNode.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.08);
+        osc.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.09);
+     }, i * 35);
+  }
+}
+
 function playBong() {
   initAudio();
   const osc = audioCtx.createOscillator();
@@ -533,10 +553,14 @@ export default function App() {
 
   const initSquareBlocks = () => {
     const phrases = activePhrasesRef.current;
-    const initialCount = Math.min(9, phrases.length);
-    const initialIndices = Array.from({ length: initialCount }, (_, i) => i);
-    initialIndices.sort(() => Math.random() - 0.5);
-
+    
+    // Total blocks must always be exactly 9 for 3x3 grid
+    const fakesCount = distractionLevel > 0 ? distractionLevel : 0;
+    const realBlocksAvailable = phrases.length;
+    
+    const initialRealCount = Math.min(9 - fakesCount, realBlocksAvailable);
+    const initialIndices = Array.from({ length: initialRealCount }, (_, i) => i);
+    
     const newBlocks = initialIndices.map((pIndex) => ({
       id: Math.random().toString(36).substr(2, 9),
       text: phrases[pIndex],
@@ -547,8 +571,7 @@ export default function App() {
       hidden: false
     }));
 
-    if (distractionLevel > 0) {
-        let fakesCount = distractionLevel; 
+    if (fakesCount > 0) {
         for (let i = 0; i < fakesCount; i++) {
            newBlocks.push({
                id: Math.random().toString(36).substr(2, 9),
@@ -563,6 +586,20 @@ export default function App() {
         }
     }
     
+    // Pad to exactly 9 blocks with hidden blocks if necessary to preserve grid
+    const currentLength = newBlocks.length;
+    for (let i = currentLength; i < 9; i++) {
+        newBlocks.push({
+           id: Math.random().toString(36).substr(2, 9),
+           text: '',
+           seqIndex: -99,
+           isSquare: true,
+           error: false,
+           correct: false,
+           hidden: true 
+        });
+    }
+
     newBlocks.sort(() => Math.random() - 0.5);
     setBlocks(newBlocks);
   };
@@ -838,7 +875,8 @@ export default function App() {
       
       if (gameState === 'playing') {
          if (playMode === 'square') {
-             const nextSpawnIndex = block.seqIndex + 9;
+             const fakesCount = distractionLevel > 0 ? distractionLevel : 0;
+             const nextSpawnIndex = block.seqIndex + (9 - fakesCount);
              setTimeout(() => {
                 setBlocks(prev => {
                     const fakesOnScreen = prev.filter(b => b.isFake && !b.hidden).length;
@@ -869,13 +907,15 @@ export default function App() {
                             seqIndex: -1,
                             isSquare: true, error: false, correct: false, hidden: false, isFake: true
                         };
-                        // Insert fake block at a random position to shift the grid and challenge memory
-                        const insertPos = Math.floor(Math.random() * (updated.length + 1));
-                        updated.splice(insertPos, 0, newFake);
+                        const hiddenIdx = updated.findIndex(b => b.hidden);
+                        if (hiddenIdx !== -1) {
+                            updated[hiddenIdx] = newFake;
+                        }
                     }
 
                     if (distractionLevel >= 2) {
                         // Scramble the whole grid on every correct click to significantly increase challenge
+                        playShuffleSound();
                         updated.sort(() => Math.random() - 0.5);
                     }
 
@@ -913,13 +953,15 @@ export default function App() {
         setBlocks(prev => {
             let updated = prev;
             if (playMode === 'square' && block.seqIndex === -1) {
-                updated = prev.filter(b => b.id !== block.id);
+                // Return prev mapped to hidden so we preserve grid length
+                updated = prev.map(b => b.id === block.id ? { ...b, error: false, hidden: true, isFake: false } : b);
             } else {
                 updated = prev.map(b => b.id === block.id ? { ...b, error: false } : b);
             }
 
             if (playMode === 'square' && distractionLevel >= 2) {
                 // Scramble the whole grid on every mistake too, making recovery harder
+                playShuffleSound();
                 updated = [...updated].sort(() => Math.random() - 0.5);
             }
 
