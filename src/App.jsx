@@ -1334,10 +1334,21 @@ export default function App() {
                                </tr>
                            </thead>
                            <tbody>
-                               {(globalLeaderboardData[globalLeaderboardTab] || []).length === 0 ? (
-                                   <tr><td colSpan="6" style={{ padding: '2rem', textAlign: 'center', color: '#94a3b8' }}>{t("目前還沒有紀錄", "No records yet")}</td></tr>
-                               ) : (
-                                   globalLeaderboardData[globalLeaderboardTab].map((entry, idx) => {
+                               {(() => {
+                                   const rawData = globalLeaderboardData[globalLeaderboardTab] || [];
+                                   if (rawData.length === 0) {
+                                       return <tr><td colSpan="6" style={{ padding: '2rem', textAlign: 'center', color: '#94a3b8' }}>{t("目前還沒有紀錄", "No records yet")}</td></tr>;
+                                   }
+
+                                   const bestPerVerse = {};
+                                   rawData.forEach(entry => {
+                                       if (!bestPerVerse[entry.verseRef] || entry.score > bestPerVerse[entry.verseRef].score) {
+                                           bestPerVerse[entry.verseRef] = entry;
+                                       }
+                                   });
+                                   const uniqueEntries = Object.values(bestPerVerse).sort((a,b) => a.verseRef.localeCompare(b.verseRef));
+
+                                   return uniqueEntries.map((entry, idx) => {
                                      const parseMode = (modeStr) => {
                                          let modeType = modeStr || 'rain';
                                          let difficulty = 0;
@@ -1353,7 +1364,20 @@ export default function App() {
                                      return (
                                      <tr key={idx} style={{ borderBottom: '1px solid #f1f5f9' }}>
                                          <td style={{ padding: '0.8rem 1rem', color: idx < 3 ? '#d97706' : '#64748b', fontWeight: 'bold' }}>{idx + 1}</td>
-                                         <td style={{ padding: '0.8rem 1rem', fontWeight: 'bold', color: '#0369a1' }}>{entry.verseRef}</td>
+                                         <td style={{ padding: '0.8rem 1rem' }}>
+                                             <button onClick={() => {
+                                                 const fullVerse = activeVerseSets.flatMap(vs => vs.verses).find(v => v.reference === entry.verseRef) || { reference: entry.verseRef, title: "Custom" };
+                                                 setLeaderboardModalVerse(fullVerse);
+                                                 setIsFetchingLeaderboard(true);
+                                                 fetch(`/api/get-scores?verseRef=${encodeURIComponent(entry.verseRef)}`)
+                                                   .then(res => res.json())
+                                                   .then(data => setLeaderboardModalData(data && Array.isArray(data.alltime) ? data : { alltime: Array.isArray(data) ? data : [], monthly: [], daily: [] }))
+                                                   .catch(() => setLeaderboardModalData({ alltime: [], monthly: [], daily: [] }))
+                                                   .finally(() => setIsFetchingLeaderboard(false));
+                                             }} style={{ background: 'transparent', border: 'none', color: '#0369a1', fontWeight: 'bold', fontSize: '1rem', cursor: 'pointer', padding: 0, textAlign: 'left' }} onMouseOver={(e) => e.target.style.textDecoration = 'underline'} onMouseOut={(e) => e.target.style.textDecoration = 'none'}>
+                                                 {entry.verseRef}
+                                             </button>
+                                         </td>
                                          <td style={{ padding: '0.8rem 1rem', fontWeight: 'bold', color: '#1e293b' }}>{entry.name}</td>
                                          <td style={{ padding: '0.8rem 1rem', textAlign: 'right', fontFamily: 'monospace', fontSize: '1.2rem', color: '#3b82f6' }}>{entry.score}</td>
                                          <td style={{ padding: '0.8rem 1rem', textAlign: 'center' }}>
@@ -1364,7 +1388,7 @@ export default function App() {
                                          </td>
                                      </tr>
                                    )})
-                               )}
+                               })()}
                            </tbody>
                        </table>
                     )}
