@@ -1290,7 +1290,7 @@ export default function App() {
 
             {mainTab === 'leaderboard' && (
               <div style={{ backgroundColor: '#ffffff', borderRadius: '8px', border: '1px solid #cbd5e1', padding: '2rem', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
-                <h2 style={{ color: '#1e293b', marginTop: 0, marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '10px' }}><Trophy color="#d97706" /> {t("全服神射手總排行", "Global Leaderboard")}</h2>
+                <h2 style={{ color: '#1e293b', marginTop: 0, marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '10px' }}><Trophy color="#d97706" /> {t("全球 VerseRain 排行榜", "Global Leaderboard")}</h2>
                 <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem' }}>
                   <button onClick={() => { setGlobalLeaderboardTab('alltime'); setGlobalLeaderboardPage(1); }} style={{ padding: '0.5rem 1rem', border: 'none', background: globalLeaderboardTab === 'alltime' ? '#3b82f6' : '#e2e8f0', color: globalLeaderboardTab === 'alltime' ? 'white' : '#475569', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>{t("歷史總榜", "All Time")}</button>
                   <button onClick={() => { setGlobalLeaderboardTab('monthly'); setGlobalLeaderboardPage(1); }} style={{ padding: '0.5rem 1rem', border: 'none', background: globalLeaderboardTab === 'monthly' ? '#8b5cf6' : '#e2e8f0', color: globalLeaderboardTab === 'monthly' ? 'white' : '#475569', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>{t("本月排行", "Monthly")}</button>
