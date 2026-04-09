@@ -1390,21 +1390,43 @@ export default function App() {
                                 </td>
                                 <td style={{ padding: '0.8rem 1rem', textAlign: 'center' }}>
                                   <button
-                                    onClick={(e) => {
+                                    onClick={async (e) => {
                                       e.stopPropagation();
                                       initAudio();
-                                      const fullVerse = activeVerseSets.flatMap(vs => vs.verses).find(v => v.reference === entry.verseRef);
-                                      if (fullVerse) {
+                                      
+                                      // Search across all possible sets
+                                      let targetVerse = VERSES_CUV.find(v => v.reference === entry.verseRef);
+                                      let targetVersion = 'cuv';
+                                      
+                                      if (!targetVerse) {
+                                        targetVerse = VERSES_KJV.find(v => v.reference === entry.verseRef);
+                                        targetVersion = 'kjv';
+                                      }
+
+                                      // If still not found, it might be a custom record or from a different dataset
+                                      if (!targetVerse && entry.verseRef) {
+                                        try {
+                                          const res = await fetch(`https://bible-api.com/${encodeURIComponent(entry.verseRef)}?translation=kjv`);
+                                          if (res.ok) {
+                                            const data = await res.json();
+                                            targetVerse = {
+                                              reference: data.reference,
+                                              title: "Custom Selection",
+                                              text: data.text.replace(/\n/g, ' ').trim()
+                                            };
+                                            targetVersion = 'kjv';
+                                          }
+                                        } catch (err) { console.error("Fetch failed", err); }
+                                      }
+
+                                      if (targetVerse && targetVerse.text) {
+                                        if (version !== targetVersion) setVersion(targetVersion);
                                         setPlayMode(modeType);
                                         setDistractionLevel(difficulty);
-                                        setActiveVerse(fullVerse);
+                                        setActiveVerse(targetVerse);
                                         setTimeout(() => startGame(false), 50);
                                       } else {
-                                        // Fallback if verse not found in local sets (unlikely but possible if database changed)
-                                        setPlayMode(modeType);
-                                        setDistractionLevel(difficulty);
-                                        setActiveVerse({ reference: entry.verseRef, title: "Custom", text: entry.text || "" });
-                                        setTimeout(() => startGame(false), 50);
+                                        alert(t("找不到該經文內容，無法挑戰。", "Verse content not found, cannot challenge."));
                                       }
                                     }}
                                     style={{ background: '#f59e0b', color: 'white', border: 'none', borderRadius: '4px', padding: '0.4rem 0.8rem', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.85rem' }}
