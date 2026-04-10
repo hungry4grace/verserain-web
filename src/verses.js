@@ -307,8 +307,7 @@ export const VERSE_SETS = [
     PSALMS_42_72,
     PSALMS_73_89,
     PSALMS_90_106,
-    PSALMS_107_150,
-    ...VERSE_SETS_KJV
+    PSALMS_107_150
 ];
 
 // Fallback for backwards compatibility

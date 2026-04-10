@@ -1,6 +1,6 @@
 export const VERSE_SETS_KJV = [
     {
-        id: "mutualized-economics",
+        id: "mutualized-economics-kjv",
         title: "Mutualized Economics (Key Verses)",
         description: "Core principles of God's image, stewardship, Jubilee and reset mechanics.",
         verses: [
@@ -155,7 +155,7 @@ export const VERSE_SETS_KJV = [
     text: "What doth it profit, my brethren, though a man say he hath faith, and have not works? can faith save him? If a brother or sister be naked, and destitute of daily food, and one of you say unto them, Depart in peace, be ye warmed and filled; notwithstanding ye give them not those things which are needful to the body; what doth it profit? Even so faith, if it hath not works, is dead, being alone."
   }
         ]
-    },,
+    },
     {
         "id": "psalms-1-41-kjv",
         "title": "Psalms 1-41 (KJV)",

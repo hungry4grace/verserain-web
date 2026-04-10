@@ -1150,97 +1150,116 @@ export default function App() {
                       </tbody>
                     </table>
                   ) : (
-                    <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
-                      <thead>
-                        <tr style={{ backgroundColor: '#f8fafc', color: '#475569', fontSize: '0.9rem' }}>
-                          <th style={{ padding: '1rem', borderBottom: '2px solid #e2e8f0', width: '80px', textAlign: 'center' }}>{t("榜單", "Rank")}</th>
-                          <th style={{ padding: '1rem', borderBottom: '2px solid #e2e8f0' }}>{t("經文組", "Verse Set")}</th>
-                          <th style={{ padding: '1rem', borderBottom: '2px solid #e2e8f0', minWidth: '150px' }}>{t("經文簡介", "Reference")}</th>
-                          <th style={{ padding: '1rem', borderBottom: '2px solid #e2e8f0' }}>{t("作者", "Author")}</th>
-                          <th style={{ padding: '1rem', borderBottom: '2px solid #e2e8f0', textAlign: 'right' }}>{t("設定", "Settings")}</th>
-                          <th style={{ padding: '1rem', borderBottom: '2px solid #e2e8f0', width: '60px', textAlign: 'center' }}></th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {VERSES_DB.map((v, i) => {
-                          const vBest = parseInt(localStorage.getItem(`verseRainBestScore_${v.reference}`)) || 0;
-                          const isSelected = selectedVerseRefs.includes(v.reference);
+                    <>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '1rem', borderBottom: '1px solid #e2e8f0', backgroundColor: '#f8fafc' }}>
+                        <button 
+                          onClick={() => setSelectedSetId(null)}
+                          style={{ background: '#ffffff', border: '1px solid #cbd5e1', padding: '0.4rem 0.8rem', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', color: '#475569', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '5px' }}
+                          onMouseOver={(e) => e.target.style.backgroundColor = '#f1f5f9'}
+                          onMouseOut={(e) => e.target.style.backgroundColor = '#ffffff'}
+                        >
+                          <Home size={14} /> {t("返回目錄", "Back to Menu")}
+                        </button>
+                        <div style={{ display: 'flex', flexDirection: 'column' }}>
+                          <span style={{ fontSize: '0.8rem', color: '#64748b', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{t("目前選擇", "Current Set")}</span>
+                          <span style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#1e293b' }}>{currentSet?.title}</span>
+                        </div>
+                      </div>
+                      <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+                        <thead>
+                          <tr style={{ backgroundColor: '#f8fafc', color: '#475569', fontSize: '0.9rem' }}>
+                            <th style={{ padding: '1rem', borderBottom: '2px solid #e2e8f0' }}>{t("經文出處", "Reference")}</th>
+                            <th style={{ padding: '1rem', borderBottom: '2px solid #e2e8f0' }}>{t("經文內容", "Snippet")}</th>
+                            <th style={{ padding: '1rem', borderBottom: '2px solid #e2e8f0', textAlign: 'center', width: '100px' }}>{t("展現", "Show")}</th>
+                            <th style={{ padding: '1rem', borderBottom: '2px solid #e2e8f0', textAlign: 'center', width: '100px' }}>{t("排行", "Rank")}</th>
+                            <th style={{ padding: '1rem', borderBottom: '2px solid #e2e8f0', textAlign: 'right', minWidth: '150px' }}>{t("設定", "Settings")}</th>
+                            <th style={{ padding: '1rem', borderBottom: '2px solid #e2e8f0', width: '80px', textAlign: 'center' }}>{t("開始", "Play")}</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {VERSES_DB.map((v, i) => {
+                            const vBest = parseInt(localStorage.getItem(`verseRainBestScore_${v.reference}`)) || 0;
+                            const isSelected = selectedVerseRefs.includes(v.reference);
 
-                          return (
-                            <tr key={i} style={{ borderBottom: '1px solid #e2e8f0', backgroundColor: isSelected ? '#eff6ff' : (i % 2 === 0 ? '#ffffff' : '#f8fafc'), transition: 'background 0.2s', cursor: 'pointer' }} onClick={() => toggleSelection(v.reference)}>
-                              <td style={{ padding: '0.8rem 1rem', textAlign: 'center' }} onClick={(e) => e.stopPropagation()}>
-                                <button
-                                  style={{ background: 'transparent', border: '1px solid #fbbf24', color: '#d97706', padding: '0.2rem 0.5rem', borderRadius: '4px', cursor: 'pointer', fontSize: '0.8rem', whiteSpace: 'nowrap' }}
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setLeaderboardModalVerse(v);
-                                    setIsFetchingLeaderboard(true);
-                                    fetch(`/api/get-scores?verseRef=${encodeURIComponent(v.reference)}`)
-                                      .then(res => res.json())
-                                      .then(data => setLeaderboardModalData(data && Array.isArray(data.alltime) ? data : { alltime: Array.isArray(data) ? data : [], monthly: [], daily: [] }))
-                                      .catch(() => setLeaderboardModalData({ alltime: [], monthly: [], daily: [] }))
-                                      .finally(() => setIsFetchingLeaderboard(false));
-                                  }}
-                                >
-                                  <Trophy size={11} style={{ display: 'inline', verticalAlign: 'middle', marginRight: '3px' }} /> {vBest > 0 ? vBest : t('榜單', 'Rank')}
-                                </button>
-                              </td>
-                              <td style={{ padding: '0.8rem 1rem' }}>
-                                <button
-                                  onClick={(e) => { e.stopPropagation(); setVerseViewModal(v); }}
-                                  style={{ background: 'transparent', border: 'none', color: '#337ab7', fontWeight: 'bold', fontSize: '1rem', cursor: 'pointer', padding: 0, textAlign: 'left' }}
-                                  onMouseOver={(e) => e.target.style.textDecoration = 'underline'}
-                                  onMouseOut={(e) => e.target.style.textDecoration = 'none'}
-                                >
+                            return (
+                              <tr key={i} style={{ borderBottom: '1px solid #e2e8f0', backgroundColor: isSelected ? '#eff6ff' : (i % 2 === 0 ? '#ffffff' : '#f8fafc'), transition: 'background 0.2s', cursor: 'pointer' }} onClick={() => toggleSelection(v.reference)}>
+                                <td style={{ padding: '0.8rem 1rem', fontWeight: 'bold', color: '#1e293b', fontSize: '0.95rem' }}>
                                   {v.reference}
-                                </button>
-                              </td>
-                              <td style={{ padding: '0.8rem 1rem', color: '#64748b', fontSize: '0.9rem' }}>{v.title}</td>
-                              <td style={{ padding: '0.8rem 1rem', color: '#337ab7', fontSize: '0.9rem' }}>{t("官方", "Official")}</td>
-                              <td style={{ padding: '0.8rem 1rem', textAlign: 'right' }} onClick={(e) => e.stopPropagation()}>
-                                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem', alignItems: 'center' }}>
-                                  <select
-                                    onChange={(e) => setPlayMode(e.target.value)}
-                                    value={playMode}
-                                    style={{ padding: '0.2rem', borderRadius: '4px', border: '1px solid #cbd5e1', fontSize: '0.85rem', color: '#334155', backgroundColor: '#fff' }}
+                                </td>
+                                <td style={{ padding: '0.8rem 1rem', color: '#64748b', fontSize: '0.9rem' }}>
+                                  {v.title}
+                                </td>
+                                <td style={{ padding: '0.8rem 1rem', textAlign: 'center' }} onClick={(e) => e.stopPropagation()}>
+                                  <button
+                                    onClick={() => setVerseViewModal(v)}
+                                    style={{ background: '#f1f5f9', border: '1px solid #cbd5e1', color: '#475569', padding: '0.3rem 0.6rem', borderRadius: '4px', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 'bold' }}
+                                    onMouseOver={(e) => e.target.style.background = '#e2e8f0'}
+                                    onMouseOut={(e) => e.target.style.background = '#f1f5f9'}
                                   >
-                                    <option value="square">Verse Square</option>
-                                    <option value="rain">Verse Rain</option>
-                                  </select>
-                                  <select
-                                    onChange={(e) => setDistractionLevel(Number(e.target.value))}
-                                    value={distractionLevel}
-                                    style={{ padding: '0.2rem', borderRadius: '4px', border: '1px solid #cbd5e1', fontSize: '0.85rem', color: '#334155', backgroundColor: '#fff' }}
+                                    {t("展現經文", "Show")}
+                                  </button>
+                                </td>
+                                <td style={{ padding: '0.8rem 1rem', textAlign: 'center' }} onClick={(e) => e.stopPropagation()}>
+                                  <button
+                                    style={{ background: 'transparent', border: '1px solid #fbbf24', color: '#d97706', padding: '0.3rem 0.6rem', borderRadius: '4px', cursor: 'pointer', fontSize: '0.8rem', whiteSpace: 'nowrap', fontWeight: 'bold' }}
+                                    onClick={() => {
+                                      setLeaderboardModalVerse(v);
+                                      setIsFetchingLeaderboard(true);
+                                      fetch(`/api/get-scores?verseRef=${encodeURIComponent(v.reference)}`)
+                                        .then(res => res.json())
+                                        .then(data => setLeaderboardModalData(data && Array.isArray(data.alltime) ? data : { alltime: Array.isArray(data) ? data : [], monthly: [], daily: [] }))
+                                        .catch(() => setLeaderboardModalData({ alltime: [], monthly: [], daily: [] }))
+                                        .finally(() => setIsFetchingLeaderboard(false));
+                                    }}
                                   >
-                                    <option value={0}>{t("難度 0", "Diff 0")}</option>
-                                    <option value={1}>{t("難度 1", "Diff 1")}</option>
-                                    <option value={2}>{t("難度 2", "Diff 2")}</option>
-                                    <option value={3}>{t("難度 3", "Diff 3")}</option>
-                                  </select>
-                                </div>
-                              </td>
-                              <td style={{ padding: '0.8rem 1rem', textAlign: 'center' }}>
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    initAudio();
-                                    setCampaignQueue(null);
-                                    setCampaignResults([]);
-                                    setActiveVerse(v);
-                                    setTimeout(() => startGame(false), 50);
-                                  }}
-                                  style={{ backgroundColor: '#5cb85c', color: 'white', border: 'none', borderRadius: '4px', padding: '0.4rem 0.8rem', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', transition: 'background 0.2s' }}
-                                  onMouseOver={(e) => e.target.style.backgroundColor = '#4cae4c'}
-                                  onMouseOut={(e) => e.target.style.backgroundColor = '#5cb85c'}
-                                >
-                                  ►
-                                </button>
-                              </td>
-                            </tr>
-                          )
-                        })}
-                      </tbody>
-                    </table>
+                                    <Trophy size={11} style={{ display: 'inline', verticalAlign: 'middle', marginRight: '3px' }} /> {vBest > 0 ? vBest : t('排行榜', 'Rank')}
+                                  </button>
+                                </td>
+                                <td style={{ padding: '0.8rem 1rem', textAlign: 'right' }} onClick={(e) => e.stopPropagation()}>
+                                  <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.4rem', alignItems: 'center' }}>
+                                    <select
+                                      onChange={(e) => setPlayMode(e.target.value)}
+                                      value={playMode}
+                                      style={{ padding: '0.2rem', borderRadius: '4px', border: '1px solid #cbd5e1', fontSize: '0.8rem', color: '#334155', backgroundColor: '#fff' }}
+                                    >
+                                      <option value="square">Verse Square</option>
+                                      <option value="rain">Verse Rain</option>
+                                    </select>
+                                    <select
+                                      onChange={(e) => setDistractionLevel(Number(e.target.value))}
+                                      value={distractionLevel}
+                                      style={{ padding: '0.2rem', borderRadius: '4px', border: '1px solid #cbd5e1', fontSize: '0.8rem', color: '#334155', backgroundColor: '#fff' }}
+                                    >
+                                      <option value={0}>Lv 0</option>
+                                      <option value={1}>Lv 1</option>
+                                      <option value={2}>Lv 2</option>
+                                      <option value={3}>Lv 3</option>
+                                    </select>
+                                  </div>
+                                </td>
+                                <td style={{ padding: '0.8rem 1rem', textAlign: 'center' }}>
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      initAudio();
+                                      setCampaignQueue(null);
+                                      setCampaignResults([]);
+                                      setActiveVerse(v);
+                                      setTimeout(() => startGame(false), 50);
+                                    }}
+                                    style={{ backgroundColor: '#10b981', color: 'white', border: 'none', borderRadius: '6px', width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'transform 0.1s', margin: '0 auto' }}
+                                    onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.1)'}
+                                    onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                                  >
+                                    <Play size={16} fill="white" />
+                                  </button>
+                                </td>
+                              </tr>
+                            )
+                          })}
+                        </tbody>
+                      </table>
+                    </>
                   )}
                 </div>
 
@@ -1513,9 +1532,22 @@ export default function App() {
                   const query = searchQuery.trim().toLowerCase();
 
                   // Search in sets
-                  const matchingSets = activeVerseSets.filter(s => s.title.toLowerCase().includes(query) || s.description.toLowerCase().includes(query));
+                  const matchingSets = activeVerseSets.filter(s => 
+                    s && s.title && (
+                      s.title.toLowerCase().includes(query) || 
+                      (s.description && s.description.toLowerCase().includes(query))
+                    )
+                  );
                   // Search in individual verses
-                  const matchingVerses = activeVerseSets.flatMap(s => s.verses.map(v => ({ ...v, setId: s.id, setName: s.title }))).filter(v => v.reference.toLowerCase().includes(query) || v.title.toLowerCase().includes(query) || v.text.toLowerCase().includes(query));
+                  const matchingVerses = activeVerseSets.flatMap(s => 
+                    (s && s.verses) ? s.verses.map(v => ({ ...v, setId: s.id, setName: s.title })) : []
+                  ).filter(v => 
+                    v && (
+                      (v.reference && v.reference.toLowerCase().includes(query)) || 
+                      (v.title && v.title.toLowerCase().includes(query)) || 
+                      (v.text && v.text.toLowerCase().includes(query))
+                    )
+                  );
 
                   return (
                     <div>
