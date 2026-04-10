@@ -196,7 +196,7 @@ export default function App() {
 
   const [initAutoStart, setInitAutoStart] = useState(null);
 
-  const [isMusicPlaying, setIsMusicPlaying] = useState(true);
+  const [isMusicPlaying, setIsMusicPlaying] = useState(false);
   const bgmAudioRef = useRef(null);
   const [autoplayBlocked, setAutoplayBlocked] = useState(false);
 
@@ -204,7 +204,7 @@ export default function App() {
     if (!bgmAudioRef.current) {
       bgmAudioRef.current = new Audio('/bgm.mp3');
       bgmAudioRef.current.loop = true;
-      bgmAudioRef.current.volume = 0.4;
+      bgmAudioRef.current.volume = 0.2;
     }
     if (isMusicPlaying) {
       const playPromise = bgmAudioRef.current.play();
