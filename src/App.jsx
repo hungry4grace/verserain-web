@@ -1765,7 +1765,7 @@ export default function App() {
           onClick={handleGlobalClick}
           style={{ position: 'absolute', width: '100vw', height: '100vh', top: 0, left: 0, overflow: 'hidden' }}
         >
-          <div style={{ position: 'absolute', top: 0, left: 0, padding: 'clamp(0.5rem, 2vw, 1.5rem)', display: 'flex', flexDirection: 'column', gap: '0.75rem', alignItems: 'flex-start', zIndex: 10 }}>
+          <div style={{ position: 'absolute', top: 0, left: 0, right: 0, padding: '0.5rem 1rem', display: 'flex', flexDirection: 'row', flexWrap: 'wrap', gap: '0.75rem', alignItems: 'center', zIndex: 10 }}>
             <div style={{ display: 'flex', gap: '0.75rem' }}>
               <button
                 className="hud-glass"
@@ -1777,40 +1777,42 @@ export default function App() {
                 }}
                 style={{ padding: '0.75rem', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#f87171' }}
               >
-                <XCircle size={28} />
+                <XCircle size={22} />
               </button>
               {!isAutoPlay && (
-                <div className="hud-glass" style={{ padding: '0.5rem 1rem', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                  <span style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#93c5fd' }}>{activeVerse.reference}</span>
+                <div className="hud-glass" style={{ padding: '0.3rem 0.8rem', display: 'flex', alignItems: 'center' }}>
+                  <span style={{ fontSize: '0.95rem', fontWeight: 'bold', color: '#93c5fd' }}>{activeVerse.reference}</span>
                 </div>
               )}
             </div>
 
             {!isAutoPlay && (
-              <div className="hud-glass" style={{ padding: '0.5rem 1rem', display: 'flex', gap: '1rem', alignItems: 'center' }}>
+              <div className="hud-glass" style={{ padding: '0.3rem 0.8rem', display: 'flex', gap: '0.8rem', alignItems: 'center', height: '100%', minHeight: '36px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.2rem', color: '#f87171' }}>
                   {[...Array(3)].map((_, i) => (
-                    <Heart key={i} size={20} fill={i < health ? '#f87171' : 'transparent'} strokeWidth={i < health ? 0 : 2} />
+                    <Heart key={i} size={16} fill={i < health ? '#f87171' : 'transparent'} strokeWidth={i < health ? 0 : 2} />
                   ))}
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.2rem', fontSize: '1.2rem', fontWeight: 'bold', color: '#fbbf24' }}>
-                  <Zap size={20} fill="#fbbf24" strokeWidth={0} /> {combo}x
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.2rem', fontSize: '1rem', fontWeight: 'bold', color: '#fbbf24' }}>
+                  <Zap size={16} fill="#fbbf24" strokeWidth={0} /> {combo}x
                 </div>
               </div>
             )}
 
             {!isAutoPlay && (
-              <div className="hud-glass" style={{ padding: '0.5rem 1rem', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', minWidth: '120px', position: 'relative' }}>
-                <div style={{ position: 'absolute', top: '-10px', left: '10px', color: '#fbbf24', fontSize: '0.7rem', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                  <Crown size={12} /> {t("最高分", "Best")} {bestScore}
+              <div className="hud-glass" style={{ padding: '0.3rem 0.8rem', display: 'flex', alignItems: 'center', gap: '1rem', minHeight: '36px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+                  <div style={{ color: '#fbbf24', fontSize: '0.65rem', display: 'flex', alignItems: 'center', gap: '3px', marginBottom: '-2px' }}>
+                    <Crown size={10} /> {bestScore}
+                  </div>
+                  <div style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#fff', fontFamily: 'monospace' }}>
+                    {String(score).padStart(6, '0')}
+                  </div>
                 </div>
-                <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: '#fff', fontFamily: 'monospace', marginBottom: '0.2rem' }}>
-                  {String(score).padStart(6, '0')}
-                </div>
-                <div style={{ padding: '0.25rem 0.75rem', background: 'rgba(0,0,0,0.5)', borderRadius: '9999px', display: 'flex', alignItems: 'center', gap: '0.5rem', border: '1px solid rgba(255,255,255,0.1)' }}>
-                  <div style={{ fontSize: '0.8rem', color: '#94a3b8' }}>TIME</div>
-                  <div style={{ fontSize: '1rem', color: timeLeft <= 1000 ? '#f87171' : '#cbd5e1', fontFamily: 'monospace' }}>
-                    00:{String(Math.floor(timeLeft / 100)).padStart(2, '0')}.{String(timeLeft % 100).padStart(2, '0')}
+                <div style={{ padding: '0.2rem 0.6rem', background: 'rgba(0,0,0,0.5)', borderRadius: '6px', display: 'flex', alignItems: 'center', gap: '0.4rem', border: '1px solid rgba(255,255,255,0.1)' }}>
+                  <div style={{ fontSize: '0.7rem', color: '#94a3b8' }}>T</div>
+                  <div style={{ fontSize: '0.95rem', color: timeLeft <= 1000 ? '#f87171' : '#cbd5e1', fontFamily: 'monospace' }}>
+                    {String(Math.floor(timeLeft / 100)).padStart(2, '0')}.{String(timeLeft % 100).padStart(2, '0')}
                   </div>
                 </div>
               </div>
