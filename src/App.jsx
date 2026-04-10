@@ -354,35 +354,6 @@ export default function App() {
     parseUrlArgs();
   }, []); // Run strictly once on mount
 
-  // Process Challenge URL parameter
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const challengeRef = params.get('challenge');
-    if (challengeRef) {
-      if (!playerName) {
-        setShowLoginModal('login');
-      } else {
-        const allVerses = activeVerseSets.flatMap(s => s.verses || []);
-        const targetVerse = allVerses.find(v => v.reference === challengeRef);
-        if (targetVerse) {
-          const isEnglish = /^[a-zA-Z]/.test(targetVerse.reference);
-          // If the verse belongs to the opposite language, setting version triggers activeVerseSets change
-          if ((isEnglish && version !== 'kjv') || (!isEnglish && version !== 'cuv')) {
-             setVersion(isEnglish ? 'kjv' : 'cuv');
-             return; // Wait for activeVerseSets to update on next render
-          }
-          setActiveVerse(targetVerse);
-          setSelectedVerseRefs([targetVerse.reference]);
-          window.history.replaceState({}, document.title, window.location.pathname);
-          // Small delay ensures state is painted before starting the game
-          setTimeout(() => {
-            setInitAutoStart({ trigger: true, isAuto: false });
-          }, 300);
-        }
-      }
-    }
-  }, [playerName, activeVerseSets, version]);
-
   const toggleSelection = (ref) => {
     setSelectedVerseRefs(prev =>
       prev.includes(ref)
@@ -499,6 +470,35 @@ export default function App() {
   };
   const [showLoginModal, setShowLoginModal] = useState(null);
   const [verseViewModal, setVerseViewModal] = useState(null);
+
+  // Process Challenge URL parameter
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const challengeRef = params.get('challenge');
+    if (challengeRef) {
+      if (!playerName) {
+        setShowLoginModal('login');
+      } else {
+        const allVerses = activeVerseSets.flatMap(s => s.verses || []);
+        const targetVerse = allVerses.find(v => v.reference === challengeRef);
+        if (targetVerse) {
+          const isEnglish = /^[a-zA-Z]/.test(targetVerse.reference);
+          // If the verse belongs to the opposite language, setting version triggers activeVerseSets change
+          if ((isEnglish && version !== 'kjv') || (!isEnglish && version !== 'cuv')) {
+             setVersion(isEnglish ? 'kjv' : 'cuv');
+             return; // Wait for activeVerseSets to update on next render
+          }
+          setActiveVerse(targetVerse);
+          setSelectedVerseRefs([targetVerse.reference]);
+          window.history.replaceState({}, document.title, window.location.pathname);
+          // Small delay ensures state is painted before starting the game
+          setTimeout(() => {
+            setInitAutoStart({ trigger: true, isAuto: false });
+          }, 300);
+        }
+      }
+    }
+  }, [playerName, activeVerseSets, version, setActiveVerse, setSelectedVerseRefs, setInitAutoStart, setShowLoginModal, setVersion]);
 
   const timerRef = useRef(null);
   const speechRef = useRef(null);
