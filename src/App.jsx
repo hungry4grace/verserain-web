@@ -1688,6 +1688,68 @@ export default function App() {
                   <li>線上排行榜能激勵會眾、青年團契和小組成員一起參與遊玩、共同精進！</li>
                 </ul>
 
+                <hr style={{ border: 'none', borderTop: '2px dashed #e2e8f0', margin: '2rem 0' }} />
+
+                <h2 style={{ color: '#1e293b', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  📖 VerseRain 使用手冊 / User Manual
+                </h2>
+
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2rem' }}>
+                  {/* Chinese Version */}
+                  <div>
+                    <h3 style={{ borderLeft: '4px solid #3b82f6', paddingLeft: '0.8rem', color: '#1e293b' }}>中文版使用說明</h3>
+                    <div style={{ marginTop: '1rem', display: 'flex', flexDirection: 'column', gap: '1.2rem' }}>
+                      <section>
+                        <h4 style={{ color: '#3b82f6', marginBottom: '0.3rem' }}>1. 教會小組比賽</h4>
+                        <p>這是一款非常適合團契、小組或是主日學舉辦比賽的工具。您可以將畫面投影到大螢幕上，讓不同隊伍同時針對某一組核心經文進行挑戰模式（Rain 模式）。透過實時排行榜，大家可以互相激勵，讓背聖經變得像電競一樣熱血！</p>
+                      </section>
+                      <section>
+                        <h4 style={{ color: '#3b82f6', marginBottom: '0.3rem' }}>2. 兒童與青少年的讀經利器</h4>
+                        <p>對於正在學習認字或背誦的孩子，VerseRain 的「語音朗讀」功能非常關鍵。點擊掉落的字塊時，系統會同步發音，結合「視覺」與「聽覺」的雙重刺激，讓孩子在遊戲中不知不覺就背下了整段經文。</p>
+                      </section>
+                      <section>
+                        <h4 style={{ color: '#3b82f6', marginBottom: '0.3rem' }}>3. 個人靈修與默想</h4>
+                        <p>在個人靜修時，您可以使用 Square（棋盤）模式。這種模式沒有時間壓力，您可以專注於經文的每一個詞彙、每一個逗點，透過點擊與重組的過程，反覆默想神的話語如何在您心中扎根。</p>
+                      </section>
+                      <section>
+                        <h4 style={{ color: '#3b82f6', marginBottom: '0.3rem' }}>4. 雙語學習與對照</h4>
+                        <p>透過右上角的語系切換，您可以隨時在中文（和合本）與英文（KJV）之間切換。對於想學習英文經文或是想對照原文語感的玩家來說，這是一個極佳的語言學習工具。</p>
+                      </section>
+                      <section>
+                        <h4 style={{ color: '#3b82f6', marginBottom: '0.3rem' }}>5. 線上互派挑戰</h4>
+                        <p>點擊列表右側的「分享」圖示，即可複製專屬的挑戰連結。您可以將連結貼到 LINE 或 WhatsApp 群組，邀請朋友針對某一節經文一較高下，看看誰能達成「完美無瑕 (Flawless)」的最高境界！</p>
+                      </section>
+                    </div>
+                  </div>
+
+                  {/* English Version */}
+                  <div>
+                    <h3 style={{ borderLeft: '4px solid #10b981', paddingLeft: '0.8rem', color: '#1e293b' }}>English User Manual</h3>
+                    <div style={{ marginTop: '1rem', display: 'flex', flexDirection: 'column', gap: '1.2rem' }}>
+                      <section>
+                        <h4 style={{ color: '#10b981', marginBottom: '0.3rem' }}>1. Church & Small Group Competition</h4>
+                        <p>VerseRain is the perfect tool for fellowships or Sunday schools to host scripture memorization contests. Project the game on a big screen and let teams compete in "Rain" mode. The real-time leaderboard adds a competitive edge that makes learning scripture exciting!</p>
+                      </section>
+                      <section>
+                        <h4 style={{ color: '#10b981', marginBottom: '0.3rem' }}>2. Interactive Learning for Kids</h4>
+                        <p>For children who are learning to read or memorize, the Text-to-Speech (TTS) feature is vital. As words fall and are clicked, the system reads them aloud. This combines visual and auditory learning, helping kids memorize verses effortlessly through playtime.</p>
+                      </section>
+                      <section>
+                        <h4 style={{ color: '#10b981', marginBottom: '0.3rem' }}>3. Personal Devotion & Meditation</h4>
+                        <p>During your personal quiet time, use the "Square" mode. With no timer or pressure, you can focus on every word and punctuation. The physical act of selecting and reassembling the verse helps you ruminate on God's Word more deeply.</p>
+                      </section>
+                      <section>
+                        <h4 style={{ color: '#10b981', marginBottom: '0.3rem' }}>4. Bilingual Bible Study</h4>
+                        <p>Toggle between Chinese (CUV) and English (KJV) using the language switcher in the top-right corner. It’s an excellent way for learners to master English scripture or for students of the Bible to compare different translations side-by-side.</p>
+                      </section>
+                      <section>
+                        <h4 style={{ color: '#10b981', marginBottom: '0.3rem' }}>5. Social Challenge Sharing</h4>
+                        <p>Click the "Share" icon on the verse table to copy a unique challenge link. Share it with friends on social media or messaging groups to invite them to beat your high score. Aim for the "Flawless" title together!</p>
+                      </section>
+                    </div>
+                  </div>
+                </div>
+
               </div>
             )}
 
