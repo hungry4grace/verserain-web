@@ -1301,68 +1301,7 @@ export default function App() {
                   )}
                 </div>
 
-                {/* Auto Play Floating Bar */}
-                {selectedVerseRefs.length > 0 && (
-                  <div style={{ marginTop: '1rem', padding: '1rem', backgroundColor: '#f0f9ff', border: '1px solid #bae6fd', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
-                    <span style={{ color: '#0369a1', fontWeight: 'bold', fontSize: '0.95rem' }}>
-                      {t(`已選擇 ${selectedVerseRefs.length} 個經文組`, `Selected ${selectedVerseRefs.length} verse sets`)}
-                    </span>
-                    <div style={{ display: 'flex', gap: '0.5rem' }}>
-                      <button
-                        onClick={() => {
-                          initAudio();
-                          const queue = VERSES_DB.filter(v => selectedVerseRefs.includes(v.reference));
-                          if (queue.length === 0) {
-                            if (activeVerse && activeVerse.text) {
-                              setCampaignQueue(null);
-                              setCampaignResults([]);
-                              setTimeout(() => startGame(false), 50);
-                            }
-                            return;
-                          }
 
-                          if (queue.length === 1) {
-                            setActiveVerse(queue[0]);
-                            setCampaignQueue(null);
-                            setCampaignResults([]);
-                            setTimeout(() => startGame(false), 50);
-                          } else {
-                            const shuffled = [...queue].sort(() => Math.random() - 0.5);
-                            setCampaignQueue(shuffled.slice(1));
-                            setCampaignResults([]);
-                            setActiveVerse(shuffled[0]);
-                            setTimeout(() => startGame(false), 50);
-                          }
-                        }}
-                        style={{ background: '#3b82f6', color: 'white', border: 'none', padding: '0.5rem 1rem', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.9rem' }}
-                      >
-                        {t("選取範圍開始", "Play Selected Range")}
-                      </button>
-                      <button
-                        onClick={() => {
-                          initAudio();
-                          const queue = VERSES_DB.filter(v => selectedVerseRefs.includes(v.reference));
-                          if (queue.length === 0) {
-                            if (activeVerse && activeVerse.text) {
-                              setCampaignQueue(null);
-                              setCampaignResults([]);
-                              setTimeout(() => startGame(true), 50);
-                            }
-                            return;
-                          }
-                          const sortedQueue = [...queue];
-                          setCampaignQueue(sortedQueue.slice(1));
-                          setCampaignResults([]);
-                          setActiveVerse(sortedQueue[0]);
-                          setTimeout(() => startGame(true), 50);
-                        }}
-                        style={{ background: '#10b981', color: 'white', border: 'none', padding: '0.5rem 1rem', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.9rem' }}
-                      >
-                        {t("連續自動播放", "Auto Play Selected")}
-                      </button>
-                    </div>
-                  </div>
-                )}
               </>
             )}
 
