@@ -1236,15 +1236,15 @@ export default function App() {
                                     <select
                                       onChange={(e) => setPlayMode(e.target.value)}
                                       value={playMode}
-                                      style={{ padding: '0.1rem 0.2rem', borderRadius: '4px', border: '1px solid #cbd5e1', fontSize: '0.75rem', color: '#334155', backgroundColor: '#fff', width: '100px' }}
+                                      style={{ padding: '0.1rem 0.2rem', borderRadius: '4px', border: '1px solid #cbd5e1', fontSize: '0.75rem', color: '#334155', backgroundColor: '#fff', width: '80px' }}
                                     >
-                                      <option value="square">Verse Square</option>
-                                      <option value="rain">Verse Rain</option>
+                                      <option value="square">Square</option>
+                                      <option value="rain">Rain</option>
                                     </select>
                                     <select
                                       onChange={(e) => setDistractionLevel(Number(e.target.value))}
                                       value={distractionLevel}
-                                      style={{ padding: '0.1rem 0.2rem', borderRadius: '4px', border: '1px solid #cbd5e1', fontSize: '0.75rem', color: '#334155', backgroundColor: '#fff', width: '100px' }}
+                                      style={{ padding: '0.1rem 0.2rem', borderRadius: '4px', border: '1px solid #cbd5e1', fontSize: '0.75rem', color: '#334155', backgroundColor: '#fff', width: '80px' }}
                                     >
                                       <option value={0}>Lv 0</option>
                                       <option value={1}>Lv 1</option>
