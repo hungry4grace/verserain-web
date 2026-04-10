@@ -470,6 +470,7 @@ export default function App() {
   };
   const [showLoginModal, setShowLoginModal] = useState(null);
   const [verseViewModal, setVerseViewModal] = useState(null);
+  const [toast, setToast] = useState(null);
 
   // Process Challenge URL parameter
   useEffect(() => {
@@ -1276,7 +1277,8 @@ export default function App() {
                                         const link = `${window.location.origin}${window.location.pathname}?challenge=${encodeURIComponent(v.reference)}`;
                                         try {
                                           await navigator.clipboard.writeText(link);
-                                          alert(t("挑戰連結已複製到剪貼簿！", "Challenge link copied to clipboard!"));
+                                          setToast(t("挑戰連結已複製到剪貼簿！", "Challenge link copied to clipboard!"));
+                                          setTimeout(() => setToast(null), 3000);
                                         } catch (err) {
                                           alert(t("無法複製連結，請手動全選複製：", "Could not copy link, please copy this directly: ") + link);
                                         }
@@ -2367,6 +2369,14 @@ export default function App() {
               </button>
             </div>
           </div>
+        </div>
+      )}
+      
+      {/* Toast Notification Overlay */}
+      {toast && (
+        <div style={{ position: 'fixed', bottom: '2rem', left: '50%', transform: 'translateX(-50%)', backgroundColor: '#1e293b', color: 'white', padding: '0.8rem 1.5rem', borderRadius: '50px', boxShadow: '0 4px 12px rgba(0,0,0,0.15)', zIndex: 9999, display: 'flex', alignItems: 'center', gap: '8px', animation: 'fadeInUp 0.3s ease-out', fontWeight: 'bold' }}>
+          <Star size={18} fill="#fbbf24" stroke="#fbbf24" />
+          {toast}
         </div>
       )}
 
