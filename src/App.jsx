@@ -1200,8 +1200,7 @@ export default function App() {
                             <th style={{ padding: '1rem', borderBottom: '2px solid #e2e8f0' }}>{t("經文出處 (點擊觀看)", "Reference (Click to View)")}</th>
                             <th style={{ padding: '1rem', borderBottom: '2px solid #e2e8f0', textAlign: 'center', width: '100px' }}>{t("排行", "Rank")}</th>
                             <th style={{ padding: '1rem', borderBottom: '2px solid #e2e8f0', textAlign: 'right', minWidth: '120px' }}>{t("設定", "Settings")}</th>
-                            <th style={{ padding: '1rem', borderBottom: '2px solid #e2e8f0', width: '80px', textAlign: 'center' }}>{t("開始", "Play")}</th>
-                            <th style={{ padding: '1rem', borderBottom: '2px solid #e2e8f0', width: '60px', textAlign: 'center' }}>{t("分享", "Share")}</th>
+                            <th style={{ padding: '1rem', borderBottom: '2px solid #e2e8f0', width: '80px', textAlign: 'center' }}>{t("操作", "Action")}</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -1254,42 +1253,42 @@ export default function App() {
                                     </select>
                                   </div>
                                 </td>
-                                <td style={{ padding: '0.8rem 1rem', textAlign: 'center' }}>
-                                  <button
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      initAudio();
-                                      setCampaignQueue(null);
-                                      setCampaignResults([]);
-                                      setActiveVerse(v);
-                                      setTimeout(() => startGame(false), 50);
-                                    }}
-                                    style={{ backgroundColor: '#10b981', color: 'white', border: 'none', borderRadius: '6px', width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'transform 0.1s', margin: '0 auto' }}
-                                    onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.1)'}
-                                    onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
-                                  >
-                                    <Play size={16} fill="white" />
-                                  </button>
-                                </td>
                                 <td style={{ padding: '0.8rem 1rem', textAlign: 'center' }} onClick={(e) => e.stopPropagation()}>
-                                  <button
-                                    onClick={async (e) => {
-                                      e.stopPropagation();
-                                      const link = `${window.location.origin}${window.location.pathname}?challenge=${encodeURIComponent(v.reference)}`;
-                                      try {
-                                        await navigator.clipboard.writeText(link);
-                                        alert(t("挑戰連結已複製到剪貼簿！", "Challenge link copied to clipboard!"));
-                                      } catch (err) {
-                                        alert(t("無法複製連結，請手動全選複製：", "Could not copy link, please copy this directly: ") + link);
-                                      }
-                                    }}
-                                    title={t("分享挑戰連結", "Share challenge link")}
-                                    style={{ backgroundColor: '#ffffff', color: '#64748b', border: '1px solid #cbd5e1', borderRadius: '6px', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'all 0.1s', margin: '0 auto' }}
-                                    onMouseOver={(e) => { e.currentTarget.style.backgroundColor = '#f1f5f9'; e.currentTarget.style.color = '#3b82f6'; e.currentTarget.style.borderColor = '#3b82f6'; }}
-                                    onMouseOut={(e) => { e.currentTarget.style.backgroundColor = '#ffffff'; e.currentTarget.style.color = '#64748b'; e.currentTarget.style.borderColor = '#cbd5e1'; }}
-                                  >
-                                    <Share2 size={16} />
-                                  </button>
+                                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', alignItems: 'center' }}>
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        initAudio();
+                                        setCampaignQueue(null);
+                                        setCampaignResults([]);
+                                        setActiveVerse(v);
+                                        setTimeout(() => startGame(false), 50);
+                                      }}
+                                      style={{ backgroundColor: '#10b981', color: 'white', border: 'none', borderRadius: '6px', width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'transform 0.1s', margin: '0 auto' }}
+                                      onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.1)'}
+                                      onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                                    >
+                                      <Play size={16} fill="white" />
+                                    </button>
+                                    <button
+                                      onClick={async (e) => {
+                                        e.stopPropagation();
+                                        const link = `${window.location.origin}${window.location.pathname}?challenge=${encodeURIComponent(v.reference)}`;
+                                        try {
+                                          await navigator.clipboard.writeText(link);
+                                          alert(t("挑戰連結已複製到剪貼簿！", "Challenge link copied to clipboard!"));
+                                        } catch (err) {
+                                          alert(t("無法複製連結，請手動全選複製：", "Could not copy link, please copy this directly: ") + link);
+                                        }
+                                      }}
+                                      title={t("分享挑戰連結", "Share challenge link")}
+                                      style={{ backgroundColor: '#ffffff', color: '#64748b', border: '1px solid #cbd5e1', borderRadius: '6px', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'all 0.1s', margin: '0 auto' }}
+                                      onMouseOver={(e) => { e.currentTarget.style.backgroundColor = '#f1f5f9'; e.currentTarget.style.color = '#3b82f6'; e.currentTarget.style.borderColor = '#3b82f6'; }}
+                                      onMouseOut={(e) => { e.currentTarget.style.backgroundColor = '#ffffff'; e.currentTarget.style.color = '#64748b'; e.currentTarget.style.borderColor = '#cbd5e1'; }}
+                                    >
+                                      <Share2 size={16} />
+                                    </button>
+                                  </div>
                                 </td>
                               </tr>
                             )
