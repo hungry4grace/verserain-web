@@ -1198,11 +1198,10 @@ export default function App() {
                         <thead>
                           <tr style={{ backgroundColor: '#f8fafc', color: '#475569', fontSize: '0.9rem' }}>
                             <th style={{ padding: '1rem', borderBottom: '2px solid #e2e8f0' }}>{t("經文出處 (點擊觀看)", "Reference (Click to View)")}</th>
-                            <th style={{ padding: '1rem', borderBottom: '2px solid #e2e8f0' }}>{t("經文內容", "Snippet")}</th>
                             <th style={{ padding: '1rem', borderBottom: '2px solid #e2e8f0', textAlign: 'center', width: '100px' }}>{t("排行", "Rank")}</th>
-                            <th style={{ padding: '1rem', borderBottom: '2px solid #e2e8f0', textAlign: 'right', minWidth: '150px' }}>{t("設定", "Settings")}</th>
-                            <th style={{ padding: '1rem', borderBottom: '2px solid #e2e8f0', width: '80px', textAlign: 'center' }}>{t("分享", "Share")}</th>
+                            <th style={{ padding: '1rem', borderBottom: '2px solid #e2e8f0', textAlign: 'right', minWidth: '120px' }}>{t("設定", "Settings")}</th>
                             <th style={{ padding: '1rem', borderBottom: '2px solid #e2e8f0', width: '80px', textAlign: 'center' }}>{t("開始", "Play")}</th>
+                            <th style={{ padding: '1rem', borderBottom: '2px solid #e2e8f0', width: '60px', textAlign: 'center' }}>{t("分享", "Share")}</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -1216,9 +1215,6 @@ export default function App() {
                                   <button style={{ background: 'none', border: 'none', padding: 0, margin: 0, color: '#3b82f6', textDecoration: 'underline', cursor: 'pointer', fontWeight: 'bold', fontSize: 'inherit', fontFamily: 'inherit' }}>
                                     {v.reference}
                                   </button>
-                                </td>
-                                <td style={{ padding: '0.8rem 1rem', color: '#64748b', fontSize: '0.9rem' }}>
-                                  {v.title}
                                 </td>
                                 <td style={{ padding: '0.8rem 1rem', textAlign: 'center' }} onClick={(e) => e.stopPropagation()}>
                                   <button
@@ -1237,11 +1233,11 @@ export default function App() {
                                   </button>
                                 </td>
                                 <td style={{ padding: '0.8rem 1rem', textAlign: 'right' }} onClick={(e) => e.stopPropagation()}>
-                                  <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.4rem', alignItems: 'center' }}>
+                                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.2rem' }}>
                                     <select
                                       onChange={(e) => setPlayMode(e.target.value)}
                                       value={playMode}
-                                      style={{ padding: '0.2rem', borderRadius: '4px', border: '1px solid #cbd5e1', fontSize: '0.8rem', color: '#334155', backgroundColor: '#fff' }}
+                                      style={{ padding: '0.1rem 0.2rem', borderRadius: '4px', border: '1px solid #cbd5e1', fontSize: '0.75rem', color: '#334155', backgroundColor: '#fff', width: '100px' }}
                                     >
                                       <option value="square">Verse Square</option>
                                       <option value="rain">Verse Rain</option>
@@ -1249,7 +1245,7 @@ export default function App() {
                                     <select
                                       onChange={(e) => setDistractionLevel(Number(e.target.value))}
                                       value={distractionLevel}
-                                      style={{ padding: '0.2rem', borderRadius: '4px', border: '1px solid #cbd5e1', fontSize: '0.8rem', color: '#334155', backgroundColor: '#fff' }}
+                                      style={{ padding: '0.1rem 0.2rem', borderRadius: '4px', border: '1px solid #cbd5e1', fontSize: '0.75rem', color: '#334155', backgroundColor: '#fff', width: '100px' }}
                                     >
                                       <option value={0}>Lv 0</option>
                                       <option value={1}>Lv 1</option>
@@ -1257,26 +1253,6 @@ export default function App() {
                                       <option value={3}>Lv 3</option>
                                     </select>
                                   </div>
-                                </td>
-                                <td style={{ padding: '0.8rem 1rem', textAlign: 'center' }} onClick={(e) => e.stopPropagation()}>
-                                  <button
-                                    onClick={async (e) => {
-                                      e.stopPropagation();
-                                      const link = `${window.location.origin}${window.location.pathname}?challenge=${encodeURIComponent(v.reference)}`;
-                                      try {
-                                        await navigator.clipboard.writeText(link);
-                                        alert(t("挑戰連結已複製到剪貼簿！", "Challenge link copied to clipboard!"));
-                                      } catch (err) {
-                                        alert(t("無法複製連結，請手動全選複製：", "Could not copy link, please copy this directly: ") + link);
-                                      }
-                                    }}
-                                    style={{ backgroundColor: '#ffffff', color: '#3b82f6', border: '1px solid #3b82f6', borderRadius: '6px', height: '32px', padding: '0 0.8rem', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'all 0.1s', margin: '0 auto', fontSize: '0.85rem', fontWeight: 'bold' }}
-                                    onMouseOver={(e) => { e.currentTarget.style.backgroundColor = '#eff6ff'; }}
-                                    onMouseOut={(e) => { e.currentTarget.style.backgroundColor = '#ffffff'; }}
-                                  >
-                                    <Share2 size={14} style={{ marginRight: '4px' }} />
-                                    {t("挑戰", "Challenge")}
-                                  </button>
                                 </td>
                                 <td style={{ padding: '0.8rem 1rem', textAlign: 'center' }}>
                                   <button
@@ -1293,6 +1269,26 @@ export default function App() {
                                     onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
                                   >
                                     <Play size={16} fill="white" />
+                                  </button>
+                                </td>
+                                <td style={{ padding: '0.8rem 1rem', textAlign: 'center' }} onClick={(e) => e.stopPropagation()}>
+                                  <button
+                                    onClick={async (e) => {
+                                      e.stopPropagation();
+                                      const link = `${window.location.origin}${window.location.pathname}?challenge=${encodeURIComponent(v.reference)}`;
+                                      try {
+                                        await navigator.clipboard.writeText(link);
+                                        alert(t("挑戰連結已複製到剪貼簿！", "Challenge link copied to clipboard!"));
+                                      } catch (err) {
+                                        alert(t("無法複製連結，請手動全選複製：", "Could not copy link, please copy this directly: ") + link);
+                                      }
+                                    }}
+                                    title={t("分享挑戰連結", "Share challenge link")}
+                                    style={{ backgroundColor: '#ffffff', color: '#64748b', border: '1px solid #cbd5e1', borderRadius: '6px', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'all 0.1s', margin: '0 auto' }}
+                                    onMouseOver={(e) => { e.currentTarget.style.backgroundColor = '#f1f5f9'; e.currentTarget.style.color = '#3b82f6'; e.currentTarget.style.borderColor = '#3b82f6'; }}
+                                    onMouseOut={(e) => { e.currentTarget.style.backgroundColor = '#ffffff'; e.currentTarget.style.color = '#64748b'; e.currentTarget.style.borderColor = '#cbd5e1'; }}
+                                  >
+                                    <Share2 size={16} />
                                   </button>
                                 </td>
                               </tr>
