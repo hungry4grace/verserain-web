@@ -7,6 +7,14 @@ let sidrothJson = fs.readFileSync('sidroth.json', 'utf8');
 let arrayContent = orig.substring(orig.indexOf('[') + 1, orig.lastIndexOf(']'));
 
 let newContent = `
+import { 
+  PSALMS_1_41, 
+  PSALMS_42_72, 
+  PSALMS_73_89, 
+  PSALMS_90_106, 
+  PSALMS_107_150 
+} from './verses_psalms';
+
 export const VERSE_SETS = [
     {
         id: "mutualized-economics",
@@ -21,7 +29,12 @@ export const VERSE_SETS = [
         title: "醫治的默想經文",
         description: "Sid Roth：我發現醫治和信心對很多的基督徒來說就像奧秘一般。雖然有許多的書在討論這個主題，但它們仍然是教許多人困惑。我在40年前，開始我自己的研經。我發現最好的就是我自己研讀整本的聖經...",
         verses: ${sidrothJson}
-    }
+    },
+    PSALMS_1_41,
+    PSALMS_42_72,
+    PSALMS_73_89,
+    PSALMS_90_106,
+    PSALMS_107_150
 ];
 
 // Fallback for backwards compatibility if needed somewhere
