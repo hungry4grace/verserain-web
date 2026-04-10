@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Play, RotateCcw, Heart, Zap, Trophy, Crown, Star, Home, XCircle, Headphones, Music, VolumeX, Search } from 'lucide-react';
+import { Play, RotateCcw, Heart, Zap, Trophy, Crown, Star, Home, XCircle, Headphones, Music, VolumeX, Search, Share2 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import './index.css';
 
@@ -353,6 +353,35 @@ export default function App() {
     };
     parseUrlArgs();
   }, []); // Run strictly once on mount
+
+  // Process Challenge URL parameter
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const challengeRef = params.get('challenge');
+    if (challengeRef) {
+      if (!playerName) {
+        setShowLoginModal('login');
+      } else {
+        const allVerses = activeVerseSets.flatMap(s => s.verses || []);
+        const targetVerse = allVerses.find(v => v.reference === challengeRef);
+        if (targetVerse) {
+          const isEnglish = /^[a-zA-Z]/.test(targetVerse.reference);
+          // If the verse belongs to the opposite language, setting version triggers activeVerseSets change
+          if ((isEnglish && version !== 'kjv') || (!isEnglish && version !== 'cuv')) {
+             setVersion(isEnglish ? 'kjv' : 'cuv');
+             return; // Wait for activeVerseSets to update on next render
+          }
+          setActiveVerse(targetVerse);
+          setSelectedVerseRefs([targetVerse.reference]);
+          window.history.replaceState({}, document.title, window.location.pathname);
+          // Small delay ensures state is painted before starting the game
+          setTimeout(() => {
+            setInitAutoStart({ trigger: true, isAuto: false });
+          }, 300);
+        }
+      }
+    }
+  }, [playerName, activeVerseSets, version]);
 
   const toggleSelection = (ref) => {
     setSelectedVerseRefs(prev =>
@@ -1168,11 +1197,11 @@ export default function App() {
                       <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
                         <thead>
                           <tr style={{ backgroundColor: '#f8fafc', color: '#475569', fontSize: '0.9rem' }}>
-                            <th style={{ padding: '1rem', borderBottom: '2px solid #e2e8f0' }}>{t("經文出處", "Reference")}</th>
+                            <th style={{ padding: '1rem', borderBottom: '2px solid #e2e8f0' }}>{t("經文出處 (點擊觀看)", "Reference (Click to View)")}</th>
                             <th style={{ padding: '1rem', borderBottom: '2px solid #e2e8f0' }}>{t("經文內容", "Snippet")}</th>
-                            <th style={{ padding: '1rem', borderBottom: '2px solid #e2e8f0', textAlign: 'center', width: '100px' }}>{t("展現", "Show")}</th>
                             <th style={{ padding: '1rem', borderBottom: '2px solid #e2e8f0', textAlign: 'center', width: '100px' }}>{t("排行", "Rank")}</th>
                             <th style={{ padding: '1rem', borderBottom: '2px solid #e2e8f0', textAlign: 'right', minWidth: '150px' }}>{t("設定", "Settings")}</th>
+                            <th style={{ padding: '1rem', borderBottom: '2px solid #e2e8f0', width: '80px', textAlign: 'center' }}>{t("分享", "Share")}</th>
                             <th style={{ padding: '1rem', borderBottom: '2px solid #e2e8f0', width: '80px', textAlign: 'center' }}>{t("開始", "Play")}</th>
                           </tr>
                         </thead>
@@ -1183,21 +1212,13 @@ export default function App() {
 
                             return (
                               <tr key={i} style={{ borderBottom: '1px solid #e2e8f0', backgroundColor: isSelected ? '#eff6ff' : (i % 2 === 0 ? '#ffffff' : '#f8fafc'), transition: 'background 0.2s', cursor: 'pointer' }} onClick={() => toggleSelection(v.reference)}>
-                                <td style={{ padding: '0.8rem 1rem', fontWeight: 'bold', color: '#1e293b', fontSize: '0.95rem' }}>
-                                  {v.reference}
+                                <td style={{ padding: '0.8rem 1rem', fontWeight: 'bold', color: '#1e293b', fontSize: '0.95rem' }} onClick={(e) => { e.stopPropagation(); setVerseViewModal(v); }}>
+                                  <button style={{ background: 'none', border: 'none', padding: 0, margin: 0, color: '#3b82f6', textDecoration: 'underline', cursor: 'pointer', fontWeight: 'bold', fontSize: 'inherit', fontFamily: 'inherit' }}>
+                                    {v.reference}
+                                  </button>
                                 </td>
                                 <td style={{ padding: '0.8rem 1rem', color: '#64748b', fontSize: '0.9rem' }}>
                                   {v.title}
-                                </td>
-                                <td style={{ padding: '0.8rem 1rem', textAlign: 'center' }} onClick={(e) => e.stopPropagation()}>
-                                  <button
-                                    onClick={() => setVerseViewModal(v)}
-                                    style={{ background: '#f1f5f9', border: '1px solid #cbd5e1', color: '#475569', padding: '0.3rem 0.6rem', borderRadius: '4px', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 'bold' }}
-                                    onMouseOver={(e) => e.target.style.background = '#e2e8f0'}
-                                    onMouseOut={(e) => e.target.style.background = '#f1f5f9'}
-                                  >
-                                    {t("展現經文", "Show")}
-                                  </button>
                                 </td>
                                 <td style={{ padding: '0.8rem 1rem', textAlign: 'center' }} onClick={(e) => e.stopPropagation()}>
                                   <button
@@ -1236,6 +1257,26 @@ export default function App() {
                                       <option value={3}>Lv 3</option>
                                     </select>
                                   </div>
+                                </td>
+                                <td style={{ padding: '0.8rem 1rem', textAlign: 'center' }} onClick={(e) => e.stopPropagation()}>
+                                  <button
+                                    onClick={async (e) => {
+                                      e.stopPropagation();
+                                      const link = `${window.location.origin}${window.location.pathname}?challenge=${encodeURIComponent(v.reference)}`;
+                                      try {
+                                        await navigator.clipboard.writeText(link);
+                                        alert(t("挑戰連結已複製到剪貼簿！", "Challenge link copied to clipboard!"));
+                                      } catch (err) {
+                                        alert(t("無法複製連結，請手動全選複製：", "Could not copy link, please copy this directly: ") + link);
+                                      }
+                                    }}
+                                    style={{ backgroundColor: '#ffffff', color: '#3b82f6', border: '1px solid #3b82f6', borderRadius: '6px', height: '32px', padding: '0 0.8rem', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'all 0.1s', margin: '0 auto', fontSize: '0.85rem', fontWeight: 'bold' }}
+                                    onMouseOver={(e) => { e.currentTarget.style.backgroundColor = '#eff6ff'; }}
+                                    onMouseOut={(e) => { e.currentTarget.style.backgroundColor = '#ffffff'; }}
+                                  >
+                                    <Share2 size={14} style={{ marginRight: '4px' }} />
+                                    {t("挑戰", "Challenge")}
+                                  </button>
                                 </td>
                                 <td style={{ padding: '0.8rem 1rem', textAlign: 'center' }}>
                                   <button
