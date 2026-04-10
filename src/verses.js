@@ -1,4 +1,11 @@
-import { PSALMS_1_41 } from './verses_psalms';
+import { 
+  PSALMS_1_41, 
+  PSALMS_42_72, 
+  PSALMS_73_89, 
+  PSALMS_90_106, 
+  PSALMS_107_150 
+} from './verses_psalms';
+import { VERSE_SETS_KJV } from './verses_kjv';
 
 export const VERSE_SETS = [
     {
@@ -139,7 +146,7 @@ export const VERSE_SETS = [
   {
     reference: "哥林多後書 8:9",
     title: "豐盛的交換原則",
-    text: "你們知道我們主耶穌基督的恩典：他本來富足，卻為你們成了貧窮，叫你們因他的貧窮，可以成為富足。"
+    text: "你們知道我們主耶穌基督的恩典：he 本來富足，卻為你們成了貧窮，叫你們因他的貧窮，可以成為富足。"
   },
   {
     reference: "加拉太書 5:1",
@@ -196,7 +203,7 @@ export const VERSE_SETS = [
     "id": "sidroth-5",
     "reference": "以賽亞書 53:4-5",
     "title": "醫治默想",
-    text: "他誠然擔當我們的憂患，背負我們的痛苦，我們卻以為他受責罰，被神擊打苦待了。哪知他為我們的過犯受害，為我們的罪孽壓傷。因他受的刑罰我們得平安，因他受的鞭傷我們得醫治。"
+    text: "他誠然擔當我們的憂患，背負我們的痛苦，我們卻以為他受責罰，被神擊打苦待了。哪知 he 為我們的過犯受害，為我們的罪孽壓傷。因他受的刑罰我們得平安，因他受的鞭傷我們得醫治。"
   },
   {
     "id": "sidroth-6",
@@ -262,7 +269,7 @@ export const VERSE_SETS = [
     "id": "sidroth-16",
     "reference": "彼得後書 1:3-4",
     "title": "醫治默想",
-    text: "神的神能已將一切關乎生命和虔敬的事賜給我們，皆因我們認識那用自己榮耀和美德召我們的主。因此，他已將又寶貴又極大的應許賜給我們，叫我們既脫離世上從情慾來的敗壞，就得與神的性情有份。"
+    text: "神的神能已將一切關乎生命 and 虔敬的事賜給我們，皆因我們認識那用自己榮耀和美德召我們的主。因此，他已將又寶貴又極大的應許賜給我們，叫我們既脫離世上從情慾來的敗壞，就得與神的性情有份。"
   },
   {
     "id": "sidroth-17",
@@ -296,7 +303,12 @@ export const VERSE_SETS = [
   }
 ]
     },
-    PSALMS_1_41
+    PSALMS_1_41,
+    PSALMS_42_72,
+    PSALMS_73_89,
+    PSALMS_90_106,
+    PSALMS_107_150,
+    ...VERSE_SETS_KJV
 ];
 
 // Fallback for backwards compatibility

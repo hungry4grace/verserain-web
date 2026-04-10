@@ -1117,13 +1117,13 @@ export default function App() {
                     onClick={() => handleVersionChange('cuv')}
                     style={{ padding: '0.4rem 0.8rem', borderRadius: '4px', border: '1px solid #cbd5e1', background: version === 'cuv' ? '#3b82f6' : '#fff', color: version === 'cuv' ? '#fff' : '#475569', fontWeight: 'bold', cursor: 'pointer' }}
                   >
-                    中文 CUV
+                    中文
                   </button>
                   <button
                     onClick={() => handleVersionChange('kjv')}
                     style={{ padding: '0.4rem 0.8rem', borderRadius: '4px', border: '1px solid #cbd5e1', background: version === 'kjv' ? '#3b82f6' : '#fff', color: version === 'kjv' ? '#fff' : '#475569', fontWeight: 'bold', cursor: 'pointer' }}
                   >
-                    English KJV
+                    English
                   </button>
                 </div>
                 {/* The Verse Sets Table */}
@@ -2082,7 +2082,7 @@ export default function App() {
               <input
                 id="modalEmailInput"
                 type="email"
-                placeholder={t("電子郵件 Email", "Email Address")}
+                placeholder={t("電子郵件", "Email Address")}
                 style={{ padding: '0.8rem', borderRadius: '6px', border: '1px solid #cbd5e1', background: '#f8fafc', color: '#1e293b', fontSize: '0.95rem', outline: 'none' }}
                 onFocus={(e) => e.target.style.borderColor = '#3b82f6'}
                 onBlur={(e) => e.target.style.borderColor = '#cbd5e1'}
@@ -2091,7 +2091,7 @@ export default function App() {
               <input
                 id="modalPasswordInput"
                 type="password"
-                placeholder={t("密碼 Password", "Password")}
+                placeholder={t("密碼", "Password")}
                 style={{ padding: '0.8rem', borderRadius: '6px', border: '1px solid #cbd5e1', background: '#f8fafc', color: '#1e293b', fontSize: '0.95rem', outline: 'none' }}
                 onFocus={(e) => e.target.style.borderColor = '#3b82f6'}
                 onBlur={(e) => e.target.style.borderColor = '#cbd5e1'}
@@ -2103,7 +2103,7 @@ export default function App() {
                   type="text"
                   maxLength={20}
                   defaultValue={playerName}
-                  placeholder={t("顯示暱稱 (Display Name)", "Display Name")}
+                  placeholder={t("顯示暱稱", "Display Name")}
                   style={{ padding: '0.8rem', borderRadius: '6px', border: '1px solid #cbd5e1', background: '#f8fafc', color: '#1e293b', fontSize: '0.95rem', outline: 'none' }}
                   onFocus={(e) => e.target.style.borderColor = '#3b82f6'}
                   onBlur={(e) => e.target.style.borderColor = '#cbd5e1'}
