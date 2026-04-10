@@ -471,6 +471,7 @@ export default function App() {
   const [showLoginModal, setShowLoginModal] = useState(null);
   const [verseViewModal, setVerseViewModal] = useState(null);
   const [toast, setToast] = useState(null);
+  const [showNameEditModal, setShowNameEditModal] = useState(false);
 
   // Process Challenge URL parameter
   useEffect(() => {
@@ -1101,10 +1102,18 @@ export default function App() {
             </div>
             <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
               {playerName ? (
-                <>
-                  <span style={{ color: '#475569', fontWeight: 'bold', fontSize: '0.95rem' }}>{t("歡迎, ", "Welcome, ")}{playerName}</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', cursor: 'pointer', padding: '0.3rem 0.6rem', borderRadius: '6px', transition: 'background 0.2s' }} 
+                       onClick={() => setShowNameEditModal(true)}
+                       onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#f1f5f9'}
+                       onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}>
+                    <span style={{ color: '#1e293b', fontWeight: 'bold', fontSize: '0.95rem' }}>{playerName}</span>
+                    <button style={{ background: 'none', border: 'none', color: '#94a3b8', padding: 0, cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
+                      <Crown size={14} style={{ color: '#fbbf24' }} />
+                    </button>
+                  </div>
                   <button onClick={() => { setPlayerName(''); localStorage.removeItem('verserain_player_name'); }} style={{ background: 'transparent', border: '1px solid #cbd5e1', color: '#64748b', cursor: 'pointer', borderRadius: '4px', padding: '0.3rem 0.6rem', fontSize: '0.85rem' }}>{t("登出", "Logout")}</button>
-                </>
+                </div>
               ) : (
                 <>
                   <a href="#" onClick={(e) => { e.preventDefault(); setShowLoginModal('login'); }} style={{ color: '#0056b3', textDecoration: 'none', fontWeight: 'bold', fontSize: '0.95rem' }}>{t("登入", "Login")}</a>
@@ -2127,10 +2136,8 @@ export default function App() {
 
             <button
               onClick={() => {
-                const name = "Google P" + Math.floor(Math.random() * 999);
-                setPlayerName(name);
-                localStorage.setItem('verserain_player_name', name);
                 setShowLoginModal(null);
+                setShowNameEditModal(true);
               }}
               style={{ background: '#ffffff', border: '1px solid #cbd5e1', padding: '0.8rem', borderRadius: '6px', fontSize: '1rem', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', transition: 'background 0.2s', color: '#475569' }}
               onMouseOver={(e) => e.target.style.background = '#f8fafc'}
@@ -2313,6 +2320,56 @@ export default function App() {
         </div>
       )}
       
+
+      {/* Name Edit Modal */}
+      {showNameEditModal && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.6)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1100, padding: '1rem' }}>
+          <div style={{ background: '#ffffff', borderRadius: '12px', padding: '2rem', width: '100%', maxWidth: '400px', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)', display: 'flex', flexDirection: 'column', gap: '1.5rem', border: '1px solid #e2e8f0' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <h2 style={{ margin: 0, color: '#1e293b', fontSize: '1.5rem', fontWeight: 'bold' }}>
+                {t("設定您的暱稱", "Set Your Display Name")}
+              </h2>
+              <button 
+                onClick={() => setShowNameEditModal(false)}
+                style={{ background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer' }}
+              >
+                <XCircle size={24} />
+              </button>
+            </div>
+            <p style={{ margin: 0, color: '#64748b', fontSize: '0.9rem' }}>
+              {t("請輸入您想在排行榜上顯示的名稱（例如您的 Skool 名稱）。", "Enter the name you'd like to show on the leaderboard (e.g., your Skool name).")}
+            </p>
+            <input 
+              id="nameEditInput"
+              type="text"
+              maxLength={20}
+              placeholder={t("輸入名稱...", "Enter name...")}
+              defaultValue={playerName && !playerName.startsWith("Google P") ? playerName : ""}
+              autoFocus
+              onKeyDown={(e) => { if (e.key === 'Enter') document.getElementById('saveNameBtn')?.click(); }}
+              style={{ padding: '0.8rem', borderRadius: '6px', border: '1px solid #cbd5e1', background: '#f8fafc', color: '#1e293b', fontSize: '1rem', outline: 'none' }}
+            />
+            <button 
+              id="saveNameBtn"
+              onClick={() => {
+                const input = document.getElementById('nameEditInput');
+                const newName = input ? input.value.trim() : "";
+                if (newName) {
+                  setPlayerName(newName);
+                  localStorage.setItem('verserain_player_name', newName);
+                  setToast(t("設定成功！觀迎遊玩，", "Name set! Welcome, ") + newName);
+                  setTimeout(() => setToast(null), 3000);
+                  setShowNameEditModal(false);
+                }
+              }}
+              style={{ background: '#3b82f6', color: 'white', border: 'none', padding: '0.8rem', borderRadius: '6px', fontSize: '1rem', fontWeight: 'bold', cursor: 'pointer', transition: 'background 0.2s' }}
+            >
+              {t("確認儲存", "Save & Continue")}
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Toast Notification Overlay */}
       {toast && (
         <div style={{ position: 'fixed', bottom: '2rem', left: '50%', transform: 'translateX(-50%)', backgroundColor: '#1e293b', color: 'white', padding: '0.8rem 1.5rem', borderRadius: '50px', boxShadow: '0 4px 12px rgba(0,0,0,0.15)', zIndex: 9999, display: 'flex', alignItems: 'center', gap: '8px', animation: 'fadeInUp 0.3s ease-out', fontWeight: 'bold' }}>
