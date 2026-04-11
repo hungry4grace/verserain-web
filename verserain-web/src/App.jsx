@@ -797,7 +797,7 @@ export default function App() {
   useEffect(() => {
     if (initAutoStart?.trigger) {
       if (initAutoStart.isMultiplayerReadyCheck) {
-         initSquareBlocks(true, initAutoStart.campaignQueue);
+         initSquareBlocks(true, initAutoStart.campaignQueue, initAutoStart.verse);
       } else {
          startGame(initAutoStart.isAuto);
       }
@@ -805,8 +805,16 @@ export default function App() {
     }
   }, [initAutoStart]);
 
-  const initSquareBlocks = (isMultiplayerReadyCheck = false, campaignQueue = null) => {
-    const phrases = activePhrasesRef.current;
+  const initSquareBlocks = (isMultiplayerReadyCheck = false, campaignQueue = null, overrideVerse = null) => {
+    const verse = overrideVerse || activeVerse;
+    let phrases;
+    if (overrideVerse) {
+      const isEnglish = /^[a-zA-Z\s.,:;'"]+$/.test(verse.text.substring(0, 50));
+      const regex = isEnglish ? /[,，。；：「」、;:\.\?!]/ : /[,，。；：「」、;:\.\?!！？『』《》]/;
+      phrases = verse.text.split(regex).map(p => p.trim()).filter(Boolean);
+    } else {
+      phrases = activePhrasesRef.current;
+    }
 
     // Grid size depends on difficulty
     const maxGridSize = distractionLevel <= 1 ? 4 : 9;
@@ -862,11 +870,11 @@ export default function App() {
         socketRef.current.send(JSON.stringify({ 
            type: 'INIT_GAME', 
            blocks: newBlocks, 
-           verseRef: activeVerse.reference,
-           verseText: activeVerse.text,
+           verseRef: verse.reference,
+           verseText: verse.text,
            playMode: playMode,
            distractionLevel: distractionLevel,
-           phrases: activePhrasesRef.current,
+           phrases: phrases,
            campaignQueue: campaignQueue
         }));
     } else {
@@ -1537,7 +1545,7 @@ export default function App() {
                                           setActiveVerse(selected[0]);
                                           setPlayMode(multiplayerPlayMode);
                                           setDistractionLevel(multiplayerDistractionLevel);
-                                          setInitAutoStart({ trigger: true, isAuto: false, isMultiplayerReadyCheck: true, campaignQueue: selected });
+                                          setInitAutoStart({ trigger: true, isAuto: false, isMultiplayerReadyCheck: true, campaignQueue: selected, verse: selected[0] });
                                           setShowMultiplayerVersePicker(false);
                                        }}
                                        style={{ background: '#8b5cf6', color: 'white', border: 'none', padding: '0.3rem 0.6rem', borderRadius: '4px', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.2rem', fontSize: '0.8rem' }}
@@ -1552,7 +1560,7 @@ export default function App() {
                                         setActiveVerse(multiplayerSelectedVerses[0]);
                                         setPlayMode(multiplayerPlayMode);
                                         setDistractionLevel(multiplayerDistractionLevel);
-                                        setInitAutoStart({ trigger: true, isAuto: false, isMultiplayerReadyCheck: true, campaignQueue: multiplayerSelectedVerses });
+                                        setInitAutoStart({ trigger: true, isAuto: false, isMultiplayerReadyCheck: true, campaignQueue: multiplayerSelectedVerses, verse: multiplayerSelectedVerses[0] });
                                         setShowMultiplayerVersePicker(false);
                                      }}
                                      style={{ background: '#10b981', color: 'white', border: 'none', padding: '0.5rem 1rem', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.9rem' }}
@@ -2296,7 +2304,6 @@ export default function App() {
           {!isAutoPlay && multiplayerRoomId && (
             <div style={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: '35vh', minHeight: '180px', zIndex: 10, pointerEvents: 'auto', display: 'flex', flexDirection: 'column' }}>
                <div className="hud-glass" style={{ flex: 1, padding: '1rem 5vw', overflowY: 'auto', background: 'rgba(15, 23, 42, 0.85)', borderRadius: '16px 16px 0 0', borderTop: '1px solid rgba(255,255,255,0.1)', borderLeft: '1px solid rgba(255,255,255,0.1)', borderRight: '1px solid rgba(255,255,255,0.1)', display: 'flex', flexDirection: 'column', gap: '0.4rem', borderBottom: 'none' }}>
-                  <h3 style={{ fontSize: '1.1rem', color: '#fbbf24', marginBottom: '0.2rem', paddingBottom: '0.4rem', borderBottom: '1px solid rgba(251,191,36,0.3)' }}>{activeVerse.reference}</h3>
                   <div style={{ fontSize: 'clamp(1rem, 4vw, 1.4rem)', lineHeight: '1.8', color: '#cbd5e1', wordBreak: 'break-word' }}>
                     {activePhrases.slice(0, currentSeqIndex).map((phrase, idx) => (
                       <span key={idx} style={{ color: '#fbbf24', fontWeight: 'bold' }}>{phrase} </span>

@@ -242,6 +242,19 @@ export default class Server {
 
       if (data.type === 'RESTART_GAME' && sender.id === this.state.host) {
         this.state.status = 'waiting';
+        this.state.verseRef = null;
+        this.state.verseText = null;
+        this.state.blocks = [];
+        this.state.currentSeqIndex = 0;
+        this.state.phrases = [];
+        this.state.campaignQueue = [];
+        this.state.campaignResults = [];
+        // Reset player states
+        Object.values(this.state.players).forEach(p => {
+          p.isReady = false;
+          p.score = 0;
+          p.health = 3;
+        });
         this.broadcastState();
       }
 
