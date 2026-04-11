@@ -1,0 +1,4 @@
+{
+  "name": "verserain-party",
+  "main": "src/party/server.js"
+}
