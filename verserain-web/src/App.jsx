@@ -1378,7 +1378,7 @@ export default function App() {
           <div style={{ display: 'flex', backgroundColor: '#334155', color: 'white', padding: '0 1rem', overflowX: 'auto', borderBottom: '2px solid #1e293b' }}>
             {[
               { id: 'versesets', label: t('經文組', 'Verse Sets') },
-              { id: 'multiplayer', label: t('多人連線 (Beta)', 'Multiplayer') },
+              { id: 'multiplayer', label: t('多人連線', 'Multiplayer') },
               { id: 'leaderboard', label: t('排行榜', 'Leaderboard') },
               { id: 'search', label: t('搜尋', 'Search') },
               { id: 'about', label: t('有關', 'About') },
@@ -1403,7 +1403,7 @@ export default function App() {
 
             {mainTab === 'multiplayer' && (
               <div style={{ backgroundColor: '#ffffff', borderRadius: '8px', border: '1px solid #cbd5e1', padding: '2rem', boxShadow: '0 1px 3px rgba(0,0,0,0.05)', textAlign: 'center' }}>
-                <h2 style={{ color: '#1e293b', marginTop: 0, marginBottom: '1.5rem', fontFamily: 'cursive', color: '#8b5cf6' }}>{t("多人即時對戰 (測試版)", "Live Multiplayer (Beta)")}</h2>
+                <h2 style={{ color: '#1e293b', marginTop: 0, marginBottom: '1.5rem', fontFamily: 'cursive', color: '#8b5cf6' }}>{t("多人即時對戰", "Live Multiplayer")}</h2>
                 
                 {!multiplayerRoomId ? (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', alignItems: 'center' }}>
