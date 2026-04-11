@@ -5,6 +5,7 @@ import usePartySocket from 'partysocket/react';
 import PartySocket from 'partysocket';
 import QRCode from 'qrcode';
 import './index.css';
+import { BIBLE_BOOKS } from './bibleDictionary';
 
 let audioCtx = null;
 
@@ -190,7 +191,19 @@ export default function App() {
   const [distractionLevel, setDistractionLevel] = useState(0);
   const [selectedSetId, setSelectedSetId] = useState(null);
 
-  const activeVerseSets = version === 'cuv' ? VERSE_SETS_CUV : VERSE_SETS_KJV;
+  const [isPremium, setIsPremium] = useState(false); // Simulate premium user status
+  const [customVerseSets, setCustomVerseSets] = useState(() => {
+    try {
+      const saved = localStorage.getItem('verseRain_custom_sets');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+  const [editingCustomSet, setEditingCustomSet] = useState(null);
+
+  const baseVerseSets = version === 'cuv' ? VERSE_SETS_CUV : VERSE_SETS_KJV;
+  const activeVerseSets = [...customVerseSets, ...baseVerseSets];
   const currentSet = selectedSetId ? activeVerseSets.find(s => s.id === selectedSetId) : null;
   const VERSES_DB = currentSet ? currentSet.verses : activeVerseSets[0].verses;
 
@@ -484,7 +497,7 @@ export default function App() {
   const [multiplayerDistractionLevel, setMultiplayerDistractionLevel] = useState(0);
   const [multiplayerSelectedVerses, setMultiplayerSelectedVerses] = useState([]);
   const [randomPickCount, setRandomPickCount] = useState(1);
-  
+
   const multiplayerRoomRef = useRef(multiplayerRoomId);
   useEffect(() => { multiplayerRoomRef.current = multiplayerRoomId; }, [multiplayerRoomId]);
 
@@ -1378,6 +1391,7 @@ export default function App() {
           <div style={{ display: 'flex', backgroundColor: '#334155', color: 'white', padding: '0 1rem', overflowX: 'auto', borderBottom: '2px solid #1e293b' }}>
             {[
               { id: 'versesets', label: t('經文組', 'Verse Sets') },
+              { id: 'custom_verses', label: t('👑 我的題庫', '👑 Custom Sets') },
               { id: 'multiplayer', label: t('多人連線', 'Multiplayer') },
               { id: 'leaderboard', label: t('排行榜', 'Leaderboard') },
               { id: 'search', label: t('搜尋', 'Search') },
@@ -1400,6 +1414,266 @@ export default function App() {
 
           {/* Main Content Area */}
           <div style={{ maxWidth: '1000px', margin: '2rem auto', padding: '0 1rem' }}>
+
+            {mainTab === 'custom_verses' && (
+              <div style={{ backgroundColor: '#ffffff', borderRadius: '8px', border: '1px solid #cbd5e1', padding: '2rem', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                    <h2 style={{ color: '#1e293b', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>👑 {t("我的專屬題庫", "My Custom Sets")}</h2>
+                    <button type="button" onClick={() => setIsPremium(!isPremium)} style={{ background: '#f8fafc', border: '1px solid #cbd5e1', padding: '0.3rem 0.6rem', borderRadius: '4px', fontSize: '0.8rem', cursor: 'pointer' }}>
+                        [Dev] Toggle Premium
+                    </button>
+                </div>
+
+                {!isPremium ? (
+                    <div style={{ textAlign: 'center', padding: '3rem 1rem', background: 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                        <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>🔒</div>
+                        <h3 style={{ color: '#334155', marginBottom: '1rem' }}>{t("解鎖自訂經文組功能！", "Unlock Custom Verse Sets!")}</h3>
+                        <p style={{ color: '#64748b', marginBottom: '2rem', maxWidth: '400px', margin: '0 auto 2rem', lineHeight: '1.6' }}>
+                            {t("升級為 Skool MutualizedEconomy Premium 會員，無限建立你的專屬考題與默想清單，還能在多人連線模式中用你的題目考驗朋友！", "Upgrade to Skool MutualizedEconomy Premium to create unlimited custom verse sets and challenge your friends in multiplayer!")}
+                        </p>
+                        <button type="button" onClick={() => window.open('https://www.skool.com/mutualizedeconomy', '_blank')} style={{ background: '#8b5cf6', color: 'white', border: 'none', padding: '0.8rem 2rem', borderRadius: '8px', fontWeight: 'bold', fontSize: '1.1rem', cursor: 'pointer', boxShadow: '0 4px 6px rgba(139, 92, 246, 0.25)' }}>
+                            {t("了解並加入 Premium", "Learn About Premium")}
+                        </button>
+                    </div>
+                ) : (
+                    <div>
+                        {editingCustomSet ? (
+                            <div>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                                    <h3 style={{ margin: 0, color: '#3b82f6' }}>{editingCustomSet.id ? t("編輯題庫", "Edit Set") : t("新增題庫", "New Set")}</h3>
+                                    <button type="button" onClick={() => setEditingCustomSet(null)} style={{ background: 'transparent', border: 'none', color: '#64748b', cursor: 'pointer', fontWeight: 'bold' }}>✕ {t("取消", "Cancel")}</button>
+                                </div>
+                                
+                                <div style={{ marginBottom: '1rem' }}>
+                                    <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '0.5rem', color: '#475569' }}>{t("標題", "Title")}</label>
+                                    <input type="text" value={editingCustomSet.title} onChange={e => setEditingCustomSet({...editingCustomSet, title: e.target.value})} style={{ width: '100%', padding: '0.8rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '1rem' }} placeholder={t("例如：約翰福音核心經文", "e.g., Core Verses of John")} />
+                                </div>
+
+                                <div style={{ marginBottom: '1rem' }}>
+                                    <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '0.5rem', color: '#475569' }}>{t("簡介", "Description")}</label>
+                                    <textarea value={editingCustomSet.description} onChange={e => setEditingCustomSet({...editingCustomSet, description: e.target.value})} style={{ width: '100%', padding: '0.8rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '1rem', minHeight: '80px', resize: 'vertical' }} placeholder={t("描述一下這個題庫的用途...", "Describe this set...")} />
+                                </div>
+
+                                <div style={{ marginBottom: '1rem' }}>
+                                    <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '0.5rem', color: '#475569' }}>{t("經文列表", "Verses")}</label>
+                                    
+                                    {editingCustomSet.verses.map((v, idx) => (
+                                        <div key={idx} style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.5rem', alignItems: 'flex-start' }}>
+                                            <select value={v.version || 'CUV'} onChange={e => {
+                                                const newVerses = [...editingCustomSet.verses];
+                                                newVerses[idx].version = e.target.value;
+                                                setEditingCustomSet({...editingCustomSet, verses: newVerses});
+                                            }} style={{ padding: '0.6rem', borderRadius: '4px', border: '1px solid #cbd5e1', backgroundColor: '#fff', cursor: 'pointer' }}>
+                                                <option value="CUV">CUV</option>
+                                                <option value="KJV">KJV</option>
+                                            </select>
+                                            <input type="text" value={v.reference} onChange={e => {
+                                                const newVerses = [...editingCustomSet.verses];
+                                                newVerses[idx].reference = e.target.value;
+                                                setEditingCustomSet({...editingCustomSet, verses: newVerses});
+                                            }} placeholder={t("出處(如:約 3:16)", "Ref")} style={{ width: '120px', padding: '0.6rem', borderRadius: '4px', border: '1px solid #cbd5e1' }} />
+                                            
+                                            <button type="button" onClick={async (e) => {
+                                                const btn = e.currentTarget;
+                                                const originalIcon = btn.innerText;
+                                                
+                                                if (!v.reference) return alert(t("請先輸入出處", "Please enter reference first"));
+                                                btn.innerText = "⌛";
+                                                try {
+                                                    const version = (v.version || 'CUV');
+                                                    const db = version === 'CUV' ? VERSES_CUV : VERSES_KJV;
+                                                    // Normalize spacing, cases, and dashes (-, –, —, ~) for robust searching e.g., "約 3:16" == "約3:16"
+                                                    const sanitizeRef = (str) => str.toString().replace(/\s+/g, '').replace(/[–—~]/g, '-').replace(/[：]/g, ':').toLowerCase();
+                                                    const searchRef = sanitizeRef(v.reference);
+                                                    let foundLocal = false;
+                                                    let foundText = "";
+                                                    
+                                                    for (const verse of db) {
+                                                        if (!verse.reference) continue;
+                                                        const dbRef = sanitizeRef(verse.reference);
+                                                        if (dbRef === searchRef) {
+                                                            foundLocal = true;
+                                                            foundText = verse.text;
+                                                            break;
+                                                        }
+                                                        
+                                                        const searchNumMatch = searchRef.match(/\d+.*$/);
+                                                        const dbNumMatch = dbRef.match(/\d+.*$/);
+                                                        
+                                                        if (searchNumMatch && dbNumMatch) {
+                                                            const searchNumPart = searchNumMatch[0];
+                                                            const dbNumPart = dbNumMatch[0];
+                                                            
+                                                            // Number parts must match exactly to prevent "詩篇 1" from matching "詩篇 23:1"
+                                                            if (searchNumPart === dbNumPart) {
+                                                                const bookPart = searchRef.replace(searchNumPart, '');
+                                                                const dbBookPart = dbRef.replace(dbNumPart, '');
+                                                                let matchIdx = 0;
+                                                                for (let i = 0; i < dbBookPart.length && matchIdx < bookPart.length; i++) {
+                                                                    if (dbBookPart[i] === bookPart[matchIdx]) {
+                                                                        matchIdx++;
+                                                                    }
+                                                                }
+                                                                if (matchIdx === bookPart.length && matchIdx > 0) {
+                                                                    foundLocal = true;
+                                                                    foundText = verse.text;
+                                                                    break;
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                    
+                                                    if (foundLocal) {
+                                                        setEditingCustomSet(prev => {
+                                                            const newVerses = [...prev.verses];
+                                                            newVerses[idx].text = foundText;
+                                                            return {...prev, verses: newVerses};
+                                                        });
+                                                        btn.innerText = originalIcon;
+                                                        return;
+                                                    }
+                                                    
+                                                    // Fallback to Online API 
+                                                    const searchNumMatch = searchRef.match(/\d+.*$/);
+                                                    if (!searchNumMatch) throw new Error("Invalid Format");
+                                                    
+                                                    const searchNumPart = searchNumMatch[0];
+                                                    const bookPart = searchRef.replace(searchNumPart, '');
+                                                    
+                                                    const chapMatch = searchNumPart.match(/^(\d+)/);
+                                                    const chapter = chapMatch ? parseInt(chapMatch[1]) : 1;
+                                                    
+                                                    let startVerse = 1;
+                                                    let endVerse = 999;
+                                                    
+                                                    const verseMatch = searchNumPart.match(/:(\d+)(?:-(\d+))?/);
+                                                    if (verseMatch) {
+                                                        startVerse = parseInt(verseMatch[1]);
+                                                        endVerse = verseMatch[2] ? parseInt(verseMatch[2]) : startVerse;
+                                                    } else if (!searchNumPart.includes(':')) {
+                                                        startVerse = 1;
+                                                        endVerse = 999;
+                                                    }
+                                                    
+                                                    const bookInfo = BIBLE_BOOKS.find(b => b.names.some(n => n.toLowerCase() === bookPart || bookPart.includes(n.toLowerCase()) || n.toLowerCase().includes(bookPart)));
+                                                    if (!bookInfo) throw new Error("Book not found");
+                                                    
+                                                    const bollsVersion = version === 'CUV' ? 'CUV' : 'KJV';
+                                                    const res = await fetch(`https://bolls.life/get-text/${bollsVersion}/${bookInfo.id}/${chapter}/`);
+                                                    if (!res.ok) throw new Error("API Connection Failed");
+                                                    
+                                                    const json = await res.json();
+                                                    if (!Array.isArray(json) || json.length === 0) throw new Error("No data returned");
+                                                    
+                                                    const filtered = json.filter(v => v.verse >= startVerse && v.verse <= endVerse);
+                                                    if (filtered.length === 0) throw new Error("Verses out of range");
+                                                    
+                                                    let combinedText = "";
+                                                    if (version === 'CUV') {
+                                                        combinedText = filtered.map(v => v.text.replace(/<[^>]+>/g, '').replace(/\s+/g, '')).join('');
+                                                    } else {
+                                                        combinedText = filtered.map(v => v.text.replace(/<[^>]+>/g, '').trim()).join(' ');
+                                                    }
+                                                    
+                                                    setEditingCustomSet(prev => {
+                                                        const newVerses = [...prev.verses];
+                                                        newVerses[idx].text = combinedText;
+                                                        return {...prev, verses: newVerses};
+                                                    });
+                                                    
+                                                } catch (e) {
+                                                    alert(t(`找不到「${v.reference}」！(錯誤: ${e.message})\n請確認格式是否如「約 3:16」或手編測試。`, `Cannot find ${v.reference}. Error: ${e.message}`));
+                                                }
+                                                btn.innerText = originalIcon;
+                                            }} title={t("自動擷取", "Auto-fetch")} style={{ background: '#f59e0b', color: 'white', border: 'none', padding: '0.6rem', borderRadius: '4px', cursor: 'pointer', fontSize: '1rem' }}>🪄</button>
+                                            
+                                            <textarea value={v.text} onChange={e => {
+                                                const newVerses = [...editingCustomSet.verses];
+                                                newVerses[idx].text = e.target.value;
+                                                setEditingCustomSet({...editingCustomSet, verses: newVerses});
+                                            }} placeholder={t("經文內容", "Verse Text")} style={{ flex: 1, padding: '0.6rem', borderRadius: '4px', border: '1px solid #cbd5e1', minHeight: '40px', resize: 'vertical' }} />
+                                            
+                                            <button type="button" onClick={() => {
+                                                const newVerses = editingCustomSet.verses.filter((_, i) => i !== idx);
+                                                setEditingCustomSet({...editingCustomSet, verses: newVerses});
+                                            }} style={{ background: '#ef4444', color: 'white', border: 'none', padding: '0.6rem', borderRadius: '4px', cursor: 'pointer' }}>✖</button>
+                                        </div>
+                                    ))}
+                                    
+                                    <button type="button" onClick={() => {
+                                        setEditingCustomSet({
+                                            ...editingCustomSet, 
+                                            verses: [...editingCustomSet.verses, { version: 'CUV', reference: '', text: '' }]
+                                        });
+                                    }} style={{ background: '#e2e8f0', color: '#475569', border: '1px dashed #94a3b8', padding: '0.5rem 1rem', borderRadius: '4px', cursor: 'pointer', width: '100%', marginTop: '0.5rem', fontWeight: 'bold' }}>
+                                        + {t("新增一節經文", "Add Verse")}
+                                    </button>
+                                </div>
+
+                                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem', marginTop: '2rem' }}>
+                                    <button type="button" onClick={() => {
+                                        if(!editingCustomSet.title) return alert(t("請填寫標題", "Please fill in title"));
+                                        if(editingCustomSet.verses.length === 0) return alert(t("請至少新增一節經文", "Please add at least one verse"));
+                                        
+                                        const setObj = {
+                                            ...editingCustomSet,
+                                            id: editingCustomSet.id || `custom-${Date.now()}`
+                                        };
+                                        
+                                        let updatedSets;
+                                        if(editingCustomSet.id) {
+                                            updatedSets = customVerseSets.map(s => s.id === setObj.id ? setObj : s);
+                                        } else {
+                                            updatedSets = [setObj, ...customVerseSets];
+                                        }
+                                        
+                                        setCustomVerseSets(updatedSets);
+                                        localStorage.setItem('verseRain_custom_sets', JSON.stringify(updatedSets));
+                                        setEditingCustomSet(null);
+                                    }} style={{ background: '#10b981', color: 'white', border: 'none', padding: '0.8rem 2rem', borderRadius: '6px', fontWeight: 'bold', fontSize: '1.1rem', cursor: 'pointer' }}>
+                                        {t("儲存題庫", "Save Set")}
+                                    </button>
+                                </div>
+                            </div>
+                        ) : (
+                            <div>
+                                <button type="button" onClick={() => {
+                                    setEditingCustomSet({ title: '', description: '', verses: [{ version: 'CUV', reference: '', text: '' }] });
+                                }} style={{ background: '#3b82f6', color: 'white', border: 'none', padding: '0.8rem 1.5rem', borderRadius: '6px', fontWeight: 'bold', marginBottom: '1.5rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                    <span>+</span> {t("建立新題庫", "Create New Set")}
+                                </button>
+
+                                {customVerseSets.length === 0 ? (
+                                    <div style={{ textAlign: 'center', padding: '3rem 1rem', color: '#94a3b8', border: '2px dashed #e2e8f0', borderRadius: '8px' }}>
+                                        {t("你還沒有建立任何專屬題庫。點擊上方按鈕開始！", "You haven't created any custom sets yet. Click the button above to start!")}
+                                    </div>
+                                ) : (
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                                        {customVerseSets.map(set => (
+                                            <div key={set.id} style={{ border: '1px solid #cbd5e1', borderRadius: '8px', padding: '1.5rem', position: 'relative' }}>
+                                                <div style={{ position: 'absolute', top: '1rem', right: '1rem', display: 'flex', gap: '0.5rem' }}>
+                                                    <button type="button" onClick={() => setEditingCustomSet(set)} style={{ background: '#f1f5f9', border: '1px solid #cbd5e1', padding: '0.4rem 0.8rem', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', color: '#475569' }}>{t("編輯", "Edit")}</button>
+                                                    <button type="button" onClick={() => {
+                                                        if(window.confirm(t("確定要刪除嗎？", "Are you sure you want to delete?"))) {
+                                                            const updated = customVerseSets.filter(s => s.id !== set.id);
+                                                            setCustomVerseSets(updated);
+                                                            localStorage.setItem('verseRain_custom_sets', JSON.stringify(updated));
+                                                        }
+                                                    }} style={{ background: '#fee2e2', border: '1px solid #fca5a5', padding: '0.4rem 0.8rem', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', color: '#ef4444' }}>{t("刪除", "Delete")}</button>
+                                                </div>
+                                                <h3 style={{ margin: '0 0 0.5rem 0', color: '#1e293b', paddingRight: '120px' }}>{set.title}</h3>
+                                                <p style={{ color: '#64748b', fontSize: '0.9rem', marginBottom: '1rem' }}>{set.description}</p>
+                                                <div style={{ color: '#3b82f6', fontSize: '0.85rem', fontWeight: 'bold' }}>{set.verses.length} {t("節經文", "verses")}</div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                    </div>
+                )}
+              </div>
+            )}
 
             {mainTab === 'multiplayer' && (
               <div style={{ backgroundColor: '#ffffff', borderRadius: '8px', border: '1px solid #cbd5e1', padding: '2rem', boxShadow: '0 1px 3px rgba(0,0,0,0.05)', textAlign: 'center' }}>
@@ -1542,7 +1816,7 @@ export default function App() {
                                   onClick={() => setPickerSelectedSet(set)}
                                   style={{ padding: '1rem', border: '1px solid #cbd5e1', borderRadius: '6px', background: '#f8fafc', color: '#334155', fontWeight: 'bold', cursor: 'pointer', textAlign: 'center', transition: 'background 0.2s' }}
                                >
-                                  {set.title}
+                                  {customVerseSets.some(c => c.id === set.id) ? '👑 ' : ''}{set.title}
                                   <div style={{ fontSize: '0.8rem', color: '#64748b', marginTop: '0.5rem', fontWeight: 'normal' }}>{set.verses?.length || 0} {t("節", "verses")}</div>
                                </button>
                             ))}
@@ -1707,7 +1981,7 @@ export default function App() {
                       <tbody>
                         {activeVerseSets.map((set, i) => (
                           <tr key={i} style={{ borderBottom: '1px solid #e2e8f0', backgroundColor: i % 2 === 0 ? '#ffffff' : '#f8fafc', transition: 'background 0.2s', cursor: 'pointer' }} onClick={() => setSelectedSetId(set.id)} onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#eff6ff'} onMouseOut={(e) => e.currentTarget.style.backgroundColor = i % 2 === 0 ? '#ffffff' : '#f8fafc'}>
-                            <td style={{ padding: '1rem', textAlign: 'center', color: '#3b82f6', fontSize: '1.2rem' }}>📁</td>
+                            <td style={{ padding: '1rem', textAlign: 'center', color: '#3b82f6', fontSize: '1.2rem' }}>{customVerseSets.some(c => c.id === set.id) ? '👑' : '📁'}</td>
                             <td style={{ padding: '1rem', fontWeight: 'bold', color: '#1e293b', fontSize: '1.05rem' }}>{set.title}</td>
                             <td style={{ padding: '1rem', color: '#64748b', fontSize: '0.9rem' }}>{set.description || ""}</td>
                             <td style={{ padding: '1rem', textAlign: 'right', color: '#337ab7', fontWeight: 'bold' }}>{set.verses.length}</td>
