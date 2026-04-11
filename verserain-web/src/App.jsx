@@ -2294,24 +2294,22 @@ export default function App() {
           </div>
 
           {!isAutoPlay && multiplayerRoomId && (
-            <div style={{ position: 'absolute', top: '4rem', left: '1vw', bottom: '1rem', zIndex: 10, width: 'clamp(200px, 20vw, 300px)', pointerEvents: 'none', display: 'flex', flexDirection: 'column' }}>
-               <div className="hud-glass" style={{ flex: 1, padding: '1rem', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '0.4rem', background: 'rgba(15, 23, 42, 0.8)' }}>
-                  <h3 style={{ fontSize: '0.9rem', color: '#fbbf24', marginBottom: '0.5rem', borderBottom: '1px solid rgba(251,191,36,0.3)', paddingBottom: '0.3rem' }}>{activeVerse.reference}</h3>
-                  {activePhrases.slice(0, currentSeqIndex).map((phrase, idx) => (
-                    <div key={idx} style={{ padding: '0.4rem 0.6rem', background: 'rgba(52, 211, 153, 0.15)', borderLeft: '3px solid #34d399', borderRadius: '4px', color: '#f8fafc', fontSize: '0.95rem', fontWeight: 'bold' }}>
-                       {phrase}
-                    </div>
-                  ))}
-                  {currentSeqIndex < activePhrases.length && (
-                    <div id="multiplayer-stack-cursor" style={{ padding: '0.5rem 0.6rem', background: 'rgba(251, 191, 36, 0.15)', border: '2px dashed rgba(251, 191, 36, 0.8)', borderRadius: '4px', color: '#fbbf24', fontSize: '1rem', fontWeight: 'bold', opacity: 0.9, transition: 'all 0.3s' }}>
-                       Next: {activePhrases[currentSeqIndex]}
-                    </div>
-                  )}
-                  {activePhrases.slice(currentSeqIndex + 1).map((phrase, idx) => (
-                    <div key={'rem-'+idx} style={{ padding: '0.3rem 0.6rem', color: '#475569', fontSize: '0.85rem' }}>
-                       {phrase}
-                    </div>
-                  ))}
+            <div style={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: '35vh', minHeight: '180px', zIndex: 10, pointerEvents: 'auto', display: 'flex', flexDirection: 'column' }}>
+               <div className="hud-glass" style={{ flex: 1, padding: '1rem 5vw', overflowY: 'auto', background: 'rgba(15, 23, 42, 0.85)', borderRadius: '16px 16px 0 0', borderTop: '1px solid rgba(255,255,255,0.1)', borderLeft: '1px solid rgba(255,255,255,0.1)', borderRight: '1px solid rgba(255,255,255,0.1)', display: 'flex', flexDirection: 'column', gap: '0.4rem', borderBottom: 'none' }}>
+                  <h3 style={{ fontSize: '1.1rem', color: '#fbbf24', marginBottom: '0.2rem', paddingBottom: '0.4rem', borderBottom: '1px solid rgba(251,191,36,0.3)' }}>{activeVerse.reference}</h3>
+                  <div style={{ fontSize: 'clamp(1rem, 4vw, 1.4rem)', lineHeight: '1.8', color: '#cbd5e1', wordBreak: 'break-word' }}>
+                    {activePhrases.slice(0, currentSeqIndex).map((phrase, idx) => (
+                      <span key={idx} style={{ color: '#34d399', fontWeight: 'bold' }}>{phrase} </span>
+                    ))}
+                    {currentSeqIndex < activePhrases.length && (
+                      <span id="multiplayer-stack-cursor" style={{ display: 'inline-block', color: '#fbbf24', fontWeight: 'bold', padding: '0 0.4rem', border: '2px dashed rgba(251, 191, 36, 0.8)', borderRadius: '6px', margin: '0 0.2rem', background: 'rgba(251, 191, 36, 0.15)', transition: 'all 0.3s' }}>
+                        Next: {activePhrases[currentSeqIndex]}
+                      </span>
+                    )}
+                    {activePhrases.slice(currentSeqIndex + 1).map((phrase, idx) => (
+                      <span key={'rem-'+idx} style={{ color: '#475569' }}> {phrase} </span>
+                    ))}
+                  </div>
                </div>
             </div>
           )}
@@ -2339,7 +2337,7 @@ export default function App() {
               </div>
             </div>
           ) : playMode === 'square' ? (
-            <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '5rem 0 0 0', pointerEvents: 'none' }}>
+            <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: multiplayerRoomId ? '35vh' : 0, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '5rem 0 0 0', pointerEvents: 'none' }}>
               <div style={{ display: 'grid', gridTemplateColumns: `repeat(${distractionLevel <= 1 ? 2 : 3}, minmax(0, 1fr))`, gap: '0.75rem', width: '95%', maxWidth: distractionLevel <= 1 ? '600px' : '900px', pointerEvents: 'auto' }}>
                 {blocks.map(block => {
                   let appliedClasses = 'falling-block-inner';
