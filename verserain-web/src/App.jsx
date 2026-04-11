@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Play, RotateCcw, Heart, Zap, Trophy, Crown, Star, Home, XCircle, Headphones, Music, VolumeX, Search, Share2, Dices } from 'lucide-react';
+import { Play, RotateCcw, Heart, Zap, Trophy, Crown, Star, Home, XCircle, Headphones, Music, VolumeX, Search, Share2, Dices, Mic, MicOff } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import usePartySocket from 'partysocket/react';
 import PartySocket from 'partysocket';
@@ -495,6 +495,26 @@ export default function App() {
   const [multiplayerPlayMode, setMultiplayerPlayMode] = useState('square_solo');
   const [flyingBlocks, setFlyingBlocks] = useState([]);
   const [multiplayerDistractionLevel, setMultiplayerDistractionLevel] = useState(0);
+
+  // Voice Control State
+  const [isMicOn, setIsMicOn] = useState(false);
+  const [micStatusText, setMicStatusText] = useState("");
+  const recognitionRef = useRef(null);
+  const isMicOnRef = useRef(isMicOn);
+  const phrasesRef = useRef(phrases);
+  const currentSeqIndexRef = useRef(currentSeqIndex);
+  const blocksRef = useRef(blocks);
+  const statusRef = useRef(status);
+  const handleBlockClickRef = useRef();
+
+  // Keep refs updated for SpeechRecognition closure
+  useEffect(() => {
+    isMicOnRef.current = isMicOn;
+    phrasesRef.current = phrases;
+    currentSeqIndexRef.current = currentSeqIndex;
+    blocksRef.current = blocks;
+    statusRef.current = status;
+  }, [isMicOn, phrases, currentSeqIndex, blocks, status]);
   const [multiplayerSelectedVerses, setMultiplayerSelectedVerses] = useState([]);
   const [randomPickCount, setRandomPickCount] = useState(1);
 
@@ -1335,6 +1355,112 @@ export default function App() {
 
   const t = (zh, en) => version === 'kjv' ? en : zh;
 
+  // Sync handleBlockClick to ref so Speech can fire it
+  useEffect(() => {
+    handleBlockClickRef.current = handleBlockClick;
+  }, [handleBlockClick]);
+
+  useEffect(() => {
+    if (!isMicOn) {
+      if (recognitionRef.current) {
+        recognitionRef.current.stop();
+        recognitionRef.current = null;
+      }
+      setMicStatusText("");
+      return;
+    }
+
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      alert("您的瀏覽器不支援語音辨識 (建議使用 Chrome/Safari)。");
+      setIsMicOn(false);
+      return;
+    }
+
+    let recognition;
+    try {
+      recognition = new SpeechRecognition();
+      recognition.continuous = true;
+      recognition.interimResults = true;
+      recognition.lang = version === 'kjv' ? 'en-US' : 'zh-TW';
+    } catch(e) {
+      console.warn("Speech init failed", e);
+      return;
+    }
+
+    let lastMatchedIndex = -1;
+
+    recognition.onstart = () => {
+      setMicStatusText("🎤");
+    };
+
+    recognition.onresult = (event) => {
+      if (statusRef.current !== 'playing') return;
+
+      let currentTranscript = "";
+      for (let i = event.resultIndex; i < event.results.length; ++i) {
+        currentTranscript += event.results[i][0].transcript;
+      }
+      
+      const isChinese = version !== 'kjv';
+      let normalizedTranscript = "";
+      if (isChinese) {
+        normalizedTranscript = currentTranscript.replace(/\s+/g, '').toLowerCase();
+      } else {
+        // Keep spaces for english but lowercase
+        normalizedTranscript = currentTranscript.replace(/[.,!?]/g, '').toLowerCase();
+      }
+
+      const currIdx = currentSeqIndexRef.current;
+      const expectedPhrase = phrasesRef.current[currIdx];
+      
+      if (expectedPhrase && currIdx !== lastMatchedIndex) {
+        let matchTarget = expectedPhrase;
+        if (isChinese) {
+           matchTarget = expectedPhrase.substring(0, 3).toLowerCase();
+        } else {
+           // For English, match the first two words if possible, or just the word
+           const words = expectedPhrase.split(/\s+/).filter(Boolean);
+           matchTarget = words.slice(0, 2).join(' ').toLowerCase().replace(/[.,!?]/g, '');
+        }
+        
+        if (normalizedTranscript.includes(matchTarget)) {
+          const targetBlock = blocksRef.current.find(b => b.seqIndex === currIdx && !b.error && !b.hidden);
+          if (targetBlock && handleBlockClickRef.current) {
+             lastMatchedIndex = currIdx;
+             handleBlockClickRef.current(targetBlock);
+          }
+        }
+      }
+    };
+
+    recognition.onerror = (event) => {
+      console.log("Speech recognition error:", event.error);
+      if (event.error === 'not-allowed') {
+         setIsMicOn(false);
+         alert(t("需要麥克風權限才能使用語音功能！", "Microphone permission is required!"));
+      }
+    };
+
+    recognition.onend = () => {
+      if (isMicOnRef.current) {
+         try { recognition.start(); } catch(e) {}
+      }
+    };
+
+    try {
+      recognition.start();
+      recognitionRef.current = recognition;
+    } catch (e) {
+      console.error("Speech start err", e);
+    }
+
+    return () => {
+      recognition.onend = null;
+      recognition.stop();
+    };
+  }, [isMicOn, version]);
+
   return (
     <>
       <div className="bg-layer" />
@@ -1347,11 +1473,24 @@ export default function App() {
         <div key={lightningKey} className={`lightning-flash ${lightningActive === 'heavy' ? 'heavy' : 'active'}`} />
       )}
 
+      {/* Global Mic Toggle */}
+      <div style={{ position: 'fixed', bottom: '6.5rem', right: '1.5rem', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem', zIndex: 100 }}>
+        {micStatusText && <div className="hud-glass" style={{ padding: '4px 8px', fontSize: '0.8rem', color: '#4ade80', animation: 'pulse 2s infinite' }}>{micStatusText}</div>}
+        <button
+          onClick={(e) => { e.stopPropagation(); setIsMicOn(!isMicOn); }}
+          className="hud-glass"
+          title={t("語音控制開關", "Toggle Voice Control")}
+          style={{ padding: '0.75rem', borderRadius: '50%', color: isMicOn ? '#4ade80' : '#ef4444', backgroundColor: isMicOn ? 'rgba(74, 222, 128, 0.1)' : 'rgba(239, 68, 68, 0.1)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.3s' }}
+        >
+          {isMicOn ? <Mic size={24} /> : <MicOff size={24} />}
+        </button>
+      </div>
+
       {/* Global Music Toggle */}
       <button
         onClick={(e) => { e.stopPropagation(); setIsMusicPlaying(!isMusicPlaying); }}
         className="hud-glass"
-        style={{ position: 'fixed', bottom: '1.5rem', right: '1.5rem', padding: '0.75rem', borderRadius: '50%', color: isMusicPlaying ? '#4ade80' : '#cbd5e1', cursor: 'pointer', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+        style={{ position: 'fixed', bottom: '2rem', right: '1.5rem', padding: '0.75rem', borderRadius: '50%', color: isMusicPlaying ? '#4ade80' : '#cbd5e1', cursor: 'pointer', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
       >
         {isMusicPlaying ? <Music size={24} /> : <VolumeX size={24} />}
       </button>
