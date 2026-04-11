@@ -27,6 +27,8 @@ export default class Server {
       name, 
       score: 0, 
       health: 3,
+      seqIndex: 0,
+      isFinished: false,
       connected: true,
       color: Object.keys(this.state.players).length === 0 ? '#3b82f6' : '#ef4444' // Host is Blue, Guest is Red
     };
@@ -70,6 +72,8 @@ export default class Server {
              p.score = 0; 
              p.health = 3;
              p.isReady = false; 
+             p.isFinished = false;
+             p.seqIndex = 0;
           });
           
           this.broadcastState();
@@ -89,6 +93,8 @@ export default class Server {
           Object.values(this.state.players).forEach(p => {
              p.score = 0;
              p.health = 3;
+             p.isFinished = false;
+             p.seqIndex = 0;
           });
           
           this.broadcastState();
@@ -114,6 +120,8 @@ export default class Server {
       }
 
       if (data.type === 'CLICK_BLOCK' && this.state.status === 'playing') {
+        if (this.state.playMode === 'square_solo') return; // Handled locally in square_solo
+
         const { blockId } = data;
         const block = this.state.blocks.find(b => b.id === blockId);
         
@@ -240,6 +248,43 @@ export default class Server {
         }
       }
 
+      if (data.type === 'PLAYER_PROGRESS' && this.state.status === 'playing' && this.state.playMode === 'square_solo') {
+          if (this.state.players[sender.id]) {
+             this.state.players[sender.id].score = data.score;
+             this.state.players[sender.id].health = data.health;
+             this.state.players[sender.id].seqIndex = data.seqIndex;
+             this.broadcastState();
+          }
+      }
+
+      if (data.type === 'PLAYER_FINISHED_ROUND' && this.state.status === 'playing' && this.state.playMode === 'square_solo') {
+          if (this.state.players[sender.id]) {
+              console.log(`[PARTY] Player ${sender.id} finished round locally`);
+              this.state.players[sender.id].isFinished = true;
+              
+              // Check if ALL alive connected players are finished
+              const activePlayers = Object.values(this.state.players).filter(p => p.connected);
+              const allFinished = activePlayers.length > 0 && activePlayers.every(p => p.isFinished);
+              
+              if (allFinished) {
+                  console.log(`[PARTY] All players finished Solo Round! Round over!`);
+                  if (!this.state.campaignResults) this.state.campaignResults = [];
+                  this.state.campaignResults.push({
+                      verseRef: this.state.verseRef,
+                      scores: Object.fromEntries(Object.values(this.state.players).map(p => [p.id, p.score]))
+                  });
+                  
+                  if (this.state.campaignQueue && this.state.campaignQueue.length > 1) {
+                      this.state.campaignQueue.shift();
+                      this.state.status = 'intermission';
+                  } else {
+                      this.state.status = 'finished';
+                  }
+              }
+              this.broadcastState();
+          }
+      }
+
       if (data.type === 'RESTART_GAME' && sender.id === this.state.host) {
         this.state.status = 'waiting';
         this.state.verseRef = null;
@@ -254,6 +299,8 @@ export default class Server {
           p.isReady = false;
           p.score = 0;
           p.health = 3;
+          p.isFinished = false;
+          p.seqIndex = 0;
         });
         this.broadcastState();
       }

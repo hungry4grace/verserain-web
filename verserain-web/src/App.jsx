@@ -3,6 +3,7 @@ import { Play, RotateCcw, Heart, Zap, Trophy, Crown, Star, Home, XCircle, Headph
 import confetti from 'canvas-confetti';
 import usePartySocket from 'partysocket/react';
 import PartySocket from 'partysocket';
+import QRCode from 'qrcode';
 import './index.css';
 
 let audioCtx = null;
@@ -474,6 +475,7 @@ export default function App() {
   const [verseViewModal, setVerseViewModal] = useState(null);
   const [toast, setToast] = useState(null);
   const [showNameEditModal, setShowNameEditModal] = useState(false);
+  const [qrShareModal, setQrShareModal] = useState(null); // { url, reference }
   const [multiplayerRoomId, setMultiplayerRoomId] = useState(null);
   const [showMultiplayerVersePicker, setShowMultiplayerVersePicker] = useState(false);
   const [pickerSelectedSet, setPickerSelectedSet] = useState(null);
@@ -588,7 +590,9 @@ export default function App() {
               timerRef.current = setInterval(() => setTimeLeft(t => Math.max(0, t - 1)), 10);
            } else if (msg.state.status === 'playing' && gameStateRef.current === 'playing') {
               // Vital logic: Apply the refreshed block array from the referee!
-              setBlocks(msg.state.blocks);
+              if (msg.state.playMode !== 'square_solo') {
+                 setBlocks(msg.state.blocks);
+              }
            }
            if (msg.state.status === 'intermission' && gameStateRef.current !== 'intermission') {
                setGameState('intermission');
@@ -1117,12 +1121,29 @@ export default function App() {
   };
 
   useEffect(() => {
-    if (multiplayerRoomId) return; // In multiplayer, the server dictates the end of the game
-
     if (currentSeqIndex >= activePhrases.length && gameState === 'playing') {
-      endGame();
+      if (multiplayerRoomId) {
+         if (multiplayerState?.playMode === 'square_solo') {
+            socketRef.current.send(JSON.stringify({ type: 'PLAYER_FINISHED_ROUND' }));
+         }
+         return; // In shared multiplayer, server dictates end. In solo, we just emitted that we are finished and now wait.
+      } else {
+         endGame();
+      }
     }
-  }, [currentSeqIndex, gameState, activePhrases.length, multiplayerRoomId]);
+  }, [currentSeqIndex, gameState, activePhrases.length, multiplayerRoomId, multiplayerState?.playMode]);
+
+  // Sync individual progress for solo multiplayer mode
+  useEffect(() => {
+    if (multiplayerRoomId && gameState === 'playing' && multiplayerState?.playMode === 'square_solo' && socketRef.current) {
+      socketRef.current.send(JSON.stringify({
+         type: 'PLAYER_PROGRESS',
+         score: score,
+         health: health,
+         seqIndex: currentSeqIndex
+      }));
+    }
+  }, [score, health, currentSeqIndex, multiplayerRoomId, gameState, multiplayerState?.playMode]);
 
   const handleAnimationEnd = (e, id) => {
     if (e.animationName === 'fall') {
@@ -1138,8 +1159,10 @@ export default function App() {
     if (block.correct || block.error || block.claimedBy) return;
 
     if (multiplayerRoomId && socketRef.current && gameState === 'playing') {
-       socketRef.current.send(JSON.stringify({ type: 'CLICK_BLOCK', blockId: block.id }));
-       return; // Local state will be updated via socket broadcast
+       if (multiplayerState?.playMode !== 'square_solo') {
+          socketRef.current.send(JSON.stringify({ type: 'CLICK_BLOCK', blockId: block.id }));
+          return; // Local state will be updated via socket broadcast
+       }
     }
 
     if (block.seqIndex === currentSeqIndex) {
@@ -1159,7 +1182,7 @@ export default function App() {
       setBlocks(prev => prev.map(b => b.id === block.id ? { ...b, correct: true } : b));
 
       if (gameState === 'playing') {
-        if (playMode === 'square') {
+        if (playMode.startsWith('square')) {
           const maxGridSize = distractionLevel <= 1 ? 4 : 9;
           const fakesCount = distractionLevel > 0 ? distractionLevel : 0;
           const nextSpawnIndex = block.seqIndex + (maxGridSize - fakesCount);
@@ -1228,6 +1251,9 @@ export default function App() {
         } else if (newHealth <= 0) {
           playThunder('heavy');
           triggerLightning('heavy');
+          if (multiplayerRoomId && multiplayerState?.playMode === 'square_solo') {
+             return 0; // Just lose points, keep playing!
+          }
           endGame();
           return 0;
         }
@@ -1238,14 +1264,14 @@ export default function App() {
       setTimeout(() => {
         setBlocks(prev => {
           let updated = prev;
-          if (playMode === 'square' && block.seqIndex === -1) {
+          if (playMode.startsWith('square') && block.seqIndex === -1) {
             // Return prev mapped to hidden so we preserve grid length
             updated = prev.map(b => b.id === block.id ? { ...b, error: false, hidden: true, isFake: false } : b);
           } else {
             updated = prev.map(b => b.id === block.id ? { ...b, error: false } : b);
           }
 
-          if (playMode === 'square' && distractionLevel >= 2) {
+          if (playMode.startsWith('square') && distractionLevel >= 2) {
             // Scramble the whole grid on every mistake too, making recovery harder
             playShuffleSound();
             updated = [...updated].sort(() => Math.random() - 0.5);
@@ -1488,7 +1514,8 @@ export default function App() {
                                onChange={(e) => setMultiplayerPlayMode(e.target.value)}
                                style={{ padding: '0.5rem', borderRadius: '4px', border: '1px solid #cbd5e1', flex: 1, backgroundColor: '#fff', fontSize: '1rem', outline: 'none' }}
                             >
-                               <option value="square">{t("九宮格 (VerseSquare)", "VerseSquare")}</option>
+                               <option value="square">{t("共用九宮格 (Shared Square)", "Shared Square")}</option>
+                               <option value="square_solo">{t("獨立九宮格 (Solo Square)", "Solo Square")}</option>
                                <option value="rain" disabled>{t("雨滴瀑布 (VerseRain) - 即將推出", "VerseRain - Coming Soon")}</option>
                             </select>
                          </div>
@@ -1781,16 +1808,10 @@ export default function App() {
                                       <Play size={16} fill="white" />
                                     </button>
                                     <button
-                                      onClick={async (e) => {
+                                      onClick={(e) => {
                                         e.stopPropagation();
                                         const link = `${window.location.origin}${window.location.pathname}?challenge=${encodeURIComponent(v.reference)}`;
-                                        try {
-                                          await navigator.clipboard.writeText(link);
-                                          setToast(t("挑戰連結已複製到剪貼簿！", "Challenge link copied to clipboard!"));
-                                          setTimeout(() => setToast(null), 3000);
-                                        } catch (err) {
-                                          alert(t("無法複製連結，請手動全選複製：", "Could not copy link, please copy this directly: ") + link);
-                                        }
+                                        setQrShareModal({ url: link, reference: v.reference });
                                       }}
                                       title={t("分享挑戰連結", "Share challenge link")}
                                       style={{ backgroundColor: '#ffffff', color: '#64748b', border: '1px solid #cbd5e1', borderRadius: '6px', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'all 0.1s', margin: '0 auto' }}
@@ -2340,7 +2361,7 @@ export default function App() {
                 </div>
               </div>
             </div>
-          ) : playMode === 'square' ? (
+          ) : playMode.startsWith('square') ? (
             <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: multiplayerRoomId ? '35vh' : 0, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '5rem 0 0 0', pointerEvents: 'none' }}>
               <div style={{ display: 'grid', gridTemplateColumns: `repeat(${distractionLevel <= 1 ? 2 : 3}, minmax(0, 1fr))`, gap: '0.75rem', width: '95%', maxWidth: distractionLevel <= 1 ? '600px' : '900px', pointerEvents: 'auto' }}>
                 {blocks.map(block => {
@@ -2394,6 +2415,40 @@ export default function App() {
             </div>
           )}
 
+          {/* Waiting for others overlay for solo mode */}
+          {multiplayerRoomId && multiplayerState?.playMode === 'square_solo' && multiplayerState?.players?.[myClientId]?.isFinished && (
+             <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.8)', zIndex: 100, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
+                <h2 style={{ color: '#34d399', fontSize: '2.5rem', marginBottom: '1rem', animation: 'flashSuccess 1s ease-out' }}>{t("完成本回合！", "Round Finished!")}</h2>
+                <div style={{ color: '#cbd5e1', fontSize: '1.2rem', animation: 'bounce 2s infinite' }}>{t("等待其他玩家完成...", "Waiting for others to finish...")}</div>
+             </div>
+          )}
+
+          {/* Competitor Progress HUD for Solo Mode */}
+          {multiplayerRoomId && multiplayerState?.playMode === 'square_solo' && (
+             <div style={{ position: 'absolute', top: '5rem', left: '1rem', zIndex: 40, display: 'flex', flexDirection: 'column', gap: '0.8rem', pointerEvents: 'none' }}>
+                {Object.values(multiplayerState.players || {}).filter(p => p.id !== myClientId && p.connected).map(p => (
+                   <div key={p.id} style={{ background: 'rgba(15, 23, 42, 0.75)', padding: '0.6rem 1rem', borderRadius: '12px', border: '1px solid rgba(59, 130, 246, 0.3)', display: 'flex', flexDirection: 'column', gap: '0.3rem', backdropFilter: 'blur(4px)' }}>
+                      <div style={{ color: '#93c5fd', fontWeight: 'bold', fontSize: '0.9rem', display: 'flex', justifyContent: 'space-between' }}>
+                         <span>{p.name}</span>
+                         <span style={{ color: '#fbbf24' }}>{p.isFinished ? '✅' : `${p.seqIndex}/${activePhrases.length}`}</span>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: '#cbd5e1', fontSize: '0.9rem', minWidth: '120px' }}>
+                         <span style={{ fontFamily: 'monospace', fontSize: '1rem' }}>{Math.max(0, p.score)} pts</span>
+                         <span style={{ display: 'flex' }}>
+                             {Array.from({ length: 3 }).map((_, i) => (
+                               <Heart key={i} size={12} color={i < p.health ? "#ef4444" : "#475569"} fill={i < p.health ? "#ef4444" : "none"} style={{ marginLeft: '2px' }} />
+                             ))}
+                         </span>
+                      </div>
+                      {/* Mini progress bar */}
+                      <div style={{ width: '100%', height: '4px', background: 'rgba(255,255,255,0.1)', borderRadius: '2px', overflow: 'hidden', marginTop: '2px' }}>
+                         <div style={{ width: `${(p.seqIndex / activePhrases.length) * 100}%`, height: '100%', background: p.isFinished ? '#10b981' : '#3b82f6', transition: 'width 0.3s' }}></div>
+                      </div>
+                   </div>
+                ))}
+             </div>
+          )}
+
           {/* Flying Blocks Animation Layer */}
           {gameState === 'playing' && multiplayerRoomId && flyingBlocks.map(fb => (
              <div 
@@ -2418,7 +2473,7 @@ export default function App() {
              </div>
           ))}
 
-          {multiplayerRoomId && health <= 0 && (
+          {multiplayerRoomId && health <= 0 && multiplayerState?.playMode !== 'square_solo' && (
              <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.85)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', animation: 'flashSuccess 0.5s ease-out' }}>
                 <div style={{ color: '#ef4444', marginBottom: '1rem' }}><XCircle size={64} /></div>
                 <h2 style={{ color: '#fca5a5', fontSize: '2.5rem', fontWeight: 'bold', marginBottom: '1rem', textShadow: '0 2px 10px rgba(239,68,68,0.5)' }}>{t("您已出局！", "You're Out!")}</h2>
@@ -2958,6 +3013,68 @@ export default function App() {
                   <span onClick={() => setShowLoginModal('signup')} style={{ color: '#3b82f6', cursor: 'pointer', fontWeight: 'bold' }}>{t("立即註冊", "Sign up")}</span>
                 </>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* QR Code Share Modal */}
+      {qrShareModal && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.75)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1100, padding: '1rem', backdropFilter: 'blur(8px)' }} onClick={(e) => { if (e.target === e.currentTarget) setQrShareModal(null); }}>
+          <div style={{ background: 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)', borderRadius: '20px', padding: 'clamp(1.5rem, 4vw, 3rem)', width: '100%', maxWidth: '420px', boxShadow: '0 25px 50px rgba(0,0,0,0.5), 0 0 100px rgba(59,130,246,0.15)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1.5rem', border: '1px solid rgba(59,130,246,0.3)', animation: 'flashSuccess 0.4s ease-out' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+              <h3 style={{ margin: 0, color: '#e2e8f0', fontSize: '1.2rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <Share2 size={20} color="#60a5fa" /> {t("掃描 QR 碼來挑戰！", "Scan to Challenge!")}
+              </h3>
+              <button onClick={() => setQrShareModal(null)} style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer', padding: '0.25rem' }}><XCircle size={24} /></button>
+            </div>
+
+            <div style={{ color: '#fbbf24', fontSize: 'clamp(1.1rem, 3vw, 1.4rem)', fontWeight: 'bold', textAlign: 'center' }}>
+              📖 {qrShareModal.reference}
+            </div>
+
+            <canvas
+              ref={(canvas) => {
+                if (canvas && qrShareModal) {
+                  QRCode.toCanvas(canvas, qrShareModal.url, {
+                    width: Math.min(280, window.innerWidth - 120),
+                    margin: 2,
+                    color: { dark: '#1e293b', light: '#ffffff' }
+                  });
+                }
+              }}
+              style={{ borderRadius: '12px', boxShadow: '0 4px 20px rgba(0,0,0,0.3)', background: '#fff', padding: '12px' }}
+            />
+
+            <p style={{ color: '#94a3b8', fontSize: '0.9rem', textAlign: 'center', margin: 0 }}>
+              {t("讓大家掃描這個 QR 碼，一起來挑戰這段經文！", "Have everyone scan this QR code to challenge this verse together!")}
+            </p>
+
+            <div style={{ display: 'flex', gap: '0.75rem', width: '100%' }}>
+              <button
+                onClick={async () => {
+                  try {
+                    await navigator.clipboard.writeText(qrShareModal.url);
+                    setToast(t("挑戰連結已複製到剪貼簿！", "Challenge link copied!"));
+                    setTimeout(() => setToast(null), 3000);
+                  } catch (err) {
+                    alert(qrShareModal.url);
+                  }
+                }}
+                style={{ flex: 1, padding: '0.75rem', background: 'rgba(59,130,246,0.15)', color: '#60a5fa', border: '1px solid rgba(59,130,246,0.3)', borderRadius: '10px', fontSize: '0.95rem', fontWeight: 'bold', cursor: 'pointer', transition: 'all 0.2s' }}
+                onMouseOver={(e) => { e.currentTarget.style.background = 'rgba(59,130,246,0.25)'; }}
+                onMouseOut={(e) => { e.currentTarget.style.background = 'rgba(59,130,246,0.15)'; }}
+              >
+                {t("📋 複製連結", "📋 Copy Link")}
+              </button>
+              <button
+                onClick={() => setQrShareModal(null)}
+                style={{ flex: 1, padding: '0.75rem', background: 'rgba(255,255,255,0.05)', color: '#cbd5e1', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '10px', fontSize: '0.95rem', fontWeight: 'bold', cursor: 'pointer', transition: 'all 0.2s' }}
+                onMouseOver={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.1)'; }}
+                onMouseOut={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.05)'; }}
+              >
+                {t("關閉", "Close")}
+              </button>
             </div>
           </div>
         </div>
