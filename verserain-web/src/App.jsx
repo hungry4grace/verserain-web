@@ -2299,16 +2299,13 @@ export default function App() {
                   <h3 style={{ fontSize: '1.1rem', color: '#fbbf24', marginBottom: '0.2rem', paddingBottom: '0.4rem', borderBottom: '1px solid rgba(251,191,36,0.3)' }}>{activeVerse.reference}</h3>
                   <div style={{ fontSize: 'clamp(1rem, 4vw, 1.4rem)', lineHeight: '1.8', color: '#cbd5e1', wordBreak: 'break-word' }}>
                     {activePhrases.slice(0, currentSeqIndex).map((phrase, idx) => (
-                      <span key={idx} style={{ color: '#34d399', fontWeight: 'bold' }}>{phrase} </span>
+                      <span key={idx} style={{ color: '#fbbf24', fontWeight: 'bold' }}>{phrase} </span>
                     ))}
                     {currentSeqIndex < activePhrases.length && (
-                      <span id="multiplayer-stack-cursor" style={{ display: 'inline-block', color: '#fbbf24', fontWeight: 'bold', padding: '0 0.4rem', border: '2px dashed rgba(251, 191, 36, 0.8)', borderRadius: '6px', margin: '0 0.2rem', background: 'rgba(251, 191, 36, 0.15)', transition: 'all 0.3s' }}>
-                        Next: {activePhrases[currentSeqIndex]}
+                      <span id="multiplayer-stack-cursor" style={{ display: 'inline-block', color: '#94a3b8', fontWeight: 'bold', padding: '0 0.4rem', border: '2px dashed rgba(251, 191, 36, 0.4)', borderRadius: '6px', margin: '0 0.2rem', background: 'rgba(251, 191, 36, 0.05)', transition: 'all 0.3s' }}>
+                        Next: {activePhrases[currentSeqIndex].replace(/[^\s\.,\?!;:，。？！；：]/g, '〇')}
                       </span>
                     )}
-                    {activePhrases.slice(currentSeqIndex + 1).map((phrase, idx) => (
-                      <span key={'rem-'+idx} style={{ color: '#475569' }}> {phrase} </span>
-                    ))}
                   </div>
                </div>
             </div>
