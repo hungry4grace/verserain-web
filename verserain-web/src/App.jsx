@@ -478,6 +478,7 @@ export default function App() {
   const [showMultiplayerVersePicker, setShowMultiplayerVersePicker] = useState(false);
   const [pickerSelectedSet, setPickerSelectedSet] = useState(null);
   const [multiplayerPlayMode, setMultiplayerPlayMode] = useState('square');
+  const [flyingBlocks, setFlyingBlocks] = useState([]);
   const [multiplayerDistractionLevel, setMultiplayerDistractionLevel] = useState(0);
   const [multiplayerSelectedVerses, setMultiplayerSelectedVerses] = useState([]);
   const [randomPickCount, setRandomPickCount] = useState(1);
@@ -599,6 +600,33 @@ export default function App() {
              if (timerRef.current) clearInterval(timerRef.current);
           }
         } else if (msg.type === 'BLOCK_CLAIMED') {
+           // Dom coordinate extraction for flying animation
+           const el = document.querySelector(`[data-id="${msg.blockId}"]`);
+           const targetContainer = document.getElementById('multiplayer-stack-cursor');
+           if (el && targetContainer) {
+              const rect = el.getBoundingClientRect();
+              const targetRect = targetContainer.getBoundingClientRect();
+              
+              const newFlyingBlock = {
+                 id: Date.now() + Math.random(),
+                 text: msg.blockText,
+                 claimedByName: msg.claimedByName,
+                 color: msg.claimedBy === socket.id ? '#10b981' : '#f43f5e',
+                 startX: `${rect.left}px`,
+                 startY: `${rect.top}px`,
+                 endX: `${targetRect.left}px`,
+                 endY: `${targetRect.top}px`,
+                 width: `${rect.width}px`,
+                 height: `${rect.height}px`
+              };
+              
+              setFlyingBlocks(prev => [...prev, newFlyingBlock]);
+              
+              setTimeout(() => {
+                 setFlyingBlocks(prev => prev.filter(fb => fb.id !== newFlyingBlock.id));
+              }, 500);
+           }
+
            setBlocks(prev => prev.map(b => b.id === msg.blockId ? { ...b, claimedBy: msg.claimedBy, claimedByName: msg.claimedByName, correct: true } : b));
            setCurrentSeqIndex(msg.nextSeq);
            currentSeqRef.current = msg.nextSeq;
@@ -2265,6 +2293,29 @@ export default function App() {
             )}
           </div>
 
+          {!isAutoPlay && multiplayerRoomId && (
+            <div style={{ position: 'absolute', top: '4rem', left: '1vw', bottom: '1rem', zIndex: 10, width: 'clamp(200px, 20vw, 300px)', pointerEvents: 'none', display: 'flex', flexDirection: 'column' }}>
+               <div className="hud-glass" style={{ flex: 1, padding: '1rem', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '0.4rem', background: 'rgba(15, 23, 42, 0.8)' }}>
+                  <h3 style={{ fontSize: '0.9rem', color: '#fbbf24', marginBottom: '0.5rem', borderBottom: '1px solid rgba(251,191,36,0.3)', paddingBottom: '0.3rem' }}>{activeVerse.reference}</h3>
+                  {activePhrases.slice(0, currentSeqIndex).map((phrase, idx) => (
+                    <div key={idx} style={{ padding: '0.4rem 0.6rem', background: 'rgba(52, 211, 153, 0.15)', borderLeft: '3px solid #34d399', borderRadius: '4px', color: '#f8fafc', fontSize: '0.95rem', fontWeight: 'bold' }}>
+                       {phrase}
+                    </div>
+                  ))}
+                  {currentSeqIndex < activePhrases.length && (
+                    <div id="multiplayer-stack-cursor" style={{ padding: '0.5rem 0.6rem', background: 'rgba(251, 191, 36, 0.15)', border: '2px dashed rgba(251, 191, 36, 0.8)', borderRadius: '4px', color: '#fbbf24', fontSize: '1rem', fontWeight: 'bold', opacity: 0.9, transition: 'all 0.3s' }}>
+                       Next: {activePhrases[currentSeqIndex]}
+                    </div>
+                  )}
+                  {activePhrases.slice(currentSeqIndex + 1).map((phrase, idx) => (
+                    <div key={'rem-'+idx} style={{ padding: '0.3rem 0.6rem', color: '#475569', fontSize: '0.85rem' }}>
+                       {phrase}
+                    </div>
+                  ))}
+               </div>
+            </div>
+          )}
+
           {isAutoPlay ? (
             <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '6rem 5vw 2rem' }}>
               <div className="hud-glass" style={{ padding: 'clamp(1.5rem, 4vw, 3rem)', textAlign: 'center', maxWidth: '1000px', width: '90%', maxHeight: '85vh', overflowY: 'auto' }}>
@@ -2297,17 +2348,13 @@ export default function App() {
                   
                   let blockStyle = { cursor: 'pointer', padding: 'clamp(0.5rem, 2vw, 1.5rem)', fontSize: 'clamp(0.9rem, 2.5vw, 1.5rem)', display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100px', wordBreak: 'break-word', hyphens: 'auto', textAlign: 'center', visibility: block.hidden ? 'hidden' : 'visible' };
                   
-                  if (block.claimedBy && block.claimedBy !== myClientId) {
-                     blockStyle.backgroundColor = '#fee2e2'; // Light red
-                     blockStyle.color = '#ef4444';
-                     blockStyle.borderColor = '#ef4444';
-                     blockStyle.transform = 'scale(0.95)';
-                     blockStyle.pointerEvents = 'none';
-                     blockStyle.opacity = 0.8;
+                  if (block.claimedBy) {
+                     // Block instantly disappears physically so the flying clone can animate
+                     blockStyle.visibility = 'hidden';
                   }
 
                   return (
-                    <div key={block.id} className={appliedClasses} onClick={(e) => { e.stopPropagation(); handleBlockClick(block); }} style={blockStyle}>
+                    <div key={block.id} data-id={block.id} className={appliedClasses} onClick={(e) => { e.stopPropagation(); handleBlockClick(block); }} style={blockStyle}>
                       {!block.hidden && block.text}
                     </div>
                   )
@@ -2344,6 +2391,30 @@ export default function App() {
               })}
             </div>
           )}
+
+          {/* Flying Blocks Animation Layer */}
+          {gameState === 'playing' && multiplayerRoomId && flyingBlocks.map(fb => (
+             <div 
+                key={fb.id} 
+                className="falling-block-inner flying-block-anim" 
+                style={{ 
+                   '--startX': fb.startX, 
+                   '--startY': fb.startY, 
+                   '--endX': fb.endX, 
+                   '--endY': fb.endY, 
+                   width: fb.width, 
+                   height: fb.height,
+                   display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 'clamp(0.9rem, 2.5vw, 1.5rem)',
+                   backgroundColor: fb.color,
+                   borderColor: fb.color,
+                   boxShadow: `0 0 20px ${fb.color}`,
+                   color: '#fff',
+                   wordBreak: 'break-word', hyphens: 'auto', textAlign: 'center'
+                }}
+             >
+                {fb.text}
+             </div>
+          ))}
 
           {multiplayerRoomId && health <= 0 && (
              <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.85)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', animation: 'flashSuccess 0.5s ease-out' }}>

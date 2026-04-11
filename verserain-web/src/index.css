@@ -192,3 +192,16 @@ body {
   0% { transform: translate(-50%, 20px); opacity: 0; }
   100% { transform: translate(-50%, 0); opacity: 1; }
 }
+
+@keyframes flyToStack {
+  0% { transform: translate(var(--startX), var(--startY)) scale(1); opacity: 1; }
+  100% { transform: translate(var(--endX), var(--endY)) scale(0.6); opacity: 0; }
+}
+
+.flying-block-anim {
+  position: fixed;
+  top: 0; left: 0;
+  z-index: 1000;
+  animation: flyToStack 0.5s cubic-bezier(0.25, 1, 0.5, 1) forwards !important;
+  pointer-events: none;
+}

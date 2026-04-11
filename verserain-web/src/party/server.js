@@ -134,6 +134,7 @@ export default class Server {
             this.room.broadcast(JSON.stringify({
               type: 'BLOCK_CLAIMED',
               blockId: block.id,
+              blockText: block.text,
               claimedBy: sender.id,
               claimedByName: this.state.players[sender.id].name,
               nextSeq: this.state.currentSeqIndex
