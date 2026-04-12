@@ -1,7 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Play, RotateCcw, Heart, Zap, Trophy, Crown, Star, Home, XCircle, Headphones, Music, VolumeX, Search, Share2 } from 'lucide-react';
+import { Play, RotateCcw, Heart, Zap, Trophy, Crown, Star, Home, XCircle, Headphones, Music, VolumeX, Search, Share2, Dices, Mic, MicOff, Users } from 'lucide-react';
 import confetti from 'canvas-confetti';
+import usePartySocket from 'partysocket/react';
+import PartySocket from 'partysocket';
+import QRCode from 'qrcode';
 import './index.css';
+import { BIBLE_BOOKS } from './bibleDictionary';
 
 let audioCtx = null;
 
@@ -183,11 +187,26 @@ export default function App() {
   const VERSES_KJV = React.useMemo(() => VERSE_SETS_KJV.flatMap(s => s.verses), []);
 
   const [version, setVersion] = useState('cuv');
-  const [playMode, setPlayMode] = useState('square');
+  const [playMode, setPlayMode] = useState('square_solo');
   const [distractionLevel, setDistractionLevel] = useState(0);
   const [selectedSetId, setSelectedSetId] = useState(null);
 
-  const activeVerseSets = version === 'cuv' ? VERSE_SETS_CUV : VERSE_SETS_KJV;
+  const [isPremium, setIsPremium] = useState(() => localStorage.getItem('verserain_is_premium') === 'true');
+  const [userEmail, setUserEmail] = useState(() => localStorage.getItem('verserain_player_email') || "");
+  const [authLoading, setAuthLoading] = useState(false);
+  const [authError, setAuthError] = useState("");
+  const [customVerseSets, setCustomVerseSets] = useState(() => {
+    try {
+      const saved = localStorage.getItem('verseRain_custom_sets');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+  const [editingCustomSet, setEditingCustomSet] = useState(null);
+
+  const baseVerseSets = version === 'cuv' ? VERSE_SETS_CUV : VERSE_SETS_KJV;
+  const activeVerseSets = [...customVerseSets, ...baseVerseSets];
   const currentSet = selectedSetId ? activeVerseSets.find(s => s.id === selectedSetId) : null;
   const VERSES_DB = currentSet ? currentSet.verses : activeVerseSets[0].verses;
 
@@ -366,7 +385,7 @@ export default function App() {
   const activePhrases = React.useMemo(() => {
     const isEnglish = /^[a-zA-Z\s.,:;'"]+$/.test(activeVerse.text.substring(0, 50));
     // Remove \s from the non-English regex so Chinese doesn't fragment on spaces
-    const regex = isEnglish ? /[,，。；：「」、;:\.\?!]/ : /[,，。；：「」、;:\.\?!！？『』《》]/;
+    const regex = isEnglish ? /[,，。；：「」、;:\.\?!]/ : /[,，。；：「」、;:\.\?!！？『』《》\s]/;
     return activeVerse.text.split(regex).map(p => p.trim()).filter(Boolean);
   }, [activeVerse]);
 
@@ -417,32 +436,9 @@ export default function App() {
   const [lightningKey, setLightningKey] = useState(0);
 
   const triggerLightning = React.useCallback((type) => {
-    setLightningActive(type);
-    setLightningKey(k => k + 1);
-  }, []);
-
-  useEffect(() => {
-    let timeoutId;
-    const scheduleLightning = () => {
-      const randTime = Math.random() * 8000 + 4000;
-      timeoutId = setTimeout(() => {
-        // Occasional visual lightning with no audio
-        if (Math.random() > 0.4) {
-          triggerLightning('light');
-        }
-        scheduleLightning();
-      }, randTime);
-    };
-
-    if (gameState === 'playing') {
-      scheduleLightning();
-    } else {
-      setLightningActive(null);
-    }
-    return () => clearTimeout(timeoutId);
-  }, [gameState, triggerLightning]);
-
-  // Leaderboard specific state
+    // Lightning visually disabled to reduce distraction
+    return;
+  }, []);  // Leaderboard specific state
   const [playerName, setPlayerName] = useState(() => localStorage.getItem('verserain_player_name') || "");
   const [leaderboard, setLeaderboard] = useState({ alltime: [], monthly: [], daily: [] });
   const [isSubmittingScore, setIsSubmittingScore] = useState(false);
@@ -472,11 +468,247 @@ export default function App() {
   const [verseViewModal, setVerseViewModal] = useState(null);
   const [toast, setToast] = useState(null);
   const [showNameEditModal, setShowNameEditModal] = useState(false);
+  const [qrShareModal, setQrShareModal] = useState(null); // { url, reference }
+  const [multiplayerRoomId, setMultiplayerRoomId] = useState(null);
+  const [showMultiplayerVersePicker, setShowMultiplayerVersePicker] = useState(false);
+  const [pickerSelectedSet, setPickerSelectedSet] = useState(null);
+  const [multiplayerPlayMode, setMultiplayerPlayMode] = useState('square_solo');
+  const [flyingBlocks, setFlyingBlocks] = useState([]);
+  const [multiplayerDistractionLevel, setMultiplayerDistractionLevel] = useState(0);
+
+  // Voice Control State
+  const [isMicOn, setIsMicOn] = useState(false);
+  const [micStatusText, setMicStatusText] = useState("");
+  const [liveTranscript, setLiveTranscript] = useState("");
+  const recognitionRef = useRef(null);
+  const isMicOnRef = useRef(isMicOn);
+  const phrasesRef = useRef(activePhrases);
+  const currentSeqIndexRef = useRef(currentSeqIndex);
+  const blocksRef = useRef(blocks);
+  const statusRef = useRef(gameState);
+  const handleBlockClickRef = useRef();
+
+  // Keep refs updated for SpeechRecognition closure
+  useEffect(() => {
+    isMicOnRef.current = isMicOn;
+    phrasesRef.current = activePhrases;
+    currentSeqIndexRef.current = currentSeqIndex;
+    blocksRef.current = blocks;
+    statusRef.current = gameState;
+  }, [isMicOn, activePhrases, currentSeqIndex, blocks, gameState]);
+  const [multiplayerSelectedVerses, setMultiplayerSelectedVerses] = useState([]);
+  const [randomPickCount, setRandomPickCount] = useState(1);
+
+  const multiplayerRoomRef = useRef(multiplayerRoomId);
+  useEffect(() => { multiplayerRoomRef.current = multiplayerRoomId; }, [multiplayerRoomId]);
+
+  const [multiplayerState, setMultiplayerState] = useState(null);
+  const [myClientId, setMyClientId] = useState(null);
+  const [intermissionCountdown, setIntermissionCountdown] = useState(0);
+
+  useEffect(() => {
+    if (gameState === 'intermission' && intermissionCountdown > 0) {
+      const timer = setTimeout(() => {
+        setIntermissionCountdown(c => c - 1);
+      }, 1000);
+      return () => clearTimeout(timer);
+    } else if (gameState === 'intermission' && intermissionCountdown === 0) {
+      if (multiplayerState?.host === myClientId && multiplayerState.campaignQueue && multiplayerState.campaignQueue.length > 0) {
+          const nextVerse = multiplayerState.campaignQueue[0];
+          const isEnglish = /^[a-zA-Z\s.,:;'"]+$/.test(nextVerse.text.substring(0, 50));
+          const regex = isEnglish ? /[,，。；：「」、;:\.\?!]/ : /[,，。；：「」、;:\.\?!！？『』《》\s]/;
+          const phrases = nextVerse.text.split(regex).map(p => p.trim()).filter(Boolean);
+          
+          const maxGridSize = multiplayerState.distractionLevel <= 1 ? 4 : 9;
+          const fakesCount = multiplayerState.distractionLevel > 0 ? multiplayerState.distractionLevel : 0;
+          const realBlocksAvailable = phrases.length;
+          const initialRealCount = Math.min(maxGridSize - fakesCount, realBlocksAvailable);
+          
+          let newBlocks = Array.from({ length: initialRealCount }, (_, i) => ({
+             id: Math.random().toString(36).substr(2, 9),
+             text: phrases[i],
+             seqIndex: i,
+             isSquare: true,
+             error: false,
+             correct: false,
+             hidden: false
+          }));
+          
+          if (fakesCount > 0) {
+            for (let i = 0; i < fakesCount; i++) {
+              newBlocks.push({ id: Math.random().toString(36).substr(2, 9), text: "---", seqIndex: -1, isSquare: true, error: false, correct: false, hidden: false, isFake: true });
+            }
+          }
+          
+          const currentLength = newBlocks.length;
+          for (let i = currentLength; i < maxGridSize; i++) {
+            newBlocks.push({ id: Math.random().toString(36).substr(2, 9), text: '', seqIndex: -99, isSquare: true, error: false, correct: false, hidden: true });
+          }
+          newBlocks.sort(() => Math.random() - 0.5);
+          
+          if (socketRef.current) {
+            socketRef.current.send(JSON.stringify({ 
+               type: 'NEXT_CAMPAIGN_ROUND', 
+               blocks: newBlocks, 
+               verseRef: nextVerse.reference,
+               verseText: nextVerse.text,
+               phrases: phrases
+            }));
+          }
+      }
+    }
+  }, [gameState, intermissionCountdown, multiplayerState, myClientId]);
+
+  const socketRef = useRef(null);
+
+  useEffect(() => {
+    const targetRoom = multiplayerRoomId || "global-lobby";
+
+    const socket = new PartySocket({
+      host: "verserain-party.hungry4grace.partykit.dev", // Production Cloudflare Worker URL
+      room: targetRoom,
+      query: { name: playerName || "Player" + Math.floor(Math.random() * 999) }
+    });
+
+    socketRef.current = socket;
+
+    const handleOpen = () => {
+      setMyClientId(socket.id);
+    };
+
+    const handleMessage = (e) => {
+      if (socket.id) setMyClientId(socket.id);
+      try {
+        const msg = JSON.parse(e.data);
+        if (msg.type === 'STATE_UPDATE') {
+          setMultiplayerState(msg.state);
+          
+          if (msg.state.status === 'playing' && gameStateRef.current !== 'playing') {
+             setBlocks(msg.state.blocks);
+             setGameState('playing');
+             setHealth(3);
+             setCombo(0);
+             setScore(0);
+             setTimeLeft(6000); 
+             setCurrentSeqIndex(0);
+             currentSeqRef.current = 0;
+             // Set a placeholder activeVerse so HUD works
+              const fakeVerse = { reference: msg.state.verseRef, title: "Multiplayer", text: msg.state.verseText || msg.state.blocks.filter(b=>!b.isFake).map(b=>b.text).join('') };
+              setActiveVerse(fakeVerse);
+              setPlayMode(msg.state.playMode || 'square');
+              if (msg.state.distractionLevel !== undefined) {
+                 setDistractionLevel(msg.state.distractionLevel);
+              }
+              
+              if (timerRef.current) clearInterval(timerRef.current);
+              timerRef.current = setInterval(() => setTimeLeft(t => Math.max(0, t - 1)), 10);
+           } else if (msg.state.status === 'playing' && gameStateRef.current === 'playing') {
+              // Vital logic: Apply the refreshed block array from the referee!
+              if (msg.state.playMode !== 'square_solo') {
+                 setBlocks(msg.state.blocks);
+              }
+           }
+           if (msg.state.status === 'intermission' && gameStateRef.current !== 'intermission') {
+               setGameState('intermission');
+               setIntermissionCountdown(5);
+               if (timerRef.current) clearInterval(timerRef.current);
+           }
+           if (msg.state.status === 'finished' && gameStateRef.current !== 'multiplayer_results') {
+             setGameState('multiplayer_results');
+             if (timerRef.current) clearInterval(timerRef.current);
+          }
+        } else if (msg.type === 'BLOCK_CLAIMED') {
+           // Dom coordinate extraction for flying animation
+           const el = document.querySelector(`[data-id="${msg.blockId}"]`);
+           const targetContainer = document.getElementById('multiplayer-stack-cursor');
+           if (el && targetContainer) {
+              const rect = el.getBoundingClientRect();
+              const targetRect = targetContainer.getBoundingClientRect();
+              
+              const newFlyingBlock = {
+                 id: Date.now() + Math.random(),
+                 text: msg.blockText,
+                 claimedByName: msg.claimedByName,
+                 color: msg.claimedBy === socket.id ? '#10b981' : '#f43f5e',
+                 startX: `${rect.left}px`,
+                 startY: `${rect.top}px`,
+                 endX: `${targetRect.left}px`,
+                 endY: `${targetRect.top}px`,
+                 width: `${rect.width}px`,
+                 height: `${rect.height}px`
+              };
+              
+              setFlyingBlocks(prev => [...prev, newFlyingBlock]);
+              
+              setTimeout(() => {
+                 setFlyingBlocks(prev => prev.filter(fb => fb.id !== newFlyingBlock.id));
+              }, 500);
+           }
+
+           setBlocks(prev => prev.map(b => b.id === msg.blockId ? { ...b, claimedBy: msg.claimedBy, claimedByName: msg.claimedByName, correct: true } : b));
+           setCurrentSeqIndex(msg.nextSeq);
+           currentSeqRef.current = msg.nextSeq;
+           
+           if (msg.claimedBy === socket.id) {
+             setScore(prev => prev + 100);
+             setCombo(c => c + 1);
+           } else {
+             setCombo(0);
+           }
+        } else if (msg.type === 'MISTAKE') {
+           setHealth(h => {
+             const newHealth = msg.health !== undefined ? msg.health : Math.max(0, h - 1);
+             if (newHealth === 2) {
+               playThunder('light');
+               triggerLightning('light');
+             } else if (newHealth <= 0) {
+               playThunder('heavy');
+               triggerLightning('heavy');
+             }
+             return newHealth;
+           });
+        }
+      } catch (err) {}
+    };
+
+    socket.addEventListener('open', handleOpen);
+    socket.addEventListener('message', handleMessage);
+
+    return () => {
+      socket.removeEventListener('open', handleOpen);
+      socket.removeEventListener('message', handleMessage);
+      socket.close();
+      socketRef.current = null;
+    };
+  }, [multiplayerRoomId, playerName, triggerLightning]);
+
 
   // Process Challenge URL parameter
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const challengeRef = params.get('challenge');
+    const setRef = params.get('set');
+
+    if (setRef) {
+      if (!playerName) {
+        setShowLoginModal('login');
+      } else {
+        const foundSet = activeVerseSets.find(s => s.id === setRef);
+        if (foundSet) {
+          setSelectedSetId(foundSet.id);
+          window.history.replaceState({}, document.title, window.location.pathname);
+          setTimeout(() => {
+            const queue = [...foundSet.verses];
+            setCampaignQueue(queue.slice(1));
+            setCampaignResults([]);
+            setActiveVerse(queue[0]);
+            setTimeout(() => startGame(false, queue), 50);
+          }, 300);
+          return;
+        }
+      }
+    }
+
     if (challengeRef) {
       if (!playerName) {
         setShowLoginModal('login');
@@ -564,7 +796,7 @@ export default function App() {
 
       if (candidates.includes(targetSeq)) {
         seqToSpawn = targetSeq; // Absolute guarantee the required phrase is spawned
-      } else if (spawnFake && playMode !== 'square') {
+      } else if (spawnFake && !playMode.startsWith('square')) {
         isFake = true;
         seqToSpawn = -1;
       } else {
@@ -604,13 +836,25 @@ export default function App() {
 
   useEffect(() => {
     if (initAutoStart?.trigger) {
-      startGame(initAutoStart.isAuto);
+      if (initAutoStart.isMultiplayerReadyCheck) {
+         initSquareBlocks(true, initAutoStart.campaignQueue, initAutoStart.verse);
+      } else {
+         startGame(initAutoStart.isAuto);
+      }
       setInitAutoStart(null);
     }
   }, [initAutoStart]);
 
-  const initSquareBlocks = () => {
-    const phrases = activePhrasesRef.current;
+  const initSquareBlocks = (isMultiplayerReadyCheck = false, campaignQueue = null, overrideVerse = null) => {
+    const verse = overrideVerse || activeVerse;
+    let phrases;
+    if (overrideVerse) {
+      const isEnglish = /^[a-zA-Z\s.,:;'"]+$/.test(verse.text.substring(0, 50));
+      const regex = isEnglish ? /[,，。；：「」、;:\.\?!]/ : /[,，。；：「」、;:\.\?!！？『』《》\s]/;
+      phrases = verse.text.split(regex).map(p => p.trim()).filter(Boolean);
+    } else {
+      phrases = activePhrasesRef.current;
+    }
 
     // Grid size depends on difficulty
     const maxGridSize = distractionLevel <= 1 ? 4 : 9;
@@ -661,7 +905,21 @@ export default function App() {
     }
 
     newBlocks.sort(() => Math.random() - 0.5);
-    setBlocks(newBlocks);
+    
+    if (isMultiplayerReadyCheck && socketRef.current) {
+        socketRef.current.send(JSON.stringify({ 
+           type: 'INIT_GAME', 
+           blocks: newBlocks, 
+           verseRef: verse.reference,
+           verseText: verse.text,
+           playMode: playMode,
+           distractionLevel: distractionLevel,
+           phrases: phrases,
+           campaignQueue: campaignQueue
+        }));
+    } else {
+        setBlocks(newBlocks);
+    }
   };
 
   const startGame = (isAuto = false) => {
@@ -692,7 +950,7 @@ export default function App() {
     }, 10);
 
     if (!isAuto) {
-      if (playMode === 'square') {
+      if (playMode.startsWith('square')) {
         initSquareBlocks();
       } else {
         setTimeout(spawnNextBlock, 100);
@@ -836,11 +1094,11 @@ export default function App() {
       setTimeBonus(0);
     }
 
-    const hs = isSuccess && finalCalculatedScore > bestScore && finalCalculatedScore > 0;
+    const hs = isSuccess && healthRef.current > 0 && finalCalculatedScore > bestScore && finalCalculatedScore > 0;
 
     setIsFlawless(f);
     setIsNewHighScore(hs);
-    setIsFailed(failed);
+    setIsFailed(failed || healthRef.current <= 0); // Consider it visually failed if health <= 0, but verse completes
 
     if (isSuccess && !isAutoPlayRef.current) {
       // Load current leaderboard initially
@@ -850,7 +1108,7 @@ export default function App() {
         .catch(err => console.log("Leaderboard not ready or fetch failed"));
 
       // If user is already identified, auto-submit their score behind the scenes
-      if (playerName && finalCalculatedScore > 0) {
+      if (playerName && finalCalculatedScore > 0 && healthRef.current > 0) {
         setIsSubmittingScore(true);
         const actualModeName = distractionLevel > 0 ? `${playMode}-dx${distractionLevel}` : playMode;
 
@@ -900,9 +1158,28 @@ export default function App() {
 
   useEffect(() => {
     if (currentSeqIndex >= activePhrases.length && gameState === 'playing') {
-      endGame();
+      if (multiplayerRoomId) {
+         if (multiplayerState?.playMode === 'square_solo') {
+            socketRef.current.send(JSON.stringify({ type: 'PLAYER_FINISHED_ROUND' }));
+         }
+         return; // In shared multiplayer, server dictates end. In solo, we just emitted that we are finished and now wait.
+      } else {
+         endGame();
+      }
     }
-  }, [currentSeqIndex, gameState]);
+  }, [currentSeqIndex, gameState, activePhrases.length, multiplayerRoomId, multiplayerState?.playMode]);
+
+  // Sync individual progress for solo multiplayer mode
+  useEffect(() => {
+    if (multiplayerRoomId && gameState === 'playing' && multiplayerState?.playMode === 'square_solo' && socketRef.current) {
+      socketRef.current.send(JSON.stringify({
+         type: 'PLAYER_PROGRESS',
+         score: score,
+         health: health,
+         seqIndex: currentSeqIndex
+      }));
+    }
+  }, [score, health, currentSeqIndex, multiplayerRoomId, gameState, multiplayerState?.playMode]);
 
   const handleAnimationEnd = (e, id) => {
     if (e.animationName === 'fall') {
@@ -915,9 +1192,22 @@ export default function App() {
   };
 
   const handleBlockClick = (block) => {
-    if (block.correct || block.error) return;
+    if (block.correct || block.error || block.claimedBy) return;
 
-    if (block.seqIndex === currentSeqIndex) {
+    // Flush speech recognition buffer on ANY block click (manual or voice) to prepare for next block
+    setLiveTranscript("");
+    if (recognitionRef.current) {
+       try { recognitionRef.current.stop(); } catch(e) {}
+    }
+
+    if (multiplayerRoomId && socketRef.current && gameState === 'playing') {
+       if (multiplayerState?.playMode !== 'square_solo') {
+          socketRef.current.send(JSON.stringify({ type: 'CLICK_BLOCK', blockId: block.id }));
+          return; // Local state will be updated via socket broadcast
+       }
+    }
+
+    if (block.seqIndex === currentSeqIndex || block.text === activePhrases[currentSeqIndex]) {
       // Voice should remain at normal speed so the user doesn't get nervous
       const voiceRate = 1.0;
 
@@ -934,10 +1224,10 @@ export default function App() {
       setBlocks(prev => prev.map(b => b.id === block.id ? { ...b, correct: true } : b));
 
       if (gameState === 'playing') {
-        if (playMode === 'square') {
+        if (playMode.startsWith('square')) {
           const maxGridSize = distractionLevel <= 1 ? 4 : 9;
           const fakesCount = distractionLevel > 0 ? distractionLevel : 0;
-          const nextSpawnIndex = block.seqIndex + (maxGridSize - fakesCount);
+          const nextSpawnIndex = currentSeqIndex + (maxGridSize - fakesCount);
           setTimeout(() => {
             setBlocks(prev => {
               const fakesOnScreen = prev.filter(b => b.isFake && !b.hidden).length;
@@ -1003,7 +1293,6 @@ export default function App() {
         } else if (newHealth <= 0) {
           playThunder('heavy');
           triggerLightning('heavy');
-          endGame();
           return 0;
         }
         return newHealth;
@@ -1013,14 +1302,14 @@ export default function App() {
       setTimeout(() => {
         setBlocks(prev => {
           let updated = prev;
-          if (playMode === 'square' && block.seqIndex === -1) {
+          if (playMode.startsWith('square') && block.seqIndex === -1) {
             // Return prev mapped to hidden so we preserve grid length
             updated = prev.map(b => b.id === block.id ? { ...b, error: false, hidden: true, isFake: false } : b);
           } else {
             updated = prev.map(b => b.id === block.id ? { ...b, error: false } : b);
           }
 
-          if (playMode === 'square' && distractionLevel >= 2) {
+          if (playMode.startsWith('square') && distractionLevel >= 2) {
             // Scramble the whole grid on every mistake too, making recovery harder
             playShuffleSound();
             updated = [...updated].sort(() => Math.random() - 0.5);
@@ -1071,6 +1360,167 @@ export default function App() {
 
   const t = (zh, en) => version === 'kjv' ? en : zh;
 
+  // Sync handleBlockClick to ref so Speech can fire it
+  useEffect(() => {
+    handleBlockClickRef.current = handleBlockClick;
+  }, [handleBlockClick]);
+
+  useEffect(() => {
+    if (!isMicOn) {
+      if (recognitionRef.current) {
+        recognitionRef.current.stop();
+        recognitionRef.current = null;
+      }
+      setMicStatusText("");
+      return;
+    }
+
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      alert("您的瀏覽器不支援語音辨識 (建議使用 Chrome/Safari)。");
+      setIsMicOn(false);
+      return;
+    }
+
+    let recognition;
+    try {
+      recognition = new SpeechRecognition();
+      recognition.continuous = true;
+      recognition.interimResults = true;
+      recognition.lang = version === 'kjv' ? 'en-US' : 'zh-TW';
+    } catch(e) {
+      console.warn("Speech init failed", e);
+      return;
+    }
+
+    let lastMatchedIndex = -1;
+
+    recognition.onstart = () => {
+      setMicStatusText("🎤");
+    };
+
+    recognition.onresult = (event) => {
+      if (statusRef.current !== 'playing') return;
+
+      let currentTranscript = "";
+      let hasFinal = false;
+      // Gather all available active chunks; we aggressively flush below to prevent trailing garbage
+      for (let i = 0; i < event.results.length; ++i) {
+        currentTranscript += event.results[i][0].transcript;
+        if (event.results[i].isFinal) hasFinal = true;
+      }
+      
+      const isChinese = version !== 'kjv';
+      setLiveTranscript(currentTranscript);
+
+      let normalizedTranscript = "";
+      if (isChinese) {
+        // Deep string clear: strip absolutely everything except alphanumeric and chinese chars
+        normalizedTranscript = currentTranscript.replace(/[^\u4e00-\u9fa5a-zA-Z0-9]/g, '').toLowerCase();
+      } else {
+        // Keep spaces for english but lowercase and strip punctuation
+        normalizedTranscript = currentTranscript.replace(/[^a-zA-Z0-9\s]/g, '').toLowerCase();
+      }
+
+      const currIdx = currentSeqIndexRef.current;
+      const expectedPhrase = phrasesRef.current[currIdx];
+      
+      if (!expectedPhrase) return;
+
+      const checkPhraseMatch = (transcript, phrase, isStrict = false) => {
+         if (isChinese) {
+            const cleanPhrase = phrase.replace(/[^\u4e00-\u9fa5a-zA-Z0-9]/g, '').toLowerCase();
+            if (isStrict) {
+               // Strict mode for wrong blocks: require a larger chunk (up to 5 chars) to prevent false random lightning
+               const requiredLen = Math.min(cleanPhrase.length, 5);
+               return transcript.includes(cleanPhrase.substring(0, requiredLen));
+            }
+            if (cleanPhrase.length <= 2) return transcript.includes(cleanPhrase);
+            for (let i = 0; i <= cleanPhrase.length - 2; i++) {
+               if (transcript.includes(cleanPhrase.substring(i, i + 2))) return true;
+            }
+         } else {
+            const cleanPhrase = phrase.replace(/[^a-zA-Z0-9\s]/g, '').toLowerCase();
+            const words = cleanPhrase.split(/\s+/).filter(Boolean);
+            if (isStrict) {
+               const requiredWords = words.slice(0, Math.min(words.length, 3)).join(' ');
+               return transcript.includes(requiredWords);
+            }
+            if (words.length <= 2) return transcript.includes(cleanPhrase);
+            for (let i = 0; i <= words.length - 2; i++) {
+               if (transcript.includes(words[i] + ' ' + words[i+1])) return true;
+            }
+         }
+         return false;
+      };
+
+      if (currIdx !== lastMatchedIndex) {
+        let matchedRight = false;
+        let matchedWrong = false;
+
+        // Priority 1: Check correct match
+        if (checkPhraseMatch(normalizedTranscript, expectedPhrase)) {
+          matchedRight = true;
+          const targetBlock = blocksRef.current.find(b => b.seqIndex === currIdx && !b.error && !b.hidden);
+          if (targetBlock && handleBlockClickRef.current) {
+             lastMatchedIndex = currIdx;
+             handleBlockClickRef.current(targetBlock);
+          }
+        }
+
+        // Priority 2: Penalize reading visible wrong blocks
+        if (!matchedRight) {
+           const visibleBlocks = blocksRef.current.filter(b => !b.error && !b.hidden);
+           for (const block of visibleBlocks) {
+              if (block.seqIndex !== currIdx && block.seqIndex !== -99) {
+                 const phraseText = block.isFake ? block.text : phrasesRef.current[block.seqIndex];
+                 // Very careful with wrong block detection: use isStrict = true
+                 if (phraseText && checkPhraseMatch(normalizedTranscript, phraseText, true)) {
+                    matchedWrong = true;
+                    if (handleBlockClickRef.current) {
+                       handleBlockClickRef.current(block);
+                       break;
+                    }
+                 }
+              }
+           }
+        }
+
+        // Garbage flush: If the user paused (hasFinal) and we didn't hit anything, clear the buffer silently
+        if (!matchedRight && !matchedWrong && hasFinal) {
+           setLiveTranscript("");
+           if (recognitionRef.current) recognitionRef.current.stop();
+        }
+      }
+    };
+
+    recognition.onerror = (event) => {
+      console.log("Speech recognition error:", event.error);
+      if (event.error === 'not-allowed') {
+         setIsMicOn(false);
+         alert(t("需要麥克風權限才能使用語音功能！", "Microphone permission is required!"));
+      }
+    };
+
+    recognition.onend = () => {
+      if (isMicOnRef.current) {
+         try { recognition.start(); } catch(e) {}
+      }
+    };
+
+    try {
+      recognition.start();
+      recognitionRef.current = recognition;
+    } catch (e) {
+      console.error("Speech start err", e);
+    }
+
+    return () => {
+      recognition.onend = null;
+      recognition.stop();
+    };
+  }, [isMicOn, version]);
+
   return (
     <>
       <div className="bg-layer" />
@@ -1079,15 +1529,38 @@ export default function App() {
         <div className="rain-layer mid" />
         <div className="rain-layer front" />
       </div>
-      {lightningActive && (
-        <div key={lightningKey} className={`lightning-flash ${lightningActive === 'heavy' ? 'heavy' : 'active'}`} />
-      )}
+
+      {/* Global Mic Toggle & Subtitles */}
+      <div style={{ position: 'fixed', bottom: '6.5rem', right: '1.5rem', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.8rem', zIndex: 100 }}>
+        {liveTranscript && isMicOn && gameState === 'playing' && (
+          <div className="hud-glass" style={{ padding: '8px 16px', fontSize: '1rem', color: '#93c5fd', maxWidth: '80vw', textAlign: 'right', wordBreak: 'break-word', border: '1px solid rgba(147, 197, 253, 0.4)', borderRadius: '12px', whiteSpace: 'pre-wrap' }}>
+            <span style={{ fontSize: '0.8rem', color: '#64748b', display: 'block', marginBottom: '2px' }}>麥克風聽見：</span>
+            <span style={{ color: '#fff' }}>"{liveTranscript}"</span>
+          </div>
+        )}
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem' }}>
+          {micStatusText && <div className="hud-glass" style={{ padding: '4px 8px', fontSize: '0.8rem', color: '#4ade80', animation: 'pulse 2s infinite' }}>{micStatusText}</div>}
+          <button
+            onClick={(e) => { 
+              e.stopPropagation(); 
+              const nextMicState = !isMicOn;
+              setIsMicOn(nextMicState);
+              if (nextMicState) setIsMusicPlaying(false);
+            }}
+            className="hud-glass"
+            title={t("語音控制開關", "Toggle Voice Control")}
+            style={{ padding: '0.75rem', borderRadius: '50%', color: isMicOn ? '#4ade80' : '#ef4444', backgroundColor: isMicOn ? 'rgba(74, 222, 128, 0.1)' : 'rgba(239, 68, 68, 0.1)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.3s' }}
+          >
+            {isMicOn ? <Mic size={24} /> : <MicOff size={24} />}
+          </button>
+        </div>
+      </div>
 
       {/* Global Music Toggle */}
       <button
         onClick={(e) => { e.stopPropagation(); setIsMusicPlaying(!isMusicPlaying); }}
         className="hud-glass"
-        style={{ position: 'fixed', bottom: '1.5rem', right: '1.5rem', padding: '0.75rem', borderRadius: '50%', color: isMusicPlaying ? '#4ade80' : '#cbd5e1', cursor: 'pointer', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+        style={{ position: 'fixed', bottom: '2rem', right: '1.5rem', padding: '0.75rem', borderRadius: '50%', color: isMusicPlaying ? '#4ade80' : '#cbd5e1', cursor: 'pointer', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
       >
         {isMusicPlaying ? <Music size={24} /> : <VolumeX size={24} />}
       </button>
@@ -1112,7 +1585,7 @@ export default function App() {
                       <Crown size={14} style={{ color: '#fbbf24' }} />
                     </button>
                   </div>
-                  <button onClick={() => { setPlayerName(''); localStorage.removeItem('verserain_player_name'); }} style={{ background: 'transparent', border: '1px solid #cbd5e1', color: '#64748b', cursor: 'pointer', borderRadius: '4px', padding: '0.3rem 0.6rem', fontSize: '0.85rem' }}>{t("登出", "Logout")}</button>
+                  <button onClick={() => { setPlayerName(''); setIsPremium(false); setUserEmail(''); localStorage.removeItem('verserain_player_name'); localStorage.removeItem('verserain_is_premium'); localStorage.removeItem('verserain_player_email'); }} style={{ background: 'transparent', border: '1px solid #cbd5e1', color: '#64748b', cursor: 'pointer', borderRadius: '4px', padding: '0.3rem 0.6rem', fontSize: '0.85rem' }}>{t("登出", "Logout")}</button>
                 </div>
               ) : (
                 <>
@@ -1127,6 +1600,8 @@ export default function App() {
           <div style={{ display: 'flex', backgroundColor: '#334155', color: 'white', padding: '0 1rem', overflowX: 'auto', borderBottom: '2px solid #1e293b' }}>
             {[
               { id: 'versesets', label: t('經文組', 'Verse Sets') },
+              { id: 'custom_verses', label: t('👑 我的題庫', '👑 Custom Sets') },
+              { id: 'multiplayer', label: t('多人連線', 'Multiplayer') },
               { id: 'leaderboard', label: t('排行榜', 'Leaderboard') },
               { id: 'search', label: t('搜尋', 'Search') },
               { id: 'about', label: t('有關', 'About') },
@@ -1148,6 +1623,541 @@ export default function App() {
 
           {/* Main Content Area */}
           <div style={{ maxWidth: '1000px', margin: '2rem auto', padding: '0 1rem' }}>
+
+            {mainTab === 'custom_verses' && (
+              <div style={{ backgroundColor: '#ffffff', borderRadius: '8px', border: '1px solid #cbd5e1', padding: '2rem', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                    <h2 style={{ color: '#1e293b', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>👑 {t("我的專屬題庫", "My Custom Sets")}</h2>
+                    <div style={{ background: '#f8fafc', border: '1px solid #cbd5e1', padding: '0.3rem 0.6rem', borderRadius: '4px', fontSize: '0.85rem', color: isPremium ? '#fbbf24' : '#64748b', fontWeight: 'bold' }}>
+                        {isPremium ? t("✨ Premium 認證", "✨ Premium Active") : t("🔒 基本帳號", "🔒 Basic Account")}
+                    </div>
+                </div>
+
+                {!isPremium ? (
+                    <div style={{ textAlign: 'center', padding: '3rem 1rem', background: 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                        <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>🔒</div>
+                        <h3 style={{ color: '#334155', marginBottom: '1rem' }}>{t("解鎖自訂經文組功能！", "Unlock Custom Verse Sets!")}</h3>
+                        <p style={{ color: '#64748b', marginBottom: '2rem', maxWidth: '400px', margin: '0 auto 2rem', lineHeight: '1.6' }}>
+                            {t("升級為 Skool MutualizedEconomy Premium 會員，無限建立你的專屬考題與默想清單，還能在多人連線模式中用你的題目考驗朋友！", "Upgrade to Skool MutualizedEconomy Premium to create unlimited custom verse sets and challenge your friends in multiplayer!")}
+                        </p>
+                        <button type="button" onClick={() => window.open('https://www.skool.com/mutualizedeconomy', '_blank')} style={{ background: '#8b5cf6', color: 'white', border: 'none', padding: '0.8rem 2rem', borderRadius: '8px', fontWeight: 'bold', fontSize: '1.1rem', cursor: 'pointer', boxShadow: '0 4px 6px rgba(139, 92, 246, 0.25)' }}>
+                            {t("了解並加入 Premium", "Learn About Premium")}
+                        </button>
+                    </div>
+                ) : (
+                    <div>
+                        {editingCustomSet ? (
+                            <div>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                                    <h3 style={{ margin: 0, color: '#3b82f6' }}>{editingCustomSet.id ? t("編輯題庫", "Edit Set") : t("新增題庫", "New Set")}</h3>
+                                    <button type="button" onClick={() => setEditingCustomSet(null)} style={{ background: 'transparent', border: 'none', color: '#64748b', cursor: 'pointer', fontWeight: 'bold' }}>✕ {t("取消", "Cancel")}</button>
+                                </div>
+                                
+                                <div style={{ marginBottom: '1rem' }}>
+                                    <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '0.5rem', color: '#475569' }}>{t("標題", "Title")}</label>
+                                    <input type="text" value={editingCustomSet.title} onChange={e => setEditingCustomSet({...editingCustomSet, title: e.target.value})} style={{ width: '100%', padding: '0.8rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '1rem' }} placeholder={t("例如：約翰福音核心經文", "e.g., Core Verses of John")} />
+                                </div>
+
+                                <div style={{ marginBottom: '1rem' }}>
+                                    <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '0.5rem', color: '#475569' }}>{t("簡介", "Description")}</label>
+                                    <textarea value={editingCustomSet.description} onChange={e => setEditingCustomSet({...editingCustomSet, description: e.target.value})} style={{ width: '100%', padding: '0.8rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '1rem', minHeight: '80px', resize: 'vertical' }} placeholder={t("描述一下這個題庫的用途...", "Describe this set...")} />
+                                </div>
+
+                                <div style={{ marginBottom: '1rem' }}>
+                                    <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '0.5rem', color: '#475569' }}>{t("經文列表", "Verses")}</label>
+                                    
+                                    {editingCustomSet.verses.map((v, idx) => (
+                                        <div key={idx} style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.5rem', alignItems: 'flex-start' }}>
+                                            <select value={v.version || 'CUV'} onChange={e => {
+                                                const newVerses = [...editingCustomSet.verses];
+                                                newVerses[idx].version = e.target.value;
+                                                setEditingCustomSet({...editingCustomSet, verses: newVerses});
+                                            }} style={{ padding: '0.6rem', borderRadius: '4px', border: '1px solid #cbd5e1', backgroundColor: '#fff', cursor: 'pointer' }}>
+                                                <option value="CUV">CUV</option>
+                                                <option value="KJV">KJV</option>
+                                            </select>
+                                            <input type="text" value={v.reference} onChange={e => {
+                                                const newVerses = [...editingCustomSet.verses];
+                                                newVerses[idx].reference = e.target.value;
+                                                setEditingCustomSet({...editingCustomSet, verses: newVerses});
+                                            }} placeholder={t("出處(如:約 3:16)", "Ref")} style={{ width: '120px', padding: '0.6rem', borderRadius: '4px', border: '1px solid #cbd5e1' }} />
+                                            
+                                            <button type="button" onClick={async (e) => {
+                                                const btn = e.currentTarget;
+                                                const originalIcon = btn.innerText;
+                                                
+                                                if (!v.reference) return alert(t("請先輸入出處", "Please enter reference first"));
+                                                btn.innerText = "⌛";
+                                                try {
+                                                    const version = (v.version || 'CUV');
+                                                    const db = version === 'CUV' ? VERSES_CUV : VERSES_KJV;
+                                                    // Normalize spacing, cases, and dashes (-, –, —, ~) for robust searching e.g., "約 3:16" == "約3:16"
+                                                    const sanitizeRef = (str) => str.toString().replace(/\s+/g, '').replace(/[–—~]/g, '-').replace(/[：]/g, ':').toLowerCase();
+                                                    const searchRef = sanitizeRef(v.reference);
+                                                    let foundLocal = false;
+                                                    let foundText = "";
+                                                    
+                                                    for (const verse of db) {
+                                                        if (!verse.reference) continue;
+                                                        const dbRef = sanitizeRef(verse.reference);
+                                                        if (dbRef === searchRef) {
+                                                            foundLocal = true;
+                                                            foundText = verse.text;
+                                                            break;
+                                                        }
+                                                        
+                                                        const searchNumMatch = searchRef.match(/\d+.*$/);
+                                                        const dbNumMatch = dbRef.match(/\d+.*$/);
+                                                        
+                                                        if (searchNumMatch && dbNumMatch) {
+                                                            const searchNumPart = searchNumMatch[0];
+                                                            const dbNumPart = dbNumMatch[0];
+                                                            
+                                                            // Number parts must match exactly to prevent "詩篇 1" from matching "詩篇 23:1"
+                                                            if (searchNumPart === dbNumPart) {
+                                                                const bookPart = searchRef.replace(searchNumPart, '');
+                                                                const dbBookPart = dbRef.replace(dbNumPart, '');
+                                                                let matchIdx = 0;
+                                                                for (let i = 0; i < dbBookPart.length && matchIdx < bookPart.length; i++) {
+                                                                    if (dbBookPart[i] === bookPart[matchIdx]) {
+                                                                        matchIdx++;
+                                                                    }
+                                                                }
+                                                                if (matchIdx === bookPart.length && matchIdx > 0) {
+                                                                    foundLocal = true;
+                                                                    foundText = verse.text;
+                                                                    break;
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                    
+                                                    if (foundLocal) {
+                                                        setEditingCustomSet(prev => {
+                                                            const newVerses = [...prev.verses];
+                                                            newVerses[idx].text = foundText;
+                                                            return {...prev, verses: newVerses};
+                                                        });
+                                                        btn.innerText = originalIcon;
+                                                        return;
+                                                    }
+                                                    
+                                                    // Fallback to Online API 
+                                                    const searchNumMatch = searchRef.match(/\d+.*$/);
+                                                    if (!searchNumMatch) throw new Error("Invalid Format");
+                                                    
+                                                    const searchNumPart = searchNumMatch[0];
+                                                    const bookPart = searchRef.replace(searchNumPart, '');
+                                                    
+                                                    const chapMatch = searchNumPart.match(/^(\d+)/);
+                                                    const chapter = chapMatch ? parseInt(chapMatch[1]) : 1;
+                                                    
+                                                    let startVerse = 1;
+                                                    let endVerse = 999;
+                                                    
+                                                    const verseMatch = searchNumPart.match(/:(\d+)(?:-(\d+))?/);
+                                                    if (verseMatch) {
+                                                        startVerse = parseInt(verseMatch[1]);
+                                                        endVerse = verseMatch[2] ? parseInt(verseMatch[2]) : startVerse;
+                                                    } else if (!searchNumPart.includes(':')) {
+                                                        startVerse = 1;
+                                                        endVerse = 999;
+                                                    }
+                                                    
+                                                    const bookInfo = BIBLE_BOOKS.find(b => b.names.some(n => n.toLowerCase() === bookPart || bookPart.includes(n.toLowerCase()) || n.toLowerCase().includes(bookPart)));
+                                                    if (!bookInfo) throw new Error("Book not found");
+                                                    
+                                                    const bollsVersion = version === 'CUV' ? 'CUV' : 'KJV';
+                                                    const res = await fetch(`https://bolls.life/get-text/${bollsVersion}/${bookInfo.id}/${chapter}/`);
+                                                    if (!res.ok) throw new Error("API Connection Failed");
+                                                    
+                                                    const json = await res.json();
+                                                    if (!Array.isArray(json) || json.length === 0) throw new Error("No data returned");
+                                                    
+                                                    const filtered = json.filter(v => v.verse >= startVerse && v.verse <= endVerse);
+                                                    if (filtered.length === 0) throw new Error("Verses out of range");
+                                                    
+                                                    let combinedText = "";
+                                                    if (version === 'CUV') {
+                                                        combinedText = filtered.map(v => v.text.replace(/<[^>]+>/g, '').replace(/\s+/g, '')).join('');
+                                                    } else {
+                                                        combinedText = filtered.map(v => v.text.replace(/<[^>]+>/g, '').trim()).join(' ');
+                                                    }
+                                                    
+                                                    setEditingCustomSet(prev => {
+                                                        const newVerses = [...prev.verses];
+                                                        newVerses[idx].text = combinedText;
+                                                        return {...prev, verses: newVerses};
+                                                    });
+                                                    
+                                                } catch (e) {
+                                                    alert(t(`找不到「${v.reference}」！(錯誤: ${e.message})\n請確認格式是否如「約 3:16」或手編測試。`, `Cannot find ${v.reference}. Error: ${e.message}`));
+                                                }
+                                                btn.innerText = originalIcon;
+                                            }} title={t("自動擷取", "Auto-fetch")} style={{ background: '#f59e0b', color: 'white', border: 'none', padding: '0.6rem', borderRadius: '4px', cursor: 'pointer', fontSize: '1rem' }}>🪄</button>
+                                            
+                                            <textarea value={v.text} onChange={e => {
+                                                const newVerses = [...editingCustomSet.verses];
+                                                newVerses[idx].text = e.target.value;
+                                                setEditingCustomSet({...editingCustomSet, verses: newVerses});
+                                            }} placeholder={t("經文內容", "Verse Text")} style={{ flex: 1, padding: '0.6rem', borderRadius: '4px', border: '1px solid #cbd5e1', minHeight: '40px', resize: 'vertical' }} />
+                                            
+                                            <button type="button" onClick={() => {
+                                                const newVerses = editingCustomSet.verses.filter((_, i) => i !== idx);
+                                                setEditingCustomSet({...editingCustomSet, verses: newVerses});
+                                            }} style={{ background: '#ef4444', color: 'white', border: 'none', padding: '0.6rem', borderRadius: '4px', cursor: 'pointer' }}>✖</button>
+                                        </div>
+                                    ))}
+                                    
+                                    <button type="button" onClick={() => {
+                                        setEditingCustomSet({
+                                            ...editingCustomSet, 
+                                            verses: [...editingCustomSet.verses, { version: 'CUV', reference: '', text: '' }]
+                                        });
+                                    }} style={{ background: '#e2e8f0', color: '#475569', border: '1px dashed #94a3b8', padding: '0.5rem 1rem', borderRadius: '4px', cursor: 'pointer', width: '100%', marginTop: '0.5rem', fontWeight: 'bold' }}>
+                                        + {t("新增一節經文", "Add Verse")}
+                                    </button>
+                                </div>
+
+                                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem', marginTop: '2rem' }}>
+                                    <button type="button" onClick={() => {
+                                        if(!editingCustomSet.title) return alert(t("請填寫標題", "Please fill in title"));
+                                        if(editingCustomSet.verses.length === 0) return alert(t("請至少新增一節經文", "Please add at least one verse"));
+                                        
+                                        const setObj = {
+                                            ...editingCustomSet,
+                                            id: editingCustomSet.id || `custom-${Date.now()}`
+                                        };
+                                        
+                                        let updatedSets;
+                                        if(editingCustomSet.id) {
+                                            updatedSets = customVerseSets.map(s => s.id === setObj.id ? setObj : s);
+                                        } else {
+                                            updatedSets = [setObj, ...customVerseSets];
+                                        }
+                                        
+                                        setCustomVerseSets(updatedSets);
+                                        localStorage.setItem('verseRain_custom_sets', JSON.stringify(updatedSets));
+                                        setEditingCustomSet(null);
+                                    }} style={{ background: '#10b981', color: 'white', border: 'none', padding: '0.8rem 2rem', borderRadius: '6px', fontWeight: 'bold', fontSize: '1.1rem', cursor: 'pointer' }}>
+                                        {t("儲存題庫", "Save Set")}
+                                    </button>
+                                </div>
+                            </div>
+                        ) : (
+                            <div>
+                                <button type="button" onClick={() => {
+                                    setEditingCustomSet({ title: '', description: '', verses: [{ version: 'CUV', reference: '', text: '' }] });
+                                }} style={{ background: '#3b82f6', color: 'white', border: 'none', padding: '0.8rem 1.5rem', borderRadius: '6px', fontWeight: 'bold', marginBottom: '1.5rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                    <span>+</span> {t("建立新題庫", "Create New Set")}
+                                </button>
+
+                                {customVerseSets.length === 0 ? (
+                                    <div style={{ textAlign: 'center', padding: '3rem 1rem', color: '#94a3b8', border: '2px dashed #e2e8f0', borderRadius: '8px' }}>
+                                        {t("你還沒有建立任何專屬題庫。點擊上方按鈕開始！", "You haven't created any custom sets yet. Click the button above to start!")}
+                                    </div>
+                                ) : (
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                                        {customVerseSets.map(set => (
+                                            <div key={set.id} style={{ border: '1px solid #cbd5e1', borderRadius: '8px', padding: '1.5rem', position: 'relative' }}>
+                                                <div style={{ position: 'absolute', top: '1rem', right: '1rem', display: 'flex', gap: '0.5rem' }}>
+                                                    <button type="button" onClick={() => setEditingCustomSet(set)} style={{ background: '#f1f5f9', border: '1px solid #cbd5e1', padding: '0.4rem 0.8rem', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', color: '#475569' }}>{t("編輯", "Edit")}</button>
+                                                    <button type="button" onClick={() => {
+                                                        if(window.confirm(t("確定要刪除嗎？", "Are you sure you want to delete?"))) {
+                                                            const updated = customVerseSets.filter(s => s.id !== set.id);
+                                                            setCustomVerseSets(updated);
+                                                            localStorage.setItem('verseRain_custom_sets', JSON.stringify(updated));
+                                                        }
+                                                    }} style={{ background: '#fee2e2', border: '1px solid #fca5a5', padding: '0.4rem 0.8rem', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', color: '#ef4444' }}>{t("刪除", "Delete")}</button>
+                                                </div>
+                                                <h3 style={{ margin: '0 0 0.5rem 0', color: '#1e293b', paddingRight: '120px' }}>{set.title}</h3>
+                                                <p style={{ color: '#64748b', fontSize: '0.9rem', marginBottom: '1rem' }}>{set.description}</p>
+                                                <div style={{ color: '#3b82f6', fontSize: '0.85rem', fontWeight: 'bold' }}>{set.verses.length} {t("節經文", "verses")}</div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                    </div>
+                )}
+              </div>
+            )}
+
+            {mainTab === 'multiplayer' && (
+              <div style={{ backgroundColor: '#ffffff', borderRadius: '8px', border: '1px solid #cbd5e1', padding: '2rem', boxShadow: '0 1px 3px rgba(0,0,0,0.05)', textAlign: 'center' }}>
+                <h2 style={{ color: '#1e293b', marginTop: 0, marginBottom: '1.5rem', fontFamily: 'cursive', color: '#8b5cf6' }}>{t("多人即時對戰", "Live Multiplayer")}</h2>
+                
+                {!multiplayerRoomId ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', alignItems: 'center' }}>
+                    <p style={{ color: '#64748b' }}>{t("與朋友一起挑戰九宮格模式！最快拼出經文的人獲勝。", "Challenge your friends in Square mode! The fastest to assemble the verse wins.")}</p>
+                    
+                    <button 
+                      onClick={() => {
+                        const chars = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+                        let newRoom = '';
+                        for(let i=0; i<4; i++) newRoom += chars.charAt(Math.floor(Math.random() * chars.length));
+                        setMultiplayerRoomId(newRoom);
+                      }}
+                      style={{ background: '#3b82f6', color: 'white', border: 'none', padding: '1rem 2rem', borderRadius: '8px', fontSize: '1.1rem', fontWeight: 'bold', cursor: 'pointer', transition: 'background 0.2s', width: '100%', maxWidth: '300px' }}
+                    >
+                      {t("建立房間 (Host Game)", "Create Room")}
+                    </button>
+
+                    <div style={{ display: 'flex', alignItems: 'center', width: '100%', maxWidth: '300px' }}>
+                      <div style={{ flex: 1, height: '1px', backgroundColor: '#e2e8f0' }}></div>
+                      <span style={{ padding: '0 1rem', color: '#94a3b8', fontSize: '0.9rem', fontWeight: 'bold' }}>{t("或", "OR")}</span>
+                      <div style={{ flex: 1, height: '1px', backgroundColor: '#e2e8f0' }}></div>
+                    </div>
+
+                    <div style={{ display: 'flex', gap: '0.5rem', width: '100%', maxWidth: '300px' }}>
+                      <input 
+                        id="joinRoomInput"
+                        type="text" 
+                        placeholder={t("輸入房間代碼", "Enter Room Code")} 
+                        maxLength={4}
+                        style={{ flex: 1, padding: '0.8rem', borderRadius: '6px', border: '1px solid #cbd5e1', textTransform: 'uppercase', textAlign: 'center', fontSize: '1.1rem', fontWeight: 'bold' }} 
+                        onKeyDown={(e) => { if (e.key === 'Enter') document.getElementById('joinRoomBtn')?.click(); }}
+                      />
+                      <button 
+                        id="joinRoomBtn"
+                        onClick={() => {
+                          const code = document.getElementById('joinRoomInput')?.value.trim().toUpperCase();
+                          if (code && code.length > 0) setMultiplayerRoomId(code);
+                        }}
+                        style={{ background: '#10b981', color: 'white', border: 'none', padding: '0 1.5rem', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer' }}
+                      >
+                        {t("加入", "Join")}
+                      </button>
+                    </div>
+                  </div>
+                ) : multiplayerState?.status === 'ready_check' ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', alignItems: 'center' }}>
+                     <div style={{ padding: '1.5rem', backgroundColor: '#fdf4ff', borderRadius: '8px', border: '2px dashed #d946ef', width: '100%', maxWidth: '400px' }}>
+                        <h3 style={{ margin: '0 0 1rem 0', color: '#86198f' }}>{t("準備比賽！", "Get Ready!")}</h3>
+                        <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#c026d3', marginBottom: '0.5rem' }}>{multiplayerState.verseRef}</div>
+                        <div style={{ fontSize: '1rem', color: '#701a75', marginBottom: '1rem', fontStyle: 'italic', maxWidth: '300px', lineHeight: '1.4' }}>"{multiplayerState.verseText}"</div>
+                        <p style={{ color: '#a21caf', fontSize: '0.9rem', margin: 0 }}>{t("雙方準備就緒後即將開始", "Match starts when both are ready")}</p>
+                     </div>
+                     
+                     <div style={{ width: '100%', maxWidth: '400px', textAlign: 'left' }}>
+                        <h4 style={{ color: '#475569', marginBottom: '0.5rem' }}>{t("玩家狀態:", "Player Status:")}</h4>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                           {Object.values(multiplayerState.players).map(p => (
+                             <div key={p.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.8rem', backgroundColor: p.isReady ? '#dcfce7' : '#f1f5f9', borderRadius: '6px', border: p.isReady ? '1px solid #86efac' : '1px solid transparent' }}>
+                               <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
+                                 <div style={{ width: '16px', height: '16px', borderRadius: '50%', backgroundColor: p.color, boxShadow: '0 0 0 2px white, 0 0 0 4px ' + p.color }}></div>
+                                 <span style={{ fontWeight: 'bold', color: '#1e293b', fontSize: '1.1rem' }}>{p.name} {multiplayerState.host === p.id ? '(Host)' : ''}</span>
+                               </div>
+                               <span style={{ fontSize: '0.9rem', fontWeight: 'bold', color: p.isReady ? '#15803d' : '#94a3b8' }}>
+                                 {p.isReady ? t("✔️ 已準備", "✔️ READY") : t("等待中...", "WAITING")}
+                               </span>
+                             </div>
+                           ))}
+                        </div>
+                     </div>
+                     
+                     <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
+                        <button 
+                          onClick={() => {
+                             if (socketRef.current) socketRef.current.close();
+                             setMultiplayerRoomId(null);
+                             setMultiplayerState(null);
+                          }}
+                          style={{ background: '#f1f5f9', color: '#64748b', border: '1px solid #cbd5e1', padding: '0.8rem 1.5rem', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer' }}
+                        >
+                          {t("離開", "Leave")}
+                        </button>
+                        
+                        <button 
+                          onClick={() => {
+                             if (socketRef.current) socketRef.current.send(JSON.stringify({ type: 'PLAYER_READY' }));
+                          }}
+                          disabled={multiplayerState.players[myClientId]?.isReady}
+                          style={{ background: multiplayerState.players[myClientId]?.isReady ? '#10b981' : '#3b82f6', color: 'white', border: 'none', padding: '0.8rem 2rem', borderRadius: '6px', fontSize: '1.1rem', fontWeight: 'bold', cursor: multiplayerState.players[myClientId]?.isReady ? 'default' : 'pointer' }}
+                        >
+                          {multiplayerState.players[myClientId]?.isReady ? t("已準備", "Ready") : t("準備！", "Ready!")}
+                        </button>
+                     </div>
+                  </div>
+                ) : showMultiplayerVersePicker && multiplayerState?.host === myClientId ? (
+                   <div style={{ backgroundColor: '#ffffff', borderRadius: '8px', padding: '1.5rem', width: '100%', maxWidth: '500px', textAlign: 'left', border: '1px solid #cbd5e1' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', borderBottom: '1px solid #e2e8f0', paddingBottom: '1rem' }}>
+                         <h3 style={{ margin: 0, color: '#334155' }}>
+                            {pickerSelectedSet ? pickerSelectedSet.title : t("選擇比賽經文組", "Select Verse Group")}
+                         </h3>
+                         <button onClick={() => setShowMultiplayerVersePicker(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8' }}><XCircle size={24} /></button>
+                      </div>
+
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '1.5rem', backgroundColor: '#f8fafc', padding: '1rem', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                         <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                            <label style={{ fontWeight: 'bold', color: '#475569', minWidth: '80px' }}>{t("遊戲模式", "Game Mode")}:</label>
+                            <select 
+                               value={multiplayerPlayMode} 
+                               onChange={(e) => setMultiplayerPlayMode(e.target.value)}
+                               style={{ padding: '0.5rem', borderRadius: '4px', border: '1px solid #cbd5e1', flex: 1, backgroundColor: '#fff', fontSize: '1rem', outline: 'none' }}
+                            >
+                               <option value="square_solo">{t("獨立九宮格 (Solo Square)", "Solo Square")}</option>
+                               <option value="square">{t("共用九宮格 (Shared Square)", "Shared Square")}</option>
+                               <option value="rain" disabled>{t("雨滴瀑布 (VerseRain) - 即將推出", "VerseRain - Coming Soon")}</option>
+                            </select>
+                         </div>
+                         <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                            <label style={{ fontWeight: 'bold', color: '#475569', minWidth: '80px' }}>{t("難度級別", "Difficulty")}:</label>
+                            <select 
+                               value={multiplayerDistractionLevel} 
+                               onChange={(e) => setMultiplayerDistractionLevel(Number(e.target.value))}
+                               style={{ padding: '0.5rem', borderRadius: '4px', border: '1px solid #cbd5e1', flex: 1, backgroundColor: '#fff', fontSize: '1rem', outline: 'none' }}
+                            >
+                               <option value={0}>{t("等級 0 (無干擾方塊，2x2)", "Level 0 (No fakes, 2x2)")}</option>
+                               <option value={1}>{t("等級 1 (少量干擾，2x2)", "Level 1 (Few fakes, 2x2)")}</option>
+                               <option value={2}>{t("等級 2 (中等干擾，3x3)", "Level 2 (Medium fakes, 3x3)")}</option>
+                               <option value={3}>{t("等級 3 (極限干擾，3x3)", "Level 3 (Max fakes, 3x3)")}</option>
+                            </select>
+                         </div>
+                      </div>
+                      
+                      {!pickerSelectedSet ? (
+                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '0.8rem', maxHeight: '400px', overflowY: 'auto' }}>
+                            {activeVerseSets.map(set => (
+                               <button 
+                                  key={set.id}
+                                  onClick={() => setPickerSelectedSet(set)}
+                                  style={{ padding: '1rem', border: '1px solid #cbd5e1', borderRadius: '6px', background: '#f8fafc', color: '#334155', fontWeight: 'bold', cursor: 'pointer', textAlign: 'center', transition: 'background 0.2s' }}
+                               >
+                                  {customVerseSets.some(c => c.id === set.id) ? '👑 ' : ''}{set.title}
+                                  <div style={{ fontSize: '0.8rem', color: '#64748b', marginTop: '0.5rem', fontWeight: 'normal' }}>{set.verses?.length || 0} {t("節", "verses")}</div>
+                               </button>
+                            ))}
+                         </div>
+                      ) : (
+                         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', maxHeight: '400px', overflowY: 'auto', paddingRight: '0.5rem' }}>
+                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
+                               <button onClick={() => { setPickerSelectedSet(null); setMultiplayerSelectedVerses([]); }} style={{ background: 'none', border: 'none', color: '#3b82f6', cursor: 'pointer', textAlign: 'left', padding: '0.5rem 0', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                 <span>←</span> {t("返回經文組", "Back to Groups")}
+                               </button>
+                               <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: '#f8fafc', padding: '0.4rem 0.8rem', borderRadius: '6px', border: '1px solid #cbd5e1' }}>
+                                     <span style={{ fontSize: '0.9rem', color: '#64748b' }}>{t("隨機挑選", "Random Pick")} (共 {pickerSelectedSet.verses?.length || 0})</span>
+                                     <input 
+                                         type="number" 
+                                         min="1" 
+                                         max={pickerSelectedSet.verses?.length || 1} 
+                                         value={randomPickCount} 
+                                         onChange={(e) => setRandomPickCount(Math.min(pickerSelectedSet.verses?.length || 1, Math.max(1, parseInt(e.target.value) || 1)))}
+                                         style={{ width: '40px', padding: '0.2rem', textAlign: 'center', border: '1px solid #cbd5e1', borderRadius: '4px', outline: 'none' }}
+                                     />
+                                     <button 
+                                       onClick={() => {
+                                          if (!pickerSelectedSet || !pickerSelectedSet.verses) return;
+                                          const shuffled = [...pickerSelectedSet.verses].sort(() => 0.5 - Math.random());
+                                          const selected = shuffled.slice(0, randomPickCount);
+                                          setActiveVerse(selected[0]);
+                                          setPlayMode(multiplayerPlayMode);
+                                          setDistractionLevel(multiplayerDistractionLevel);
+                                          setInitAutoStart({ trigger: true, isAuto: false, isMultiplayerReadyCheck: true, campaignQueue: selected, verse: selected[0] });
+                                          setShowMultiplayerVersePicker(false);
+                                       }}
+                                       style={{ background: '#8b5cf6', color: 'white', border: 'none', padding: '0.3rem 0.6rem', borderRadius: '4px', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.2rem', fontSize: '0.8rem' }}
+                                     >
+                                        <Dices size={14} /> {t("開始", "Start")}
+                                     </button>
+                                  </div>
+
+                                 {multiplayerSelectedVerses.length > 0 && (
+                                   <button 
+                                     onClick={() => {
+                                        setActiveVerse(multiplayerSelectedVerses[0]);
+                                        setPlayMode(multiplayerPlayMode);
+                                        setDistractionLevel(multiplayerDistractionLevel);
+                                        setInitAutoStart({ trigger: true, isAuto: false, isMultiplayerReadyCheck: true, campaignQueue: multiplayerSelectedVerses, verse: multiplayerSelectedVerses[0] });
+                                        setShowMultiplayerVersePicker(false);
+                                     }}
+                                     style={{ background: '#10b981', color: 'white', border: 'none', padding: '0.5rem 1rem', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.9rem' }}
+                                   >
+                                     {t("完成揀選", "Finish")} ({multiplayerSelectedVerses.length})
+                                   </button>
+                                 )}
+                               </div>
+                             </div>
+                            {pickerSelectedSet.verses?.map(v => {
+                               const isSelected = multiplayerSelectedVerses.some(sv => sv.reference === v.reference);
+                               return (
+                               <div 
+                                  key={v.reference}
+                                  onClick={() => {
+                                     if (isSelected) {
+                                        setMultiplayerSelectedVerses(prev => prev.filter(sv => sv.reference !== v.reference));
+                                     } else {
+                                        setMultiplayerSelectedVerses(prev => [...prev, v]);
+                                     }
+                                  }}
+                                  style={{ padding: '1rem', border: `2px solid ${isSelected ? '#10b981' : '#cbd5e1'}`, borderRadius: '6px', background: isSelected ? '#ecfdf5' : '#fff', cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: '0.3rem', transition: 'all 0.2s', position: 'relative' }}
+                                  onMouseOver={(e) => e.currentTarget.style.boxShadow = '0 2px 5px rgba(0,0,0,0.1)'}
+                                  onMouseOut={(e) => e.currentTarget.style.boxShadow = 'none'}
+                               >
+                                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                     <span style={{ fontWeight: 'bold', color: '#8b5cf6', fontSize: '1.1rem' }}>{v.reference}</span>
+                                     {isSelected && <span style={{ color: '#10b981', fontWeight: 'bold', fontSize: '1.2rem' }}>✓</span>}
+                                  </div>
+                                  <span style={{ fontSize: '0.9rem', color: '#475569', marginTop: '0.2rem' }}>{v.title}</span>
+                                  <span style={{ fontSize: '0.8rem', color: '#94a3b8', fontStyle: 'italic', marginTop: '0.2rem', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{v.text}</span>
+                               </div>
+                            )})}
+                         </div>
+                      )}
+                   </div>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', alignItems: 'center' }}>
+                    <div style={{ padding: '1.5rem', backgroundColor: '#f8fafc', borderRadius: '8px', border: '1px dashed #cbd5e1', width: '100%', maxWidth: '400px' }}>
+                      <h3 style={{ margin: '0 0 1rem 0', color: '#334155' }}>{t("等待玩家...", "Waiting...")}</h3>
+                      <div style={{ fontSize: '2.5rem', fontWeight: 'bold', color: '#3b82f6', letterSpacing: '6px', marginBottom: '1rem' }}>{multiplayerRoomId}</div>
+                      <p style={{ color: '#94a3b8', fontSize: '0.9rem', margin: 0 }}>{t("請朋友輸入上方的代碼來加入您的遊戲", "Ask your friend to enter this code to join")}</p>
+                    </div>
+
+                    {multiplayerState && multiplayerState.players && (
+                      <div style={{ width: '100%', maxWidth: '400px', textAlign: 'left' }}>
+                        <h4 style={{ color: '#475569', marginBottom: '0.5rem' }}>{t("已加入的玩家:", "Players Joined:")}</h4>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                          {Object.values(multiplayerState.players).map(p => (
+                            <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', padding: '0.8rem', backgroundColor: '#f1f5f9', borderRadius: '6px' }}>
+                              <div style={{ width: '16px', height: '16px', borderRadius: '50%', backgroundColor: p.color, boxShadow: '0 0 0 2px white, 0 0 0 4px ' + p.color }}></div>
+                              <span style={{ fontWeight: 'bold', color: '#1e293b', fontSize: '1.1rem' }}>{p.name} {multiplayerState.host === p.id ? '(Host)' : ''}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
+                      <button 
+                        onClick={() => {
+                           if (socketRef.current) socketRef.current.close();
+                           setMultiplayerRoomId(null);
+                           setMultiplayerState(null);
+                        }}
+                        style={{ background: '#f1f5f9', color: '#64748b', border: '1px solid #cbd5e1', padding: '0.8rem 1.5rem', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer' }}
+                      >
+                        {t("離開房間", "Leave Room")}
+                      </button>
+                      
+                      {multiplayerState?.host === myClientId && (
+                        <button 
+                          onClick={() => {
+                            setShowMultiplayerVersePicker(true);
+                            setPickerSelectedSet(null);
+                          }}
+                          disabled={!multiplayerState || Object.keys(multiplayerState.players).length < 2}
+                          style={{ background: '#3b82f6', color: 'white', border: 'none', padding: '0.8rem 2rem', borderRadius: '6px', fontSize: '1.1rem', fontWeight: 'bold', cursor: Object.keys(multiplayerState?.players || {}).length < 2 ? 'not-allowed' : 'pointer', opacity: Object.keys(multiplayerState?.players || {}).length < 2 ? 0.5 : 1 }}
+                        >
+                          {t("選擇比賽經文", "Select Verse")}
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
 
             {mainTab === 'versesets' && (
               <>
@@ -1180,7 +2190,7 @@ export default function App() {
                       <tbody>
                         {activeVerseSets.map((set, i) => (
                           <tr key={i} style={{ borderBottom: '1px solid #e2e8f0', backgroundColor: i % 2 === 0 ? '#ffffff' : '#f8fafc', transition: 'background 0.2s', cursor: 'pointer' }} onClick={() => setSelectedSetId(set.id)} onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#eff6ff'} onMouseOut={(e) => e.currentTarget.style.backgroundColor = i % 2 === 0 ? '#ffffff' : '#f8fafc'}>
-                            <td style={{ padding: '1rem', textAlign: 'center', color: '#3b82f6', fontSize: '1.2rem' }}>📁</td>
+                            <td style={{ padding: '1rem', textAlign: 'center', color: '#3b82f6', fontSize: '1.2rem' }}>{customVerseSets.some(c => c.id === set.id) ? '👑' : '📁'}</td>
                             <td style={{ padding: '1rem', fontWeight: 'bold', color: '#1e293b', fontSize: '1.05rem' }}>{set.title}</td>
                             <td style={{ padding: '1rem', color: '#64748b', fontSize: '0.9rem' }}>{set.description || ""}</td>
                             <td style={{ padding: '1rem', textAlign: 'right', color: '#337ab7', fontWeight: 'bold' }}>{set.verses.length}</td>
@@ -1190,18 +2200,93 @@ export default function App() {
                     </table>
                   ) : (
                     <>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '1rem', borderBottom: '1px solid #e2e8f0', backgroundColor: '#f8fafc' }}>
-                        <button 
-                          onClick={() => setSelectedSetId(null)}
-                          style={{ background: '#ffffff', border: '1px solid #cbd5e1', padding: '0.4rem 0.8rem', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', color: '#475569', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '5px' }}
-                          onMouseOver={(e) => e.target.style.backgroundColor = '#f1f5f9'}
-                          onMouseOut={(e) => e.target.style.backgroundColor = '#ffffff'}
-                        >
-                          <Home size={14} /> {t("返回目錄", "Back to Menu")}
-                        </button>
-                        <div style={{ display: 'flex', flexDirection: 'column' }}>
-                          <span style={{ fontSize: '0.8rem', color: '#64748b', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{t("目前選擇", "Current Set")}</span>
-                          <span style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#1e293b' }}>{currentSet?.title}</span>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem', borderBottom: '1px solid #e2e8f0', backgroundColor: '#f8fafc', flexWrap: 'wrap', gap: '1rem' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                          <button 
+                            onClick={() => setSelectedSetId(null)}
+                            style={{ background: '#ffffff', border: '1px solid #cbd5e1', padding: '0.4rem 0.8rem', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', color: '#475569', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '5px' }}
+                            onMouseOver={(e) => e.target.style.backgroundColor = '#f1f5f9'}
+                            onMouseOut={(e) => e.target.style.backgroundColor = '#ffffff'}
+                          >
+                            <Home size={14} /> {t("返回目錄", "Back to Menu")}
+                          </button>
+                          <div style={{ display: 'flex', flexDirection: 'column' }}>
+                            <span style={{ fontSize: '0.8rem', color: '#64748b', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{t("目前選擇", "Current Set")}</span>
+                            <span style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#1e293b' }}>{currentSet?.title}</span>
+                          </div>
+                        </div>
+
+                        {/* Top Level Action Bar */}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', borderRight: '1px solid #cbd5e1', paddingRight: '0.5rem', marginRight: '0.5rem' }}>
+                            <select
+                              onChange={(e) => setPlayMode(e.target.value)}
+                              value={playMode}
+                              style={{ padding: '0.4rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.85rem', color: '#334155', backgroundColor: '#fff', fontWeight: 'bold', cursor: 'pointer' }}
+                            >
+                              <option value="square">Square</option>
+                              <option value="rain">Rain</option>
+                            </select>
+                            <select
+                              onChange={(e) => setDistractionLevel(Number(e.target.value))}
+                              value={distractionLevel}
+                              style={{ padding: '0.4rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.85rem', color: '#334155', backgroundColor: '#fff', fontWeight: 'bold', cursor: 'pointer' }}
+                            >
+                              <option value={0}>Lv 0</option>
+                              <option value={1}>Lv 1</option>
+                              <option value={2}>Lv 2</option>
+                              <option value={3}>Lv 3</option>
+                            </select>
+                          </div>
+
+                          <button
+                            onClick={() => {
+                              const link = `${window.location.origin}${window.location.pathname}?set=${encodeURIComponent(currentSet.id)}`;
+                              setQrShareModal({ url: link, reference: currentSet.title });
+                            }}
+                            title={t("分享整組經文連結", "Share the set link")}
+                            style={{ backgroundColor: '#ffffff', color: '#64748b', border: '1px solid #cbd5e1', borderRadius: '6px', width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'all 0.1s' }}
+                            onMouseOver={(e) => { e.currentTarget.style.backgroundColor = '#f1f5f9'; e.currentTarget.style.color = '#3b82f6'; e.currentTarget.style.borderColor = '#3b82f6'; }}
+                            onMouseOut={(e) => { e.currentTarget.style.backgroundColor = '#ffffff'; e.currentTarget.style.color = '#64748b'; e.currentTarget.style.borderColor = '#cbd5e1'; }}
+                          >
+                            <Share2 size={16} />
+                          </button>
+
+                          <button
+                            onClick={() => {
+                              initAudio();
+                              const queue = [...VERSES_DB];
+                              setCampaignQueue(queue.slice(1));
+                              setCampaignResults([]);
+                              setActiveVerse(queue[0]);
+                              setTimeout(() => startGame(false, queue), 50);
+                            }}
+                            title={t("依序遊玩全部經文", "Play all verses in sequence")}
+                            style={{ backgroundColor: '#10b981', color: 'white', border: 'none', borderRadius: '6px', padding: '0 0.8rem', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'transform 0.1s', fontWeight: 'bold', gap: '5px' }}
+                            onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
+                            onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                          >
+                            <Play size={16} fill="white" /> {t("Play", "Play")}
+                          </button>
+
+                          <button
+                            onClick={() => {
+                              initAudio();
+                              const queue = [...VERSES_DB];
+                              setCampaignQueue(queue.slice(1));
+                              setMainTab('multiplayer');
+                              const chars = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+                              let newRoom = '';
+                              for(let i=0; i<4; i++) newRoom += chars.charAt(Math.floor(Math.random() * chars.length));
+                              setMultiplayerRoomId(newRoom);
+                            }}
+                            title={t("開房間邀請連線遊玩", "Invite players for the whole set")}
+                            style={{ backgroundColor: '#6366f1', color: 'white', border: 'none', borderRadius: '6px', padding: '0 0.8rem', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'transform 0.1s', fontWeight: 'bold', gap: '5px' }}
+                            onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
+                            onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                          >
+                            <Users size={16} /> {t("Invite", "Invite")}
+                          </button>
                         </div>
                       </div>
                       <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
@@ -1281,16 +2366,10 @@ export default function App() {
                                       <Play size={16} fill="white" />
                                     </button>
                                     <button
-                                      onClick={async (e) => {
+                                      onClick={(e) => {
                                         e.stopPropagation();
                                         const link = `${window.location.origin}${window.location.pathname}?challenge=${encodeURIComponent(v.reference)}`;
-                                        try {
-                                          await navigator.clipboard.writeText(link);
-                                          setToast(t("挑戰連結已複製到剪貼簿！", "Challenge link copied to clipboard!"));
-                                          setTimeout(() => setToast(null), 3000);
-                                        } catch (err) {
-                                          alert(t("無法複製連結，請手動全選複製：", "Could not copy link, please copy this directly: ") + link);
-                                        }
+                                        setQrShareModal({ url: link, reference: v.reference });
                                       }}
                                       title={t("分享挑戰連結", "Share challenge link")}
                                       style={{ backgroundColor: '#ffffff', color: '#64748b', border: '1px solid #cbd5e1', borderRadius: '6px', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'all 0.1s', margin: '0 auto' }}
@@ -1734,7 +2813,7 @@ export default function App() {
               )}
             </div>
 
-            {!isAutoPlay && (
+            {!isAutoPlay && !multiplayerRoomId && (
               <div className="hud-glass" style={{ padding: '0.3rem 0.8rem', display: 'flex', gap: '0.8rem', alignItems: 'center', height: '100%', minHeight: '36px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.2rem', color: '#f87171' }}>
                   {[...Array(3)].map((_, i) => (
@@ -1747,7 +2826,7 @@ export default function App() {
               </div>
             )}
 
-            {!isAutoPlay && (
+            {!isAutoPlay && !multiplayerRoomId && (
               <div className="hud-glass" style={{ padding: '0.3rem 0.8rem', display: 'flex', alignItems: 'center', gap: '1rem', minHeight: '36px' }}>
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
                   <div style={{ color: '#fbbf24', fontSize: '0.65rem', display: 'flex', alignItems: 'center', gap: '3px', marginBottom: '-2px' }}>
@@ -1765,7 +2844,64 @@ export default function App() {
                 </div>
               </div>
             )}
+
+            {/* Multiplayer HUD */}
+            {!isAutoPlay && multiplayerRoomId && multiplayerState && multiplayerState.players && (
+              <>
+                 <div className="hud-glass" style={{ padding: '0.3rem 0.8rem', display: 'flex', alignItems: 'center', gap: '1rem', minHeight: '36px', border: '1px solid rgba(59, 130, 246, 0.5)' }}>
+                    <div style={{ color: '#93c5fd', fontSize: '0.8rem', fontWeight: 'bold', marginRight: '-0.3rem' }}>{t("我", "Me")}</div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.1rem', color: '#f87171' }}>
+                      {[...Array(3)].map((_, i) => (
+                        <Heart key={i} size={14} fill={i < health ? '#f87171' : 'transparent'} strokeWidth={i < health ? 0 : 2} />
+                      ))}
+                    </div>
+                    <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: '#fff', fontFamily: 'monospace' }}>
+                      {String(score).padStart(6, '0')}
+                    </div>
+                 </div>
+                 
+                 {Object.values(multiplayerState.players).find(p => p.id !== myClientId) && (() => {
+                    const opp = Object.values(multiplayerState.players).find(p => p.id !== myClientId);
+                    return (
+                       <div className="hud-glass" style={{ padding: '0.3rem 0.8rem', display: 'flex', alignItems: 'center', gap: '1rem', minHeight: '36px', border: '1px solid rgba(248, 113, 113, 0.3)' }}>
+                          <div style={{ color: '#fca5a5', fontSize: '0.8rem', fontWeight: 'bold', marginRight: '-0.3rem', maxWidth: '80px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{opp.name}</div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.1rem', color: '#f87171', opacity: 0.8 }}>
+                            {[...Array(3)].map((_, i) => (
+                              <Heart key={i} size={14} fill={i < (opp.health || 0) ? '#f87171' : 'transparent'} strokeWidth={i < (opp.health || 0) ? 0 : 2} />
+                            ))}
+                          </div>
+                          <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: '#fecaca', fontFamily: 'monospace' }}>
+                            {String(opp.score || 0).padStart(6, '0')}
+                          </div>
+                       </div>
+                    );
+                 })()}
+              </>
+            )}
           </div>
+
+          {!isAutoPlay && playMode.startsWith('square') && (() => {
+            const HUD_PAGE_SIZE = 40;
+            const startIdx = Math.floor(currentSeqIndex / HUD_PAGE_SIZE) * HUD_PAGE_SIZE;
+            const currentPhrasesWindow = activePhrases.slice(startIdx, currentSeqIndex);
+
+            return (
+              <div style={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: '35vh', minHeight: '180px', zIndex: 10, pointerEvents: 'auto', display: 'flex', flexDirection: 'column' }}>
+                 <div className="hud-glass" style={{ flex: 1, padding: '1rem 5vw', overflowY: 'auto', background: 'rgba(15, 23, 42, 0.85)', borderRadius: '16px 16px 0 0', borderTop: '1px solid rgba(255,255,255,0.1)', borderLeft: '1px solid rgba(255,255,255,0.1)', borderRight: '1px solid rgba(255,255,255,0.1)', display: 'flex', flexDirection: 'column', gap: '0.4rem', borderBottom: 'none' }}>
+                    <div style={{ fontSize: 'clamp(1rem, 4vw, 1.4rem)', lineHeight: '1.8', color: '#cbd5e1', wordBreak: 'break-word', alignContent: 'flex-start' }}>
+                      {currentPhrasesWindow.map((phrase, localIdx) => (
+                        <span key={startIdx + localIdx} style={{ color: '#fbbf24', fontWeight: 'bold' }}>{phrase} </span>
+                      ))}
+                      {currentSeqIndex < activePhrases.length && (
+                        <span id="stack-cursor" style={{ display: 'inline-block', color: '#94a3b8', fontWeight: 'bold', padding: '0 0.4rem', border: '2px dashed rgba(251, 191, 36, 0.4)', borderRadius: '6px', margin: '0 0.2rem', background: 'rgba(251, 191, 36, 0.05)', transition: 'all 0.3s' }}>
+                          Next: {activePhrases[currentSeqIndex].replace(/[^\s\.,\?!;:，。？！；：]/g, '〇')}
+                        </span>
+                      )}
+                    </div>
+                 </div>
+              </div>
+            );
+          })()}
 
           {isAutoPlay ? (
             <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '6rem 5vw 2rem' }}>
@@ -1789,15 +2925,23 @@ export default function App() {
                 </div>
               </div>
             </div>
-          ) : playMode === 'square' ? (
-            <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '5rem 0 0 0', pointerEvents: 'none' }}>
+          ) : playMode.startsWith('square') ? (
+            <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: playMode.startsWith('square') ? '35vh' : 0, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '5rem 0 0 0', pointerEvents: 'none' }}>
               <div style={{ display: 'grid', gridTemplateColumns: `repeat(${distractionLevel <= 1 ? 2 : 3}, minmax(0, 1fr))`, gap: '0.75rem', width: '95%', maxWidth: distractionLevel <= 1 ? '600px' : '900px', pointerEvents: 'auto' }}>
                 {blocks.map(block => {
                   let appliedClasses = 'falling-block-inner';
                   if (block.error) appliedClasses += ' error-shake';
-                  if (block.correct) appliedClasses += ' success-flash';
+                  if (block.correct && (!block.claimedBy || block.claimedBy === myClientId)) appliedClasses += ' success-flash';
+                  
+                  let blockStyle = { cursor: 'pointer', padding: 'clamp(0.5rem, 2vw, 1.5rem)', fontSize: 'clamp(0.9rem, 2.5vw, 1.5rem)', display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100px', wordBreak: 'break-word', hyphens: 'auto', textAlign: 'center', visibility: block.hidden ? 'hidden' : 'visible' };
+                  
+                  if (block.claimedBy) {
+                     // Block instantly disappears physically so the flying clone can animate
+                     blockStyle.visibility = 'hidden';
+                  }
+
                   return (
-                    <div key={block.id} className={appliedClasses} onClick={(e) => { e.stopPropagation(); handleBlockClick(block); }} style={{ cursor: 'pointer', padding: 'clamp(0.5rem, 2vw, 1.5rem)', fontSize: 'clamp(0.9rem, 2.5vw, 1.5rem)', display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100px', wordBreak: 'break-word', hyphens: 'auto', textAlign: 'center', visibility: block.hidden ? 'hidden' : 'visible' }}>
+                    <div key={block.id} data-id={block.id} className={appliedClasses} onClick={(e) => { e.stopPropagation(); handleBlockClick(block); }} style={blockStyle}>
                       {!block.hidden && block.text}
                     </div>
                   )
@@ -1834,6 +2978,189 @@ export default function App() {
               })}
             </div>
           )}
+
+          {/* Waiting for others overlay for solo mode */}
+          {multiplayerRoomId && multiplayerState?.playMode === 'square_solo' && multiplayerState?.players?.[myClientId]?.isFinished && (
+             <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.8)', zIndex: 100, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
+                <h2 style={{ color: '#34d399', fontSize: '2.5rem', marginBottom: '1rem', animation: 'flashSuccess 1s ease-out' }}>{t("完成本回合！", "Round Finished!")}</h2>
+                <div style={{ color: '#cbd5e1', fontSize: '1.2rem', animation: 'bounce 2s infinite' }}>{t("等待其他玩家完成...", "Waiting for others to finish...")}</div>
+             </div>
+          )}
+
+          {/* Competitor Progress HUD for Solo Mode */}
+          {multiplayerRoomId && multiplayerState?.playMode === 'square_solo' && (
+             <div style={{ position: 'absolute', top: '5rem', left: '1rem', zIndex: 40, display: 'flex', flexDirection: 'column', gap: '0.8rem', pointerEvents: 'none' }}>
+                {Object.values(multiplayerState.players || {}).filter(p => p.id !== myClientId && p.connected).map(p => (
+                   <div key={p.id} style={{ background: 'rgba(15, 23, 42, 0.75)', padding: '0.6rem 1rem', borderRadius: '12px', border: '1px solid rgba(59, 130, 246, 0.3)', display: 'flex', flexDirection: 'column', gap: '0.3rem', backdropFilter: 'blur(4px)' }}>
+                      <div style={{ color: '#93c5fd', fontWeight: 'bold', fontSize: '0.9rem', display: 'flex', justifyContent: 'space-between' }}>
+                         <span>{p.name}</span>
+                         <span style={{ color: '#fbbf24' }}>{p.isFinished ? '✅' : `${p.seqIndex}/${activePhrases.length}`}</span>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: '#cbd5e1', fontSize: '0.9rem', minWidth: '120px' }}>
+                         <span style={{ fontFamily: 'monospace', fontSize: '1rem' }}>{Math.max(0, p.score)} pts</span>
+                         <span style={{ display: 'flex' }}>
+                             {Array.from({ length: 3 }).map((_, i) => (
+                               <Heart key={i} size={12} color={i < p.health ? "#ef4444" : "#475569"} fill={i < p.health ? "#ef4444" : "none"} style={{ marginLeft: '2px' }} />
+                             ))}
+                         </span>
+                      </div>
+                      {/* Mini progress bar */}
+                      <div style={{ width: '100%', height: '4px', background: 'rgba(255,255,255,0.1)', borderRadius: '2px', overflow: 'hidden', marginTop: '2px' }}>
+                         <div style={{ width: `${(p.seqIndex / activePhrases.length) * 100}%`, height: '100%', background: p.isFinished ? '#10b981' : '#3b82f6', transition: 'width 0.3s' }}></div>
+                      </div>
+                   </div>
+                ))}
+             </div>
+          )}
+
+          {/* Flying Blocks Animation Layer */}
+          {gameState === 'playing' && multiplayerRoomId && flyingBlocks.map(fb => (
+             <div 
+                key={fb.id} 
+                className="falling-block-inner flying-block-anim" 
+                style={{ 
+                   '--startX': fb.startX, 
+                   '--startY': fb.startY, 
+                   '--endX': fb.endX, 
+                   '--endY': fb.endY, 
+                   width: fb.width, 
+                   height: fb.height,
+                   display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 'clamp(0.9rem, 2.5vw, 1.5rem)',
+                   backgroundColor: fb.color,
+                   borderColor: fb.color,
+                   boxShadow: `0 0 20px ${fb.color}`,
+                   color: '#fff',
+                   wordBreak: 'break-word', hyphens: 'auto', textAlign: 'center'
+                }}
+             >
+                {fb.text}
+             </div>
+          ))}
+
+          {multiplayerRoomId && health <= 0 && multiplayerState?.playMode !== 'square_solo' && (
+             <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.85)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', animation: 'flashSuccess 0.5s ease-out' }}>
+                <div style={{ color: '#ef4444', marginBottom: '1rem' }}><XCircle size={64} /></div>
+                <h2 style={{ color: '#fca5a5', fontSize: '2.5rem', fontWeight: 'bold', marginBottom: '1rem', textShadow: '0 2px 10px rgba(239,68,68,0.5)' }}>{t("您已出局！", "You're Out!")}</h2>
+                <div style={{ fontSize: '1.2rem', color: '#cbd5e1', background: 'rgba(255,255,255,0.05)', padding: '1.5rem', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)', textAlign: 'center', maxWidth: '80%' }}>
+                   {t("防線已經崩潰。請等待隊友完成...", "Defenses breached. Please wait for your teammates...")}
+                   {multiplayerState?.campaignQueue && multiplayerState.campaignQueue.length > 1 ? (
+                       <div style={{ marginTop: '1rem', color: '#10b981', fontWeight: 'bold' }}>
+                          {t("下一局加油，還有", "Cheer up for next round! You have")} {multiplayerState.campaignQueue.length - 1} {t("次的機會", "more rounds.")}
+                       </div>
+                   ) : multiplayerState?.campaignQueue && multiplayerState.campaignQueue.length === 1 ? (
+                       <div style={{ marginTop: '1rem', color: '#fbbf24', fontWeight: 'bold' }}>
+                          {t("這是最後一關了！為隊友祈禱吧！", "This is the final round! Pray for your teammates!")}
+                       </div>
+                   ) : null}
+                </div>
+             </div>
+          )}
+        </div>
+      )}
+
+      {gameState === 'multiplayer_results' && multiplayerState && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.85)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000, padding: '1rem', flexDirection: 'column' }}>
+          <div className="hud-glass" style={{ background: 'rgba(15, 23, 42, 0.95)', borderRadius: '12px', padding: '3rem 2rem', width: '100%', maxWidth: '800px', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1.5rem', textAlign: 'center', border: '1px solid rgba(59, 130, 246, 0.3)' }}>
+            <h2 style={{ fontSize: '2.5rem', fontWeight: 'bold', margin: 0, color: '#e2e8f0', display: 'flex', alignItems: 'center', gap: '12px' }}><Trophy size={40} color="#fbbf24" fill="#fbbf24" /> {multiplayerState.campaignResults?.length > 1 ? t("連戰結束！", "Marathon Completed!") : t("對局結束！", "Game Over!")}</h2>
+            
+            <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '1.5rem', margin: '1.5rem 0', maxHeight: '60vh', overflowY: 'auto', paddingRight: '0.5rem' }}>
+               
+               <h3 style={{ margin: 0, textAlign: 'left', color: '#94a3b8', borderBottom: '2px solid rgba(255,255,255,0.1)', paddingBottom: '0.5rem' }}>{t("總排名", "Final Standings")}</h3>
+               <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                 {Object.values(multiplayerState.players)
+                   .map(p => {
+                       const totalScore = multiplayerState.campaignResults?.reduce((acc, round) => acc + Math.max(0, round.scores[p.id] || 0), 0) || p.score;
+                       return { ...p, totalScore };
+                   })
+                   .sort((a,b) => b.totalScore - a.totalScore)
+                   .map((p, idx) => (
+                   <div key={p.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1.2rem', backgroundColor: idx === 0 ? 'rgba(251, 191, 36, 0.1)' : 'rgba(255,255,255,0.03)', border: `1px solid ${idx === 0 ? '#fbbf24' : 'rgba(255,255,255,0.1)'}`, borderRadius: '8px' }}>
+                     <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                       <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: idx === 0 ? '#fbbf24' : '#64748b' }}>#{idx+1}</div>
+                       <div style={{ width: '16px', height: '16px', borderRadius: '50%', backgroundColor: p.color, boxShadow: '0 0 0 2px rgba(255,255,255,0.2)' }}></div>
+                       <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: '#e2e8f0' }}>{p.name} {p.id === myClientId ? '(You)' : ''}</div>
+                     </div>
+                     <div style={{ fontSize: '1.8rem', fontWeight: 'bold', color: '#3b82f6', fontFamily: 'monospace' }}>{p.totalScore}</div>
+                   </div>
+                 ))}
+               </div>
+
+               {multiplayerState.campaignResults?.length > 1 && (
+                  <>
+                     <h3 style={{ margin: '1rem 0 0 0', textAlign: 'left', color: '#94a3b8', borderBottom: '2px solid rgba(255,255,255,0.1)', paddingBottom: '0.5rem' }}>{t("回合紀錄", "Round History")}</h3>
+                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
+                        {multiplayerState.campaignResults.map((round, rIdx) => (
+                           <div key={rIdx} style={{ display: 'flex', flexDirection: 'column', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '6px', padding: '1rem' }}>
+                              <div style={{ color: '#93c5fd', fontWeight: 'bold', textAlign: 'left', marginBottom: '0.5rem' }}>{t("回合", "Round")} {rIdx+1}: {round.verseRef}</div>
+                              <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+                                 {Object.keys(round.scores)
+                                     .sort((a,b) => round.scores[b] - round.scores[a])
+                                     .map((pid, rank) => {
+                                         const player = multiplayerState.players[pid];
+                                         if (!player) return null;
+                                         return (
+                                            <div key={pid} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.9rem', color: '#cbd5e1', background: rank === 0 ? 'rgba(16, 185, 129, 0.2)' : 'transparent', padding: '0.2rem 0.5rem', borderRadius: '4px' }}>
+                                               {rank === 0 && <span style={{color: '#10b981'}}>★</span>}
+                                               {player.name}: <span style={{fontWeight: 'bold', fontFamily: 'monospace'}}>{Math.max(0, round.scores[pid])}</span>
+                                            </div>
+                                         )
+                                     })
+                                 }
+                              </div>
+                           </div>
+                        ))}
+                     </div>
+                  </>
+               )}
+            </div>
+
+            <div style={{ display: 'flex', gap: '1rem', width: '100%', marginTop: 'auto' }}>
+              <button 
+                onClick={() => {
+                  setGameState('menu'); 
+                  setMultiplayerRoomId(null);
+                  if (socketRef.current) socketRef.current.close();
+                }} 
+                style={{ flex: 1, padding: '1rem', background: 'rgba(255,255,255,0.1)', color: '#cbd5e1', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '8px', fontSize: '1.1rem', fontWeight: 'bold', cursor: 'pointer', transition: 'all 0.2s' }}
+              >
+                {t("離開對戰", "Leave Match")}
+              </button>
+              
+              {multiplayerState?.host === myClientId && (
+                <button 
+                  onClick={() => {
+                    socketRef.current.send(JSON.stringify({ type: 'RESTART_GAME' }));
+                    setGameState('menu');
+                  }} 
+                  style={{ flex: 1, padding: '1rem', background: '#3b82f6', color: 'white', border: 'none', borderRadius: '8px', fontSize: '1.1rem', fontWeight: 'bold', cursor: 'pointer', transition: 'all 0.2s' }}
+                >
+                  {t("回到大廳", "Return to Lobby")}
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {gameState === 'intermission' && multiplayerState && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.85)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000, padding: '1rem', flexDirection: 'column' }}>
+          <div className="hud-glass" style={{ background: 'rgba(15, 23, 42, 0.95)', borderRadius: '12px', padding: '4rem 2rem', width: '100%', maxWidth: '600px', boxShadow: '0 25px 50px -12px rgba(16, 185, 129, 0.3)', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', border: '1px solid rgba(16, 185, 129, 0.5)' }}>
+             <h2 style={{ fontSize: '2.5rem', color: '#10b981', marginBottom: '1.5rem', fontWeight: 'bold' }}>{t("太棒了！準備下一回合", "Great job! Get ready...")}</h2>
+             <p style={{ color: '#cbd5e1', fontSize: '1.5rem', marginBottom: '2.5rem' }}>
+                {t("還剩", "Remaining:")} <strong style={{ color: '#fff' }}>{multiplayerState.campaignQueue?.length}</strong> {t("節經文", "verses")}
+             </p>
+             <p style={{ color: '#93c5fd', fontSize: '1.8rem', fontWeight: 'bold', marginBottom: '1rem' }}>
+                {t("接下來：", "Next Up:")} {multiplayerState.campaignQueue?.[0]?.reference || multiplayerState.campaignQueue?.[0]}
+             </p>
+             {multiplayerState.campaignQueue?.[0]?.text && (
+                 <div style={{ color: '#e2e8f0', fontSize: '1.1rem', marginBottom: '2rem', padding: '1rem', background: 'rgba(255,255,255,0.05)', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)', maxHeight: '150px', overflowY: 'auto' }}>
+                    {multiplayerState.campaignQueue[0].text}
+                 </div>
+             )}
+             <div style={{ fontSize: '6rem', fontWeight: 'bold', color: '#fbbf24', animation: 'bounce 1s infinite' }}>
+                {intermissionCountdown}
+             </div>
+          </div>
         </div>
       )}
 
@@ -2191,52 +3518,64 @@ export default function App() {
               )}
             </div>
 
-            <button
-              onClick={() => {
-                const emailInput = document.getElementById('modalEmailInput');
-                const email = emailInput ? emailInput.value.trim() : '';
-
-                // Retrieve mock DB
-                let mockDB = {};
-                try {
-                  mockDB = JSON.parse(localStorage.getItem('verserain_mock_user_db')) || {};
-                } catch (e) { }
-
-                let nameToSet = playerName || "";
-
-                if (showLoginModal === 'signup') {
+              {authError && <div style={{ color: '#ef4444', fontSize: '0.85rem', textAlign: 'center', marginTop: '-0.5rem', fontWeight: 'bold' }}>{authError}</div>}
+              
+              <button
+                disabled={authLoading}
+                onClick={async () => {
+                  const emailInput = document.getElementById('modalEmailInput');
+                  const passInput = document.getElementById('modalPasswordInput');
                   const nameInput = document.getElementById('modalPlayerNameInput');
-                  if (nameInput && nameInput.value.trim().length > 0) {
-                    nameToSet = nameInput.value.trim();
-                  } else if (email) {
-                    nameToSet = email.split('@')[0];
-                  }
-                  // Save to mock DB
-                  if (email && nameToSet) {
-                    mockDB[email] = nameToSet;
-                    localStorage.setItem('verserain_mock_user_db', JSON.stringify(mockDB));
-                  }
-                } else {
-                  if (email && mockDB[email]) {
-                    // Found registered display name for this email!
-                    nameToSet = mockDB[email];
-                  } else if (email) {
-                    nameToSet = email.split('@')[0];
-                  }
-                }
+                  
+                  const email = emailInput ? emailInput.value.trim() : '';
+                  const password = passInput ? passInput.value.trim() : '';
+                  const nameStr = nameInput ? nameInput.value.trim() : '';
 
-                if (!nameToSet) nameToSet = "Player" + Math.floor(Math.random() * 9999);
+                  if (!email || !password) {
+                     setAuthError("請輸入 Email 與 密碼 (Email & Password required)");
+                     return;
+                  }
 
-                setPlayerName(nameToSet);
-                localStorage.setItem('verserain_player_name', nameToSet);
-                setShowLoginModal(null);
-              }}
-              style={{ background: '#3b82f6', color: 'white', border: 'none', padding: '0.8rem', borderRadius: '6px', fontSize: '1rem', fontWeight: 'bold', cursor: 'pointer', transition: 'background 0.2s', marginTop: '0.5rem' }}
-              onMouseOver={(e) => e.target.style.background = '#2563eb'}
-              onMouseOut={(e) => e.target.style.background = '#3b82f6'}
-            >
-              {showLoginModal === 'signup' ? t("建立新帳號", "Create Account") : t("登入", "Log In")}
-            </button>
+                  setAuthLoading(true);
+                  setAuthError("");
+
+                  try {
+                     const endpoint = showLoginModal === 'signup' ? '/register' : '/login';
+                     const payload = { email, password, nickname: nameStr };
+                     
+                     // Hit PartyKit Backend
+                     const host = "https://verserain-party.hungry4grace.partykit.dev/parties/main/global-auth-db" + endpoint;
+                     const response = await fetch(host, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                     });
+                     
+                     const data = await response.json();
+                     
+                     if (response.ok && data.success) {
+                        setPlayerName(data.user.name || email.split('@')[0]);
+                        setUserEmail(data.user.email);
+                        setIsPremium(data.user.isPremium);
+                        localStorage.setItem('verserain_player_name', data.user.name || email.split('@')[0]);
+                        localStorage.setItem('verserain_player_email', data.user.email);
+                        localStorage.setItem('verserain_is_premium', data.user.isPremium ? 'true' : 'false');
+                        setShowLoginModal(null);
+                     } else {
+                        setAuthError(data.error || "連線失敗 (Connection Error)");
+                     }
+                  } catch (err) {
+                     setAuthError("無法連線到伺服器 (Server unreachable)");
+                  } finally {
+                     setAuthLoading(false);
+                  }
+                }}
+                style={{ background: authLoading ? '#94a3b8' : '#3b82f6', color: 'white', border: 'none', padding: '0.8rem', borderRadius: '6px', fontSize: '1rem', fontWeight: 'bold', cursor: authLoading ? 'not-allowed' : 'pointer', transition: 'background 0.2s', marginTop: '0.5rem' }}
+                onMouseOver={(e) => { if(!authLoading) e.target.style.background = '#2563eb' }}
+                onMouseOut={(e) => { if(!authLoading) e.target.style.background = '#3b82f6' }}
+              >
+                {authLoading ? "..." : (showLoginModal === 'signup' ? t("建立新帳號 (需與 Skool Email 相同以獲取權限)", "Create Account") : t("登入", "Log In"))}
+              </button>
 
             <div style={{ textAlign: 'center', fontSize: '0.9rem', color: '#64748b', marginTop: '0.5rem' }}>
               {showLoginModal === 'signup' ? (
@@ -2250,6 +3589,68 @@ export default function App() {
                   <span onClick={() => setShowLoginModal('signup')} style={{ color: '#3b82f6', cursor: 'pointer', fontWeight: 'bold' }}>{t("立即註冊", "Sign up")}</span>
                 </>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* QR Code Share Modal */}
+      {qrShareModal && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.75)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1100, padding: '1rem', backdropFilter: 'blur(8px)' }} onClick={(e) => { if (e.target === e.currentTarget) setQrShareModal(null); }}>
+          <div style={{ background: 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)', borderRadius: '20px', padding: 'clamp(1.5rem, 4vw, 3rem)', width: '100%', maxWidth: '420px', boxShadow: '0 25px 50px rgba(0,0,0,0.5), 0 0 100px rgba(59,130,246,0.15)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1.5rem', border: '1px solid rgba(59,130,246,0.3)', animation: 'flashSuccess 0.4s ease-out' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+              <h3 style={{ margin: 0, color: '#e2e8f0', fontSize: '1.2rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <Share2 size={20} color="#60a5fa" /> {t("掃描 QR 碼來挑戰！", "Scan to Challenge!")}
+              </h3>
+              <button onClick={() => setQrShareModal(null)} style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer', padding: '0.25rem' }}><XCircle size={24} /></button>
+            </div>
+
+            <div style={{ color: '#fbbf24', fontSize: 'clamp(1.1rem, 3vw, 1.4rem)', fontWeight: 'bold', textAlign: 'center' }}>
+              📖 {qrShareModal.reference}
+            </div>
+
+            <canvas
+              ref={(canvas) => {
+                if (canvas && qrShareModal) {
+                  QRCode.toCanvas(canvas, qrShareModal.url, {
+                    width: Math.min(280, window.innerWidth - 120),
+                    margin: 2,
+                    color: { dark: '#1e293b', light: '#ffffff' }
+                  });
+                }
+              }}
+              style={{ borderRadius: '12px', boxShadow: '0 4px 20px rgba(0,0,0,0.3)', background: '#fff', padding: '12px' }}
+            />
+
+            <p style={{ color: '#94a3b8', fontSize: '0.9rem', textAlign: 'center', margin: 0 }}>
+              {t("讓大家掃描這個 QR 碼，一起來挑戰這段經文！", "Have everyone scan this QR code to challenge this verse together!")}
+            </p>
+
+            <div style={{ display: 'flex', gap: '0.75rem', width: '100%' }}>
+              <button
+                onClick={async () => {
+                  try {
+                    await navigator.clipboard.writeText(qrShareModal.url);
+                    setToast(t("挑戰連結已複製到剪貼簿！", "Challenge link copied!"));
+                    setTimeout(() => setToast(null), 3000);
+                  } catch (err) {
+                    alert(qrShareModal.url);
+                  }
+                }}
+                style={{ flex: 1, padding: '0.75rem', background: 'rgba(59,130,246,0.15)', color: '#60a5fa', border: '1px solid rgba(59,130,246,0.3)', borderRadius: '10px', fontSize: '0.95rem', fontWeight: 'bold', cursor: 'pointer', transition: 'all 0.2s' }}
+                onMouseOver={(e) => { e.currentTarget.style.background = 'rgba(59,130,246,0.25)'; }}
+                onMouseOut={(e) => { e.currentTarget.style.background = 'rgba(59,130,246,0.15)'; }}
+              >
+                {t("📋 複製連結", "📋 Copy Link")}
+              </button>
+              <button
+                onClick={() => setQrShareModal(null)}
+                style={{ flex: 1, padding: '0.75rem', background: 'rgba(255,255,255,0.05)', color: '#cbd5e1', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '10px', fontSize: '0.95rem', fontWeight: 'bold', cursor: 'pointer', transition: 'all 0.2s' }}
+                onMouseOver={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.1)'; }}
+                onMouseOut={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.05)'; }}
+              >
+                {t("關閉", "Close")}
+              </button>
             </div>
           </div>
         </div>
