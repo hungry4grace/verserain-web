@@ -12,6 +12,105 @@ export default class Server {
     };
   }
 
+  // --- HTTP Authentication API & Webhook Endpoints ---
+  async onRequest(request) {
+    // We only process auth requests on a dedicated "auth" room to keep the DB cohesive
+    if (this.room.id === "global-auth-db" || request.url.includes("/global-auth-db/")) {
+      // Handle preflight CORS logic for the browser frontend
+      if (request.method === "OPTIONS") {
+        return new Response(null, {
+          headers: {
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Methods": "POST, OPTIONS",
+            "Access-Control-Allow-Headers": "Content-Type"
+          }
+        });
+      }
+
+      const corsHeaders = { "Access-Control-Allow-Origin": "*" };
+
+      if (request.method === "POST") {
+        const url = new URL(request.url);
+        
+        // 1. Skool Webhook Endpoint (From Zapier / Skool Platform)
+        // Expected payload from Skool: { email: "user@example.com", name: "David" }
+        if (url.pathname.endsWith('/skool-webhook')) {
+           try {
+              const payload = await request.json();
+              const email = payload.email || (payload.member && payload.member.email);
+              const name = payload.name || payload.first_name || (payload.member && payload.member.name) || "Premium Member";
+              
+              if (!email) return new Response(JSON.stringify({ error: 'Missing email' }), { status: 400, headers: corsHeaders });
+              
+              let user = await this.room.storage.get(`user:${email.toLowerCase()}`);
+              
+              // If user exists, upgrade them. If not, create a "ghost" account that will be claimed when they register.
+              if (user) {
+                 user.isPremium = true;
+                 user.skoolName = name;
+                 await this.room.storage.put(`user:${email.toLowerCase()}`, user);
+              } else {
+                 await this.room.storage.put(`user:${email.toLowerCase()}`, { email: email.toLowerCase(), skoolName: name, isPremium: true, password: null });
+              }
+              
+              return new Response(JSON.stringify({ success: true, message: 'Webhook processed' }), { status: 200, headers: corsHeaders });
+           } catch(e) {
+              return new Response(JSON.stringify({ error: 'Webhook processing failed' }), { status: 500, headers: corsHeaders });
+           }
+        }
+        
+        // 2. User Registration Endpoint
+        if (url.pathname.endsWith('/register')) {
+           try {
+              const { email, password, nickname } = await request.json();
+              if (!email || !password) return new Response(JSON.stringify({ error: 'Email and password required' }), { status: 400, headers: corsHeaders });
+              
+              let user = await this.room.storage.get(`user:${email.toLowerCase()}`);
+              
+              // Handle conflict or claim ghost account
+              if (user && user.password) {
+                 return new Response(JSON.stringify({ error: 'Email already registered' }), { status: 409, headers: corsHeaders });
+              }
+              
+              // If a webhook already created a ghost record, we preserve `isPremium`
+              const isPremium = user ? user.isPremium : false;
+              const finalName = (user && user.skoolName) ? user.skoolName : (nickname || "Player");
+
+              const newUserObj = { email: email.toLowerCase(), password: password, name: finalName, isPremium };
+              await this.room.storage.put(`user:${email.toLowerCase()}`, newUserObj);
+              
+              // We return the raw object (Excluding pass in real production, but fine for MVP)
+              return new Response(JSON.stringify({ success: true, user: { email: newUserObj.email, name: newUserObj.name, isPremium: newUserObj.isPremium } }), { status: 200, headers: corsHeaders });
+           } catch(e) {
+              return new Response(JSON.stringify({ error: 'Registration failed' }), { status: 500, headers: corsHeaders });
+           }
+        }
+
+        // 3. User Login Endpoint
+        if (url.pathname.endsWith('/login')) {
+           try {
+              const { email, password } = await request.json();
+              if (!email || !password) return new Response(JSON.stringify({ error: 'Email and password required' }), { status: 400, headers: corsHeaders });
+              
+              let user = await this.room.storage.get(`user:${email.toLowerCase()}`);
+              
+              if (!user || user.password !== password) {
+                 return new Response(JSON.stringify({ error: 'Invalid email or password' }), { status: 401, headers: corsHeaders });
+              }
+              
+              return new Response(JSON.stringify({ success: true, user: { email: user.email, name: user.name, isPremium: user.isPremium } }), { status: 200, headers: corsHeaders });
+           } catch(e) {
+              return new Response(JSON.stringify({ error: 'Login failed' }), { status: 500, headers: corsHeaders });
+           }
+        }
+      }
+      return new Response("Not Found API Route", { status: 404, headers: corsHeaders });
+    }
+
+    // Default route for other random requests to gameplay rooms (if any)
+    return new Response("VerseRain Gameplay Room HTTP endpoint OK", { status: 200 });
+  }
+
   onConnect(conn, ctx) {
     // Player connected to the room
     const url = new URL(ctx.request.url);

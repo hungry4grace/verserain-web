@@ -191,7 +191,10 @@ export default function App() {
   const [distractionLevel, setDistractionLevel] = useState(0);
   const [selectedSetId, setSelectedSetId] = useState(null);
 
-  const [isPremium, setIsPremium] = useState(false); // Simulate premium user status
+  const [isPremium, setIsPremium] = useState(() => localStorage.getItem('verserain_is_premium') === 'true');
+  const [userEmail, setUserEmail] = useState(() => localStorage.getItem('verserain_player_email') || "");
+  const [authLoading, setAuthLoading] = useState(false);
+  const [authError, setAuthError] = useState("");
   const [customVerseSets, setCustomVerseSets] = useState(() => {
     try {
       const saved = localStorage.getItem('verseRain_custom_sets');
@@ -1582,7 +1585,7 @@ export default function App() {
                       <Crown size={14} style={{ color: '#fbbf24' }} />
                     </button>
                   </div>
-                  <button onClick={() => { setPlayerName(''); localStorage.removeItem('verserain_player_name'); }} style={{ background: 'transparent', border: '1px solid #cbd5e1', color: '#64748b', cursor: 'pointer', borderRadius: '4px', padding: '0.3rem 0.6rem', fontSize: '0.85rem' }}>{t("登出", "Logout")}</button>
+                  <button onClick={() => { setPlayerName(''); setIsPremium(false); setUserEmail(''); localStorage.removeItem('verserain_player_name'); localStorage.removeItem('verserain_is_premium'); localStorage.removeItem('verserain_player_email'); }} style={{ background: 'transparent', border: '1px solid #cbd5e1', color: '#64748b', cursor: 'pointer', borderRadius: '4px', padding: '0.3rem 0.6rem', fontSize: '0.85rem' }}>{t("登出", "Logout")}</button>
                 </div>
               ) : (
                 <>
@@ -1625,9 +1628,9 @@ export default function App() {
               <div style={{ backgroundColor: '#ffffff', borderRadius: '8px', border: '1px solid #cbd5e1', padding: '2rem', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
                     <h2 style={{ color: '#1e293b', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>👑 {t("我的專屬題庫", "My Custom Sets")}</h2>
-                    <button type="button" onClick={() => setIsPremium(!isPremium)} style={{ background: '#f8fafc', border: '1px solid #cbd5e1', padding: '0.3rem 0.6rem', borderRadius: '4px', fontSize: '0.8rem', cursor: 'pointer' }}>
-                        [Dev] Toggle Premium
-                    </button>
+                    <div style={{ background: '#f8fafc', border: '1px solid #cbd5e1', padding: '0.3rem 0.6rem', borderRadius: '4px', fontSize: '0.85rem', color: isPremium ? '#fbbf24' : '#64748b', fontWeight: 'bold' }}>
+                        {isPremium ? t("✨ Premium 認證", "✨ Premium Active") : t("🔒 基本帳號", "🔒 Basic Account")}
+                    </div>
                 </div>
 
                 {!isPremium ? (
@@ -3515,52 +3518,64 @@ export default function App() {
               )}
             </div>
 
-            <button
-              onClick={() => {
-                const emailInput = document.getElementById('modalEmailInput');
-                const email = emailInput ? emailInput.value.trim() : '';
-
-                // Retrieve mock DB
-                let mockDB = {};
-                try {
-                  mockDB = JSON.parse(localStorage.getItem('verserain_mock_user_db')) || {};
-                } catch (e) { }
-
-                let nameToSet = playerName || "";
-
-                if (showLoginModal === 'signup') {
+              {authError && <div style={{ color: '#ef4444', fontSize: '0.85rem', textAlign: 'center', marginTop: '-0.5rem', fontWeight: 'bold' }}>{authError}</div>}
+              
+              <button
+                disabled={authLoading}
+                onClick={async () => {
+                  const emailInput = document.getElementById('modalEmailInput');
+                  const passInput = document.getElementById('modalPasswordInput');
                   const nameInput = document.getElementById('modalPlayerNameInput');
-                  if (nameInput && nameInput.value.trim().length > 0) {
-                    nameToSet = nameInput.value.trim();
-                  } else if (email) {
-                    nameToSet = email.split('@')[0];
-                  }
-                  // Save to mock DB
-                  if (email && nameToSet) {
-                    mockDB[email] = nameToSet;
-                    localStorage.setItem('verserain_mock_user_db', JSON.stringify(mockDB));
-                  }
-                } else {
-                  if (email && mockDB[email]) {
-                    // Found registered display name for this email!
-                    nameToSet = mockDB[email];
-                  } else if (email) {
-                    nameToSet = email.split('@')[0];
-                  }
-                }
+                  
+                  const email = emailInput ? emailInput.value.trim() : '';
+                  const password = passInput ? passInput.value.trim() : '';
+                  const nameStr = nameInput ? nameInput.value.trim() : '';
 
-                if (!nameToSet) nameToSet = "Player" + Math.floor(Math.random() * 9999);
+                  if (!email || !password) {
+                     setAuthError("請輸入 Email 與 密碼 (Email & Password required)");
+                     return;
+                  }
 
-                setPlayerName(nameToSet);
-                localStorage.setItem('verserain_player_name', nameToSet);
-                setShowLoginModal(null);
-              }}
-              style={{ background: '#3b82f6', color: 'white', border: 'none', padding: '0.8rem', borderRadius: '6px', fontSize: '1rem', fontWeight: 'bold', cursor: 'pointer', transition: 'background 0.2s', marginTop: '0.5rem' }}
-              onMouseOver={(e) => e.target.style.background = '#2563eb'}
-              onMouseOut={(e) => e.target.style.background = '#3b82f6'}
-            >
-              {showLoginModal === 'signup' ? t("建立新帳號", "Create Account") : t("登入", "Log In")}
-            </button>
+                  setAuthLoading(true);
+                  setAuthError("");
+
+                  try {
+                     const endpoint = showLoginModal === 'signup' ? '/register' : '/login';
+                     const payload = { email, password, nickname: nameStr };
+                     
+                     // Hit PartyKit Backend
+                     const host = "https://verserain-party.hungry4grace.partykit.dev/parties/main/global-auth-db" + endpoint;
+                     const response = await fetch(host, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                     });
+                     
+                     const data = await response.json();
+                     
+                     if (response.ok && data.success) {
+                        setPlayerName(data.user.name || email.split('@')[0]);
+                        setUserEmail(data.user.email);
+                        setIsPremium(data.user.isPremium);
+                        localStorage.setItem('verserain_player_name', data.user.name || email.split('@')[0]);
+                        localStorage.setItem('verserain_player_email', data.user.email);
+                        localStorage.setItem('verserain_is_premium', data.user.isPremium ? 'true' : 'false');
+                        setShowLoginModal(null);
+                     } else {
+                        setAuthError(data.error || "連線失敗 (Connection Error)");
+                     }
+                  } catch (err) {
+                     setAuthError("無法連線到伺服器 (Server unreachable)");
+                  } finally {
+                     setAuthLoading(false);
+                  }
+                }}
+                style={{ background: authLoading ? '#94a3b8' : '#3b82f6', color: 'white', border: 'none', padding: '0.8rem', borderRadius: '6px', fontSize: '1rem', fontWeight: 'bold', cursor: authLoading ? 'not-allowed' : 'pointer', transition: 'background 0.2s', marginTop: '0.5rem' }}
+                onMouseOver={(e) => { if(!authLoading) e.target.style.background = '#2563eb' }}
+                onMouseOut={(e) => { if(!authLoading) e.target.style.background = '#3b82f6' }}
+              >
+                {authLoading ? "..." : (showLoginModal === 'signup' ? t("建立新帳號 (需與 Skool Email 相同以獲取權限)", "Create Account") : t("登入", "Log In"))}
+              </button>
 
             <div style={{ textAlign: 'center', fontSize: '0.9rem', color: '#64748b', marginTop: '0.5rem' }}>
               {showLoginModal === 'signup' ? (
