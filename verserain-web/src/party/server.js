@@ -128,7 +128,7 @@ export default class Server {
         // Removed health <= 0 early return so players can always finish the verse
 
         if (block && !block.claimedBy) {
-          if (block.seqIndex === this.state.currentSeqIndex) {
+          if (block.seqIndex === this.state.currentSeqIndex || block.text === this.state.phrases[this.state.currentSeqIndex]) {
             // Correct click! The referee approves it.
             block.claimedBy = sender.id;
             block.claimedByName = this.state.players[sender.id].name;
@@ -168,7 +168,7 @@ export default class Server {
                if (this.state.playMode.startsWith('square')) {
                   const maxGridSize = this.state.distractionLevel <= 1 ? 4 : 9;
                   const fakesCount = this.state.distractionLevel > 0 ? this.state.distractionLevel : 0;
-                  const nextSpawnIndex = block.seqIndex + (maxGridSize - fakesCount);
+                  const nextSpawnIndex = this.state.currentSeqIndex + (maxGridSize - fakesCount);
                   
                   if (nextSpawnIndex < this.state.phrases.length) {
                       // Delayed refill to allow CSS animation to play on clients

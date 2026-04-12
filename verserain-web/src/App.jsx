@@ -1204,7 +1204,7 @@ export default function App() {
        }
     }
 
-    if (block.seqIndex === currentSeqIndex) {
+    if (block.seqIndex === currentSeqIndex || block.text === activePhrases[currentSeqIndex]) {
       // Voice should remain at normal speed so the user doesn't get nervous
       const voiceRate = 1.0;
 
@@ -1224,7 +1224,7 @@ export default function App() {
         if (playMode.startsWith('square')) {
           const maxGridSize = distractionLevel <= 1 ? 4 : 9;
           const fakesCount = distractionLevel > 0 ? distractionLevel : 0;
-          const nextSpawnIndex = block.seqIndex + (maxGridSize - fakesCount);
+          const nextSpawnIndex = currentSeqIndex + (maxGridSize - fakesCount);
           setTimeout(() => {
             setBlocks(prev => {
               const fakesOnScreen = prev.filter(b => b.isFake && !b.hidden).length;
