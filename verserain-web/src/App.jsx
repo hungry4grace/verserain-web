@@ -1432,9 +1432,9 @@ export default function App() {
                const requiredLen = Math.min(cleanPhrase.length, 5);
                return transcript.includes(cleanPhrase.substring(0, requiredLen));
             }
-            if (cleanPhrase.length <= 3) return transcript.includes(cleanPhrase);
-            for (let i = 0; i <= cleanPhrase.length - 3; i++) {
-               if (transcript.includes(cleanPhrase.substring(i, i + 3))) return true;
+            if (cleanPhrase.length <= 2) return transcript.includes(cleanPhrase);
+            for (let i = 0; i <= cleanPhrase.length - 2; i++) {
+               if (transcript.includes(cleanPhrase.substring(i, i + 2))) return true;
             }
          } else {
             const cleanPhrase = phrase.replace(/[^a-zA-Z0-9\s]/g, '').toLowerCase();
