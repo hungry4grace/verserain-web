@@ -125,9 +125,7 @@ export default class Server {
         const { blockId } = data;
         const block = this.state.blocks.find(b => b.id === blockId);
         
-        if (this.state.players[sender.id].health <= 0) {
-           return; // Dead players cannot click
-        }
+        // Removed health <= 0 early return so players can always finish the verse
 
         if (block && !block.claimedBy) {
           if (block.seqIndex === this.state.currentSeqIndex) {
@@ -167,7 +165,7 @@ export default class Server {
                this.broadcastState();
             } else {
                // Dynamic Server-Side Block Replenishment for VerseSquare
-               if (this.state.playMode === 'square') {
+               if (this.state.playMode.startsWith('square')) {
                   const maxGridSize = this.state.distractionLevel <= 1 ? 4 : 9;
                   const fakesCount = this.state.distractionLevel > 0 ? this.state.distractionLevel : 0;
                   const nextSpawnIndex = block.seqIndex + (maxGridSize - fakesCount);
@@ -220,26 +218,8 @@ export default class Server {
              }));
 
              if (this.state.players[sender.id].health <= 0) {
-                 console.log(`[PARTY] Player ${sender.id} died but match continues.`);
-                 this.state.players[sender.id].score = 0; // Dead players get exactly 0 for the round
-                 // Do not terminate the match! Let other alive players finish it.
-                 // However, we should check if ALL players are dead.
-                 const allDead = Object.values(this.state.players).every(p => p.health <= 0);
-                 if (allDead) {
-                     console.log(`[PARTY] All players died. Round over!`);
-                     if (!this.state.campaignResults) this.state.campaignResults = [];
-                     this.state.campaignResults.push({
-                         verseRef: this.state.verseRef,
-                         scores: Object.fromEntries(Object.values(this.state.players).map(p => [p.id, p.score]))
-                     });
-                     
-                     if (this.state.campaignQueue && this.state.campaignQueue.length > 1) {
-                         this.state.campaignQueue.shift();
-                         this.state.status = 'intermission';
-                     } else {
-                         this.state.status = 'finished';
-                     }
-                 }
+                 console.log(`[PARTY] Player ${sender.id} health empty but match continues.`);
+                 // Do not terminate the match! Players can finish it but their score won't go to leaderboard locally
              }
              
              // Broadcast the score/health change

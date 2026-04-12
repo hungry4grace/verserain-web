@@ -433,32 +433,9 @@ export default function App() {
   const [lightningKey, setLightningKey] = useState(0);
 
   const triggerLightning = React.useCallback((type) => {
-    setLightningActive(type);
-    setLightningKey(k => k + 1);
-  }, []);
-
-  useEffect(() => {
-    let timeoutId;
-    const scheduleLightning = () => {
-      const randTime = Math.random() * 8000 + 4000;
-      timeoutId = setTimeout(() => {
-        // Occasional visual lightning with no audio
-        if (Math.random() > 0.4) {
-          triggerLightning('light');
-        }
-        scheduleLightning();
-      }, randTime);
-    };
-
-    if (gameState === 'playing') {
-      scheduleLightning();
-    } else {
-      setLightningActive(null);
-    }
-    return () => clearTimeout(timeoutId);
-  }, [gameState, triggerLightning]);
-
-  // Leaderboard specific state
+    // Lightning visually disabled to reduce distraction
+    return;
+  }, []);  // Leaderboard specific state
   const [playerName, setPlayerName] = useState(() => localStorage.getItem('verserain_player_name') || "");
   const [leaderboard, setLeaderboard] = useState({ alltime: [], monthly: [], daily: [] });
   const [isSubmittingScore, setIsSubmittingScore] = useState(false);
@@ -499,22 +476,23 @@ export default function App() {
   // Voice Control State
   const [isMicOn, setIsMicOn] = useState(false);
   const [micStatusText, setMicStatusText] = useState("");
+  const [liveTranscript, setLiveTranscript] = useState("");
   const recognitionRef = useRef(null);
   const isMicOnRef = useRef(isMicOn);
-  const phrasesRef = useRef(phrases);
+  const phrasesRef = useRef(activePhrases);
   const currentSeqIndexRef = useRef(currentSeqIndex);
   const blocksRef = useRef(blocks);
-  const statusRef = useRef(status);
+  const statusRef = useRef(gameState);
   const handleBlockClickRef = useRef();
 
   // Keep refs updated for SpeechRecognition closure
   useEffect(() => {
     isMicOnRef.current = isMicOn;
-    phrasesRef.current = phrases;
+    phrasesRef.current = activePhrases;
     currentSeqIndexRef.current = currentSeqIndex;
     blocksRef.current = blocks;
-    statusRef.current = status;
-  }, [isMicOn, phrases, currentSeqIndex, blocks, status]);
+    statusRef.current = gameState;
+  }, [isMicOn, activePhrases, currentSeqIndex, blocks, gameState]);
   const [multiplayerSelectedVerses, setMultiplayerSelectedVerses] = useState([]);
   const [randomPickCount, setRandomPickCount] = useState(1);
 
@@ -793,7 +771,7 @@ export default function App() {
 
       if (candidates.includes(targetSeq)) {
         seqToSpawn = targetSeq; // Absolute guarantee the required phrase is spawned
-      } else if (spawnFake && playMode !== 'square') {
+      } else if (spawnFake && !playMode.startsWith('square')) {
         isFake = true;
         seqToSpawn = -1;
       } else {
@@ -947,7 +925,7 @@ export default function App() {
     }, 10);
 
     if (!isAuto) {
-      if (playMode === 'square') {
+      if (playMode.startsWith('square')) {
         initSquareBlocks();
       } else {
         setTimeout(spawnNextBlock, 100);
@@ -1091,11 +1069,11 @@ export default function App() {
       setTimeBonus(0);
     }
 
-    const hs = isSuccess && finalCalculatedScore > bestScore && finalCalculatedScore > 0;
+    const hs = isSuccess && healthRef.current > 0 && finalCalculatedScore > bestScore && finalCalculatedScore > 0;
 
     setIsFlawless(f);
     setIsNewHighScore(hs);
-    setIsFailed(failed);
+    setIsFailed(failed || healthRef.current <= 0); // Consider it visually failed if health <= 0, but verse completes
 
     if (isSuccess && !isAutoPlayRef.current) {
       // Load current leaderboard initially
@@ -1105,7 +1083,7 @@ export default function App() {
         .catch(err => console.log("Leaderboard not ready or fetch failed"));
 
       // If user is already identified, auto-submit their score behind the scenes
-      if (playerName && finalCalculatedScore > 0) {
+      if (playerName && finalCalculatedScore > 0 && healthRef.current > 0) {
         setIsSubmittingScore(true);
         const actualModeName = distractionLevel > 0 ? `${playMode}-dx${distractionLevel}` : playMode;
 
@@ -1190,6 +1168,12 @@ export default function App() {
 
   const handleBlockClick = (block) => {
     if (block.correct || block.error || block.claimedBy) return;
+
+    // Flush speech recognition buffer on ANY block click (manual or voice) to prepare for next block
+    setLiveTranscript("");
+    if (recognitionRef.current) {
+       try { recognitionRef.current.stop(); } catch(e) {}
+    }
 
     if (multiplayerRoomId && socketRef.current && gameState === 'playing') {
        if (multiplayerState?.playMode !== 'square_solo') {
@@ -1284,10 +1268,6 @@ export default function App() {
         } else if (newHealth <= 0) {
           playThunder('heavy');
           triggerLightning('heavy');
-          if (multiplayerRoomId && multiplayerState?.playMode === 'square_solo') {
-             return 0; // Just lose points, keep playing!
-          }
-          endGame();
           return 0;
         }
         return newHealth;
@@ -1398,38 +1378,93 @@ export default function App() {
       if (statusRef.current !== 'playing') return;
 
       let currentTranscript = "";
-      for (let i = event.resultIndex; i < event.results.length; ++i) {
+      let hasFinal = false;
+      // Gather all available active chunks; we aggressively flush below to prevent trailing garbage
+      for (let i = 0; i < event.results.length; ++i) {
         currentTranscript += event.results[i][0].transcript;
+        if (event.results[i].isFinal) hasFinal = true;
       }
       
       const isChinese = version !== 'kjv';
+      setLiveTranscript(currentTranscript);
+
       let normalizedTranscript = "";
       if (isChinese) {
-        normalizedTranscript = currentTranscript.replace(/\s+/g, '').toLowerCase();
+        // Deep string clear: strip absolutely everything except alphanumeric and chinese chars
+        normalizedTranscript = currentTranscript.replace(/[^\u4e00-\u9fa5a-zA-Z0-9]/g, '').toLowerCase();
       } else {
-        // Keep spaces for english but lowercase
-        normalizedTranscript = currentTranscript.replace(/[.,!?]/g, '').toLowerCase();
+        // Keep spaces for english but lowercase and strip punctuation
+        normalizedTranscript = currentTranscript.replace(/[^a-zA-Z0-9\s]/g, '').toLowerCase();
       }
 
       const currIdx = currentSeqIndexRef.current;
       const expectedPhrase = phrasesRef.current[currIdx];
       
-      if (expectedPhrase && currIdx !== lastMatchedIndex) {
-        let matchTarget = expectedPhrase;
-        if (isChinese) {
-           matchTarget = expectedPhrase.substring(0, 3).toLowerCase();
-        } else {
-           // For English, match the first two words if possible, or just the word
-           const words = expectedPhrase.split(/\s+/).filter(Boolean);
-           matchTarget = words.slice(0, 2).join(' ').toLowerCase().replace(/[.,!?]/g, '');
-        }
-        
-        if (normalizedTranscript.includes(matchTarget)) {
+      if (!expectedPhrase) return;
+
+      const checkPhraseMatch = (transcript, phrase, isStrict = false) => {
+         if (isChinese) {
+            const cleanPhrase = phrase.replace(/[^\u4e00-\u9fa5a-zA-Z0-9]/g, '').toLowerCase();
+            if (isStrict) {
+               // Strict mode for wrong blocks: require a larger chunk (up to 5 chars) to prevent false random lightning
+               const requiredLen = Math.min(cleanPhrase.length, 5);
+               return transcript.includes(cleanPhrase.substring(0, requiredLen));
+            }
+            if (cleanPhrase.length <= 3) return transcript.includes(cleanPhrase);
+            for (let i = 0; i <= cleanPhrase.length - 3; i++) {
+               if (transcript.includes(cleanPhrase.substring(i, i + 3))) return true;
+            }
+         } else {
+            const cleanPhrase = phrase.replace(/[^a-zA-Z0-9\s]/g, '').toLowerCase();
+            const words = cleanPhrase.split(/\s+/).filter(Boolean);
+            if (isStrict) {
+               const requiredWords = words.slice(0, Math.min(words.length, 3)).join(' ');
+               return transcript.includes(requiredWords);
+            }
+            if (words.length <= 2) return transcript.includes(cleanPhrase);
+            for (let i = 0; i <= words.length - 2; i++) {
+               if (transcript.includes(words[i] + ' ' + words[i+1])) return true;
+            }
+         }
+         return false;
+      };
+
+      if (currIdx !== lastMatchedIndex) {
+        let matchedRight = false;
+        let matchedWrong = false;
+
+        // Priority 1: Check correct match
+        if (checkPhraseMatch(normalizedTranscript, expectedPhrase)) {
+          matchedRight = true;
           const targetBlock = blocksRef.current.find(b => b.seqIndex === currIdx && !b.error && !b.hidden);
           if (targetBlock && handleBlockClickRef.current) {
              lastMatchedIndex = currIdx;
              handleBlockClickRef.current(targetBlock);
           }
+        }
+
+        // Priority 2: Penalize reading visible wrong blocks
+        if (!matchedRight) {
+           const visibleBlocks = blocksRef.current.filter(b => !b.error && !b.hidden);
+           for (const block of visibleBlocks) {
+              if (block.seqIndex !== currIdx && block.seqIndex !== -99) {
+                 const phraseText = block.isFake ? block.text : phrasesRef.current[block.seqIndex];
+                 // Very careful with wrong block detection: use isStrict = true
+                 if (phraseText && checkPhraseMatch(normalizedTranscript, phraseText, true)) {
+                    matchedWrong = true;
+                    if (handleBlockClickRef.current) {
+                       handleBlockClickRef.current(block);
+                       break;
+                    }
+                 }
+              }
+           }
+        }
+
+        // Garbage flush: If the user paused (hasFinal) and we didn't hit anything, clear the buffer silently
+        if (!matchedRight && !matchedWrong && hasFinal) {
+           setLiveTranscript("");
+           if (recognitionRef.current) recognitionRef.current.stop();
         }
       }
     };
@@ -1469,21 +1504,31 @@ export default function App() {
         <div className="rain-layer mid" />
         <div className="rain-layer front" />
       </div>
-      {lightningActive && (
-        <div key={lightningKey} className={`lightning-flash ${lightningActive === 'heavy' ? 'heavy' : 'active'}`} />
-      )}
 
-      {/* Global Mic Toggle */}
-      <div style={{ position: 'fixed', bottom: '6.5rem', right: '1.5rem', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem', zIndex: 100 }}>
-        {micStatusText && <div className="hud-glass" style={{ padding: '4px 8px', fontSize: '0.8rem', color: '#4ade80', animation: 'pulse 2s infinite' }}>{micStatusText}</div>}
-        <button
-          onClick={(e) => { e.stopPropagation(); setIsMicOn(!isMicOn); }}
-          className="hud-glass"
-          title={t("語音控制開關", "Toggle Voice Control")}
-          style={{ padding: '0.75rem', borderRadius: '50%', color: isMicOn ? '#4ade80' : '#ef4444', backgroundColor: isMicOn ? 'rgba(74, 222, 128, 0.1)' : 'rgba(239, 68, 68, 0.1)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.3s' }}
-        >
-          {isMicOn ? <Mic size={24} /> : <MicOff size={24} />}
-        </button>
+      {/* Global Mic Toggle & Subtitles */}
+      <div style={{ position: 'fixed', bottom: '6.5rem', right: '1.5rem', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.8rem', zIndex: 100 }}>
+        {liveTranscript && isMicOn && gameState === 'playing' && (
+          <div className="hud-glass" style={{ padding: '8px 16px', fontSize: '1rem', color: '#93c5fd', maxWidth: '80vw', textAlign: 'right', wordBreak: 'break-word', border: '1px solid rgba(147, 197, 253, 0.4)', borderRadius: '12px', whiteSpace: 'pre-wrap' }}>
+            <span style={{ fontSize: '0.8rem', color: '#64748b', display: 'block', marginBottom: '2px' }}>麥克風聽見：</span>
+            <span style={{ color: '#fff' }}>"{liveTranscript}"</span>
+          </div>
+        )}
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem' }}>
+          {micStatusText && <div className="hud-glass" style={{ padding: '4px 8px', fontSize: '0.8rem', color: '#4ade80', animation: 'pulse 2s infinite' }}>{micStatusText}</div>}
+          <button
+            onClick={(e) => { 
+              e.stopPropagation(); 
+              const nextMicState = !isMicOn;
+              setIsMicOn(nextMicState);
+              if (nextMicState) setIsMusicPlaying(false);
+            }}
+            className="hud-glass"
+            title={t("語音控制開關", "Toggle Voice Control")}
+            style={{ padding: '0.75rem', borderRadius: '50%', color: isMicOn ? '#4ade80' : '#ef4444', backgroundColor: isMicOn ? 'rgba(74, 222, 128, 0.1)' : 'rgba(239, 68, 68, 0.1)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.3s' }}
+          >
+            {isMicOn ? <Mic size={24} /> : <MicOff size={24} />}
+          </button>
+        </div>
       </div>
 
       {/* Global Music Toggle */}
@@ -2735,22 +2780,28 @@ export default function App() {
             )}
           </div>
 
-          {!isAutoPlay && multiplayerRoomId && (
-            <div style={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: '35vh', minHeight: '180px', zIndex: 10, pointerEvents: 'auto', display: 'flex', flexDirection: 'column' }}>
-               <div className="hud-glass" style={{ flex: 1, padding: '1rem 5vw', overflowY: 'auto', background: 'rgba(15, 23, 42, 0.85)', borderRadius: '16px 16px 0 0', borderTop: '1px solid rgba(255,255,255,0.1)', borderLeft: '1px solid rgba(255,255,255,0.1)', borderRight: '1px solid rgba(255,255,255,0.1)', display: 'flex', flexDirection: 'column', gap: '0.4rem', borderBottom: 'none' }}>
-                  <div style={{ fontSize: 'clamp(1rem, 4vw, 1.4rem)', lineHeight: '1.8', color: '#cbd5e1', wordBreak: 'break-word' }}>
-                    {activePhrases.slice(0, currentSeqIndex).map((phrase, idx) => (
-                      <span key={idx} style={{ color: '#fbbf24', fontWeight: 'bold' }}>{phrase} </span>
-                    ))}
-                    {currentSeqIndex < activePhrases.length && (
-                      <span id="multiplayer-stack-cursor" style={{ display: 'inline-block', color: '#94a3b8', fontWeight: 'bold', padding: '0 0.4rem', border: '2px dashed rgba(251, 191, 36, 0.4)', borderRadius: '6px', margin: '0 0.2rem', background: 'rgba(251, 191, 36, 0.05)', transition: 'all 0.3s' }}>
-                        Next: {activePhrases[currentSeqIndex].replace(/[^\s\.,\?!;:，。？！；：]/g, '〇')}
-                      </span>
-                    )}
-                  </div>
-               </div>
-            </div>
-          )}
+          {!isAutoPlay && playMode.startsWith('square') && (() => {
+            const HUD_PAGE_SIZE = 40;
+            const startIdx = Math.floor(currentSeqIndex / HUD_PAGE_SIZE) * HUD_PAGE_SIZE;
+            const currentPhrasesWindow = activePhrases.slice(startIdx, currentSeqIndex);
+
+            return (
+              <div style={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: '35vh', minHeight: '180px', zIndex: 10, pointerEvents: 'auto', display: 'flex', flexDirection: 'column' }}>
+                 <div className="hud-glass" style={{ flex: 1, padding: '1rem 5vw', overflowY: 'auto', background: 'rgba(15, 23, 42, 0.85)', borderRadius: '16px 16px 0 0', borderTop: '1px solid rgba(255,255,255,0.1)', borderLeft: '1px solid rgba(255,255,255,0.1)', borderRight: '1px solid rgba(255,255,255,0.1)', display: 'flex', flexDirection: 'column', gap: '0.4rem', borderBottom: 'none' }}>
+                    <div style={{ fontSize: 'clamp(1rem, 4vw, 1.4rem)', lineHeight: '1.8', color: '#cbd5e1', wordBreak: 'break-word', alignContent: 'flex-start' }}>
+                      {currentPhrasesWindow.map((phrase, localIdx) => (
+                        <span key={startIdx + localIdx} style={{ color: '#fbbf24', fontWeight: 'bold' }}>{phrase} </span>
+                      ))}
+                      {currentSeqIndex < activePhrases.length && (
+                        <span id="stack-cursor" style={{ display: 'inline-block', color: '#94a3b8', fontWeight: 'bold', padding: '0 0.4rem', border: '2px dashed rgba(251, 191, 36, 0.4)', borderRadius: '6px', margin: '0 0.2rem', background: 'rgba(251, 191, 36, 0.05)', transition: 'all 0.3s' }}>
+                          Next: {activePhrases[currentSeqIndex].replace(/[^\s\.,\?!;:，。？！；：]/g, '〇')}
+                        </span>
+                      )}
+                    </div>
+                 </div>
+              </div>
+            );
+          })()}
 
           {isAutoPlay ? (
             <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '6rem 5vw 2rem' }}>
@@ -2775,7 +2826,7 @@ export default function App() {
               </div>
             </div>
           ) : playMode.startsWith('square') ? (
-            <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: multiplayerRoomId ? '35vh' : 0, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '5rem 0 0 0', pointerEvents: 'none' }}>
+            <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: playMode.startsWith('square') ? '35vh' : 0, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '5rem 0 0 0', pointerEvents: 'none' }}>
               <div style={{ display: 'grid', gridTemplateColumns: `repeat(${distractionLevel <= 1 ? 2 : 3}, minmax(0, 1fr))`, gap: '0.75rem', width: '95%', maxWidth: distractionLevel <= 1 ? '600px' : '900px', pointerEvents: 'auto' }}>
                 {blocks.map(block => {
                   let appliedClasses = 'falling-block-inner';
