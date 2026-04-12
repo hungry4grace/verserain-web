@@ -13,3 +13,5 @@
 /*.booproj
 *~
 .DS_Store
+.vercel
+.env*.local

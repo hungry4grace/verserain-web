@@ -696,7 +696,7 @@ export default function App() {
           window.history.replaceState({}, document.title, window.location.pathname);
           setTimeout(() => {
             const queue = [...foundSet.verses];
-            setCampaignQueue(queue);
+            setCampaignQueue(queue.slice(1));
             setCampaignResults([]);
             setActiveVerse(queue[0]);
             setTimeout(() => startGame(false, queue), 50);
@@ -2253,7 +2253,7 @@ export default function App() {
                             onClick={() => {
                               initAudio();
                               const queue = [...VERSES_DB];
-                              setCampaignQueue(queue);
+                              setCampaignQueue(queue.slice(1));
                               setCampaignResults([]);
                               setActiveVerse(queue[0]);
                               setTimeout(() => startGame(false, queue), 50);
@@ -2270,7 +2270,7 @@ export default function App() {
                             onClick={() => {
                               initAudio();
                               const queue = [...VERSES_DB];
-                              setCampaignQueue(queue);
+                              setCampaignQueue(queue.slice(1));
                               setMainTab('multiplayer');
                               const chars = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
                               let newRoom = '';
