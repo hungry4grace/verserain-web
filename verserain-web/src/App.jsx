@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Play, RotateCcw, Heart, Zap, Trophy, Crown, Star, Home, XCircle, Headphones, Music, VolumeX, Search, Share2, Dices, Mic, MicOff } from 'lucide-react';
+import { Play, RotateCcw, Heart, Zap, Trophy, Crown, Star, Home, XCircle, Headphones, Music, VolumeX, Search, Share2, Dices, Mic, MicOff, Users } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import usePartySocket from 'partysocket/react';
 import PartySocket from 'partysocket';
@@ -684,6 +684,28 @@ export default function App() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const challengeRef = params.get('challenge');
+    const setRef = params.get('set');
+
+    if (setRef) {
+      if (!playerName) {
+        setShowLoginModal('login');
+      } else {
+        const foundSet = activeVerseSets.find(s => s.id === setRef);
+        if (foundSet) {
+          setSelectedSetId(foundSet.id);
+          window.history.replaceState({}, document.title, window.location.pathname);
+          setTimeout(() => {
+            const queue = [...foundSet.verses];
+            setCampaignQueue(queue);
+            setCampaignResults([]);
+            setActiveVerse(queue[0]);
+            setTimeout(() => startGame(false, queue), 50);
+          }, 300);
+          return;
+        }
+      }
+    }
+
     if (challengeRef) {
       if (!playerName) {
         setShowLoginModal('login');
@@ -2175,18 +2197,93 @@ export default function App() {
                     </table>
                   ) : (
                     <>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '1rem', borderBottom: '1px solid #e2e8f0', backgroundColor: '#f8fafc' }}>
-                        <button 
-                          onClick={() => setSelectedSetId(null)}
-                          style={{ background: '#ffffff', border: '1px solid #cbd5e1', padding: '0.4rem 0.8rem', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', color: '#475569', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '5px' }}
-                          onMouseOver={(e) => e.target.style.backgroundColor = '#f1f5f9'}
-                          onMouseOut={(e) => e.target.style.backgroundColor = '#ffffff'}
-                        >
-                          <Home size={14} /> {t("返回目錄", "Back to Menu")}
-                        </button>
-                        <div style={{ display: 'flex', flexDirection: 'column' }}>
-                          <span style={{ fontSize: '0.8rem', color: '#64748b', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{t("目前選擇", "Current Set")}</span>
-                          <span style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#1e293b' }}>{currentSet?.title}</span>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem', borderBottom: '1px solid #e2e8f0', backgroundColor: '#f8fafc', flexWrap: 'wrap', gap: '1rem' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                          <button 
+                            onClick={() => setSelectedSetId(null)}
+                            style={{ background: '#ffffff', border: '1px solid #cbd5e1', padding: '0.4rem 0.8rem', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', color: '#475569', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '5px' }}
+                            onMouseOver={(e) => e.target.style.backgroundColor = '#f1f5f9'}
+                            onMouseOut={(e) => e.target.style.backgroundColor = '#ffffff'}
+                          >
+                            <Home size={14} /> {t("返回目錄", "Back to Menu")}
+                          </button>
+                          <div style={{ display: 'flex', flexDirection: 'column' }}>
+                            <span style={{ fontSize: '0.8rem', color: '#64748b', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{t("目前選擇", "Current Set")}</span>
+                            <span style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#1e293b' }}>{currentSet?.title}</span>
+                          </div>
+                        </div>
+
+                        {/* Top Level Action Bar */}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', borderRight: '1px solid #cbd5e1', paddingRight: '0.5rem', marginRight: '0.5rem' }}>
+                            <select
+                              onChange={(e) => setPlayMode(e.target.value)}
+                              value={playMode}
+                              style={{ padding: '0.4rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.85rem', color: '#334155', backgroundColor: '#fff', fontWeight: 'bold', cursor: 'pointer' }}
+                            >
+                              <option value="square">Square</option>
+                              <option value="rain">Rain</option>
+                            </select>
+                            <select
+                              onChange={(e) => setDistractionLevel(Number(e.target.value))}
+                              value={distractionLevel}
+                              style={{ padding: '0.4rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.85rem', color: '#334155', backgroundColor: '#fff', fontWeight: 'bold', cursor: 'pointer' }}
+                            >
+                              <option value={0}>Lv 0</option>
+                              <option value={1}>Lv 1</option>
+                              <option value={2}>Lv 2</option>
+                              <option value={3}>Lv 3</option>
+                            </select>
+                          </div>
+
+                          <button
+                            onClick={() => {
+                              const link = `${window.location.origin}${window.location.pathname}?set=${encodeURIComponent(currentSet.id)}`;
+                              setQrShareModal({ url: link, reference: currentSet.title });
+                            }}
+                            title={t("分享整組經文連結", "Share the set link")}
+                            style={{ backgroundColor: '#ffffff', color: '#64748b', border: '1px solid #cbd5e1', borderRadius: '6px', width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'all 0.1s' }}
+                            onMouseOver={(e) => { e.currentTarget.style.backgroundColor = '#f1f5f9'; e.currentTarget.style.color = '#3b82f6'; e.currentTarget.style.borderColor = '#3b82f6'; }}
+                            onMouseOut={(e) => { e.currentTarget.style.backgroundColor = '#ffffff'; e.currentTarget.style.color = '#64748b'; e.currentTarget.style.borderColor = '#cbd5e1'; }}
+                          >
+                            <Share2 size={16} />
+                          </button>
+
+                          <button
+                            onClick={() => {
+                              initAudio();
+                              const queue = [...VERSES_DB];
+                              setCampaignQueue(queue);
+                              setCampaignResults([]);
+                              setActiveVerse(queue[0]);
+                              setTimeout(() => startGame(false, queue), 50);
+                            }}
+                            title={t("依序遊玩全部經文", "Play all verses in sequence")}
+                            style={{ backgroundColor: '#10b981', color: 'white', border: 'none', borderRadius: '6px', padding: '0 0.8rem', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'transform 0.1s', fontWeight: 'bold', gap: '5px' }}
+                            onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
+                            onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                          >
+                            <Play size={16} fill="white" /> {t("Play", "Play")}
+                          </button>
+
+                          <button
+                            onClick={() => {
+                              initAudio();
+                              const queue = [...VERSES_DB];
+                              setCampaignQueue(queue);
+                              setMainTab('multiplayer');
+                              const chars = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+                              let newRoom = '';
+                              for(let i=0; i<4; i++) newRoom += chars.charAt(Math.floor(Math.random() * chars.length));
+                              setMultiplayerRoomId(newRoom);
+                            }}
+                            title={t("開房間邀請連線遊玩", "Invite players for the whole set")}
+                            style={{ backgroundColor: '#6366f1', color: 'white', border: 'none', borderRadius: '6px', padding: '0 0.8rem', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'transform 0.1s', fontWeight: 'bold', gap: '5px' }}
+                            onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
+                            onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                          >
+                            <Users size={16} /> {t("Invite", "Invite")}
+                          </button>
                         </div>
                       </div>
                       <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
