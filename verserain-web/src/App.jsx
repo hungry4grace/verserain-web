@@ -8,6 +8,7 @@ import './index.css';
 import { BIBLE_BOOKS } from './bibleDictionary';
 import ReactQuill from 'react-quill-new';
 import 'react-quill-new/dist/quill.snow.css';
+import { PREMIUM_EMAILS } from './premiumEmails';
 
 const quillModules = {
   toolbar: [
@@ -203,7 +204,11 @@ export default function App() {
   const [distractionLevel, setDistractionLevel] = useState(0);
   const [selectedSetId, setSelectedSetId] = useState(null);
 
-  const [isPremium, setIsPremium] = useState(() => localStorage.getItem('verserain_is_premium') === 'true');
+  const [isPremium, setIsPremium] = useState(() => {
+    const storedPremium = localStorage.getItem('verserain_is_premium') === 'true';
+    const storedEmail = localStorage.getItem('verserain_player_email') || "";
+    return storedPremium || PREMIUM_EMAILS.includes(storedEmail.toLowerCase());
+  });
   const [userEmail, setUserEmail] = useState(() => localStorage.getItem('verserain_player_email') || "");
   const [authLoading, setAuthLoading] = useState(false);
   const [authError, setAuthError] = useState("");
@@ -3603,12 +3608,13 @@ export default function App() {
                      const data = await response.json();
                      
                      if (response.ok && data.success) {
+                        const isPrem = data.user.isPremium || PREMIUM_EMAILS.includes((data.user.email || '').toLowerCase());
                         setPlayerName(data.user.name || email.split('@')[0]);
                         setUserEmail(data.user.email);
-                        setIsPremium(data.user.isPremium);
+                        setIsPremium(isPrem);
                         localStorage.setItem('verserain_player_name', data.user.name || email.split('@')[0]);
                         localStorage.setItem('verserain_player_email', data.user.email);
-                        localStorage.setItem('verserain_is_premium', data.user.isPremium ? 'true' : 'false');
+                        localStorage.setItem('verserain_is_premium', isPrem ? 'true' : 'false');
                         setShowLoginModal(null);
                      } else {
                         setAuthError(data.error || "連線失敗 (Connection Error)");
