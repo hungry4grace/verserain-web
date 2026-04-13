@@ -2280,12 +2280,29 @@ export default function App() {
                               setActiveVerse(queue[0]);
                               setTimeout(() => startGame(false, queue), 50);
                             }}
-                            title={t("依序遊玩全部經文", "Play all verses in sequence")}
+                            title={t("依序挑戰全部經文", "Challenge all verses in sequence")}
                             style={{ backgroundColor: '#10b981', color: 'white', border: 'none', borderRadius: '6px', padding: '0 0.8rem', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'transform 0.1s', fontWeight: 'bold', gap: '5px' }}
                             onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
                             onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
                           >
-                            <Play size={16} fill="white" /> {t("Play", "Play")}
+                            <Zap size={16} fill="white" /> {t("挑戰", "Challenge")}
+                          </button>
+
+                          <button
+                            onClick={() => {
+                              initAudio();
+                              const queue = [...VERSES_DB];
+                              setCampaignQueue(queue.slice(1));
+                              setCampaignResults([]);
+                              setActiveVerse(queue[0]);
+                              setTimeout(() => startGame(true, queue), 50);
+                            }}
+                            title={t("自動播放全部經文圖卡與語音", "Auto-play all verses with audio")}
+                            style={{ backgroundColor: '#8b5cf6', color: 'white', border: 'none', borderRadius: '6px', padding: '0 0.8rem', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'transform 0.1s', fontWeight: 'bold', gap: '5px' }}
+                            onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
+                            onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                          >
+                            <Headphones size={16} fill="white" /> {t("播放全部", "Play All")}
                           </button>
 
                           <button
@@ -2382,7 +2399,7 @@ export default function App() {
                                       onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.1)'}
                                       onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
                                     >
-                                      <Play size={16} fill="white" />
+                                      <Zap size={16} fill="white" />
                                     </button>
                                     <button
                                       onClick={(e) => {
