@@ -627,7 +627,7 @@ export default function App() {
            }
            if (msg.state.status === 'intermission' && gameStateRef.current !== 'intermission') {
                setGameState('intermission');
-               setIntermissionCountdown(5);
+               setIntermissionCountdown(0);
                if (timerRef.current) clearInterval(timerRef.current);
            }
            if (msg.state.status === 'finished' && gameStateRef.current !== 'multiplayer_results') {
