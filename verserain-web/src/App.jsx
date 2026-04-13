@@ -611,10 +611,12 @@ export default function App() {
              setTimeLeft(6000); 
              setCurrentSeqIndex(0);
              currentSeqRef.current = 0;
-             // For square_solo: store full ordered verse list so each player can advance independently
+             // For square_solo: store full ordered verse list so each player can advance independently.
+             // campaignQueue from the server already includes all verses starting from verse 0.
              if (msg.state.playMode === 'square_solo') {
-               const firstVerse = { reference: msg.state.verseRef, text: msg.state.verseText, title: 'Multiplayer' };
-               localCampaignListRef.current = [firstVerse, ...(msg.state.campaignQueue || [])];
+               localCampaignListRef.current = (msg.state.campaignQueue && msg.state.campaignQueue.length > 0)
+                 ? msg.state.campaignQueue
+                 : [{ reference: msg.state.verseRef, text: msg.state.verseText, title: 'Multiplayer' }];
                localVerseIndexRef.current = 0;
              }
              // Set a placeholder activeVerse so HUD works
@@ -3054,31 +3056,6 @@ export default function App() {
           )}
 
 
-          {/* Competitor Progress HUD for Solo Mode */}
-          {multiplayerRoomId && multiplayerState?.playMode === 'square_solo' && (
-             <div style={{ position: 'absolute', top: '5rem', left: '1rem', zIndex: 40, display: 'flex', flexDirection: 'column', gap: '0.8rem', pointerEvents: 'none' }}>
-                {Object.values(multiplayerState.players || {}).filter(p => p.id !== myClientId && p.connected).map(p => (
-                   <div key={p.id} style={{ background: 'rgba(15, 23, 42, 0.75)', padding: '0.6rem 1rem', borderRadius: '12px', border: '1px solid rgba(59, 130, 246, 0.3)', display: 'flex', flexDirection: 'column', gap: '0.3rem', backdropFilter: 'blur(4px)' }}>
-                      <div style={{ color: '#93c5fd', fontWeight: 'bold', fontSize: '0.9rem', display: 'flex', justifyContent: 'space-between' }}>
-                         <span>{p.name}</span>
-                         <span style={{ color: '#fbbf24' }}>{p.isFinished ? '✅' : `${p.versesCompleted || 0}/${localCampaignListRef.current.length}`}</span>
-                      </div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: '#cbd5e1', fontSize: '0.9rem', minWidth: '120px' }}>
-                         <span style={{ fontFamily: 'monospace', fontSize: '1rem' }}>{Math.max(0, p.score)} pts</span>
-                         <span style={{ display: 'flex' }}>
-                             {Array.from({ length: 3 }).map((_, i) => (
-                               <Heart key={i} size={12} color={i < p.health ? "#ef4444" : "#475569"} fill={i < p.health ? "#ef4444" : "none"} style={{ marginLeft: '2px' }} />
-                             ))}
-                         </span>
-                      </div>
-                      {/* Mini progress bar */}
-                      <div style={{ width: '100%', height: '4px', background: 'rgba(255,255,255,0.1)', borderRadius: '2px', overflow: 'hidden', marginTop: '2px' }}>
-                         <div style={{ width: `${((p.versesCompleted || 0) / Math.max(1, localCampaignListRef.current.length)) * 100}%`, height: '100%', background: p.isFinished ? '#10b981' : '#3b82f6', transition: 'width 0.3s' }}></div>
-                      </div>
-                   </div>
-                ))}
-             </div>
-          )}
 
           {/* Flying Blocks Animation Layer */}
           {gameState === 'playing' && multiplayerRoomId && flyingBlocks.map(fb => (
