@@ -656,6 +656,9 @@ export default function App() {
                setIntermissionCountdown(0);
                if (timerRef.current) clearInterval(timerRef.current);
            }
+           if (msg.state.status === 'waiting') {
+             squareSoloActiveRef.current = false; // server reset — allow re-init on next game start
+           }
            if (msg.state.status === 'finished' && gameStateRef.current !== 'multiplayer_results') {
              squareSoloActiveRef.current = false;
              setGameState('multiplayer_results');
@@ -3210,10 +3213,11 @@ export default function App() {
             <div style={{ display: 'flex', gap: '1rem', width: '100%', marginTop: 'auto' }}>
               <button 
                 onClick={() => {
-                  setGameState('menu'); 
+                  squareSoloActiveRef.current = false;
+                  setGameState('menu');
                   setMultiplayerRoomId(null);
                   if (socketRef.current) socketRef.current.close();
-                }} 
+                }}
                 style={{ flex: 1, padding: '1rem', background: 'rgba(255,255,255,0.1)', color: '#cbd5e1', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '8px', fontSize: '1.1rem', fontWeight: 'bold', cursor: 'pointer', transition: 'all 0.2s' }}
               >
                 {t("離開對戰", "Leave Match")}
@@ -3222,9 +3226,10 @@ export default function App() {
               {multiplayerState?.host === myClientId && (
                 <button 
                   onClick={() => {
+                    squareSoloActiveRef.current = false;
                     socketRef.current.send(JSON.stringify({ type: 'RESTART_GAME' }));
                     setGameState('menu');
-                  }} 
+                  }}
                   style={{ flex: 1, padding: '1rem', background: '#3b82f6', color: 'white', border: 'none', borderRadius: '8px', fontSize: '1.1rem', fontWeight: 'bold', cursor: 'pointer', transition: 'all 0.2s' }}
                 >
                   {t("回到大廳", "Return to Lobby")}
