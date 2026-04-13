@@ -6,6 +6,19 @@ import PartySocket from 'partysocket';
 import QRCode from 'qrcode';
 import './index.css';
 import { BIBLE_BOOKS } from './bibleDictionary';
+import ReactQuill from 'react-quill-new';
+import 'react-quill-new/dist/quill.snow.css';
+import { PREMIUM_EMAILS } from './premiumEmails';
+
+const quillModules = {
+  toolbar: [
+    [{ 'header': [1, 2, 3, 4, false] }],
+    ['bold', 'italic', 'underline', 'strike', 'blockquote'],
+    [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+    ['link', 'image', 'video'],
+    ['clean']
+  ],
+};
 
 let audioCtx = null;
 
@@ -191,7 +204,11 @@ export default function App() {
   const [distractionLevel, setDistractionLevel] = useState(0);
   const [selectedSetId, setSelectedSetId] = useState(null);
 
-  const [isPremium, setIsPremium] = useState(() => localStorage.getItem('verserain_is_premium') === 'true');
+  const [isPremium, setIsPremium] = useState(() => {
+    const storedPremium = localStorage.getItem('verserain_is_premium') === 'true';
+    const storedEmail = localStorage.getItem('verserain_player_email') || "";
+    return storedPremium || PREMIUM_EMAILS.includes(storedEmail.toLowerCase());
+  });
   const [userEmail, setUserEmail] = useState(() => localStorage.getItem('verserain_player_email') || "");
   const [authLoading, setAuthLoading] = useState(false);
   const [authError, setAuthError] = useState("");
@@ -1660,7 +1677,15 @@ export default function App() {
 
                                 <div style={{ marginBottom: '1rem' }}>
                                     <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '0.5rem', color: '#475569' }}>{t("簡介", "Description")}</label>
-                                    <textarea value={editingCustomSet.description} onChange={e => setEditingCustomSet({...editingCustomSet, description: e.target.value})} style={{ width: '100%', padding: '0.8rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '1rem', minHeight: '80px', resize: 'vertical' }} placeholder={t("描述一下這個題庫的用途...", "Describe this set...")} />
+                                    <div style={{ background: '#fff', color: '#0f172a', borderRadius: '6px', border: '1px solid #cbd5e1', overflow: 'hidden' }}>
+                                        <ReactQuill 
+                                            theme="snow" 
+                                            value={editingCustomSet.description || ''} 
+                                            onChange={content => setEditingCustomSet({...editingCustomSet, description: content})} 
+                                            modules={quillModules}
+                                            placeholder={t("描述一下這個題庫的用途...", "Describe this set...")} 
+                                        />
+                                    </div>
                                 </div>
 
                                 <div style={{ marginBottom: '1rem' }}>
@@ -1871,7 +1896,7 @@ export default function App() {
                                                     }} style={{ background: '#fee2e2', border: '1px solid #fca5a5', padding: '0.4rem 0.8rem', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', color: '#ef4444' }}>{t("刪除", "Delete")}</button>
                                                 </div>
                                                 <h3 style={{ margin: '0 0 0.5rem 0', color: '#1e293b', paddingRight: '120px' }}>{set.title}</h3>
-                                                <p style={{ color: '#64748b', fontSize: '0.9rem', marginBottom: '1rem' }}>{set.description}</p>
+                                                <div style={{ color: '#64748b', fontSize: '0.9rem', marginBottom: '1rem' }} dangerouslySetInnerHTML={{ __html: set.description }} />
                                                 <div style={{ color: '#3b82f6', fontSize: '0.85rem', fontWeight: 'bold' }}>{set.verses.length} {t("節經文", "verses")}</div>
                                             </div>
                                         ))}
@@ -1998,7 +2023,6 @@ export default function App() {
                                style={{ padding: '0.5rem', borderRadius: '4px', border: '1px solid #cbd5e1', flex: 1, backgroundColor: '#fff', fontSize: '1rem', outline: 'none' }}
                             >
                                <option value="square_solo">{t("獨立九宮格 (Solo Square)", "Solo Square")}</option>
-                               <option value="square">{t("共用九宮格 (Shared Square)", "Shared Square")}</option>
                                <option value="rain" disabled>{t("雨滴瀑布 (VerseRain) - 即將推出", "VerseRain - Coming Soon")}</option>
                             </select>
                          </div>
@@ -2192,7 +2216,7 @@ export default function App() {
                           <tr key={i} style={{ borderBottom: '1px solid #e2e8f0', backgroundColor: i % 2 === 0 ? '#ffffff' : '#f8fafc', transition: 'background 0.2s', cursor: 'pointer' }} onClick={() => setSelectedSetId(set.id)} onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#eff6ff'} onMouseOut={(e) => e.currentTarget.style.backgroundColor = i % 2 === 0 ? '#ffffff' : '#f8fafc'}>
                             <td style={{ padding: '1rem', textAlign: 'center', color: '#3b82f6', fontSize: '1.2rem' }}>{customVerseSets.some(c => c.id === set.id) ? '👑' : '📁'}</td>
                             <td style={{ padding: '1rem', fontWeight: 'bold', color: '#1e293b', fontSize: '1.05rem' }}>{set.title}</td>
-                            <td style={{ padding: '1rem', color: '#64748b', fontSize: '0.9rem' }}>{set.description || ""}</td>
+                            <td style={{ padding: '1rem', color: '#64748b', fontSize: '0.9rem' }} dangerouslySetInnerHTML={{ __html: set.description || "" }} />
                             <td style={{ padding: '1rem', textAlign: 'right', color: '#337ab7', fontWeight: 'bold' }}>{set.verses.length}</td>
                           </tr>
                         ))}
@@ -2252,6 +2276,36 @@ export default function App() {
                             <Share2 size={16} />
                           </button>
 
+                          <div style={{ display: 'flex', alignItems: 'center', backgroundColor: '#f1f5f9', borderRadius: '6px', border: '1px solid #cbd5e1', padding: '2px' }}>
+                             <input 
+                                type="number" 
+                                min="1" 
+                                max={VERSES_DB.length} 
+                                value={randomPickCount > VERSES_DB.length ? VERSES_DB.length : randomPickCount} 
+                                onChange={(e) => setRandomPickCount(e.target.value === '' ? '' : Math.min(VERSES_DB.length, Math.max(1, parseInt(e.target.value))))}
+                                style={{ width: '50px', padding: '0 0.4rem', border: 'none', background: 'transparent', outline: 'none', textAlign: 'center', fontSize: '1rem', color: '#334155', fontWeight: 'bold' }}
+                                title={t("選擇隨機題數", "Number of random verses")}
+                             />
+                             <button
+                               onClick={() => {
+                                 initAudio();
+                                 let queue = [...VERSES_DB];
+                                 let actualCount = Math.min(VERSES_DB.length, Math.max(1, parseInt(randomPickCount) || 1));
+                                 queue = queue.sort(() => 0.5 - Math.random()).slice(0, actualCount);
+                                 setCampaignQueue(queue.slice(1));
+                                 setCampaignResults([]);
+                                 setActiveVerse(queue[0]);
+                                 setTimeout(() => startGame(false, queue), 50);
+                               }}
+                               title={t("隨機挑戰所選題數", "Randomly challenge selected number")}
+                               style={{ backgroundColor: '#10b981', color: 'white', border: 'none', borderRadius: '4px', padding: '0 0.8rem', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'transform 0.1s', fontWeight: 'bold', gap: '5px' }}
+                               onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
+                               onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                             >
+                               <Zap size={16} fill="white" /> {t("挑戰", "Challenge")}
+                             </button>
+                          </div>
+
                           <button
                             onClick={() => {
                               initAudio();
@@ -2259,14 +2313,14 @@ export default function App() {
                               setCampaignQueue(queue.slice(1));
                               setCampaignResults([]);
                               setActiveVerse(queue[0]);
-                              setTimeout(() => startGame(false, queue), 50);
+                              setTimeout(() => startGame(true, queue), 50);
                             }}
-                            title={t("依序遊玩全部經文", "Play all verses in sequence")}
-                            style={{ backgroundColor: '#10b981', color: 'white', border: 'none', borderRadius: '6px', padding: '0 0.8rem', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'transform 0.1s', fontWeight: 'bold', gap: '5px' }}
+                            title={t("自動播放全部經文圖卡與語音", "Auto-play all verses with audio")}
+                            style={{ backgroundColor: '#8b5cf6', color: 'white', border: 'none', borderRadius: '6px', padding: '0 0.8rem', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'transform 0.1s', fontWeight: 'bold', gap: '5px' }}
                             onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
                             onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
                           >
-                            <Play size={16} fill="white" /> {t("Play", "Play")}
+                            <Headphones size={16} fill="white" /> {t("播放全部", "Play All")}
                           </button>
 
                           <button
@@ -2363,7 +2417,7 @@ export default function App() {
                                       onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.1)'}
                                       onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
                                     >
-                                      <Play size={16} fill="white" />
+                                      <Zap size={16} fill="white" />
                                     </button>
                                     <button
                                       onClick={(e) => {
@@ -2600,7 +2654,7 @@ export default function App() {
                   const matchingSets = activeVerseSets.filter(s => 
                     s && s.title && (
                       s.title.toLowerCase().includes(query) || 
-                      (s.description && s.description.toLowerCase().includes(query))
+                      (s.description && s.description.replace(/<[^>]+>/g, '').toLowerCase().includes(query))
                     )
                   );
                   // Search in individual verses
@@ -2625,7 +2679,7 @@ export default function App() {
                                 <div style={{ fontSize: '2rem' }}>📁</div>
                                 <div>
                                   <div style={{ fontWeight: 'bold', color: '#1e293b', fontSize: '1.1rem' }}>{set.title}</div>
-                                  <div style={{ color: '#64748b', fontSize: '0.9rem', marginTop: '0.3rem' }}>{set.description}</div>
+                                  <div style={{ color: '#64748b', fontSize: '0.9rem', marginTop: '0.3rem', maxHeight: '4.5em', overflow: 'hidden', textOverflow: 'ellipsis' }} dangerouslySetInnerHTML={{ __html: set.description }} />
                                 </div>
                               </div>
                             ))}
@@ -3554,12 +3608,13 @@ export default function App() {
                      const data = await response.json();
                      
                      if (response.ok && data.success) {
+                        const isPrem = data.user.isPremium || PREMIUM_EMAILS.includes((data.user.email || '').toLowerCase());
                         setPlayerName(data.user.name || email.split('@')[0]);
                         setUserEmail(data.user.email);
-                        setIsPremium(data.user.isPremium);
+                        setIsPremium(isPrem);
                         localStorage.setItem('verserain_player_name', data.user.name || email.split('@')[0]);
                         localStorage.setItem('verserain_player_email', data.user.email);
-                        localStorage.setItem('verserain_is_premium', data.user.isPremium ? 'true' : 'false');
+                        localStorage.setItem('verserain_is_premium', isPrem ? 'true' : 'false');
                         setShowLoginModal(null);
                      } else {
                         setAuthError(data.error || "連線失敗 (Connection Error)");
