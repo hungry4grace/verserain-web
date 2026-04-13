@@ -2018,7 +2018,6 @@ export default function App() {
                                style={{ padding: '0.5rem', borderRadius: '4px', border: '1px solid #cbd5e1', flex: 1, backgroundColor: '#fff', fontSize: '1rem', outline: 'none' }}
                             >
                                <option value="square_solo">{t("獨立九宮格 (Solo Square)", "Solo Square")}</option>
-                               <option value="square">{t("共用九宮格 (Shared Square)", "Shared Square")}</option>
                                <option value="rain" disabled>{t("雨滴瀑布 (VerseRain) - 即將推出", "VerseRain - Coming Soon")}</option>
                             </select>
                          </div>
