@@ -2935,16 +2935,17 @@ export default function App() {
           </div>
 
           {!isAutoPlay && playMode.startsWith('square') && (() => {
-            const HUD_PAGE_SIZE = 40;
-            const startIdx = Math.floor(currentSeqIndex / HUD_PAGE_SIZE) * HUD_PAGE_SIZE;
-            const currentPhrasesWindow = activePhrases.slice(startIdx, currentSeqIndex);
+            // Show only the last few phrases that fit in ~2 lines, auto-clearing when full
+            const MAX_VISIBLE_PHRASES = 6;
+            const visibleStart = Math.max(0, currentSeqIndex - MAX_VISIBLE_PHRASES);
+            const currentPhrasesWindow = activePhrases.slice(visibleStart, currentSeqIndex);
 
             return (
-              <div style={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: '35vh', minHeight: '180px', zIndex: 10, pointerEvents: 'auto', display: 'flex', flexDirection: 'column' }}>
-                 <div className="hud-glass" style={{ flex: 1, padding: '1rem 5vw', overflowY: 'auto', background: 'rgba(15, 23, 42, 0.85)', borderRadius: '16px 16px 0 0', borderTop: '1px solid rgba(255,255,255,0.1)', borderLeft: '1px solid rgba(255,255,255,0.1)', borderRight: '1px solid rgba(255,255,255,0.1)', display: 'flex', flexDirection: 'column', gap: '0.4rem', borderBottom: 'none' }}>
-                    <div style={{ fontSize: 'clamp(1rem, 4vw, 1.4rem)', lineHeight: '1.8', color: '#cbd5e1', wordBreak: 'break-word', alignContent: 'flex-start' }}>
+              <div style={{ position: 'absolute', left: 0, right: 0, bottom: 0, zIndex: 10, pointerEvents: 'auto', display: 'flex', flexDirection: 'column' }}>
+                 <div className="hud-glass" style={{ padding: '0.6rem 5vw', background: 'rgba(15, 23, 42, 0.85)', borderRadius: '16px 16px 0 0', borderTop: '1px solid rgba(255,255,255,0.1)', borderLeft: '1px solid rgba(255,255,255,0.1)', borderRight: '1px solid rgba(255,255,255,0.1)', borderBottom: 'none', maxHeight: 'calc(1.8em * 2 + 1.6rem)', overflow: 'hidden' }}>
+                    <div style={{ fontSize: 'clamp(1rem, 4vw, 1.4rem)', lineHeight: '1.8', color: '#cbd5e1', wordBreak: 'break-word' }}>
                       {currentPhrasesWindow.map((phrase, localIdx) => (
-                        <span key={startIdx + localIdx} style={{ color: '#fbbf24', fontWeight: 'bold' }}>{phrase} </span>
+                        <span key={visibleStart + localIdx} style={{ color: '#fbbf24', fontWeight: 'bold' }}>{phrase} </span>
                       ))}
                       {currentSeqIndex < activePhrases.length && (
                         <span id="stack-cursor" style={{ display: 'inline-block', color: '#94a3b8', fontWeight: 'bold', padding: '0 0.4rem', border: '2px dashed rgba(251, 191, 36, 0.4)', borderRadius: '6px', margin: '0 0.2rem', background: 'rgba(251, 191, 36, 0.05)', transition: 'all 0.3s' }}>
@@ -3041,32 +3042,7 @@ export default function App() {
              </div>
           )}
 
-          {/* Competitor Progress HUD for Solo Mode */}
-          {multiplayerRoomId && multiplayerState?.playMode === 'square_solo' && (
-             <div style={{ position: 'absolute', top: '5rem', left: '1rem', zIndex: 40, display: 'flex', flexDirection: 'column', gap: '0.8rem', pointerEvents: 'none' }}>
-                {Object.values(multiplayerState.players || {}).filter(p => p.id !== myClientId && p.connected).map(p => (
-                   <div key={p.id} style={{ background: 'rgba(15, 23, 42, 0.75)', padding: '0.6rem 1rem', borderRadius: '12px', border: '1px solid rgba(59, 130, 246, 0.3)', display: 'flex', flexDirection: 'column', gap: '0.3rem', backdropFilter: 'blur(4px)' }}>
-                      <div style={{ color: '#93c5fd', fontWeight: 'bold', fontSize: '0.9rem', display: 'flex', justifyContent: 'space-between' }}>
-                         <span>{p.name}</span>
-                         <span style={{ color: '#fbbf24' }}>{p.isFinished ? '✅' : `${p.seqIndex}/${activePhrases.length}`}</span>
-                      </div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: '#cbd5e1', fontSize: '0.9rem', minWidth: '120px' }}>
-                         <span style={{ fontFamily: 'monospace', fontSize: '1rem' }}>{Math.max(0, p.score)} pts</span>
-                         <span style={{ display: 'flex' }}>
-                             {Array.from({ length: 3 }).map((_, i) => (
-                               <Heart key={i} size={12} color={i < p.health ? "#ef4444" : "#475569"} fill={i < p.health ? "#ef4444" : "none"} style={{ marginLeft: '2px' }} />
-                             ))}
-                         </span>
-                      </div>
-                      {/* Mini progress bar */}
-                      <div style={{ width: '100%', height: '4px', background: 'rgba(255,255,255,0.1)', borderRadius: '2px', overflow: 'hidden', marginTop: '2px' }}>
-                         <div style={{ width: `${(p.seqIndex / activePhrases.length) * 100}%`, height: '100%', background: p.isFinished ? '#10b981' : '#3b82f6', transition: 'width 0.3s' }}></div>
-                      </div>
-                   </div>
-                ))}
-             </div>
-          )}
-
+          {/* Competitor Progress HUD for Solo Mode - Hidden to save screen space */}
           {/* Flying Blocks Animation Layer */}
           {gameState === 'playing' && multiplayerRoomId && flyingBlocks.map(fb => (
              <div 
