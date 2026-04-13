@@ -449,6 +449,7 @@ export default function App() {
   const [campaignQueue, setCampaignQueue] = useState(null);
   const localCampaignListRef = useRef([]); // full ordered verse list for square_solo mp
   const localVerseIndexRef = useRef(0);    // which verse this player is currently on
+  const squareSoloActiveRef = useRef(false); // true once square_solo game is initialized; prevents re-init on every broadcast
   const [localNextVerse, setLocalNextVerse] = useState(null); // verse shown during intermission countdown
   const [campaignResults, setCampaignResults] = useState([]);
 
@@ -616,18 +617,19 @@ export default function App() {
         if (msg.type === 'STATE_UPDATE') {
           setMultiplayerState(msg.state);
           
-          if (msg.state.status === 'playing' && gameStateRef.current !== 'playing') {
+          if (msg.state.status === 'playing' && gameStateRef.current !== 'playing' && !squareSoloActiveRef.current) {
              setBlocks(msg.state.blocks);
              setGameState('playing');
              setHealth(3);
              setCombo(0);
              setScore(0);
-             setTimeLeft(6000); 
+             setTimeLeft(6000);
              setCurrentSeqIndex(0);
              currentSeqRef.current = 0;
              // For square_solo: store full ordered verse list so each player can advance independently.
              // campaignQueue from the server already includes all verses starting from verse 0.
              if (msg.state.playMode === 'square_solo') {
+               squareSoloActiveRef.current = true;
                localCampaignListRef.current = (msg.state.campaignQueue && msg.state.campaignQueue.length > 0)
                  ? msg.state.campaignQueue
                  : [{ reference: msg.state.verseRef, text: msg.state.verseText, title: 'Multiplayer' }];
@@ -655,6 +657,7 @@ export default function App() {
                if (timerRef.current) clearInterval(timerRef.current);
            }
            if (msg.state.status === 'finished' && gameStateRef.current !== 'multiplayer_results') {
+             squareSoloActiveRef.current = false;
              setGameState('multiplayer_results');
              if (timerRef.current) clearInterval(timerRef.current);
           }
@@ -720,6 +723,7 @@ export default function App() {
       socket.removeEventListener('message', handleMessage);
       socket.close();
       socketRef.current = null;
+      squareSoloActiveRef.current = false;
     };
   }, [multiplayerRoomId, playerName, triggerLightning]);
 
