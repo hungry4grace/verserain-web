@@ -2914,34 +2914,18 @@ export default function App() {
                     </div>
                  </div>
                  
-                 {Object.values(multiplayerState.players).find(p => p.id !== myClientId) && (() => {
-                    const opp = Object.values(multiplayerState.players).find(p => p.id !== myClientId);
-                    return (
-                       <div className="hud-glass" style={{ padding: '0.3rem 0.8rem', display: 'flex', alignItems: 'center', gap: '1rem', minHeight: '36px', border: '1px solid rgba(248, 113, 113, 0.3)' }}>
-                          <div style={{ color: '#fca5a5', fontSize: '0.8rem', fontWeight: 'bold', marginRight: '-0.3rem', maxWidth: '80px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{opp.name}</div>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.1rem', color: '#f87171', opacity: 0.8 }}>
-                            {[...Array(3)].map((_, i) => (
-                              <Heart key={i} size={14} fill={i < (opp.health || 0) ? '#f87171' : 'transparent'} strokeWidth={i < (opp.health || 0) ? 0 : 2} />
-                            ))}
-                          </div>
-                          <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: '#fecaca', fontFamily: 'monospace' }}>
-                            {String(opp.score || 0).padStart(6, '0')}
-                          </div>
-                       </div>
-                    );
-                 })()}
               </>
             )}
           </div>
 
           {!isAutoPlay && playMode.startsWith('square') && (() => {
-            const HUD_PAGE_SIZE = 40;
+            const HUD_PAGE_SIZE = 6;
             const startIdx = Math.floor(currentSeqIndex / HUD_PAGE_SIZE) * HUD_PAGE_SIZE;
             const currentPhrasesWindow = activePhrases.slice(startIdx, currentSeqIndex);
 
             return (
-              <div style={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: '35vh', minHeight: '180px', zIndex: 10, pointerEvents: 'auto', display: 'flex', flexDirection: 'column' }}>
-                 <div className="hud-glass" style={{ flex: 1, padding: '1rem 5vw', overflowY: 'auto', background: 'rgba(15, 23, 42, 0.85)', borderRadius: '16px 16px 0 0', borderTop: '1px solid rgba(255,255,255,0.1)', borderLeft: '1px solid rgba(255,255,255,0.1)', borderRight: '1px solid rgba(255,255,255,0.1)', display: 'flex', flexDirection: 'column', gap: '0.4rem', borderBottom: 'none' }}>
+              <div style={{ position: 'absolute', left: 0, right: 0, bottom: 0, zIndex: 10, pointerEvents: 'auto', display: 'flex', flexDirection: 'column' }}>
+                 <div className="hud-glass" style={{ padding: '0.5rem 5vw', background: 'rgba(15, 23, 42, 0.85)', borderRadius: '16px 16px 0 0', borderTop: '1px solid rgba(255,255,255,0.1)', borderLeft: '1px solid rgba(255,255,255,0.1)', borderRight: '1px solid rgba(255,255,255,0.1)', borderBottom: 'none' }}>
                     <div style={{ fontSize: 'clamp(1rem, 4vw, 1.4rem)', lineHeight: '1.8', color: '#cbd5e1', wordBreak: 'break-word', alignContent: 'flex-start' }}>
                       {currentPhrasesWindow.map((phrase, localIdx) => (
                         <span key={startIdx + localIdx} style={{ color: '#fbbf24', fontWeight: 'bold' }}>{phrase} </span>
