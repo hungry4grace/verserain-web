@@ -6,6 +6,18 @@ import PartySocket from 'partysocket';
 import QRCode from 'qrcode';
 import './index.css';
 import { BIBLE_BOOKS } from './bibleDictionary';
+import ReactQuill from 'react-quill';
+import 'react-quill/dist/quill.snow.css';
+
+const quillModules = {
+  toolbar: [
+    [{ 'header': [1, 2, 3, 4, false] }],
+    ['bold', 'italic', 'underline', 'strike', 'blockquote'],
+    [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+    ['link', 'image', 'video'],
+    ['clean']
+  ],
+};
 
 let audioCtx = null;
 
@@ -1660,7 +1672,15 @@ export default function App() {
 
                                 <div style={{ marginBottom: '1rem' }}>
                                     <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '0.5rem', color: '#475569' }}>{t("簡介", "Description")}</label>
-                                    <textarea value={editingCustomSet.description} onChange={e => setEditingCustomSet({...editingCustomSet, description: e.target.value})} style={{ width: '100%', padding: '0.8rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '1rem', minHeight: '80px', resize: 'vertical' }} placeholder={t("描述一下這個題庫的用途...", "Describe this set...")} />
+                                    <div style={{ background: '#fff', borderRadius: '6px', border: '1px solid #cbd5e1', overflow: 'hidden' }}>
+                                        <ReactQuill 
+                                            theme="snow" 
+                                            value={editingCustomSet.description || ''} 
+                                            onChange={content => setEditingCustomSet({...editingCustomSet, description: content})} 
+                                            modules={quillModules}
+                                            placeholder={t("描述一下這個題庫的用途...", "Describe this set...")} 
+                                        />
+                                    </div>
                                 </div>
 
                                 <div style={{ marginBottom: '1rem' }}>
@@ -1871,7 +1891,7 @@ export default function App() {
                                                     }} style={{ background: '#fee2e2', border: '1px solid #fca5a5', padding: '0.4rem 0.8rem', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', color: '#ef4444' }}>{t("刪除", "Delete")}</button>
                                                 </div>
                                                 <h3 style={{ margin: '0 0 0.5rem 0', color: '#1e293b', paddingRight: '120px' }}>{set.title}</h3>
-                                                <p style={{ color: '#64748b', fontSize: '0.9rem', marginBottom: '1rem' }}>{set.description}</p>
+                                                <div style={{ color: '#64748b', fontSize: '0.9rem', marginBottom: '1rem' }} dangerouslySetInnerHTML={{ __html: set.description }} />
                                                 <div style={{ color: '#3b82f6', fontSize: '0.85rem', fontWeight: 'bold' }}>{set.verses.length} {t("節經文", "verses")}</div>
                                             </div>
                                         ))}
@@ -2192,7 +2212,7 @@ export default function App() {
                           <tr key={i} style={{ borderBottom: '1px solid #e2e8f0', backgroundColor: i % 2 === 0 ? '#ffffff' : '#f8fafc', transition: 'background 0.2s', cursor: 'pointer' }} onClick={() => setSelectedSetId(set.id)} onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#eff6ff'} onMouseOut={(e) => e.currentTarget.style.backgroundColor = i % 2 === 0 ? '#ffffff' : '#f8fafc'}>
                             <td style={{ padding: '1rem', textAlign: 'center', color: '#3b82f6', fontSize: '1.2rem' }}>{customVerseSets.some(c => c.id === set.id) ? '👑' : '📁'}</td>
                             <td style={{ padding: '1rem', fontWeight: 'bold', color: '#1e293b', fontSize: '1.05rem' }}>{set.title}</td>
-                            <td style={{ padding: '1rem', color: '#64748b', fontSize: '0.9rem' }}>{set.description || ""}</td>
+                            <td style={{ padding: '1rem', color: '#64748b', fontSize: '0.9rem' }} dangerouslySetInnerHTML={{ __html: set.description || "" }} />
                             <td style={{ padding: '1rem', textAlign: 'right', color: '#337ab7', fontWeight: 'bold' }}>{set.verses.length}</td>
                           </tr>
                         ))}
@@ -2600,7 +2620,7 @@ export default function App() {
                   const matchingSets = activeVerseSets.filter(s => 
                     s && s.title && (
                       s.title.toLowerCase().includes(query) || 
-                      (s.description && s.description.toLowerCase().includes(query))
+                      (s.description && s.description.replace(/<[^>]+>/g, '').toLowerCase().includes(query))
                     )
                   );
                   // Search in individual verses
@@ -2625,7 +2645,7 @@ export default function App() {
                                 <div style={{ fontSize: '2rem' }}>📁</div>
                                 <div>
                                   <div style={{ fontWeight: 'bold', color: '#1e293b', fontSize: '1.1rem' }}>{set.title}</div>
-                                  <div style={{ color: '#64748b', fontSize: '0.9rem', marginTop: '0.3rem' }}>{set.description}</div>
+                                  <div style={{ color: '#64748b', fontSize: '0.9rem', marginTop: '0.3rem', maxHeight: '4.5em', overflow: 'hidden', textOverflow: 'ellipsis' }} dangerouslySetInnerHTML={{ __html: set.description }} />
                                 </div>
                               </div>
                             ))}
