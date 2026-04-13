@@ -167,12 +167,13 @@ export default class Server {
           this.state.campaignResults = [];
           
           // Reset scores, health, and readiness
-          Object.values(this.state.players).forEach(p => { 
-             p.score = 0; 
+          Object.values(this.state.players).forEach(p => {
+             p.score = 0;
              p.health = 3;
-             p.isReady = false; 
+             p.isReady = false;
              p.isFinished = false;
              p.seqIndex = 0;
+             p.versesCompleted = 0;
           });
           
           this.broadcastState();
@@ -336,29 +337,36 @@ export default class Server {
           }
       }
 
-      if (data.type === 'PLAYER_FINISHED_ROUND' && this.state.status === 'playing' && this.state.playMode === 'square_solo') {
+      // Player finished one verse — record score and let them keep going on their own
+      if (data.type === 'PLAYER_FINISHED_VERSE' && this.state.status === 'playing' && this.state.playMode === 'square_solo') {
           if (this.state.players[sender.id]) {
-              console.log(`[PARTY] Player ${sender.id} finished round locally`);
+              const { verseRef, score, verseIndex } = data;
+              console.log(`[PARTY] Player ${this.state.players[sender.id].name} finished verse ${verseIndex} (${verseRef}) score=${score}`);
+              this.state.players[sender.id].versesCompleted = (this.state.players[sender.id].versesCompleted || 0) + 1;
+
+              if (!this.state.campaignResults) this.state.campaignResults = [];
+              const existing = this.state.campaignResults.find(r => r.verseIndex === verseIndex);
+              if (existing) {
+                  existing.scores[sender.id] = score;
+              } else {
+                  this.state.campaignResults.push({ verseRef, verseIndex, scores: { [sender.id]: score } });
+                  this.state.campaignResults.sort((a, b) => a.verseIndex - b.verseIndex);
+              }
+              this.broadcastState();
+          }
+      }
+
+      // Player finished ALL verses — when everyone is done, end the game
+      if (data.type === 'PLAYER_FINISHED_ALL' && this.state.status === 'playing' && this.state.playMode === 'square_solo') {
+          if (this.state.players[sender.id]) {
+              console.log(`[PARTY] Player ${this.state.players[sender.id].name} finished ALL verses`);
               this.state.players[sender.id].isFinished = true;
-              
-              // Check if ALL alive connected players are finished
-              const activePlayers = Object.values(this.state.players).filter(p => p.connected);
-              const allFinished = activePlayers.length > 0 && activePlayers.every(p => p.isFinished);
-              
+
+              const connectedPlayers = Object.values(this.state.players).filter(p => p.connected);
+              const allFinished = connectedPlayers.length > 0 && connectedPlayers.every(p => p.isFinished);
               if (allFinished) {
-                  console.log(`[PARTY] All players finished Solo Round! Round over!`);
-                  if (!this.state.campaignResults) this.state.campaignResults = [];
-                  this.state.campaignResults.push({
-                      verseRef: this.state.verseRef,
-                      scores: Object.fromEntries(Object.values(this.state.players).map(p => [p.id, p.score]))
-                  });
-                  
-                  if (this.state.campaignQueue && this.state.campaignQueue.length > 1) {
-                      this.state.campaignQueue.shift();
-                      this.state.status = 'intermission';
-                  } else {
-                      this.state.status = 'finished';
-                  }
+                  console.log(`[PARTY] All players finished all verses! Game over.`);
+                  this.state.status = 'finished';
               }
               this.broadcastState();
           }
@@ -380,6 +388,7 @@ export default class Server {
           p.health = 3;
           p.isFinished = false;
           p.seqIndex = 0;
+          p.versesCompleted = 0;
         });
         this.broadcastState();
       }

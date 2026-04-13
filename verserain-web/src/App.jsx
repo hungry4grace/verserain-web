@@ -447,6 +447,8 @@ export default function App() {
   const [timeBonus, setTimeBonus] = useState(0);
   const [pureBaseScore, setPureBaseScore] = useState(0);
   const [campaignQueue, setCampaignQueue] = useState(null);
+  const localCampaignListRef = useRef([]); // full ordered verse list for square_solo mp
+  const localVerseIndexRef = useRef(0);    // which verse this player is currently on
   const [campaignResults, setCampaignResults] = useState([]);
 
   const [lightningActive, setLightningActive] = useState(null);
@@ -609,6 +611,12 @@ export default function App() {
              setTimeLeft(6000); 
              setCurrentSeqIndex(0);
              currentSeqRef.current = 0;
+             // For square_solo: store full ordered verse list so each player can advance independently
+             if (msg.state.playMode === 'square_solo') {
+               const firstVerse = { reference: msg.state.verseRef, text: msg.state.verseText, title: 'Multiplayer' };
+               localCampaignListRef.current = [firstVerse, ...(msg.state.campaignQueue || [])];
+               localVerseIndexRef.current = 0;
+             }
              // Set a placeholder activeVerse so HUD works
               const fakeVerse = { reference: msg.state.verseRef, title: "Multiplayer", text: msg.state.verseText || msg.state.blocks.filter(b=>!b.isFake).map(b=>b.text).join('') };
               setActiveVerse(fakeVerse);
@@ -1174,12 +1182,40 @@ export default function App() {
   };
 
   useEffect(() => {
-    if (currentSeqIndex >= activePhrases.length && gameState === 'playing') {
+    if (currentSeqIndex >= activePhrases.length && activePhrases.length > 0 && gameState === 'playing') {
       if (multiplayerRoomId) {
          if (multiplayerState?.playMode === 'square_solo') {
-            socketRef.current.send(JSON.stringify({ type: 'PLAYER_FINISHED_ROUND' }));
+            // Report this verse's score to server (server accumulates campaign results)
+            if (socketRef.current) {
+               socketRef.current.send(JSON.stringify({
+                  type: 'PLAYER_FINISHED_VERSE',
+                  verseRef: activeVerse.reference,
+                  score: scoreRef.current,
+                  verseIndex: localVerseIndexRef.current
+               }));
+            }
+            const nextIndex = localVerseIndexRef.current + 1;
+            localVerseIndexRef.current = nextIndex;
+            if (nextIndex < localCampaignListRef.current.length) {
+               // Immediately start the next verse without waiting for anyone
+               const nextVerse = localCampaignListRef.current[nextIndex];
+               const verseObj = { reference: nextVerse.reference, text: nextVerse.text, title: 'Multiplayer' };
+               setActiveVerse(verseObj);
+               setCurrentSeqIndex(0);
+               currentSeqRef.current = 0;
+               setScore(0);
+               setCombo(0);
+               setHealth(3);
+               setTimeLeft(6000);
+               initSquareBlocks(false, null, verseObj);
+            } else {
+               // All verses done — tell server, wait for others to finish too
+               if (socketRef.current) {
+                  socketRef.current.send(JSON.stringify({ type: 'PLAYER_FINISHED_ALL' }));
+               }
+            }
          }
-         return; // In shared multiplayer, server dictates end. In solo, we just emitted that we are finished and now wait.
+         return;
       } else {
          endGame();
       }
@@ -3032,7 +3068,7 @@ export default function App() {
                    <div key={p.id} style={{ background: 'rgba(15, 23, 42, 0.75)', padding: '0.6rem 1rem', borderRadius: '12px', border: '1px solid rgba(59, 130, 246, 0.3)', display: 'flex', flexDirection: 'column', gap: '0.3rem', backdropFilter: 'blur(4px)' }}>
                       <div style={{ color: '#93c5fd', fontWeight: 'bold', fontSize: '0.9rem', display: 'flex', justifyContent: 'space-between' }}>
                          <span>{p.name}</span>
-                         <span style={{ color: '#fbbf24' }}>{p.isFinished ? '✅' : `${p.seqIndex}/${activePhrases.length}`}</span>
+                         <span style={{ color: '#fbbf24' }}>{p.isFinished ? '✅' : `${p.versesCompleted || 0}/${localCampaignListRef.current.length}`}</span>
                       </div>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: '#cbd5e1', fontSize: '0.9rem', minWidth: '120px' }}>
                          <span style={{ fontFamily: 'monospace', fontSize: '1rem' }}>{Math.max(0, p.score)} pts</span>
@@ -3044,7 +3080,7 @@ export default function App() {
                       </div>
                       {/* Mini progress bar */}
                       <div style={{ width: '100%', height: '4px', background: 'rgba(255,255,255,0.1)', borderRadius: '2px', overflow: 'hidden', marginTop: '2px' }}>
-                         <div style={{ width: `${(p.seqIndex / activePhrases.length) * 100}%`, height: '100%', background: p.isFinished ? '#10b981' : '#3b82f6', transition: 'width 0.3s' }}></div>
+                         <div style={{ width: `${((p.versesCompleted || 0) / Math.max(1, localCampaignListRef.current.length)) * 100}%`, height: '100%', background: p.isFinished ? '#10b981' : '#3b82f6', transition: 'width 0.3s' }}></div>
                       </div>
                    </div>
                 ))}
