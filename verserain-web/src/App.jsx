@@ -3053,13 +3053,6 @@ export default function App() {
             </div>
           )}
 
-          {/* Waiting for others overlay for solo mode */}
-          {multiplayerRoomId && multiplayerState?.playMode === 'square_solo' && multiplayerState?.players?.[myClientId]?.isFinished && (
-             <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.8)', zIndex: 100, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
-                <h2 style={{ color: '#34d399', fontSize: '2.5rem', marginBottom: '1rem', animation: 'flashSuccess 1s ease-out' }}>{t("完成本回合！", "Round Finished!")}</h2>
-                <div style={{ color: '#cbd5e1', fontSize: '1.2rem', animation: 'bounce 2s infinite' }}>{t("等待其他玩家完成...", "Waiting for others to finish...")}</div>
-             </div>
-          )}
 
           {/* Competitor Progress HUD for Solo Mode */}
           {multiplayerRoomId && multiplayerState?.playMode === 'square_solo' && (
