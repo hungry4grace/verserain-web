@@ -205,3 +205,8 @@ body {
   animation: flyToStack 0.5s cubic-bezier(0.25, 1, 0.5, 1) forwards !important;
   pointer-events: none;
 }
+
+/* ReactQuill overrides */
+.ql-editor {
+  font-size: 20px !important;
+}
