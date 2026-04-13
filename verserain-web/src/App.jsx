@@ -2271,22 +2271,35 @@ export default function App() {
                             <Share2 size={16} />
                           </button>
 
-                          <button
-                            onClick={() => {
-                              initAudio();
-                              const queue = [...VERSES_DB];
-                              setCampaignQueue(queue.slice(1));
-                              setCampaignResults([]);
-                              setActiveVerse(queue[0]);
-                              setTimeout(() => startGame(false, queue), 50);
-                            }}
-                            title={t("依序挑戰全部經文", "Challenge all verses in sequence")}
-                            style={{ backgroundColor: '#10b981', color: 'white', border: 'none', borderRadius: '6px', padding: '0 0.8rem', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'transform 0.1s', fontWeight: 'bold', gap: '5px' }}
-                            onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
-                            onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
-                          >
-                            <Zap size={16} fill="white" /> {t("挑戰", "Challenge")}
-                          </button>
+                          <div style={{ display: 'flex', alignItems: 'center', backgroundColor: '#f1f5f9', borderRadius: '6px', border: '1px solid #cbd5e1', padding: '2px' }}>
+                             <input 
+                                type="number" 
+                                min="1" 
+                                max={VERSES_DB.length} 
+                                value={randomPickCount > VERSES_DB.length ? VERSES_DB.length : randomPickCount} 
+                                onChange={(e) => setRandomPickCount(e.target.value === '' ? '' : Math.min(VERSES_DB.length, Math.max(1, parseInt(e.target.value))))}
+                                style={{ width: '50px', padding: '0 0.4rem', border: 'none', background: 'transparent', outline: 'none', textAlign: 'center', fontSize: '1rem', color: '#334155', fontWeight: 'bold' }}
+                                title={t("選擇隨機題數", "Number of random verses")}
+                             />
+                             <button
+                               onClick={() => {
+                                 initAudio();
+                                 let queue = [...VERSES_DB];
+                                 let actualCount = Math.min(VERSES_DB.length, Math.max(1, parseInt(randomPickCount) || 1));
+                                 queue = queue.sort(() => 0.5 - Math.random()).slice(0, actualCount);
+                                 setCampaignQueue(queue.slice(1));
+                                 setCampaignResults([]);
+                                 setActiveVerse(queue[0]);
+                                 setTimeout(() => startGame(false, queue), 50);
+                               }}
+                               title={t("隨機挑戰所選題數", "Randomly challenge selected number")}
+                               style={{ backgroundColor: '#10b981', color: 'white', border: 'none', borderRadius: '4px', padding: '0 0.8rem', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'transform 0.1s', fontWeight: 'bold', gap: '5px' }}
+                               onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
+                               onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                             >
+                               <Zap size={16} fill="white" /> {t("挑戰", "Challenge")}
+                             </button>
+                          </div>
 
                           <button
                             onClick={() => {
