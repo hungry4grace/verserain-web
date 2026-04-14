@@ -3430,18 +3430,63 @@ export default function App() {
                   ))}
                 </div>
               </div>
-              <button
-                onClick={() => startGame()}
-                className="play-btn"
-                style={{
-                  width: '100%', maxWidth: '400px', background: '#3b82f6', color: 'white', border: 'none', padding: 'clamp(0.8rem, 2vh, 1.2rem)',
-                  fontSize: 'clamp(1.1rem, 2.5vh, 1.3rem)', fontWeight: 'bold', borderRadius: '12px', cursor: 'pointer',
-                  display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '0.75rem',
-                  boxShadow: '0 0 15px rgba(59, 130, 246, 0.5)', transition: 'all 0.2s', margin: '0 auto', flexShrink: 0
-                }}
-              >
-                <RotateCcw size={24} /> {t("再玩一次", "Play Again")}
-              </button>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', justifyContent: 'center' }}>
+                <button
+                  onClick={() => startGame()}
+                  className="play-btn"
+                  style={{
+                    flex: '1 1 200px', maxWidth: '400px', background: '#3b82f6', color: 'white', border: 'none', padding: 'clamp(0.8rem, 2vh, 1.2rem)',
+                    fontSize: 'clamp(1.1rem, 2.5vh, 1.3rem)', fontWeight: 'bold', borderRadius: '12px', cursor: 'pointer',
+                    display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '0.75rem',
+                    boxShadow: '0 0 15px rgba(59, 130, 246, 0.5)', transition: 'all 0.2s', flexShrink: 0
+                  }}
+                >
+                  <RotateCcw size={24} /> {t("再玩一次", "Play Again")}
+                </button>
+                {campaignQueue !== null ? (
+                  campaignQueue.length > 0 ? (
+                    <button
+                      onClick={() => {
+                        setActiveVerse(campaignQueue[0]);
+                        setCampaignQueue(campaignQueue.slice(1));
+                        setTimeout(startGame, 50);
+                      }}
+                      className="play-btn"
+                      style={{
+                        flex: '1 1 200px', maxWidth: '400px', background: '#64748b', color: 'white', border: 'none', padding: 'clamp(0.8rem, 2vh, 1.2rem)',
+                        fontSize: 'clamp(1.1rem, 2.5vh, 1.3rem)', fontWeight: 'bold', borderRadius: '12px', cursor: 'pointer',
+                        display: 'inline-flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s'
+                      }}
+                    >
+                      {t("跳過", "Skip")}
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => setGameState('campaign-results')}
+                      className="play-btn"
+                      style={{
+                        flex: '1 1 200px', maxWidth: '400px', background: '#8b5cf6', color: 'white', border: 'none', padding: 'clamp(0.8rem, 2vh, 1.2rem)',
+                        fontSize: 'clamp(1.1rem, 2.5vh, 1.3rem)', fontWeight: 'bold', borderRadius: '12px', cursor: 'pointer',
+                        display: 'inline-flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s'
+                      }}
+                    >
+                      {t("查看成績", "View Results")}
+                    </button>
+                  )
+                ) : (
+                  <button
+                    onClick={() => setGameState('menu')}
+                    className="play-btn"
+                    style={{
+                        flex: '1 1 200px', maxWidth: '400px', background: '#475569', color: 'white', border: 'none', padding: 'clamp(0.8rem, 2vh, 1.2rem)',
+                        fontSize: 'clamp(1.1rem, 2.5vh, 1.3rem)', fontWeight: 'bold', borderRadius: '12px', cursor: 'pointer',
+                        display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', transition: 'all 0.2s'
+                    }}
+                  >
+                    <Home size={20} /> {t("放棄", "Give Up")}
+                  </button>
+                )}
+              </div>
             </div>
           ) : (
             <div className="hud-glass" style={{ padding: 'clamp(1.5rem, 4vw, 3rem)', textAlign: 'center', width: '90%', maxWidth: '800px', maxHeight: '95dvh', display: 'flex', flexDirection: 'column', justifyContent: 'center', animation: isNewHighScore || isFlawless ? 'flashSuccess 1s ease-out' : 'none' }}>
@@ -3601,7 +3646,10 @@ export default function App() {
                   )
                 ) : (
                   <button
-                    onClick={() => setGameState('menu')}
+                    onClick={() => {
+                      setGameState('menu');
+                      setCampaignQueue(null);
+                    }}
                     className="play-btn"
                     style={{
                       width: '100%', maxWidth: '300px', background: '#3b82f6', color: 'white', border: 'none', padding: 'clamp(0.8rem, 2vh, 1rem)',
@@ -3640,7 +3688,10 @@ export default function App() {
             </div>
 
             <button
-              onClick={() => setGameState('menu')}
+              onClick={() => {
+                 setGameState('menu');
+                 setCampaignQueue(null);
+              }}
               className="play-btn"
               style={{
                 background: '#3b82f6', color: 'white', border: 'none', padding: '1rem',
