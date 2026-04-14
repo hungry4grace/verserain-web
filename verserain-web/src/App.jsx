@@ -210,6 +210,8 @@ export default function App() {
     return storedPremium || PREMIUM_EMAILS.includes(storedEmail.toLowerCase());
   });
   const [userEmail, setUserEmail] = useState(() => localStorage.getItem('verserain_player_email') || "");
+  const isAdmin = ['samhsiung@gmail.com', 'davidhwang1125@gmail.com', 'hsiungsam@gmail.com'].includes(userEmail.toLowerCase());
+  
   const [authLoading, setAuthLoading] = useState(false);
   const [authError, setAuthError] = useState("");
   const [customVerseSets, setCustomVerseSets] = useState(() => {
@@ -1944,7 +1946,11 @@ export default function App() {
                                         
                                         let updatedSets;
                                         if(editingCustomSet.id) {
-                                            updatedSets = customVerseSets.map(s => s.id === setObj.id ? setObj : s);
+                                            if (customVerseSets.some(s => s.id === setObj.id)) {
+                                                updatedSets = customVerseSets.map(s => s.id === setObj.id ? setObj : s);
+                                            } else {
+                                                updatedSets = [setObj, ...customVerseSets];
+                                            }
                                         } else {
                                             updatedSets = [setObj, ...customVerseSets];
                                         }
@@ -2335,9 +2341,31 @@ export default function App() {
                         {activeVerseSets.map((set, i) => (
                           <tr key={i} style={{ borderBottom: '1px solid #e2e8f0', backgroundColor: i % 2 === 0 ? '#ffffff' : '#f8fafc', transition: 'background 0.2s', cursor: 'pointer' }} onClick={() => setSelectedSetId(set.id)} onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#eff6ff'} onMouseOut={(e) => e.currentTarget.style.backgroundColor = i % 2 === 0 ? '#ffffff' : '#f8fafc'}>
                             <td style={{ padding: '1rem', textAlign: 'center', color: '#3b82f6', fontSize: '1.2rem' }}>{customVerseSets.some(c => c.id === set.id) ? '👑' : '📁'}</td>
-                            <td style={{ padding: '1rem', fontWeight: 'bold', color: '#1e293b', fontSize: '1.05rem' }}>{set.title}</td>
+                            <td style={{ padding: '1rem', fontWeight: 'bold', color: '#1e293b', fontSize: '1.05rem' }}>
+                               <span>{set.title}</span>
+                               {isAdmin && String(set.id).startsWith("custom-") && !customVerseSets.some(c => c.id === set.id) && (
+                                  <span style={{ marginLeft: '1rem', display: 'inline-flex', gap: '0.5rem' }}>
+                                     <button onClick={(e) => {
+                                         e.stopPropagation();
+                                         setEditingCustomSet({...set, isPublished: true});
+                                         setMainTab('custom_verses');
+                                     }} style={{ background: '#f1f5f9', border: '1px solid #cbd5e1', padding: '0.2rem 0.5rem', borderRadius: '4px', cursor: 'pointer', fontSize: '0.8rem', color: '#475569' }}>Admin 編輯</button>
+                                     <button onClick={(e) => {
+                                         e.stopPropagation();
+                                         if (window.confirm("Admin: 確定要從全域資料庫強制刪除這份經文組？")) {
+                                             fetch("https://verserain-party.hungry4grace.partykit.dev/parties/main/global-auth-db/custom-sets", {
+                                                 method: "DELETE",
+                                                 headers: { "Content-Type": "application/json" },
+                                                 body: JSON.stringify({ id: set.id })
+                                             }).catch(e => console.error(e));
+                                             setPublishedVerseSets(prev => prev.filter(p => p.id !== set.id));
+                                         }
+                                     }} style={{ background: '#fee2e2', border: '1px solid #fca5a5', color: '#ef4444', padding: '0.2rem 0.5rem', borderRadius: '4px', cursor: 'pointer', fontSize: '0.8rem' }}>Admin 刪除</button>
+                                  </span>
+                               )}
+                            </td>
                             <td style={{ padding: '1rem', color: '#64748b', fontSize: '0.9rem' }} dangerouslySetInnerHTML={{ __html: set.description || "" }} />
-                            <td style={{ padding: '1rem', textAlign: 'right', color: '#337ab7', fontWeight: 'bold' }}>{set.verses.length}</td>
+                            <td style={{ padding: '1rem', textAlign: 'right', color: '#337ab7', fontWeight: 'bold' }}>{set.verses?.length || 0}</td>
                           </tr>
                         ))}
                       </tbody>
