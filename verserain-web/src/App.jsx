@@ -1775,6 +1775,7 @@ export default function App() {
                                 <div style={{ marginBottom: '1rem' }}>
                                     <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '0.5rem', color: '#475569' }}>{t("簡介", "Description")}</label>
                                     <div style={{ background: '#fff', color: '#0f172a', borderRadius: '6px', border: '1px solid #cbd5e1', overflow: 'hidden' }}>
+                                        <style>{`.ql-editor { min-height: 100px; }`}</style>
                                         <ReactQuill 
                                             theme="snow" 
                                             value={editingCustomSet.description || ''} 
