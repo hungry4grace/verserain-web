@@ -211,6 +211,7 @@ export default function App() {
   });
   const [userEmail, setUserEmail] = useState(() => localStorage.getItem('verserain_player_email') || "");
   const isAdmin = ['samhsiung@gmail.com', 'davidhwang1125@gmail.com', 'hsiungsam@gmail.com', 'hungry4grace@gmail.com'].includes(userEmail.toLowerCase());
+  const [playerName, setPlayerName] = useState(() => localStorage.getItem('verserain_player_name') || "");
   
   const [authLoading, setAuthLoading] = useState(false);
   const [authError, setAuthError] = useState("");
@@ -498,7 +499,6 @@ export default function App() {
     // Lightning visually disabled to reduce distraction
     return;
   }, []);  // Leaderboard specific state
-  const [playerName, setPlayerName] = useState(() => localStorage.getItem('verserain_player_name') || "");
   const [leaderboard, setLeaderboard] = useState({ alltime: [], monthly: [], daily: [] });
   const [isSubmittingScore, setIsSubmittingScore] = useState(false);
   const [leaderboardTab, setLeaderboardTab] = useState('alltime');
