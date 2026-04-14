@@ -124,6 +124,44 @@ export default class Server {
               return new Response(JSON.stringify({ error: 'Update failed' }), { status: 500, headers: corsHeaders });
            }
         }
+
+        // 3.8. Forgot Password
+        if (url.pathname.endsWith('/forgot-password')) {
+           try {
+              const { email } = await request.json();
+              if (!email) return new Response(JSON.stringify({ error: 'Email required' }), { status: 400, headers: corsHeaders });
+              
+              let user = await this.room.storage.get(`user:${email.toLowerCase()}`);
+              if (!user) return new Response(JSON.stringify({ error: '找不到此信箱 (Email not found)' }), { status: 404, headers: corsHeaders });
+              
+              const resendApiKey = this.room.env.RESEND_API_KEY;
+              if (!resendApiKey) return new Response(JSON.stringify({ error: '伺服器未設定 Resend API Key，寄信失敗' }), { status: 500, headers: corsHeaders });
+              
+              const resendRes = await fetch("https://api.resend.com/emails", {
+                 method: "POST",
+                 headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${resendApiKey}`
+                 },
+                 body: JSON.stringify({
+                    from: "VerseScramble <onboarding@resend.dev>",
+                    to: [email],
+                    subject: "VerseScramble: 您的密碼 (Your Password)",
+                    html: `<p>哈囉 ${user.name || '玩家'}，</p><p>您在 VerseScramble 的密碼為：<strong>${user.password}</strong></p><p>登入後，請點擊右上角名稱以更換新密碼。</p>`
+                 })
+              });
+              
+              if (!resendRes.ok) {
+                 const errText = await resendRes.text();
+                 console.error("Resend API Error:", errText);
+                 return new Response(JSON.stringify({ error: '寄信失敗，可能是尚未通過 Resend 網域驗證或超過額度' }), { status: 500, headers: corsHeaders });
+              }
+
+              return new Response(JSON.stringify({ success: true }), { status: 200, headers: corsHeaders });
+           } catch(e) {
+              return new Response(JSON.stringify({ error: 'System error processing request' }), { status: 500, headers: corsHeaders });
+           }
+        }
         // 4. Published Custom Verse Sets Endpoint
         if (url.pathname.endsWith('/custom-sets')) {
            try {

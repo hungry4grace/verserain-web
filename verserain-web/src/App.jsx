@@ -3788,7 +3788,31 @@ export default function App() {
                   {t("還沒有帳號？", "Don't have an account? ")}
                   <span onClick={() => setShowLoginModal('signup')} style={{ color: '#3b82f6', cursor: 'pointer', fontWeight: 'bold' }}>{t("立即註冊", "Sign up")}</span>
                   <div style={{ marginTop: '0.8rem' }}>
-                    <span onClick={() => alert(t("因為系統並未串接電子郵件服務，請直接聯絡管理人員 (負責人) 來協助您重置密碼！", "Since there is no email service configured, please contact the administrator to reset your password!"))} style={{ color: '#94a3b8', cursor: 'pointer', textDecoration: 'underline' }}>{t("忘記密碼？", "Forgot Password?")}</span>
+                    <span onClick={async () => {
+                        const emailInput = document.getElementById('modalEmailInput');
+                        const email = emailInput ? emailInput.value.trim() : '';
+                        if (!email) return alert(t("請先在上方的信箱欄位輸入您的信箱！", "Please enter your email first!"));
+                        
+                        setAuthLoading(true);
+                        setAuthError("");
+                        try {
+                           const res = await fetch("https://verserain-party.hungry4grace.partykit.dev/parties/main/global-auth-db/forgot-password", {
+                               method: "POST",
+                               headers: { "Content-Type": "application/json" },
+                               body: JSON.stringify({ email })
+                           });
+                           const data = await res.json();
+                           if (data.success) {
+                               alert(t("密碼已寄出！請檢查您的信箱（包含垃圾郵件匣）。", "Password sent! Please check your email inbox (including spam)."));
+                           } else {
+                               setAuthError(data.error || "寄送失敗 (Failed to send)");
+                           }
+                        } catch(err) {
+                           setAuthError("無法連線到伺服器 (Server unreachable)");
+                        } finally {
+                           setAuthLoading(false);
+                        }
+                    }} style={{ color: '#94a3b8', cursor: 'pointer', textDecoration: 'underline' }}>{t("忘記密碼？", "Forgot Password?")}</span>
                   </div>
                 </>
               )}
