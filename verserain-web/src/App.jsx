@@ -2614,8 +2614,43 @@ export default function App() {
             )}
 
             {mainTab === 'leaderboard' && (
-              <div style={{ backgroundColor: '#ffffff', borderRadius: '8px', border: '1px solid #cbd5e1', padding: '2rem', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
-                <h2 style={{ color: '#1e293b', marginTop: 0, marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '10px' }}><Trophy color="#d97706" /> {t("全球 VerseRain 排行榜", "Global Leaderboard")}</h2>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+                <div style={{ backgroundColor: '#ffffff', borderRadius: '8px', border: '1px solid #cbd5e1', padding: '2rem', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+                  <h2 style={{ color: '#1e293b', marginTop: 0, marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '10px' }}><Trophy color="#f59e0b" /> {t("最受歡迎經文組", "Most Popular Verse Sets")}</h2>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+                     <thead>
+                       <tr style={{ borderBottom: '2px solid #e2e8f0', color: '#64748b', fontSize: '0.9rem' }}>
+                         <th style={{ padding: '0.8rem 1rem', width: '50px' }}>🏆</th>
+                         <th style={{ padding: '0.8rem 1rem' }}>{t("經文組名稱", "Set Name")}</th>
+                         <th style={{ padding: '0.8rem 1rem' }}>{t("作者", "Author")}</th>
+                         <th style={{ padding: '0.8rem 1rem', textAlign: 'right' }}>{t("點閱次數", "Views")}</th>
+                       </tr>
+                     </thead>
+                     <tbody>
+                       {(() => {
+                          const sortedSets = [...activeVerseSets]
+                               .sort((a,b) => (viewCounts[b.id]||0) - (viewCounts[a.id]||0))
+                               .slice(0, 10);
+                          return sortedSets.map((set, idx) => (
+                              <tr key={idx} style={{ borderBottom: '1px solid #f1f5f9', cursor: 'pointer', transition: 'background 0.2s' }} onClick={() => {
+                                 setMainTab('versesets');
+                                 setSelectedSetId(set.id);
+                                 fetch("https://verserain-party.hungry4grace.partykit.dev/parties/main/global-auth-db/custom-sets/view", { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({id: set.id}) }).catch(e=>e);
+                                 setViewCounts(prev => ({...prev, [set.id]: (prev[set.id] || 0) + 1}));
+                              }} onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#eff6ff'} onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}>
+                                  <td style={{ padding: '0.8rem 1rem', fontWeight: 'bold', color: idx === 0 ? '#d97706' : idx === 1 ? '#94a3b8' : idx === 2 ? '#b45309' : '#64748b', fontSize: '1.2rem' }}>#{idx+1}</td>
+                                  <td style={{ padding: '0.8rem 1rem', fontWeight: 'bold', color: '#1e293b' }}>{set.title}</td>
+                                  <td style={{ padding: '0.8rem 1rem', color: '#3b82f6' }}>{set.authorName || (String(set.id).startsWith("custom-") ? "匿名玩家" : "Verserain 官方")}</td>
+                                  <td style={{ padding: '0.8rem 1rem', textAlign: 'right', fontWeight: 'bold', color: '#059669' }}>{viewCounts[set.id] || 0}</td>
+                              </tr>
+                          ));
+                       })()}
+                     </tbody>
+                  </table>
+                </div>
+
+                <div style={{ backgroundColor: '#ffffff', borderRadius: '8px', border: '1px solid #cbd5e1', padding: '2rem', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+                  <h2 style={{ color: '#1e293b', marginTop: 0, marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '10px' }}><Trophy color="#d97706" /> {t("全球 VerseRain 排行榜", "Global Leaderboard")}</h2>
                 <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem' }}>
                   <button onClick={() => { setGlobalLeaderboardTab('daily'); setGlobalLeaderboardPage(1); }} style={{ padding: '0.5rem 1rem', border: 'none', background: globalLeaderboardTab === 'daily' ? '#10b981' : '#e2e8f0', color: globalLeaderboardTab === 'daily' ? 'white' : '#475569', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>{t("本日排行", "Daily")}</button>
                   <button onClick={() => { setGlobalLeaderboardTab('monthly'); setGlobalLeaderboardPage(1); }} style={{ padding: '0.5rem 1rem', border: 'none', background: globalLeaderboardTab === 'monthly' ? '#8b5cf6' : '#e2e8f0', color: globalLeaderboardTab === 'monthly' ? 'white' : '#475569', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>{t("本月排行", "Monthly")}</button>
@@ -2799,8 +2834,8 @@ export default function App() {
                   );
                 })()}
               </div>
+            </div>
             )}
-
             {mainTab === 'search' && (
               <div style={{ backgroundColor: '#ffffff', borderRadius: '8px', border: '1px solid #cbd5e1', padding: '2rem', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
                 <h2 style={{ color: '#1e293b', marginTop: 0, marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '10px' }}><Search color="#0369a1" /> {t("搜尋經文", "Search Verses")}</h2>
