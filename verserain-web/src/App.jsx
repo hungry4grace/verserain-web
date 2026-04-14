@@ -1656,6 +1656,7 @@ export default function App() {
               { id: 'multiplayer', label: t('多人連線', 'Multiplayer') },
               { id: 'leaderboard', label: t('排行榜', 'Leaderboard') },
               { id: 'search', label: t('搜尋', 'Search') },
+              { id: 'manual', label: t('使用說明', 'Manual') },
               { id: 'about', label: t('有關', 'About') },
               { id: 'donate', label: t('解鎖經文組', 'Unlock Verse Sets'), link: 'https://www.skool.com/mutualizedeconomy/classroom' }
             ].map((item, idx) => (
@@ -2770,6 +2771,54 @@ export default function App() {
                     </div>
                   );
                 })()}
+              </div>
+            )}
+
+            {mainTab === 'manual' && (
+              <div style={{ padding: '2rem', maxWidth: '800px', margin: '0 auto', color: '#1e293b', lineHeight: '1.8' }}>
+                <h1 style={{ color: '#3b82f6', marginBottom: '1.5rem', textAlign: 'center' }}>🌧️ VerseRain 經文雨 操作手冊</h1>
+                <p style={{ textAlign: 'center', fontSize: '1.1rem', marginBottom: '3rem' }}>歡迎進入 <strong>VerseRain 經文雨</strong>！這是一個結合挑戰與學習的互動背經平台。<br/>在這裡您可以挑戰全球經文組、建立個人專屬的題庫，同時登上互惠經濟的全球排行榜！</p>
+                
+                <h2 style={{ borderBottom: '2px solid #e2e8f0', paddingBottom: '0.5rem', marginTop: '2rem' }}>🎯 一、如何開始遊玩？</h2>
+                <p>只需簡單三步，您就能進入背經的挑戰中！</p>
+                
+                <h3 style={{ marginTop: '1.5rem', color: '#0f172a' }}>1. 切換至「經文組」</h3>
+                <p>首先點擊左上角導航列的「經文組」頁籤。這會顯示系統與玩家建立的所有公開經文。</p>
+                <img src="/manual/step1.png" alt="切換經文組" style={{ width: '100%', borderRadius: '8px', boxShadow: '0 4px 6px rgba(0,0,0,0.1)', marginBottom: '1rem' }} />
+
+                <h3 style={{ marginTop: '1.5rem', color: '#0f172a' }}>2. 選擇想要挑戰的經文組</h3>
+                <p>點選列表中的主題（例如：約翰福音 核心經文），展開內含的經文關卡。</p>
+                <img src="/manual/step2.png" alt="選擇經文組" style={{ width: '100%', borderRadius: '8px', boxShadow: '0 4px 6px rgba(0,0,0,0.1)', marginBottom: '1rem' }} />
+
+                <h3 style={{ marginTop: '1.5rem', color: '#0f172a' }}>3. 開始遊戲</h3>
+                <p>點選該經文組底下的任何一節關卡旁邊的「排行榜/遊玩圖示」，三秒鐘後，滿天掉落的經文雨就會傾盆而下！</p>
+                <img src="/manual/step3.png" alt="開始遊戲" style={{ width: '100%', borderRadius: '8px', boxShadow: '0 4px 6px rgba(0,0,0,0.1)', marginBottom: '2rem' }} />
+
+                <h3 style={{ marginTop: '1.5rem', color: '#0f172a' }}>🎬 實際遊玩流程示範（動畫）：</h3>
+                <p>這是一段實際進入遊戲的流程示範！</p>
+                <img src="/manual/play.webp" alt="遊戲流程動畫" style={{ width: '100%', borderRadius: '8px', boxShadow: '0 4px 6px rgba(0,0,0,0.1)', marginBottom: '3rem' }} />
+
+                <h2 style={{ borderBottom: '2px solid #e2e8f0', paddingBottom: '0.5rem', marginTop: '2rem' }}>👑 二、如何自建專屬「經文組」？（Premium 會員獨享）</h2>
+                <p>如果您是「互惠經濟」社群的尊榮會員，就可以盡情打造自己的主日學或小組背經專屬題庫！</p>
+                <ol style={{ paddingLeft: '1.5rem', marginBottom: '2rem' }}>
+                  <li>點擊上方導航列的 <strong>「👑 我的題庫」</strong>。</li>
+                  <li>在輸入框打下你想要的 <strong>新經文組名稱</strong>。</li>
+                  <li>利用強大的 <strong>魔法一鍵抓取功能</strong>：在區塊中輸入經文章節出處（如：<code>約 3:16</code>），點擊旁邊的魔法星號按鈕。</li>
+                  <li>系統將為您自動帶入完整的經文內容！</li>
+                  <li>在左上角確認一切無誤後，點擊 <strong>「發佈 (Publish)」</strong>。</li>
+                  <li>恭喜！這份經文組就會瞬間上傳到全球資料庫，供大眾在「經文組」挑戰了！</li>
+                </ol>
+                <div style={{ backgroundColor: '#f0fdf4', borderLeft: '4px solid #22c55e', padding: '1rem', borderRadius: '4px', marginBottom: '3rem' }}>
+                  <strong>💡 提示：</strong> 魔法一鍵抓取功能串接了精準的華語聖經資料庫，能夠大幅省去手動打字、校稿的時間。您可以直接嘗試輸入「創世紀 1:1」，感受一秒匯入的流暢度！
+                </div>
+
+                <h2 style={{ borderBottom: '2px solid #e2e8f0', paddingBottom: '0.5rem', marginTop: '2rem' }}>🏆 三、個人積分全球排行榜</h2>
+                <p>點選 <strong>「排行榜」</strong>，您將會看到三大首頁看板：</p>
+                <ul style={{ paddingLeft: '1.5rem', marginBottom: '2rem' }}>
+                  <li><strong>個人過關積點排行：</strong> 只要完成挑戰就能累積積分，破自己的紀錄也算分！</li>
+                  <li><strong>最受歡迎的經文組排名：</strong> 被玩越多次的經文組，將會在此看板上獲得頂級榮耀。</li>
+                </ul>
+                <p style={{ textAlign: 'center', fontSize: '1.1rem', fontWeight: 'bold', color: '#3b82f6' }}>想獲得好名次？那就持之以恆地回來挑戰，或是創建讓大家愛不釋手的經文組合吧！</p>
               </div>
             )}
 
