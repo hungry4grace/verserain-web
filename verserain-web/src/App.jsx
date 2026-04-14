@@ -210,7 +210,7 @@ export default function App() {
     return storedPremium || PREMIUM_EMAILS.includes(storedEmail.toLowerCase());
   });
   const [userEmail, setUserEmail] = useState(() => localStorage.getItem('verserain_player_email') || "");
-  const isAdmin = ['samhsiung@gmail.com', 'davidhwang1125@gmail.com', 'hsiungsam@gmail.com'].includes(userEmail.toLowerCase());
+  const isAdmin = ['samhsiung@gmail.com', 'davidhwang1125@gmail.com', 'hsiungsam@gmail.com', 'hungry4grace@gmail.com'].includes(userEmail.toLowerCase());
   
   const [authLoading, setAuthLoading] = useState(false);
   const [authError, setAuthError] = useState("");
