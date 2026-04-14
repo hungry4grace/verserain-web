@@ -222,8 +222,29 @@ export default function App() {
   });
   const [editingCustomSet, setEditingCustomSet] = useState(null);
 
+  const [publishedVerseSets, setPublishedVerseSets] = useState([]);
+
+  useEffect(() => {
+    fetch("https://verserain-party.hungry4grace.partykit.dev/parties/main/global-auth-db/custom-sets")
+      .then(res => res.json())
+      .then(data => {
+        if (Array.isArray(data)) setPublishedVerseSets(data);
+      })
+      .catch(err => console.error("Failed to fetch published sets", err));
+  }, []);
+
   const baseVerseSets = version === 'cuv' ? VERSE_SETS_CUV : VERSE_SETS_KJV;
-  const activeVerseSets = [...customVerseSets, ...baseVerseSets];
+  
+  const activeVerseSets = React.useMemo(() => {
+    const merged = [...customVerseSets];
+    publishedVerseSets.forEach(ps => {
+       if (!merged.some(cs => cs.id === ps.id)) {
+          merged.push(ps);
+       }
+    });
+    return [...merged, ...baseVerseSets];
+  }, [customVerseSets, publishedVerseSets, baseVerseSets]);
+
   const currentSet = selectedSetId ? activeVerseSets.find(s => s.id === selectedSetId) : null;
   const VERSES_DB = currentSet ? currentSet.verses : activeVerseSets[0].verses;
 
@@ -885,6 +906,14 @@ export default function App() {
   useEffect(() => {
     if (initAutoStart?.trigger) {
       if (initAutoStart.isMultiplayerReadyCheck) {
+         // For square_solo: initialize local verse tracking HERE, before startGame sets gameState='playing'.
+         // The STATE_UPDATE handler's init block won't fire for the HOST because gameState is already
+         // 'playing' by the time the server's first broadcast arrives.
+         if (initAutoStart.playMode === 'square_solo' && initAutoStart.campaignQueue?.length > 0) {
+           localCampaignListRef.current = initAutoStart.campaignQueue;
+           localVerseIndexRef.current = 0;
+           squareSoloActiveRef.current = true;
+         }
          initSquareBlocks(true, initAutoStart.campaignQueue, initAutoStart.verse);
       } else {
          startGame(initAutoStart.isAuto);
@@ -1898,6 +1927,11 @@ export default function App() {
                                     </button>
                                 </div>
 
+                                <div style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                    <input type="checkbox" id="publishSet" checked={editingCustomSet.isPublished || false} onChange={e => setEditingCustomSet({...editingCustomSet, isPublished: e.target.checked})} style={{ width: '1.2rem', height: '1.2rem', cursor: 'pointer' }} />
+                                    <label htmlFor="publishSet" style={{ fontWeight: 'bold', color: '#475569', cursor: 'pointer' }}>{t("公開此題庫 (Publish to Global Verse Sets)", "Publish to Global Verse Sets")}</label>
+                                </div>
+
                                 <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem', marginTop: '2rem' }}>
                                     <button type="button" onClick={() => {
                                         if(!editingCustomSet.title) return alert(t("請填寫標題", "Please fill in title"));
@@ -1917,6 +1951,31 @@ export default function App() {
                                         
                                         setCustomVerseSets(updatedSets);
                                         localStorage.setItem('verseRain_custom_sets', JSON.stringify(updatedSets));
+                                        
+                                        // Handle publishing sync
+                                        if (setObj.isPublished) {
+                                            const publishedObj = { ...setObj, authorName: playerName || "Anonymous" };
+                                            fetch("https://verserain-party.hungry4grace.partykit.dev/parties/main/global-auth-db/custom-sets", {
+                                                method: "POST",
+                                                headers: { "Content-Type": "application/json" },
+                                                body: JSON.stringify(publishedObj)
+                                            }).catch(e => console.error("Publish failed", e));
+                                            
+                                            setPublishedVerseSets(prev => {
+                                                const exists = prev.find(p => p.id === setObj.id);
+                                                if (exists) return prev.map(p => p.id === setObj.id ? publishedObj : p);
+                                                return [publishedObj, ...prev];
+                                            });
+                                        } else {
+                                            fetch("https://verserain-party.hungry4grace.partykit.dev/parties/main/global-auth-db/custom-sets", {
+                                                method: "DELETE",
+                                                headers: { "Content-Type": "application/json" },
+                                                body: JSON.stringify({ id: setObj.id })
+                                            }).catch(e => console.error("Unpublish failed", e));
+                                            
+                                            setPublishedVerseSets(prev => prev.filter(p => p.id !== setObj.id));
+                                        }
+
                                         setEditingCustomSet(null);
                                     }} style={{ background: '#10b981', color: 'white', border: 'none', padding: '0.8rem 2rem', borderRadius: '6px', fontWeight: 'bold', fontSize: '1.1rem', cursor: 'pointer' }}>
                                         {t("儲存題庫", "Save Set")}
@@ -1946,6 +2005,13 @@ export default function App() {
                                                             const updated = customVerseSets.filter(s => s.id !== set.id);
                                                             setCustomVerseSets(updated);
                                                             localStorage.setItem('verseRain_custom_sets', JSON.stringify(updated));
+                                                            
+                                                            fetch("https://verserain-party.hungry4grace.partykit.dev/parties/main/global-auth-db/custom-sets", {
+                                                                method: "DELETE",
+                                                                headers: { "Content-Type": "application/json" },
+                                                                body: JSON.stringify({ id: set.id })
+                                                            }).catch(e => console.error(e));
+                                                            setPublishedVerseSets(prev => prev.filter(p => p.id !== set.id));
                                                         }
                                                     }} style={{ background: '#fee2e2', border: '1px solid #fca5a5', padding: '0.4rem 0.8rem', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', color: '#ef4444' }}>{t("刪除", "Delete")}</button>
                                                 </div>
@@ -2133,7 +2199,7 @@ export default function App() {
                                           setActiveVerse(selected[0]);
                                           setPlayMode(multiplayerPlayMode);
                                           setDistractionLevel(multiplayerDistractionLevel);
-                                          setInitAutoStart({ trigger: true, isAuto: false, isMultiplayerReadyCheck: true, campaignQueue: selected, verse: selected[0] });
+                                          setInitAutoStart({ trigger: true, isAuto: false, isMultiplayerReadyCheck: true, campaignQueue: selected, verse: selected[0], playMode: multiplayerPlayMode });
                                           setShowMultiplayerVersePicker(false);
                                        }}
                                        style={{ background: '#8b5cf6', color: 'white', border: 'none', padding: '0.3rem 0.6rem', borderRadius: '4px', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.2rem', fontSize: '0.8rem' }}
@@ -2148,7 +2214,7 @@ export default function App() {
                                         setActiveVerse(multiplayerSelectedVerses[0]);
                                         setPlayMode(multiplayerPlayMode);
                                         setDistractionLevel(multiplayerDistractionLevel);
-                                        setInitAutoStart({ trigger: true, isAuto: false, isMultiplayerReadyCheck: true, campaignQueue: multiplayerSelectedVerses, verse: multiplayerSelectedVerses[0] });
+                                        setInitAutoStart({ trigger: true, isAuto: false, isMultiplayerReadyCheck: true, campaignQueue: multiplayerSelectedVerses, verse: multiplayerSelectedVerses[0], playMode: multiplayerPlayMode });
                                         setShowMultiplayerVersePicker(false);
                                      }}
                                      style={{ background: '#10b981', color: 'white', border: 'none', padding: '0.5rem 1rem', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.9rem' }}

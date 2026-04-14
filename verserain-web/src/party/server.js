@@ -103,6 +103,27 @@ export default class Server {
               return new Response(JSON.stringify({ error: 'Login failed' }), { status: 500, headers: corsHeaders });
            }
         }
+
+        // 4. Published Custom Verse Sets Endpoint
+        if (url.pathname.endsWith('/custom-sets')) {
+           try {
+              if (request.method === "GET") {
+                 const list = await this.room.storage.list({ prefix: "verseset:" });
+                 const sets = Array.from(list.values());
+                 return new Response(JSON.stringify(sets), { status: 200, headers: corsHeaders });
+              } else if (request.method === "POST") {
+                 const payload = await request.json();
+                 await this.room.storage.put(`verseset:${payload.id}`, payload);
+                 return new Response(JSON.stringify({ success: true }), { status: 200, headers: corsHeaders });
+              } else if (request.method === "DELETE") {
+                 const { id } = await request.json();
+                 await this.room.storage.delete(`verseset:${id}`);
+                 return new Response(JSON.stringify({ success: true }), { status: 200, headers: corsHeaders });
+              }
+           } catch(e) {
+              return new Response(JSON.stringify({ error: 'DB error' }), { status: 500, headers: corsHeaders });
+           }
+        }
       }
       return new Response("Not Found API Route", { status: 404, headers: corsHeaders });
     }
