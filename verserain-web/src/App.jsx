@@ -250,14 +250,17 @@ export default function App() {
   const baseVerseSets = version === 'cuv' ? VERSE_SETS_CUV : VERSE_SETS_KJV;
   
   const activeVerseSets = React.useMemo(() => {
-    const merged = [...customVerseSets];
+    const merged = customVerseSets.map(cs => {
+       const pub = publishedVerseSets.find(p => p.id === cs.id);
+       return { ...cs, authorName: (pub && pub.authorName !== "Anonymous") ? pub.authorName : (cs.authorName || playerName || "匿名玩家") };
+    });
     publishedVerseSets.forEach(ps => {
        if (!merged.some(cs => cs.id === ps.id)) {
           merged.push(ps);
        }
     });
     return [...merged, ...baseVerseSets];
-  }, [customVerseSets, publishedVerseSets, baseVerseSets]);
+  }, [customVerseSets, publishedVerseSets, baseVerseSets, playerName]);
 
   const currentSet = selectedSetId ? activeVerseSets.find(s => s.id === selectedSetId) : null;
   const VERSES_DB = currentSet ? currentSet.verses : activeVerseSets[0].verses;
@@ -2383,7 +2386,7 @@ export default function App() {
                                )}
                             </td>
                             <td style={{ padding: '1rem', color: '#64748b', fontSize: '0.9rem', maxWidth: '300px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} dangerouslySetInnerHTML={{ __html: set.description || "" }} />
-                            <td style={{ padding: '1rem', color: '#337ab7', fontSize: '0.9rem', fontWeight: 'bold' }}>{set.authorName || (String(set.id).startsWith("custom-") ? "匿名玩家" : "Verserain 官方")}</td>
+                            <td style={{ padding: '1rem', color: '#337ab7', fontSize: '0.9rem', fontWeight: 'bold' }}>{set.authorName && set.authorName !== "Anonymous" ? set.authorName : (String(set.id).startsWith("custom-") ? "匿名玩家" : "Verserain 官方")}</td>
                             <td style={{ padding: '1rem', textAlign: 'right', color: '#64748b', fontWeight: 'bold' }}>{viewCounts[set.id] || 0}</td>
                           </tr>
                         ))}
@@ -2644,7 +2647,7 @@ export default function App() {
                               }} onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#eff6ff'} onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}>
                                   <td style={{ padding: '0.8rem 1rem', fontWeight: 'bold', color: idx === 0 ? '#d97706' : idx === 1 ? '#94a3b8' : idx === 2 ? '#b45309' : '#64748b', fontSize: '1.2rem' }}>#{idx+1}</td>
                                   <td style={{ padding: '0.8rem 1rem', fontWeight: 'bold', color: '#1e293b' }}>{set.title}</td>
-                                  <td style={{ padding: '0.8rem 1rem', color: '#3b82f6' }}>{set.authorName || (String(set.id).startsWith("custom-") ? "匿名玩家" : "Verserain 官方")}</td>
+                                  <td style={{ padding: '0.8rem 1rem', color: '#3b82f6' }}>{set.authorName && set.authorName !== "Anonymous" ? set.authorName : (String(set.id).startsWith("custom-") ? "匿名玩家" : "Verserain 官方")}</td>
                                   <td style={{ padding: '0.8rem 1rem', textAlign: 'right', fontWeight: 'bold', color: '#059669' }}>{viewCounts[set.id] || 0}</td>
                               </tr>
                           ));
