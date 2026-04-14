@@ -1754,14 +1754,16 @@ export default function App() {
         </div>
       )}
 
-      {/* Global Music Toggle */}
-      <button
-        onClick={(e) => { e.stopPropagation(); setIsMusicPlaying(!isMusicPlaying); }}
-        className="hud-glass"
-        style={{ position: 'fixed', bottom: '2rem', right: '1.5rem', padding: '0.75rem', borderRadius: '50%', color: isMusicPlaying ? '#4ade80' : '#cbd5e1', cursor: 'pointer', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-      >
-        {isMusicPlaying ? <Music size={24} /> : <VolumeX size={24} />}
-      </button>
+      {/* Global Music Toggle - Temporarily Disabled */}
+      {false && (
+        <button
+          onClick={(e) => { e.stopPropagation(); setIsMusicPlaying(!isMusicPlaying); }}
+          className="hud-glass"
+          style={{ position: 'fixed', bottom: '2rem', right: '1.5rem', padding: '0.75rem', borderRadius: '50%', color: isMusicPlaying ? '#4ade80' : '#cbd5e1', cursor: 'pointer', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+        >
+          {isMusicPlaying ? <Music size={24} /> : <VolumeX size={24} />}
+        </button>
+      )}
 
       {gameState === 'menu' && (
         <div style={{ position: 'relative', width: '100vw', height: '100dvh', overflowY: 'auto', WebkitOverflowScrolling: 'touch', backgroundColor: '#f4f6f8', zIndex: 10, fontFamily: 'Arial, sans-serif' }}>
