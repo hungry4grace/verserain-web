@@ -228,6 +228,73 @@ export default function App() {
   const [publishedVerseSets, setPublishedVerseSets] = useState([]);
   const [viewCounts, setViewCounts] = useState({});
 
+  // Local Leaderboard tracking (to be migrated to PartyKit on next deployment)
+  const [globalUserStats, setGlobalUserStats] = useState(() => {
+     let prev;
+     try { prev = JSON.parse(localStorage.getItem('verseRain_globalUserStats')) || {}; } catch { prev = {}; }
+     if (!prev.alltime) prev = { alltime: prev, daily: {}, monthly: {}, dateInfo: '', monthInfo: '' };
+     return prev;
+  });
+  const [globalVerseStats, setGlobalVerseStats] = useState(() => {
+     let prev;
+     try { prev = JSON.parse(localStorage.getItem('verseRain_globalVerseStats')) || {}; } catch { prev = {}; }
+     if (!prev.alltime) prev = { alltime: prev, daily: {}, monthly: {}, dateInfo: '', monthInfo: '' };
+     return prev;
+  });
+
+  const logEvent = (type, args) => {
+      const today = new Date().toISOString().split('T')[0];
+      const month = today.slice(0, 7);
+
+      const updateStats = (prev, idKey, field, amount) => {
+          let updated = { ...prev };
+          if (updated.dateInfo !== today) {
+              updated.dateInfo = today;
+              updated.daily = {};
+          }
+          if (updated.monthInfo !== month) {
+              updated.monthInfo = month;
+              updated.monthly = {};
+          }
+          if (!updated.alltime) updated.alltime = {};
+          if (!updated.daily) updated.daily = {};
+          if (!updated.monthly) updated.monthly = {};
+          
+          ['alltime', 'monthly', 'daily'].forEach(period => {
+              if (!updated[period][idKey]) updated[period][idKey] = { champs: 0, completes: 0, plays: 0 };
+              updated[period][idKey][field] = (updated[period][idKey][field] || 0) + amount;
+          });
+          return updated;
+      };
+
+      if (type === 'versePlayed') {
+          const { ref } = args;
+          setGlobalVerseStats(prev => {
+              const updated = updateStats(prev, ref, 'plays', 1);
+              localStorage.setItem('verseRain_globalVerseStats', JSON.stringify(updated));
+              return updated;
+          });
+      }
+      if (type === 'verseCompleted') {
+          const { ref, name, isChamp } = args;
+          setGlobalVerseStats(prev => {
+              const updated = updateStats(prev, ref, 'completes', 1);
+              localStorage.setItem('verseRain_globalVerseStats', JSON.stringify(updated));
+              return updated;
+          });
+          if (name) {
+              setGlobalUserStats(prev => {
+                  let updated = updateStats(prev, name, 'completes', 1);
+                  if (isChamp) {
+                      updated = updateStats(updated, name, 'champs', 1);
+                  }
+                  localStorage.setItem('verseRain_globalUserStats', JSON.stringify(updated));
+                  return updated;
+              });
+          }
+      }
+  };
+
   useEffect(() => {
     fetch("https://verserain-party.hungry4grace.partykit.dev/parties/main/global-auth-db/custom-sets")
       .then(res => res.json())
@@ -251,9 +318,12 @@ export default function App() {
   const baseVerseSets = version === 'cuv' ? VERSE_SETS_CUV : VERSE_SETS_KJV;
   
   const activeVerseSets = React.useMemo(() => {
-    const merged = customVerseSets.map(cs => {
-       const pub = publishedVerseSets.find(p => p.id === cs.id);
-       return { ...cs, authorName: (pub && pub.authorName !== "Anonymous") ? pub.authorName : (cs.authorName || playerName || "匿名玩家") };
+    const merged = [];
+    customVerseSets.forEach(cs => {
+       if (cs.isPublished) {
+          const pub = publishedVerseSets.find(p => p.id === cs.id);
+          merged.push({ ...cs, authorName: (pub && pub.authorName !== "Anonymous") ? pub.authorName : (cs.authorName || playerName || "匿名玩家") });
+       }
     });
     publishedVerseSets.forEach(ps => {
        if (!merged.some(cs => cs.id === ps.id)) {
@@ -263,7 +333,7 @@ export default function App() {
     return [...merged, ...baseVerseSets];
   }, [customVerseSets, publishedVerseSets, baseVerseSets, playerName]);
 
-  const currentSet = selectedSetId ? activeVerseSets.find(s => s.id === selectedSetId) : null;
+  const currentSet = selectedSetId ? (activeVerseSets.find(s => s.id === selectedSetId) || customVerseSets.find(s => s.id === selectedSetId)) : null;
   const VERSES_DB = currentSet ? currentSet.verses : activeVerseSets[0].verses;
 
   const [activeVerse, setActiveVerse] = useState(VERSES_DB[0]);
@@ -1054,6 +1124,10 @@ export default function App() {
         setTimeout(spawnNextBlock, 3300);
       }
     }
+    
+    if (activeVerse && !isAuto) {
+        logEvent('versePlayed', { ref: activeVerse.reference });
+    }
   };
 
   useEffect(() => {
@@ -1195,6 +1269,11 @@ export default function App() {
     setIsFailed(failed || healthRef.current <= 0); // Consider it visually failed if health <= 0, but verse completes
 
     if (isSuccess && !isAutoPlayRef.current) {
+      logEvent('verseCompleted', { 
+          ref: activeVerse.reference, 
+          name: playerName, 
+          isChamp: hs 
+      });
       // Load current leaderboard initially
       fetch(`/api/get-scores?verseRef=${encodeURIComponent(activeVerse.reference)}`)
         .then(res => res.json())
@@ -1722,7 +1801,7 @@ export default function App() {
               { id: 'leaderboard', label: t('排行榜', 'Leaderboard') },
               { id: 'search', label: t('搜尋', 'Search') },
               { id: 'about', label: t('有關', 'About') },
-              { id: 'donate', label: t('加入「互惠經濟」', 'Join Mutualized Economy'), link: 'https://www.skool.com/mutualizedeconomy' }
+              { id: 'donate', label: t('加入會員', 'Join Membership'), link: 'https://www.skool.com/mutualizedeconomy' }
             ].map((item, idx) => (
               <div key={idx} onClick={() => {
                 if (item.link) {
@@ -2021,6 +2100,10 @@ export default function App() {
                                         {customVerseSets.map(set => (
                                             <div key={set.id} style={{ border: '1px solid #cbd5e1', borderRadius: '8px', padding: '1.5rem', position: 'relative' }}>
                                                 <div style={{ position: 'absolute', top: '1rem', right: '1rem', display: 'flex', gap: '0.5rem' }}>
+                                                    <button type="button" onClick={() => {
+                                                        setSelectedSetId(set.id);
+                                                        setMainTab('versesets');
+                                                    }} style={{ background: '#10b981', border: '1px solid #059669', padding: '0.4rem 0.8rem', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', color: 'white' }}>{t("測試遊玩", "Play/Test")}</button>
                                                     <button type="button" onClick={() => setEditingCustomSet(set)} style={{ background: '#f1f5f9', border: '1px solid #cbd5e1', padding: '0.4rem 0.8rem', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', color: '#475569' }}>{t("編輯", "Edit")}</button>
                                                     <button type="button" onClick={() => {
                                                         if(window.confirm(t("確定要刪除嗎？", "Are you sure you want to delete?"))) {
@@ -2620,6 +2703,75 @@ export default function App() {
 
             {mainTab === 'leaderboard' && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+                
+                {/* 1. 排行榜切換按鈕 */}
+                <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
+                  <button onClick={() => setGlobalLeaderboardTab('daily')} style={{ padding: '0.8rem 2rem', border: 'none', background: globalLeaderboardTab === 'daily' ? '#10b981' : '#e2e8f0', color: globalLeaderboardTab === 'daily' ? 'white' : '#475569', borderRadius: '30px', cursor: 'pointer', fontWeight: 'bold', fontSize: '1.1rem', transition: 'all 0.2s', boxShadow: globalLeaderboardTab === 'daily' ? '0 4px 6px -1px rgba(16, 185, 129, 0.4)' : 'none' }}>{t("本日排行", "Daily")}</button>
+                  <button onClick={() => setGlobalLeaderboardTab('monthly')} style={{ padding: '0.8rem 2rem', border: 'none', background: globalLeaderboardTab === 'monthly' ? '#8b5cf6' : '#e2e8f0', color: globalLeaderboardTab === 'monthly' ? 'white' : '#475569', borderRadius: '30px', cursor: 'pointer', fontWeight: 'bold', fontSize: '1.1rem', transition: 'all 0.2s', boxShadow: globalLeaderboardTab === 'monthly' ? '0 4px 6px -1px rgba(139, 92, 246, 0.4)' : 'none' }}>{t("本月排行", "Monthly")}</button>
+                  <button onClick={() => setGlobalLeaderboardTab('alltime')} style={{ padding: '0.8rem 2rem', border: 'none', background: globalLeaderboardTab === 'alltime' ? '#3b82f6' : '#e2e8f0', color: globalLeaderboardTab === 'alltime' ? 'white' : '#475569', borderRadius: '30px', cursor: 'pointer', fontWeight: 'bold', fontSize: '1.1rem', transition: 'all 0.2s', boxShadow: globalLeaderboardTab === 'alltime' ? '0 4px 6px -1px rgba(59, 130, 246, 0.4)' : 'none' }}>{t("歷史總榜", "All Time")}</button>
+                </div>
+
+                {/* 2. 個人總積分排行榜 */}
+                <div style={{ backgroundColor: '#ffffff', borderRadius: '8px', border: '1px solid #cbd5e1', padding: '2rem', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+                  <h2 style={{ color: '#1e293b', marginTop: 0, marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '10px' }}><Trophy color="#2563eb" /> {t("個人總積分排行榜", "Player Total Score Leaderboard")}</h2>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+                     <thead>
+                       <tr style={{ borderBottom: '2px solid #e2e8f0', color: '#64748b', fontSize: '0.9rem' }}>
+                         <th style={{ padding: '0.8rem 1rem', width: '50px' }}>🏆</th>
+                         <th style={{ padding: '0.8rem 1rem' }}>{t("玩家名稱", "Player Name")}</th>
+                         <th style={{ padding: '0.8rem 1rem', textAlign: 'right' }}>{t("紀錄次數/完成數", "Records/Clears")}</th>
+                       </tr>
+                     </thead>
+                     <tbody>
+                       {Object.entries((globalUserStats[globalLeaderboardTab] || {}))
+                           .sort((a,b) => b[1].champs - a[1].champs || b[1].completes - a[1].completes)
+                           .slice(0, 50)
+                           .map(([name, stats], idx) => (
+                              <tr key={idx} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                                  <td style={{ padding: '0.8rem 1rem', fontWeight: 'bold', color: idx === 0 ? '#d97706' : idx === 1 ? '#94a3b8' : idx === 2 ? '#b45309' : '#64748b', fontSize: '1.2rem' }}>#{idx+1}</td>
+                                  <td style={{ padding: '0.8rem 1rem', fontWeight: 'bold', color: '#1e293b' }}>{name} {name === playerName && <Crown size={14} style={{ color: '#fbbf24', marginLeft: '5px' }} />}</td>
+                                  <td style={{ padding: '0.8rem 1rem', textAlign: 'right', fontWeight: 'bold', color: '#3b82f6' }}>{stats.champs} / {stats.completes}</td>
+                              </tr>
+                           ))}
+                       {Object.keys((globalUserStats[globalLeaderboardTab] || {})).length === 0 && (
+                          <tr><td colSpan="3" style={{ padding: '1rem', textAlign: 'center', color: '#94a3b8' }}>{t("目前尚無紀錄", "No records yet")}</td></tr>
+                       )}
+                     </tbody>
+                  </table>
+                </div>
+
+                {/* 3. 最受歡迎經文排行榜 */}
+                <div style={{ backgroundColor: '#ffffff', borderRadius: '8px', border: '1px solid #cbd5e1', padding: '2rem', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+                  <h2 style={{ color: '#1e293b', marginTop: 0, marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '10px' }}><Trophy color="#10b981" /> {t("最受歡迎經文排行榜", "Most Popular Verses")}</h2>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+                     <thead>
+                       <tr style={{ borderBottom: '2px solid #e2e8f0', color: '#64748b', fontSize: '0.9rem' }}>
+                         <th style={{ padding: '0.8rem 1rem', width: '50px' }}>🏆</th>
+                         <th style={{ padding: '0.8rem 1rem' }}>{t("經文出處", "Reference")}</th>
+                         <th style={{ padding: '0.8rem 1rem', textAlign: 'right' }}>{t("遊玩次數", "Plays")}</th>
+                         <th style={{ padding: '0.8rem 1rem', textAlign: 'right' }}>{t("完成次數", "Completes")}</th>
+                       </tr>
+                     </thead>
+                     <tbody>
+                       {Object.entries((globalVerseStats[globalLeaderboardTab] || {}))
+                           .sort((a,b) => b[1].plays - a[1].plays || b[1].completes - a[1].completes)
+                           .slice(0, 50)
+                           .map(([ref, stats], idx) => (
+                              <tr key={idx} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                                  <td style={{ padding: '0.8rem 1rem', fontWeight: 'bold', color: idx === 0 ? '#d97706' : idx === 1 ? '#94a3b8' : idx === 2 ? '#b45309' : '#64748b', fontSize: '1.2rem' }}>#{idx+1}</td>
+                                  <td style={{ padding: '0.8rem 1rem', fontWeight: 'bold', color: '#1e293b' }}>{ref}</td>
+                                  <td style={{ padding: '0.8rem 1rem', textAlign: 'right', fontWeight: 'bold', color: '#10b981' }}>{stats.plays}</td>
+                                  <td style={{ padding: '0.8rem 1rem', textAlign: 'right', fontWeight: 'bold', color: '#059669' }}>{stats.completes}</td>
+                              </tr>
+                           ))}
+                       {Object.keys((globalVerseStats[globalLeaderboardTab] || {})).length === 0 && (
+                          <tr><td colSpan="4" style={{ padding: '1rem', textAlign: 'center', color: '#94a3b8' }}>{t("目前尚無經文紀錄", "No records yet")}</td></tr>
+                       )}
+                     </tbody>
+                  </table>
+                </div>
+
+                {/* 4. 最受歡迎經文組 */}
                 <div style={{ backgroundColor: '#ffffff', borderRadius: '8px', border: '1px solid #cbd5e1', padding: '2rem', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
                   <h2 style={{ color: '#1e293b', marginTop: 0, marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '10px' }}><Trophy color="#f59e0b" /> {t("最受歡迎經文組", "Most Popular Verse Sets")}</h2>
                   <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
@@ -2654,192 +2806,7 @@ export default function App() {
                   </table>
                 </div>
 
-                <div style={{ backgroundColor: '#ffffff', borderRadius: '8px', border: '1px solid #cbd5e1', padding: '2rem', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
-                  <h2 style={{ color: '#1e293b', marginTop: 0, marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '10px' }}><Trophy color="#d97706" /> {t("全球 VerseRain 排行榜", "Global Leaderboard")}</h2>
-                <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem' }}>
-                  <button onClick={() => { setGlobalLeaderboardTab('daily'); setGlobalLeaderboardPage(1); }} style={{ padding: '0.5rem 1rem', border: 'none', background: globalLeaderboardTab === 'daily' ? '#10b981' : '#e2e8f0', color: globalLeaderboardTab === 'daily' ? 'white' : '#475569', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>{t("本日排行", "Daily")}</button>
-                  <button onClick={() => { setGlobalLeaderboardTab('monthly'); setGlobalLeaderboardPage(1); }} style={{ padding: '0.5rem 1rem', border: 'none', background: globalLeaderboardTab === 'monthly' ? '#8b5cf6' : '#e2e8f0', color: globalLeaderboardTab === 'monthly' ? 'white' : '#475569', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>{t("本月排行", "Monthly")}</button>
-                  <button onClick={() => { setGlobalLeaderboardTab('alltime'); setGlobalLeaderboardPage(1); }} style={{ padding: '0.5rem 1rem', border: 'none', background: globalLeaderboardTab === 'alltime' ? '#3b82f6' : '#e2e8f0', color: globalLeaderboardTab === 'alltime' ? 'white' : '#475569', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>{t("歷史總榜", "All Time")}</button>
-                </div>
-
-                {isFetchingGlobalLeaderboard ? (
-                  <div style={{ padding: '2rem', textAlign: 'center', color: '#64748b' }}>{t("載入中...", "Loading...")}</div>
-                ) : (() => {
-                  const rawData = globalLeaderboardData[globalLeaderboardTab] || [];
-                  if (rawData.length === 0) {
-                    return <div style={{ padding: '2rem', textAlign: 'center', color: '#94a3b8' }}>{t("目前還沒有紀錄", "No records yet")}</div>;
-                  }
-
-                  const bestPerVerse = {};
-                    rawData.forEach(entry => {
-                      if (!bestPerVerse[entry.verseRef] || entry.score > bestPerVerse[entry.verseRef].score) {
-                        bestPerVerse[entry.verseRef] = entry;
-                      }
-                    });
-                    const uniqueEntries = Object.values(bestPerVerse).sort((a, b) => a.verseRef.localeCompare(b.verseRef));
-                    const ITEMS_PER_PAGE = 10;
-                    const totalPages = Math.ceil(uniqueEntries.length / ITEMS_PER_PAGE);
-                    const startIndex = (globalLeaderboardPage - 1) * ITEMS_PER_PAGE;
-                    const pagedEntries = uniqueEntries.slice(startIndex, startIndex + ITEMS_PER_PAGE);
-
-                    return (
-                      <div>
-                        <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
-                          <thead>
-                            <tr style={{ borderBottom: '2px solid #e2e8f0', color: '#64748b', fontSize: '0.9rem' }}>
-                              <th style={{ padding: '0.8rem 1rem' }}>{t("經文出處", "Verse Reference")}</th>
-                            <th style={{ padding: '0.8rem 1rem' }}>{t("玩家", "Player")}</th>
-                            <th style={{ padding: '0.8rem 1rem', textAlign: 'right' }}>{t("最高分數", "Best Score")}</th>
-                            <th style={{ padding: '0.8rem 1rem', textAlign: 'center' }}>{t("模式/難度", "Mode/Lv")}</th>
-                            <th style={{ padding: '0.8rem 1rem', textAlign: 'center' }}>{t("查看排行榜", "Leaderboard")}</th>
-                            <th style={{ padding: '0.8rem 1rem', textAlign: 'center' }}>{t("直接挑戰", "Challenge")}</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {pagedEntries.map((entry, idx) => {
-                            const parseMode = (modeStr) => {
-                              let modeType = modeStr || 'rain';
-                              let difficulty = 0;
-                              if (modeStr && modeStr.includes('-dx')) {
-                                const parts = modeStr.split('-dx');
-                                modeType = parts[0];
-                                difficulty = parseInt(parts[1], 10) || 0;
-                              }
-                              return { modeType, difficulty };
-                            };
-                            const { modeType, difficulty } = parseMode(entry.mode);
-
-                            return (
-                              <tr key={idx} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                                <td style={{ padding: '0.8rem 1rem' }}>
-                                  <button onClick={() => {
-                                    const fullVerse = VERSES_CUV.find(v => v.reference === entry.verseRef) || VERSES_KJV.find(v => v.reference === entry.verseRef);
-                                    if (fullVerse) {
-                                      setVerseViewModal(fullVerse);
-                                    } else {
-                                      fetch(`https://bible-api.com/${encodeURIComponent(entry.verseRef)}?translation=kjv`)
-                                        .then(res => res.json())
-                                        .then(data => setVerseViewModal({ reference: data.reference, title: "Bible", text: data.text.trim() }))
-                                        .catch(() => alert("Could not fetch verse preview"));
-                                    }
-                                  }} style={{ background: 'transparent', border: 'none', color: '#0369a1', fontWeight: 'bold', fontSize: '1rem', cursor: 'pointer', padding: 0, textAlign: 'left' }} onMouseOver={(e) => e.target.style.textDecoration = 'underline'} onMouseOut={(e) => e.target.style.textDecoration = 'none'}>
-                                    {entry.verseRef}
-                                  </button>
-                                </td>
-                                <td style={{ padding: '0.8rem 1rem', fontWeight: 'bold', color: '#1e293b' }}>{entry.name}</td>
-                                <td style={{ padding: '0.8rem 1rem', textAlign: 'right', fontFamily: 'monospace', fontSize: '1.2rem', color: '#3b82f6' }}>{entry.score}</td>
-                                <td style={{ padding: '0.8rem 1rem', textAlign: 'center', fontSize: '0.85rem' }}>
-                                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px' }}>
-                                     {modeType === 'square' ? <span style={{ background: '#fef3c7', color: '#d97706', padding: '0.1rem 0.4rem', borderRadius: '4px' }}>Square</span> : <span style={{ background: '#dbeafe', color: '#2563eb', padding: '0.1rem 0.4rem', borderRadius: '4px' }}>Rain</span>}
-                                     <span style={{ color: '#64748b', fontWeight: 'bold' }}>Lv {difficulty}</span>
-                                  </div>
-                                </td>
-                                <td style={{ padding: '0.8rem 1rem', textAlign: 'center' }}>
-                                  <button 
-                                    onClick={() => {
-                                      const fullVerse = activeVerseSets.flatMap(vs => vs.verses).find(v => v.reference === entry.verseRef) || { reference: entry.verseRef, title: "Custom" };
-                                      setLeaderboardModalVerse(fullVerse);
-                                      setIsFetchingLeaderboard(true);
-                                      fetch(`/api/get-scores?verseRef=${encodeURIComponent(entry.verseRef)}`)
-                                        .then(res => res.json())
-                                        .then(data => setLeaderboardModalData(data && Array.isArray(data.alltime) ? data : { alltime: Array.isArray(data) ? data : [], monthly: [], daily: [] }))
-                                        .catch(() => setLeaderboardModalData({ alltime: [], monthly: [], daily: [] }))
-                                        .finally(() => setIsFetchingLeaderboard(false));
-                                    }}
-                                    style={{ background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '0.3rem 0.6rem', cursor: 'pointer', color: '#475569' }}
-                                    onMouseOver={(e) => e.target.style.background = '#e2e8f0'}
-                                    onMouseOut={(e) => e.target.style.background = '#f8fafc'}
-                                  >
-                                    🏆
-                                  </button>
-                                </td>
-                                <td style={{ padding: '0.8rem 1rem', textAlign: 'center' }}>
-                                  <button
-                                    onClick={async (e) => {
-                                      e.stopPropagation();
-                                      initAudio();
-                                      
-                                      // Search across all possible sets
-                                      let targetVerse = VERSES_CUV.find(v => v.reference === entry.verseRef);
-                                      let targetVersion = 'cuv';
-                                      
-                                      if (!targetVerse) {
-                                        targetVerse = VERSES_KJV.find(v => v.reference === entry.verseRef);
-                                        targetVersion = 'kjv';
-                                      }
-
-                                      // If still not found, it might be a custom record or from a different dataset
-                                      if (!targetVerse && entry.verseRef) {
-                                        try {
-                                          const res = await fetch(`https://bible-api.com/${encodeURIComponent(entry.verseRef)}?translation=kjv`);
-                                          if (res.ok) {
-                                            const data = await res.json();
-                                            targetVerse = {
-                                              reference: data.reference,
-                                              title: "Custom Selection",
-                                              text: data.text.replace(/\n/g, ' ').trim()
-                                            };
-                                            targetVersion = 'kjv';
-                                          }
-                                        } catch (err) { console.error("Fetch failed", err); }
-                                      }
-
-                                      if (targetVerse && targetVerse.text) {
-                                        // Clear everything first to prevent mode mixing
-                                        setBlocks([]);
-                                        setGameState('menu'); 
-                                        
-                                        if (version !== targetVersion) setVersion(targetVersion);
-                                        setPlayMode(modeType);
-                                        setDistractionLevel(difficulty);
-                                        setActiveVerse(targetVerse);
-                                        
-                                        // Use the automatic start mechanism to ensure state convergence
-                                        setInitAutoStart({ trigger: true, isAuto: false });
-                                      } else {
-                                        alert(t("找不到該經文內容，無法挑戰。", "Verse content not found, cannot challenge."));
-                                      }
-                                    }}
-                                    style={{ background: '#f59e0b', color: 'white', border: 'none', borderRadius: '4px', padding: '0.4rem 0.8rem', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.85rem' }}
-                                    onMouseOver={(e) => e.target.style.background = '#d97706'}
-                                    onMouseOut={(e) => e.target.style.background = '#f59e0b'}
-                                  >
-                                    {t("挑戰", "Challenge")}
-                                  </button>
-                                </td>
-                              </tr>
-                            )
-                          })}
-                        </tbody>
-                      </table>
-
-                      {totalPages > 1 && (
-                        <div style={{ display: 'flex', justifyContent: 'center', gap: '0.5rem', marginTop: '1.5rem', flexWrap: 'wrap' }}>
-                          {Array.from({ length: totalPages }, (_, i) => i + 1).map(pageNum => (
-                            <button
-                              key={pageNum}
-                              onClick={() => setGlobalLeaderboardPage(pageNum)}
-                              style={{
-                                padding: '0.4rem 0.8rem',
-                                border: '1px solid #cbd5e1',
-                                background: globalLeaderboardPage === pageNum ? '#3b82f6' : '#ffffff',
-                                color: globalLeaderboardPage === pageNum ? 'white' : '#334155',
-                                borderRadius: '4px',
-                                cursor: 'pointer',
-                                fontWeight: 'bold',
-                                fontSize: '0.9rem'
-                              }}
-                            >
-                              {pageNum}
-                            </button>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  );
-                })()}
               </div>
-            </div>
             )}
             {mainTab === 'search' && (
               <div style={{ backgroundColor: '#ffffff', borderRadius: '8px', border: '1px solid #cbd5e1', padding: '2rem', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
