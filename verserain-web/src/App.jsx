@@ -2348,7 +2348,7 @@ export default function App() {
                       <thead>
                         <tr style={{ backgroundColor: '#f8fafc', color: '#475569', fontSize: '0.9rem' }}>
                           <th style={{ padding: '1rem', borderBottom: '2px solid #e2e8f0', width: '50px' }}>📁</th>
-                          <th style={{ padding: '1rem', borderBottom: '2px solid #e2e8f0' }}>{t("經文組的名稱", "Set Name")}</th>
+                          <th style={{ padding: '1rem', borderBottom: '2px solid #e2e8f0' }}>{t("標題", "Title")}</th>
                           <th style={{ padding: '1rem', borderBottom: '2px solid #e2e8f0' }}>{t("作者", "Author")}</th>
                           <th style={{ padding: '1rem', borderBottom: '2px solid #e2e8f0', textAlign: 'right' }}>{t("點閱次數", "Views")}</th>
                         </tr>
@@ -2626,7 +2626,7 @@ export default function App() {
                      <thead>
                        <tr style={{ borderBottom: '2px solid #e2e8f0', color: '#64748b', fontSize: '0.9rem' }}>
                          <th style={{ padding: '0.8rem 1rem', width: '50px' }}>🏆</th>
-                         <th style={{ padding: '0.8rem 1rem' }}>{t("經文組名稱", "Set Name")}</th>
+                         <th style={{ padding: '0.8rem 1rem' }}>{t("標題", "Title")}</th>
                          <th style={{ padding: '0.8rem 1rem' }}>{t("作者", "Author")}</th>
                          <th style={{ padding: '0.8rem 1rem', textAlign: 'right' }}>{t("點閱次數", "Views")}</th>
                        </tr>
