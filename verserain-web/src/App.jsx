@@ -1726,31 +1726,33 @@ export default function App() {
         <div className="rain-layer front" />
       </div>
 
-      {/* Global Mic Toggle & Subtitles */}
-      <div style={{ position: 'fixed', bottom: '6.5rem', right: '1.5rem', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.8rem', zIndex: 100 }}>
-        {liveTranscript && isMicOn && gameState === 'playing' && (
-          <div className="hud-glass" style={{ padding: '8px 16px', fontSize: '1rem', color: '#93c5fd', maxWidth: '80vw', textAlign: 'right', wordBreak: 'break-word', border: '1px solid rgba(147, 197, 253, 0.4)', borderRadius: '12px', whiteSpace: 'pre-wrap' }}>
-            <span style={{ fontSize: '0.8rem', color: '#64748b', display: 'block', marginBottom: '2px' }}>麥克風聽見：</span>
-            <span style={{ color: '#fff' }}>"{liveTranscript}"</span>
+      {/* Global Mic Toggle & Subtitles - Temporarily Disabled */}
+      {false && (
+        <div style={{ position: 'fixed', bottom: '6.5rem', right: '1.5rem', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.8rem', zIndex: 100 }}>
+          {liveTranscript && isMicOn && gameState === 'playing' && (
+            <div className="hud-glass" style={{ padding: '8px 16px', fontSize: '1rem', color: '#93c5fd', maxWidth: '80vw', textAlign: 'right', wordBreak: 'break-word', border: '1px solid rgba(147, 197, 253, 0.4)', borderRadius: '12px', whiteSpace: 'pre-wrap' }}>
+              <span style={{ fontSize: '0.8rem', color: '#64748b', display: 'block', marginBottom: '2px' }}>麥克風聽見：</span>
+              <span style={{ color: '#fff' }}>"{liveTranscript}"</span>
+            </div>
+          )}
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem' }}>
+            {micStatusText && <div className="hud-glass" style={{ padding: '4px 8px', fontSize: '0.8rem', color: '#4ade80', animation: 'pulse 2s infinite' }}>{micStatusText}</div>}
+            <button
+              onClick={(e) => { 
+                e.stopPropagation(); 
+                const nextMicState = !isMicOn;
+                setIsMicOn(nextMicState);
+                if (nextMicState) setIsMusicPlaying(false);
+              }}
+              className="hud-glass"
+              title={t("語音控制開關", "Toggle Voice Control")}
+              style={{ padding: '0.75rem', borderRadius: '50%', color: isMicOn ? '#4ade80' : '#ef4444', backgroundColor: isMicOn ? 'rgba(74, 222, 128, 0.1)' : 'rgba(239, 68, 68, 0.1)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.3s' }}
+            >
+              {isMicOn ? <Mic size={24} /> : <MicOff size={24} />}
+            </button>
           </div>
-        )}
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem' }}>
-          {micStatusText && <div className="hud-glass" style={{ padding: '4px 8px', fontSize: '0.8rem', color: '#4ade80', animation: 'pulse 2s infinite' }}>{micStatusText}</div>}
-          <button
-            onClick={(e) => { 
-              e.stopPropagation(); 
-              const nextMicState = !isMicOn;
-              setIsMicOn(nextMicState);
-              if (nextMicState) setIsMusicPlaying(false);
-            }}
-            className="hud-glass"
-            title={t("語音控制開關", "Toggle Voice Control")}
-            style={{ padding: '0.75rem', borderRadius: '50%', color: isMicOn ? '#4ade80' : '#ef4444', backgroundColor: isMicOn ? 'rgba(74, 222, 128, 0.1)' : 'rgba(239, 68, 68, 0.1)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.3s' }}
-          >
-            {isMicOn ? <Mic size={24} /> : <MicOff size={24} />}
-          </button>
         </div>
-      </div>
+      )}
 
       {/* Global Music Toggle */}
       <button
