@@ -3787,6 +3787,9 @@ export default function App() {
                 <>
                   {t("還沒有帳號？", "Don't have an account? ")}
                   <span onClick={() => setShowLoginModal('signup')} style={{ color: '#3b82f6', cursor: 'pointer', fontWeight: 'bold' }}>{t("立即註冊", "Sign up")}</span>
+                  <div style={{ marginTop: '0.8rem' }}>
+                    <span onClick={() => alert(t("因為系統並未串接電子郵件服務，請直接聯絡管理人員 (負責人) 來協助您重置密碼！", "Since there is no email service configured, please contact the administrator to reset your password!"))} style={{ color: '#94a3b8', cursor: 'pointer', textDecoration: 'underline' }}>{t("忘記密碼？", "Forgot Password?")}</span>
+                  </div>
                 </>
               )}
             </div>
@@ -3928,7 +3931,7 @@ export default function App() {
           <div style={{ background: '#ffffff', borderRadius: '12px', padding: '2rem', width: '100%', maxWidth: '400px', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)', display: 'flex', flexDirection: 'column', gap: '1.5rem', border: '1px solid #e2e8f0' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <h2 style={{ margin: 0, color: '#1e293b', fontSize: '1.5rem', fontWeight: 'bold' }}>
-                {t("設定您的暱稱", "Set Your Display Name")}
+                {t("修改個人資料", "Edit Profile")}
               </h2>
               <button 
                 onClick={() => setShowNameEditModal(false)}
@@ -3937,35 +3940,111 @@ export default function App() {
                 <XCircle size={24} />
               </button>
             </div>
-            <p style={{ margin: 0, color: '#64748b', fontSize: '0.9rem' }}>
-              {t("請輸入您想在排行榜上顯示的名稱（例如您的 Skool 名稱）。", "Enter the name you'd like to show on the leaderboard (e.g., your Skool name).")}
-            </p>
-            <input 
-              id="nameEditInput"
-              type="text"
-              maxLength={20}
-              placeholder={t("輸入名稱...", "Enter name...")}
-              defaultValue={playerName && !playerName.startsWith("Google P") ? playerName : ""}
-              autoFocus
-              onKeyDown={(e) => { if (e.key === 'Enter') document.getElementById('saveNameBtn')?.click(); }}
-              style={{ padding: '0.8rem', borderRadius: '6px', border: '1px solid #cbd5e1', background: '#f8fafc', color: '#1e293b', fontSize: '1rem', outline: 'none' }}
-            />
+            
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+               <div>
+                  <label style={{ display: 'block', fontSize: '0.9rem', color: '#64748b', marginBottom: '0.3rem', fontWeight: 'bold' }}>{t("目前暱稱", "Display Name")}</label>
+                  <input 
+                    id="nameEditInput"
+                    type="text"
+                    maxLength={20}
+                    placeholder={t("輸入名稱...", "Enter name...")}
+                    defaultValue={playerName && !playerName.startsWith("Google P") ? playerName : ""}
+                    style={{ width: '100%', padding: '0.8rem', borderRadius: '6px', border: '1px solid #cbd5e1', background: '#f8fafc', color: '#1e293b', fontSize: '1rem', outline: 'none', boxSizing: 'border-box' }}
+                  />
+               </div>
+               
+               {userEmail && (
+                 <>
+                   <div>
+                      <label style={{ display: 'block', fontSize: '0.9rem', color: '#64748b', marginBottom: '0.3rem', fontWeight: 'bold' }}>{t("目前密碼 (必填)", "Current Password (Required)")}</label>
+                      <input 
+                        id="profileOldPassword"
+                        type="password"
+                        placeholder={t("輸入目前密碼驗證身分", "Enter current password...")}
+                        style={{ width: '100%', padding: '0.8rem', borderRadius: '6px', border: '1px solid #cbd5e1', background: '#f8fafc', color: '#1e293b', fontSize: '1rem', outline: 'none', boxSizing: 'border-box' }}
+                      />
+                   </div>
+                   <div>
+                      <label style={{ display: 'block', fontSize: '0.9rem', color: '#64748b', marginBottom: '0.3rem', fontWeight: 'bold' }}>{t("新密碼 (選填)", "New Password (Optional)")}</label>
+                      <input 
+                        id="profileNewPassword"
+                        type="password"
+                        placeholder={t("若不修改請留空", "Leave empty to keep unchanged")}
+                        style={{ width: '100%', padding: '0.8rem', borderRadius: '6px', border: '1px solid #cbd5e1', background: '#f8fafc', color: '#1e293b', fontSize: '1rem', outline: 'none', boxSizing: 'border-box' }}
+                      />
+                   </div>
+                 </>
+               )}
+            </div>
+
             <button 
               id="saveNameBtn"
-              onClick={() => {
-                const input = document.getElementById('nameEditInput');
-                const newName = input ? input.value.trim() : "";
-                if (newName) {
-                  setPlayerName(newName);
-                  localStorage.setItem('verserain_player_name', newName);
-                  setToast(t("設定成功！觀迎遊玩，", "Name set! Welcome, ") + newName);
-                  setTimeout(() => setToast(null), 3000);
-                  setShowNameEditModal(false);
+              onClick={async (e) => {
+                const btn = e.target;
+                const originalText = btn.innerText;
+                const inputName = document.getElementById('nameEditInput');
+                const newName = inputName ? inputName.value.trim() : "";
+                
+                if (!userEmail) {
+                   // Guest user, only update local name
+                   if (newName) {
+                      setPlayerName(newName);
+                      localStorage.setItem('verserain_player_name', newName);
+                      setToast(t("設定成功！觀迎遊玩，", "Name set! Welcome, ") + newName);
+                      setTimeout(() => setToast(null), 3000);
+                   }
+                   setShowNameEditModal(false);
+                   return;
+                }
+                
+                const oldPasswordInput = document.getElementById('profileOldPassword');
+                const newPasswordInput = document.getElementById('profileNewPassword');
+                const oldPassword = oldPasswordInput ? oldPasswordInput.value : "";
+                const newPassword = newPasswordInput ? newPasswordInput.value : "";
+                
+                if (!oldPassword) {
+                   return alert(t("請輸入您目前的密碼以確認身分！", "Please enter your current password to confirm!"));
+                }
+                if (!newName) {
+                   return alert(t("暱稱不能為空！", "Display name cannot be empty!"));
+                }
+                
+                btn.innerText = "...";
+                btn.disabled = true;
+                
+                try {
+                   const res = await fetch("https://verserain-party.hungry4grace.partykit.dev/parties/main/global-auth-db/update-profile", {
+                       method: 'POST',
+                       headers: { 'Content-Type': 'application/json' },
+                       body: JSON.stringify({
+                           email: userEmail,
+                           password: oldPassword,
+                           newName: newName,
+                           newPassword: newPassword || undefined
+                       })
+                   });
+                   const data = await res.json();
+                   
+                   if (data.success) {
+                       setPlayerName(data.user.name);
+                       localStorage.setItem('verserain_player_name', data.user.name);
+                       setToast(t("個人資料修改成功！", "Profile updated successfully!"));
+                       setTimeout(() => setToast(null), 3000);
+                       setShowNameEditModal(false);
+                   } else {
+                       alert(data.error || "Update failed");
+                   }
+                } catch (err) {
+                   alert("Failed to connect to server.");
+                } finally {
+                   btn.innerText = originalText;
+                   btn.disabled = false;
                 }
               }}
-              style={{ background: '#3b82f6', color: 'white', border: 'none', padding: '0.8rem', borderRadius: '6px', fontSize: '1rem', fontWeight: 'bold', cursor: 'pointer', transition: 'background 0.2s' }}
+              style={{ background: '#3b82f6', color: 'white', border: 'none', padding: '0.8rem', borderRadius: '6px', fontSize: '1rem', fontWeight: 'bold', cursor: 'pointer', transition: 'background 0.2s', marginTop: '1rem' }}
             >
-              {t("確認儲存", "Save & Continue")}
+              {t("確認儲存", "Save Changes")}
             </button>
           </div>
         </div>

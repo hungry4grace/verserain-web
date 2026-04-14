@@ -104,6 +104,26 @@ export default class Server {
            }
         }
 
+        // 3.5. Update Profile
+        if (url.pathname.endsWith('/update-profile')) {
+           try {
+              const { email, password, newPassword, newName } = await request.json();
+              if (!email || !password) return new Response(JSON.stringify({ error: 'Email and current password required' }), { status: 400, headers: corsHeaders });
+              
+              let user = await this.room.storage.get(`user:${email.toLowerCase()}`);
+              if (!user || user.password !== password) {
+                 return new Response(JSON.stringify({ error: '密碼錯誤 (Invalid password)' }), { status: 401, headers: corsHeaders });
+              }
+              
+              if (newPassword) user.password = newPassword;
+              if (newName) user.name = newName;
+              
+              await this.room.storage.put(`user:${email.toLowerCase()}`, user);
+              return new Response(JSON.stringify({ success: true, user }), { status: 200, headers: corsHeaders });
+           } catch(e) {
+              return new Response(JSON.stringify({ error: 'Update failed' }), { status: 500, headers: corsHeaders });
+           }
+        }
         // 4. Published Custom Verse Sets Endpoint
         if (url.pathname.endsWith('/custom-sets')) {
            try {
