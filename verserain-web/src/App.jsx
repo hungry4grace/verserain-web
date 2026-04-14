@@ -1801,7 +1801,7 @@ export default function App() {
               { id: 'leaderboard', label: t('排行榜', 'Leaderboard') },
               { id: 'search', label: t('搜尋', 'Search') },
               { id: 'about', label: t('有關', 'About') },
-              { id: 'donate', label: t('加入會員', 'Join Membership'), link: 'https://www.skool.com/mutualizedeconomy' }
+              { id: 'donate', label: t('解鎖經文組', 'Unlock Verse Sets'), link: 'https://www.skool.com/mutualizedeconomy/classroom' }
             ].map((item, idx) => (
               <div key={idx} onClick={() => {
                 if (item.link) {
