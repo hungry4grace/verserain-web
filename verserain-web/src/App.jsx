@@ -2510,6 +2510,9 @@ export default function App() {
                           </button>
                         </div>
                       </div>
+                      {currentSet?.description && (
+                        <div style={{ padding: '1rem 1.5rem', borderBottom: '1px solid #e2e8f0', backgroundColor: '#ffffff', color: '#334155', fontSize: '1rem', lineHeight: '1.6' }} dangerouslySetInnerHTML={{ __html: currentSet.description }} className="ql-editor-content" />
+                      )}
                       <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
                         <thead>
                           <tr style={{ backgroundColor: '#f8fafc', color: '#475569', fontSize: '0.9rem' }}>
