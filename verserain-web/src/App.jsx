@@ -225,6 +225,7 @@ export default function App() {
   const [editingCustomSet, setEditingCustomSet] = useState(null);
 
   const [publishedVerseSets, setPublishedVerseSets] = useState([]);
+  const [viewCounts, setViewCounts] = useState({});
 
   useEffect(() => {
     fetch("https://verserain-party.hungry4grace.partykit.dev/parties/main/global-auth-db/custom-sets")
@@ -233,6 +234,17 @@ export default function App() {
         if (Array.isArray(data)) setPublishedVerseSets(data);
       })
       .catch(err => console.error("Failed to fetch published sets", err));
+      
+    fetch("https://verserain-party.hungry4grace.partykit.dev/parties/main/global-auth-db/custom-sets/view")
+      .then(res => res.json())
+      .then(data => {
+         if (data) {
+             const cleanData = {};
+             Object.keys(data).forEach(k => cleanData[k.replace('views:', '')] = data[k]);
+             setViewCounts(cleanData);
+         }
+      })
+      .catch(err => console.error("Failed to fetch view counts", err));
   }, []);
 
   const baseVerseSets = version === 'cuv' ? VERSE_SETS_CUV : VERSE_SETS_KJV;
@@ -2332,14 +2344,19 @@ export default function App() {
                       <thead>
                         <tr style={{ backgroundColor: '#f8fafc', color: '#475569', fontSize: '0.9rem' }}>
                           <th style={{ padding: '1rem', borderBottom: '2px solid #e2e8f0', width: '50px' }}>📁</th>
-                          <th style={{ padding: '1rem', borderBottom: '2px solid #e2e8f0' }}>{t("經文組名稱", "Verse Set Name")}</th>
-                          <th style={{ padding: '1rem', borderBottom: '2px solid #e2e8f0' }}>{t("說明", "Description")}</th>
-                          <th style={{ padding: '1rem', borderBottom: '2px solid #e2e8f0', textAlign: 'right' }}>{t("經文數量", "Count")}</th>
+                          <th style={{ padding: '1rem', borderBottom: '2px solid #e2e8f0' }}>{t("經文組的名稱", "Set Name")}</th>
+                          <th style={{ padding: '1rem', borderBottom: '2px solid #e2e8f0' }}>{t("標題", "Title")}</th>
+                          <th style={{ padding: '1rem', borderBottom: '2px solid #e2e8f0' }}>{t("作者", "Author")}</th>
+                          <th style={{ padding: '1rem', borderBottom: '2px solid #e2e8f0', textAlign: 'right' }}>{t("點閱次數", "Views")}</th>
                         </tr>
                       </thead>
                       <tbody>
                         {activeVerseSets.map((set, i) => (
-                          <tr key={i} style={{ borderBottom: '1px solid #e2e8f0', backgroundColor: i % 2 === 0 ? '#ffffff' : '#f8fafc', transition: 'background 0.2s', cursor: 'pointer' }} onClick={() => setSelectedSetId(set.id)} onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#eff6ff'} onMouseOut={(e) => e.currentTarget.style.backgroundColor = i % 2 === 0 ? '#ffffff' : '#f8fafc'}>
+                          <tr key={i} style={{ borderBottom: '1px solid #e2e8f0', backgroundColor: i % 2 === 0 ? '#ffffff' : '#f8fafc', transition: 'background 0.2s', cursor: 'pointer' }} onClick={() => {
+                              setSelectedSetId(set.id);
+                              fetch("https://verserain-party.hungry4grace.partykit.dev/parties/main/global-auth-db/custom-sets/view", { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({id: set.id}) }).catch(e=>e);
+                              setViewCounts(prev => ({...prev, [set.id]: (prev[set.id] || 0) + 1}));
+                          }} onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#eff6ff'} onMouseOut={(e) => e.currentTarget.style.backgroundColor = i % 2 === 0 ? '#ffffff' : '#f8fafc'}>
                             <td style={{ padding: '1rem', textAlign: 'center', color: '#3b82f6', fontSize: '1.2rem' }}>{customVerseSets.some(c => c.id === set.id) ? '👑' : '📁'}</td>
                             <td style={{ padding: '1rem', fontWeight: 'bold', color: '#1e293b', fontSize: '1.05rem' }}>
                                <span>{set.title}</span>
@@ -2364,8 +2381,9 @@ export default function App() {
                                   </span>
                                )}
                             </td>
-                            <td style={{ padding: '1rem', color: '#64748b', fontSize: '0.9rem' }} dangerouslySetInnerHTML={{ __html: set.description || "" }} />
-                            <td style={{ padding: '1rem', textAlign: 'right', color: '#337ab7', fontWeight: 'bold' }}>{set.verses?.length || 0}</td>
+                            <td style={{ padding: '1rem', color: '#64748b', fontSize: '0.9rem', maxWidth: '300px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} dangerouslySetInnerHTML={{ __html: set.description || "" }} />
+                            <td style={{ padding: '1rem', color: '#337ab7', fontSize: '0.9rem', fontWeight: 'bold' }}>{set.authorName || (String(set.id).startsWith("custom-") ? "匿名玩家" : "Verserain 官方")}</td>
+                            <td style={{ padding: '1rem', textAlign: 'right', color: '#64748b', fontWeight: 'bold' }}>{viewCounts[set.id] || 0}</td>
                           </tr>
                         ))}
                       </tbody>

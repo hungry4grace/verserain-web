@@ -162,6 +162,27 @@ export default class Server {
               return new Response(JSON.stringify({ error: 'System error processing request' }), { status: 500, headers: corsHeaders });
            }
         }
+
+        // 3.9 View Counts Endpoint
+        if (url.pathname.endsWith('/custom-sets/view')) {
+           try {
+              if (request.method === "POST") {
+                 const { id } = await request.json();
+                 if (!id) return new Response(JSON.stringify({ error: 'ID required' }), { status: 400, headers: corsHeaders });
+                 let c = await this.room.storage.get(`views:${id}`) || 0;
+                 await this.room.storage.put(`views:${id}`, c + 1);
+                 return new Response(JSON.stringify({ success: true, views: c + 1 }), { status: 200, headers: corsHeaders });
+              }
+              if (request.method === "GET") {
+                 const list = await this.room.storage.list({ prefix: "views:" });
+                 const views = Object.fromEntries(list.entries());
+                 return new Response(JSON.stringify(views), { status: 200, headers: corsHeaders });
+              }
+           } catch(e) {
+              return new Response(JSON.stringify({ error: 'System error' }), { status: 500, headers: corsHeaders });
+           }
+        }
+
         // 4. Published Custom Verse Sets Endpoint
         if (url.pathname.endsWith('/custom-sets')) {
            try {
