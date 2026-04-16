@@ -3400,12 +3400,35 @@ export default function App() {
                               <button
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  const targetVerse = findVerseByRef(VERSES_DB, ref);
+                                  // Search current set first, then ALL language pools (fixes iPhone 'verse not found')
+                                  let targetVerse = findVerseByRef(VERSES_DB, ref);
+                                  let detectedLang = null;
+                                  if (!targetVerse) {
+                                    const allCurrentVerses = safeActiveSets.flatMap(s => s.verses);
+                                    targetVerse = findVerseByRef(allCurrentVerses, ref);
+                                  }
+                                  if (!targetVerse) {
+                                    const langPools = [
+                                      { lang: 'kjv', verses: [...VERSE_SETS_KJV, ...VERSE_SETS_PROVERBS_KJV].flatMap(s => s.verses) },
+                                      { lang: 'cuv', verses: [...VERSE_SETS_CUV, ...VERSE_SETS_PROVERBS_ZH].flatMap(s => s.verses) },
+                                      { lang: 'ko',  verses: [...VERSE_SETS_KO,  ...VERSE_SETS_PROVERBS_KO].flatMap(s => s.verses) },
+                                      { lang: 'ja',  verses: [...VERSE_SETS_JA,  ...VERSE_SETS_PROVERBS_JA].flatMap(s => s.verses) },
+                                    ];
+                                    for (const pool of langPools) {
+                                      if (pool.lang === version) continue;
+                                      const found = findVerseByRef(pool.verses, ref);
+                                      if (found) { targetVerse = found; detectedLang = pool.lang; break; }
+                                    }
+                                  }
                                   if (targetVerse) {
+                                    if (detectedLang) {
+                                      versionBeforeChallenge.current = version;
+                                      setVersion(detectedLang);
+                                    }
                                     setActiveVerse(targetVerse);
                                     setTimeout(() => startGame(), 50);
                                   } else {
-                                    setToast(t("本機找不到此經文", "Verse not found locally"));
+                                    setToast(t('本機找不到此經文', 'Verse not found locally'));
                                   }
                                 }}
                                 style={{ background: '#10b981', color: 'white', border: 'none', padding: '0.3rem 0.6rem', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '4px' }}
