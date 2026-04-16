@@ -36,6 +36,7 @@ export default async function handler(req, res) {
       country: country || '',
       city: city || '',
       verseRef: verseRef || '',
+      roomId: roomId || '',      // active room (empty string = not in a room)
       updatedAt: Date.now()
     });
     // Keep a set of all player keys for easy retrieval

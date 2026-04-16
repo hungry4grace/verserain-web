@@ -23,6 +23,15 @@ const quillModules = {
 
 let audioCtx = null;
 
+// Deterministic room color from roomId — same roomId always = same color
+const ROOM_COLORS = ['#ef4444','#f97316','#eab308','#22c55e','#14b8a6','#0ea5e9','#8b5cf6','#ec4899','#06b6d4','#84cc16'];
+export function getRoomColor(roomId) {
+  if (!roomId) return null;
+  let hash = 0;
+  for (const c of roomId) hash = (hash * 31 + c.charCodeAt(0)) % ROOM_COLORS.length;
+  return ROOM_COLORS[hash];
+}
+
 function initAudio() {
   if (!audioCtx) {
     audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -732,6 +741,7 @@ export default function App() {
   const [showNameEditModal, setShowNameEditModal] = useState(false);
   const [qrShareModal, setQrShareModal] = useState(null); // { url, reference }
   const [multiplayerRoomId, setMultiplayerRoomId] = useState(null);
+  const geoRef = useRef(null); // cached IP geolocation
   const [showMultiplayerVersePicker, setShowMultiplayerVersePicker] = useState(false);
   const [pickerSelectedSet, setPickerSelectedSet] = useState(null);
   const [multiplayerPlayMode, setMultiplayerPlayMode] = useState('square_solo');
@@ -763,6 +773,36 @@ export default function App() {
 
   const multiplayerRoomRef = useRef(multiplayerRoomId);
   useEffect(() => { multiplayerRoomRef.current = multiplayerRoomId; }, [multiplayerRoomId]);
+
+  // Submit location immediately when room changes (join/leave/game-over)
+  useEffect(() => {
+    const name = playerNameRef.current;
+    if (!name) return;
+    const activeRoomId = multiplayerRoomId; // null when leaving
+    const doSubmit = (geo) => {
+      fetch('/api/submit-location', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name,
+          score: 0,
+          lat: parseFloat(geo.latitude),
+          lng: parseFloat(geo.longitude),
+          country: geo.country_name || geo.country || '',
+          city: geo.city || '',
+          verseRef: '',
+          roomId: activeRoomId || null
+        })
+      }).catch(() => {});
+    };
+    if (geoRef.current) {
+      doSubmit(geoRef.current);
+    } else {
+      fetch('https://ipapi.co/json/').then(r => r.json()).then(geo => {
+        if (geo?.latitude) { geoRef.current = geo; doSubmit(geo); }
+      }).catch(() => {});
+    }
+  }, [multiplayerRoomId]);
 
   const [multiplayerState, setMultiplayerState] = useState(null);
   const [myClientId, setMyClientId] = useState(null);
@@ -2628,7 +2668,7 @@ export default function App() {
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', alignItems: 'center' }}>
                     <div style={{ padding: '1.5rem', backgroundColor: '#fdf4ff', borderRadius: '8px', border: '2px dashed #d946ef', width: '100%', maxWidth: '400px' }}>
                       <h3 style={{ margin: '0 0 0.5rem 0', color: '#86198f' }}>{t("準備比賽！", "Get Ready!")}</h3>
-                      <div style={{ fontSize: '1.8rem', fontWeight: 'bold', color: '#3b82f6', letterSpacing: '6px', marginBottom: '0.5rem', background: '#f0f9ff', borderRadius: '6px', padding: '0.3rem 1rem', display: 'inline-block', border: '1px solid #bfdbfe' }}>{multiplayerRoomId}</div>
+                      <div style={{ fontSize: '1.8rem', fontWeight: 'bold', color: getRoomColor(multiplayerRoomId) || '#3b82f6', letterSpacing: '6px', marginBottom: '0.5rem', background: (getRoomColor(multiplayerRoomId) || '#3b82f6') + '18', borderRadius: '6px', padding: '0.3rem 1rem', display: 'inline-block', border: `2px solid ${getRoomColor(multiplayerRoomId) || '#3b82f6'}` }}>{multiplayerRoomId}</div>
                       <p style={{ fontSize: '0.8rem', color: '#94a3b8', margin: '0 0 0.8rem 0' }}>{t("分享此代碼讓更多人加入", "Share this code to let others join")}</p>
                       <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#c026d3', marginBottom: '0.5rem' }}>{multiplayerState.verseRef}</div>
                       <div style={{ fontSize: '1rem', color: '#701a75', marginBottom: '1rem', fontStyle: 'italic', maxWidth: '300px', lineHeight: '1.4' }}>"{multiplayerState.verseText}"</div>
@@ -2820,7 +2860,7 @@ export default function App() {
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', alignItems: 'center' }}>
                     <div style={{ padding: '1.5rem', backgroundColor: '#f8fafc', borderRadius: '8px', border: '1px dashed #cbd5e1', width: '100%', maxWidth: '400px' }}>
                       <h3 style={{ margin: '0 0 1rem 0', color: '#334155' }}>{t("等待玩家...", "Waiting...")}</h3>
-                      <div style={{ fontSize: '2.5rem', fontWeight: 'bold', color: '#3b82f6', letterSpacing: '6px', marginBottom: '1rem' }}>{multiplayerRoomId}</div>
+                      <div style={{ fontSize: '2.5rem', fontWeight: 'bold', color: getRoomColor(multiplayerRoomId) || '#3b82f6', letterSpacing: '6px', marginBottom: '0.8rem', background: (getRoomColor(multiplayerRoomId) || '#3b82f6') + '18', borderRadius: '8px', padding: '0.4rem 1.2rem', display: 'inline-block', border: `3px solid ${getRoomColor(multiplayerRoomId) || '#3b82f6'}`, boxShadow: `0 0 16px ${getRoomColor(multiplayerRoomId) || '#3b82f6'}44` }}>{multiplayerRoomId}</div>
                       <p style={{ color: '#94a3b8', fontSize: '0.9rem', margin: 0 }}>{t("請朋友輸入上方的代碼來加入您的遊戲", "Ask your friend to enter this code to join")}</p>
                     </div>
 

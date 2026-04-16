@@ -33,6 +33,7 @@ export default async function handler(req, res) {
         country: r.country || '',
         city: r.city || '',
         verseRef: r.verseRef || '',
+        roomId: r.roomId || null,
         updatedAt: r.updatedAt ? parseInt(r.updatedAt) : 0
       }));
 
