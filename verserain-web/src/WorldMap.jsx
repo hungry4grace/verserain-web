@@ -123,12 +123,14 @@ export default function WorldMap({ t, playerName }) {
             ? `<div style="margin-top:6px; font-size:0.8rem; font-weight:bold; background:${roomColor}22; color:${roomColor}; border-radius:12px; padding:2px 8px; display:inline-block;">⚔️ 房間 ${p.roomId}</div>`
             : '';
 
+          const lastOnline = p.updatedAt ? new Date(p.updatedAt).toLocaleString() : 'Unknown';
+
           const popup = L.popup({ maxWidth: 220, className: 'verse-map-popup' }).setContent(`
             <div style="font-family: system-ui, sans-serif; text-align:center; min-width: 120px;">
               <div style="font-weight:bold; font-size:1.1rem; color:#1e293b; margin-bottom:4px;">${p.name}</div>
               <div style="font-size:0.85rem; color:#64748b;">📍 ${p.city ? p.city + ', ' : ''}${p.country || 'Unknown'}</div>
               ${roomBadge}
-              ${p.verseRef ? `<div style="margin-top:8px; font-size:0.75rem; color:#94a3b8;">📖 ${p.verseRef}</div>` : ''}
+              <div style="margin-top:8px; font-size:0.75rem; color:#94a3b8;">🕒 ${t('最後上線', 'Last Online')}: ${lastOnline}</div>
             </div>
           `);
 
