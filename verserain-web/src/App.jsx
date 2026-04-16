@@ -762,6 +762,9 @@ export default function App() {
   const [multiplayerState, setMultiplayerState] = useState(null);
   const [myClientId, setMyClientId] = useState(null);
   const [intermissionCountdown, setIntermissionCountdown] = useState(0);
+  const [joinRoomError, setJoinRoomError] = useState(null);
+  const joinRoomTimeoutRef = useRef(null);
+  const isGuestJoinRef = useRef(false);
 
   useEffect(() => {
     if (gameState === 'intermission' && intermissionCountdown > 0) {
@@ -868,6 +871,23 @@ export default function App() {
         const msg = JSON.parse(e.data);
         if (msg.type === 'STATE_UPDATE') {
           setMultiplayerState(msg.state);
+          // Room validation for guest join:
+          // If we received a state AND there are other players (host exists), room is valid → clear timeout
+          // If status='waiting' and only 1 player (just us), room is empty/nonexistent
+          if (isGuestJoinRef.current) {
+            const players = msg.state.players || {};
+            const playerCount = Object.keys(players).length;
+            if (playerCount > 1 || msg.state.status !== 'waiting') {
+              // Room has a host — it's valid
+              if (joinRoomTimeoutRef.current) {
+                clearTimeout(joinRoomTimeoutRef.current);
+                joinRoomTimeoutRef.current = null;
+              }
+              setJoinRoomError(null);
+              isGuestJoinRef.current = false;
+            }
+            // else: still waiting — let the 5s timeout decide
+          }
 
           // Only init game if we are NOT already in any game-active state
           const isGameActive = ['playing', 'intermission', 'waiting_for_others'].includes(gameStateRef.current);
@@ -2508,13 +2528,42 @@ export default function App() {
                         id="joinRoomBtn"
                         onClick={() => {
                           const code = document.getElementById('joinRoomInput')?.value.replace(/\s+/g, '').toUpperCase();
-                          if (code && code.length > 0) setMultiplayerRoomId(code.substring(0, 4));
+                          if (code && code.length > 0) {
+                            const roomCode = code.substring(0, 4);
+                            setJoinRoomError(null);
+                            isGuestJoinRef.current = true;
+                            setMultiplayerRoomId(roomCode);
+                            // Start 5s timeout — if no STATE_UPDATE arrives, room likely doesn't exist
+                            if (joinRoomTimeoutRef.current) clearTimeout(joinRoomTimeoutRef.current);
+                            joinRoomTimeoutRef.current = setTimeout(() => {
+                              if (isGuestJoinRef.current) {
+                                setJoinRoomError(roomCode);
+                                setMultiplayerRoomId(null);
+                                isGuestJoinRef.current = false;
+                              }
+                            }, 5000);
+                          }
                         }}
                         style={{ background: '#10b981', color: 'white', border: 'none', padding: '0 1.5rem', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer' }}
                       >
                         {t("加入", "Join")}
                       </button>
                     </div>
+
+                    {joinRoomError && (
+                      <div style={{ width: '100%', maxWidth: '300px', backgroundColor: '#fef2f2', border: '1px solid #fca5a5', borderRadius: '8px', padding: '0.8rem 1rem', display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                        <span style={{ fontSize: '1.2rem' }}>⚠️</span>
+                        <div>
+                          <div style={{ fontWeight: 'bold', color: '#dc2626', fontSize: '0.95rem' }}>
+                            {t(`找不到房間「${joinRoomError}」`, `Room "${joinRoomError}" not found`)}
+                          </div>
+                          <div style={{ color: '#ef4444', fontSize: '0.8rem', marginTop: '2px' }}>
+                            {t('請確認房間代碼是否正確', 'Please check the room code and try again')}
+                          </div>
+                        </div>
+                        <button onClick={() => setJoinRoomError(null)} style={{ marginLeft: 'auto', background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer', fontSize: '1rem', padding: '0 0.2rem' }}>✕</button>
+                      </div>
+                    )}
                   </div>
                 ) : multiplayerState?.status === 'ready_check' ? (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', alignItems: 'center' }}>
