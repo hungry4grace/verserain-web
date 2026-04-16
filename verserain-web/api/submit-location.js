@@ -9,9 +9,11 @@ export default async function handler(req, res) {
   if (req.method === 'OPTIONS') { res.status(200).end(); return; }
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
-  const { name, score, lat, lng, country, city, verseRef } = req.body;
+  const { name, score, lat, lng, country, city, verseRef, roomId } = req.body;
 
-  if (!name || typeof lat !== 'number' || typeof lng !== 'number') {
+  const latNum = parseFloat(lat);
+  const lngNum = parseFloat(lng);
+  if (!name || isNaN(latNum) || isNaN(lngNum)) {
     return res.status(400).json({ error: 'Missing required fields' });
   }
 
@@ -30,13 +32,13 @@ export default async function handler(req, res) {
 
     await redis.hset(playerKey, {
       name,
-      score: bestScore,          // keep best score
-      lat: lat.toFixed(4),       // always update to latest location
-      lng: lng.toFixed(4),
+      score: bestScore,
+      lat: latNum.toFixed(4),
+      lng: lngNum.toFixed(4),
       country: country || '',
       city: city || '',
       verseRef: verseRef || '',
-      roomId: roomId || '',      // active room (empty string = not in a room)
+      roomId: roomId || '',
       updatedAt: Date.now()
     });
     // Keep a set of all player keys for easy retrieval

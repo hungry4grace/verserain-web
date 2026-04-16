@@ -798,9 +798,17 @@ export default function App() {
     if (geoRef.current) {
       doSubmit(geoRef.current);
     } else {
-      fetch('https://ipapi.co/json/').then(r => r.json()).then(geo => {
-        if (geo?.latitude) { geoRef.current = geo; doSubmit(geo); }
-      }).catch(() => {});
+      // Try multiple geo services with fallback
+      const tryGeo = async () => {
+        const services = [
+          async () => { const r = await fetch('https://ipapi.co/json/'); const d = await r.json(); if (d?.latitude) return { latitude: d.latitude, longitude: d.longitude, country_name: d.country_name, city: d.city }; throw new Error('no data'); },
+          async () => { const r = await fetch('https://ip-api.com/json/?fields=lat,lon,country,city,status'); const d = await r.json(); if (d?.status === 'success') return { latitude: d.lat, longitude: d.lon, country_name: d.country, city: d.city }; throw new Error('no data'); },
+        ];
+        for (const svc of services) {
+          try { const geo = await svc(); geoRef.current = geo; doSubmit(geo); return; } catch {}
+        }
+      };
+      tryGeo();
     }
   }, [multiplayerRoomId]);
 
@@ -970,25 +978,21 @@ export default function App() {
             // Fix: submit location for ALL multiplayer players at game start (not just endGame)
             const nameAtStart = playerNameRef.current || socket?.id;
             if (nameAtStart) {
-              fetch('https://ipapi.co/json/')
-                .then(r => r.json())
-                .then(geo => {
-                  if (geo && geo.latitude && geo.longitude) {
-                    fetch('/api/submit-location', {
-                      method: 'POST',
-                      headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({
-                        name: nameAtStart,
-                        score: 0,
-                        lat: geo.latitude,
-                        lng: geo.longitude,
-                        country: geo.country_name || geo.country,
-                        city: geo.city || '',
-                        verseRef: msg.state.verseRef || ''
-                      })
-                    }).catch(() => {});
-                  }
-                }).catch(() => {});
+              const roomIdAtStart = multiplayerRoomRef.current;
+              const submitLoc = (geo) => fetch('/api/submit-location', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name: nameAtStart, score: 0, lat: geo.latitude, lng: geo.longitude, country: geo.country_name || geo.country, city: geo.city || '', verseRef: msg.state.verseRef || '', roomId: roomIdAtStart || null })
+              }).catch(() => {});
+              if (geoRef.current) {
+                submitLoc(geoRef.current);
+              } else {
+                (async () => {
+                  for (const svc of [
+                    async () => { const d = await (await fetch('https://ipapi.co/json/')).json(); if (d?.latitude) return d; throw 0; },
+                    async () => { const d = await (await fetch('https://ip-api.com/json/?fields=lat,lon,country,city,status')).json(); if (d?.status==='success') return {latitude:d.lat,longitude:d.lon,country_name:d.country,city:d.city}; throw 0; }
+                  ]) { try { const g = await svc(); geoRef.current = g; submitLoc(g); return; } catch {} }
+                })();
+              }
             }
 
             if (timerRef.current) clearInterval(timerRef.current);

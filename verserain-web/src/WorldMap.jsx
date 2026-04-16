@@ -27,20 +27,17 @@ export default function WorldMap({ t, playerName }) {
   const [selectedPlayer, setSelectedPlayer] = useState(null);
   const [error, setError] = useState(null);
 
-  // Fetch player map data
+  // Fetch player map data + auto-refresh every 30s
   useEffect(() => {
-    setLoading(true);
-    fetch('/api/get-player-map')
-      .then(r => r.json())
-      .then(data => {
-        if (Array.isArray(data)) setPlayers(data);
-        else setPlayers([]);
-        setLoading(false);
-      })
-      .catch(() => {
-        setError('Failed to load map data');
-        setLoading(false);
-      });
+    const load = () => {
+      fetch('/api/get-player-map')
+        .then(r => r.json())
+        .then(data => { if (Array.isArray(data)) setPlayers(data); else setPlayers([]); setLoading(false); })
+        .catch(() => { setError('Failed to load map data'); setLoading(false); });
+    };
+    load();
+    const interval = setInterval(load, 30000);
+    return () => clearInterval(interval);
   }, []);
 
   // Init Leaflet map
