@@ -1517,9 +1517,9 @@ export default function App() {
                     city: geo.city || '',
                     verseRef: activeVerse.reference
                   })
-                }).catch(() => {});
+                }).catch(() => { });
               }
-            }).catch(() => {});
+            }).catch(() => { });
           return fetch(`/api/get-scores?verseRef=${encodeURIComponent(activeVerse.reference)}`);
         }).then(res => res.json())
           .then(data => setLeaderboard(data && Array.isArray(data.alltime) ? data : { alltime: Array.isArray(data) ? data : [], monthly: [], daily: [] }))
@@ -2059,7 +2059,7 @@ export default function App() {
                   verserain
                 </div>
                 <div style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', marginTop: '4px', marginLeft: '2px' }}>
-                  v2.1.2
+                  v2.2.0
                 </div>
               </div>
               <select

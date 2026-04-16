@@ -22,25 +22,24 @@ export default async function handler(req, res) {
   try {
     const redis = new Redis({ url: redisUrl, token: redisToken });
 
+    // Always update to latest location & best score
     const playerKey = `map:player:${name}`;
     const existing = await redis.hgetall(playerKey);
-
-    // Only update if new score is higher (or no existing entry)
     const existingScore = existing ? parseFloat(existing.score || 0) : 0;
-    if (!existing || score > existingScore) {
-      await redis.hset(playerKey, {
-        name,
-        score: score || 0,
-        lat: lat.toFixed(4),
-        lng: lng.toFixed(4),
-        country: country || '',
-        city: city || '',
-        verseRef: verseRef || '',
-        updatedAt: Date.now()
-      });
-      // Keep a set of all player keys for easy retrieval
-      await redis.sadd('map:players', name);
-    }
+    const bestScore = Math.max(existingScore, score || 0);
+
+    await redis.hset(playerKey, {
+      name,
+      score: bestScore,          // keep best score
+      lat: lat.toFixed(4),       // always update to latest location
+      lng: lng.toFixed(4),
+      country: country || '',
+      city: city || '',
+      verseRef: verseRef || '',
+      updatedAt: Date.now()
+    });
+    // Keep a set of all player keys for easy retrieval
+    await redis.sadd('map:players', name);
 
     res.status(200).json({ success: true });
   } catch (error) {
