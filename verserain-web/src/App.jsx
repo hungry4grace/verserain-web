@@ -204,6 +204,35 @@ const Tooltip = ({ text, children }) => (
   </div>
 );
 
+const findVerseByRef = (allVerses, ref) => {
+  let target = allVerses.find(v => v.reference === ref);
+  if (!target && ref) {
+    const refTrim = ref.replace(/\s+/g, '');
+    target = allVerses.find(v => v.reference.replace(/\s+/g, '') === refTrim);
+
+    if (!target && refTrim.includes(':')) {
+      const match = refTrim.match(/^(.*?)(\d+:\d+(-\d+)?)$/);
+      if (match) {
+        const bookStr = match[1];
+        const cvStr = match[2];
+        const bookObj = BIBLE_BOOKS.find(b =>
+          b.names.includes(bookStr) || b.ja === bookStr || b.ko === bookStr || (b.names[3] === bookStr)
+        );
+        target = allVerses.find(v => {
+          const vTrim = v.reference.replace(/\s+/g, '');
+          if (!vTrim.endsWith(cvStr)) return false;
+          const vBookStr = vTrim.replace(cvStr, '');
+          if (bookObj) {
+            return bookObj.names.includes(vBookStr) || bookObj.ja === vBookStr || bookObj.ko === vBookStr || (bookObj.names[3] === vBookStr);
+          }
+          return vTrim[0] === bookStr[0];
+        });
+      }
+    }
+  }
+  return target;
+};
+
 export default function App() {
   const VERSES_CUV = React.useMemo(() => VERSE_SETS_CUV.flatMap(s => s.verses), []);
   const VERSES_KJV = React.useMemo(() => VERSE_SETS_KJV.flatMap(s => s.verses), []);
@@ -313,6 +342,7 @@ export default function App() {
         localStorage.setItem('verseRain_globalVerseStats', JSON.stringify(updated));
         return updated;
       });
+      fetch('/api/submit-verse-stat', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ref, type: 'plays' }) }).catch(() => { });
       updateGarden(ref, 'played', setId);
     }
     if (type === 'verseCompleted') {
@@ -322,6 +352,7 @@ export default function App() {
         localStorage.setItem('verseRain_globalVerseStats', JSON.stringify(updated));
         return updated;
       });
+      fetch('/api/submit-verse-stat', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ref, type: 'completes' }) }).catch(() => { });
       if (name) {
         setGlobalUserStats(prev => {
           let updated = updateStats(prev, name, 'completes', 1);
@@ -618,7 +649,7 @@ export default function App() {
   const [campaignQueue, setCampaignQueue] = useState(null);
   const localCampaignListRef = useRef([]); // full ordered verse list for square_solo mp
   const localVerseIndexRef = useRef(0);    // which verse this player is currently on
-  const squareSoloActiveRef = useRef(false); // true once square_solo game is initialized; prevents re-init on every broadcast
+  const multiplayerSoloActiveRef = useRef(false); // true once any *_solo game is initialized; prevents re-init on every broadcast
   const [localNextVerse, setLocalNextVerse] = useState(null); // verse shown during intermission countdown
   const [campaignResults, setCampaignResults] = useState([]);
 
@@ -647,10 +678,14 @@ export default function App() {
 
   const fetchGlobalLeaderboard = () => {
     setIsFetchingGlobalLeaderboard(true);
-    fetch(`/api/get-all-scores`)
-      .then(res => res.json())
-      .then(data => setGlobalLeaderboardData(data && Array.isArray(data.alltime) ? data : { alltime: Array.isArray(data) ? data : [], monthly: [], daily: [] }))
-      .catch(() => setGlobalLeaderboardData({ alltime: [], monthly: [], daily: [] }))
+    Promise.all([
+      fetch('/api/get-all-scores').then(res => res.ok ? res.json() : {}).catch(() => ({})),
+      fetch('/api/get-top-verses').then(res => res.ok ? res.json() : {}).catch(() => ({}))
+    ])
+      .then(([scoresData, versesData]) => {
+        setGlobalLeaderboardData(scoresData && Array.isArray(scoresData.alltime) ? scoresData : { alltime: Array.isArray(scoresData) ? scoresData : [], monthly: [], daily: [] });
+        if (versesData && versesData.alltime) setGlobalVerseStats(versesData);
+      })
       .finally(() => setIsFetchingGlobalLeaderboard(false));
   };
   const [showLoginModal, setShowLoginModal] = useState(null);
@@ -703,7 +738,7 @@ export default function App() {
       return () => clearTimeout(timer);
     } else if (gameState === 'intermission' && intermissionCountdown === 0) {
       // square_solo: each player advances to their next verse independently
-      if (multiplayerRoomId && multiplayerState?.playMode === 'square_solo' && localNextVerse) {
+      if (multiplayerRoomId && multiplayerState?.playMode?.endsWith('_solo') && localNextVerse) {
         const verseObj = { reference: localNextVerse.reference, text: localNextVerse.text, title: 'Multiplayer' };
         setActiveVerse(verseObj);
         setCurrentSeqIndex(0);
@@ -714,7 +749,23 @@ export default function App() {
         setTimeLeft(6000);
         setLocalNextVerse(null);
         setGameState('playing');
-        initSquareBlocks(false, null, verseObj);
+        if (multiplayerState.playMode === 'square_solo') {
+          initSquareBlocks(false, null, verseObj);
+        } else if (multiplayerState.playMode === 'rain_solo') {
+          setBlocks([]);
+          const spawnWhenReady = () => {
+            if (activePhrasesRef.current.length > 0) {
+              setTimeout(spawnNextBlock, 100);
+              setTimeout(spawnNextBlock, 900);
+              setTimeout(spawnNextBlock, 1700);
+              setTimeout(spawnNextBlock, 2500);
+              setTimeout(spawnNextBlock, 3300);
+            } else if (gameStateRef.current === 'playing') {
+              setTimeout(spawnWhenReady, 100);
+            }
+          };
+          spawnWhenReady();
+        }
       } else if (multiplayerState?.host === myClientId && multiplayerState.campaignQueue && multiplayerState.campaignQueue.length > 0) {
         const nextVerse = multiplayerState.campaignQueue[0];
         const isEnglish = /^[a-zA-Z\s.,:;'"]+$/.test(nextVerse.text.substring(0, 50));
@@ -799,8 +850,8 @@ export default function App() {
             // For square_solo: store full ordered verse list so each player can advance independently.
             // campaignQueue from the server already includes all verses starting from verse 0.
             // Only init if not already set (host sets it in initAutoStart before INIT_GAME)
-            if (msg.state.playMode === 'square_solo' && !squareSoloActiveRef.current) {
-              squareSoloActiveRef.current = true;
+            if (msg.state.playMode?.endsWith('_solo') && !multiplayerSoloActiveRef.current) {
+              multiplayerSoloActiveRef.current = true;
               localCampaignListRef.current = (msg.state.campaignQueue && msg.state.campaignQueue.length > 0)
                 ? msg.state.campaignQueue
                 : [{ reference: msg.state.verseRef, text: msg.state.verseText, title: 'Multiplayer' }];
@@ -816,9 +867,25 @@ export default function App() {
 
             if (timerRef.current) clearInterval(timerRef.current);
             timerRef.current = setInterval(() => setTimeLeft(t => Math.max(0, t - 1)), 10);
+
+            if (msg.state.playMode === 'rain_solo') {
+              setBlocks([]);
+              const spawnWhenReady = () => {
+                if (activePhrasesRef.current.length > 0) {
+                  setTimeout(spawnNextBlock, 100);
+                  setTimeout(spawnNextBlock, 900);
+                  setTimeout(spawnNextBlock, 1700);
+                  setTimeout(spawnNextBlock, 2500);
+                  setTimeout(spawnNextBlock, 3300);
+                } else if (gameStateRef.current === 'playing') {
+                  setTimeout(spawnWhenReady, 100);
+                }
+              };
+              spawnWhenReady();
+            }
           } else if (msg.state.status === 'playing' && gameStateRef.current === 'playing') {
             // Vital logic: Apply the refreshed block array from the referee!
-            if (msg.state.playMode !== 'square_solo') {
+            if (!msg.state.playMode?.endsWith('_solo')) {
               setBlocks(msg.state.blocks);
             }
           }
@@ -828,10 +895,10 @@ export default function App() {
             if (timerRef.current) clearInterval(timerRef.current);
           }
           if (msg.state.status === 'waiting') {
-            squareSoloActiveRef.current = false; // server reset — allow re-init on next game start
+            multiplayerSoloActiveRef.current = false; // server reset — allow re-init on next game start
           }
           if (msg.state.status === 'finished' && gameStateRef.current !== 'multiplayer_results') {
-            squareSoloActiveRef.current = false;
+            multiplayerSoloActiveRef.current = false;
             setGameState('multiplayer_results');
             if (timerRef.current) clearInterval(timerRef.current);
           }
@@ -897,7 +964,7 @@ export default function App() {
       socket.removeEventListener('message', handleMessage);
       socket.close();
       socketRef.current = null;
-      squareSoloActiveRef.current = false;
+      multiplayerSoloActiveRef.current = false;
     };
   }, [multiplayerRoomId, playerName, triggerLightning]);
 
@@ -1056,15 +1123,32 @@ export default function App() {
   useEffect(() => {
     if (initAutoStart?.trigger) {
       if (initAutoStart.isMultiplayerReadyCheck) {
-        // For square_solo: initialize local verse tracking HERE, before startGame sets gameState='playing'.
-        // The STATE_UPDATE handler's init block won't fire for the HOST because gameState is already
-        // 'playing' by the time the server's first broadcast arrives.
-        if (initAutoStart.playMode === 'square_solo' && initAutoStart.campaignQueue?.length > 0) {
+        if (initAutoStart.playMode?.endsWith('_solo') && initAutoStart.campaignQueue?.length > 0) {
           localCampaignListRef.current = initAutoStart.campaignQueue;
           localVerseIndexRef.current = 0;
-          squareSoloActiveRef.current = true;
+          multiplayerSoloActiveRef.current = true;
         }
-        initSquareBlocks(true, initAutoStart.campaignQueue, initAutoStart.verse);
+        if (initAutoStart.playMode === 'square_solo') {
+          initSquareBlocks(true, initAutoStart.campaignQueue, initAutoStart.verse);
+        } else if (initAutoStart.playMode === 'rain_solo') {
+          if (socketRef.current) {
+            const verse = initAutoStart.verse || activeVerse;
+            const isEnglish = /^[a-zA-Z\s.,:;'"]+$/.test(verse.text.substring(0, 50));
+            const regex = isEnglish ? /[,，。；：「」、;:\.\?!]/ : /[,，。；：「」、;:\.\?!！？『』《》\s]/;
+            const phrases = verse.text.split(regex).map(p => p.trim()).filter(Boolean);
+
+            socketRef.current.send(JSON.stringify({
+              type: 'INIT_GAME',
+              blocks: [],
+              verseRef: verse.reference,
+              verseText: verse.text,
+              playMode: 'rain_solo',
+              distractionLevel: multiplayerDistractionLevel,
+              phrases: phrases,
+              campaignQueue: initAutoStart.campaignQueue
+            }));
+          }
+        }
       } else {
         startGame(initAutoStart.isAuto);
       }
@@ -1396,7 +1480,7 @@ export default function App() {
   useEffect(() => {
     if (currentSeqIndex >= activePhrases.length && activePhrases.length > 0 && gameState === 'playing') {
       if (multiplayerRoomId) {
-        if (multiplayerState?.playMode === 'square_solo') {
+        if (multiplayerState?.playMode?.endsWith('_solo')) {
           // Report this verse's score to server (server accumulates campaign results)
           if (socketRef.current) {
             socketRef.current.send(JSON.stringify({
@@ -1433,7 +1517,7 @@ export default function App() {
 
   // Sync individual progress for solo multiplayer mode
   useEffect(() => {
-    if (multiplayerRoomId && gameState === 'playing' && multiplayerState?.playMode === 'square_solo' && socketRef.current) {
+    if (multiplayerRoomId && gameState === 'playing' && multiplayerState?.playMode?.endsWith('_solo') && socketRef.current) {
       socketRef.current.send(JSON.stringify({
         type: 'PLAYER_PROGRESS',
         score: score,
@@ -1463,7 +1547,7 @@ export default function App() {
     }
 
     if (multiplayerRoomId && socketRef.current && gameState === 'playing') {
-      if (multiplayerState?.playMode !== 'square_solo') {
+      if (!multiplayerState?.playMode?.endsWith('_solo')) {
         socketRef.current.send(JSON.stringify({ type: 'CLICK_BLOCK', blockId: block.id }));
         return; // Local state will be updated via socket broadcast
       }
@@ -1556,7 +1640,7 @@ export default function App() {
           playThunder('heavy');
           triggerLightning('heavy');
           // In multiplayer square_solo: auto-advance to next verse instead of being stuck
-          if (multiplayerRoomId && multiplayerState?.playMode === 'square_solo' && squareSoloActiveRef.current) {
+          if (multiplayerRoomId && multiplayerState?.playMode?.endsWith('_solo') && multiplayerSoloActiveRef.current) {
             setTimeout(() => {
               // Report failed verse with score 0
               if (socketRef.current) {
@@ -1894,7 +1978,7 @@ export default function App() {
                   verserain
                 </div>
                 <div style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', marginTop: '4px', marginLeft: '2px' }}>
-                  v2.0.1
+                  v2.1.0
                 </div>
               </div>
               <select
@@ -1997,7 +2081,8 @@ export default function App() {
                     { id: 'leaderboard', icon: '🏆', label: t('全球排行榜', 'Leaderboards'), desc: t('觀看大排行', 'View global rankings') },
                     { id: 'manual', icon: '📖', label: t('使用說明', 'Manual'), desc: t('操作詳解', 'Detailed instructions') },
                     { id: 'about', icon: 'ℹ️', label: t('關於我們', 'About'), desc: t('VerseRain 開發資訊', 'Info & Credits') },
-                    { id: 'donate', link: 'https://www.skool.com/mutualizedeconomy/classroom', icon: '🔓', label: t('解鎖進階功能', 'Unlock Premium'), desc: t('加入進階群組', 'Join Premium Community') }
+                    { id: 'donate', link: 'https://www.skool.com/mutualizedeconomy/classroom', icon: '🔓', label: t('解鎖進階功能', 'Unlock Premium'), desc: t('加入進階群組', 'Join Premium Community') },
+                    { id: 'feedback', link: 'mailto:hungry4grace@gmail.com', icon: '✉️', label: t('意見回饋', 'Feedback'), desc: t('聯絡與建議', 'Bugs & Suggestions') }
                   ].map(item => (
                     <div key={item.id} className="block-tile" onClick={() => {
                       if (item.link) { window.open(item.link, '_blank'); return; }
@@ -2378,15 +2463,16 @@ export default function App() {
                         id="joinRoomInput"
                         type="text"
                         placeholder={t("輸入房間代碼", "Enter Room Code")}
-                        maxLength={4}
+                        maxLength={5}
                         style={{ flex: 1, padding: '0.8rem', borderRadius: '6px', border: '1px solid #cbd5e1', textTransform: 'uppercase', textAlign: 'center', fontSize: '1.1rem', fontWeight: 'bold' }}
+                        onChange={(e) => e.target.value = e.target.value.replace(/\s+/g, '')}
                         onKeyDown={(e) => { if (e.key === 'Enter') document.getElementById('joinRoomBtn')?.click(); }}
                       />
                       <button
                         id="joinRoomBtn"
                         onClick={() => {
-                          const code = document.getElementById('joinRoomInput')?.value.trim().toUpperCase();
-                          if (code && code.length > 0) setMultiplayerRoomId(code);
+                          const code = document.getElementById('joinRoomInput')?.value.replace(/\s+/g, '').toUpperCase();
+                          if (code && code.length > 0) setMultiplayerRoomId(code.substring(0, 4));
                         }}
                         style={{ background: '#10b981', color: 'white', border: 'none', padding: '0 1.5rem', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer' }}
                       >
@@ -2463,7 +2549,7 @@ export default function App() {
                           style={{ padding: '0.5rem', borderRadius: '4px', border: '1px solid #cbd5e1', flex: 1, backgroundColor: '#fff', fontSize: '1rem', outline: 'none' }}
                         >
                           <option value="square_solo">{t("獨立九宮格 (Solo Square)", "Solo Square")}</option>
-                          <option value="rain" disabled>{t("雨滴瀑布 (VerseRain) - 即將推出", "VerseRain - Coming Soon")}</option>
+                          <option value="rain_solo">{t("雨滴瀑布 (VerseRain)", "VerseRain")}</option>
                         </select>
                       </div>
                       <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
@@ -2503,14 +2589,28 @@ export default function App() {
                           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: '#f8fafc', padding: '0.4rem 0.8rem', borderRadius: '6px', border: '1px solid #cbd5e1' }}>
                               <span style={{ fontSize: '0.9rem', color: '#64748b' }}>{t("隨機挑選", "Random Pick")} (共 {pickerSelectedSet.verses?.length || 0})</span>
-                              <input
-                                type="number"
-                                min="1"
-                                max={pickerSelectedSet.verses?.length || 1}
-                                value={randomPickCount}
-                                onChange={(e) => setRandomPickCount(Math.min(pickerSelectedSet.verses?.length || 1, Math.max(1, parseInt(e.target.value) || 1)))}
-                                style={{ width: '40px', padding: '0.2rem', textAlign: 'center', border: '1px solid #cbd5e1', borderRadius: '4px', outline: 'none' }}
-                              />
+                              <div style={{ display: 'flex', alignItems: 'center', border: '1px solid #cbd5e1', borderRadius: '4px', overflow: 'hidden' }}>
+                                <button
+                                  onClick={() => setRandomPickCount(Math.max(1, (parseInt(randomPickCount) || 1) - 1))}
+                                  style={{ width: '28px', height: '28px', border: 'none', background: '#e2e8f0', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#64748b', fontWeight: 'bold', fontSize: '1.2rem', transform: 'none' }}
+                                >
+                                  -
+                                </button>
+                                <input
+                                  type="number"
+                                  min="1"
+                                  max={pickerSelectedSet.verses?.length || 1}
+                                  value={randomPickCount || 1}
+                                  onChange={(e) => setRandomPickCount(e.target.value === '' ? '' : Math.min(pickerSelectedSet.verses?.length || 1, Math.max(1, parseInt(e.target.value))))}
+                                  style={{ width: '40px', height: '28px', padding: '0', border: 'none', background: 'white', outline: 'none', textAlign: 'center', fontSize: '1rem', color: '#334155', fontWeight: 'bold', margin: '0' }}
+                                />
+                                <button
+                                  onClick={() => setRandomPickCount(Math.min(pickerSelectedSet.verses?.length || 1, (parseInt(randomPickCount) || 1) + 1))}
+                                  style={{ width: '28px', height: '28px', border: 'none', background: '#e2e8f0', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#64748b', fontWeight: 'bold', fontSize: '1.2rem', transform: 'none' }}
+                                >
+                                  +
+                                </button>
+                              </div>
                               <button
                                 onClick={() => {
                                   if (!pickerSelectedSet || !pickerSelectedSet.verses) return;
@@ -2731,15 +2831,29 @@ export default function App() {
                           </button>
 
                           <div style={{ display: 'flex', alignItems: 'center', backgroundColor: '#f1f5f9', borderRadius: '6px', border: '1px solid #cbd5e1', padding: '2px' }}>
-                            <input
-                              type="number"
-                              min="1"
-                              max={VERSES_DB.length}
-                              value={randomPickCount > VERSES_DB.length ? VERSES_DB.length : randomPickCount}
-                              onChange={(e) => setRandomPickCount(e.target.value === '' ? '' : Math.min(VERSES_DB.length, Math.max(1, parseInt(e.target.value))))}
-                              style={{ width: '50px', padding: '0 0.4rem', border: 'none', background: 'transparent', outline: 'none', textAlign: 'center', fontSize: '1rem', color: '#334155', fontWeight: 'bold' }}
-                              title={t("選擇隨機題數", "Number of random verses")}
-                            />
+                            <div style={{ display: 'flex', alignItems: 'center', background: 'transparent', borderRadius: '4px' }}>
+                              <button
+                                onClick={() => setRandomPickCount(Math.max(1, (parseInt(randomPickCount) || 1) - 1))}
+                                style={{ width: '28px', height: '30px', border: 'none', background: '#e2e8f0', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#64748b', fontWeight: 'bold', fontSize: '1.2rem', borderTopLeftRadius: '4px', borderBottomLeftRadius: '4px', transform: 'none' }}
+                              >
+                                -
+                              </button>
+                              <input
+                                type="number"
+                                min="1"
+                                max={VERSES_DB.length}
+                                value={randomPickCount > VERSES_DB.length ? VERSES_DB.length : randomPickCount}
+                                onChange={(e) => setRandomPickCount(e.target.value === '' ? '' : Math.min(VERSES_DB.length, Math.max(1, parseInt(e.target.value))))}
+                                style={{ width: '40px', height: '30px', padding: '0', border: 'none', background: 'white', outline: 'none', textAlign: 'center', fontSize: '1rem', color: '#334155', fontWeight: 'bold', margin: '0' }}
+                                title={t("選擇隨機題數", "Number of random verses")}
+                              />
+                              <button
+                                onClick={() => setRandomPickCount(Math.min(VERSES_DB.length, (parseInt(randomPickCount) || 1) + 1))}
+                                style={{ width: '28px', height: '30px', border: 'none', background: '#e2e8f0', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#64748b', fontWeight: 'bold', fontSize: '1.2rem', borderTopRightRadius: '4px', borderBottomRightRadius: '4px', transform: 'none' }}
+                              >
+                                +
+                              </button>
+                            </div>
                             <button
                               onClick={() => {
                                 initAudio();
@@ -2961,13 +3075,13 @@ export default function App() {
                     <div>
                       {/* Stats bar */}
                       <div style={{ display: 'flex', gap: '1.5rem', marginBottom: '1rem', flexWrap: 'wrap' }}>
-                        <div style={{ padding: '0.5rem 1rem', background: '#f0fdf4', borderRadius: '8px', border: '1px solid #bbf7d0' }}>
+                        <div style={{ padding: '0.5rem 1rem', background: '#f0fdf4', borderRadius: '8px', border: '1px solid #bbf7d0', color: '#0f172a', fontWeight: '500' }}>
                           🌱 {t("種植", "Planted")}: <strong>{treeCount}</strong>
                         </div>
-                        <div style={{ padding: '0.5rem 1rem', background: '#f0fdf4', borderRadius: '8px', border: '1px solid #bbf7d0' }}>
+                        <div style={{ padding: '0.5rem 1rem', background: '#f0fdf4', borderRadius: '8px', border: '1px solid #bbf7d0', color: '#4c1d95', fontWeight: '500' }}>
                           🌳 {t("大樹", "Full Trees")}: <strong>{entries.filter(([, d]) => d.stage >= 10).length}</strong>
                         </div>
-                        <div style={{ padding: '0.5rem 1rem', background: '#fef3c7', borderRadius: '8px', border: '1px solid #fde68a' }}>
+                        <div style={{ padding: '0.5rem 1rem', background: '#fef3c7', borderRadius: '8px', border: '1px solid #fde68a', color: '#7f1d1d', fontWeight: '500' }}>
                           🍎 {t("果子", "Fruits")}: <strong>{entries.reduce((sum, [, d]) => sum + (d.fruits || 0), 0)}</strong>
                         </div>
                       </div>
@@ -3037,7 +3151,7 @@ export default function App() {
                                     gardenClickTimer.current = setTimeout(() => {
                                       gardenClickTimer.current = null;
                                       const allVerses = [...safeActiveSets, ...customVerseSets].flatMap(s => s.verses);
-                                      const targetVerse = allVerses.find(v => v.reference === cell.ref);
+                                      const targetVerse = findVerseByRef(allVerses, cell.ref);
                                       setSelectedGardenCell({
                                         ref: cell.ref,
                                         text: targetVerse?.text || '',
@@ -3057,7 +3171,7 @@ export default function App() {
                                   if (cell) {
                                     if (gardenClickTimer.current) { clearTimeout(gardenClickTimer.current); gardenClickTimer.current = null; }
                                     const allVerses = [...safeActiveSets, ...customVerseSets].flatMap(s => s.verses);
-                                    const targetVerse = allVerses.find(v => v.reference === cell.ref);
+                                    const targetVerse = findVerseByRef(allVerses, cell.ref);
                                     if (targetVerse) {
                                       setSelectedGardenCell(null);
                                       setActiveVerse(targetVerse);
@@ -3200,6 +3314,7 @@ export default function App() {
                         <th style={{ padding: '0.8rem 1rem' }}>{t("經文出處", "Reference")}</th>
                         <th style={{ padding: '0.8rem 1rem', textAlign: 'right' }}>{t("遊玩次數", "Plays")}</th>
                         <th style={{ padding: '0.8rem 1rem', textAlign: 'right' }}>{t("完成次數", "Completes")}</th>
+                        <th style={{ padding: '0.8rem 1rem', width: '60px' }}></th>
                       </tr>
                     </thead>
                     <tbody>
@@ -3212,6 +3327,23 @@ export default function App() {
                             <td style={{ padding: '0.8rem 1rem', fontWeight: 'bold', color: '#1e293b' }}>{ref}</td>
                             <td style={{ padding: '0.8rem 1rem', textAlign: 'right', fontWeight: 'bold', color: '#10b981' }}>{stats.plays}</td>
                             <td style={{ padding: '0.8rem 1rem', textAlign: 'right', fontWeight: 'bold', color: '#059669' }}>{stats.completes}</td>
+                            <td style={{ padding: '0.8rem 0' }}>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  const targetVerse = findVerseByRef(VERSES_DB, ref);
+                                  if (targetVerse) {
+                                    setActiveVerse(targetVerse);
+                                    setTimeout(() => startGame(), 50);
+                                  } else {
+                                    setToast(t("本機找不到此經文", "Verse not found locally"));
+                                  }
+                                }}
+                                style={{ background: '#10b981', color: 'white', border: 'none', padding: '0.3rem 0.6rem', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '4px' }}
+                              >
+                                <Play size={12} fill="white" /> {t("挑戰", "Play")}
+                              </button>
+                            </td>
                           </tr>
                         ))}
                       {Object.keys((globalVerseStats[globalLeaderboardTab] || {})).length === 0 && (
@@ -3231,6 +3363,7 @@ export default function App() {
                         <th style={{ padding: '0.8rem 1rem' }}>{t("標題", "Title")}</th>
                         <th style={{ padding: '0.8rem 1rem' }}>{t("作者", "Author")}</th>
                         <th style={{ padding: '0.8rem 1rem', textAlign: 'right' }}>{t("點閱次數", "Views")}</th>
+                        <th style={{ padding: '0.8rem 1rem', width: '60px' }}></th>
                       </tr>
                     </thead>
                     <tbody>
@@ -3249,6 +3382,20 @@ export default function App() {
                             <td style={{ padding: '0.8rem 1rem', fontWeight: 'bold', color: '#1e293b' }}>{set.title}</td>
                             <td style={{ padding: '0.8rem 1rem', color: '#3b82f6' }}>{set.authorName && set.authorName !== "Anonymous" ? set.authorName : (String(set.id).startsWith("custom-") ? "匿名玩家" : "Verserain 官方")}</td>
                             <td style={{ padding: '0.8rem 1rem', textAlign: 'right', fontWeight: 'bold', color: '#059669' }}>{viewCounts[set.id] || 0}</td>
+                            <td style={{ padding: '0.8rem 0' }}>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setMainTab('versesets');
+                                  setSelectedSetId(set.id);
+                                  fetch("https://verserain-party.hungry4grace.partykit.dev/parties/main/global-auth-db/custom-sets/view", { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: set.id }) }).catch(e => e);
+                                  setViewCounts(prev => ({ ...prev, [set.id]: (prev[set.id] || 0) + 1 }));
+                                }}
+                                style={{ background: '#3b82f6', color: 'white', border: 'none', padding: '0.3rem 0.6rem', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '4px' }}
+                              >
+                                <Play size={12} fill="white" /> {t("挑戰", "Play")}
+                              </button>
+                            </td>
                           </tr>
                         ));
                       })()}
@@ -3689,7 +3836,7 @@ export default function App() {
             )}
           </div>
 
-          {!isAutoPlay && playMode.startsWith('square') && (() => {
+          {!isAutoPlay && (() => {
             const HUD_PAGE_SIZE = 6;
             const startIdx = Math.floor(currentSeqIndex / HUD_PAGE_SIZE) * HUD_PAGE_SIZE;
             const currentPhrasesWindow = activePhrases.slice(startIdx, currentSeqIndex);
@@ -3779,7 +3926,7 @@ export default function App() {
                     }}
                     onAnimationEnd={(e) => handleAnimationEnd(e, block.id)}
                   >
-                    <div className={appliedClasses}>
+                    <div className={appliedClasses} onClick={(e) => { e.stopPropagation(); handleBlockClick(block); }} style={{ pointerEvents: 'auto', cursor: 'pointer' }}>
                       {block.text}
                     </div>
                   </div>
@@ -3873,7 +4020,7 @@ export default function App() {
                   socketRef.current.close();
                   socketRef.current = null;
                 }
-                squareSoloActiveRef.current = false;
+                multiplayerSoloActiveRef.current = false;
                 setGameState('menu');
                 setMultiplayerRoomId(null);
                 setMultiplayerState(null);
@@ -3945,7 +4092,7 @@ export default function App() {
             <div style={{ display: 'flex', gap: '1rem', width: '100%', marginTop: 'auto' }}>
               <button
                 onClick={() => {
-                  squareSoloActiveRef.current = false;
+                  multiplayerSoloActiveRef.current = false;
                   setGameState('menu');
                   setMultiplayerRoomId(null);
                   if (socketRef.current) socketRef.current.close();
@@ -3958,7 +4105,7 @@ export default function App() {
               {multiplayerState?.host === myClientId && (
                 <button
                   onClick={() => {
-                    squareSoloActiveRef.current = false;
+                    multiplayerSoloActiveRef.current = false;
                     socketRef.current.send(JSON.stringify({ type: 'RESTART_GAME' }));
                     setGameState('menu');
                   }}
@@ -3973,7 +4120,7 @@ export default function App() {
       )}
 
       {gameState === 'intermission' && multiplayerState && (() => {
-        const isSoloMP = multiplayerRoomId && multiplayerState.playMode === 'square_solo';
+        const isSoloMP = multiplayerRoomId && multiplayerState.playMode?.endsWith('_solo');
         const nextVerseData = isSoloMP ? localNextVerse : multiplayerState.campaignQueue?.[0];
         const remaining = isSoloMP
           ? localCampaignListRef.current.length - localVerseIndexRef.current
