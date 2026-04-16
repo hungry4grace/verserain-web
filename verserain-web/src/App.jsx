@@ -3885,7 +3885,7 @@ export default function App() {
               >
                 <XCircle size={22} />
               </button>
-              {!isAutoPlay && (
+              {!isAutoPlay && !multiplayerRoomId && (
                 <button
                   className="hud-glass"
                   onClick={(e) => {
