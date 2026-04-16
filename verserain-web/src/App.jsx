@@ -195,6 +195,12 @@ import { VERSE_SETS as VERSE_SETS_CUV } from './verses';
 import { VERSE_SETS_KJV } from './verses_kjv';
 import { VERSE_SETS_JA } from './verses_ja';
 import { VERSE_SETS_KO } from './verses_ko';
+import {
+  VERSE_SETS_PROVERBS_ZH,
+  VERSE_SETS_PROVERBS_KJV,
+  VERSE_SETS_PROVERBS_KO,
+  VERSE_SETS_PROVERBS_JA,
+} from './verses_proverbs';
 import { getRandomFakePhrase } from './fakeLogic';
 
 const Tooltip = ({ text, children }) => (
@@ -387,7 +393,15 @@ export default function App() {
       .catch(err => console.error("Failed to fetch view counts", err));
   }, []);
 
-  const baseVerseSets = version === 'cuv' ? VERSE_SETS_CUV : (version === 'kjv' ? VERSE_SETS_KJV : (version === 'ja' ? VERSE_SETS_JA : (version === 'ko' ? VERSE_SETS_KO : [])));
+  const baseVerseSets = version === 'cuv'
+    ? [...VERSE_SETS_CUV, ...VERSE_SETS_PROVERBS_ZH]
+    : version === 'kjv'
+      ? [...VERSE_SETS_KJV, ...VERSE_SETS_PROVERBS_KJV]
+      : version === 'ja'
+        ? [...VERSE_SETS_JA, ...VERSE_SETS_PROVERBS_JA]
+        : version === 'ko'
+          ? [...VERSE_SETS_KO, ...VERSE_SETS_PROVERBS_KO]
+          : [];
 
   const activeVerseSets = React.useMemo(() => {
     const merged = [];
