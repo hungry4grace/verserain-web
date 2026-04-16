@@ -40,7 +40,9 @@ export default function WorldMap({ t, playerName }) {
     return () => clearInterval(interval);
   }, []);
 
-  // Init Leaflet map
+  const markersGroupRef = useRef(null);
+
+  // Init Leaflet map and markers
   useEffect(() => {
     if (loading || !mapRef.current) return;
 
@@ -49,25 +51,30 @@ export default function WorldMap({ t, playerName }) {
     // Dynamic import of Leaflet
     import('https://unpkg.com/leaflet@1.9.4/dist/leaflet-src.esm.js')
       .then(L => {
-        if (leafletMapRef.current) {
-          leafletMapRef.current.remove();
+        let map = leafletMapRef.current;
+        
+        // Only create the map once
+        if (!map) {
+          map = L.map(mapRef.current, {
+            center: [20, 105],
+            zoom: 3,
+            minZoom: 2,
+            maxZoom: 19,
+            zoomControl: true,
+            attributionControl: true,
+          });
+
+          L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+            maxZoom: 19
+          }).addTo(map);
+
+          markersGroupRef.current = L.layerGroup().addTo(map);
+          leafletMapRef.current = map;
         }
 
-        const map = L.map(mapRef.current, {
-          center: [20, 105],
-          zoom: 3,
-          minZoom: 2,
-          maxZoom: 10,
-          zoomControl: true,
-          attributionControl: true,
-        });
-
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-          attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
-          maxZoom: 19
-        }).addTo(map);
-
-        leafletMapRef.current = map;
+        // Clear existing markers for this update
+        markersGroupRef.current.clearLayers();
 
         // Group players by nearby location (simple clustering)
         const clusters = {};
@@ -83,8 +90,7 @@ export default function WorldMap({ t, playerName }) {
           const count = group.length;
           const isCurrentUser = group.some(p => p.name === playerName);
 
-          // Determine dominant color: room color if any player in group is in a room, else dark
-          // If current user is here + in a room, prioritize their room color
+          // Determine dominant color
           const currentUserPlayer = group.find(p => p.name === playerName);
           const anyRoomId = currentUserPlayer?.roomId || group.find(p => p.roomId)?.roomId || null;
           const roomColor = getRoomColor(anyRoomId);
@@ -161,20 +167,29 @@ export default function WorldMap({ t, playerName }) {
 
           marker.bindPopup(popup);
           marker.on('mouseover', function () { this.openPopup(); });
-          marker.addTo(map);
+          
+          // Click to zoom in by 3 levels
+          marker.on('click', function () {
+            const currentZoom = map.getZoom();
+            const targetZoom = Math.min(currentZoom + 3, map.getMaxZoom());
+            map.flyTo([avgLat, avgLng], targetZoom);
+          });
+          
+          marker.addTo(markersGroupRef.current);
         });
 
-        // Show player count
       }).catch(err => {
         console.error('Leaflet load failed', err);
         setError('Map library failed to load');
       });
 
     return () => {
-      if (leafletMapRef.current) {
-        leafletMapRef.current.remove();
-        leafletMapRef.current = null;
-      }
+      // Don't remove the map instance on unmount/re-render to preserve view
+      // We only clear markers when data updates, handled above
+      // if (leafletMapRef.current) {
+      //   leafletMapRef.current.remove();
+      //   leafletMapRef.current = null;
+      // }
     };
   }, [loading, players, playerName]);
 
