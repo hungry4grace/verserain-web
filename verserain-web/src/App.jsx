@@ -4,6 +4,7 @@ import confetti from 'canvas-confetti';
 import usePartySocket from 'partysocket/react';
 import PartySocket from 'partysocket';
 import QRCode from 'qrcode';
+import { QRCodeSVG } from 'qrcode.react';
 import './index.css';
 import { BIBLE_BOOKS, getBookAbbr } from './bibleDictionary';
 import ReactQuill from 'react-quill-new';
@@ -1105,6 +1106,15 @@ export default function App() {
     const params = new URLSearchParams(window.location.search);
     const challengeRef = params.get('challenge');
     const setRef = params.get('set');
+    const roomParam = params.get('room');
+
+    if (roomParam) {
+      setMainTab('multiplayer');
+      setMultiplayerRoomId(roomParam.toUpperCase().trim());
+      // Small timeout to allow state applied before url replace
+      setTimeout(() => window.history.replaceState({}, document.title, window.location.pathname), 100);
+      return; 
+    }
 
     if (setRef) {
       if (!playerName) {
@@ -2674,6 +2684,13 @@ export default function App() {
                       <h3 style={{ margin: '0 0 0.5rem 0', color: '#86198f' }}>{t("準備比賽！", "Get Ready!")}</h3>
                       <div style={{ fontSize: '1.8rem', fontWeight: 'bold', color: getRoomColor(multiplayerRoomId) || '#3b82f6', letterSpacing: '6px', marginBottom: '0.5rem', background: (getRoomColor(multiplayerRoomId) || '#3b82f6') + '18', borderRadius: '6px', padding: '0.3rem 1rem', display: 'inline-block', border: `2px solid ${getRoomColor(multiplayerRoomId) || '#3b82f6'}` }}>{multiplayerRoomId}</div>
                       <p style={{ fontSize: '0.8rem', color: '#94a3b8', margin: '0 0 0.8rem 0' }}>{t("分享此代碼讓更多人加入", "Share this code to let others join")}</p>
+                      
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
+                        <div style={{ background: 'white', padding: '0.5rem', borderRadius: '8px', border: '1px solid #cbd5e1' }}>
+                          <QRCodeSVG value={`${window.location.origin}${window.location.pathname}?room=${multiplayerRoomId}`} size={100} />
+                        </div>
+                        <p style={{ color: '#94a3b8', fontSize: '0.8rem', margin: 0 }}>{t("或掃描此 QR Code 快速加入", "or scan QR to join")}</p>
+                      </div>
                       <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#c026d3', marginBottom: '0.5rem' }}>{multiplayerState.verseRef}</div>
                       <div style={{ fontSize: '1rem', color: '#701a75', marginBottom: '1rem', fontStyle: 'italic', maxWidth: '300px', lineHeight: '1.4' }}>"{multiplayerState.verseText}"</div>
                       <p style={{ color: '#a21caf', fontSize: '0.9rem', margin: 0 }}>{t("雙方準備就緒後即將開始", "Match starts when both are ready")}</p>
@@ -2866,6 +2883,13 @@ export default function App() {
                       <h3 style={{ margin: '0 0 1rem 0', color: '#334155' }}>{t("等待玩家...", "Waiting...")}</h3>
                       <div style={{ fontSize: '2.5rem', fontWeight: 'bold', color: getRoomColor(multiplayerRoomId) || '#3b82f6', letterSpacing: '6px', marginBottom: '0.8rem', background: (getRoomColor(multiplayerRoomId) || '#3b82f6') + '18', borderRadius: '8px', padding: '0.4rem 1.2rem', display: 'inline-block', border: `3px solid ${getRoomColor(multiplayerRoomId) || '#3b82f6'}`, boxShadow: `0 0 16px ${getRoomColor(multiplayerRoomId) || '#3b82f6'}44` }}>{multiplayerRoomId}</div>
                       <p style={{ color: '#94a3b8', fontSize: '0.9rem', margin: 0 }}>{t("請朋友輸入上方的代碼來加入您的遊戲", "Ask your friend to enter this code to join")}</p>
+                      
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem', marginTop: '1rem' }}>
+                        <div style={{ background: 'white', padding: '0.5rem', borderRadius: '8px', border: '1px dashed #cbd5e1' }}>
+                          <QRCodeSVG value={`${window.location.origin}${window.location.pathname}?room=${multiplayerRoomId}`} size={120} />
+                        </div>
+                        <p style={{ color: '#94a3b8', fontSize: '0.8rem', margin: 0 }}>{t("或掃描上方 QR Code 快速加入", "or scan QR to join")}</p>
+                      </div>
                     </div>
 
                     {multiplayerState && multiplayerState.players && (
