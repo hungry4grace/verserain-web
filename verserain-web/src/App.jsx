@@ -4289,7 +4289,7 @@ export default function App() {
               </div>
             </div>
           ) : (
-            <div className="hud-glass" style={{ padding: 'clamp(1.5rem, 4vw, 3rem)', textAlign: 'center', width: '90%', maxWidth: '800px', maxHeight: '95dvh', display: 'flex', flexDirection: 'column', justifyContent: 'center', animation: isNewHighScore || isFlawless ? 'flashSuccess 1s ease-out' : 'none' }}>
+            <div className="hud-glass" style={{ padding: 'clamp(1.5rem, 4vw, 3rem)', textAlign: 'center', width: '90%', maxWidth: '800px', maxHeight: '95dvh', overflowY: 'auto', WebkitOverflowScrolling: 'touch', display: 'flex', flexDirection: 'column', justifyContent: 'flex-start', animation: isNewHighScore || isFlawless ? 'flashSuccess 1s ease-out' : 'none' }}>
 
               <div style={{ flexShrink: 0 }}>
                 {isNewHighScore ? (
@@ -4334,9 +4334,28 @@ export default function App() {
                     {t("難度加成", "Difficulty Multiplier")}: × {(1 + distractionLevel * 0.1).toFixed(1)} {t(`(難度 ${distractionLevel})`, `(Lv ${distractionLevel})`)}
                   </div>
                 )}
-                <div style={{ fontSize: 'clamp(1rem, 2.5vh, 1.25rem)', color: '#cbd5e1', marginBottom: 'clamp(0.5rem, 2vh, 1rem)', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '0.5rem', marginTop: '0.5rem' }}>
+                <div style={{ fontSize: 'clamp(1rem, 2.5vh, 1.25rem)', color: '#cbd5e1', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '0.5rem', marginTop: '0.5rem' }}>
                   {t("最終得分", "Final Score")}: <strong style={{ color: isNewHighScore ? '#fbbf24' : '#fff', fontSize: 'clamp(2rem, 5vh, 2.5rem)', display: 'block', marginTop: '0.2rem' }}>{score}</strong>
                 </div>
+
+                {/* Home button placed HERE — always visible above the leaderboard */}
+                {campaignQueue === null && (
+                  <button
+                    onClick={() => { setGameState('menu'); setCampaignQueue(null); }}
+                    className="play-btn"
+                    style={{
+                      width: '100%', maxWidth: '300px', margin: 'clamp(0.6rem, 2vh, 1rem) auto',
+                      background: '#3b82f6', color: 'white', border: 'none',
+                      padding: 'clamp(0.6rem, 1.5vh, 0.9rem)',
+                      fontSize: 'clamp(1rem, 2vh, 1.1rem)', fontWeight: 'bold',
+                      borderRadius: '12px', cursor: 'pointer',
+                      display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                      gap: '0.5rem', boxShadow: '0 0 15px rgba(59, 130, 246, 0.5)'
+                    }}
+                  >
+                    <Home size={18} /> {t("回到主頁", "Home")}
+                  </button>
+                )}
 
                 {!isAutoPlayRef.current && (
                   <div style={{ background: 'rgba(0,0,0,0.4)', borderRadius: '12px', padding: '1rem', marginTop: '1rem', marginBottom: '1.5rem', border: '1px solid rgba(255,255,255,0.1)' }}>
@@ -4453,21 +4472,7 @@ export default function App() {
                       {t("查看最終成績", "View Final Results")}
                     </button>
                   )
-                ) : (
-                  <button
-                    onClick={() => {
-                      setGameState('menu');
-                      setCampaignQueue(null);
-                    }}
-                    className="play-btn"
-                    style={{
-                      width: '100%', maxWidth: '300px', background: '#3b82f6', color: 'white', border: 'none', padding: 'clamp(0.8rem, 2vh, 1rem)',
-                      fontSize: 'clamp(1.1rem, 2.5vh, 1.2rem)', fontWeight: 'bold', borderRadius: '12px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', boxShadow: '0 0 15px rgba(59, 130, 246, 0.5)', transition: 'all 0.2s', margin: '0 auto'
-                    }}
-                  >
-                    <Home size={20} /> {t("回到主頁", "Home")}
-                  </button>
-                )}
+                ) : null /* Home button already shown above the leaderboard */}
               </div>
             </div>
           )}
