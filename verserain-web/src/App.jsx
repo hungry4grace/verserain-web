@@ -669,6 +669,8 @@ export default function App() {
   const [timeBonus, setTimeBonus] = useState(0);
   const [pureBaseScore, setPureBaseScore] = useState(0);
   const [campaignQueue, setCampaignQueue] = useState(null);
+  const campaignQueueRef = useRef(null);
+  useEffect(() => { campaignQueueRef.current = campaignQueue; }, [campaignQueue]);
   const localCampaignListRef = useRef([]); // full ordered verse list for square_solo mp
   const localVerseIndexRef = useRef(0);    // which verse this player is currently on
   const multiplayerSoloActiveRef = useRef(false); // true once any *_solo game is initialized; prevents re-init on every broadcast
@@ -1427,9 +1429,11 @@ export default function App() {
     if (isAutoPlayRef.current) {
       setTimeout(() => {
         if (gameStateRef.current !== 'menu') {
-          if (campaignQueue !== null && campaignQueue.length > 0) {
-            setActiveVerse(campaignQueue[0]);
-            setCampaignQueue(campaignQueue.slice(1));
+          const currentQueue = campaignQueueRef.current;
+          if (currentQueue !== null && currentQueue.length > 0) {
+            setActiveVerse(currentQueue[0]);
+            setCampaignQueue(currentQueue.slice(1));
+            campaignQueueRef.current = currentQueue.slice(1);
             startGame(true);
           } else {
             setGameState('menu');
