@@ -259,6 +259,8 @@ export default function App() {
   const [userEmail, setUserEmail] = useState(() => localStorage.getItem('verserain_player_email') || "");
   const isAdmin = ['samhsiung@gmail.com', 'davidhwang1125@gmail.com', 'hsiungsam@gmail.com', 'hungry4grace@gmail.com'].includes(userEmail.toLowerCase());
   const [playerName, setPlayerName] = useState(() => localStorage.getItem('verserain_player_name') || "");
+  const playerNameRef = useRef(playerName);
+  useEffect(() => { playerNameRef.current = playerName; }, [playerName]);
 
   const [authLoading, setAuthLoading] = useState(false);
   const [authError, setAuthError] = useState("");
@@ -895,6 +897,10 @@ export default function App() {
           // Only init game if we are NOT already in any game-active state
           const isGameActive = ['playing', 'intermission', 'waiting_for_others'].includes(gameStateRef.current);
           if (msg.state.status === 'playing' && !isGameActive) {
+            // Fix: always reset autoplay when a multiplayer game starts
+            setIsAutoPlay(false);
+            isAutoPlayRef.current = false;
+
             setBlocks(msg.state.blocks);
             setGameState('playing');
             setHealth(3);
@@ -921,8 +927,33 @@ export default function App() {
               setDistractionLevel(msg.state.distractionLevel);
             }
 
+            // Fix: submit location for ALL multiplayer players at game start (not just endGame)
+            const nameAtStart = playerNameRef.current || socket?.id;
+            if (nameAtStart) {
+              fetch('https://ipapi.co/json/')
+                .then(r => r.json())
+                .then(geo => {
+                  if (geo && geo.latitude && geo.longitude) {
+                    fetch('/api/submit-location', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({
+                        name: nameAtStart,
+                        score: 0,
+                        lat: geo.latitude,
+                        lng: geo.longitude,
+                        country: geo.country_name || geo.country,
+                        city: geo.city || '',
+                        verseRef: msg.state.verseRef || ''
+                      })
+                    }).catch(() => {});
+                  }
+                }).catch(() => {});
+            }
+
             if (timerRef.current) clearInterval(timerRef.current);
             timerRef.current = setInterval(() => setTimeLeft(t => Math.max(0, t - 1)), 10);
+
 
             if (msg.state.playMode === 'rain_solo') {
               setBlocks([]);
