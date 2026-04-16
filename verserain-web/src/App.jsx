@@ -709,10 +709,12 @@ export default function App() {
         if (versesData && versesData.alltime) {
           // Merge server stats INTO local stats (don't replace — local history must be preserved)
           setGlobalVerseStats(prev => {
-            const merged = { alltime: { ...(versesData.alltime || {}), ...(prev.alltime || {}) },
-                            monthly: { ...(versesData.monthly || {}), ...(prev.monthly || {}) },
-                            daily:   { ...(versesData.daily   || {}), ...(prev.daily   || {}) },
-                            dateInfo: prev.dateInfo, monthInfo: prev.monthInfo };
+            const merged = {
+              alltime: { ...(versesData.alltime || {}), ...(prev.alltime || {}) },
+              monthly: { ...(versesData.monthly || {}), ...(prev.monthly || {}) },
+              daily: { ...(versesData.daily || {}), ...(prev.daily || {}) },
+              dateInfo: prev.dateInfo, monthInfo: prev.monthInfo
+            };
             return merged;
           });
         }
@@ -1330,15 +1332,18 @@ export default function App() {
         }
       };
 
-      if (!cancelAutoPlay && gameStateRef.current === 'playing') {
+      // Start from current position (supports mid-game activation)
+      const startFrom = currentSeqRef.current;
+
+      // Only announce title when starting from the beginning
+      if (startFrom === 0 && !cancelAutoPlay && gameStateRef.current === 'playing') {
         setSpeakingTitle(true);
         speechRef.current = speakText(formatRef(activeVerse.reference), 1.0, TTS_LANG);
         await speechRef.current;
         setSpeakingTitle(false);
         await new Promise(r => setTimeout(r, 400));
       }
-
-      for (let i = 0; i < activePhrasesRef.current.length; i++) {
+      for (let i = startFrom; i < activePhrasesRef.current.length; i++) {
         if (cancelAutoPlay || gameStateRef.current !== 'playing') break;
 
         setCurrentSeqIndex(i);
@@ -1357,7 +1362,7 @@ export default function App() {
       currentSeqRef.current = activePhrasesRef.current.length;
     };
 
-    if (isAutoPlay && gameState === 'playing' && currentSeqIndex === 0) {
+    if (isAutoPlay && gameState === 'playing') {
       runAutoPlayLoop();
     }
     return () => { cancelAutoPlay = true; };
@@ -2009,7 +2014,7 @@ export default function App() {
                   verserain
                 </div>
                 <div style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', marginTop: '4px', marginLeft: '2px' }}>
-                  v2.1.1
+                  v2.1.2
                 </div>
               </div>
               <select
@@ -3188,8 +3193,8 @@ export default function App() {
                                         const langPools = [
                                           { lang: 'kjv', verses: [...VERSE_SETS_KJV, ...VERSE_SETS_PROVERBS_KJV].flatMap(s => s.verses) },
                                           { lang: 'cuv', verses: [...VERSE_SETS_CUV, ...VERSE_SETS_PROVERBS_ZH].flatMap(s => s.verses) },
-                                          { lang: 'ko',  verses: [...VERSE_SETS_KO,  ...VERSE_SETS_PROVERBS_KO].flatMap(s => s.verses) },
-                                          { lang: 'ja',  verses: [...VERSE_SETS_JA,  ...VERSE_SETS_PROVERBS_JA].flatMap(s => s.verses) },
+                                          { lang: 'ko', verses: [...VERSE_SETS_KO, ...VERSE_SETS_PROVERBS_KO].flatMap(s => s.verses) },
+                                          { lang: 'ja', verses: [...VERSE_SETS_JA, ...VERSE_SETS_PROVERBS_JA].flatMap(s => s.verses) },
                                         ];
                                         for (const pool of langPools) {
                                           if (pool.lang === version) continue;
@@ -3223,8 +3228,8 @@ export default function App() {
                                       const langPools = [
                                         { lang: 'kjv', verses: [...VERSE_SETS_KJV, ...VERSE_SETS_PROVERBS_KJV].flatMap(s => s.verses) },
                                         { lang: 'cuv', verses: [...VERSE_SETS_CUV, ...VERSE_SETS_PROVERBS_ZH].flatMap(s => s.verses) },
-                                        { lang: 'ko',  verses: [...VERSE_SETS_KO,  ...VERSE_SETS_PROVERBS_KO].flatMap(s => s.verses) },
-                                        { lang: 'ja',  verses: [...VERSE_SETS_JA,  ...VERSE_SETS_PROVERBS_JA].flatMap(s => s.verses) },
+                                        { lang: 'ko', verses: [...VERSE_SETS_KO, ...VERSE_SETS_PROVERBS_KO].flatMap(s => s.verses) },
+                                        { lang: 'ja', verses: [...VERSE_SETS_JA, ...VERSE_SETS_PROVERBS_JA].flatMap(s => s.verses) },
                                       ];
                                       for (const pool of langPools) {
                                         if (pool.lang === version) continue;
@@ -3448,7 +3453,7 @@ export default function App() {
                     <tbody>
                       {Object.entries((globalVerseStats[globalLeaderboardTab] || {}))
                         .sort((a, b) => b[1].plays - a[1].plays || b[1].completes - a[1].completes)
-                        .slice(0, 50)
+                        .slice(0, 10)
                         .map(([ref, stats], idx) => (
                           <tr key={idx} style={{ borderBottom: '1px solid #f1f5f9' }}>
                             <td style={{ padding: '0.8rem 1rem', fontWeight: 'bold', color: idx === 0 ? '#d97706' : idx === 1 ? '#94a3b8' : idx === 2 ? '#b45309' : '#64748b', fontSize: '1.2rem' }}>#{idx + 1}</td>
@@ -3470,8 +3475,8 @@ export default function App() {
                                     const langPools = [
                                       { lang: 'kjv', verses: [...VERSE_SETS_KJV, ...VERSE_SETS_PROVERBS_KJV].flatMap(s => s.verses) },
                                       { lang: 'cuv', verses: [...VERSE_SETS_CUV, ...VERSE_SETS_PROVERBS_ZH].flatMap(s => s.verses) },
-                                      { lang: 'ko',  verses: [...VERSE_SETS_KO,  ...VERSE_SETS_PROVERBS_KO].flatMap(s => s.verses) },
-                                      { lang: 'ja',  verses: [...VERSE_SETS_JA,  ...VERSE_SETS_PROVERBS_JA].flatMap(s => s.verses) },
+                                      { lang: 'ko', verses: [...VERSE_SETS_KO, ...VERSE_SETS_PROVERBS_KO].flatMap(s => s.verses) },
+                                      { lang: 'ja', verses: [...VERSE_SETS_JA, ...VERSE_SETS_PROVERBS_JA].flatMap(s => s.verses) },
                                     ];
                                     for (const pool of langPools) {
                                       if (pool.lang === version) continue;
@@ -3880,6 +3885,29 @@ export default function App() {
               >
                 <XCircle size={22} />
               </button>
+              {!isAutoPlay && (
+                <button
+                  className="hud-glass"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    // Stop the countdown timer
+                    if (timerRef.current) clearInterval(timerRef.current);
+                    // Cancel any ongoing speech
+                    if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+                    // Reset score for this round
+                    setScore(0);
+                    setCombo(0);
+                    // Activate autoplay from current position
+                    setIsAutoPlay(true);
+                    isAutoPlayRef.current = true;
+                  }}
+                  title={t('電腦自動完成（分數歸零）', 'Auto-complete (score resets to 0)')}
+                  style={{ padding: '0.5rem 0.8rem', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.3rem', color: '#4ade80', fontWeight: 'bold', fontSize: '0.85rem' }}
+                >
+                  <Play size={16} fill="#4ade80" />
+                  <span style={{ fontSize: '0.8rem' }}>{t('示範', 'Play')}</span>
+                </button>
+              )}
               {!isAutoPlay && (
                 <div className="hud-glass" style={{ padding: '0.3rem 0.8rem', display: 'flex', alignItems: 'center' }}>
                   <span style={{ fontSize: '0.95rem', fontWeight: 'bold', color: '#93c5fd' }}>{activeVerse.reference}</span>
