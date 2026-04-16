@@ -293,8 +293,9 @@ export default function App() {
   const [gardenData, setGardenData] = useState(() => {
     try { return JSON.parse(localStorage.getItem('verseRain_gardenData')) || {}; } catch { return {}; }
   });
-  const [selectedGardenCell, setSelectedGardenCell] = useState(null); // { ref, text, stage, fruits }
+  const [selectedGardenCell, setSelectedGardenCell] = useState(null); // { ref, text, stage, fruits, detectedLang }
   const gardenClickTimer = useRef(null);
+  const versionBeforeChallenge = useRef(null); // saved version to restore after cross-lang challenge
   const updateGarden = React.useCallback((ref, type, setId) => {
     setGardenData(prev => {
       const updated = { ...prev };
@@ -626,6 +627,13 @@ export default function App() {
   const [gameState, setGameState] = useState('menu');
   const gameStateRef = useRef('menu');
   useEffect(() => { gameStateRef.current = gameState; }, [gameState]);
+  // Restore original language after a cross-language garden challenge ends
+  useEffect(() => {
+    if (gameState === 'menu' && versionBeforeChallenge.current) {
+      setVersion(versionBeforeChallenge.current);
+      versionBeforeChallenge.current = null;
+    }
+  }, [gameState]);
 
   const [isAutoPlay, setIsAutoPlay] = useState(false);
   const isAutoPlayRef = useRef(false);
@@ -1992,7 +2000,7 @@ export default function App() {
                   verserain
                 </div>
                 <div style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', marginTop: '4px', marginLeft: '2px' }}>
-                  v2.1.0
+                  v2.1.1
                 </div>
               </div>
               <select
@@ -3164,15 +3172,30 @@ export default function App() {
                                     if (gardenClickTimer.current) { clearTimeout(gardenClickTimer.current); gardenClickTimer.current = null; return; }
                                     gardenClickTimer.current = setTimeout(() => {
                                       gardenClickTimer.current = null;
-                                      const allVerses = [...safeActiveSets, ...customVerseSets].flatMap(s => s.verses);
-                                      const targetVerse = findVerseByRef(allVerses, cell.ref);
+                                      const allCurrentVerses = [...safeActiveSets, ...customVerseSets].flatMap(s => s.verses);
+                                      let targetVerse = findVerseByRef(allCurrentVerses, cell.ref);
+                                      let detectedLang = version;
+                                      if (!targetVerse) {
+                                        const langPools = [
+                                          { lang: 'kjv', verses: [...VERSE_SETS_KJV, ...VERSE_SETS_PROVERBS_KJV].flatMap(s => s.verses) },
+                                          { lang: 'cuv', verses: [...VERSE_SETS_CUV, ...VERSE_SETS_PROVERBS_ZH].flatMap(s => s.verses) },
+                                          { lang: 'ko',  verses: [...VERSE_SETS_KO,  ...VERSE_SETS_PROVERBS_KO].flatMap(s => s.verses) },
+                                          { lang: 'ja',  verses: [...VERSE_SETS_JA,  ...VERSE_SETS_PROVERBS_JA].flatMap(s => s.verses) },
+                                        ];
+                                        for (const pool of langPools) {
+                                          if (pool.lang === version) continue;
+                                          const found = findVerseByRef(pool.verses, cell.ref);
+                                          if (found) { targetVerse = found; detectedLang = pool.lang; break; }
+                                        }
+                                      }
                                       setSelectedGardenCell({
                                         ref: cell.ref,
                                         text: targetVerse?.text || '',
                                         stage: cell.stage,
                                         fruits: cell.fruits || 0,
                                         setId: cell.setId,
-                                        verse: targetVerse
+                                        verse: targetVerse,
+                                        detectedLang,
                                       });
                                       setTimeout(() => {
                                         const popup = document.getElementById('garden-verse-popup');
@@ -3184,10 +3207,28 @@ export default function App() {
                                 onDoubleClick={() => {
                                   if (cell) {
                                     if (gardenClickTimer.current) { clearTimeout(gardenClickTimer.current); gardenClickTimer.current = null; }
-                                    const allVerses = [...safeActiveSets, ...customVerseSets].flatMap(s => s.verses);
-                                    const targetVerse = findVerseByRef(allVerses, cell.ref);
+                                    const allCurrentVerses = [...safeActiveSets, ...customVerseSets].flatMap(s => s.verses);
+                                    let targetVerse = findVerseByRef(allCurrentVerses, cell.ref);
+                                    let detectedLang = version;
+                                    if (!targetVerse) {
+                                      const langPools = [
+                                        { lang: 'kjv', verses: [...VERSE_SETS_KJV, ...VERSE_SETS_PROVERBS_KJV].flatMap(s => s.verses) },
+                                        { lang: 'cuv', verses: [...VERSE_SETS_CUV, ...VERSE_SETS_PROVERBS_ZH].flatMap(s => s.verses) },
+                                        { lang: 'ko',  verses: [...VERSE_SETS_KO,  ...VERSE_SETS_PROVERBS_KO].flatMap(s => s.verses) },
+                                        { lang: 'ja',  verses: [...VERSE_SETS_JA,  ...VERSE_SETS_PROVERBS_JA].flatMap(s => s.verses) },
+                                      ];
+                                      for (const pool of langPools) {
+                                        if (pool.lang === version) continue;
+                                        const found = findVerseByRef(pool.verses, cell.ref);
+                                        if (found) { targetVerse = found; detectedLang = pool.lang; break; }
+                                      }
+                                    }
                                     if (targetVerse) {
                                       setSelectedGardenCell(null);
+                                      if (detectedLang !== version) {
+                                        versionBeforeChallenge.current = version;
+                                        setVersion(detectedLang);
+                                      }
                                       setActiveVerse(targetVerse);
                                       setSelectedVerseRefs([targetVerse.reference]);
                                       if (cell.setId) setSelectedSetId(cell.setId);
@@ -3227,16 +3268,30 @@ export default function App() {
                         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }} onClick={() => setSelectedGardenCell(null)}>
                           <div id="garden-verse-popup" onClick={e => e.stopPropagation()} style={{ width: '100%', maxWidth: '400px', padding: '1.5rem', background: 'linear-gradient(135deg, #f0fdf4, #ecfdf5)', borderRadius: '15px', border: '3px solid #86efac', boxShadow: '0 10px 30px rgba(0,0,0,0.3)', position: 'relative', animation: 'flashSuccess 0.3s ease-out' }}>
                             <button onClick={() => setSelectedGardenCell(null)} style={{ position: 'absolute', top: '10px', right: '15px', background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer', fontSize: '1.4rem', fontWeight: 'bold' }}>✕</button>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.8rem' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.8rem', flexWrap: 'wrap' }}>
                               <span style={{ fontSize: '1.8rem' }}>{stageEmoji(selectedGardenCell.stage, selectedGardenCell.fruits)}</span>
                               <span style={{ fontWeight: 'bold', color: '#166534', fontSize: '1.2rem' }}>{selectedGardenCell.ref}</span>
                               <span style={{ fontSize: '0.85rem', color: '#166534', background: '#b2f5ea', padding: '3px 10px', borderRadius: '12px', fontWeight: 'bold' }}>{stageLabel(selectedGardenCell.stage)}</span>
+                              {selectedGardenCell.detectedLang && selectedGardenCell.detectedLang !== version && (
+                                <span style={{ fontSize: '0.75rem', color: '#1d4ed8', background: '#dbeafe', padding: '2px 8px', borderRadius: '10px', fontWeight: 'bold' }}>
+                                  {selectedGardenCell.detectedLang === 'kjv' ? 'KJV 🇬🇧' : selectedGardenCell.detectedLang === 'ko' ? '한국어 🇰🇷' : selectedGardenCell.detectedLang === 'ja' ? '日本語 🇯🇵' : '中文 🇹🇼'}
+                                </span>
+                              )}
                             </div>
-                            <p style={{ color: '#334155', lineHeight: '1.6', fontSize: '1rem', margin: '1rem 0 1.5rem', fontStyle: 'italic', maxHeight: '30vh', overflowY: 'auto' }}>
+                            <p style={{ color: '#334155', lineHeight: '1.6', fontSize: '1rem', margin: '1rem 0 0.8rem', fontStyle: 'italic', maxHeight: '30vh', overflowY: 'auto' }}>
                               "{selectedGardenCell.text || t('(經文內容未找到)', '(Verse text not found)')}"
                             </p>
+                            {selectedGardenCell.detectedLang && selectedGardenCell.detectedLang !== version && (
+                              <p style={{ fontSize: '0.78rem', color: '#64748b', margin: '0 0 1rem', textAlign: 'center' }}>
+                                💡 {t('將暫時切換語言來挑戰，完成後自動恢復', 'Will temporarily switch language for this challenge, then restore')}
+                              </p>
+                            )}
                             <button onClick={() => {
                               if (selectedGardenCell.verse) {
+                                if (selectedGardenCell.detectedLang && selectedGardenCell.detectedLang !== version) {
+                                  versionBeforeChallenge.current = version;
+                                  setVersion(selectedGardenCell.detectedLang);
+                                }
                                 setActiveVerse(selectedGardenCell.verse);
                                 setSelectedVerseRefs([selectedGardenCell.verse.reference]);
                                 if (selectedGardenCell.setId) setSelectedSetId(selectedGardenCell.setId);
@@ -3244,7 +3299,7 @@ export default function App() {
                                 setTimeout(() => startGame(), 50);
                               }
                             }} style={{ width: '100%', justifyContent: 'center', background: '#22c55e', color: 'white', border: 'none', padding: '0.8rem', borderRadius: '10px', fontWeight: 'bold', fontSize: '1.1rem', cursor: selectedGardenCell.verse ? 'pointer' : 'not-allowed', opacity: selectedGardenCell.verse ? 1 : 0.5, boxShadow: '0 4px 12px rgba(34,197,94,0.3)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                              <Play size={20} /> {t("挑戰這節經文", "Challenge this verse")}
+                              <Play size={20} /> {t('挑戰這節經文', 'Challenge this verse')}
                             </button>
                           </div>
                         </div>
