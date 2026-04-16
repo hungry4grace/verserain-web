@@ -24,7 +24,7 @@ const quillModules = {
 let audioCtx = null;
 
 // Deterministic room color from roomId — same roomId always = same color
-const ROOM_COLORS = ['#ef4444','#f97316','#eab308','#22c55e','#14b8a6','#0ea5e9','#8b5cf6','#ec4899','#06b6d4','#84cc16'];
+const ROOM_COLORS = ['#ef4444', '#f97316', '#eab308', '#22c55e', '#14b8a6', '#0ea5e9', '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16'];
 export function getRoomColor(roomId) {
   if (!roomId) return null;
   let hash = 0;
@@ -793,7 +793,7 @@ export default function App() {
           verseRef: '',
           roomId: activeRoomId || null
         })
-      }).catch(() => {});
+      }).catch(() => { });
     };
     if (geoRef.current) {
       doSubmit(geoRef.current);
@@ -805,7 +805,7 @@ export default function App() {
           async () => { const r = await fetch('https://ip-api.com/json/?fields=lat,lon,country,city,status'); const d = await r.json(); if (d?.status === 'success') return { latitude: d.lat, longitude: d.lon, country_name: d.country, city: d.city }; throw new Error('no data'); },
         ];
         for (const svc of services) {
-          try { const geo = await svc(); geoRef.current = geo; doSubmit(geo); return; } catch {}
+          try { const geo = await svc(); geoRef.current = geo; doSubmit(geo); return; } catch { }
         }
       };
       tryGeo();
@@ -982,15 +982,15 @@ export default function App() {
               const submitLoc = (geo) => fetch('/api/submit-location', {
                 method: 'POST', headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ name: nameAtStart, score: 0, lat: geo.latitude, lng: geo.longitude, country: geo.country_name || geo.country, city: geo.city || '', verseRef: msg.state.verseRef || '', roomId: roomIdAtStart || null })
-              }).catch(() => {});
+              }).catch(() => { });
               if (geoRef.current) {
                 submitLoc(geoRef.current);
               } else {
                 (async () => {
                   for (const svc of [
                     async () => { const d = await (await fetch('https://ipapi.co/json/')).json(); if (d?.latitude) return d; throw 0; },
-                    async () => { const d = await (await fetch('https://ip-api.com/json/?fields=lat,lon,country,city,status')).json(); if (d?.status==='success') return {latitude:d.lat,longitude:d.lon,country_name:d.country,city:d.city}; throw 0; }
-                  ]) { try { const g = await svc(); geoRef.current = g; submitLoc(g); return; } catch {} }
+                    async () => { const d = await (await fetch('https://ip-api.com/json/?fields=lat,lon,country,city,status')).json(); if (d?.status === 'success') return { latitude: d.lat, longitude: d.lon, country_name: d.country, city: d.city }; throw 0; }
+                  ]) { try { const g = await svc(); geoRef.current = g; submitLoc(g); return; } catch { } }
                 })();
               }
             }
@@ -2134,7 +2134,7 @@ export default function App() {
                   verserain
                 </div>
                 <div style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', marginTop: '4px', marginLeft: '2px' }}>
-                  v2.2.0
+                  v2.3.0
                 </div>
               </div>
               <select
