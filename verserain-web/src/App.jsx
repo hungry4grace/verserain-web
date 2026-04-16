@@ -9,6 +9,7 @@ import { BIBLE_BOOKS, getBookAbbr } from './bibleDictionary';
 import ReactQuill from 'react-quill-new';
 import 'react-quill-new/dist/quill.snow.css';
 import { PREMIUM_EMAILS } from './premiumEmails';
+import WorldMap from './WorldMap';
 
 const quillModules = {
   toolbar: [
@@ -1499,6 +1500,26 @@ export default function App() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ name: playerName, score: finalCalculatedScore, verseRef: activeVerse.reference, mode: actualModeName })
         }).then(() => {
+          // Also submit geolocation for the world map (fire-and-forget)
+          fetch('https://ipapi.co/json/')
+            .then(r => r.json())
+            .then(geo => {
+              if (geo && geo.latitude && geo.longitude) {
+                fetch('/api/submit-location', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    name: playerName,
+                    score: finalCalculatedScore,
+                    lat: geo.latitude,
+                    lng: geo.longitude,
+                    country: geo.country_name || geo.country,
+                    city: geo.city || '',
+                    verseRef: activeVerse.reference
+                  })
+                }).catch(() => {});
+              }
+            }).catch(() => {});
           return fetch(`/api/get-scores?verseRef=${encodeURIComponent(activeVerse.reference)}`);
         }).then(res => res.json())
           .then(data => setLeaderboard(data && Array.isArray(data.alltime) ? data : { alltime: Array.isArray(data) ? data : [], monthly: [], daily: [] }))
@@ -2088,6 +2109,9 @@ export default function App() {
             </div>
             <div className="block-tile" onClick={() => setMainTab('search')} style={{ display: 'flex', alignItems: 'center', padding: '0.5rem 1.2rem', cursor: 'pointer', backgroundColor: mainTab === 'search' ? '#8b5cf6' : 'white', color: mainTab === 'search' ? 'white' : '#475569', borderRadius: '20px', fontWeight: 'bold', whiteSpace: 'nowrap', transition: 'all 0.2s' }}>
               🔍 {t('搜尋', 'Search')}
+            </div>
+            <div className="block-tile" onClick={() => { setMainTab('map'); }} style={{ display: 'flex', alignItems: 'center', padding: '0.5rem 1.2rem', cursor: 'pointer', backgroundColor: mainTab === 'map' ? '#0ea5e9' : 'white', color: mainTab === 'map' ? 'white' : '#475569', borderRadius: '20px', fontWeight: 'bold', whiteSpace: 'nowrap', transition: 'all 0.2s' }}>
+              🗺️ {t('地圖', 'Map')}
             </div>
             <div style={{ flex: 1, minWidth: '20px' }}></div>
             <div className="block-tile" onClick={() => setMainTab('advanced')} style={{ display: 'flex', alignItems: 'center', padding: '0.5rem 1.2rem', cursor: 'pointer', backgroundColor: mainTab === 'advanced' ? '#475569' : 'white', color: mainTab === 'advanced' ? 'white' : '#64748b', borderRadius: '20px', fontWeight: 'bold', whiteSpace: 'nowrap', transition: 'all 0.2s' }}>
@@ -3673,6 +3697,22 @@ export default function App() {
                 })()}
               </div>
             )}
+
+            {mainTab === 'map' && (() => {
+              // Lazy-load Leaflet only when map tab is opened
+              return (
+                <div style={{ backgroundColor: '#ffffff', borderRadius: '8px', border: '1px solid #cbd5e1', overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+                  <div style={{ padding: '1.5rem 2rem 1rem', borderBottom: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <span style={{ fontSize: '1.5rem' }}>🗺️</span>
+                    <div>
+                      <h2 style={{ margin: 0, color: '#1e293b', fontSize: '1.2rem' }}>{t('全球玩家地圖', 'Global Player Map')}</h2>
+                      <p style={{ margin: '2px 0 0', color: '#64748b', fontSize: '0.85rem' }}>{t('點擊標記查看玩家成績', 'Click a marker to see player scores')}</p>
+                    </div>
+                  </div>
+                  <WorldMap t={t} playerName={playerName} />
+                </div>
+              );
+            })()}
 
             {mainTab === 'manual' && (
               <div style={{ padding: '2rem', maxWidth: '800px', margin: '0 auto', color: '#1e293b', lineHeight: '1.8' }}>

@@ -1,0 +1,216 @@
+import { useEffect, useRef, useState } from 'react';
+
+// Leaflet CSS injected dynamically
+function injectLeafletCSS() {
+  if (document.getElementById('leaflet-css')) return;
+  const link = document.createElement('link');
+  link.id = 'leaflet-css';
+  link.rel = 'stylesheet';
+  link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+  document.head.appendChild(link);
+}
+
+export default function WorldMap({ t, playerName }) {
+  const mapRef = useRef(null);
+  const leafletMapRef = useRef(null);
+  const [players, setPlayers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedPlayer, setSelectedPlayer] = useState(null);
+  const [error, setError] = useState(null);
+
+  // Fetch player map data
+  useEffect(() => {
+    setLoading(true);
+    fetch('/api/get-player-map')
+      .then(r => r.json())
+      .then(data => {
+        if (Array.isArray(data)) setPlayers(data);
+        else setPlayers([]);
+        setLoading(false);
+      })
+      .catch(() => {
+        setError('Failed to load map data');
+        setLoading(false);
+      });
+  }, []);
+
+  // Init Leaflet map
+  useEffect(() => {
+    if (loading || !mapRef.current) return;
+
+    injectLeafletCSS();
+
+    // Dynamic import of Leaflet
+    import('https://unpkg.com/leaflet@1.9.4/dist/leaflet-src.esm.js')
+      .then(L => {
+        if (leafletMapRef.current) {
+          leafletMapRef.current.remove();
+        }
+
+        const map = L.map(mapRef.current, {
+          center: [20, 105],
+          zoom: 3,
+          minZoom: 2,
+          maxZoom: 10,
+          zoomControl: true,
+          attributionControl: true,
+        });
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+          maxZoom: 19
+        }).addTo(map);
+
+        leafletMapRef.current = map;
+
+        // Group players by nearby location (simple clustering)
+        const clusters = {};
+        players.forEach(p => {
+          const key = `${Math.round(p.lat * 2) / 2},${Math.round(p.lng * 2) / 2}`;
+          if (!clusters[key]) clusters[key] = [];
+          clusters[key].push(p);
+        });
+
+        Object.entries(clusters).forEach(([key, group]) => {
+          const avgLat = group.reduce((s, p) => s + p.lat, 0) / group.length;
+          const avgLng = group.reduce((s, p) => s + p.lng, 0) / group.length;
+          const topScore = Math.max(...group.map(p => p.score));
+          const count = group.length;
+
+          // Custom circle icon
+          const size = count === 1 ? 32 : Math.min(52, 32 + count * 3);
+          const isCurrentUser = group.some(p => p.name === playerName);
+          const bgColor = isCurrentUser ? '#f59e0b' : '#0f172a';
+          const borderColor = isCurrentUser ? '#fbbf24' : '#334155';
+
+          const icon = L.divIcon({
+            className: '',
+            html: `<div style="
+              width:${size}px; height:${size}px;
+              background:${bgColor};
+              border:3px solid ${borderColor};
+              border-radius:50%;
+              display:flex; align-items:center; justify-content:center;
+              color:white; font-weight:bold; font-size:${count > 9 ? '11px' : '13px'};
+              box-shadow: 0 3px 10px rgba(0,0,0,0.4);
+              cursor:pointer;
+              transition: transform 0.15s;
+            ">${count > 1 ? count : (isCurrentUser ? '★' : '●')}</div>`,
+            iconSize: [size, size],
+            iconAnchor: [size / 2, size / 2],
+          });
+
+          const marker = L.marker([avgLat, avgLng], { icon });
+
+          // Build popup HTML
+          const sortedGroup = [...group].sort((a, b) => b.score - a.score);
+          const popup = L.popup({ maxWidth: 260, className: 'verse-map-popup' }).setContent(`
+            <div style="font-family: system-ui, sans-serif; min-width: 200px;">
+              <div style="font-weight:bold; color:#0f172a; margin-bottom:8px; font-size:0.95rem;">
+                📍 ${group[0].city ? `${group[0].city}, ` : ''}${group[0].country || 'Unknown'}
+              </div>
+              <table style="width:100%; border-collapse:collapse; font-size:0.85rem;">
+                <thead>
+                  <tr style="border-bottom:1px solid #e2e8f0; color:#64748b;">
+                    <th style="padding:4px 6px; text-align:left;">${t('玩家', 'Player')}</th>
+                    <th style="padding:4px 6px; text-align:right;">${t('最高分', 'Best Score')}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${sortedGroup.slice(0, 8).map((p, i) => `
+                    <tr style="border-bottom:1px solid #f1f5f9; ${p.name === playerName ? 'background:#fef9c3;' : ''}">
+                      <td style="padding:5px 6px; font-weight:${p.name === playerName ? 'bold' : 'normal'}; color:#1e293b;">
+                        ${i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `#${i+1}`} ${p.name}
+                        ${p.name === playerName ? ' ★' : ''}
+                      </td>
+                      <td style="padding:5px 6px; text-align:right; font-weight:bold; color:#3b82f6;">
+                        ${p.score.toLocaleString()}
+                      </td>
+                    </tr>
+                  `).join('')}
+                  ${sortedGroup.length > 8 ? `<tr><td colspan="2" style="padding:4px 6px; color:#94a3b8; font-size:0.8rem; text-align:center;">+${sortedGroup.length - 8} more</td></tr>` : ''}
+                </tbody>
+              </table>
+              ${group[0].verseRef ? `<div style="margin-top:8px; font-size:0.78rem; color:#94a3b8;">📖 ${sortedGroup[0].verseRef}</div>` : ''}
+            </div>
+          `);
+
+          marker.bindPopup(popup);
+          marker.on('mouseover', function () { this.openPopup(); });
+          marker.addTo(map);
+        });
+
+        // Show player count
+      }).catch(err => {
+        console.error('Leaflet load failed', err);
+        setError('Map library failed to load');
+      });
+
+    return () => {
+      if (leafletMapRef.current) {
+        leafletMapRef.current.remove();
+        leafletMapRef.current = null;
+      }
+    };
+  }, [loading, players, playerName]);
+
+  return (
+    <div>
+      {/* Stats bar */}
+      <div style={{ padding: '0.8rem 2rem', backgroundColor: '#f8fafc', borderBottom: '1px solid #e2e8f0', display: 'flex', gap: '2rem', flexWrap: 'wrap', alignItems: 'center' }}>
+        <div style={{ color: '#475569', fontSize: '0.9rem' }}>
+          🌍 <strong style={{ color: '#0ea5e9' }}>{players.length}</strong> {t('位玩家遍佈全球', 'players worldwide')}
+        </div>
+        {players.length > 0 && (
+          <div style={{ color: '#475569', fontSize: '0.9rem' }}>
+            🏆 {t('最高分', 'Top score')}: <strong style={{ color: '#3b82f6' }}>
+              {Math.max(...players.map(p => p.score)).toLocaleString()}
+            </strong>
+            {' '}({players.reduce((best, p) => p.score > (best?.score || 0) ? p : best, null)?.name})
+          </div>
+        )}
+        <button
+          onClick={() => {
+            setLoading(true);
+            fetch('/api/get-player-map').then(r => r.json()).then(data => {
+              setPlayers(Array.isArray(data) ? data : []);
+              setLoading(false);
+            }).catch(() => setLoading(false));
+          }}
+          style={{ marginLeft: 'auto', background: '#0ea5e9', color: 'white', border: 'none', padding: '0.3rem 0.8rem', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.8rem' }}
+        >
+          🔄 {t('重新整理', 'Refresh')}
+        </button>
+      </div>
+
+      {/* Map container */}
+      {loading ? (
+        <div style={{ height: '500px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#94a3b8', fontSize: '1.1rem', background: '#f8fafc' }}>
+          ⏳ {t('載入地圖中...', 'Loading map...')}
+        </div>
+      ) : error ? (
+        <div style={{ height: '400px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#ef4444' }}>
+          ⚠️ {error}
+        </div>
+      ) : (
+        <div>
+          <div ref={mapRef} style={{ height: '520px', width: '100%', background: '#e0f2fe' }} />
+          {players.length === 0 && (
+            <div style={{ position: 'relative', top: '-260px', textAlign: 'center', color: '#94a3b8', pointerEvents: 'none', fontSize: '1rem' }}>
+              {t('還沒有玩家資料，完成一局遊戲後你的位置就會出現！', 'No players yet — complete a game to appear on the map!')}
+            </div>
+          )}
+        </div>
+      )}
+
+      <style>{`
+        .verse-map-popup .leaflet-popup-content-wrapper {
+          border-radius: 10px;
+          box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+          border: 1px solid #e2e8f0;
+        }
+        .verse-map-popup .leaflet-popup-tip { background: white; }
+      `}</style>
+    </div>
+  );
+}
