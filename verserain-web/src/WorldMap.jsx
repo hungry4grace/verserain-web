@@ -76,103 +76,69 @@ export default function WorldMap({ t, playerName }) {
         // Clear existing markers for this update
         markersGroupRef.current.clearLayers();
 
-        // Group players by nearby location (simple clustering)
-        const clusters = {};
+        // Object to track identical locations to jitter overlapping markers
+        const locationOffsets = {};
+
         players.forEach(p => {
-          const key = `${Math.round(p.lat * 2) / 2},${Math.round(p.lng * 2) / 2}`;
-          if (!clusters[key]) clusters[key] = [];
-          clusters[key].push(p);
-        });
+          // Identify locations that are too close, using a grid string
+          const key = `${p.lat.toFixed(2)},${p.lng.toFixed(2)}`;
+          if (!locationOffsets[key]) locationOffsets[key] = 0;
+          const offsetFactor = locationOffsets[key];
+          locationOffsets[key]++;
 
-        Object.entries(clusters).forEach(([key, group]) => {
-          const avgLat = group.reduce((s, p) => s + p.lat, 0) / group.length;
-          const avgLng = group.reduce((s, p) => s + p.lng, 0) / group.length;
-          const count = group.length;
-          const isCurrentUser = group.some(p => p.name === playerName);
+          // Generate a small jitter to separate overlapping points visually
+          const spiralAngle = offsetFactor * (Math.PI * 2.3); 
+          const spiralRadius = offsetFactor > 0 ? (0.015 * Math.ceil(offsetFactor / 2)) : 0;
+          const finalLat = p.lat + spiralRadius * Math.cos(spiralAngle);
+          const finalLng = p.lng + spiralRadius * Math.sin(spiralAngle);
 
-          // Determine dominant color
-          const currentUserPlayer = group.find(p => p.name === playerName);
-          const anyRoomId = currentUserPlayer?.roomId || group.find(p => p.roomId)?.roomId || null;
-          const roomColor = getRoomColor(anyRoomId);
-
+          const isCurrentUser = p.name === playerName;
+          const roomColor = getRoomColor(p.roomId);
+          
           const bgColor = roomColor || (isCurrentUser ? '#f59e0b' : '#1e293b');
           const borderColor = roomColor ? roomColor : (isCurrentUser ? '#fbbf24' : '#475569');
-          const size = count === 1 ? 32 : Math.min(52, 32 + count * 3);
-          const glowStyle = roomColor ? `box-shadow: 0 0 0 3px ${roomColor}55, 0 0 16px ${roomColor}88;` : 'box-shadow: 0 2px 8px rgba(0,0,0,0.4);';
+          const glowStyle = roomColor ? `box-shadow: 0 0 0 3px ${roomColor}55, 0 0 12px ${roomColor}88;` : 'box-shadow: 0 2px 6px rgba(0,0,0,0.3);';
 
+          // Directly show the player's name as a pill-shaped marker
           const icon = L.divIcon({
             className: '',
             html: `<div style="
-              width:${size}px; height:${size}px;
-              background:${bgColor};
-              border:3px solid ${borderColor};
-              border-radius:50%;
               display:flex; align-items:center; justify-content:center;
-              color:white; font-weight:bold; font-size:${count > 9 ? '11px' : '13px'};
+              background:${bgColor};
+              border:2px solid ${borderColor};
+              border-radius:20px;
+              padding: 4px 10px;
+              color:white; font-weight:bold; font-size:12px;
               ${glowStyle}
               cursor:pointer;
-            ">${count > 1 ? count : (isCurrentUser ? '★' : '●')}</div>`,
-            iconSize: [size, size],
-            iconAnchor: [size / 2, size / 2],
+              white-space: nowrap;
+            ">${p.name} ${isCurrentUser ? '★' : ''}</div>`,
+            iconSize: null // Allows it to size itself based on contents
           });
 
-          const marker = L.marker([avgLat, avgLng], { icon });
+          const marker = L.marker([finalLat, finalLng], { icon });
 
-          // Build popup HTML
-          const sortedGroup = [...group].sort((a, b) => b.score - a.score);
-
-          // Group by rooms within this cluster for display
-          const roomGroups = {};
-          sortedGroup.forEach(p => {
-            const rid = p.roomId || '__solo__';
-            if (!roomGroups[rid]) roomGroups[rid] = [];
-            roomGroups[rid].push(p);
-          });
-
-          const roomBadge = anyRoomId
-            ? `<div style="display:inline-block; background:${roomColor}22; color:${roomColor}; border:1px solid ${roomColor}; border-radius:99px; padding:2px 10px; font-size:0.78rem; font-weight:bold; margin-bottom:8px;">⚔️ 房間 ${anyRoomId}</div>`
+          // Simple popup without the scoreboard
+          const roomBadge = p.roomId
+            ? `<div style="margin-top:6px; font-size:0.8rem; font-weight:bold; background:${roomColor}22; color:${roomColor}; border-radius:12px; padding:2px 8px; display:inline-block;">⚔️ 房間 ${p.roomId}</div>`
             : '';
 
-          const popup = L.popup({ maxWidth: 280, className: 'verse-map-popup' }).setContent(`
-            <div style="font-family: system-ui, sans-serif; min-width: 210px;">
-              <div style="font-weight:bold; color:#0f172a; margin-bottom:6px; font-size:0.95rem;">
-                📍 ${group[0].city ? `${group[0].city}, ` : ''}${group[0].country || 'Unknown'}
-              </div>
+          const popup = L.popup({ maxWidth: 220, className: 'verse-map-popup' }).setContent(`
+            <div style="font-family: system-ui, sans-serif; text-align:center; min-width: 120px;">
+              <div style="font-weight:bold; font-size:1.1rem; color:#1e293b; margin-bottom:4px;">${p.name}</div>
+              <div style="font-size:0.85rem; color:#64748b;">📍 ${p.city ? p.city + ', ' : ''}${p.country || 'Unknown'}</div>
               ${roomBadge}
-              <table style="width:100%; border-collapse:collapse; font-size:0.85rem;">
-                <thead>
-                  <tr style="border-bottom:1px solid #e2e8f0; color:#64748b;">
-                    <th style="padding:4px 6px; text-align:left;">${t('玩家', 'Player')}</th>
-                    <th style="padding:4px 6px; text-align:right;">${t('最高分', 'Best')}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  ${sortedGroup.slice(0, 8).map((p, i) => {
-                    const pRoom = getRoomColor(p.roomId);
-                    const dot = pRoom ? `<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${pRoom};margin-right:4px;"></span>` : '';
-                    return `<tr style="border-bottom:1px solid #f1f5f9; ${p.name === playerName ? 'background:#fef9c3;' : ''}">
-                      <td style="padding:5px 6px; font-weight:${p.name === playerName ? 'bold' : 'normal'}; color:#1e293b;">
-                        ${dot}${i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `#${i+1}`} ${p.name}${p.name === playerName ? ' ★' : ''}
-                      </td>
-                      <td style="padding:5px 6px; text-align:right; font-weight:bold; color:${pRoom || '#3b82f6'};">
-                        ${p.score.toLocaleString()}
-                      </td>
-                    </tr>`;
-                  }).join('')}
-                  ${sortedGroup.length > 8 ? `<tr><td colspan="2" style="padding:4px 6px; color:#94a3b8; font-size:0.8rem; text-align:center;">+${sortedGroup.length - 8} more</td></tr>` : ''}
-                </tbody>
-              </table>
+              ${p.verseRef ? `<div style="margin-top:8px; font-size:0.75rem; color:#94a3b8;">📖 ${p.verseRef}</div>` : ''}
             </div>
           `);
 
           marker.bindPopup(popup);
-          marker.on('mouseover', function () { this.openPopup(); });
-          
+
           // Click to zoom in by 3 levels
           marker.on('click', function () {
             const currentZoom = map.getZoom();
             const targetZoom = Math.min(currentZoom + 3, map.getMaxZoom());
-            map.flyTo([avgLat, avgLng], targetZoom);
+            map.flyTo([finalLat, finalLng], targetZoom);
           });
           
           marker.addTo(markersGroupRef.current);
