@@ -1,0 +1,21 @@
+
+  // === ヨハネの福音書 核心聖句 ===
+  {
+    id: "gospel-of-john-ja",
+    title: "ヨハネの福音書 核心聖句",
+    description: "ヨハネの福音書から選ばれた重要な宣言、約束、真理。",
+    language: "ja",
+    verses: [
+
+    ]
+  },
+  // === マタイの福音書 重要聖句 ===
+  {
+    id: "matthew-important-ja",
+    title: "マタイの福音書 重要聖句",
+    description: "マタイの福音書の重要な経文テストと黙想集。",
+    language: "ja",
+    verses: [
+
+    ]
+  },

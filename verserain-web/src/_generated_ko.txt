@@ -1,0 +1,21 @@
+
+  // === 요한복음 핵심 구절 ===
+  {
+    id: "gospel-of-john-ko",
+    title: "요한복음 핵심 구절",
+    description: "요한복음에서 엄선한 핵심 선언, 약속, 진리.",
+    language: "ko",
+    verses: [
+
+    ]
+  },
+  // === 마태복음 중요 구절 ===
+  {
+    id: "matthew-important-ko",
+    title: "마태복음 중요 구절",
+    description: "마태복음의 중요한 구절 시험과 묵상 모음.",
+    language: "ko",
+    verses: [
+
+    ]
+  },

@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Play, RotateCcw, Heart, Zap, Trophy, Crown, Star, Home, XCircle, Headphones, Music, VolumeX, Search, Share2, Dices, Mic, MicOff, Users } from 'lucide-react';
+import { Play, RotateCcw, Heart, Zap, Trophy, Crown, Star, Home, XCircle, Headphones, Music, VolumeX, Search, Share2, Dices, Mic, MicOff, Users, CloudRain } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import usePartySocket from 'partysocket/react';
 import PartySocket from 'partysocket';
 import QRCode from 'qrcode';
 import './index.css';
-import { BIBLE_BOOKS } from './bibleDictionary';
+import { BIBLE_BOOKS, getBookAbbr } from './bibleDictionary';
 import ReactQuill from 'react-quill-new';
 import 'react-quill-new/dist/quill.snow.css';
 import { PREMIUM_EMAILS } from './premiumEmails';
@@ -14,7 +14,7 @@ const quillModules = {
   toolbar: [
     [{ 'header': [1, 2, 3, 4, false] }],
     ['bold', 'italic', 'underline', 'strike', 'blockquote'],
-    [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+    [{ 'list': 'ordered' }, { 'list': 'bullet' }],
     ['link', 'image', 'video'],
     ['clean']
   ],
@@ -193,11 +193,22 @@ function playFireworksSound() {
 
 import { VERSE_SETS as VERSE_SETS_CUV } from './verses';
 import { VERSE_SETS_KJV } from './verses_kjv';
+import { VERSE_SETS_JA } from './verses_ja';
+import { VERSE_SETS_KO } from './verses_ko';
 import { getRandomFakePhrase } from './fakeLogic';
+
+const Tooltip = ({ text, children }) => (
+  <div className="fancy-tooltip-container">
+    {children}
+    <div className="fancy-tooltip-text">{text}</div>
+  </div>
+);
 
 export default function App() {
   const VERSES_CUV = React.useMemo(() => VERSE_SETS_CUV.flatMap(s => s.verses), []);
   const VERSES_KJV = React.useMemo(() => VERSE_SETS_KJV.flatMap(s => s.verses), []);
+  const VERSES_JA = React.useMemo(() => VERSE_SETS_JA.flatMap(s => s.verses), []);
+  const VERSES_KO = React.useMemo(() => VERSE_SETS_KO.flatMap(s => s.verses), []);
 
   const [version, setVersion] = useState('cuv');
   const [playMode, setPlayMode] = useState('square_solo');
@@ -212,7 +223,7 @@ export default function App() {
   const [userEmail, setUserEmail] = useState(() => localStorage.getItem('verserain_player_email') || "");
   const isAdmin = ['samhsiung@gmail.com', 'davidhwang1125@gmail.com', 'hsiungsam@gmail.com', 'hungry4grace@gmail.com'].includes(userEmail.toLowerCase());
   const [playerName, setPlayerName] = useState(() => localStorage.getItem('verserain_player_name') || "");
-  
+
   const [authLoading, setAuthLoading] = useState(false);
   const [authError, setAuthError] = useState("");
   const [customVerseSets, setCustomVerseSets] = useState(() => {
@@ -224,75 +235,105 @@ export default function App() {
     }
   });
   const [editingCustomSet, setEditingCustomSet] = useState(null);
+  const [bookPickerIdx, setBookPickerIdx] = useState(null); // which verse row has the book picker open
 
   const [publishedVerseSets, setPublishedVerseSets] = useState([]);
   const [viewCounts, setViewCounts] = useState({});
 
   // Local Leaderboard tracking (to be migrated to PartyKit on next deployment)
   const [globalUserStats, setGlobalUserStats] = useState(() => {
-     let prev;
-     try { prev = JSON.parse(localStorage.getItem('verseRain_globalUserStats')) || {}; } catch { prev = {}; }
-     if (!prev.alltime) prev = { alltime: prev, daily: {}, monthly: {}, dateInfo: '', monthInfo: '' };
-     return prev;
+    let prev;
+    try { prev = JSON.parse(localStorage.getItem('verseRain_globalUserStats')) || {}; } catch { prev = {}; }
+    if (!prev.alltime) prev = { alltime: prev, daily: {}, monthly: {}, dateInfo: '', monthInfo: '' };
+    return prev;
   });
   const [globalVerseStats, setGlobalVerseStats] = useState(() => {
-     let prev;
-     try { prev = JSON.parse(localStorage.getItem('verseRain_globalVerseStats')) || {}; } catch { prev = {}; }
-     if (!prev.alltime) prev = { alltime: prev, daily: {}, monthly: {}, dateInfo: '', monthInfo: '' };
-     return prev;
+    let prev;
+    try { prev = JSON.parse(localStorage.getItem('verseRain_globalVerseStats')) || {}; } catch { prev = {}; }
+    if (!prev.alltime) prev = { alltime: prev, daily: {}, monthly: {}, dateInfo: '', monthInfo: '' };
+    return prev;
   });
 
+  // Garden data: keyed by verseRef, each slot has { gridIndex, stage (1-10), fruits, setId }
+  const [gardenData, setGardenData] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('verseRain_gardenData')) || {}; } catch { return {}; }
+  });
+  const [selectedGardenCell, setSelectedGardenCell] = useState(null); // { ref, text, stage, fruits }
+  const gardenClickTimer = useRef(null);
+  const updateGarden = React.useCallback((ref, type, setId) => {
+    setGardenData(prev => {
+      const updated = { ...prev };
+      if (!updated[ref]) {
+        // Assign next available grid slot
+        const used = new Set(Object.values(updated).map(v => v.gridIndex));
+        let idx = 0;
+        while (used.has(idx)) idx++;
+        updated[ref] = { gridIndex: idx, stage: 1, fruits: 0, setId: setId || null };
+      } else if (type === 'played' && updated[ref].stage < 9) {
+        updated[ref] = { ...updated[ref], stage: updated[ref].stage + 1 };
+      } else if (type === 'completed') {
+        updated[ref] = { ...updated[ref], stage: 10 };
+      } else if (type === 'champ') {
+        updated[ref] = { ...updated[ref], stage: 10, fruits: (updated[ref].fruits || 0) + 1 };
+      }
+      localStorage.setItem('verseRain_gardenData', JSON.stringify(updated));
+      return updated;
+    });
+  }, []);
+
   const logEvent = (type, args) => {
-      const today = new Date().toISOString().split('T')[0];
-      const month = today.slice(0, 7);
+    const today = new Date().toISOString().split('T')[0];
+    const month = today.slice(0, 7);
 
-      const updateStats = (prev, idKey, field, amount) => {
-          let updated = { ...prev };
-          if (updated.dateInfo !== today) {
-              updated.dateInfo = today;
-              updated.daily = {};
+    const updateStats = (prev, idKey, field, amount) => {
+      let updated = { ...prev };
+      if (updated.dateInfo !== today) {
+        updated.dateInfo = today;
+        updated.daily = {};
+      }
+      if (updated.monthInfo !== month) {
+        updated.monthInfo = month;
+        updated.monthly = {};
+      }
+      if (!updated.alltime) updated.alltime = {};
+      if (!updated.daily) updated.daily = {};
+      if (!updated.monthly) updated.monthly = {};
+
+      ['alltime', 'monthly', 'daily'].forEach(period => {
+        if (!updated[period][idKey]) updated[period][idKey] = { champs: 0, completes: 0, plays: 0 };
+        updated[period][idKey][field] = (updated[period][idKey][field] || 0) + amount;
+      });
+      return updated;
+    };
+
+    if (type === 'versePlayed') {
+      const { ref, setId } = args;
+      setGlobalVerseStats(prev => {
+        const updated = updateStats(prev, ref, 'plays', 1);
+        localStorage.setItem('verseRain_globalVerseStats', JSON.stringify(updated));
+        return updated;
+      });
+      updateGarden(ref, 'played', setId);
+    }
+    if (type === 'verseCompleted') {
+      const { ref, name, isChamp, setId } = args;
+      setGlobalVerseStats(prev => {
+        const updated = updateStats(prev, ref, 'completes', 1);
+        localStorage.setItem('verseRain_globalVerseStats', JSON.stringify(updated));
+        return updated;
+      });
+      if (name) {
+        setGlobalUserStats(prev => {
+          let updated = updateStats(prev, name, 'completes', 1);
+          if (isChamp) {
+            updated = updateStats(updated, name, 'champs', 1);
           }
-          if (updated.monthInfo !== month) {
-              updated.monthInfo = month;
-              updated.monthly = {};
-          }
-          if (!updated.alltime) updated.alltime = {};
-          if (!updated.daily) updated.daily = {};
-          if (!updated.monthly) updated.monthly = {};
-          
-          ['alltime', 'monthly', 'daily'].forEach(period => {
-              if (!updated[period][idKey]) updated[period][idKey] = { champs: 0, completes: 0, plays: 0 };
-              updated[period][idKey][field] = (updated[period][idKey][field] || 0) + amount;
-          });
+          localStorage.setItem('verseRain_globalUserStats', JSON.stringify(updated));
           return updated;
-      };
-
-      if (type === 'versePlayed') {
-          const { ref } = args;
-          setGlobalVerseStats(prev => {
-              const updated = updateStats(prev, ref, 'plays', 1);
-              localStorage.setItem('verseRain_globalVerseStats', JSON.stringify(updated));
-              return updated;
-          });
+        });
       }
-      if (type === 'verseCompleted') {
-          const { ref, name, isChamp } = args;
-          setGlobalVerseStats(prev => {
-              const updated = updateStats(prev, ref, 'completes', 1);
-              localStorage.setItem('verseRain_globalVerseStats', JSON.stringify(updated));
-              return updated;
-          });
-          if (name) {
-              setGlobalUserStats(prev => {
-                  let updated = updateStats(prev, name, 'completes', 1);
-                  if (isChamp) {
-                      updated = updateStats(updated, name, 'champs', 1);
-                  }
-                  localStorage.setItem('verseRain_globalUserStats', JSON.stringify(updated));
-                  return updated;
-              });
-          }
-      }
+      updateGarden(ref, isChamp ? 'champ' : 'completed', setId);
+    }
   };
 
   useEffect(() => {
@@ -302,42 +343,55 @@ export default function App() {
         if (Array.isArray(data)) setPublishedVerseSets(data);
       })
       .catch(err => console.error("Failed to fetch published sets", err));
-      
+
     fetch("https://verserain-party.hungry4grace.partykit.dev/parties/main/global-auth-db/custom-sets/view")
       .then(res => res.json())
       .then(data => {
-         if (data) {
-             const cleanData = {};
-             Object.keys(data).forEach(k => cleanData[k.replace('views:', '')] = data[k]);
-             setViewCounts(cleanData);
-         }
+        if (data) {
+          const cleanData = {};
+          Object.keys(data).forEach(k => cleanData[k.replace('views:', '')] = data[k]);
+          setViewCounts(cleanData);
+        }
       })
       .catch(err => console.error("Failed to fetch view counts", err));
   }, []);
 
-  const baseVerseSets = version === 'cuv' ? VERSE_SETS_CUV : VERSE_SETS_KJV;
-  
+  const baseVerseSets = version === 'cuv' ? VERSE_SETS_CUV : (version === 'kjv' ? VERSE_SETS_KJV : (version === 'ja' ? VERSE_SETS_JA : (version === 'ko' ? VERSE_SETS_KO : [])));
+
   const activeVerseSets = React.useMemo(() => {
     const merged = [];
     customVerseSets.forEach(cs => {
-       if (cs.isPublished) {
+      if (cs.isPublished) {
+        const csLang = cs.language || 'cuv';
+        if (csLang === version) {
           const pub = publishedVerseSets.find(p => p.id === cs.id);
           merged.push({ ...cs, authorName: (pub && pub.authorName !== "Anonymous") ? pub.authorName : (cs.authorName || playerName || "匿名玩家") });
-       }
+        }
+      }
     });
     publishedVerseSets.forEach(ps => {
-       if (!merged.some(cs => cs.id === ps.id)) {
+      const psLang = ps.language || 'cuv';
+      if (psLang === version) {
+        if (!merged.some(cs => cs.id === ps.id)) {
           merged.push(ps);
-       }
+        }
+      }
     });
-    return [...merged, ...baseVerseSets];
-  }, [customVerseSets, publishedVerseSets, baseVerseSets, playerName]);
+    return [...baseVerseSets, ...merged];
+  }, [customVerseSets, publishedVerseSets, baseVerseSets, playerName, version]);
 
-  const currentSet = selectedSetId ? (activeVerseSets.find(s => s.id === selectedSetId) || customVerseSets.find(s => s.id === selectedSetId)) : null;
-  const VERSES_DB = currentSet ? currentSet.verses : activeVerseSets[0].verses;
+  const safeActiveSets = activeVerseSets.length > 0 ? activeVerseSets : [{
+    id: "dummy",
+    title: version === 'ja' ? '経文セットが見つかりません' : (version === 'ko' ? '성경 구절 세트를 찾을 수 없습니다' : (version === 'kjv' ? 'No Verse Sets Found' : '尚未發現經文組')),
+    authorName: "System",
+    verses: [{ reference: "N/A", text: version === 'ja' ? '現在この言語には経文セットがありません。👑 マイ問題集から作成してください。' : (version === 'ko' ? '현재 이 언어에 대한 구절 세트가 없습니다. 👑 내 문제집에서 만드십시오.' : (version === 'kjv' ? 'There are no verse sets for this language yet. Create one in 👑 Custom Sets.' : '目前此語言沒有經文組。請去 👑 我的題庫 中建立！')) }]
+  }];
 
-  const [activeVerse, setActiveVerse] = useState(VERSES_DB[0]);
-  const [selectedVerseRefs, setSelectedVerseRefs] = useState([VERSES_DB[0].reference]);
+  const currentSet = selectedSetId ? (safeActiveSets.find(s => s.id === selectedSetId) || customVerseSets.find(s => s.id === selectedSetId)) : null;
+  const VERSES_DB = currentSet ? currentSet.verses : safeActiveSets[0].verses;
+
+  const [activeVerse, setActiveVerse] = useState(VERSES_DB[0] || { reference: "N/A", text: "" });
+  const [selectedVerseRefs, setSelectedVerseRefs] = useState([VERSES_DB[0]?.reference || "N/A"]);
 
   const [initAutoStart, setInitAutoStart] = useState(null);
 
@@ -384,9 +438,15 @@ export default function App() {
 
   const handleVersionChange = (newVer) => {
     setVersion(newVer);
-    const targetDB = newVer === 'cuv' ? VERSES_CUV : VERSES_KJV;
-    setActiveVerse(targetDB[0]);
-    setSelectedVerseRefs([targetDB[0].reference]);
+    let targetVerses = [];
+    if (newVer === 'cuv') targetVerses = VERSES_CUV;
+    else if (newVer === 'kjv') targetVerses = VERSES_KJV;
+
+    if (targetVerses.length === 0) {
+      targetVerses = [{ reference: "N/A", text: newVer === 'ja' ? '経文が見つかりません。' : (newVer === 'ko' ? '성경 구절을 찾을 수 없습니다.' : (newVer === 'kjv' ? 'No verses found.' : '目前的分類下沒有經文。')) }];
+    }
+    setActiveVerse(targetVerses[0]);
+    setSelectedVerseRefs([targetVerses[0].reference]);
     setCampaignQueue(null);
   };
 
@@ -578,7 +638,7 @@ export default function App() {
   const [leaderboardModalData, setLeaderboardModalData] = useState({ alltime: [], monthly: [], daily: [] });
   const [leaderboardModalTab, setLeaderboardModalTab] = useState('alltime'); // 'daily', 'monthly', 'alltime'
   const [isFetchingLeaderboard, setIsFetchingLeaderboard] = useState(false);
-  const [mainTab, setMainTab] = useState('versesets');
+  const [mainTab, setMainTab] = useState('lobby');
   const [searchQuery, setSearchQuery] = useState('');
   const [globalLeaderboardData, setGlobalLeaderboardData] = useState({ alltime: [], monthly: [], daily: [] });
   const [isFetchingGlobalLeaderboard, setIsFetchingGlobalLeaderboard] = useState(false);
@@ -644,59 +704,59 @@ export default function App() {
     } else if (gameState === 'intermission' && intermissionCountdown === 0) {
       // square_solo: each player advances to their next verse independently
       if (multiplayerRoomId && multiplayerState?.playMode === 'square_solo' && localNextVerse) {
-          const verseObj = { reference: localNextVerse.reference, text: localNextVerse.text, title: 'Multiplayer' };
-          setActiveVerse(verseObj);
-          setCurrentSeqIndex(0);
-          currentSeqRef.current = 0;
-          setScore(0);
-          setCombo(0);
-          setHealth(3);
-          setTimeLeft(6000);
-          setLocalNextVerse(null);
-          setGameState('playing');
-          initSquareBlocks(false, null, verseObj);
+        const verseObj = { reference: localNextVerse.reference, text: localNextVerse.text, title: 'Multiplayer' };
+        setActiveVerse(verseObj);
+        setCurrentSeqIndex(0);
+        currentSeqRef.current = 0;
+        setScore(0);
+        setCombo(0);
+        setHealth(3);
+        setTimeLeft(6000);
+        setLocalNextVerse(null);
+        setGameState('playing');
+        initSquareBlocks(false, null, verseObj);
       } else if (multiplayerState?.host === myClientId && multiplayerState.campaignQueue && multiplayerState.campaignQueue.length > 0) {
-          const nextVerse = multiplayerState.campaignQueue[0];
-          const isEnglish = /^[a-zA-Z\s.,:;'"]+$/.test(nextVerse.text.substring(0, 50));
-          const regex = isEnglish ? /[,，。；：「」、;:\.\?!]/ : /[,，。；：「」、;:\.\?!！？『』《》\s]/;
-          const phrases = nextVerse.text.split(regex).map(p => p.trim()).filter(Boolean);
-          
-          const maxGridSize = multiplayerState.distractionLevel <= 1 ? 4 : 9;
-          const fakesCount = multiplayerState.distractionLevel > 0 ? multiplayerState.distractionLevel : 0;
-          const realBlocksAvailable = phrases.length;
-          const initialRealCount = Math.min(maxGridSize - fakesCount, realBlocksAvailable);
-          
-          let newBlocks = Array.from({ length: initialRealCount }, (_, i) => ({
-             id: Math.random().toString(36).substr(2, 9),
-             text: phrases[i],
-             seqIndex: i,
-             isSquare: true,
-             error: false,
-             correct: false,
-             hidden: false
+        const nextVerse = multiplayerState.campaignQueue[0];
+        const isEnglish = /^[a-zA-Z\s.,:;'"]+$/.test(nextVerse.text.substring(0, 50));
+        const regex = isEnglish ? /[,，。；：「」、;:\.\?!]/ : /[,，。；：「」、;:\.\?!！？『』《》\s]/;
+        const phrases = nextVerse.text.split(regex).map(p => p.trim()).filter(Boolean);
+
+        const maxGridSize = multiplayerState.distractionLevel <= 1 ? 4 : 9;
+        const fakesCount = multiplayerState.distractionLevel > 0 ? multiplayerState.distractionLevel : 0;
+        const realBlocksAvailable = phrases.length;
+        const initialRealCount = Math.min(maxGridSize - fakesCount, realBlocksAvailable);
+
+        let newBlocks = Array.from({ length: initialRealCount }, (_, i) => ({
+          id: Math.random().toString(36).substr(2, 9),
+          text: phrases[i],
+          seqIndex: i,
+          isSquare: true,
+          error: false,
+          correct: false,
+          hidden: false
+        }));
+
+        if (fakesCount > 0) {
+          for (let i = 0; i < fakesCount; i++) {
+            newBlocks.push({ id: Math.random().toString(36).substr(2, 9), text: "---", seqIndex: -1, isSquare: true, error: false, correct: false, hidden: false, isFake: true });
+          }
+        }
+
+        const currentLength = newBlocks.length;
+        for (let i = currentLength; i < maxGridSize; i++) {
+          newBlocks.push({ id: Math.random().toString(36).substr(2, 9), text: '', seqIndex: -99, isSquare: true, error: false, correct: false, hidden: true });
+        }
+        newBlocks.sort(() => Math.random() - 0.5);
+
+        if (socketRef.current) {
+          socketRef.current.send(JSON.stringify({
+            type: 'NEXT_CAMPAIGN_ROUND',
+            blocks: newBlocks,
+            verseRef: nextVerse.reference,
+            verseText: nextVerse.text,
+            phrases: phrases
           }));
-          
-          if (fakesCount > 0) {
-            for (let i = 0; i < fakesCount; i++) {
-              newBlocks.push({ id: Math.random().toString(36).substr(2, 9), text: "---", seqIndex: -1, isSquare: true, error: false, correct: false, hidden: false, isFake: true });
-            }
-          }
-          
-          const currentLength = newBlocks.length;
-          for (let i = currentLength; i < maxGridSize; i++) {
-            newBlocks.push({ id: Math.random().toString(36).substr(2, 9), text: '', seqIndex: -99, isSquare: true, error: false, correct: false, hidden: true });
-          }
-          newBlocks.sort(() => Math.random() - 0.5);
-          
-          if (socketRef.current) {
-            socketRef.current.send(JSON.stringify({ 
-               type: 'NEXT_CAMPAIGN_ROUND', 
-               blocks: newBlocks, 
-               verseRef: nextVerse.reference,
-               verseText: nextVerse.text,
-               phrases: phrases
-            }));
-          }
+        }
       }
     }
   }, [gameState, intermissionCountdown, multiplayerState, myClientId, multiplayerRoomId, localNextVerse]);
@@ -724,106 +784,109 @@ export default function App() {
         const msg = JSON.parse(e.data);
         if (msg.type === 'STATE_UPDATE') {
           setMultiplayerState(msg.state);
-          
-          if (msg.state.status === 'playing' && gameStateRef.current !== 'playing' && !squareSoloActiveRef.current) {
-             setBlocks(msg.state.blocks);
-             setGameState('playing');
-             setHealth(3);
-             setCombo(0);
-             setScore(0);
-             setTimeLeft(6000);
-             setCurrentSeqIndex(0);
-             currentSeqRef.current = 0;
-             // For square_solo: store full ordered verse list so each player can advance independently.
-             // campaignQueue from the server already includes all verses starting from verse 0.
-             if (msg.state.playMode === 'square_solo') {
-               squareSoloActiveRef.current = true;
-               localCampaignListRef.current = (msg.state.campaignQueue && msg.state.campaignQueue.length > 0)
-                 ? msg.state.campaignQueue
-                 : [{ reference: msg.state.verseRef, text: msg.state.verseText, title: 'Multiplayer' }];
-               localVerseIndexRef.current = 0;
-             }
-             // Set a placeholder activeVerse so HUD works
-              const fakeVerse = { reference: msg.state.verseRef, title: "Multiplayer", text: msg.state.verseText || msg.state.blocks.filter(b=>!b.isFake).map(b=>b.text).join('') };
-              setActiveVerse(fakeVerse);
-              setPlayMode(msg.state.playMode || 'square');
-              if (msg.state.distractionLevel !== undefined) {
-                 setDistractionLevel(msg.state.distractionLevel);
-              }
-              
-              if (timerRef.current) clearInterval(timerRef.current);
-              timerRef.current = setInterval(() => setTimeLeft(t => Math.max(0, t - 1)), 10);
-           } else if (msg.state.status === 'playing' && gameStateRef.current === 'playing') {
-              // Vital logic: Apply the refreshed block array from the referee!
-              if (msg.state.playMode !== 'square_solo') {
-                 setBlocks(msg.state.blocks);
-              }
-           }
-           if (msg.state.status === 'intermission' && gameStateRef.current !== 'intermission') {
-               setGameState('intermission');
-               setIntermissionCountdown(0);
-               if (timerRef.current) clearInterval(timerRef.current);
-           }
-           if (msg.state.status === 'waiting') {
-             squareSoloActiveRef.current = false; // server reset — allow re-init on next game start
-           }
-           if (msg.state.status === 'finished' && gameStateRef.current !== 'multiplayer_results') {
-             squareSoloActiveRef.current = false;
-             setGameState('multiplayer_results');
-             if (timerRef.current) clearInterval(timerRef.current);
+
+          // Only init game if we are NOT already in any game-active state
+          const isGameActive = ['playing', 'intermission', 'waiting_for_others'].includes(gameStateRef.current);
+          if (msg.state.status === 'playing' && !isGameActive) {
+            setBlocks(msg.state.blocks);
+            setGameState('playing');
+            setHealth(3);
+            setCombo(0);
+            setScore(0);
+            setTimeLeft(6000);
+            setCurrentSeqIndex(0);
+            currentSeqRef.current = 0;
+            // For square_solo: store full ordered verse list so each player can advance independently.
+            // campaignQueue from the server already includes all verses starting from verse 0.
+            // Only init if not already set (host sets it in initAutoStart before INIT_GAME)
+            if (msg.state.playMode === 'square_solo' && !squareSoloActiveRef.current) {
+              squareSoloActiveRef.current = true;
+              localCampaignListRef.current = (msg.state.campaignQueue && msg.state.campaignQueue.length > 0)
+                ? msg.state.campaignQueue
+                : [{ reference: msg.state.verseRef, text: msg.state.verseText, title: 'Multiplayer' }];
+              localVerseIndexRef.current = 0;
+            }
+            // Set a placeholder activeVerse so HUD works
+            const fakeVerse = { reference: msg.state.verseRef, title: "Multiplayer", text: msg.state.verseText || msg.state.blocks.filter(b => !b.isFake).map(b => b.text).join('') };
+            setActiveVerse(fakeVerse);
+            setPlayMode(msg.state.playMode || 'square');
+            if (msg.state.distractionLevel !== undefined) {
+              setDistractionLevel(msg.state.distractionLevel);
+            }
+
+            if (timerRef.current) clearInterval(timerRef.current);
+            timerRef.current = setInterval(() => setTimeLeft(t => Math.max(0, t - 1)), 10);
+          } else if (msg.state.status === 'playing' && gameStateRef.current === 'playing') {
+            // Vital logic: Apply the refreshed block array from the referee!
+            if (msg.state.playMode !== 'square_solo') {
+              setBlocks(msg.state.blocks);
+            }
+          }
+          if (msg.state.status === 'intermission' && gameStateRef.current !== 'intermission') {
+            setGameState('intermission');
+            setIntermissionCountdown(0);
+            if (timerRef.current) clearInterval(timerRef.current);
+          }
+          if (msg.state.status === 'waiting') {
+            squareSoloActiveRef.current = false; // server reset — allow re-init on next game start
+          }
+          if (msg.state.status === 'finished' && gameStateRef.current !== 'multiplayer_results') {
+            squareSoloActiveRef.current = false;
+            setGameState('multiplayer_results');
+            if (timerRef.current) clearInterval(timerRef.current);
           }
         } else if (msg.type === 'BLOCK_CLAIMED') {
-           // Dom coordinate extraction for flying animation
-           const el = document.querySelector(`[data-id="${msg.blockId}"]`);
-           const targetContainer = document.getElementById('multiplayer-stack-cursor');
-           if (el && targetContainer) {
-              const rect = el.getBoundingClientRect();
-              const targetRect = targetContainer.getBoundingClientRect();
-              
-              const newFlyingBlock = {
-                 id: Date.now() + Math.random(),
-                 text: msg.blockText,
-                 claimedByName: msg.claimedByName,
-                 color: msg.claimedBy === socket.id ? '#10b981' : '#f43f5e',
-                 startX: `${rect.left}px`,
-                 startY: `${rect.top}px`,
-                 endX: `${targetRect.left}px`,
-                 endY: `${targetRect.top}px`,
-                 width: `${rect.width}px`,
-                 height: `${rect.height}px`
-              };
-              
-              setFlyingBlocks(prev => [...prev, newFlyingBlock]);
-              
-              setTimeout(() => {
-                 setFlyingBlocks(prev => prev.filter(fb => fb.id !== newFlyingBlock.id));
-              }, 500);
-           }
+          // Dom coordinate extraction for flying animation
+          const el = document.querySelector(`[data-id="${msg.blockId}"]`);
+          const targetContainer = document.getElementById('multiplayer-stack-cursor');
+          if (el && targetContainer) {
+            const rect = el.getBoundingClientRect();
+            const targetRect = targetContainer.getBoundingClientRect();
 
-           setBlocks(prev => prev.map(b => b.id === msg.blockId ? { ...b, claimedBy: msg.claimedBy, claimedByName: msg.claimedByName, correct: true } : b));
-           setCurrentSeqIndex(msg.nextSeq);
-           currentSeqRef.current = msg.nextSeq;
-           
-           if (msg.claimedBy === socket.id) {
-             setScore(prev => prev + 100);
-             setCombo(c => c + 1);
-           } else {
-             setCombo(0);
-           }
+            const newFlyingBlock = {
+              id: Date.now() + Math.random(),
+              text: msg.blockText,
+              claimedByName: msg.claimedByName,
+              color: msg.claimedBy === socket.id ? '#10b981' : '#f43f5e',
+              startX: `${rect.left}px`,
+              startY: `${rect.top}px`,
+              endX: `${targetRect.left}px`,
+              endY: `${targetRect.top}px`,
+              width: `${rect.width}px`,
+              height: `${rect.height}px`
+            };
+
+            setFlyingBlocks(prev => [...prev, newFlyingBlock]);
+
+            setTimeout(() => {
+              setFlyingBlocks(prev => prev.filter(fb => fb.id !== newFlyingBlock.id));
+            }, 500);
+          }
+
+          setBlocks(prev => prev.map(b => b.id === msg.blockId ? { ...b, claimedBy: msg.claimedBy, claimedByName: msg.claimedByName, correct: true } : b));
+          setCurrentSeqIndex(msg.nextSeq);
+          currentSeqRef.current = msg.nextSeq;
+
+          if (msg.claimedBy === socket.id) {
+            setScore(prev => prev + 100);
+            setCombo(c => c + 1);
+          } else {
+            setCombo(0);
+          }
         } else if (msg.type === 'MISTAKE') {
-           setHealth(h => {
-             const newHealth = msg.health !== undefined ? msg.health : Math.max(0, h - 1);
-             if (newHealth === 2) {
-               playThunder('light');
-               triggerLightning('light');
-             } else if (newHealth <= 0) {
-               playThunder('heavy');
-               triggerLightning('heavy');
-             }
-             return newHealth;
-           });
+          setHealth(h => {
+            const newHealth = msg.health !== undefined ? msg.health : Math.max(0, h - 1);
+            if (newHealth === 2) {
+              playThunder('light');
+              triggerLightning('light');
+            } else if (newHealth <= 0) {
+              playThunder('heavy');
+              triggerLightning('heavy');
+            }
+            return newHealth;
+          });
         }
-      } catch (err) {}
+      } catch (err) { }
     };
 
     socket.addEventListener('open', handleOpen);
@@ -875,8 +938,8 @@ export default function App() {
           const isEnglish = /^[a-zA-Z]/.test(targetVerse.reference);
           // If the verse belongs to the opposite language, setting version triggers activeVerseSets change
           if ((isEnglish && version !== 'kjv') || (!isEnglish && version !== 'cuv')) {
-             setVersion(isEnglish ? 'kjv' : 'cuv');
-             return; // Wait for activeVerseSets to update on next render
+            setVersion(isEnglish ? 'kjv' : 'cuv');
+            return; // Wait for activeVerseSets to update on next render
           }
           setActiveVerse(targetVerse);
           setSelectedVerseRefs([targetVerse.reference]);
@@ -906,10 +969,10 @@ export default function App() {
       anims.forEach(anim => {
         // Only target fall animation and ensure it's not paused
         if (anim.effect && anim.effect.getComputedTiming && anim.effect.getComputedTiming().progress !== null) {
-           anim.playbackRate = rate;
+          anim.playbackRate = rate;
         } else {
-           // Fallback for newer blocks just added
-           anim.playbackRate = rate;
+          // Fallback for newer blocks just added
+          anim.playbackRate = rate;
         }
       });
     });
@@ -993,17 +1056,17 @@ export default function App() {
   useEffect(() => {
     if (initAutoStart?.trigger) {
       if (initAutoStart.isMultiplayerReadyCheck) {
-         // For square_solo: initialize local verse tracking HERE, before startGame sets gameState='playing'.
-         // The STATE_UPDATE handler's init block won't fire for the HOST because gameState is already
-         // 'playing' by the time the server's first broadcast arrives.
-         if (initAutoStart.playMode === 'square_solo' && initAutoStart.campaignQueue?.length > 0) {
-           localCampaignListRef.current = initAutoStart.campaignQueue;
-           localVerseIndexRef.current = 0;
-           squareSoloActiveRef.current = true;
-         }
-         initSquareBlocks(true, initAutoStart.campaignQueue, initAutoStart.verse);
+        // For square_solo: initialize local verse tracking HERE, before startGame sets gameState='playing'.
+        // The STATE_UPDATE handler's init block won't fire for the HOST because gameState is already
+        // 'playing' by the time the server's first broadcast arrives.
+        if (initAutoStart.playMode === 'square_solo' && initAutoStart.campaignQueue?.length > 0) {
+          localCampaignListRef.current = initAutoStart.campaignQueue;
+          localVerseIndexRef.current = 0;
+          squareSoloActiveRef.current = true;
+        }
+        initSquareBlocks(true, initAutoStart.campaignQueue, initAutoStart.verse);
       } else {
-         startGame(initAutoStart.isAuto);
+        startGame(initAutoStart.isAuto);
       }
       setInitAutoStart(null);
     }
@@ -1069,20 +1132,20 @@ export default function App() {
     }
 
     newBlocks.sort(() => Math.random() - 0.5);
-    
+
     if (isMultiplayerReadyCheck && socketRef.current) {
-        socketRef.current.send(JSON.stringify({ 
-           type: 'INIT_GAME', 
-           blocks: newBlocks, 
-           verseRef: verse.reference,
-           verseText: verse.text,
-           playMode: playMode,
-           distractionLevel: distractionLevel,
-           phrases: phrases,
-           campaignQueue: campaignQueue
-        }));
+      socketRef.current.send(JSON.stringify({
+        type: 'INIT_GAME',
+        blocks: newBlocks,
+        verseRef: verse.reference,
+        verseText: verse.text,
+        playMode: playMode,
+        distractionLevel: distractionLevel,
+        phrases: phrases,
+        campaignQueue: campaignQueue
+      }));
     } else {
-        setBlocks(newBlocks);
+      setBlocks(newBlocks);
     }
   };
 
@@ -1124,9 +1187,9 @@ export default function App() {
         setTimeout(spawnNextBlock, 3300);
       }
     }
-    
+
     if (activeVerse && !isAuto) {
-        logEvent('versePlayed', { ref: activeVerse.reference });
+      logEvent('versePlayed', { ref: activeVerse.reference, setId: selectedSetId });
     }
   };
 
@@ -1186,7 +1249,7 @@ export default function App() {
   }, [isAutoPlay, gameState, version, activeVerse.reference]);
 
   const triggerFireworks = () => {
-    const duration = 4 * 1000;
+    const duration = 2 * 1000;
     const end = Date.now() + duration;
 
     let soundTick = 0;
@@ -1269,10 +1332,11 @@ export default function App() {
     setIsFailed(failed || healthRef.current <= 0); // Consider it visually failed if health <= 0, but verse completes
 
     if (isSuccess && !isAutoPlayRef.current) {
-      logEvent('verseCompleted', { 
-          ref: activeVerse.reference, 
-          name: playerName, 
-          isChamp: hs 
+      logEvent('verseCompleted', {
+        ref: activeVerse.reference,
+        name: playerName,
+        isChamp: hs,
+        setId: selectedSetId
       });
       // Load current leaderboard initially
       fetch(`/api/get-scores?verseRef=${encodeURIComponent(activeVerse.reference)}`)
@@ -1332,35 +1396,37 @@ export default function App() {
   useEffect(() => {
     if (currentSeqIndex >= activePhrases.length && activePhrases.length > 0 && gameState === 'playing') {
       if (multiplayerRoomId) {
-         if (multiplayerState?.playMode === 'square_solo') {
-            // Report this verse's score to server (server accumulates campaign results)
+        if (multiplayerState?.playMode === 'square_solo') {
+          // Report this verse's score to server (server accumulates campaign results)
+          if (socketRef.current) {
+            socketRef.current.send(JSON.stringify({
+              type: 'PLAYER_FINISHED_VERSE',
+              verseRef: activeVerse.reference,
+              score: scoreRef.current,
+              verseIndex: localVerseIndexRef.current
+            }));
+          }
+          const nextIndex = localVerseIndexRef.current + 1;
+          localVerseIndexRef.current = nextIndex;
+          if (nextIndex < localCampaignListRef.current.length) {
+            // Show 5-second countdown before next verse
+            const nextVerse = localCampaignListRef.current[nextIndex];
+            setLocalNextVerse(nextVerse);
+            setGameState('intermission');
+            // Countdown duration scales with difficulty level
+            const countdownByLevel = [5, 3, 2, 1];
+            setIntermissionCountdown(countdownByLevel[distractionLevel] || 5);
+          } else {
+            // All verses done — tell server and show the waiting room
             if (socketRef.current) {
-               socketRef.current.send(JSON.stringify({
-                  type: 'PLAYER_FINISHED_VERSE',
-                  verseRef: activeVerse.reference,
-                  score: scoreRef.current,
-                  verseIndex: localVerseIndexRef.current
-               }));
+              socketRef.current.send(JSON.stringify({ type: 'PLAYER_FINISHED_ALL' }));
             }
-            const nextIndex = localVerseIndexRef.current + 1;
-            localVerseIndexRef.current = nextIndex;
-            if (nextIndex < localCampaignListRef.current.length) {
-               // Show 5-second countdown before next verse
-               const nextVerse = localCampaignListRef.current[nextIndex];
-               setLocalNextVerse(nextVerse);
-               setGameState('intermission');
-               setIntermissionCountdown(5);
-            } else {
-               // All verses done — tell server and show the waiting room
-               if (socketRef.current) {
-                  socketRef.current.send(JSON.stringify({ type: 'PLAYER_FINISHED_ALL' }));
-               }
-               setGameState('waiting_for_others');
-            }
-         }
-         return;
+            setGameState('waiting_for_others');
+          }
+        }
+        return;
       } else {
-         endGame();
+        endGame();
       }
     }
   }, [currentSeqIndex, gameState, activePhrases.length, multiplayerRoomId, multiplayerState?.playMode]);
@@ -1369,10 +1435,10 @@ export default function App() {
   useEffect(() => {
     if (multiplayerRoomId && gameState === 'playing' && multiplayerState?.playMode === 'square_solo' && socketRef.current) {
       socketRef.current.send(JSON.stringify({
-         type: 'PLAYER_PROGRESS',
-         score: score,
-         health: health,
-         seqIndex: currentSeqIndex
+        type: 'PLAYER_PROGRESS',
+        score: score,
+        health: health,
+        seqIndex: currentSeqIndex
       }));
     }
   }, [score, health, currentSeqIndex, multiplayerRoomId, gameState, multiplayerState?.playMode]);
@@ -1393,14 +1459,14 @@ export default function App() {
     // Flush speech recognition buffer on ANY block click (manual or voice) to prepare for next block
     setLiveTranscript("");
     if (recognitionRef.current) {
-       try { recognitionRef.current.stop(); } catch(e) {}
+      try { recognitionRef.current.stop(); } catch (e) { }
     }
 
     if (multiplayerRoomId && socketRef.current && gameState === 'playing') {
-       if (multiplayerState?.playMode !== 'square_solo') {
-          socketRef.current.send(JSON.stringify({ type: 'CLICK_BLOCK', blockId: block.id }));
-          return; // Local state will be updated via socket broadcast
-       }
+      if (multiplayerState?.playMode !== 'square_solo') {
+        socketRef.current.send(JSON.stringify({ type: 'CLICK_BLOCK', blockId: block.id }));
+        return; // Local state will be updated via socket broadcast
+      }
     }
 
     if (block.seqIndex === currentSeqIndex || block.text === activePhrases[currentSeqIndex]) {
@@ -1489,6 +1555,34 @@ export default function App() {
         } else if (newHealth <= 0) {
           playThunder('heavy');
           triggerLightning('heavy');
+          // In multiplayer square_solo: auto-advance to next verse instead of being stuck
+          if (multiplayerRoomId && multiplayerState?.playMode === 'square_solo' && squareSoloActiveRef.current) {
+            setTimeout(() => {
+              // Report failed verse with score 0
+              if (socketRef.current) {
+                socketRef.current.send(JSON.stringify({
+                  type: 'PLAYER_FINISHED_VERSE',
+                  verseRef: activeVerse?.reference || '',
+                  score: 0,
+                  verseIndex: localVerseIndexRef.current
+                }));
+              }
+              const nextIndex = localVerseIndexRef.current + 1;
+              localVerseIndexRef.current = nextIndex;
+              if (nextIndex < localCampaignListRef.current.length) {
+                const nextVerse = localCampaignListRef.current[nextIndex];
+                setLocalNextVerse(nextVerse);
+                setGameState('intermission');
+                const countdownByLevel = [5, 3, 2, 1];
+                setIntermissionCountdown(countdownByLevel[distractionLevel] || 5);
+              } else {
+                if (socketRef.current) {
+                  socketRef.current.send(JSON.stringify({ type: 'PLAYER_FINISHED_ALL' }));
+                }
+                setGameState('waiting_for_others');
+              }
+            }, 800);
+          }
           return 0;
         }
         return newHealth;
@@ -1554,7 +1648,179 @@ export default function App() {
     }
   };
 
-  const t = (zh, en) => version === 'kjv' ? en : zh;
+  const jaDict = {
+    '經文組': '経文セット',
+    '👑 我的題庫': '👑 マイ問題集',
+    '多人連線': 'マルチプレイヤー',
+    '排行榜': 'ランキング',
+    '搜尋': '検索',
+    '使用說明': 'マニュアル',
+    '有關': '概要',
+    '解鎖經文組': '経文セットをロック解除',
+    '✨ Premium 認證': '✨ Premium 認証',
+    '🔒 基本帳號': '🔒 通常アカウント',
+    '編輯題庫': '問題集を編集',
+    '新增題庫': '問題集を追加',
+    '✔️ 已準備': '✔️ 準備完了',
+    '等待中...': '待機中...',
+    '已準備': '準備完了',
+    '準備！': '準備！',
+    '選擇比賽經文組': '経文セットを選択',
+    '連戰結束！': '連戦終了！',
+    '對局結束！': '対戦終了！',
+    '新高分！': '新記録！',
+    '完美無瑕！': 'パーフェクト！',
+    '今天': '今日',
+    '30天 (本月)': '30日 (今月)',
+    '歷史': '歴代',
+    '完美': 'パーフェクト',
+    '過關': 'クリア',
+    '失敗': '失敗',
+    '註冊新帳號': '新規アカウント登録',
+    '登入帳號': 'ログイン',
+    '建立新帳號 (需與 Skool Email 相同以獲取權限)': '新規アカウント作成 (Skool Email と同じものを使用)',
+    '登入': 'ログイン',
+    '標題': 'タイトル',
+    '作者': '作成者',
+    '點閱次數': '閲覧数',
+    '目前選擇': '現在の選択',
+    '返回目錄': '目次に戻る',
+    '沒有找到匹配的經文組。': '一致する経文セットが見つかりません。',
+    '新經文組名稱': '新しい経文セットの名前',
+    '新增經文': '経文を追加する',
+    '準備儲存 (Local)': '保存を準備中 (Local)',
+    '您尚未解鎖此項功能！': 'この機能はまだ解放されていません！',
+    '刪除': '削除',
+    '開始遊戲': 'ゲーム開始',
+    '本週進度 : ': '今週の進捗 : ',
+    '經文出處 (點擊觀看)': '出典（クリックして閲覧）',
+    '排行': 'ランク',
+    '魔法一鍵抓取 (輸入出處)': '魔法のワンクリック取得（出典を入力）',
+    '從聖經抓取經文': '聖書から経文を取得',
+    '經文內容': '経文の内容',
+    '正確答案 (例如 5,4,3,2,1 或留空自動順序)': '正解 (例 5,4,3,2,1 または空白で自動順序)',
+    '👑 發佈至全球 (Publish)': '👑 グローバル公開 (Publish)',
+    '本日排行': 'デイリー',
+    '本月排行': 'マンスリー',
+    '歷史總榜': '歴代ランキング',
+    '個人總積分排行榜': '個人の合計スコアランキング',
+    '玩家名稱': 'プレイヤー名',
+    '紀錄次數/完成數': '記録回数/クリア回数',
+    '目前尚無紀錄': 'まだ記録がありません',
+    '最受歡迎經文排行榜': '最も人気のある経文ランキング',
+    '經文出處': '経文の出典',
+    '遊玩次數': 'プレイ回数',
+    '完成次數': 'クリア回数',
+    '此經文組的介面語言': 'この経文セットのUI言語',
+    '尚未發現經文組': '経文セットが見つかりません',
+    '最高分': '最高スコア',
+    '載入中...': '読み込み中...',
+    '🌳 我的園子': '🌳 私の園',
+    '我的園子': '私の園',
+    '種植': '植えた数',
+    '大樹': '大樹',
+    '果子': '果実',
+    '嫩芽': '芽',
+    '幼苗': '苗',
+    '小樹': '苗木',
+    '成長中': '成長中',
+    '快完成了': 'もうすぐ',
+    '空地': '空地',
+    '搜尋經文': '経文を検索',
+    '輸入關鍵字，例如「利未記」或「醫治」...': 'キーワードを入力...例：「レビ記」または「癒やし」',
+    '請輸入關鍵字開始搜尋。': '検索を開始するにはキーワードを入力してください。',
+    '登出': 'ログアウト'
+  };
+
+  const koDict = {
+    '挑戰': '도전',
+    '經文組': '구절 세트',
+    '排行榜': '리더보드',
+    '👑 我的題庫': '👑 내 문제집',
+    '使用說明': '사용 설명서',
+    '關於': '정보',
+    '連線對戰': '멀티플레이',
+    '你的名字:': '이름:',
+    '登入 / 修改': '로그인 / 수정',
+    '經文': '말씀',
+    '無干擾': '방해 없음',
+    '單字干擾': '단어 방해',
+    '標點干擾': '기호 방해',
+    '選擇': '선택',
+    '創建主題：': '주제 생성:',
+    '創建': '생성',
+    '連線對戰 (2~4人)': '멀티플레이 (2~4인)',
+    '發起對戰': '대결 시작',
+    '加入對戰': '대결 참여',
+    '房間代碼:': '방 코드:',
+    '返回': '뒤로',
+    '遊玩': '플레이',
+    '自建題庫': '문제집 만들기',
+    '標題': '제목',
+    '例如：約翰福音核心經文': '예: 요한복음 핵심 구절',
+    '簡介': '설명',
+    '這是一組關於生命與愛的經文...': '이것은 생명과 사랑에 관한 구절입니다...',
+    '作者 (選填)': '작성자 (선택)',
+    '取消作者': '작성자 취소',
+    '匿名玩家': '익명 플레이어',
+    '新增經文': '구절 추가',
+    '取消': '취소',
+    '儲存': '저장',
+    '編輯題庫': '문제집 편집',
+    '新增題庫': '문제집 생성',
+    '編輯': '편집',
+    '刪除': '삭제',
+    '開始遊戲': '게임 시작',
+    '本週進度 : ': '이번 주 진도 : ',
+    '經文出處 (點擊觀看)': '출처 (클릭하여 보기)',
+    '排行': '순위',
+    '魔法一鍵抓取 (輸入出處)': '마법 원클릭 (출처 입력)',
+    '從聖經抓取經文': '성경에서 구절 가져오기',
+    '經文內容': '구절 내용',
+    '正確答案 (例如 5,4,3,2,1 或留空自動順序)': '정답 (예: 5,4,3,2,1 또는 빈칸)',
+    '👑 發佈至全球 (Publish)': '👑 글로벌 게시 (Publish)',
+    '本日排行': '일간',
+    '本月排行': '월간',
+    '歷史總榜': '전체 순위',
+    '個人總積分排行榜': '개인 총점 순위',
+    '玩家名稱': '플레이어 이름',
+    '紀錄次數/完成數': '기록 횟수/완료 횟수',
+    '目前尚無紀錄': '아직 기록이 없습니다',
+    '最受歡迎經文排行榜': '가장 인기 있는 구절 순위',
+    '經文出處': '구절 출처',
+    '遊玩次數': '플레이 횟수',
+    '完成次數': '완료 횟수',
+    '此經文組的介面語言': '이 구절 세트의 UI 언어',
+    '尚未發現經文組': '구절 세트를 찾을 수 없습니다',
+    '有關': '소개',
+    '解鎖經文組': '구절 세트 잠금 해제',
+    '最高分': '최고 점수',
+    '載入中...': '로딩 중...',
+    '🌳 我的園子': '🌳 나의 정원',
+    '我的園子': '나의 정원',
+    '種植': '심은 수',
+    '大樹': '큰 나무',
+    '果子': '열매',
+    '嫩芽': '새싹',
+    '幼苗': '어린 싹',
+    '小樹': '작은 나무',
+    '成長中': '성장 중',
+    '快完成了': '거의 다 됐',
+    '空地': '빈 땅',
+    '多人連線': '멀티플레이',
+    '搜尋': '검색',
+    '搜尋經文': '구절 검색',
+    '輸入關鍵字，例如「利未記」或「醫治」...': '키워드 입력, 예: "레위기" 또는 "치유"...',
+    '請輸入關鍵字開始搜尋。': '검색을 시작하려면 키워드를 입력하세요.',
+    '登出': '로그아웃'
+  };
+
+  const t = (zh, en) => {
+    if (version === 'kjv') return en || zh;
+    if (version === 'ja') return jaDict[zh] || zh;
+    if (version === 'ko') return koDict[zh] || zh;
+    return zh;
+  };
 
   // Sync handleBlockClick to ref so Speech can fire it
   useEffect(() => {
@@ -1590,8 +1856,8 @@ export default function App() {
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem' }}>
             {micStatusText && <div className="hud-glass" style={{ padding: '4px 8px', fontSize: '0.8rem', color: '#4ade80', animation: 'pulse 2s infinite' }}>{micStatusText}</div>}
             <button
-              onClick={(e) => { 
-                e.stopPropagation(); 
+              onClick={(e) => {
+                e.stopPropagation();
                 const nextMicState = !isMicOn;
                 setIsMicOn(nextMicState);
                 if (nextMicState) setIsMusicPlaying(false);
@@ -1622,16 +1888,33 @@ export default function App() {
 
           {/* Header */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem 2rem', backgroundColor: '#ffffff', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
-            <div style={{ fontSize: '1.8rem', fontWeight: 'bold', color: '#3b82f6', fontFamily: 'cursive' }}>
-              verserain
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+                <div style={{ fontSize: '1.8rem', fontWeight: 'bold', color: '#3b82f6', fontFamily: 'cursive', lineHeight: '1' }}>
+                  verserain
+                </div>
+                <div style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', marginTop: '4px', marginLeft: '2px' }}>
+                  v2.0.1
+                </div>
+              </div>
+              <select
+                value={version}
+                onChange={(e) => handleVersionChange(e.target.value)}
+                style={{ padding: '0.3rem 0.5rem', borderRadius: '4px', border: '1px solid #cbd5e1', background: '#3b82f6', color: '#fff', fontWeight: 'bold', cursor: 'pointer', fontSize: '0.8rem' }}
+              >
+                <option value="cuv">中文</option>
+                <option value="kjv">English</option>
+                <option value="ja">日本語</option>
+                <option value="ko">한국어</option>
+              </select>
             </div>
             <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
               {playerName ? (
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', cursor: 'pointer', padding: '0.3rem 0.6rem', borderRadius: '6px', transition: 'background 0.2s' }} 
-                       onClick={() => setShowNameEditModal(true)}
-                       onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#f1f5f9'}
-                       onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', cursor: 'pointer', padding: '0.3rem 0.6rem', borderRadius: '6px', transition: 'background 0.2s' }}
+                    onClick={() => setShowNameEditModal(true)}
+                    onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#f1f5f9'}
+                    onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}>
                     <span style={{ color: '#1e293b', fontWeight: 'bold', fontSize: '0.95rem' }}>{playerName}</span>
                     <button style={{ background: 'none', border: 'none', color: '#94a3b8', padding: 0, cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
                       <Crown size={14} style={{ color: '#fbbf24' }} />
@@ -1649,344 +1932,391 @@ export default function App() {
           </div>
 
           {/* Navigation Bar */}
-          <div style={{ display: 'flex', backgroundColor: '#334155', color: 'white', padding: '0 1rem', overflowX: 'auto', borderBottom: '2px solid #1e293b' }}>
-            {[
-              { id: 'versesets', label: t('經文組', 'Verse Sets') },
-              { id: 'custom_verses', label: t('👑 我的題庫', '👑 Custom Sets') },
-              { id: 'multiplayer', label: t('多人連線', 'Multiplayer') },
-              { id: 'leaderboard', label: t('排行榜', 'Leaderboard') },
-              { id: 'search', label: t('搜尋', 'Search') },
-              { id: 'manual', label: t('使用說明', 'Manual') },
-              { id: 'about', label: t('有關', 'About') },
-              { id: 'donate', label: t('解鎖經文組', 'Unlock Verse Sets'), link: 'https://www.skool.com/mutualizedeconomy/classroom' }
-            ].map((item, idx) => (
-              <div key={idx} onClick={() => {
-                if (item.link) {
-                  window.open(item.link, '_blank');
-                  return;
-                }
-                setMainTab(item.id);
-                if (item.id === 'versesets') setSelectedSetId(null);
-                if (item.id === 'leaderboard') fetchGlobalLeaderboard();
-              }} style={{ padding: '0.8rem 1.5rem', cursor: 'pointer', backgroundColor: (!item.link && mainTab === item.id) ? '#3b82f6' : 'transparent', fontWeight: 'bold', whiteSpace: 'nowrap', transition: 'background 0.2s', fontSize: '0.95rem' }} onMouseOver={(e) => { if (item.link || mainTab !== item.id) e.target.style.backgroundColor = '#475569'; }} onMouseOut={(e) => { if (item.link || mainTab !== item.id) e.target.style.backgroundColor = 'transparent'; }}>
-                {item.label}
-              </div>
-            ))}
+          <div style={{ display: 'flex', backgroundColor: '#e2e8f0', color: '#334155', padding: '0.8rem 1rem', overflowX: 'auto', borderBottom: '2px solid #cbd5e1', gap: '0.8rem', alignItems: 'center' }}>
+            <div className="block-tile" onClick={() => setMainTab('lobby')} style={{ display: 'flex', alignItems: 'center', padding: '0.5rem 1.2rem', cursor: 'pointer', backgroundColor: mainTab === 'lobby' ? '#3b82f6' : 'white', color: mainTab === 'lobby' ? 'white' : '#475569', borderRadius: '20px', fontWeight: 'bold', whiteSpace: 'nowrap', transition: 'all 0.2s' }}>
+              🏠 {t('大廳', 'Home')}
+            </div>
+            <div className="block-tile" onClick={() => setMainTab('garden')} style={{ display: 'flex', alignItems: 'center', padding: '0.5rem 1.2rem', cursor: 'pointer', backgroundColor: mainTab === 'garden' ? '#10b981' : 'white', color: mainTab === 'garden' ? 'white' : '#475569', borderRadius: '20px', fontWeight: 'bold', whiteSpace: 'nowrap', transition: 'all 0.2s' }}>
+              🌳 {t('我的園子', 'My Garden')}
+            </div>
+            <div className="block-tile" onClick={() => setMainTab('multiplayer')} style={{ display: 'flex', alignItems: 'center', padding: '0.5rem 1.2rem', cursor: 'pointer', backgroundColor: mainTab === 'multiplayer' ? '#ec4899' : 'white', color: mainTab === 'multiplayer' ? 'white' : '#475569', borderRadius: '20px', fontWeight: 'bold', whiteSpace: 'nowrap', transition: 'all 0.2s' }}>
+              🎮 {t('多人連線', 'Multiplayer')}
+            </div>
+            <div className="block-tile" onClick={() => setMainTab('search')} style={{ display: 'flex', alignItems: 'center', padding: '0.5rem 1.2rem', cursor: 'pointer', backgroundColor: mainTab === 'search' ? '#8b5cf6' : 'white', color: mainTab === 'search' ? 'white' : '#475569', borderRadius: '20px', fontWeight: 'bold', whiteSpace: 'nowrap', transition: 'all 0.2s' }}>
+              🔍 {t('搜尋', 'Search')}
+            </div>
+            <div style={{ flex: 1, minWidth: '20px' }}></div>
+            <div className="block-tile" onClick={() => setMainTab('advanced')} style={{ display: 'flex', alignItems: 'center', padding: '0.5rem 1.2rem', cursor: 'pointer', backgroundColor: mainTab === 'advanced' ? '#475569' : 'white', color: mainTab === 'advanced' ? 'white' : '#64748b', borderRadius: '20px', fontWeight: 'bold', whiteSpace: 'nowrap', transition: 'all 0.2s' }}>
+              ⚙️ {t('進階功能', 'Advanced')}
+            </div>
           </div>
 
           {/* Main Content Area */}
           <div style={{ maxWidth: '1000px', margin: '2rem auto', padding: '0 1rem' }}>
 
+            {mainTab === 'lobby' && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem', alignItems: 'center', marginTop: '1rem', paddingBottom: '3rem' }}>
+                <div style={{ textAlign: 'center', marginBottom: '1.5rem', background: 'linear-gradient(135deg, #ffffff, #f8fafc)', padding: '2rem', borderRadius: '20px', width: '100%', boxShadow: '0 4px 15px rgba(0,0,0,0.05)' }}>
+                  <h1 style={{ fontSize: '2.5rem', color: '#1e293b', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '1rem' }}>
+                    <CloudRain size={40} color="#3b82f6" /> {t("歡迎來到 VerseRain", "Welcome to VerseRain")}
+                  </h1>
+                  <p style={{ fontSize: '1.2rem', color: '#64748b' }}>{t("澆灌心田，結出生命果子", "Water your heart, bear fruits of life")}</p>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.5rem', width: '100%' }}>
+                  {/* Play Solo */}
+                  <div className="primary-button" onClick={() => setMainTab('versesets')} style={{ background: 'linear-gradient(135deg, #60a5fa, #3b82f6)', borderRadius: '16px', padding: '2.5rem 2rem', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', color: 'white', textAlign: 'center' }}>
+                    <div style={{ fontSize: '4.5rem', marginBottom: '1rem' }}>👤</div>
+                    <h2 style={{ fontSize: '2rem', margin: 0, marginBottom: '0.5rem', textShadow: '0 2px 4px rgba(0,0,0,0.2)' }}>{t("經典挑戰", "Play Solo")}</h2>
+                    <p style={{ fontSize: '1rem', margin: 0, opacity: 0.9 }}>{t("挑戰全球經文組，鍛鍊記憶力與專注力。", "Challenge global sets, hone memory & focus.")}</p>
+                  </div>
+
+                  {/* Host Party */}
+                  <div className="primary-button" onClick={() => setMainTab('multiplayer')} style={{ background: 'linear-gradient(135deg, #f472b6, #ec4899)', borderRadius: '16px', padding: '2.5rem 2rem', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', color: 'white', textAlign: 'center' }}>
+                    <div style={{ fontSize: '4.5rem', marginBottom: '1rem' }}>👨‍👩‍👧‍👦</div>
+                    <h2 style={{ fontSize: '2rem', margin: 0, marginBottom: '0.5rem', textShadow: '0 2px 4px rgba(0,0,0,0.2)' }}>{t("一起玩!", "Host a Party")}</h2>
+                    <p style={{ fontSize: '1rem', margin: 0, opacity: 0.9 }}>{t("與家人朋友分享房間碼來PK同樂！", "Share room code with family and friends!")}</p>
+                  </div>
+
+                  {/* My Garden */}
+                  <div className="primary-button" onClick={() => setMainTab('garden')} style={{ background: 'linear-gradient(135deg, #34d399, #10b981)', borderRadius: '16px', padding: '2.5rem 2rem', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', color: 'white', textAlign: 'center' }}>
+                    <div style={{ fontSize: '4.5rem', marginBottom: '1rem' }}>🌳</div>
+                    <h2 style={{ fontSize: '2rem', margin: 0, marginBottom: '0.5rem', textShadow: '0 2px 4px rgba(0,0,0,0.2)' }}>{t("我的園子", "My Garden")}</h2>
+                    <p style={{ fontSize: '1rem', margin: 0, opacity: 0.9 }}>{t("檢視你已經學會並種下生命樹的經文。", "View your living scripture trees.")}</p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {mainTab === 'advanced' && (
+              <div style={{ paddingBottom: '3rem' }}>
+                <h2 style={{ color: '#1e293b', marginBottom: '1.5rem', borderBottom: '2px solid #e2e8f0', paddingBottom: '0.8rem' }}>⚙️ {t("進階設定與學習", "Advanced Settings & Learning")}</h2>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1rem', width: '100%' }}>
+                  {[
+                    { id: 'custom_verses', icon: '👑', label: t('我的專屬題庫', 'My Custom Sets'), desc: t('建立自訂經文組', 'Create custom sets') },
+                    { id: 'leaderboard', icon: '🏆', label: t('全球排行榜', 'Leaderboards'), desc: t('觀看大排行', 'View global rankings') },
+                    { id: 'manual', icon: '📖', label: t('使用說明', 'Manual'), desc: t('操作詳解', 'Detailed instructions') },
+                    { id: 'about', icon: 'ℹ️', label: t('關於我們', 'About'), desc: t('VerseRain 開發資訊', 'Info & Credits') },
+                    { id: 'donate', link: 'https://www.skool.com/mutualizedeconomy/classroom', icon: '🔓', label: t('解鎖進階功能', 'Unlock Premium'), desc: t('加入進階群組', 'Join Premium Community') }
+                  ].map(item => (
+                    <div key={item.id} className="block-tile" onClick={() => {
+                      if (item.link) { window.open(item.link, '_blank'); return; }
+                      setMainTab(item.id);
+                      if (item.id === 'leaderboard') fetchGlobalLeaderboard();
+                    }} style={{ background: 'white', borderRadius: '12px', padding: '1.5rem', border: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', gap: '1rem', cursor: 'pointer' }}>
+                      <div style={{ fontSize: '2.5rem' }}>{item.icon}</div>
+                      <div>
+                        <h3 style={{ margin: 0, color: '#1e293b', fontSize: '1.2rem', marginBottom: '0.2rem' }}>{item.label}</h3>
+                        <p style={{ margin: 0, color: '#64748b', fontSize: '0.95rem' }}>{item.desc}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {mainTab === 'custom_verses' && (
               <div style={{ backgroundColor: '#ffffff', borderRadius: '8px', border: '1px solid #cbd5e1', padding: '2rem', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-                    <h2 style={{ color: '#1e293b', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>👑 {t("我的專屬題庫", "My Custom Sets")}</h2>
-                    <div style={{ background: '#f8fafc', border: '1px solid #cbd5e1', padding: '0.3rem 0.6rem', borderRadius: '4px', fontSize: '0.85rem', color: isPremium ? '#fbbf24' : '#64748b', fontWeight: 'bold' }}>
-                        {isPremium ? t("✨ Premium 認證", "✨ Premium Active") : t("🔒 基本帳號", "🔒 Basic Account")}
-                    </div>
+                  <h2 style={{ color: '#1e293b', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>👑 {t("我的專屬題庫", "My Custom Sets")}</h2>
+                  <div style={{ background: '#f8fafc', border: '1px solid #cbd5e1', padding: '0.3rem 0.6rem', borderRadius: '4px', fontSize: '0.85rem', color: isPremium ? '#fbbf24' : '#64748b', fontWeight: 'bold' }}>
+                    {isPremium ? t("✨ Premium 認證", "✨ Premium Active") : t("🔒 基本帳號", "🔒 Basic Account")}
+                  </div>
                 </div>
 
                 {!isPremium ? (
-                    <div style={{ textAlign: 'center', padding: '3rem 1rem', background: 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-                        <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>🔒</div>
-                        <h3 style={{ color: '#334155', marginBottom: '1rem' }}>{t("解鎖自訂經文組功能！", "Unlock Custom Verse Sets!")}</h3>
-                        <p style={{ color: '#64748b', marginBottom: '2rem', maxWidth: '400px', margin: '0 auto 2rem', lineHeight: '1.6' }}>
-                            {t("升級為 Skool MutualizedEconomy Premium 會員，無限建立你的專屬考題與默想清單，還能在多人連線模式中用你的題目考驗朋友！", "Upgrade to Skool MutualizedEconomy Premium to create unlimited custom verse sets and challenge your friends in multiplayer!")}
-                        </p>
-                        <button type="button" onClick={() => window.open('https://www.skool.com/mutualizedeconomy', '_blank')} style={{ background: '#8b5cf6', color: 'white', border: 'none', padding: '0.8rem 2rem', borderRadius: '8px', fontWeight: 'bold', fontSize: '1.1rem', cursor: 'pointer', boxShadow: '0 4px 6px rgba(139, 92, 246, 0.25)' }}>
-                            {t("了解並加入 Premium", "Learn About Premium")}
-                        </button>
-                    </div>
+                  <div style={{ textAlign: 'center', padding: '3rem 1rem', background: 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                    <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>🔒</div>
+                    <h3 style={{ color: '#334155', marginBottom: '1rem' }}>{t("解鎖自訂經文組功能！", "Unlock Custom Verse Sets!")}</h3>
+                    <p style={{ color: '#64748b', marginBottom: '2rem', maxWidth: '400px', margin: '0 auto 2rem', lineHeight: '1.6' }}>
+                      {t("升級為 Skool MutualizedEconomy Premium 會員，無限建立你的專屬考題與默想清單，還能在多人連線模式中用你的題目考驗朋友！", "Upgrade to Skool MutualizedEconomy Premium to create unlimited custom verse sets and challenge your friends in multiplayer!")}
+                    </p>
+                    <button type="button" onClick={() => window.open('https://www.skool.com/mutualizedeconomy', '_blank')} style={{ background: '#8b5cf6', color: 'white', border: 'none', padding: '0.8rem 2rem', borderRadius: '8px', fontWeight: 'bold', fontSize: '1.1rem', cursor: 'pointer', boxShadow: '0 4px 6px rgba(139, 92, 246, 0.25)' }}>
+                      {t("了解並加入 Premium", "Learn About Premium")}
+                    </button>
+                  </div>
                 ) : (
-                    <div>
-                        {editingCustomSet ? (
-                            <div>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                                    <h3 style={{ margin: 0, color: '#3b82f6' }}>{editingCustomSet.id ? t("編輯題庫", "Edit Set") : t("新增題庫", "New Set")}</h3>
-                                    <button type="button" onClick={() => setEditingCustomSet(null)} style={{ background: 'transparent', border: 'none', color: '#64748b', cursor: 'pointer', fontWeight: 'bold' }}>✕ {t("取消", "Cancel")}</button>
-                                </div>
-                                
-                                <div style={{ marginBottom: '1rem' }}>
-                                    <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '0.5rem', color: '#475569' }}>{t("標題", "Title")}</label>
-                                    <input type="text" value={editingCustomSet.title} onChange={e => setEditingCustomSet({...editingCustomSet, title: e.target.value})} style={{ width: '100%', padding: '0.8rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '1rem' }} placeholder={t("例如：約翰福音核心經文", "e.g., Core Verses of John")} />
-                                </div>
+                  <div>
+                    {editingCustomSet ? (
+                      <div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                          <h3 style={{ margin: 0, color: '#3b82f6' }}>{editingCustomSet.id ? t("編輯題庫", "Edit Set") : t("新增題庫", "New Set")}</h3>
+                          <button type="button" onClick={() => setEditingCustomSet(null)} style={{ background: 'transparent', border: 'none', color: '#64748b', cursor: 'pointer', fontWeight: 'bold' }}>✕ {t("取消", "Cancel")}</button>
+                        </div>
 
-                                <div style={{ marginBottom: '1rem' }}>
-                                    <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '0.5rem', color: '#475569' }}>{t("簡介", "Description")}</label>
-                                    <div style={{ background: '#fff', color: '#0f172a', borderRadius: '6px', border: '1px solid #cbd5e1', overflow: 'visible' }}>
-                                        <style>{`.ql-editor { min-height: 100px; }`}</style>
-                                        <ReactQuill 
-                                            theme="snow" 
-                                            value={editingCustomSet.description || ''} 
-                                            onChange={content => setEditingCustomSet({...editingCustomSet, description: content})} 
-                                            modules={quillModules}
-                                            placeholder={t("描述一下這個題庫的用途...", "Describe this set...")} 
-                                        />
-                                    </div>
-                                </div>
 
-                                <div style={{ marginBottom: '1rem' }}>
-                                    <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '0.5rem', color: '#475569' }}>{t("經文列表", "Verses")}</label>
-                                    
-                                    {editingCustomSet.verses.map((v, idx) => (
-                                        <div key={idx} style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.5rem', alignItems: 'flex-start' }}>
-                                            <select value={v.version || 'CUV'} onChange={e => {
-                                                const newVerses = [...editingCustomSet.verses];
-                                                newVerses[idx].version = e.target.value;
-                                                setEditingCustomSet({...editingCustomSet, verses: newVerses});
-                                            }} style={{ padding: '0.6rem', borderRadius: '4px', border: '1px solid #cbd5e1', backgroundColor: '#fff', cursor: 'pointer' }}>
-                                                <option value="CUV">CUV</option>
-                                                <option value="KJV">KJV</option>
-                                            </select>
-                                            <input type="text" value={v.reference} onChange={e => {
-                                                const newVerses = [...editingCustomSet.verses];
-                                                newVerses[idx].reference = e.target.value;
-                                                setEditingCustomSet({...editingCustomSet, verses: newVerses});
-                                            }} placeholder={t("出處(如:約 3:16)", "Ref")} style={{ width: '120px', padding: '0.6rem', borderRadius: '4px', border: '1px solid #cbd5e1' }} />
-                                            
-                                            <button type="button" onClick={async (e) => {
-                                                const btn = e.currentTarget;
-                                                const originalIcon = btn.innerText;
-                                                
-                                                if (!v.reference) return alert(t("請先輸入出處", "Please enter reference first"));
-                                                btn.innerText = "⌛";
-                                                try {
-                                                    const version = (v.version || 'CUV');
-                                                    const db = version === 'CUV' ? VERSES_CUV : VERSES_KJV;
-                                                    // Normalize spacing, cases, and dashes (-, –, —, ~) for robust searching e.g., "約 3:16" == "約3:16"
-                                                    const sanitizeRef = (str) => str.toString().replace(/\s+/g, '').replace(/[–—~]/g, '-').replace(/[：]/g, ':').toLowerCase();
-                                                    const searchRef = sanitizeRef(v.reference);
-                                                    let foundLocal = false;
-                                                    let foundText = "";
-                                                    
-                                                    for (const verse of db) {
-                                                        if (!verse.reference) continue;
-                                                        const dbRef = sanitizeRef(verse.reference);
-                                                        if (dbRef === searchRef) {
-                                                            foundLocal = true;
-                                                            foundText = verse.text;
-                                                            break;
-                                                        }
-                                                        
-                                                        const searchNumMatch = searchRef.match(/\d+.*$/);
-                                                        const dbNumMatch = dbRef.match(/\d+.*$/);
-                                                        
-                                                        if (searchNumMatch && dbNumMatch) {
-                                                            const searchNumPart = searchNumMatch[0];
-                                                            const dbNumPart = dbNumMatch[0];
-                                                            
-                                                            // Number parts must match exactly to prevent "詩篇 1" from matching "詩篇 23:1"
-                                                            if (searchNumPart === dbNumPart) {
-                                                                const bookPart = searchRef.replace(searchNumPart, '');
-                                                                const dbBookPart = dbRef.replace(dbNumPart, '');
-                                                                let matchIdx = 0;
-                                                                for (let i = 0; i < dbBookPart.length && matchIdx < bookPart.length; i++) {
-                                                                    if (dbBookPart[i] === bookPart[matchIdx]) {
-                                                                        matchIdx++;
-                                                                    }
-                                                                }
-                                                                if (matchIdx === bookPart.length && matchIdx > 0) {
-                                                                    foundLocal = true;
-                                                                    foundText = verse.text;
-                                                                    break;
-                                                                }
-                                                            }
-                                                        }
-                                                    }
-                                                    
-                                                    if (foundLocal) {
-                                                        setEditingCustomSet(prev => {
-                                                            const newVerses = [...prev.verses];
-                                                            newVerses[idx].text = foundText;
-                                                            return {...prev, verses: newVerses};
-                                                        });
-                                                        btn.innerText = originalIcon;
-                                                        return;
-                                                    }
-                                                    
-                                                    // Fallback to Online API 
-                                                    const searchNumMatch = searchRef.match(/\d+.*$/);
-                                                    if (!searchNumMatch) throw new Error("Invalid Format");
-                                                    
-                                                    const searchNumPart = searchNumMatch[0];
-                                                    const bookPart = searchRef.replace(searchNumPart, '');
-                                                    
-                                                    const chapMatch = searchNumPart.match(/^(\d+)/);
-                                                    const chapter = chapMatch ? parseInt(chapMatch[1]) : 1;
-                                                    
-                                                    let startVerse = 1;
-                                                    let endVerse = 999;
-                                                    
-                                                    const verseMatch = searchNumPart.match(/:(\d+)(?:-(\d+))?/);
-                                                    if (verseMatch) {
-                                                        startVerse = parseInt(verseMatch[1]);
-                                                        endVerse = verseMatch[2] ? parseInt(verseMatch[2]) : startVerse;
-                                                    } else if (!searchNumPart.includes(':')) {
-                                                        startVerse = 1;
-                                                        endVerse = 999;
-                                                    }
-                                                    
-                                                    const bookInfo = BIBLE_BOOKS.find(b => b.names.some(n => n.toLowerCase() === bookPart || bookPart.includes(n.toLowerCase()) || n.toLowerCase().includes(bookPart)));
-                                                    if (!bookInfo) throw new Error("Book not found");
-                                                    
-                                                    const bollsVersion = version === 'CUV' ? 'CUV' : 'KJV';
-                                                    const res = await fetch(`https://bolls.life/get-text/${bollsVersion}/${bookInfo.id}/${chapter}/`);
-                                                    if (!res.ok) throw new Error("API Connection Failed");
-                                                    
-                                                    const json = await res.json();
-                                                    if (!Array.isArray(json) || json.length === 0) throw new Error("No data returned");
-                                                    
-                                                    const filtered = json.filter(v => v.verse >= startVerse && v.verse <= endVerse);
-                                                    if (filtered.length === 0) throw new Error("Verses out of range");
-                                                    
-                                                    let combinedText = "";
-                                                    if (version === 'CUV') {
-                                                        combinedText = filtered.map(v => v.text.replace(/<[^>]+>/g, '').replace(/\s+/g, '')).join('');
-                                                    } else {
-                                                        combinedText = filtered.map(v => v.text.replace(/<[^>]+>/g, '').trim()).join(' ');
-                                                    }
-                                                    
-                                                    setEditingCustomSet(prev => {
-                                                        const newVerses = [...prev.verses];
-                                                        newVerses[idx].text = combinedText;
-                                                        return {...prev, verses: newVerses};
-                                                    });
-                                                    
-                                                } catch (e) {
-                                                    alert(t(`找不到「${v.reference}」！(錯誤: ${e.message})\n請確認格式是否如「約 3:16」或手編測試。`, `Cannot find ${v.reference}. Error: ${e.message}`));
-                                                }
-                                                btn.innerText = originalIcon;
-                                            }} title={t("自動擷取", "Auto-fetch")} style={{ background: '#f59e0b', color: 'white', border: 'none', padding: '0.6rem', borderRadius: '4px', cursor: 'pointer', fontSize: '1rem' }}>🪄</button>
-                                            
-                                            <textarea value={v.text} onChange={e => {
-                                                const newVerses = [...editingCustomSet.verses];
-                                                newVerses[idx].text = e.target.value;
-                                                setEditingCustomSet({...editingCustomSet, verses: newVerses});
-                                            }} placeholder={t("經文內容", "Verse Text")} style={{ flex: 1, padding: '0.6rem', borderRadius: '4px', border: '1px solid #cbd5e1', minHeight: '40px', resize: 'vertical' }} />
-                                            
-                                            <button type="button" onClick={() => {
-                                                const newVerses = editingCustomSet.verses.filter((_, i) => i !== idx);
-                                                setEditingCustomSet({...editingCustomSet, verses: newVerses});
-                                            }} style={{ background: '#ef4444', color: 'white', border: 'none', padding: '0.6rem', borderRadius: '4px', cursor: 'pointer' }}>✖</button>
-                                        </div>
-                                    ))}
-                                    
-                                    <button type="button" onClick={() => {
-                                        setEditingCustomSet({
-                                            ...editingCustomSet, 
-                                            verses: [...editingCustomSet.verses, { version: 'CUV', reference: '', text: '' }]
-                                        });
-                                    }} style={{ background: '#e2e8f0', color: '#475569', border: '1px dashed #94a3b8', padding: '0.5rem 1rem', borderRadius: '4px', cursor: 'pointer', width: '100%', marginTop: '0.5rem', fontWeight: 'bold' }}>
-                                        + {t("新增一節經文", "Add Verse")}
-                                    </button>
-                                </div>
 
-                                <div style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                    <input type="checkbox" id="publishSet" checked={editingCustomSet.isPublished || false} onChange={e => setEditingCustomSet({...editingCustomSet, isPublished: e.target.checked})} style={{ width: '1.2rem', height: '1.2rem', cursor: 'pointer' }} />
-                                    <label htmlFor="publishSet" style={{ fontWeight: 'bold', color: '#475569', cursor: 'pointer' }}>{t("公開此題庫 (Publish to Global Verse Sets)", "Publish to Global Verse Sets")}</label>
-                                </div>
+                        <div style={{ marginBottom: '1rem' }}>
+                          <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '0.5rem', color: '#475569' }}>{t("標題", "Title")}</label>
+                          <input type="text" value={editingCustomSet.title} onChange={e => setEditingCustomSet({ ...editingCustomSet, title: e.target.value })} style={{ width: '100%', padding: '0.8rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '1rem' }} placeholder={t("例如：約翰福音核心經文", "e.g., Core Verses of John")} />
+                        </div>
 
-                                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem', marginTop: '2rem' }}>
-                                    <button type="button" onClick={() => {
-                                        if(!editingCustomSet.title) return alert(t("請填寫標題", "Please fill in title"));
-                                        if(editingCustomSet.verses.length === 0) return alert(t("請至少新增一節經文", "Please add at least one verse"));
-                                        
-                                        const setObj = {
-                                            ...editingCustomSet,
-                                            id: editingCustomSet.id || `custom-${Date.now()}`
-                                        };
-                                        
-                                        let updatedSets;
-                                        if(editingCustomSet.id) {
-                                            if (customVerseSets.some(s => s.id === setObj.id)) {
-                                                updatedSets = customVerseSets.map(s => s.id === setObj.id ? setObj : s);
-                                            } else {
-                                                updatedSets = [setObj, ...customVerseSets];
-                                            }
-                                        } else {
-                                            updatedSets = [setObj, ...customVerseSets];
-                                        }
-                                        
-                                        setCustomVerseSets(updatedSets);
-                                        localStorage.setItem('verseRain_custom_sets', JSON.stringify(updatedSets));
-                                        
-                                        // Handle publishing sync
-                                        if (setObj.isPublished) {
-                                            const publishedObj = { ...setObj, authorName: playerName || "Anonymous" };
-                                            fetch("https://verserain-party.hungry4grace.partykit.dev/parties/main/global-auth-db/custom-sets", {
-                                                method: "POST",
-                                                headers: { "Content-Type": "application/json" },
-                                                body: JSON.stringify(publishedObj)
-                                            }).catch(e => console.error("Publish failed", e));
-                                            
-                                            setPublishedVerseSets(prev => {
-                                                const exists = prev.find(p => p.id === setObj.id);
-                                                if (exists) return prev.map(p => p.id === setObj.id ? publishedObj : p);
-                                                return [publishedObj, ...prev];
-                                            });
-                                        } else {
-                                            fetch("https://verserain-party.hungry4grace.partykit.dev/parties/main/global-auth-db/custom-sets", {
-                                                method: "DELETE",
-                                                headers: { "Content-Type": "application/json" },
-                                                body: JSON.stringify({ id: setObj.id })
-                                            }).catch(e => console.error("Unpublish failed", e));
-                                            
-                                            setPublishedVerseSets(prev => prev.filter(p => p.id !== setObj.id));
-                                        }
+                        <div style={{ marginBottom: '1rem' }}>
+                          <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '0.5rem', color: '#475569' }}>{t("簡介", "Description")}</label>
+                          <div style={{ background: '#fff', color: '#0f172a', borderRadius: '6px', border: '1px solid #cbd5e1', overflow: 'visible' }}>
+                            <style>{`.ql-editor { min-height: 100px; }`}</style>
+                            <ReactQuill
+                              theme="snow"
+                              value={editingCustomSet.description || ''}
+                              onChange={content => setEditingCustomSet({ ...editingCustomSet, description: content })}
+                              modules={quillModules}
+                              placeholder={t("描述一下這個題庫的用途...", "Describe this set...")}
+                            />
+                          </div>
+                        </div>
 
-                                        setEditingCustomSet(null);
-                                    }} style={{ background: '#10b981', color: 'white', border: 'none', padding: '0.8rem 2rem', borderRadius: '6px', fontWeight: 'bold', fontSize: '1.1rem', cursor: 'pointer' }}>
-                                        {t("儲存題庫", "Save Set")}
-                                    </button>
-                                </div>
-                            </div>
-                        ) : (
-                            <div>
-                                <button type="button" onClick={() => {
-                                    setEditingCustomSet({ title: '', description: '', verses: [{ version: 'CUV', reference: '', text: '' }] });
-                                }} style={{ background: '#3b82f6', color: 'white', border: 'none', padding: '0.8rem 1.5rem', borderRadius: '6px', fontWeight: 'bold', marginBottom: '1.5rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                    <span>+</span> {t("建立新題庫", "Create New Set")}
+                        <div style={{ marginBottom: '1rem' }}>
+                          <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '0.5rem', color: '#475569' }}>{t("經文列表", "Verses")}</label>
+
+                          {editingCustomSet.verses.map((v, idx) => {
+                            const autoFetchVerse = async (bookInfo, verseInput, verseIdx) => {
+                              if (!bookInfo || !verseInput) return;
+                              const sanitized = verseInput.replace(/[～~]/g, '-').replace(/[：]/g, ':').trim();
+                              const chapMatch = sanitized.match(/^(\d+)/);
+                              if (!chapMatch) return;
+                              const chapter = parseInt(chapMatch[1]);
+                              let startVerse = 1, endVerse = 999;
+                              const verseMatch = sanitized.match(/:(\d+)(?:-(\d+))?/);
+                              if (verseMatch) {
+                                startVerse = parseInt(verseMatch[1]);
+                                endVerse = verseMatch[2] ? parseInt(verseMatch[2]) : startVerse;
+                              } else if (!sanitized.includes(':')) {
+                                startVerse = 1; endVerse = 999;
+                              }
+                              const bookAbbr = getBookAbbr(bookInfo, version);
+                              const refStr = `${bookAbbr} ${sanitized}`;
+                              setEditingCustomSet(prev => {
+                                const nv = [...prev.verses];
+                                nv[verseIdx] = { ...nv[verseIdx], reference: refStr, book: bookInfo.id, verseInput: sanitized };
+                                return { ...prev, verses: nv };
+                              });
+                              const db = version === 'cuv' ? VERSES_CUV : (version === 'kjv' ? VERSES_KJV : (version === 'ja' ? VERSES_JA : VERSES_KO));
+                              const sanitizeRef = (str) => str.toString().replace(/\s+/g, '').replace(/[–—~]/g, '-').replace(/[：]/g, ':').toLowerCase();
+                              const searchRef = sanitizeRef(refStr);
+                              let foundText = '';
+                              for (const verse of db) {
+                                if (!verse.reference) continue;
+                                const dbRef = sanitizeRef(verse.reference);
+                                if (dbRef === searchRef) { foundText = verse.text; break; }
+                                const sNum = searchRef.match(/\d+.*$/);
+                                const dNum = dbRef.match(/\d+.*$/);
+                                if (sNum && dNum && sNum[0] === dNum[0]) {
+                                  const sBk = searchRef.replace(sNum[0], '');
+                                  const dBk = dbRef.replace(dNum[0], '');
+                                  let mi = 0;
+                                  for (let i = 0; i < dBk.length && mi < sBk.length; i++) { if (dBk[i] === sBk[mi]) mi++; }
+                                  if (mi === sBk.length && mi > 0) { foundText = verse.text; break; }
+                                }
+                              }
+                              if (foundText) {
+                                setEditingCustomSet(prev => {
+                                  const nv = [...prev.verses]; nv[verseIdx] = { ...nv[verseIdx], text: foundText }; return { ...prev, verses: nv };
+                                });
+                                return;
+                              }
+                              try {
+                                const bollsVersion = version === 'kjv' ? 'KJV' : 'CUV';
+                                const res = await fetch(`https://bolls.life/get-text/${bollsVersion}/${bookInfo.id}/${chapter}/`);
+                                if (!res.ok) throw new Error("API error");
+                                const json = await res.json();
+                                const filtered = json.filter(vv => vv.verse >= startVerse && vv.verse <= endVerse);
+                                if (filtered.length === 0) throw new Error("No verses");
+                                const combined = version === 'cuv'
+                                  ? filtered.map(vv => vv.text.replace(/<[^>]+>/g, '').replace(/\s+/g, '')).join('')
+                                  : filtered.map(vv => vv.text.replace(/<[^>]+>/g, '').trim()).join(' ');
+                                setEditingCustomSet(prev => {
+                                  const nv = [...prev.verses]; nv[verseIdx] = { ...nv[verseIdx], text: combined }; return { ...prev, verses: nv };
+                                });
+                              } catch (e) { /* user can fill manually */ }
+                            };
+
+                            return (
+                              <div key={idx} style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.8rem', alignItems: 'flex-start', position: 'relative' }}>
+                                <button type="button" onClick={() => setBookPickerIdx(bookPickerIdx === idx ? null : idx)}
+                                  style={{ padding: '0.5rem 0.7rem', borderRadius: '4px', border: '1px solid #cbd5e1', background: v.book ? '#3b82f6' : '#f1f5f9', color: v.book ? '#fff' : '#475569', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.85rem', whiteSpace: 'nowrap', minWidth: '50px', textAlign: 'center' }}>
+                                  {v.book ? getBookAbbr(BIBLE_BOOKS.find(b => b.id === v.book), version) : '📖'}
                                 </button>
 
-                                {customVerseSets.length === 0 ? (
-                                    <div style={{ textAlign: 'center', padding: '3rem 1rem', color: '#94a3b8', border: '2px dashed #e2e8f0', borderRadius: '8px' }}>
-                                        {t("你還沒有建立任何專屬題庫。點擊上方按鈕開始！", "You haven't created any custom sets yet. Click the button above to start!")}
+                                {bookPickerIdx === idx && (
+                                  <div style={{ position: 'absolute', top: '100%', left: 0, zIndex: 100, background: '#1e293b', borderRadius: '8px', padding: '0.8rem', boxShadow: '0 10px 30px rgba(0,0,0,0.4)', width: '320px', maxHeight: '400px', overflowY: 'auto' }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                                      <span style={{ color: '#10b981', fontWeight: 'bold', fontSize: '0.9rem' }}>📖 {t("選擇書卷", "Books")}</span>
+                                      <button type="button" onClick={() => setBookPickerIdx(null)} style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer', fontWeight: 'bold' }}>{t("取消", "Cancel")}</button>
                                     </div>
-                                ) : (
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                                        {customVerseSets.map(set => (
-                                            <div key={set.id} style={{ border: '1px solid #cbd5e1', borderRadius: '8px', padding: '1.5rem', position: 'relative' }}>
-                                                <div style={{ position: 'absolute', top: '1rem', right: '1rem', display: 'flex', gap: '0.5rem' }}>
-                                                    <button type="button" onClick={() => {
-                                                        setSelectedSetId(set.id);
-                                                        setMainTab('versesets');
-                                                    }} style={{ background: '#10b981', border: '1px solid #059669', padding: '0.4rem 0.8rem', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', color: 'white' }}>{t("測試遊玩", "Play/Test")}</button>
-                                                    <button type="button" onClick={() => setEditingCustomSet(set)} style={{ background: '#f1f5f9', border: '1px solid #cbd5e1', padding: '0.4rem 0.8rem', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', color: '#475569' }}>{t("編輯", "Edit")}</button>
-                                                    <button type="button" onClick={() => {
-                                                        if(window.confirm(t("確定要刪除嗎？", "Are you sure you want to delete?"))) {
-                                                            const updated = customVerseSets.filter(s => s.id !== set.id);
-                                                            setCustomVerseSets(updated);
-                                                            localStorage.setItem('verseRain_custom_sets', JSON.stringify(updated));
-                                                            
-                                                            fetch("https://verserain-party.hungry4grace.partykit.dev/parties/main/global-auth-db/custom-sets", {
-                                                                method: "DELETE",
-                                                                headers: { "Content-Type": "application/json" },
-                                                                body: JSON.stringify({ id: set.id })
-                                                            }).catch(e => console.error(e));
-                                                            setPublishedVerseSets(prev => prev.filter(p => p.id !== set.id));
-                                                        }
-                                                    }} style={{ background: '#fee2e2', border: '1px solid #fca5a5', padding: '0.4rem 0.8rem', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', color: '#ef4444' }}>{t("刪除", "Delete")}</button>
-                                                </div>
-                                                <h3 style={{ margin: '0 0 0.5rem 0', color: '#1e293b', paddingRight: '120px' }}>{set.title}</h3>
-                                                <div style={{ color: '#64748b', fontSize: '0.9rem', marginBottom: '1rem' }} dangerouslySetInnerHTML={{ __html: set.description }} />
-                                                <div style={{ color: '#3b82f6', fontSize: '0.85rem', fontWeight: 'bold' }}>{set.verses.length} {t("節經文", "verses")}</div>
-                                            </div>
-                                        ))}
+                                    <div style={{ color: '#e2e8f0', fontWeight: 'bold', fontSize: '0.85rem', padding: '0.3rem 0', borderBottom: '1px solid rgba(255,255,255,0.1)', marginBottom: '0.3rem' }}>{t("舊約", "Old Testament")}</div>
+                                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '2px', marginBottom: '0.5rem' }}>
+                                      {BIBLE_BOOKS.filter(b => b.testament === 'OT').map(book => (
+                                        <button key={book.id} type="button" onClick={() => {
+                                          const newVerses = [...editingCustomSet.verses];
+                                          newVerses[idx] = { ...newVerses[idx], book: book.id, reference: '' };
+                                          setEditingCustomSet({ ...editingCustomSet, verses: newVerses });
+                                          setBookPickerIdx(null);
+                                        }} style={{ padding: '0.35rem 0.5rem', borderRadius: '3px', border: 'none', background: v.book === book.id ? '#10b981' : 'rgba(255,255,255,0.08)', color: v.book === book.id ? '#fff' : '#e2e8f0', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 'bold', minWidth: '42px' }}>
+                                          {getBookAbbr(book, version)}
+                                        </button>
+                                      ))}
                                     </div>
+                                    <div style={{ color: '#e2e8f0', fontWeight: 'bold', fontSize: '0.85rem', padding: '0.3rem 0', borderBottom: '1px solid rgba(255,255,255,0.1)', marginBottom: '0.3rem' }}>{t("新約", "New Testament")}</div>
+                                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '2px' }}>
+                                      {BIBLE_BOOKS.filter(b => b.testament === 'NT').map(book => (
+                                        <button key={book.id} type="button" onClick={() => {
+                                          const newVerses = [...editingCustomSet.verses];
+                                          newVerses[idx] = { ...newVerses[idx], book: book.id, reference: '' };
+                                          setEditingCustomSet({ ...editingCustomSet, verses: newVerses });
+                                          setBookPickerIdx(null);
+                                        }} style={{ padding: '0.35rem 0.5rem', borderRadius: '3px', border: 'none', background: v.book === book.id ? '#10b981' : 'rgba(255,255,255,0.08)', color: v.book === book.id ? '#fff' : '#e2e8f0', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 'bold', minWidth: '42px' }}>
+                                          {getBookAbbr(book, version)}
+                                        </button>
+                                      ))}
+                                    </div>
+                                  </div>
                                 )}
-                            </div>
+
+                                <input type="text" value={v.verseInput || ''} onChange={e => {
+                                  const newVerses = [...editingCustomSet.verses];
+                                  newVerses[idx] = { ...newVerses[idx], verseInput: e.target.value };
+                                  setEditingCustomSet({ ...editingCustomSet, verses: newVerses });
+                                }} onKeyDown={async (e) => {
+                                  if (e.key === 'Enter') {
+                                    e.preventDefault();
+                                    const bookInfo = BIBLE_BOOKS.find(b => b.id === v.book);
+                                    if (!bookInfo) return alert(t("請先選擇書卷", "Please select a book first"));
+                                    await autoFetchVerse(bookInfo, v.verseInput || '', idx);
+                                  }
+                                }} placeholder={t("章:節 (如 3:16)", "Ch:Vs (e.g. 3:16)")}
+                                  style={{ width: '110px', padding: '0.5rem', borderRadius: '4px', border: '1px solid #cbd5e1', fontSize: '0.9rem' }} />
+
+                                <textarea value={v.text} onChange={e => {
+                                  const newVerses = [...editingCustomSet.verses];
+                                  newVerses[idx].text = e.target.value;
+                                  setEditingCustomSet({ ...editingCustomSet, verses: newVerses });
+                                }} placeholder={t("經文內容 (按 Enter 自動擷取)", "Verse text (press Enter to auto-fetch)")} style={{ flex: 1, padding: '0.5rem', borderRadius: '4px', border: '1px solid #cbd5e1', minHeight: '40px', resize: 'vertical', fontSize: '0.9rem' }} />
+
+                                <button type="button" onClick={() => {
+                                  const newVerses = editingCustomSet.verses.filter((_, i) => i !== idx);
+                                  setEditingCustomSet({ ...editingCustomSet, verses: newVerses });
+                                }} style={{ background: '#ef4444', color: 'white', border: 'none', padding: '0.5rem', borderRadius: '4px', cursor: 'pointer' }}>✖</button>
+                              </div>
+                            );
+                          })}
+
+                          <button type="button" onClick={() => {
+                            setEditingCustomSet({
+                              ...editingCustomSet,
+                              verses: [...editingCustomSet.verses, { book: null, verseInput: '', reference: '', text: '' }]
+                            });
+                          }} style={{ background: '#e2e8f0', color: '#475569', border: '1px dashed #94a3b8', padding: '0.5rem 1rem', borderRadius: '4px', cursor: 'pointer', width: '100%', marginTop: '0.5rem', fontWeight: 'bold' }}>
+                            + {t("新增一節經文", "Add Verse")}
+                          </button>
+                        </div>
+
+                        <div style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                          <input type="checkbox" id="publishSet" checked={editingCustomSet.isPublished || false} onChange={e => setEditingCustomSet({ ...editingCustomSet, isPublished: e.target.checked })} style={{ width: '1.2rem', height: '1.2rem', cursor: 'pointer' }} />
+                          <label htmlFor="publishSet" style={{ fontWeight: 'bold', color: '#475569', cursor: 'pointer' }}>{t("公開此題庫 (Publish to Global Verse Sets)", "Publish to Global Verse Sets")}</label>
+                        </div>
+
+                        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem', marginTop: '2rem' }}>
+                          <button type="button" onClick={() => {
+                            if (!editingCustomSet.title) return alert(t("請填寫標題", "Please fill in title"));
+                            if (editingCustomSet.verses.length === 0) return alert(t("請至少新增一節經文", "Please add at least one verse"));
+
+                            const setObj = {
+                              ...editingCustomSet,
+                              language: version,
+                              id: editingCustomSet.id || `custom-${Date.now()}`
+                            };
+
+                            let updatedSets;
+                            if (editingCustomSet.id) {
+                              if (customVerseSets.some(s => s.id === setObj.id)) {
+                                updatedSets = customVerseSets.map(s => s.id === setObj.id ? setObj : s);
+                              } else {
+                                updatedSets = [setObj, ...customVerseSets];
+                              }
+                            } else {
+                              updatedSets = [setObj, ...customVerseSets];
+                            }
+
+                            setCustomVerseSets(updatedSets);
+                            localStorage.setItem('verseRain_custom_sets', JSON.stringify(updatedSets));
+
+                            // Handle publishing sync
+                            if (setObj.isPublished) {
+                              const publishedObj = { ...setObj, authorName: playerName || "Anonymous" };
+                              fetch("https://verserain-party.hungry4grace.partykit.dev/parties/main/global-auth-db/custom-sets", {
+                                method: "POST",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify(publishedObj)
+                              }).catch(e => console.error("Publish failed", e));
+
+                              setPublishedVerseSets(prev => {
+                                const exists = prev.find(p => p.id === setObj.id);
+                                if (exists) return prev.map(p => p.id === setObj.id ? publishedObj : p);
+                                return [publishedObj, ...prev];
+                              });
+                            } else {
+                              fetch("https://verserain-party.hungry4grace.partykit.dev/parties/main/global-auth-db/custom-sets", {
+                                method: "DELETE",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({ id: setObj.id })
+                              }).catch(e => console.error("Unpublish failed", e));
+
+                              setPublishedVerseSets(prev => prev.filter(p => p.id !== setObj.id));
+                            }
+
+                            setEditingCustomSet(null);
+                          }} style={{ background: '#10b981', color: 'white', border: 'none', padding: '0.8rem 2rem', borderRadius: '6px', fontWeight: 'bold', fontSize: '1.1rem', cursor: 'pointer' }}>
+                            {t("儲存題庫", "Save Set")}
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div>
+                        <button type="button" onClick={() => {
+                          setEditingCustomSet({ title: '', description: '', verses: [{ version: 'CUV', reference: '', text: '' }] });
+                        }} style={{ background: '#3b82f6', color: 'white', border: 'none', padding: '0.8rem 1.5rem', borderRadius: '6px', fontWeight: 'bold', marginBottom: '1.5rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                          <span>+</span> {t("建立新題庫", "Create New Set")}
+                        </button>
+
+                        {customVerseSets.length === 0 ? (
+                          <div style={{ textAlign: 'center', padding: '3rem 1rem', color: '#94a3b8', border: '2px dashed #e2e8f0', borderRadius: '8px' }}>
+                            {t("你還沒有建立任何專屬題庫。點擊上方按鈕開始！", "You haven't created any custom sets yet. Click the button above to start!")}
+                          </div>
+                        ) : (
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                            {customVerseSets.map(set => (
+                              <div key={set.id} style={{ border: '1px solid #cbd5e1', borderRadius: '8px', padding: '1.5rem', position: 'relative' }}>
+                                <div style={{ position: 'absolute', top: '1rem', right: '1rem', display: 'flex', gap: '0.5rem' }}>
+                                  <button type="button" onClick={() => {
+                                    setSelectedSetId(set.id);
+                                    setMainTab('versesets');
+                                  }} style={{ background: '#10b981', border: '1px solid #059669', padding: '0.4rem 0.8rem', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', color: 'white' }}>{t("測試遊玩", "Play/Test")}</button>
+                                  <button type="button" onClick={() => setEditingCustomSet(set)} style={{ background: '#f1f5f9', border: '1px solid #cbd5e1', padding: '0.4rem 0.8rem', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', color: '#475569' }}>{t("編輯", "Edit")}</button>
+                                  <button type="button" onClick={() => {
+                                    if (window.confirm(t("確定要刪除嗎？", "Are you sure you want to delete?"))) {
+                                      const updated = customVerseSets.filter(s => s.id !== set.id);
+                                      setCustomVerseSets(updated);
+                                      localStorage.setItem('verseRain_custom_sets', JSON.stringify(updated));
+
+                                      fetch("https://verserain-party.hungry4grace.partykit.dev/parties/main/global-auth-db/custom-sets", {
+                                        method: "DELETE",
+                                        headers: { "Content-Type": "application/json" },
+                                        body: JSON.stringify({ id: set.id })
+                                      }).catch(e => console.error(e));
+                                      setPublishedVerseSets(prev => prev.filter(p => p.id !== set.id));
+                                    }
+                                  }} style={{ background: '#fee2e2', border: '1px solid #fca5a5', padding: '0.4rem 0.8rem', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', color: '#ef4444' }}>{t("刪除", "Delete")}</button>
+                                </div>
+                                <h3 style={{ margin: '0 0 0.5rem 0', color: '#1e293b', paddingRight: '120px' }}>{set.title}</h3>
+                                <div style={{ color: '#64748b', fontSize: '0.9rem', marginBottom: '1rem' }} dangerouslySetInnerHTML={{ __html: set.description }} />
+                                <div style={{ color: '#3b82f6', fontSize: '0.85rem', fontWeight: 'bold' }}>{set.verses.length} {t("節經文", "verses")}</div>
+                              </div>
+                            ))}
+                          </div>
                         )}
-                    </div>
+                      </div>
+                    )}
+                  </div>
                 )}
               </div>
             )}
@@ -1994,16 +2324,42 @@ export default function App() {
             {mainTab === 'multiplayer' && (
               <div style={{ backgroundColor: '#ffffff', borderRadius: '8px', border: '1px solid #cbd5e1', padding: '2rem', boxShadow: '0 1px 3px rgba(0,0,0,0.05)', textAlign: 'center' }}>
                 <h2 style={{ color: '#1e293b', marginTop: 0, marginBottom: '1.5rem', fontFamily: 'cursive', color: '#8b5cf6' }}>{t("多人即時對戰", "Live Multiplayer")}</h2>
-                
-                {!multiplayerRoomId ? (
+
+                {!playerName ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', alignItems: 'center', background: '#f8fafc', padding: '2rem', borderRadius: '16px', border: '2px dashed #cbd5e1' }}>
+                    <h3 style={{ color: '#475569', margin: 0, fontSize: '1.5rem' }}>{t("請先告訴我們你的名字！", "First, what's your name?")}</h3>
+                    <p style={{ color: '#94a3b8', margin: 0 }}>{t("選一個頭像，或直接輸入文字", "Pick an avatar, or just type your name")}</p>
+                    <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', justifyContent: 'center', maxWidth: '350px' }}>
+                      {['🦁', '🐶', '🐰', '🐱', '🐸', '🐼', '🦊', '🐵', '🦄', '🦖', '🐙', '🦋'].map(emj => (
+                        <div key={emj} className="block-tile" onClick={() => {
+                          const input = document.getElementById('guestNameInput');
+                          if (!input.value.includes(emj)) input.value = emj + " " + input.value;
+                        }} style={{ fontSize: '2rem', cursor: 'pointer', padding: '0.5rem', background: 'white', borderRadius: '12px', border: '1px solid #e2e8f0' }}>{emj}</div>
+                      ))}
+                    </div>
+                    <div style={{ display: 'flex', gap: '0.5rem', width: '100%', maxWidth: '300px', marginTop: '1rem' }}>
+                      <input id="guestNameInput" type="text" placeholder={t("你的暱稱", "Your nickname")} style={{ flex: 1, padding: '1rem', borderRadius: '12px', border: '2px solid #cbd5e1', fontSize: '1.2rem', fontWeight: 'bold' }} onKeyDown={(e) => {
+                        if (e.key === 'Enter') document.getElementById('guestNameBtn')?.click();
+                      }} />
+                      <button id="guestNameBtn" onClick={() => {
+                        const val = document.getElementById('guestNameInput').value.trim();
+                        if (val) {
+                          setPlayerName(val);
+                          localStorage.setItem('verserain_player_name', val);
+                        }
+                      }} className="primary-button" style={{ background: '#3b82f6', color: 'white', border: 'none', padding: '0 1.5rem', borderRadius: '12px', fontWeight: 'bold', cursor: 'pointer', fontSize: '1.2rem' }}>{t("出發！", "Go!")}</button>
+                    </div>
+                  </div>
+                ) : !multiplayerRoomId ? (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', alignItems: 'center' }}>
-                    <p style={{ color: '#64748b' }}>{t("與朋友一起挑戰九宮格模式！最快拼出經文的人獲勝。", "Challenge your friends in Square mode! The fastest to assemble the verse wins.")}</p>
-                    
-                    <button 
+                    <div style={{ fontSize: '2rem', marginBottom: '-1rem' }}>{playerName.substring(0, 2)}</div>
+                    <p style={{ color: '#64748b', fontSize: '1.1rem' }}>{t("與朋友一起挑戰九宮格模式！最快拼出經文的人獲勝。", "Challenge your friends in Square mode! The fastest to assemble the verse wins.")}</p>
+
+                    <button
                       onClick={() => {
                         const chars = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
                         let newRoom = '';
-                        for(let i=0; i<4; i++) newRoom += chars.charAt(Math.floor(Math.random() * chars.length));
+                        for (let i = 0; i < 4; i++) newRoom += chars.charAt(Math.floor(Math.random() * chars.length));
                         setMultiplayerRoomId(newRoom);
                       }}
                       style={{ background: '#3b82f6', color: 'white', border: 'none', padding: '1rem 2rem', borderRadius: '8px', fontSize: '1.1rem', fontWeight: 'bold', cursor: 'pointer', transition: 'background 0.2s', width: '100%', maxWidth: '300px' }}
@@ -2018,15 +2374,15 @@ export default function App() {
                     </div>
 
                     <div style={{ display: 'flex', gap: '0.5rem', width: '100%', maxWidth: '300px' }}>
-                      <input 
+                      <input
                         id="joinRoomInput"
-                        type="text" 
-                        placeholder={t("輸入房間代碼", "Enter Room Code")} 
+                        type="text"
+                        placeholder={t("輸入房間代碼", "Enter Room Code")}
                         maxLength={4}
-                        style={{ flex: 1, padding: '0.8rem', borderRadius: '6px', border: '1px solid #cbd5e1', textTransform: 'uppercase', textAlign: 'center', fontSize: '1.1rem', fontWeight: 'bold' }} 
+                        style={{ flex: 1, padding: '0.8rem', borderRadius: '6px', border: '1px solid #cbd5e1', textTransform: 'uppercase', textAlign: 'center', fontSize: '1.1rem', fontWeight: 'bold' }}
                         onKeyDown={(e) => { if (e.key === 'Enter') document.getElementById('joinRoomBtn')?.click(); }}
                       />
-                      <button 
+                      <button
                         id="joinRoomBtn"
                         onClick={() => {
                           const code = document.getElementById('joinRoomInput')?.value.trim().toUpperCase();
@@ -2040,179 +2396,182 @@ export default function App() {
                   </div>
                 ) : multiplayerState?.status === 'ready_check' ? (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', alignItems: 'center' }}>
-                     <div style={{ padding: '1.5rem', backgroundColor: '#fdf4ff', borderRadius: '8px', border: '2px dashed #d946ef', width: '100%', maxWidth: '400px' }}>
-                        <h3 style={{ margin: '0 0 1rem 0', color: '#86198f' }}>{t("準備比賽！", "Get Ready!")}</h3>
-                        <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#c026d3', marginBottom: '0.5rem' }}>{multiplayerState.verseRef}</div>
-                        <div style={{ fontSize: '1rem', color: '#701a75', marginBottom: '1rem', fontStyle: 'italic', maxWidth: '300px', lineHeight: '1.4' }}>"{multiplayerState.verseText}"</div>
-                        <p style={{ color: '#a21caf', fontSize: '0.9rem', margin: 0 }}>{t("雙方準備就緒後即將開始", "Match starts when both are ready")}</p>
-                     </div>
-                     
-                     <div style={{ width: '100%', maxWidth: '400px', textAlign: 'left' }}>
-                        <h4 style={{ color: '#475569', marginBottom: '0.5rem' }}>{t("玩家狀態:", "Player Status:")}</h4>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                           {Object.values(multiplayerState.players).map(p => (
-                             <div key={p.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.8rem', backgroundColor: p.isReady ? '#dcfce7' : '#f1f5f9', borderRadius: '6px', border: p.isReady ? '1px solid #86efac' : '1px solid transparent' }}>
-                               <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
-                                 <div style={{ width: '16px', height: '16px', borderRadius: '50%', backgroundColor: p.color, boxShadow: '0 0 0 2px white, 0 0 0 4px ' + p.color }}></div>
-                                 <span style={{ fontWeight: 'bold', color: '#1e293b', fontSize: '1.1rem' }}>{p.name} {multiplayerState.host === p.id ? '(Host)' : ''}</span>
-                               </div>
-                               <span style={{ fontSize: '0.9rem', fontWeight: 'bold', color: p.isReady ? '#15803d' : '#94a3b8' }}>
-                                 {p.isReady ? t("✔️ 已準備", "✔️ READY") : t("等待中...", "WAITING")}
-                               </span>
-                             </div>
-                           ))}
-                        </div>
-                     </div>
-                     
-                     <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
-                        <button 
-                          onClick={() => {
-                             if (socketRef.current) socketRef.current.close();
-                             setMultiplayerRoomId(null);
-                             setMultiplayerState(null);
-                          }}
-                          style={{ background: '#f1f5f9', color: '#64748b', border: '1px solid #cbd5e1', padding: '0.8rem 1.5rem', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer' }}
-                        >
-                          {t("離開", "Leave")}
-                        </button>
-                        
-                        <button 
-                          onClick={() => {
-                             if (socketRef.current) socketRef.current.send(JSON.stringify({ type: 'PLAYER_READY' }));
-                          }}
-                          disabled={multiplayerState.players[myClientId]?.isReady}
-                          style={{ background: multiplayerState.players[myClientId]?.isReady ? '#10b981' : '#3b82f6', color: 'white', border: 'none', padding: '0.8rem 2rem', borderRadius: '6px', fontSize: '1.1rem', fontWeight: 'bold', cursor: multiplayerState.players[myClientId]?.isReady ? 'default' : 'pointer' }}
-                        >
-                          {multiplayerState.players[myClientId]?.isReady ? t("已準備", "Ready") : t("準備！", "Ready!")}
-                        </button>
-                     </div>
+                    <div style={{ padding: '1.5rem', backgroundColor: '#fdf4ff', borderRadius: '8px', border: '2px dashed #d946ef', width: '100%', maxWidth: '400px' }}>
+                      <h3 style={{ margin: '0 0 0.5rem 0', color: '#86198f' }}>{t("準備比賽！", "Get Ready!")}</h3>
+                      <div style={{ fontSize: '1.8rem', fontWeight: 'bold', color: '#3b82f6', letterSpacing: '6px', marginBottom: '0.5rem', background: '#f0f9ff', borderRadius: '6px', padding: '0.3rem 1rem', display: 'inline-block', border: '1px solid #bfdbfe' }}>{multiplayerRoomId}</div>
+                      <p style={{ fontSize: '0.8rem', color: '#94a3b8', margin: '0 0 0.8rem 0' }}>{t("分享此代碼讓更多人加入", "Share this code to let others join")}</p>
+                      <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#c026d3', marginBottom: '0.5rem' }}>{multiplayerState.verseRef}</div>
+                      <div style={{ fontSize: '1rem', color: '#701a75', marginBottom: '1rem', fontStyle: 'italic', maxWidth: '300px', lineHeight: '1.4' }}>"{multiplayerState.verseText}"</div>
+                      <p style={{ color: '#a21caf', fontSize: '0.9rem', margin: 0 }}>{t("雙方準備就緒後即將開始", "Match starts when both are ready")}</p>
+                    </div>
+
+                    <div style={{ width: '100%', maxWidth: '400px', textAlign: 'left' }}>
+                      <h4 style={{ color: '#475569', marginBottom: '0.5rem' }}>{t("玩家狀態:", "Player Status:")}</h4>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                        {Object.values(multiplayerState.players).map(p => (
+                          <div key={p.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.8rem', backgroundColor: p.isReady ? '#dcfce7' : '#f1f5f9', borderRadius: '6px', border: p.isReady ? '1px solid #86efac' : '1px solid transparent' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
+                              <div style={{ width: '16px', height: '16px', borderRadius: '50%', backgroundColor: p.color, boxShadow: '0 0 0 2px white, 0 0 0 4px ' + p.color }}></div>
+                              <span style={{ fontWeight: 'bold', color: '#1e293b', fontSize: '1.1rem' }}>{p.name} {multiplayerState.host === p.id ? '(Host)' : ''}</span>
+                            </div>
+                            <span style={{ fontSize: '0.9rem', fontWeight: 'bold', color: p.isReady ? '#15803d' : '#94a3b8' }}>
+                              {p.isReady ? t("✔️ 已準備", "✔️ READY") : t("等待中...", "WAITING")}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
+                      <button
+                        onClick={() => {
+                          if (socketRef.current) socketRef.current.close();
+                          setMultiplayerRoomId(null);
+                          setMultiplayerState(null);
+                        }}
+                        style={{ background: '#f1f5f9', color: '#64748b', border: '1px solid #cbd5e1', padding: '0.8rem 1.5rem', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer' }}
+                      >
+                        {t("離開", "Leave")}
+                      </button>
+
+                      <button
+                        onClick={() => {
+                          if (socketRef.current) socketRef.current.send(JSON.stringify({ type: 'PLAYER_READY' }));
+                        }}
+                        disabled={multiplayerState.players[myClientId]?.isReady}
+                        style={{ background: multiplayerState.players[myClientId]?.isReady ? '#10b981' : '#3b82f6', color: 'white', border: 'none', padding: '0.8rem 2rem', borderRadius: '6px', fontSize: '1.1rem', fontWeight: 'bold', cursor: multiplayerState.players[myClientId]?.isReady ? 'default' : 'pointer' }}
+                      >
+                        {multiplayerState.players[myClientId]?.isReady ? t("已準備", "Ready") : t("準備！", "Ready!")}
+                      </button>
+                    </div>
                   </div>
                 ) : showMultiplayerVersePicker && multiplayerState?.host === myClientId ? (
-                   <div style={{ backgroundColor: '#ffffff', borderRadius: '8px', padding: '1.5rem', width: '100%', maxWidth: '500px', textAlign: 'left', border: '1px solid #cbd5e1' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', borderBottom: '1px solid #e2e8f0', paddingBottom: '1rem' }}>
-                         <h3 style={{ margin: 0, color: '#334155' }}>
-                            {pickerSelectedSet ? pickerSelectedSet.title : t("選擇比賽經文組", "Select Verse Group")}
-                         </h3>
-                         <button onClick={() => setShowMultiplayerVersePicker(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8' }}><XCircle size={24} /></button>
-                      </div>
+                  <div style={{ backgroundColor: '#ffffff', borderRadius: '8px', padding: '1.5rem', width: '100%', maxWidth: '500px', textAlign: 'left', border: '1px solid #cbd5e1' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', borderBottom: '1px solid #e2e8f0', paddingBottom: '1rem' }}>
+                      <h3 style={{ margin: 0, color: '#334155' }}>
+                        {pickerSelectedSet ? pickerSelectedSet.title : t("選擇比賽經文組", "Select Verse Group")}
+                      </h3>
+                      <button onClick={() => setShowMultiplayerVersePicker(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8' }}><XCircle size={24} /></button>
+                    </div>
 
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '1.5rem', backgroundColor: '#f8fafc', padding: '1rem', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-                         <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-                            <label style={{ fontWeight: 'bold', color: '#475569', minWidth: '80px' }}>{t("遊戲模式", "Game Mode")}:</label>
-                            <select 
-                               value={multiplayerPlayMode} 
-                               onChange={(e) => setMultiplayerPlayMode(e.target.value)}
-                               style={{ padding: '0.5rem', borderRadius: '4px', border: '1px solid #cbd5e1', flex: 1, backgroundColor: '#fff', fontSize: '1rem', outline: 'none' }}
-                            >
-                               <option value="square_solo">{t("獨立九宮格 (Solo Square)", "Solo Square")}</option>
-                               <option value="rain" disabled>{t("雨滴瀑布 (VerseRain) - 即將推出", "VerseRain - Coming Soon")}</option>
-                            </select>
-                         </div>
-                         <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-                            <label style={{ fontWeight: 'bold', color: '#475569', minWidth: '80px' }}>{t("難度級別", "Difficulty")}:</label>
-                            <select 
-                               value={multiplayerDistractionLevel} 
-                               onChange={(e) => setMultiplayerDistractionLevel(Number(e.target.value))}
-                               style={{ padding: '0.5rem', borderRadius: '4px', border: '1px solid #cbd5e1', flex: 1, backgroundColor: '#fff', fontSize: '1rem', outline: 'none' }}
-                            >
-                               <option value={0}>{t("等級 0 (無干擾方塊，2x2)", "Level 0 (No fakes, 2x2)")}</option>
-                               <option value={1}>{t("等級 1 (少量干擾，2x2)", "Level 1 (Few fakes, 2x2)")}</option>
-                               <option value={2}>{t("等級 2 (中等干擾，3x3)", "Level 2 (Medium fakes, 3x3)")}</option>
-                               <option value={3}>{t("等級 3 (極限干擾，3x3)", "Level 3 (Max fakes, 3x3)")}</option>
-                            </select>
-                         </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '1.5rem', backgroundColor: '#f8fafc', padding: '1rem', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                      <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                        <label style={{ fontWeight: 'bold', color: '#475569', minWidth: '80px' }}>{t("遊戲模式", "Game Mode")}:</label>
+                        <select
+                          value={multiplayerPlayMode}
+                          onChange={(e) => setMultiplayerPlayMode(e.target.value)}
+                          style={{ padding: '0.5rem', borderRadius: '4px', border: '1px solid #cbd5e1', flex: 1, backgroundColor: '#fff', fontSize: '1rem', outline: 'none' }}
+                        >
+                          <option value="square_solo">{t("獨立九宮格 (Solo Square)", "Solo Square")}</option>
+                          <option value="rain" disabled>{t("雨滴瀑布 (VerseRain) - 即將推出", "VerseRain - Coming Soon")}</option>
+                        </select>
                       </div>
-                      
-                      {!pickerSelectedSet ? (
-                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '0.8rem', maxHeight: '400px', overflowY: 'auto' }}>
-                            {activeVerseSets.map(set => (
-                               <button 
-                                  key={set.id}
-                                  onClick={() => setPickerSelectedSet(set)}
-                                  style={{ padding: '1rem', border: '1px solid #cbd5e1', borderRadius: '6px', background: '#f8fafc', color: '#334155', fontWeight: 'bold', cursor: 'pointer', textAlign: 'center', transition: 'background 0.2s' }}
-                               >
-                                  {customVerseSets.some(c => c.id === set.id) ? '👑 ' : ''}{set.title}
-                                  <div style={{ fontSize: '0.8rem', color: '#64748b', marginTop: '0.5rem', fontWeight: 'normal' }}>{set.verses?.length || 0} {t("節", "verses")}</div>
-                               </button>
-                            ))}
-                         </div>
-                      ) : (
-                         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', maxHeight: '400px', overflowY: 'auto', paddingRight: '0.5rem' }}>
-                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
-                               <button onClick={() => { setPickerSelectedSet(null); setMultiplayerSelectedVerses([]); }} style={{ background: 'none', border: 'none', color: '#3b82f6', cursor: 'pointer', textAlign: 'left', padding: '0.5rem 0', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                 <span>←</span> {t("返回經文組", "Back to Groups")}
-                               </button>
-                               <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
-                                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: '#f8fafc', padding: '0.4rem 0.8rem', borderRadius: '6px', border: '1px solid #cbd5e1' }}>
-                                     <span style={{ fontSize: '0.9rem', color: '#64748b' }}>{t("隨機挑選", "Random Pick")} (共 {pickerSelectedSet.verses?.length || 0})</span>
-                                     <input 
-                                         type="number" 
-                                         min="1" 
-                                         max={pickerSelectedSet.verses?.length || 1} 
-                                         value={randomPickCount} 
-                                         onChange={(e) => setRandomPickCount(Math.min(pickerSelectedSet.verses?.length || 1, Math.max(1, parseInt(e.target.value) || 1)))}
-                                         style={{ width: '40px', padding: '0.2rem', textAlign: 'center', border: '1px solid #cbd5e1', borderRadius: '4px', outline: 'none' }}
-                                     />
-                                     <button 
-                                       onClick={() => {
-                                          if (!pickerSelectedSet || !pickerSelectedSet.verses) return;
-                                          const shuffled = [...pickerSelectedSet.verses].sort(() => 0.5 - Math.random());
-                                          const selected = shuffled.slice(0, randomPickCount);
-                                          setActiveVerse(selected[0]);
-                                          setPlayMode(multiplayerPlayMode);
-                                          setDistractionLevel(multiplayerDistractionLevel);
-                                          setInitAutoStart({ trigger: true, isAuto: false, isMultiplayerReadyCheck: true, campaignQueue: selected, verse: selected[0], playMode: multiplayerPlayMode });
-                                          setShowMultiplayerVersePicker(false);
-                                       }}
-                                       style={{ background: '#8b5cf6', color: 'white', border: 'none', padding: '0.3rem 0.6rem', borderRadius: '4px', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.2rem', fontSize: '0.8rem' }}
-                                     >
-                                        <Dices size={14} /> {t("開始", "Start")}
-                                     </button>
-                                  </div>
+                      <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                        <label style={{ fontWeight: 'bold', color: '#475569', minWidth: '80px' }}>{t("難度級別", "Difficulty")}:</label>
+                        <select
+                          value={multiplayerDistractionLevel}
+                          onChange={(e) => setMultiplayerDistractionLevel(Number(e.target.value))}
+                          style={{ padding: '0.5rem', borderRadius: '4px', border: '1px solid #cbd5e1', flex: 1, backgroundColor: '#fff', fontSize: '1rem', outline: 'none' }}
+                        >
+                          <option value={0}>{t("等級 0 (無干擾方塊，2x2)", "Level 0 (No fakes, 2x2)")}</option>
+                          <option value={1}>{t("等級 1 (少量干擾，2x2)", "Level 1 (Few fakes, 2x2)")}</option>
+                          <option value={2}>{t("等級 2 (中等干擾，3x3)", "Level 2 (Medium fakes, 3x3)")}</option>
+                          <option value={3}>{t("等級 3 (極限干擾，3x3)", "Level 3 (Max fakes, 3x3)")}</option>
+                        </select>
+                      </div>
+                    </div>
 
-                                 {multiplayerSelectedVerses.length > 0 && (
-                                   <button 
-                                     onClick={() => {
-                                        setActiveVerse(multiplayerSelectedVerses[0]);
-                                        setPlayMode(multiplayerPlayMode);
-                                        setDistractionLevel(multiplayerDistractionLevel);
-                                        setInitAutoStart({ trigger: true, isAuto: false, isMultiplayerReadyCheck: true, campaignQueue: multiplayerSelectedVerses, verse: multiplayerSelectedVerses[0], playMode: multiplayerPlayMode });
-                                        setShowMultiplayerVersePicker(false);
-                                     }}
-                                     style={{ background: '#10b981', color: 'white', border: 'none', padding: '0.5rem 1rem', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.9rem' }}
-                                   >
-                                     {t("完成揀選", "Finish")} ({multiplayerSelectedVerses.length})
-                                   </button>
-                                 )}
-                               </div>
-                             </div>
-                            {pickerSelectedSet.verses?.map(v => {
-                               const isSelected = multiplayerSelectedVerses.some(sv => sv.reference === v.reference);
-                               return (
-                               <div 
-                                  key={v.reference}
-                                  onClick={() => {
-                                     if (isSelected) {
-                                        setMultiplayerSelectedVerses(prev => prev.filter(sv => sv.reference !== v.reference));
-                                     } else {
-                                        setMultiplayerSelectedVerses(prev => [...prev, v]);
-                                     }
-                                  }}
-                                  style={{ padding: '1rem', border: `2px solid ${isSelected ? '#10b981' : '#cbd5e1'}`, borderRadius: '6px', background: isSelected ? '#ecfdf5' : '#fff', cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: '0.3rem', transition: 'all 0.2s', position: 'relative' }}
-                                  onMouseOver={(e) => e.currentTarget.style.boxShadow = '0 2px 5px rgba(0,0,0,0.1)'}
-                                  onMouseOut={(e) => e.currentTarget.style.boxShadow = 'none'}
-                               >
-                                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                     <span style={{ fontWeight: 'bold', color: '#8b5cf6', fontSize: '1.1rem' }}>{v.reference}</span>
-                                     {isSelected && <span style={{ color: '#10b981', fontWeight: 'bold', fontSize: '1.2rem' }}>✓</span>}
-                                  </div>
-                                  <span style={{ fontSize: '0.9rem', color: '#475569', marginTop: '0.2rem' }}>{v.title}</span>
-                                  <span style={{ fontSize: '0.8rem', color: '#94a3b8', fontStyle: 'italic', marginTop: '0.2rem', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{v.text}</span>
-                               </div>
-                            )})}
-                         </div>
-                      )}
-                   </div>
+                    {!pickerSelectedSet ? (
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '0.8rem', maxHeight: '400px', overflowY: 'auto' }}>
+                        {activeVerseSets.map(set => (
+                          <button
+                            key={set.id}
+                            onClick={() => setPickerSelectedSet(set)}
+                            style={{ padding: '1rem', border: '1px solid #cbd5e1', borderRadius: '6px', background: '#f8fafc', color: '#334155', fontWeight: 'bold', cursor: 'pointer', textAlign: 'center', transition: 'background 0.2s' }}
+                          >
+                            {customVerseSets.some(c => c.id === set.id) ? '👑 ' : ''}{set.title}
+                            <div style={{ fontSize: '0.8rem', color: '#64748b', marginTop: '0.5rem', fontWeight: 'normal' }}>{set.verses?.length || 0} {t("節", "verses")}</div>
+                          </button>
+                        ))}
+                      </div>
+                    ) : (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', maxHeight: '400px', overflowY: 'auto', paddingRight: '0.5rem' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
+                          <button onClick={() => { setPickerSelectedSet(null); setMultiplayerSelectedVerses([]); }} style={{ background: 'none', border: 'none', color: '#3b82f6', cursor: 'pointer', textAlign: 'left', padding: '0.5rem 0', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            <span>←</span> {t("返回經文組", "Back to Groups")}
+                          </button>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: '#f8fafc', padding: '0.4rem 0.8rem', borderRadius: '6px', border: '1px solid #cbd5e1' }}>
+                              <span style={{ fontSize: '0.9rem', color: '#64748b' }}>{t("隨機挑選", "Random Pick")} (共 {pickerSelectedSet.verses?.length || 0})</span>
+                              <input
+                                type="number"
+                                min="1"
+                                max={pickerSelectedSet.verses?.length || 1}
+                                value={randomPickCount}
+                                onChange={(e) => setRandomPickCount(Math.min(pickerSelectedSet.verses?.length || 1, Math.max(1, parseInt(e.target.value) || 1)))}
+                                style={{ width: '40px', padding: '0.2rem', textAlign: 'center', border: '1px solid #cbd5e1', borderRadius: '4px', outline: 'none' }}
+                              />
+                              <button
+                                onClick={() => {
+                                  if (!pickerSelectedSet || !pickerSelectedSet.verses) return;
+                                  const shuffled = [...pickerSelectedSet.verses].sort(() => 0.5 - Math.random());
+                                  const selected = shuffled.slice(0, randomPickCount);
+                                  setActiveVerse(selected[0]);
+                                  setPlayMode(multiplayerPlayMode);
+                                  setDistractionLevel(multiplayerDistractionLevel);
+                                  setInitAutoStart({ trigger: true, isAuto: false, isMultiplayerReadyCheck: true, campaignQueue: selected, verse: selected[0], playMode: multiplayerPlayMode });
+                                  setShowMultiplayerVersePicker(false);
+                                }}
+                                style={{ background: '#8b5cf6', color: 'white', border: 'none', padding: '0.3rem 0.6rem', borderRadius: '4px', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.2rem', fontSize: '0.8rem' }}
+                              >
+                                <Dices size={14} /> {t("開始", "Start")}
+                              </button>
+                            </div>
+
+                            {multiplayerSelectedVerses.length > 0 && (
+                              <button
+                                onClick={() => {
+                                  setActiveVerse(multiplayerSelectedVerses[0]);
+                                  setPlayMode(multiplayerPlayMode);
+                                  setDistractionLevel(multiplayerDistractionLevel);
+                                  setInitAutoStart({ trigger: true, isAuto: false, isMultiplayerReadyCheck: true, campaignQueue: multiplayerSelectedVerses, verse: multiplayerSelectedVerses[0], playMode: multiplayerPlayMode });
+                                  setShowMultiplayerVersePicker(false);
+                                }}
+                                style={{ background: '#10b981', color: 'white', border: 'none', padding: '0.5rem 1rem', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.9rem' }}
+                              >
+                                {t("完成揀選", "Finish")} ({multiplayerSelectedVerses.length})
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                        {pickerSelectedSet.verses?.map(v => {
+                          const isSelected = multiplayerSelectedVerses.some(sv => sv.reference === v.reference);
+                          return (
+                            <div
+                              key={v.reference}
+                              onClick={() => {
+                                if (isSelected) {
+                                  setMultiplayerSelectedVerses(prev => prev.filter(sv => sv.reference !== v.reference));
+                                } else {
+                                  setMultiplayerSelectedVerses(prev => [...prev, v]);
+                                }
+                              }}
+                              style={{ padding: '1rem', border: `2px solid ${isSelected ? '#10b981' : '#cbd5e1'}`, borderRadius: '6px', background: isSelected ? '#ecfdf5' : '#fff', cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: '0.3rem', transition: 'all 0.2s', position: 'relative' }}
+                              onMouseOver={(e) => e.currentTarget.style.boxShadow = '0 2px 5px rgba(0,0,0,0.1)'}
+                              onMouseOut={(e) => e.currentTarget.style.boxShadow = 'none'}
+                            >
+                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <span style={{ fontWeight: 'bold', color: '#8b5cf6', fontSize: '1.1rem' }}>{v.reference}</span>
+                                {isSelected && <span style={{ color: '#10b981', fontWeight: 'bold', fontSize: '1.2rem' }}>✓</span>}
+                              </div>
+                              <span style={{ fontSize: '0.9rem', color: '#475569', marginTop: '0.2rem' }}>{v.title}</span>
+                              <span style={{ fontSize: '0.8rem', color: '#94a3b8', fontStyle: 'italic', marginTop: '0.2rem', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{v.text}</span>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    )}
+                  </div>
                 ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', alignItems: 'center' }}>
                     <div style={{ padding: '1.5rem', backgroundColor: '#f8fafc', borderRadius: '8px', border: '1px dashed #cbd5e1', width: '100%', maxWidth: '400px' }}>
@@ -2236,19 +2595,19 @@ export default function App() {
                     )}
 
                     <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
-                      <button 
+                      <button
                         onClick={() => {
-                           if (socketRef.current) socketRef.current.close();
-                           setMultiplayerRoomId(null);
-                           setMultiplayerState(null);
+                          if (socketRef.current) socketRef.current.close();
+                          setMultiplayerRoomId(null);
+                          setMultiplayerState(null);
                         }}
                         style={{ background: '#f1f5f9', color: '#64748b', border: '1px solid #cbd5e1', padding: '0.8rem 1.5rem', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer' }}
                       >
                         {t("離開房間", "Leave Room")}
                       </button>
-                      
+
                       {multiplayerState?.host === myClientId && (
-                        <button 
+                        <button
                           onClick={() => {
                             setShowMultiplayerVersePicker(true);
                             setPickerSelectedSet(null);
@@ -2267,20 +2626,7 @@ export default function App() {
 
             {mainTab === 'versesets' && (
               <>
-                <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '1rem', gap: '0.5rem' }}>
-                  <button
-                    onClick={() => handleVersionChange('cuv')}
-                    style={{ padding: '0.4rem 0.8rem', borderRadius: '4px', border: '1px solid #cbd5e1', background: version === 'cuv' ? '#3b82f6' : '#fff', color: version === 'cuv' ? '#fff' : '#475569', fontWeight: 'bold', cursor: 'pointer' }}
-                  >
-                    中文
-                  </button>
-                  <button
-                    onClick={() => handleVersionChange('kjv')}
-                    style={{ padding: '0.4rem 0.8rem', borderRadius: '4px', border: '1px solid #cbd5e1', background: version === 'kjv' ? '#3b82f6' : '#fff', color: version === 'kjv' ? '#fff' : '#475569', fontWeight: 'bold', cursor: 'pointer' }}
-                  >
-                    English
-                  </button>
-                </div>
+
                 {/* The Verse Sets Table */}
                 <div style={{ backgroundColor: '#ffffff', overflowX: 'auto', borderRadius: '8px', border: '1px solid #cbd5e1', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
                   {selectedSetId === null ? (
@@ -2296,33 +2642,33 @@ export default function App() {
                       <tbody>
                         {activeVerseSets.map((set, i) => (
                           <tr key={i} style={{ borderBottom: '1px solid #e2e8f0', backgroundColor: i % 2 === 0 ? '#ffffff' : '#f8fafc', transition: 'background 0.2s', cursor: 'pointer' }} onClick={() => {
-                              setSelectedSetId(set.id);
-                              fetch("https://verserain-party.hungry4grace.partykit.dev/parties/main/global-auth-db/custom-sets/view", { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({id: set.id}) }).catch(e=>e);
-                              setViewCounts(prev => ({...prev, [set.id]: (prev[set.id] || 0) + 1}));
+                            setSelectedSetId(set.id);
+                            fetch("https://verserain-party.hungry4grace.partykit.dev/parties/main/global-auth-db/custom-sets/view", { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: set.id }) }).catch(e => e);
+                            setViewCounts(prev => ({ ...prev, [set.id]: (prev[set.id] || 0) + 1 }));
                           }} onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#eff6ff'} onMouseOut={(e) => e.currentTarget.style.backgroundColor = i % 2 === 0 ? '#ffffff' : '#f8fafc'}>
                             <td style={{ padding: '1rem', textAlign: 'center', color: '#3b82f6', fontSize: '1.2rem' }}>{customVerseSets.some(c => c.id === set.id) ? '👑' : '📁'}</td>
                             <td style={{ padding: '1rem', fontWeight: 'bold', color: '#1e293b', fontSize: '1.05rem' }}>
-                               <span>{set.title}</span>
-                               {isAdmin && String(set.id).startsWith("custom-") && !customVerseSets.some(c => c.id === set.id) && (
-                                  <span style={{ marginLeft: '1rem', display: 'inline-flex', gap: '0.5rem' }}>
-                                     <button onClick={(e) => {
-                                         e.stopPropagation();
-                                         setEditingCustomSet({...set, isPublished: true});
-                                         setMainTab('custom_verses');
-                                     }} style={{ background: '#f1f5f9', border: '1px solid #cbd5e1', padding: '0.2rem 0.5rem', borderRadius: '4px', cursor: 'pointer', fontSize: '0.8rem', color: '#475569' }}>Admin 編輯</button>
-                                     <button onClick={(e) => {
-                                         e.stopPropagation();
-                                         if (window.confirm("Admin: 確定要從全域資料庫強制刪除這份經文組？")) {
-                                             fetch("https://verserain-party.hungry4grace.partykit.dev/parties/main/global-auth-db/custom-sets", {
-                                                 method: "DELETE",
-                                                 headers: { "Content-Type": "application/json" },
-                                                 body: JSON.stringify({ id: set.id })
-                                             }).catch(e => console.error(e));
-                                             setPublishedVerseSets(prev => prev.filter(p => p.id !== set.id));
-                                         }
-                                     }} style={{ background: '#fee2e2', border: '1px solid #fca5a5', color: '#ef4444', padding: '0.2rem 0.5rem', borderRadius: '4px', cursor: 'pointer', fontSize: '0.8rem' }}>Admin 刪除</button>
-                                  </span>
-                               )}
+                              <span>{set.title}</span>
+                              {isAdmin && String(set.id).startsWith("custom-") && !customVerseSets.some(c => c.id === set.id) && (
+                                <span style={{ marginLeft: '1rem', display: 'inline-flex', gap: '0.5rem' }}>
+                                  <button onClick={(e) => {
+                                    e.stopPropagation();
+                                    setEditingCustomSet({ ...set, isPublished: true });
+                                    setMainTab('custom_verses');
+                                  }} style={{ background: '#f1f5f9', border: '1px solid #cbd5e1', padding: '0.2rem 0.5rem', borderRadius: '4px', cursor: 'pointer', fontSize: '0.8rem', color: '#475569' }}>Admin 編輯</button>
+                                  <button onClick={(e) => {
+                                    e.stopPropagation();
+                                    if (window.confirm("Admin: 確定要從全域資料庫強制刪除這份經文組？")) {
+                                      fetch("https://verserain-party.hungry4grace.partykit.dev/parties/main/global-auth-db/custom-sets", {
+                                        method: "DELETE",
+                                        headers: { "Content-Type": "application/json" },
+                                        body: JSON.stringify({ id: set.id })
+                                      }).catch(e => console.error(e));
+                                      setPublishedVerseSets(prev => prev.filter(p => p.id !== set.id));
+                                    }
+                                  }} style={{ background: '#fee2e2', border: '1px solid #fca5a5', color: '#ef4444', padding: '0.2rem 0.5rem', borderRadius: '4px', cursor: 'pointer', fontSize: '0.8rem' }}>Admin 刪除</button>
+                                </span>
+                              )}
                             </td>
                             <td style={{ padding: '1rem', color: '#337ab7', fontSize: '0.9rem', fontWeight: 'bold' }}>{set.authorName && set.authorName !== "Anonymous" ? set.authorName : (String(set.id).startsWith("custom-") ? "匿名玩家" : "Verserain 官方")}</td>
                             <td style={{ padding: '1rem', textAlign: 'right', color: '#64748b', fontWeight: 'bold' }}>{viewCounts[set.id] || 0}</td>
@@ -2334,7 +2680,7 @@ export default function App() {
                     <>
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem', borderBottom: '1px solid #e2e8f0', backgroundColor: '#f8fafc', flexWrap: 'wrap', gap: '1rem' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                          <button 
+                          <button
                             onClick={() => setSelectedSetId(null)}
                             style={{ background: '#ffffff', border: '1px solid #cbd5e1', padding: '0.4rem 0.8rem', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', color: '#475569', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '5px' }}
                             onMouseOver={(e) => e.target.style.backgroundColor = '#f1f5f9'}
@@ -2385,33 +2731,33 @@ export default function App() {
                           </button>
 
                           <div style={{ display: 'flex', alignItems: 'center', backgroundColor: '#f1f5f9', borderRadius: '6px', border: '1px solid #cbd5e1', padding: '2px' }}>
-                             <input 
-                                type="number" 
-                                min="1" 
-                                max={VERSES_DB.length} 
-                                value={randomPickCount > VERSES_DB.length ? VERSES_DB.length : randomPickCount} 
-                                onChange={(e) => setRandomPickCount(e.target.value === '' ? '' : Math.min(VERSES_DB.length, Math.max(1, parseInt(e.target.value))))}
-                                style={{ width: '50px', padding: '0 0.4rem', border: 'none', background: 'transparent', outline: 'none', textAlign: 'center', fontSize: '1rem', color: '#334155', fontWeight: 'bold' }}
-                                title={t("選擇隨機題數", "Number of random verses")}
-                             />
-                             <button
-                               onClick={() => {
-                                 initAudio();
-                                 let queue = [...VERSES_DB];
-                                 let actualCount = Math.min(VERSES_DB.length, Math.max(1, parseInt(randomPickCount) || 1));
-                                 queue = queue.sort(() => 0.5 - Math.random()).slice(0, actualCount);
-                                 setCampaignQueue(queue.slice(1));
-                                 setCampaignResults([]);
-                                 setActiveVerse(queue[0]);
-                                 setTimeout(() => startGame(false, queue), 50);
-                               }}
-                               title={t("隨機挑戰所選題數", "Randomly challenge selected number")}
-                               style={{ backgroundColor: '#10b981', color: 'white', border: 'none', borderRadius: '4px', padding: '0 0.8rem', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'transform 0.1s', fontWeight: 'bold', gap: '5px' }}
-                               onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
-                               onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
-                             >
-                               <Zap size={16} fill="white" /> {t("挑戰", "Challenge")}
-                             </button>
+                            <input
+                              type="number"
+                              min="1"
+                              max={VERSES_DB.length}
+                              value={randomPickCount > VERSES_DB.length ? VERSES_DB.length : randomPickCount}
+                              onChange={(e) => setRandomPickCount(e.target.value === '' ? '' : Math.min(VERSES_DB.length, Math.max(1, parseInt(e.target.value))))}
+                              style={{ width: '50px', padding: '0 0.4rem', border: 'none', background: 'transparent', outline: 'none', textAlign: 'center', fontSize: '1rem', color: '#334155', fontWeight: 'bold' }}
+                              title={t("選擇隨機題數", "Number of random verses")}
+                            />
+                            <button
+                              onClick={() => {
+                                initAudio();
+                                let queue = [...VERSES_DB];
+                                let actualCount = Math.min(VERSES_DB.length, Math.max(1, parseInt(randomPickCount) || 1));
+                                queue = queue.sort(() => 0.5 - Math.random()).slice(0, actualCount);
+                                setCampaignQueue(queue.slice(1));
+                                setCampaignResults([]);
+                                setActiveVerse(queue[0]);
+                                setTimeout(() => startGame(false, queue), 50);
+                              }}
+                              title={t("隨機挑戰所選題數", "Randomly challenge selected number")}
+                              style={{ backgroundColor: '#10b981', color: 'white', border: 'none', borderRadius: '4px', padding: '0 0.8rem', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'transform 0.1s', fontWeight: 'bold', gap: '5px' }}
+                              onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
+                              onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                            >
+                              <Zap size={16} fill="white" /> {t("挑戰", "Challenge")}
+                            </button>
                           </div>
 
                           <button
@@ -2439,7 +2785,7 @@ export default function App() {
                               setMainTab('multiplayer');
                               const chars = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
                               let newRoom = '';
-                              for(let i=0; i<4; i++) newRoom += chars.charAt(Math.floor(Math.random() * chars.length));
+                              for (let i = 0; i < 4; i++) newRoom += chars.charAt(Math.floor(Math.random() * chars.length));
                               setMultiplayerRoomId(newRoom);
                             }}
                             title={t("開房間邀請連線遊玩", "Invite players for the whole set")}
@@ -2558,9 +2904,241 @@ export default function App() {
               </>
             )}
 
+            {mainTab === 'garden' && (
+              <div style={{ backgroundColor: '#ffffff', borderRadius: '8px', border: '1px solid #cbd5e1', padding: '1.5rem', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+                <h2 style={{ color: '#1e293b', marginTop: 0, marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '10px' }}>🌳 {t("我的園子", "My Garden")}</h2>
+                <p style={{ color: '#64748b', fontSize: '0.9rem', marginBottom: '1rem' }}>
+                  {t("每挑戰一節新經文，就會在空地上長出嫩芽。持續練習讓它長大！通過經文變成大樹，創新高則結出果子🍎", "Each new verse you challenge sprouts a seedling. Keep practicing to grow it! Clearing a verse makes it a full tree; new high scores bear fruit 🍎")}
+                </p>
+
+                {(() => {
+                  const entries = Object.entries(gardenData);
+                  const treeCount = entries.length;
+                  const gridSize = Math.max(10, Math.ceil(Math.sqrt(Math.max(treeCount, 1) * 1.5 / 100) * 10) * 10 > 100 ? Math.ceil(Math.sqrt(treeCount * 1.5)) : 10);
+                  const totalCells = gridSize * gridSize;
+
+                  // Build grid lookup: gridIndex -> { ref, stage, fruits }
+                  const gridMap = {};
+                  entries.forEach(([ref, data]) => {
+                    if (data.gridIndex < totalCells) {
+                      gridMap[data.gridIndex] = { ref, ...data };
+                    }
+                  });
+
+                  // Stage visuals
+                  const stageEmoji = (stage, fruits) => {
+                    if (stage <= 0) return '';
+                    if (stage === 1) return '🌱';
+                    if (stage === 2) return '☘️';
+                    if (stage === 3) return '🌿';
+                    if (stage === 4) return '🪴';
+                    if (stage <= 6) return '🌲';
+                    if (stage <= 8) return '🌳';
+                    if (stage === 9) return '🌳';
+                    // stage 10 = completed
+                    if (fruits > 0) return '🍎'.repeat(Math.min(fruits, 3)) + '🌳';
+                    return '🌳✨';
+                  };
+
+                  const stageLabel = (stage) => {
+                    if (stage === 1) return t('嫩芽', 'Seedling');
+                    if (stage <= 3) return t('幼苗', 'Sprout');
+                    if (stage <= 5) return t('小樹', 'Sapling');
+                    if (stage <= 8) return t('成長中', 'Growing');
+                    if (stage === 9) return t('快完成了', 'Almost there');
+                    return t('大樹', 'Full Tree');
+                  };
+
+                  const stageBg = (stage) => {
+                    if (stage === 0) return '#e8f5e9';
+                    if (stage <= 3) return '#c8e6c9';
+                    if (stage <= 6) return '#a5d6a7';
+                    if (stage <= 9) return '#81c784';
+                    return '#66bb6a';
+                  };
+
+                  return (
+                    <div>
+                      {/* Stats bar */}
+                      <div style={{ display: 'flex', gap: '1.5rem', marginBottom: '1rem', flexWrap: 'wrap' }}>
+                        <div style={{ padding: '0.5rem 1rem', background: '#f0fdf4', borderRadius: '8px', border: '1px solid #bbf7d0' }}>
+                          🌱 {t("種植", "Planted")}: <strong>{treeCount}</strong>
+                        </div>
+                        <div style={{ padding: '0.5rem 1rem', background: '#f0fdf4', borderRadius: '8px', border: '1px solid #bbf7d0' }}>
+                          🌳 {t("大樹", "Full Trees")}: <strong>{entries.filter(([, d]) => d.stage >= 10).length}</strong>
+                        </div>
+                        <div style={{ padding: '0.5rem 1rem', background: '#fef3c7', borderRadius: '8px', border: '1px solid #fde68a' }}>
+                          🍎 {t("果子", "Fruits")}: <strong>{entries.reduce((sum, [, d]) => sum + (d.fruits || 0), 0)}</strong>
+                        </div>
+                      </div>
+
+                      {/* Mode & Level Controls */}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem', flexWrap: 'wrap', padding: '0.8rem 1rem', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                        <span style={{ fontWeight: 'bold', color: '#475569', fontSize: '0.9rem' }}>⚙️ {t("挑戰設定", "Challenge Settings")}:</span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                          <label style={{ fontSize: '0.85rem', color: '#64748b' }}>{t("模式", "Mode")}</label>
+                          <select
+                            onChange={(e) => setPlayMode(e.target.value)}
+                            value={playMode}
+                            style={{ padding: '0.4rem 0.6rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.85rem', color: '#334155', backgroundColor: '#fff', fontWeight: 'bold', cursor: 'pointer' }}
+                          >
+                            <option value="square">Square</option>
+                            <option value="rain">Rain</option>
+                          </select>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                          <Tooltip text={t("等級越高，會有越多錯誤的干擾方塊混在裡面！", "Higher levels mix in more fake blocks!")}>
+                            <label style={{ fontSize: '0.85rem', color: '#64748b', cursor: 'help', borderBottom: '1px dotted #94a3b8' }}>{t("難度", "Level")} ⓘ</label>
+                          </Tooltip>
+                          <select
+                            onChange={(e) => setDistractionLevel(Number(e.target.value))}
+                            value={distractionLevel}
+                            style={{ padding: '0.4rem 0.6rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.85rem', color: '#334155', backgroundColor: '#fff', fontWeight: 'bold', cursor: 'pointer' }}
+                          >
+                            <option value={0}>{t("無干擾", "No Distraction")}</option>
+                            <option value={1}>{t("單字干擾", "Lv 1")}</option>
+                            <option value={2}>{t("標點干擾", "Lv 2")}</option>
+                            <option value={3}>Lv 3</option>
+                          </select>
+                        </div>
+                        <span style={{ fontSize: '0.8rem', color: '#94a3b8' }}>{t("點擊查看經文，雙擊開始挑戰！", "Click to view, double-click to challenge!")}</span>
+                      </div>
+
+                      {/* The Grid - scrollable/pannable container for mobile */}
+                      <div style={{
+                        overflow: 'auto',
+                        WebkitOverflowScrolling: 'touch',
+                        touchAction: 'pan-x pan-y',
+                        maxWidth: '100%',
+                        maxHeight: '70vh',
+                        borderRadius: '8px',
+                        border: '3px solid #4e342e',
+                        background: '#5d4037',
+                        position: 'relative',
+                      }}>
+                        <div style={{
+                          display: 'grid',
+                          gridTemplateColumns: `repeat(${gridSize}, 48px)`,
+                          gap: '2px',
+                          padding: '4px',
+                          width: 'fit-content',
+                          minWidth: `${gridSize * 50}px`,
+                        }}>
+                          {Array.from({ length: totalCells }).map((_, i) => {
+                            const cell = gridMap[i];
+                            const isEmpty = !cell;
+
+                            return (
+                              <div
+                                key={i}
+                                onClick={() => {
+                                  if (cell) {
+                                    if (gardenClickTimer.current) { clearTimeout(gardenClickTimer.current); gardenClickTimer.current = null; return; }
+                                    gardenClickTimer.current = setTimeout(() => {
+                                      gardenClickTimer.current = null;
+                                      const allVerses = [...safeActiveSets, ...customVerseSets].flatMap(s => s.verses);
+                                      const targetVerse = allVerses.find(v => v.reference === cell.ref);
+                                      setSelectedGardenCell({
+                                        ref: cell.ref,
+                                        text: targetVerse?.text || '',
+                                        stage: cell.stage,
+                                        fruits: cell.fruits || 0,
+                                        setId: cell.setId,
+                                        verse: targetVerse
+                                      });
+                                      setTimeout(() => {
+                                        const popup = document.getElementById('garden-verse-popup');
+                                        if (popup) popup.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                                      }, 100);
+                                    }, 300);
+                                  }
+                                }}
+                                onDoubleClick={() => {
+                                  if (cell) {
+                                    if (gardenClickTimer.current) { clearTimeout(gardenClickTimer.current); gardenClickTimer.current = null; }
+                                    const allVerses = [...safeActiveSets, ...customVerseSets].flatMap(s => s.verses);
+                                    const targetVerse = allVerses.find(v => v.reference === cell.ref);
+                                    if (targetVerse) {
+                                      setSelectedGardenCell(null);
+                                      setActiveVerse(targetVerse);
+                                      setSelectedVerseRefs([targetVerse.reference]);
+                                      if (cell.setId) setSelectedSetId(cell.setId);
+                                      setTimeout(() => startGame(), 50);
+                                    }
+                                  }
+                                }}
+                                title={cell ? `${cell.ref} — ${stageLabel(cell.stage)}${cell.fruits ? ` 🍎×${cell.fruits}` : ''}` : t('空地', 'Empty')}
+                                style={{
+                                  width: '48px',
+                                  height: '48px',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  backgroundColor: isEmpty ? '#a5d6a7' : stageBg(cell.stage),
+                                  borderRadius: '3px',
+                                  cursor: cell ? 'pointer' : 'default',
+                                  fontSize: '20px',
+                                  transition: 'all 0.2s',
+                                  position: 'relative',
+                                  border: cell && cell.stage >= 10 ? '1px solid #2e7d32' : '1px solid rgba(0,0,0,0.05)',
+                                  boxShadow: cell && cell.stage >= 10 ? 'inset 0 0 4px rgba(46,125,50,0.3)' : 'none',
+                                }}
+                                onMouseEnter={e => { if (cell) e.currentTarget.style.transform = 'scale(1.2)'; e.currentTarget.style.zIndex = '10'; }}
+                                onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.zIndex = '1'; }}
+                              >
+                                {cell ? stageEmoji(cell.stage, cell.fruits) : ''}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                      <p style={{ fontSize: '0.8rem', color: '#94a3b8', marginTop: '0.5rem' }}>📱 {t("可用手指滑動來瀏覽園子", "Swipe to pan around the garden")}</p>
+
+                      {/* Verse Info Popup Modal */}
+                      {selectedGardenCell && (
+                        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }} onClick={() => setSelectedGardenCell(null)}>
+                          <div id="garden-verse-popup" onClick={e => e.stopPropagation()} style={{ width: '100%', maxWidth: '400px', padding: '1.5rem', background: 'linear-gradient(135deg, #f0fdf4, #ecfdf5)', borderRadius: '15px', border: '3px solid #86efac', boxShadow: '0 10px 30px rgba(0,0,0,0.3)', position: 'relative', animation: 'flashSuccess 0.3s ease-out' }}>
+                            <button onClick={() => setSelectedGardenCell(null)} style={{ position: 'absolute', top: '10px', right: '15px', background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer', fontSize: '1.4rem', fontWeight: 'bold' }}>✕</button>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.8rem' }}>
+                              <span style={{ fontSize: '1.8rem' }}>{stageEmoji(selectedGardenCell.stage, selectedGardenCell.fruits)}</span>
+                              <span style={{ fontWeight: 'bold', color: '#166534', fontSize: '1.2rem' }}>{selectedGardenCell.ref}</span>
+                              <span style={{ fontSize: '0.85rem', color: '#166534', background: '#b2f5ea', padding: '3px 10px', borderRadius: '12px', fontWeight: 'bold' }}>{stageLabel(selectedGardenCell.stage)}</span>
+                            </div>
+                            <p style={{ color: '#334155', lineHeight: '1.6', fontSize: '1rem', margin: '1rem 0 1.5rem', fontStyle: 'italic', maxHeight: '30vh', overflowY: 'auto' }}>
+                              "{selectedGardenCell.text || t('(經文內容未找到)', '(Verse text not found)')}"
+                            </p>
+                            <button onClick={() => {
+                              if (selectedGardenCell.verse) {
+                                setActiveVerse(selectedGardenCell.verse);
+                                setSelectedVerseRefs([selectedGardenCell.verse.reference]);
+                                if (selectedGardenCell.setId) setSelectedSetId(selectedGardenCell.setId);
+                                setSelectedGardenCell(null);
+                                setTimeout(() => startGame(), 50);
+                              }
+                            }} style={{ width: '100%', justifyContent: 'center', background: '#22c55e', color: 'white', border: 'none', padding: '0.8rem', borderRadius: '10px', fontWeight: 'bold', fontSize: '1.1rem', cursor: selectedGardenCell.verse ? 'pointer' : 'not-allowed', opacity: selectedGardenCell.verse ? 1 : 0.5, boxShadow: '0 4px 12px rgba(34,197,94,0.3)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                              <Play size={20} /> {t("挑戰這節經文", "Challenge this verse")}
+                            </button>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Legend */}
+                      <div style={{ marginTop: '1.5rem', display: 'flex', flexWrap: 'wrap', gap: '1rem', fontSize: '0.85rem', color: '#475569' }}>
+                        <span>🌱 {t("嫩芽 (第1次玩)", "Seedling (1st play)")}</span>
+                        <span>☘️🌿 {t("幼苗 (練習中)", "Sprout (practicing)")}</span>
+                        <span>🪴🌲 {t("小樹 (持續成長)", "Sapling (growing)")}</span>
+                        <span>🌳✨ {t("大樹 (通過!)", "Full tree (cleared!)")}</span>
+                        <span>🍎🌳 {t("結果子 (創新高!)", "Fruit (new record!)")}</span>
+                      </div>
+                    </div>
+                  );
+                })()}
+              </div>
+            )}
+
             {mainTab === 'leaderboard' && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-                
+
                 {/* 1. 排行榜切換按鈕 */}
                 <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
                   <button onClick={() => setGlobalLeaderboardTab('daily')} style={{ padding: '0.8rem 2rem', border: 'none', background: globalLeaderboardTab === 'daily' ? '#10b981' : '#e2e8f0', color: globalLeaderboardTab === 'daily' ? 'white' : '#475569', borderRadius: '30px', cursor: 'pointer', fontWeight: 'bold', fontSize: '1.1rem', transition: 'all 0.2s', boxShadow: globalLeaderboardTab === 'daily' ? '0 4px 6px -1px rgba(16, 185, 129, 0.4)' : 'none' }}>{t("本日排行", "Daily")}</button>
@@ -2568,32 +3146,47 @@ export default function App() {
                   <button onClick={() => setGlobalLeaderboardTab('alltime')} style={{ padding: '0.8rem 2rem', border: 'none', background: globalLeaderboardTab === 'alltime' ? '#3b82f6' : '#e2e8f0', color: globalLeaderboardTab === 'alltime' ? 'white' : '#475569', borderRadius: '30px', cursor: 'pointer', fontWeight: 'bold', fontSize: '1.1rem', transition: 'all 0.2s', boxShadow: globalLeaderboardTab === 'alltime' ? '0 4px 6px -1px rgba(59, 130, 246, 0.4)' : 'none' }}>{t("歷史總榜", "All Time")}</button>
                 </div>
 
-                {/* 2. 個人總積分排行榜 */}
+                {/* 2. 個人總積分排行榜 - reads from globalLeaderboardData (Redis) */}
                 <div style={{ backgroundColor: '#ffffff', borderRadius: '8px', border: '1px solid #cbd5e1', padding: '2rem', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
                   <h2 style={{ color: '#1e293b', marginTop: 0, marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '10px' }}><Trophy color="#2563eb" /> {t("個人總積分排行榜", "Player Total Score Leaderboard")}</h2>
                   <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
-                     <thead>
-                       <tr style={{ borderBottom: '2px solid #e2e8f0', color: '#64748b', fontSize: '0.9rem' }}>
-                         <th style={{ padding: '0.8rem 1rem', width: '50px' }}>🏆</th>
-                         <th style={{ padding: '0.8rem 1rem' }}>{t("玩家名稱", "Player Name")}</th>
-                         <th style={{ padding: '0.8rem 1rem', textAlign: 'right' }}>{t("紀錄次數/完成數", "Records/Clears")}</th>
-                       </tr>
-                     </thead>
-                     <tbody>
-                       {Object.entries((globalUserStats[globalLeaderboardTab] || {}))
-                           .sort((a,b) => b[1].champs - a[1].champs || b[1].completes - a[1].completes)
-                           .slice(0, 50)
-                           .map(([name, stats], idx) => (
-                              <tr key={idx} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                                  <td style={{ padding: '0.8rem 1rem', fontWeight: 'bold', color: idx === 0 ? '#d97706' : idx === 1 ? '#94a3b8' : idx === 2 ? '#b45309' : '#64748b', fontSize: '1.2rem' }}>#{idx+1}</td>
-                                  <td style={{ padding: '0.8rem 1rem', fontWeight: 'bold', color: '#1e293b' }}>{name} {name === playerName && <Crown size={14} style={{ color: '#fbbf24', marginLeft: '5px' }} />}</td>
-                                  <td style={{ padding: '0.8rem 1rem', textAlign: 'right', fontWeight: 'bold', color: '#3b82f6' }}>{stats.champs} / {stats.completes}</td>
-                              </tr>
-                           ))}
-                       {Object.keys((globalUserStats[globalLeaderboardTab] || {})).length === 0 && (
-                          <tr><td colSpan="3" style={{ padding: '1rem', textAlign: 'center', color: '#94a3b8' }}>{t("目前尚無紀錄", "No records yet")}</td></tr>
-                       )}
-                     </tbody>
+                    <thead>
+                      <tr style={{ borderBottom: '2px solid #e2e8f0', color: '#64748b', fontSize: '0.9rem' }}>
+                        <th style={{ padding: '0.8rem 1rem', width: '50px' }}>🏆</th>
+                        <th style={{ padding: '0.8rem 1rem' }}>{t("玩家名稱", "Player Name")}</th>
+                        <th style={{ padding: '0.8rem 1rem', textAlign: 'right' }}>{t("最高分", "Best Score")}</th>
+                        <th style={{ padding: '0.8rem 1rem', textAlign: 'right' }}>{t("完成次數", "Clears")}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {(() => {
+                        const entries = globalLeaderboardData[globalLeaderboardTab] || [];
+                        if (isFetchingGlobalLeaderboard) {
+                          return <tr><td colSpan="4" style={{ padding: '1rem', textAlign: 'center', color: '#94a3b8' }}>⏳ {t("載入中...", "Loading...")}</td></tr>;
+                        }
+                        if (entries.length === 0) {
+                          return <tr><td colSpan="4" style={{ padding: '1rem', textAlign: 'center', color: '#94a3b8' }}>{t("目前尚無紀錄", "No records yet")}</td></tr>;
+                        }
+                        const playerMap = {};
+                        entries.forEach(({ name, score }) => {
+                          if (!name) return;
+                          if (!playerMap[name]) playerMap[name] = { best: 0, clears: 0 };
+                          playerMap[name].best = Math.max(playerMap[name].best, score);
+                          playerMap[name].clears += 1;
+                        });
+                        return Object.entries(playerMap)
+                          .sort((a, b) => b[1].best - a[1].best || b[1].clears - a[1].clears)
+                          .slice(0, 50)
+                          .map(([name, stats], idx) => (
+                            <tr key={idx} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                              <td style={{ padding: '0.8rem 1rem', fontWeight: 'bold', color: idx === 0 ? '#d97706' : idx === 1 ? '#94a3b8' : idx === 2 ? '#b45309' : '#64748b', fontSize: '1.2rem' }}>#{idx + 1}</td>
+                              <td style={{ padding: '0.8rem 1rem', fontWeight: 'bold', color: '#1e293b' }}>{name} {name === playerName && <Crown size={14} style={{ color: '#fbbf24', marginLeft: '5px' }} />}</td>
+                              <td style={{ padding: '0.8rem 1rem', textAlign: 'right', fontWeight: 'bold', color: '#3b82f6' }}>{stats.best.toLocaleString()}</td>
+                              <td style={{ padding: '0.8rem 1rem', textAlign: 'right', fontWeight: 'bold', color: '#059669' }}>{stats.clears}</td>
+                            </tr>
+                          ));
+                      })()}
+                    </tbody>
                   </table>
                 </div>
 
@@ -2601,30 +3194,30 @@ export default function App() {
                 <div style={{ backgroundColor: '#ffffff', borderRadius: '8px', border: '1px solid #cbd5e1', padding: '2rem', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
                   <h2 style={{ color: '#1e293b', marginTop: 0, marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '10px' }}><Trophy color="#10b981" /> {t("最受歡迎經文排行榜", "Most Popular Verses")}</h2>
                   <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
-                     <thead>
-                       <tr style={{ borderBottom: '2px solid #e2e8f0', color: '#64748b', fontSize: '0.9rem' }}>
-                         <th style={{ padding: '0.8rem 1rem', width: '50px' }}>🏆</th>
-                         <th style={{ padding: '0.8rem 1rem' }}>{t("經文出處", "Reference")}</th>
-                         <th style={{ padding: '0.8rem 1rem', textAlign: 'right' }}>{t("遊玩次數", "Plays")}</th>
-                         <th style={{ padding: '0.8rem 1rem', textAlign: 'right' }}>{t("完成次數", "Completes")}</th>
-                       </tr>
-                     </thead>
-                     <tbody>
-                       {Object.entries((globalVerseStats[globalLeaderboardTab] || {}))
-                           .sort((a,b) => b[1].plays - a[1].plays || b[1].completes - a[1].completes)
-                           .slice(0, 50)
-                           .map(([ref, stats], idx) => (
-                              <tr key={idx} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                                  <td style={{ padding: '0.8rem 1rem', fontWeight: 'bold', color: idx === 0 ? '#d97706' : idx === 1 ? '#94a3b8' : idx === 2 ? '#b45309' : '#64748b', fontSize: '1.2rem' }}>#{idx+1}</td>
-                                  <td style={{ padding: '0.8rem 1rem', fontWeight: 'bold', color: '#1e293b' }}>{ref}</td>
-                                  <td style={{ padding: '0.8rem 1rem', textAlign: 'right', fontWeight: 'bold', color: '#10b981' }}>{stats.plays}</td>
-                                  <td style={{ padding: '0.8rem 1rem', textAlign: 'right', fontWeight: 'bold', color: '#059669' }}>{stats.completes}</td>
-                              </tr>
-                           ))}
-                       {Object.keys((globalVerseStats[globalLeaderboardTab] || {})).length === 0 && (
-                          <tr><td colSpan="4" style={{ padding: '1rem', textAlign: 'center', color: '#94a3b8' }}>{t("目前尚無經文紀錄", "No records yet")}</td></tr>
-                       )}
-                     </tbody>
+                    <thead>
+                      <tr style={{ borderBottom: '2px solid #e2e8f0', color: '#64748b', fontSize: '0.9rem' }}>
+                        <th style={{ padding: '0.8rem 1rem', width: '50px' }}>🏆</th>
+                        <th style={{ padding: '0.8rem 1rem' }}>{t("經文出處", "Reference")}</th>
+                        <th style={{ padding: '0.8rem 1rem', textAlign: 'right' }}>{t("遊玩次數", "Plays")}</th>
+                        <th style={{ padding: '0.8rem 1rem', textAlign: 'right' }}>{t("完成次數", "Completes")}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {Object.entries((globalVerseStats[globalLeaderboardTab] || {}))
+                        .sort((a, b) => b[1].plays - a[1].plays || b[1].completes - a[1].completes)
+                        .slice(0, 50)
+                        .map(([ref, stats], idx) => (
+                          <tr key={idx} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                            <td style={{ padding: '0.8rem 1rem', fontWeight: 'bold', color: idx === 0 ? '#d97706' : idx === 1 ? '#94a3b8' : idx === 2 ? '#b45309' : '#64748b', fontSize: '1.2rem' }}>#{idx + 1}</td>
+                            <td style={{ padding: '0.8rem 1rem', fontWeight: 'bold', color: '#1e293b' }}>{ref}</td>
+                            <td style={{ padding: '0.8rem 1rem', textAlign: 'right', fontWeight: 'bold', color: '#10b981' }}>{stats.plays}</td>
+                            <td style={{ padding: '0.8rem 1rem', textAlign: 'right', fontWeight: 'bold', color: '#059669' }}>{stats.completes}</td>
+                          </tr>
+                        ))}
+                      {Object.keys((globalVerseStats[globalLeaderboardTab] || {})).length === 0 && (
+                        <tr><td colSpan="4" style={{ padding: '1rem', textAlign: 'center', color: '#94a3b8' }}>{t("目前尚無經文紀錄", "No records yet")}</td></tr>
+                      )}
+                    </tbody>
                   </table>
                 </div>
 
@@ -2632,34 +3225,34 @@ export default function App() {
                 <div style={{ backgroundColor: '#ffffff', borderRadius: '8px', border: '1px solid #cbd5e1', padding: '2rem', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
                   <h2 style={{ color: '#1e293b', marginTop: 0, marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '10px' }}><Trophy color="#f59e0b" /> {t("最受歡迎經文組", "Most Popular Verse Sets")}</h2>
                   <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
-                     <thead>
-                       <tr style={{ borderBottom: '2px solid #e2e8f0', color: '#64748b', fontSize: '0.9rem' }}>
-                         <th style={{ padding: '0.8rem 1rem', width: '50px' }}>🏆</th>
-                         <th style={{ padding: '0.8rem 1rem' }}>{t("標題", "Title")}</th>
-                         <th style={{ padding: '0.8rem 1rem' }}>{t("作者", "Author")}</th>
-                         <th style={{ padding: '0.8rem 1rem', textAlign: 'right' }}>{t("點閱次數", "Views")}</th>
-                       </tr>
-                     </thead>
-                     <tbody>
-                       {(() => {
-                          const sortedSets = [...activeVerseSets]
-                               .sort((a,b) => (viewCounts[b.id]||0) - (viewCounts[a.id]||0))
-                               .slice(0, 10);
-                          return sortedSets.map((set, idx) => (
-                              <tr key={idx} style={{ borderBottom: '1px solid #f1f5f9', cursor: 'pointer', transition: 'background 0.2s' }} onClick={() => {
-                                 setMainTab('versesets');
-                                 setSelectedSetId(set.id);
-                                 fetch("https://verserain-party.hungry4grace.partykit.dev/parties/main/global-auth-db/custom-sets/view", { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({id: set.id}) }).catch(e=>e);
-                                 setViewCounts(prev => ({...prev, [set.id]: (prev[set.id] || 0) + 1}));
-                              }} onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#eff6ff'} onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}>
-                                  <td style={{ padding: '0.8rem 1rem', fontWeight: 'bold', color: idx === 0 ? '#d97706' : idx === 1 ? '#94a3b8' : idx === 2 ? '#b45309' : '#64748b', fontSize: '1.2rem' }}>#{idx+1}</td>
-                                  <td style={{ padding: '0.8rem 1rem', fontWeight: 'bold', color: '#1e293b' }}>{set.title}</td>
-                                  <td style={{ padding: '0.8rem 1rem', color: '#3b82f6' }}>{set.authorName && set.authorName !== "Anonymous" ? set.authorName : (String(set.id).startsWith("custom-") ? "匿名玩家" : "Verserain 官方")}</td>
-                                  <td style={{ padding: '0.8rem 1rem', textAlign: 'right', fontWeight: 'bold', color: '#059669' }}>{viewCounts[set.id] || 0}</td>
-                              </tr>
-                          ));
-                       })()}
-                     </tbody>
+                    <thead>
+                      <tr style={{ borderBottom: '2px solid #e2e8f0', color: '#64748b', fontSize: '0.9rem' }}>
+                        <th style={{ padding: '0.8rem 1rem', width: '50px' }}>🏆</th>
+                        <th style={{ padding: '0.8rem 1rem' }}>{t("標題", "Title")}</th>
+                        <th style={{ padding: '0.8rem 1rem' }}>{t("作者", "Author")}</th>
+                        <th style={{ padding: '0.8rem 1rem', textAlign: 'right' }}>{t("點閱次數", "Views")}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {(() => {
+                        const sortedSets = [...activeVerseSets]
+                          .sort((a, b) => (viewCounts[b.id] || 0) - (viewCounts[a.id] || 0))
+                          .slice(0, 10);
+                        return sortedSets.map((set, idx) => (
+                          <tr key={idx} style={{ borderBottom: '1px solid #f1f5f9', cursor: 'pointer', transition: 'background 0.2s' }} onClick={() => {
+                            setMainTab('versesets');
+                            setSelectedSetId(set.id);
+                            fetch("https://verserain-party.hungry4grace.partykit.dev/parties/main/global-auth-db/custom-sets/view", { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: set.id }) }).catch(e => e);
+                            setViewCounts(prev => ({ ...prev, [set.id]: (prev[set.id] || 0) + 1 }));
+                          }} onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#eff6ff'} onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}>
+                            <td style={{ padding: '0.8rem 1rem', fontWeight: 'bold', color: idx === 0 ? '#d97706' : idx === 1 ? '#94a3b8' : idx === 2 ? '#b45309' : '#64748b', fontSize: '1.2rem' }}>#{idx + 1}</td>
+                            <td style={{ padding: '0.8rem 1rem', fontWeight: 'bold', color: '#1e293b' }}>{set.title}</td>
+                            <td style={{ padding: '0.8rem 1rem', color: '#3b82f6' }}>{set.authorName && set.authorName !== "Anonymous" ? set.authorName : (String(set.id).startsWith("custom-") ? "匿名玩家" : "Verserain 官方")}</td>
+                            <td style={{ padding: '0.8rem 1rem', textAlign: 'right', fontWeight: 'bold', color: '#059669' }}>{viewCounts[set.id] || 0}</td>
+                          </tr>
+                        ));
+                      })()}
+                    </tbody>
                   </table>
                 </div>
 
@@ -2681,19 +3274,19 @@ export default function App() {
                   const query = searchQuery.trim().toLowerCase();
 
                   // Search in sets
-                  const matchingSets = activeVerseSets.filter(s => 
+                  const matchingSets = activeVerseSets.filter(s =>
                     s && s.title && (
-                      s.title.toLowerCase().includes(query) || 
+                      s.title.toLowerCase().includes(query) ||
                       (s.description && s.description.replace(/<[^>]+>/g, '').toLowerCase().includes(query))
                     )
                   );
                   // Search in individual verses
-                  const matchingVerses = activeVerseSets.flatMap(s => 
+                  const matchingVerses = activeVerseSets.flatMap(s =>
                     (s && s.verses) ? s.verses.map(v => ({ ...v, setId: s.id, setName: s.title })) : []
-                  ).filter(v => 
+                  ).filter(v =>
                     v && (
-                      (v.reference && v.reference.toLowerCase().includes(query)) || 
-                      (v.title && v.title.toLowerCase().includes(query)) || 
+                      (v.reference && v.reference.toLowerCase().includes(query)) ||
+                      (v.title && v.title.toLowerCase().includes(query)) ||
                       (v.text && v.text.toLowerCase().includes(query))
                     )
                   );
@@ -2776,140 +3369,240 @@ export default function App() {
 
             {mainTab === 'manual' && (
               <div style={{ padding: '2rem', maxWidth: '800px', margin: '0 auto', color: '#1e293b', lineHeight: '1.8' }}>
-                <h1 style={{ color: '#3b82f6', marginBottom: '1.5rem', textAlign: 'center' }}>🌧️ VerseRain 經文雨 操作手冊</h1>
-                <p style={{ textAlign: 'center', fontSize: '1.1rem', marginBottom: '3rem' }}>歡迎進入 <strong>VerseRain 經文雨</strong>！這是一個結合挑戰與學習的互動背經平台。<br/>在這裡您可以挑戰全球經文組、建立個人專屬的題庫，同時登上互惠經濟的全球排行榜！</p>
-                
-                <h2 style={{ borderBottom: '2px solid #e2e8f0', paddingBottom: '0.5rem', marginTop: '2rem' }}>🎯 一、如何開始遊玩？</h2>
-                <p>只需簡單三步，您就能進入背經的挑戰中！</p>
-                
-                <h3 style={{ marginTop: '1.5rem', color: '#0f172a' }}>1. 切換至「經文組」</h3>
-                <p>首先點擊左上角導航列的「經文組」頁籤。這會顯示系統與玩家建立的所有公開經文。</p>
-                <img src="/manual/step1.png" alt="切換經文組" style={{ width: '100%', borderRadius: '8px', boxShadow: '0 4px 6px rgba(0,0,0,0.1)', marginBottom: '1rem' }} />
+                {version === 'ko' ? (
+                  <>
+                    <h1 style={{ color: '#3b82f6', marginBottom: '1.5rem', textAlign: 'center' }}>🌧️ VerseRain 말씀비 사용 설명서</h1>
+                    <p style={{ textAlign: 'center', fontSize: '1.1rem', marginBottom: '3rem' }}><strong>VerseRain 말씀비</strong>에 오신 것을 환영합니다! 도전과 학습을 결합한 인터랙티브 성경 암송 플랫폼입니다.<br />여기서는 글로벌 구절 세트에 도전하고, 나만의 개인 문제집을 만들고, 상호 경제 글로벌 리더보드에 이름을 올릴 수 있습니다!</p>
 
-                <h3 style={{ marginTop: '1.5rem', color: '#0f172a' }}>2. 選擇想要挑戰的經文組</h3>
-                <p>點選列表中的主題（例如：約翰福音 核心經文），展開內含的經文關卡。</p>
-                <img src="/manual/step2.png" alt="選擇經文組" style={{ width: '100%', borderRadius: '8px', boxShadow: '0 4px 6px rgba(0,0,0,0.1)', marginBottom: '1rem' }} />
+                    <h2 style={{ borderBottom: '2px solid #e2e8f0', paddingBottom: '0.5rem', marginTop: '2rem' }}>🎯 1. 어떻게 플레이하나요?</h2>
+                    <p>단 세 가지 간단한 단계로 성경 암송 도전을 시작할 수 있습니다!</p>
 
-                <h3 style={{ marginTop: '1.5rem', color: '#0f172a' }}>3. 開始遊戲</h3>
-                <p>點選該經文組底下的任何一節關卡旁邊的「排行榜/遊玩圖示」，三秒鐘後，滿天掉落的經文雨就會傾盆而下！</p>
-                <img src="/manual/step3.png" alt="開始遊戲" style={{ width: '100%', borderRadius: '8px', boxShadow: '0 4px 6px rgba(0,0,0,0.1)', marginBottom: '2rem' }} />
+                    <h3 style={{ marginTop: '1.5rem', color: '#0f172a' }}>1. 「구절 세트」로 전환하기</h3>
+                    <p>먼저 왼쪽 상단 탐색 바의 「구절 세트」 탭을 클릭합니다. 시스템과 플레이어가 만든 모든 공개 구절 세트가 표시됩니다.</p>
+                    <img src="/manual/step1.png" alt="구절 세트 전환" style={{ width: '100%', borderRadius: '8px', boxShadow: '0 4px 6px rgba(0,0,0,0.1)', marginBottom: '1rem' }} />
 
-                <h3 style={{ marginTop: '1.5rem', color: '#0f172a' }}>🎬 實際遊玩流程示範（動畫）：</h3>
-                <p>這是一段實際進入遊戲的流程示範！</p>
-                <img src="/manual/play.webp" alt="遊戲流程動畫" style={{ width: '100%', borderRadius: '8px', boxShadow: '0 4px 6px rgba(0,0,0,0.1)', marginBottom: '3rem' }} />
+                    <h3 style={{ marginTop: '1.5rem', color: '#0f172a' }}>2. 도전할 구절 세트 선택하기</h3>
+                    <p>목록에서 주제(예: 요한복음 핵심 구절)를 클릭하여 포함된 구절 레벨을 펼칩니다.</p>
+                    <img src="/manual/step2.png" alt="구절 세트 선택" style={{ width: '100%', borderRadius: '8px', boxShadow: '0 4px 6px rgba(0,0,0,0.1)', marginBottom: '1rem' }} />
 
-                <h2 style={{ borderBottom: '2px solid #e2e8f0', paddingBottom: '0.5rem', marginTop: '2rem' }}>👑 二、如何自建專屬「經文組」？（Premium 會員獨享）</h2>
-                <p>如果您是「互惠經濟」社群的尊榮會員，就可以盡情打造自己的主日學或小組背經專屬題庫！</p>
-                <ol style={{ paddingLeft: '1.5rem', marginBottom: '2rem' }}>
-                  <li>點擊上方導航列的 <strong>「👑 我的題庫」</strong>。</li>
-                  <li>在輸入框打下你想要的 <strong>新經文組名稱</strong>。</li>
-                  <li>利用強大的 <strong>魔法一鍵抓取功能</strong>：在區塊中輸入經文章節出處（如：<code>約 3:16</code>），點擊旁邊的魔法星號按鈕。</li>
-                  <li>系統將為您自動帶入完整的經文內容！</li>
-                  <li>在左上角確認一切無誤後，點擊 <strong>「發佈 (Publish)」</strong>。</li>
-                  <li>恭喜！這份經文組就會瞬間上傳到全球資料庫，供大眾在「經文組」挑戰了！</li>
-                </ol>
-                <div style={{ backgroundColor: '#f0fdf4', borderLeft: '4px solid #22c55e', padding: '1rem', borderRadius: '4px', marginBottom: '3rem' }}>
-                  <strong>💡 提示：</strong> 魔法一鍵抓取功能串接了精準的華語聖經資料庫，能夠大幅省去手動打字、校稿的時間。您可以直接嘗試輸入「創世紀 1:1」，感受一秒匯入的流暢度！
-                </div>
+                    <h3 style={{ marginTop: '1.5rem', color: '#0f172a' }}>3. 게임 시작하기</h3>
+                    <p>구절 세트 내 구절 옆의 「리더보드/플레이 아이콘」을 클릭하면 3초 후에 말씀비가 쏟아집니다!</p>
+                    <img src="/manual/step3.png" alt="게임 시작" style={{ width: '100%', borderRadius: '8px', boxShadow: '0 4px 6px rgba(0,0,0,0.1)', marginBottom: '2rem' }} />
 
-                <h2 style={{ borderBottom: '2px solid #e2e8f0', paddingBottom: '0.5rem', marginTop: '2rem' }}>🏆 三、個人積分全球排行榜</h2>
-                <p>點選 <strong>「排行榜」</strong>，您將會看到三大首頁看板：</p>
-                <ul style={{ paddingLeft: '1.5rem', marginBottom: '2rem' }}>
-                  <li><strong>個人過關積點排行：</strong> 只要完成挑戰就能累積積分，破自己的紀錄也算分！</li>
-                  <li><strong>最受歡迎的經文組排名：</strong> 被玩越多次的經文組，將會在此看板上獲得頂級榮耀。</li>
-                </ul>
-                <p style={{ textAlign: 'center', fontSize: '1.1rem', fontWeight: 'bold', color: '#3b82f6' }}>想獲得好名次？那就持之以恆地回來挑戰，或是創建讓大家愛不釋手的經文組合吧！</p>
+                    <h3 style={{ marginTop: '1.5rem', color: '#0f172a' }}>🎬 실제 게임플레이 시연 (애니메이션):</h3>
+                    <p>실제 게임플레이 데모입니다!</p>
+                    <img src="/manual/play.webp" alt="게임플레이 애니메이션" style={{ width: '100%', borderRadius: '8px', boxShadow: '0 4px 6px rgba(0,0,0,0.1)', marginBottom: '3rem' }} />
+
+                    <h2 style={{ borderBottom: '2px solid #e2e8f0', paddingBottom: '0.5rem', marginTop: '2rem' }}>👑 2. 나만의 「구절 세트」를 만드는 방법은? (프리미엄 전용)</h2>
+                    <p>「상호 경제」 커뮤니티의 프리미엄 회원이라면, 주일학교나 소그룹을 위한 나만의 성경 문제집을 자유롭게 만들 수 있습니다!</p>
+                    <ol style={{ paddingLeft: '1.5rem', marginBottom: '2rem' }}>
+                      <li>상단 탐색 바에서 <strong>「👑 내 문제집」</strong>을 클릭합니다.</li>
+                      <li>입력란에 원하는 <strong>새 구절 세트 제목</strong>을 입력합니다.</li>
+                      <li>강력한 <strong>마법 원클릭 가져오기 기능</strong>을 사용합니다: 섹션에 구절 출처(예: <code>요한복음 3:16</code>)를 입력하고 옆의 마법 별 버튼을 클릭합니다.</li>
+                      <li>시스템이 완전한 구절 내용을 자동으로 가져옵니다!</li>
+                      <li>모든 것이 맞는지 확인한 후 왼쪽 상단의 <strong>「게시 (Publish)」</strong>를 클릭합니다.</li>
+                      <li>축하합니다! 이 구절 세트는 즉시 글로벌 데이터베이스에 업로드되어 「구절 세트」에서 공개 도전이 가능해집니다!</li>
+                    </ol>
+                    <div style={{ backgroundColor: '#f0fdf4', borderLeft: '4px solid #22c55e', padding: '1rem', borderRadius: '4px', marginBottom: '3rem' }}>
+                      <strong>💡 팁:</strong> 마법 원클릭 가져오기는 정확한 성경 데이터베이스에 연결되어 있어 수동 입력과 교정 시간을 크게 절약합니다. 「창세기 1:1」을 입력하여 1초 수입의 부드러움을 경험해보세요!
+                    </div>
+
+                    <h2 style={{ borderBottom: '2px solid #e2e8f0', paddingBottom: '0.5rem', marginTop: '2rem' }}>🏆 3. 개인 점수 글로벌 리더보드</h2>
+                    <p><strong>「리더보드」</strong>를 클릭하면 메인 순위가 표시됩니다:</p>
+                    <ul style={{ paddingLeft: '1.5rem', marginBottom: '2rem' }}>
+                      <li><strong>개인 클리어 포인트 랭킹:</strong> 도전을 완료하면 포인트가 쌓이며, 자신의 기록을 경신해도 카운트됩니다!</li>
+                      <li><strong>가장 인기 있는 구절 세트 랭킹:</strong> 더 많이 플레이된 구절 세트일수록 이 보드에서 최고의 영예를 얻습니다.</li>
+                    </ul>
+                    <p style={{ textAlign: 'center', fontSize: '1.1rem', fontWeight: 'bold', color: '#3b82f6' }}>좋은 순위를 원하시나요? 꾸준히 도전하거나 모두가 즐길 수 있는 구절 세트를 만들어보세요!</p>
+                  </>
+                ) : version === 'ja' ? (
+                  <>
+                    <h1 style={{ color: '#3b82f6', marginBottom: '1.5rem', textAlign: 'center' }}>🌧️ VerseRain 経文の雨 ユーザーマニュアル</h1>
+                    <p style={{ textAlign: 'center', fontSize: '1.1rem', marginBottom: '3rem' }}><strong>VerseRain 経文の雨</strong>へようこそ！これは挑戦と学習を組み合わせたインタラクティブな暗唱プラットフォームです。<br />ここでは、グローバルな経文セットに挑戦し、独自の個人的な問題集を作成し、互恵経済のグローバルリーダーボードに自分の名前を載せることができます！</p>
+
+                    <h2 style={{ borderBottom: '2px solid #e2e8f0', paddingBottom: '0.5rem', marginTop: '2rem' }}>🎯 1. 遊び方は？</h2>
+                    <p>たった3つの簡単なステップで、経文暗唱の挑戦を始められます！</p>
+
+                    <h3 style={{ marginTop: '1.5rem', color: '#0f172a' }}>1. 「経文セット」に切り替える</h3>
+                    <p>まず、左上隅のナビゲーションバーにある「経文セット」タブをクリックします。ここには、システムとプレイヤーによって作成されたすべての公開経文が表示されます。</p>
+                    <img src="/manual/step1.png" alt="経文セットの切り替え" style={{ width: '100%', borderRadius: '8px', boxShadow: '0 4px 6px rgba(0,0,0,0.1)', marginBottom: '1rem' }} />
+
+                    <h3 style={{ marginTop: '1.5rem', color: '#0f172a' }}>2. 挑戦したい経文セットを選ぶ</h3>
+                    <p>リストからトピック（例：ヨハネの福音書 核心経文）をクリックして、それに含まれる経文レベルを展開します。</p>
+                    <img src="/manual/step2.png" alt="経文セットの選択" style={{ width: '100%', borderRadius: '8px', boxShadow: '0 4px 6px rgba(0,0,0,0.1)', marginBottom: '1rem' }} />
+
+                    <h3 style={{ marginTop: '1.5rem', color: '#0f172a' }}>3. ゲームを開始する</h3>
+                    <p>経文セット内の任意の経文の横にある「リーダーボード/プレイアイコン」をクリックすると、3秒後に経文の雨が降り注ぎます！</p>
+                    <img src="/manual/step3.png" alt="ゲーム開始" style={{ width: '100%', borderRadius: '8px', boxShadow: '0 4px 6px rgba(0,0,0,0.1)', marginBottom: '2rem' }} />
+
+                    <h3 style={{ marginTop: '1.5rem', color: '#0f172a' }}>🎬 実際のゲームプレイドラフト（アニメーション）：</h3>
+                    <p>これは実際のゲームプレイのデモンストレーションです！</p>
+                    <img src="/manual/play.webp" alt="ゲームプレイアニメーション" style={{ width: '100%', borderRadius: '8px', boxShadow: '0 4px 6px rgba(0,0,0,0.1)', marginBottom: '3rem' }} />
+
+                    <h2 style={{ borderBottom: '2px solid #e2e8f0', paddingBottom: '0.5rem', marginTop: '2rem' }}>👑 2. 専用の「経文セット」を自作するには？（プレミアム会員専用）</h2>
+                    <p>「互恵経済」コミュニティのプレミアム会員であれば、日曜学校や小グループ向けの独自の経文問題集を自由に作成できます！</p>
+                    <ol style={{ paddingLeft: '1.5rem', marginBottom: '2rem' }}>
+                      <li>上部のナビゲーションバーにある <strong>「👑 マイ問題集」</strong> をクリックします。</li>
+                      <li>入力ボックスに作成したい <strong>新しい経文セットのタイトル</strong> を入力します。</li>
+                      <li>強力な <strong>魔法のワンクリック取得機能</strong> を使用します: セクションに経文の出典（例: <code>ヨハネ 3:16</code>）を入力し、横にある星の魔法ボタンをクリックします。</li>
+                      <li>システムが完全な経文コンテンツを自動的にインポートします！</li>
+                      <li>すべてが正しいことを確認した後、左上隅の <strong>「公開する (Publish)」</strong> をクリックします。</li>
+                      <li>おめでとうございます！この経文セットは瞬時にグローバルデータベースにアップロードされ、「経文セット」で挑戦できるようになります！</li>
+                    </ol>
+                    <div style={{ backgroundColor: '#f0fdf4', borderLeft: '4px solid #22c55e', padding: '1rem', borderRadius: '4px', marginBottom: '3rem' }}>
+                      <strong>💡 ヒント：</strong> 魔法のワンクリック取得機能は、正確な中国語聖書データベースに接続されているため、手動での入力と校正の時間を大幅に節約できます。「創世記 1:1」と入力して、その1秒でのインポートの滑らかさを体験してみてください！
+                    </div>
+
+                    <h2 style={{ borderBottom: '2px solid #e2e8f0', paddingBottom: '0.5rem', marginTop: '2rem' }}>🏆 3. 個人のスコアグローバルリーダーボード</h2>
+                    <p><strong>「リーダーボード」</strong> をクリックすると、メインボードが表示されます：</p>
+                    <ul style={{ paddingLeft: '1.5rem', marginBottom: '2rem' }}>
+                      <li><strong>個人のクリアポイントランキング：</strong> チャレンジをクリアする限りポイントが貯まり、自己ベストを更新してもカウントされます！</li>
+                      <li><strong>最も人気のある経文セットのランキング：</strong> 多くプレイされた経文セットほど、このボードで最高の栄誉を獲得します。</li>
+                    </ul>
+                    <p style={{ textAlign: 'center', fontSize: '1.1rem', fontWeight: 'bold', color: '#3b82f6' }}>高順位を獲得したいですか？それなら根気よく挑戦し続けるか、誰もが楽しめる経文セットを作成しましょう！</p>
+                  </>
+                ) : version === 'kjv' ? (
+                  <>
+                    <h1 style={{ color: '#3b82f6', marginBottom: '1.5rem', textAlign: 'center' }}>🌧️ VerseRain User Manual</h1>
+                    <p style={{ textAlign: 'center', fontSize: '1.1rem', marginBottom: '3rem' }}>Welcome to <strong>VerseRain</strong>! An interactive scripture memorization platform combining challenge and learning.<br />Here you can challenge global verse sets, create your own personal library, and climb the Global Leaderboard of the Mutualized Economics!</p>
+
+                    <h2 style={{ borderBottom: '2px solid #e2e8f0', paddingBottom: '0.5rem', marginTop: '2rem' }}>🎯 1. How to Play?</h2>
+                    <p>Just three simple steps to start your scripture memorization challenge!</p>
+
+                    <h3 style={{ marginTop: '1.5rem', color: '#0f172a' }}>1. Switch to "Verse Sets"</h3>
+                    <p>First, click the "Verse Sets" tab in the top left navigation bar. This will display all public verse sets created by the system and players.</p>
+                    <img src="/manual/step1.png" alt="Switch Verse Sets" style={{ width: '100%', borderRadius: '8px', boxShadow: '0 4px 6px rgba(0,0,0,0.1)', marginBottom: '1rem' }} />
+
+                    <h3 style={{ marginTop: '1.5rem', color: '#0f172a' }}>2. Select a Verse Set</h3>
+                    <p>Click on a topic in the list (e.g., Gospel of John Core Verses) to expand the verse levels within it.</p>
+                    <img src="/manual/step2.png" alt="Select Verse Set" style={{ width: '100%', borderRadius: '8px', boxShadow: '0 4px 6px rgba(0,0,0,0.1)', marginBottom: '1rem' }} />
+
+                    <h3 style={{ marginTop: '1.5rem', color: '#0f172a' }}>3. Start Game</h3>
+                    <p>Click the "Leaderboard/Play icon" next to any verse level under the verse set. The verse rain will start falling in 3 seconds!</p>
+                    <img src="/manual/step3.png" alt="Start Game" style={{ width: '100%', borderRadius: '8px', boxShadow: '0 4px 6px rgba(0,0,0,0.1)', marginBottom: '2rem' }} />
+
+                    <h3 style={{ marginTop: '1.5rem', color: '#0f172a' }}>🎬 Gameplay Demonstration (Animation):</h3>
+                    <p>Here is an actual demonstration of the gameplay!</p>
+                    <img src="/manual/play.webp" alt="Gameplay Animation" style={{ width: '100%', borderRadius: '8px', boxShadow: '0 4px 6px rgba(0,0,0,0.1)', marginBottom: '3rem' }} />
+
+                    <h2 style={{ borderBottom: '2px solid #e2e8f0', paddingBottom: '0.5rem', marginTop: '2rem' }}>👑 2. How to create custom "Verse Sets"? (Premium Only)</h2>
+                    <p>If you are a Premium Member of the "Mutualized Economics" community, you can freely create your own customized scripture libraries for Sunday school or cell groups!</p>
+                    <ol style={{ paddingLeft: '1.5rem', marginBottom: '2rem' }}>
+                      <li>Click <strong>"👑 Custom Sets"</strong> in the top navigation bar.</li>
+                      <li>Type your desired <strong>New Verse Set Title</strong> in the input box.</li>
+                      <li>Use the powerful <strong>Magic One-Click Fetch Feature</strong>: Enter the scripture reference in the section (e.g., <code>John 3:16</code>), and click the magic star button next to it.</li>
+                      <li>The system will automatically import the complete verse content for you!</li>
+                      <li>After verifying everything is correct, click <strong>"Publish"</strong>.</li>
+                      <li>Congratulations! This verse set will be instantly uploaded to the global database, available for public challenge in "Verse Sets"!</li>
+                    </ol>
+                    <div style={{ backgroundColor: '#f0fdf4', borderLeft: '4px solid #22c55e', padding: '1rem', borderRadius: '4px', marginBottom: '3rem' }}>
+                      <strong>💡 Tip:</strong> The Magic One-Click Fetch connects to an accurate Bible database, saving a significant amount of manual typing and proofreading time. Try entering "Genesis 1:1" to experience the smooth 1-second import!
+                    </div>
+
+                    <h2 style={{ borderBottom: '2px solid #e2e8f0', paddingBottom: '0.5rem', marginTop: '2rem' }}>🏆 3. Global Leaderboard</h2>
+                    <p>Click <strong>"Leaderboard"</strong> to view the main top rankings:</p>
+                    <ul style={{ paddingLeft: '1.5rem', marginBottom: '2rem' }}>
+                      <li><strong>Personal Clear Points Ranking:</strong> Accumulate points by completing challenges. Beating your own record also counts!</li>
+                      <li><strong>Most Popular Verse Sets Ranking:</strong> The more a verse set is played, the higher its glory on this board.</li>
+                    </ul>
+                    <p style={{ textAlign: 'center', fontSize: '1.1rem', fontWeight: 'bold', color: '#3b82f6' }}>Want a good rank? Keep challenging constantly, or create a verse set that everyone loves!</p>
+                  </>
+                ) : (
+                  <>
+                    <h1 style={{ color: '#3b82f6', marginBottom: '1.5rem', textAlign: 'center' }}>🌧️ VerseRain 經文雨 操作手冊</h1>
+                    <p style={{ textAlign: 'center', fontSize: '1.1rem', marginBottom: '3rem' }}>歡迎進入 <strong>VerseRain 經文雨</strong>！這是一個結合挑戰與學習的互動背經平台。<br />在這裡您可以挑戰全球經文組、建立個人專屬的題庫，同時登上互惠經濟的全球排行榜！</p>
+
+                    <h2 style={{ borderBottom: '2px solid #e2e8f0', paddingBottom: '0.5rem', marginTop: '2rem' }}>🎯 一、如何開始遊玩？</h2>
+                    <p>只需簡單三步，您就能進入背經的挑戰中！</p>
+
+                    <h3 style={{ marginTop: '1.5rem', color: '#0f172a' }}>1. 切換至「經文組」</h3>
+                    <p>首先點擊左上角導航列的「經文組」頁籤。這會顯示系統與玩家建立的所有公開經文。</p>
+                    <img src="/manual/step1.png" alt="切換經文組" style={{ width: '100%', borderRadius: '8px', boxShadow: '0 4px 6px rgba(0,0,0,0.1)', marginBottom: '1rem' }} />
+
+                    <h3 style={{ marginTop: '1.5rem', color: '#0f172a' }}>2. 選擇想要挑戰的經文組</h3>
+                    <p>點選列表中的主題（例如：約翰福音 核心經文），展開內含的經文關卡。</p>
+                    <img src="/manual/step2.png" alt="選擇經文組" style={{ width: '100%', borderRadius: '8px', boxShadow: '0 4px 6px rgba(0,0,0,0.1)', marginBottom: '1rem' }} />
+
+                    <h3 style={{ marginTop: '1.5rem', color: '#0f172a' }}>3. 開始遊戲</h3>
+                    <p>點選該經文組底下的任何一節關卡旁邊的「排行榜/遊玩圖示」，三秒鐘後，滿天掉落的經文雨就會傾盆而下！</p>
+                    <img src="/manual/step3.png" alt="開始遊戲" style={{ width: '100%', borderRadius: '8px', boxShadow: '0 4px 6px rgba(0,0,0,0.1)', marginBottom: '2rem' }} />
+
+                    <h3 style={{ marginTop: '1.5rem', color: '#0f172a' }}>🎬 實際遊玩流程示範（動畫）：</h3>
+                    <p>這是一段實際進入遊戲的流程示範！</p>
+                    <img src="/manual/play.webp" alt="遊戲流程動畫" style={{ width: '100%', borderRadius: '8px', boxShadow: '0 4px 6px rgba(0,0,0,0.1)', marginBottom: '3rem' }} />
+
+                    <h2 style={{ borderBottom: '2px solid #e2e8f0', paddingBottom: '0.5rem', marginTop: '2rem' }}>👑 二、如何自建專屬「經文組」？（Premium 會員獨享）</h2>
+                    <p>如果您是「互惠經濟」社群的尊榮會員，就可以盡情打造自己的主日學或小組背經專屬題庫！</p>
+                    <ol style={{ paddingLeft: '1.5rem', marginBottom: '2rem' }}>
+                      <li>點擊上方導航列的 <strong>「👑 我的題庫」</strong>。</li>
+                      <li>在輸入框打下你想要的 <strong>新經文組名稱</strong>。</li>
+                      <li>利用強大的 <strong>魔法一鍵抓取功能</strong>：在區塊中輸入經文章節出處（如：<code>約 3:16</code>），點擊旁邊的魔法星號按鈕。</li>
+                      <li>系統將為您自動帶入完整的經文內容！</li>
+                      <li>在左上角確認一切無誤後，點擊 <strong>「發佈 (Publish)」</strong>。</li>
+                      <li>恭喜！這份經文組就會瞬間上傳到全球資料庫，供大眾在「經文組」挑戰了！</li>
+                    </ol>
+                    <div style={{ backgroundColor: '#f0fdf4', borderLeft: '4px solid #22c55e', padding: '1rem', borderRadius: '4px', marginBottom: '3rem' }}>
+                      <strong>💡 提示：</strong> 魔法一鍵抓取功能串接了精準的華語聖經資料庫，能夠大幅省去手動打字、校稿的時間。您可以直接嘗試輸入「創世紀 1:1」，感受一秒匯入的流暢度！
+                    </div>
+
+                    <h2 style={{ borderBottom: '2px solid #e2e8f0', paddingBottom: '0.5rem', marginTop: '2rem' }}>🏆 三、個人積分全球排行榜</h2>
+                    <p>點選 <strong>「排行榜」</strong>，您將會看到三大首頁看板：</p>
+                    <ul style={{ paddingLeft: '1.5rem', marginBottom: '2rem' }}>
+                      <li><strong>個人過關積點排行：</strong> 只要完成挑戰就能累積積分，破自己的紀錄也算分！</li>
+                      <li><strong>最受歡迎的經文組排名：</strong> 被玩越多次的經文組，將會在此看板上獲得頂級榮耀。</li>
+                    </ul>
+                    <p style={{ textAlign: 'center', fontSize: '1.1rem', fontWeight: 'bold', color: '#3b82f6' }}>想獲得好名次？那就持之以恆地回來挑戰，或是創建讓大家愛不釋手的經文組合吧！</p>
+                  </>
+                )}
               </div>
             )}
 
             {mainTab === 'about' && (
               <div style={{ backgroundColor: '#ffffff', borderRadius: '8px', border: '1px solid #cbd5e1', padding: '2rem', boxShadow: '0 1px 3px rgba(0,0,0,0.05)', color: '#334155', lineHeight: '1.6' }}>
-                <h2 style={{ color: '#1e293b', marginTop: 0, marginBottom: '1.5rem', borderBottom: '2px solid #e2e8f0', paddingBottom: '0.5rem', fontFamily: 'cursive', color: '#3b82f6' }}>Verse Rain 讓背記經文變得生動有趣！</h2>
+                <h2 style={{ color: '#1e293b', marginTop: 0, marginBottom: '1.5rem', borderBottom: '2px solid #e2e8f0', paddingBottom: '0.5rem', fontFamily: 'cursive', color: '#3b82f6' }}>
+                  {version === 'ko' ? 'VerseRain 말씀비는 성경 암송을 생생하고 재미있게 만듭니다!' : t('Verse Rain 讓背記經文變得生動有趣！', 'VerseRain makes scripture memorization fun!')}
+                </h2>
 
                 <p style={{ marginBottom: '1rem' }}>
-                  一間華人教會使用 VerseRain 應用程式為會眾舉辦了「聖經背誦比賽」。家庭和小組中的所有年齡層都能參與。他們架設了四台投影機，讓四個隊伍能同時在相同的經文組上進行挑戰模式的比賽。
+                  {version === 'ko'
+                    ? '한 중국 교회에서 VerseRain 앱을 사용하여 성도들을 위한 「성경 암송 대회」를 개최했습니다. 가족과 소그룹의 모든 연령대가 참여했습니다. 그들은 4대의 프로젝터를 설치하여 4개 팀이 동시에 같은 구절 세트로 챌린지 모드에서 경쟁할 수 있었습니다.'
+                    : version === 'ja'
+                      ? 'ある中国の教会では、VerseRainアプリを使って会衆向けに「聖書暗唱コンテスト」を開催しました。家族や小グループのすべての年齢層が参加できました。彼らは4台のプロジェクターを設置し、4つのチームが同時に同じ経文セットのチャレンジモードで競い合えるようにしました。'
+                      : version === 'kjv'
+                        ? 'A Chinese church used the VerseRain app to host a "Bible Memorization Contest" for its congregation. All ages in families and small groups participated. They set up four projectors, allowing four teams to compete simultaneously in Challenge Mode using the same verse sets.'
+                        : '一間華人教會使用 VerseRain 應用程式為會眾舉辦了「聖經背誦比賽」。家庭和小組中的所有年齡層都能參與。他們架設了四台投影機，讓四個隊伍能同時在相同的經文組上進行挑戰模式的比賽。'}
                 </p>
-                <iframe width="560" height="315" src="//www.youtube.com/embed/2tFxeesKISk" frameborder="0" allowfullscreen=""></iframe>
+                <iframe width="560" height="315" src="//www.youtube.com/embed/2tFxeesKISk" frameBorder="0" allowFullScreen=""></iframe>
 
-                <p style={{ marginBottom: '1.5rem' }}>
-                  一位四歲的男孩和三歲的妹妹急切地想展示他們能用中文背誦「主禱文」來遊玩 VerseRain。他們都是在美國出生的，卻能夠用中文閱讀並遊玩這款遊戲。
+                <p style={{ marginBottom: '1.5rem', marginTop: '1.5rem' }}>
+                  {version === 'ko'
+                    ? '4살 남자아이와 3살 여동생이 VerseRain으로 중국어 「주기도문」을 암송할 수 있다는 것을 열성적으로 보여주었습니다. 그들은 미국에서 태어났지만 중국어를 읽고 이 게임을 플레이할 수 있습니다.'
+                    : version === 'ja'
+                      ? '4歳の男の子と3歳の妹が、VerseRainで中国語の「主の祈り」を暗唱できることを熱心に披露してくれました。彼らはアメリカで生まれましたが、中国語を読み、このゲームを遊ぶことができます。'
+                      : version === 'kjv'
+                        ? 'A four-year-old boy and his three-year-old sister eagerly showed off how they could recite the "Lord\'s Prayer" in Chinese by playing VerseRain. Born in the US, they are able to read Chinese and play this game.'
+                        : '一位四歲的男孩和三歲的妹妹急切地想展示他們能用中文背誦「主禱文」來遊玩 VerseRain。他們都是在美國出生的，卻能夠用中文閱讀並遊玩這款遊戲。'}
                 </p>
-                <iframe width="560" height="315" src="//www.youtube.com/embed/Tty82Gn1gvQ" frameborder="0" allowfullscreen=""></iframe>
+                <iframe width="560" height="315" src="//www.youtube.com/embed/Tty82Gn1gvQ" frameBorder="0" allowFullScreen=""></iframe>
 
-                <p style={{ marginBottom: '1.5rem' }}>
-                  聖經經文的單字會從天而降，玩家只要按照正確的順序點擊經文就能獲得分數。經文被點擊時，會用語音朗讀出來，從視覺和語音的聽覺兩方面來加強您的記憶。
+                <p style={{ marginBottom: '1.5rem', marginTop: '1.5rem' }}>
+                  {version === 'ko'
+                    ? '성경 구절의 단어들이 하늘에서 떨어집니다. 플레이어는 올바른 순서로 구절을 클릭하여 점수를 얻습니다. 클릭 시 구절이 소리 내어 읽혀 시각과 청각 모두로 기억을 강화합니다.'
+                    : version === 'ja'
+                      ? '聖書の経文の単語が空から降ってきます。プレイヤーは正しい順序で経文をクリックしてスコアを獲得します。経文がクリックされると音声で読み上げられ、視覚と聴覚の両方から記憶を強化します。'
+                      : version === 'kjv'
+                        ? 'Words of bible verses fall from the sky, and you score points by clicking the verse in the correct order. The verse is spoken out loud when clicked to reinforce your memory audibly and spelling visually.'
+                        : '聖經經文的單字會從天而降，玩家只要按照正確的順序點擊經文就能獲得分數。經文被點擊時，會用語音朗讀出來，從視覺和語音的聽覺兩方面來加強您的記憶。'}
                 </p>
 
                 <ul style={{ paddingLeft: '1.5rem', marginBottom: '1.5rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                  <li>學習多種語言的聖經經文！</li>
-                  <li>點擊單字時會有文字轉語音的朗讀功能，來加深您對經文背誦的印象。</li>
-                  <li>透過 verserain，能支援近乎無限多的經文、經文組以及多種聖經譯本可以使用。</li>
-                  <li>提供多種挑戰難度，無論是小孩還是成人都非常適合來挑戰自己的極限。</li>
-                  <li>挑戰模式有助於加強記憶同一個經文組中的多段相關經文。</li>
-                  <li>線上排行榜能激勵會眾、青年團契和小組成員一起參與遊玩、共同精進！</li>
+                  <li>{version === 'ko' ? '여러 언어로 성경 구절을 배우세요!' : (version === 'ja' ? '多言語で聖書の経文を学びましょう！' : (version === 'kjv' ? 'Learn bible verses in multiple languages!' : '學習多種語言的聖經經文！'))}</li>
+                  <li>{version === 'ko' ? '단어를 클릭하면 텍스트 음성 변환 기능으로 읽어줘 암송 기억을 깊게 합니다.' : (version === 'ja' ? '単語をクリックするとテキスト読み上げ機能で朗読され、暗唱の印象を深めます。' : (version === 'kjv' ? 'Text to Speech verbal reading as you click the words to impress your memory on verse recitation.' : '點擊單字時會有文字轉語音的朗讀功能，來加深您對經文背誦的印象。'))}</li>
+                  <li>{version === 'ko' ? 'VerseRain을 통해 무한에 가까운 구절, 구절 세트, 다양한 성경 번역본을 지원합니다.' : (version === 'ja' ? 'VerseRainを通じ、無限に近い経文、経文セット、様々な聖書翻訳をサポートします。' : (version === 'kjv' ? 'Through verserain, it supports virtually unlimited number of verses, verse sets, and multiple bible versions.' : '透過 verserain，能支援近乎無限多的經文、經文組以及多種聖經譯本可以使用。'))}</li>
+                  <li>{version === 'ko' ? '어린이부터 어른까지 자신의 한계에 도전하기에 적합한 다양한 난이도를 제공합니다.' : (version === 'ja' ? '複数の難易度が用意されており、子供から大人まで自分の限界に挑戦するのに最適です。' : (version === 'kjv' ? 'Multiple difficulty levels offered to be played by kids to adults.' : '提供多種挑戰難度，無論是小孩還是成人都非常適合來挑戰自己的極限。'))}</li>
+                  <li>{version === 'ko' ? '챌린지 모드는 같은 구절 세트 내 여러 관련 구절의 기억을 강화하는 데 도움이 됩니다.' : (version === 'ja' ? 'チャレンジモードは、同じ経文セット内の関連する複数の経文の記憶を強化するのに役立ちます。' : (version === 'kjv' ? 'Challenge mode helps to strengthen the memory of multiple related verses in the same verse set.' : '挑戰模式有助於加強記憶同一個經文組中的多段相關經文。'))}</li>
+                  <li>{version === 'ko' ? '온라인 리더보드는 성도, 청년부, 소그룹 구성원이 함께 참여하고 성장하도록 동기를 부여합니다!' : (version === 'ja' ? 'オンラインリーダーボードは、会衆、青年フェローシップ、小グループのメンバーが一緒に参加して改善するよう動機付けます！' : (version === 'kjv' ? 'Online Leaderboard to motivate congregation, youth fellowships and small group members to participate and improve together!' : '線上排行榜能激勵會眾、青年團契和小組成員一起參與遊玩、共同精進！'))}</li>
                 </ul>
-
-                <hr style={{ border: 'none', borderTop: '2px dashed #e2e8f0', margin: '2rem 0' }} />
-
-                <h2 style={{ color: '#1e293b', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  📖 VerseRain 使用手冊 / User Manual
-                </h2>
-
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2rem' }}>
-                  {/* Chinese Version */}
-                  <div>
-                    <h3 style={{ borderLeft: '4px solid #3b82f6', paddingLeft: '0.8rem', color: '#1e293b' }}>中文版使用說明</h3>
-                    <div style={{ marginTop: '1rem', display: 'flex', flexDirection: 'column', gap: '1.2rem' }}>
-                      <section>
-                        <h4 style={{ color: '#3b82f6', marginBottom: '0.3rem' }}>1. 教會小組比賽</h4>
-                        <p>這是一款非常適合團契、小組或是主日學舉辦比賽的工具。您可以將畫面投影到大螢幕上，讓不同隊伍同時針對某一組核心經文進行挑戰模式（Rain 模式）。透過實時排行榜，大家可以互相激勵，讓背聖經變得像電競一樣熱血！</p>
-                      </section>
-                      <section>
-                        <h4 style={{ color: '#3b82f6', marginBottom: '0.3rem' }}>2. 兒童與青少年的讀經利器</h4>
-                        <p>對於正在學習認字或背誦的孩子，VerseRain 的「語音朗讀」功能非常關鍵。點擊掉落的字塊時，系統會同步發音，結合「視覺」與「聽覺」的雙重刺激，讓孩子在遊戲中不知不覺就背下了整段經文。</p>
-                      </section>
-                      <section>
-                        <h4 style={{ color: '#3b82f6', marginBottom: '0.3rem' }}>3. 個人靈修與默想</h4>
-                        <p>在個人靜修時，您可以使用 Square（棋盤）模式。這種模式沒有時間壓力，您可以專注於經文的每一個詞彙、每一個逗點，透過點擊與重組的過程，反覆默想神的話語如何在您心中扎根。</p>
-                      </section>
-                      <section>
-                        <h4 style={{ color: '#3b82f6', marginBottom: '0.3rem' }}>4. 雙語學習與對照</h4>
-                        <p>透過右上角的語系切換，您可以隨時在中文（和合本）與英文（KJV）之間切換。對於想學習英文經文或是想對照原文語感的玩家來說，這是一個極佳的語言學習工具。</p>
-                      </section>
-                      <section>
-                        <h4 style={{ color: '#3b82f6', marginBottom: '0.3rem' }}>5. 線上互派挑戰</h4>
-                        <p>點擊列表右側的「分享」圖示，即可複製專屬的挑戰連結。您可以將連結貼到 LINE 或 WhatsApp 群組，邀請朋友針對某一節經文一較高下，看看誰能達成「完美無瑕 (Flawless)」的最高境界！</p>
-                      </section>
-                    </div>
-                  </div>
-
-                  {/* English Version */}
-                  <div>
-                    <h3 style={{ borderLeft: '4px solid #10b981', paddingLeft: '0.8rem', color: '#1e293b' }}>English User Manual</h3>
-                    <div style={{ marginTop: '1rem', display: 'flex', flexDirection: 'column', gap: '1.2rem' }}>
-                      <section>
-                        <h4 style={{ color: '#10b981', marginBottom: '0.3rem' }}>1. Church & Small Group Competition</h4>
-                        <p>VerseRain is the perfect tool for fellowships or Sunday schools to host scripture memorization contests. Project the game on a big screen and let teams compete in "Rain" mode. The real-time leaderboard adds a competitive edge that makes learning scripture exciting!</p>
-                      </section>
-                      <section>
-                        <h4 style={{ color: '#10b981', marginBottom: '0.3rem' }}>2. Interactive Learning for Kids</h4>
-                        <p>For children who are learning to read or memorize, the Text-to-Speech (TTS) feature is vital. As words fall and are clicked, the system reads them aloud. This combines visual and auditory learning, helping kids memorize verses effortlessly through playtime.</p>
-                      </section>
-                      <section>
-                        <h4 style={{ color: '#10b981', marginBottom: '0.3rem' }}>3. Personal Devotion & Meditation</h4>
-                        <p>During your personal quiet time, use the "Square" mode. With no timer or pressure, you can focus on every word and punctuation. The physical act of selecting and reassembling the verse helps you ruminate on God's Word more deeply.</p>
-                      </section>
-                      <section>
-                        <h4 style={{ color: '#10b981', marginBottom: '0.3rem' }}>4. Bilingual Bible Study</h4>
-                        <p>Toggle between Chinese (CUV) and English (KJV) using the language switcher in the top-right corner. It’s an excellent way for learners to master English scripture or for students of the Bible to compare different translations side-by-side.</p>
-                      </section>
-                      <section>
-                        <h4 style={{ color: '#10b981', marginBottom: '0.3rem' }}>5. Social Challenge Sharing</h4>
-                        <p>Click the "Share" icon on the verse table to copy a unique challenge link. Share it with friends on social media or messaging groups to invite them to beat your high score. Aim for the "Flawless" title together!</p>
-                      </section>
-                    </div>
-                  </div>
-                </div>
 
               </div>
             )}
@@ -2980,18 +3673,18 @@ export default function App() {
             {/* Multiplayer HUD */}
             {!isAutoPlay && multiplayerRoomId && multiplayerState && multiplayerState.players && (
               <>
-                 <div className="hud-glass" style={{ padding: '0.3rem 0.8rem', display: 'flex', alignItems: 'center', gap: '1rem', minHeight: '36px', border: '1px solid rgba(59, 130, 246, 0.5)' }}>
-                    <div style={{ color: '#93c5fd', fontSize: '0.8rem', fontWeight: 'bold', marginRight: '-0.3rem' }}>{t("我", "Me")}</div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.1rem', color: '#f87171' }}>
-                      {[...Array(3)].map((_, i) => (
-                        <Heart key={i} size={14} fill={i < health ? '#f87171' : 'transparent'} strokeWidth={i < health ? 0 : 2} />
-                      ))}
-                    </div>
-                    <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: '#fff', fontFamily: 'monospace' }}>
-                      {String(score).padStart(6, '0')}
-                    </div>
-                 </div>
-                 
+                <div className="hud-glass" style={{ padding: '0.3rem 0.8rem', display: 'flex', alignItems: 'center', gap: '1rem', minHeight: '36px', border: '1px solid rgba(59, 130, 246, 0.5)' }}>
+                  <div style={{ color: '#93c5fd', fontSize: '0.8rem', fontWeight: 'bold', marginRight: '-0.3rem' }}>{t("我", "Me")}</div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.1rem', color: '#f87171' }}>
+                    {[...Array(3)].map((_, i) => (
+                      <Heart key={i} size={14} fill={i < health ? '#f87171' : 'transparent'} strokeWidth={i < health ? 0 : 2} />
+                    ))}
+                  </div>
+                  <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: '#fff', fontFamily: 'monospace' }}>
+                    {String(score).padStart(6, '0')}
+                  </div>
+                </div>
+
               </>
             )}
           </div>
@@ -3003,18 +3696,18 @@ export default function App() {
 
             return (
               <div style={{ position: 'absolute', left: 0, right: 0, bottom: 0, zIndex: 10, pointerEvents: 'auto', display: 'flex', flexDirection: 'column' }}>
-                 <div className="hud-glass" style={{ padding: '0.5rem 5vw', background: 'rgba(15, 23, 42, 0.85)', borderRadius: '16px 16px 0 0', borderTop: '1px solid rgba(255,255,255,0.1)', borderLeft: '1px solid rgba(255,255,255,0.1)', borderRight: '1px solid rgba(255,255,255,0.1)', borderBottom: 'none' }}>
-                    <div style={{ fontSize: 'clamp(1rem, 4vw, 1.4rem)', lineHeight: '1.8', color: '#cbd5e1', wordBreak: 'break-word', alignContent: 'flex-start' }}>
-                      {currentPhrasesWindow.map((phrase, localIdx) => (
-                        <span key={startIdx + localIdx} style={{ color: '#fbbf24', fontWeight: 'bold' }}>{phrase} </span>
-                      ))}
-                      {currentSeqIndex < activePhrases.length && (
-                        <span id="stack-cursor" style={{ display: 'inline-block', color: '#94a3b8', fontWeight: 'bold', padding: '0 0.4rem', border: '2px dashed rgba(251, 191, 36, 0.4)', borderRadius: '6px', margin: '0 0.2rem', background: 'rgba(251, 191, 36, 0.05)', transition: 'all 0.3s' }}>
-                          Next: {activePhrases[currentSeqIndex].replace(/[^\s\.,\?!;:，。？！；：]/g, '〇')}
-                        </span>
-                      )}
-                    </div>
-                 </div>
+                <div className="hud-glass" style={{ padding: '0.5rem 5vw', background: 'rgba(15, 23, 42, 0.85)', borderRadius: '16px 16px 0 0', borderTop: '1px solid rgba(255,255,255,0.1)', borderLeft: '1px solid rgba(255,255,255,0.1)', borderRight: '1px solid rgba(255,255,255,0.1)', borderBottom: 'none' }}>
+                  <div style={{ fontSize: 'clamp(1rem, 4vw, 1.4rem)', lineHeight: '1.8', color: '#cbd5e1', wordBreak: 'break-word', alignContent: 'flex-start' }}>
+                    {currentPhrasesWindow.map((phrase, localIdx) => (
+                      <span key={startIdx + localIdx} style={{ color: '#fbbf24', fontWeight: 'bold' }}>{phrase} </span>
+                    ))}
+                    {currentSeqIndex < activePhrases.length && (
+                      <span id="stack-cursor" style={{ display: 'inline-block', color: '#94a3b8', fontWeight: 'bold', padding: '0 0.4rem', border: '2px dashed rgba(251, 191, 36, 0.4)', borderRadius: '6px', margin: '0 0.2rem', background: 'rgba(251, 191, 36, 0.05)', transition: 'all 0.3s' }}>
+                        Next: {activePhrases[currentSeqIndex].replace(/[^\s\.,\?!;:，。？！；：]/g, '〇')}
+                      </span>
+                    )}
+                  </div>
+                </div>
               </div>
             );
           })()}
@@ -3048,12 +3741,12 @@ export default function App() {
                   let appliedClasses = 'falling-block-inner';
                   if (block.error) appliedClasses += ' error-shake';
                   if (block.correct && (!block.claimedBy || block.claimedBy === myClientId)) appliedClasses += ' success-flash';
-                  
+
                   let blockStyle = { cursor: 'pointer', padding: 'clamp(0.5rem, 2vw, 1.5rem)', fontSize: 'clamp(0.9rem, 2.5vw, 1.5rem)', display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100px', wordBreak: 'break-word', hyphens: 'auto', textAlign: 'center', visibility: block.hidden ? 'hidden' : 'visible' };
-                  
+
                   if (block.claimedBy) {
-                     // Block instantly disappears physically so the flying clone can animate
-                     blockStyle.visibility = 'hidden';
+                    // Block instantly disappears physically so the flying clone can animate
+                    blockStyle.visibility = 'hidden';
                   }
 
                   return (
@@ -3099,45 +3792,45 @@ export default function App() {
 
           {/* Flying Blocks Animation Layer */}
           {gameState === 'playing' && multiplayerRoomId && flyingBlocks.map(fb => (
-             <div 
-                key={fb.id} 
-                className="falling-block-inner flying-block-anim" 
-                style={{ 
-                   '--startX': fb.startX, 
-                   '--startY': fb.startY, 
-                   '--endX': fb.endX, 
-                   '--endY': fb.endY, 
-                   width: fb.width, 
-                   height: fb.height,
-                   display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 'clamp(0.9rem, 2.5vw, 1.5rem)',
-                   backgroundColor: fb.color,
-                   borderColor: fb.color,
-                   boxShadow: `0 0 20px ${fb.color}`,
-                   color: '#fff',
-                   wordBreak: 'break-word', hyphens: 'auto', textAlign: 'center'
-                }}
-             >
-                {fb.text}
-             </div>
+            <div
+              key={fb.id}
+              className="falling-block-inner flying-block-anim"
+              style={{
+                '--startX': fb.startX,
+                '--startY': fb.startY,
+                '--endX': fb.endX,
+                '--endY': fb.endY,
+                width: fb.width,
+                height: fb.height,
+                display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 'clamp(0.9rem, 2.5vw, 1.5rem)',
+                backgroundColor: fb.color,
+                borderColor: fb.color,
+                boxShadow: `0 0 20px ${fb.color}`,
+                color: '#fff',
+                wordBreak: 'break-word', hyphens: 'auto', textAlign: 'center'
+              }}
+            >
+              {fb.text}
+            </div>
           ))}
 
           {multiplayerRoomId && health <= 0 && multiplayerState?.playMode !== 'square_solo' && (
-             <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.85)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', animation: 'flashSuccess 0.5s ease-out' }}>
-                <div style={{ color: '#ef4444', marginBottom: '1rem' }}><XCircle size={64} /></div>
-                <h2 style={{ color: '#fca5a5', fontSize: '2.5rem', fontWeight: 'bold', marginBottom: '1rem', textShadow: '0 2px 10px rgba(239,68,68,0.5)' }}>{t("您已出局！", "You're Out!")}</h2>
-                <div style={{ fontSize: '1.2rem', color: '#cbd5e1', background: 'rgba(255,255,255,0.05)', padding: '1.5rem', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)', textAlign: 'center', maxWidth: '80%' }}>
-                   {t("防線已經崩潰。請等待隊友完成...", "Defenses breached. Please wait for your teammates...")}
-                   {multiplayerState?.campaignQueue && multiplayerState.campaignQueue.length > 1 ? (
-                       <div style={{ marginTop: '1rem', color: '#10b981', fontWeight: 'bold' }}>
-                          {t("下一局加油，還有", "Cheer up for next round! You have")} {multiplayerState.campaignQueue.length - 1} {t("次的機會", "more rounds.")}
-                       </div>
-                   ) : multiplayerState?.campaignQueue && multiplayerState.campaignQueue.length === 1 ? (
-                       <div style={{ marginTop: '1rem', color: '#fbbf24', fontWeight: 'bold' }}>
-                          {t("這是最後一關了！為隊友祈禱吧！", "This is the final round! Pray for your teammates!")}
-                       </div>
-                   ) : null}
-                </div>
-             </div>
+            <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.85)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', animation: 'flashSuccess 0.5s ease-out' }}>
+              <div style={{ color: '#ef4444', marginBottom: '1rem' }}><XCircle size={64} /></div>
+              <h2 style={{ color: '#fca5a5', fontSize: '2.5rem', fontWeight: 'bold', marginBottom: '1rem', textShadow: '0 2px 10px rgba(239,68,68,0.5)' }}>{t("您已出局！", "You're Out!")}</h2>
+              <div style={{ fontSize: '1.2rem', color: '#cbd5e1', background: 'rgba(255,255,255,0.05)', padding: '1.5rem', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)', textAlign: 'center', maxWidth: '80%' }}>
+                {t("防線已經崩潰。請等待隊友完成...", "Defenses breached. Please wait for your teammates...")}
+                {multiplayerState?.campaignQueue && multiplayerState.campaignQueue.length > 1 ? (
+                  <div style={{ marginTop: '1rem', color: '#10b981', fontWeight: 'bold' }}>
+                    {t("下一局加油，還有", "Cheer up for next round! You have")} {multiplayerState.campaignQueue.length - 1} {t("次的機會", "more rounds.")}
+                  </div>
+                ) : multiplayerState?.campaignQueue && multiplayerState.campaignQueue.length === 1 ? (
+                  <div style={{ marginTop: '1rem', color: '#fbbf24', fontWeight: 'bold' }}>
+                    {t("這是最後一關了！為隊友祈禱吧！", "This is the final round! Pray for your teammates!")}
+                  </div>
+                ) : null}
+              </div>
+            </div>
           )}
         </div>
       )}
@@ -3174,6 +3867,21 @@ export default function App() {
                 );
               })}
             </div>
+            <button
+              onClick={() => {
+                if (socketRef.current) {
+                  socketRef.current.close();
+                  socketRef.current = null;
+                }
+                squareSoloActiveRef.current = false;
+                setGameState('menu');
+                setMultiplayerRoomId(null);
+                setMultiplayerState(null);
+              }}
+              style={{ marginTop: '1rem', background: 'rgba(239,68,68,0.15)', color: '#f87171', border: '1px solid rgba(239,68,68,0.3)', padding: '0.7rem 2rem', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', fontSize: '1rem', transition: 'all 0.2s' }}
+            >
+              {t("離開遊戲", "Leave Game")}
+            </button>
           </div>
         </div>
       )}
@@ -3182,60 +3890,60 @@ export default function App() {
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.85)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000, padding: '1rem', flexDirection: 'column' }}>
           <div className="hud-glass" style={{ background: 'rgba(15, 23, 42, 0.95)', borderRadius: '12px', padding: '3rem 2rem', width: '100%', maxWidth: '800px', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1.5rem', textAlign: 'center', border: '1px solid rgba(59, 130, 246, 0.3)' }}>
             <h2 style={{ fontSize: '2.5rem', fontWeight: 'bold', margin: 0, color: '#e2e8f0', display: 'flex', alignItems: 'center', gap: '12px' }}><Trophy size={40} color="#fbbf24" fill="#fbbf24" /> {multiplayerState.campaignResults?.length > 1 ? t("連戰結束！", "Marathon Completed!") : t("對局結束！", "Game Over!")}</h2>
-            
-            <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '1.5rem', margin: '1.5rem 0', maxHeight: '60vh', overflowY: 'auto', paddingRight: '0.5rem' }}>
-               
-               <h3 style={{ margin: 0, textAlign: 'left', color: '#94a3b8', borderBottom: '2px solid rgba(255,255,255,0.1)', paddingBottom: '0.5rem' }}>{t("總排名", "Final Standings")}</h3>
-               <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                 {Object.values(multiplayerState.players)
-                   .map(p => {
-                       const totalScore = multiplayerState.campaignResults?.reduce((acc, round) => acc + Math.max(0, round.scores[p.id] || 0), 0) || p.score;
-                       return { ...p, totalScore };
-                   })
-                   .sort((a,b) => b.totalScore - a.totalScore)
-                   .map((p, idx) => (
-                   <div key={p.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1.2rem', backgroundColor: idx === 0 ? 'rgba(251, 191, 36, 0.1)' : 'rgba(255,255,255,0.03)', border: `1px solid ${idx === 0 ? '#fbbf24' : 'rgba(255,255,255,0.1)'}`, borderRadius: '8px' }}>
-                     <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                       <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: idx === 0 ? '#fbbf24' : '#64748b' }}>#{idx+1}</div>
-                       <div style={{ width: '16px', height: '16px', borderRadius: '50%', backgroundColor: p.color, boxShadow: '0 0 0 2px rgba(255,255,255,0.2)' }}></div>
-                       <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: '#e2e8f0' }}>{p.name} {p.id === myClientId ? '(You)' : ''}</div>
-                     </div>
-                     <div style={{ fontSize: '1.8rem', fontWeight: 'bold', color: '#3b82f6', fontFamily: 'monospace' }}>{p.totalScore}</div>
-                   </div>
-                 ))}
-               </div>
 
-               {multiplayerState.campaignResults?.length > 1 && (
-                  <>
-                     <h3 style={{ margin: '1rem 0 0 0', textAlign: 'left', color: '#94a3b8', borderBottom: '2px solid rgba(255,255,255,0.1)', paddingBottom: '0.5rem' }}>{t("回合紀錄", "Round History")}</h3>
-                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
-                        {multiplayerState.campaignResults.map((round, rIdx) => (
-                           <div key={rIdx} style={{ display: 'flex', flexDirection: 'column', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '6px', padding: '1rem' }}>
-                              <div style={{ color: '#93c5fd', fontWeight: 'bold', textAlign: 'left', marginBottom: '0.5rem' }}>{t("回合", "Round")} {rIdx+1}: {round.verseRef}</div>
-                              <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
-                                 {Object.keys(round.scores)
-                                     .sort((a,b) => round.scores[b] - round.scores[a])
-                                     .map((pid, rank) => {
-                                         const player = multiplayerState.players[pid];
-                                         if (!player) return null;
-                                         return (
-                                            <div key={pid} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.9rem', color: '#cbd5e1', background: rank === 0 ? 'rgba(16, 185, 129, 0.2)' : 'transparent', padding: '0.2rem 0.5rem', borderRadius: '4px' }}>
-                                               {rank === 0 && <span style={{color: '#10b981'}}>★</span>}
-                                               {player.name}: <span style={{fontWeight: 'bold', fontFamily: 'monospace'}}>{Math.max(0, round.scores[pid])}</span>
-                                            </div>
-                                         )
-                                     })
-                                 }
-                              </div>
-                           </div>
-                        ))}
-                     </div>
-                  </>
-               )}
+            <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '1.5rem', margin: '1.5rem 0', maxHeight: '60vh', overflowY: 'auto', paddingRight: '0.5rem' }}>
+
+              <h3 style={{ margin: 0, textAlign: 'left', color: '#94a3b8', borderBottom: '2px solid rgba(255,255,255,0.1)', paddingBottom: '0.5rem' }}>{t("總排名", "Final Standings")}</h3>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                {Object.values(multiplayerState.players)
+                  .map(p => {
+                    const totalScore = multiplayerState.campaignResults?.reduce((acc, round) => acc + Math.max(0, round.scores[p.id] || 0), 0) || p.score;
+                    return { ...p, totalScore };
+                  })
+                  .sort((a, b) => b.totalScore - a.totalScore)
+                  .map((p, idx) => (
+                    <div key={p.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1.2rem', backgroundColor: idx === 0 ? 'rgba(251, 191, 36, 0.1)' : 'rgba(255,255,255,0.03)', border: `1px solid ${idx === 0 ? '#fbbf24' : 'rgba(255,255,255,0.1)'}`, borderRadius: '8px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                        <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: idx === 0 ? '#fbbf24' : '#64748b' }}>#{idx + 1}</div>
+                        <div style={{ width: '16px', height: '16px', borderRadius: '50%', backgroundColor: p.color, boxShadow: '0 0 0 2px rgba(255,255,255,0.2)' }}></div>
+                        <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: '#e2e8f0' }}>{p.name} {p.id === myClientId ? '(You)' : ''}</div>
+                      </div>
+                      <div style={{ fontSize: '1.8rem', fontWeight: 'bold', color: '#3b82f6', fontFamily: 'monospace' }}>{p.totalScore}</div>
+                    </div>
+                  ))}
+              </div>
+
+              {multiplayerState.campaignResults?.length > 1 && (
+                <>
+                  <h3 style={{ margin: '1rem 0 0 0', textAlign: 'left', color: '#94a3b8', borderBottom: '2px solid rgba(255,255,255,0.1)', paddingBottom: '0.5rem' }}>{t("回合紀錄", "Round History")}</h3>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
+                    {multiplayerState.campaignResults.map((round, rIdx) => (
+                      <div key={rIdx} style={{ display: 'flex', flexDirection: 'column', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '6px', padding: '1rem' }}>
+                        <div style={{ color: '#93c5fd', fontWeight: 'bold', textAlign: 'left', marginBottom: '0.5rem' }}>{t("回合", "Round")} {rIdx + 1}: {round.verseRef}</div>
+                        <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+                          {Object.keys(round.scores)
+                            .sort((a, b) => round.scores[b] - round.scores[a])
+                            .map((pid, rank) => {
+                              const player = multiplayerState.players[pid];
+                              if (!player) return null;
+                              return (
+                                <div key={pid} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.9rem', color: '#cbd5e1', background: rank === 0 ? 'rgba(16, 185, 129, 0.2)' : 'transparent', padding: '0.2rem 0.5rem', borderRadius: '4px' }}>
+                                  {rank === 0 && <span style={{ color: '#10b981' }}>★</span>}
+                                  {player.name}: <span style={{ fontWeight: 'bold', fontFamily: 'monospace' }}>{Math.max(0, round.scores[pid])}</span>
+                                </div>
+                              )
+                            })
+                          }
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
             </div>
 
             <div style={{ display: 'flex', gap: '1rem', width: '100%', marginTop: 'auto' }}>
-              <button 
+              <button
                 onClick={() => {
                   squareSoloActiveRef.current = false;
                   setGameState('menu');
@@ -3246,9 +3954,9 @@ export default function App() {
               >
                 {t("離開對戰", "Leave Match")}
               </button>
-              
+
               {multiplayerState?.host === myClientId && (
-                <button 
+                <button
                   onClick={() => {
                     squareSoloActiveRef.current = false;
                     socketRef.current.send(JSON.stringify({ type: 'RESTART_GAME' }));
@@ -3273,21 +3981,21 @@ export default function App() {
         return (
           <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.85)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000, padding: '1rem', flexDirection: 'column' }}>
             <div className="hud-glass" style={{ background: 'rgba(15, 23, 42, 0.95)', borderRadius: '12px', padding: '4rem 2rem', width: '100%', maxWidth: '600px', boxShadow: '0 25px 50px -12px rgba(16, 185, 129, 0.3)', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', border: '1px solid rgba(16, 185, 129, 0.5)' }}>
-               <h2 style={{ fontSize: '2.5rem', color: '#10b981', marginBottom: '1.5rem', fontWeight: 'bold' }}>{t("太棒了！準備下一回合", "Great job! Get ready...")}</h2>
-               <p style={{ color: '#cbd5e1', fontSize: '1.5rem', marginBottom: '2.5rem' }}>
-                  {t("還剩", "Remaining:")} <strong style={{ color: '#fff' }}>{remaining}</strong> {t("節經文", "verses")}
-               </p>
-               <p style={{ color: '#93c5fd', fontSize: '1.8rem', fontWeight: 'bold', marginBottom: '1rem' }}>
-                  {t("接下來：", "Next Up:")} {nextVerseData?.reference}
-               </p>
-               {nextVerseData?.text && (
-                   <div style={{ color: '#e2e8f0', fontSize: '1.1rem', marginBottom: '2rem', padding: '1rem', background: 'rgba(255,255,255,0.05)', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)', maxHeight: '150px', overflowY: 'auto' }}>
-                      {nextVerseData.text}
-                   </div>
-               )}
-               <div style={{ fontSize: '6rem', fontWeight: 'bold', color: '#fbbf24', animation: 'bounce 1s infinite' }}>
-                  {intermissionCountdown}
-               </div>
+              <h2 style={{ fontSize: '2.5rem', color: '#10b981', marginBottom: '1.5rem', fontWeight: 'bold' }}>{t("太棒了！準備下一回合", "Great job! Get ready...")}</h2>
+              <p style={{ color: '#cbd5e1', fontSize: '1.5rem', marginBottom: '2.5rem' }}>
+                {t("還剩", "Remaining:")} <strong style={{ color: '#fff' }}>{remaining}</strong> {t("節經文", "verses")}
+              </p>
+              <p style={{ color: '#93c5fd', fontSize: '1.8rem', fontWeight: 'bold', marginBottom: '1rem' }}>
+                {t("接下來：", "Next Up:")} {nextVerseData?.reference}
+              </p>
+              {nextVerseData?.text && (
+                <div style={{ color: '#e2e8f0', fontSize: '1.1rem', marginBottom: '2rem', padding: '1rem', background: 'rgba(255,255,255,0.05)', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)', maxHeight: '150px', overflowY: 'auto' }}>
+                  {nextVerseData.text}
+                </div>
+              )}
+              <div style={{ fontSize: '6rem', fontWeight: 'bold', color: '#fbbf24', animation: 'bounce 1s infinite' }}>
+                {intermissionCountdown}
+              </div>
             </div>
           </div>
         );
@@ -3354,9 +4062,9 @@ export default function App() {
                     onClick={() => setGameState('menu')}
                     className="play-btn"
                     style={{
-                        flex: '1 1 200px', maxWidth: '400px', background: '#475569', color: 'white', border: 'none', padding: 'clamp(0.8rem, 2vh, 1.2rem)',
-                        fontSize: 'clamp(1.1rem, 2.5vh, 1.3rem)', fontWeight: 'bold', borderRadius: '12px', cursor: 'pointer',
-                        display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', transition: 'all 0.2s'
+                      flex: '1 1 200px', maxWidth: '400px', background: '#475569', color: 'white', border: 'none', padding: 'clamp(0.8rem, 2vh, 1.2rem)',
+                      fontSize: 'clamp(1.1rem, 2.5vh, 1.3rem)', fontWeight: 'bold', borderRadius: '12px', cursor: 'pointer',
+                      display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', transition: 'all 0.2s'
                     }}
                   >
                     <Home size={20} /> {t("放棄", "Give Up")}
@@ -3421,17 +4129,26 @@ export default function App() {
                     </h3>
 
                     {!playerName ? (
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                        <p style={{ margin: 0, fontSize: '0.9rem', color: '#94a3b8' }}>{t("想要將神聖高分刻在群組榜單上嗎？", "Want to carve your sacred high score on the universal leaderboard?")}</p>
-                        <div style={{ display: 'flex', gap: '0.5rem' }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', alignItems: 'center' }}>
+                        <p style={{ margin: 0, fontSize: '0.95rem', color: '#e2e8f0', textAlign: 'center' }}>{t("想要將神聖高分刻在群組榜單上嗎？", "Want to carve your high score on the leaderboard?")}</p>
+                        <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap', justifyContent: 'center' }}>
+                          {['🦁', '🐶', '🐰', '🦊', '🐼'].map(emj => (
+                            <div key={emj} onClick={() => {
+                              const input = document.getElementById('playerNameInput');
+                              if (!input.value.includes(emj)) input.value = emj + " " + input.value;
+                            }} style={{ fontSize: '1.5rem', cursor: 'pointer', padding: '0.3rem', background: 'rgba(255,255,255,0.1)', borderRadius: '8px', transition: 'background 0.2s' }}>{emj}</div>
+                          ))}
+                        </div>
+                        <div style={{ display: 'flex', gap: '0.5rem', width: '100%' }}>
                           <input
                             type="text"
-                            placeholder={t("您的 Skool 暱稱", "Your Nickname")}
+                            placeholder={t("你的雷雨暱稱", "Your Nickname")}
                             id="playerNameInput"
-                            style={{ flex: 1, padding: '0.5rem', borderRadius: '6px', border: 'none', outline: 'none' }}
+                            style={{ flex: 1, padding: '0.8rem', borderRadius: '8px', border: 'none', outline: 'none', fontSize: '1rem' }}
                           />
                           <button
-                            style={{ background: '#3b82f6', color: 'white', border: 'none', padding: '0.5rem 1rem', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer' }}
+                            className="primary-button"
+                            style={{ background: '#3b82f6', color: 'white', border: 'none', padding: '0 1.5rem', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer' }}
                             onClick={() => {
                               const name = document.getElementById('playerNameInput').value.trim();
                               if (!name) return;
@@ -3565,8 +4282,8 @@ export default function App() {
 
             <button
               onClick={() => {
-                 setGameState('menu');
-                 setCampaignQueue(null);
+                setGameState('menu');
+                setCampaignQueue(null);
               }}
               className="play-btn"
               style={{
@@ -3676,65 +4393,65 @@ export default function App() {
               )}
             </div>
 
-              {authError && <div style={{ color: '#ef4444', fontSize: '0.85rem', textAlign: 'center', marginTop: '-0.5rem', fontWeight: 'bold' }}>{authError}</div>}
-              
-              <button
-                disabled={authLoading}
-                onClick={async () => {
-                  const emailInput = document.getElementById('modalEmailInput');
-                  const passInput = document.getElementById('modalPasswordInput');
-                  const nameInput = document.getElementById('modalPlayerNameInput');
-                  
-                  const email = emailInput ? emailInput.value.trim() : '';
-                  const password = passInput ? passInput.value.trim() : '';
-                  const nameStr = nameInput ? nameInput.value.trim() : '';
+            {authError && <div style={{ color: '#ef4444', fontSize: '0.85rem', textAlign: 'center', marginTop: '-0.5rem', fontWeight: 'bold' }}>{authError}</div>}
 
-                  if (!email || !password) {
-                     setAuthError("請輸入 Email 與 密碼 (Email & Password required)");
-                     return;
+            <button
+              disabled={authLoading}
+              onClick={async () => {
+                const emailInput = document.getElementById('modalEmailInput');
+                const passInput = document.getElementById('modalPasswordInput');
+                const nameInput = document.getElementById('modalPlayerNameInput');
+
+                const email = emailInput ? emailInput.value.trim() : '';
+                const password = passInput ? passInput.value.trim() : '';
+                const nameStr = nameInput ? nameInput.value.trim() : '';
+
+                if (!email || !password) {
+                  setAuthError("請輸入 Email 與 密碼 (Email & Password required)");
+                  return;
+                }
+
+                setAuthLoading(true);
+                setAuthError("");
+
+                try {
+                  const endpoint = showLoginModal === 'signup' ? '/register' : '/login';
+                  const payload = { email, password, nickname: nameStr };
+
+                  // Hit PartyKit Backend
+                  const host = "https://verserain-party.hungry4grace.partykit.dev/parties/main/global-auth-db" + endpoint;
+                  const response = await fetch(host, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                  });
+
+                  const data = await response.json();
+
+                  if (response.ok && data.success) {
+                    const isPrem = data.user.isPremium || PREMIUM_EMAILS.includes((data.user.email || '').toLowerCase());
+                    setPlayerName(data.user.name || email.split('@')[0]);
+                    setUserEmail(data.user.email);
+                    setIsPremium(isPrem);
+                    localStorage.setItem('verserain_player_name', data.user.name || email.split('@')[0]);
+                    localStorage.setItem('verserain_player_email', data.user.email);
+                    localStorage.setItem('verserain_is_premium', isPrem ? 'true' : 'false');
+                    setShowLoginModal(null);
+                  } else {
+                    setAuthError(data.error || "連線失敗 (Connection Error)");
                   }
-
-                  setAuthLoading(true);
-                  setAuthError("");
-
-                  try {
-                     const endpoint = showLoginModal === 'signup' ? '/register' : '/login';
-                     const payload = { email, password, nickname: nameStr };
-                     
-                     // Hit PartyKit Backend
-                     const host = "https://verserain-party.hungry4grace.partykit.dev/parties/main/global-auth-db" + endpoint;
-                     const response = await fetch(host, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(payload)
-                     });
-                     
-                     const data = await response.json();
-                     
-                     if (response.ok && data.success) {
-                        const isPrem = data.user.isPremium || PREMIUM_EMAILS.includes((data.user.email || '').toLowerCase());
-                        setPlayerName(data.user.name || email.split('@')[0]);
-                        setUserEmail(data.user.email);
-                        setIsPremium(isPrem);
-                        localStorage.setItem('verserain_player_name', data.user.name || email.split('@')[0]);
-                        localStorage.setItem('verserain_player_email', data.user.email);
-                        localStorage.setItem('verserain_is_premium', isPrem ? 'true' : 'false');
-                        setShowLoginModal(null);
-                     } else {
-                        setAuthError(data.error || "連線失敗 (Connection Error)");
-                     }
-                  } catch (err) {
-                     setAuthError("無法連線到伺服器 (Server unreachable)");
-                  } finally {
-                     setAuthLoading(false);
-                  }
-                }}
-                style={{ background: authLoading ? '#94a3b8' : '#3b82f6', color: 'white', border: 'none', padding: '0.8rem', borderRadius: '6px', fontSize: '1rem', fontWeight: 'bold', cursor: authLoading ? 'not-allowed' : 'pointer', transition: 'background 0.2s', marginTop: '0.5rem' }}
-                onMouseOver={(e) => { if(!authLoading) e.target.style.background = '#2563eb' }}
-                onMouseOut={(e) => { if(!authLoading) e.target.style.background = '#3b82f6' }}
-              >
-                {authLoading ? "..." : (showLoginModal === 'signup' ? t("建立新帳號 (需與 Skool Email 相同以獲取權限)", "Create Account") : t("登入", "Log In"))}
-              </button>
+                } catch (err) {
+                  setAuthError("無法連線到伺服器 (Server unreachable)");
+                } finally {
+                  setAuthLoading(false);
+                }
+              }}
+              style={{ background: authLoading ? '#94a3b8' : '#3b82f6', color: 'white', border: 'none', padding: '0.8rem', borderRadius: '6px', fontSize: '1rem', fontWeight: 'bold', cursor: authLoading ? 'not-allowed' : 'pointer', transition: 'background 0.2s', marginTop: '0.5rem' }}
+              onMouseOver={(e) => { if (!authLoading) e.target.style.background = '#2563eb' }}
+              onMouseOut={(e) => { if (!authLoading) e.target.style.background = '#3b82f6' }}
+            >
+              {authLoading ? "..." : (showLoginModal === 'signup' ? t("建立新帳號 (需與 Skool Email 相同以獲取權限)", "Create Account") : t("登入", "Log In"))}
+            </button>
 
             <div style={{ textAlign: 'center', fontSize: '0.9rem', color: '#64748b', marginTop: '0.5rem' }}>
               {showLoginModal === 'signup' ? (
@@ -3748,29 +4465,29 @@ export default function App() {
                   <span onClick={() => setShowLoginModal('signup')} style={{ color: '#3b82f6', cursor: 'pointer', fontWeight: 'bold' }}>{t("立即註冊", "Sign up")}</span>
                   <div style={{ marginTop: '0.8rem' }}>
                     <span onClick={async () => {
-                        const emailInput = document.getElementById('modalEmailInput');
-                        const email = emailInput ? emailInput.value.trim() : '';
-                        if (!email) return alert(t("請先在上方的信箱欄位輸入您的信箱！", "Please enter your email first!"));
-                        
-                        setAuthLoading(true);
-                        setAuthError("");
-                        try {
-                           const res = await fetch("https://verserain-party.hungry4grace.partykit.dev/parties/main/global-auth-db/forgot-password", {
-                               method: "POST",
-                               headers: { "Content-Type": "application/json" },
-                               body: JSON.stringify({ email })
-                           });
-                           const data = await res.json();
-                           if (data.success) {
-                               alert(t("密碼已寄出！請檢查您的信箱（包含垃圾郵件匣）。", "Password sent! Please check your email inbox (including spam)."));
-                           } else {
-                               setAuthError(data.error || "寄送失敗 (Failed to send)");
-                           }
-                        } catch(err) {
-                           setAuthError("無法連線到伺服器 (Server unreachable)");
-                        } finally {
-                           setAuthLoading(false);
+                      const emailInput = document.getElementById('modalEmailInput');
+                      const email = emailInput ? emailInput.value.trim() : '';
+                      if (!email) return alert(t("請先在上方的信箱欄位輸入您的信箱！", "Please enter your email first!"));
+
+                      setAuthLoading(true);
+                      setAuthError("");
+                      try {
+                        const res = await fetch("https://verserain-party.hungry4grace.partykit.dev/parties/main/global-auth-db/forgot-password", {
+                          method: "POST",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({ email })
+                        });
+                        const data = await res.json();
+                        if (data.success) {
+                          alert(t("密碼已寄出！請檢查您的信箱（包含垃圾郵件匣）。", "Password sent! Please check your email inbox (including spam)."));
+                        } else {
+                          setAuthError(data.error || "寄送失敗 (Failed to send)");
                         }
+                      } catch (err) {
+                        setAuthError("無法連線到伺服器 (Server unreachable)");
+                      } finally {
+                        setAuthLoading(false);
+                      }
                     }} style={{ color: '#94a3b8', cursor: 'pointer', textDecoration: 'underline' }}>{t("忘記密碼？", "Forgot Password?")}</span>
                   </div>
                 </>
@@ -3906,7 +4623,7 @@ export default function App() {
           </div>
         </div>
       )}
-      
+
 
       {/* Name Edit Modal */}
       {showNameEditModal && (
@@ -3916,113 +4633,113 @@ export default function App() {
               <h2 style={{ margin: 0, color: '#1e293b', fontSize: '1.5rem', fontWeight: 'bold' }}>
                 {t("修改個人資料", "Edit Profile")}
               </h2>
-              <button 
+              <button
                 onClick={() => setShowNameEditModal(false)}
                 style={{ background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer' }}
               >
                 <XCircle size={24} />
               </button>
             </div>
-            
+
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-               <div>
-                  <label style={{ display: 'block', fontSize: '0.9rem', color: '#64748b', marginBottom: '0.3rem', fontWeight: 'bold' }}>{t("目前暱稱", "Display Name")}</label>
-                  <input 
-                    id="nameEditInput"
-                    type="text"
-                    maxLength={20}
-                    placeholder={t("輸入名稱...", "Enter name...")}
-                    defaultValue={playerName && !playerName.startsWith("Google P") ? playerName : ""}
-                    style={{ width: '100%', padding: '0.8rem', borderRadius: '6px', border: '1px solid #cbd5e1', background: '#f8fafc', color: '#1e293b', fontSize: '1rem', outline: 'none', boxSizing: 'border-box' }}
-                  />
-               </div>
-               
-               {userEmail && (
-                 <>
-                   <div>
-                      <label style={{ display: 'block', fontSize: '0.9rem', color: '#64748b', marginBottom: '0.3rem', fontWeight: 'bold' }}>{t("目前密碼 (必填)", "Current Password (Required)")}</label>
-                      <input 
-                        id="profileOldPassword"
-                        type="password"
-                        placeholder={t("輸入目前密碼驗證身分", "Enter current password...")}
-                        style={{ width: '100%', padding: '0.8rem', borderRadius: '6px', border: '1px solid #cbd5e1', background: '#f8fafc', color: '#1e293b', fontSize: '1rem', outline: 'none', boxSizing: 'border-box' }}
-                      />
-                   </div>
-                   <div>
-                      <label style={{ display: 'block', fontSize: '0.9rem', color: '#64748b', marginBottom: '0.3rem', fontWeight: 'bold' }}>{t("新密碼 (選填)", "New Password (Optional)")}</label>
-                      <input 
-                        id="profileNewPassword"
-                        type="password"
-                        placeholder={t("若不修改請留空", "Leave empty to keep unchanged")}
-                        style={{ width: '100%', padding: '0.8rem', borderRadius: '6px', border: '1px solid #cbd5e1', background: '#f8fafc', color: '#1e293b', fontSize: '1rem', outline: 'none', boxSizing: 'border-box' }}
-                      />
-                   </div>
-                 </>
-               )}
+              <div>
+                <label style={{ display: 'block', fontSize: '0.9rem', color: '#64748b', marginBottom: '0.3rem', fontWeight: 'bold' }}>{t("目前暱稱", "Display Name")}</label>
+                <input
+                  id="nameEditInput"
+                  type="text"
+                  maxLength={20}
+                  placeholder={t("輸入名稱...", "Enter name...")}
+                  defaultValue={playerName && !playerName.startsWith("Google P") ? playerName : ""}
+                  style={{ width: '100%', padding: '0.8rem', borderRadius: '6px', border: '1px solid #cbd5e1', background: '#f8fafc', color: '#1e293b', fontSize: '1rem', outline: 'none', boxSizing: 'border-box' }}
+                />
+              </div>
+
+              {userEmail && (
+                <>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.9rem', color: '#64748b', marginBottom: '0.3rem', fontWeight: 'bold' }}>{t("目前密碼 (必填)", "Current Password (Required)")}</label>
+                    <input
+                      id="profileOldPassword"
+                      type="password"
+                      placeholder={t("輸入目前密碼驗證身分", "Enter current password...")}
+                      style={{ width: '100%', padding: '0.8rem', borderRadius: '6px', border: '1px solid #cbd5e1', background: '#f8fafc', color: '#1e293b', fontSize: '1rem', outline: 'none', boxSizing: 'border-box' }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.9rem', color: '#64748b', marginBottom: '0.3rem', fontWeight: 'bold' }}>{t("新密碼 (選填)", "New Password (Optional)")}</label>
+                    <input
+                      id="profileNewPassword"
+                      type="password"
+                      placeholder={t("若不修改請留空", "Leave empty to keep unchanged")}
+                      style={{ width: '100%', padding: '0.8rem', borderRadius: '6px', border: '1px solid #cbd5e1', background: '#f8fafc', color: '#1e293b', fontSize: '1rem', outline: 'none', boxSizing: 'border-box' }}
+                    />
+                  </div>
+                </>
+              )}
             </div>
 
-            <button 
+            <button
               id="saveNameBtn"
               onClick={async (e) => {
                 const btn = e.target;
                 const originalText = btn.innerText;
                 const inputName = document.getElementById('nameEditInput');
                 const newName = inputName ? inputName.value.trim() : "";
-                
+
                 if (!userEmail) {
-                   // Guest user, only update local name
-                   if (newName) {
-                      setPlayerName(newName);
-                      localStorage.setItem('verserain_player_name', newName);
-                      setToast(t("設定成功！觀迎遊玩，", "Name set! Welcome, ") + newName);
-                      setTimeout(() => setToast(null), 3000);
-                   }
-                   setShowNameEditModal(false);
-                   return;
+                  // Guest user, only update local name
+                  if (newName) {
+                    setPlayerName(newName);
+                    localStorage.setItem('verserain_player_name', newName);
+                    setToast(t("設定成功！觀迎遊玩，", "Name set! Welcome, ") + newName);
+                    setTimeout(() => setToast(null), 3000);
+                  }
+                  setShowNameEditModal(false);
+                  return;
                 }
-                
+
                 const oldPasswordInput = document.getElementById('profileOldPassword');
                 const newPasswordInput = document.getElementById('profileNewPassword');
                 const oldPassword = oldPasswordInput ? oldPasswordInput.value : "";
                 const newPassword = newPasswordInput ? newPasswordInput.value : "";
-                
+
                 if (!oldPassword) {
-                   return alert(t("請輸入您目前的密碼以確認身分！", "Please enter your current password to confirm!"));
+                  return alert(t("請輸入您目前的密碼以確認身分！", "Please enter your current password to confirm!"));
                 }
                 if (!newName) {
-                   return alert(t("暱稱不能為空！", "Display name cannot be empty!"));
+                  return alert(t("暱稱不能為空！", "Display name cannot be empty!"));
                 }
-                
+
                 btn.innerText = "...";
                 btn.disabled = true;
-                
+
                 try {
-                   const res = await fetch("https://verserain-party.hungry4grace.partykit.dev/parties/main/global-auth-db/update-profile", {
-                       method: 'POST',
-                       headers: { 'Content-Type': 'application/json' },
-                       body: JSON.stringify({
-                           email: userEmail,
-                           password: oldPassword,
-                           newName: newName,
-                           newPassword: newPassword || undefined
-                       })
-                   });
-                   const data = await res.json();
-                   
-                   if (data.success) {
-                       setPlayerName(data.user.name);
-                       localStorage.setItem('verserain_player_name', data.user.name);
-                       setToast(t("個人資料修改成功！", "Profile updated successfully!"));
-                       setTimeout(() => setToast(null), 3000);
-                       setShowNameEditModal(false);
-                   } else {
-                       alert(data.error || "Update failed");
-                   }
+                  const res = await fetch("https://verserain-party.hungry4grace.partykit.dev/parties/main/global-auth-db/update-profile", {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                      email: userEmail,
+                      password: oldPassword,
+                      newName: newName,
+                      newPassword: newPassword || undefined
+                    })
+                  });
+                  const data = await res.json();
+
+                  if (data.success) {
+                    setPlayerName(data.user.name);
+                    localStorage.setItem('verserain_player_name', data.user.name);
+                    setToast(t("個人資料修改成功！", "Profile updated successfully!"));
+                    setTimeout(() => setToast(null), 3000);
+                    setShowNameEditModal(false);
+                  } else {
+                    alert(data.error || "Update failed");
+                  }
                 } catch (err) {
-                   alert("Failed to connect to server.");
+                  alert("Failed to connect to server.");
                 } finally {
-                   btn.innerText = originalText;
-                   btn.disabled = false;
+                  btn.innerText = originalText;
+                  btn.disabled = false;
                 }
               }}
               style={{ background: '#3b82f6', color: 'white', border: 'none', padding: '0.8rem', borderRadius: '6px', fontSize: '1rem', fontWeight: 'bold', cursor: 'pointer', transition: 'background 0.2s', marginTop: '1rem' }}

@@ -58,25 +58,27 @@ body {
   padding: 12px 24px;
   font-size: 1.25rem;
   font-weight: 600;
-  border-radius: 9999px; /* pill shape */
-  background: linear-gradient(135deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.05) 100%);
+  border-radius: 20px; /* softer rounded block instead of pill */
+  background: linear-gradient(135deg, rgba(255,255,255,0.7) 0%, rgba(255,255,255,0.3) 100%);
+  color: #1e293b;
   backdrop-filter: blur(8px);
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), inset 0 1px 1px rgba(255, 255, 255, 0.3);
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  box-shadow: 0 6px 0px rgba(0, 0, 0, 0.3), 0 10px 20px rgba(0,0,0,0.2), inset 0 2px 2px rgba(255, 255, 255, 0.8);
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
   will-change: transform, opacity;
   user-select: none;
 }
 
 .falling-block-inner:hover {
-  transform: scale(1.05);
-  border-color: rgba(255, 255, 255, 0.6);
-  box-shadow: 0 12px 40px rgba(59, 130, 246, 0.5), inset 0 1px 1px rgba(255, 255, 255, 0.5);
-  background: linear-gradient(135deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0.1) 100%);
+  transform: translateY(-4px) scale(1.02);
+  border-color: rgba(255, 255, 255, 0.8);
+  box-shadow: 0 10px 0px rgba(0, 0, 0, 0.3), 0 15px 30px rgba(59, 130, 246, 0.4), inset 0 2px 2px rgba(255, 255, 255, 0.9);
+  background: linear-gradient(135deg, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0.5) 100%);
 }
 
 .falling-block-inner:active {
-  transform: scale(0.95);
+  transform: translateY(6px) scale(0.98);
+  box-shadow: 0 0px 0px rgba(0, 0, 0, 0.5), inset 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
 .error-shake {
@@ -210,3 +212,75 @@ body {
 .ql-editor {
   font-size: 20px !important;
 }
+
+/* Fancy Tooltips */
+.fancy-tooltip-container {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+.fancy-tooltip-container .fancy-tooltip-text {
+  visibility: hidden;
+  opacity: 0;
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%) translateY(4px) scale(0.95);
+  margin-bottom: 8px;
+  padding: 0.6rem 1.2rem;
+  background: #1e293b;
+  color: #f8fafc;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-weight: bold;
+  white-space: pre-wrap;
+  min-width: max-content;
+  max-width: 250px;
+  text-align: center;
+  z-index: 9999;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.25);
+  pointer-events: none;
+  transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+.fancy-tooltip-container .fancy-tooltip-text::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  margin-left: -6px;
+  border-width: 6px;
+  border-style: solid;
+  border-color: #1e293b transparent transparent transparent;
+}
+.fancy-tooltip-container:hover .fancy-tooltip-text {
+  visibility: visible;
+  opacity: 1;
+  transform: translateX(-50%) translateY(0) scale(1);
+}
+
+/* Joyful Blocks & Animations */
+.block-tile {
+  box-shadow: 0 4px 0px rgba(0,0,0,0.15);
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+.block-tile:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 4px rgba(0,0,0,0.15);
+}
+.block-tile:active {
+  transform: translateY(2px);
+  box-shadow: 0 0px 0px rgba(0,0,0,0);
+}
+
+.primary-button {
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+.primary-button:hover {
+  transform: scale(1.05);
+  box-shadow: 0 8px 15px rgba(0,0,0,0.15);
+}
+.primary-button:active {
+  transform: scale(0.95);
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
