@@ -706,7 +706,16 @@ export default function App() {
     ])
       .then(([scoresData, versesData]) => {
         setGlobalLeaderboardData(scoresData && Array.isArray(scoresData.alltime) ? scoresData : { alltime: Array.isArray(scoresData) ? scoresData : [], monthly: [], daily: [] });
-        if (versesData && versesData.alltime) setGlobalVerseStats(versesData);
+        if (versesData && versesData.alltime) {
+          // Merge server stats INTO local stats (don't replace — local history must be preserved)
+          setGlobalVerseStats(prev => {
+            const merged = { alltime: { ...(versesData.alltime || {}), ...(prev.alltime || {}) },
+                            monthly: { ...(versesData.monthly || {}), ...(prev.monthly || {}) },
+                            daily:   { ...(versesData.daily   || {}), ...(prev.daily   || {}) },
+                            dateInfo: prev.dateInfo, monthInfo: prev.monthInfo };
+            return merged;
+          });
+        }
       })
       .finally(() => setIsFetchingGlobalLeaderboard(false));
   };
@@ -3359,7 +3368,7 @@ export default function App() {
                         });
                         return Object.entries(playerMap)
                           .sort((a, b) => b[1].best - a[1].best || b[1].clears - a[1].clears)
-                          .slice(0, 50)
+                          .slice(0, 10)
                           .map(([name, stats], idx) => (
                             <tr key={idx} style={{ borderBottom: '1px solid #f1f5f9' }}>
                               <td style={{ padding: '0.8rem 1rem', fontWeight: 'bold', color: idx === 0 ? '#d97706' : idx === 1 ? '#94a3b8' : idx === 2 ? '#b45309' : '#64748b', fontSize: '1.2rem' }}>#{idx + 1}</td>
@@ -3368,6 +3377,56 @@ export default function App() {
                               <td style={{ padding: '0.8rem 1rem', textAlign: 'right', fontWeight: 'bold', color: '#059669' }}>{stats.clears}</td>
                             </tr>
                           ));
+                      })()}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* 4. 最受歡迎經文組 */}
+                <div style={{ backgroundColor: '#ffffff', borderRadius: '8px', border: '1px solid #cbd5e1', padding: '2rem', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+                  <h2 style={{ color: '#1e293b', marginTop: 0, marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '10px' }}><Trophy color="#f59e0b" /> {t("最受歡迎經文組", "Most Popular Verse Sets")}</h2>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+                    <thead>
+                      <tr style={{ borderBottom: '2px solid #e2e8f0', color: '#64748b', fontSize: '0.9rem' }}>
+                        <th style={{ padding: '0.8rem 1rem', width: '50px' }}>🏆</th>
+                        <th style={{ padding: '0.8rem 1rem' }}>{t("標題", "Title")}</th>
+                        <th style={{ padding: '0.8rem 1rem' }}>{t("作者", "Author")}</th>
+                        <th style={{ padding: '0.8rem 1rem', textAlign: 'right' }}>{t("點閱次數", "Views")}</th>
+                        <th style={{ padding: '0.8rem 1rem', width: '60px' }}></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {(() => {
+                        const sortedSets = [...activeVerseSets]
+                          .sort((a, b) => (viewCounts[b.id] || 0) - (viewCounts[a.id] || 0))
+                          .slice(0, 10);
+                        return sortedSets.map((set, idx) => (
+                          <tr key={idx} style={{ borderBottom: '1px solid #f1f5f9', cursor: 'pointer', transition: 'background 0.2s' }} onClick={() => {
+                            setMainTab('versesets');
+                            setSelectedSetId(set.id);
+                            fetch("https://verserain-party.hungry4grace.partykit.dev/parties/main/global-auth-db/custom-sets/view", { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: set.id }) }).catch(e => e);
+                            setViewCounts(prev => ({ ...prev, [set.id]: (prev[set.id] || 0) + 1 }));
+                          }} onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#eff6ff'} onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}>
+                            <td style={{ padding: '0.8rem 1rem', fontWeight: 'bold', color: idx === 0 ? '#d97706' : idx === 1 ? '#94a3b8' : idx === 2 ? '#b45309' : '#64748b', fontSize: '1.2rem' }}>#{idx + 1}</td>
+                            <td style={{ padding: '0.8rem 1rem', fontWeight: 'bold', color: '#1e293b' }}>{set.title}</td>
+                            <td style={{ padding: '0.8rem 1rem', color: '#3b82f6' }}>{set.authorName && set.authorName !== "Anonymous" ? set.authorName : (String(set.id).startsWith("custom-") ? "匿名玩家" : "Verserain 官方")}</td>
+                            <td style={{ padding: '0.8rem 1rem', textAlign: 'right', fontWeight: 'bold', color: '#059669' }}>{viewCounts[set.id] || 0}</td>
+                            <td style={{ padding: '0.8rem 0' }}>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setMainTab('versesets');
+                                  setSelectedSetId(set.id);
+                                  fetch("https://verserain-party.hungry4grace.partykit.dev/parties/main/global-auth-db/custom-sets/view", { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: set.id }) }).catch(e => e);
+                                  setViewCounts(prev => ({ ...prev, [set.id]: (prev[set.id] || 0) + 1 }));
+                                }}
+                                style={{ background: '#3b82f6', color: 'white', border: 'none', padding: '0.3rem 0.6rem', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '4px' }}
+                              >
+                                <Play size={12} fill="white" /> {t("挑戰", "Play")}
+                              </button>
+                            </td>
+                          </tr>
+                        ));
                       })()}
                     </tbody>
                   </table>
@@ -3445,55 +3504,6 @@ export default function App() {
                   </table>
                 </div>
 
-                {/* 4. 最受歡迎經文組 */}
-                <div style={{ backgroundColor: '#ffffff', borderRadius: '8px', border: '1px solid #cbd5e1', padding: '2rem', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
-                  <h2 style={{ color: '#1e293b', marginTop: 0, marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '10px' }}><Trophy color="#f59e0b" /> {t("最受歡迎經文組", "Most Popular Verse Sets")}</h2>
-                  <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
-                    <thead>
-                      <tr style={{ borderBottom: '2px solid #e2e8f0', color: '#64748b', fontSize: '0.9rem' }}>
-                        <th style={{ padding: '0.8rem 1rem', width: '50px' }}>🏆</th>
-                        <th style={{ padding: '0.8rem 1rem' }}>{t("標題", "Title")}</th>
-                        <th style={{ padding: '0.8rem 1rem' }}>{t("作者", "Author")}</th>
-                        <th style={{ padding: '0.8rem 1rem', textAlign: 'right' }}>{t("點閱次數", "Views")}</th>
-                        <th style={{ padding: '0.8rem 1rem', width: '60px' }}></th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {(() => {
-                        const sortedSets = [...activeVerseSets]
-                          .sort((a, b) => (viewCounts[b.id] || 0) - (viewCounts[a.id] || 0))
-                          .slice(0, 10);
-                        return sortedSets.map((set, idx) => (
-                          <tr key={idx} style={{ borderBottom: '1px solid #f1f5f9', cursor: 'pointer', transition: 'background 0.2s' }} onClick={() => {
-                            setMainTab('versesets');
-                            setSelectedSetId(set.id);
-                            fetch("https://verserain-party.hungry4grace.partykit.dev/parties/main/global-auth-db/custom-sets/view", { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: set.id }) }).catch(e => e);
-                            setViewCounts(prev => ({ ...prev, [set.id]: (prev[set.id] || 0) + 1 }));
-                          }} onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#eff6ff'} onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}>
-                            <td style={{ padding: '0.8rem 1rem', fontWeight: 'bold', color: idx === 0 ? '#d97706' : idx === 1 ? '#94a3b8' : idx === 2 ? '#b45309' : '#64748b', fontSize: '1.2rem' }}>#{idx + 1}</td>
-                            <td style={{ padding: '0.8rem 1rem', fontWeight: 'bold', color: '#1e293b' }}>{set.title}</td>
-                            <td style={{ padding: '0.8rem 1rem', color: '#3b82f6' }}>{set.authorName && set.authorName !== "Anonymous" ? set.authorName : (String(set.id).startsWith("custom-") ? "匿名玩家" : "Verserain 官方")}</td>
-                            <td style={{ padding: '0.8rem 1rem', textAlign: 'right', fontWeight: 'bold', color: '#059669' }}>{viewCounts[set.id] || 0}</td>
-                            <td style={{ padding: '0.8rem 0' }}>
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setMainTab('versesets');
-                                  setSelectedSetId(set.id);
-                                  fetch("https://verserain-party.hungry4grace.partykit.dev/parties/main/global-auth-db/custom-sets/view", { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: set.id }) }).catch(e => e);
-                                  setViewCounts(prev => ({ ...prev, [set.id]: (prev[set.id] || 0) + 1 }));
-                                }}
-                                style={{ background: '#3b82f6', color: 'white', border: 'none', padding: '0.3rem 0.6rem', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '4px' }}
-                              >
-                                <Play size={12} fill="white" /> {t("挑戰", "Play")}
-                              </button>
-                            </td>
-                          </tr>
-                        ));
-                      })()}
-                    </tbody>
-                  </table>
-                </div>
 
               </div>
             )}
