@@ -531,7 +531,7 @@ export default function App() {
           }
         }
 
-        const isEnglish = /^[a-zA-Z\s.,:;'"]+$/.test(cleanText.substring(0, 50));
+        const isEnglish = /^[a-zA-Z\s.,:;'"''‘’“”?!()\-]+$/.test(cleanText.substring(0, 50));
         setVersion(isEnglish ? 'kjv' : 'cuv');
 
         setActiveVerse({
@@ -614,7 +614,7 @@ export default function App() {
 
 
   const activePhrases = React.useMemo(() => {
-    const isEnglish = /^[a-zA-Z\s.,:;'"]+$/.test(activeVerse.text.substring(0, 50));
+    const isEnglish = /^[a-zA-Z\s.,:;'"''\u2018\u2019\u201c\u201d?!()\-]+$/.test(activeVerse.text.substring(0, 50));
     // Remove \s from the non-English regex so Chinese doesn't fragment on spaces
     const regex = isEnglish ? /[,，。；：「」、;:\.\?!]/ : /[,，。；：「」、;:\.\?!！？『』《》\s]/;
     return activeVerse.text.split(regex).map(p => p.trim()).filter(Boolean);
@@ -782,7 +782,7 @@ export default function App() {
         }
       } else if (multiplayerState?.host === myClientId && multiplayerState.campaignQueue && multiplayerState.campaignQueue.length > 0) {
         const nextVerse = multiplayerState.campaignQueue[0];
-        const isEnglish = /^[a-zA-Z\s.,:;'"]+$/.test(nextVerse.text.substring(0, 50));
+        const isEnglish = /^[a-zA-Z\s.,:;'"''‘’“”?!()\-]+$/.test(nextVerse.text.substring(0, 50));
         const regex = isEnglish ? /[,，。；：「」、;:\.\?!]/ : /[,，。；：「」、;:\.\?!！？『』《》\s]/;
         const phrases = nextVerse.text.split(regex).map(p => p.trim()).filter(Boolean);
 
@@ -1147,7 +1147,7 @@ export default function App() {
         } else if (initAutoStart.playMode === 'rain_solo') {
           if (socketRef.current) {
             const verse = initAutoStart.verse || activeVerse;
-            const isEnglish = /^[a-zA-Z\s.,:;'"]+$/.test(verse.text.substring(0, 50));
+            const isEnglish = /^[a-zA-Z\s.,:;'"''‘’“”?!()\-]+$/.test(verse.text.substring(0, 50));
             const regex = isEnglish ? /[,，。；：「」、;:\.\?!]/ : /[,，。；：「」、;:\.\?!！？『』《》\s]/;
             const phrases = verse.text.split(regex).map(p => p.trim()).filter(Boolean);
 
@@ -1174,7 +1174,7 @@ export default function App() {
     const verse = overrideVerse || activeVerse;
     let phrases;
     if (overrideVerse) {
-      const isEnglish = /^[a-zA-Z\s.,:;'"]+$/.test(verse.text.substring(0, 50));
+      const isEnglish = /^[a-zA-Z\s.,:;'"''‘’“”?!()\-]+$/.test(verse.text.substring(0, 50));
       const regex = isEnglish ? /[,，。；：「」、;:\.\?!]/ : /[,，。；：「」、;:\.\?!！？『』《》\s]/;
       phrases = verse.text.split(regex).map(p => p.trim()).filter(Boolean);
     } else {
