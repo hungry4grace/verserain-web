@@ -11,7 +11,7 @@ function getRoomColor(roomId) {
 
 // Load Leaflet and MarkerCluster Plugin dynamically
 function loadLeafletAndCluster() {
-  return new Promise((resolve) => {
+  return new Promise((resolve, reject) => {
     if (window.L && window.L.markerClusterGroup) return resolve(window.L);
     
     if (!document.getElementById('leaflet-css')) {
@@ -19,15 +19,23 @@ function loadLeafletAndCluster() {
       const css2 = document.createElement('link'); css2.id = 'leaflet-cluster-css'; css2.rel = 'stylesheet'; css2.href = 'https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css'; document.head.appendChild(css2);
     }
 
-    import('https://unpkg.com/leaflet@1.9.4/dist/leaflet-src.esm.js').then(L => {
-      window.L = L; // Required for markercluster plugin to attach itself
+    const loadCluster = () => {
       const script = document.createElement('script');
       script.src = 'https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js';
       script.onload = () => resolve(window.L);
+      script.onerror = () => reject(new Error('Failed to load markercluster plugin'));
       document.head.appendChild(script);
-    }).catch(err => {
-      console.error('Failed to load Leaflet', err);
-    });
+    };
+
+    if (!window.L) {
+      const script = document.createElement('script');
+      script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+      script.onload = () => loadCluster();
+      script.onerror = () => reject(new Error('Failed to load Leaflet script'));
+      document.head.appendChild(script);
+    } else {
+      loadCluster();
+    }
   });
 }
 
