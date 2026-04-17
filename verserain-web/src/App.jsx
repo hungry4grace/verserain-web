@@ -4061,7 +4061,7 @@ export default function App() {
         <div
           key={`${playMode}-${activeVerse.reference}-${distractionLevel}`}
           onClick={handleGlobalClick}
-          style={{ position: 'absolute', width: '100vw', height: '100vh', top: 0, left: 0, overflow: 'hidden' }}
+          style={{ position: 'absolute', width: '100vw', height: '100dvh', top: 0, left: 0, overflow: 'hidden' }}
         >
           <div style={{ position: 'absolute', top: 0, left: 0, right: 0, padding: '0.5rem 1rem', display: 'flex', flexDirection: 'row', flexWrap: 'wrap', gap: '0.75rem', alignItems: 'center', zIndex: 10 }}>
             <div style={{ display: 'flex', gap: '0.75rem' }}>
@@ -4227,7 +4227,7 @@ export default function App() {
               </div>
             </div>
           ) : (
-            <div style={{ position: 'absolute', width: '100vw', height: '100vh', top: 0, left: 0, overflow: 'hidden', pointerEvents: 'none' }}>
+            <div style={{ position: 'absolute', width: '100vw', height: '100dvh', top: 0, left: 0, overflow: 'hidden', pointerEvents: 'none' }}>
               {blocks.map((block) => {
                 let appliedClasses = 'falling-block-inner';
                 if (block.error) appliedClasses += ' error-shake';
@@ -4924,7 +4924,7 @@ export default function App() {
               onMouseOver={(e) => { if (!authLoading) e.target.style.background = '#2563eb' }}
               onMouseOut={(e) => { if (!authLoading) e.target.style.background = '#3b82f6' }}
             >
-              {authLoading ? "..." : (showLoginModal === 'signup' ? t("建立新帳號 (需與 Skool Email 相同以獲取權限)", "Create Account") : t("登入", "Log In"))}
+              {authLoading ? "..." : (showLoginModal === 'signup' ? t("建立新帳號 ", "Create Account") : t("登入", "Log In"))}
             </button>
 
             <div style={{ textAlign: 'center', fontSize: '0.9rem', color: '#64748b', marginTop: '0.5rem' }}>
