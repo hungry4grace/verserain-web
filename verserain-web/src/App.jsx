@@ -1797,12 +1797,6 @@ export default function App() {
                 }
               }
 
-              if (distractionLevel >= 2) {
-                // Scramble the whole grid on every correct click to significantly increase challenge
-                playShuffleSound();
-                updated.sort(() => Math.random() - 0.5);
-              }
-
               return updated;
             });
           }, 400);
@@ -1868,12 +1862,6 @@ export default function App() {
             updated = prev.map(b => b.id === block.id ? { ...b, error: false, hidden: true, isFake: false } : b);
           } else {
             updated = prev.map(b => b.id === block.id ? { ...b, error: false } : b);
-          }
-
-          if (playMode.startsWith('square') && distractionLevel >= 2) {
-            // Scramble the whole grid on every mistake too, making recovery harder
-            playShuffleSound();
-            updated = [...updated].sort(() => Math.random() - 0.5);
           }
 
           return updated;
