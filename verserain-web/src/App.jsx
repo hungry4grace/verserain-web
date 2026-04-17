@@ -2716,7 +2716,13 @@ export default function App() {
                       <p style={{ color: '#a21caf', fontSize: '0.9rem', margin: 0 }}>{t("雙方準備就緒後即將開始", "Match starts when both are ready")}</p>
                     </div>
 
-                    <div style={{ display: 'flex', gap: '1rem', margin: '0.5rem 0 1.5rem 0' }}>
+                    {!multiplayerState.players[myClientId]?.isReady && (
+                      <div style={{ textAlign: 'center', marginTop: '1rem', color: '#3b82f6', fontWeight: 'bold', fontSize: '1.05rem', backgroundColor: '#eff6ff', padding: '0.6rem 1rem', borderRadius: '8px', border: '1px solid #bfdbfe' }}>
+                        👉 {t("如果你準備好了，請按下「我準備好了」的鍵", "If you are ready, please press the 'I am ready' button")} 👈
+                      </div>
+                    )}
+
+                    <div style={{ display: 'flex', gap: '1rem', margin: '0.5rem 0 1.5rem 0', justifyContent: 'center' }}>
                       <button
                         onClick={() => {
                           if (socketRef.current) socketRef.current.close();
@@ -2733,9 +2739,9 @@ export default function App() {
                           if (socketRef.current) socketRef.current.send(JSON.stringify({ type: 'PLAYER_READY' }));
                         }}
                         disabled={multiplayerState.players[myClientId]?.isReady}
-                        style={{ background: multiplayerState.players[myClientId]?.isReady ? '#10b981' : '#3b82f6', color: 'white', border: 'none', padding: '0.8rem 2rem', borderRadius: '6px', fontSize: '1.1rem', fontWeight: 'bold', cursor: multiplayerState.players[myClientId]?.isReady ? 'default' : 'pointer' }}
+                        style={{ background: multiplayerState.players[myClientId]?.isReady ? '#10b981' : '#3b82f6', color: 'white', border: 'none', padding: '0.8rem 2rem', borderRadius: '6px', fontSize: '1.1rem', fontWeight: 'bold', cursor: multiplayerState.players[myClientId]?.isReady ? 'default' : 'pointer', transition: 'all 0.2s', boxShadow: multiplayerState.players[myClientId]?.isReady ? 'none' : '0 4px 6px -1px rgba(59, 130, 246, 0.5)' }}
                       >
-                        {multiplayerState.players[myClientId]?.isReady ? t("已準備", "Ready") : t("準備！", "Ready!")}
+                        {multiplayerState.players[myClientId]?.isReady ? t("✔️ 已準備", "✔️ Ready") : t("我準備好了", "I am ready")}
                       </button>
                     </div>
 
@@ -2900,16 +2906,28 @@ export default function App() {
                 ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', alignItems: 'center' }}>
                     <div style={{ padding: '1.5rem', backgroundColor: '#f8fafc', borderRadius: '8px', border: '1px dashed #cbd5e1', width: '100%', maxWidth: '400px' }}>
-                      <h3 style={{ margin: '0 0 1rem 0', color: '#334155' }}>{t("等待玩家...", "Waiting...")}</h3>
-                      <div style={{ fontSize: '2.5rem', fontWeight: 'bold', color: getRoomColor(multiplayerRoomId) || '#3b82f6', letterSpacing: '6px', marginBottom: '0.8rem', background: (getRoomColor(multiplayerRoomId) || '#3b82f6') + '18', borderRadius: '8px', padding: '0.4rem 1.2rem', display: 'inline-block', border: `3px solid ${getRoomColor(multiplayerRoomId) || '#3b82f6'}`, boxShadow: `0 0 16px ${getRoomColor(multiplayerRoomId) || '#3b82f6'}44` }}>{multiplayerRoomId}</div>
-                      <p style={{ color: '#94a3b8', fontSize: '0.9rem', margin: 0 }}>{t("請朋友輸入上方的代碼來加入您的遊戲", "Ask your friend to enter this code to join")}</p>
+                      {(!multiplayerState?.host || multiplayerState.host === myClientId) ? (
+                        <>
+                          <h3 style={{ margin: '0 0 1rem 0', color: '#334155' }}>{t("等待玩家...", "Waiting...")}</h3>
+                          <div style={{ fontSize: '2.5rem', fontWeight: 'bold', color: getRoomColor(multiplayerRoomId) || '#3b82f6', letterSpacing: '6px', marginBottom: '0.8rem', background: (getRoomColor(multiplayerRoomId) || '#3b82f6') + '18', borderRadius: '8px', padding: '0.4rem 1.2rem', display: 'inline-block', border: `3px solid ${getRoomColor(multiplayerRoomId) || '#3b82f6'}`, boxShadow: `0 0 16px ${getRoomColor(multiplayerRoomId) || '#3b82f6'}44` }}>{multiplayerRoomId}</div>
+                          <p style={{ color: '#94a3b8', fontSize: '0.9rem', margin: 0 }}>{t("請朋友輸入上方的代碼來加入您的遊戲", "Ask your friend to enter this code to join")}</p>
 
-                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem', marginTop: '1rem' }}>
-                        <div style={{ background: 'white', padding: '0.5rem', borderRadius: '8px', border: '1px dashed #cbd5e1' }}>
-                          <QRCodeSVG value={`${window.location.origin}${window.location.pathname}?room=${multiplayerRoomId}`} size={120} />
-                        </div>
-                        <p style={{ color: '#94a3b8', fontSize: '0.8rem', margin: 0 }}>{t("或掃描上方 QR Code 快速加入", "or scan QR to join")}</p>
-                      </div>
+                          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem', marginTop: '1rem' }}>
+                            <div style={{ background: 'white', padding: '0.5rem', borderRadius: '8px', border: '1px dashed #cbd5e1' }}>
+                              <QRCodeSVG value={`${window.location.origin}${window.location.pathname}?room=${multiplayerRoomId}`} size={120} />
+                            </div>
+                            <p style={{ color: '#94a3b8', fontSize: '0.8rem', margin: 0 }}>{t("或掃描上方 QR Code 快速加入", "or scan QR to join")}</p>
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <h3 style={{ margin: '0 0 1rem 0', color: '#3b82f6' }}>{t("等待遊戲開始...", "Waiting for game...")}</h3>
+                          <div style={{ fontSize: '2.5rem', fontWeight: 'bold', color: getRoomColor(multiplayerRoomId) || '#3b82f6', letterSpacing: '6px', marginBottom: '0.8rem', background: (getRoomColor(multiplayerRoomId) || '#3b82f6') + '18', borderRadius: '8px', padding: '0.4rem 1.2rem', display: 'inline-block', border: `3px solid ${getRoomColor(multiplayerRoomId) || '#3b82f6'}`, boxShadow: `0 0 16px ${getRoomColor(multiplayerRoomId) || '#3b82f6'}44` }}>{multiplayerRoomId}</div>
+                          <p style={{ color: '#0ea5e9', fontSize: '1.05rem', margin: '1rem 0 0 0', fontWeight: 'bold', lineHeight: 1.5 }}>
+                            {t("現在等候遊戲主人選好經文，", "Waiting for the host to")} <br /> {t("請稍後。。。", "select verses, please wait...")}
+                          </p>
+                        </>
+                      )}
                     </div>
 
                     {multiplayerState && multiplayerState.players && (
