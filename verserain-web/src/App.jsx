@@ -2696,24 +2696,7 @@ export default function App() {
                       <p style={{ color: '#a21caf', fontSize: '0.9rem', margin: 0 }}>{t("雙方準備就緒後即將開始", "Match starts when both are ready")}</p>
                     </div>
 
-                    <div style={{ width: '100%', maxWidth: '400px', textAlign: 'left' }}>
-                      <h4 style={{ color: '#475569', marginBottom: '0.5rem' }}>{t("玩家狀態:", "Player Status:")}</h4>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                        {Object.values(multiplayerState.players).map(p => (
-                          <div key={p.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.8rem', backgroundColor: p.isReady ? '#dcfce7' : '#f1f5f9', borderRadius: '6px', border: p.isReady ? '1px solid #86efac' : '1px solid transparent' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
-                              <div style={{ width: '16px', height: '16px', borderRadius: '50%', backgroundColor: p.color, boxShadow: '0 0 0 2px white, 0 0 0 4px ' + p.color }}></div>
-                              <span style={{ fontWeight: 'bold', color: '#1e293b', fontSize: '1.1rem' }}>{p.name} {multiplayerState.host === p.id ? '(Host)' : ''}</span>
-                            </div>
-                            <span style={{ fontSize: '0.9rem', fontWeight: 'bold', color: p.isReady ? '#15803d' : '#94a3b8' }}>
-                              {p.isReady ? t("✔️ 已準備", "✔️ READY") : t("等待中...", "WAITING")}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-
-                    <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
+                    <div style={{ display: 'flex', gap: '1rem', margin: '0.5rem 0 1.5rem 0' }}>
                       <button
                         onClick={() => {
                           if (socketRef.current) socketRef.current.close();
@@ -2734,6 +2717,23 @@ export default function App() {
                       >
                         {multiplayerState.players[myClientId]?.isReady ? t("已準備", "Ready") : t("準備！", "Ready!")}
                       </button>
+                    </div>
+
+                    <div style={{ width: '100%', maxWidth: '400px', textAlign: 'left' }}>
+                      <h4 style={{ color: '#475569', marginBottom: '0.5rem' }}>{t("玩家狀態:", "Player Status:")}</h4>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                        {Object.values(multiplayerState.players).map(p => (
+                          <div key={p.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.8rem', backgroundColor: p.isReady ? '#dcfce7' : '#f1f5f9', borderRadius: '6px', border: p.isReady ? '1px solid #86efac' : '1px solid transparent' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
+                              <div style={{ width: '16px', height: '16px', borderRadius: '50%', backgroundColor: p.color, boxShadow: '0 0 0 2px white, 0 0 0 4px ' + p.color }}></div>
+                              <span style={{ fontWeight: 'bold', color: '#1e293b', fontSize: '1.1rem' }}>{p.name} {multiplayerState.host === p.id ? '(Host)' : ''}</span>
+                            </div>
+                            <span style={{ fontSize: '0.9rem', fontWeight: 'bold', color: p.isReady ? '#15803d' : '#94a3b8' }}>
+                              {p.isReady ? t("✔️ 已準備", "✔️ READY") : t("等待中...", "WAITING")}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   </div>
                 ) : showMultiplayerVersePicker && multiplayerState?.host === myClientId ? (
