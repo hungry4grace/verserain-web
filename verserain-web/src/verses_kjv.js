@@ -1067,6 +1067,35 @@ export const VERSE_SETS_KJV = [
       { id: "matthew-important-kjv-93", reference: "Matthew 28:19-20", title: "Matthew Important Verses", text: "Go ye therefore, and teach all nations, baptizing them in the name of the Father, and of the Son, and of the Holy Ghost: teach: or, make disciples, or, Christians of all nations Teaching them to observe all things whatsoever I have commanded you: and, lo, I am with you alway, even unto the end of the world. Amen." }
     ]
   },
+  {
+    id: "sid-roth-healing-kjv",
+    title: "Healing Meditation Verses (Sid Roth)",
+    description: "I discovered that healing and faith are like a mystery to many Christians...",
+    language: "en",
+    verses: [
+      { id: "sidroth-kjv-1", reference: "Hebrews 11:6", title: "Healing Meditation", text: "But without faith it is impossible to please him: for he that cometh to God must believe that he is, and that he is a rewarder of them that diligently seek him." },
+      { id: "sidroth-kjv-2", reference: "Joshua 1:7-8", title: "Healing Meditation", text: "Only be thou strong and very courageous, that thou mayest observe to do according to all the law, which Moses my servant commanded thee: turn not from it to the right hand or to the left, that thou mayest prosper whithersoever thou goest. This book of the law shall not depart out of thy mouth; but thou shalt meditate therein day and night..." },
+      { id: "sidroth-kjv-3", reference: "Exodus 23:25-26", title: "Healing Meditation", text: "And ye shall serve the LORD your God, and he shall bless thy bread, and thy water; and I will take sickness away from the midst of thee. There shall nothing cast their young, nor be barren, in thy land: the number of thy days I will fulfil." },
+      { id: "sidroth-kjv-4", reference: "Romans 10:17", title: "Healing Meditation", text: "So then faith cometh by hearing, and hearing by the word of God." },
+      { id: "sidroth-kjv-5", reference: "Isaiah 53:4-5", title: "Healing Meditation", text: "Surely he hath borne our griefs, and carried our sorrows: yet we did esteem him stricken, smitten of God, and afflicted. But he was wounded for our transgressions, he was bruised for our iniquities: the chastisement of our peace was upon him; and with his stripes we are healed." },
+      { id: "sidroth-kjv-6", reference: "Mark 11:23-24", title: "Healing Meditation", text: "For verily I say unto you, That whosoever shall say unto this mountain, Be thou removed, and be thou cast into the sea; and shall not doubt in his heart, but shall believe that those things which he saith shall come to pass; he shall have whatsoever he saith. Therefore I say unto you, What things soever ye desire, when ye pray, believe that ye receive them, and ye shall have them." },
+      { id: "sidroth-kjv-7", reference: "Psalms 86:15", title: "Healing Meditation", text: "But thou, O Lord, art a God full of compassion, and gracious, longsuffering, and plenteous in mercy and truth." },
+      { id: "sidroth-kjv-8", reference: "Proverbs 4:20-22", title: "Healing Meditation", text: "My son, attend to my words; incline thine ear unto my sayings. Let them not depart from thine eyes; keep them in the midst of thine heart. For they are life unto those that find them, and health to all their flesh." },
+      { id: "sidroth-kjv-9", reference: "Acts 10:38", title: "Healing Meditation", text: "How God anointed Jesus of Nazareth with the Holy Ghost and with power: who went about doing good, and healing all that were oppressed of the devil; for God was with him." },
+      { id: "sidroth-kjv-10", reference: "Psalms 1:1-3", title: "Healing Meditation", text: "Blessed is the man that walketh not in the counsel of the ungodly, nor standeth in the way of sinners, nor sitteth in the seat of the scornful. But his delight is in the law of the LORD; and in his law doth he meditate day and night. And he shall be like a tree planted by the rivers of water..." },
+      { id: "sidroth-kjv-11", reference: "Romans 4:17-21", title: "Healing Meditation", text: "(As it is written, I have made thee a father of many nations,) before him whom he believed, even God, who quickeneth the dead, and calleth those things which be not as though they were..." },
+      { id: "sidroth-kjv-12", reference: "Isaiah 54:17", title: "Healing Meditation", text: "No weapon that is formed against thee shall prosper; and every tongue that shall rise against thee in judgment thou shalt condemn. This is the heritage of the servants of the LORD..." },
+      { id: "sidroth-kjv-13", reference: "John 10:10", title: "Healing Meditation", text: "The thief cometh not, but for to steal, and to kill, and to destroy: I am come that they might have life, and that they might have it more abundantly." },
+      { id: "sidroth-kjv-14", reference: "Matthew 28:18-19", title: "Healing Meditation", text: "And Jesus came and spake unto them, saying, All power is given unto me in heaven and in earth. Go ye therefore, and teach all nations, baptizing them in the name of the Father, and of the Son, and of the Holy Ghost." },
+      { id: "sidroth-kjv-15", reference: "Luke 10:19", title: "Healing Meditation", text: "Behold, I give unto you power to tread on serpents and scorpions, and over all the power of the enemy: and nothing shall by any means hurt you." },
+      { id: "sidroth-kjv-16", reference: "2 Peter 1:3-4", title: "Healing Meditation", text: "According as his divine power hath given unto us all things that pertain unto life and godliness, through the knowledge of him that hath called us to glory and virtue..." },
+      { id: "sidroth-kjv-17", reference: "1 John 3:8", title: "Healing Meditation", text: "He that committeth sin is of the devil; for the devil sinneth from the beginning. For this purpose the Son of God was manifested, that he might destroy the works of the devil." },
+      { id: "sidroth-kjv-18", reference: "1 Peter 3:9", title: "Healing Meditation", text: "Not rendering evil for evil, or railing for railing: but contrariwise blessing; knowing that ye are thereunto called, that ye should inherit a blessing." },
+      { id: "sidroth-kjv-19", reference: "Isaiah 55:10-12", title: "Healing Meditation", text: "For as the rain cometh down, and the snow from heaven, and returneth not thither, but watereth the earth, and maketh it bring forth and bud..." },
+      { id: "sidroth-kjv-20", reference: "Zephaniah 3:17", title: "Healing Meditation", text: "The LORD thy God in the midst of thee is mighty; he will save, he will rejoice over thee with joy; he will rest in his love, he will joy over thee with singing." },
+      { id: "sidroth-kjv-21", reference: "Philippians 2:9-10", title: "Healing Meditation", text: "Wherefore God also hath highly exalted him, and given him a name which is above every name: That at the name of Jesus every knee should bow, of things in heaven, and things in earth, and things under the earth;" }
+    ]
+  }
 ];
 
 // Fallback
