@@ -53,7 +53,12 @@ function initAudio() {
 function speakText(text, rate = 1.0, lang = 'zh-TW') {
   return new Promise(resolve => {
     if ('speechSynthesis' in window) {
+      // iOS Safari hack: cancel() sometimes perma-breaks the speech queue.
+      // Calling pause() and resume() helps clear out the stuck internal state.
       window.speechSynthesis.cancel();
+      window.speechSynthesis.pause();
+      window.speechSynthesis.resume();
+
       const utterance = new SpeechSynthesisUtterance(text);
       utterance.lang = lang;
       utterance.rate = rate;
@@ -62,6 +67,9 @@ function speakText(text, rate = 1.0, lang = 'zh-TW') {
       const safeResolve = () => {
         if (!resolved) {
           resolved = true;
+          // Clear out the utterance reference to prevent mem leak bugs in Safari
+          utterance.onend = null;
+          utterance.onerror = null;
           resolve();
         }
       };
