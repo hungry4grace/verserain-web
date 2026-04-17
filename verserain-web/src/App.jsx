@@ -456,7 +456,8 @@ export default function App() {
         }
       }
     });
-    return [...baseVerseSets, ...merged];
+    const filteredBase = baseVerseSets.filter(bs => !merged.some(m => m.id === bs.id));
+    return [...filteredBase, ...merged];
   }, [customVerseSets, publishedVerseSets, baseVerseSets, playerName, version]);
 
   const safeActiveSets = activeVerseSets.length > 0 ? activeVerseSets : [{
@@ -3031,7 +3032,7 @@ export default function App() {
                             <td style={{ padding: '1rem', textAlign: 'center', color: '#3b82f6', fontSize: '1.2rem' }}>{customVerseSets.some(c => c.id === set.id) ? '👑' : '📁'}</td>
                             <td style={{ padding: '1rem', fontWeight: 'bold', color: '#1e293b', fontSize: '1.05rem' }}>
                               <span>{set.title}</span>
-                              {isAdmin && String(set.id).startsWith("custom-") && !customVerseSets.some(c => c.id === set.id) && (
+                              {isAdmin && !customVerseSets.some(c => c.id === set.id) && (
                                 <span style={{ marginLeft: '1rem', display: 'inline-flex', gap: '0.5rem' }}>
                                   <button onClick={(e) => {
                                     e.stopPropagation();
