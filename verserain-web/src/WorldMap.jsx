@@ -9,14 +9,26 @@ function getRoomColor(roomId) {
   return ROOM_COLORS[hash];
 }
 
-// Leaflet CSS injected dynamically
-function injectLeafletCSS() {
-  if (document.getElementById('leaflet-css')) return;
-  const link = document.createElement('link');
-  link.id = 'leaflet-css';
-  link.rel = 'stylesheet';
-  link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
-  document.head.appendChild(link);
+// Load Leaflet and MarkerCluster Plugin dynamically
+function loadLeafletAndCluster() {
+  return new Promise((resolve) => {
+    if (window.L && window.L.markerClusterGroup) return resolve(window.L);
+    
+    if (!document.getElementById('leaflet-css')) {
+      const css1 = document.createElement('link'); css1.id = 'leaflet-css'; css1.rel = 'stylesheet'; css1.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css'; document.head.appendChild(css1);
+      const css2 = document.createElement('link'); css2.id = 'leaflet-cluster-css'; css2.rel = 'stylesheet'; css2.href = 'https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css'; document.head.appendChild(css2);
+    }
+
+    import('https://unpkg.com/leaflet@1.9.4/dist/leaflet-src.esm.js').then(L => {
+      window.L = L; // Required for markercluster plugin to attach itself
+      const script = document.createElement('script');
+      script.src = 'https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js';
+      script.onload = () => resolve(window.L);
+      document.head.appendChild(script);
+    }).catch(err => {
+      console.error('Failed to load Leaflet', err);
+    });
+  });
 }
 
 export default function WorldMap({ t, playerName }) {
@@ -46,10 +58,7 @@ export default function WorldMap({ t, playerName }) {
   useEffect(() => {
     if (loading || !mapRef.current) return;
 
-    injectLeafletCSS();
-
-    // Dynamic import of Leaflet
-    import('https://unpkg.com/leaflet@1.9.4/dist/leaflet-src.esm.js')
+    loadLeafletAndCluster()
       .then(L => {
         let map = leafletMapRef.current;
         
@@ -69,28 +78,30 @@ export default function WorldMap({ t, playerName }) {
             maxZoom: 19
           }).addTo(map);
 
-          markersGroupRef.current = L.layerGroup().addTo(map);
+          // Use MarkerClusterGroup instead of regular layerGroup
+          markersGroupRef.current = L.markerClusterGroup({
+            maxClusterRadius: 40,
+            spiderfyOnMaxZoom: true,
+            showCoverageOnHover: false,
+            zoomToBoundsOnClick: true,
+            iconCreateFunction: function(cluster) {
+              return L.divIcon({ 
+                html: '<div class="custom-cluster">' + cluster.getChildCount() + '</div>', 
+                className: 'custom-cluster-icon', 
+                iconSize: [36, 36] 
+              });
+            }
+          }).addTo(map);
+
           leafletMapRef.current = map;
         }
 
         // Clear existing markers for this update
         markersGroupRef.current.clearLayers();
 
-        // Object to track identical locations to jitter overlapping markers
-        const locationOffsets = {};
-
         players.forEach(p => {
-          // Identify locations that are too close, using a grid string
-          const key = `${p.lat.toFixed(2)},${p.lng.toFixed(2)}`;
-          if (!locationOffsets[key]) locationOffsets[key] = 0;
-          const offsetFactor = locationOffsets[key];
-          locationOffsets[key]++;
-
-          // Generate a small jitter to separate overlapping points visually
-          const spiralAngle = offsetFactor * (Math.PI * 2.3); 
-          const spiralRadius = offsetFactor > 0 ? (0.015 * Math.ceil(offsetFactor / 2)) : 0;
-          const finalLat = p.lat + spiralRadius * Math.cos(spiralAngle);
-          const finalLng = p.lng + spiralRadius * Math.sin(spiralAngle);
+          const finalLat = p.lat;
+          const finalLng = p.lng;
 
           const isCurrentUser = p.name === playerName;
           const roomColor = getRoomColor(p.roomId);
@@ -118,7 +129,6 @@ export default function WorldMap({ t, playerName }) {
 
           const marker = L.marker([finalLat, finalLng], { icon });
 
-          // Simple popup without the scoreboard
           const roomBadge = p.roomId
             ? `<div style="margin-top:6px; font-size:0.8rem; font-weight:bold; background:${roomColor}22; color:${roomColor}; border-radius:12px; padding:2px 8px; display:inline-block;">⚔️ 房間 ${p.roomId}</div>`
             : '';
@@ -136,7 +146,7 @@ export default function WorldMap({ t, playerName }) {
 
           marker.bindPopup(popup);
 
-          // Click to zoom in by 3 levels
+          // Click to zoom in is handled automatically by cluster, but we can preserve it for unclustered individual markers
           marker.on('click', function () {
             const currentZoom = map.getZoom();
             const targetZoom = Math.min(currentZoom + 3, map.getMaxZoom());
@@ -153,11 +163,6 @@ export default function WorldMap({ t, playerName }) {
 
     return () => {
       // Don't remove the map instance on unmount/re-render to preserve view
-      // We only clear markers when data updates, handled above
-      // if (leafletMapRef.current) {
-      //   leafletMapRef.current.remove();
-      //   leafletMapRef.current = null;
-      // }
     };
   }, [loading, players, playerName]);
 
@@ -244,6 +249,32 @@ export default function WorldMap({ t, playerName }) {
           border: 1px solid #e2e8f0;
         }
         .verse-map-popup .leaflet-popup-tip { background: white; }
+        
+        .custom-cluster-icon {
+          display: flex !important;
+          align-items: center;
+          justify-content: center;
+        }
+        .custom-cluster {
+          background-color: #1e293b;
+          color: white;
+          border-radius: 50%;
+          width: 36px;
+          height: 36px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-weight: bold;
+          font-family: system-ui, sans-serif;
+          font-size: 14px;
+          box-shadow: 0 4px 10px rgba(0,0,0,0.4);
+          border: 2px solid #334155;
+          transition: transform 0.2s;
+        }
+        .custom-cluster:hover {
+          transform: scale(1.1);
+          background-color: #0f172a;
+        }
       `}</style>
     </div>
   );
