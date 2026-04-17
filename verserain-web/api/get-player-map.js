@@ -25,17 +25,22 @@ export default async function handler(req, res) {
 
     const players = results
       .filter(r => r && r.lat && r.lng)
-      .map(r => ({
-        name: r.name,
-        score: parseFloat(r.score || 0),
-        lat: parseFloat(r.lat),
-        lng: parseFloat(r.lng),
-        country: r.country || '',
-        city: r.city || '',
-        verseRef: r.verseRef || '',
-        roomId: r.roomId || null,
-        updatedAt: r.updatedAt ? parseInt(r.updatedAt) : 0
-      }));
+      .map(r => {
+        const updatedAt = r.updatedAt ? parseInt(r.updatedAt) : 0;
+        // If the player's last update was more than 15 minutes ago, they are no longer in an active room
+        const isStale = (Date.now() - updatedAt) > 15 * 60 * 1000;
+        return {
+          name: r.name,
+          score: parseFloat(r.score || 0),
+          lat: parseFloat(r.lat),
+          lng: parseFloat(r.lng),
+          country: r.country || '',
+          city: r.city || '',
+          verseRef: r.verseRef || '',
+          roomId: isStale ? null : (r.roomId || null),
+          updatedAt
+        };
+      });
 
     res.status(200).json(players);
   } catch (error) {

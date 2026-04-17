@@ -182,14 +182,7 @@ export default function WorldMap({ t, playerName }) {
             </div>
           ) : null;
         })()}
-        {players.length > 0 && (
-          <div style={{ color: '#475569', fontSize: '0.9rem' }}>
-            🏆 {t('最高分', 'Top score')}: <strong style={{ color: '#3b82f6' }}>
-              {Math.max(...players.map(p => p.score)).toLocaleString()}
-            </strong>
-            {' '}({players.reduce((best, p) => p.score > (best?.score || 0) ? p : best, null)?.name})
-          </div>
-        )}
+
         <button
           onClick={() => {
             setLoading(true);

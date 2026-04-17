@@ -53,23 +53,35 @@ function initAudio() {
 function speakText(text, rate = 1.0, lang = 'zh-TW') {
   return new Promise(resolve => {
     if ('speechSynthesis' in window) {
-      // iOS Safari hack: cancel() sometimes perma-breaks the speech queue.
-      // Calling pause() and resume() helps clear out the stuck internal state.
+      // Clear queue. This is standard to prevent overlapping, but Safari needs extra trickery.
       window.speechSynthesis.cancel();
-      window.speechSynthesis.pause();
-      window.speechSynthesis.resume();
+
+      // Safari hack: cancel() sometimes perma-breaks the speech queue.
+      // Calling pause() and resume() helps clear out the stuck internal state.
+      // BUT doing this in Chrome can cause it to stall completely or permanently pause.
+      if (/^((?!chrome|android).)*safari/i.test(navigator.userAgent)) {
+        window.speechSynthesis.pause();
+        window.speechSynthesis.resume();
+      }
 
       const utterance = new SpeechSynthesisUtterance(text);
       utterance.lang = lang;
       utterance.rate = rate;
 
+      // Chrome GC bug workaround: keep a global reference to the utterance
+      // so the garbage collector doesn't reap it before the audio finishes.
+      window.__speech_utterances = window.__speech_utterances || [];
+      window.__speech_utterances.push(utterance);
+
       let resolved = false;
       const safeResolve = () => {
         if (!resolved) {
           resolved = true;
-          // Clear out the utterance reference to prevent mem leak bugs in Safari
+          // Clean up memory
           utterance.onend = null;
           utterance.onerror = null;
+          const idx = window.__speech_utterances.indexOf(utterance);
+          if (idx !== -1) window.__speech_utterances.splice(idx, 1);
           resolve();
         }
       };
