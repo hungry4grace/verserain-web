@@ -46,6 +46,12 @@ export default function WorldMap({ t, playerName }) {
   const [loading, setLoading] = useState(true);
   const [selectedPlayer, setSelectedPlayer] = useState(null);
   const [error, setError] = useState(null);
+  const [selectedRoom, setSelectedRoom] = useState(null);
+  const selectedRoomRef = useRef(selectedRoom);
+  
+  useEffect(() => {
+    selectedRoomRef.current = selectedRoom;
+  }, [selectedRoom]);
 
   // Fetch player map data + auto-refresh every 30s
   useEffect(() => {
@@ -93,8 +99,27 @@ export default function WorldMap({ t, playerName }) {
             showCoverageOnHover: false,
             zoomToBoundsOnClick: true,
             iconCreateFunction: function(cluster) {
+              const sr = selectedRoomRef.current;
+              let bgColor = '#1e293b';
+              let borderColor = '#334155';
+              let opacity = 1.0;
+              let filter = 'none';
+
+              if (sr) {
+                const childMarkers = cluster.getAllChildMarkers();
+                const hasSelected = childMarkers.some(m => m.options.myRoomId === sr);
+                if (hasSelected) {
+                  const rc = getRoomColor(sr);
+                  bgColor = rc;
+                  borderColor = rc;
+                } else {
+                  opacity = 0.3;
+                  filter = 'grayscale(100%)';
+                }
+              }
+
               return L.divIcon({ 
-                html: '<div class="custom-cluster">' + cluster.getChildCount() + '</div>', 
+                html: `<div class="custom-cluster" style="background-color: ${bgColor}; border-color: ${borderColor}; opacity: ${opacity}; filter: ${filter};">` + cluster.getChildCount() + '</div>', 
                 className: 'custom-cluster-icon', 
                 iconSize: [36, 36] 
               });
@@ -114,11 +139,20 @@ export default function WorldMap({ t, playerName }) {
           const isCurrentUser = p.name === playerName;
           const roomColor = getRoomColor(p.roomId);
           
-          const bgColor = roomColor || (isCurrentUser ? '#f59e0b' : '#1e293b');
-          const borderColor = roomColor ? roomColor : (isCurrentUser ? '#fbbf24' : '#475569');
-          const glowStyle = roomColor ? `box-shadow: 0 0 0 3px ${roomColor}55, 0 0 12px ${roomColor}88;` : 'box-shadow: 0 2px 6px rgba(0,0,0,0.3);';
+          let bgColor = roomColor || (isCurrentUser ? '#f59e0b' : '#1e293b');
+          let borderColor = roomColor ? roomColor : (isCurrentUser ? '#fbbf24' : '#475569');
+          let glowStyle = roomColor ? `box-shadow: 0 0 0 3px ${roomColor}55, 0 0 12px ${roomColor}88;` : 'box-shadow: 0 2px 6px rgba(0,0,0,0.3);';
+          let opacity = 1.0;
+          let filter = 'none';
 
-          // Directly show the player's name as a pill-shaped marker
+          if (selectedRoom) {
+            if (p.roomId !== selectedRoom) {
+               opacity = 0.3;
+               filter = 'grayscale(100%)';
+               glowStyle = 'none';
+            }
+          }
+
           const icon = L.divIcon({
             className: '',
             html: `<div style="
@@ -128,6 +162,8 @@ export default function WorldMap({ t, playerName }) {
               border-radius:20px;
               padding: 4px 10px;
               color:white; font-weight:bold; font-size:12px;
+              opacity: ${opacity};
+              filter: ${filter};
               ${glowStyle}
               cursor:pointer;
               white-space: nowrap;
@@ -135,7 +171,7 @@ export default function WorldMap({ t, playerName }) {
             iconSize: null // Allows it to size itself based on contents
           });
 
-          const marker = L.marker([finalLat, finalLng], { icon });
+          const marker = L.marker([finalLat, finalLng], { icon, myRoomId: p.roomId });
 
           const roomBadge = p.roomId
             ? `<div style="margin-top:6px; font-size:0.8rem; font-weight:bold; background:${roomColor}22; color:${roomColor}; border-radius:12px; padding:2px 8px; display:inline-block;">⚔️ 房間 ${p.roomId}</div>`
@@ -172,7 +208,7 @@ export default function WorldMap({ t, playerName }) {
     return () => {
       // Don't remove the map instance on unmount/re-render to preserve view
     };
-  }, [loading, players, playerName]);
+  }, [loading, players, playerName, selectedRoom]);
 
   return (
     <div>
@@ -190,21 +226,25 @@ export default function WorldMap({ t, playerName }) {
                 <button 
                   key={rid} 
                   onClick={() => {
-                    const roomPlayers = players.filter(p => p.roomId === rid);
-                    if (roomPlayers.length > 0 && leafletMapRef.current) {
-                      const lats = roomPlayers.map(p => p.lat);
-                      const lngs = roomPlayers.map(p => p.lng);
-                      leafletMapRef.current.flyToBounds([
-                        [Math.min(...lats), Math.min(...lngs)],
-                        [Math.max(...lats), Math.max(...lngs)]
-                      ], { padding: [60, 60], maxZoom: 7 });
+                    const isSelecting = selectedRoom !== rid;
+                    setSelectedRoom(isSelecting ? rid : null);
+                    if (isSelecting) {
+                      const roomPlayers = players.filter(p => p.roomId === rid);
+                      if (roomPlayers.length > 0 && leafletMapRef.current) {
+                        const lats = roomPlayers.map(p => p.lat);
+                        const lngs = roomPlayers.map(p => p.lng);
+                        leafletMapRef.current.flyToBounds([
+                          [Math.min(...lats), Math.min(...lngs)],
+                          [Math.max(...lats), Math.max(...lngs)]
+                        ], { padding: [60, 60], maxZoom: 7 });
+                      }
                     }
                   }}
                   onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
                   onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
                   style={{ 
-                    display: 'inline-flex', alignItems: 'center', gap: '4px', background: getRoomColor(rid) + '22', 
-                    color: getRoomColor(rid), border: `1px solid ${getRoomColor(rid)}`, borderRadius: '99px', 
+                    display: 'inline-flex', alignItems: 'center', gap: '4px', background: selectedRoom === rid ? getRoomColor(rid) + '88' : getRoomColor(rid) + '22', 
+                    color: selectedRoom === rid ? '#fff' : getRoomColor(rid), border: `1px solid ${getRoomColor(rid)}`, borderRadius: '99px', 
                     padding: '2px 10px', fontSize: '0.78rem', fontWeight: 'bold', cursor: 'pointer',
                     transition: 'transform 0.2s', outline: 'none'
                   }}>
