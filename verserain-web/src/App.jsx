@@ -1113,7 +1113,7 @@ export default function App() {
       setMultiplayerRoomId(roomParam.toUpperCase().trim());
       // Small timeout to allow state applied before url replace
       setTimeout(() => window.history.replaceState({}, document.title, window.location.pathname), 100);
-      return; 
+      return;
     }
 
     if (setRef) {
@@ -2591,8 +2591,8 @@ export default function App() {
                         }} style={{ fontSize: '2rem', cursor: 'pointer', padding: '0.5rem', background: 'white', borderRadius: '12px', border: '1px solid #e2e8f0' }}>{emj}</div>
                       ))}
                     </div>
-                    <div style={{ display: 'flex', gap: '0.5rem', width: '100%', maxWidth: '300px', marginTop: '1rem' }}>
-                      <input id="guestNameInput" type="text" placeholder={t("你的暱稱", "Your nickname")} style={{ flex: 1, padding: '1rem', borderRadius: '12px', border: '2px solid #cbd5e1', fontSize: '1.2rem', fontWeight: 'bold' }} onKeyDown={(e) => {
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem', width: '100%', maxWidth: '300px', marginTop: '1rem' }}>
+                      <input id="guestNameInput" type="text" placeholder={t("你的暱稱", "Your nickname")} style={{ width: '100%', padding: '1rem', borderRadius: '12px', border: '2px solid #cbd5e1', fontSize: '1.2rem', fontWeight: 'bold', boxSizing: 'border-box' }} onKeyDown={(e) => {
                         if (e.key === 'Enter') document.getElementById('guestNameBtn')?.click();
                       }} />
                       <button id="guestNameBtn" onClick={() => {
@@ -2601,7 +2601,7 @@ export default function App() {
                           setPlayerName(val);
                           localStorage.setItem('verserain_player_name', val);
                         }
-                      }} className="primary-button" style={{ background: '#3b82f6', color: 'white', border: 'none', padding: '0 1.5rem', borderRadius: '12px', fontWeight: 'bold', cursor: 'pointer', fontSize: '1.2rem' }}>{t("出發！", "Go!")}</button>
+                      }} className="primary-button" style={{ width: '100%', background: '#3b82f6', color: 'white', border: 'none', padding: '1rem', borderRadius: '12px', fontWeight: 'bold', cursor: 'pointer', fontSize: '1.2rem' }}>{t("出發！", "Go!")}</button>
                     </div>
                   </div>
                 ) : !multiplayerRoomId ? (
@@ -2684,7 +2684,7 @@ export default function App() {
                       <h3 style={{ margin: '0 0 0.5rem 0', color: '#86198f' }}>{t("準備比賽！", "Get Ready!")}</h3>
                       <div style={{ fontSize: '1.8rem', fontWeight: 'bold', color: getRoomColor(multiplayerRoomId) || '#3b82f6', letterSpacing: '6px', marginBottom: '0.5rem', background: (getRoomColor(multiplayerRoomId) || '#3b82f6') + '18', borderRadius: '6px', padding: '0.3rem 1rem', display: 'inline-block', border: `2px solid ${getRoomColor(multiplayerRoomId) || '#3b82f6'}` }}>{multiplayerRoomId}</div>
                       <p style={{ fontSize: '0.8rem', color: '#94a3b8', margin: '0 0 0.8rem 0' }}>{t("分享此代碼讓更多人加入", "Share this code to let others join")}</p>
-                      
+
                       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
                         <div style={{ background: 'white', padding: '0.5rem', borderRadius: '8px', border: '1px solid #cbd5e1' }}>
                           <QRCodeSVG value={`${window.location.origin}${window.location.pathname}?room=${multiplayerRoomId}`} size={100} />
@@ -2883,7 +2883,7 @@ export default function App() {
                       <h3 style={{ margin: '0 0 1rem 0', color: '#334155' }}>{t("等待玩家...", "Waiting...")}</h3>
                       <div style={{ fontSize: '2.5rem', fontWeight: 'bold', color: getRoomColor(multiplayerRoomId) || '#3b82f6', letterSpacing: '6px', marginBottom: '0.8rem', background: (getRoomColor(multiplayerRoomId) || '#3b82f6') + '18', borderRadius: '8px', padding: '0.4rem 1.2rem', display: 'inline-block', border: `3px solid ${getRoomColor(multiplayerRoomId) || '#3b82f6'}`, boxShadow: `0 0 16px ${getRoomColor(multiplayerRoomId) || '#3b82f6'}44` }}>{multiplayerRoomId}</div>
                       <p style={{ color: '#94a3b8', fontSize: '0.9rem', margin: 0 }}>{t("請朋友輸入上方的代碼來加入您的遊戲", "Ask your friend to enter this code to join")}</p>
-                      
+
                       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem', marginTop: '1rem' }}>
                         <div style={{ background: 'white', padding: '0.5rem', borderRadius: '8px', border: '1px dashed #cbd5e1' }}>
                           <QRCodeSVG value={`${window.location.origin}${window.location.pathname}?room=${multiplayerRoomId}`} size={120} />
@@ -4536,7 +4536,7 @@ export default function App() {
                       display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', transition: 'all 0.2s'
                     }}
                   >
-                    <Home size={20} /> {t("放棄", "Give Up")}
+                    <Home size={20} /> {t("跳過", "Give Up")}
                   </button>
                 )}
               </div>
