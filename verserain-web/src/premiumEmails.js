@@ -250,5 +250,6 @@ export const PREMIUM_EMAILS = [
   "asd335453037@gmail.com",
   "jeremiahcui@gmail.com",
   "weichang.frcc@gmail.com",
-  "wecan62099@gmail.com"
+  "wecan62099@gmail.com",
+  "ccl0136@gmail.com"
 ];
