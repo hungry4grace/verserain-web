@@ -174,10 +174,30 @@ export default function WorldMap({ t, playerName }) {
             <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'wrap' }}>
               <span style={{ color: '#475569', fontSize: '0.9rem' }}>⚔️ <strong style={{ color: '#ef4444' }}>{activeRooms.length}</strong> {t('場比賽進行中', 'active rooms')}:</span>
               {activeRooms.map(rid => (
-                <span key={rid} style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', background: getRoomColor(rid) + '22', color: getRoomColor(rid), border: `1px solid ${getRoomColor(rid)}`, borderRadius: '99px', padding: '1px 8px', fontSize: '0.78rem', fontWeight: 'bold' }}>
+                <button 
+                  key={rid} 
+                  onClick={() => {
+                    const roomPlayers = players.filter(p => p.roomId === rid);
+                    if (roomPlayers.length > 0 && leafletMapRef.current) {
+                      const lats = roomPlayers.map(p => p.lat);
+                      const lngs = roomPlayers.map(p => p.lng);
+                      leafletMapRef.current.flyToBounds([
+                        [Math.min(...lats), Math.min(...lngs)],
+                        [Math.max(...lats), Math.max(...lngs)]
+                      ], { padding: [60, 60], maxZoom: 7 });
+                    }
+                  }}
+                  onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
+                  onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                  style={{ 
+                    display: 'inline-flex', alignItems: 'center', gap: '4px', background: getRoomColor(rid) + '22', 
+                    color: getRoomColor(rid), border: `1px solid ${getRoomColor(rid)}`, borderRadius: '99px', 
+                    padding: '2px 10px', fontSize: '0.78rem', fontWeight: 'bold', cursor: 'pointer',
+                    transition: 'transform 0.2s', outline: 'none'
+                  }}>
                   <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: getRoomColor(rid), display: 'inline-block' }}></span>
                   {rid} ({players.filter(p => p.roomId === rid).length}人)
-                </span>
+                </button>
               ))}
             </div>
           ) : null;
