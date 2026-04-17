@@ -4275,14 +4275,14 @@ export default function App() {
               </div>
             </div>
           ) : playMode.startsWith('square') ? (
-            <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: playMode.startsWith('square') ? '35vh' : 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-start', paddingTop: '5.5rem', paddingBottom: '2rem', overflowY: 'auto', pointerEvents: 'none' }}>
+            <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: playMode.startsWith('square') ? 'clamp(80px, 25vh, 200px)' : 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-start', paddingTop: 'clamp(3.5rem, 12vh, 5.5rem)', paddingBottom: '1rem', overflowY: 'auto', pointerEvents: 'none' }}>
               <div style={{ display: 'grid', gridTemplateColumns: `repeat(${distractionLevel <= 1 ? 2 : 3}, minmax(0, 1fr))`, gap: 'clamp(0.4rem, 2vh, 0.75rem)', width: '95%', maxWidth: distractionLevel <= 1 ? '600px' : '900px', pointerEvents: 'auto', margin: 'auto 0' }}>
                 {blocks.map(block => {
                   let appliedClasses = 'falling-block-inner';
                   if (block.error) appliedClasses += ' error-shake';
                   if (block.correct && (!block.claimedBy || block.claimedBy === myClientId)) appliedClasses += ' success-flash';
 
-                  let blockStyle = { cursor: 'pointer', padding: 'clamp(0.4rem, 2vh, 1.5rem)', fontSize: 'clamp(0.9rem, 2.5vw, 1.5rem)', display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 'clamp(3rem, 15vh, 100px)', wordBreak: 'break-word', hyphens: 'auto', textAlign: 'center', visibility: block.hidden ? 'hidden' : 'visible' };
+                  let blockStyle = { cursor: 'pointer', padding: 'clamp(0.4rem, 2vh, 1.5rem)', fontSize: 'clamp(0.9rem, 2.5vw, 1.5rem)', display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 'clamp(2.5rem, 12vh, 100px)', wordBreak: 'break-word', hyphens: 'auto', textAlign: 'center', visibility: block.hidden ? 'hidden' : 'visible' };
 
                   if (block.claimedBy) {
                     // Block instantly disappears physically so the flying clone can animate
