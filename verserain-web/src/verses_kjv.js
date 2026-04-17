@@ -1095,6 +1095,34 @@ export const VERSE_SETS_KJV = [
       { id: "sidroth-kjv-20", reference: "Zephaniah 3:17", title: "Healing Meditation", text: "The LORD thy God in the midst of thee is mighty; he will save, he will rejoice over thee with joy; he will rest in his love, he will joy over thee with singing." },
       { id: "sidroth-kjv-21", reference: "Philippians 2:9-10", title: "Healing Meditation", text: "Wherefore God also hath highly exalted him, and given him a name which is above every name: That at the name of Jesus every knee should bow, of things in heaven, and things in earth, and things under the earth;" }
     ]
+  },
+  {
+    id: "chiayi-children-kjv",
+    title: "Children Sunday School",
+    description: "Essential scriptures for Sunday School children...",
+    language: "en",
+    verses: [
+      { id: "css-kjv-1", reference: "John 3:16", title: "Children Sunday School", text: "For God so loved the world, that he gave his only begotten Son, that whosoever believeth in him should not perish, but have everlasting life." },
+      { id: "css-kjv-2", reference: "Proverbs 3:5-6", title: "Children Sunday School", text: "Trust in the LORD with all thine heart; and lean not unto thine own understanding. In all thy ways acknowledge him, and he shall direct thy paths." },
+      { id: "css-kjv-3", reference: "Philippians 4:6-7", title: "Children Sunday School", text: "Be careful for nothing; but in every thing by prayer and supplication with thanksgiving let your requests be made known unto God. And the peace of God, which passeth all understanding, shall keep your hearts and minds through Christ Jesus." },
+      { id: "css-kjv-4", reference: "Jeremiah 29:11", title: "Children Sunday School", text: "For I know the thoughts that I think toward you, saith the LORD, thoughts of peace, and not of evil, to give you an expected end." },
+      { id: "css-kjv-5", reference: "Isaiah 41:10", title: "Children Sunday School", text: "Fear thou not; for I am with thee: be not dismayed; for I am thy God: I will strengthen thee; yea, I will help thee; yea, I will uphold thee with the right hand of my righteousness." },
+      { id: "css-kjv-6", reference: "Psalms 23:1", title: "Children Sunday School", text: "The LORD is my shepherd; I shall not want." },
+      { id: "css-kjv-7", reference: "Matthew 11:28", title: "Children Sunday School", text: "Come unto me, all ye that labour and are heavy laden, and I will give you rest." },
+      { id: "css-kjv-8", reference: "Isaiah 40:31", title: "Children Sunday School", text: "But they that wait upon the LORD shall renew their strength; they shall mount up with wings as eagles; they shall run, and not be weary; and they shall walk, and not faint." },
+      { id: "css-kjv-9", reference: "1 Peter 5:7", title: "Children Sunday School", text: "Casting all your care upon him; for he careth for you." },
+      { id: "css-kjv-10", reference: "1 Corinthians 13:13", title: "Children Sunday School", text: "And now abideth faith, hope, charity, these three; but the greatest of these is charity." },
+      { id: "css-kjv-11", reference: "2 Corinthians 5:17", title: "Children Sunday School", text: "Therefore if any man be in Christ, he is a new creature: old things are passed away; behold, all things are become new." },
+      { id: "css-kjv-12", reference: "Ephesians 2:8", title: "Children Sunday School", text: "For by grace are ye saved through faith; and that not of yourselves: it is the gift of God:" },
+      { id: "css-kjv-13", reference: "Romans 3:23", title: "Children Sunday School", text: "For all have sinned, and come short of the glory of God;" },
+      { id: "css-kjv-14", reference: "Romans 6:23", title: "Children Sunday School", text: "For the wages of sin is death; but the gift of God is eternal life through Jesus Christ our Lord." },
+      { id: "css-kjv-15", reference: "Joshua 1:9", title: "Children Sunday School", text: "Have not I commanded thee? Be strong and of a good courage; be not afraid, neither be thou dismayed: for the LORD thy God is with thee whithersoever thou goest." },
+      { id: "css-kjv-16", reference: "Psalms 46:1", title: "Children Sunday School", text: "God is our refuge and strength, a very present help in trouble." },
+      { id: "css-kjv-17", reference: "Galatians 2:20", title: "Children Sunday School", text: "I am crucified with Christ: nevertheless I live; yet not I, but Christ liveth in me: and the life which I now live in the flesh I live by the faith of the Son of God, who loved me, and gave himself for me." },
+      { id: "css-kjv-18", reference: "James 1:19", title: "Children Sunday School", text: "Wherefore, my beloved brethren, let every man be swift to hear, slow to speak, slow to wrath:" },
+      { id: "css-kjv-19", reference: "Micah 6:8", title: "Children Sunday School", text: "He hath shewed thee, O man, what is good; and what doth the LORD require of thee, but to do justly, and to love mercy, and to walk humbly with thy God?" },
+      { id: "css-kjv-20", reference: "John 14:6", title: "Children Sunday School", text: "Jesus saith unto him, I am the way, the truth, and the life: no man cometh unto the Father, but by me." }
+    ]
   }
 ];
 
