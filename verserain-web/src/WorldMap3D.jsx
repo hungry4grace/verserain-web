@@ -213,9 +213,9 @@ export default function WorldMap3D({ t, playerName, onJoinRoom, onToggleMode, cu
       el.onclick = () => {
         if (globeEl.current) {
           globeEl.current.controls().autoRotate = false;
-          // Zoom in smoothly, just like 2D's zoom + 3
-          // Altitude goes from ~2.5 (far) to 0.1 (very close)
-          const targetAltitude = Math.max(0.1, altitude * 0.5); 
+          // Zoom in smoothly, but prevent zooming too close to avoid blurry texture 
+          // Altitude goes from ~2.5 (far) to 0.6 (continent/country level)
+          const targetAltitude = Math.max(0.6, altitude * 0.5); 
           globeEl.current.pointOfView({ lat: d.lat, lng: d.lng, altitude: targetAltitude }, 1000);
         }
       };
@@ -240,8 +240,8 @@ export default function WorldMap3D({ t, playerName, onJoinRoom, onToggleMode, cu
       el.onclick = () => {
         if (globeEl.current) {
           globeEl.current.controls().autoRotate = false;
-          // Zoom in to the single marker, equivalent to flyTo in 2D
-          const targetAltitude = Math.max(0.1, altitude * 0.5);
+          // Zoom in to the single marker, but stop at 0.6 altitude
+          const targetAltitude = Math.max(0.6, altitude * 0.5);
           globeEl.current.pointOfView({ lat: d.lat, lng: d.lng, altitude: targetAltitude }, 1000);
         }
       };
