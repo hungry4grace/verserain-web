@@ -53,11 +53,10 @@ export default function WorldMap3D({ t, playerName, onJoinRoom, onToggleMode, cu
     return () => clearInterval(interval);
   }, []);
 
-  // Add initial rotation and set controls after mount
+  // Add initial setting and set controls after mount
   useEffect(() => {
     if (globeEl.current && !loading) {
-      globeEl.current.controls().autoRotate = true;
-      globeEl.current.controls().autoRotateSpeed = 0.5;
+      globeEl.current.controls().autoRotate = false; // Stopped auto rotation per user request
     }
   }, [loading]);
 
@@ -200,8 +199,9 @@ export default function WorldMap3D({ t, playerName, onJoinRoom, onToggleMode, cu
       el.onclick = () => {
         if (globeEl.current) {
           globeEl.current.controls().autoRotate = false;
-          // Zoom in smoothly
-          const targetAltitude = Math.max(0.1, altitude - 0.5);
+          // Zoom in smoothly, just like 2D's zoom + 3
+          // Altitude goes from ~2.5 (far) to 0.1 (very close)
+          const targetAltitude = Math.max(0.1, altitude * 0.5); 
           globeEl.current.pointOfView({ lat: d.lat, lng: d.lng, altitude: targetAltitude }, 1000);
         }
       };
@@ -226,7 +226,9 @@ export default function WorldMap3D({ t, playerName, onJoinRoom, onToggleMode, cu
       el.onclick = () => {
         if (globeEl.current) {
           globeEl.current.controls().autoRotate = false;
-          globeEl.current.pointOfView({ lat: d.lat, lng: d.lng, altitude: Math.min(altitude, 0.4) }, 1000);
+          // Zoom in to the single marker, equivalent to flyTo in 2D
+          const targetAltitude = Math.max(0.1, altitude * 0.5);
+          globeEl.current.pointOfView({ lat: d.lat, lng: d.lng, altitude: targetAltitude }, 1000);
         }
       };
     }
@@ -264,7 +266,7 @@ export default function WorldMap3D({ t, playerName, onJoinRoom, onToggleMode, cu
                         globeEl.current.pointOfView({ lat: midLat, lng: midLng, altitude: 0.8 }, 1500);
                       }
                     } else if (globeEl.current) {
-                        globeEl.current.controls().autoRotate = true;
+                        globeEl.current.controls().autoRotate = false;
                     }
                   }}
                   onDoubleClick={() => {
@@ -324,7 +326,7 @@ export default function WorldMap3D({ t, playerName, onJoinRoom, onToggleMode, cu
               ref={globeEl}
               width={dimensions.width}
               height={dimensions.height}
-              globeImageUrl="//unpkg.com/three-globe/example/img/earth-water.png"
+              globeImageUrl="//unpkg.com/three-globe/example/img/earth-blue-marble.jpg"
               bumpImageUrl="//unpkg.com/three-globe/example/img/earth-topology.png"
               backgroundImageUrl="//unpkg.com/three-globe/example/img/night-sky.png"
               htmlElementsData={mapData}
@@ -344,7 +346,7 @@ export default function WorldMap3D({ t, playerName, onJoinRoom, onToggleMode, cu
               style={{ position: 'absolute', bottom: '20px', left: '20px', background: 'rgba(255,255,255,0.8)', padding: '5px 10px', borderRadius: '8px', fontSize: '0.8rem', color: '#475569', boxShadow: '0 2px 5px rgba(0,0,0,0.2)', cursor: 'pointer', fontWeight: 'bold' }}
               onClick={() => {
                 if (globeEl.current) {
-                    globeEl.current.controls().autoRotate = true;
+                    globeEl.current.pointOfView({ lat: 20, lng: 105, altitude: 2.5 }, 1000);
                 }
                 setSelectedRoom(null);
               }}
