@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useMemo } from 'react';
+import Globe from 'react-globe.gl';
 
 // Same deterministic room color as in App.jsx
 const ROOM_COLORS = ['#ef4444','#f97316','#eab308','#22c55e','#14b8a6','#0ea5e9','#8b5cf6','#ec4899','#06b6d4','#84cc16'];
@@ -9,49 +10,34 @@ function getRoomColor(roomId) {
   return ROOM_COLORS[hash];
 }
 
-// Load Leaflet and MarkerCluster Plugin dynamically
-function loadLeafletAndCluster() {
-  return new Promise((resolve, reject) => {
-    if (window.L && window.L.markerClusterGroup) return resolve(window.L);
-    
-    if (!document.getElementById('leaflet-css')) {
-      const css1 = document.createElement('link'); css1.id = 'leaflet-css'; css1.rel = 'stylesheet'; css1.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css'; document.head.appendChild(css1);
-      const css2 = document.createElement('link'); css2.id = 'leaflet-cluster-css'; css2.rel = 'stylesheet'; css2.href = 'https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css'; document.head.appendChild(css2);
-    }
-
-    const loadCluster = () => {
-      const script = document.createElement('script');
-      script.src = 'https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js';
-      script.onload = () => resolve(window.L);
-      script.onerror = () => reject(new Error('Failed to load markercluster plugin'));
-      document.head.appendChild(script);
-    };
-
-    if (!window.L) {
-      const script = document.createElement('script');
-      script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
-      script.onload = () => loadCluster();
-      script.onerror = () => reject(new Error('Failed to load Leaflet script'));
-      document.head.appendChild(script);
-    } else {
-      loadCluster();
-    }
-  });
-}
-
 export default function WorldMap({ t, playerName, onJoinRoom }) {
-  const mapRef = useRef(null);
-  const leafletMapRef = useRef(null);
+  const globeEl = useRef(null);
+  const containerRef = useRef(null);
   const [players, setPlayers] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [selectedPlayer, setSelectedPlayer] = useState(null);
   const [error, setError] = useState(null);
   const [selectedRoom, setSelectedRoom] = useState(null);
-  const selectedRoomRef = useRef(selectedRoom);
-  
+  const [dimensions, setDimensions] = useState({ width: 800, height: 520 });
+
+  // Handle container resize
   useEffect(() => {
-    selectedRoomRef.current = selectedRoom;
-  }, [selectedRoom]);
+    const updateSize = () => {
+      if (containerRef.current) {
+        setDimensions({
+          width: containerRef.current.clientWidth,
+          height: 520
+        });
+      }
+    };
+    window.addEventListener('resize', updateSize);
+    updateSize(); // initial set
+    
+    // Sometimes it takes a moment for layout to settle
+    setTimeout(updateSize, 100);
+    setTimeout(updateSize, 500);
+    
+    return () => window.removeEventListener('resize', updateSize);
+  }, []);
 
   // Fetch player map data + auto-refresh every 30s
   useEffect(() => {
@@ -66,149 +52,81 @@ export default function WorldMap({ t, playerName, onJoinRoom }) {
     return () => clearInterval(interval);
   }, []);
 
-  const markersGroupRef = useRef(null);
-
-  // Init Leaflet map and markers
+  // Add initial rotation and set controls after mount
   useEffect(() => {
-    if (loading || !mapRef.current) return;
+    if (globeEl.current && !loading) {
+      globeEl.current.controls().autoRotate = true;
+      globeEl.current.controls().autoRotateSpeed = 0.5;
+    }
+  }, [loading]);
 
-    loadLeafletAndCluster()
-      .then(L => {
-        let map = leafletMapRef.current;
-        
-        // Only create the map once
-        if (!map) {
-          map = L.map(mapRef.current, {
-            center: [20, 105],
-            zoom: 3,
-            minZoom: 2,
-            maxZoom: 19,
-            zoomControl: true,
-            attributionControl: true,
-          });
+  const mapData = useMemo(() => {
+    return players.map((p) => {
+      const isCurrentUser = p.name === playerName;
+      const roomColor = getRoomColor(p.roomId);
+      
+      let bgColor = roomColor || (isCurrentUser ? '#f59e0b' : '#1e293b');
+      let borderColor = roomColor ? roomColor : (isCurrentUser ? '#fbbf24' : '#475569');
+      let glowStyle = roomColor ? `box-shadow: 0 0 0 3px ${roomColor}55, 0 0 12px ${roomColor}88;` : 'box-shadow: 0 2px 6px rgba(0,0,0,0.3);';
+      let opacity = 1.0;
+      let filter = 'none';
 
-          L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
-            maxZoom: 19
-          }).addTo(map);
-
-          // Use MarkerClusterGroup instead of regular layerGroup
-          markersGroupRef.current = L.markerClusterGroup({
-            maxClusterRadius: 40,
-            spiderfyOnMaxZoom: true,
-            showCoverageOnHover: false,
-            zoomToBoundsOnClick: true,
-            iconCreateFunction: function(cluster) {
-              const sr = selectedRoomRef.current;
-              let bgColor = '#1e293b';
-              let borderColor = '#334155';
-              let opacity = 1.0;
-              let filter = 'none';
-
-              if (sr) {
-                const childMarkers = cluster.getAllChildMarkers();
-                const hasSelected = childMarkers.some(m => m.options.myRoomId === sr);
-                if (hasSelected) {
-                  const rc = getRoomColor(sr);
-                  bgColor = rc;
-                  borderColor = rc;
-                } else {
-                  opacity = 0.3;
-                  filter = 'grayscale(100%)';
-                }
-              }
-
-              return L.divIcon({ 
-                html: `<div class="custom-cluster" style="background-color: ${bgColor}; border-color: ${borderColor}; opacity: ${opacity}; filter: ${filter};">` + cluster.getChildCount() + '</div>', 
-                className: 'custom-cluster-icon', 
-                iconSize: [36, 36] 
-              });
-            }
-          }).addTo(map);
-
-          leafletMapRef.current = map;
+      if (selectedRoom) {
+        if (p.roomId !== selectedRoom) {
+           opacity = 0.3;
+           filter = 'grayscale(100%)';
+           glowStyle = 'none';
+           bgColor = '#475569';
+           borderColor = '#334155';
         }
+      }
 
-        // Clear existing markers for this update
-        markersGroupRef.current.clearLayers();
+      return {
+        lat: p.lat,
+        lng: p.lng,
+        name: p.name,
+        roomId: p.roomId,
+        bgColor,
+        borderColor,
+        opacity,
+        filter,
+        glowStyle,
+        isCurrentUser,
+        roomColor,
+        locationStr: `📍 ${p.city ? p.city + ', ' : ''}${p.country || 'Unknown'}`,
+        lastOnline: p.updatedAt ? new Date(p.updatedAt).toLocaleString() : 'Unknown',
+      };
+    });
+  }, [players, playerName, selectedRoom]);
 
-        players.forEach(p => {
-          const finalLat = p.lat;
-          const finalLng = p.lng;
-
-          const isCurrentUser = p.name === playerName;
-          const roomColor = getRoomColor(p.roomId);
-          
-          let bgColor = roomColor || (isCurrentUser ? '#f59e0b' : '#1e293b');
-          let borderColor = roomColor ? roomColor : (isCurrentUser ? '#fbbf24' : '#475569');
-          let glowStyle = roomColor ? `box-shadow: 0 0 0 3px ${roomColor}55, 0 0 12px ${roomColor}88;` : 'box-shadow: 0 2px 6px rgba(0,0,0,0.3);';
-          let opacity = 1.0;
-          let filter = 'none';
-
-          if (selectedRoom) {
-            if (p.roomId !== selectedRoom) {
-               opacity = 0.3;
-               filter = 'grayscale(100%)';
-               glowStyle = 'none';
-            }
-          }
-
-          const icon = L.divIcon({
-            className: '',
-            html: `<div style="
-              display:flex; align-items:center; justify-content:center;
-              background:${bgColor};
-              border:2px solid ${borderColor};
-              border-radius:20px;
-              padding: 4px 10px;
-              color:white; font-weight:bold; font-size:12px;
-              opacity: ${opacity};
-              filter: ${filter};
-              ${glowStyle}
-              cursor:pointer;
-              white-space: nowrap;
-            ">${p.name} ${isCurrentUser ? '★' : ''}</div>`,
-            iconSize: null // Allows it to size itself based on contents
-          });
-
-          const marker = L.marker([finalLat, finalLng], { icon, myRoomId: p.roomId });
-
-          const roomBadge = p.roomId
-            ? `<div style="margin-top:6px; font-size:0.8rem; font-weight:bold; background:${roomColor}22; color:${roomColor}; border-radius:12px; padding:2px 8px; display:inline-block;">⚔️ 房間 ${p.roomId}</div>`
-            : '';
-
-          const lastOnline = p.updatedAt ? new Date(p.updatedAt).toLocaleString() : 'Unknown';
-
-          const popup = L.popup({ maxWidth: 220, className: 'verse-map-popup' }).setContent(`
-            <div style="font-family: system-ui, sans-serif; text-align:center; min-width: 120px;">
-              <div style="font-weight:bold; font-size:1.1rem; color:#1e293b; margin-bottom:4px;">${p.name}</div>
-              <div style="font-size:0.85rem; color:#64748b;">📍 ${p.city ? p.city + ', ' : ''}${p.country || 'Unknown'}</div>
-              ${roomBadge}
-              <div style="margin-top:8px; font-size:0.75rem; color:#94a3b8;">🕒 ${t('最後上線', 'Last Online')}: ${lastOnline}</div>
-            </div>
-          `);
-
-          marker.bindPopup(popup);
-
-          // Click to zoom in is handled automatically by cluster, but we can preserve it for unclustered individual markers
-          marker.on('click', function () {
-            const currentZoom = map.getZoom();
-            const targetZoom = Math.min(currentZoom + 3, map.getMaxZoom());
-            map.flyTo([finalLat, finalLng], targetZoom);
-          });
-          
-          marker.addTo(markersGroupRef.current);
-        });
-
-      }).catch(err => {
-        console.error('Leaflet load failed', err);
-        setError('Map library failed to load');
-      });
-
-    return () => {
-      // Don't remove the map instance on unmount/re-render to preserve view
+  const htmlElement = (d) => {
+    const el = document.createElement('div');
+    el.innerHTML = `<div style="
+        display:flex; align-items:center; justify-content:center;
+        background:${d.bgColor};
+        border:2px solid ${d.borderColor};
+        border-radius:20px;
+        padding: 4px 10px;
+        color:white; font-weight:bold; font-size:12px;
+        opacity: ${d.opacity};
+        filter: ${d.filter};
+        ${d.glowStyle}
+        cursor:pointer;
+        white-space: nowrap;
+        pointer-events: auto;
+      ">${d.name} ${d.isCurrentUser ? '★' : ''}</div>`;
+      
+    el.title = `${d.name}\n${d.locationStr}\n${d.roomId ? '⚔️ ' + t('房間', 'Room') + ' ' + d.roomId + '\n' : ''}🕒 ${t('最後上線', 'Last Online')}: ${d.lastOnline}`;
+      
+    el.onclick = () => {
+      if (globeEl.current) {
+        globeEl.current.controls().autoRotate = false;
+        globeEl.current.pointOfView({ lat: d.lat, lng: d.lng, altitude: 0.8 }, 1500);
+      }
     };
-  }, [loading, players, playerName, selectedRoom]);
+    
+    return el;
+  };
 
   return (
     <div>
@@ -231,14 +149,16 @@ export default function WorldMap({ t, playerName, onJoinRoom }) {
                     setSelectedRoom(isSelecting ? rid : null);
                     if (isSelecting) {
                       const roomPlayers = players.filter(p => p.roomId === rid);
-                      if (roomPlayers.length > 0 && leafletMapRef.current) {
+                      if (roomPlayers.length > 0 && globeEl.current) {
                         const lats = roomPlayers.map(p => p.lat);
                         const lngs = roomPlayers.map(p => p.lng);
-                        leafletMapRef.current.flyToBounds([
-                          [Math.min(...lats), Math.min(...lngs)],
-                          [Math.max(...lats), Math.max(...lngs)]
-                        ], { padding: [60, 60], maxZoom: 7 });
+                        const midLat = (Math.min(...lats) + Math.max(...lats)) / 2;
+                        const midLng = (Math.min(...lngs) + Math.max(...lngs)) / 2;
+                        globeEl.current.controls().autoRotate = false;
+                        globeEl.current.pointOfView({ lat: midLat, lng: midLng, altitude: 0.8 }, 1500);
                       }
+                    } else if (globeEl.current) {
+                        globeEl.current.controls().autoRotate = true;
                     }
                   }}
                   onDoubleClick={() => {
@@ -275,59 +195,50 @@ export default function WorldMap({ t, playerName, onJoinRoom }) {
       </div>
 
       {/* Map container */}
-      {loading ? (
-        <div style={{ height: '500px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#94a3b8', fontSize: '1.1rem', background: '#f8fafc' }}>
-          ⏳ {t('載入地圖中...', 'Loading map...')}
-        </div>
-      ) : error ? (
-        <div style={{ height: '400px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#ef4444' }}>
-          ⚠️ {error}
-        </div>
-      ) : (
-        <div>
-          <div ref={mapRef} style={{ height: '520px', width: '100%', background: '#e0f2fe' }} />
-          {players.length === 0 && (
-            <div style={{ position: 'relative', top: '-260px', textAlign: 'center', color: '#94a3b8', pointerEvents: 'none', fontSize: '1rem' }}>
-              {t('還沒有玩家資料，完成一局遊戲後你的位置就會出現！', 'No players yet — complete a game to appear on the map!')}
+      <div ref={containerRef} style={{ width: '100%', height: '520px', background: '#e0f2fe', cursor: 'grab' }} onMouseDown={(e) => e.currentTarget.style.cursor='grabbing'} onMouseUp={(e) => e.currentTarget.style.cursor='grab'}>
+        {loading ? (
+          <div style={{ height: '520px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#94a3b8', fontSize: '1.1rem' }}>
+            ⏳ {t('載入地球中...', 'Loading globe...')}
+          </div>
+        ) : error ? (
+          <div style={{ height: '520px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#ef4444' }}>
+            ⚠️ {error}
+          </div>
+        ) : (
+          <div style={{ position: 'relative' }}>
+            <Globe
+              ref={globeEl}
+              width={dimensions.width}
+              height={dimensions.height}
+              globeImageUrl="//unpkg.com/three-globe/example/img/earth-water.png"
+              bumpImageUrl="//unpkg.com/three-globe/example/img/earth-topology.png"
+              backgroundImageUrl="//unpkg.com/three-globe/example/img/night-sky.png"
+              htmlElementsData={mapData}
+              htmlElement={htmlElement}
+              htmlAltitude={0.05}
+              htmlTransitionDuration={100}
+            />
+            {players.length === 0 && (
+              <div style={{ position: 'absolute', top: '1rem', left: '50%', transform: 'translateX(-50%)', textAlign: 'center', color: '#fff', textShadow: '0 2px 4px rgba(0,0,0,0.5)', pointerEvents: 'none', fontSize: '1rem', background: 'rgba(0,0,0,0.5)', padding: '0.5rem 1rem', borderRadius: '20px' }}>
+                {t('還沒有玩家資料，完成一局遊戲後你的位置就會出現！', 'No players yet — complete a game to appear on the map!')}
+              </div>
+            )}
+            
+            {/* Compass / Reset view hint */}
+            <div 
+              style={{ position: 'absolute', bottom: '20px', left: '20px', background: 'rgba(255,255,255,0.8)', padding: '5px 10px', borderRadius: '8px', fontSize: '0.8rem', color: '#475569', boxShadow: '0 2px 5px rgba(0,0,0,0.2)', cursor: 'pointer', fontWeight: 'bold' }}
+              onClick={() => {
+                if (globeEl.current) {
+                    globeEl.current.controls().autoRotate = true;
+                }
+                setSelectedRoom(null);
+              }}
+            >
+              🔄 {t('還原視角', 'Reset View')}
             </div>
-          )}
-        </div>
-      )}
-
-      <style>{`
-        .verse-map-popup .leaflet-popup-content-wrapper {
-          border-radius: 10px;
-          box-shadow: 0 8px 24px rgba(0,0,0,0.2);
-          border: 1px solid #e2e8f0;
-        }
-        .verse-map-popup .leaflet-popup-tip { background: white; }
-        
-        .custom-cluster-icon {
-          display: flex !important;
-          align-items: center;
-          justify-content: center;
-        }
-        .custom-cluster {
-          background-color: #1e293b;
-          color: white;
-          border-radius: 50%;
-          width: 36px;
-          height: 36px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-weight: bold;
-          font-family: system-ui, sans-serif;
-          font-size: 14px;
-          box-shadow: 0 4px 10px rgba(0,0,0,0.4);
-          border: 2px solid #334155;
-          transition: transform 0.2s;
-        }
-        .custom-cluster:hover {
-          transform: scale(1.1);
-          background-color: #0f172a;
-        }
-      `}</style>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
