@@ -211,20 +211,10 @@ export default function WorldMap3D({ t, playerName, onJoinRoom, onToggleMode, cu
       el.title = `${d.count} ${t('名玩家', 'players')}\n${tooltipNames}`;
         
       el.onclick = () => {
-        if (globeEl.current) {
-          globeEl.current.controls().autoRotate = false;
-          
-          if (altitude <= 0.65 && onToggleMode) {
-             // User is already at max zoom (0.6) and wants to see more detail inside the cluster
-             // Seamlessly switch them to 2D map at this precise coordinate
-             onToggleMode({ lat: d.lat, lng: d.lng });
-             return;
-          }
-          
-          // Zoom in smoothly, but prevent zooming too close to avoid blurry texture 
-          // Altitude goes from ~2.5 (far) to 0.6 (continent/country level)
-          const targetAltitude = Math.max(0.6, altitude * 0.5); 
-          globeEl.current.pointOfView({ lat: d.lat, lng: d.lng, altitude: targetAltitude }, 1000);
+        if (globeEl.current && onToggleMode) {
+           globeEl.current.controls().autoRotate = false;
+           // Instantly switch to 2D Map on any click
+           onToggleMode({ lat: d.lat, lng: d.lng });
         }
       };
     } else {
@@ -246,18 +236,10 @@ export default function WorldMap3D({ t, playerName, onJoinRoom, onToggleMode, cu
       el.title = `${d.name}\n${d.locationStr}\n${d.roomId ? '⚔️ ' + t('房間', 'Room') + ' ' + d.roomId + '\n' : ''}🕒 ${t('最後上線', 'Last Online')}: ${d.lastOnline}`;
         
       el.onclick = () => {
-        if (globeEl.current) {
-          globeEl.current.controls().autoRotate = false;
-          
-          if (altitude <= 0.65 && onToggleMode) {
-             // At max zoom already, transition to 2D for detail
-             onToggleMode({ lat: d.lat, lng: d.lng });
-             return;
-          }
-
-          // Zoom in to the single marker, but stop at 0.6 altitude
-          const targetAltitude = Math.max(0.6, altitude * 0.5);
-          globeEl.current.pointOfView({ lat: d.lat, lng: d.lng, altitude: targetAltitude }, 1000);
+        if (globeEl.current && onToggleMode) {
+           globeEl.current.controls().autoRotate = false;
+           // Instantly switch to 2D Map on any click
+           onToggleMode({ lat: d.lat, lng: d.lng });
         }
       };
     }
@@ -318,12 +300,6 @@ export default function WorldMap3D({ t, playerName, onJoinRoom, onToggleMode, cu
         })()}
 
         <div style={{ marginLeft: 'auto', display: 'flex', gap: '10px' }}>
-          <button
-            onClick={() => onToggleMode && onToggleMode()}
-            style={{ background: '#e2e8f0', color: '#475569', border: '1px solid #cbd5e1', padding: '0.3rem 0.8rem', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.8rem' }}
-          >
-            {currentMode === '2d' ? '🌐 ' + t('切換至 3D 地球', 'Switch to 3D Globe') : '🗺️ ' + t('切換至 2D 地圖', 'Switch to 2D Map')}
-          </button>
           <button
             onClick={() => {
               setLoading(true);

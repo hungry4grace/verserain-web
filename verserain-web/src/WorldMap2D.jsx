@@ -292,12 +292,6 @@ export default function WorldMap2D({ t, playerName, onJoinRoom, onToggleMode, cu
 
         <div style={{ marginLeft: 'auto', display: 'flex', gap: '10px' }}>
           <button
-            onClick={() => onToggleMode && onToggleMode()}
-            style={{ background: '#e2e8f0', color: '#475569', border: '1px solid #cbd5e1', padding: '0.3rem 0.8rem', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.8rem' }}
-          >
-            {currentMode === '2d' ? '🌐 ' + t('切換至 3D 地球', 'Switch to 3D Globe') : '🗺️ ' + t('切換至 2D 地圖', 'Switch to 2D Map')}
-          </button>
-          <button
             onClick={() => {
               setLoading(true);
               fetch('/api/get-player-map').then(r => r.json()).then(data => {
