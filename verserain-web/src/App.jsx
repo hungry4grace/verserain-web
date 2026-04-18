@@ -2185,7 +2185,7 @@ export default function App() {
                   verserain
                 </div>
                 <div style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', marginTop: '4px', marginLeft: '2px' }}>
-                  v2.3.0
+                  v2.4.0
                 </div>
               </div>
               <select
@@ -3073,18 +3073,18 @@ export default function App() {
                               value={playMode}
                               style={{ padding: '0.4rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.85rem', color: '#334155', backgroundColor: '#fff', fontWeight: 'bold', cursor: 'pointer' }}
                             >
-                              <option value="square">Square</option>
-                              <option value="rain">Rain</option>
+                              <option value="square">九宮格</option>
+                              <option value="rain">經文雨</option>
                             </select>
                             <select
                               onChange={(e) => setDistractionLevel(Number(e.target.value))}
                               value={distractionLevel}
                               style={{ padding: '0.4rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.85rem', color: '#334155', backgroundColor: '#fff', fontWeight: 'bold', cursor: 'pointer' }}
                             >
-                              <option value={0}>Lv 0</option>
-                              <option value={1}>Lv 1</option>
-                              <option value={2}>Lv 2</option>
-                              <option value={3}>Lv 3</option>
+                              <option value={0}>難度 0</option>
+                              <option value={1}>難度 1</option>
+                              <option value={2}>難度 2</option>
+                              <option value={3}>難度 3</option>
                             </select>
                           </div>
 
@@ -3229,18 +3229,18 @@ export default function App() {
                                       value={playMode}
                                       style={{ padding: '0.1rem 0.2rem', borderRadius: '4px', border: '1px solid #cbd5e1', fontSize: '0.75rem', color: '#334155', backgroundColor: '#fff', width: '80px' }}
                                     >
-                                      <option value="square">Square</option>
-                                      <option value="rain">Rain</option>
+                                      <option value="square">九宮格</option>
+                                      <option value="rain">經文雨</option>
                                     </select>
                                     <select
                                       onChange={(e) => setDistractionLevel(Number(e.target.value))}
                                       value={distractionLevel}
                                       style={{ padding: '0.1rem 0.2rem', borderRadius: '4px', border: '1px solid #cbd5e1', fontSize: '0.75rem', color: '#334155', backgroundColor: '#fff', width: '80px' }}
                                     >
-                                      <option value={0}>Lv 0</option>
-                                      <option value={1}>Lv 1</option>
-                                      <option value={2}>Lv 2</option>
-                                      <option value={3}>Lv 3</option>
+                                      <option value={0}>難度 0</option>
+                                      <option value={1}>難度 1</option>
+                                      <option value={2}>難度 2</option>
+                                      <option value={3}>難度 3</option>
                                     </select>
                                   </div>
                                 </td>
@@ -3367,8 +3367,8 @@ export default function App() {
                             value={playMode}
                             style={{ padding: '0.4rem 0.6rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.85rem', color: '#334155', backgroundColor: '#fff', fontWeight: 'bold', cursor: 'pointer' }}
                           >
-                            <option value="square">Square</option>
-                            <option value="rain">Rain</option>
+                            <option value="square">九宮格</option>
+                            <option value="rain">經文雨</option>
                           </select>
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
@@ -3381,9 +3381,9 @@ export default function App() {
                             style={{ padding: '0.4rem 0.6rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.85rem', color: '#334155', backgroundColor: '#fff', fontWeight: 'bold', cursor: 'pointer' }}
                           >
                             <option value={0}>{t("無干擾", "No Distraction")}</option>
-                            <option value={1}>{t("單字干擾", "Lv 1")}</option>
-                            <option value={2}>{t("標點干擾", "Lv 2")}</option>
-                            <option value={3}>Lv 3</option>
+                            <option value={1}>{t("單字干擾", "Level 1")}</option>
+                            <option value={2}>{t("標點干擾", "Level 2")}</option>
+                            <option value={3}>難度 3</option>
                           </select>
                         </div>
                         <span style={{ fontSize: '0.8rem', color: '#94a3b8' }}>{t("點擊查看經文，雙擊開始挑戰！", "Click to view, double-click to challenge!")}</span>
