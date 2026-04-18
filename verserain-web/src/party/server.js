@@ -306,18 +306,20 @@ export default class Server {
             this.state.players[sender.id].isReady = true;
             console.log(`[PARTY] Player ${this.state.players[sender.id].name} is ready!`);
             
-            // Check if ALL currently connected players are ready
-            const connectedPlayers = Object.values(this.state.players).filter(p => p.connected);
-            const allReady = connectedPlayers.length > 0 && connectedPlayers.every(p => p.isReady);
-            
-            if (allReady) {
-               console.log(`[PARTY] All players ready! Starting game.`);
-               this.state.status = 'playing';
-               // Reset active sequence to 0
-               this.state.currentSeqIndex = 0;
-            }
+            // We no longer strictly wait for all players to automatically start the game,
+            // However, we still record readiness. Let the host start it manually.
             this.broadcastState();
          }
+      }
+
+      if (data.type === 'HOST_START_GAME' && this.state.status === 'ready_check' && sender.id === this.state.host) {
+         console.log(`[PARTY] Host forced start game!`);
+         this.state.status = 'playing';
+         this.state.currentSeqIndex = 0;
+         
+         // Mark everyone as ready so intermission/history views look clean
+         Object.values(this.state.players).forEach(p => p.isReady = true);
+         this.broadcastState();
       }
 
       if (data.type === 'CLICK_BLOCK' && this.state.status === 'playing') {
@@ -471,6 +473,12 @@ export default class Server {
               }
               this.broadcastState();
           }
+      }
+
+      if (data.type === 'FORCE_END_GAME' && this.state.status === 'playing' && sender.id === this.state.host) {
+          console.log(`[PARTY] Host forced end game.`);
+          this.state.status = 'finished';
+          this.broadcastState();
       }
 
       if (data.type === 'RESTART_GAME' && sender.id === this.state.host) {

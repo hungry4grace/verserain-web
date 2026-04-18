@@ -2737,7 +2737,7 @@ export default function App() {
                       <p style={{ color: '#a21caf', fontSize: '0.9rem', margin: 0 }}>{t("雙方準備就緒後即將開始", "Match starts when both are ready")}</p>
                     </div>
 
-                    {!multiplayerState.players[myClientId]?.isReady && (
+                    {multiplayerState.host !== myClientId && !multiplayerState.players[myClientId]?.isReady && (
                       <div style={{ textAlign: 'center', marginTop: '1rem', color: '#3b82f6', fontWeight: 'bold', fontSize: '1.05rem', backgroundColor: '#eff6ff', padding: '0.6rem 1rem', borderRadius: '8px', border: '1px solid #bfdbfe' }}>
                         👉 {t("如果你準備好了，請按下「我準備好了」的鍵", "If you are ready, please press the 'I am ready' button")} 👈
                       </div>
@@ -2755,15 +2755,26 @@ export default function App() {
                         {t("離開", "Leave")}
                       </button>
 
-                      <button
-                        onClick={() => {
-                          if (socketRef.current) socketRef.current.send(JSON.stringify({ type: 'PLAYER_READY' }));
-                        }}
-                        disabled={multiplayerState.players[myClientId]?.isReady}
-                        style={{ background: multiplayerState.players[myClientId]?.isReady ? '#10b981' : '#3b82f6', color: 'white', border: 'none', padding: '0.8rem 2rem', borderRadius: '6px', fontSize: '1.1rem', fontWeight: 'bold', cursor: multiplayerState.players[myClientId]?.isReady ? 'default' : 'pointer', transition: 'all 0.2s', boxShadow: multiplayerState.players[myClientId]?.isReady ? 'none' : '0 4px 6px -1px rgba(59, 130, 246, 0.5)' }}
-                      >
-                        {multiplayerState.players[myClientId]?.isReady ? t("✔️ 已準備", "✔️ Ready") : t("我準備好了", "I am ready")}
-                      </button>
+                      {multiplayerState.host === myClientId ? (
+                        <button
+                          onClick={() => {
+                            if (socketRef.current) socketRef.current.send(JSON.stringify({ type: 'HOST_START_GAME' }));
+                          }}
+                          style={{ background: '#ec4899', color: 'white', border: 'none', padding: '0.8rem 2rem', borderRadius: '6px', fontSize: '1.1rem', fontWeight: 'bold', cursor: 'pointer', transition: 'all 0.2s', boxShadow: '0 4px 6px -1px rgba(236, 72, 153, 0.5)' }}
+                        >
+                          {t("比賽開始", "Start Game")}
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => {
+                            if (socketRef.current) socketRef.current.send(JSON.stringify({ type: 'PLAYER_READY' }));
+                          }}
+                          disabled={multiplayerState.players[myClientId]?.isReady}
+                          style={{ background: multiplayerState.players[myClientId]?.isReady ? '#10b981' : '#3b82f6', color: 'white', border: 'none', padding: '0.8rem 2rem', borderRadius: '6px', fontSize: '1.1rem', fontWeight: 'bold', cursor: multiplayerState.players[myClientId]?.isReady ? 'default' : 'pointer', transition: 'all 0.2s', boxShadow: multiplayerState.players[myClientId]?.isReady ? 'none' : '0 4px 6px -1px rgba(59, 130, 246, 0.5)' }}
+                        >
+                          {multiplayerState.players[myClientId]?.isReady ? t("✔️ 已準備", "✔️ Ready") : t("我準備好了", "I am ready")}
+                        </button>
+                      )}
                     </div>
 
                     <div style={{ width: '100%', maxWidth: '400px', textAlign: 'left' }}>
@@ -4408,21 +4419,34 @@ export default function App() {
                 );
               })}
             </div>
-            <button
-              onClick={() => {
-                if (socketRef.current) {
-                  socketRef.current.close();
-                  socketRef.current = null;
-                }
-                multiplayerSoloActiveRef.current = false;
-                setGameState('menu');
-                setMultiplayerRoomId(null);
-                setMultiplayerState(null);
-              }}
-              style={{ marginTop: '1rem', background: 'rgba(239,68,68,0.15)', color: '#f87171', border: '1px solid rgba(239,68,68,0.3)', padding: '0.7rem 2rem', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', fontSize: '1rem', transition: 'all 0.2s' }}
-            >
-              {t("離開遊戲", "Leave Game")}
-            </button>
+            <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
+              <button
+                onClick={() => {
+                  if (socketRef.current) {
+                    socketRef.current.close();
+                    socketRef.current = null;
+                  }
+                  multiplayerSoloActiveRef.current = false;
+                  setGameState('menu');
+                  setMultiplayerRoomId(null);
+                  setMultiplayerState(null);
+                }}
+                style={{ background: 'rgba(239,68,68,0.15)', color: '#f87171', border: '1px solid rgba(239,68,68,0.3)', padding: '0.7rem 2rem', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', fontSize: '1rem', transition: 'all 0.2s' }}
+              >
+                {t("離開遊戲", "Leave Game")}
+              </button>
+
+              {multiplayerState?.host === myClientId && (
+                <button
+                  onClick={() => {
+                    if (socketRef.current) socketRef.current.send(JSON.stringify({ type: 'FORCE_END_GAME' }));
+                  }}
+                  style={{ background: '#ef4444', color: 'white', border: 'none', padding: '0.7rem 2rem', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', fontSize: '1rem', transition: 'all 0.2s', boxShadow: '0 4px 6px -1px rgba(239, 68, 68, 0.5)' }}
+                >
+                  {t("比賽結束", "End Match Now")}
+                </button>
+              )}
+            </div>
           </div>
         </div>
       )}
