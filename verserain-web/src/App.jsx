@@ -343,6 +343,7 @@ export default function App() {
   const skoolLevel = React.useMemo(() => getSkoolLevel(totalFruits), [totalFruits]);
   const hasPremiumAccess = isPremium || skoolLevel.level >= 3;
   const [selectedGardenCell, setSelectedGardenCell] = useState(null); // { ref, text, stage, fruits, detectedLang }
+  const [showLevelInfo, setShowLevelInfo] = useState(false);
   const gardenClickTimer = useRef(null);
   const versionBeforeChallenge = useRef(null); // saved version to restore after cross-lang challenge
   const updateGarden = React.useCallback((ref, type, setId) => {
@@ -3338,12 +3339,19 @@ export default function App() {
                         <span style={{ fontSize: '0.9rem', color: '#94a3b8', fontWeight: 'bold' }}>{t("總果子數量", "Total Fruits")}</span>
                         <span style={{ fontSize: '2.5rem', fontWeight: 'bold', color: '#d97706', lineHeight: '1' }}>{totalFruits} <span style={{ fontSize: '1.5rem' }}>🍎</span></span>
                      </div>
-                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', paddingLeft: '0.5rem' }}>
-                        <span style={{ fontSize: '0.9rem', color: '#94a3b8', fontWeight: 'bold' }}>{t("目前階級", "Current Level")}</span>
+                     <button 
+                        onClick={() => setShowLevelInfo(true)}
+                        onMouseEnter={e => Object.assign(e.currentTarget.style, { transform: 'scale(1.05)', backgroundColor: '#f8fafc' })}
+                        onMouseLeave={e => Object.assign(e.currentTarget.style, { transform: 'scale(1)', backgroundColor: 'transparent' })}
+                        style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '0.5rem 1rem', background: 'transparent', border: 'none', cursor: 'pointer', transition: 'all 0.2s', borderRadius: '12px' }}
+                     >
+                        <span style={{ fontSize: '0.9rem', color: '#94a3b8', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                           {t("目前階級", "Current Level")} <span style={{ fontSize: '1rem', animation: 'pulse 2s infinite' }}>ℹ️</span>
+                        </span>
                         <span style={{ fontSize: '1.5rem', fontWeight: 'bold', color: skoolLevel.level >= 3 ? '#8b5cf6' : '#2563eb' }}>
                            Lv.{skoolLevel.level} {skoolLevel.title}
                         </span>
-                     </div>
+                     </button>
                   </div>
 
                   {skoolLevel.next !== null && (
@@ -5389,6 +5397,71 @@ export default function App() {
         <div style={{ position: 'fixed', bottom: '2rem', left: '50%', transform: 'translateX(-50%)', backgroundColor: '#1e293b', color: 'white', padding: '0.8rem 1.5rem', borderRadius: '50px', boxShadow: '0 4px 12px rgba(0,0,0,0.15)', zIndex: 9999, display: 'flex', alignItems: 'center', gap: '8px', animation: 'fadeInUp 0.3s ease-out', fontWeight: 'bold' }}>
           <Star size={18} fill="#fbbf24" stroke="#fbbf24" />
           {toast}
+        </div>
+      )}
+
+      {/* Level Info Modal */}
+      {showLevelInfo && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.7)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }} onClick={() => setShowLevelInfo(false)}>
+          <div style={{ background: '#fff', borderRadius: '16px', width: '100%', maxWidth: '600px', maxHeight: '90vh', display: 'flex', flexDirection: 'column', overflow: 'hidden', boxShadow: '0 20px 40px rgba(0,0,0,0.2)' }} onClick={e => e.stopPropagation()}>
+            <div style={{ padding: '1.5rem', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#f8fafc' }}>
+              <h3 style={{ margin: 0, color: '#1e293b', fontSize: '1.5rem', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                🏅 {t("互惠階級說明", "Level System")}
+              </h3>
+              <button onClick={() => setShowLevelInfo(false)} style={{ background: 'transparent', border: 'none', fontSize: '1.5rem', color: '#94a3b8', cursor: 'pointer' }}>✕</button>
+            </div>
+            
+            <div style={{ padding: '1.5rem', overflowY: 'auto' }}>
+              <p style={{ color: '#475569', marginBottom: '1.5rem', lineHeight: '1.6' }}>
+                {t("在園子裡持續照顧樹苗並結出果子，就能提升你的互惠階級！當達到 ", "Bear fruits in your garden to level up! Reaching ")}
+                <strong style={{ color: '#8b5cf6' }}>Lv.3 {t("共識實踐者", "Level 3")}</strong>
+                {t(" 時，將自動解鎖「專屬題庫」的建立權限喔！", " automatically unlocks Custom Verse Sets!")}
+              </p>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
+                {SKOOL_LEVELS.map(levelObj => {
+                  const isCurrent = skoolLevel.level === levelObj.level;
+                  const isUnlocked = skoolLevel.level >= levelObj.level;
+                  
+                  return (
+                    <div key={levelObj.level} style={{
+                      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                      padding: '1rem 1.5rem', borderRadius: '12px',
+                      background: isCurrent ? 'linear-gradient(135deg, #f0fdf4, #dcfce7)' : (isUnlocked ? '#f8fafc' : '#ffffff'),
+                      border: `2px solid ${isCurrent ? '#22c55e' : (isUnlocked ? '#e2e8f0' : '#f1f5f9')}`,
+                      transition: 'transform 0.2s', transform: isCurrent ? 'scale(1.02)' : 'none',
+                      boxShadow: isCurrent ? '0 4px 12px rgba(34, 197, 94, 0.15)' : 'none'
+                    }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                        <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: isCurrent ? '#22c55e' : (isUnlocked ? '#64748b' : '#cbd5e1'), color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '1.2rem' }}>
+                          {levelObj.level}
+                        </div>
+                        <div>
+                          <div style={{ fontWeight: 'bold', color: isCurrent ? '#15803d' : (isUnlocked ? '#334155' : '#94a3b8'), fontSize: '1.1rem' }}>
+                            {levelObj.title} {isCurrent && <span style={{ fontSize: '0.9rem', color: '#059669', marginLeft: '8px' }}>👈 {t("目前階級", "You are here")}</span>}
+                          </div>
+                          {levelObj.level === 3 && (
+                            <div style={{ fontSize: '0.85rem', color: '#8b5cf6', fontWeight: 'bold', marginTop: '4px' }}>
+                              🔓 {t("解鎖建立專屬題庫", "Unlocks Custom Sets")}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      <div style={{ fontWeight: 'bold', color: isUnlocked ? '#d97706' : '#cbd5e1', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <span style={{ fontSize: '1.2rem' }}>🍎</span> {levelObj.points}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+            
+            <div style={{ padding: '1rem 1.5rem', background: '#f8fafc', borderTop: '1px solid #e2e8f0', textAlign: 'center' }}>
+              <button onClick={() => setShowLevelInfo(false)} style={{ background: '#3b82f6', color: 'white', border: 'none', padding: '0.8rem 2rem', borderRadius: '8px', fontWeight: 'bold', fontSize: '1rem', cursor: 'pointer' }}>
+                {t("關閉", "Close")}
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
