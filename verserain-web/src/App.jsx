@@ -26,6 +26,18 @@ let audioCtx = null;
 
 const ROOM_COLORS = ['#ef4444', '#f97316', '#eab308', '#22c55e', '#14b8a6', '#0ea5e9', '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16'];
 
+export const SKOOL_LEVELS = [
+  { level: 1, title: '互惠種子', points: 0 },
+  { level: 2, title: '探索學員', points: 5 },
+  { level: 3, title: '共識實踐者', points: 20 },
+  { level: 4, title: '價值貢獻者', points: 65 },
+  { level: 5, title: '生態連結者', points: 155 },
+  { level: 6, title: '方田開拓者', points: 515 },
+  { level: 7, title: '互惠建設者', points: 2015 },
+  { level: 8, title: '推廣大使', points: 8015 },
+  { level: 9, title: '生態系架構師', points: 33015 },
+];
+
 export function getSkoolLevel(points) {
   if (points >= 33015) return { level: 9, title: "生態系架構師", next: null };
   if (points >= 8015) return { level: 8, title: "推廣大使", next: 33015 };
