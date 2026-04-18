@@ -3178,7 +3178,7 @@ export default function App() {
                             onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
                             onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
                           >
-                            <Users size={16} /> {t("Invite", "Invite")}
+                            <Users size={16} /> {t("邀人PK", "Invite")}
                           </button>
                         </div>
                       </div>
