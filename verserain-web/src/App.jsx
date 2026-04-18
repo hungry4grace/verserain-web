@@ -2260,6 +2260,9 @@ export default function App() {
             <div className="block-tile" onClick={() => setMainTab('multiplayer')} style={{ display: 'flex', alignItems: 'center', padding: '0.5rem 1.2rem', cursor: 'pointer', backgroundColor: mainTab === 'multiplayer' ? '#ec4899' : 'white', color: mainTab === 'multiplayer' ? 'white' : '#475569', borderRadius: '20px', fontWeight: 'bold', whiteSpace: 'nowrap', transition: 'all 0.2s' }}>
               🎮 {t('多人連線', 'Multiplayer')}
             </div>
+            <div className="block-tile" onClick={() => setMainTab('leaderboard')} style={{ display: 'flex', alignItems: 'center', padding: '0.5rem 1.2rem', cursor: 'pointer', backgroundColor: mainTab === 'leaderboard' ? '#f59e0b' : 'white', color: mainTab === 'leaderboard' ? 'white' : '#475569', borderRadius: '20px', fontWeight: 'bold', whiteSpace: 'nowrap', transition: 'all 0.2s' }}>
+              🏆 {t('排行榜', 'Ranks')}
+            </div>
             <div className="block-tile" onClick={() => setMainTab('search')} style={{ display: 'flex', alignItems: 'center', padding: '0.5rem 1.2rem', cursor: 'pointer', backgroundColor: mainTab === 'search' ? '#8b5cf6' : 'white', color: mainTab === 'search' ? 'white' : '#475569', borderRadius: '20px', fontWeight: 'bold', whiteSpace: 'nowrap', transition: 'all 0.2s' }}>
               🔍 {t('搜尋', 'Search')}
             </div>
@@ -2315,7 +2318,6 @@ export default function App() {
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1rem', width: '100%' }}>
                   {[
                     { id: 'custom_verses', icon: '👑', label: t('我的專屬題庫', 'My Custom Sets'), desc: t('建立自訂經文組', 'Create custom sets') },
-                    { id: 'leaderboard', icon: '🏆', label: t('全球排行榜', 'Leaderboards'), desc: t('觀看大排行', 'View global rankings') },
                     { id: 'manual', icon: '📖', label: t('使用說明', 'Manual'), desc: t('操作詳解', 'Detailed instructions') },
                     { id: 'about', icon: 'ℹ️', label: t('關於我們', 'About'), desc: t('VerseRain 開發資訊', 'Info & Credits') },
                     { id: 'donate', link: 'https://www.skool.com/mutualizedeconomy/classroom', icon: '🔓', label: t('解鎖進階功能', 'Unlock Premium'), desc: t('加入進階群組', 'Join Premium Community') },
@@ -3707,7 +3709,10 @@ export default function App() {
                           .map(([name, stats], idx) => (
                             <tr key={idx} style={{ borderBottom: '1px solid #f1f5f9' }}>
                               <td style={{ padding: '0.8rem 1rem', fontWeight: 'bold', color: idx === 0 ? '#d97706' : idx === 1 ? '#94a3b8' : idx === 2 ? '#b45309' : '#64748b', fontSize: '1.2rem' }}>#{idx + 1}</td>
-                              <td style={{ padding: '0.8rem 1rem', fontWeight: 'bold', color: '#1e293b' }}>{name} {name === playerName && <Crown size={14} style={{ color: '#fbbf24', marginLeft: '5px' }} />}</td>
+                              <td style={{ padding: '0.8rem 1rem', fontWeight: 'bold', color: '#1e293b' }}>
+                                {name} {name === playerName && <Crown size={14} style={{ color: '#fbbf24', marginLeft: '5px' }} />}
+                                <span style={{ marginLeft: '8px', fontSize: '0.8rem', backgroundColor: '#f1f5f9', color: '#64748b', padding: '0.2rem 0.6rem', borderRadius: '12px', border: '1px solid #e2e8f0' }}>Lv.{getSkoolLevel(stats.clears).level}</span>
+                              </td>
                               <td style={{ padding: '0.8rem 1rem', textAlign: 'right', fontWeight: 'bold', color: '#3b82f6' }}>{stats.best.toLocaleString()}</td>
                               <td style={{ padding: '0.8rem 1rem', textAlign: 'right', fontWeight: 'bold', color: '#059669' }}>{stats.clears}</td>
                             </tr>
