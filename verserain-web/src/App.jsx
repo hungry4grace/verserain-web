@@ -3703,6 +3703,13 @@ export default function App() {
                           playerMap[name].best = Math.max(playerMap[name].best, score);
                           playerMap[name].clears += 1;
                         });
+
+                        const alltimeClears = {};
+                        (globalLeaderboardData.alltime || []).forEach(({ name }) => {
+                           if (!name) return;
+                           alltimeClears[name] = (alltimeClears[name] || 0) + 1;
+                        });
+
                         return Object.entries(playerMap)
                           .sort((a, b) => b[1].best - a[1].best || b[1].clears - a[1].clears)
                           .slice(0, 10)
@@ -3711,7 +3718,7 @@ export default function App() {
                               <td style={{ padding: '0.8rem 1rem', fontWeight: 'bold', color: idx === 0 ? '#d97706' : idx === 1 ? '#94a3b8' : idx === 2 ? '#b45309' : '#64748b', fontSize: '1.2rem' }}>#{idx + 1}</td>
                               <td style={{ padding: '0.8rem 1rem', fontWeight: 'bold', color: '#1e293b' }}>
                                 {name} {name === playerName && <Crown size={14} style={{ color: '#fbbf24', marginLeft: '5px' }} />}
-                                <span style={{ marginLeft: '8px', fontSize: '0.8rem', backgroundColor: '#f1f5f9', color: '#64748b', padding: '0.2rem 0.6rem', borderRadius: '12px', border: '1px solid #e2e8f0' }}>Lv.{getSkoolLevel(stats.clears).level}</span>
+                                <span style={{ marginLeft: '8px', fontSize: '0.8rem', backgroundColor: '#f1f5f9', color: '#64748b', padding: '0.2rem 0.6rem', borderRadius: '12px', border: '1px solid #e2e8f0' }}>Lv.{getSkoolLevel(alltimeClears[name] || stats.clears).level}</span>
                               </td>
                               <td style={{ padding: '0.8rem 1rem', textAlign: 'right', fontWeight: 'bold', color: '#3b82f6' }}>{stats.best.toLocaleString()}</td>
                               <td style={{ padding: '0.8rem 1rem', textAlign: 'right', fontWeight: 'bold', color: '#059669' }}>{stats.clears}</td>
