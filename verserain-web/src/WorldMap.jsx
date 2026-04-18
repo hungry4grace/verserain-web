@@ -7,8 +7,12 @@ export default function WorldMap(props) {
   const [mapMode, setMapMode] = useState(() => {
     return localStorage.getItem('verserain-map-mode') || '3d';
   });
+  const [focusLocation, setFocusLocation] = useState(null);
 
-  const toggleMode = () => {
+  const toggleMode = (targetLocation = null) => {
+    if (targetLocation && targetLocation.lat) {
+      setFocusLocation(targetLocation);
+    }
     setMapMode(prev => {
       const newMode = prev === '3d' ? '2d' : '3d';
       localStorage.setItem('verserain-map-mode', newMode);
@@ -22,6 +26,7 @@ export default function WorldMap(props) {
         {...props} 
         currentMode={mapMode} 
         onToggleMode={toggleMode} 
+        focusLocation={focusLocation}
       />
     );
   }

@@ -213,6 +213,14 @@ export default function WorldMap3D({ t, playerName, onJoinRoom, onToggleMode, cu
       el.onclick = () => {
         if (globeEl.current) {
           globeEl.current.controls().autoRotate = false;
+          
+          if (altitude <= 0.65 && onToggleMode) {
+             // User is already at max zoom (0.6) and wants to see more detail inside the cluster
+             // Seamlessly switch them to 2D map at this precise coordinate
+             onToggleMode({ lat: d.lat, lng: d.lng });
+             return;
+          }
+          
           // Zoom in smoothly, but prevent zooming too close to avoid blurry texture 
           // Altitude goes from ~2.5 (far) to 0.6 (continent/country level)
           const targetAltitude = Math.max(0.6, altitude * 0.5); 
@@ -240,6 +248,13 @@ export default function WorldMap3D({ t, playerName, onJoinRoom, onToggleMode, cu
       el.onclick = () => {
         if (globeEl.current) {
           globeEl.current.controls().autoRotate = false;
+          
+          if (altitude <= 0.65 && onToggleMode) {
+             // At max zoom already, transition to 2D for detail
+             onToggleMode({ lat: d.lat, lng: d.lng });
+             return;
+          }
+
           // Zoom in to the single marker, but stop at 0.6 altitude
           const targetAltitude = Math.max(0.6, altitude * 0.5);
           globeEl.current.pointOfView({ lat: d.lat, lng: d.lng, altitude: targetAltitude }, 1000);

@@ -202,14 +202,23 @@ export default function WorldMap2D({ t, playerName, onJoinRoom, onToggleMode, cu
         });
 
         if (!initialFlyDone.current && players.length > 0) {
-          const myPlayer = players.find(p => p.name === playerName);
-          if (myPlayer) {
-            // Wait a small moment for map to settle
+          if (focusLocation) {
             setTimeout(() => {
               if (leafletMapRef.current) {
-                leafletMapRef.current.flyTo([myPlayer.lat, myPlayer.lng], 4, { animate: true, duration: 1.5 });
+                // Instantly teleport to the coordinate from 3D without animation to feel seamless
+                leafletMapRef.current.setView([focusLocation.lat, focusLocation.lng], 7, { animate: false });
               }
-            }, 500);
+            }, 100);
+          } else {
+            const myPlayer = players.find(p => p.name === playerName);
+            if (myPlayer) {
+              // Wait a small moment for map to settle
+              setTimeout(() => {
+                if (leafletMapRef.current) {
+                  leafletMapRef.current.flyTo([myPlayer.lat, myPlayer.lng], 4, { animate: true, duration: 1.5 });
+                }
+              }, 500);
+            }
           }
           initialFlyDone.current = true;
         }
