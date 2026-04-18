@@ -77,8 +77,13 @@ export default function WorldMap2D({ t, playerName, onJoinRoom, onToggleMode, cu
       .then(L => {
         let map = leafletMapRef.current;
         
-        // Only create the map once
-        if (!map) {
+        // Ensure the DOM node exists and map isn't already created
+        if (!map && mapRef.current) {
+          // Fix for "Map container is already initialized" if React rapidly re-mounted
+          if (mapRef.current._leaflet_id) {
+             mapRef.current._leaflet_id = null;
+          }
+          
           map = L.map(mapRef.current, {
             center: [20, 105],
             zoom: 3,
@@ -134,6 +139,8 @@ export default function WorldMap2D({ t, playerName, onJoinRoom, onToggleMode, cu
         markersGroupRef.current.clearLayers();
 
         players.forEach(p => {
+          if (p.lat == null || p.lng == null || isNaN(p.lat) || isNaN(p.lng)) return;
+
           const finalLat = p.lat;
           const finalLng = p.lng;
 
@@ -225,7 +232,7 @@ export default function WorldMap2D({ t, playerName, onJoinRoom, onToggleMode, cu
 
       }).catch(err => {
         console.error('Leaflet load failed', err);
-        setError('Map library failed to load');
+        setError('Map Error: ' + err.message);
       });
 
     return () => {
