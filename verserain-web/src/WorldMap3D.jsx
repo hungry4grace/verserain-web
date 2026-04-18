@@ -54,11 +54,25 @@ export default function WorldMap3D({ t, playerName, onJoinRoom, onToggleMode, cu
   }, []);
 
   // Add initial setting and set controls after mount
+  const initialFlyDone = useRef(false);
   useEffect(() => {
     if (globeEl.current && !loading) {
       globeEl.current.controls().autoRotate = false; // Stopped auto rotation per user request
+      
+      // Auto move view to current player on first load
+      if (!initialFlyDone.current && players.length > 0) {
+        const myPlayer = players.find(p => p.name === playerName);
+        if (myPlayer) {
+          setTimeout(() => {
+            if (globeEl.current) {
+              globeEl.current.pointOfView({ lat: myPlayer.lat, lng: myPlayer.lng, altitude: 1.5 }, 2000);
+            }
+          }, 500);
+        }
+        initialFlyDone.current = true;
+      }
     }
-  }, [loading]);
+  }, [loading, players, playerName]);
 
   const mapData = useMemo(() => {
     // Dynamic grid size based on altitude to break apart clusters when zooming in
@@ -345,8 +359,13 @@ export default function WorldMap3D({ t, playerName, onJoinRoom, onToggleMode, cu
             <div 
               style={{ position: 'absolute', bottom: '20px', left: '20px', background: 'rgba(255,255,255,0.8)', padding: '5px 10px', borderRadius: '8px', fontSize: '0.8rem', color: '#475569', boxShadow: '0 2px 5px rgba(0,0,0,0.2)', cursor: 'pointer', fontWeight: 'bold' }}
               onClick={() => {
+                const myPlayer = players.find(p => p.name === playerName);
                 if (globeEl.current) {
-                    globeEl.current.pointOfView({ lat: 20, lng: 105, altitude: 2.5 }, 1000);
+                    globeEl.current.pointOfView({ 
+                      lat: myPlayer ? myPlayer.lat : 20, 
+                      lng: myPlayer ? myPlayer.lng : 105, 
+                      altitude: 2.5 
+                    }, 1000);
                 }
                 setSelectedRoom(null);
               }}

@@ -69,6 +69,7 @@ export default function WorldMap2D({ t, playerName, onJoinRoom, onToggleMode, cu
   const markersGroupRef = useRef(null);
 
   // Init Leaflet map and markers
+  const initialFlyDone = useRef(false);
   useEffect(() => {
     if (loading || !mapRef.current) return;
 
@@ -199,6 +200,19 @@ export default function WorldMap2D({ t, playerName, onJoinRoom, onToggleMode, cu
           
           marker.addTo(markersGroupRef.current);
         });
+
+        if (!initialFlyDone.current && players.length > 0) {
+          const myPlayer = players.find(p => p.name === playerName);
+          if (myPlayer) {
+            // Wait a small moment for map to settle
+            setTimeout(() => {
+              if (leafletMapRef.current) {
+                leafletMapRef.current.flyTo([myPlayer.lat, myPlayer.lng], 4, { animate: true, duration: 1.5 });
+              }
+            }, 500);
+          }
+          initialFlyDone.current = true;
+        }
 
       }).catch(err => {
         console.error('Leaflet load failed', err);
