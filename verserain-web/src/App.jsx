@@ -24,8 +24,20 @@ const quillModules = {
 
 let audioCtx = null;
 
-// Deterministic room color from roomId — same roomId always = same color
 const ROOM_COLORS = ['#ef4444', '#f97316', '#eab308', '#22c55e', '#14b8a6', '#0ea5e9', '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16'];
+
+export function getSkoolLevel(points) {
+  if (points >= 33015) return { level: 9, title: "生態系架構師", next: null };
+  if (points >= 8015) return { level: 8, title: "推廣大使", next: 33015 };
+  if (points >= 2015) return { level: 7, title: "互惠建設者", next: 8015 };
+  if (points >= 515) return { level: 6, title: "方田開拓者", next: 2015 };
+  if (points >= 155) return { level: 5, title: "生態連結者", next: 515 };
+  if (points >= 65) return { level: 4, title: "價值貢獻者", next: 155 };
+  if (points >= 20) return { level: 3, title: "共識實踐者", next: 65 };
+  if (points >= 5) return { level: 2, title: "探索學員", next: 20 };
+  return { level: 1, title: "互惠種子", next: 5 };
+}
+
 export function getRoomColor(roomId) {
   if (!roomId) return null;
   let hash = 0;
@@ -326,6 +338,10 @@ export default function App() {
   const [gardenData, setGardenData] = useState(() => {
     try { return JSON.parse(localStorage.getItem('verseRain_gardenData')) || {}; } catch { return {}; }
   });
+
+  const totalFruits = React.useMemo(() => Object.values(gardenData || {}).reduce((sum, curr) => sum + (curr.fruits || 0), 0), [gardenData]);
+  const skoolLevel = React.useMemo(() => getSkoolLevel(totalFruits), [totalFruits]);
+  const hasPremiumAccess = isPremium || skoolLevel.level >= 3;
   const [selectedGardenCell, setSelectedGardenCell] = useState(null); // { ref, text, stage, fruits, detectedLang }
   const gardenClickTimer = useRef(null);
   const versionBeforeChallenge = useRef(null); // saved version to restore after cross-lang challenge
@@ -2312,18 +2328,22 @@ export default function App() {
               <div style={{ backgroundColor: '#ffffff', borderRadius: '8px', border: '1px solid #cbd5e1', padding: '2rem', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
                   <h2 style={{ color: '#1e293b', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>👑 {t("我的專屬題庫", "My Custom Sets")}</h2>
-                  <div style={{ background: '#f8fafc', border: '1px solid #cbd5e1', padding: '0.3rem 0.6rem', borderRadius: '4px', fontSize: '0.85rem', color: isPremium ? '#fbbf24' : '#64748b', fontWeight: 'bold' }}>
-                    {isPremium ? t("✨ Premium 認證", "✨ Premium Active") : t("🔒 基本帳號", "🔒 Basic Account")}
+                  <div style={{ background: '#f8fafc', border: '1px solid #cbd5e1', padding: '0.3rem 0.6rem', borderRadius: '4px', fontSize: '0.85rem', color: hasPremiumAccess ? '#fbbf24' : '#64748b', fontWeight: 'bold' }}>
+                    {isPremium ? t("✨ Premium 認證", "✨ Premium Active") : (skoolLevel.level >= 3 ? t(`🌟 Lv.${skoolLevel.level} 權限解鎖`, `🌟 Lv.${skoolLevel.level} Unlocked`) : t("🔒 基本帳號", "🔒 Basic Account"))}
                   </div>
                 </div>
 
-                {!isPremium ? (
+                {!hasPremiumAccess ? (
                   <div style={{ textAlign: 'center', padding: '3rem 1rem', background: 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
                     <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>🔒</div>
                     <h3 style={{ color: '#334155', marginBottom: '1rem' }}>{t("解鎖自訂經文組功能！", "Unlock Custom Verse Sets!")}</h3>
-                    <p style={{ color: '#64748b', marginBottom: '2rem', maxWidth: '400px', margin: '0 auto 2rem', lineHeight: '1.6' }}>
-                      {t("升級為 Skool MutualizedEconomy Premium 會員，無限建立你的專屬考題與默想清單，還能在多人連線模式中用你的題目考驗朋友！", "Upgrade to Skool MutualizedEconomy Premium to create unlimited custom verse sets and challenge your friends in multiplayer!")}
+                    <p style={{ color: '#64748b', marginBottom: '1rem', maxWidth: '400px', margin: '0 auto 1rem', lineHeight: '1.6' }}>
+                      {t("你目前還沒有權限建立專屬題庫。有兩種方式可以解鎖：", "You do not have access to create custom verse sets. There are two ways to unlock this:")}
                     </p>
+                    <ul style={{ color: '#475569', textAlign: 'left', maxWidth: '400px', margin: '0 auto 2rem', paddingLeft: '1.5rem', lineHeight: '1.8' }}>
+                      <li><strong>{t("方式一：", "Method 1: ")}</strong>{t("加入 Skool 成為 Premium 會員", "Subscribe to Skool Premium")}</li>
+                      <li><strong>{t("方式二：", "Method 2: ")}</strong>{t("在 VerseRain 遊戲的「我的園子」中持續挑戰經文，獲得 20 顆果子，達到 ", "Earn 20 fruits in the game's 'My Garden' to reach ")} <strong style={{ color: '#8b5cf6' }}>Level 3 (共識實踐者)</strong>！</li>
+                    </ul>
                     <button type="button" onClick={() => window.open('https://www.skool.com/mutualizedeconomy', '_blank')} style={{ background: '#8b5cf6', color: 'white', border: 'none', padding: '0.8rem 2rem', borderRadius: '8px', fontWeight: 'bold', fontSize: '1.1rem', cursor: 'pointer', boxShadow: '0 4px 6px rgba(139, 92, 246, 0.25)' }}>
                       {t("了解並加入 Premium", "Learn About Premium")}
                     </button>
@@ -3304,6 +3324,52 @@ export default function App() {
                 <p style={{ color: '#64748b', fontSize: '0.9rem', marginBottom: '1rem' }}>
                   {t("每挑戰一節新經文，就會在空地上長出嫩芽。持續練習讓它長大！通過經文變成大樹，創新高則結出果子🍎", "Each new verse you challenge sprouts a seedling. Keep practicing to grow it! Clearing a verse makes it a full tree; new high scores bear fruit 🍎")}
                 </p>
+
+                {/* My Harvest Basket Header */}
+                <div style={{ background: 'linear-gradient(135deg, #fffbeb, #fef3c7)', padding: '2rem', borderRadius: '16px', border: '1px solid #fde68a', marginBottom: '2rem', textAlign: 'center', boxShadow: '0 4px 10px rgba(0,0,0,0.05)' }}>
+                  <div style={{ fontSize: '4rem', marginBottom: '0.5rem', animation: 'bounce 2s infinite' }}>🧺</div>
+                  <h3 style={{ margin: 0, fontSize: '1.8rem', color: '#b45309', marginBottom: '0.5rem' }}>{t("我的收成", "My Harvest")}</h3>
+                  <p style={{ margin: 0, color: '#92400e', fontSize: '1.1rem', marginBottom: '1.5rem' }}>
+                    {t("過關斬將結出果子，提升你的互惠階級！", "Clear verses to bear fruit and level up!")}
+                  </p>
+                  
+                  <div style={{ display: 'inline-flex', alignItems: 'center', gap: '1rem', background: '#fff', padding: '1rem 2rem', borderRadius: '50px', border: '2px solid #fbbf24', boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.05)', flexWrap: 'wrap', justifyContent: 'center' }}>
+                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', borderRight: '2px solid #fcd34d', paddingRight: '1rem' }}>
+                        <span style={{ fontSize: '0.9rem', color: '#94a3b8', fontWeight: 'bold' }}>{t("總果子數量", "Total Fruits")}</span>
+                        <span style={{ fontSize: '2.5rem', fontWeight: 'bold', color: '#d97706', lineHeight: '1' }}>{totalFruits} <span style={{ fontSize: '1.5rem' }}>🍎</span></span>
+                     </div>
+                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', paddingLeft: '0.5rem' }}>
+                        <span style={{ fontSize: '0.9rem', color: '#94a3b8', fontWeight: 'bold' }}>{t("目前階級", "Current Level")}</span>
+                        <span style={{ fontSize: '1.5rem', fontWeight: 'bold', color: skoolLevel.level >= 3 ? '#8b5cf6' : '#2563eb' }}>
+                           Lv.{skoolLevel.level} {skoolLevel.title}
+                        </span>
+                     </div>
+                  </div>
+
+                  {skoolLevel.next !== null && (
+                    <div style={{ marginTop: '1.5rem', maxWidth: '400px', margin: '1.5rem auto 0' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', color: '#92400e', marginBottom: '0.3rem', fontWeight: 'bold' }}>
+                         <span>Lv.{skoolLevel.level}</span>
+                         <span>Lv.{skoolLevel.level + 1} ({skoolLevel.next}🍎)</span>
+                      </div>
+                      <div style={{ width: '100%', height: '14px', background: '#fef3c7', border: '1px solid #fde68a', borderRadius: '10px', overflow: 'hidden' }}>
+                         <div style={{ width: `${Math.min(100, (totalFruits / skoolLevel.next) * 100)}%`, height: '100%', background: 'linear-gradient(90deg, #fbbf24, #f59e0b)', transition: 'width 1s ease-in-out' }} />
+                      </div>
+                    </div>
+                  )}
+
+                  {skoolLevel.level >= 3 && !isPremium && (
+                    <div style={{ marginTop: '2rem', padding: '1.5rem', background: 'linear-gradient(135deg, #ede9fe, #ddd6fe)', borderRadius: '12px', border: '1px solid #c4b5fd', animation: 'flashSuccess 2s infinite' }}>
+                       <div style={{ fontSize: '2.5rem', marginBottom: '0.5rem' }}>🎉</div>
+                       <h4 style={{ margin: 0, color: '#5b21b6', fontSize: '1.3rem', marginBottom: '0.5rem', fontWeight: 'bold' }}>
+                          {t("恭喜！你已解鎖專屬題庫功能！", "Congratulations! Custom Sets Unlocked!")}
+                       </h4>
+                       <p style={{ margin: 0, color: '#4c1d95', fontSize: '1rem', lineHeight: '1.5' }}>
+                          {t("身為 Lv.3 以上的實踐者，你現在可以前往「進階功能 ➔ 我的專屬題庫」自由創建與分享你專屬的經文組了！", "As a Level 3+ player, you can now freely create custom verse sets from the Advanced settings menu!")}
+                       </p>
+                    </div>
+                  )}
+                </div>
 
                 {(() => {
                   const entries = Object.entries(gardenData);
