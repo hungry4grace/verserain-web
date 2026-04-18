@@ -27,24 +27,18 @@ let audioCtx = null;
 const ROOM_COLORS = ['#ef4444', '#f97316', '#eab308', '#22c55e', '#14b8a6', '#0ea5e9', '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16'];
 
 export const SKOOL_LEVELS = [
-  { level: 1, title: '互惠種子', points: 0 },
-  { level: 2, title: '探索學員', points: 5 },
-  { level: 3, title: '共識實踐者', points: 20 },
-  { level: 4, title: '價值貢獻者', points: 65 },
-  { level: 5, title: '生態連結者', points: 155 },
-  { level: 6, title: '方田開拓者', points: 515 },
-  { level: 7, title: '互惠建設者', points: 2015 },
-  { level: 8, title: '推廣大使', points: 8015 },
-  { level: 9, title: '生態系架構師', points: 33015 },
+  { level: 1, title: '互惠種子', enTitle: 'Mutuality Seed', points: 0 },
+  { level: 2, title: '探索學員', enTitle: 'Exploring Learner', points: 5 },
+  { level: 3, title: '共識實踐者', enTitle: 'Consensus Practitioner', points: 20 },
+  { level: 4, title: '價值貢獻者', enTitle: 'Value Contributor', points: 65 },
+  { level: 5, title: '生態連結者', enTitle: 'Eco Connector', points: 155 },
+  { level: 6, title: '方田開拓者', enTitle: 'Field Pioneer', points: 515 },
+  { level: 7, title: '互惠建設者', enTitle: 'Mutuality Builder', points: 2015 },
+  { level: 8, title: '推廣大使', enTitle: 'Ambassador', points: 8015 },
+  { level: 9, title: '生態系架構師', enTitle: 'Ecosystem Architect', points: 33015 },
 ];
 
 export function getSkoolLevel(points) {
-  if (points >= 33015) return { level: 9, title: "生態系架構師", next: null };
-  if (points >= 8015) return { level: 8, title: "推廣大使", next: 33015 };
-  if (points >= 2015) return { level: 7, title: "互惠建設者", next: 8015 };
-  if (points >= 515) return { level: 6, title: "方田開拓者", next: 2015 };
-  if (points >= 155) return { level: 5, title: "生態連結者", next: 515 };
-  if (points >= 65) return { level: 4, title: "價值貢獻者", next: 155 };
   if (points >= 20) return { level: 3, title: "共識實踐者", next: 65 };
   if (points >= 5) return { level: 2, title: "探索學員", next: 20 };
   return { level: 1, title: "互惠種子", next: 5 };
@@ -2031,7 +2025,16 @@ export default function App() {
     '如果你準備好了，請按下「我準備好了」的鍵': '準備ができたら「準備完了」ボタンを押してください',
     '我準備好了': '準備完了',
     '回到大廳': 'ホームに戻る',
-    '登出': 'ログアウト'
+    '登出': 'ログアウト',
+    '互惠種子': '互恵の種',
+    '探索學員': '探索の生徒',
+    '共識實踐者': '共感の実践者',
+    '價值貢獻者': '価値の貢献者',
+    '生態連結者': 'エココネクター',
+    '方田開拓者': '開拓者',
+    '互惠建設者': '互恵の建設者',
+    '推廣大使': '推進大使',
+    '生態系架構師': 'エコシステムアーキテクト'
   };
 
   const koDict = {
@@ -2130,7 +2133,16 @@ export default function App() {
     '如果你準備好了，請按下「我準備好了」的鍵': '준비가 되었으면 "준비 완료" 버튼을 눌러주세요',
     '我準備好了': '준비 완료',
     '回到大廳': '로비로 돌아가기',
-    '登出': '로그아웃'
+    '登出': '로그아웃',
+    '互惠種子': '호혜 씨앗',
+    '探索學員': '탐색 수강생',
+    '共識實踐者': '공감 실천가',
+    '價值貢獻者': '가치 공헌자',
+    '生態連結者': '생태 연결자',
+    '方田開拓者': '개척자',
+    '互惠建設者': '호혜 건설자',
+    '推廣大使': '홍보 대사',
+    '生態系架構師': '생태계 설계자'
   };
 
   const t = (zh, en) => {
@@ -3363,7 +3375,7 @@ export default function App() {
                            {t("目前階級", "Current Level")} <span style={{ fontSize: '1rem', animation: 'pulse 2s infinite' }}>ℹ️</span>
                         </span>
                         <span style={{ fontSize: '1.5rem', fontWeight: 'bold', color: skoolLevel.level >= 3 ? '#8b5cf6' : '#2563eb' }}>
-                           Lv.{skoolLevel.level} {skoolLevel.title}
+                           Lv.{skoolLevel.level} {t(skoolLevel.title, skoolLevel.enTitle)}
                         </span>
                      </button>
                   </div>
@@ -3718,7 +3730,7 @@ export default function App() {
                               <td style={{ padding: '0.8rem 1rem', fontWeight: 'bold', color: idx === 0 ? '#d97706' : idx === 1 ? '#94a3b8' : idx === 2 ? '#b45309' : '#64748b', fontSize: '1.2rem' }}>#{idx + 1}</td>
                               <td style={{ padding: '0.8rem 1rem', fontWeight: 'bold', color: '#1e293b' }}>
                                 {name} {name === playerName && <Crown size={14} style={{ color: '#fbbf24', marginLeft: '5px' }} />}
-                                <span style={{ marginLeft: '8px', fontSize: '0.8rem', backgroundColor: '#f1f5f9', color: '#64748b', padding: '0.2rem 0.6rem', borderRadius: '12px', border: '1px solid #e2e8f0' }}>Lv.{getSkoolLevel(alltimeClears[name] || stats.clears).level}</span>
+                                <span style={{ marginLeft: '8px', fontSize: '0.8rem', backgroundColor: '#f1f5f9', color: '#64748b', padding: '0.2rem 0.6rem', borderRadius: '12px', border: '1px solid #e2e8f0', whiteSpace: 'nowrap' }}>Lv.{getSkoolLevel(alltimeClears[name] || stats.clears).level} {t(getSkoolLevel(alltimeClears[name] || stats.clears).title, getSkoolLevel(alltimeClears[name] || stats.clears).enTitle)}</span>
                               </td>
                               <td style={{ padding: '0.8rem 1rem', textAlign: 'right', fontWeight: 'bold', color: '#3b82f6' }}>{stats.best.toLocaleString()}</td>
                               <td style={{ padding: '0.8rem 1rem', textAlign: 'right', fontWeight: 'bold', color: '#059669' }}>{stats.clears}</td>
@@ -5462,7 +5474,7 @@ export default function App() {
                         </div>
                         <div>
                           <div style={{ fontWeight: 'bold', color: isCurrent ? '#15803d' : (isUnlocked ? '#334155' : '#94a3b8'), fontSize: '1.1rem' }}>
-                            {levelObj.title} {isCurrent && <span style={{ fontSize: '0.9rem', color: '#059669', marginLeft: '8px' }}>👈 {t("目前階級", "You are here")}</span>}
+                            {t(levelObj.title, levelObj.enTitle)} {isCurrent && <span style={{ fontSize: '0.9rem', color: '#059669', marginLeft: '8px' }}>👈 {t("目前階級", "You are here")}</span>}
                           </div>
                           {levelObj.level === 3 && (
                             <div style={{ fontSize: '0.85rem', color: '#8b5cf6', fontWeight: 'bold', marginTop: '4px' }}>
