@@ -2042,7 +2042,18 @@ export default function App() {
     '方田開拓者': '開拓者',
     '互惠建設者': '互恵の建設者',
     '推廣大使': '推進大使',
-    '生態系架構師': 'エコシステムアーキテクト'
+    '生態系架構師': 'エコシステムアーキテクト',
+    '互惠階級說明': '互恵階級の説明',
+    '目前階級': '現在の階級',
+    '在園子裡持續照顧樹苗並結出果子，就能提升你的互惠階級！當達到 ': '園で苗木を世話し続けて果実を結ばせると、互恵階級が上がります！次のレベルに達すると：',
+    ' 時，將自動解鎖「專屬題庫」的建立權限喔！': ' に達すると、「専用問題集」の作成権限が自動的に解放されます！',
+    '解鎖建立專屬題庫': '専用問題集の作成を解放',
+    '關閉': '閉じる',
+    '每挑戰一節新經文，就會在空地上長出嫩芽。持續練習讓它長大！通過經文變成大樹，創新高則結出果子🍎': '新しい経文に挑戦するたびに空き地に新芽が出ます。練習を続けて成長させましょう！クリアすると大樹になり、最高スコアを出すと果実が実ります🍎',
+    '我的收成': '私の収穫',
+    '過關斬將結出果子，提升你的互惠階級！': '試練を乗り越えて果実を結び、互恵階級を上げよう！',
+    '總果子數量': '果実の合計',
+    '最受歡迎經文組': '最も人気のある経文セット'
   };
 
   const koDict = {
@@ -2150,7 +2161,18 @@ export default function App() {
     '方田開拓者': '개척자',
     '互惠建設者': '호혜 건설자',
     '推廣大使': '홍보 대사',
-    '生態系架構師': '생태계 설계자'
+    '生態系架構師': '생태계 설계자',
+    '互惠階級說明': '호혜 계급 설명',
+    '目前階級': '현재 계급',
+    '在園子裡持續照顧樹苗並結出果子，就能提升你的互惠階級！當達到 ': '동산에서 묘목을 계속 돌보고 열매를 맺으면 호혜 계급이 올라갑니다! 다음 레벨에 달성하면: ',
+    ' 時，將自動解鎖「專屬題庫」的建立權限喔！': ' 에 도달하면, 「개인 문제집」 작성 권한이 자동으로 해제됩니다!',
+    '解鎖建立專屬題庫': '개인 문제집 생성 해제',
+    '關閉': '닫기',
+    '每挑戰一節新經文，就會在空地上長出嫩芽。持續練習讓它長大！通過經文變成大樹，創新高則結出果子🍎': '새로운 구절에 도전할 때마다 빈터에 새싹이 자랍니다. 계속 연습하여 성장시키세요! 통과하면 큰 나무가 되고, 최고 점수를 기록하면 열매를 맺습니다🍎',
+    '我的收成': '나의 수확',
+    '過關斬將結出果子，提升你的互惠階級！': '시련을 이겨내고 열매를 맺어 호혜 계급을 올리세요!',
+    '總果子數量': '총 열매 수',
+    '最受歡迎經文組': '가장 인기 있는 구절 세트'
   };
 
   const t = (zh, en) => {
@@ -2377,7 +2399,7 @@ export default function App() {
                     </p>
                     <ul style={{ color: '#475569', textAlign: 'left', maxWidth: '400px', margin: '0 auto 2rem', paddingLeft: '1.5rem', lineHeight: '1.8' }}>
                       <li><strong>{t("方式一：", "Method 1: ")}</strong>{t("加入 Skool 成為 Premium 會員", "Subscribe to Skool Premium")}</li>
-                      <li><strong>{t("方式二：", "Method 2: ")}</strong>{t("在 VerseRain 遊戲的「我的園子」中持續挑戰經文，獲得 20 顆果子，達到 ", "Earn 20 fruits in the game's 'My Garden' to reach ")} <strong style={{ color: '#8b5cf6' }}>Level 3 (共識實踐者)</strong>！</li>
+                      <li><strong>{t("方式二：", "Method 2: ")}</strong>{t("在 VerseRain 遊戲的「我的園子」中持續挑戰經文，獲得 20 顆果子，達到 ", "Earn 20 fruits in the game's 'My Garden' to reach ")} <strong style={{ color: '#8b5cf6' }}>Level 3 ({t("共識實踐者", "Consensus Practitioner")})</strong>！</li>
                     </ul>
                     <button type="button" onClick={() => window.open('https://www.skool.com/mutualizedeconomy', '_blank')} style={{ background: '#8b5cf6', color: 'white', border: 'none', padding: '0.8rem 2rem', borderRadius: '8px', fontWeight: 'bold', fontSize: '1.1rem', cursor: 'pointer', boxShadow: '0 4px 6px rgba(139, 92, 246, 0.25)' }}>
                       {t("了解並加入 Premium", "Learn About Premium")}
