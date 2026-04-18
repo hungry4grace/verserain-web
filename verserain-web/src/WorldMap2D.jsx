@@ -39,7 +39,7 @@ function loadLeafletAndCluster() {
   });
 }
 
-export default function WorldMap2D({ t, playerName, onJoinRoom, onToggleMode, currentMode }) {
+export default function WorldMap2D({ t, playerName, onJoinRoom, onToggleMode, currentMode, focusLocation }) {
   const mapRef = useRef(null);
   const leafletMapRef = useRef(null);
   const [players, setPlayers] = useState([]);
