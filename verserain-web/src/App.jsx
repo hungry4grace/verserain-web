@@ -440,12 +440,10 @@ export default function App() {
   const activeVerseSets = React.useMemo(() => {
     const merged = [];
     customVerseSets.forEach(cs => {
-      if (cs.isPublished) {
-        const csLang = cs.language || 'cuv';
-        if (csLang === version) {
-          const pub = publishedVerseSets.find(p => p.id === cs.id);
-          merged.push({ ...cs, authorName: (pub && pub.authorName !== "Anonymous") ? pub.authorName : (cs.authorName || playerName || "匿名玩家") });
-        }
+      const csLang = cs.language || 'cuv';
+      if (csLang === version) {
+        const pub = publishedVerseSets.find(p => p.id === cs.id);
+        merged.push({ ...cs, authorName: (pub && pub.authorName !== "Anonymous") ? pub.authorName : (cs.authorName || playerName || "匿名玩家") });
       }
     });
     publishedVerseSets.forEach(ps => {
@@ -2185,7 +2183,7 @@ export default function App() {
                   verserain
                 </div>
                 <div style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', marginTop: '4px', marginLeft: '2px' }}>
-                  v2.4.0
+                  v2.5.0
                 </div>
               </div>
               <select
