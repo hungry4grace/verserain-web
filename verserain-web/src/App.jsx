@@ -39,9 +39,17 @@ export const SKOOL_LEVELS = [
 ];
 
 export function getSkoolLevel(points) {
-  if (points >= 20) return { level: 3, title: "共識實踐者", next: 65 };
-  if (points >= 5) return { level: 2, title: "探索學員", next: 20 };
-  return { level: 1, title: "互惠種子", next: 5 };
+  for (let i = SKOOL_LEVELS.length - 1; i >= 0; i--) {
+    if (points >= SKOOL_LEVELS[i].points) {
+      return { 
+        level: SKOOL_LEVELS[i].level, 
+        title: SKOOL_LEVELS[i].title, 
+        enTitle: SKOOL_LEVELS[i].enTitle,
+        next: i < SKOOL_LEVELS.length - 1 ? SKOOL_LEVELS[i + 1].points : null 
+      };
+    }
+  }
+  return { level: 1, title: '互惠種子', enTitle: 'Mutuality Seed', next: 5 };
 }
 
 export function getRoomColor(roomId) {
