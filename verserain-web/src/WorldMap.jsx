@@ -18,6 +18,7 @@ export default function WorldMap({ t, playerName, onJoinRoom }) {
   const [error, setError] = useState(null);
   const [selectedRoom, setSelectedRoom] = useState(null);
   const [dimensions, setDimensions] = useState({ width: 800, height: 520 });
+  const [altitude, setAltitude] = useState(2.5);
 
   // Handle container resize
   useEffect(() => {
@@ -61,69 +62,174 @@ export default function WorldMap({ t, playerName, onJoinRoom }) {
   }, [loading]);
 
   const mapData = useMemo(() => {
-    return players.map((p) => {
-      const isCurrentUser = p.name === playerName;
-      const roomColor = getRoomColor(p.roomId);
+    // Dynamic grid size based on altitude to break apart clusters when zooming in
+    // At default altitude (2.5), grid size is ~7.5 degrees
+    // Below 0.2 (zoomed in completely), clustering stops
+    const gridSize = altitude > 0.3 ? altitude * 3 : 0; 
+    
+    // 1. Group into clusters
+    const clusters = [];
+    players.forEach(p => {
+      if (gridSize === 0) {
+        clusters.push({ lat: p.lat, lng: p.lng, players: [p] });
+        return;
+      }
       
-      let bgColor = roomColor || (isCurrentUser ? '#f59e0b' : '#1e293b');
-      let borderColor = roomColor ? roomColor : (isCurrentUser ? '#fbbf24' : '#475569');
-      let glowStyle = roomColor ? `box-shadow: 0 0 0 3px ${roomColor}55, 0 0 12px ${roomColor}88;` : 'box-shadow: 0 2px 6px rgba(0,0,0,0.3);';
+      const gridLat = Math.round(p.lat / gridSize) * gridSize;
+      const gridLng = Math.round(p.lng / gridSize) * gridSize;
+      
+      const existing = clusters.find(c => c.gridLat === gridLat && c.gridLng === gridLng);
+      if (existing) {
+        existing.players.push(p);
+      } else {
+        clusters.push({ lat: p.lat, lng: p.lng, gridLat, gridLng, players: [p] });
+      }
+    });
+
+    // 2. Format output
+    return clusters.map(cluster => {
+      // If it's a single player, render standard marker
+      if (cluster.players.length === 1) {
+        const p = cluster.players[0];
+        const isCurrentUser = p.name === playerName;
+        const roomColor = getRoomColor(p.roomId);
+        
+        let bgColor = roomColor || (isCurrentUser ? '#f59e0b' : '#1e293b');
+        let borderColor = roomColor ? roomColor : (isCurrentUser ? '#fbbf24' : '#475569');
+        let glowStyle = roomColor ? `box-shadow: 0 0 0 3px ${roomColor}55, 0 0 12px ${roomColor}88;` : 'box-shadow: 0 2px 6px rgba(0,0,0,0.3);';
+        let opacity = 1.0;
+        let filter = 'none';
+
+        if (selectedRoom) {
+          if (p.roomId !== selectedRoom) {
+             opacity = 0.3;
+             filter = 'grayscale(100%)';
+             glowStyle = 'none';
+             bgColor = '#475569';
+             borderColor = '#334155';
+          }
+        }
+
+        return {
+          isCluster: false,
+          lat: p.lat,
+          lng: p.lng,
+          name: p.name,
+          roomId: p.roomId,
+          bgColor,
+          borderColor,
+          opacity,
+          filter,
+          glowStyle,
+          isCurrentUser,
+          roomColor,
+          locationStr: `📍 ${p.city ? p.city + ', ' : ''}${p.country || 'Unknown'}`,
+          lastOnline: p.updatedAt ? new Date(p.updatedAt).toLocaleString() : 'Unknown',
+        };
+      }
+      
+      // If it's a cluster, render numbered cluster marker
+      const avgLat = cluster.players.reduce((sum, p) => sum + p.lat, 0) / cluster.players.length;
+      const avgLng = cluster.players.reduce((sum, p) => sum + p.lng, 0) / cluster.players.length;
+      const isCurrentUserInCluster = cluster.players.some(p => p.name === playerName);
+      
       let opacity = 1.0;
       let filter = 'none';
+      let bgColor = '#1e293b';
+      let borderColor = '#334155';
+      let glowStyle = 'box-shadow: 0 4px 10px rgba(0,0,0,0.4);';
 
       if (selectedRoom) {
-        if (p.roomId !== selectedRoom) {
-           opacity = 0.3;
-           filter = 'grayscale(100%)';
-           glowStyle = 'none';
-           bgColor = '#475569';
-           borderColor = '#334155';
+        const hasSelected = cluster.players.some(p => p.roomId === selectedRoom);
+        if (hasSelected) {
+          bgColor = getRoomColor(selectedRoom);
+          borderColor = bgColor;
+          glowStyle = `box-shadow: 0 0 0 3px ${bgColor}55, 0 0 12px ${bgColor}88;`;
+        } else {
+          opacity = 0.3;
+          filter = 'grayscale(100%)';
+          glowStyle = 'none';
         }
+      } else if (isCurrentUserInCluster) {
+         borderColor = '#fbbf24';
       }
 
       return {
-        lat: p.lat,
-        lng: p.lng,
-        name: p.name,
-        roomId: p.roomId,
+        isCluster: true,
+        lat: avgLat,
+        lng: avgLng,
+        count: cluster.players.length,
+        players: cluster.players,
         bgColor,
         borderColor,
         opacity,
         filter,
-        glowStyle,
-        isCurrentUser,
-        roomColor,
-        locationStr: `📍 ${p.city ? p.city + ', ' : ''}${p.country || 'Unknown'}`,
-        lastOnline: p.updatedAt ? new Date(p.updatedAt).toLocaleString() : 'Unknown',
+        glowStyle
       };
     });
-  }, [players, playerName, selectedRoom]);
+  }, [players, playerName, selectedRoom, altitude]);
 
   const htmlElement = (d) => {
     const el = document.createElement('div');
-    el.innerHTML = `<div style="
-        display:flex; align-items:center; justify-content:center;
-        background:${d.bgColor};
-        border:2px solid ${d.borderColor};
-        border-radius:20px;
-        padding: 4px 10px;
-        color:white; font-weight:bold; font-size:12px;
-        opacity: ${d.opacity};
-        filter: ${d.filter};
-        ${d.glowStyle}
-        cursor:pointer;
-        white-space: nowrap;
-        pointer-events: auto;
-      ">${d.name} ${d.isCurrentUser ? '★' : ''}</div>`;
-      
-    el.title = `${d.name}\n${d.locationStr}\n${d.roomId ? '⚔️ ' + t('房間', 'Room') + ' ' + d.roomId + '\n' : ''}🕒 ${t('最後上線', 'Last Online')}: ${d.lastOnline}`;
-      
-    el.onclick = () => {
-      if (globeEl.current) {
-        globeEl.current.controls().autoRotate = false;
-        globeEl.current.pointOfView({ lat: d.lat, lng: d.lng, altitude: 0.8 }, 1500);
-      }
-    };
+    
+    if (d.isCluster) {
+      el.innerHTML = `<div style="
+          background-color: ${d.bgColor};
+          color: white;
+          border-radius: 50%;
+          width: 36px;
+          height: 36px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-weight: bold;
+          font-family: system-ui, sans-serif;
+          font-size: 14px;
+          border: 2px solid ${d.borderColor};
+          opacity: ${d.opacity};
+          filter: ${d.filter};
+          ${d.glowStyle}
+          transition: transform 0.2s;
+          cursor: pointer;
+          pointer-events: auto;
+        " onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'">${d.count}</div>`;
+        
+      const tooltipNames = d.players.slice(0, 10).map(p => p.name).join(', ') + (d.players.length > 10 ? '...' : '');
+      el.title = `${d.count} ${t('名玩家', 'players')}\n${tooltipNames}`;
+        
+      el.onclick = () => {
+        if (globeEl.current) {
+          globeEl.current.controls().autoRotate = false;
+          // Zoom in smoothly
+          const targetAltitude = Math.max(0.1, altitude - 0.5);
+          globeEl.current.pointOfView({ lat: d.lat, lng: d.lng, altitude: targetAltitude }, 1000);
+        }
+      };
+    } else {
+      el.innerHTML = `<div style="
+          display:flex; align-items:center; justify-content:center;
+          background:${d.bgColor};
+          border:2px solid ${d.borderColor};
+          border-radius:20px;
+          padding: 4px 10px;
+          color:white; font-weight:bold; font-size:12px;
+          opacity: ${d.opacity};
+          filter: ${d.filter};
+          ${d.glowStyle}
+          cursor:pointer;
+          white-space: nowrap;
+          pointer-events: auto;
+        ">${d.name} ${d.isCurrentUser ? '★' : ''}</div>`;
+        
+      el.title = `${d.name}\n${d.locationStr}\n${d.roomId ? '⚔️ ' + t('房間', 'Room') + ' ' + d.roomId + '\n' : ''}🕒 ${t('最後上線', 'Last Online')}: ${d.lastOnline}`;
+        
+      el.onclick = () => {
+        if (globeEl.current) {
+          globeEl.current.controls().autoRotate = false;
+          globeEl.current.pointOfView({ lat: d.lat, lng: d.lng, altitude: Math.min(altitude, 0.4) }, 1000);
+        }
+      };
+    }
     
     return el;
   };
@@ -215,6 +321,7 @@ export default function WorldMap({ t, playerName, onJoinRoom }) {
               backgroundImageUrl="//unpkg.com/three-globe/example/img/night-sky.png"
               htmlElementsData={mapData}
               htmlElement={htmlElement}
+              onZoom={({ altitude: newAltitude }) => setAltitude(newAltitude)}
               htmlAltitude={0.05}
               htmlTransitionDuration={100}
             />
