@@ -39,7 +39,7 @@ function loadLeafletAndCluster() {
   });
 }
 
-export default function WorldMap({ t, playerName }) {
+export default function WorldMap({ t, playerName, onJoinRoom }) {
   const mapRef = useRef(null);
   const leafletMapRef = useRef(null);
   const [players, setPlayers] = useState([]);
@@ -225,6 +225,7 @@ export default function WorldMap({ t, playerName }) {
               {activeRooms.map(rid => (
                 <button 
                   key={rid} 
+                  title={t('點擊縮放，雙擊加入房間', 'Click to zoom, double click to join')}
                   onClick={() => {
                     const isSelecting = selectedRoom !== rid;
                     setSelectedRoom(isSelecting ? rid : null);
@@ -239,6 +240,9 @@ export default function WorldMap({ t, playerName }) {
                         ], { padding: [60, 60], maxZoom: 7 });
                       }
                     }
+                  }}
+                  onDoubleClick={() => {
+                    if (onJoinRoom) onJoinRoom(rid);
                   }}
                   onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
                   onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}

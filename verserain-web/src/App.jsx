@@ -3864,10 +3864,23 @@ export default function App() {
                     <span style={{ fontSize: '1.5rem' }}>🗺️</span>
                     <div>
                       <h2 style={{ margin: 0, color: '#1e293b', fontSize: '1.2rem' }}>{t('全球玩家地圖', 'Global Player Map')}</h2>
-                      <p style={{ margin: '2px 0 0', color: '#64748b', fontSize: '0.85rem' }}>{t('點擊標記查看玩家成績', 'Click a marker to see player scores')}</p>
+                      <p style={{ margin: '2px 0 0', color: '#64748b', fontSize: '0.85rem' }}>{t('點擊標記查看玩家成績，雙擊遊戲房間加入戰局！', 'Click a marker to see scores, double click a room to join!')}</p>
                     </div>
                   </div>
-                  <WorldMap t={t} playerName={playerName} />
+                  <WorldMap t={t} playerName={playerName} onJoinRoom={(roomId) => {
+                    setMainTab('multiplayer');
+                    setJoinRoomError(null);
+                    isGuestJoinRef.current = true;
+                    setMultiplayerRoomId(roomId);
+                    if (joinRoomTimeoutRef.current) clearTimeout(joinRoomTimeoutRef.current);
+                    joinRoomTimeoutRef.current = setTimeout(() => {
+                      if (isGuestJoinRef.current) {
+                        setJoinRoomError(roomId);
+                        setMultiplayerRoomId(null);
+                        isGuestJoinRef.current = false;
+                      }
+                    }, 5000);
+                  }} />
                 </div>
               );
             })()}
