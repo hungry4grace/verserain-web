@@ -147,14 +147,18 @@ export default function BlindModeGame({
             const cleanHeard = currentTranscript.replace(/[^\w\u4e00-\u9fa5]/g, '').toLowerCase();
             
             let isMatch = false;
-            if (cleanTarget.length >= 2) {
-                const firstTwo = cleanTarget.substring(0, 2);
-                if (cleanHeard.includes(firstTwo)) isMatch = true;
-            } else if (cleanTarget.length === 1) {
-                if (cleanHeard.includes(cleanTarget)) isMatch = true;
+            if (cleanHeard.includes(cleanTarget) || cleanTarget.includes(cleanHeard)) {
+                isMatch = true;
+            } else {
+                const heardChars = [...new Set(cleanHeard)];
+                const matchCount = heardChars.filter(c => cleanTarget.includes(c)).length;
+                const requiredMatches = Math.max(1, Math.floor(cleanTarget.length * 0.5));
+                if (matchCount >= requiredMatches) {
+                    isMatch = true;
+                }
             }
             
-            if (isMatch || cleanHeard.includes(cleanTarget) || cleanTarget.includes(cleanHeard)) {
+            if (isMatch) {
                 // Match!
                 if (timerRef.current) clearTimeout(timerRef.current);
                 setHeardText(t("收到正確！等候中...", "Correct! Waiting...")); // clear
