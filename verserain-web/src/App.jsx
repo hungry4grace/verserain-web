@@ -3474,7 +3474,14 @@ export default function App() {
                     if (stage <= 8) return '🌳';
                     if (stage === 9) return '🌳';
                     // stage 10 = completed
-                    if (fruits > 0) return '🍎'.repeat(Math.min(fruits, 3)) + '🌳';
+                    if (fruits > 0) {
+                      return (
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', lineHeight: '1.1' }}>
+                          <span style={{ fontSize: '12px', fontWeight: 'bold', color: '#b91c1c' }}>🍎{fruits > 1 ? `x${fruits}` : ''}</span>
+                          <span style={{ fontSize: '20px' }}>🌳</span>
+                        </div>
+                      );
+                    }
                     return '🌳✨';
                   };
 
