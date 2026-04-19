@@ -114,7 +114,9 @@ function speakText(text, rate = 1.0, lang = 'zh-TW') {
       utterance.onerror = safeResolve;
 
       // Safety fallback in case Web Speech API hangs
-      setTimeout(safeResolve, 2500);
+      // Scale timeout with text length — Chinese TTS can take 300ms+ per character
+      const timeoutMs = Math.max(3000, text.length * 300);
+      setTimeout(safeResolve, timeoutMs);
 
       window.speechSynthesis.speak(utterance);
     } else {

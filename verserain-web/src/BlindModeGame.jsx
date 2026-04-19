@@ -46,6 +46,8 @@ export default function BlindModeGame({
         isListeningRef.current = false;
         missCountRef.current = 0;
         isSuccessFlashRef.current = false;
+        // Kill any lingering TTS from a previous game (e.g. the full-verse readout)
+        if ('speechSynthesis' in window) window.speechSynthesis.cancel();
         return () => { isMountedRef.current = false; };
     }, []);
 
@@ -223,6 +225,11 @@ export default function BlindModeGame({
                 }, 300);
             }
         };
+
+        // Cancel any lingering speech from previous game before starting mic
+        if ('speechSynthesis' in window && window.speechSynthesis.speaking) {
+            window.speechSynthesis.cancel();
+        }
 
         // Delay initial start slightly to let iOS fully release any hardware lock from a previous abort
         const startTimer = setTimeout(() => {
