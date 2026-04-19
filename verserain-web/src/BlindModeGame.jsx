@@ -41,6 +41,29 @@ export default function BlindModeGame({
     const speakSegment = async (textToSpeak) => {
         isSpeakingRef.current = true;
         
+        if (isListeningRef.current && recognitionRef.current) {
+            // iOS TTS explicitly requires the dictation engine to be fully powered down (signaled by onend)
+            // before it allows synthetic speech to occupy the audio channel.
+            await new Promise(resolve => {
+                const oldOnEnd = recognitionRef.current.onend;
+                const safeTimer = setTimeout(() => {
+                    if (recognitionRef.current) recognitionRef.current.onend = oldOnEnd; 
+                    resolve(); 
+                }, 800);
+
+                recognitionRef.current.onend = () => {
+                    clearTimeout(safeTimer);
+                    isListeningRef.current = false;
+                    if (recognitionRef.current) recognitionRef.current.onend = oldOnEnd;
+                    if (oldOnEnd) oldOnEnd(); 
+                    resolve();
+                };
+                
+                try { recognitionRef.current.stop(); } catch(e){ resolve(); }
+            });
+            await new Promise(r => setTimeout(r, 200));
+        }
+        
         await speakText(textToSpeak, 1.0, TTS_LANG);
         
         isSpeakingRef.current = false;
@@ -158,7 +181,7 @@ export default function BlindModeGame({
                     } else {
                         const heardChars = [...new Set(cleanHeard)];
                         const matchCount = heardChars.filter(c => cleanTarget.includes(c)).length;
-                        const requiredMatches = Math.max(1, Math.floor(cleanTarget.length * 0.5));
+                        const requiredMatches = Math.max(1, Math.floor(cleanTarget.length * 0.4));
                         if (matchCount >= requiredMatches) {
                             isMatch = true;
                         }
