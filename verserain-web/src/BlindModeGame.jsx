@@ -8,7 +8,8 @@ export default function BlindModeGame({
   speakText,
   playDing,
   version,
-  t
+  t,
+  onFail
 }) {
   const [micStatus, setMicStatus] = useState("初始化中...");
   const [heardText, setHeardText] = useState("");
@@ -39,9 +40,12 @@ export default function BlindModeGame({
       isSpeakingRef.current = true;
       try {
           if (recognitionRef.current) {
-             try { recognitionRef.current.abort(); } catch(e){}
+             try { recognitionRef.current.stop(); } catch(e){}
           }
       } catch(e) {}
+      
+      // Give iOS Safari 300ms to release the AVAudioSession mic lock before TTS!
+      await new Promise(r => setTimeout(r, 400));
       
       await speakText(textToSpeak, 1.0, TTS_LANG);
       isSpeakingRef.current = false;
@@ -66,6 +70,13 @@ export default function BlindModeGame({
            try { playDing(); } catch(e){}
            
            speakSegment(block.text).then(() => {
+               if (missCountRef.current >= 3) {
+                   speakText(t("你已經錯了三次，挑戰失敗。", "You missed 3 times, challenge failed."), 1.0, TTS_LANG).then(() => {
+                       if (onFail) onFail();
+                   });
+                   return;
+               }
+               
                // Advance automatically if they fail the timeout Timeout means they get moving forward!
                if (currentSeqIndexRef.current === activePhrases.length - 1) {
                   const total = activePhrases.length;

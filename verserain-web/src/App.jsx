@@ -4361,6 +4361,9 @@ export default function App() {
                  setCurrentSeqIndex(nextSeq);
                  currentSeqRef.current = nextSeq;
             }}
+            onFail={() => {
+                 setGameState('home');
+            }}
             speakText={speakText}
             playDing={() => {
                if (!window.__sharedDingCtx) {
