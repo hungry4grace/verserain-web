@@ -353,7 +353,19 @@ export default function App() {
     try { return JSON.parse(localStorage.getItem('verseRain_gardenData')) || {}; } catch { return {}; }
   });
 
-  const totalFruits = React.useMemo(() => Object.values(gardenData || {}).reduce((sum, curr) => sum + (curr.fruits || 0), 0), [gardenData]);
+  const [creatorPoints, setCreatorPoints] = useState(0);
+
+  useEffect(() => {
+    if (playerName) {
+      fetch(`/api/get-creator-points?author=${encodeURIComponent(playerName)}`)
+        .then(r => r.json())
+        .then(d => { if (d.points) setCreatorPoints(d.points); })
+        .catch(e => console.error(e));
+    }
+  }, [playerName]);
+
+  const localFruits = React.useMemo(() => Object.values(gardenData || {}).reduce((sum, curr) => sum + (curr.fruits || 0), 0), [gardenData]);
+  const totalFruits = localFruits + creatorPoints;
   const skoolLevel = React.useMemo(() => getSkoolLevel(totalFruits), [totalFruits]);
   const hasPremiumAccess = isPremium || skoolLevel.level >= 3;
   const [selectedGardenCell, setSelectedGardenCell] = useState(null); // { ref, text, stage, fruits, detectedLang }
@@ -3116,6 +3128,15 @@ export default function App() {
                             setSelectedSetId(set.id);
                             fetch("https://verserain-party.hungry4grace.partykit.dev/parties/main/global-auth-db/custom-sets/view", { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: set.id }) }).catch(e => e);
                             setViewCounts(prev => ({ ...prev, [set.id]: (prev[set.id] || 0) + 1 }));
+                            
+                            // ⭐️ Award point to the creator when played!
+                            if (set.authorName && set.authorName !== "Anonymous" && set.authorName !== "Verserain 官方") {
+                                fetch("/api/submit-creator-point", {
+                                  method: "POST",
+                                  headers: { "Content-Type": "application/json" },
+                                  body: JSON.stringify({ author: set.authorName })
+                                }).catch(e => e);
+                            }
                           }} onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#eff6ff'} onMouseOut={(e) => e.currentTarget.style.backgroundColor = i % 2 === 0 ? '#ffffff' : '#f8fafc'}>
                             <td style={{ padding: '1rem', textAlign: 'center', color: '#3b82f6', fontSize: '1.2rem' }}>{customVerseSets.some(c => c.id === set.id) ? '👑' : '📁'}</td>
                             <td style={{ padding: '1rem', fontWeight: 'bold', color: '#1e293b', fontSize: '1.05rem' }}>
