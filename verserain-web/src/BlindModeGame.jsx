@@ -36,17 +36,19 @@ export default function BlindModeGame({
 
     const TTS_LANG = version === 'kjv' ? 'en-US' : (version === 'ja' ? 'ja-JP' : (version === 'ko' ? 'ko-KR' : 'zh-TW'));
 
+    const isListeningRef = useRef(false);
+
     const speakSegment = async (textToSpeak) => {
         isSpeakingRef.current = true;
-        // Do not touch recognitionRef here to avoid iOS recording-ducking bug
+        
         await speakText(textToSpeak, 1.0, TTS_LANG);
+        
         isSpeakingRef.current = false;
-
-        try {
-            if (recognitionRef.current) {
-                recognitionRef.current.start();
-            }
-        } catch (e) { }
+        
+        // After speaking finishes, dynamically ensure the microphone comes back online if the OS dropped it!
+        if (!isListeningRef.current && recognitionRef.current) {
+            try { recognitionRef.current.start(); } catch (e) { }
+        }
     };
 
     const startTimer = () => {
@@ -63,7 +65,7 @@ export default function BlindModeGame({
 
                 speakSegment(block.text).then(() => {
                     if (missCountRef.current >= 3) {
-                        speakText(t("你已經錯了三次，挑戰失敗。", "You missed 3 times, challenge failed."), 1.0, TTS_LANG).then(() => {
+                        speakText(`${t("你已經錯了三次，挑戰失敗。", "You missed 3 times, challenge failed.")} ${t("整段經文是：", "The full verse is:")} ${activeVerse.text}`, 1.0, TTS_LANG).then(() => {
                             if (onFail) onFail();
                         });
                         return;
@@ -130,6 +132,7 @@ export default function BlindModeGame({
         recognition.lang = TTS_LANG;
 
         recognition.onstart = () => {
+            isListeningRef.current = true;
             if (!isSpeakingRef.current) setMicStatus(t("聆聽中...", "Listening..."));
         };
 
@@ -199,22 +202,24 @@ export default function BlindModeGame({
         };
 
         recognition.onend = () => {
+            isListeningRef.current = false;
             if (!isCompleteRef.current && !isSpeakingRef.current) {
                 setTimeout(() => {
-                    try { recognition.start(); } catch (e) { }
+                    if (!isListeningRef.current && recognitionRef.current) {
+                        try { recognition.start(); } catch (e) { }
+                    }
                 }, 300); // Slight delay to prevent aggressive Safari throttling
             }
         };
 
-        if (!isSpeakingRef.current) {
-            try {
-                recognition.start();
-                recognitionRef.current = recognition;
-            } catch (e) {
-                console.error(e);
-            }
-        } else {
+        // Always attempt an initial start regardless of isSpeakingRef to get permissions warmed up.
+        // If it throws InvalidState, it's fine.
+        try {
+            recognition.start();
             recognitionRef.current = recognition;
+        } catch (e) {
+            recognitionRef.current = recognition;
+            console.error(e);
         }
 
         return () => {
