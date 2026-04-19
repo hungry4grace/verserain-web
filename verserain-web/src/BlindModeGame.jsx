@@ -71,7 +71,7 @@ export default function BlindModeGame({
            
            speakSegment(block.text).then(() => {
                if (missCountRef.current >= 3) {
-                   speakText(t("你已經錯了三次，挑戰失敗。", "You missed 3 times, challenge failed."), 1.0, TTS_LANG).then(() => {
+                   speakText(`${t("你已經錯了三次，挑戰失敗。", "You missed 3 times, challenge failed.")} ${t("整段經文是：", "The full verse is:")} ${activeVerse.text}`, 1.0, TTS_LANG).then(() => {
                        if (onFail) onFail();
                    });
                    return;
