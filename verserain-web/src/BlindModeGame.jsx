@@ -208,10 +208,10 @@ export default function BlindModeGame({
         recognition.onresult = (event) => {
             if (isSpeakingRef.current) return;
 
-            let currentTranscript = '';
-            for (let i = event.resultIndex; i < event.results.length; i++) {
-                currentTranscript += event.results[i][0].transcript;
-            }
+            // Only use the LATEST result — with continuous mode, old results from
+            // previous blocks accumulate and would falsely match new blocks.
+            const lastResult = event.results[event.results.length - 1];
+            const currentTranscript = lastResult[0].transcript;
 
             if (currentTranscript.trim()) {
                 setHeardText(currentTranscript);

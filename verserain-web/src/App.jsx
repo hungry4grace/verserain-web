@@ -80,15 +80,9 @@ function initAudio() {
 function speakText(text, rate = 1.0, lang = 'zh-TW') {
   return new Promise(resolve => {
     if ('speechSynthesis' in window) {
-      // Clear any stuck queue before speaking
-      window.speechSynthesis.cancel();
-
-      // Safari hack: cancel() sometimes perma-breaks the speech queue.
-      // Calling pause() and resume() helps clear out the stuck internal state.
-      // BUT doing this in Chrome can cause it to stall completely or permanently pause.
-      if (/^((?!chrome|android).)*safari/i.test(navigator.userAgent)) {
-        window.speechSynthesis.pause();
-        window.speechSynthesis.resume();
+      // Only cancel if something is actually speaking/pending — blind cancel() corrupts iOS audio
+      if (window.speechSynthesis.speaking || window.speechSynthesis.pending) {
+        window.speechSynthesis.cancel();
       }
 
       const utterance = new SpeechSynthesisUtterance(text);
@@ -104,7 +98,6 @@ function speakText(text, rate = 1.0, lang = 'zh-TW') {
       const safeResolve = () => {
         if (!resolved) {
           resolved = true;
-          // Clean up memory
           utterance.onend = null;
           utterance.onerror = null;
           const idx = window.__speech_utterances.indexOf(utterance);
@@ -116,12 +109,14 @@ function speakText(text, rate = 1.0, lang = 'zh-TW') {
       utterance.onend = safeResolve;
       utterance.onerror = safeResolve;
 
-      // Safety fallback in case Web Speech API hangs
-      // Scale timeout with text length — Chinese TTS can take 300ms+ per character
-      const timeoutMs = Math.max(3000, text.length * 300);
+      // Safety fallback — scale with text length but cap reasonably
+      const timeoutMs = Math.max(3000, Math.min(text.length * 300, 15000));
       setTimeout(safeResolve, timeoutMs);
 
-      window.speechSynthesis.speak(utterance);
+      // Small delay to let iOS audio session settle after cancel(), then speak
+      setTimeout(() => {
+        window.speechSynthesis.speak(utterance);
+      }, 50);
     } else {
       resolve();
     }
