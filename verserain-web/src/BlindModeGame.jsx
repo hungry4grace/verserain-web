@@ -37,6 +37,17 @@ export default function BlindModeGame({
     const TTS_LANG = version === 'kjv' ? 'en-US' : (version === 'ja' ? 'ja-JP' : (version === 'ko' ? 'ko-KR' : 'zh-TW'));
 
     const isListeningRef = useRef(false);
+    const isMountedRef = useRef(true);
+
+    // Reset volatile refs on every mount (important for 2nd-game-onwards correctness)
+    useEffect(() => {
+        isMountedRef.current = true;
+        isSpeakingRef.current = false;
+        isListeningRef.current = false;
+        missCountRef.current = 0;
+        isSuccessFlashRef.current = false;
+        return () => { isMountedRef.current = false; };
+    }, []);
 
     const speakSegment = async (textToSpeak) => {
         isSpeakingRef.current = true;
@@ -203,26 +214,31 @@ export default function BlindModeGame({
 
         recognition.onend = () => {
             isListeningRef.current = false;
-            if (!isCompleteRef.current && !isSpeakingRef.current) {
+            // Guard: only auto-restart if this component is still mounted
+            if (isMountedRef.current && !isSpeakingRef.current) {
                 setTimeout(() => {
-                    if (!isListeningRef.current && recognitionRef.current) {
+                    if (isMountedRef.current && !isListeningRef.current) {
                         try { recognition.start(); } catch (e) { }
                     }
-                }, 300); // Slight delay to prevent aggressive Safari throttling
+                }, 300);
             }
         };
 
-        // Always attempt an initial start regardless of isSpeakingRef to get permissions warmed up.
-        // If it throws InvalidState, it's fine.
-        try {
-            recognition.start();
-            recognitionRef.current = recognition;
-        } catch (e) {
-            recognitionRef.current = recognition;
-            console.error(e);
-        }
+        // Delay initial start slightly to let iOS fully release any hardware lock from a previous abort
+        const startTimer = setTimeout(() => {
+            try {
+                recognition.start();
+                recognitionRef.current = recognition;
+            } catch (e) {
+                recognitionRef.current = recognition;
+                console.error('recognition.start failed:', e);
+            }
+        }, 500);
 
         return () => {
+            clearTimeout(startTimer);
+            isMountedRef.current = false;
+            isListeningRef.current = false;
             try { recognition.abort(); } catch (e) { }
         };
     }, [TTS_LANG]);
