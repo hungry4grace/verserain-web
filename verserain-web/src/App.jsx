@@ -374,7 +374,7 @@ export default function App() {
       } else if (type === 'completed') {
         updated[ref] = { ...updated[ref], stage: 10 };
       } else if (type === 'champ') {
-        updated[ref] = { ...updated[ref], stage: 10, fruits: (updated[ref].fruits || 0) + 1 };
+        updated[ref] = { ...updated[ref], stage: 10, fruits: Math.min((updated[ref].fruits || 0) + 1, 9) };
       }
       localStorage.setItem('verseRain_gardenData', JSON.stringify(updated));
       return updated;
