@@ -337,11 +337,7 @@ export default function App() {
   const [searchSetsPage, setSearchSetsPage] = useState(1);
   const [searchVersesPage, setSearchVersesPage] = useState(1);
 
-  // Reset search pages when query changes
-  useEffect(() => {
-    setSearchSetsPage(1);
-    setSearchVersesPage(1);
-  }, [searchQuery]);
+
 
   // Local Leaderboard tracking (to be migrated to PartyKit on next deployment)
   const [globalUserStats, setGlobalUserStats] = useState(() => {
@@ -780,6 +776,12 @@ export default function App() {
   const [isFetchingLeaderboard, setIsFetchingLeaderboard] = useState(false);
   const [mainTab, setMainTab] = useState('lobby');
   const [searchQuery, setSearchQuery] = useState('');
+
+  // Reset search pages when query changes
+  useEffect(() => {
+    setSearchSetsPage(1);
+    setSearchVersesPage(1);
+  }, [searchQuery]);
   const [globalLeaderboardData, setGlobalLeaderboardData] = useState({ alltime: [], monthly: [], daily: [] });
   const [isFetchingGlobalLeaderboard, setIsFetchingGlobalLeaderboard] = useState(false);
   const [globalLeaderboardTab, setGlobalLeaderboardTab] = useState('daily');
