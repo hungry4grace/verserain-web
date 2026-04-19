@@ -80,6 +80,9 @@ function initAudio() {
 function speakText(text, rate = 1.0, lang = 'zh-TW') {
   return new Promise(resolve => {
     if ('speechSynthesis' in window) {
+      // Clear any stuck queue before speaking
+      window.speechSynthesis.cancel();
+
       // Safari hack: cancel() sometimes perma-breaks the speech queue.
       // Calling pause() and resume() helps clear out the stuck internal state.
       // BUT doing this in Chrome can cause it to stall completely or permanently pause.

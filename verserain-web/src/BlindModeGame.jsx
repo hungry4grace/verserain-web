@@ -16,11 +16,14 @@ export default function BlindModeGame({
     const [isSuccessFlash, setIsSuccessFlash] = useState(false);
     const [missCount, setMissCount] = useState(0);
     const [missedIndices, setMissedIndices] = useState([]);
+    const [countdown, setCountdown] = useState(null); // visual countdown
     const recognitionRef = useRef(null);
     const timerRef = useRef(null);
+    const countdownRef = useRef(null);
     const isSpeakingRef = useRef(false);
     const isSuccessFlashRef = useRef(false);
     const missCountRef = useRef(0);
+    const isMountedRef = useRef(true);
 
     const currentBlock = activePhrases[currentSeqIndex] || null;
     const currentBlockRef = useRef(currentBlock);
@@ -36,37 +39,78 @@ export default function BlindModeGame({
 
     const TTS_LANG = version === 'kjv' ? 'en-US' : (version === 'ja' ? 'ja-JP' : (version === 'ko' ? 'ko-KR' : 'zh-TW'));
 
-    const isListeningRef = useRef(false);
-    const isMountedRef = useRef(true);
-
-    // Reset volatile refs on every mount (important for 2nd-game-onwards correctness)
+    // ──────────────────────────────────────────────
+    // MOUNT RESET — clean slate for every new game
+    // ──────────────────────────────────────────────
     useEffect(() => {
         isMountedRef.current = true;
         isSpeakingRef.current = false;
-        isListeningRef.current = false;
         missCountRef.current = 0;
         isSuccessFlashRef.current = false;
-        // Kill any lingering TTS from a previous game (e.g. the full-verse readout)
+        // Kill any lingering TTS from a previous game
         if ('speechSynthesis' in window) window.speechSynthesis.cancel();
         return () => { isMountedRef.current = false; };
     }, []);
 
+    // ──────────────────────────────────────────────
+    // SPEAK SEGMENT — speak text, then ensure mic is alive
+    // ──────────────────────────────────────────────
     const speakSegment = async (textToSpeak) => {
         isSpeakingRef.current = true;
-        
+        setMicStatus(t("播放中...", "Speaking..."));
+
         await speakText(textToSpeak, 1.0, TTS_LANG);
-        
+
         isSpeakingRef.current = false;
-        
-        // After speaking finishes, dynamically ensure the microphone comes back online if the OS dropped it natively!
-        if (!isListeningRef.current && recognitionRef.current) {
-            try { recognitionRef.current.start(); } catch (e) { }
-        }
+        ensureMicAlive();
     };
 
+    // ──────────────────────────────────────────────
+    // ENSURE MIC ALIVE — the single source of truth for mic recovery
+    // ──────────────────────────────────────────────
+    const ensureMicAlive = () => {
+        if (!isMountedRef.current) return;
+        if (isSpeakingRef.current) return;
+        if (recognitionRef.current) {
+            // Check if recognition is NOT running — if so, restart it
+            try { recognitionRef.current.start(); } catch (e) {
+                // InvalidStateError means it's already running — that's fine
+            }
+        }
+        setMicStatus(t("聆聽中...", "Listening..."));
+    };
+
+    // ──────────────────────────────────────────────
+    // HEARTBEAT — every 2 seconds, check if mic died and revive it
+    // ──────────────────────────────────────────────
+    useEffect(() => {
+        const heartbeat = setInterval(() => {
+            if (!isMountedRef.current) return;
+            if (isSpeakingRef.current) return;
+            if (isCompleteRef.current) return;
+            ensureMicAlive();
+        }, 2000);
+        return () => clearInterval(heartbeat);
+    }, []);
+
+    // ──────────────────────────────────────────────
+    // TIMER — 5 second countdown per block
+    // ──────────────────────────────────────────────
     const startTimer = () => {
         if (timerRef.current) clearTimeout(timerRef.current);
+        if (countdownRef.current) clearInterval(countdownRef.current);
+
+        let remaining = 5;
+        setCountdown(remaining);
+        countdownRef.current = setInterval(() => {
+            remaining -= 1;
+            setCountdown(remaining);
+            if (remaining <= 0) clearInterval(countdownRef.current);
+        }, 1000);
+
         timerRef.current = setTimeout(() => {
+            if (countdownRef.current) clearInterval(countdownRef.current);
+            setCountdown(null);
             if (isSpeakingRef.current || isCompleteRef.current) return;
             const block = currentBlockRef.current;
             if (block && !isSuccessFlashRef.current) {
@@ -77,6 +121,7 @@ export default function BlindModeGame({
                 try { playDing(); } catch (e) { }
 
                 speakSegment(block.text).then(() => {
+                    if (!isMountedRef.current) return;
                     if (missCountRef.current >= 3) {
                         speakText(`${t("你已經錯了三次，挑戰失敗。", "You missed 3 times, challenge failed.")} ${t("整段經文是：", "The full verse is:")} ${activeVerse.text}`, 1.0, TTS_LANG).then(() => {
                             if (onFail) onFail();
@@ -84,7 +129,6 @@ export default function BlindModeGame({
                         return;
                     }
 
-                    // Advance automatically if they fail the timeout Timeout means they get moving forward!
                     if (currentSeqIndexRef.current === activePhrases.length - 1) {
                         const total = activePhrases.length;
                         const accuracy = Math.max(0, Math.round(((total - missCountRef.current) / total) * 100));
@@ -101,6 +145,9 @@ export default function BlindModeGame({
         }, 5000);
     };
 
+    // ──────────────────────────────────────────────
+    // 3 DINGS
+    // ──────────────────────────────────────────────
     const playThreeDings = () => {
         return new Promise(resolve => {
             let count = 0;
@@ -115,23 +162,33 @@ export default function BlindModeGame({
         });
     };
 
+    // ──────────────────────────────────────────────
+    // GAME FLOW — speak reference, play dings, start timer
+    // ──────────────────────────────────────────────
     useEffect(() => {
         if (isComplete) return;
 
-        // Speak verse reference on start
         if (currentSeqIndex === 0 && activeVerse) {
             speakSegment(`${t("視障模式", "Blind Mode")}. ${t("出處", "Reference")} ${activeVerse.reference}`).then(() => {
+                if (!isMountedRef.current) return;
                 return playThreeDings();
             }).then(() => {
+                if (!isMountedRef.current) return;
                 startTimer();
             });
         } else if (currentBlock) {
             startTimer();
         }
 
-        return () => { if (timerRef.current) clearTimeout(timerRef.current); };
+        return () => {
+            if (timerRef.current) clearTimeout(timerRef.current);
+            if (countdownRef.current) clearInterval(countdownRef.current);
+        };
     }, [currentSeqIndex, activeVerse]);
 
+    // ──────────────────────────────────────────────
+    // SPEECH RECOGNITION — setup once, never tear down until unmount
+    // ──────────────────────────────────────────────
     useEffect(() => {
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         if (!SpeechRecognition) {
@@ -145,7 +202,6 @@ export default function BlindModeGame({
         recognition.lang = TTS_LANG;
 
         recognition.onstart = () => {
-            isListeningRef.current = true;
             if (!isSpeakingRef.current) setMicStatus(t("聆聽中...", "Listening..."));
         };
 
@@ -159,7 +215,6 @@ export default function BlindModeGame({
 
             if (currentTranscript.trim()) {
                 setHeardText(currentTranscript);
-                // Process match against EVERY interim result! Much more responsive.
                 const block = currentBlockRef.current;
                 if (block && !isSuccessFlashRef.current) {
                     const cleanTarget = block.text.replace(/[^\w\u4e00-\u9fa5]/g, '').toLowerCase();
@@ -178,13 +233,15 @@ export default function BlindModeGame({
                     }
 
                     if (isMatch) {
-                        // Match!
                         if (timerRef.current) clearTimeout(timerRef.current);
-                        setHeardText(t("收到正確！等候中...", "Correct! Waiting...")); // clear
+                        if (countdownRef.current) clearInterval(countdownRef.current);
+                        setCountdown(null);
+                        setHeardText(t("收到正確！等候中...", "Correct! Waiting..."));
                         isSuccessFlashRef.current = true;
                         setIsSuccessFlash(true);
 
                         speakSegment(block.text).then(() => {
+                            if (!isMountedRef.current) return;
                             isSuccessFlashRef.current = false;
                             setIsSuccessFlash(false);
                             if (currentSeqIndexRef.current === activePhrases.length - 1) {
@@ -204,55 +261,41 @@ export default function BlindModeGame({
 
         recognition.onerror = (e) => {
             console.log("Speech recognition error:", e.error);
-            if (e.error !== 'aborted') {
-                setMicStatus(t("重新啟動麥克風...", "Restarting mic..."));
-                setTimeout(() => {
-                    if (!isSpeakingRef.current) {
-                        try { recognition.start(); } catch (err) { }
-                    }
-                }, 1000);
-            }
+            // Don't restart on 'aborted' — that's our own cleanup
+            // For all other errors, the heartbeat will handle restart
         };
 
         recognition.onend = () => {
-            isListeningRef.current = false;
-            // Guard: only auto-restart if this component is still mounted
-            if (isMountedRef.current && !isSpeakingRef.current) {
-                setTimeout(() => {
-                    if (isMountedRef.current && !isListeningRef.current) {
-                        try { recognition.start(); } catch (e) { }
-                    }
-                }, 300);
-            }
+            // Don't restart here — the heartbeat handles all restarts.
+            // This prevents race conditions between onend restarts and speakSegment restarts.
         };
 
-        // Cancel any lingering speech from previous game before starting mic
+        // Cancel any lingering speech, then start recognition
         if ('speechSynthesis' in window && window.speechSynthesis.speaking) {
             window.speechSynthesis.cancel();
         }
 
-        // Delay initial start slightly to let iOS fully release any hardware lock from a previous abort
-        const startTimer = setTimeout(() => {
-            try {
-                recognition.start();
-                recognitionRef.current = recognition;
-            } catch (e) {
-                recognitionRef.current = recognition;
-                console.error('recognition.start failed:', e);
-            }
-        }, 500);
+        // Start mic immediately — permission dialog will block until granted
+        try {
+            recognition.start();
+        } catch (e) {
+            console.error('Initial recognition.start failed:', e);
+        }
+        recognitionRef.current = recognition;
 
         return () => {
-            clearTimeout(startTimer);
             isMountedRef.current = false;
-            isListeningRef.current = false;
             try { recognition.abort(); } catch (e) { }
+            recognitionRef.current = null;
         };
     }, [TTS_LANG]);
 
     return (
         <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', backgroundColor: '#000', zIndex: 9999, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '2rem' }}>
-            <h1 style={{ color: '#fff', fontSize: '2rem', position: 'absolute', top: '5%', margin: 0 }}>{t("視障模式", "Blind Mode")} - <span style={{ color: '#4ade80' }}>{micStatus}</span></h1>
+            <h1 style={{ color: '#fff', fontSize: '2rem', position: 'absolute', top: '5%', margin: 0 }}>
+                {t("視障模式", "Blind Mode")} - <span style={{ color: '#4ade80' }}>{micStatus}</span>
+                {countdown !== null && <span style={{ color: '#facc15', marginLeft: '1rem' }}>⏱ {countdown}s</span>}
+            </h1>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', justifyContent: 'center', width: '100%', maxHeight: '70vh', overflowY: 'auto', padding: '1rem' }}>
                 {activePhrases && activePhrases.map((phrase, index) => {
                     const isActive = index === currentSeqIndex;
