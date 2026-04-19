@@ -17,9 +17,20 @@ export default function BlindModeGame({
   const recognitionRef = useRef(null);
   const timerRef = useRef(null);
   const isSpeakingRef = useRef(false);
+  const isSuccessFlashRef = useRef(false);
+  const missCountRef = useRef(0);
   
   const currentBlock = activePhrases[currentSeqIndex] || null;
+  const currentBlockRef = useRef(currentBlock);
+  const currentSeqIndexRef = useRef(currentSeqIndex);
   const isComplete = currentSeqIndex >= activePhrases.length || !currentBlock;
+  const isCompleteRef = useRef(isComplete);
+  
+  useEffect(() => {
+      currentBlockRef.current = currentBlock;
+      currentSeqIndexRef.current = currentSeqIndex;
+      isCompleteRef.current = isComplete;
+  }, [currentBlock, currentSeqIndex, isComplete]);
   
   const TTS_LANG = version === 'kjv' ? 'en-US' : (version === 'ja' ? 'ja-JP' : (version === 'ko' ? 'ko-KR' : 'zh-TW'));
 
@@ -42,15 +53,19 @@ export default function BlindModeGame({
   };
 
   const startTimer = () => {
-    clearInterval(timerRef.current);
-    timerRef.current = setInterval(() => {
-       if (isSpeakingRef.current) return; // don't timeout while speaking
-       if (currentBlock) {
-           setMissCount(m => m + 1);
-           playDing();
-           speakSegment(currentBlock.text).then(() => {
+    if (timerRef.current) clearTimeout(timerRef.current);
+    timerRef.current = setTimeout(() => {
+       if (isSpeakingRef.current || isCompleteRef.current) return;
+       const block = currentBlockRef.current;
+       if (block && !isSuccessFlashRef.current) {
+           missCountRef.current += 1;
+           setMissCount(missCountRef.current);
+           try { playDing(); } catch(e){}
+           speakSegment(block.text).then(() => {
               startTimer(); // reset timer
            });
+       } else {
+           startTimer();
        }
     }, 5000);
   };
@@ -67,7 +82,7 @@ export default function BlindModeGame({
       startTimer();
     }
     
-    return () => clearInterval(timerRef.current);
+    return () => { if (timerRef.current) clearTimeout(timerRef.current); };
   }, [currentSeqIndex, activeVerse]);
 
   useEffect(() => {
@@ -101,13 +116,12 @@ export default function BlindModeGame({
       if (finalTranscript) {
         setHeardText(finalTranscript);
         // Process match
-        if (currentBlock && !isSuccessFlash) {
-            const cleanTarget = currentBlock.text.replace(/[^\w\u4e00-\u9fa5]/g, '').toLowerCase();
+        const block = currentBlockRef.current;
+        if (block && !isSuccessFlashRef.current) {
+            const cleanTarget = block.text.replace(/[^\w\u4e00-\u9fa5]/g, '').toLowerCase();
             const cleanHeard = finalTranscript.replace(/[^\w\u4e00-\u9fa5]/g, '').toLowerCase();
             
             let isMatch = false;
-            // Fuzzy match: if it's 2 chars or more, we just need the first two characters to show up in what they said Let me be careful here. If the target is "神創造" (3 chars) and they say "神創", firstTwo is "神創", so it's a match.
-            // That fulfills "用最前面的兩個音，模糊比對大概對了就可以".
             if (cleanTarget.length >= 2) {
                 const firstTwo = cleanTarget.substring(0, 2);
                 if (cleanHeard.includes(firstTwo)) isMatch = true;
@@ -117,19 +131,22 @@ export default function BlindModeGame({
             
             if (isMatch || cleanHeard.includes(cleanTarget) || cleanTarget.includes(cleanHeard)) {
                 // Match!
-                clearInterval(timerRef.current);
-                setHeardText(""); // clear
+                if (timerRef.current) clearTimeout(timerRef.current);
+                setHeardText(t("收到正確！等候中...", "Correct! Waiting...")); // clear
+                isSuccessFlashRef.current = true;
                 setIsSuccessFlash(true);
-                speakSegment(currentBlock.text).then(() => {
+                
+                speakSegment(block.text).then(() => {
+                     isSuccessFlashRef.current = false;
                      setIsSuccessFlash(false);
-                     if (currentSeqIndex === activePhrases.length - 1) {
+                     if (currentSeqIndexRef.current === activePhrases.length - 1) {
                          const total = activePhrases.length;
-                         const accuracy = Math.max(0, Math.round(((total - missCount) / total) * 100));
+                         const accuracy = Math.max(0, Math.round(((total - missCountRef.current) / total) * 100));
                          speakText(`${t("正確率", "Accuracy")} ${accuracy}%. ${t("恭喜，你完成了這個經文！", "Congratulations, you completed this verse!")}`, 1.0, TTS_LANG).then(() => {
-                             onWordMatch(currentBlock);
+                             onWordMatch(block);
                          });
                      } else {
-                         onWordMatch(currentBlock);
+                         onWordMatch(block);
                      }
                 });
             }
@@ -169,7 +186,7 @@ export default function BlindModeGame({
     return () => {
        try { recognition.stop(); } catch(e) {}
     };
-  }, [currentBlock, isComplete, TTS_LANG, isSuccessFlash]);
+  }, [TTS_LANG]);
 
   return (
     <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', backgroundColor: '#000', zIndex: 9999, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '2rem' }}>
