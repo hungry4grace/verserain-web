@@ -4363,7 +4363,11 @@ export default function App() {
             }}
             speakText={speakText}
             playDing={() => {
-               const actx = new (window.AudioContext || window.webkitAudioContext)();
+               if (!window.__sharedDingCtx) {
+                   window.__sharedDingCtx = new (window.AudioContext || window.webkitAudioContext)();
+               }
+               const actx = window.__sharedDingCtx;
+               if (actx.state === 'suspended') actx.resume();
                const osc = actx.createOscillator();
                const gn = actx.createGain();
                osc.type = 'sine';
