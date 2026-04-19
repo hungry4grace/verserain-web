@@ -105,7 +105,17 @@ export default function BlindModeGame({
             const cleanTarget = currentBlock.text.replace(/[^\w\u4e00-\u9fa5]/g, '').toLowerCase();
             const cleanHeard = finalTranscript.replace(/[^\w\u4e00-\u9fa5]/g, '').toLowerCase();
             
-            if (cleanHeard.includes(cleanTarget) || cleanTarget.includes(cleanHeard)) {
+            let isMatch = false;
+            // Fuzzy match: if it's 2 chars or more, we just need the first two characters to show up in what they said Let me be careful here. If the target is "神創造" (3 chars) and they say "神創", firstTwo is "神創", so it's a match.
+            // That fulfills "用最前面的兩個音，模糊比對大概對了就可以".
+            if (cleanTarget.length >= 2) {
+                const firstTwo = cleanTarget.substring(0, 2);
+                if (cleanHeard.includes(firstTwo)) isMatch = true;
+            } else if (cleanTarget.length === 1) {
+                if (cleanHeard.includes(cleanTarget)) isMatch = true;
+            }
+            
+            if (isMatch || cleanHeard.includes(cleanTarget) || cleanTarget.includes(cleanHeard)) {
                 // Match!
                 clearInterval(timerRef.current);
                 setHeardText(""); // clear
@@ -176,7 +186,10 @@ export default function BlindModeGame({
                       style={{ 
                          fontSize: '8vw', fontWeight: 'bold', lineHeight: '1.4',
                          color: showGold ? '#fbbf24' : '#475569', 
-                         transition: 'color 0.3s'
+                         border: `2px solid ${showGold ? '#fbbf24' : '#334155'}`,
+                         padding: '0.4rem 1rem',
+                         borderRadius: '16px',
+                         transition: 'all 0.3s'
                       }}
                    >
                      {phrase.text || phrase}
@@ -185,7 +198,9 @@ export default function BlindModeGame({
            })}
        </div>
        {heardText && (
-           <p style={{ color: '#94a3b8', fontSize: '2.5rem', position: 'absolute', bottom: '5%', textAlign: 'center', margin: 0, width: '100%', padding: '0 2rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{heardText}</p>
+           <div style={{ position: 'absolute', bottom: '5%', width: '100%', padding: '0 2rem', textAlign: 'center' }}>
+               <p style={{ color: '#94a3b8', fontSize: '2.5rem', margin: 0, wordBreak: 'break-word' }}>聽見：{heardText}</p>
+           </div>
        )}
     </div>
   );
