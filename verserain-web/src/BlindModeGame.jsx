@@ -14,6 +14,7 @@ export default function BlindModeGame({
   const [heardText, setHeardText] = useState("");
   const [isSuccessFlash, setIsSuccessFlash] = useState(false);
   const [missCount, setMissCount] = useState(0);
+  const [missedIndices, setMissedIndices] = useState([]);
   const recognitionRef = useRef(null);
   const timerRef = useRef(null);
   const isSpeakingRef = useRef(false);
@@ -60,6 +61,8 @@ export default function BlindModeGame({
        if (block && !isSuccessFlashRef.current) {
            missCountRef.current += 1;
            setMissCount(missCountRef.current);
+           setMissedIndices(prev => [...prev, currentSeqIndexRef.current]);
+           
            try { playDing(); } catch(e){}
            
            speakSegment(block.text).then(() => {
@@ -80,12 +83,28 @@ export default function BlindModeGame({
     }, 5000);
   };
 
+  const playThreeDings = () => {
+    return new Promise(resolve => {
+        let count = 0;
+        const interval = setInterval(() => {
+            try { playDing(); } catch(e){}
+            count++;
+            if (count >= 3) {
+                clearInterval(interval);
+                setTimeout(resolve, 800);
+            }
+        }, 600);
+    });
+  };
+
   useEffect(() => {
     if (isComplete) return;
 
     // Speak verse reference on start
     if (currentSeqIndex === 0 && activeVerse) {
       speakSegment(`${t("視障模式", "Blind Mode")}. ${t("出處", "Reference")} ${activeVerse.reference}`).then(() => {
+          return playThreeDings();
+      }).then(() => {
           startTimer();
       });
     } else if (currentBlock) {
@@ -203,7 +222,8 @@ export default function BlindModeGame({
            {activePhrases && activePhrases.map((phrase, index) => {
                const isActive = index === currentSeqIndex;
                const isPassed = index < currentSeqIndex;
-               const showGold = isPassed || (isActive && isSuccessFlash);
+               const isMissed = missedIndices.includes(index);
+               const showGold = (isPassed && !isMissed) || (isActive && isSuccessFlash);
                
                return (
                    <span 
@@ -211,7 +231,7 @@ export default function BlindModeGame({
                       style={{ 
                          fontSize: '8vw', fontWeight: 'bold', lineHeight: '1.4',
                          color: showGold ? '#fbbf24' : '#475569', 
-                         border: `2px solid ${showGold ? '#fbbf24' : '#334155'}`,
+                         border: `2px solid ${showGold ? '#fbbf24' : (isActive ? '#64748b' : '#334155')}`,
                          padding: '0.4rem 1rem',
                          borderRadius: '16px',
                          transition: 'all 0.3s'
@@ -223,8 +243,8 @@ export default function BlindModeGame({
            })}
        </div>
        {heardText && (
-           <div style={{ position: 'absolute', bottom: '5%', width: '100%', padding: '0 2rem', textAlign: 'center' }}>
-               <p style={{ color: '#94a3b8', fontSize: '2.5rem', margin: 0, wordBreak: 'break-word' }}>聽見：{heardText}</p>
+           <div style={{ position: 'absolute', bottom: '2%', width: '100%', padding: '1rem 2rem', textAlign: 'center', backgroundColor: 'rgba(0,0,0,0.7)', borderTop: '1px solid #334155' }}>
+               <p style={{ color: '#bae6fd', fontSize: '3rem', margin: 0, wordBreak: 'break-word', fontWeight: 'bold' }}>{t("聽見：", "Heard: ")}{heardText}</p>
            </div>
        )}
     </div>
