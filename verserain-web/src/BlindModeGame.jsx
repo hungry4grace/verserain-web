@@ -61,8 +61,18 @@ export default function BlindModeGame({
            missCountRef.current += 1;
            setMissCount(missCountRef.current);
            try { playDing(); } catch(e){}
+           
            speakSegment(block.text).then(() => {
-              startTimer(); // reset timer
+               // Advance automatically if they fail the timeout Timeout means they get moving forward!
+               if (currentSeqIndexRef.current === activePhrases.length - 1) {
+                  const total = activePhrases.length;
+                  const accuracy = Math.max(0, Math.round(((total - missCountRef.current) / total) * 100));
+                  speakText(`${t("正確率", "Accuracy")} ${accuracy}%. ${t("恭喜，你完成了這個經文！", "Congratulations, you completed this verse!")}`, 1.0, TTS_LANG).then(() => {
+                      onWordMatch(block);
+                  });
+               } else {
+                  onWordMatch(block);
+               }
            });
        } else {
            startTimer();
@@ -104,22 +114,18 @@ export default function BlindModeGame({
     recognition.onresult = (event) => {
       if (isSpeakingRef.current) return;
 
-      let finalTranscript = '';
+      let currentTranscript = '';
       for (let i = event.resultIndex; i < event.results.length; i++) {
-        if (event.results[i].isFinal) {
-          finalTranscript += event.results[i][0].transcript;
-        } else {
-          setHeardText(event.results[i][0].transcript);
-        }
+          currentTranscript += event.results[i][0].transcript;
       }
       
-      if (finalTranscript) {
-        setHeardText(finalTranscript);
-        // Process match
+      if (currentTranscript.trim()) {
+        setHeardText(currentTranscript);
+        // Process match against EVERY interim result! Much more responsive.
         const block = currentBlockRef.current;
         if (block && !isSuccessFlashRef.current) {
             const cleanTarget = block.text.replace(/[^\w\u4e00-\u9fa5]/g, '').toLowerCase();
-            const cleanHeard = finalTranscript.replace(/[^\w\u4e00-\u9fa5]/g, '').toLowerCase();
+            const cleanHeard = currentTranscript.replace(/[^\w\u4e00-\u9fa5]/g, '').toLowerCase();
             
             let isMatch = false;
             if (cleanTarget.length >= 2) {
@@ -167,8 +173,10 @@ export default function BlindModeGame({
     };
 
     recognition.onend = () => {
-      if (!isComplete && !isSpeakingRef.current) {
-         try { recognition.start(); } catch (e) {}
+      if (!isCompleteRef.current && !isSpeakingRef.current) {
+         setTimeout(() => {
+             try { recognition.start(); } catch (e) {}
+         }, 300); // Slight delay to prevent aggressive Safari throttling
       }
     };
 
