@@ -40,12 +40,12 @@ export default function BlindModeGame({
       isSpeakingRef.current = true;
       try {
           if (recognitionRef.current) {
-             try { recognitionRef.current.stop(); } catch(e){}
+             // In iOS Safari, explicitly stopping the mic before TTS will often cause the audio routing 
+             // to switch too slowly, permanently dropping the TTS utterance. 
+             // Letting the browser manage the audio lock when TTS starts is much more reliable.
+             try { recognitionRef.current.abort(); } catch(e){}
           }
       } catch(e) {}
-      
-      // Give iOS Safari 300ms to release the AVAudioSession mic lock before TTS!
-      await new Promise(r => setTimeout(r, 400));
       
       await speakText(textToSpeak, 1.0, TTS_LANG);
       isSpeakingRef.current = false;

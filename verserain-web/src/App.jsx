@@ -4362,7 +4362,7 @@ export default function App() {
                  currentSeqRef.current = nextSeq;
             }}
             onFail={() => {
-                 setGameState('home');
+                 setGameState('menu');
             }}
             speakText={speakText}
             playDing={() => {
