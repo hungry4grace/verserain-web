@@ -332,6 +332,17 @@ export default function App() {
   const [publishedVerseSets, setPublishedVerseSets] = useState([]);
   const [viewCounts, setViewCounts] = useState({});
 
+  const [versesetsPage, setVersesetsPage] = useState(1);
+  const [versesetsSort, setVersesetsSort] = useState('popular'); // 'popular' | 'newest'
+  const [searchSetsPage, setSearchSetsPage] = useState(1);
+  const [searchVersesPage, setSearchVersesPage] = useState(1);
+
+  // Reset search pages when query changes
+  useEffect(() => {
+    setSearchSetsPage(1);
+    setSearchVersesPage(1);
+  }, [searchQuery]);
+
   // Local Leaderboard tracking (to be migrated to PartyKit on next deployment)
   const [globalUserStats, setGlobalUserStats] = useState(() => {
     let prev;
@@ -3142,12 +3153,23 @@ export default function App() {
               </div>
             )}
 
-            {mainTab === 'versesets' && (
+              {mainTab === 'versesets' && (
               <>
 
                 {/* The Verse Sets Table */}
                 <div style={{ backgroundColor: '#ffffff', overflowX: 'auto', borderRadius: '8px', border: '1px solid #cbd5e1', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
                   {selectedSetId === null ? (
+                    <>
+                    <div style={{ display: 'flex', justifyContent: 'flex-end', padding: '1rem', borderBottom: '1px solid #e2e8f0' }}>
+                      <select 
+                        value={versesetsSort} 
+                        onChange={(e) => { setVersesetsSort(e.target.value); setVersesetsPage(1); }}
+                        style={{ padding: '0.5rem 1rem', borderRadius: '8px', border: '1px solid #cbd5e1', outline: 'none', background: '#f8fafc', color: '#334155', fontWeight: 'bold', cursor: 'pointer' }}
+                      >
+                        <option value="popular">{t("最受歡迎", "Most Popular")}</option>
+                        <option value="newest">{t("最新", "Newest")}</option>
+                      </select>
+                    </div>
                     <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
                       <thead>
                         <tr style={{ backgroundColor: '#f8fafc', color: '#475569', fontSize: '0.9rem' }}>
@@ -3158,7 +3180,21 @@ export default function App() {
                         </tr>
                       </thead>
                       <tbody>
-                        {activeVerseSets.map((set, i) => (
+                        {(() => {
+                           let sortedSets = [...activeVerseSets];
+                           if (versesetsSort === 'popular') {
+                              sortedSets.sort((a,b) => (viewCounts[b.id]||0) - (viewCounts[a.id]||0));
+                           } else {
+                              sortedSets.sort((a,b) => {
+                                 // sort by id desc (assuming id has timestamp or similar, or just place newest custom sets first)
+                                 return String(b.id).localeCompare(String(a.id));
+                              });
+                           }
+                           
+                           const totalPages = Math.ceil(sortedSets.length / 10) || 1;
+                           const currentSetList = sortedSets.slice((versesetsPage - 1) * 10, versesetsPage * 10);
+                           
+                           return currentSetList.map((set, i) => (
                           <tr key={i} style={{ borderBottom: '1px solid #e2e8f0', backgroundColor: i % 2 === 0 ? '#ffffff' : '#f8fafc', transition: 'background 0.2s', cursor: 'pointer' }} onClick={() => {
                             setSelectedSetId(set.id);
                             fetch("https://verserain-party.hungry4grace.partykit.dev/parties/main/global-auth-db/custom-sets/view", { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: set.id }) }).catch(e => e);
@@ -3191,9 +3227,36 @@ export default function App() {
                             <td style={{ padding: '1rem', color: '#337ab7', fontSize: '0.9rem', fontWeight: 'bold' }}>{set.authorName && set.authorName !== "Anonymous" ? set.authorName : (String(set.id).startsWith("custom-") ? "匿名玩家" : "Verserain 官方")}</td>
                             <td style={{ padding: '1rem', textAlign: 'right', color: '#64748b', fontWeight: 'bold' }}>{viewCounts[set.id] || 0}</td>
                           </tr>
-                        ))}
+                        ));
+                        })()}
                       </tbody>
                     </table>
+                    
+                    {/* Pagination for Verse Sets */}
+                    {Math.ceil(activeVerseSets.length / 10) > 1 && (
+                      <div style={{ padding: '1.5rem', display: 'flex', justifyContent: 'center', gap: '0.5rem', borderTop: '1px solid #e2e8f0' }}>
+                        {Array.from({ length: Math.ceil(activeVerseSets.length / 10) }).map((_, idx) => (
+                          <button
+                            key={idx}
+                            onClick={() => setVersesetsPage(idx + 1)}
+                            style={{
+                              padding: '0.5rem 1rem',
+                              borderRadius: '8px',
+                              border: versesetsPage === idx + 1 ? 'none' : '1px solid #cbd5e1',
+                              background: versesetsPage === idx + 1 ? '#3b82f6' : '#ffffff',
+                              color: versesetsPage === idx + 1 ? '#ffffff' : '#475569',
+                              fontWeight: 'bold',
+                              cursor: 'pointer',
+                              transition: 'all 0.2s',
+                              minWidth: '40px'
+                            }}
+                          >
+                            {idx + 1}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                    </>
                   ) : (
                     <>
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem', borderBottom: '1px solid #e2e8f0', backgroundColor: '#f8fafc', flexWrap: 'wrap', gap: '1rem' }}>
@@ -4003,16 +4066,45 @@ export default function App() {
                         <div style={{ marginBottom: '2rem' }}>
                           <h3 style={{ color: '#334155', borderBottom: '2px solid #e2e8f0', paddingBottom: '0.5rem' }}>{t("經文組資料夾", "Verse Sets")} ({matchingSets.length})</h3>
                           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem', marginTop: '1rem' }}>
-                            {matchingSets.map(set => (
-                              <div key={set.id} onClick={() => { setSelectedSetId(set.id); setMainTab('versesets'); }} style={{ padding: '1.5rem', border: '1px solid #e2e8f0', borderRadius: '8px', cursor: 'pointer', backgroundColor: '#f8fafc', display: 'flex', alignItems: 'center', gap: '1rem', transition: 'background-color 0.2s' }} onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#eff6ff'} onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#f8fafc'}>
-                                <div style={{ fontSize: '2rem' }}>📁</div>
-                                <div>
-                                  <div style={{ fontWeight: 'bold', color: '#1e293b', fontSize: '1.1rem' }}>{set.title}</div>
-                                  <div style={{ color: '#64748b', fontSize: '0.9rem', marginTop: '0.3rem', maxHeight: '4.5em', overflow: 'hidden', textOverflow: 'ellipsis' }} dangerouslySetInnerHTML={{ __html: set.description }} />
+                            {(() => {
+                              const totalPages = Math.ceil(matchingSets.length / 10);
+                              const paginatedSets = matchingSets.slice((searchSetsPage - 1) * 10, searchSetsPage * 10);
+                              return paginatedSets.map(set => (
+                                <div key={set.id} onClick={() => { setSelectedSetId(set.id); setMainTab('versesets'); }} style={{ padding: '1.5rem', border: '1px solid #e2e8f0', borderRadius: '8px', cursor: 'pointer', backgroundColor: '#f8fafc', display: 'flex', alignItems: 'center', gap: '1rem', transition: 'background-color 0.2s' }} onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#eff6ff'} onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#f8fafc'}>
+                                  <div style={{ fontSize: '2rem' }}>📁</div>
+                                  <div>
+                                    <div style={{ fontWeight: 'bold', color: '#1e293b', fontSize: '1.1rem' }}>{set.title}</div>
+                                    <div style={{ color: '#64748b', fontSize: '0.9rem', marginTop: '0.3rem', maxHeight: '4.5em', overflow: 'hidden', textOverflow: 'ellipsis' }} dangerouslySetInnerHTML={{ __html: set.description }} />
+                                  </div>
                                 </div>
-                              </div>
-                            ))}
+                              ));
+                            })()}
                           </div>
+                          
+                          {/* Search Sets Pagination */}
+                          {Math.ceil(matchingSets.length / 10) > 1 && (
+                            <div style={{ marginTop: '1.5rem', display: 'flex', justifyContent: 'center', gap: '0.5rem' }}>
+                              {Array.from({ length: Math.ceil(matchingSets.length / 10) }).map((_, idx) => (
+                                <button
+                                  key={idx}
+                                  onClick={() => setSearchSetsPage(idx + 1)}
+                                  style={{
+                                    padding: '0.5rem 1rem',
+                                    borderRadius: '8px',
+                                    border: searchSetsPage === idx + 1 ? 'none' : '1px solid #cbd5e1',
+                                    background: searchSetsPage === idx + 1 ? '#8b5cf6' : '#ffffff',
+                                    color: searchSetsPage === idx + 1 ? '#ffffff' : '#475569',
+                                    fontWeight: 'bold',
+                                    cursor: 'pointer',
+                                    transition: 'all 0.2s',
+                                    minWidth: '40px'
+                                  }}
+                                >
+                                  {idx + 1}
+                                </button>
+                              ))}
+                            </div>
+                          )}
                         </div>
                       )}
 
@@ -4030,35 +4122,64 @@ export default function App() {
                                 </tr>
                               </thead>
                               <tbody>
-                                {matchingVerses.map((v, i) => (
-                                  <tr key={i} style={{ borderBottom: '1px solid #e2e8f0', transition: 'background-color 0.1s' }} onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#f8fafc'} onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}>
-                                    <td style={{ padding: '0.8rem 1rem', color: '#64748b', fontSize: '0.85rem' }}>{v.setName}</td>
-                                    <td style={{ padding: '0.8rem 1rem', fontWeight: 'bold', color: '#0369a1', fontSize: '0.95rem' }}>
-                                      <button onClick={(e) => { e.stopPropagation(); setVerseViewModal(v); }} style={{ background: 'transparent', border: 'none', color: '#0ea5e9', fontWeight: 'bold', fontSize: '0.95rem', cursor: 'pointer', padding: 0, textAlign: 'left' }} onMouseOver={(e) => e.target.style.textDecoration = 'underline'} onMouseOut={(e) => e.target.style.textDecoration = 'none'}>
-                                        {v.reference}
-                                      </button>
-                                    </td>
-                                    <td style={{ padding: '0.8rem 1rem', color: '#475569', fontSize: '0.9rem' }}>{v.text.substring(0, 35)}...</td>
-                                    <td style={{ padding: '0.8rem 1rem', textAlign: 'right' }}>
-                                      <button
-                                        onClick={() => {
-                                          initAudio();
-                                          setCampaignQueue(null);
-                                          setCampaignResults([]);
-                                          setActiveVerse(v);
-                                          setTimeout(() => startGame(false), 50);
-                                        }}
-                                        title={t("遊玩這篇經文", "Play this verse")}
-                                        style={{ backgroundColor: '#10b981', color: 'white', border: 'none', borderRadius: '50%', width: '32px', height: '32px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}
-                                      >
-                                        <Play size={16} fill="white" />
-                                      </button>
-                                    </td>
-                                  </tr>
-                                ))}
+                                {(() => {
+                                  const totalPages = Math.ceil(matchingVerses.length / 10);
+                                  const paginatedVerses = matchingVerses.slice((searchVersesPage - 1) * 10, searchVersesPage * 10);
+                                  return paginatedVerses.map((v, i) => (
+                                    <tr key={i} style={{ borderBottom: '1px solid #e2e8f0', transition: 'background-color 0.1s' }} onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#f8fafc'} onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}>
+                                      <td style={{ padding: '0.8rem 1rem', color: '#64748b', fontSize: '0.85rem' }}>{v.setName}</td>
+                                      <td style={{ padding: '0.8rem 1rem', fontWeight: 'bold', color: '#0369a1', fontSize: '0.95rem' }}>
+                                        <button onClick={(e) => { e.stopPropagation(); setVerseViewModal(v); }} style={{ background: 'transparent', border: 'none', color: '#0ea5e9', fontWeight: 'bold', fontSize: '0.95rem', cursor: 'pointer', padding: 0, textAlign: 'left' }} onMouseOver={(e) => e.target.style.textDecoration = 'underline'} onMouseOut={(e) => e.target.style.textDecoration = 'none'}>
+                                          {v.reference}
+                                        </button>
+                                      </td>
+                                      <td style={{ padding: '0.8rem 1rem', color: '#475569', fontSize: '0.9rem' }}>{v.text.substring(0, 35)}...</td>
+                                      <td style={{ padding: '0.8rem 1rem', textAlign: 'right' }}>
+                                        <button
+                                          onClick={() => {
+                                            initAudio();
+                                            setCampaignQueue(null);
+                                            setCampaignResults([]);
+                                            setActiveVerse(v);
+                                            setTimeout(() => startGame(false), 50);
+                                          }}
+                                          title={t("遊玩這篇經文", "Play this verse")}
+                                          style={{ backgroundColor: '#10b981', color: 'white', border: 'none', borderRadius: '50%', width: '32px', height: '32px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}
+                                        >
+                                          <Play size={16} fill="white" />
+                                        </button>
+                                      </td>
+                                    </tr>
+                                  ));
+                                })()}
                               </tbody>
                             </table>
                           </div>
+                          
+                          {/* Search Verses Pagination */}
+                          {Math.ceil(matchingVerses.length / 10) > 1 && (
+                            <div style={{ marginTop: '1.5rem', display: 'flex', justifyContent: 'center', gap: '0.5rem' }}>
+                              {Array.from({ length: Math.ceil(matchingVerses.length / 10) }).map((_, idx) => (
+                                <button
+                                  key={idx}
+                                  onClick={() => setSearchVersesPage(idx + 1)}
+                                  style={{
+                                    padding: '0.5rem 1rem',
+                                    borderRadius: '8px',
+                                    border: searchVersesPage === idx + 1 ? 'none' : '1px solid #cbd5e1',
+                                    background: searchVersesPage === idx + 1 ? '#8b5cf6' : '#ffffff',
+                                    color: searchVersesPage === idx + 1 ? '#ffffff' : '#475569',
+                                    fontWeight: 'bold',
+                                    cursor: 'pointer',
+                                    transition: 'all 0.2s',
+                                    minWidth: '40px'
+                                  }}
+                                >
+                                  {idx + 1}
+                                </button>
+                              ))}
+                            </div>
+                          )}
                         </div>
                       )}
 
