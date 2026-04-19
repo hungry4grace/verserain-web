@@ -11,6 +11,7 @@ import ReactQuill from 'react-quill-new';
 import 'react-quill-new/dist/quill.snow.css';
 import { PREMIUM_EMAILS } from './premiumEmails';
 import WorldMap from './WorldMap';
+import BlindModeGame from './BlindModeGame';
 
 const quillModules = {
   toolbar: [
@@ -751,6 +752,7 @@ export default function App() {
   const multiplayerSoloActiveRef = useRef(false); // true once any *_solo game is initialized; prevents re-init on every broadcast
   const [localNextVerse, setLocalNextVerse] = useState(null); // verse shown during intermission countdown
   const [campaignResults, setCampaignResults] = useState([]);
+  const [isBlindMode, setIsBlindMode] = useState(() => localStorage.getItem('verseRain_blindMode') === 'true');
 
   const [lightningActive, setLightningActive] = useState(null);
   const [lightningKey, setLightningKey] = useState(0);
@@ -1249,6 +1251,8 @@ export default function App() {
   }, [combo, blocks]); // We keep blocks here because when a new block is added, we want it to inherit the Current rate instantly
 
   const spawnNextBlock = (expiredBlockId = null) => {
+    if (isBlindMode) return;
+    
     setBlocks(prev => {
       let expiredBlock = null;
       let remainingBlocks = prev;
@@ -2412,6 +2416,7 @@ export default function App() {
                 <h2 style={{ color: '#1e293b', marginBottom: '1.5rem', borderBottom: '2px solid #e2e8f0', paddingBottom: '0.8rem' }}>⚙️ {t("進階設定與學習", "Advanced Settings & Learning")}</h2>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1rem', width: '100%' }}>
                   {[
+                    { id: 'blindMode', icon: isBlindMode ? '👁️‍🗨️' : '🦯', label: isBlindMode ? t('關閉視障經文雨', 'Disable Blind Mode') : t('打開視障經文雨', 'Enable Blind Mode'), desc: t('為視覺障礙朋友設計的語音模式', 'Voice mode for visually impaired') },
                     { id: 'custom_verses', icon: '👑', label: t('我的專屬題庫', 'My Custom Sets'), desc: t('建立自訂經文組', 'Create custom sets') },
                     { id: 'manual', icon: '📖', label: t('使用說明', 'Manual'), desc: t('操作詳解', 'Detailed instructions') },
                     { id: 'about', icon: 'ℹ️', label: t('關於我們', 'About'), desc: t('VerseRain 開發資訊', 'Info & Credits') },
@@ -2419,6 +2424,12 @@ export default function App() {
                     { id: 'feedback', link: 'mailto:hungry4grace@gmail.com', icon: '✉️', label: t('意見回饋', 'Feedback'), desc: t('聯絡與建議', 'Bugs & Suggestions') }
                   ].map(item => (
                     <div key={item.id} className="block-tile" onClick={() => {
+                      if (item.id === 'blindMode') {
+                          const n = !isBlindMode;
+                          setIsBlindMode(n);
+                          localStorage.setItem('verseRain_blindMode', String(n));
+                          return;
+                      }
                       if (item.link) { window.open(item.link, '_blank'); return; }
                       setMainTab(item.id);
                       if (item.id === 'leaderboard') fetchGlobalLeaderboard();
@@ -4338,7 +4349,38 @@ export default function App() {
         </div>
       )}
 
-      {gameState === 'playing' && (
+      {gameState === 'playing' && isBlindMode && (
+         <BlindModeGame 
+            activeVerse={activeVerse}
+            activePhrases={activePhrases}
+            currentSeqIndex={currentSeqIndex}
+            onWordMatch={(block) => {
+                 setScore(s => s + 100 + (combo * 50));
+                 setCombo(c => c + 1);
+                 const nextSeq = currentSeqIndex + 1;
+                 setCurrentSeqIndex(nextSeq);
+                 currentSeqRef.current = nextSeq;
+            }}
+            speakText={speakText}
+            playDing={() => {
+               const actx = new (window.AudioContext || window.webkitAudioContext)();
+               const osc = actx.createOscillator();
+               const gn = actx.createGain();
+               osc.type = 'sine';
+               osc.frequency.setValueAtTime(800, actx.currentTime);
+               osc.frequency.exponentialRampToValueAtTime(300, actx.currentTime + 0.5);
+               gn.gain.setValueAtTime(0, actx.currentTime);
+               gn.gain.linearRampToValueAtTime(0.5, actx.currentTime + 0.05);
+               gn.gain.exponentialRampToValueAtTime(0.01, actx.currentTime + 0.5);
+               osc.connect(gn); gn.connect(actx.destination);
+               osc.start(); osc.stop(actx.currentTime + 0.5);
+            }}
+            version={version}
+            t={t}
+         />
+      )}
+
+      {gameState === 'playing' && !isBlindMode && (
         <div
           key={`${playMode}-${activeVerse.reference}-${distractionLevel}`}
           onClick={handleGlobalClick}
