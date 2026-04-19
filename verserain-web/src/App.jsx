@@ -4367,13 +4367,12 @@ export default function App() {
                const osc = actx.createOscillator();
                const gn = actx.createGain();
                osc.type = 'sine';
-               osc.frequency.setValueAtTime(800, actx.currentTime);
-               osc.frequency.exponentialRampToValueAtTime(300, actx.currentTime + 0.5);
+               osc.frequency.setValueAtTime(1000, actx.currentTime);
                gn.gain.setValueAtTime(0, actx.currentTime);
-               gn.gain.linearRampToValueAtTime(0.5, actx.currentTime + 0.05);
-               gn.gain.exponentialRampToValueAtTime(0.01, actx.currentTime + 0.5);
+               gn.gain.linearRampToValueAtTime(0.5, actx.currentTime + 0.02);
+               gn.gain.exponentialRampToValueAtTime(0.01, actx.currentTime + 1.0);
                osc.connect(gn); gn.connect(actx.destination);
-               osc.start(); osc.stop(actx.currentTime + 0.5);
+               osc.start(); osc.stop(actx.currentTime + 1.0);
             }}
             version={version}
             t={t}

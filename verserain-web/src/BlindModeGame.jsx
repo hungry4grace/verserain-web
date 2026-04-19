@@ -163,14 +163,29 @@ export default function BlindModeGame({
 
   return (
     <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', backgroundColor: '#000', zIndex: 9999, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '2rem' }}>
-       <h1 style={{ color: '#fff', fontSize: '2rem', position: 'absolute', top: '10%' }}>{t("視障模式", "Blind Mode")} - <span style={{color: '#4ade80'}}>{micStatus}</span></h1>
-       {currentBlock && (
-           <div style={{ fontSize: '15vw', fontWeight: 'bold', color: isSuccessFlash ? '#fbbf24' : '#fff', textAlign: 'center', wordBreak: 'break-word', lineHeight: '1.2', transition: 'color 0.3s' }}>
-              {currentBlock.text}
-           </div>
-       )}
+       <h1 style={{ color: '#fff', fontSize: '2rem', position: 'absolute', top: '5%', margin: 0 }}>{t("視障模式", "Blind Mode")} - <span style={{color: '#4ade80'}}>{micStatus}</span></h1>
+       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', justifyContent: 'center', width: '100%', maxHeight: '70vh', overflowY: 'auto', padding: '1rem' }}>
+           {activePhrases && activePhrases.map((phrase, index) => {
+               const isActive = index === currentSeqIndex;
+               const isPassed = index < currentSeqIndex;
+               const showGold = isPassed || (isActive && isSuccessFlash);
+               
+               return (
+                   <span 
+                      key={index} 
+                      style={{ 
+                         fontSize: '8vw', fontWeight: 'bold', lineHeight: '1.4',
+                         color: showGold ? '#fbbf24' : '#475569', 
+                         transition: 'color 0.3s'
+                      }}
+                   >
+                     {phrase.text || phrase}
+                   </span>
+               );
+           })}
+       </div>
        {heardText && (
-           <p style={{ color: '#94a3b8', fontSize: '2.5rem', position: 'absolute', bottom: '10%', textAlign: 'center' }}>{heardText}</p>
+           <p style={{ color: '#94a3b8', fontSize: '2.5rem', position: 'absolute', bottom: '5%', textAlign: 'center', margin: 0, width: '100%', padding: '0 2rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{heardText}</p>
        )}
     </div>
   );
