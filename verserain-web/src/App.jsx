@@ -372,7 +372,7 @@ export default function App() {
   const [showLevelInfo, setShowLevelInfo] = useState(false);
   const gardenClickTimer = useRef(null);
   const versionBeforeChallenge = useRef(null); // saved version to restore after cross-lang challenge
-  const updateGarden = React.useCallback((ref, type, setId) => {
+  const updateGarden = React.useCallback((ref, type, setId, amount = 1) => {
     setGardenData(prev => {
       const updated = { ...prev };
       if (!updated[ref]) {
@@ -386,7 +386,7 @@ export default function App() {
       } else if (type === 'completed') {
         updated[ref] = { ...updated[ref], stage: 10 };
       } else if (type === 'champ') {
-        updated[ref] = { ...updated[ref], stage: 10, fruits: Math.min((updated[ref].fruits || 0) + 1, 9) };
+        updated[ref] = { ...updated[ref], stage: 10, fruits: Math.min((updated[ref].fruits || 0) + amount, 9) };
       }
       localStorage.setItem('verseRain_gardenData', JSON.stringify(updated));
       return updated;
@@ -429,13 +429,13 @@ export default function App() {
       updateGarden(ref, 'played', setId);
     }
     if (type === 'verseCompleted') {
-      const { ref, name, isChamp, setId } = args;
+      const { ref, name, isChamp, setId, amount } = args;
       setGlobalVerseStats(prev => {
         const updated = updateStats(prev, ref, 'completes', 1);
         localStorage.setItem('verseRain_globalVerseStats', JSON.stringify(updated));
         return updated;
       });
-      fetch('/api/submit-verse-stat', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ref, type: 'completes' }) }).catch(() => { });
+      fetch('/api/submit-verse-stat', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ref, type: 'completes', amount: 1 }) }).catch(() => { });
       if (name) {
         setGlobalUserStats(prev => {
           let updated = updateStats(prev, name, 'completes', 1);
@@ -446,7 +446,7 @@ export default function App() {
           return updated;
         });
       }
-      updateGarden(ref, isChamp ? 'champ' : 'completed', setId);
+      updateGarden(ref, isChamp ? 'champ' : 'completed', setId, amount || 1);
     }
   };
 
@@ -1624,11 +1624,38 @@ export default function App() {
     setIsFailed(failed || healthRef.current <= 0); // Consider it visually failed if health <= 0, but verse completes
 
     if (isSuccess && !isAutoPlayRef.current) {
+      const estimateVerseCount = (ref, txt) => {
+        let count = 1;
+        const rangeMatch = ref.match(/[:：]\s*(\d+)\s*[~\-至]\s*(\d+)/);
+        if (rangeMatch) {
+          const s = parseInt(rangeMatch[1]);
+          const e = parseInt(rangeMatch[2]);
+          if (e >= s) count = e - s + 1;
+        } else if (!ref.match(/[:：]/)) {
+          count = Math.max(1, Math.round(txt.replace(/\s+/g, '').length / 40));
+        }
+        return Math.min(Math.max(1, count), 50);
+      };
+      
+      const vCount = estimateVerseCount(activeVerse.reference, activeVerse.text);
+      
+      // Award point to the creator when successfully played!
+      if (selectedSetId && hs) {
+          const foundSet = [...customVerseSets, ...publishedVerseSets, ...baseVerseSets].find(s => s.id === selectedSetId);
+          if (foundSet && foundSet.authorName && foundSet.authorName !== "Anonymous" && foundSet.authorName !== "Verserain 官方") {
+              fetch("/api/submit-creator-point", {
+                method: "POST", headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ author: foundSet.authorName, amount: vCount })
+              }).catch(e => e);
+          }
+      }
+
       logEvent('verseCompleted', {
         ref: activeVerse.reference,
         name: playerName,
         isChamp: hs,
-        setId: selectedSetId
+        setId: selectedSetId,
+        amount: vCount
       });
       // Load current leaderboard initially
       fetch(`/api/get-scores?verseRef=${encodeURIComponent(activeVerse.reference)}`)
@@ -3128,15 +3155,6 @@ export default function App() {
                             setSelectedSetId(set.id);
                             fetch("https://verserain-party.hungry4grace.partykit.dev/parties/main/global-auth-db/custom-sets/view", { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: set.id }) }).catch(e => e);
                             setViewCounts(prev => ({ ...prev, [set.id]: (prev[set.id] || 0) + 1 }));
-                            
-                            // ⭐️ Award point to the creator when played!
-                            if (set.authorName && set.authorName !== "Anonymous" && set.authorName !== "Verserain 官方") {
-                                fetch("/api/submit-creator-point", {
-                                  method: "POST",
-                                  headers: { "Content-Type": "application/json" },
-                                  body: JSON.stringify({ author: set.authorName })
-                                }).catch(e => e);
-                            }
                           }} onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#eff6ff'} onMouseOut={(e) => e.currentTarget.style.backgroundColor = i % 2 === 0 ? '#ffffff' : '#f8fafc'}>
                             <td style={{ padding: '1rem', textAlign: 'center', color: '#3b82f6', fontSize: '1.2rem' }}>{customVerseSets.some(c => c.id === set.id) ? '👑' : '📁'}</td>
                             <td style={{ padding: '1rem', fontWeight: 'bold', color: '#1e293b', fontSize: '1.05rem' }}>
