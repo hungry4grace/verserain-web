@@ -7,7 +7,7 @@ export default async function handler(req, res) {
   
   if (req.method === 'OPTIONS') { res.status(200).end(); return; }
 
-  const { author, stats } = req.query;
+  const { author, stats, history } = req.query;
   if (!author && !stats) return res.status(400).json({ error: 'Missing author or stats query' });
 
   const redisUrl = process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL;
@@ -29,7 +29,24 @@ export default async function handler(req, res) {
     }
 
     const pts = await redis.zscore('verse_stats:creator_points', author);
-    res.status(200).json({ points: parseFloat(pts) || 0 });
+    
+    let creatorHistory = [];
+    let referralHistory = [];
+    
+    if (history === 'true') {
+      const p1 = redis.lrange(`gamification:history:creator:${author}`, 0, 49);
+      const p2 = redis.lrange(`gamification:history:referral:${author}`, 0, 49);
+      const [cHist, rHist] = await Promise.all([p1, p2]);
+      
+      creatorHistory = (cHist || []).map(s => typeof s === 'string' ? JSON.parse(s) : s);
+      referralHistory = (rHist || []).map(s => typeof s === 'string' ? JSON.parse(s) : s);
+    }
+
+    res.status(200).json({ 
+      points: parseFloat(pts) || 0,
+      creatorHistory,
+      referralHistory
+    });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

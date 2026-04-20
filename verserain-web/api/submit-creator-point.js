@@ -8,7 +8,7 @@ export default async function handler(req, res) {
   if (req.method === 'OPTIONS') { res.status(200).end(); return; }
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
-  const { author, amount = 1 } = req.body;
+  const { author, amount = 1, player, verseSetName } = req.body;
   if (!author) return res.status(400).json({ error: 'Missing author' });
 
   const redisUrl = process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL;
@@ -17,7 +17,17 @@ export default async function handler(req, res) {
 
   try {
     const redis = new Redis({ url: redisUrl, token: redisToken });
-    await redis.zincrby('verse_stats:creator_points', amount, author);
+    
+    const p1 = redis.zincrby('verse_stats:creator_points', amount, author);
+    
+    // Log history if player info is provided
+    let p2 = Promise.resolve();
+    if (player && verseSetName) {
+      const record = JSON.stringify({ player, verseSetName, amount, timestamp: Date.now() });
+      p2 = redis.lpush(`gamification:history:creator:${author}`, record);
+    }
+    
+    await Promise.all([p1, p2]);
     res.status(200).json({ success: true });
   } catch (error) {
     res.status(500).json({ error: error.message });

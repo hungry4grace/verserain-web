@@ -42,11 +42,11 @@ export const SKOOL_LEVELS = [
 export function getSkoolLevel(points) {
   for (let i = SKOOL_LEVELS.length - 1; i >= 0; i--) {
     if (points >= SKOOL_LEVELS[i].points) {
-      return { 
-        level: SKOOL_LEVELS[i].level, 
-        title: SKOOL_LEVELS[i].title, 
+      return {
+        level: SKOOL_LEVELS[i].level,
+        title: SKOOL_LEVELS[i].title,
         enTitle: SKOOL_LEVELS[i].enTitle,
-        next: i < SKOOL_LEVELS.length - 1 ? SKOOL_LEVELS[i + 1].points : null 
+        next: i < SKOOL_LEVELS.length - 1 ? SKOOL_LEVELS[i + 1].points : null
       };
     }
   }
@@ -359,12 +359,18 @@ export default function App() {
   });
 
   const [creatorPoints, setCreatorPoints] = useState(0);
+  const [creatorHistory, setCreatorHistory] = useState([]);
+  const [referralHistory, setReferralHistory] = useState([]);
 
   useEffect(() => {
     if (playerName) {
-      fetch(`/api/get-creator-points?author=${encodeURIComponent(playerName)}`)
+      fetch(`/api/get-creator-points?author=${encodeURIComponent(playerName)}&history=true`)
         .then(r => r.json())
-        .then(d => { if (d.points) setCreatorPoints(d.points); })
+        .then(d => {
+          if (d.points) setCreatorPoints(d.points);
+          if (d.creatorHistory) setCreatorHistory(d.creatorHistory);
+          if (d.referralHistory) setReferralHistory(d.referralHistory);
+        })
         .catch(e => console.error(e));
     }
   }, [playerName]);
@@ -389,14 +395,14 @@ export default function App() {
               const lvl = getSkoolLevel(score).level;
               counts[lvl] = (counts[lvl] || 0) + 1;
             });
-            
+
             // Fix locally: Ensure the current user is at least represented in their own level
             // Since localFruits aren't always fully synced to the server instantly,
             // we guarantee the user sees themself in the count.
             const myLvl = skoolLevel.level;
             // Only add +1 if it seems we aren't already grouped in the server score (heuristically, to avoid over-counting, but ensuring at least 1)
             counts[myLvl] = Math.max(counts[myLvl] || 0, 1);
-            
+
             setLevelCounts(counts);
           }
         })
@@ -613,8 +619,8 @@ export default function App() {
       const refParam = params.get('ref');
 
       if (refParam) {
-         localStorage.setItem('verserain_inviter', refParam);
-         localStorage.removeItem('verserain_invite_claimed'); 
+        localStorage.setItem('verserain_inviter', refParam);
+        localStorage.removeItem('verserain_invite_claimed');
       }
 
       let shouldAutoPlay = false;
@@ -1296,7 +1302,7 @@ export default function App() {
 
   const spawnNextBlock = (expiredBlockId = null) => {
     if (isBlindMode) return;
-    
+
     setBlocks(prev => {
       let expiredBlock = null;
       let remainingBlocks = prev;
@@ -1684,45 +1690,47 @@ export default function App() {
         }
         return Math.min(Math.max(1, count), 50);
       };
-      
+
       const vCount = estimateVerseCount(activeVerse.reference, activeVerse.text);
-      
+
       // Award point to the creator (or the player themselves if playing default sets)
       if (hs && playerName) {
-          let authorToReward = playerName;
-          
-          if (selectedSetId) {
-            const foundSet = [...customVerseSets, ...publishedVerseSets, ...baseVerseSets].find(s => s.id === selectedSetId);
-            if (foundSet && foundSet.authorName && foundSet.authorName !== "Anonymous" && foundSet.authorName !== "Verserain 官方") {
-                authorToReward = foundSet.authorName; // If playing someone else's custom set, reward the creator
-            }
-          }
+        let authorToReward = playerName;
+        let verseSetName = "系統預設經文";
 
-          fetch("/api/submit-creator-point", {
+        if (selectedSetId) {
+          const foundSet = [...customVerseSets, ...publishedVerseSets, ...baseVerseSets].find(s => s.id === selectedSetId);
+          if (foundSet && foundSet.authorName && foundSet.authorName !== "Anonymous" && foundSet.authorName !== "Verserain 官方") {
+            authorToReward = foundSet.authorName; // If playing someone else's custom set, reward the creator
+            verseSetName = foundSet.title || verseSetName;
+          }
+        }
+
+        fetch("/api/submit-creator-point", {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ author: authorToReward, amount: vCount, player: playerName, verseSetName })
+        }).catch(e => e);
+
+        // Phase 1 Gamification: Reward Inviter & Invitee (Using Dedicated Points, NOT Fruits)
+        const inviter = localStorage.getItem('verserain_inviter');
+        const claimed = localStorage.getItem('verserain_invite_claimed');
+        if (inviter && inviter !== playerName && !claimed) {
+          // Reward the inviter (+5 points)
+          fetch("/api/submit-referral-point", {
             method: "POST", headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ author: authorToReward, amount: vCount })
+            body: JSON.stringify({ author: inviter, amount: 5, player: playerName, type: 'referred' })
           }).catch(e => e);
 
-          // Phase 1 Gamification: Reward Inviter & Invitee (Using Dedicated Points, NOT Fruits)
-          const inviter = localStorage.getItem('verserain_inviter');
-          const claimed = localStorage.getItem('verserain_invite_claimed');
-          if (inviter && inviter !== playerName && !claimed) {
-            // Reward the inviter (+5 points)
-            fetch("/api/submit-referral-point", {
-              method: "POST", headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ author: inviter, amount: 5 })
-            }).catch(e => e);
-            
-            // Reward the new player (+3 points bonus)
-            fetch("/api/submit-referral-point", {
-              method: "POST", headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ author: playerName, amount: 3 })
-            }).catch(e => e);
-            
-            localStorage.setItem('verserain_invite_claimed', 'true');
-            setToast(`🎉 成功透過 ${inviter} 的邀請首次過關！雙方各獲推廣點數獎勵！`);
-            setTimeout(() => setToast(null), 4000);
-          }
+          // Reward the new player (+3 points bonus)
+          fetch("/api/submit-referral-point", {
+            method: "POST", headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ author: playerName, amount: 3, player: inviter, type: 'invited_by' })
+          }).catch(e => e);
+
+          localStorage.setItem('verserain_invite_claimed', 'true');
+          setToast(`🎉 成功透過 ${inviter} 的邀請首次過關！雙方各獲推廣點數獎勵！`);
+          setTimeout(() => setToast(null), 4000);
+        }
       }
 
       logEvent('verseCompleted', {
@@ -2382,7 +2390,7 @@ export default function App() {
                   verserain
                 </div>
                 <div style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', marginTop: '4px', marginLeft: '2px' }}>
-                  v2.5.0
+                  v2.6.0
                 </div>
               </div>
               <select
@@ -2496,10 +2504,10 @@ export default function App() {
                   ].map(item => (
                     <div key={item.id} className="block-tile" onClick={() => {
                       if (item.id === 'blindMode') {
-                          const n = !isBlindMode;
-                          setIsBlindMode(n);
-                          localStorage.setItem('verseRain_blindMode', String(n));
-                          return;
+                        const n = !isBlindMode;
+                        setIsBlindMode(n);
+                        localStorage.setItem('verseRain_blindMode', String(n));
+                        return;
                       }
                       if (item.link) { window.open(item.link, '_blank'); return; }
                       setMainTab(item.id);
@@ -2606,11 +2614,12 @@ export default function App() {
                                 const sNum = searchRef.match(/\d+.*$/);
                                 const dNum = dbRef.match(/\d+.*$/);
                                 if (sNum && dNum && sNum[0] === dNum[0]) {
-                                  const sBk = searchRef.replace(sNum[0], '');
                                   const dBk = dbRef.replace(dNum[0], '');
-                                  let mi = 0;
-                                  for (let i = 0; i < dBk.length && mi < sBk.length; i++) { if (dBk[i] === sBk[mi]) mi++; }
-                                  if (mi === sBk.length && mi > 0) { foundText = verse.text; break; }
+                                  const validNames = [...bookInfo.names, bookInfo.ja, bookInfo.ko].filter(Boolean).map(n => sanitizeRef(n));
+                                  if (validNames.includes(dBk)) {
+                                    foundText = verse.text;
+                                    break;
+                                  }
                                 }
                               }
                               if (foundText) {
@@ -2682,8 +2691,8 @@ export default function App() {
                                   newVerses[idx] = { ...newVerses[idx], verseInput: e.target.value };
                                   setEditingCustomSet({ ...editingCustomSet, verses: newVerses });
                                 }} onKeyDown={async (e) => {
-                                  if (e.key === 'Enter') {
-                                    e.preventDefault();
+                                  if (e.key === 'Enter' || e.key === 'Tab') {
+                                    if (e.key === 'Enter') e.preventDefault();
                                     const bookInfo = BIBLE_BOOKS.find(b => b.id === v.book);
                                     if (!bookInfo) return alert(t("請先選擇書卷", "Please select a book first"));
                                     await autoFetchVerse(bookInfo, v.verseInput || '', idx);
@@ -2691,11 +2700,28 @@ export default function App() {
                                 }} placeholder={t("章:節 (如 3:16)", "Ch:Vs (e.g. 3:16)")}
                                   style={{ width: '110px', padding: '0.5rem', borderRadius: '4px', border: '1px solid #cbd5e1', fontSize: '0.9rem' }} />
 
-                                <textarea value={v.text} onChange={e => {
-                                  const newVerses = [...editingCustomSet.verses];
-                                  newVerses[idx].text = e.target.value;
-                                  setEditingCustomSet({ ...editingCustomSet, verses: newVerses });
-                                }} placeholder={t("經文內容 (按 Enter 自動擷取)", "Verse text (press Enter to auto-fetch)")} style={{ flex: 1, padding: '0.5rem', borderRadius: '4px', border: '1px solid #cbd5e1', minHeight: '40px', resize: 'vertical', fontSize: '0.9rem' }} />
+                                <textarea
+                                  value={v.text}
+                                  readOnly={!v.reference}
+                                  onChange={e => {
+                                    const newVerses = [...editingCustomSet.verses];
+                                    newVerses[idx].text = e.target.value;
+                                    setEditingCustomSet({ ...editingCustomSet, verses: newVerses });
+                                  }}
+                                  placeholder={t("請先在前方選定書卷並輸入章節，按下 Enter 或 Tab 後即可解鎖此欄位", "Select book & chapter:verse, press Enter/Tab to unlock")}
+                                  style={{
+                                    flex: 1,
+                                    padding: '0.5rem',
+                                    borderRadius: '4px',
+                                    border: '1px solid #cbd5e1',
+                                    minHeight: '40px',
+                                    resize: 'vertical',
+                                    fontSize: '0.9rem',
+                                    background: !v.reference ? '#e2e8f0' : '#ffffff',
+                                    cursor: !v.reference ? 'not-allowed' : 'text',
+                                    color: !v.reference ? '#94a3b8' : '#0f172a'
+                                  }}
+                                />
 
                                 <button type="button" onClick={() => {
                                   const newVerses = editingCustomSet.verses.filter((_, i) => i !== idx);
@@ -3216,109 +3242,109 @@ export default function App() {
               </div>
             )}
 
-              {mainTab === 'versesets' && (
+            {mainTab === 'versesets' && (
               <>
 
                 {/* The Verse Sets Table */}
                 <div style={{ backgroundColor: '#ffffff', overflowX: 'auto', borderRadius: '8px', border: '1px solid #cbd5e1', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
                   {selectedSetId === null ? (
                     <>
-                    <div style={{ display: 'flex', justifyContent: 'flex-end', padding: '1rem', borderBottom: '1px solid #e2e8f0' }}>
-                      <select 
-                        value={versesetsSort} 
-                        onChange={(e) => { setVersesetsSort(e.target.value); setVersesetsPage(1); }}
-                        style={{ padding: '0.5rem 1rem', borderRadius: '8px', border: '1px solid #cbd5e1', outline: 'none', background: '#f8fafc', color: '#334155', fontWeight: 'bold', cursor: 'pointer' }}
-                      >
-                        <option value="popular">{t("最受歡迎", "Most Popular")}</option>
-                        <option value="newest">{t("最新", "Newest")}</option>
-                      </select>
-                    </div>
-                    <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
-                      <thead>
-                        <tr style={{ backgroundColor: '#f8fafc', color: '#475569', fontSize: '0.9rem' }}>
-                          <th style={{ padding: '1rem', borderBottom: '2px solid #e2e8f0', width: '50px' }}>📁</th>
-                          <th style={{ padding: '1rem', borderBottom: '2px solid #e2e8f0' }}>{t("標題", "Title")}</th>
-                          <th style={{ padding: '1rem', borderBottom: '2px solid #e2e8f0' }}>{t("作者", "Author")}</th>
-                          <th style={{ padding: '1rem', borderBottom: '2px solid #e2e8f0', textAlign: 'right' }}>{t("點閱次數", "Views")}</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {(() => {
-                           let sortedSets = [...activeVerseSets];
-                           if (versesetsSort === 'popular') {
-                              sortedSets.sort((a,b) => (viewCounts[b.id]||0) - (viewCounts[a.id]||0));
-                           } else {
-                              sortedSets.sort((a,b) => {
-                                 // sort by id desc (assuming id has timestamp or similar, or just place newest custom sets first)
-                                 return String(b.id).localeCompare(String(a.id));
-                              });
-                           }
-                           
-                           const totalPages = Math.ceil(sortedSets.length / 10) || 1;
-                           const currentSetList = sortedSets.slice((versesetsPage - 1) * 10, versesetsPage * 10);
-                           
-                           return currentSetList.map((set, i) => (
-                          <tr key={i} style={{ borderBottom: '1px solid #e2e8f0', backgroundColor: i % 2 === 0 ? '#ffffff' : '#f8fafc', transition: 'background 0.2s', cursor: 'pointer' }} onClick={() => {
-                            setSelectedSetId(set.id);
-                            fetch("https://verserain-party.hungry4grace.partykit.dev/parties/main/global-auth-db/custom-sets/view", { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: set.id }) }).catch(e => e);
-                            setViewCounts(prev => ({ ...prev, [set.id]: (prev[set.id] || 0) + 1 }));
-                          }} onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#eff6ff'} onMouseOut={(e) => e.currentTarget.style.backgroundColor = i % 2 === 0 ? '#ffffff' : '#f8fafc'}>
-                            <td style={{ padding: '1rem', textAlign: 'center', color: '#3b82f6', fontSize: '1.2rem' }}>{customVerseSets.some(c => c.id === set.id) ? '👑' : '📁'}</td>
-                            <td style={{ padding: '1rem', fontWeight: 'bold', color: '#1e293b', fontSize: '1.05rem' }}>
-                              <span>{set.title}</span>
-                              {isAdmin && !customVerseSets.some(c => c.id === set.id) && (
-                                <span style={{ marginLeft: '1rem', display: 'inline-flex', gap: '0.5rem' }}>
-                                  <button onClick={(e) => {
-                                    e.stopPropagation();
-                                    setEditingCustomSet({ ...set, isPublished: true });
-                                    setMainTab('custom_verses');
-                                  }} style={{ background: '#f1f5f9', border: '1px solid #cbd5e1', padding: '0.2rem 0.5rem', borderRadius: '4px', cursor: 'pointer', fontSize: '0.8rem', color: '#475569' }}>Admin 編輯</button>
-                                  <button onClick={(e) => {
-                                    e.stopPropagation();
-                                    if (window.confirm("Admin: 確定要從全域資料庫強制刪除這份經文組？")) {
-                                      fetch("https://verserain-party.hungry4grace.partykit.dev/parties/main/global-auth-db/custom-sets", {
-                                        method: "DELETE",
-                                        headers: { "Content-Type": "application/json" },
-                                        body: JSON.stringify({ id: set.id })
-                                      }).catch(e => console.error(e));
-                                      setPublishedVerseSets(prev => prev.filter(p => p.id !== set.id));
-                                    }
-                                  }} style={{ background: '#fee2e2', border: '1px solid #fca5a5', color: '#ef4444', padding: '0.2rem 0.5rem', borderRadius: '4px', cursor: 'pointer', fontSize: '0.8rem' }}>Admin 刪除</button>
-                                </span>
-                              )}
-                            </td>
-                            <td style={{ padding: '1rem', color: '#337ab7', fontSize: '0.9rem', fontWeight: 'bold' }}>{set.authorName && set.authorName !== "Anonymous" ? set.authorName : (String(set.id).startsWith("custom-") ? "匿名玩家" : "Verserain 官方")}</td>
-                            <td style={{ padding: '1rem', textAlign: 'right', color: '#64748b', fontWeight: 'bold' }}>{viewCounts[set.id] || 0}</td>
-                          </tr>
-                        ));
-                        })()}
-                      </tbody>
-                    </table>
-                    
-                    {/* Pagination for Verse Sets */}
-                    {Math.ceil(activeVerseSets.length / 10) > 1 && (
-                      <div style={{ padding: '1.5rem', display: 'flex', justifyContent: 'center', gap: '0.5rem', borderTop: '1px solid #e2e8f0' }}>
-                        {Array.from({ length: Math.ceil(activeVerseSets.length / 10) }).map((_, idx) => (
-                          <button
-                            key={idx}
-                            onClick={() => setVersesetsPage(idx + 1)}
-                            style={{
-                              padding: '0.5rem 1rem',
-                              borderRadius: '8px',
-                              border: versesetsPage === idx + 1 ? 'none' : '1px solid #cbd5e1',
-                              background: versesetsPage === idx + 1 ? '#3b82f6' : '#ffffff',
-                              color: versesetsPage === idx + 1 ? '#ffffff' : '#475569',
-                              fontWeight: 'bold',
-                              cursor: 'pointer',
-                              transition: 'all 0.2s',
-                              minWidth: '40px'
-                            }}
-                          >
-                            {idx + 1}
-                          </button>
-                        ))}
+                      <div style={{ display: 'flex', justifyContent: 'flex-end', padding: '1rem', borderBottom: '1px solid #e2e8f0' }}>
+                        <select
+                          value={versesetsSort}
+                          onChange={(e) => { setVersesetsSort(e.target.value); setVersesetsPage(1); }}
+                          style={{ padding: '0.5rem 1rem', borderRadius: '8px', border: '1px solid #cbd5e1', outline: 'none', background: '#f8fafc', color: '#334155', fontWeight: 'bold', cursor: 'pointer' }}
+                        >
+                          <option value="popular">{t("最受歡迎", "Most Popular")}</option>
+                          <option value="newest">{t("最新", "Newest")}</option>
+                        </select>
                       </div>
-                    )}
+                      <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+                        <thead>
+                          <tr style={{ backgroundColor: '#f8fafc', color: '#475569', fontSize: '0.9rem' }}>
+                            <th style={{ padding: '1rem', borderBottom: '2px solid #e2e8f0', width: '50px' }}>📁</th>
+                            <th style={{ padding: '1rem', borderBottom: '2px solid #e2e8f0' }}>{t("標題", "Title")}</th>
+                            <th style={{ padding: '1rem', borderBottom: '2px solid #e2e8f0' }}>{t("作者", "Author")}</th>
+                            <th style={{ padding: '1rem', borderBottom: '2px solid #e2e8f0', textAlign: 'right' }}>{t("點閱次數", "Views")}</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {(() => {
+                            let sortedSets = [...activeVerseSets];
+                            if (versesetsSort === 'popular') {
+                              sortedSets.sort((a, b) => (viewCounts[b.id] || 0) - (viewCounts[a.id] || 0));
+                            } else {
+                              sortedSets.sort((a, b) => {
+                                // sort by id desc (assuming id has timestamp or similar, or just place newest custom sets first)
+                                return String(b.id).localeCompare(String(a.id));
+                              });
+                            }
+
+                            const totalPages = Math.ceil(sortedSets.length / 10) || 1;
+                            const currentSetList = sortedSets.slice((versesetsPage - 1) * 10, versesetsPage * 10);
+
+                            return currentSetList.map((set, i) => (
+                              <tr key={i} style={{ borderBottom: '1px solid #e2e8f0', backgroundColor: i % 2 === 0 ? '#ffffff' : '#f8fafc', transition: 'background 0.2s', cursor: 'pointer' }} onClick={() => {
+                                setSelectedSetId(set.id);
+                                fetch("https://verserain-party.hungry4grace.partykit.dev/parties/main/global-auth-db/custom-sets/view", { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: set.id }) }).catch(e => e);
+                                setViewCounts(prev => ({ ...prev, [set.id]: (prev[set.id] || 0) + 1 }));
+                              }} onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#eff6ff'} onMouseOut={(e) => e.currentTarget.style.backgroundColor = i % 2 === 0 ? '#ffffff' : '#f8fafc'}>
+                                <td style={{ padding: '1rem', textAlign: 'center', color: '#3b82f6', fontSize: '1.2rem' }}>{customVerseSets.some(c => c.id === set.id) ? '👑' : '📁'}</td>
+                                <td style={{ padding: '1rem', fontWeight: 'bold', color: '#1e293b', fontSize: '1.05rem' }}>
+                                  <span>{set.title}</span>
+                                  {isAdmin && !customVerseSets.some(c => c.id === set.id) && (
+                                    <span style={{ marginLeft: '1rem', display: 'inline-flex', gap: '0.5rem' }}>
+                                      <button onClick={(e) => {
+                                        e.stopPropagation();
+                                        setEditingCustomSet({ ...set, isPublished: true });
+                                        setMainTab('custom_verses');
+                                      }} style={{ background: '#f1f5f9', border: '1px solid #cbd5e1', padding: '0.2rem 0.5rem', borderRadius: '4px', cursor: 'pointer', fontSize: '0.8rem', color: '#475569' }}>Admin 編輯</button>
+                                      <button onClick={(e) => {
+                                        e.stopPropagation();
+                                        if (window.confirm("Admin: 確定要從全域資料庫強制刪除這份經文組？")) {
+                                          fetch("https://verserain-party.hungry4grace.partykit.dev/parties/main/global-auth-db/custom-sets", {
+                                            method: "DELETE",
+                                            headers: { "Content-Type": "application/json" },
+                                            body: JSON.stringify({ id: set.id })
+                                          }).catch(e => console.error(e));
+                                          setPublishedVerseSets(prev => prev.filter(p => p.id !== set.id));
+                                        }
+                                      }} style={{ background: '#fee2e2', border: '1px solid #fca5a5', color: '#ef4444', padding: '0.2rem 0.5rem', borderRadius: '4px', cursor: 'pointer', fontSize: '0.8rem' }}>Admin 刪除</button>
+                                    </span>
+                                  )}
+                                </td>
+                                <td style={{ padding: '1rem', color: '#337ab7', fontSize: '0.9rem', fontWeight: 'bold' }}>{set.authorName && set.authorName !== "Anonymous" ? set.authorName : (String(set.id).startsWith("custom-") ? "匿名玩家" : "Verserain 官方")}</td>
+                                <td style={{ padding: '1rem', textAlign: 'right', color: '#64748b', fontWeight: 'bold' }}>{viewCounts[set.id] || 0}</td>
+                              </tr>
+                            ));
+                          })()}
+                        </tbody>
+                      </table>
+
+                      {/* Pagination for Verse Sets */}
+                      {Math.ceil(activeVerseSets.length / 10) > 1 && (
+                        <div style={{ padding: '1.5rem', display: 'flex', justifyContent: 'center', gap: '0.5rem', borderTop: '1px solid #e2e8f0' }}>
+                          {Array.from({ length: Math.ceil(activeVerseSets.length / 10) }).map((_, idx) => (
+                            <button
+                              key={idx}
+                              onClick={() => setVersesetsPage(idx + 1)}
+                              style={{
+                                padding: '0.5rem 1rem',
+                                borderRadius: '8px',
+                                border: versesetsPage === idx + 1 ? 'none' : '1px solid #cbd5e1',
+                                background: versesetsPage === idx + 1 ? '#3b82f6' : '#ffffff',
+                                color: versesetsPage === idx + 1 ? '#ffffff' : '#475569',
+                                fontWeight: 'bold',
+                                cursor: 'pointer',
+                                transition: 'all 0.2s',
+                                minWidth: '40px'
+                              }}
+                            >
+                              {idx + 1}
+                            </button>
+                          ))}
+                        </div>
+                      )}
                     </>
                   ) : (
                     <>
@@ -3576,103 +3602,103 @@ export default function App() {
                   <p style={{ margin: 0, color: '#92400e', fontSize: '1.1rem', marginBottom: '1.5rem' }}>
                     {t("過關斬將結出果子，提升你的互惠階級！", "Clear verses to bear fruit and level up!")}
                   </p>
-                  
+
                   <div style={{ display: 'inline-flex', alignItems: 'center', gap: '1rem', background: '#fff', padding: '1rem 2rem', borderRadius: '50px', border: '2px solid #fbbf24', boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.05)', flexWrap: 'wrap', justifyContent: 'center' }}>
-                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', borderRight: '2px solid #fcd34d', paddingRight: '1rem' }}>
-                        <span style={{ fontSize: '0.9rem', color: '#94a3b8', fontWeight: 'bold' }}>{t("總果子數量", "Total Fruits")}</span>
-                        <span style={{ fontSize: '2.5rem', fontWeight: 'bold', color: '#d97706', lineHeight: '1' }}>{totalFruits} <span style={{ fontSize: '1.5rem' }}>🍎</span></span>
-                     </div>
-                     <button 
-                        onClick={() => setShowLevelInfo(true)}
-                        onMouseEnter={e => Object.assign(e.currentTarget.style, { transform: 'scale(1.05)', backgroundColor: '#f8fafc' })}
-                        onMouseLeave={e => Object.assign(e.currentTarget.style, { transform: 'scale(1)', backgroundColor: 'transparent' })}
-                        style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '0.5rem 1rem', background: 'transparent', border: 'none', cursor: 'pointer', transition: 'all 0.2s', borderRadius: '12px' }}
-                     >
-                        <span style={{ fontSize: '0.9rem', color: '#94a3b8', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                           {t("目前階級", "Current Level")} <span style={{ fontSize: '1rem', animation: 'pulse 2s infinite' }}>ℹ️</span>
-                        </span>
-                        <span style={{ fontSize: '1.5rem', fontWeight: 'bold', color: skoolLevel.level >= 3 ? '#8b5cf6' : '#2563eb' }}>
-                           Lv.{skoolLevel.level} {t(skoolLevel.title, skoolLevel.enTitle)}
-                        </span>
-                     </button>
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', borderRight: '2px solid #fcd34d', paddingRight: '1rem' }}>
+                      <span style={{ fontSize: '0.9rem', color: '#94a3b8', fontWeight: 'bold' }}>{t("總果子數量", "Total Fruits")}</span>
+                      <span style={{ fontSize: '2.5rem', fontWeight: 'bold', color: '#d97706', lineHeight: '1' }}>{totalFruits} <span style={{ fontSize: '1.5rem' }}>🍎</span></span>
+                    </div>
+                    <button
+                      onClick={() => setShowLevelInfo(true)}
+                      onMouseEnter={e => Object.assign(e.currentTarget.style, { transform: 'scale(1.05)', backgroundColor: '#f8fafc' })}
+                      onMouseLeave={e => Object.assign(e.currentTarget.style, { transform: 'scale(1)', backgroundColor: 'transparent' })}
+                      style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '0.5rem 1rem', background: 'transparent', border: 'none', cursor: 'pointer', transition: 'all 0.2s', borderRadius: '12px' }}
+                    >
+                      <span style={{ fontSize: '0.9rem', color: '#94a3b8', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        {t("目前階級", "Current Level")} <span style={{ fontSize: '1rem', animation: 'pulse 2s infinite' }}>ℹ️</span>
+                      </span>
+                      <span style={{ fontSize: '1.5rem', fontWeight: 'bold', color: skoolLevel.level >= 3 ? '#8b5cf6' : '#2563eb' }}>
+                        Lv.{skoolLevel.level} {t(skoolLevel.title, skoolLevel.enTitle)}
+                      </span>
+                    </button>
                   </div>
 
                   {skoolLevel.next !== null && (
                     <div style={{ marginTop: '1.5rem', maxWidth: '400px', margin: '1.5rem auto 0' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', color: '#92400e', marginBottom: '0.3rem', fontWeight: 'bold' }}>
-                         <span>Lv.{skoolLevel.level}</span>
-                         <span>Lv.{skoolLevel.level + 1} ({skoolLevel.next}🍎)</span>
+                        <span>Lv.{skoolLevel.level}</span>
+                        <span>Lv.{skoolLevel.level + 1} ({skoolLevel.next}🍎)</span>
                       </div>
                       <div style={{ width: '100%', height: '14px', background: '#fef3c7', border: '1px solid #fde68a', borderRadius: '10px', overflow: 'hidden' }}>
-                         <div style={{ width: `${Math.min(100, (totalFruits / skoolLevel.next) * 100)}%`, height: '100%', background: 'linear-gradient(90deg, #fbbf24, #f59e0b)', transition: 'width 1s ease-in-out' }} />
+                        <div style={{ width: `${Math.min(100, (totalFruits / skoolLevel.next) * 100)}%`, height: '100%', background: 'linear-gradient(90deg, #fbbf24, #f59e0b)', transition: 'width 1s ease-in-out' }} />
                       </div>
                     </div>
                   )}
 
                   {skoolLevel.level >= 3 && !isPremium && (
                     <div style={{ marginTop: '2rem', padding: '1.5rem', background: 'linear-gradient(135deg, #ede9fe, #ddd6fe)', borderRadius: '12px', border: '1px solid #c4b5fd', animation: 'flashSuccess 2s infinite' }}>
-                       <div style={{ fontSize: '2.5rem', marginBottom: '0.5rem' }}>🎉</div>
-                       <h4 style={{ margin: 0, color: '#5b21b6', fontSize: '1.3rem', marginBottom: '0.5rem', fontWeight: 'bold' }}>
-                          {t("恭喜！你已解鎖專屬題庫功能！", "Congratulations! Custom Sets Unlocked!")}
-                       </h4>
-                       <p style={{ margin: 0, color: '#4c1d95', fontSize: '1rem', lineHeight: '1.5' }}>
-                          {t("身為 Lv.3 以上的實踐者，你現在可以前往「進階功能 ➔ 我的專屬題庫」自由創建與分享你專屬的經文組了！", "As a Level 3+ player, you can now freely create custom verse sets from the Advanced settings menu!")}
-                       </p>
+                      <div style={{ fontSize: '2.5rem', marginBottom: '0.5rem' }}>🎉</div>
+                      <h4 style={{ margin: 0, color: '#5b21b6', fontSize: '1.3rem', marginBottom: '0.5rem', fontWeight: 'bold' }}>
+                        {t("恭喜！你已解鎖專屬題庫功能！", "Congratulations! Custom Sets Unlocked!")}
+                      </h4>
+                      <p style={{ margin: 0, color: '#4c1d95', fontSize: '1rem', lineHeight: '1.5' }}>
+                        {t("身為 Lv.3 以上的實踐者，你現在可以前往「進階功能 ➔ 我的專屬題庫」自由創建與分享你專屬的經文組了！", "As a Level 3+ player, you can now freely create custom verse sets from the Advanced settings menu!")}
+                      </p>
                     </div>
                   )}
 
                   {/* Gamification Invite Block (Unlocked for Lv.2+, Teaser for Lv.1) */}
                   <div style={{ marginTop: '2rem', padding: '1.5rem', background: '#f8fafc', borderRadius: '12px', border: '1px solid #e2e8f0', textAlign: 'left', position: 'relative', overflow: 'hidden' }}>
-                     <h4 style={{ margin: 0, color: skoolLevel.level >= 2 ? '#10b981' : '#94a3b8', fontSize: '1.3rem', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <span style={{ fontSize: '1.5rem' }}>📨</span> {t("邀請朋友一起玩", "Invite Friends to Play")}
-                     </h4>
-                     
-                     {skoolLevel.level >= 2 ? (
-                       <>
-                         <p style={{ margin: 0, color: '#475569', fontSize: '1rem', lineHeight: '1.5', marginBottom: '1.2rem' }}>
-                            {t("你的專屬推廣連結：當朋友們透過此連結直接進入加入 VerseRain，並完成他們的第一次背經遊戲，雙方都會自動獲得「推廣點數」獎勵，同時你也將累積推廣大使進度！", "Your personal invite link: When friends load VerseRain via this link and complete their first game, both of you earn bonus points!")}
-                         </p>
-                         <div style={{ display: 'flex', gap: '10px', alignItems: 'stretch', flexWrap: 'wrap' }}>
-                            <input 
-                              readOnly 
-                              value={`${window.location.origin}?ref=${encodeURIComponent(playerName)}`} 
-                              style={{ flex: 1, minWidth: '220px', padding: '0.8rem', borderRadius: '8px', border: '1px solid #cbd5e1', backgroundColor: '#fff', color: '#334155', fontSize: '0.95rem' }}
-                            />
-                            <button 
-                              onClick={() => {
-                                navigator.clipboard.writeText(`${window.location.origin}?ref=${encodeURIComponent(playerName)}`);
-                                setToast(t("邀請連結已複製！快發給好朋友吧！", "Invite link copied! Share it with friends!"));
-                                setTimeout(() => setToast(null), 3500);
-                              }}
-                              style={{ background: '#3b82f6', color: 'white', border: 'none', padding: '0 1.5rem', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', transition: 'background 0.2s', minHeight: '44px' }}
-                              onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#2563eb'}
-                              onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#3b82f6'}
+                    <h4 style={{ margin: 0, color: skoolLevel.level >= 2 ? '#10b981' : '#94a3b8', fontSize: '1.3rem', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span style={{ fontSize: '1.5rem' }}>📨</span> {t("邀請朋友一起玩", "Invite Friends to Play")}
+                    </h4>
+
+                    {skoolLevel.level >= 2 ? (
+                      <>
+                        <p style={{ margin: 0, color: '#475569', fontSize: '1rem', lineHeight: '1.5', marginBottom: '1.2rem' }}>
+                          {t("你的專屬推廣連結：當朋友們透過此連結直接進入加入 VerseRain，並完成他們的第一次背經遊戲，雙方都會自動獲得「推廣點數」獎勵，同時你也將累積推廣大使進度！", "Your personal invite link: When friends load VerseRain via this link and complete their first game, both of you earn bonus points!")}
+                        </p>
+                        <div style={{ display: 'flex', gap: '10px', alignItems: 'stretch', flexWrap: 'wrap' }}>
+                          <input
+                            readOnly
+                            value={`${window.location.origin}?ref=${encodeURIComponent(playerName)}`}
+                            style={{ flex: 1, minWidth: '220px', padding: '0.8rem', borderRadius: '8px', border: '1px solid #cbd5e1', backgroundColor: '#fff', color: '#334155', fontSize: '0.95rem' }}
+                          />
+                          <button
+                            onClick={() => {
+                              navigator.clipboard.writeText(`${window.location.origin}?ref=${encodeURIComponent(playerName)}`);
+                              setToast(t("邀請連結已複製！快發給好朋友吧！", "Invite link copied! Share it with friends!"));
+                              setTimeout(() => setToast(null), 3500);
+                            }}
+                            style={{ background: '#3b82f6', color: 'white', border: 'none', padding: '0 1.5rem', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', transition: 'background 0.2s', minHeight: '44px' }}
+                            onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#2563eb'}
+                            onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#3b82f6'}
+                          >
+                            {t("複製", "Copy")}
+                          </button>
+                          {typeof QRCodeSVG !== 'undefined' && (
+                            <button
+                              onClick={() => setQrShareModal({ url: `${window.location.origin}?ref=${encodeURIComponent(playerName)}`, reference: 'VerseRain 遊戲邀請' })}
+                              style={{ background: '#10b981', color: 'white', border: 'none', padding: '0 1.5rem', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', transition: 'background 0.2s', minHeight: '44px' }}
                             >
-                              {t("複製", "Copy")}
+                              QR Code
                             </button>
-                            {typeof QRCodeSVG !== 'undefined' && (
-                              <button
-                                 onClick={() => setQrShareModal({ url: `${window.location.origin}?ref=${encodeURIComponent(playerName)}`, reference: 'VerseRain 遊戲邀請' })}
-                                 style={{ background: '#10b981', color: 'white', border: 'none', padding: '0 1.5rem', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', transition: 'background 0.2s', minHeight: '44px' }}
-                              >
-                                 QR Code
-                              </button>
-                            )}
-                         </div>
-                       </>
-                     ) : (
-                       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '0.8rem' }}>
-                         <p style={{ margin: 0, color: '#64748b', fontSize: '1rem', lineHeight: '1.5' }}>
-                            {t("想要擁有你的個人推薦碼並賺取推廣點數嗎？", "Want to get your personal invite code and earn referral points?")}
-                         </p>
-                         <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: '#f1f5f9', padding: '0.6rem 1rem', borderRadius: '8px', border: '1px dashed #cbd5e1' }}>
-                            <span>🔒</span>
-                            <span style={{ color: '#475569', fontSize: '0.95rem' }}>
-                              {t("再結出 ", "Bear ")} <strong>{2 - totalFruits}</strong> {t(" 個果子 🍎，達到 Lv.2 即可解鎖個人專屬連結！", " more fruits 🍎 to reach Lv.2 and unlock your invite link!")}
-                            </span>
-                         </div>
-                       </div>
-                     )}
+                          )}
+                        </div>
+                      </>
+                    ) : (
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '0.8rem' }}>
+                        <p style={{ margin: 0, color: '#64748b', fontSize: '1rem', lineHeight: '1.5' }}>
+                          {t("想要擁有你的個人推薦碼並賺取推廣點數嗎？", "Want to get your personal invite code and earn referral points?")}
+                        </p>
+                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: '#f1f5f9', padding: '0.6rem 1rem', borderRadius: '8px', border: '1px dashed #cbd5e1' }}>
+                          <span>🔒</span>
+                          <span style={{ color: '#475569', fontSize: '0.95rem' }}>
+                            {t("再結出 ", "Bear ")} <strong>{2 - totalFruits}</strong> {t(" 個果子 🍎，達到 Lv.2 即可解鎖個人專屬連結！", " more fruits 🍎 to reach Lv.2 and unlock your invite link!")}
+                          </span>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -3952,6 +3978,62 @@ export default function App() {
                     </div>
                   );
                 })()}
+
+                {/* Reciprocity History */}
+                <div style={{ marginTop: '2rem', padding: '1.5rem', background: '#f8fafc', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
+                  <h3 style={{ marginTop: 0, color: '#1e293b', display: 'flex', alignItems: 'center', gap: '8px', borderBottom: '1px solid #cbd5e1', paddingBottom: '0.5rem', marginBottom: '1.5rem' }}>
+                    📜 {t('互惠點數紀錄', 'Reciprocity History')}
+                  </h3>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2rem' }}>
+                    {/* Referrals */}
+                    <div>
+                      <h4 style={{ color: '#0369a1', marginTop: 0, marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        👫 {t('推薦紀錄', 'Referrals')}
+                      </h4>
+                      {referralHistory && referralHistory.length > 0 ? (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '400px', overflowY: 'auto', paddingRight: '10px' }}>
+                          {referralHistory.map((h, i) => (
+                            <div key={i} style={{ background: '#fff', padding: '10px 15px', borderRadius: '8px', borderLeft: h.type === 'referred' ? '4px solid #10b981' : '4px solid #3b82f6', boxShadow: '0 1px 2px rgba(0,0,0,0.05)', fontSize: '0.9rem', color: '#475569' }}>
+                              <div style={{ fontSize: '0.75rem', color: '#94a3b8', marginBottom: '4px' }}>{new Date(h.timestamp).toLocaleString()}</div>
+                              {h.type === 'referred' ? (
+                                <span>{t('推薦了玩家', 'Referred player')} <strong style={{ color: '#0f766e' }}>{h.player}</strong> {t('加入了 VerseRain', 'to VerseRain')} <span style={{ color: '#10b981', fontWeight: 'bold' }}>(+{h.amount} {t('點', 'pts')})</span></span>
+                              ) : (
+                                <span>{t('透過', 'Joined via')} <strong style={{ color: '#1d4ed8' }}>{h.player}</strong> {t('的推薦加入', '\'s referral')} <span style={{ color: '#3b82f6', fontWeight: 'bold' }}>(+{h.amount} {t('點', 'pts')})</span></span>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div style={{ padding: '1.5rem', background: '#fff', border: '1px dashed #cbd5e1', borderRadius: '8px', color: '#94a3b8', textAlign: 'center', fontSize: '0.9rem' }}>
+                          {t('尚未有任何推薦紀錄。分享邀請碼邀請朋友獲得互惠點數！', 'No referral history yet. Share your invite code to get reciprocity points!')}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Custom set plays */}
+                    <div>
+                      <h4 style={{ color: '#b45309', marginTop: 0, marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        💡 {t('專屬題庫遊玩紀錄', 'Custom Set Plays')}
+                      </h4>
+                      {creatorHistory && creatorHistory.length > 0 ? (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '400px', overflowY: 'auto', paddingRight: '10px' }}>
+                          {creatorHistory.map((h, i) => (
+                            <div key={i} style={{ background: '#fff', padding: '10px 15px', borderRadius: '8px', borderLeft: '4px solid #f59e0b', boxShadow: '0 1px 2px rgba(0,0,0,0.05)', fontSize: '0.9rem', color: '#475569' }}>
+                              <div style={{ fontSize: '0.75rem', color: '#94a3b8', marginBottom: '4px' }}>{new Date(h.timestamp).toLocaleString()}</div>
+                              <span>{t('玩家', 'Player')} <strong style={{ color: '#0f766e' }}>{h.player}</strong> {t('突破了你的題庫', 'cleared your set')} 「<strong style={{ color: '#b45309' }}>{h.verseSetName}</strong>」 <span style={{ color: '#f59e0b', fontWeight: 'bold' }}>(+{h.amount} {t('點', 'pts')})</span></span>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div style={{ padding: '1.5rem', background: '#fff', border: '1px dashed #cbd5e1', borderRadius: '8px', color: '#94a3b8', textAlign: 'center', fontSize: '0.9rem' }}>
+                          {t('尚未有玩家遊玩你的專屬題庫。建立更多題庫來吸引大家挑戰！', 'No custom set plays yet. Create more sets for others to play!')}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
               </div>
             )}
 
@@ -3996,8 +4078,8 @@ export default function App() {
 
                         const alltimeClears = {};
                         (globalLeaderboardData.alltime || []).forEach(({ name }) => {
-                           if (!name) return;
-                           alltimeClears[name] = (alltimeClears[name] || 0) + 1;
+                          if (!name) return;
+                          alltimeClears[name] = (alltimeClears[name] || 0) + 1;
                         });
 
                         return Object.entries(playerMap)
@@ -4197,7 +4279,7 @@ export default function App() {
                               ));
                             })()}
                           </div>
-                          
+
                           {/* Search Sets Pagination */}
                           {Math.ceil(matchingSets.length / 10) > 1 && (
                             <div style={{ marginTop: '1.5rem', display: 'flex', justifyContent: 'center', gap: '0.5rem' }}>
@@ -4272,7 +4354,7 @@ export default function App() {
                               </tbody>
                             </table>
                           </div>
-                          
+
                           {/* Search Verses Pagination */}
                           {Math.ceil(matchingVerses.length / 10) > 1 && (
                             <div style={{ marginTop: '1.5rem', display: 'flex', justifyContent: 'center', gap: '0.5rem' }}>
@@ -4585,40 +4667,40 @@ export default function App() {
       )}
 
       {gameState === 'playing' && isBlindMode && (
-         <BlindModeGame 
-            activeVerse={activeVerse}
-            activePhrases={activePhrases}
-            currentSeqIndex={currentSeqIndex}
-            onWordMatch={(block) => {
-                 setScore(s => s + 100 + (combo * 50));
-                 setCombo(c => c + 1);
-                 const nextSeq = currentSeqIndex + 1;
-                 setCurrentSeqIndex(nextSeq);
-                 currentSeqRef.current = nextSeq;
-            }}
-            onFail={() => {
-                 setGameState('menu');
-            }}
-            speakText={speakText}
-            playDing={() => {
-               if (!window.__sharedDingCtx) {
-                   window.__sharedDingCtx = new (window.AudioContext || window.webkitAudioContext)();
-               }
-               const actx = window.__sharedDingCtx;
-               if (actx.state === 'suspended') actx.resume();
-               const osc = actx.createOscillator();
-               const gn = actx.createGain();
-               osc.type = 'sine';
-               osc.frequency.setValueAtTime(1000, actx.currentTime);
-               gn.gain.setValueAtTime(0, actx.currentTime);
-               gn.gain.linearRampToValueAtTime(0.5, actx.currentTime + 0.02);
-               gn.gain.exponentialRampToValueAtTime(0.01, actx.currentTime + 1.0);
-               osc.connect(gn); gn.connect(actx.destination);
-               osc.start(); osc.stop(actx.currentTime + 1.0);
-            }}
-            version={version}
-            t={t}
-         />
+        <BlindModeGame
+          activeVerse={activeVerse}
+          activePhrases={activePhrases}
+          currentSeqIndex={currentSeqIndex}
+          onWordMatch={(block) => {
+            setScore(s => s + 100 + (combo * 50));
+            setCombo(c => c + 1);
+            const nextSeq = currentSeqIndex + 1;
+            setCurrentSeqIndex(nextSeq);
+            currentSeqRef.current = nextSeq;
+          }}
+          onFail={() => {
+            setGameState('menu');
+          }}
+          speakText={speakText}
+          playDing={() => {
+            if (!window.__sharedDingCtx) {
+              window.__sharedDingCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            const actx = window.__sharedDingCtx;
+            if (actx.state === 'suspended') actx.resume();
+            const osc = actx.createOscillator();
+            const gn = actx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(1000, actx.currentTime);
+            gn.gain.setValueAtTime(0, actx.currentTime);
+            gn.gain.linearRampToValueAtTime(0.5, actx.currentTime + 0.02);
+            gn.gain.exponentialRampToValueAtTime(0.01, actx.currentTime + 1.0);
+            osc.connect(gn); gn.connect(actx.destination);
+            osc.start(); osc.stop(actx.currentTime + 1.0);
+          }}
+          version={version}
+          t={t}
+        />
       )}
 
       {gameState === 'playing' && !isBlindMode && (
@@ -5819,7 +5901,7 @@ export default function App() {
               </h3>
               <button onClick={() => setShowLevelInfo(false)} style={{ background: 'transparent', border: 'none', fontSize: '1.5rem', color: '#94a3b8', cursor: 'pointer' }}>✕</button>
             </div>
-            
+
             <div style={{ padding: '1.5rem', overflowY: 'auto' }}>
               <p style={{ color: '#475569', marginBottom: '1.5rem', lineHeight: '1.6' }}>
                 {t("在園子裡持續照顧樹苗並結出果子，就能提升你的互惠階級！當達到 ", "Bear fruits in your garden to level up! Reaching ")}
@@ -5831,7 +5913,7 @@ export default function App() {
                 {SKOOL_LEVELS.map(levelObj => {
                   const isCurrent = skoolLevel.level === levelObj.level;
                   const isUnlocked = skoolLevel.level >= levelObj.level;
-                  
+
                   return (
                     <div key={levelObj.level} style={{
                       display: 'flex', alignItems: 'center', justifyContent: 'space-between',
@@ -5848,7 +5930,7 @@ export default function App() {
                         <div>
                           <div style={{ fontWeight: 'bold', color: isCurrent ? '#15803d' : (isUnlocked ? '#334155' : '#94a3b8'), fontSize: '1.1rem', display: 'flex', alignItems: 'center', flexWrap: 'wrap' }}>
                             {t(levelObj.title, levelObj.enTitle)}
-                            
+
                             {levelCounts !== null && (
                               <span style={{ fontSize: '0.85rem', color: '#64748b', marginLeft: '12px', fontWeight: 'bold', background: '#f1f5f9', padding: '4px 10px', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
                                 👥 {levelCounts[levelObj.level] || 0} {t("人", "players")}
@@ -5872,7 +5954,7 @@ export default function App() {
                 })}
               </div>
             </div>
-            
+
             <div style={{ padding: '1rem 1.5rem', background: '#f8fafc', borderTop: '1px solid #e2e8f0', textAlign: 'center' }}>
               <button onClick={() => setShowLevelInfo(false)} style={{ background: '#3b82f6', color: 'white', border: 'none', padding: '0.8rem 2rem', borderRadius: '8px', fontWeight: 'bold', fontSize: '1rem', cursor: 'pointer' }}>
                 {t("關閉", "Close")}

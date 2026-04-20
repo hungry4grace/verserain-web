@@ -162,6 +162,29 @@ export default class Server {
               return new Response(JSON.stringify({ error: 'System error processing request' }), { status: 500, headers: corsHeaders });
            }
         }
+
+        // 3.9 Export Users Endpoint (Non-sensitive)
+        if (url.pathname.endsWith('/export-users')) {
+           const secret = url.searchParams.get("secret");
+           if (secret !== "vrain_export_2026") return new Response("Unauthorized", { status: 401 });
+           
+           try {
+              const list = await this.room.storage.list({ prefix: "user:" });
+              const users = [];
+              for (const [key, value] of list) {
+                  if (value.email) {
+                      users.push({
+                          email: value.email,
+                          name: value.name || value.skoolName || "Unknown",
+                          isPremium: value.isPremium || false
+                      });
+                  }
+              }
+              return new Response(JSON.stringify(users), { status: 200, headers: corsHeaders });
+           } catch(e) {
+              return new Response(JSON.stringify({ error: 'System error' }), { status: 500, headers: corsHeaders });
+           }
+        }
       }
 
       // 3.9 View Counts Endpoint
