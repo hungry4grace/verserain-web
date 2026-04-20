@@ -29,7 +29,7 @@ const ROOM_COLORS = ['#ef4444', '#f97316', '#eab308', '#22c55e', '#14b8a6', '#0e
 
 export const SKOOL_LEVELS = [
   { level: 1, title: '互惠種子', enTitle: 'Mutuality Seed', points: 0 },
-  { level: 2, title: '探索學員', enTitle: 'Exploring Learner', points: 5 },
+  { level: 2, title: '探索學員', enTitle: 'Exploring Learner', points: 2 },
   { level: 3, title: '共識實踐者', enTitle: 'Consensus Practitioner', points: 20 },
   { level: 4, title: '價值貢獻者', enTitle: 'Value Contributor', points: 65 },
   { level: 5, title: '生態連結者', enTitle: 'Eco Connector', points: 155 },
@@ -50,7 +50,7 @@ export function getSkoolLevel(points) {
       };
     }
   }
-  return { level: 1, title: '互惠種子', enTitle: 'Mutuality Seed', next: 5 };
+  return { level: 1, title: '互惠種子', enTitle: 'Mutuality Seed', next: 2 };
 }
 
 export function getRoomColor(roomId) {
@@ -375,6 +375,25 @@ export default function App() {
   const hasPremiumAccess = isPremium || skoolLevel.level >= 3;
   const [selectedGardenCell, setSelectedGardenCell] = useState(null); // { ref, text, stage, fruits, detectedLang }
   const [showLevelInfo, setShowLevelInfo] = useState(false);
+  const [levelCounts, setLevelCounts] = useState({});
+
+  useEffect(() => {
+    if (showLevelInfo) {
+      fetch('/api/get-creator-points?stats=true')
+        .then(res => res.json())
+        .then(data => {
+          if (data.allScores) {
+            const counts = {};
+            data.allScores.forEach(score => {
+              const lvl = getSkoolLevel(score).level;
+              counts[lvl] = (counts[lvl] || 0) + 1;
+            });
+            setLevelCounts(counts);
+          }
+        })
+        .catch(err => console.error("Could not fetch level stats", err));
+    }
+  }, [showLevelInfo]);
   const gardenClickTimer = useRef(null);
   const versionBeforeChallenge = useRef(null); // saved version to restore after cross-lang challenge
   const updateGarden = React.useCallback((ref, type, setId, amount = 1) => {
@@ -5731,8 +5750,16 @@ export default function App() {
                           {levelObj.level}
                         </div>
                         <div>
-                          <div style={{ fontWeight: 'bold', color: isCurrent ? '#15803d' : (isUnlocked ? '#334155' : '#94a3b8'), fontSize: '1.1rem' }}>
-                            {t(levelObj.title, levelObj.enTitle)} {isCurrent && <span style={{ fontSize: '0.9rem', color: '#059669', marginLeft: '8px' }}>👈 {t("目前階級", "You are here")}</span>}
+                          <div style={{ fontWeight: 'bold', color: isCurrent ? '#15803d' : (isUnlocked ? '#334155' : '#94a3b8'), fontSize: '1.1rem', display: 'flex', alignItems: 'center', flexWrap: 'wrap' }}>
+                            {t(levelObj.title, levelObj.enTitle)}
+                            
+                            {levelCounts[levelObj.level] !== undefined && (
+                              <span style={{ fontSize: '0.85rem', color: '#64748b', marginLeft: '8px', fontWeight: 'normal', background: '#f1f5f9', padding: '2px 8px', borderRadius: '12px' }}>
+                                {levelCounts[levelObj.level] || 0} {t("人", "players")}
+                              </span>
+                            )}
+
+                            {isCurrent && <span style={{ fontSize: '0.9rem', color: '#059669', marginLeft: '8px' }}>👈 {t("目前階級", "You are here")}</span>}
                           </div>
                           {levelObj.level === 3 && (
                             <div style={{ fontSize: '0.85rem', color: '#8b5cf6', fontWeight: 'bold', marginTop: '4px' }}>
