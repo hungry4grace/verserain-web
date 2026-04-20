@@ -318,6 +318,7 @@ export default function App() {
 
   const [authLoading, setAuthLoading] = useState(false);
   const [authError, setAuthError] = useState("");
+  const [recoveredPassword, setRecoveredPassword] = useState(null); // { name, password }
   const [customVerseSets, setCustomVerseSets] = useState(() => {
     try {
       const saved = localStorage.getItem('verseRain_custom_sets');
@@ -5528,6 +5529,17 @@ export default function App() {
 
             {authError && <div style={{ color: '#ef4444', fontSize: '0.85rem', textAlign: 'center', marginTop: '-0.5rem', fontWeight: 'bold' }}>{authError}</div>}
 
+            {recoveredPassword && (
+              <div style={{ background: '#ecfdf5', border: '2px solid #10b981', borderRadius: '10px', padding: '1rem', textAlign: 'center' }}>
+                <div style={{ fontSize: '0.85rem', color: '#065f46', marginBottom: '0.4rem', fontWeight: 'bold' }}>哈囉 {recoveredPassword.name}！您的密碼如下：</div>
+                <div style={{ fontFamily: 'monospace', fontSize: '1.4rem', fontWeight: 'bold', color: '#047857', letterSpacing: '2px', background: '#d1fae5', padding: '0.5rem 1rem', borderRadius: '6px', marginBottom: '0.6rem', userSelect: 'all' }}>
+                  {recoveredPassword.password}
+                </div>
+                <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>請複製密碼後貼到上方密碼欄位登入</div>
+                <button onClick={() => { navigator.clipboard.writeText(recoveredPassword.password); }} style={{ marginTop: '0.5rem', background: '#10b981', color: 'white', border: 'none', padding: '0.4rem 1rem', borderRadius: '6px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 'bold' }}>📋 複製密碼</button>
+              </div>
+            )}
+
             <button
               disabled={authLoading}
               onClick={async () => {
@@ -5613,12 +5625,14 @@ export default function App() {
                         const data = await res.json();
                         if (data.success && data.password) {
                           setAuthError("");
-                          alert(t(`哈囉 ${data.name}！您的密碼為：\n\n${data.password}\n\n請複製後登入，並建議登入後前往帳號設定更換密碼。`, `Hello ${data.name}! Your password is:\n\n${data.password}\n\nPlease copy it to log in. We recommend changing your password after logging in.`));
+                          setRecoveredPassword({ name: data.name, password: data.password });
                         } else {
                           setAuthError(data.error || t("查詢失敗", "Failed to retrieve password"));
+                          setRecoveredPassword(null);
                         }
                       } catch (err) {
                         setAuthError(t("無法連線到伺服器", "Server unreachable"));
+                        setRecoveredPassword(null);
                       } finally {
                         setAuthLoading(false);
                       }
