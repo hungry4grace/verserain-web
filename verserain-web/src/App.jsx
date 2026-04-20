@@ -1703,24 +1703,24 @@ export default function App() {
             body: JSON.stringify({ author: authorToReward, amount: vCount })
           }).catch(e => e);
 
-          // Phase 1 Gamification: Reward Inviter & Invitee
+          // Phase 1 Gamification: Reward Inviter & Invitee (Using Dedicated Points, NOT Fruits)
           const inviter = localStorage.getItem('verserain_inviter');
           const claimed = localStorage.getItem('verserain_invite_claimed');
           if (inviter && inviter !== playerName && !claimed) {
             // Reward the inviter (+5 points)
-            fetch("/api/submit-creator-point", {
+            fetch("/api/submit-referral-point", {
               method: "POST", headers: { "Content-Type": "application/json" },
               body: JSON.stringify({ author: inviter, amount: 5 })
             }).catch(e => e);
             
             // Reward the new player (+3 points bonus)
-            fetch("/api/submit-creator-point", {
+            fetch("/api/submit-referral-point", {
               method: "POST", headers: { "Content-Type": "application/json" },
               body: JSON.stringify({ author: playerName, amount: 3 })
             }).catch(e => e);
             
             localStorage.setItem('verserain_invite_claimed', 'true');
-            setToast(`🎉 成功透過 ${inviter} 的邀請首關！雙方各獲推廣果實獎勵！`);
+            setToast(`🎉 成功透過 ${inviter} 的邀請首次過關！雙方各獲推廣點數獎勵！`);
             setTimeout(() => setToast(null), 4000);
           }
       }
@@ -3627,7 +3627,7 @@ export default function App() {
                           <span style={{ fontSize: '1.5rem' }}>📨</span> {t("邀請朋友一起玩", "Invite Friends to Play")}
                        </h4>
                        <p style={{ margin: 0, color: '#475569', fontSize: '1rem', lineHeight: '1.5', marginBottom: '1.2rem' }}>
-                          {t("你的專屬推廣連結：當朋友們透過此連結直接進入加入 VerseRain，並完成他們的第一次背經遊戲，雙方都會自動獲得 🍎 果實獎勵，同時你也將獲得推廣大使進度！", "Your personal invite link: When friends load VerseRain via this link and complete their first game, both of you earn bonus fruits!")}
+                          {t("你的專屬推廣連結：當朋友們透過此連結直接進入加入 VerseRain，並完成他們的第一次背經遊戲，雙方都會自動獲得「推廣點數」獎勵，同時你也將累積推廣大使進度！", "Your personal invite link: When friends load VerseRain via this link and complete their first game, both of you earn bonus points!")}
                        </p>
                        <div style={{ display: 'flex', gap: '10px', alignItems: 'stretch', flexWrap: 'wrap' }}>
                           <input 
