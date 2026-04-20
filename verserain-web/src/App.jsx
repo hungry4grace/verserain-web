@@ -1672,15 +1672,21 @@ export default function App() {
       
       const vCount = estimateVerseCount(activeVerse.reference, activeVerse.text);
       
-      // Award point to the creator when successfully played!
-      if (selectedSetId && hs) {
-          const foundSet = [...customVerseSets, ...publishedVerseSets, ...baseVerseSets].find(s => s.id === selectedSetId);
-          if (foundSet && foundSet.authorName && foundSet.authorName !== "Anonymous" && foundSet.authorName !== "Verserain 官方") {
-              fetch("/api/submit-creator-point", {
-                method: "POST", headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ author: foundSet.authorName, amount: vCount })
-              }).catch(e => e);
+      // Award point to the creator (or the player themselves if playing default sets)
+      if (hs && playerName) {
+          let authorToReward = playerName;
+          
+          if (selectedSetId) {
+            const foundSet = [...customVerseSets, ...publishedVerseSets, ...baseVerseSets].find(s => s.id === selectedSetId);
+            if (foundSet && foundSet.authorName && foundSet.authorName !== "Anonymous" && foundSet.authorName !== "Verserain 官方") {
+                authorToReward = foundSet.authorName; // If playing someone else's custom set, reward the creator
+            }
           }
+
+          fetch("/api/submit-creator-point", {
+            method: "POST", headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ author: authorToReward, amount: vCount })
+          }).catch(e => e);
       }
 
       logEvent('verseCompleted', {
