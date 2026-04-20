@@ -375,7 +375,7 @@ export default function App() {
   const hasPremiumAccess = isPremium || skoolLevel.level >= 3;
   const [selectedGardenCell, setSelectedGardenCell] = useState(null); // { ref, text, stage, fruits, detectedLang }
   const [showLevelInfo, setShowLevelInfo] = useState(false);
-  const [levelCounts, setLevelCounts] = useState({});
+  const [levelCounts, setLevelCounts] = useState(null);
 
   useEffect(() => {
     if (showLevelInfo) {
@@ -5753,9 +5753,9 @@ export default function App() {
                           <div style={{ fontWeight: 'bold', color: isCurrent ? '#15803d' : (isUnlocked ? '#334155' : '#94a3b8'), fontSize: '1.1rem', display: 'flex', alignItems: 'center', flexWrap: 'wrap' }}>
                             {t(levelObj.title, levelObj.enTitle)}
                             
-                            {levelCounts[levelObj.level] !== undefined && (
-                              <span style={{ fontSize: '0.85rem', color: '#64748b', marginLeft: '8px', fontWeight: 'normal', background: '#f1f5f9', padding: '2px 8px', borderRadius: '12px' }}>
-                                {levelCounts[levelObj.level] || 0} {t("人", "players")}
+                            {levelCounts !== null && (
+                              <span style={{ fontSize: '0.85rem', color: '#64748b', marginLeft: '12px', fontWeight: 'bold', background: '#f1f5f9', padding: '4px 10px', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
+                                👥 {levelCounts[levelObj.level] || 0} {t("人", "players")}
                               </span>
                             )}
 
