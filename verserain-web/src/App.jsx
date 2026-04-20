@@ -5597,7 +5597,7 @@ export default function App() {
                   {t("還沒有帳號？", "Don't have an account? ")}
                   <span onClick={() => setShowLoginModal('signup')} style={{ color: '#3b82f6', cursor: 'pointer', fontWeight: 'bold' }}>{t("立即註冊", "Sign up")}</span>
                   <div style={{ marginTop: '0.8rem' }}>
-                    <span onClick={async () => {
+                     <span onClick={async () => {
                       const emailInput = document.getElementById('modalEmailInput');
                       const email = emailInput ? emailInput.value.trim() : '';
                       if (!email) return alert(t("請先在上方的信箱欄位輸入您的信箱！", "Please enter your email first!"));
@@ -5611,13 +5611,14 @@ export default function App() {
                           body: JSON.stringify({ email })
                         });
                         const data = await res.json();
-                        if (data.success) {
-                          alert(t("密碼已寄出！請檢查您的信箱（包含垃圾郵件匣）。", "Password sent! Please check your email inbox (including spam)."));
+                        if (data.success && data.password) {
+                          setAuthError("");
+                          alert(t(`哈囉 ${data.name}！您的密碼為：\n\n${data.password}\n\n請複製後登入，並建議登入後前往帳號設定更換密碼。`, `Hello ${data.name}! Your password is:\n\n${data.password}\n\nPlease copy it to log in. We recommend changing your password after logging in.`));
                         } else {
-                          setAuthError(data.error || "寄送失敗 (Failed to send)");
+                          setAuthError(data.error || t("查詢失敗", "Failed to retrieve password"));
                         }
                       } catch (err) {
-                        setAuthError("無法連線到伺服器 (Server unreachable)");
+                        setAuthError(t("無法連線到伺服器", "Server unreachable"));
                       } finally {
                         setAuthLoading(false);
                       }

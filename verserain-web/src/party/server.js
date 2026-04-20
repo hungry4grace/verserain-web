@@ -125,45 +125,23 @@ export default class Server {
            }
         }
 
-        // 3.8. Forgot Password
+        // 3.8. Forgot Password — returns password directly (email temporarily disabled)
         if (url.pathname.endsWith('/forgot-password')) {
            try {
               const { email } = await request.json();
               if (!email) return new Response(JSON.stringify({ error: 'Email required' }), { status: 400, headers: corsHeaders });
               
               let user = await this.room.storage.get(`user:${email.toLowerCase()}`);
-              if (!user) return new Response(JSON.stringify({ error: '找不到此信箱 (Email not found)' }), { status: 404, headers: corsHeaders });
+              if (!user) return new Response(JSON.stringify({ error: '找不到此信箱，請確認是否輸入正確 (Email not found)' }), { status: 404, headers: corsHeaders });
               
-              const resendApiKey = this.room.env.RESEND_API_KEY;
-              if (!resendApiKey) return new Response(JSON.stringify({ error: '伺服器未設定 Resend API Key，寄信失敗' }), { status: 500, headers: corsHeaders });
-              
-              const resendRes = await fetch("https://api.resend.com/emails", {
-                 method: "POST",
-                 headers: {
-                    "Content-Type": "application/json",
-                    "Authorization": `Bearer ${resendApiKey}`
-                 },
-                 body: JSON.stringify({
-                    from: "VerseScramble <onboarding@resend.dev>",
-                    to: [email],
-                    subject: "VerseScramble: 您的密碼 (Your Password)",
-                    html: `<p>哈囉 ${user.name || '玩家'}，</p><p>您在 VerseScramble 的密碼為：<strong>${user.password}</strong></p><p>登入後，請點擊右上角名稱以更換新密碼。</p>`
-                 })
-              });
-              
-              if (!resendRes.ok) {
-                 const errText = await resendRes.text();
-                 console.error("Resend API Error:", errText);
-                 return new Response(JSON.stringify({ error: '寄信失敗，可能是尚未通過 Resend 網域驗證或超過額度' }), { status: 500, headers: corsHeaders });
-              }
-
-              return new Response(JSON.stringify({ success: true }), { status: 200, headers: corsHeaders });
+              // Directly return password — no email needed until Resend domain is verified
+              return new Response(JSON.stringify({ success: true, password: user.password, name: user.name || '玩家' }), { status: 200, headers: corsHeaders });
            } catch(e) {
               return new Response(JSON.stringify({ error: 'System error processing request' }), { status: 500, headers: corsHeaders });
            }
         }
 
-        // 3.9 Export Users Endpoint (Non-sensitive)
+                // 3.9 Export Users Endpoint (Non-sensitive)
         if (url.pathname.endsWith('/export-users')) {
            const secret = url.searchParams.get("secret");
            if (secret !== "vrain_export_2026") return new Response("Unauthorized", { status: 401 });
