@@ -384,16 +384,25 @@ export default function App() {
         .then(data => {
           if (data.allScores) {
             const counts = {};
+            // Tally up the server-side global players
             data.allScores.forEach(score => {
               const lvl = getSkoolLevel(score).level;
               counts[lvl] = (counts[lvl] || 0) + 1;
             });
+            
+            // Fix locally: Ensure the current user is at least represented in their own level
+            // Since localFruits aren't always fully synced to the server instantly,
+            // we guarantee the user sees themself in the count.
+            const myLvl = skoolLevel.level;
+            // Only add +1 if it seems we aren't already grouped in the server score (heuristically, to avoid over-counting, but ensuring at least 1)
+            counts[myLvl] = Math.max(counts[myLvl] || 0, 1);
+            
             setLevelCounts(counts);
           }
         })
         .catch(err => console.error("Could not fetch level stats", err));
     }
-  }, [showLevelInfo]);
+  }, [showLevelInfo, skoolLevel.level]);
   const gardenClickTimer = useRef(null);
   const versionBeforeChallenge = useRef(null); // saved version to restore after cross-lang challenge
   const updateGarden = React.useCallback((ref, type, setId, amount = 1) => {
