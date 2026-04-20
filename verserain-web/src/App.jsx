@@ -610,6 +610,12 @@ export default function App() {
       const mParam = params.get('m');
       const vParam = params.get('v');
       const textParam = params.get('text');
+      const refParam = params.get('ref');
+
+      if (refParam) {
+         localStorage.setItem('verserain_inviter', refParam);
+         localStorage.removeItem('verserain_invite_claimed'); 
+      }
 
       let shouldAutoPlay = false;
       let loadedVerses = [];
@@ -1696,6 +1702,27 @@ export default function App() {
             method: "POST", headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ author: authorToReward, amount: vCount })
           }).catch(e => e);
+
+          // Phase 1 Gamification: Reward Inviter & Invitee
+          const inviter = localStorage.getItem('verserain_inviter');
+          const claimed = localStorage.getItem('verserain_invite_claimed');
+          if (inviter && inviter !== playerName && !claimed) {
+            // Reward the inviter (+5 points)
+            fetch("/api/submit-creator-point", {
+              method: "POST", headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ author: inviter, amount: 5 })
+            }).catch(e => e);
+            
+            // Reward the new player (+3 points bonus)
+            fetch("/api/submit-creator-point", {
+              method: "POST", headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ author: playerName, amount: 3 })
+            }).catch(e => e);
+            
+            localStorage.setItem('verserain_invite_claimed', 'true');
+            setToast(`🎉 成功透過 ${inviter} 的邀請首關！雙方各獲推廣果實獎勵！`);
+            setTimeout(() => setToast(null), 4000);
+          }
       }
 
       logEvent('verseCompleted', {
@@ -3591,6 +3618,44 @@ export default function App() {
                        <p style={{ margin: 0, color: '#4c1d95', fontSize: '1rem', lineHeight: '1.5' }}>
                           {t("身為 Lv.3 以上的實踐者，你現在可以前往「進階功能 ➔ 我的專屬題庫」自由創建與分享你專屬的經文組了！", "As a Level 3+ player, you can now freely create custom verse sets from the Advanced settings menu!")}
                        </p>
+                    </div>
+                  )}
+
+                  {skoolLevel.level >= 2 && (
+                    <div style={{ marginTop: '2rem', padding: '1.5rem', background: '#f8fafc', borderRadius: '12px', border: '1px solid #e2e8f0', textAlign: 'left' }}>
+                       <h4 style={{ margin: 0, color: '#10b981', fontSize: '1.3rem', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <span style={{ fontSize: '1.5rem' }}>📨</span> {t("邀請朋友一起玩", "Invite Friends to Play")}
+                       </h4>
+                       <p style={{ margin: 0, color: '#475569', fontSize: '1rem', lineHeight: '1.5', marginBottom: '1.2rem' }}>
+                          {t("你的專屬推廣連結：當朋友們透過此連結直接進入加入 VerseRain，並完成他們的第一次背經遊戲，雙方都會自動獲得 🍎 果實獎勵，同時你也將獲得推廣大使進度！", "Your personal invite link: When friends load VerseRain via this link and complete their first game, both of you earn bonus fruits!")}
+                       </p>
+                       <div style={{ display: 'flex', gap: '10px', alignItems: 'stretch', flexWrap: 'wrap' }}>
+                          <input 
+                            readOnly 
+                            value={`${window.location.origin}?ref=${encodeURIComponent(playerName)}`} 
+                            style={{ flex: 1, minWidth: '220px', padding: '0.8rem', borderRadius: '8px', border: '1px solid #cbd5e1', backgroundColor: '#fff', color: '#334155', fontSize: '0.95rem' }}
+                          />
+                          <button 
+                            onClick={() => {
+                              navigator.clipboard.writeText(`${window.location.origin}?ref=${encodeURIComponent(playerName)}`);
+                              setToast(t("邀請連結已複製！快發給好朋友吧！", "Invite link copied! Share it with friends!"));
+                              setTimeout(() => setToast(null), 3500);
+                            }}
+                            style={{ background: '#3b82f6', color: 'white', border: 'none', padding: '0 1.5rem', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', transition: 'background 0.2s', minHeight: '44px' }}
+                            onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#2563eb'}
+                            onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#3b82f6'}
+                          >
+                            {t("複製", "Copy")}
+                          </button>
+                          {typeof QRCodeSVG !== 'undefined' && (
+                            <button
+                               onClick={() => setQrShareModal({ url: `${window.location.origin}?ref=${encodeURIComponent(playerName)}`, reference: 'VerseRain 遊戲邀請' })}
+                               style={{ background: '#10b981', color: 'white', border: 'none', padding: '0 1.5rem', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', transition: 'background 0.2s', minHeight: '44px' }}
+                            >
+                               QR Code
+                            </button>
+                          )}
+                       </div>
                     </div>
                   )}
                 </div>
