@@ -316,6 +316,20 @@ export default function App() {
   const playerNameRef = useRef(playerName);
   useEffect(() => { playerNameRef.current = playerName; }, [playerName]);
 
+  // Sync gardenData to backend whenever playerName becomes available (login)
+  useEffect(() => {
+    if (playerName) {
+      const gd = JSON.parse(localStorage.getItem('verseRain_gardenData') || '{}');
+      if (Object.keys(gd).length > 0) {
+        fetch('https://verserain-party.hungry4grace.partykit.dev/parties/main/global-auth-db/save-garden', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ playerName, gardenData: gd })
+        }).catch(() => {});
+      }
+    }
+  }, [playerName]);
+
   const [authLoading, setAuthLoading] = useState(false);
   const [authError, setAuthError] = useState("");
   const [recoveredPassword, setRecoveredPassword] = useState(null); // { name, password }
@@ -437,7 +451,7 @@ export default function App() {
       }
       localStorage.setItem('verseRain_gardenData', JSON.stringify(updated));
       // Sync to backend if logged in
-      const pn = localStorage.getItem('verseRain_playerName');
+      const pn = playerNameRef.current;
       if (pn) {
         fetch('https://verserain-party.hungry4grace.partykit.dev/parties/main/global-auth-db/save-garden', {
           method: 'POST',
