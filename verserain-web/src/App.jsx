@@ -362,6 +362,9 @@ export default function App() {
   const [creatorPoints, setCreatorPoints] = useState(0);
   const [creatorHistory, setCreatorHistory] = useState([]);
   const [referralHistory, setReferralHistory] = useState([]);
+  const [referralHistoryPage, setReferralHistoryPage] = useState(1);
+  const [creatorHistoryPage, setCreatorHistoryPage] = useState(1);
+  const HISTORY_PAGE_SIZE = 5;
 
   useEffect(() => {
     if (playerName) {
@@ -3992,20 +3995,50 @@ export default function App() {
                       <h4 style={{ color: '#0369a1', marginTop: 0, marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
                         👫 {t('推薦紀錄', 'Referrals')}
                       </h4>
-                      {referralHistory && referralHistory.length > 0 ? (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '400px', overflowY: 'auto', paddingRight: '10px' }}>
-                          {referralHistory.map((h, i) => (
-                            <div key={i} style={{ background: '#fff', padding: '10px 15px', borderRadius: '8px', borderLeft: h.type === 'referred' ? '4px solid #10b981' : '4px solid #3b82f6', boxShadow: '0 1px 2px rgba(0,0,0,0.05)', fontSize: '0.9rem', color: '#475569' }}>
-                              <div style={{ fontSize: '0.75rem', color: '#94a3b8', marginBottom: '4px' }}>{new Date(h.timestamp).toLocaleString()}</div>
-                              {h.type === 'referred' ? (
-                                <span>{t('推薦了玩家', 'Referred player')} <strong style={{ color: '#0f766e' }}>{h.player}</strong> {t('加入了 VerseRain', 'to VerseRain')} <span style={{ color: '#10b981', fontWeight: 'bold' }}>(+{h.amount} {t('點', 'pts')})</span></span>
-                              ) : (
-                                <span>{t('透過', 'Joined via')} <strong style={{ color: '#1d4ed8' }}>{h.player}</strong> {t('的推薦加入', '\'s referral')} <span style={{ color: '#3b82f6', fontWeight: 'bold' }}>(+{h.amount} {t('點', 'pts')})</span></span>
-                              )}
+                      {referralHistory && referralHistory.length > 0 ? (() => {
+                        // Group: same player + same type → sum amounts, keep latest timestamp
+                        const grouped = [];
+                        const keyMap = {};
+                        referralHistory.forEach(h => {
+                          const key = `${h.type}::${h.player}`;
+                          if (keyMap[key] !== undefined) {
+                            grouped[keyMap[key]].amount += h.amount;
+                            if (h.timestamp > grouped[keyMap[key]].timestamp) grouped[keyMap[key]].timestamp = h.timestamp;
+                            grouped[keyMap[key]].count = (grouped[keyMap[key]].count || 1) + 1;
+                          } else {
+                            keyMap[key] = grouped.length;
+                            grouped.push({ ...h, count: 1 });
+                          }
+                        });
+                        const totalPages = Math.ceil(grouped.length / HISTORY_PAGE_SIZE);
+                        const page = Math.min(referralHistoryPage, totalPages);
+                        const sliced = grouped.slice((page - 1) * HISTORY_PAGE_SIZE, page * HISTORY_PAGE_SIZE);
+                        return (
+                          <>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                              {sliced.map((h, i) => (
+                                <div key={i} style={{ background: '#fff', padding: '10px 15px', borderRadius: '8px', borderLeft: h.type === 'referred' ? '4px solid #10b981' : '4px solid #3b82f6', boxShadow: '0 1px 2px rgba(0,0,0,0.05)', fontSize: '0.9rem', color: '#475569' }}>
+                                  <div style={{ fontSize: '0.75rem', color: '#94a3b8', marginBottom: '4px' }}>{new Date(h.timestamp).toLocaleString()} {h.count > 1 && <span style={{ background: '#e0f2fe', color: '#0369a1', borderRadius: '10px', padding: '1px 7px', fontSize: '0.7rem', fontWeight: 'bold', marginLeft: '4px' }}>×{h.count}</span>}</div>
+                                  {h.type === 'referred' ? (
+                                    <span>{t('推薦了玩家', 'Referred player')} <strong style={{ color: '#0f766e' }}>{h.player}</strong> {t('加入了 VerseRain', 'to VerseRain')} <span style={{ color: '#10b981', fontWeight: 'bold' }}>(+{h.amount} {t('點', 'pts')})</span></span>
+                                  ) : (
+                                    <span>{t('透過', 'Joined via')} <strong style={{ color: '#1d4ed8' }}>{h.player}</strong> {t('的推薦加入', "'s referral")} <span style={{ color: '#3b82f6', fontWeight: 'bold' }}>(+{h.amount} {t('點', 'pts')})</span></span>
+                                  )}
+                                </div>
+                              ))}
                             </div>
-                          ))}
-                        </div>
-                      ) : (
+                            {totalPages > 1 && (
+                              <div style={{ display: 'flex', justifyContent: 'center', gap: '6px', marginTop: '10px' }}>
+                                <button onClick={() => setReferralHistoryPage(p => Math.max(1, p - 1))} disabled={page <= 1} style={{ padding: '4px 10px', borderRadius: '6px', border: '1px solid #cbd5e1', background: page <= 1 ? '#f1f5f9' : '#fff', color: page <= 1 ? '#94a3b8' : '#334155', cursor: page <= 1 ? 'default' : 'pointer', fontWeight: 'bold' }}>‹</button>
+                                {Array.from({ length: totalPages }, (_, idx) => (
+                                  <button key={idx} onClick={() => setReferralHistoryPage(idx + 1)} style={{ padding: '4px 10px', borderRadius: '6px', border: 'none', background: page === idx + 1 ? '#0369a1' : '#f1f5f9', color: page === idx + 1 ? '#fff' : '#334155', cursor: 'pointer', fontWeight: 'bold' }}>{idx + 1}</button>
+                                ))}
+                                <button onClick={() => setReferralHistoryPage(p => Math.min(totalPages, p + 1))} disabled={page >= totalPages} style={{ padding: '4px 10px', borderRadius: '6px', border: '1px solid #cbd5e1', background: page >= totalPages ? '#f1f5f9' : '#fff', color: page >= totalPages ? '#94a3b8' : '#334155', cursor: page >= totalPages ? 'default' : 'pointer', fontWeight: 'bold' }}>›</button>
+                              </div>
+                            )}
+                          </>
+                        );
+                      })() : (
                         <div style={{ padding: '1.5rem', background: '#fff', border: '1px dashed #cbd5e1', borderRadius: '8px', color: '#94a3b8', textAlign: 'center', fontSize: '0.9rem' }}>
                           {t('尚未有任何推薦紀錄。分享邀請碼邀請朋友獲得互惠點數！', 'No referral history yet. Share your invite code to get reciprocity points!')}
                         </div>
@@ -4017,16 +4050,46 @@ export default function App() {
                       <h4 style={{ color: '#b45309', marginTop: 0, marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
                         💡 {t('專屬題庫遊玩紀錄', 'Custom Set Plays')}
                       </h4>
-                      {creatorHistory && creatorHistory.length > 0 ? (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '400px', overflowY: 'auto', paddingRight: '10px' }}>
-                          {creatorHistory.map((h, i) => (
-                            <div key={i} style={{ background: '#fff', padding: '10px 15px', borderRadius: '8px', borderLeft: '4px solid #f59e0b', boxShadow: '0 1px 2px rgba(0,0,0,0.05)', fontSize: '0.9rem', color: '#475569' }}>
-                              <div style={{ fontSize: '0.75rem', color: '#94a3b8', marginBottom: '4px' }}>{new Date(h.timestamp).toLocaleString()}</div>
-                              <span>{t('玩家', 'Player')} <strong style={{ color: '#0f766e' }}>{h.player}</strong> {t('突破了你的題庫', 'cleared your set')} 「<strong style={{ color: '#b45309' }}>{h.verseSetName}</strong>」 <span style={{ color: '#f59e0b', fontWeight: 'bold' }}>(+{h.amount} {t('點', 'pts')})</span></span>
+                      {creatorHistory && creatorHistory.length > 0 ? (() => {
+                        // Group: same player + same verseSetName → sum amounts, keep latest timestamp
+                        const grouped = [];
+                        const keyMap = {};
+                        creatorHistory.forEach(h => {
+                          const key = `${h.player}::${h.verseSetName}`;
+                          if (keyMap[key] !== undefined) {
+                            grouped[keyMap[key]].amount += h.amount;
+                            if (h.timestamp > grouped[keyMap[key]].timestamp) grouped[keyMap[key]].timestamp = h.timestamp;
+                            grouped[keyMap[key]].count = (grouped[keyMap[key]].count || 1) + 1;
+                          } else {
+                            keyMap[key] = grouped.length;
+                            grouped.push({ ...h, count: 1 });
+                          }
+                        });
+                        const totalPages = Math.ceil(grouped.length / HISTORY_PAGE_SIZE);
+                        const page = Math.min(creatorHistoryPage, totalPages);
+                        const sliced = grouped.slice((page - 1) * HISTORY_PAGE_SIZE, page * HISTORY_PAGE_SIZE);
+                        return (
+                          <>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                              {sliced.map((h, i) => (
+                                <div key={i} style={{ background: '#fff', padding: '10px 15px', borderRadius: '8px', borderLeft: '4px solid #f59e0b', boxShadow: '0 1px 2px rgba(0,0,0,0.05)', fontSize: '0.9rem', color: '#475569' }}>
+                                  <div style={{ fontSize: '0.75rem', color: '#94a3b8', marginBottom: '4px' }}>{new Date(h.timestamp).toLocaleString()} {h.count > 1 && <span style={{ background: '#fef3c7', color: '#92400e', borderRadius: '10px', padding: '1px 7px', fontSize: '0.7rem', fontWeight: 'bold', marginLeft: '4px' }}>×{h.count} 次</span>}</div>
+                                  <span>{t('玩家', 'Player')} <strong style={{ color: '#0f766e' }}>{h.player}</strong> {t('突破了你的題庫', 'cleared your set')} 「<strong style={{ color: '#b45309' }}>{h.verseSetName}</strong>」 <span style={{ color: '#f59e0b', fontWeight: 'bold' }}>(+{h.amount} {t('點', 'pts')})</span></span>
+                                </div>
+                              ))}
                             </div>
-                          ))}
-                        </div>
-                      ) : (
+                            {totalPages > 1 && (
+                              <div style={{ display: 'flex', justifyContent: 'center', gap: '6px', marginTop: '10px' }}>
+                                <button onClick={() => setCreatorHistoryPage(p => Math.max(1, p - 1))} disabled={page <= 1} style={{ padding: '4px 10px', borderRadius: '6px', border: '1px solid #cbd5e1', background: page <= 1 ? '#f1f5f9' : '#fff', color: page <= 1 ? '#94a3b8' : '#334155', cursor: page <= 1 ? 'default' : 'pointer', fontWeight: 'bold' }}>‹</button>
+                                {Array.from({ length: totalPages }, (_, idx) => (
+                                  <button key={idx} onClick={() => setCreatorHistoryPage(idx + 1)} style={{ padding: '4px 10px', borderRadius: '6px', border: 'none', background: page === idx + 1 ? '#b45309' : '#f1f5f9', color: page === idx + 1 ? '#fff' : '#334155', cursor: 'pointer', fontWeight: 'bold' }}>{idx + 1}</button>
+                                ))}
+                                <button onClick={() => setCreatorHistoryPage(p => Math.min(totalPages, p + 1))} disabled={page >= totalPages} style={{ padding: '4px 10px', borderRadius: '6px', border: '1px solid #cbd5e1', background: page >= totalPages ? '#f1f5f9' : '#fff', color: page >= totalPages ? '#94a3b8' : '#334155', cursor: page >= totalPages ? 'default' : 'pointer', fontWeight: 'bold' }}>›</button>
+                              </div>
+                            )}
+                          </>
+                        );
+                      })() : (
                         <div style={{ padding: '1.5rem', background: '#fff', border: '1px dashed #cbd5e1', borderRadius: '8px', color: '#94a3b8', textAlign: 'center', fontSize: '0.9rem' }}>
                           {t('尚未有玩家遊玩你的專屬題庫。建立更多題庫來吸引大家挑戰！', 'No custom set plays yet. Create more sets for others to play!')}
                         </div>
