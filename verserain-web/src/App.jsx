@@ -5640,20 +5640,38 @@ export default function App() {
                     style={{
                       position: 'absolute',
                       top: '-30px',
-                      left: `${block.xPos}%`,
+                      left: `${Math.min(block.xPos, 75)}%`,
                       animation: `fall ${block.duration}s linear forwards`,
                       animationPlayState: 'running',
                       zIndex: block.seqIndex === currentSeqIndex ? 50 : 10
                     }}
                     onAnimationEnd={(e) => handleAnimationEnd(e, block.id)}
                   >
-                    <div className={appliedClasses} onClick={(e) => { e.stopPropagation(); handleBlockClick(block); }} style={{ pointerEvents: 'auto', cursor: 'pointer' }}>
+                    <div
+                      className={appliedClasses}
+                      onClick={(e) => { e.stopPropagation(); handleBlockClick(block); }}
+                      style={{
+                        pointerEvents: 'auto',
+                        cursor: 'pointer',
+                        minWidth: 'clamp(100px, 20vw, 240px)',
+                        minHeight: 'clamp(2.5rem, 12vh, 100px)',
+                        fontSize: 'clamp(0.9rem, 2.5vw, 1.5rem)',
+                        padding: 'clamp(0.4rem, 2vh, 1.5rem) clamp(0.6rem, 2.5vw, 1.5rem)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        wordBreak: 'break-word',
+                        hyphens: 'auto',
+                        textAlign: 'center',
+                      }}
+                    >
                       {block.text}
                     </div>
                   </div>
                 );
               })}
             </div>
+
           )}
 
 
