@@ -6223,7 +6223,7 @@ export default function App() {
                                   setDistractionLevel(guestChallengeLevel);
                                   setActiveVerse(targetVerse);
                                   setSelectedVerseRefs([targetVerse.reference]);
-                                  setGameState('playing');
+                                  setTimeout(() => startGame(), 50);
                                 }
                               }}
                               style={{ width: '48px', height: '48px', borderRadius: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: cell ? '20px' : '10px', background: cell ? stageBg(cell.stage) : '#5d4037', border: cell ? '1px solid rgba(0,0,0,0.1)' : 'none', cursor: cell ? 'pointer' : 'default', transition: 'transform 0.1s, filter 0.2s', userSelect: 'none' }}
