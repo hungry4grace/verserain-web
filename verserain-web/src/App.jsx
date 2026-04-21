@@ -2212,6 +2212,10 @@ export default function App() {
     '標題': 'عنوان',
     '作者': 'نویسنده',
     '點閱次數': 'بازدیدها',
+    '最受歡迎': 'محبوب‌ترین',
+    '最新': 'جدیدترین',
+    'Verserain 官方': 'Verserain رسمی',
+    '匿名玩家': 'بازیکن ناشناس',
 
     // Custom Set Editor
     '編輯題庫': 'ویرایش مجموعه',
@@ -2432,6 +2436,10 @@ export default function App() {
     '標題': 'כותרת',
     '作者': 'מחבר',
     '點閱次數': 'צפיות',
+    '最受歡迎': 'הפופולרי ביותר',
+    '最新': 'החדש ביותר',
+    'Verserain 官方': 'Verserain רשמי',
+    '匿名玩家': 'שחקן אנונימי',
 
     // Custom Set Editor
     '編輯題庫': 'ערוך סט',
@@ -2600,6 +2608,10 @@ export default function App() {
     '標題': 'タイトル',
     '作者': '作成者',
     '點閱次數': '閲覧数',
+    '最受歡迎': '人気順',
+    '最新': '最新順',
+    'Verserain 官方': 'Verserain 公式',
+    '匿名玩家': '匿名プレイヤー',
     '目前選擇': '現在の選択',
     '返回目錄': '目次に戻る',
     '沒有找到匹配的經文組。': '一致する経文セットが見つかりません。',
@@ -2943,6 +2955,14 @@ export default function App() {
     '小樹 (持續成長)': '작은 나무 (계속 성장)',
     '大樹 (通過!)': '큰 나무 (통과!)',
     '結果子 (創新高!)': '열매 맺음 (최고 기록!)',
+
+    // Verse set listing
+    '最受歡迎': '인기순',
+    '最新': '최신순',
+    '作者': '작성자',
+    '點閱次數': '조회수',
+    'Verserain 官方': 'Verserain 공식',
+    '匿名玩家': '익명 플레이어',
   };
 
 
@@ -3964,7 +3984,7 @@ export default function App() {
                                     </span>
                                   )}
                                 </td>
-                                <td style={{ padding: '1rem', color: '#337ab7', fontSize: '0.9rem', fontWeight: 'bold' }}>{set.authorName && set.authorName !== "Anonymous" ? set.authorName : (String(set.id).startsWith("custom-") ? "匿名玩家" : "Verserain 官方")}</td>
+                                <td style={{ padding: '1rem', color: '#337ab7', fontSize: '0.9rem', fontWeight: 'bold' }}>{set.authorName && set.authorName !== "Anonymous" ? set.authorName : (String(set.id).startsWith("custom-") ? t('匿名玩家', 'Anonymous') : t('Verserain 官方', 'Official'))}</td>
                                 <td style={{ padding: '1rem', textAlign: 'right', color: '#64748b', fontWeight: 'bold' }}>{viewCounts[set.id] || 0}</td>
                               </tr>
                             ));
@@ -4861,7 +4881,7 @@ export default function App() {
                           }} onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#eff6ff'} onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}>
                             <td style={{ padding: '0.8rem 1rem', fontWeight: 'bold', color: idx === 0 ? '#d97706' : idx === 1 ? '#94a3b8' : idx === 2 ? '#b45309' : '#64748b', fontSize: '1.2rem' }}>#{idx + 1}</td>
                             <td style={{ padding: '0.8rem 1rem', fontWeight: 'bold', color: '#1e293b' }}>{set.title}</td>
-                            <td style={{ padding: '0.8rem 1rem', color: '#3b82f6' }}>{set.authorName && set.authorName !== "Anonymous" ? set.authorName : (String(set.id).startsWith("custom-") ? "匿名玩家" : "Verserain 官方")}</td>
+                            <td style={{ padding: '0.8rem 1rem', color: '#3b82f6' }}>{set.authorName && set.authorName !== "Anonymous" ? set.authorName : (String(set.id).startsWith("custom-") ? t('匿名玩家', 'Anonymous') : t('Verserain 官方', 'Official'))}</td>
                             <td style={{ padding: '0.8rem 1rem', textAlign: 'right', fontWeight: 'bold', color: '#059669' }}>{viewCounts[set.id] || 0}</td>
                             <td style={{ padding: '0.8rem 0' }}>
                               <button
