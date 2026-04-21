@@ -206,7 +206,33 @@ export default class Server {
          }
       }
 
+
+      // 5. Garden Sync — Save & Retrieve player garden data
+      if (url.pathname.endsWith('/save-garden') && request.method === 'POST') {
+         try {
+            const { playerName, gardenData } = await request.json();
+            if (!playerName || !gardenData) return new Response(JSON.stringify({ error: 'playerName and gardenData required' }), { status: 400, headers: corsHeaders });
+            await this.room.storage.put(`garden:${playerName}`, gardenData);
+            return new Response(JSON.stringify({ success: true }), { status: 200, headers: corsHeaders });
+         } catch(e) {
+            return new Response(JSON.stringify({ error: 'Failed to save garden' }), { status: 500, headers: corsHeaders });
+         }
+      }
+
+      if (url.pathname.endsWith('/garden') && request.method === 'GET') {
+         try {
+            const playerName = url.searchParams.get('player');
+            if (!playerName) return new Response(JSON.stringify({ error: 'player param required' }), { status: 400, headers: corsHeaders });
+            const data = await this.room.storage.get(`garden:${playerName}`);
+            if (!data) return new Response(JSON.stringify({ error: 'No garden found for this player' }), { status: 404, headers: corsHeaders });
+            return new Response(JSON.stringify({ success: true, gardenData: data }), { status: 200, headers: corsHeaders });
+         } catch(e) {
+            return new Response(JSON.stringify({ error: 'Failed to fetch garden' }), { status: 500, headers: corsHeaders });
+         }
+      }
+
       return new Response("Not Found API Route", { status: 404, headers: corsHeaders });
+
     }
 
     // Default route for other random requests to gameplay rooms (if any)

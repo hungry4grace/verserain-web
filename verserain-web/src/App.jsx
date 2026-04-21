@@ -383,9 +383,14 @@ export default function App() {
   const totalFruits = localFruits + creatorPoints;
   const skoolLevel = React.useMemo(() => getSkoolLevel(totalFruits), [totalFruits]);
   const hasPremiumAccess = isPremium || skoolLevel.level >= 3;
-  const [selectedGardenCell, setSelectedGardenCell] = useState(null); // { ref, text, stage, fruits, detectedLang }
+  const [selectedGardenCell, setSelectedGardenCell] = useState(null);
   const [showLevelInfo, setShowLevelInfo] = useState(false);
   const [levelCounts, setLevelCounts] = useState(null);
+  const [viewingPlayerGarden, setViewingPlayerGarden] = useState(null); // { playerName, gardenData } or null
+  const [guestChallengeMode, setGuestChallengeMode] = useState('square');
+  const [guestChallengeLevel, setGuestChallengeLevel] = useState(0);
+  const [guestGardenCell, setGuestGardenCell] = useState(null);
+  const guestGardenClickTimer = useRef(null);
 
   useEffect(() => {
     if (showLevelInfo) {
@@ -419,7 +424,6 @@ export default function App() {
     setGardenData(prev => {
       const updated = { ...prev };
       if (!updated[ref]) {
-        // Assign next available grid slot
         const used = new Set(Object.values(updated).map(v => v.gridIndex));
         let idx = 0;
         while (used.has(idx)) idx++;
@@ -432,6 +436,15 @@ export default function App() {
         updated[ref] = { ...updated[ref], stage: 10, fruits: Math.min((updated[ref].fruits || 0) + amount, 9) };
       }
       localStorage.setItem('verseRain_gardenData', JSON.stringify(updated));
+      // Sync to backend if logged in
+      const pn = localStorage.getItem('verseRain_playerName');
+      if (pn) {
+        fetch('https://verserain-party.hungry4grace.partykit.dev/parties/main/global-auth-db/save-garden', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ playerName: pn, gardenData: updated })
+        }).catch(() => {});
+      }
       return updated;
     });
   }, []);
@@ -4154,7 +4167,29 @@ export default function App() {
                               <td style={{ padding: '0.8rem 1rem', fontWeight: 'bold', color: idx === 0 ? '#d97706' : idx === 1 ? '#94a3b8' : idx === 2 ? '#b45309' : '#64748b', fontSize: '1.2rem' }}>#{idx + 1}</td>
                               <td style={{ padding: '0.8rem 1rem', fontWeight: 'bold', color: '#1e293b' }}>
                                 {name} {name === playerName && <Crown size={14} style={{ color: '#fbbf24', marginLeft: '5px' }} />}
-                                <span style={{ marginLeft: '8px', fontSize: '0.8rem', backgroundColor: '#f1f5f9', color: '#64748b', padding: '0.2rem 0.6rem', borderRadius: '12px', border: '1px solid #e2e8f0', whiteSpace: 'nowrap' }}>Lv.{getSkoolLevel(alltimeClears[name] || stats.clears).level} {t(getSkoolLevel(alltimeClears[name] || stats.clears).title, getSkoolLevel(alltimeClears[name] || stats.clears).enTitle)}</span>
+                                <button
+                                  onClick={async () => {
+                                    setViewingPlayerGarden({ playerName: name, gardenData: null, loading: true });
+                                    try {
+                                      const res = await fetch(`https://verserain-party.hungry4grace.partykit.dev/parties/main/global-auth-db/garden?player=${encodeURIComponent(name)}`);
+                                      const data = await res.json();
+                                      if (data.success) {
+                                        setViewingPlayerGarden({ playerName: name, gardenData: data.gardenData, loading: false });
+                                      } else {
+                                        setViewingPlayerGarden({ playerName: name, gardenData: {}, loading: false, error: t('該玩家尚未分享園地', 'This player has not shared their garden yet') });
+                                      }
+                                    } catch {
+                                      setViewingPlayerGarden({ playerName: name, gardenData: {}, loading: false, error: t('無法載入', 'Failed to load') });
+                                    }
+                                  }}
+                                  style={{ marginLeft: '8px', fontSize: '0.8rem', backgroundColor: '#f1f5f9', color: '#2563eb', padding: '0.2rem 0.6rem', borderRadius: '12px', border: '1px solid #bfdbfe', whiteSpace: 'nowrap', cursor: 'pointer', fontWeight: 'bold', transition: 'all 0.2s' }}
+                                  onMouseOver={e => { e.currentTarget.style.backgroundColor = '#dbeafe'; e.currentTarget.style.borderColor = '#3b82f6'; }}
+                                  onMouseOut={e => { e.currentTarget.style.backgroundColor = '#f1f5f9'; e.currentTarget.style.borderColor = '#bfdbfe'; }}
+                                  title={t('點擊查看此玩家的園地', "Click to view this player's garden")}
+                                >
+                                  🌱 Lv.{getSkoolLevel(alltimeClears[name] || stats.clears).level} {t(getSkoolLevel(alltimeClears[name] || stats.clears).title, getSkoolLevel(alltimeClears[name] || stats.clears).enTitle)}
+                                </button>
+
                               </td>
                               <td style={{ padding: '0.8rem 1rem', textAlign: 'right', fontWeight: 'bold', color: '#3b82f6' }}>{stats.best.toLocaleString()}</td>
                               <td style={{ padding: '0.8rem 1rem', textAlign: 'right', fontWeight: 'bold', color: '#059669' }}>{stats.clears}</td>
@@ -6041,6 +6076,170 @@ export default function App() {
           </div>
         </div>
       )}
+
+      {/* Player Garden Viewer Modal */}
+      {viewingPlayerGarden && (() => {
+        const vgData = viewingPlayerGarden.gardenData || {};
+        const vgEntries = Object.entries(vgData);
+        const vgTreeCount = vgEntries.length;
+        const vgGridSize = Math.max(10, vgTreeCount > 0 ? Math.min(20, Math.ceil(Math.sqrt(vgTreeCount * 2))) * 2 : 10);
+        const vgTotalCells = vgGridSize * vgGridSize;
+        const vgGridMap = {};
+        vgEntries.forEach(([ref, data]) => { if (data.gridIndex < vgTotalCells) vgGridMap[data.gridIndex] = { ref, ...data }; });
+
+        const stageEmoji = (stage, fruits) => {
+          if (stage <= 0) return '';
+          if (stage === 1) return '🌱';
+          if (stage === 2) return '☘️';
+          if (stage === 3) return '🌿';
+          if (stage === 4) return '🪴';
+          if (stage <= 6) return '🌲';
+          if (stage <= 9) return '🌳';
+          if (fruits > 0) return '🍎🌳';
+          return '🌳✨';
+        };
+        const stageBg = (stage) => {
+          if (stage <= 0) return '#e8f5e9';
+          if (stage <= 3) return '#c8e6c9';
+          if (stage <= 6) return '#a5d6a7';
+          if (stage <= 9) return '#81c784';
+          return '#66bb6a';
+        };
+
+        return (
+          <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.75)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem', backdropFilter: 'blur(4px)' }} onClick={() => { setViewingPlayerGarden(null); setGuestGardenCell(null); }}>
+            <div style={{ background: '#fff', borderRadius: '16px', width: '100%', maxWidth: '800px', maxHeight: '92vh', display: 'flex', flexDirection: 'column', overflow: 'hidden', boxShadow: '0 25px 50px rgba(0,0,0,0.3)' }} onClick={e => e.stopPropagation()}>
+
+              {/* Header */}
+              <div style={{ padding: '1.2rem 1.5rem', background: 'linear-gradient(135deg, #065f46, #047857)', color: 'white', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                  <h3 style={{ margin: 0, fontSize: '1.3rem', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    🌿 {viewingPlayerGarden.playerName} {t('的園地', "'s Garden")}
+                  </h3>
+                  <div style={{ fontSize: '0.85rem', opacity: 0.8, marginTop: '4px' }}>
+                    {vgTreeCount} {t('棵植物', 'plants')} · {t('點擊查看，雙擊挑戰！', 'Click to view, double-click to challenge!')}
+                  </div>
+                </div>
+                <button onClick={() => { setViewingPlayerGarden(null); setGuestGardenCell(null); }} style={{ background: 'rgba(255,255,255,0.2)', border: 'none', color: 'white', fontSize: '1.4rem', cursor: 'pointer', borderRadius: '50%', width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✕</button>
+              </div>
+
+              {/* Body */}
+              <div style={{ flex: 1, overflowY: 'auto', padding: '1.2rem' }}>
+                {viewingPlayerGarden.loading ? (
+                  <div style={{ textAlign: 'center', padding: '3rem', color: '#94a3b8', fontSize: '1.1rem' }}>⏳ {t('載入中...', 'Loading...')}</div>
+                ) : viewingPlayerGarden.error ? (
+                  <div style={{ textAlign: 'center', padding: '3rem', color: '#f43f5e', fontSize: '1rem' }}>😕 {viewingPlayerGarden.error}</div>
+                ) : vgTreeCount === 0 ? (
+                  <div style={{ textAlign: 'center', padding: '3rem', color: '#94a3b8', fontSize: '1rem' }}>🌾 {t('這個玩家的園地還是空的！', 'This player\'s garden is empty!')}</div>
+                ) : (
+                  <>
+                    {/* Challenge Settings */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem', flexWrap: 'wrap', padding: '0.8rem 1rem', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                      <span style={{ fontWeight: 'bold', color: '#475569', fontSize: '0.9rem' }}>⚙️ {t('挑戰設定', 'Challenge Settings')}:</span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                        <label style={{ fontSize: '0.85rem', color: '#64748b' }}>{t('模式', 'Mode')}</label>
+                        <select value={guestChallengeMode} onChange={e => setGuestChallengeMode(e.target.value)} style={{ padding: '0.4rem 0.6rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.85rem', color: '#334155', backgroundColor: '#fff', fontWeight: 'bold', cursor: 'pointer' }}>
+                          <option value="square">九宮格</option>
+                          <option value="rain">經文雨</option>
+                        </select>
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                        <label style={{ fontSize: '0.85rem', color: '#64748b' }}>{t('難度', 'Difficulty')}</label>
+                        <select value={guestChallengeLevel} onChange={e => setGuestChallengeLevel(Number(e.target.value))} style={{ padding: '0.4rem 0.6rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.85rem', color: '#334155', backgroundColor: '#fff', fontWeight: 'bold', cursor: 'pointer' }}>
+                          <option value={0}>{t('無干擾', 'No Distraction')}</option>
+                          <option value={1}>{t('單字干擾', 'Level 1')}</option>
+                          <option value={2}>{t('標點干擾', 'Level 2')}</option>
+                          <option value={3}>難度 3</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    {/* Garden Grid */}
+                    <div style={{ overflow: 'auto', WebkitOverflowScrolling: 'touch', touchAction: 'pan-x pan-y', maxWidth: '100%', maxHeight: '50vh', borderRadius: '8px', border: '3px solid #4e342e', background: '#5d4037' }}>
+                      <div style={{ display: 'grid', gridTemplateColumns: `repeat(${vgGridSize}, 48px)`, gap: '2px', padding: '4px', width: 'fit-content', minWidth: `${vgGridSize * 50}px` }}>
+                        {Array.from({ length: vgTotalCells }).map((_, i) => {
+                          const cell = vgGridMap[i];
+                          return (
+                            <div key={i}
+                              onClick={() => {
+                                if (!cell) return;
+                                if (guestGardenClickTimer.current) { clearTimeout(guestGardenClickTimer.current); guestGardenClickTimer.current = null; return; }
+                                guestGardenClickTimer.current = setTimeout(() => {
+                                  guestGardenClickTimer.current = null;
+                                  const allVerses = [...safeActiveSets, ...customVerseSets].flatMap(s => s.verses);
+                                  let targetVerse = findVerseByRef(allVerses, cell.ref);
+                                  if (!targetVerse) {
+                                    const langPools = [
+                                      { lang: 'kjv', verses: [...VERSE_SETS_KJV, ...VERSE_SETS_PROVERBS_KJV].flatMap(s => s.verses) },
+                                      { lang: 'cuv', verses: [...VERSE_SETS_CUV, ...VERSE_SETS_PROVERBS_ZH].flatMap(s => s.verses) },
+                                      { lang: 'ko', verses: [...VERSE_SETS_KO, ...VERSE_SETS_PROVERBS_KO].flatMap(s => s.verses) },
+                                      { lang: 'ja', verses: [...VERSE_SETS_JA, ...VERSE_SETS_PROVERBS_JA].flatMap(s => s.verses) },
+                                    ];
+                                    for (const pool of langPools) {
+                                      const found = findVerseByRef(pool.verses, cell.ref);
+                                      if (found) { targetVerse = found; break; }
+                                    }
+                                  }
+                                  setGuestGardenCell({ ref: cell.ref, text: targetVerse?.text || '', stage: cell.stage, fruits: cell.fruits || 0 });
+                                }, 250);
+                              }}
+                              onDoubleClick={() => {
+                                if (!cell) return;
+                                if (guestGardenClickTimer.current) { clearTimeout(guestGardenClickTimer.current); guestGardenClickTimer.current = null; }
+                                const allVerses = [...safeActiveSets, ...customVerseSets].flatMap(s => s.verses);
+                                let targetVerse = findVerseByRef(allVerses, cell.ref);
+                                let detectedLang = version;
+                                if (!targetVerse) {
+                                  const langPools = [
+                                    { lang: 'kjv', verses: [...VERSE_SETS_KJV, ...VERSE_SETS_PROVERBS_KJV].flatMap(s => s.verses) },
+                                    { lang: 'cuv', verses: [...VERSE_SETS_CUV, ...VERSE_SETS_PROVERBS_ZH].flatMap(s => s.verses) },
+                                    { lang: 'ko', verses: [...VERSE_SETS_KO, ...VERSE_SETS_PROVERBS_KO].flatMap(s => s.verses) },
+                                    { lang: 'ja', verses: [...VERSE_SETS_JA, ...VERSE_SETS_PROVERBS_JA].flatMap(s => s.verses) },
+                                  ];
+                                  for (const pool of langPools) {
+                                    const found = findVerseByRef(pool.verses, cell.ref);
+                                    if (found) { targetVerse = found; detectedLang = pool.lang; break; }
+                                  }
+                                }
+                                if (targetVerse) {
+                                  setGuestGardenCell(null);
+                                  setViewingPlayerGarden(null);
+                                  if (detectedLang !== version) { versionBeforeChallenge.current = version; setVersion(detectedLang); }
+                                  setPlayMode(guestChallengeMode);
+                                  setDistractionLevel(guestChallengeLevel);
+                                  setActiveVerse(targetVerse);
+                                  setSelectedVerseRefs([targetVerse.reference]);
+                                  setGameState('playing');
+                                }
+                              }}
+                              style={{ width: '48px', height: '48px', borderRadius: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: cell ? '20px' : '10px', background: cell ? stageBg(cell.stage) : '#5d4037', border: cell ? '1px solid rgba(0,0,0,0.1)' : 'none', cursor: cell ? 'pointer' : 'default', transition: 'transform 0.1s, filter 0.2s', userSelect: 'none' }}
+                              onMouseOver={e => { if (cell) { e.currentTarget.style.filter = 'brightness(1.15)'; e.currentTarget.style.transform = 'scale(1.08)'; } }}
+                              onMouseOut={e => { e.currentTarget.style.filter = ''; e.currentTarget.style.transform = ''; }}
+                            >
+                              {cell ? stageEmoji(cell.stage, cell.fruits || 0) : ''}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Verse preview on single click */}
+                    {guestGardenCell && (
+                      <div style={{ marginTop: '1rem', padding: '1rem 1.5rem', background: '#f0fdf4', borderRadius: '10px', border: '1px solid #86efac', position: 'relative' }}>
+                        <button onClick={() => setGuestGardenCell(null)} style={{ position: 'absolute', top: '8px', right: '12px', background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer', fontSize: '1.2rem' }}>✕</button>
+                        <div style={{ fontWeight: 'bold', color: '#166534', marginBottom: '6px' }}>{guestGardenCell.ref}</div>
+                        <div style={{ color: '#1e293b', lineHeight: '1.8', fontSize: '1rem' }}>{guestGardenCell.text || t('（在此裝置上未找到經文文字，但仍可雙擊挑戰）', '(Text not found on this device, but you can still double-click to challenge)')}</div>
+                        <div style={{ fontSize: '0.8rem', color: '#94a3b8', marginTop: '8px' }}>💡 {t('雙擊格子開始挑戰！', 'Double-click the cell to start challenging!')}</div>
+                      </div>
+                    )}
+                    <div style={{ marginTop: '0.8rem', fontSize: '0.75rem', color: '#94a3b8', textAlign: 'center' }}>📱 {t('可用手指滑動來瀏覽園子', 'Swipe to browse the garden')}</div>
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
     </>
   );
