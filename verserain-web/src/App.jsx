@@ -2913,33 +2913,16 @@ export default function App() {
               <select
                 value={version}
                 onChange={(e) => handleVersionChange(e.target.value)}
+                title="語言 / Language / זבאن / שפה"
                 style={{ padding: '0.3rem 0.5rem', borderRadius: '4px', border: '1px solid #cbd5e1', background: '#3b82f6', color: '#fff', fontWeight: 'bold', cursor: 'pointer', fontSize: '0.8rem' }}
               >
                 <option value="cuv">中文</option>
                 <option value="kjv">English</option>
-                <option value="fa">فارسی 📖</option>
-                <option value="he">עברית 📖</option>
+                <option value="fa">فارسی</option>
+                <option value="he">עברית</option>
                 <option value="ja">日本語</option>
                 <option value="ko">한국어</option>
               </select>
-
-              {/* 🌐 UI Language Selector */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginLeft: '4px' }}>
-                <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>🌐</span>
-                <select
-                  value={uiLang}
-                  onChange={(e) => setUiLangPersisted(e.target.value)}
-                  title="Interface Language / 介面語言 / زبان رابط"
-                  style={{ padding: '0.3rem 0.5rem', borderRadius: '4px', border: '1px solid #cbd5e1', background: '#f0fdf4', color: '#16a34a', fontWeight: 'bold', cursor: 'pointer', fontSize: '0.8rem' }}
-                >
-                  <option value="zh">中文</option>
-                  <option value="en">English</option>
-                  <option value="fa">فارسی</option>
-                  <option value="he">עברית</option>
-                  <option value="ja">日本語</option>
-                  <option value="ko">한국어</option>
-                </select>
-              </div>
             </div>
             <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
               {playerName ? (
