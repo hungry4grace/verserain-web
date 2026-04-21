@@ -2800,9 +2800,9 @@ export default function App() {
     '生態系架構師': '생태계 설계자',
     '互惠階級說明': '호혜 계급 설명',
     '目前階級': '현재 계급',
-    '在園子裡持續照顧樹苗並結出果子，就能提升你的互惠階級！當達到 ': '동산에서 묘목을 계속 돌보고 열매를 맺으면 호혜 계급이 올라갑니다! 다음 레벨에 달성하면: ',
-    ' 時，將自動解鎖「專屬題庫」的建立權限喔！': ' 에 도달하면, 「개인 문제집」 작성 권한이 자동으로 해제됩니다!',
-    '解鎖建立專屬題庫': '개인 문제집 생성 해제',
+    '在園子裡持續照顧樹苗並結出果子，就能提升你的互惠階級！當達到 ': '동산에서 묘목을 계속 돌보고 열매를 맺으면 호혜 계급이 올라갑니다! ',
+    ' 時，將自動解鎖「專屬題庫」的建立權限喔！': '에 도달하면, 전용 문제집 작성 권한이 자동으로 해제됩니다!',
+    '解鎖建立專屬題庫': '전용 문제집 생성 잠금 해제',
     '關閉': '닫기',
     '每挑戰一節新經文，就會在空地上長出嫩芽。持續練習讓它長大！通過經文變成大樹，創新高則結出果子🍎': '새로운 구절에 도전할 때마다 빈터에 새싹이 자랍니다. 계속 연습하여 성장시키세요! 통과하면 큰 나무가 되고, 최고 점수를 기록하면 열매를 맺습니다🍎',
     '我的收成': '나의 수확',
@@ -2815,8 +2815,116 @@ export default function App() {
     '挑戰全球經文組，鍛鍊記憶力與專注力。': '전 세계 구절 세트에 도전하고 기억력과 집중력을 기르세요.',
     '一起玩!': '함께 놀아요!',
     '與家人朋友分享房間碼來PK同樂！': '가족, 친구와 방 코드를 공유하고 함께 대결하세요!',
-    '檢視你已經學會並種下生命樹的經文。': '당신이 배우고 생명나무로 심은 구절을 확인하세요.'
+    '與家人朋友分享房間碼來PK同樣！': '가족, 친구와 방 코드를 공유하고 함께 대결하세요!',
+    '檢視你已經學會並種下生命樹的經文。': '당신이 배우고 생명나무로 심은 구절을 확인하세요.',
+
+    // ─── 누락된 번역 일괄 추가 ─────────────────────
+    // Game modes
+    '九宮格': '성경비',
+    '經文雨': '말씀비',
+    '獨立九宮格 (Solo Square)': '솔로 성경비',
+    '模式': '모드',
+    '難度': '난이도',
+    '挑戰設定': '도전 설정',
+    '挑戰這節經文': '이 구절에 도전하기',
+    '點擊查看，雙擊挑戰！': '클릭하여 보기, 두 번 클릭하여 도전!',
+    '雙擊格子開始挑戰！': '셀을 두 번 클릭하여 도전하세요!',
+    '點擊查看經文，雙擊開始挑戰！': '클릭하여 구절 보기, 두 번 클릭하여 도전!',
+    '（在此裝置上未找到經文文字，但仍可雙擊挑戰）': '(이 기기에서 구절 텍스트를 찾을 수 없지만 두 번 클릭하여 도전 가능)',
+    '在此裝置上未找到經文文字，但仍可雙擊挑戰': '이 기기에서 구절 텍스트를 찾을 수 없지만 두 번 클릭하여 도전 가능',
+    '本機找不到此經文': '이 기기에서 구절을 찾을 수 없습니다',
+    '(經文內容未找到)': '(내용 없음)',
+    '示範': '데모',
+    '電腦自動完成（分數歸零）': '자동 완성 (점수 초기화)',
+    '過關': '통과',
+    '失敗': '실패',
+    '完美': '완벽',
+    '新高分！': '새 최고 점수!',
+    '完美無瑕！': '완벽해!',
+    '連戰結束！': '연속 전투 종료!',
+    '對局結束！': '게임 종료!',
+    '將暫時切換語言來挑戰，完成後自動恢復': '잠시 언어를 전환하여 도전합니다. 완료 후 자동으로 복원됩니다',
+    '與朋友一起挑戰九宮格模式！最快拼出經文的人獲勝。': '친구와 함께 성경비 모드에 도전하세요! 가장 빨리 구절을 완성한 사람이 승리합니다.',
+
+    // Garden
+    '棵植物': '그루',
+    '的園地': '의 정원',
+    '可用手指滑動來瀏覽園子': '손가락으로 정원을 탐색하세요',
+    '該玩家尚未分享園地': '이 플레이어는 아직 정원을 공유하지 않았습니다',
+    '這個玩家的園地還是空的！': '이 플레이어의 정원은 아직 비어 있습니다!',
+    '無法載入': '로드 실패',
+    '點擊查看此玩家的園地': '이 플레이어의 정원 보기',
+
+    // History / Reciprocity
+    '互惠點數紀錄': '상호 혜택 점수 기록',
+    '推薦紀錄': '추천 기록',
+    '專屬題庫遊玩紀錄': '전용 문제집 기록',
+    '尚未有任何推薦紀錄。分享邀請碼邀請朋友獲得互惠點數！': '아직 추천 기록이 없습니다. 초대 코드를 공유하여 친구를 초대하세요!',
+    '尚未有玩家遊玩你的專屬題庫。建立更多題庫來吸引大家挑戰！': '아직 플레이어가 전용 문제집을 플레이하지 않았습니다. 더 많은 문제집을 만들어 도전을 유치하세요!',
+    '玩家': '플레이어',
+    '突破了你的題庫': '문제집을 클리어했습니다',
+    '點': '점',
+    '推薦了玩家': '플레이어를 추천했습니다',
+    '透過': '를 통해',
+    '的推薦加入': '의 추천으로 가입했습니다',
+    '加入了 VerseRain': 'VerseRain에 가입했습니다',
+
+    // Leaderboard
+    '今天': '오늘',
+    '30天 (本月)': '30일 (이번 달)',
+    '歷史': '전체',
+    '點擊標記查看玩家成績，雙擊遊戲房間加入戰局！': '마커를 클릭하여 플레이어 점수 확인, 더블클릭으로 게임방 참가!',
+
+    // Advanced features / menu
+    '解鎖進階功能': '고급 기능 잠금 해제',
+    '建立自訂經文組': '맞춤 구절 세트 만들기',
+    '我的專屬題庫': '나의 전용 문제집',
+    '操作詳解': '자세한 지침',
+    '關於我們': '소개',
+    '意見回饋': '피드백',
+    '聯絡與建議': '연락 및 제안',
+    '加入進階群組': '프리미엄 그룹 가입',
+    'Verse Rain 讓背記經文變得生動有趣！': 'VerseRain은 성경 암송을 재미있고 생동감 있게 만들어줍니다!',
+    'VerseRain 開發資訊': 'VerseRain 개발 정보',
+
+    // Blind mode
+    '打開視障經文雨': '시각 장애 모드 활성화',
+    '關閉視障經文雨': '시각 장애 모드 비활성화',
+    '為視覺障礙朋友設計的語音模式': '시각 장애인을 위한 음성 모드',
+
+    // Auth
+    '登入帳號': '계정 로그인',
+    '忘記密碼？': '비밀번호를 잊으셨나요?',
+    '還沒有帳號？': '계정이 없으신가요?',
+    '立即註冊': '지금 가입하기',
+    '在此登入': '여기서 로그인',
+    '申請帳號': '계정 신청',
+    '✨ Premium 認證': '✨ Premium 인증',
+    '🔒 基本帳號': '🔒 기본 계정',
+    '哈囉 ': '안녕 ',
+    '！您的密碼如下：': '! 비밀번호는 다음과 같습니다:',
+    '請複製密碼後貼到上方密碼欄位登入': '비밀번호를 복사하여 위의 비밀번호 칸에 붙여넣고 로그인하세요',
+    '複製密碼': '비밀번호 복사',
+    '找不到此信箱，請確認是否輸入正確': '이메일을 찾을 수 없습니다. 올바르게 입력했는지 확인해 주세요',
+    '連線失敗 (Connection Error)': '연결 실패 (Connection Error)',
+    '請確認房間代碼是否正確': '방 코드를 확인해 주세요',
+
+    // Misc
+    '✔️ 已準備': '✔️ 준비 완료',
+    '已準備': '준비 완료',
+    '準備！': '준비!',
+    '返回目錄': '목차로 돌아가기',
+    '選擇比賽經文組': '대결 구절 세트 선택',
+    '目前選擇': '현재 선택',
+    '沒有找到匹配的經文組。': '일치하는 구절 세트가 없습니다.',
+    '準備儲存 (Local)': '저장 준비 (로컬)',
+    '您尚未解鎖此項功能！': '이 기능은 아직 잠금 해제되지 않았습니다!',
+    '查詢失敗': '조회 실패',
+    '無法連線到伺服器': '서버에 연결할 수 없습니다',
+    '次': '회',
+    '在此登入': '여기서 로그인',
   };
+
 
   const t = (zh, en) => {
     if (uiLang === 'en') return en || zh;
@@ -3893,8 +4001,8 @@ export default function App() {
                               value={playMode}
                               style={{ padding: '0.4rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.85rem', color: '#334155', backgroundColor: '#fff', fontWeight: 'bold', cursor: 'pointer' }}
                             >
-                              <option value="square">九宮格</option>
-                              <option value="rain">經文雨</option>
+                              <option value="square">{t('九宮格', 'Square')}</option>
+                              <option value="rain">{t('經文雨', 'Verse Rain')}</option>
                             </select>
                             <select
                               onChange={(e) => setDistractionLevel(Number(e.target.value))}
@@ -4049,8 +4157,8 @@ export default function App() {
                                       value={playMode}
                                       style={{ padding: '0.1rem 0.2rem', borderRadius: '4px', border: '1px solid #cbd5e1', fontSize: '0.75rem', color: '#334155', backgroundColor: '#fff', width: '80px' }}
                                     >
-                                      <option value="square">九宮格</option>
-                                      <option value="rain">經文雨</option>
+                                      <option value="square">{t('九宮格', 'Square')}</option>
+                                      <option value="rain">{t('經文雨', 'Verse Rain')}</option>
                                     </select>
                                     <select
                                       onChange={(e) => setDistractionLevel(Number(e.target.value))}
@@ -4301,8 +4409,8 @@ export default function App() {
                             value={playMode}
                             style={{ padding: '0.4rem 0.6rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.85rem', color: '#334155', backgroundColor: '#fff', fontWeight: 'bold', cursor: 'pointer' }}
                           >
-                            <option value="square">九宮格</option>
-                            <option value="rain">經文雨</option>
+                            <option value="square">{t('九宮格', 'Square')}</option>
+                            <option value="rain">{t('經文雨', 'Verse Rain')}</option>
                           </select>
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
@@ -6643,8 +6751,8 @@ export default function App() {
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
                         <label style={{ fontSize: '0.85rem', color: '#64748b' }}>{t('模式', 'Mode')}</label>
                         <select value={guestChallengeMode} onChange={e => setGuestChallengeMode(e.target.value)} style={{ padding: '0.4rem 0.6rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.85rem', color: '#334155', backgroundColor: '#fff', fontWeight: 'bold', cursor: 'pointer' }}>
-                          <option value="square">九宮格</option>
-                          <option value="rain">經文雨</option>
+                          <option value="square">{t('九宮格', 'Square')}</option>
+                          <option value="rain">{t('經文雨', 'Verse Rain')}</option>
                         </select>
                       </div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
