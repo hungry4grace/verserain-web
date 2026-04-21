@@ -4514,6 +4514,8 @@ export default function App() {
                                           { lang: 'cuv', verses: [...VERSE_SETS_CUV, ...VERSE_SETS_PROVERBS_ZH].flatMap(s => s.verses) },
                                           { lang: 'ko', verses: [...VERSE_SETS_KO, ...VERSE_SETS_PROVERBS_KO].flatMap(s => s.verses) },
                                           { lang: 'ja', verses: [...VERSE_SETS_JA, ...VERSE_SETS_PROVERBS_JA].flatMap(s => s.verses) },
+                                          { lang: 'fa', verses: VERSE_SETS_FA.flatMap(s => s.verses) },
+                                          { lang: 'he', verses: VERSE_SETS_HE.flatMap(s => s.verses) },
                                         ];
                                         for (const pool of langPools) {
                                           if (pool.lang === version) continue;
@@ -4549,6 +4551,8 @@ export default function App() {
                                         { lang: 'cuv', verses: [...VERSE_SETS_CUV, ...VERSE_SETS_PROVERBS_ZH].flatMap(s => s.verses) },
                                         { lang: 'ko', verses: [...VERSE_SETS_KO, ...VERSE_SETS_PROVERBS_KO].flatMap(s => s.verses) },
                                         { lang: 'ja', verses: [...VERSE_SETS_JA, ...VERSE_SETS_PROVERBS_JA].flatMap(s => s.verses) },
+                                        { lang: 'fa', verses: VERSE_SETS_FA.flatMap(s => s.verses) },
+                                        { lang: 'he', verses: VERSE_SETS_HE.flatMap(s => s.verses) },
                                       ];
                                       for (const pool of langPools) {
                                         if (pool.lang === version) continue;
@@ -4607,7 +4611,7 @@ export default function App() {
                               <span style={{ fontSize: '0.85rem', color: '#166534', background: '#b2f5ea', padding: '3px 10px', borderRadius: '12px', fontWeight: 'bold' }}>{stageLabel(selectedGardenCell.stage)}</span>
                               {selectedGardenCell.detectedLang && selectedGardenCell.detectedLang !== version && (
                                 <span style={{ fontSize: '0.75rem', color: '#1d4ed8', background: '#dbeafe', padding: '2px 8px', borderRadius: '10px', fontWeight: 'bold' }}>
-                                  {selectedGardenCell.detectedLang === 'kjv' ? 'KJV 🇬🇧' : selectedGardenCell.detectedLang === 'ko' ? '한국어 🇰🇷' : selectedGardenCell.detectedLang === 'ja' ? '日本語 🇯🇵' : '中文 🇹🇼'}
+                                  {selectedGardenCell.detectedLang === 'kjv' ? 'KJV 🇬🇧' : selectedGardenCell.detectedLang === 'ko' ? '한국어 🇰🇷' : selectedGardenCell.detectedLang === 'ja' ? '日本語 🇯🇵' : selectedGardenCell.detectedLang === 'fa' ? 'فارسی 🇮🇷' : selectedGardenCell.detectedLang === 'he' ? 'עברית 🇮🇱' : '中文 🇹🇼'}
                                 </span>
                               )}
                             </div>
