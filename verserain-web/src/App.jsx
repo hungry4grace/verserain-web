@@ -250,6 +250,8 @@ import { VERSE_SETS as VERSE_SETS_CUV } from './verses';
 import { VERSE_SETS_KJV } from './verses_kjv';
 import { VERSE_SETS_JA } from './verses_ja';
 import { VERSE_SETS_KO } from './verses_ko';
+import { VERSE_SETS_FA } from './verses_fa';
+import { VERSE_SETS_HE } from './verses_he';
 import {
   VERSE_SETS_PROVERBS_ZH,
   VERSE_SETS_PROVERBS_KJV,
@@ -299,6 +301,8 @@ export default function App() {
   const VERSES_KJV = React.useMemo(() => VERSE_SETS_KJV.flatMap(s => s.verses), []);
   const VERSES_JA = React.useMemo(() => VERSE_SETS_JA.flatMap(s => s.verses), []);
   const VERSES_KO = React.useMemo(() => VERSE_SETS_KO.flatMap(s => s.verses), []);
+  const VERSES_FA = React.useMemo(() => VERSE_SETS_FA.flatMap(s => s.verses), []);
+  const VERSES_HE = React.useMemo(() => VERSE_SETS_HE.flatMap(s => s.verses), []);
 
   const [version, setVersion] = useState('cuv');
   const [playMode, setPlayMode] = useState('square_solo');
@@ -564,7 +568,11 @@ export default function App() {
         ? [...VERSE_SETS_JA, ...VERSE_SETS_PROVERBS_JA]
         : version === 'ko'
           ? [...VERSE_SETS_KO, ...VERSE_SETS_PROVERBS_KO]
-          : [];
+          : version === 'fa'
+            ? [...VERSE_SETS_FA]
+            : version === 'he'
+              ? [...VERSE_SETS_HE]
+              : [];
 
   const activeVerseSets = React.useMemo(() => {
     const merged = [];
@@ -589,9 +597,19 @@ export default function App() {
 
   const safeActiveSets = activeVerseSets.length > 0 ? activeVerseSets : [{
     id: "dummy",
-    title: version === 'ja' ? '経文セットが見つかりません' : (version === 'ko' ? '성경 구절 세트를 찾을 수 없습니다' : (version === 'kjv' ? 'No Verse Sets Found' : '尚未發現經文組')),
+    title: version === 'ja' ? '経文セットが見つかりません'
+      : version === 'ko' ? '성경 구절 세트를 찾을 수 없습니다'
+      : version === 'kjv' ? 'No Verse Sets Found'
+      : version === 'fa' ? 'مجموعه‌ای یافت نشد'
+      : version === 'he' ? 'לא נמצא סט פסוקים'
+      : '尚未發現經文組',
     authorName: "System",
-    verses: [{ reference: "N/A", text: version === 'ja' ? '現在この言語には経文セットがありません。👑 マイ問題集から作成してください。' : (version === 'ko' ? '현재 이 언어에 대한 구절 세트가 없습니다. 👑 내 문제집에서 만드십시오.' : (version === 'kjv' ? 'There are no verse sets for this language yet. Create one in 👑 Custom Sets.' : '目前此語言沒有經文組。請去 👑 我的題庫 中建立！')) }]
+    verses: [{ reference: "N/A", text: version === 'ja' ? '現在この言語には経文セットがありません。👑 マイ問題集から作成してください。'
+      : version === 'ko' ? '현재 이 언어에 대한 구절 세트가 없습니다. 👑 내 문제집에서 만드십시오.'
+      : version === 'kjv' ? 'There are no verse sets for this language yet. Create one in 👑 Custom Sets.'
+      : version === 'fa' ? 'هنوز مجموعه‌ای برای این زبان وجود ندارد.'
+      : version === 'he' ? 'עדיין אין סטי פסוקים לשפה זו.'
+      : '目前此語言沒有經文組。請去 👑 我的題庫 中建立！' }]
   }];
 
   const currentSet = selectedSetId ? (safeActiveSets.find(s => s.id === selectedSetId) || customVerseSets.find(s => s.id === selectedSetId)) : null;
@@ -645,17 +663,28 @@ export default function App() {
 
   const handleVersionChange = (newVer) => {
     setVersion(newVer);
+    // Auto-sync UI language when switching Bible version
+    if (newVer === 'fa') setUiLangPersisted('fa');
+    else if (newVer === 'he') setUiLangPersisted('he');
+    else if (newVer === 'kjv') setUiLangPersisted('en');
+    else if (newVer === 'ja') setUiLangPersisted('ja');
+    else if (newVer === 'ko') setUiLangPersisted('ko');
+    else setUiLangPersisted('zh');
+
     let targetVerses = [];
     if (newVer === 'cuv') targetVerses = VERSES_CUV;
     else if (newVer === 'kjv') targetVerses = VERSES_KJV;
+    else if (newVer === 'fa') targetVerses = VERSES_FA;
+    else if (newVer === 'he') targetVerses = VERSES_HE;
 
     if (targetVerses.length === 0) {
-      targetVerses = [{ reference: "N/A", text: newVer === 'ja' ? '経文が見つかりません。' : (newVer === 'ko' ? '성경 구절을 찾을 수 없습니다.' : (newVer === 'kjv' ? 'No verses found.' : '目前的分類下沒有經文。')) }];
+      targetVerses = [{ reference: "N/A", text: newVer === 'fa' ? 'آیه‌ای یافت نشد.' : (newVer === 'he' ? 'לא נמצא פסוק.' : (newVer === 'ja' ? '経文が見つかりません。' : (newVer === 'ko' ? '성경 구절을 찾을 수 없습니다.' : (newVer === 'kjv' ? 'No verses found.' : '目前的分類下沒有經文。')))) }];
     }
     setActiveVerse(targetVerses[0]);
     setSelectedVerseRefs([targetVerses[0].reference]);
     setCampaignQueue(null);
   };
+
 
   useEffect(() => {
     const parseUrlArgs = async () => {
@@ -2888,6 +2917,8 @@ export default function App() {
               >
                 <option value="cuv">中文</option>
                 <option value="kjv">English</option>
+                <option value="fa">فارسی 📖</option>
+                <option value="he">עברית 📖</option>
                 <option value="ja">日本語</option>
                 <option value="ko">한국어</option>
               </select>
