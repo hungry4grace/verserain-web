@@ -2923,7 +2923,21 @@ export default function App() {
     '無法連線到伺服器': '서버에 연결할 수 없습니다',
     '次': '회',
     '在此登入': '여기서 로그인',
+
+    // Invite / Referral section
+    '邀請朋友一起玩': '친구 초대하기',
+    '你的專屬推廣連結：當朋友們透過此連結直接進入加入 VerseRain，並完成他們的第一次背經遊戲，雙方都會自動獲得「推廣點數」獎勵，同時你也將累積推廣大使進度！': '나의 초대 링크: 친구가 이 링크를 통해 VerseRain에 가입하고 첫 번째 게임을 완료하면, 양쪽 모두 「추천 점수」 보상을 받으며 홍보 대사 진度도 쌓입니다!',
+    '想要擁有你的個人推薦碼並賺取推廣點數嗎？': '개인 초대 코드를 받고 추천 점수를 적립하고 싶으신가요?',
+    '複製': '복사',
+    '📨 邀請朋友一起玩': '📨 친구 초대하기',
+
+    // Difficulty options in dropdown
+    '難度 0': '난이도 0',
+    '難度 1': '난이도 1',
+    '難度 2': '난이도 2',
+    '難度 3': '난이도 3',
   };
+
 
 
   const t = (zh, en) => {
@@ -4009,10 +4023,10 @@ export default function App() {
                               value={distractionLevel}
                               style={{ padding: '0.4rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.85rem', color: '#334155', backgroundColor: '#fff', fontWeight: 'bold', cursor: 'pointer' }}
                             >
-                              <option value={0}>難度 0</option>
-                              <option value={1}>難度 1</option>
-                              <option value={2}>難度 2</option>
-                              <option value={3}>難度 3</option>
+                              <option value={0}>{t("難度 0", "Level 0")}</option>
+                              <option value={1}>{t("難度 1", "Level 1")}</option>
+                              <option value={2}>{t("難度 2", "Level 2")}</option>
+                              <option value={3}>{t("難度 3", "Level 3")}</option>
                             </select>
                           </div>
 
@@ -4165,10 +4179,10 @@ export default function App() {
                                       value={distractionLevel}
                                       style={{ padding: '0.1rem 0.2rem', borderRadius: '4px', border: '1px solid #cbd5e1', fontSize: '0.75rem', color: '#334155', backgroundColor: '#fff', width: '80px' }}
                                     >
-                                      <option value={0}>難度 0</option>
-                                      <option value={1}>難度 1</option>
-                                      <option value={2}>難度 2</option>
-                                      <option value={3}>難度 3</option>
+                                      <option value={0}>{t("難度 0", "Level 0")}</option>
+                                      <option value={1}>{t("難度 1", "Level 1")}</option>
+                                      <option value={2}>{t("難度 2", "Level 2")}</option>
+                                      <option value={3}>{t("難度 3", "Level 3")}</option>
                                     </select>
                                   </div>
                                 </td>
@@ -4425,7 +4439,7 @@ export default function App() {
                             <option value={0}>{t("無干擾", "No Distraction")}</option>
                             <option value={1}>{t("單字干擾", "Level 1")}</option>
                             <option value={2}>{t("標點干擾", "Level 2")}</option>
-                            <option value={3}>難度 3</option>
+                            <option value={3}>{t("難度 3", "Level 3")}</option>
                           </select>
                         </div>
                         <span style={{ fontSize: '0.8rem', color: '#94a3b8' }}>{t("點擊查看經文，雙擊開始挑戰！", "Click to view, double-click to challenge!")}</span>
@@ -6761,7 +6775,7 @@ export default function App() {
                           <option value={0}>{t('無干擾', 'No Distraction')}</option>
                           <option value={1}>{t('單字干擾', 'Level 1')}</option>
                           <option value={2}>{t('標點干擾', 'Level 2')}</option>
-                          <option value={3}>難度 3</option>
+                          <option value={3}>{t("難度 3", "Level 3")}</option>
                         </select>
                       </div>
                     </div>
