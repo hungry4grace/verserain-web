@@ -296,6 +296,54 @@ const findVerseByRef = (allVerses, ref) => {
   return target;
 };
 
+export function formatVerseReferenceForSpeech(ref, version) {
+  const match = ref.match(/(.+?)\s*(\d+)\s*:\s*([\d,\s\-–]+)/);
+  if (!match) return ref;
+  const book = match[1].trim();
+  const chapter = match[2];
+  
+  if (version === 'kjv') {
+    const versesStr = match[3].replace(/-/g, ' to ').replace(/–/g, ' to ').trim();
+    const isPlural = versesStr.includes('to') || versesStr.includes(',');
+    return `${book} chapter ${chapter}, verse${isPlural ? 's' : ''} ${versesStr}`;
+  } else if (version === 'ko') {
+    const versesStr = match[3].replace(/-/g, '에서 ').replace(/–/g, '에서 ').trim();
+    return `${book} ${chapter}장 ${versesStr}절`;
+  } else if (version === 'ja') {
+    const versesStr = match[3].replace(/-/g, 'から ').replace(/–/g, 'から ').trim();
+    return `${book} 第${chapter}章 ${versesStr}節`;
+  } else if (version === 'fa') {
+    const versesStr = match[3].replace(/-/g, ' تا ').replace(/–/g, ' تا ').trim();
+    return `${book} فصل ${chapter} آیه ${versesStr}`;
+  } else if (version === 'he') {
+    const versesStr = match[3].replace(/-/g, ' עד ').replace(/–/g, ' עד ').trim();
+    return `${book} פרק ${chapter} פסוק ${versesStr}`;
+  } else {
+    // Chinese (cuv, default)
+    const versesStr = match[3].replace(/-/g, '至').replace(/–/g, '至').trim();
+    // Convert Arabic numeral to Chinese numeral for chapter to ensure it's spoken as "一章"
+    const chineseNumbers = ['零', '一', '二', '三', '四', '五', '六', '七', '八', '九', '十'];
+    let chineseChapter = chapter;
+    const num = parseInt(chapter, 10);
+    if (!isNaN(num)) {
+      if (num <= 10) {
+        chineseChapter = chineseNumbers[num];
+      } else if (num < 20) {
+        chineseChapter = '十' + (num % 10 === 0 ? '' : chineseNumbers[num % 10]);
+      } else if (num < 100) {
+        chineseChapter = chineseNumbers[Math.floor(num / 10)] + '十' + (num % 10 === 0 ? '' : chineseNumbers[num % 10]);
+      } else if (num === 100) {
+        chineseChapter = '一百';
+      } else if (num < 200) {
+        const tens = Math.floor((num % 100) / 10);
+        const ones = num % 10;
+        chineseChapter = '一百' + (tens === 0 ? (ones === 0 ? '' : '零') : (tens === 1 ? '一十' : chineseNumbers[tens] + '十')) + (ones === 0 ? '' : chineseNumbers[ones]);
+      }
+    }
+    return `${book} ${chineseChapter}章${versesStr}節`;
+  }
+}
+
 export default function App() {
   const VERSES_CUV = React.useMemo(() => VERSE_SETS_CUV.flatMap(s => s.verses), []);
   const VERSES_KJV = React.useMemo(() => VERSE_SETS_KJV.flatMap(s => s.verses), []);
@@ -875,6 +923,7 @@ export default function App() {
   const [localNextVerse, setLocalNextVerse] = useState(null); // verse shown during intermission countdown
   const [campaignResults, setCampaignResults] = useState([]);
   const [isBlindMode, setIsBlindMode] = useState(() => localStorage.getItem('verseRain_blindMode') === 'true');
+  const [isDebugMode, setIsDebugMode] = useState(() => localStorage.getItem('verseRain_debugMode') === 'true');
 
   const [lightningActive, setLightningActive] = useState(null);
   const [lightningKey, setLightningKey] = useState(0);
@@ -1620,27 +1669,13 @@ export default function App() {
 
       const TTS_LANG = version === 'kjv' ? 'en-US' : 'zh-TW';
 
-      const formatRef = (ref) => {
-        const match = ref.match(/(.+?)\s*(\d+)\s*:\s*([\d,\s\-–]+)/);
-        if (!match) return ref;
-        const book = match[1].trim();
-        const chapter = match[2];
-        const versesStr = match[3].replace(/-/g, version === 'kjv' ? ' to ' : '到 ').replace(/–/g, version === 'kjv' ? ' to ' : '到 ').trim();
-        if (version === 'kjv') {
-          const isPlural = versesStr.includes('to') || versesStr.includes(',');
-          return `${book} chapter ${chapter}, verse${isPlural ? 's' : ''} ${versesStr}`;
-        } else {
-          return `${book} ${chapter}章 ${versesStr}節`;
-        }
-      };
-
       // Start from current position (supports mid-game activation)
       const startFrom = currentSeqRef.current;
 
       // Only announce title when starting from the beginning
       if (startFrom === 0 && !cancelAutoPlay && gameStateRef.current === 'playing') {
         setSpeakingTitle(true);
-        speechRef.current = speakText(formatRef(activeVerse.reference), 1.0, TTS_LANG);
+        speechRef.current = speakText(formatVerseReferenceForSpeech(activeVerse.reference, version), 1.0, TTS_LANG);
         await speechRef.current;
         setSpeakingTitle(false);
         await new Promise(r => setTimeout(r, 400));
@@ -1887,7 +1922,7 @@ export default function App() {
 
     setCampaignResults(prev => {
       if (campaignQueue !== null) {
-        return [...prev, { verse: activeVerse, score: isSuccess ? finalCalculatedScore : 0, flawless: f }];
+        return [...prev, { verse: activeVerse, score: isSuccess ? finalCalculatedScore : 0, flawless: f, health: healthRef.current }];
       }
       return prev;
     });
@@ -1933,13 +1968,13 @@ export default function App() {
             calculatedTimeBonus = Math.floor(Math.max(0, timeLeftRef.current) * 0.5);
           }
           let finalCalculatedScore = scoreRef.current + calculatedTimeBonus;
-          if (distractionLevel > 0) {
+          if (distractionLevel > 0 && finalCalculatedScore > 0) {
             finalCalculatedScore = Math.floor(finalCalculatedScore * (1 + distractionLevel * 0.1));
           }
           
           const f = healthRef.current === 3;
 
-          setCampaignResults(prev => [...prev, { verse: activeVerse, score: finalCalculatedScore, flawless: f }]);
+          setCampaignResults(prev => [...prev, { verse: activeVerse, score: finalCalculatedScore, flawless: f, health: healthRef.current }]);
 
           if (playerName && finalCalculatedScore > 0 && healthRef.current > 0) {
             const actualModeName = distractionLevel > 0 ? `${playMode}-dx${distractionLevel}` : playMode;
@@ -3848,6 +3883,7 @@ export default function App() {
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1rem', width: '100%' }}>
                   {[
                     { id: 'blindMode', icon: isBlindMode ? '👁️‍🗨️' : '🦯', label: isBlindMode ? t('關閉視障經文雨', 'Disable Blind Mode') : t('打開視障經文雨', 'Enable Blind Mode'), desc: t('為視覺障礙朋友設計的語音模式', 'Voice mode for visually impaired') },
+                    { id: 'debugMode', icon: isDebugMode ? '🐞' : '🐛', label: isDebugMode ? t('關閉 Debug', 'Disable Debug') : t('打開 Debug', 'Enable Debug'), desc: t('顯示除錯資訊', 'Show debug info') },
                     { id: 'custom_verses', icon: '👑', label: t('我的專屬題庫', 'My Custom Sets'), desc: t('建立自訂經文組', 'Create custom sets') },
                     { id: 'manual', icon: '📖', label: t('使用說明', 'Manual'), desc: t('操作詳解', 'Detailed instructions') },
                     { id: 'about', icon: 'ℹ️', label: t('關於我們', 'About'), desc: t('VerseRain 開發資訊', 'Info & Credits') },
@@ -3859,6 +3895,12 @@ export default function App() {
                         const n = !isBlindMode;
                         setIsBlindMode(n);
                         localStorage.setItem('verseRain_blindMode', String(n));
+                        return;
+                      }
+                      if (item.id === 'debugMode') {
+                        const n = !isDebugMode;
+                        setIsDebugMode(n);
+                        localStorage.setItem('verseRain_debugMode', String(n));
                         return;
                       }
                       if (item.link) { window.open(item.link, '_blank'); return; }
@@ -4726,6 +4768,7 @@ export default function App() {
                             >
                               <option value="square">{t('九宮格', 'Square')}</option>
                               <option value="rain">{t('經文雨', 'Verse Rain')}</option>
+                              <option value="voice">{t('語音模式', 'Voice Mode')}</option>
                             </select>
                             <select
                               onChange={(e) => setDistractionLevel(Number(e.target.value))}
@@ -4882,6 +4925,7 @@ export default function App() {
                                     >
                                       <option value="square">{t('九宮格', 'Square')}</option>
                                       <option value="rain">{t('經文雨', 'Verse Rain')}</option>
+                                      <option value="voice">{t('語音模式', 'Voice Mode')}</option>
                                     </select>
                                     <select
                                       onChange={(e) => setDistractionLevel(Number(e.target.value))}
@@ -5134,6 +5178,7 @@ export default function App() {
                           >
                             <option value="square">{t('九宮格', 'Square')}</option>
                             <option value="rain">{t('經文雨', 'Verse Rain')}</option>
+                            <option value="voice">{t('語音模式', 'Voice Mode')}</option>
                           </select>
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
@@ -6104,7 +6149,7 @@ export default function App() {
         </div>
       )}
 
-      {gameState === 'playing' && isBlindMode && (
+      {gameState === 'playing' && (isBlindMode || playMode === 'voice') && (
         <BlindModeGame
           key={activeVerse?.reference}
           activeVerse={activeVerse}
@@ -6131,7 +6176,14 @@ export default function App() {
           onFail={() => {
             setGameState('menu');
           }}
+          health={health}
+          timeLeft={timeLeft}
+          score={score}
+          combo={combo}
           speakText={speakText}
+          formatVerseReferenceForSpeech={formatVerseReferenceForSpeech}
+          isDebugMode={isDebugMode}
+          playMode={playMode}
           playDing={() => {
             if (!window.__sharedDingCtx) {
               window.__sharedDingCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -6143,7 +6195,7 @@ export default function App() {
             osc.type = 'sine';
             osc.frequency.setValueAtTime(1000, actx.currentTime);
             gn.gain.setValueAtTime(0, actx.currentTime);
-            gn.gain.linearRampToValueAtTime(0.5, actx.currentTime + 0.02);
+            gn.gain.linearRampToValueAtTime(0.25, actx.currentTime + 0.02);
             gn.gain.exponentialRampToValueAtTime(0.01, actx.currentTime + 1.0);
             osc.connect(gn); gn.connect(actx.destination);
             osc.start(); osc.stop(actx.currentTime + 1.0);
@@ -6153,7 +6205,7 @@ export default function App() {
         />
       )}
 
-      {gameState === 'playing' && !isBlindMode && (
+      {gameState === 'playing' && !isBlindMode && playMode !== 'voice' && (
         <div
           key={`${playMode}-${activeVerse.reference}-${distractionLevel}`}
           onClick={handleGlobalClick}
@@ -6870,9 +6922,11 @@ export default function App() {
                 <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem', borderBottom: i < campaignResults.length - 1 ? '1px solid rgba(255,255,255,0.1)' : 'none' }}>
                   <div style={{ textAlign: 'left' }}>
                     <div style={{ color: '#93c5fd', fontWeight: 'bold', fontSize: '1.1rem' }}>{result.verse.reference}</div>
-                    <div style={{ color: result.score > 0 ? '#34d399' : '#f87171', fontSize: '0.9rem' }}>{result.score > 0 ? (result.flawless ? t('完美', 'Perfect') : t('過關', 'Cleared')) : t('失敗', 'Failed')}</div>
+                    <div style={{ color: result.health > 0 ? (result.flawless ? '#34d399' : '#93c5fd') : '#f87171', fontSize: '0.9rem' }}>
+                      {result.health > 0 ? (result.flawless ? t('完美', 'Perfect') : t('過關', 'Cleared')) : t('錯失', 'Missed')}
+                    </div>
                   </div>
-                  <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: result.score > 0 ? '#fbbf24' : '#64748b' }}>{result.score}</div>
+                  <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: result.health > 0 ? '#fbbf24' : '#64748b' }}>{result.score}</div>
                 </div>
               ))}
             </div>
@@ -7510,6 +7564,7 @@ export default function App() {
                         <select value={guestChallengeMode} onChange={e => setGuestChallengeMode(e.target.value)} style={{ padding: '0.4rem 0.6rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.85rem', color: '#334155', backgroundColor: '#fff', fontWeight: 'bold', cursor: 'pointer' }}>
                           <option value="square">{t('九宮格', 'Square')}</option>
                           <option value="rain">{t('經文雨', 'Verse Rain')}</option>
+                          <option value="voice">{t('語音模式', 'Voice Mode')}</option>
                         </select>
                       </div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>

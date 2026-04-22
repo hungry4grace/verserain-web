@@ -1,4 +1,5 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useMemo } from 'react';
+import { Heart, Zap, XCircle } from 'lucide-react';
 
 export default function BlindModeGame({
     activeVerse,
@@ -10,7 +11,14 @@ export default function BlindModeGame({
     version,
     t,
     onFail,
-    speakText
+    speakText,
+    formatVerseReferenceForSpeech,
+    isDebugMode,
+    playMode,
+    health,
+    timeLeft,
+    score,
+    combo
 }) {
     const [micStatus, setMicStatus] = useState("初始化中...");
     const [heardText, setHeardText] = useState("");
@@ -77,7 +85,7 @@ export default function BlindModeGame({
             osc.type = 'sine';
             osc.frequency.setValueAtTime(300, actx.currentTime); // Lower pitch for Dong
             gn.gain.setValueAtTime(0, actx.currentTime);
-            gn.gain.linearRampToValueAtTime(0.5, actx.currentTime + 0.02);
+            gn.gain.linearRampToValueAtTime(0.25, actx.currentTime + 0.02);
             gn.gain.exponentialRampToValueAtTime(0.01, actx.currentTime + 1.0);
             osc.connect(gn); gn.connect(actx.destination);
             osc.start(); osc.stop(actx.currentTime + 1.0);
@@ -126,11 +134,6 @@ export default function BlindModeGame({
                 setMissedIndices(prev => [...prev, currentSeqIndexRef.current]);
 
                 playDong();
-
-                if (missCountRef.current >= 3) {
-                    if (onFailRef.current) onFailRef.current();
-                    return;
-                }
                 
                 setTimeout(() => {
                     if (isMountedRef.current) {
@@ -155,7 +158,8 @@ export default function BlindModeGame({
         if (currentSeqIndex === 0 && activeVerse && !hasSpokenRef.current) {
             hasSpokenRef.current = true;
             // Speak the verse reference before starting
-            speakText(activeVerse.reference, 1.0, TTS_LANG).then(() => {
+            const formattedRef = formatVerseReferenceForSpeech ? formatVerseReferenceForSpeech(activeVerse.reference, version) : activeVerse.reference;
+            speakText(formattedRef, 1.0, TTS_LANG).then(() => {
                 if (!isMountedRef.current) return;
                 startTimer();
             });
@@ -339,16 +343,65 @@ export default function BlindModeGame({
 
     return (
         <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', backgroundColor: '#000', zIndex: 9999, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '2rem' }}>
-            <h1 style={{ color: '#fff', fontSize: '2rem', position: 'absolute', top: '5%', margin: 0 }}>
-                {t("視障模式", "Blind Mode")} - <span style={{ color: '#4ade80' }}>{micStatus}</span>
-                {countdown !== null && <span style={{ color: '#facc15', marginLeft: '1rem' }}>⏱ {countdown}s</span>}
+            
+            <div style={{ position: 'absolute', top: 0, left: 0, right: 0, padding: '0.5rem 1rem', display: 'flex', flexDirection: 'row', flexWrap: 'wrap', gap: '0.75rem', alignItems: 'center', zIndex: 10 }}>
+                <div style={{ display: 'flex', gap: '0.75rem' }}>
+                    <button
+                        className="hud-glass"
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+                            if (onFail) onFail();
+                        }}
+                        style={{ padding: '0.75rem', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#f87171' }}
+                    >
+                        <XCircle size={22} />
+                    </button>
+                </div>
+                
+                <div className="hud-glass" style={{ padding: '0.3rem 0.8rem', display: 'flex', gap: '0.8rem', alignItems: 'center', height: '100%', minHeight: '36px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.2rem', color: '#f87171' }}>
+                        {[...Array(3)].map((_, i) => (
+                            <Heart key={i} size={16} fill={i < health ? '#f87171' : 'transparent'} strokeWidth={i < health ? 0 : 2} />
+                        ))}
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.2rem', fontSize: '1rem', fontWeight: 'bold', color: '#fbbf24' }}>
+                        <Zap size={16} fill="#fbbf24" strokeWidth={0} /> {combo}x
+                    </div>
+                </div>
+
+                <div className="hud-glass" style={{ padding: '0.3rem 0.8rem', display: 'flex', alignItems: 'center', gap: '1rem', minHeight: '36px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+                        <div style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#fff', fontFamily: 'monospace' }}>
+                            {String(score || 0).padStart(6, '0')}
+                        </div>
+                    </div>
+                    <div style={{ padding: '0.2rem 0.6rem', background: 'rgba(0,0,0,0.5)', borderRadius: '6px', display: 'flex', alignItems: 'center', gap: '0.4rem', border: '1px solid rgba(255,255,255,0.1)' }}>
+                        <div style={{ fontSize: '0.7rem', color: '#94a3b8' }}>T</div>
+                        <div style={{ fontSize: '0.95rem', color: timeLeft <= 1000 ? '#f87171' : '#cbd5e1', fontFamily: 'monospace' }}>
+                            {String(Math.floor(timeLeft / 100)).padStart(2, '0')}.{String(timeLeft % 100).padStart(2, '0')}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <h1 style={{ color: '#fff', position: 'absolute', top: '15%', margin: 0, textAlign: 'center', width: '100%' }}>
+                <div style={{ fontSize: '2.5rem', fontWeight: 'bold', color: '#bae6fd', marginBottom: '0.5rem', textShadow: '0 2px 4px rgba(0,0,0,0.5)' }}>
+                    {activeVerse?.reference}
+                </div>
+                <div style={{ fontSize: '1.2rem', opacity: 0.9 }}>
+                    {playMode === 'voice' ? t("語音模式", "Voice Mode") : t("視障模式", "Blind Mode")} - <span style={{ color: '#4ade80' }}>{micStatus}</span>
+                    {countdown !== null && <span style={{ color: '#facc15', marginLeft: '1rem' }}>⏱ {countdown}s</span>}
+                </div>
             </h1>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', justifyContent: 'center', width: '100%', maxHeight: '70vh', overflowY: 'auto', padding: '1rem' }}>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', justifyContent: 'center', width: '100%', maxHeight: '60vh', marginTop: '10vh', overflowY: 'auto', padding: '1rem' }}>
                 {activePhrases && activePhrases.map((phrase, index) => {
                     const isActive = index === currentSeqIndex;
                     const isPassed = index < currentSeqIndex;
                     const isMissed = missedIndices.includes(index);
                     const showGold = (isPassed && !isMissed) || (isActive && isSuccessFlash);
+                    const isVoiceMode = playMode === 'voice';
+                    const isVisible = showGold || isMissed || !isVoiceMode;
 
                     return (
                         <span
@@ -360,6 +413,7 @@ export default function BlindModeGame({
                                 border: `2px solid ${showGold ? '#fbbf24' : (isActive ? '#94a3b8' : '#334155')}`,
                                 padding: '0.4rem 1rem',
                                 borderRadius: '16px',
+                                opacity: isVisible ? 1 : 0,
                                 transition: 'all 0.3s'
                             }}
                         >
@@ -368,7 +422,7 @@ export default function BlindModeGame({
                     );
                 })}
             </div>
-            {heardText && (
+            {isDebugMode && heardText && (
                 <div style={{ position: 'absolute', bottom: '2%', width: '100%', padding: '1rem 2rem', textAlign: 'center', backgroundColor: 'rgba(0,0,0,0.7)', borderTop: '1px solid #334155' }}>
                     <p style={{ color: '#bae6fd', fontSize: '2.5rem', margin: 0, wordBreak: 'break-word', fontWeight: 'bold' }}>
                         {t("聽見：", "Heard: ")}{heardText}
