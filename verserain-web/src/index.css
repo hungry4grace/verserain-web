@@ -96,6 +96,44 @@ body {
   pointer-events: none;
   z-index: -1;
   background-image: radial-gradient(circle at 50% 120%, #1e3a8a 0%, transparent 60%);
+  transition: all 1s ease-in-out;
+}
+
+.bg-layer.golden-bg {
+  background-image: radial-gradient(circle at 50% 120%, #78350f 0%, #1e3a8a 70%, transparent 100%);
+}
+
+.rain-system.golden-rain {
+  filter: sepia(1) hue-rotate(-30deg) saturate(3) brightness(1.2) drop-shadow(0 0 5px rgba(255, 215, 0, 0.5));
+  transition: filter 1s ease-in-out;
+}
+
+/* Upward floating particles (Seeds of life) */
+.particles-system {
+  position: absolute;
+  top: 0; left: 0; width: 100%; height: 100%;
+  pointer-events: none;
+  z-index: -1;
+  overflow: hidden;
+}
+
+.particle {
+  position: absolute;
+  bottom: -20px;
+  width: 6px;
+  height: 6px;
+  background: rgba(255, 240, 180, 0.9);
+  border-radius: 50%;
+  box-shadow: 0 0 10px rgba(255, 215, 0, 0.8), 0 0 20px rgba(255, 215, 0, 0.4);
+  animation: floatUp var(--duration, 8s) ease-in infinite;
+  opacity: 0;
+}
+
+@keyframes floatUp {
+  0% { transform: translateY(0) translateX(0) scale(0.5); opacity: 0; }
+  20% { opacity: var(--max-opacity, 0.8); transform: translateY(-20vh) translateX(calc(var(--drift, 20px) * 0.2)) scale(1); }
+  80% { opacity: var(--max-opacity, 0.8); }
+  100% { transform: translateY(-120vh) translateX(var(--drift, 20px)) scale(0.8); opacity: 0; }
 }
 
 #root { width: 100vw; height: 100vh; position: relative; overflow: hidden; }

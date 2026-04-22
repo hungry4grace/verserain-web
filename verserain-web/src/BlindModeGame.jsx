@@ -5,14 +5,16 @@ export default function BlindModeGame({
     activePhrases,
     currentSeqIndex,
     onWordMatch,
-    speakText,
+    onWordMiss,
     playDing,
     version,
     t,
-    onFail
+    onFail,
+    speakText
 }) {
     const [micStatus, setMicStatus] = useState("初始化中...");
     const [heardText, setHeardText] = useState("");
+    const [currentAccuracy, setCurrentAccuracy] = useState(0);
     const [isSuccessFlash, setIsSuccessFlash] = useState(false);
     const [missCount, setMissCount] = useState(0);
     const [missedIndices, setMissedIndices] = useState([]);
@@ -20,10 +22,13 @@ export default function BlindModeGame({
     const recognitionRef = useRef(null);
     const timerRef = useRef(null);
     const countdownRef = useRef(null);
-    const isSpeakingRef = useRef(false);
     const isSuccessFlashRef = useRef(false);
     const missCountRef = useRef(0);
     const isMountedRef = useRef(true);
+    const lastMatchedIndexRef = useRef(-1);
+    const lastMatchedLengthRef = useRef(0);
+    const latestTranscriptRef = useRef(null);
+    const activeBlockRef = useRef(null);
 
     const currentBlock = activePhrases[currentSeqIndex] || null;
     const currentBlockRef = useRef(currentBlock);
@@ -31,48 +36,57 @@ export default function BlindModeGame({
     const isComplete = currentSeqIndex >= activePhrases.length || !currentBlock;
     const isCompleteRef = useRef(isComplete);
 
+    const onWordMatchRef = useRef(onWordMatch);
+    const onWordMissRef = useRef(onWordMiss);
+    const onFailRef = useRef(onFail);
+
     useEffect(() => {
         currentBlockRef.current = currentBlock;
         currentSeqIndexRef.current = currentSeqIndex;
         isCompleteRef.current = isComplete;
-    }, [currentBlock, currentSeqIndex, isComplete]);
+        onWordMatchRef.current = onWordMatch;
+        onWordMissRef.current = onWordMiss;
+        onFailRef.current = onFail;
+    }, [currentBlock, currentSeqIndex, isComplete, onWordMatch, onWordMiss, onFail]);
+
+    useEffect(() => {
+        if (activeBlockRef.current) {
+            activeBlockRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+    }, [currentSeqIndex]);
 
     const TTS_LANG = version === 'kjv' ? 'en-US' : (version === 'ja' ? 'ja-JP' : (version === 'ko' ? 'ko-KR' : 'zh-TW'));
 
-    // ──────────────────────────────────────────────
-    // MOUNT RESET — clean slate for every new game
-    // ──────────────────────────────────────────────
     useEffect(() => {
         isMountedRef.current = true;
-        isSpeakingRef.current = false;
         missCountRef.current = 0;
         isSuccessFlashRef.current = false;
-        // Kill any lingering TTS from a previous game
         if ('speechSynthesis' in window) window.speechSynthesis.cancel();
         return () => { isMountedRef.current = false; };
     }, []);
 
-    // ──────────────────────────────────────────────
-    // SPEAK SEGMENT — speak text, then ensure mic is alive
-    // ──────────────────────────────────────────────
-    const speakSegment = async (textToSpeak) => {
-        isSpeakingRef.current = true;
-        setMicStatus(t("播放中...", "Speaking..."));
-
-        await speakText(textToSpeak, 1.0, TTS_LANG);
-
-        isSpeakingRef.current = false;
-        ensureMicAlive();
+    const playDong = () => {
+        try {
+            if (!window.__sharedDongCtx) {
+                window.__sharedDongCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            const actx = window.__sharedDongCtx;
+            if (actx.state === 'suspended') actx.resume();
+            const osc = actx.createOscillator();
+            const gn = actx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(300, actx.currentTime); // Lower pitch for Dong
+            gn.gain.setValueAtTime(0, actx.currentTime);
+            gn.gain.linearRampToValueAtTime(0.5, actx.currentTime + 0.02);
+            gn.gain.exponentialRampToValueAtTime(0.01, actx.currentTime + 1.0);
+            osc.connect(gn); gn.connect(actx.destination);
+            osc.start(); osc.stop(actx.currentTime + 1.0);
+        } catch (e) { console.error(e); }
     };
 
-    // ──────────────────────────────────────────────
-    // ENSURE MIC ALIVE — the single source of truth for mic recovery
-    // ──────────────────────────────────────────────
     const ensureMicAlive = () => {
         if (!isMountedRef.current) return;
-        if (isSpeakingRef.current) return;
         if (recognitionRef.current) {
-            // Check if recognition is NOT running — if so, restart it
             try { recognitionRef.current.start(); } catch (e) {
                 // InvalidStateError means it's already running — that's fine
             }
@@ -80,22 +94,15 @@ export default function BlindModeGame({
         setMicStatus(t("聆聽中...", "Listening..."));
     };
 
-    // ──────────────────────────────────────────────
-    // HEARTBEAT — every 2 seconds, check if mic died and revive it
-    // ──────────────────────────────────────────────
     useEffect(() => {
         const heartbeat = setInterval(() => {
             if (!isMountedRef.current) return;
-            if (isSpeakingRef.current) return;
             if (isCompleteRef.current) return;
             ensureMicAlive();
         }, 2000);
         return () => clearInterval(heartbeat);
     }, []);
 
-    // ──────────────────────────────────────────────
-    // TIMER — 5 second countdown per block
-    // ──────────────────────────────────────────────
     const startTimer = () => {
         if (timerRef.current) clearTimeout(timerRef.current);
         if (countdownRef.current) clearInterval(countdownRef.current);
@@ -111,68 +118,44 @@ export default function BlindModeGame({
         timerRef.current = setTimeout(() => {
             if (countdownRef.current) clearInterval(countdownRef.current);
             setCountdown(null);
-            if (isSpeakingRef.current || isCompleteRef.current) return;
+            if (isCompleteRef.current) return;
             const block = currentBlockRef.current;
             if (block && !isSuccessFlashRef.current) {
                 missCountRef.current += 1;
                 setMissCount(missCountRef.current);
                 setMissedIndices(prev => [...prev, currentSeqIndexRef.current]);
 
-                try { playDing(); } catch (e) { }
+                playDong();
 
-                speakSegment(block.text).then(() => {
-                    if (!isMountedRef.current) return;
-                    if (missCountRef.current >= 3) {
-                        speakText(`${t("你已經錯了三次，挑戰失敗。", "You missed 3 times, challenge failed.")} ${t("整段經文是：", "The full verse is:")} ${activeVerse.text}`, 1.0, TTS_LANG).then(() => {
-                            if (onFail) onFail();
-                        });
-                        return;
+                if (missCountRef.current >= 3) {
+                    if (onFailRef.current) onFailRef.current();
+                    return;
+                }
+                
+                setTimeout(() => {
+                    if (isMountedRef.current) {
+                        if (onWordMissRef.current) onWordMissRef.current();
                     }
-
-                    if (currentSeqIndexRef.current === activePhrases.length - 1) {
-                        const total = activePhrases.length;
-                        const accuracy = Math.max(0, Math.round(((total - missCountRef.current) / total) * 100));
-                        speakText(`${t("正確率", "Accuracy")} ${accuracy}%. ${t("恭喜，你完成了這個經文！", "Congratulations, you completed this verse!")}`, 1.0, TTS_LANG).then(() => {
-                            onWordMatch(block);
-                        });
-                    } else {
-                        onWordMatch(block);
-                    }
-                });
+                }, 500);
             } else {
                 startTimer();
             }
         }, 5000);
     };
 
-    // ──────────────────────────────────────────────
-    // 3 DINGS
-    // ──────────────────────────────────────────────
-    const playThreeDings = () => {
-        return new Promise(resolve => {
-            let count = 0;
-            const interval = setInterval(() => {
-                try { playDing(); } catch (e) { }
-                count++;
-                if (count >= 3) {
-                    clearInterval(interval);
-                    setTimeout(resolve, 800);
-                }
-            }, 600);
-        });
-    };
+    const hasSpokenRef = useRef(false);
 
-    // ──────────────────────────────────────────────
-    // GAME FLOW — speak reference, play dings, start timer
-    // ──────────────────────────────────────────────
+    useEffect(() => {
+        hasSpokenRef.current = false;
+    }, [activeVerse]);
+
     useEffect(() => {
         if (isComplete) return;
 
-        if (currentSeqIndex === 0 && activeVerse) {
-            speakSegment(`${t("視障模式", "Blind Mode")}. ${t("出處", "Reference")} ${activeVerse.reference}`).then(() => {
-                if (!isMountedRef.current) return;
-                return playThreeDings();
-            }).then(() => {
+        if (currentSeqIndex === 0 && activeVerse && !hasSpokenRef.current) {
+            hasSpokenRef.current = true;
+            // Speak the verse reference before starting
+            speakText(activeVerse.reference, 1.0, TTS_LANG).then(() => {
                 if (!isMountedRef.current) return;
                 startTimer();
             });
@@ -184,11 +167,110 @@ export default function BlindModeGame({
             if (timerRef.current) clearTimeout(timerRef.current);
             if (countdownRef.current) clearInterval(countdownRef.current);
         };
-    }, [currentSeqIndex, activeVerse]);
+    }, [currentSeqIndex, activeVerse, TTS_LANG, speakText]);
 
-    // ──────────────────────────────────────────────
-    // SPEECH RECOGNITION — setup once, never tear down until unmount
-    // ──────────────────────────────────────────────
+    const evaluateTranscriptRef = useRef(null);
+
+    useEffect(() => {
+        evaluateTranscriptRef.current = () => {
+            const transcriptObj = latestTranscriptRef.current;
+            if (!transcriptObj || !transcriptObj.transcript.trim()) return;
+
+            const { index: lastIndex, transcript: currentTranscript } = transcriptObj;
+            
+            setHeardText(currentTranscript);
+            const block = currentBlockRef.current;
+            if (block && !isSuccessFlashRef.current) {
+                const targetText = typeof block === 'string' ? block : (block.text || '');
+                const cleanTarget = targetText.replace(/[^\w\u4e00-\u9fa5]/g, '').toLowerCase();
+                
+                let textToProcess = currentTranscript;
+                if (lastMatchedIndexRef.current === lastIndex) {
+                    textToProcess = currentTranscript.substring(lastMatchedLengthRef.current);
+                } else {
+                    lastMatchedIndexRef.current = lastIndex;
+                    lastMatchedLengthRef.current = 0;
+                }
+                
+                const cleanHeard = textToProcess.replace(/[^\w\u4e00-\u9fa5]/g, '').toLowerCase();
+
+                if (!cleanHeard) {
+                    setCurrentAccuracy(0);
+                    return;
+                }
+
+                // Order-preserving character match
+                let matchCount = 0;
+                let heardIdx = 0;
+                for (let c of cleanTarget) {
+                    let foundIdx = cleanHeard.indexOf(c, heardIdx);
+                    if (foundIdx !== -1) {
+                        matchCount++;
+                        heardIdx = foundIdx + 1;
+                    }
+                }
+                
+                const calculatedAccuracy = cleanTarget.length === 0 ? 0 : Math.round((matchCount / cleanTarget.length) * 100);
+                setCurrentAccuracy(calculatedAccuracy);
+
+                let isMatch = false;
+                let consumedCleanLength = 0;
+                
+                if (cleanHeard.includes(cleanTarget)) {
+                    isMatch = true;
+                    consumedCleanLength = cleanHeard.indexOf(cleanTarget) + cleanTarget.length;
+                } else if (calculatedAccuracy >= 60) {
+                    isMatch = true;
+                    consumedCleanLength = heardIdx;
+                }
+
+                if (isMatch) {
+                    // Map consumedCleanLength back to raw length in textToProcess
+                    let rawLength = 0;
+                    let cleanCharsSeen = 0;
+                    for (let i = 0; i < textToProcess.length; i++) {
+                        rawLength = i + 1;
+                        if (/[^\w\u4e00-\u9fa5]/.test(textToProcess[i]) === false) {
+                            cleanCharsSeen++;
+                            if (cleanCharsSeen === consumedCleanLength) {
+                                break;
+                            }
+                        }
+                    }
+                    
+                    lastMatchedLengthRef.current += rawLength;
+                    
+                    if (timerRef.current) clearTimeout(timerRef.current);
+                    if (countdownRef.current) clearInterval(countdownRef.current);
+                    setCountdown(null);
+                    setHeardText(t("收到正確！等候中...", "Correct! Waiting..."));
+                    setCurrentAccuracy(100);
+                    isSuccessFlashRef.current = true;
+                    setIsSuccessFlash(true);
+                    
+                    playDing();
+
+                    setTimeout(() => {
+                        if (!isMountedRef.current) return;
+                        isSuccessFlashRef.current = false;
+                        setIsSuccessFlash(false);
+                        onWordMatchRef.current(block);
+                    }, 250); // Reduced timeout for faster combo passing
+                }
+            }
+        };
+    });
+
+    // Re-evaluate the transcript automatically when moving to the next sequence
+    useEffect(() => {
+        const sequenceChangeTimer = setTimeout(() => {
+            if (isMountedRef.current && !isCompleteRef.current && evaluateTranscriptRef.current) {
+                evaluateTranscriptRef.current();
+            }
+        }, 300);
+        return () => clearTimeout(sequenceChangeTimer);
+    }, [currentSeqIndex]);
+
     useEffect(() => {
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         if (!SpeechRecognition) {
@@ -202,93 +284,58 @@ export default function BlindModeGame({
         recognition.lang = TTS_LANG;
 
         recognition.onstart = () => {
-            if (!isSpeakingRef.current) setMicStatus(t("聆聽中...", "Listening..."));
+            setMicStatus(t("聆聽中...", "Listening..."));
         };
 
         recognition.onresult = (event) => {
-            if (isSpeakingRef.current) return;
-
-            // Only use the LATEST result — with continuous mode, old results from
-            // previous blocks accumulate and would falsely match new blocks.
-            const lastResult = event.results[event.results.length - 1];
-            const currentTranscript = lastResult[0].transcript;
-
-            if (currentTranscript.trim()) {
-                setHeardText(currentTranscript);
-                const block = currentBlockRef.current;
-                if (block && !isSuccessFlashRef.current) {
-                    const cleanTarget = block.text.replace(/[^\w\u4e00-\u9fa5]/g, '').toLowerCase();
-                    const cleanHeard = currentTranscript.replace(/[^\w\u4e00-\u9fa5]/g, '').toLowerCase();
-
-                    let isMatch = false;
-                    if (cleanHeard.includes(cleanTarget) || cleanTarget.includes(cleanHeard)) {
-                        isMatch = true;
-                    } else {
-                        const heardChars = [...new Set(cleanHeard)];
-                        const matchCount = heardChars.filter(c => cleanTarget.includes(c)).length;
-                        const requiredMatches = Math.max(1, Math.floor(cleanTarget.length * 0.4));
-                        if (matchCount >= requiredMatches) {
-                            isMatch = true;
-                        }
-                    }
-
-                    if (isMatch) {
-                        if (timerRef.current) clearTimeout(timerRef.current);
-                        if (countdownRef.current) clearInterval(countdownRef.current);
-                        setCountdown(null);
-                        setHeardText(t("收到正確！等候中...", "Correct! Waiting..."));
-                        isSuccessFlashRef.current = true;
-                        setIsSuccessFlash(true);
-
-                        speakSegment(block.text).then(() => {
-                            if (!isMountedRef.current) return;
-                            isSuccessFlashRef.current = false;
-                            setIsSuccessFlash(false);
-                            if (currentSeqIndexRef.current === activePhrases.length - 1) {
-                                const total = activePhrases.length;
-                                const accuracy = Math.max(0, Math.round(((total - missCountRef.current) / total) * 100));
-                                speakText(`${t("正確率", "Accuracy")} ${accuracy}%. ${t("恭喜，你完成了這個經文！", "Congratulations, you completed this verse!")}`, 1.0, TTS_LANG).then(() => {
-                                    onWordMatch(block);
-                                });
-                            } else {
-                                onWordMatch(block);
-                            }
-                        });
-                    }
-                }
+            const lastIndex = event.results.length - 1;
+            const lastResult = event.results[lastIndex];
+            latestTranscriptRef.current = { index: lastIndex, transcript: lastResult[0].transcript };
+            if (evaluateTranscriptRef.current) {
+                evaluateTranscriptRef.current();
             }
         };
 
         recognition.onerror = (e) => {
             console.log("Speech recognition error:", e.error);
-            // Don't restart on 'aborted' — that's our own cleanup
-            // For all other errors, the heartbeat will handle restart
         };
 
-        recognition.onend = () => {
-            // Don't restart here — the heartbeat handles all restarts.
-            // This prevents race conditions between onend restarts and speakSegment restarts.
-        };
+        recognition.onend = () => {};
 
-        // Cancel any lingering speech, then start recognition
         if ('speechSynthesis' in window && window.speechSynthesis.speaking) {
             window.speechSynthesis.cancel();
         }
 
-        // Start mic immediately — permission dialog will block until granted
         try {
             recognition.start();
         } catch (e) {
             console.error('Initial recognition.start failed:', e);
         }
+        
         recognitionRef.current = recognition;
 
+        let heartbeat = setInterval(() => {
+            if (recognitionRef.current && isMountedRef.current) {
+                try {
+                    recognitionRef.current.start();
+                } catch(e) {}
+            }
+        }, 5000);
+
         return () => {
-            isMountedRef.current = false;
-            try { recognition.abort(); } catch (e) { }
-            recognitionRef.current = null;
+            clearInterval(heartbeat);
+            try { recognition.stop(); } catch(e) {}
         };
     }, [TTS_LANG]);
+
+    useEffect(() => {
+        return () => {
+            isMountedRef.current = false;
+            if (recognitionRef.current) {
+                try { recognitionRef.current.abort(); } catch (e) { }
+            }
+        };
+    }, []);
 
     return (
         <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', backgroundColor: '#000', zIndex: 9999, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '2rem' }}>
@@ -306,10 +353,11 @@ export default function BlindModeGame({
                     return (
                         <span
                             key={index}
+                            ref={isActive ? activeBlockRef : null}
                             style={{
                                 fontSize: '8vw', fontWeight: 'bold', lineHeight: '1.4',
-                                color: showGold ? '#fbbf24' : '#475569',
-                                border: `2px solid ${showGold ? '#fbbf24' : (isActive ? '#64748b' : '#334155')}`,
+                                color: showGold ? '#fbbf24' : (isActive ? '#cbd5e1' : '#475569'),
+                                border: `2px solid ${showGold ? '#fbbf24' : (isActive ? '#94a3b8' : '#334155')}`,
                                 padding: '0.4rem 1rem',
                                 borderRadius: '16px',
                                 transition: 'all 0.3s'
@@ -322,7 +370,22 @@ export default function BlindModeGame({
             </div>
             {heardText && (
                 <div style={{ position: 'absolute', bottom: '2%', width: '100%', padding: '1rem 2rem', textAlign: 'center', backgroundColor: 'rgba(0,0,0,0.7)', borderTop: '1px solid #334155' }}>
-                    <p style={{ color: '#bae6fd', fontSize: '3rem', margin: 0, wordBreak: 'break-word', fontWeight: 'bold' }}>{t("聽見：", "Heard: ")}{heardText}</p>
+                    <p style={{ color: '#bae6fd', fontSize: '2.5rem', margin: 0, wordBreak: 'break-word', fontWeight: 'bold' }}>
+                        {t("聽見：", "Heard: ")}{heardText}
+                        {!isSuccessFlash && heardText !== t("收到正確！等候中...", "Correct! Waiting...") && (
+                            <span style={{ 
+                                marginLeft: '1rem', 
+                                fontSize: '1.5rem', 
+                                color: currentAccuracy >= 60 ? '#4ade80' : (currentAccuracy > 0 ? '#facc15' : '#94a3b8'),
+                                backgroundColor: 'rgba(255,255,255,0.1)',
+                                padding: '0.2rem 0.8rem',
+                                borderRadius: '12px',
+                                verticalAlign: 'middle'
+                            }}>
+                                準確率 {currentAccuracy}%
+                            </span>
+                        )}
+                    </p>
                 </div>
             )}
         </div>

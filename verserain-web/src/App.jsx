@@ -853,6 +853,8 @@ export default function App() {
   useEffect(() => { healthRef.current = health; }, [health]);
 
   const [timeLeft, setTimeLeft] = useState(6000); // 60.00 seconds
+  const timeLeftRef = useRef(6000);
+  useEffect(() => { timeLeftRef.current = timeLeft; }, [timeLeft]);
 
   const [bestScore, setBestScore] = useState(0);
   useEffect(() => {
@@ -1924,10 +1926,46 @@ export default function App() {
         }
         return;
       } else {
-        endGame();
+        if (campaignQueue !== null && campaignQueue.length > 0) {
+          // Auto advance to next verse in campaign
+          let calculatedTimeBonus = 0;
+          if (healthRef.current > 0) {
+            calculatedTimeBonus = Math.floor(Math.max(0, timeLeftRef.current) * 0.5);
+          }
+          let finalCalculatedScore = scoreRef.current + calculatedTimeBonus;
+          if (distractionLevel > 0) {
+            finalCalculatedScore = Math.floor(finalCalculatedScore * (1 + distractionLevel * 0.1));
+          }
+          
+          const f = healthRef.current === 3;
+
+          setCampaignResults(prev => [...prev, { verse: activeVerse, score: finalCalculatedScore, flawless: f }]);
+
+          if (playerName && finalCalculatedScore > 0 && healthRef.current > 0) {
+            const actualModeName = distractionLevel > 0 ? `${playMode}-dx${distractionLevel}` : playMode;
+            fetch('/api/submit-score', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ name: playerName, score: finalCalculatedScore, verseRef: activeVerse.reference, mode: actualModeName })
+            }).catch(() => {});
+          }
+
+          playTada();
+
+          const nextVerse = campaignQueue[0];
+          setActiveVerse(nextVerse);
+          setCampaignQueue(campaignQueue.slice(1));
+          setCurrentSeqIndex(0);
+          currentSeqRef.current = 0;
+          setTimeout(() => {
+            startGame(isAutoPlayRef.current);
+          }, 50);
+        } else {
+          endGame();
+        }
       }
     }
-  }, [currentSeqIndex, gameState, activePhrases.length, multiplayerRoomId, multiplayerState?.playMode]);
+  }, [currentSeqIndex, gameState, activePhrases.length, multiplayerRoomId, multiplayerState?.playMode, campaignQueue, activeVerse, playerName, distractionLevel, playMode]);
 
   // Sync individual progress for solo multiplayer mode
   useEffect(() => {
@@ -2517,6 +2555,11 @@ export default function App() {
     '所屬經文組': 'متعلق به مجموعه',
     '(你)': '(شما)',
     '第1次上線': 'اولین ورود',
+    '邀請朋友一起玩': 'دعوت از دوستان برای بازی',
+    '📨 邀請朋友一起玩': '📨 دعوت از دوستان برای بازی',
+    '你的專屬推廣連結：當朋友們透過此連結直接進入加入 VerseRain，並完成他們的第一次背經遊戲，雙方都會自動獲得「推廣點數」獎勵，同時你也將累積推廣大使進度！': 'لینک دعوت شخصی شما: وقتی دوستان VerseRain را از طریق این لینک بارگیری کنند و اولین بازی خود را به پایان برسانند، هر دو امتیاز جایزه می‌گیرید!',
+    '想要擁有你的個人推薦碼並賺取推廣點數嗎？': 'آیا می‌خواهید کد دعوت شخصی خود را دریافت کنید و امتیاز معرفی کسب کنید؟',
+    'QR 碼': 'کد QR',
 
   };
 
@@ -2880,6 +2923,11 @@ export default function App() {
     '這是最後一關了！為隊友祈禱吧！': 'השלב האחרון! התפלל בעד החבר שלך!',
     '防線已經崩潰。請等待隊友完成...': 'קו ההגנה נשבר. ממתין לחברים...',
     '您已出局！': 'נכשלת!',
+    '邀請朋友一起玩': 'הזמן חברים לשחק',
+    '📨 邀請朋友一起玩': '📨 הזמן חברים לשחק',
+    '你的專屬推廣連結：當朋友們透過此連結直接進入加入 VerseRain，並完成他們的第一次背經遊戲，雙方都會自動獲得「推廣點數」獎勵，同時你也將累積推廣大使進度！': 'קישור ההזמנה האישי שלך: כשחברים טוענים את VerseRain דרך קישור זה ומשלימים את המשחק הראשון שלהם, שניכם מרוויחים נקודות בונוס!',
+    '想要擁有你的個人推薦碼並賺取推廣點數嗎？': 'רוצה לקבל את קוד ההזמנה האישי שלך ולהרוויח נקודות הפניה?',
+    'QR 碼': 'קוד QR',
   });
 
 
@@ -3157,6 +3205,11 @@ export default function App() {
     '進階設定與學習': '高度な設定と学習',
     '在 VerseRain 遊戲的「我的園子」中持續挑戰經文，獲得 20 顆果子，達到 ': '「私の園」で経文に挑戦し続け、20個の果実を得て',
     ' 個果子 🍎，達到 Lv.2 即可解鎖個人專屬連結！': 'に達すると個人リンクが解除されます！',
+    '邀請朋友一起玩': '友達を招待してプレイ',
+    '📨 邀請朋友一起玩': '📨 友達を招待してプレイ',
+    '你的專屬推廣連結：當朋友們透過此連結直接進入加入 VerseRain，並完成他們的第一次背經遊戲，雙方都會自動獲得「推廣點數」獎勵，同時你也將累積推廣大使進度！': 'あなたのパーソナル招待リンク: 友達がこのリンクからVerseRainをロードし、最初のゲームを完了すると、両方にボーナスポイントが付与されます！',
+    '想要擁有你的個人推薦碼並賺取推廣點數嗎？': 'パーソナル招待コードを取得して、紹介ポイントを獲得しますか？',
+    'QR 碼': 'QRコード',
 
   };
 
@@ -3572,6 +3625,7 @@ export default function App() {
     '點閱次數': '조회수',
     'Verserain 官方': 'Verserain 공식',
     '匿名玩家': '익명 플레이어',
+    'QR 碼': 'QR 코드',
   };
 
 
@@ -3609,12 +3663,30 @@ export default function App() {
           undefined
         }}
       >
-      <div className="bg-layer" />
-      <div className="rain-system">
+      <div className={`bg-layer ${combo >= 3 ? 'golden-bg' : ''}`} />
+      <div className={`rain-system ${combo >= 3 ? 'golden-rain' : ''}`}>
         <div className="rain-layer back" />
         <div className="rain-layer mid" />
         <div className="rain-layer front" />
       </div>
+
+      {combo >= 3 && gameState === 'playing' && (
+        <div className="particles-system">
+          {Array.from({ length: 20 }).map((_, i) => (
+            <div
+              key={i}
+              className="particle"
+              style={{
+                left: `${Math.random() * 100}%`,
+                '--duration': `${4 + Math.random() * 6}s`,
+                '--drift': `${(Math.random() - 0.5) * 200}px`,
+                '--max-opacity': `${0.4 + Math.random() * 0.6}`,
+                animationDelay: `${Math.random() * 5}s`
+              }}
+            />
+          ))}
+        </div>
+      )}
 
       {/* Global Mic Toggle & Subtitles - Temporarily Disabled */}
       {false && (
@@ -4961,7 +5033,7 @@ export default function App() {
                               onClick={() => setQrShareModal({ url: `${window.location.origin}?ref=${encodeURIComponent(playerName)}`, reference: 'VerseRain 遊戲邀請' })}
                               style={{ background: '#10b981', color: 'white', border: 'none', padding: '0 1.5rem', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', transition: 'background 0.2s', minHeight: '44px' }}
                             >
-                              QR Code
+                              {t("QR 碼", "QR Code")}
                             </button>
                           )}
                         </div>
@@ -6034,12 +6106,24 @@ export default function App() {
 
       {gameState === 'playing' && isBlindMode && (
         <BlindModeGame
+          key={activeVerse?.reference}
           activeVerse={activeVerse}
           activePhrases={activePhrases}
           currentSeqIndex={currentSeqIndex}
           onWordMatch={(block) => {
             setScore(s => s + 100 + (combo * 50));
             setCombo(c => c + 1);
+            const nextSeq = currentSeqIndex + 1;
+            setCurrentSeqIndex(nextSeq);
+            currentSeqRef.current = nextSeq;
+          }}
+          onWordMiss={() => {
+            setCombo(0);
+            setHealth(h => {
+              const newHealth = Math.max(0, h - 1);
+              healthRef.current = newHealth;
+              return newHealth;
+            });
             const nextSeq = currentSeqIndex + 1;
             setCurrentSeqIndex(nextSeq);
             currentSeqRef.current = nextSeq;
