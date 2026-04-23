@@ -361,33 +361,13 @@ export function formatVerseReferenceForSpeech(ref, version) {
     // Chinese (cuv, default)
     const fullBookName = CHINESE_BOOK_MAP[book] || book;
     const chapterSuffix = fullBookName === '詩篇' ? '篇' : '章';
-
-    // Convert Arabic numeral to Chinese numeral for chapter to ensure it's spoken as "一章"
-    const chineseNumbers = ['零', '一', '二', '三', '四', '五', '六', '七', '八', '九', '十'];
-    let chineseChapter = chapter;
-    const num = parseInt(chapter, 10);
-    if (!isNaN(num)) {
-      if (num <= 10) {
-        chineseChapter = chineseNumbers[num];
-      } else if (num < 20) {
-        chineseChapter = '十' + (num % 10 === 0 ? '' : chineseNumbers[num % 10]);
-      } else if (num < 100) {
-        chineseChapter = chineseNumbers[Math.floor(num / 10)] + '十' + (num % 10 === 0 ? '' : chineseNumbers[num % 10]);
-      } else if (num === 100) {
-        chineseChapter = '一百';
-      } else if (num < 200) {
-        const tens = Math.floor((num % 100) / 10);
-        const ones = num % 10;
-        chineseChapter = '一百' + (tens === 0 ? (ones === 0 ? '' : '零') : (tens === 1 ? '一十' : chineseNumbers[tens] + '十')) + (ones === 0 ? '' : chineseNumbers[ones]);
-      }
-    }
     
     if (!verses) {
-      return `${fullBookName} ${chineseChapter}${chapterSuffix}`;
+      return `${fullBookName} ${chapter}${chapterSuffix}`;
     }
     
     const versesStr = verses.replace(/-/g, '至').replace(/–/g, '至').trim();
-    return `${fullBookName} ${chineseChapter}${chapterSuffix}${versesStr}節`;
+    return `${fullBookName} ${chapter}${chapterSuffix}${versesStr}節`;
   }
 }
 
@@ -6273,6 +6253,7 @@ export default function App() {
           combo={combo}
           speakText={speakText}
           formatVerseReferenceForSpeech={formatVerseReferenceForSpeech}
+          formatVerseReferenceForDisplay={formatVerseReferenceForDisplay}
           isDebugMode={isDebugMode}
           playMode={playMode}
           playDing={() => {
