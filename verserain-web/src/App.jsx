@@ -782,9 +782,10 @@ export default function App() {
 
 
   useEffect(() => {
-    const parseUrlArgs = async () => {
+      const parseUrlArgs = async () => {
       const params = new URLSearchParams(window.location.search);
       const mParam = params.get('m');
+      const dxParam = params.get('dx');
       const vParam = params.get('v');
       const textParam = params.get('text');
       const refParam = params.get('ref');
@@ -800,10 +801,25 @@ export default function App() {
 
       if (mParam) {
         const cleanM = mParam.replace(/['"]/gi, '').toLowerCase();
-        if (cleanM === 'verse square') {
+        if (cleanM === 'verse square' || cleanM === 'square') {
           setPlayMode('square');
+        } else if (cleanM === 'blind') {
+          setPlayMode('blind');
+        } else if (cleanM === 'voice') {
+          setPlayMode('voice');
+        } else if (cleanM === 'voice_prompt') {
+          setPlayMode('voice_prompt');
         } else if (cleanM === 'auto-played' || cleanM === 'auto-play') {
           shouldAutoPlay = true;
+        } else {
+          setPlayMode(cleanM); // Fallback for any other valid string
+        }
+      }
+
+      if (dxParam) {
+        const dx = parseInt(dxParam, 10);
+        if (!isNaN(dx) && dx >= 0 && dx <= 3) {
+          setDistractionLevel(dx);
         }
       }
 
@@ -4837,7 +4853,7 @@ export default function App() {
 
                           <button
                             onClick={() => {
-                              const link = `${window.location.origin}${window.location.pathname}?set=${encodeURIComponent(currentSet.id)}`;
+                              const link = `${window.location.origin}${window.location.pathname}?set=${encodeURIComponent(currentSet.id)}&m=${guestChallengeMode}&dx=${guestChallengeLevel}`;
                               setQrShareModal({ url: link, reference: currentSet.title });
                             }}
                             title={t("分享整組經文連結", "Share the set link")}
@@ -5012,7 +5028,7 @@ export default function App() {
                                     <button
                                       onClick={(e) => {
                                         e.stopPropagation();
-                                        const link = `${window.location.origin}${window.location.pathname}?challenge=${encodeURIComponent(v.reference)}`;
+                                        const link = `${window.location.origin}${window.location.pathname}?challenge=${encodeURIComponent(v.reference)}&m=${guestChallengeMode}&dx=${guestChallengeLevel}`;
                                         setQrShareModal({ url: link, reference: v.reference });
                                       }}
                                       title={t("分享挑戰連結", "Share challenge link")}
