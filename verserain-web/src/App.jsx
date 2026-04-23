@@ -382,6 +382,7 @@ export default function App() {
   const [version, setVersion] = useState('cuv');
   const [playMode, setPlayMode] = useState('square_solo');
   const [distractionLevel, setDistractionLevel] = useState(0);
+  const [performanceMode, setPerformanceMode] = useState(() => localStorage.getItem('verseRainPerformanceMode') === 'true');
   const [selectedSetId, setSelectedSetId] = useState(null);
 
   const [isPremium, setIsPremium] = useState(() => {
@@ -3744,6 +3745,7 @@ export default function App() {
           uiLang === 'he' ? "'Noto Sans Hebrew', Tahoma, Arial, sans-serif" :
           undefined
         }}
+        className={performanceMode ? 'performance-mode' : ''}
       >
       <div className={`bg-layer ${combo >= 3 ? 'golden-bg' : ''}`} />
       <div className={`rain-system ${combo >= 3 ? 'golden-rain' : ''}`}>
@@ -3836,6 +3838,13 @@ export default function App() {
                 <option value="ja">日本語</option>
                 <option value="ko">한국어</option>
               </select>
+              <button
+                onClick={togglePerformanceMode}
+                title={t("效能模式 / Performance Mode", "Performance Mode")}
+                style={{ padding: '0.3rem 0.5rem', borderRadius: '4px', border: '1px solid #cbd5e1', background: performanceMode ? '#10b981' : '#f1f5f9', color: performanceMode ? '#fff' : '#64748b', fontWeight: 'bold', cursor: 'pointer', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '4px' }}
+              >
+                ⚡ {performanceMode ? t('效能模式: 開', 'Performance: ON') : t('效能模式: 關', 'Performance: OFF')}
+              </button>
             </div>
             <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
               {playerName ? (

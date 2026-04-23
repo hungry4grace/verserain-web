@@ -322,3 +322,22 @@ body {
   box-shadow: 0 2px 5px rgba(0,0,0,0.1);
 }
 
+
+/* Performance Mode overrides */
+.performance-mode .rain-system {
+  display: none !important;
+}
+
+.performance-mode .bg-layer {
+  animation: none !important;
+  transition: none !important;
+  background-image: radial-gradient(circle at 50% 120%, #1e3a8a 0%, transparent 60%) !important;
+}
+
+.performance-mode .particles-system {
+  display: none !important;
+}
+
+.performance-mode .lightning-flash {
+  display: none !important;
+}
