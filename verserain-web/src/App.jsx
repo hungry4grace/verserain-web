@@ -1777,7 +1777,7 @@ export default function App() {
       return;
     }
 
-    setGameState('gameover');
+    setGameState(campaignQueue !== null ? 'campaign-results' : 'gameover');
     setBlocks([]); // clear arena
 
     const failed = !isSuccess;
