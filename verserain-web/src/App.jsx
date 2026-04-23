@@ -2103,6 +2103,7 @@ export default function App() {
                 }
               }
 
+              updated.sort(() => Math.random() - 0.5);
               return updated;
             });
           }, 400);
