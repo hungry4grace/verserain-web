@@ -167,7 +167,7 @@ export default function BlindModeGame({
             const transcriptObj = latestTranscriptRef.current;
             if (!transcriptObj || !transcriptObj.transcript.trim()) return;
 
-            const { index: lastIndex, transcript: currentTranscript } = transcriptObj;
+            const currentTranscript = transcriptObj.transcript;
             
             setHeardText(currentTranscript);
             const block = currentBlockRef.current;
@@ -175,13 +175,7 @@ export default function BlindModeGame({
                 const targetText = typeof block === 'string' ? block : (block.text || '');
                 const cleanTarget = targetText.replace(/[^\w\u4e00-\u9fa5]/g, '').toLowerCase();
                 
-                let textToProcess = currentTranscript;
-                if (lastMatchedIndexRef.current === lastIndex) {
-                    textToProcess = currentTranscript.substring(lastMatchedLengthRef.current);
-                } else {
-                    lastMatchedIndexRef.current = lastIndex;
-                    lastMatchedLengthRef.current = 0;
-                }
+                let textToProcess = currentTranscript.substring(lastMatchedLengthRef.current || 0);
                 
                 const cleanHeard = textToProcess.replace(/[^\w\u4e00-\u9fa5]/g, '').toLowerCase();
 
@@ -276,12 +270,15 @@ export default function BlindModeGame({
 
         recognition.onstart = () => {
             setMicStatus(t("聆聽中...", "Listening..."));
+            lastMatchedLengthRef.current = 0;
         };
 
         recognition.onresult = (event) => {
-            const lastIndex = event.results.length - 1;
-            const lastResult = event.results[lastIndex];
-            latestTranscriptRef.current = { index: lastIndex, transcript: lastResult[0].transcript };
+            let sessionTranscript = '';
+            for (let i = 0; i < event.results.length; i++) {
+                sessionTranscript += event.results[i][0].transcript + ' ';
+            }
+            latestTranscriptRef.current = { transcript: sessionTranscript };
             if (evaluateTranscriptRef.current) {
                 evaluateTranscriptRef.current();
             }
@@ -393,8 +390,33 @@ export default function BlindModeGame({
                         if (hintLevel === 0) {
                             content = <span style={{ opacity: 0 }}>{content}</span>;
                         } else {
-                            const revealedStr = content.substring(0, hintLevel);
-                            const hiddenStr = content.substring(hintLevel);
+                            const isEnglish = /[a-zA-Z]/.test(content);
+                            let revealedStr = '';
+                            let hiddenStr = '';
+                            
+                            if (isEnglish) {
+                                const words = content.split(/(\s+)/); // Preserve whitespace
+                                let wordCount = 0;
+                                let splitIndex = 0;
+                                for (let i = 0; i < words.length; i++) {
+                                    if (words[i].trim().length > 0) wordCount++;
+                                    if (wordCount > hintLevel) {
+                                        splitIndex = i;
+                                        break;
+                                    }
+                                }
+                                if (splitIndex === 0 || wordCount <= hintLevel) {
+                                    revealedStr = content;
+                                    hiddenStr = '';
+                                } else {
+                                    revealedStr = words.slice(0, splitIndex).join('');
+                                    hiddenStr = words.slice(splitIndex).join('');
+                                }
+                            } else {
+                                revealedStr = content.substring(0, hintLevel);
+                                hiddenStr = content.substring(hintLevel);
+                            }
+
                             content = (
                                 <>
                                     <span>{revealedStr}</span>
