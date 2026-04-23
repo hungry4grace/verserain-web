@@ -3846,13 +3846,6 @@ export default function App() {
                 <option value="ja">日本語</option>
                 <option value="ko">한국어</option>
               </select>
-              <button
-                onClick={togglePerformanceMode}
-                title={t("效能模式 / Performance Mode", "Performance Mode")}
-                style={{ padding: '0.3rem 0.5rem', borderRadius: '4px', border: '1px solid #cbd5e1', background: performanceMode ? '#10b981' : '#f1f5f9', color: performanceMode ? '#fff' : '#64748b', fontWeight: 'bold', cursor: 'pointer', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '4px' }}
-              >
-                ⚡ {performanceMode ? t('效能模式: 開', 'Performance: ON') : t('效能模式: 關', 'Performance: OFF')}
-              </button>
             </div>
             <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
               {playerName ? (
@@ -3947,6 +3940,7 @@ export default function App() {
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1rem', width: '100%' }}>
                   {[
                     { id: 'blindMode', icon: isBlindMode ? '👁️‍🗨️' : '🦯', label: isBlindMode ? t('關閉視障經文雨', 'Disable Blind Mode') : t('打開視障經文雨', 'Enable Blind Mode'), desc: t('為視覺障礙朋友設計的語音模式', 'Voice mode for visually impaired') },
+                    { id: 'performanceMode', icon: performanceMode ? '⚡' : '🔋', label: performanceMode ? t('關閉效能模式', 'Disable Performance Mode') : t('打開效能模式', 'Enable Performance Mode'), desc: t('關閉華麗特效以提升流暢度', 'Disable effects for better performance') },
                     { id: 'debugMode', icon: isDebugMode ? '🐞' : '🐛', label: isDebugMode ? t('關閉 Debug', 'Disable Debug') : t('打開 Debug', 'Enable Debug'), desc: t('顯示除錯資訊', 'Show debug info') },
                     { id: 'custom_verses', icon: '👑', label: t('我的專屬題庫', 'My Custom Sets'), desc: t('建立自訂經文組', 'Create custom sets') },
                     { id: 'manual', icon: '📖', label: t('使用說明', 'Manual'), desc: t('操作詳解', 'Detailed instructions') },
@@ -3959,6 +3953,10 @@ export default function App() {
                         const n = !isBlindMode;
                         setIsBlindMode(n);
                         localStorage.setItem('verseRain_blindMode', String(n));
+                        return;
+                      }
+                      if (item.id === 'performanceMode') {
+                        togglePerformanceMode();
                         return;
                       }
                       if (item.id === 'debugMode') {
