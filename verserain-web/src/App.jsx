@@ -4443,6 +4443,7 @@ export default function App() {
                         >
                           <option value="square_solo">{t("獨立九宮格 (Solo Square)", "Solo Square")}</option>
                           <option value="rain_solo">{t("雨滴瀑布 (VerseRain)", "VerseRain")}</option>
+                          <option value="voice">{t("語音模式 (Voice Mode)", "Voice Mode")}</option>
                         </select>
                       </div>
                       <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
