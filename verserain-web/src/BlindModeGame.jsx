@@ -378,7 +378,21 @@ export default function BlindModeGame({
                     {countdown !== null && <span style={{ color: '#facc15', marginLeft: '1rem' }}>⏱ {countdown}s</span>}
                 </div>
             </h1>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', justifyContent: 'center', width: '100%', maxHeight: '60vh', marginTop: '10vh', overflowY: 'auto', padding: '1rem' }}>
+            <div style={
+                playMode?.startsWith('voice') ? {
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+                    gap: 'clamp(0.4rem, 2vh, 0.75rem)',
+                    width: '95%',
+                    maxWidth: '600px',
+                    margin: '10vh auto 0',
+                    maxHeight: '60vh',
+                    overflowY: 'auto',
+                    padding: '1rem'
+                } : {
+                    display: 'flex', flexWrap: 'wrap', gap: '0.5rem', justifyContent: 'center', width: '100%', maxHeight: '60vh', marginTop: '10vh', overflowY: 'auto', padding: '1rem'
+                }
+            }>
                 {activePhrases && activePhrases.map((phrase, index) => {
                     const isActive = index === currentSeqIndex;
                     const isPassed = index < currentSeqIndex;
@@ -395,7 +409,7 @@ export default function BlindModeGame({
                             let hiddenStr = '';
                             
                             if (isEnglish) {
-                                const words = content.split(/(\s+)/); // Preserve whitespace
+                                const words = content.split(/(\s+)/);
                                 let wordCount = 0;
                                 let splitIndex = 0;
                                 for (let i = 0; i < words.length; i++) {
@@ -430,11 +444,30 @@ export default function BlindModeGame({
                     const isVisible = showGold || isMissed || !isVoiceMode || isFullyRevealedHint || (isActive && isVoiceMode && hintLevel > 0);
 
                     return (
-                        <span
+                        <div
                             key={index}
                             ref={isActive ? activeBlockRef : null}
-                            style={{
-                                fontSize: isVoiceMode ? '4vw' : '8vw', fontWeight: 'bold', lineHeight: '1.4',
+                            className={isVoiceMode ? 'falling-block-inner' : ''}
+                            style={isVoiceMode ? {
+                                cursor: 'default',
+                                padding: 'clamp(0.4rem, 2vh, 1.5rem)',
+                                fontSize: 'clamp(0.9rem, 2.5vw, 1.5rem)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                minHeight: 'clamp(2.5rem, 12vh, 100px)',
+                                wordBreak: 'break-word',
+                                hyphens: 'auto',
+                                textAlign: 'center',
+                                opacity: isVisible ? 1 : 0,
+                                background: showGold ? 'linear-gradient(135deg, rgba(251, 191, 36, 0.9) 0%, rgba(251, 191, 36, 0.5) 100%)' : (isActive ? 'linear-gradient(135deg, rgba(255,255,255,0.7) 0%, rgba(255,255,255,0.3) 100%)' : 'rgba(255,255,255,0.05)'),
+                                color: showGold ? '#fff' : (isActive ? '#1e293b' : '#94a3b8'),
+                                borderColor: showGold ? '#fbbf24' : (isActive ? 'rgba(255, 255, 255, 0.5)' : 'rgba(255,255,255,0.2)'),
+                                boxShadow: showGold ? '0 0 20px rgba(251, 191, 36, 0.6)' : 'none',
+                                pointerEvents: 'none',
+                                transition: 'all 0.3s'
+                            } : {
+                                fontSize: '8vw', fontWeight: 'bold', lineHeight: '1.4',
                                 color: showGold ? '#fbbf24' : (isActive ? '#cbd5e1' : '#475569'),
                                 border: `2px solid ${showGold ? '#fbbf24' : (isActive ? '#94a3b8' : '#334155')}`,
                                 padding: '0.4rem 1rem',
@@ -444,7 +477,7 @@ export default function BlindModeGame({
                             }}
                         >
                             {content}
-                        </span>
+                        </div>
                     );
                 })}
             </div>
