@@ -390,7 +390,7 @@ export default function BlindModeGame({
                     {activeVerse?.reference}
                 </div>
                 <div style={{ fontSize: '1.2rem', opacity: 0.9 }}>
-                    {playMode === 'voice' ? t("語音模式", "Voice Mode") : t("視障模式", "Blind Mode")} - <span style={{ color: '#4ade80' }}>{micStatus}</span>
+                    {playMode?.startsWith('voice') ? t("語音模式", "Voice Mode") : t("視障模式", "Blind Mode")} - <span style={{ color: '#4ade80' }}>{micStatus}</span>
                     {countdown !== null && <span style={{ color: '#facc15', marginLeft: '1rem' }}>⏱ {countdown}s</span>}
                 </div>
             </h1>
@@ -400,7 +400,7 @@ export default function BlindModeGame({
                     const isPassed = index < currentSeqIndex;
                     const isMissed = missedIndices.includes(index);
                     const showGold = (isPassed && !isMissed) || (isActive && isSuccessFlash);
-                    const isVoiceMode = playMode === 'voice';
+                    const isVoiceMode = playMode?.startsWith('voice');
                     const isVisible = showGold || isMissed || !isVoiceMode;
 
                     return (

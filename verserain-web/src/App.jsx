@@ -1514,7 +1514,7 @@ export default function App() {
         }
         if (initAutoStart.playMode === 'square_solo') {
           initSquareBlocks(true, initAutoStart.campaignQueue, initAutoStart.verse);
-        } else if (initAutoStart.playMode === 'rain_solo') {
+        } else if (initAutoStart.playMode === 'rain_solo' || initAutoStart.playMode === 'voice_solo') {
           if (socketRef.current) {
             const verse = initAutoStart.verse || activeVerse;
             const isEnglish = /^[a-zA-Z\s.,:;'"''‘’“”?!()\-]+$/.test(verse.text.substring(0, 50));
@@ -1526,7 +1526,7 @@ export default function App() {
               blocks: [],
               verseRef: verse.reference,
               verseText: verse.text,
-              playMode: 'rain_solo',
+              playMode: initAutoStart.playMode,
               distractionLevel: multiplayerDistractionLevel,
               phrases: phrases,
               campaignQueue: initAutoStart.campaignQueue
@@ -4443,7 +4443,7 @@ export default function App() {
                         >
                           <option value="square_solo">{t("獨立九宮格 (Solo Square)", "Solo Square")}</option>
                           <option value="rain_solo">{t("雨滴瀑布 (VerseRain)", "VerseRain")}</option>
-                          <option value="voice">{t("語音模式 (Voice Mode)", "Voice Mode")}</option>
+                          <option value="voice_solo">{t('語音模式 (Voice Mode)', 'Voice Mode')}</option>
                         </select>
                       </div>
                       <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
@@ -6150,7 +6150,7 @@ export default function App() {
         </div>
       )}
 
-      {gameState === 'playing' && (isBlindMode || playMode === 'voice') && (
+      {gameState === 'playing' && (isBlindMode || playMode?.startsWith('voice')) && (
         <BlindModeGame
           key={activeVerse?.reference}
           activeVerse={activeVerse}
@@ -6206,7 +6206,7 @@ export default function App() {
         />
       )}
 
-      {gameState === 'playing' && !isBlindMode && playMode !== 'voice' && (
+      {gameState === 'playing' && !isBlindMode && !playMode?.startsWith('voice') && (
         <div
           key={`${playMode}-${activeVerse.reference}-${distractionLevel}`}
           onClick={handleGlobalClick}
