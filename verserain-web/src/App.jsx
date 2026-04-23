@@ -5565,7 +5565,7 @@ export default function App() {
                       <tr style={{ borderBottom: '2px solid #e2e8f0', color: '#64748b', fontSize: '0.9rem' }}>
                         <th style={{ padding: '0.8rem 1rem', width: '50px' }}>🏆</th>
                         <th style={{ padding: '0.8rem 1rem' }}>{t("玩家名稱", "Player Name")}</th>
-                        <th style={{ padding: '0.8rem 1rem', textAlign: 'right' }}>{t("最高分", "Best Score")}</th>
+                        <th style={{ padding: '0.8rem 1rem', textAlign: 'right' }}>{t("總積分", "Total Score")}</th>
                         <th style={{ padding: '0.8rem 1rem', textAlign: 'right' }}>{t("完成次數", "Clears")}</th>
                       </tr>
                     </thead>
@@ -5581,8 +5581,8 @@ export default function App() {
                         const playerMap = {};
                         entries.forEach(({ name, score }) => {
                           if (!name) return;
-                          if (!playerMap[name]) playerMap[name] = { best: 0, clears: 0 };
-                          playerMap[name].best = Math.max(playerMap[name].best, score);
+                          if (!playerMap[name]) playerMap[name] = { total: 0, clears: 0 };
+                          playerMap[name].total += score;
                           playerMap[name].clears += 1;
                         });
 
@@ -5593,7 +5593,7 @@ export default function App() {
                         });
 
                         return Object.entries(playerMap)
-                          .sort((a, b) => b[1].best - a[1].best || b[1].clears - a[1].clears)
+                          .sort((a, b) => b[1].total - a[1].total || b[1].clears - a[1].clears)
                           .slice(0, 10)
                           .map(([name, stats], idx) => (
                             <tr key={idx} style={{ borderBottom: '1px solid #f1f5f9' }}>
@@ -5624,7 +5624,7 @@ export default function App() {
                                 </button>
 
                               </td>
-                              <td style={{ padding: '0.8rem 1rem', textAlign: 'right', fontWeight: 'bold', color: '#3b82f6' }}>{stats.best.toLocaleString()}</td>
+                              <td style={{ padding: '0.8rem 1rem', textAlign: 'right', fontWeight: 'bold', color: '#3b82f6' }}>{stats.total.toLocaleString()}</td>
                               <td style={{ padding: '0.8rem 1rem', textAlign: 'right', fontWeight: 'bold', color: '#059669' }}>{stats.clears}</td>
                             </tr>
                           ));
