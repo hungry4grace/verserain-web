@@ -22,6 +22,7 @@ export default function BlindModeGame({
 }) {
     const [micStatus, setMicStatus] = useState("初始化中...");
     const [heardText, setHeardText] = useState("");
+    const [isMicReady, setIsMicReady] = useState(false);
     const [currentAccuracy, setCurrentAccuracy] = useState(0);
     const [isSuccessFlash, setIsSuccessFlash] = useState(false);
     const [missCount, setMissCount] = useState(0);
@@ -143,15 +144,50 @@ export default function BlindModeGame({
     useEffect(() => {
         if (isComplete) return;
 
-        if (currentSeqIndex === 0 && activeVerse && !hasSpokenRef.current) {
+        if (currentSeqIndex === 0 && activeVerse && !hasSpokenRef.current && isMicReady) {
             hasSpokenRef.current = true;
-            // Speak the verse reference before starting
-            const formattedRef = formatVerseReferenceForSpeech ? formatVerseReferenceForSpeech(activeVerse.reference, version) : activeVerse.reference;
-            speakText(formattedRef, 1.0, TTS_LANG).then(() => {
+            
+            // 1. Play the 2-second "Ready" chime
+            let readyDelay = 2000;
+            try {
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                if (AudioContext) {
+                    const ctx = new AudioContext();
+                    const notes = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6 (C Major Arpeggio)
+                    
+                    notes.forEach((freq, i) => {
+                        setTimeout(() => {
+                            const osc = ctx.createOscillator();
+                            const gain = ctx.createGain();
+                            
+                            osc.type = 'sine';
+                            osc.frequency.setValueAtTime(freq, ctx.currentTime);
+                            
+                            gain.gain.setValueAtTime(0, ctx.currentTime);
+                            gain.gain.linearRampToValueAtTime(0.1, ctx.currentTime + 0.05);
+                            gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.5);
+                            
+                            osc.connect(gain);
+                            gain.connect(ctx.destination);
+                            
+                            osc.start();
+                            osc.stop(ctx.currentTime + 0.6);
+                        }, i * 200); 
+                    });
+                }
+            } catch(e) {}
+            
+            // 2. Wait 2 seconds, then speak verse reference
+            setTimeout(() => {
                 if (!isMountedRef.current) return;
-                startTimer();
-            });
-        } else if (currentBlock) {
+                const formattedRef = formatVerseReferenceForSpeech ? formatVerseReferenceForSpeech(activeVerse.reference, version) : activeVerse.reference;
+                speakText(formattedRef, 1.0, TTS_LANG).then(() => {
+                    if (!isMountedRef.current) return;
+                    startTimer();
+                });
+            }, readyDelay);
+            
+        } else if (currentSeqIndex > 0 && currentBlock) {
             startTimer();
         }
 
@@ -159,7 +195,7 @@ export default function BlindModeGame({
             if (timerRef.current) clearTimeout(timerRef.current);
             if (countdownRef.current) clearInterval(countdownRef.current);
         };
-    }, [currentSeqIndex, activeVerse, TTS_LANG, speakText]);
+    }, [currentSeqIndex, activeVerse, TTS_LANG, speakText, isMicReady]);
 
     const evaluateTranscriptRef = useRef(null);
 
@@ -273,6 +309,7 @@ export default function BlindModeGame({
         recognition.onstart = () => {
             setMicStatus(t("聆聽中...", "Listening..."));
             lastMatchedLengthRef.current = 0;
+            setIsMicReady(true);
         };
 
         recognition.onresult = (event) => {
