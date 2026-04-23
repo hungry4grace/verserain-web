@@ -434,7 +434,7 @@ export default function BlindModeGame({
                             key={index}
                             ref={isActive ? activeBlockRef : null}
                             style={{
-                                fontSize: '8vw', fontWeight: 'bold', lineHeight: '1.4',
+                                fontSize: isVoiceMode ? '4vw' : '8vw', fontWeight: 'bold', lineHeight: '1.4',
                                 color: showGold ? '#fbbf24' : (isActive ? '#cbd5e1' : '#475569'),
                                 border: `2px solid ${showGold ? '#fbbf24' : (isActive ? '#94a3b8' : '#334155')}`,
                                 padding: '0.4rem 1rem',
