@@ -111,39 +111,26 @@ export default function BlindModeGame({
         return () => clearInterval(heartbeat);
     }, []);
 
+    const [hintLevel, setHintLevel] = useState(0);
+
     const startTimer = () => {
         if (timerRef.current) clearTimeout(timerRef.current);
         if (countdownRef.current) clearInterval(countdownRef.current);
+        setHintLevel(0);
+        setCountdown(null);
 
-        let remaining = 5;
-        setCountdown(remaining);
+        let elapsed = 0;
         countdownRef.current = setInterval(() => {
-            remaining -= 1;
-            setCountdown(remaining);
-            if (remaining <= 0) clearInterval(countdownRef.current);
-        }, 1000);
-
-        timerRef.current = setTimeout(() => {
-            if (countdownRef.current) clearInterval(countdownRef.current);
-            setCountdown(null);
-            if (isCompleteRef.current) return;
-            const block = currentBlockRef.current;
-            if (block && !isSuccessFlashRef.current) {
-                missCountRef.current += 1;
-                setMissCount(missCountRef.current);
-                setMissedIndices(prev => [...prev, currentSeqIndexRef.current]);
-
-                playDong();
-                
-                setTimeout(() => {
-                    if (isMountedRef.current) {
-                        if (onWordMissRef.current) onWordMissRef.current();
-                    }
-                }, 500);
-            } else {
-                startTimer();
+            elapsed += 1;
+            if (elapsed === 3) {
+                setHintLevel(1);
+            } else if (elapsed === 4) {
+                setHintLevel(2);
+            } else if (elapsed >= 5) {
+                setHintLevel(3);
+                clearInterval(countdownRef.current);
             }
-        }, 5000);
+        }, 1000);
     };
 
     const hasSpokenRef = useRef(false);
@@ -401,7 +388,24 @@ export default function BlindModeGame({
                     const isMissed = missedIndices.includes(index);
                     const showGold = (isPassed && !isMissed) || (isActive && isSuccessFlash);
                     const isVoiceMode = playMode?.startsWith('voice');
-                    const isVisible = showGold || isMissed || !isVoiceMode;
+                    let content = phrase.text || phrase;
+                    if (isActive && isVoiceMode && !showGold && hintLevel < 3) {
+                        if (hintLevel === 0) {
+                            content = <span style={{ opacity: 0 }}>{content}</span>;
+                        } else {
+                            const revealedStr = content.substring(0, hintLevel);
+                            const hiddenStr = content.substring(hintLevel);
+                            content = (
+                                <>
+                                    <span>{revealedStr}</span>
+                                    <span style={{ opacity: 0 }}>{hiddenStr}</span>
+                                </>
+                            );
+                        }
+                    }
+
+                    const isFullyRevealedHint = isActive && isVoiceMode && hintLevel === 3;
+                    const isVisible = showGold || isMissed || !isVoiceMode || isFullyRevealedHint || (isActive && isVoiceMode && hintLevel > 0);
 
                     return (
                         <span
@@ -417,7 +421,7 @@ export default function BlindModeGame({
                                 transition: 'all 0.3s'
                             }}
                         >
-                            {phrase.text || phrase}
+                            {content}
                         </span>
                     );
                 })}
