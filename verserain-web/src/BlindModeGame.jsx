@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useRef, useMemo } from 'react';
 import { Heart, Zap, XCircle } from 'lucide-react';
+import { pinyin } from 'pinyin-pro';
 
 export default function BlindModeGame({
     activeVerse,
@@ -222,7 +223,7 @@ export default function BlindModeGame({
                     return;
                 }
 
-                // Order-preserving character match
+                // 1. Text match (Order-preserving character match)
                 let matchCount = 0;
                 let heardIdx = 0;
                 for (let c of cleanTarget) {
@@ -232,8 +233,38 @@ export default function BlindModeGame({
                         heardIdx = foundIdx + 1;
                     }
                 }
-                
-                const calculatedAccuracy = cleanTarget.length === 0 ? 0 : Math.round((matchCount / cleanTarget.length) * 100);
+                const textAccuracy = cleanTarget.length === 0 ? 0 : Math.round((matchCount / cleanTarget.length) * 100);
+
+                // 2. Full Pinyin match (handles exact homophones like '身'/'升')
+                const targetPinyin = pinyin(cleanTarget, { toneType: 'none', type: 'array' });
+                const heardPinyin = pinyin(cleanHeard, { toneType: 'none', type: 'array' });
+                let pyMatchCount = 0;
+                let pyHeardIdx = 0;
+                for (let py of targetPinyin) {
+                    let foundIdx = heardPinyin.indexOf(py, pyHeardIdx);
+                    if (foundIdx !== -1) {
+                        pyMatchCount++;
+                        pyHeardIdx = foundIdx + 1;
+                    }
+                }
+                const pyAccuracy = targetPinyin.length === 0 ? 0 : Math.round((pyMatchCount / targetPinyin.length) * 100);
+
+                // 3. Pinyin Initial match (handles strong accents: z/zh, s/sh, c/ch, etc.)
+                const targetInitials = pinyin(cleanTarget, { pattern: 'first', type: 'array' });
+                const heardInitials = pinyin(cleanHeard, { pattern: 'first', type: 'array' });
+                let initMatchCount = 0;
+                let initHeardIdx = 0;
+                for (let init of targetInitials) {
+                    let foundIdx = heardInitials.indexOf(init, initHeardIdx);
+                    if (foundIdx !== -1) {
+                        initMatchCount++;
+                        initHeardIdx = foundIdx + 1;
+                    }
+                }
+                const initAccuracy = targetInitials.length === 0 ? 0 : Math.round((initMatchCount / targetInitials.length) * 100);
+
+                // Use the best accuracy among the three methods
+                const calculatedAccuracy = Math.max(textAccuracy, pyAccuracy, initAccuracy);
                 setCurrentAccuracy(calculatedAccuracy);
 
                 let isMatch = false;
@@ -244,7 +275,14 @@ export default function BlindModeGame({
                     consumedCleanLength = cleanHeard.indexOf(cleanTarget) + cleanTarget.length;
                 } else if (calculatedAccuracy >= 60) {
                     isMatch = true;
-                    consumedCleanLength = heardIdx;
+                    // Determine how many characters we consumed in the heard string based on the best match method
+                    if (calculatedAccuracy === textAccuracy) {
+                        consumedCleanLength = heardIdx;
+                    } else if (calculatedAccuracy === pyAccuracy) {
+                        consumedCleanLength = pyHeardIdx;
+                    } else {
+                        consumedCleanLength = initHeardIdx;
+                    }
                 }
 
                 if (isMatch) {

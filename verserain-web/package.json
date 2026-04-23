@@ -14,6 +14,7 @@
     "canvas-confetti": "^1.9.4",
     "lucide-react": "^1.7.0",
     "partysocket": "^1.1.16",
+    "pinyin-pro": "^3.28.1",
     "qrcode": "^1.5.4",
     "qrcode.react": "^4.2.0",
     "react": "^19.2.4",
