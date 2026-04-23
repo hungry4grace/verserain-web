@@ -6100,6 +6100,22 @@ export default function App() {
                       <li><strong>最受歡迎的經文組排名：</strong> 被玩越多次的經文組，將會在此看板上獲得頂級榮耀。</li>
                     </ul>
                     <p style={{ textAlign: 'center', fontSize: '1.1rem', fontWeight: 'bold', color: '#3b82f6' }}>想獲得好名次？那就持之以恆地回來挑戰，或是創建讓大家愛不釋手的經文組合吧！</p>
+
+                    <h2 style={{ borderBottom: '2px solid #e2e8f0', paddingBottom: '0.5rem', marginTop: '2rem' }}>🎤 四、全新語音模式 (Voice Mode)</h2>
+                    <p>除了點擊方塊，您現在可以直接<strong>用「唸」的來背經文！</strong></p>
+                    <ul style={{ paddingLeft: '1.5rem', marginBottom: '2rem' }}>
+                      <li><strong>智慧模糊辨識：</strong> 系統內建強大的中文拼音模糊比對。就算有台灣國語、捲舌平舌音不分，只要發音相近就能過關！</li>
+                      <li><strong>貼心提示系統：</strong> 如果卡詞了，系統會在 3 秒後自動給予局部提示，幫助您順利接下去。</li>
+                      <li><strong>分數加成獎勵：</strong> 為了鼓勵大家開口宣告神的話語，在語音模式中，您的<strong>「剩餘時間加成」權重會大幅提升 30%</strong>！</li>
+                    </ul>
+
+                    <h2 style={{ borderBottom: '2px solid #e2e8f0', paddingBottom: '0.5rem', marginTop: '2rem' }}>⚔️ 五、多人即時連線對戰</h2>
+                    <p>背經文不再是一個人孤單的事！</p>
+                    <ul style={{ paddingLeft: '1.5rem', marginBottom: '2rem' }}>
+                      <li>點擊 <strong>「多人連線」</strong> 創建專屬房間，邀請小組成員或家人一起加入。</li>
+                      <li>房主可以從全域題庫中挑選 <strong>「比賽經文」</strong>。</li>
+                      <li>所有人同時開始挑戰，並能在遊戲結束後看到即時的成績排行榜，非常適合主日學活動與小組破冰！</li>
+                    </ul>
                   </>
                 )}
               </div>
@@ -6150,6 +6166,12 @@ export default function App() {
                   <li>{version === 'ko' ? '어린이부터 어른까지 자신의 한계에 도전하기에 적합한 다양한 난이도를 제공합니다.' : (version === 'ja' ? '複数の難易度が用意されており、子供から大人まで自分の限界に挑戦するのに最適です。' : (version === 'kjv' ? 'Multiple difficulty levels offered to be played by kids to adults.' : '提供多種挑戰難度，無論是小孩還是成人都非常適合來挑戰自己的極限。'))}</li>
                   <li>{version === 'ko' ? '챌린지 모드는 같은 구절 세트 내 여러 관련 구절의 기억을 강화하는 데 도움이 됩니다.' : (version === 'ja' ? 'チャレンジモードは、同じ経文セット内の関連する複数の経文の記憶を強化するのに役立ちます。' : (version === 'kjv' ? 'Challenge mode helps to strengthen the memory of multiple related verses in the same verse set.' : '挑戰模式有助於加強記憶同一個經文組中的多段相關經文。'))}</li>
                   <li>{version === 'ko' ? '온라인 리더보드는 성도, 청년부, 소그룹 구성원이 함께 참여하고 성장하도록 동기를 부여합니다!' : (version === 'ja' ? 'オンラインリーダーボードは、会衆、青年フェローシップ、小グループのメンバーが一緒に参加して改善するよう動機付けます！' : (version === 'kjv' ? 'Online Leaderboard to motivate congregation, youth fellowships and small group members to participate and improve together!' : '線上排行榜能激勵會眾、青年團契和小組成員一起參與遊玩、共同精進！'))}</li>
+                  {version === 'zh' && (
+                    <>
+                      <li><strong>全新語音模式：</strong> 結合最先進的拼音模糊辨識技術，您可以直接開口背誦！即使發音不夠標準也能智慧通關，用語音大聲宣告神的話語，還能獲得額外的 30% 分數加成。</li>
+                      <li><strong>多人即時連線對戰：</strong> 支援創建專屬房間，讓全家大小或小組成員在各自的手機上，同步挑戰同一組經文，享受刺激的即時競技樂趣！</li>
+                    </>
+                  )}
                 </ul>
 
               </div>
