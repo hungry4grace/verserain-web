@@ -911,9 +911,9 @@ export default function App() {
 
 
   const activePhrases = React.useMemo(() => {
-    const isEnglish = /^[a-zA-Z\s.,:;'"''\u2018\u2019\u201c\u201d?!()\-]+$/.test(activeVerse.text.substring(0, 50));
-    // Remove \s from the non-English regex so Chinese doesn't fragment on spaces
-    const regex = isEnglish ? /[,，。；：「」、;:\.\?!]/ : /[,，。；：「」、;:\.\?!！？『』《》\s]/;
+    // Unify all punctuation (English, Chinese, Hebrew, Farsi, etc)
+    // Removed \s so languages using spaces (Hebrew, Farsi, Korean) don't fragment into single words.
+    const regex = /[,，。；؛،：「」、;:\.\?!！？؟『』《》]/;
     return activeVerse.text.split(regex).map(p => p.trim()).filter(Boolean);
   }, [activeVerse]);
 
