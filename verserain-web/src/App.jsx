@@ -901,6 +901,14 @@ export default function App() {
     );
   };
 
+  const togglePerformanceMode = () => {
+    setPerformanceMode(prev => {
+      const newVal = !prev;
+      localStorage.setItem('verseRainPerformanceMode', newVal);
+      return newVal;
+    });
+  };
+
 
   const activePhrases = React.useMemo(() => {
     const isEnglish = /^[a-zA-Z\s.,:;'"''\u2018\u2019\u201c\u201d?!()\-]+$/.test(activeVerse.text.substring(0, 50));
