@@ -6796,6 +6796,36 @@ export default function App() {
                   </button>
                 )}
 
+                {campaignQueue !== null ? (
+                  campaignQueue.length > 0 ? (
+                    <button
+                      onClick={() => {
+                        setActiveVerse(campaignQueue[0]);
+                        setCampaignQueue(campaignQueue.slice(1));
+                        setTimeout(startGame, 50);
+                      }}
+                      className="play-btn"
+                      style={{
+                        width: '100%', maxWidth: '300px', background: '#3b82f6', color: 'white', border: 'none', padding: 'clamp(0.8rem, 2vh, 1rem)',
+                        fontSize: 'clamp(1.1rem, 2.5vh, 1.2rem)', fontWeight: 'bold', borderRadius: '12px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', boxShadow: '0 0 15px rgba(59, 130, 246, 0.5)', transition: 'all 0.2s', margin: '0 auto 1rem auto'
+                      }}
+                    >
+                      {t("下一回合", "Next Round")}
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => setGameState('campaign-results')}
+                      className="play-btn"
+                      style={{
+                        width: '100%', maxWidth: '300px', background: '#8b5cf6', color: 'white', border: 'none', padding: 'clamp(0.8rem, 2vh, 1rem)',
+                        fontSize: 'clamp(1.1rem, 2.5vh, 1.2rem)', fontWeight: 'bold', borderRadius: '12px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', boxShadow: '0 0 15px rgba(139, 92, 246, 0.5)', transition: 'all 0.2s', margin: '0 auto 1rem auto'
+                      }}
+                    >
+                      {t("查看最終成績", "View Final Results")}
+                    </button>
+                  )
+                ) : null}
+
                 {!isAutoPlayRef.current && (
                   <div style={{ background: 'rgba(0,0,0,0.4)', borderRadius: '12px', padding: '1rem', marginTop: '1rem', marginBottom: '1.5rem', border: '1px solid rgba(255,255,255,0.1)' }}>
                     <h3 style={{ margin: '0 0 1rem 0', color: '#fbbf24', fontSize: '1.2rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
@@ -6882,36 +6912,6 @@ export default function App() {
                     )}
                   </div>
                 )}
-
-                {campaignQueue !== null ? (
-                  campaignQueue.length > 0 ? (
-                    <button
-                      onClick={() => {
-                        setActiveVerse(campaignQueue[0]);
-                        setCampaignQueue(campaignQueue.slice(1));
-                        setTimeout(startGame, 50);
-                      }}
-                      className="play-btn"
-                      style={{
-                        width: '100%', maxWidth: '300px', background: '#3b82f6', color: 'white', border: 'none', padding: 'clamp(0.8rem, 2vh, 1rem)',
-                        fontSize: 'clamp(1.1rem, 2.5vh, 1.2rem)', fontWeight: 'bold', borderRadius: '12px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', boxShadow: '0 0 15px rgba(59, 130, 246, 0.5)', transition: 'all 0.2s', margin: '0 auto'
-                      }}
-                    >
-                      {t("下一回合", "Next Round")}
-                    </button>
-                  ) : (
-                    <button
-                      onClick={() => setGameState('campaign-results')}
-                      className="play-btn"
-                      style={{
-                        width: '100%', maxWidth: '300px', background: '#8b5cf6', color: 'white', border: 'none', padding: 'clamp(0.8rem, 2vh, 1rem)',
-                        fontSize: 'clamp(1.1rem, 2.5vh, 1.2rem)', fontWeight: 'bold', borderRadius: '12px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', boxShadow: '0 0 15px rgba(139, 92, 246, 0.5)', transition: 'all 0.2s', margin: '0 auto'
-                      }}
-                    >
-                      {t("查看最終成績", "View Final Results")}
-                    </button>
-                  )
-                ) : null /* Home button already shown above the leaderboard */}
               </div>
             </div>
           )}
