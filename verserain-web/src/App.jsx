@@ -1935,6 +1935,12 @@ export default function App() {
           // Report this verse's score to server (server accumulates campaign results)
           if (socketRef.current) {
             socketRef.current.send(JSON.stringify({
+              type: 'PLAYER_PROGRESS',
+              score: scoreRef.current,
+              health: healthRef.current,
+              seqIndex: currentSeqIndex
+            }));
+            socketRef.current.send(JSON.stringify({
               type: 'PLAYER_FINISHED_VERSE',
               verseRef: activeVerse.reference,
               score: scoreRef.current,
