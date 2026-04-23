@@ -6778,23 +6778,40 @@ export default function App() {
                   {t("最終得分", "Final Score")}: <strong style={{ color: isNewHighScore ? '#fbbf24' : '#fff', fontSize: 'clamp(2rem, 5vh, 2.5rem)', display: 'block', marginTop: '0.2rem' }}>{score}</strong>
                 </div>
 
-                {/* Home button placed HERE — always visible above the leaderboard */}
+                {/* Home and Play Again buttons placed HERE — always visible above the leaderboard */}
                 {campaignQueue === null && (
-                  <button
-                    onClick={() => { setGameState('menu'); setCampaignQueue(null); }}
-                    className="play-btn"
-                    style={{
-                      width: '100%', maxWidth: '300px', margin: 'clamp(0.6rem, 2vh, 1rem) auto',
-                      background: '#3b82f6', color: 'white', border: 'none',
-                      padding: 'clamp(0.6rem, 1.5vh, 0.9rem)',
-                      fontSize: 'clamp(1rem, 2vh, 1.1rem)', fontWeight: 'bold',
-                      borderRadius: '12px', cursor: 'pointer',
-                      display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                      gap: '0.5rem', boxShadow: '0 0 15px rgba(59, 130, 246, 0.5)'
-                    }}
-                  >
-                    <Home size={18} /> {t("回到主頁", "Home")}
-                  </button>
+                  <div style={{ display: 'flex', gap: '1rem', width: '100%', maxWidth: '350px', margin: 'clamp(0.6rem, 2vh, 1rem) auto' }}>
+                    <button
+                      onClick={() => { setGameState('menu'); setCampaignQueue(null); }}
+                      className="play-btn"
+                      style={{
+                        flex: 1,
+                        background: 'rgba(255,255,255,0.1)', color: 'white', border: '1px solid rgba(255,255,255,0.2)',
+                        padding: 'clamp(0.6rem, 1.5vh, 0.9rem)',
+                        fontSize: 'clamp(0.9rem, 2vh, 1.05rem)', fontWeight: 'bold',
+                        borderRadius: '12px', cursor: 'pointer',
+                        display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                        gap: '0.4rem', transition: 'all 0.2s'
+                      }}
+                    >
+                      <Home size={18} /> {t("回到主頁", "Home")}
+                    </button>
+                    <button
+                      onClick={() => startGame()}
+                      className="play-btn"
+                      style={{
+                        flex: 1,
+                        background: '#3b82f6', color: 'white', border: 'none',
+                        padding: 'clamp(0.6rem, 1.5vh, 0.9rem)',
+                        fontSize: 'clamp(0.9rem, 2vh, 1.05rem)', fontWeight: 'bold',
+                        borderRadius: '12px', cursor: 'pointer',
+                        display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                        gap: '0.4rem', boxShadow: '0 0 15px rgba(59, 130, 246, 0.5)', transition: 'all 0.2s'
+                      }}
+                    >
+                      <RotateCcw size={18} /> {t("再玩一次", "Play Again")}
+                    </button>
+                  </div>
                 )}
 
                 {campaignQueue !== null ? (
