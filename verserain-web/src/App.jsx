@@ -4599,20 +4599,6 @@ export default function App() {
                       )}
                     </div>
 
-                    {multiplayerState && multiplayerState.players && (
-                      <div style={{ width: '100%', maxWidth: '400px', textAlign: 'left' }}>
-                        <h4 style={{ color: '#475569', marginBottom: '0.5rem' }}>{t("已加入的玩家:", "Players Joined:")}</h4>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                          {Object.values(multiplayerState.players).map(p => (
-                            <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', padding: '0.8rem', backgroundColor: '#f1f5f9', borderRadius: '6px' }}>
-                              <div style={{ width: '16px', height: '16px', borderRadius: '50%', backgroundColor: p.color, boxShadow: '0 0 0 2px white, 0 0 0 4px ' + p.color }}></div>
-                              <span style={{ fontWeight: 'bold', color: '#1e293b', fontSize: '1.1rem' }}>{p.name} {multiplayerState.host === p.id ? '(Host)' : ''}</span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
                     <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
                       <button
                         onClick={() => {
@@ -4638,6 +4624,21 @@ export default function App() {
                         </button>
                       )}
                     </div>
+
+                    {multiplayerState && multiplayerState.players && (
+                      <div style={{ width: '100%', maxWidth: '400px', textAlign: 'left', marginTop: '1rem' }}>
+                        <h4 style={{ color: '#475569', marginBottom: '0.5rem' }}>{t("已加入的玩家:", "Players Joined:")}</h4>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                          {Object.values(multiplayerState.players).map(p => (
+                            <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', padding: '0.8rem', backgroundColor: '#f1f5f9', borderRadius: '6px' }}>
+                              <div style={{ width: '16px', height: '16px', borderRadius: '50%', backgroundColor: p.color, boxShadow: '0 0 0 2px white, 0 0 0 4px ' + p.color }}></div>
+                              <span style={{ fontWeight: 'bold', color: '#1e293b', fontSize: '1.1rem' }}>{p.name} {multiplayerState.host === p.id ? '(Host)' : ''}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
                   </div>
                 )}
               </div>
