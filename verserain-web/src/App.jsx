@@ -4853,7 +4853,7 @@ export default function App() {
 
                           <button
                             onClick={() => {
-                              const link = `${window.location.origin}${window.location.pathname}?set=${encodeURIComponent(currentSet.id)}&m=${guestChallengeMode}&dx=${guestChallengeLevel}`;
+                              const link = `${window.location.origin}${window.location.pathname}?set=${encodeURIComponent(currentSet.id)}&m=${playMode}&dx=${distractionLevel}`;
                               setQrShareModal({ url: link, reference: currentSet.title });
                             }}
                             title={t("分享整組經文連結", "Share the set link")}
@@ -5028,7 +5028,7 @@ export default function App() {
                                     <button
                                       onClick={(e) => {
                                         e.stopPropagation();
-                                        const link = `${window.location.origin}${window.location.pathname}?challenge=${encodeURIComponent(v.reference)}&m=${guestChallengeMode}&dx=${guestChallengeLevel}`;
+                                        const link = `${window.location.origin}${window.location.pathname}?challenge=${encodeURIComponent(v.reference)}&m=${playMode}&dx=${distractionLevel}`;
                                         setQrShareModal({ url: link, reference: v.reference });
                                       }}
                                       title={t("分享挑戰連結", "Share challenge link")}
