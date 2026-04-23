@@ -324,12 +324,9 @@ export default function BlindModeGame({
 
     // Re-evaluate the transcript automatically when moving to the next sequence
     useEffect(() => {
-        const sequenceChangeTimer = setTimeout(() => {
-            if (isMountedRef.current && !isCompleteRef.current && evaluateTranscriptRef.current) {
-                evaluateTranscriptRef.current();
-            }
-        }, 300);
-        return () => clearTimeout(sequenceChangeTimer);
+        if (isMountedRef.current && !isCompleteRef.current && evaluateTranscriptRef.current) {
+            evaluateTranscriptRef.current();
+        }
     }, [currentSeqIndex]);
 
     useEffect(() => {

@@ -2034,11 +2034,7 @@ export default function App() {
   const handleBlockClick = (block) => {
     if (block.correct || block.error || block.claimedBy) return;
 
-    // Flush speech recognition buffer on ANY block click (manual or voice) to prepare for next block
-    setLiveTranscript("");
-    if (recognitionRef.current) {
-      try { recognitionRef.current.stop(); } catch (e) { }
-    }
+    // Removed legacy speech stop to preserve Voice Mode buffer
 
     if (multiplayerRoomId && socketRef.current && gameState === 'playing') {
       if (!multiplayerState?.playMode?.endsWith('_solo')) {
