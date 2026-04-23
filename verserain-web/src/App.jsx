@@ -1769,7 +1769,8 @@ export default function App() {
 
     if (isSuccess) {
       setPureBaseScore(finalCalculatedScore);
-      const calculatedTimeBonus = Math.floor(Math.max(0, timeLeft) * 0.5);
+      let timeMultiplier = playMode === 'blind' ? 0.65 : 0.5;
+      const calculatedTimeBonus = Math.floor(Math.max(0, timeLeft) * timeMultiplier);
       setTimeBonus(calculatedTimeBonus);
       finalCalculatedScore += calculatedTimeBonus;
 
@@ -6767,7 +6768,12 @@ export default function App() {
                 </div>
                 {timeBonus > 0 && (
                   <div style={{ fontSize: 'clamp(0.9rem, 2vh, 1.1rem)', color: '#34d399', marginBottom: 'clamp(0.2rem, 1vh, 0.5rem)', fontWeight: 'bold' }}>
-                    {t("時間加成", "Time Bonus")}: {(timeLeft / 100).toFixed(2)}s × 50 = +{timeBonus}
+                    {t("時間加成", "Time Bonus")}: {(timeLeft / 100).toFixed(2)}s × {playMode === 'blind' ? '65' : '50'} = +{timeBonus}
+                    {playMode === 'blind' && (
+                        <div style={{ fontSize: 'clamp(0.75rem, 1.5vh, 0.85rem)', color: '#fbbf24', marginTop: '0.2rem' }}>
+                            ({t("語音模式專屬：時間權重增加 30%", "Voice Mode Bonus: Time weight increased by 30%")})
+                        </div>
+                    )}
                   </div>
                 )}
                 {distractionLevel > 0 && !isFailed && (
