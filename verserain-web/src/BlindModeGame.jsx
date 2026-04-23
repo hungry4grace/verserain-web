@@ -37,6 +37,7 @@ export default function BlindModeGame({
     const lastMatchedLengthRef = useRef(0);
     const latestTranscriptRef = useRef(null);
     const activeBlockRef = useRef(null);
+    const pauseTimeoutRef = useRef(null);
 
     const currentBlock = activePhrases[currentSeqIndex] || null;
     const currentBlockRef = useRef(currentBlock);
@@ -165,17 +166,18 @@ export default function BlindModeGame({
     useEffect(() => {
         evaluateTranscriptRef.current = () => {
             const transcriptObj = latestTranscriptRef.current;
-            if (!transcriptObj || !transcriptObj.transcript.trim()) return;
+            if (!transcriptObj) return;
 
-            const currentTranscript = transcriptObj.transcript;
+            const currentTranscript = transcriptObj.transcript || '';
             
-            setHeardText(currentTranscript);
             const block = currentBlockRef.current;
+            let textToProcess = currentTranscript.substring(lastMatchedLengthRef.current || 0);
+            
+            setHeardText(textToProcess);
+            
             if (block && !isSuccessFlashRef.current) {
                 const targetText = typeof block === 'string' ? block : (block.text || '');
                 const cleanTarget = targetText.replace(/[^\w\u4e00-\u9fa5]/g, '').toLowerCase();
-                
-                let textToProcess = currentTranscript.substring(lastMatchedLengthRef.current || 0);
                 
                 const cleanHeard = textToProcess.replace(/[^\w\u4e00-\u9fa5]/g, '').toLowerCase();
 
@@ -274,6 +276,10 @@ export default function BlindModeGame({
         };
 
         recognition.onresult = (event) => {
+            if (pauseTimeoutRef.current) {
+                clearTimeout(pauseTimeoutRef.current);
+            }
+
             let sessionTranscript = '';
             for (let i = 0; i < event.results.length; i++) {
                 sessionTranscript += event.results[i][0].transcript + ' ';
@@ -282,6 +288,15 @@ export default function BlindModeGame({
             if (evaluateTranscriptRef.current) {
                 evaluateTranscriptRef.current();
             }
+
+            pauseTimeoutRef.current = setTimeout(() => {
+                if (latestTranscriptRef.current && isMountedRef.current) {
+                    lastMatchedLengthRef.current = latestTranscriptRef.current.transcript.length;
+                    if (evaluateTranscriptRef.current) {
+                        evaluateTranscriptRef.current();
+                    }
+                }
+            }, 1500);
         };
 
         recognition.onerror = (e) => {
