@@ -14,6 +14,7 @@ export default function BlindModeGame({
     onFail,
     speakText,
     formatVerseReferenceForSpeech,
+    formatVerseReferenceForDisplay,
     isDebugMode,
     playMode,
     health,
@@ -375,7 +376,17 @@ export default function BlindModeGame({
             console.log("Speech recognition error:", e.error);
         };
 
-        recognition.onend = () => {};
+        recognition.onend = () => {
+            if (isMountedRef.current && recognitionRef.current) {
+                setTimeout(() => {
+                    if (isMountedRef.current && recognitionRef.current) {
+                        try {
+                            recognitionRef.current.start();
+                        } catch (e) {}
+                    }
+                }, 100);
+            }
+        };
 
         if ('speechSynthesis' in window && window.speechSynthesis.speaking) {
             window.speechSynthesis.cancel();
@@ -457,9 +468,9 @@ export default function BlindModeGame({
             </div>
 
             <h1 style={{ color: '#fff', position: 'absolute', top: '15%', margin: 0, textAlign: 'center', width: '100%' }}>
-                <div style={{ fontSize: '2.5rem', fontWeight: 'bold', color: '#bae6fd', marginBottom: '0.5rem', textShadow: '0 2px 4px rgba(0,0,0,0.5)' }}>
-                    {activeVerse?.reference}
-                </div>
+                <h2 style={{ color: '#bae6fd', fontSize: '3rem', margin: 0, textShadow: '0 0 20px rgba(186,230,253,0.5)', letterSpacing: '2px' }}>
+                    {formatVerseReferenceForDisplay ? formatVerseReferenceForDisplay(activeVerse?.reference || '', version) : activeVerse?.reference}
+                </h2>
                 <div style={{ fontSize: '1.2rem', opacity: 0.9 }}>
                     {playMode?.startsWith('voice') ? t("語音模式", "Voice Mode") : t("視障模式", "Blind Mode")} - <span style={{ color: '#4ade80' }}>{micStatus}</span>
                     {countdown !== null && <span style={{ color: '#facc15', marginLeft: '1rem' }}>⏱ {countdown}s</span>}

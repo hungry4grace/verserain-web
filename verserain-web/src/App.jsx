@@ -295,51 +295,73 @@ const findVerseByRef = (allVerses, ref) => {
   }
   return target;
 };
+export const CHINESE_BOOK_MAP = {
+  '創': '創世記', '出': '出埃及記', '利': '利未記', '民': '民數記', '申': '申命記',
+  '書': '約書亞記', '士': '士師記', '得': '路得記', '撒上': '撒母耳記上', '撒下': '撒母耳記下',
+  '王上': '列王紀上', '王下': '列王紀下', '代上': '歷代志上', '代下': '歷代志下',
+  '拉': '以斯拉記', '尼': '尼希米記', '斯': '以斯帖記', '伯': '約伯記', '詩': '詩篇',
+  '箴': '箴言', '傳': '傳道書', '歌': '雅歌', '賽': '以賽亞書', '耶': '耶利米書',
+  '哀': '耶利米哀歌', '結': '以西結書', '但': '但以理書', '何': '何西阿書', '珥': '約珥書',
+  '摩': '阿摩司書', '俄': '俄巴底亞書', '拿': '約拿書', '彌': '彌迦書', '鴻': '那鴻書',
+  '哈': '哈巴谷書', '番': '西番雅書', '該': '哈該書', '亞': '撒迦利亞書', '瑪': '瑪拉基書',
+  '太': '馬太福音', '可': '馬可福音', '路': '路加福音', '約': '約翰福音', '徒': '使徒行傳',
+  '羅': '羅馬書', '林前': '哥林多前書', '林後': '哥林多後書', '加': '加拉太書', '弗': '以弗所書',
+  '腓': '腓立比書', '西': '歌羅西書', '帖前': '帖撒羅尼迦前書', '帖後': '帖撒羅尼迦後書',
+  '提前': '提摩太前書', '提後': '提摩太後書', '多': '提多書', '門': '腓利門書', '來': '希伯來書',
+  '雅': '雅各書', '彼前': '彼得前書', '彼後': '彼得後書', '約一': '約翰一書', '約二': '約翰二書',
+  '約三': '約翰三書', '猶': '猶大書', '啟': '啟示錄'
+};
 
-export function formatVerseReferenceForSpeech(ref, version) {
-  const match = ref.match(/(.+?)\s*(\d+)\s*:\s*([\d,\s\-–]+)/);
+export function formatVerseReferenceForDisplay(ref, version) {
+  if (version !== 'cuv' && version !== 'zh') return ref;
+  const match = ref.match(/(.+?)\s*(\d+)(?:\s*:\s*([\d,\s\-–]+))?/);
   if (!match) return ref;
   const book = match[1].trim();
   const chapter = match[2];
+  const verses = match[3];
+  const fullBookName = CHINESE_BOOK_MAP[book] || book;
+  const chapterSuffix = fullBookName === '詩篇' ? '篇' : '章';
+  
+  if (verses) {
+    return `${fullBookName} ${chapter}:${verses}`;
+  } else {
+    return `${fullBookName} ${chapter}${chapterSuffix}`;
+  }
+}
+
+export function formatVerseReferenceForSpeech(ref, version) {
+  const match = ref.match(/(.+?)\s*(\d+)(?:\s*:\s*([\d,\s\-–]+))?/);
+  if (!match) return ref;
+  const book = match[1].trim();
+  const chapter = match[2];
+  const verses = match[3];
   
   if (version === 'kjv') {
-    const versesStr = match[3].replace(/-/g, ' to ').replace(/–/g, ' to ').trim();
+    if (!verses) return `${book} chapter ${chapter}`;
+    const versesStr = verses.replace(/-/g, ' to ').replace(/–/g, ' to ').trim();
     const isPlural = versesStr.includes('to') || versesStr.includes(',');
     return `${book} chapter ${chapter}, verse${isPlural ? 's' : ''} ${versesStr}`;
   } else if (version === 'ko') {
-    const versesStr = match[3].replace(/-/g, '에서 ').replace(/–/g, '에서 ').trim();
+    if (!verses) return `${book} ${chapter}장`;
+    const versesStr = verses.replace(/-/g, '에서 ').replace(/–/g, '에서 ').trim();
     return `${book} ${chapter}장 ${versesStr}절`;
   } else if (version === 'ja') {
-    const versesStr = match[3].replace(/-/g, 'から ').replace(/–/g, 'から ').trim();
+    if (!verses) return `${book} 第${chapter}章`;
+    const versesStr = verses.replace(/-/g, 'から ').replace(/–/g, 'から ').trim();
     return `${book} 第${chapter}章 ${versesStr}節`;
   } else if (version === 'fa') {
-    const versesStr = match[3].replace(/-/g, ' تا ').replace(/–/g, ' تا ').trim();
+    if (!verses) return `${book} فصل ${chapter}`;
+    const versesStr = verses.replace(/-/g, ' تا ').replace(/–/g, ' تا ').trim();
     return `${book} فصل ${chapter} آیه ${versesStr}`;
   } else if (version === 'he') {
-    const versesStr = match[3].replace(/-/g, ' עד ').replace(/–/g, ' עד ').trim();
+    if (!verses) return `${book} פרק ${chapter}`;
+    const versesStr = verses.replace(/-/g, ' עד ').replace(/–/g, ' עד ').trim();
     return `${book} פרק ${chapter} פסוק ${versesStr}`;
   } else {
     // Chinese (cuv, default)
-    const chineseBookMap = {
-      '創': '創世記', '出': '出埃及記', '利': '利未記', '民': '民數記', '申': '申命記',
-      '書': '約書亞記', '士': '士師記', '得': '路得記', '撒上': '撒母耳記上', '撒下': '撒母耳記下',
-      '王上': '列王紀上', '王下': '列王紀下', '代上': '歷代志上', '代下': '歷代志下',
-      '拉': '以斯拉記', '尼': '尼希米記', '斯': '以斯帖記', '伯': '約伯記', '詩': '詩篇',
-      '箴': '箴言', '傳': '傳道書', '歌': '雅歌', '賽': '以賽亞書', '耶': '耶利米書',
-      '哀': '耶利米哀歌', '結': '以西結書', '但': '但以理書', '何': '何西阿書', '珥': '約珥書',
-      '摩': '阿摩司書', '俄': '俄巴底亞書', '拿': '約拿書', '彌': '彌迦書', '鴻': '那鴻書',
-      '哈': '哈巴谷書', '番': '西番雅書', '該': '哈該書', '亞': '撒迦利亞書', '瑪': '瑪拉基書',
-      '太': '馬太福音', '可': '馬可福音', '路': '路加福音', '約': '約翰福音', '徒': '使徒行傳',
-      '羅': '羅馬書', '林前': '哥林多前書', '林後': '哥林多後書', '加': '加拉太書', '弗': '以弗所書',
-      '腓': '腓立比書', '西': '歌羅西書', '帖前': '帖撒羅尼迦前書', '帖後': '帖撒羅尼迦後書',
-      '提前': '提摩太前書', '提後': '提摩太後書', '多': '提多書', '門': '腓利門書', '來': '希伯來書',
-      '雅': '雅各書', '彼前': '彼得前書', '彼後': '彼得後書', '約一': '約翰一書', '約二': '約翰二書',
-      '約三': '約翰三書', '猶': '猶大書', '啟': '啟示錄'
-    };
-    
-    const fullBookName = chineseBookMap[book] || book;
+    const fullBookName = CHINESE_BOOK_MAP[book] || book;
+    const chapterSuffix = fullBookName === '詩篇' ? '篇' : '章';
 
-    const versesStr = match[3].replace(/-/g, '至').replace(/–/g, '至').trim();
     // Convert Arabic numeral to Chinese numeral for chapter to ensure it's spoken as "一章"
     const chineseNumbers = ['零', '一', '二', '三', '四', '五', '六', '七', '八', '九', '十'];
     let chineseChapter = chapter;
@@ -359,7 +381,13 @@ export function formatVerseReferenceForSpeech(ref, version) {
         chineseChapter = '一百' + (tens === 0 ? (ones === 0 ? '' : '零') : (tens === 1 ? '一十' : chineseNumbers[tens] + '十')) + (ones === 0 ? '' : chineseNumbers[ones]);
       }
     }
-    return `${fullBookName} ${chineseChapter}章${versesStr}節`;
+    
+    if (!verses) {
+      return `${fullBookName} ${chineseChapter}${chapterSuffix}`;
+    }
+    
+    const versesStr = verses.replace(/-/g, '至').replace(/–/g, '至').trim();
+    return `${fullBookName} ${chineseChapter}${chapterSuffix}${versesStr}節`;
   }
 }
 
