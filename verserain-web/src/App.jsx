@@ -4599,8 +4599,10 @@ export default function App() {
                         const q = multiplayerSearchText.trim().toLowerCase();
                         const results = [];
                         for (const set of activeVerseSets) {
+                          const setTitleMatches = (set.title || '').toLowerCase().includes(q);
                           for (const v of (set.verses || [])) {
                             if (
+                              setTitleMatches ||
                               (v.reference || '').toLowerCase().includes(q) ||
                               (v.title || '').toLowerCase().includes(q) ||
                               (v.text || '').toLowerCase().includes(q)
