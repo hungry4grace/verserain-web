@@ -3959,8 +3959,7 @@ export default function App() {
                       <CloudRain size={40} color="#3b82f6" /> {t("VerseRain 經文雨", "VerseRain")}
                     </h1>
                     <p style={{ fontSize: '0.95rem', color: '#94a3b8', lineHeight: '1.8', margin: 0 }}>
-                      {t("每天一句神的話", "One verse from God every day")}<br />
-                      {t("心意更新而變化", "Be transformed by the renewing of your mind")}
+                      {t("每天一句神的話，心意更新而變化", "One verse a day, keep the devil away")}
                     </p>
                   </div>
 
