@@ -957,11 +957,14 @@ export default function App() {
 
 
   const activePhrases = React.useMemo(() => {
-    // Unify all punctuation (English, Chinese, Hebrew, Farsi, etc)
-    // Removed \s so languages using spaces (Hebrew, Farsi, Korean) don't fragment into single words.
-    const regex = /[,，。；؛،：「」、;:\.\?!！？؟『』《》 ]/;
+    // Chinese (cuv): also split on spaces so creators can control segmentation by inserting spaces.
+    // Other languages (English, Hebrew, Farsi, Korean, Japanese) use spaces between words — keep them intact.
+    const isChinese = version === 'cuv';
+    const regex = isChinese
+      ? /[,，。；؛،：「」、;:\.\?!！？؟『』《》 ]/
+      : /[,，。；؛،：「」、;:\.\?!！？؟『』《》]/;
     return activeVerse.text.split(regex).map(p => p.trim()).filter(Boolean);
-  }, [activeVerse]);
+  }, [activeVerse, version]);
 
   const activePhrasesRef = useRef([]);
   useEffect(() => { activePhrasesRef.current = activePhrases; }, [activePhrases]);
