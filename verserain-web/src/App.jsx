@@ -1110,6 +1110,8 @@ export default function App() {
   }, [isMicOn, activePhrases, currentSeqIndex, blocks, gameState]);
   const [multiplayerSelectedVerses, setMultiplayerSelectedVerses] = useState([]);
   const [randomPickCount, setRandomPickCount] = useState(1);
+  const [multiplayerSearchText, setMultiplayerSearchText] = useState('');
+  const [showPickerBrowser, setShowPickerBrowser] = useState(false);
 
   const multiplayerRoomRef = useRef(multiplayerRoomId);
   useEffect(() => { multiplayerRoomRef.current = multiplayerRoomId; }, [multiplayerRoomId]);
@@ -4573,67 +4575,46 @@ export default function App() {
                         </div>
                       </div>
 
-                      {!pickerSelectedSet ? (
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '0.8rem', maxHeight: '400px', overflowY: 'auto' }}>
-                          {activeVerseSets.map(set => (
-                            <button
-                              key={set.id}
-                              onClick={() => setPickerSelectedSet(set)}
-                              style={{ padding: '1rem', border: '1px solid #cbd5e1', borderRadius: '6px', background: '#f8fafc', color: '#334155', fontWeight: 'bold', cursor: 'pointer', textAlign: 'center', transition: 'background 0.2s' }}
-                            >
-                              {customVerseSets.some(c => c.id === set.id) ? '👑 ' : ''}{set.title}
-                              <div style={{ fontSize: '0.8rem', color: '#64748b', marginTop: '0.5rem', fontWeight: 'normal' }}>{set.verses?.length || 0} {t("節", "verses")}</div>
-                            </button>
-                          ))}
+                      {/* ── Search Bar ── */}
+                      <div style={{ marginBottom: '1rem' }}>
+                        <div style={{ position: 'relative' }}>
+                          <span style={{ position: 'absolute', left: '0.9rem', top: '50%', transform: 'translateY(-50%)', fontSize: '1.1rem', pointerEvents: 'none' }}>🔍</span>
+                          <input
+                            id="mpVerseSearchInput"
+                            type="text"
+                            placeholder={t("搜尋經文（書卷、章節、內文…）", "Search verses (book, chapter, text…)")}
+                            value={multiplayerSearchText}
+                            onChange={(e) => { setMultiplayerSearchText(e.target.value); setPickerSelectedSet(null); }}
+                            autoFocus
+                            style={{ width: '100%', padding: '0.75rem 0.9rem 0.75rem 2.4rem', borderRadius: '8px', border: '2px solid #a78bfa', fontSize: '1rem', outline: 'none', boxSizing: 'border-box', boxShadow: '0 0 0 3px #ede9fe' }}
+                          />
+                          {multiplayerSearchText && (
+                            <button onClick={() => setMultiplayerSearchText('')} style={{ position: 'absolute', right: '0.7rem', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', fontSize: '1.1rem', padding: '0' }}>✕</button>
+                          )}
                         </div>
-                      ) : (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', maxHeight: '400px', overflowY: 'auto', paddingRight: '0.5rem' }}>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
-                            <button onClick={() => { setPickerSelectedSet(null); setMultiplayerSelectedVerses([]); }} style={{ background: 'none', border: 'none', color: '#3b82f6', cursor: 'pointer', textAlign: 'left', padding: '0.5rem 0', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                              <span>←</span> {t("返回經文組", "Back to Groups")}
-                            </button>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: '#f8fafc', padding: '0.4rem 0.8rem', borderRadius: '6px', border: '1px solid #cbd5e1' }}>
-                                <span style={{ fontSize: '0.9rem', color: '#64748b' }}>{t("隨機挑選", "Random Pick")} (共 {pickerSelectedSet.verses?.length || 0})</span>
-                                <div style={{ display: 'flex', alignItems: 'center', border: '1px solid #cbd5e1', borderRadius: '4px', overflow: 'hidden' }}>
-                                  <button
-                                    onClick={() => setRandomPickCount(Math.max(1, (parseInt(randomPickCount) || 1) - 1))}
-                                    style={{ width: '28px', height: '28px', border: 'none', background: '#e2e8f0', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#64748b', fontWeight: 'bold', fontSize: '1.2rem', transform: 'none' }}
-                                  >
-                                    -
-                                  </button>
-                                  <input
-                                    type="number"
-                                    min="1"
-                                    max={pickerSelectedSet.verses?.length || 1}
-                                    value={randomPickCount || 1}
-                                    onChange={(e) => setRandomPickCount(e.target.value === '' ? '' : Math.min(pickerSelectedSet.verses?.length || 1, Math.max(1, parseInt(e.target.value))))}
-                                    style={{ width: '40px', height: '28px', padding: '0', border: 'none', background: 'white', outline: 'none', textAlign: 'center', fontSize: '1rem', color: '#334155', fontWeight: 'bold', margin: '0' }}
-                                  />
-                                  <button
-                                    onClick={() => setRandomPickCount(Math.min(pickerSelectedSet.verses?.length || 1, (parseInt(randomPickCount) || 1) + 1))}
-                                    style={{ width: '28px', height: '28px', border: 'none', background: '#e2e8f0', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#64748b', fontWeight: 'bold', fontSize: '1.2rem', transform: 'none' }}
-                                  >
-                                    +
-                                  </button>
-                                </div>
-                                <button
-                                  onClick={() => {
-                                    if (!pickerSelectedSet || !pickerSelectedSet.verses) return;
-                                    const shuffled = [...pickerSelectedSet.verses].sort(() => 0.5 - Math.random());
-                                    const selected = shuffled.slice(0, randomPickCount);
-                                    setActiveVerse(selected[0]);
-                                    setPlayMode(multiplayerPlayMode);
-                                    setDistractionLevel(multiplayerDistractionLevel);
-                                    setInitAutoStart({ trigger: true, isAuto: false, isMultiplayerReadyCheck: true, campaignQueue: selected, verse: selected[0], playMode: multiplayerPlayMode });
-                                    setShowMultiplayerVersePicker(false);
-                                  }}
-                                  style={{ background: '#8b5cf6', color: 'white', border: 'none', padding: '0.3rem 0.6rem', borderRadius: '4px', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.2rem', fontSize: '0.8rem' }}
-                                >
-                                  <Dices size={14} /> {t("開始", "Start")}
-                                </button>
-                              </div>
+                      </div>
 
+                      {/* ── Search Results ── */}
+                      {multiplayerSearchText.trim().length > 0 ? (() => {
+                        const q = multiplayerSearchText.trim().toLowerCase();
+                        const results = [];
+                        for (const set of activeVerseSets) {
+                          for (const v of (set.verses || [])) {
+                            if (
+                              (v.reference || '').toLowerCase().includes(q) ||
+                              (v.title || '').toLowerCase().includes(q) ||
+                              (v.text || '').toLowerCase().includes(q)
+                            ) {
+                              if (!results.some(r => r.reference === v.reference)) results.push(v);
+                            }
+                          }
+                        }
+                        return (
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.3rem' }}>
+                              <span style={{ fontSize: '0.85rem', color: '#64748b', fontWeight: 'bold' }}>
+                                {results.length > 0 ? `${t('找到', 'Found')} ${results.length} ${t('節', 'verses')}` : t('找不到符合的經文', 'No verses found')}
+                              </span>
                               {multiplayerSelectedVerses.length > 0 && (
                                 <button
                                   onClick={() => {
@@ -4643,38 +4624,106 @@ export default function App() {
                                     setInitAutoStart({ trigger: true, isAuto: false, isMultiplayerReadyCheck: true, campaignQueue: multiplayerSelectedVerses, verse: multiplayerSelectedVerses[0], playMode: multiplayerPlayMode });
                                     setShowMultiplayerVersePicker(false);
                                   }}
-                                  style={{ background: '#10b981', color: 'white', border: 'none', padding: '0.5rem 1rem', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.9rem' }}
+                                  style={{ background: '#10b981', color: 'white', border: 'none', padding: '0.5rem 1.2rem', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}
                                 >
-                                  {t("完成揀選", "Finish")} ({multiplayerSelectedVerses.length})
+                                  ✓ {t('完成揀選', 'Finish')} ({multiplayerSelectedVerses.length})
                                 </button>
                               )}
                             </div>
+                            <div style={{ maxHeight: '380px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '0.4rem', paddingRight: '0.3rem' }}>
+                              {results.slice(0, 80).map(v => {
+                                const isSelected = multiplayerSelectedVerses.some(sv => sv.reference === v.reference);
+                                return (
+                                  <div
+                                    key={v.reference}
+                                    onClick={() => {
+                                      if (isSelected) {
+                                        setMultiplayerSelectedVerses(prev => prev.filter(sv => sv.reference !== v.reference));
+                                      } else {
+                                        setMultiplayerSelectedVerses(prev => [...prev, v]);
+                                      }
+                                    }}
+                                    style={{ padding: '0.8rem 1rem', border: `2px solid ${isSelected ? '#10b981' : '#e2e8f0'}`, borderRadius: '8px', background: isSelected ? '#ecfdf5' : '#fafafa', cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: '0.2rem', transition: 'all 0.15s' }}
+                                    onMouseOver={(e) => { if (!isSelected) e.currentTarget.style.borderColor = '#a78bfa'; e.currentTarget.style.boxShadow = '0 2px 6px rgba(0,0,0,0.08)'; }}
+                                    onMouseOut={(e) => { e.currentTarget.style.borderColor = isSelected ? '#10b981' : '#e2e8f0'; e.currentTarget.style.boxShadow = 'none'; }}
+                                  >
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                      <span style={{ fontWeight: 'bold', color: '#7c3aed', fontSize: '1rem' }}>{v.reference}</span>
+                                      {isSelected && <span style={{ color: '#10b981', fontWeight: 'bold', fontSize: '1.1rem' }}>✓</span>}
+                                    </div>
+                                    {v.title && <span style={{ fontSize: '0.85rem', color: '#475569' }}>{v.title}</span>}
+                                    {v.text && <span style={{ fontSize: '0.78rem', color: '#94a3b8', fontStyle: 'italic', overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>{v.text}</span>}
+                                  </div>
+                                );
+                              })}
+                            </div>
                           </div>
-                          {pickerSelectedSet.verses?.map(v => {
-                            const isSelected = multiplayerSelectedVerses.some(sv => sv.reference === v.reference);
-                            return (
-                              <div
-                                key={v.reference}
-                                onClick={() => {
-                                  if (isSelected) {
-                                    setMultiplayerSelectedVerses(prev => prev.filter(sv => sv.reference !== v.reference));
-                                  } else {
-                                    setMultiplayerSelectedVerses(prev => [...prev, v]);
-                                  }
-                                }}
-                                style={{ padding: '1rem', border: `2px solid ${isSelected ? '#10b981' : '#cbd5e1'}`, borderRadius: '6px', background: isSelected ? '#ecfdf5' : '#fff', cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: '0.3rem', transition: 'all 0.2s', position: 'relative' }}
-                                onMouseOver={(e) => e.currentTarget.style.boxShadow = '0 2px 5px rgba(0,0,0,0.1)'}
-                                onMouseOut={(e) => e.currentTarget.style.boxShadow = 'none'}
-                              >
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                  <span style={{ fontWeight: 'bold', color: '#8b5cf6', fontSize: '1.1rem' }}>{v.reference}</span>
-                                  {isSelected && <span style={{ color: '#10b981', fontWeight: 'bold', fontSize: '1.2rem' }}>✓</span>}
+                        );
+                      })() : (
+                        /* ── Browse by Set (collapsed by default) ── */
+                        <div>
+                          <button
+                            onClick={() => setShowPickerBrowser(v => !v)}
+                            style={{ width: '100%', background: '#f1f5f9', border: '1px dashed #cbd5e1', borderRadius: '8px', padding: '0.75rem 1rem', cursor: 'pointer', color: '#64748b', fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.95rem' }}
+                          >
+                            <span>📚 {t('瀏覽經文組', 'Browse Verse Sets')}</span>
+                            <span style={{ fontSize: '0.8rem' }}>{showPickerBrowser ? '▲' : '▼'}</span>
+                          </button>
+                          {showPickerBrowser && (
+                            !pickerSelectedSet ? (
+                              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: '0.7rem', maxHeight: '340px', overflowY: 'auto', marginTop: '0.75rem' }}>
+                                {activeVerseSets.map(set => (
+                                  <button
+                                    key={set.id}
+                                    onClick={() => setPickerSelectedSet(set)}
+                                    style={{ padding: '0.9rem', border: '1px solid #cbd5e1', borderRadius: '8px', background: '#f8fafc', color: '#334155', fontWeight: 'bold', cursor: 'pointer', textAlign: 'center', transition: 'background 0.2s', fontSize: '0.9rem' }}
+                                    onMouseOver={(e) => e.currentTarget.style.background = '#ede9fe'}
+                                    onMouseOut={(e) => e.currentTarget.style.background = '#f8fafc'}
+                                  >
+                                    {customVerseSets.some(c => c.id === set.id) ? '👑 ' : ''}{set.title}
+                                    <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.4rem', fontWeight: 'normal' }}>{set.verses?.length || 0} {t('節', 'verses')}</div>
+                                  </button>
+                                ))}
+                              </div>
+                            ) : (
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', maxHeight: '360px', overflowY: 'auto', paddingRight: '0.3rem', marginTop: '0.75rem' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '0.4rem' }}>
+                                  <button onClick={() => { setPickerSelectedSet(null); setMultiplayerSelectedVerses([]); }} style={{ background: 'none', border: 'none', color: '#3b82f6', cursor: 'pointer', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '0.4rem', padding: '0.3rem 0' }}>
+                                    <span>←</span> {t('返回經文組', 'Back to Groups')}
+                                  </button>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', background: '#f8fafc', padding: '0.3rem 0.7rem', borderRadius: '6px', border: '1px solid #cbd5e1' }}>
+                                      <span style={{ fontSize: '0.85rem', color: '#64748b' }}>{t('隨機', 'Rand')} ({pickerSelectedSet.verses?.length || 0})</span>
+                                      <div style={{ display: 'flex', alignItems: 'center', border: '1px solid #cbd5e1', borderRadius: '4px', overflow: 'hidden' }}>
+                                        <button onClick={() => setRandomPickCount(Math.max(1, (parseInt(randomPickCount)||1)-1))} style={{ width:'24px', height:'24px', border:'none', background:'#e2e8f0', cursor:'pointer', fontWeight:'bold', fontSize:'1rem', transform:'none' }}>-</button>
+                                        <input type="number" min="1" max={pickerSelectedSet.verses?.length||1} value={randomPickCount||1} onChange={(e) => setRandomPickCount(e.target.value==='' ? '' : Math.min(pickerSelectedSet.verses?.length||1, Math.max(1, parseInt(e.target.value))))} style={{ width:'36px', height:'24px', padding:'0', border:'none', background:'white', outline:'none', textAlign:'center', fontSize:'0.9rem', color:'#334155', fontWeight:'bold', margin:'0' }} />
+                                        <button onClick={() => setRandomPickCount(Math.min(pickerSelectedSet.verses?.length||1, (parseInt(randomPickCount)||1)+1))} style={{ width:'24px', height:'24px', border:'none', background:'#e2e8f0', cursor:'pointer', fontWeight:'bold', fontSize:'1rem', transform:'none' }}>+</button>
+                                      </div>
+                                      <button onClick={() => { if (!pickerSelectedSet?.verses) return; const sel = [...pickerSelectedSet.verses].sort(()=>0.5-Math.random()).slice(0,randomPickCount); setActiveVerse(sel[0]); setPlayMode(multiplayerPlayMode); setDistractionLevel(multiplayerDistractionLevel); setInitAutoStart({ trigger:true, isAuto:false, isMultiplayerReadyCheck:true, campaignQueue:sel, verse:sel[0], playMode:multiplayerPlayMode }); setShowMultiplayerVersePicker(false); }} style={{ background:'#8b5cf6', color:'white', border:'none', padding:'0.2rem 0.5rem', borderRadius:'4px', fontWeight:'bold', cursor:'pointer', display:'flex', alignItems:'center', gap:'0.2rem', fontSize:'0.75rem' }}><Dices size={13}/> {t('開始','Start')}</button>
+                                    </div>
+                                    {multiplayerSelectedVerses.length > 0 && (
+                                      <button onClick={() => { setActiveVerse(multiplayerSelectedVerses[0]); setPlayMode(multiplayerPlayMode); setDistractionLevel(multiplayerDistractionLevel); setInitAutoStart({ trigger:true, isAuto:false, isMultiplayerReadyCheck:true, campaignQueue:multiplayerSelectedVerses, verse:multiplayerSelectedVerses[0], playMode:multiplayerPlayMode }); setShowMultiplayerVersePicker(false); }} style={{ background:'#10b981', color:'white', border:'none', padding:'0.4rem 0.9rem', borderRadius:'6px', fontWeight:'bold', cursor:'pointer', fontSize:'0.85rem' }}>
+                                        ✓ {t('完成揀選','Finish')} ({multiplayerSelectedVerses.length})
+                                      </button>
+                                    )}
+                                  </div>
                                 </div>
-                                <span style={{ fontSize: '0.9rem', color: '#475569', marginTop: '0.2rem' }}>{v.title}</span>
-                                <span style={{ fontSize: '0.8rem', color: '#94a3b8', fontStyle: 'italic', marginTop: '0.2rem', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{v.text}</span>
+                                {pickerSelectedSet.verses?.map(v => {
+                                  const isSelected = multiplayerSelectedVerses.some(sv => sv.reference === v.reference);
+                                  return (
+                                    <div key={v.reference} onClick={() => { if (isSelected) { setMultiplayerSelectedVerses(prev => prev.filter(sv => sv.reference !== v.reference)); } else { setMultiplayerSelectedVerses(prev => [...prev, v]); } }} style={{ padding: '0.8rem 1rem', border: `2px solid ${isSelected ? '#10b981' : '#e2e8f0'}`, borderRadius: '8px', background: isSelected ? '#ecfdf5' : '#fafafa', cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: '0.2rem', transition: 'all 0.15s' }} onMouseOver={(e) => { if (!isSelected) e.currentTarget.style.borderColor='#a78bfa'; }} onMouseOut={(e) => { e.currentTarget.style.borderColor = isSelected ? '#10b981' : '#e2e8f0'; }}>
+                                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                        <span style={{ fontWeight: 'bold', color: '#7c3aed', fontSize: '1rem' }}>{v.reference}</span>
+                                        {isSelected && <span style={{ color: '#10b981', fontWeight: 'bold' }}>✓</span>}
+                                      </div>
+                                      {v.title && <span style={{ fontSize: '0.85rem', color: '#475569' }}>{v.title}</span>}
+                                      {v.text && <span style={{ fontSize: '0.78rem', color: '#94a3b8', fontStyle: 'italic', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{v.text}</span>}
+                                    </div>
+                                  );
+                                })}
                               </div>
                             )
-                          })}
+                          )}
                         </div>
                       )}
                     </div>
@@ -4722,6 +4771,8 @@ export default function App() {
                             onClick={() => {
                               setShowMultiplayerVersePicker(true);
                               setPickerSelectedSet(null);
+                              setMultiplayerSearchText('');
+                              setShowPickerBrowser(false);
                             }}
                             disabled={!multiplayerState || Object.keys(multiplayerState.players).length < 2}
                             style={{ background: '#3b82f6', color: 'white', border: 'none', padding: '0.8rem 2rem', borderRadius: '6px', fontSize: '1.1rem', fontWeight: 'bold', cursor: Object.keys(multiplayerState?.players || {}).length < 2 ? 'not-allowed' : 'pointer', opacity: Object.keys(multiplayerState?.players || {}).length < 2 ? 0.5 : 1 }}
