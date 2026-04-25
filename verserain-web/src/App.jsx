@@ -959,7 +959,7 @@ export default function App() {
   const activePhrases = React.useMemo(() => {
     // Unify all punctuation (English, Chinese, Hebrew, Farsi, etc)
     // Removed \s so languages using spaces (Hebrew, Farsi, Korean) don't fragment into single words.
-    const regex = /[,，。；؛،：「」、;:\.\?!！？؟『』《》]/;
+    const regex = /[,，。；؛،：「」、;:\.\?!！？؟『』《》 ]/;
     return activeVerse.text.split(regex).map(p => p.trim()).filter(Boolean);
   }, [activeVerse]);
 
