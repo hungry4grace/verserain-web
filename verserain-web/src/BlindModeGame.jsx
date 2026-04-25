@@ -35,6 +35,7 @@ export default function BlindModeGame({
     const countdownRef = useRef(null);
     const isSuccessFlashRef = useRef(false);
     const missCountRef = useRef(0);
+    const missedIndicesRef = useRef([]);
     const isMountedRef = useRef(true);
     const lastMatchedIndexRef = useRef(-1);
     const lastMatchedLengthRef = useRef(0);
@@ -72,6 +73,7 @@ export default function BlindModeGame({
     useEffect(() => {
         isMountedRef.current = true;
         missCountRef.current = 0;
+        missedIndicesRef.current = [];
         isSuccessFlashRef.current = false;
         if ('speechSynthesis' in window) window.speechSynthesis.cancel();
         return () => { isMountedRef.current = false; };
@@ -133,6 +135,25 @@ export default function BlindModeGame({
             } else if (elapsed >= 5) {
                 setHintLevel(3);
                 clearInterval(countdownRef.current);
+                playDong();
+                if (!missedIndicesRef.current.includes(currentSeqIndexRef.current)) {
+                    missedIndicesRef.current.push(currentSeqIndexRef.current);
+                    setMissedIndices([...missedIndicesRef.current]);
+                    onWordMissRef.current(true); // true = shouldNotAdvance
+
+                    // Stop listening temporarily while system reads
+                    if (recognitionRef.current) {
+                        try { recognitionRef.current.stop(); } catch (e) {}
+                    }
+
+                    // System reads the phrase out loud
+                    const blockText = typeof currentBlockRef.current === 'string' ? currentBlockRef.current : (currentBlockRef.current?.text || '');
+                    speakText(blockText, 1.0, TTS_LANG).then(() => {
+                        if (!isMountedRef.current) return;
+                        // Auto-advance after reading
+                        onWordMatchRef.current(currentBlockRef.current, true);
+                    });
+                }
             }
         }, 1000);
     };
@@ -316,7 +337,8 @@ export default function BlindModeGame({
                         if (!isMountedRef.current) return;
                         isSuccessFlashRef.current = false;
                         setIsSuccessFlash(false);
-                        onWordMatchRef.current(block);
+                        const wasMissed = missedIndicesRef.current.includes(currentSeqIndexRef.current);
+                        onWordMatchRef.current(block, wasMissed);
                     }, 250); // Reduced timeout for faster combo passing
                 }
             }
@@ -558,10 +580,10 @@ export default function BlindModeGame({
                                 hyphens: 'auto',
                                 textAlign: 'center',
                                 opacity: isVisible ? 1 : 0,
-                                background: showGold ? 'linear-gradient(135deg, rgba(251, 191, 36, 0.9) 0%, rgba(251, 191, 36, 0.5) 100%)' : (isActive ? 'linear-gradient(135deg, rgba(255,255,255,0.7) 0%, rgba(255,255,255,0.3) 100%)' : 'rgba(255,255,255,0.05)'),
-                                color: showGold ? '#fff' : (isActive ? '#1e293b' : '#94a3b8'),
-                                borderColor: showGold ? '#fbbf24' : (isActive ? 'rgba(255, 255, 255, 0.5)' : 'rgba(255,255,255,0.2)'),
-                                boxShadow: showGold ? '0 0 20px rgba(251, 191, 36, 0.6)' : 'none',
+                                background: isMissed ? 'rgba(71, 85, 105, 0.8)' : (showGold ? 'linear-gradient(135deg, rgba(251, 191, 36, 0.9) 0%, rgba(251, 191, 36, 0.5) 100%)' : (isActive ? 'linear-gradient(135deg, rgba(255,255,255,0.7) 0%, rgba(255,255,255,0.3) 100%)' : 'rgba(255,255,255,0.05)')),
+                                color: isMissed ? '#94a3b8' : (showGold ? '#fff' : (isActive ? '#1e293b' : '#94a3b8')),
+                                borderColor: isMissed ? '#475569' : (showGold ? '#fbbf24' : (isActive ? 'rgba(255, 255, 255, 0.5)' : 'rgba(255,255,255,0.2)')),
+                                boxShadow: (!isMissed && showGold) ? '0 0 20px rgba(251, 191, 36, 0.6)' : 'none',
                                 pointerEvents: 'none',
                                 transition: 'all 0.3s'
                             } : {

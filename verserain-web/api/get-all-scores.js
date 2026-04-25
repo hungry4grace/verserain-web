@@ -26,63 +26,65 @@ export default async function handler(req, res) {
     const today = new Date().toISOString().split('T')[0];
     const month = today.slice(0, 7);
 
-    // Get all base leaderboard keys (skipping daily, monthly, global ones)
-    const keys = await Promise.all([
-        redis.keys('leaderboard:*')
+    // We only need top 100 players from the pre-aggregated sum keys
+    const [alltimeData, monthlyData, dailyData] = await Promise.all([
+        redis.zrange('leaderboard_sum:alltime', 0, 99, { rev: true, withScores: true }).catch(() => []),
+        redis.zrange(`leaderboard_sum:monthly:${month}`, 0, 99, { rev: true, withScores: true }).catch(() => []),
+        redis.zrange(`leaderboard_sum:daily:${today}`, 0, 99, { rev: true, withScores: true }).catch(() => [])
     ]);
-    
-    // We expect keys[0] to have the array
-    const allKeys = keys[0] || [];
-    const validVerseKeys = allKeys.filter(k => 
-        !k.includes(':monthly:') && 
-        !k.includes(':daily:') && 
-        k !== 'leaderboard:global' &&
-        !k.startsWith('leaderboard_meta')
-    );
 
-    let alltime = [];
-    let monthly = [];
-    let daily = [];
-
-    // For each valid verse key, we fetch the leaderboard
-    // We will construct the verseRef from the key itself: "leaderboard:" + verseRef
-    const fetchPromises = validVerseKeys.map(async (k) => {
-        const verseRef = k.substring('leaderboard:'.length);
-        const metaKey = `leaderboard_meta:${verseRef}`;
-        
-        const [alltimeData, monthlyData, dailyData, metas] = await Promise.all([
-            redis.zrange(k, 0, 9, { rev: true, withScores: true }),
-            redis.zrange(`leaderboard:monthly:${month}:${verseRef}`, 0, 9, { rev: true, withScores: true }),
-            redis.zrange(`leaderboard:daily:${today}:${verseRef}`, 0, 9, { rev: true, withScores: true }),
-            redis.hgetall(metaKey).catch(() => ({}))
-        ]);
-
-        const formatData = (dataArray) => {
-            let res = [];
-            if (dataArray.length > 0 && typeof dataArray[0] === 'object') {
-               dataArray.forEach(el => res.push({ verseRef, name: el.member, score: el.score, mode: metas?.[el.member] || 'rain' }));
-            } else {
-               for (let i = 0; i < dataArray.length; i += 2) {
-                 res.push({ verseRef, name: dataArray[i], score: dataArray[i + 1], mode: metas?.[dataArray[i]] || 'rain' });
-               }
+    const formatAggregatedData = async (sumDataArray, clearsKey) => {
+        let players = [];
+        if (sumDataArray.length > 0 && typeof sumDataArray[0] === 'object') {
+            players = sumDataArray.map(el => ({ name: el.member, total: el.score, clears: 0 }));
+        } else {
+            for (let i = 0; i < sumDataArray.length; i += 2) {
+                players.push({ name: sumDataArray[i], total: parseFloat(sumDataArray[i + 1]), clears: 0 });
             }
-            return res;
-        };
+        }
+        
+        // Fetch clears for these specific players
+        if (players.length > 0) {
+            // Because Upstash Redis zmsore exists, but we can just use a pipeline or individual zscores
+            // For simplicity and to avoid timeout, if it's less than 100, we can use a pipeline
+            const p = redis.pipeline();
+            players.forEach(player => p.zscore(clearsKey, player.name));
+            const clearsScores = await p.exec().catch(() => []);
+            players.forEach((player, idx) => {
+                player.clears = parseFloat(clearsScores[idx]) || 0;
+            });
+        }
+        return players;
+    };
 
-        alltime = alltime.concat(formatData(alltimeData));
-        monthly = monthly.concat(formatData(monthlyData));
-        daily = daily.concat(formatData(dailyData));
-    });
+    const alltime = await formatAggregatedData(alltimeData, 'leaderboard_clears:alltime');
+    const monthly = await formatAggregatedData(monthlyData, `leaderboard_clears:monthly:${month}`);
+    const daily = await formatAggregatedData(dailyData, `leaderboard_clears:daily:${today}`);
 
-    await Promise.all(fetchPromises);
+    const [creatorData, referralData] = await Promise.all([
+      redis.zrange('verse_stats:creator_points', 0, -1, { withScores: true }).catch(() => []),
+      redis.zrange('gamification:referrals:alltime', 0, -1, { withScores: true }).catch(() => [])
+    ]);
 
-    // Sort all arrays by verseRef
-    const sortByVerse = (a, b) => a.verseRef.localeCompare(b.verseRef);
-    alltime.sort(sortByVerse);
-    monthly.sort(sortByVerse);
-    daily.sort(sortByVerse);
+    const bonusFruitsMap = {};
+    const processBonus = (data, key) => {
+      let elements = [];
+      if (data.length > 0 && typeof data[0] === 'object') {
+        elements = data;
+      } else {
+        for (let i = 0; i < data.length; i += 2) {
+          elements.push({ member: data[i], score: parseFloat(data[i + 1]) });
+        }
+      }
+      elements.forEach(el => {
+        if (!bonusFruitsMap[el.member]) bonusFruitsMap[el.member] = { creatorPoints: 0, referralPoints: 0 };
+        bonusFruitsMap[el.member][key] = el.score;
+      });
+    };
+    processBonus(creatorData, 'creatorPoints');
+    processBonus(referralData, 'referralPoints');
 
-    res.status(200).json({ alltime, monthly, daily });
+    res.status(200).json({ alltime, monthly, daily, bonusFruitsMap });
   } catch (error) {
     console.error("Failed to get all scores", error);
     res.status(500).json({ error: error.message });

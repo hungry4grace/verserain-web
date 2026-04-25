@@ -316,7 +316,7 @@ export default function WorldMap2D({ t, playerName, onJoinRoom, onToggleMode, cu
           ⚠️ {error}
         </div>
       ) : (
-        <div>
+        <div dir="ltr">
           <div ref={mapRef} style={{ height: '520px', width: '100%', background: '#e0f2fe' }} />
           {players.length === 0 && (
             <div style={{ position: 'relative', top: '-260px', textAlign: 'center', color: '#94a3b8', pointerEvents: 'none', fontSize: '1rem' }}>

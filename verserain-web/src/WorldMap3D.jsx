@@ -316,7 +316,7 @@ export default function WorldMap3D({ t, playerName, onJoinRoom, onToggleMode, cu
       </div>
 
       {/* Map container */}
-      <div ref={containerRef} style={{ width: '100%', height: '520px', background: '#e0f2fe', cursor: 'grab' }} onMouseDown={(e) => e.currentTarget.style.cursor='grabbing'} onMouseUp={(e) => e.currentTarget.style.cursor='grab'}>
+      <div dir="ltr" ref={containerRef} style={{ width: '100%', height: '520px', background: '#e0f2fe', cursor: 'grab' }} onMouseDown={(e) => e.currentTarget.style.cursor='grabbing'} onMouseUp={(e) => e.currentTarget.style.cursor='grab'}>
         {loading ? (
           <div style={{ height: '520px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#94a3b8', fontSize: '1.1rem' }}>
             ⏳ {t('載入地球中...', 'Loading globe...')}

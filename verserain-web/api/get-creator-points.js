@@ -28,14 +28,16 @@ export default async function handler(req, res) {
       return res.status(200).json({ allScores: scores });
     }
 
-    const pts = await redis.zscore('verse_stats:creator_points', author);
+    const pPts = redis.zscore('verse_stats:creator_points', author);
+    const pRef = redis.zscore('gamification:referrals:alltime', author);
+    const [pts, refPts] = await Promise.all([pPts, pRef]);
     
     let creatorHistory = [];
     let referralHistory = [];
     
     if (history === 'true') {
-      const p1 = redis.lrange(`gamification:history:creator:${author}`, 0, 49);
-      const p2 = redis.lrange(`gamification:history:referral:${author}`, 0, 49);
+      const p1 = redis.lrange(`gamification:history:creator:${author}`, 0, 499);
+      const p2 = redis.lrange(`gamification:history:referral:${author}`, 0, 499);
       const [cHist, rHist] = await Promise.all([p1, p2]);
       
       creatorHistory = (cHist || []).map(s => typeof s === 'string' ? JSON.parse(s) : s);
@@ -44,6 +46,7 @@ export default async function handler(req, res) {
 
     res.status(200).json({ 
       points: parseFloat(pts) || 0,
+      referralPoints: parseFloat(refPts) || 0,
       creatorHistory,
       referralHistory
     });

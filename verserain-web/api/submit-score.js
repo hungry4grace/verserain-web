@@ -42,23 +42,34 @@ export default async function handler(req, res) {
     const monthlyKey = `leaderboard:monthly:${month}:${verseRef}`;
     const dailyKey = `leaderboard:daily:${today}:${verseRef}`;
 
-    async function updateZset(key, verseMetaKey) {
+    async function updateZset(key, verseMetaKey, sumPrefix, clearsPrefix) {
         const currentScore = await redis.zscore(key, name);
-        if (currentScore === null || score > parseFloat(currentScore)) {
+        const prevScoreNum = currentScore === null ? 0 : parseFloat(currentScore);
+        
+        if (currentScore === null || score > prevScoreNum) {
             await redis.zadd(key, { score: score, member: name });
-            if (mode) {
+            if (mode && verseMetaKey) {
                await redis.hset(`leaderboard_meta:${verseMetaKey}`, { [name]: mode });
+            }
+
+            const scoreDelta = score - prevScoreNum;
+            if (scoreDelta > 0 && sumPrefix) {
+               await redis.zincrby(`${sumPrefix}`, scoreDelta, name);
+            }
+            if (currentScore === null && clearsPrefix) {
+               await redis.zincrby(`${clearsPrefix}`, 1, name);
             }
         }
     }
 
     await Promise.all([
-        updateZset(allTimeKey, verseRef),
-        updateZset(monthlyKey, verseRef),
-        updateZset(dailyKey, verseRef),
-        updateZset("leaderboard:global", 'global'),
-        updateZset(`leaderboard:monthly:${month}:global`, 'global'),
-        updateZset(`leaderboard:daily:${today}:global`, 'global')
+        updateZset(allTimeKey, verseRef, 'leaderboard_sum:alltime', 'leaderboard_clears:alltime'),
+        updateZset(monthlyKey, verseRef, `leaderboard_sum:monthly:${month}`, `leaderboard_clears:monthly:${month}`),
+        updateZset(dailyKey, verseRef, `leaderboard_sum:daily:${today}`, `leaderboard_clears:daily:${today}`),
+        // global tracks the single highest score across any verse (not a sum)
+        updateZset("leaderboard:global", 'global', null, null),
+        updateZset(`leaderboard:monthly:${month}:global`, 'global', null, null),
+        updateZset(`leaderboard:daily:${today}:global`, 'global', null, null)
     ]);
 
     res.status(200).json({ success: true });
