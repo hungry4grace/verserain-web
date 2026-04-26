@@ -21,6 +21,7 @@
     "react-dom": "^19.2.4",
     "react-globe.gl": "^2.27.2",
     "react-quill-new": "^3.8.3",
+    "react-zoom-pan-pinch": "^4.0.3",
     "three": "latest"
   },
   "devDependencies": {

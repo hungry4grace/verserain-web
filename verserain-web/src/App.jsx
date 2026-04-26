@@ -12,6 +12,7 @@ import 'react-quill-new/dist/quill.snow.css';
 import { PREMIUM_EMAILS } from './premiumEmails';
 import WorldMap from './WorldMap';
 import BlindModeGame from './BlindModeGame';
+import { TransformWrapper, TransformComponent } from 'react-zoom-pan-pinch';
 
 const quillModules = {
   toolbar: [
@@ -393,6 +394,16 @@ export default function App() {
   const [userEmail, setUserEmail] = useState(() => localStorage.getItem('verserain_player_email') || "");
   const isAdmin = ['samhsiung@gmail.com', 'davidhwang1125@gmail.com', 'hsiungsam@gmail.com', 'hungry4grace@gmail.com'].includes(userEmail.toLowerCase());
   const [playerName, setPlayerName] = useState(() => localStorage.getItem('verserain_player_name') || "");
+  // Unique random personal invite code (never changes, not linked to nickname)
+  const [personalCode] = useState(() => {
+    let code = localStorage.getItem('verserain_personal_code');
+    if (!code) {
+      const chars = 'ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
+      code = Array.from({ length: 10 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+      localStorage.setItem('verserain_personal_code', code);
+    }
+    return code;
+  });
   const playerNameRef = useRef(playerName);
 
   // UI Language — independent of Bible version for scalable i18n
@@ -522,16 +533,22 @@ export default function App() {
 
   useEffect(() => {
     if (playerName) {
-      fetch(`/api/get-creator-points?author=${encodeURIComponent(playerName)}&history=true`)
-        .then(r => r.json())
-        .then(d => {
-          if (d.points) setCreatorPoints(d.points);
-          if (d.creatorHistory) setCreatorHistory(d.creatorHistory);
-          if (d.referralHistory) setReferralHistory(d.referralHistory);
-        })
-        .catch(e => console.error(e));
+      // Fetch verse authoring points (by playerName) + referral points (by personalCode)
+      Promise.all([
+        fetch(`/api/get-creator-points?author=${encodeURIComponent(playerName)}&history=true`).then(r => r.json()),
+        (personalCode && personalCode !== playerName)
+          ? fetch(`/api/get-creator-points?author=${encodeURIComponent(personalCode)}&history=true`).then(r => r.json())
+          : Promise.resolve(null)
+      ]).then(([d, dCode]) => {
+        const pts = (d?.points || 0) + (dCode?.points || 0) + (dCode?.referralPoints || 0);
+        if (pts > 0) setCreatorPoints(pts);
+        else if (d?.referralPoints) setCreatorPoints(d.referralPoints);
+        if (d?.creatorHistory) setCreatorHistory(d.creatorHistory);
+        const refHist = dCode?.referralHistory?.length ? dCode.referralHistory : (d?.referralHistory || []);
+        setReferralHistory(refHist);
+      }).catch(e => console.error(e));
     }
-  }, [playerName]);
+  }, [playerName, personalCode]);
 
   const localFruits = React.useMemo(() => Object.values(gardenData || {}).reduce((sum, curr) => sum + (curr.fruits || 0), 0), [gardenData]);
   const totalFruits = localFruits + creatorPoints;
@@ -539,6 +556,7 @@ export default function App() {
   const hasPremiumAccess = isPremium || skoolLevel.level >= 3;
   const [selectedGardenCell, setSelectedGardenCell] = useState(null);
   const [showLevelInfo, setShowLevelInfo] = useState(false);
+  const [showFruitInfo, setShowFruitInfo] = useState(false);
   const [levelCounts, setLevelCounts] = useState(null);
   const [viewingPlayerGarden, setViewingPlayerGarden] = useState(null); // { playerName, gardenData } or null
   const [guestChallengeMode, setGuestChallengeMode] = useState('square');
@@ -1931,7 +1949,7 @@ export default function App() {
         // Phase 1 Gamification: Reward Inviter & Invitee (Using Dedicated Points, NOT Fruits)
         const inviter = localStorage.getItem('verserain_inviter');
         const claimed = localStorage.getItem('verserain_invite_claimed');
-        if (inviter && inviter !== playerName && !claimed) {
+        if (inviter && inviter !== personalCode && !claimed) {
           // Reward the inviter (+5 points)
           fetch("/api/submit-referral-point", {
             method: "POST", headers: { "Content-Type": "application/json" },
@@ -1941,7 +1959,7 @@ export default function App() {
           // Reward the new player (+3 points bonus)
           fetch("/api/submit-referral-point", {
             method: "POST", headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ author: playerName, amount: 3, player: inviter, type: 'invited_by' })
+            body: JSON.stringify({ author: personalCode, amount: 3, player: inviter, type: 'invited_by' })
           }).catch(e => e);
 
           localStorage.setItem('verserain_invite_claimed', 'true');
@@ -3882,7 +3900,7 @@ export default function App() {
                     verserain
                   </div>
                   <div style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', marginTop: '4px', marginLeft: '2px' }}>
-                    v2.6.0
+                    v3.0.0
                   </div>
                 </div>
                 <select
@@ -4699,15 +4717,15 @@ export default function App() {
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', background: '#f8fafc', padding: '0.3rem 0.7rem', borderRadius: '6px', border: '1px solid #cbd5e1' }}>
                                       <span style={{ fontSize: '0.85rem', color: '#64748b' }}>{t('隨機', 'Rand')} ({pickerSelectedSet.verses?.length || 0})</span>
                                       <div style={{ display: 'flex', alignItems: 'center', border: '1px solid #cbd5e1', borderRadius: '4px', overflow: 'hidden' }}>
-                                        <button onClick={() => setRandomPickCount(Math.max(1, (parseInt(randomPickCount)||1)-1))} style={{ width:'24px', height:'24px', border:'none', background:'#e2e8f0', cursor:'pointer', fontWeight:'bold', fontSize:'1rem', transform:'none' }}>-</button>
-                                        <input type="number" min="1" max={pickerSelectedSet.verses?.length||1} value={randomPickCount||1} onChange={(e) => setRandomPickCount(e.target.value==='' ? '' : Math.min(pickerSelectedSet.verses?.length||1, Math.max(1, parseInt(e.target.value))))} style={{ width:'36px', height:'24px', padding:'0', border:'none', background:'white', outline:'none', textAlign:'center', fontSize:'0.9rem', color:'#334155', fontWeight:'bold', margin:'0' }} />
-                                        <button onClick={() => setRandomPickCount(Math.min(pickerSelectedSet.verses?.length||1, (parseInt(randomPickCount)||1)+1))} style={{ width:'24px', height:'24px', border:'none', background:'#e2e8f0', cursor:'pointer', fontWeight:'bold', fontSize:'1rem', transform:'none' }}>+</button>
+                                        <button onClick={() => setRandomPickCount(Math.max(1, (parseInt(randomPickCount) || 1) - 1))} style={{ width: '24px', height: '24px', border: 'none', background: '#e2e8f0', cursor: 'pointer', fontWeight: 'bold', fontSize: '1rem', transform: 'none' }}>-</button>
+                                        <input type="number" min="1" max={pickerSelectedSet.verses?.length || 1} value={randomPickCount || 1} onChange={(e) => setRandomPickCount(e.target.value === '' ? '' : Math.min(pickerSelectedSet.verses?.length || 1, Math.max(1, parseInt(e.target.value))))} style={{ width: '36px', height: '24px', padding: '0', border: 'none', background: 'white', outline: 'none', textAlign: 'center', fontSize: '0.9rem', color: '#334155', fontWeight: 'bold', margin: '0' }} />
+                                        <button onClick={() => setRandomPickCount(Math.min(pickerSelectedSet.verses?.length || 1, (parseInt(randomPickCount) || 1) + 1))} style={{ width: '24px', height: '24px', border: 'none', background: '#e2e8f0', cursor: 'pointer', fontWeight: 'bold', fontSize: '1rem', transform: 'none' }}>+</button>
                                       </div>
-                                      <button onClick={() => { if (!pickerSelectedSet?.verses) return; const sel = [...pickerSelectedSet.verses].sort(()=>0.5-Math.random()).slice(0,randomPickCount); setActiveVerse(sel[0]); setPlayMode(multiplayerPlayMode); setDistractionLevel(multiplayerDistractionLevel); setInitAutoStart({ trigger:true, isAuto:false, isMultiplayerReadyCheck:true, campaignQueue:sel, verse:sel[0], playMode:multiplayerPlayMode }); setShowMultiplayerVersePicker(false); }} style={{ background:'#8b5cf6', color:'white', border:'none', padding:'0.2rem 0.5rem', borderRadius:'4px', fontWeight:'bold', cursor:'pointer', display:'flex', alignItems:'center', gap:'0.2rem', fontSize:'0.75rem' }}><Dices size={13}/> {t('開始','Start')}</button>
+                                      <button onClick={() => { if (!pickerSelectedSet?.verses) return; const sel = [...pickerSelectedSet.verses].sort(() => 0.5 - Math.random()).slice(0, randomPickCount); setActiveVerse(sel[0]); setPlayMode(multiplayerPlayMode); setDistractionLevel(multiplayerDistractionLevel); setInitAutoStart({ trigger: true, isAuto: false, isMultiplayerReadyCheck: true, campaignQueue: sel, verse: sel[0], playMode: multiplayerPlayMode }); setShowMultiplayerVersePicker(false); }} style={{ background: '#8b5cf6', color: 'white', border: 'none', padding: '0.2rem 0.5rem', borderRadius: '4px', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.2rem', fontSize: '0.75rem' }}><Dices size={13} /> {t('開始', 'Start')}</button>
                                     </div>
                                     {multiplayerSelectedVerses.length > 0 && (
-                                      <button onClick={() => { setActiveVerse(multiplayerSelectedVerses[0]); setPlayMode(multiplayerPlayMode); setDistractionLevel(multiplayerDistractionLevel); setInitAutoStart({ trigger:true, isAuto:false, isMultiplayerReadyCheck:true, campaignQueue:multiplayerSelectedVerses, verse:multiplayerSelectedVerses[0], playMode:multiplayerPlayMode }); setShowMultiplayerVersePicker(false); }} style={{ background:'#10b981', color:'white', border:'none', padding:'0.4rem 0.9rem', borderRadius:'6px', fontWeight:'bold', cursor:'pointer', fontSize:'0.85rem' }}>
-                                        ✓ {t('完成揀選','Finish')} ({multiplayerSelectedVerses.length})
+                                      <button onClick={() => { setActiveVerse(multiplayerSelectedVerses[0]); setPlayMode(multiplayerPlayMode); setDistractionLevel(multiplayerDistractionLevel); setInitAutoStart({ trigger: true, isAuto: false, isMultiplayerReadyCheck: true, campaignQueue: multiplayerSelectedVerses, verse: multiplayerSelectedVerses[0], playMode: multiplayerPlayMode }); setShowMultiplayerVersePicker(false); }} style={{ background: '#10b981', color: 'white', border: 'none', padding: '0.4rem 0.9rem', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer', fontSize: '0.85rem' }}>
+                                        ✓ {t('完成揀選', 'Finish')} ({multiplayerSelectedVerses.length})
                                       </button>
                                     )}
                                   </div>
@@ -4715,7 +4733,7 @@ export default function App() {
                                 {pickerSelectedSet.verses?.map(v => {
                                   const isSelected = multiplayerSelectedVerses.some(sv => sv.reference === v.reference);
                                   return (
-                                    <div key={v.reference} onClick={() => { if (isSelected) { setMultiplayerSelectedVerses(prev => prev.filter(sv => sv.reference !== v.reference)); } else { setMultiplayerSelectedVerses(prev => [...prev, v]); } }} style={{ padding: '0.8rem 1rem', border: `2px solid ${isSelected ? '#10b981' : '#e2e8f0'}`, borderRadius: '8px', background: isSelected ? '#ecfdf5' : '#fafafa', cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: '0.2rem', transition: 'all 0.15s' }} onMouseOver={(e) => { if (!isSelected) e.currentTarget.style.borderColor='#a78bfa'; }} onMouseOut={(e) => { e.currentTarget.style.borderColor = isSelected ? '#10b981' : '#e2e8f0'; }}>
+                                    <div key={v.reference} onClick={() => { if (isSelected) { setMultiplayerSelectedVerses(prev => prev.filter(sv => sv.reference !== v.reference)); } else { setMultiplayerSelectedVerses(prev => [...prev, v]); } }} style={{ padding: '0.8rem 1rem', border: `2px solid ${isSelected ? '#10b981' : '#e2e8f0'}`, borderRadius: '8px', background: isSelected ? '#ecfdf5' : '#fafafa', cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: '0.2rem', transition: 'all 0.15s' }} onMouseOver={(e) => { if (!isSelected) e.currentTarget.style.borderColor = '#a78bfa'; }} onMouseOut={(e) => { e.currentTarget.style.borderColor = isSelected ? '#10b981' : '#e2e8f0'; }}>
                                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                         <span style={{ fontWeight: 'bold', color: '#7c3aed', fontSize: '1rem' }}>{v.reference}</span>
                                         {isSelected && <span style={{ color: '#10b981', fontWeight: 'bold' }}>✓</span>}
@@ -5181,7 +5199,14 @@ export default function App() {
 
                     <div style={{ display: 'inline-flex', alignItems: 'center', gap: '1rem', background: '#fff', padding: '1rem 2rem', borderRadius: '50px', border: '2px solid #fbbf24', boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.05)', flexWrap: 'wrap', justifyContent: 'center' }}>
                       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', borderRight: '2px solid #fcd34d', paddingRight: '1rem' }}>
-                        <span style={{ fontSize: '0.9rem', color: '#94a3b8', fontWeight: 'bold' }}>{t("總果子數量", "Total Fruits")}</span>
+                        <span style={{ fontSize: '0.9rem', color: '#94a3b8', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                          {t("總果子數量", "Total Fruits")}
+                          <button
+                            onClick={() => setShowFruitInfo(true)}
+                            title={t("查看果子來源說明", "How are fruits counted?")}
+                            style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '0', lineHeight: '1', fontSize: '1rem', animation: 'pulse 2s infinite', display: 'flex', alignItems: 'center', color: '#94a3b8' }}
+                          >ⓘ</button>
+                        </span>
                         <span style={{ fontSize: '2.5rem', fontWeight: 'bold', color: '#d97706', lineHeight: '1' }}>{totalFruits} <span style={{ fontSize: '1.5rem' }}>🍎</span></span>
                       </div>
                       <button
@@ -5237,12 +5262,12 @@ export default function App() {
                           <div style={{ display: 'flex', gap: '10px', alignItems: 'stretch', flexWrap: 'wrap' }}>
                             <input
                               readOnly
-                              value={`${window.location.origin}?ref=${encodeURIComponent(playerName)}`}
+                              value={`${window.location.origin}?ref=${encodeURIComponent(personalCode)}`}
                               style={{ flex: 1, minWidth: '220px', padding: '0.8rem', borderRadius: '8px', border: '1px solid #cbd5e1', backgroundColor: '#fff', color: '#334155', fontSize: '0.95rem' }}
                             />
                             <button
                               onClick={() => {
-                                navigator.clipboard.writeText(`${window.location.origin}?ref=${encodeURIComponent(playerName)}`);
+                                navigator.clipboard.writeText(`${window.location.origin}?ref=${encodeURIComponent(personalCode)}`);
                                 setToast(t("邀請連結已複製！快發給好朋友吧！", "Invite link copied! Share it with friends!"));
                                 setTimeout(() => setToast(null), 3500);
                               }}
@@ -5254,7 +5279,7 @@ export default function App() {
                             </button>
                             {typeof QRCodeSVG !== 'undefined' && (
                               <button
-                                onClick={() => setQrShareModal({ url: `${window.location.origin}?ref=${encodeURIComponent(playerName)}`, reference: 'VerseRain 遊戲邀請' })}
+                                onClick={() => setQrShareModal({ url: `${window.location.origin}?ref=${encodeURIComponent(personalCode)}`, reference: 'VerseRain 遊戲邀請' })}
                                 style={{ background: '#10b981', color: 'white', border: 'none', padding: '0 1.5rem', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', transition: 'background 0.2s', minHeight: '44px' }}
                               >
                                 {t("QR 碼", "QR Code")}
@@ -5417,9 +5442,7 @@ export default function App() {
 
                           return (
                             <div style={{
-                              overflow: 'auto',
-                              WebkitOverflowScrolling: 'touch',
-                              touchAction: 'pan-x pan-y',
+                              overflow: 'hidden',
                               width: '100%',
                               height: '60vh',
                               minHeight: '400px',
@@ -5429,125 +5452,129 @@ export default function App() {
                               position: 'relative',
                               boxShadow: 'inset 0 10px 30px rgba(0,0,0,0.1)'
                             }}>
-                              <div style={{
-                                minWidth: '100%',
-                                minHeight: '100%',
-                                display: 'flex',
-                                alignItems: 'flex-start',
-                                justifyContent: 'center',
-                                padding: '20px',
-                              }}>
-                                <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '40px', maxWidth: '100%' }}>
-                                  {Array.from({ length: fieldCount }).map((_, fieldIdx) => (
-                                    <div key={fieldIdx} style={{
-                                      display: 'grid',
-                                      gridTemplateColumns: `repeat(10, 48px)`,
-                                      gridTemplateRows: `repeat(10, 48px)`,
-                                      gap: '2px',
-                                      background: (hour >= 19 || hour < 5) ? 'rgba(30, 41, 59, 0.4)' : 'rgba(34, 197, 94, 0.3)',
-                                      border: '2px solid rgba(255,255,255,0.2)',
-                                      borderRadius: '8px',
-                                    }}>
-                                      {Array.from({ length: cellsPerField }).map((_, i) => {
-                                        const globalIndex = fieldIdx * cellsPerField + i;
-                                        const cell = gridMap[globalIndex];
-                                        const isEmpty = !cell;
-
-                                        return (
-                                          <div
-                                            key={globalIndex}
-                                            onClick={() => {
-                                              if (cell) {
-                                                if (gardenClickTimer.current) { clearTimeout(gardenClickTimer.current); gardenClickTimer.current = null; return; }
-                                                gardenClickTimer.current = setTimeout(() => {
-                                                  gardenClickTimer.current = null;
-                                                  const allCurrentVerses = [...safeActiveSets, ...customVerseSets].flatMap(s => s.verses);
-                                                  let targetVerse = findVerseByRef(allCurrentVerses, cell.ref);
-                                                  let detectedLang = version;
-                                                  if (!targetVerse) {
-                                                    const langPools = [
-                                                      { lang: 'kjv', verses: [...VERSE_SETS_KJV, ...VERSE_SETS_PROVERBS_KJV].flatMap(s => s.verses) },
-                                                      { lang: 'cuv', verses: [...VERSE_SETS_CUV, ...VERSE_SETS_PROVERBS_ZH].flatMap(s => s.verses) },
-                                                      { lang: 'ko', verses: [...VERSE_SETS_KO, ...VERSE_SETS_PROVERBS_KO].flatMap(s => s.verses) },
-                                                      { lang: 'ja', verses: [...VERSE_SETS_JA, ...VERSE_SETS_PROVERBS_JA].flatMap(s => s.verses) },
-                                                      { lang: 'fa', verses: VERSE_SETS_FA.flatMap(s => s.verses) },
-                                                      { lang: 'he', verses: VERSE_SETS_HE.flatMap(s => s.verses) },
-                                                    ];
-                                                    for (const pool of langPools) {
-                                                      if (pool.lang === version) continue;
-                                                      const found = findVerseByRef(pool.verses, cell.ref);
-                                                      if (found) { targetVerse = found; detectedLang = pool.lang; break; }
-                                                    }
-                                                  }
-                                                  setSelectedGardenCell({
-                                                    ref: cell.ref,
-                                                    text: targetVerse?.text || '',
-                                                    stage: cell.stage,
-                                                    fruits: cell.fruits || 0,
-                                                    setId: cell.setId,
-                                                    verse: targetVerse,
-                                                    detectedLang,
-                                                  });
-                                                  setTimeout(() => {
-                                                    const popup = document.getElementById('garden-verse-popup');
-                                                    if (popup) popup.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-                                                  }, 100);
-                                                }, 300);
-                                              }
-                                            }}
-                                            onDoubleClick={() => {
-                                              if (cell) {
-                                                if (gardenClickTimer.current) { clearTimeout(gardenClickTimer.current); gardenClickTimer.current = null; }
-                                                const allCurrentVerses = [...safeActiveSets, ...customVerseSets].flatMap(s => s.verses);
-                                                let targetVerse = findVerseByRef(allCurrentVerses, cell.ref);
-                                                let detectedLang = version;
-                                                if (!targetVerse) {
-                                                  const langPools = [
-                                                    { lang: 'kjv', verses: [...VERSE_SETS_KJV, ...VERSE_SETS_PROVERBS_KJV].flatMap(s => s.verses) },
-                                                    { lang: 'cuv', verses: [...VERSE_SETS_CUV, ...VERSE_SETS_PROVERBS_ZH].flatMap(s => s.verses) },
-                                                    { lang: 'ko', verses: [...VERSE_SETS_KO, ...VERSE_SETS_PROVERBS_KO].flatMap(s => s.verses) },
-                                                    { lang: 'ja', verses: [...VERSE_SETS_JA, ...VERSE_SETS_PROVERBS_JA].flatMap(s => s.verses) },
-                                                    { lang: 'fa', verses: VERSE_SETS_FA.flatMap(s => s.verses) },
-                                                    { lang: 'he', verses: VERSE_SETS_HE.flatMap(s => s.verses) },
-                                                  ];
-                                                  for (const pool of langPools) {
-                                                    if (pool.lang === version) continue;
-                                                    const found = findVerseByRef(pool.verses, cell.ref);
-                                                    if (found) { targetVerse = found; detectedLang = pool.lang; break; }
-                                                  }
-                                                }
-                                                if (targetVerse) {
-                                                  setSelectedGardenCell(null);
-                                                  if (detectedLang !== version) {
-                                                    versionBeforeChallenge.current = version;
-                                                    setVersion(detectedLang);
-                                                  }
-                                                  setActiveVerse(targetVerse);
-                                                  setSelectedVerseRefs([targetVerse.reference]);
-                                                  if (cell.setId) setSelectedSetId(cell.setId);
-                                                  setTimeout(() => startGame(), 50);
-                                                }
-                                              }
-                                            }}
-                                            title={cell ? `${cell.ref} — ${stageLabel(cell.stage)}${cell.fruits ? ` 🍎×${cell.fruits}` : ''}` : t('空地', 'Empty')}
-                                            style={{
-                                              width: '48px', height: '48px', borderRadius: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                              fontSize: cell ? '20px' : '10px',
-                                              background: cell ? stageBg(cell.stage) : '#5d4037',
-                                              border: cell ? '1px solid rgba(0,0,0,0.1)' : 'none',
-                                              cursor: cell ? 'pointer' : 'default', transition: 'transform 0.1s, filter 0.2s', userSelect: 'none'
-                                            }}
-                                            onMouseOver={e => { if (cell) { e.currentTarget.style.filter = 'brightness(1.15)'; e.currentTarget.style.transform = 'scale(1.08)'; } }}
-                                            onMouseOut={e => { e.currentTarget.style.filter = ''; e.currentTarget.style.transform = ''; }}
-                                          >
-                                            {cell ? stageEmoji(cell.stage, cell.fruits || 0) : ''}
-                                          </div>
-                                        );
-                                      })}
+                              <TransformWrapper initialScale={1} minScale={0.3} maxScale={4} centerOnInit={true} doubleClick={{ disabled: true }}>
+                                {({ zoomIn, zoomOut, resetTransform }) => (
+                                  <>
+                                    <div style={{ position: 'absolute', bottom: '15px', right: '15px', zIndex: 10, display: 'flex', gap: '8px', background: 'rgba(255,255,255,0.8)', padding: '5px', borderRadius: '8px', boxShadow: '0 2px 5px rgba(0,0,0,0.2)' }}>
+                                      <button onClick={() => zoomIn()} style={{ width: '32px', height: '32px', borderRadius: '4px', border: '1px solid #cbd5e1', background: '#fff', cursor: 'pointer', fontSize: '18px', fontWeight: 'bold', color: '#475569', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>+</button>
+                                      <button onClick={() => zoomOut()} style={{ width: '32px', height: '32px', borderRadius: '4px', border: '1px solid #cbd5e1', background: '#fff', cursor: 'pointer', fontSize: '18px', fontWeight: 'bold', color: '#475569', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>−</button>
+                                      <button onClick={() => resetTransform()} style={{ width: '32px', height: '32px', borderRadius: '4px', border: '1px solid #cbd5e1', background: '#fff', cursor: 'pointer', fontSize: '16px', fontWeight: 'bold', color: '#475569', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>🔄</button>
                                     </div>
-                                  ))}
-                                </div>
-                              </div>
+                                    <TransformComponent wrapperStyle={{ width: '100%', height: '100%' }} contentStyle={{ width: '100%', height: '100%', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '20px' }}>
+                                      <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '40px', maxWidth: '100%' }}>
+                                        {Array.from({ length: fieldCount }).map((_, fieldIdx) => (
+                                          <div key={fieldIdx} style={{
+                                            display: 'grid',
+                                            gridTemplateColumns: `repeat(10, 48px)`,
+                                            gridTemplateRows: `repeat(10, 48px)`,
+                                            gap: '2px',
+                                            background: (hour >= 19 || hour < 5) ? 'rgba(30, 41, 59, 0.4)' : 'rgba(34, 197, 94, 0.3)',
+                                            border: '2px solid rgba(255,255,255,0.2)',
+                                            borderRadius: '8px',
+                                          }}>
+                                            {Array.from({ length: cellsPerField }).map((_, i) => {
+                                              const globalIndex = fieldIdx * cellsPerField + i;
+                                              const cell = gridMap[globalIndex];
+                                              const isEmpty = !cell;
+
+                                              return (
+                                                <div
+                                                  key={globalIndex}
+                                                  onClick={() => {
+                                                    if (cell) {
+                                                      if (gardenClickTimer.current) { clearTimeout(gardenClickTimer.current); gardenClickTimer.current = null; return; }
+                                                      gardenClickTimer.current = setTimeout(() => {
+                                                        gardenClickTimer.current = null;
+                                                        const allCurrentVerses = [...safeActiveSets, ...customVerseSets].flatMap(s => s.verses);
+                                                        let targetVerse = findVerseByRef(allCurrentVerses, cell.ref);
+                                                        let detectedLang = version;
+                                                        if (!targetVerse) {
+                                                          const langPools = [
+                                                            { lang: 'kjv', verses: [...VERSE_SETS_KJV, ...VERSE_SETS_PROVERBS_KJV].flatMap(s => s.verses) },
+                                                            { lang: 'cuv', verses: [...VERSE_SETS_CUV, ...VERSE_SETS_PROVERBS_ZH].flatMap(s => s.verses) },
+                                                            { lang: 'ko', verses: [...VERSE_SETS_KO, ...VERSE_SETS_PROVERBS_KO].flatMap(s => s.verses) },
+                                                            { lang: 'ja', verses: [...VERSE_SETS_JA, ...VERSE_SETS_PROVERBS_JA].flatMap(s => s.verses) },
+                                                            { lang: 'fa', verses: VERSE_SETS_FA.flatMap(s => s.verses) },
+                                                            { lang: 'he', verses: VERSE_SETS_HE.flatMap(s => s.verses) },
+                                                          ];
+                                                          for (const pool of langPools) {
+                                                            if (pool.lang === version) continue;
+                                                            const found = findVerseByRef(pool.verses, cell.ref);
+                                                            if (found) { targetVerse = found; detectedLang = pool.lang; break; }
+                                                          }
+                                                        }
+                                                        setSelectedGardenCell({
+                                                          ref: cell.ref,
+                                                          text: targetVerse?.text || '',
+                                                          stage: cell.stage,
+                                                          fruits: cell.fruits || 0,
+                                                          setId: cell.setId,
+                                                          verse: targetVerse,
+                                                          detectedLang,
+                                                        });
+                                                        setTimeout(() => {
+                                                          const popup = document.getElementById('garden-verse-popup');
+                                                          if (popup) popup.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                                                        }, 100);
+                                                      }, 300);
+                                                    }
+                                                  }}
+                                                  onDoubleClick={() => {
+                                                    if (cell) {
+                                                      if (gardenClickTimer.current) { clearTimeout(gardenClickTimer.current); gardenClickTimer.current = null; }
+                                                      const allCurrentVerses = [...safeActiveSets, ...customVerseSets].flatMap(s => s.verses);
+                                                      let targetVerse = findVerseByRef(allCurrentVerses, cell.ref);
+                                                      let detectedLang = version;
+                                                      if (!targetVerse) {
+                                                        const langPools = [
+                                                          { lang: 'kjv', verses: [...VERSE_SETS_KJV, ...VERSE_SETS_PROVERBS_KJV].flatMap(s => s.verses) },
+                                                          { lang: 'cuv', verses: [...VERSE_SETS_CUV, ...VERSE_SETS_PROVERBS_ZH].flatMap(s => s.verses) },
+                                                          { lang: 'ko', verses: [...VERSE_SETS_KO, ...VERSE_SETS_PROVERBS_KO].flatMap(s => s.verses) },
+                                                          { lang: 'ja', verses: [...VERSE_SETS_JA, ...VERSE_SETS_PROVERBS_JA].flatMap(s => s.verses) },
+                                                          { lang: 'fa', verses: VERSE_SETS_FA.flatMap(s => s.verses) },
+                                                          { lang: 'he', verses: VERSE_SETS_HE.flatMap(s => s.verses) },
+                                                        ];
+                                                        for (const pool of langPools) {
+                                                          if (pool.lang === version) continue;
+                                                          const found = findVerseByRef(pool.verses, cell.ref);
+                                                          if (found) { targetVerse = found; detectedLang = pool.lang; break; }
+                                                        }
+                                                      }
+                                                      if (targetVerse) {
+                                                        setSelectedGardenCell(null);
+                                                        if (detectedLang !== version) {
+                                                          versionBeforeChallenge.current = version;
+                                                          setVersion(detectedLang);
+                                                        }
+                                                        setActiveVerse(targetVerse);
+                                                        setSelectedVerseRefs([targetVerse.reference]);
+                                                        if (cell.setId) setSelectedSetId(cell.setId);
+                                                        setTimeout(() => startGame(), 50);
+                                                      }
+                                                    }
+                                                  }}
+                                                  title={cell ? `${cell.ref} — ${stageLabel(cell.stage)}${cell.fruits ? ` 🍎×${cell.fruits}` : ''}` : t('空地', 'Empty')}
+                                                  style={{
+                                                    width: '48px', height: '48px', borderRadius: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                    fontSize: cell ? '20px' : '10px',
+                                                    background: cell ? stageBg(cell.stage) : '#5d4037',
+                                                    border: cell ? '1px solid rgba(0,0,0,0.1)' : 'none',
+                                                    cursor: cell ? 'pointer' : 'default', transition: 'transform 0.1s, filter 0.2s', userSelect: 'none'
+                                                  }}
+                                                  onMouseOver={e => { if (cell) { e.currentTarget.style.filter = 'brightness(1.15)'; e.currentTarget.style.transform = 'scale(1.08)'; } }}
+                                                  onMouseOut={e => { e.currentTarget.style.filter = ''; e.currentTarget.style.transform = ''; }}
+                                                >
+                                                  {cell ? stageEmoji(cell.stage, cell.fruits || 0) : ''}
+                                                </div>
+                                              );
+                                            })}
+                                          </div>
+                                        ))}
+                                      </div>
+                                    </TransformComponent>
+                                  </>
+                                )}
+                              </TransformWrapper>
                             </div>
                           );
                         })()}
@@ -7708,6 +7735,58 @@ export default function App() {
           </div>
         )}
 
+
+        {/* Fruit Info Modal */}
+        {showFruitInfo && (
+          <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.7)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }} onClick={() => setShowFruitInfo(false)}>
+            <div style={{ background: '#fff', borderRadius: '16px', width: '100%', maxWidth: '480px', boxShadow: '0 20px 40px rgba(0,0,0,0.2)', overflow: 'hidden' }} onClick={e => e.stopPropagation()}>
+              <div style={{ padding: '1.5rem', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'linear-gradient(135deg, #fffbeb, #fef3c7)' }}>
+                <h3 style={{ margin: 0, color: '#b45309', fontSize: '1.3rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  🍎 {t("果子數量怎麼算？", "How are fruits counted?")}
+                </h3>
+                <button onClick={() => setShowFruitInfo(false)} style={{ background: 'transparent', border: 'none', fontSize: '1.5rem', color: '#94a3b8', cursor: 'pointer' }}>✕</button>
+              </div>
+              <div style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                <p style={{ margin: 0, color: '#475569', lineHeight: '1.7', fontSize: '0.97rem' }}>
+                  {t("你的總果子數量由兩部分組成：", "Your total fruit count has two components:")}
+                </p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem', background: '#f0fdf4', borderRadius: '10px', padding: '0.9rem 1rem', border: '1px solid #bbf7d0' }}>
+                    <span style={{ fontSize: '1.5rem', flexShrink: 0 }}>🌳</span>
+                    <div>
+                      <div style={{ fontWeight: 'bold', color: '#166534', marginBottom: '0.2rem' }}>
+                        {t("遊戲果子", "Game Fruits")} — <span style={{ color: '#d97706' }}>{localFruits} 🍎</span>
+                      </div>
+                      <div style={{ color: '#475569', fontSize: '0.9rem', lineHeight: '1.5' }}>
+                        {t("每次挑戰一節已「過關」的經文並創下個人最高分，這棵樹就會結出一顆果子。果子數量就是你在「我的園子」裡所有樹上果子的總和。", "Each time you beat your personal best on a verse you've already cleared, that tree bears a fruit. This total counts all fruits across every tree in your garden.")}
+                      </div>
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem', background: '#eff6ff', borderRadius: '10px', padding: '0.9rem 1rem', border: '1px solid #bfdbfe' }}>
+                    <span style={{ fontSize: '1.5rem', flexShrink: 0 }}>🤝</span>
+                    <div>
+                      <div style={{ fontWeight: 'bold', color: '#1d4ed8', marginBottom: '0.2rem' }}>
+                        {t("推廣點數", "Referral Points")} — <span style={{ color: '#d97706' }}>{creatorPoints} 🍎</span>
+                      </div>
+                      <div style={{ color: '#475569', fontSize: '0.9rem', lineHeight: '1.5' }}>
+                        {t("當你分享的邀請連結帶來新玩家，或你創作了廣受歡迎的自訂題庫，系統會自動為你累積推廣點數。", "When your invite link brings in new players, or your custom verse sets are widely used, the system automatically adds referral points to your total.")}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div style={{ background: 'linear-gradient(135deg, #fffbeb, #fef3c7)', borderRadius: '10px', padding: '0.9rem 1rem', border: '1px solid #fde68a', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
+                  <span style={{ color: '#92400e', fontWeight: 'bold', fontSize: '0.95rem' }}>
+                    🍎 {t("遊戲果子", "Game")} {localFruits} + 🤝 {t("推廣點數", "Referral")} {creatorPoints}
+                  </span>
+                  <span style={{ color: '#b45309', fontWeight: 'bold', fontSize: '1.1rem' }}>
+                    = {totalFruits} 🍎
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Level Info Modal */}
         {showLevelInfo && (
           <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.7)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }} onClick={() => setShowLevelInfo(false)}>
@@ -7908,9 +7987,7 @@ export default function App() {
 
                         return (
                           <div style={{
-                            overflow: 'auto',
-                            WebkitOverflowScrolling: 'touch',
-                            touchAction: 'pan-x pan-y',
+                            overflow: 'hidden',
                             width: '100%',
                             height: '50vh',
                             minHeight: '350px',
@@ -7920,100 +7997,104 @@ export default function App() {
                             position: 'relative',
                             boxShadow: 'inset 0 10px 30px rgba(0,0,0,0.1)'
                           }}>
-                            <div style={{
-                              minWidth: '100%',
-                              minHeight: '100%',
-                              display: 'flex',
-                              alignItems: 'flex-start',
-                              justifyContent: 'center',
-                              padding: '20px',
-                            }}>
-                              <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '40px', maxWidth: '100%' }}>
-                                {Array.from({ length: vgFieldCount }).map((_, fieldIdx) => (
-                                  <div key={fieldIdx} style={{
-                                    display: 'grid',
-                                    gridTemplateColumns: `repeat(10, 48px)`,
-                                    gridTemplateRows: `repeat(10, 48px)`,
-                                    gap: '2px',
-                                    background: (hour >= 19 || hour < 5) ? 'rgba(30, 41, 59, 0.4)' : 'rgba(34, 197, 94, 0.3)',
-                                    border: '2px solid rgba(255,255,255,0.2)',
-                                    borderRadius: '8px',
-                                  }}>
-                                    {Array.from({ length: vgCellsPerField }).map((_, i) => {
-                                      const globalIndex = fieldIdx * vgCellsPerField + i;
-                                      const cell = vgGridMap[globalIndex];
-                                      const isEmpty = !cell;
-                                      return (
-                                        <div key={globalIndex}
-                                          onClick={() => {
-                                            if (!cell) return;
-                                            if (guestGardenClickTimer.current) { clearTimeout(guestGardenClickTimer.current); guestGardenClickTimer.current = null; return; }
-                                            guestGardenClickTimer.current = setTimeout(() => {
-                                              guestGardenClickTimer.current = null;
-                                              const allVerses = [...safeActiveSets, ...customVerseSets].flatMap(s => s.verses);
-                                              let targetVerse = findVerseByRef(allVerses, cell.ref);
-                                              if (!targetVerse) {
-                                                const langPools = [
-                                                  { lang: 'kjv', verses: [...VERSE_SETS_KJV, ...VERSE_SETS_PROVERBS_KJV].flatMap(s => s.verses) },
-                                                  { lang: 'cuv', verses: [...VERSE_SETS_CUV, ...VERSE_SETS_PROVERBS_ZH].flatMap(s => s.verses) },
-                                                  { lang: 'ko', verses: [...VERSE_SETS_KO, ...VERSE_SETS_PROVERBS_KO].flatMap(s => s.verses) },
-                                                  { lang: 'ja', verses: [...VERSE_SETS_JA, ...VERSE_SETS_PROVERBS_JA].flatMap(s => s.verses) },
-                                                ];
-                                                for (const pool of langPools) {
-                                                  const found = findVerseByRef(pool.verses, cell.ref);
-                                                  if (found) { targetVerse = found; break; }
-                                                }
-                                              }
-                                              setGuestGardenCell({ ref: cell.ref, text: targetVerse?.text || '', stage: cell.stage, fruits: cell.fruits || 0 });
-                                            }, 250);
-                                          }}
-                                          onDoubleClick={() => {
-                                            if (!cell) return;
-                                            if (guestGardenClickTimer.current) { clearTimeout(guestGardenClickTimer.current); guestGardenClickTimer.current = null; }
-                                            const allVerses = [...safeActiveSets, ...customVerseSets].flatMap(s => s.verses);
-                                            let targetVerse = findVerseByRef(allVerses, cell.ref);
-                                            let detectedLang = version;
-                                            if (!targetVerse) {
-                                              const langPools = [
-                                                { lang: 'kjv', verses: [...VERSE_SETS_KJV, ...VERSE_SETS_PROVERBS_KJV].flatMap(s => s.verses) },
-                                                { lang: 'cuv', verses: [...VERSE_SETS_CUV, ...VERSE_SETS_PROVERBS_ZH].flatMap(s => s.verses) },
-                                                { lang: 'ko', verses: [...VERSE_SETS_KO, ...VERSE_SETS_PROVERBS_KO].flatMap(s => s.verses) },
-                                                { lang: 'ja', verses: [...VERSE_SETS_JA, ...VERSE_SETS_PROVERBS_JA].flatMap(s => s.verses) },
-                                              ];
-                                              for (const pool of langPools) {
-                                                const found = findVerseByRef(pool.verses, cell.ref);
-                                                if (found) { targetVerse = found; detectedLang = pool.lang; break; }
-                                              }
-                                            }
-                                            if (targetVerse) {
-                                              setGuestGardenCell(null);
-                                              setViewingPlayerGarden(null);
-                                              if (detectedLang !== version) { versionBeforeChallenge.current = version; setVersion(detectedLang); }
-                                              setPlayMode(guestChallengeMode);
-                                              setDistractionLevel(guestChallengeLevel);
-                                              setActiveVerse(targetVerse);
-                                              setSelectedVerseRefs([targetVerse.reference]);
-                                              setTimeout(() => startGame(), 50);
-                                            }
-                                          }}
-                                          style={{
-                                            width: '48px', height: '48px', borderRadius: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                            fontSize: cell ? '20px' : '10px',
-                                            background: cell ? stageBg(cell.stage) : '#5d4037',
-                                            border: cell ? '1px solid rgba(0,0,0,0.1)' : 'none',
-                                            cursor: cell ? 'pointer' : 'default', transition: 'transform 0.1s, filter 0.2s', userSelect: 'none'
-                                          }}
-                                          onMouseOver={e => { if (cell) { e.currentTarget.style.filter = 'brightness(1.15)'; e.currentTarget.style.transform = 'scale(1.08)'; } }}
-                                          onMouseOut={e => { e.currentTarget.style.filter = ''; e.currentTarget.style.transform = ''; }}
-                                        >
-                                          {cell ? stageEmoji(cell.stage, cell.fruits || 0) : ''}
-                                        </div>
-                                      );
-                                    })}
+                            <TransformWrapper initialScale={1} minScale={0.3} maxScale={4} centerOnInit={true} doubleClick={{ disabled: true }}>
+                              {({ zoomIn, zoomOut, resetTransform }) => (
+                                <>
+                                  <div style={{ position: 'absolute', bottom: '15px', right: '15px', zIndex: 10, display: 'flex', gap: '8px', background: 'rgba(255,255,255,0.8)', padding: '5px', borderRadius: '8px', boxShadow: '0 2px 5px rgba(0,0,0,0.2)' }}>
+                                    <button onClick={() => zoomIn()} style={{ width: '32px', height: '32px', borderRadius: '4px', border: '1px solid #cbd5e1', background: '#fff', cursor: 'pointer', fontSize: '18px', fontWeight: 'bold', color: '#475569', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>+</button>
+                                    <button onClick={() => zoomOut()} style={{ width: '32px', height: '32px', borderRadius: '4px', border: '1px solid #cbd5e1', background: '#fff', cursor: 'pointer', fontSize: '18px', fontWeight: 'bold', color: '#475569', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>−</button>
+                                    <button onClick={() => resetTransform()} style={{ width: '32px', height: '32px', borderRadius: '4px', border: '1px solid #cbd5e1', background: '#fff', cursor: 'pointer', fontSize: '16px', fontWeight: 'bold', color: '#475569', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>🔄</button>
                                   </div>
-                                ))}
-                              </div>
-                            </div>
+                                  <TransformComponent wrapperStyle={{ width: '100%', height: '100%' }} contentStyle={{ width: '100%', height: '100%', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '20px' }}>
+                                    <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '40px', maxWidth: '100%' }}>
+                                      {Array.from({ length: vgFieldCount }).map((_, fieldIdx) => (
+                                        <div key={fieldIdx} style={{
+                                          display: 'grid',
+                                          gridTemplateColumns: `repeat(10, 48px)`,
+                                          gridTemplateRows: `repeat(10, 48px)`,
+                                          gap: '2px',
+                                          background: (hour >= 19 || hour < 5) ? 'rgba(30, 41, 59, 0.4)' : 'rgba(34, 197, 94, 0.3)',
+                                          border: '2px solid rgba(255,255,255,0.2)',
+                                          borderRadius: '8px',
+                                        }}>
+                                          {Array.from({ length: vgCellsPerField }).map((_, i) => {
+                                            const globalIndex = fieldIdx * vgCellsPerField + i;
+                                            const cell = vgGridMap[globalIndex];
+                                            const isEmpty = !cell;
+                                            return (
+                                              <div key={globalIndex}
+                                                onClick={() => {
+                                                  if (!cell) return;
+                                                  if (guestGardenClickTimer.current) { clearTimeout(guestGardenClickTimer.current); guestGardenClickTimer.current = null; return; }
+                                                  guestGardenClickTimer.current = setTimeout(() => {
+                                                    guestGardenClickTimer.current = null;
+                                                    const allVerses = [...safeActiveSets, ...customVerseSets].flatMap(s => s.verses);
+                                                    let targetVerse = findVerseByRef(allVerses, cell.ref);
+                                                    if (!targetVerse) {
+                                                      const langPools = [
+                                                        { lang: 'kjv', verses: [...VERSE_SETS_KJV, ...VERSE_SETS_PROVERBS_KJV].flatMap(s => s.verses) },
+                                                        { lang: 'cuv', verses: [...VERSE_SETS_CUV, ...VERSE_SETS_PROVERBS_ZH].flatMap(s => s.verses) },
+                                                        { lang: 'ko', verses: [...VERSE_SETS_KO, ...VERSE_SETS_PROVERBS_KO].flatMap(s => s.verses) },
+                                                        { lang: 'ja', verses: [...VERSE_SETS_JA, ...VERSE_SETS_PROVERBS_JA].flatMap(s => s.verses) },
+                                                      ];
+                                                      for (const pool of langPools) {
+                                                        const found = findVerseByRef(pool.verses, cell.ref);
+                                                        if (found) { targetVerse = found; break; }
+                                                      }
+                                                    }
+                                                    setGuestGardenCell({ ref: cell.ref, text: targetVerse?.text || '', stage: cell.stage, fruits: cell.fruits || 0 });
+                                                  }, 250);
+                                                }}
+                                                onDoubleClick={() => {
+                                                  if (!cell) return;
+                                                  if (guestGardenClickTimer.current) { clearTimeout(guestGardenClickTimer.current); guestGardenClickTimer.current = null; }
+                                                  const allVerses = [...safeActiveSets, ...customVerseSets].flatMap(s => s.verses);
+                                                  let targetVerse = findVerseByRef(allVerses, cell.ref);
+                                                  let detectedLang = version;
+                                                  if (!targetVerse) {
+                                                    const langPools = [
+                                                      { lang: 'kjv', verses: [...VERSE_SETS_KJV, ...VERSE_SETS_PROVERBS_KJV].flatMap(s => s.verses) },
+                                                      { lang: 'cuv', verses: [...VERSE_SETS_CUV, ...VERSE_SETS_PROVERBS_ZH].flatMap(s => s.verses) },
+                                                      { lang: 'ko', verses: [...VERSE_SETS_KO, ...VERSE_SETS_PROVERBS_KO].flatMap(s => s.verses) },
+                                                      { lang: 'ja', verses: [...VERSE_SETS_JA, ...VERSE_SETS_PROVERBS_JA].flatMap(s => s.verses) },
+                                                    ];
+                                                    for (const pool of langPools) {
+                                                      const found = findVerseByRef(pool.verses, cell.ref);
+                                                      if (found) { targetVerse = found; detectedLang = pool.lang; break; }
+                                                    }
+                                                  }
+                                                  if (targetVerse) {
+                                                    setGuestGardenCell(null);
+                                                    setViewingPlayerGarden(null);
+                                                    if (detectedLang !== version) { versionBeforeChallenge.current = version; setVersion(detectedLang); }
+                                                    setPlayMode(guestChallengeMode);
+                                                    setDistractionLevel(guestChallengeLevel);
+                                                    setActiveVerse(targetVerse);
+                                                    setSelectedVerseRefs([targetVerse.reference]);
+                                                    setTimeout(() => startGame(), 50);
+                                                  }
+                                                }}
+                                                style={{
+                                                  width: '48px', height: '48px', borderRadius: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                  fontSize: cell ? '20px' : '10px',
+                                                  background: cell ? stageBg(cell.stage) : '#5d4037',
+                                                  border: cell ? '1px solid rgba(0,0,0,0.1)' : 'none',
+                                                  cursor: cell ? 'pointer' : 'default', transition: 'transform 0.1s, filter 0.2s', userSelect: 'none'
+                                                }}
+                                                onMouseOver={e => { if (cell) { e.currentTarget.style.filter = 'brightness(1.15)'; e.currentTarget.style.transform = 'scale(1.08)'; } }}
+                                                onMouseOut={e => { e.currentTarget.style.filter = ''; e.currentTarget.style.transform = ''; }}
+                                              >
+                                                {cell ? stageEmoji(cell.stage, cell.fruits || 0) : ''}
+                                              </div>
+                                            );
+                                          })}
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </TransformComponent>
+                                </>
+                              )}
+                            </TransformWrapper>
                           </div>
                         );
                       })()}
