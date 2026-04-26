@@ -7361,14 +7361,24 @@ export default function App() {
                     const data = await response.json();
 
                     if (response.ok && data.success) {
-                      const isPrem = data.user.isPremium || PREMIUM_EMAILS.includes((data.user.email || '').toLowerCase());
-                      setPlayerName(data.user.name || email.split('@')[0]);
-                      setUserEmail(data.user.email);
-                      setIsPremium(isPrem);
-                      localStorage.setItem('verserain_player_name', data.user.name || email.split('@')[0]);
-                      localStorage.setItem('verserain_player_email', data.user.email);
-                      localStorage.setItem('verserain_is_premium', isPrem ? 'true' : 'false');
-                      setShowLoginModal(null);
+                      if (showLoginModal === 'signup') {
+                        // Registration: server sends verification email — no data.user yet
+                        setShowLoginModal(null);
+                        alert(t(
+                          "註冊成功！請至您的信箱點擊驗證連結後再登入。",
+                          "Registration successful! Please check your email and click the verification link before logging in."
+                        ));
+                      } else {
+                        // Login: server returns the full user object
+                        const isPrem = data.user.isPremium || PREMIUM_EMAILS.includes((data.user.email || '').toLowerCase());
+                        setPlayerName(data.user.name || email.split('@')[0]);
+                        setUserEmail(data.user.email);
+                        setIsPremium(isPrem);
+                        localStorage.setItem('verserain_player_name', data.user.name || email.split('@')[0]);
+                        localStorage.setItem('verserain_player_email', data.user.email);
+                        localStorage.setItem('verserain_is_premium', isPrem ? 'true' : 'false');
+                        setShowLoginModal(null);
+                      }
                     } else {
                       setAuthError(data.error || "連線失敗 (Connection Error)");
                     }
@@ -7410,9 +7420,14 @@ export default function App() {
                             body: JSON.stringify({ email })
                           });
                           const data = await res.json();
-                          if (data.success && data.password) {
+                          if (data.success) {
+                            // Server sent the password to the user's email
                             setAuthError("");
-                            setRecoveredPassword({ name: data.name, password: data.password });
+                            setRecoveredPassword(null);
+                            alert(t(
+                              "密碼已發送至您的信箱，請查看。",
+                              "Your password has been sent to your email. Please check your inbox."
+                            ));
                           } else {
                             setAuthError(data.error || t("查詢失敗", "Failed to retrieve password"));
                             setRecoveredPassword(null);
