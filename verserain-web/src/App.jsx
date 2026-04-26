@@ -3930,7 +3930,7 @@ export default function App() {
                         <Crown size={14} style={{ color: '#fbbf24' }} />
                       </button>
                     </div>
-                    <button onClick={() => { setPlayerName(''); setIsPremium(false); setUserEmail(''); localStorage.removeItem('verserain_player_name'); localStorage.removeItem('verserain_is_premium'); localStorage.removeItem('verserain_player_email'); }} style={{ background: 'transparent', border: '1px solid #cbd5e1', color: '#64748b', cursor: 'pointer', borderRadius: '4px', padding: '0.3rem 0.6rem', fontSize: '0.85rem' }}>{t("登出", "Logout")}</button>
+                    <button onClick={() => { setPlayerName(''); setIsPremium(false); setUserEmail(''); localStorage.removeItem('verserain_player_name'); localStorage.removeItem('verserain_is_premium'); localStorage.removeItem('verserain_player_email'); localStorage.removeItem('verseRain_gardenData'); setGardenData({}); }} style={{ background: 'transparent', border: '1px solid #cbd5e1', color: '#64748b', cursor: 'pointer', borderRadius: '4px', padding: '0.3rem 0.6rem', fontSize: '0.85rem' }}>{t("登出", "Logout")}</button>
                   </div>
                 ) : (
                   <>
@@ -7446,6 +7446,11 @@ export default function App() {
                         ));
                       } else {
                         // Login: server returns the full user object
+                        const prevEmail = localStorage.getItem('verserain_player_email');
+                        if (prevEmail && prevEmail !== data.user.email) {
+                          localStorage.removeItem('verseRain_gardenData');
+                          setGardenData({});
+                        }
                         const isPrem = data.user.isPremium || PREMIUM_EMAILS.includes((data.user.email || '').toLowerCase());
                         setPlayerName(data.user.name || email.split('@')[0]);
                         setUserEmail(data.user.email);
