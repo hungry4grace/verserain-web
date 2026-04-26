@@ -1097,6 +1097,7 @@ export default function App() {
       .finally(() => setIsFetchingGlobalLeaderboard(false));
   };
   const [showLoginModal, setShowLoginModal] = useState(null);
+  const [verifyEmail, setVerifyEmail] = useState("");
   const [verseViewModal, setVerseViewModal] = useState(null);
   const [toast, setToast] = useState(null);
   const [showNameEditModal, setShowNameEditModal] = useState(false);
@@ -7296,7 +7297,7 @@ export default function App() {
             <div style={{ background: '#ffffff', borderRadius: '12px', padding: '2rem', width: '100%', maxWidth: '400px', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)', display: 'flex', flexDirection: 'column', gap: '1.5rem', border: '1px solid #e2e8f0' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <h2 style={{ margin: 0, color: '#1e293b', fontSize: '1.5rem', fontWeight: 'bold' }}>
-                  {showLoginModal === 'signup' ? t("註冊新帳號", "Sign Up") : t("登入帳號", "Log In")}
+                  {showLoginModal === 'signup' ? t("註冊新帳號", "Sign Up") : (showLoginModal === 'verify' ? t("輸入驗證碼", "Enter Code") : t("登入帳號", "Log In"))}
                 </h2>
                 <button
                   onClick={() => setShowLoginModal(null)}
@@ -7309,35 +7310,54 @@ export default function App() {
 
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                <input
-                  id="modalEmailInput"
-                  type="email"
-                  placeholder={t("電子郵件", "Email Address")}
-                  style={{ padding: '0.8rem', borderRadius: '6px', border: '1px solid #cbd5e1', background: '#f8fafc', color: '#1e293b', fontSize: '0.95rem', outline: 'none' }}
-                  onFocus={(e) => e.target.style.borderColor = '#3b82f6'}
-                  onBlur={(e) => e.target.style.borderColor = '#cbd5e1'}
-                />
+                {showLoginModal === 'verify' ? (
+                  <>
+                    <div style={{ fontSize: '0.9rem', color: '#64748b', textAlign: 'center' }}>
+                      {t("驗證碼已寄至 ", "Code sent to ")} <strong style={{ color: '#1e293b' }}>{verifyEmail}</strong>
+                    </div>
+                    <input
+                      id="modalCodeInput"
+                      type="text"
+                      placeholder={t("6位數驗證碼", "6-digit Code")}
+                      maxLength={6}
+                      style={{ padding: '0.8rem', borderRadius: '6px', border: '1px solid #cbd5e1', background: '#f8fafc', color: '#1e293b', fontSize: '1.2rem', outline: 'none', textAlign: 'center', letterSpacing: '4px', fontWeight: 'bold' }}
+                      onFocus={(e) => e.target.style.borderColor = '#3b82f6'}
+                      onBlur={(e) => e.target.style.borderColor = '#cbd5e1'}
+                    />
+                  </>
+                ) : (
+                  <>
+                    <input
+                      id="modalEmailInput"
+                      type="email"
+                      placeholder={t("電子郵件", "Email Address")}
+                      style={{ padding: '0.8rem', borderRadius: '6px', border: '1px solid #cbd5e1', background: '#f8fafc', color: '#1e293b', fontSize: '0.95rem', outline: 'none' }}
+                      onFocus={(e) => e.target.style.borderColor = '#3b82f6'}
+                      onBlur={(e) => e.target.style.borderColor = '#cbd5e1'}
+                    />
 
-                <input
-                  id="modalPasswordInput"
-                  type="password"
-                  placeholder={t("密碼", "Password")}
-                  style={{ padding: '0.8rem', borderRadius: '6px', border: '1px solid #cbd5e1', background: '#f8fafc', color: '#1e293b', fontSize: '0.95rem', outline: 'none' }}
-                  onFocus={(e) => e.target.style.borderColor = '#3b82f6'}
-                  onBlur={(e) => e.target.style.borderColor = '#cbd5e1'}
-                />
+                    <input
+                      id="modalPasswordInput"
+                      type="password"
+                      placeholder={t("密碼", "Password")}
+                      style={{ padding: '0.8rem', borderRadius: '6px', border: '1px solid #cbd5e1', background: '#f8fafc', color: '#1e293b', fontSize: '0.95rem', outline: 'none' }}
+                      onFocus={(e) => e.target.style.borderColor = '#3b82f6'}
+                      onBlur={(e) => e.target.style.borderColor = '#cbd5e1'}
+                    />
 
-                {showLoginModal === 'signup' && (
-                  <input
-                    id="modalPlayerNameInput"
-                    type="text"
-                    maxLength={20}
-                    defaultValue={playerName}
-                    placeholder={t("顯示暱稱", "Display Name")}
-                    style={{ padding: '0.8rem', borderRadius: '6px', border: '1px solid #cbd5e1', background: '#f8fafc', color: '#1e293b', fontSize: '0.95rem', outline: 'none' }}
-                    onFocus={(e) => e.target.style.borderColor = '#3b82f6'}
-                    onBlur={(e) => e.target.style.borderColor = '#cbd5e1'}
-                  />
+                    {showLoginModal === 'signup' && (
+                      <input
+                        id="modalPlayerNameInput"
+                        type="text"
+                        maxLength={20}
+                        defaultValue={playerName}
+                        placeholder={t("顯示暱稱", "Display Name")}
+                        style={{ padding: '0.8rem', borderRadius: '6px', border: '1px solid #cbd5e1', background: '#f8fafc', color: '#1e293b', fontSize: '0.95rem', outline: 'none' }}
+                        onFocus={(e) => e.target.style.borderColor = '#3b82f6'}
+                        onBlur={(e) => e.target.style.borderColor = '#cbd5e1'}
+                      />
+                    )}
+                  </>
                 )}
               </div>
 
@@ -7357,6 +7377,34 @@ export default function App() {
               <button
                 disabled={authLoading}
                 onClick={async () => {
+                  if (showLoginModal === 'verify') {
+                    const codeInput = document.getElementById('modalCodeInput');
+                    const code = codeInput ? codeInput.value.trim() : '';
+                    if (!code) { setAuthError("請輸入驗證碼 (Verification code required)"); return; }
+                    
+                    setAuthLoading(true);
+                    setAuthError("");
+                    try {
+                      const res = await fetch("https://verserain-party.hungry4grace.partykit.dev/parties/main/global-auth-db/verify-email", {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ email: verifyEmail, code })
+                      });
+                      const data = await res.json();
+                      if (res.ok && data.success) {
+                        alert(t("驗證成功！請重新登入。", "Verification successful! Please log in."));
+                        setShowLoginModal('login');
+                      } else {
+                        setAuthError(data.error || "驗證失敗 (Verification Error)");
+                      }
+                    } catch (err) {
+                      setAuthError("連線失敗 (Connection Error)");
+                    } finally {
+                      setAuthLoading(false);
+                    }
+                    return;
+                  }
+
                   const emailInput = document.getElementById('modalEmailInput');
                   const passInput = document.getElementById('modalPasswordInput');
                   const nameInput = document.getElementById('modalPlayerNameInput');
@@ -7389,11 +7437,12 @@ export default function App() {
 
                     if (response.ok && data.success) {
                       if (showLoginModal === 'signup') {
-                        // Registration: server sends verification email — no data.user yet
-                        setShowLoginModal(null);
+                        // Registration: server sends verification email
+                        setVerifyEmail(email);
+                        setShowLoginModal('verify');
                         alert(t(
-                          "註冊成功！請至您的信箱點擊驗證連結後再登入。",
-                          "Registration successful! Please check your email and click the verification link before logging in."
+                          "註冊成功！請至您的信箱查看驗證碼。",
+                          "Registration successful! Please check your email for the verification code."
                         ));
                       } else {
                         // Login: server returns the full user object
@@ -7407,6 +7456,11 @@ export default function App() {
                         setShowLoginModal(null);
                       }
                     } else {
+                      if (data.requiresVerification) {
+                        setVerifyEmail(email);
+                        setShowLoginModal('verify');
+                        alert(t("請先驗證您的電子郵件", "Please verify your email first"));
+                      }
                       setAuthError(data.error || "連線失敗 (Connection Error)");
                     }
                   } catch (err) {
@@ -7419,11 +7473,13 @@ export default function App() {
                 onMouseOver={(e) => { if (!authLoading) e.target.style.background = '#2563eb' }}
                 onMouseOut={(e) => { if (!authLoading) e.target.style.background = '#3b82f6' }}
               >
-                {authLoading ? "..." : (showLoginModal === 'signup' ? t("建立新帳號 ", "Create Account") : t("登入", "Log In"))}
+                {authLoading ? "..." : (showLoginModal === 'verify' ? t("驗證", "Verify") : (showLoginModal === 'signup' ? t("建立新帳號 ", "Create Account") : t("登入", "Log In")))}
               </button>
 
               <div style={{ textAlign: 'center', fontSize: '0.9rem', color: '#64748b', marginTop: '0.5rem' }}>
-                {showLoginModal === 'signup' ? (
+                {showLoginModal === 'verify' ? (
+                  <span onClick={() => setShowLoginModal('login')} style={{ color: '#3b82f6', cursor: 'pointer', fontWeight: 'bold' }}>{t("返回登入", "Back to Login")}</span>
+                ) : showLoginModal === 'signup' ? (
                   <>
                     {t("已經有帳號？", "Already have an account? ")}
                     <span onClick={() => setShowLoginModal('login')} style={{ color: '#3b82f6', cursor: 'pointer', fontWeight: 'bold' }}>{t("在此登入", "Log in here")}</span>
