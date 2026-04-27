@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Play, RotateCcw, Heart, Zap, Trophy, Crown, Star, Home, XCircle, Headphones, Music, VolumeX, Search, Share2, Dices, Mic, MicOff, Users, CloudRain } from 'lucide-react';
+import { Play, RotateCcw, Heart, Zap, Trophy, Crown, Star, Home, XCircle, Headphones, Music, VolumeX, Search, Share2, Dices, Mic, MicOff, Users, CloudRain, Info } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import usePartySocket from 'partysocket/react';
 import PartySocket from 'partysocket';
@@ -5771,7 +5771,21 @@ export default function App() {
 
                   {/* 2. 個人總積分排行榜 - reads from globalLeaderboardData (Redis) */}
                   <div style={{ backgroundColor: '#ffffff', borderRadius: '8px', border: '1px solid #cbd5e1', padding: '2rem', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
-                    <h2 style={{ color: '#1e293b', marginTop: 0, marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '10px' }}><Trophy color="#2563eb" /> {t("個人總積分排行榜", "Player Total Score Leaderboard")}</h2>
+                    <h2 style={{ color: '#1e293b', marginTop: 0, marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <Trophy color="#2563eb" /> {t("個人總積分排行榜", "Player Total Score Leaderboard")}
+                      <button 
+                        onClick={() => {
+                          const infoText = SKOOL_LEVELS.map(l => `Lv.${l.level} ${t(l.title, l.enTitle)} : ${l.points} ${t('次完成', 'clears')}`).join('\n');
+                          alert(t('階層升級條件：\n\n', 'Level Up Requirements:\n\n') + infoText);
+                        }}
+                        style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center', color: '#94a3b8', transition: 'color 0.2s' }}
+                        onMouseOver={(e) => e.currentTarget.style.color = '#3b82f6'}
+                        onMouseOut={(e) => e.currentTarget.style.color = '#94a3b8'}
+                        title={t("階層說明", "Level Info")}
+                      >
+                        <Info size={18} />
+                      </button>
+                    </h2>
                     <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
                       <thead>
                         <tr style={{ borderBottom: '2px solid #e2e8f0', color: '#64748b', fontSize: '0.9rem' }}>
