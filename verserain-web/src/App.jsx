@@ -380,7 +380,10 @@ export default function App() {
   const VERSES_FA = React.useMemo(() => VERSE_SETS_FA.flatMap(s => s.verses), []);
   const VERSES_HE = React.useMemo(() => VERSE_SETS_HE.flatMap(s => s.verses), []);
 
-  const [version, setVersion] = useState('cuv');
+  const [version, setVersion] = useState(() => localStorage.getItem('verseRain_version') || 'cuv');
+  useEffect(() => {
+    localStorage.setItem('verseRain_version', version);
+  }, [version]);
   const [playMode, setPlayMode] = useState('square_solo');
   const [distractionLevel, setDistractionLevel] = useState(0);
   const [performanceMode, setPerformanceMode] = useState(() => localStorage.getItem('verseRainPerformanceMode') === 'true');
