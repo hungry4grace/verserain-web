@@ -975,10 +975,10 @@ export default function App() {
 
 
   const activePhrases = React.useMemo(() => {
-    // Chinese (cuv): also split on spaces so creators can control segmentation by inserting spaces.
-    // Other languages (English, Hebrew, Farsi, Korean, Japanese) use spaces between words — keep them intact.
-    const isChinese = version === 'cuv';
-    const regex = isChinese
+    // Chinese (cuv) and Korean (ko): split on spaces to break down long sentences without punctuation.
+    // Other languages (English, Hebrew, Farsi, Japanese) use spaces between words — keep them intact.
+    const shouldSplitOnSpace = version === 'cuv' || version === 'ko';
+    const regex = shouldSplitOnSpace
       ? /[,，。；؛،：「」、;:\.\?!！？؟『』《》 ]/
       : /[,，。；؛،：「」、;:\.\?!！？؟『』《》]/;
     return activeVerse.text.split(regex).map(p => p.trim()).filter(Boolean);
