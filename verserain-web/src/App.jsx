@@ -1071,6 +1071,9 @@ export default function App() {
   const [globalLeaderboardData, setGlobalLeaderboardData] = useState({ alltime: [], monthly: [], daily: [] });
   const [isFetchingGlobalLeaderboard, setIsFetchingGlobalLeaderboard] = useState(false);
   const [globalLeaderboardTab, setGlobalLeaderboardTab] = useState('daily');
+  const [pageGlobalLeaderboard, setPageGlobalLeaderboard] = useState(1);
+  const [pagePopularSets, setPagePopularSets] = useState(1);
+  const [pagePopularVerses, setPagePopularVerses] = useState(1);
   const [globalLeaderboardPage, setGlobalLeaderboardPage] = useState(1);
 
   const fetchGlobalLeaderboard = () => {
@@ -5761,9 +5764,9 @@ export default function App() {
 
                   {/* 1. 排行榜切換按鈕 */}
                   <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
-                    <button onClick={() => setGlobalLeaderboardTab('daily')} style={{ padding: '0.8rem 2rem', border: 'none', background: globalLeaderboardTab === 'daily' ? '#10b981' : '#e2e8f0', color: globalLeaderboardTab === 'daily' ? 'white' : '#475569', borderRadius: '30px', cursor: 'pointer', fontWeight: 'bold', fontSize: '1.1rem', transition: 'all 0.2s', boxShadow: globalLeaderboardTab === 'daily' ? '0 4px 6px -1px rgba(16, 185, 129, 0.4)' : 'none' }}>{t("本日排行", "Daily")}</button>
-                    <button onClick={() => setGlobalLeaderboardTab('monthly')} style={{ padding: '0.8rem 2rem', border: 'none', background: globalLeaderboardTab === 'monthly' ? '#8b5cf6' : '#e2e8f0', color: globalLeaderboardTab === 'monthly' ? 'white' : '#475569', borderRadius: '30px', cursor: 'pointer', fontWeight: 'bold', fontSize: '1.1rem', transition: 'all 0.2s', boxShadow: globalLeaderboardTab === 'monthly' ? '0 4px 6px -1px rgba(139, 92, 246, 0.4)' : 'none' }}>{t("本月排行", "Monthly")}</button>
-                    <button onClick={() => setGlobalLeaderboardTab('alltime')} style={{ padding: '0.8rem 2rem', border: 'none', background: globalLeaderboardTab === 'alltime' ? '#3b82f6' : '#e2e8f0', color: globalLeaderboardTab === 'alltime' ? 'white' : '#475569', borderRadius: '30px', cursor: 'pointer', fontWeight: 'bold', fontSize: '1.1rem', transition: 'all 0.2s', boxShadow: globalLeaderboardTab === 'alltime' ? '0 4px 6px -1px rgba(59, 130, 246, 0.4)' : 'none' }}>{t("歷史總榜", "All Time")}</button>
+                    <button onClick={() => { setGlobalLeaderboardTab('daily'); setPageGlobalLeaderboard(1); setPagePopularVerses(1); }} style={{ padding: '0.8rem 2rem', border: 'none', background: globalLeaderboardTab === 'daily' ? '#10b981' : '#e2e8f0', color: globalLeaderboardTab === 'daily' ? 'white' : '#475569', borderRadius: '30px', cursor: 'pointer', fontWeight: 'bold', fontSize: '1.1rem', transition: 'all 0.2s', boxShadow: globalLeaderboardTab === 'daily' ? '0 4px 6px -1px rgba(16, 185, 129, 0.4)' : 'none' }}>{t("本日排行", "Daily")}</button>
+                    <button onClick={() => { setGlobalLeaderboardTab('monthly'); setPageGlobalLeaderboard(1); setPagePopularVerses(1); }} style={{ padding: '0.8rem 2rem', border: 'none', background: globalLeaderboardTab === 'monthly' ? '#8b5cf6' : '#e2e8f0', color: globalLeaderboardTab === 'monthly' ? 'white' : '#475569', borderRadius: '30px', cursor: 'pointer', fontWeight: 'bold', fontSize: '1.1rem', transition: 'all 0.2s', boxShadow: globalLeaderboardTab === 'monthly' ? '0 4px 6px -1px rgba(139, 92, 246, 0.4)' : 'none' }}>{t("本月排行", "Monthly")}</button>
+                    <button onClick={() => { setGlobalLeaderboardTab('alltime'); setPageGlobalLeaderboard(1); setPagePopularVerses(1); }} style={{ padding: '0.8rem 2rem', border: 'none', background: globalLeaderboardTab === 'alltime' ? '#3b82f6' : '#e2e8f0', color: globalLeaderboardTab === 'alltime' ? 'white' : '#475569', borderRadius: '30px', cursor: 'pointer', fontWeight: 'bold', fontSize: '1.1rem', transition: 'all 0.2s', boxShadow: globalLeaderboardTab === 'alltime' ? '0 4px 6px -1px rgba(59, 130, 246, 0.4)' : 'none' }}>{t("歷史總榜", "All Time")}</button>
                   </div>
 
                   {/* 2. 個人總積分排行榜 - reads from globalLeaderboardData (Redis) */}
@@ -5794,8 +5797,10 @@ export default function App() {
                           });
 
                           return entries
-                            .slice(0, 10)
-                            .map(({ name, total, clears }, idx) => (
+                            .slice((pageGlobalLeaderboard - 1) * 10, pageGlobalLeaderboard * 10)
+                            .map(({ name, total, clears }, relativeIdx) => {
+                              const idx = (pageGlobalLeaderboard - 1) * 10 + relativeIdx;
+                              return (
                               <tr key={idx} style={{ borderBottom: '1px solid #f1f5f9' }}>
                                 <td style={{ padding: '0.8rem 1rem', fontWeight: 'bold', color: idx === 0 ? '#d97706' : idx === 1 ? '#94a3b8' : idx === 2 ? '#b45309' : '#64748b', fontSize: '1.2rem' }}>#{idx + 1}</td>
                                 <td style={{ padding: '0.8rem 1rem', fontWeight: 'bold', color: '#1e293b' }}>
@@ -5827,10 +5832,25 @@ export default function App() {
                                 <td style={{ padding: '0.8rem 1rem', textAlign: 'right', fontWeight: 'bold', color: '#3b82f6' }}>{(total || 0).toLocaleString()}</td>
                                 <td style={{ padding: '0.8rem 1rem', textAlign: 'right', fontWeight: 'bold', color: '#059669' }}>{clears || 0}</td>
                               </tr>
-                            ));
+                              );
+                            });
                         })()}
                       </tbody>
                     </table>
+                    {(() => {
+                      const totalEntries = (globalLeaderboardData[globalLeaderboardTab] || []).length;
+                      const totalPages = Math.max(1, Math.ceil(totalEntries / 10));
+                      if (totalPages > 1) {
+                        return (
+                          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', marginTop: '1.5rem', gap: '1rem' }}>
+                            <button onClick={() => setPageGlobalLeaderboard(p => Math.max(1, p - 1))} disabled={pageGlobalLeaderboard === 1} style={{ background: pageGlobalLeaderboard === 1 ? '#f1f5f9' : '#e2e8f0', color: pageGlobalLeaderboard === 1 ? '#cbd5e1' : '#475569', border: 'none', padding: '0.5rem 1rem', borderRadius: '4px', cursor: pageGlobalLeaderboard === 1 ? 'not-allowed' : 'pointer', fontWeight: 'bold' }}>{t("上一頁", "Prev")}</button>
+                            <span style={{ color: '#64748b', fontSize: '0.9rem', fontWeight: 'bold' }}>{pageGlobalLeaderboard} / {totalPages}</span>
+                            <button onClick={() => setPageGlobalLeaderboard(p => Math.min(totalPages, p + 1))} disabled={pageGlobalLeaderboard === totalPages} style={{ background: pageGlobalLeaderboard === totalPages ? '#f1f5f9' : '#e2e8f0', color: pageGlobalLeaderboard === totalPages ? '#cbd5e1' : '#475569', border: 'none', padding: '0.5rem 1rem', borderRadius: '4px', cursor: pageGlobalLeaderboard === totalPages ? 'not-allowed' : 'pointer', fontWeight: 'bold' }}>{t("下一頁", "Next")}</button>
+                          </div>
+                        );
+                      }
+                      return null;
+                    })()}
                   </div>
 
                   {/* 4. 最受歡迎經文組 */}
@@ -5849,9 +5869,11 @@ export default function App() {
                       <tbody>
                         {(() => {
                           const sortedSets = [...activeVerseSets]
-                            .sort((a, b) => (viewCounts[b.id] || 0) - (viewCounts[a.id] || 0))
-                            .slice(0, 10);
-                          return sortedSets.map((set, idx) => (
+                            .sort((a, b) => (viewCounts[b.id] || 0) - (viewCounts[a.id] || 0));
+                          const paginatedSets = sortedSets.slice((pagePopularSets - 1) * 10, pagePopularSets * 10);
+                          return paginatedSets.map((set, relativeIdx) => {
+                            const idx = (pagePopularSets - 1) * 10 + relativeIdx;
+                            return (
                             <tr key={idx} style={{ borderBottom: '1px solid #f1f5f9', cursor: 'pointer', transition: 'background 0.2s' }} onClick={() => {
                               setMainTab('versesets');
                               setSelectedSetId(set.id);
@@ -5877,10 +5899,25 @@ export default function App() {
                                 </button>
                               </td>
                             </tr>
-                          ));
+                            );
+                          });
                         })()}
                       </tbody>
                     </table>
+                    {(() => {
+                      const totalEntries = activeVerseSets.length;
+                      const totalPages = Math.max(1, Math.ceil(totalEntries / 10));
+                      if (totalPages > 1) {
+                        return (
+                          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', marginTop: '1.5rem', gap: '1rem' }}>
+                            <button onClick={() => setPagePopularSets(p => Math.max(1, p - 1))} disabled={pagePopularSets === 1} style={{ background: pagePopularSets === 1 ? '#f1f5f9' : '#e2e8f0', color: pagePopularSets === 1 ? '#cbd5e1' : '#475569', border: 'none', padding: '0.5rem 1rem', borderRadius: '4px', cursor: pagePopularSets === 1 ? 'not-allowed' : 'pointer', fontWeight: 'bold' }}>{t("上一頁", "Prev")}</button>
+                            <span style={{ color: '#64748b', fontSize: '0.9rem', fontWeight: 'bold' }}>{pagePopularSets} / {totalPages}</span>
+                            <button onClick={() => setPagePopularSets(p => Math.min(totalPages, p + 1))} disabled={pagePopularSets === totalPages} style={{ background: pagePopularSets === totalPages ? '#f1f5f9' : '#e2e8f0', color: pagePopularSets === totalPages ? '#cbd5e1' : '#475569', border: 'none', padding: '0.5rem 1rem', borderRadius: '4px', cursor: pagePopularSets === totalPages ? 'not-allowed' : 'pointer', fontWeight: 'bold' }}>{t("下一頁", "Next")}</button>
+                          </div>
+                        );
+                      }
+                      return null;
+                    })()}
                   </div>
 
                   {/* 3. 最受歡迎經文排行榜 */}
@@ -5897,10 +5934,18 @@ export default function App() {
                         </tr>
                       </thead>
                       <tbody>
-                        {Object.entries((globalVerseStats[globalLeaderboardTab] || {}))
-                          .sort((a, b) => b[1].plays - a[1].plays || b[1].completes - a[1].completes)
-                          .slice(0, 10)
-                          .map(([ref, stats], idx) => (
+                        {(() => {
+                          const allVerses = Object.entries((globalVerseStats[globalLeaderboardTab] || {}))
+                            .sort((a, b) => b[1].plays - a[1].plays || b[1].completes - a[1].completes);
+                          const paginatedVerses = allVerses.slice((pagePopularVerses - 1) * 10, pagePopularVerses * 10);
+                          
+                          if (allVerses.length === 0) {
+                             return <tr><td colSpan="5" style={{ padding: '1rem', textAlign: 'center', color: '#94a3b8' }}>{t("目前尚無經文紀錄", "No records yet")}</td></tr>;
+                          }
+
+                          return paginatedVerses.map(([ref, stats], relativeIdx) => {
+                            const idx = (pagePopularVerses - 1) * 10 + relativeIdx;
+                            return (
                             <tr key={idx} style={{ borderBottom: '1px solid #f1f5f9' }}>
                               <td style={{ padding: '0.8rem 1rem', fontWeight: 'bold', color: idx === 0 ? '#d97706' : idx === 1 ? '#94a3b8' : idx === 2 ? '#b45309' : '#64748b', fontSize: '1.2rem' }}>#{idx + 1}</td>
                               <td style={{ padding: '0.8rem 1rem', fontWeight: 'bold', color: '#1e293b' }}>{ref}</td>
@@ -5947,12 +5992,25 @@ export default function App() {
                                 </button>
                               </td>
                             </tr>
-                          ))}
-                        {Object.keys((globalVerseStats[globalLeaderboardTab] || {})).length === 0 && (
-                          <tr><td colSpan="4" style={{ padding: '1rem', textAlign: 'center', color: '#94a3b8' }}>{t("目前尚無經文紀錄", "No records yet")}</td></tr>
-                        )}
+                            );
+                          });
+                        })()}
                       </tbody>
                     </table>
+                    {(() => {
+                      const totalEntries = Object.keys((globalVerseStats[globalLeaderboardTab] || {})).length;
+                      const totalPages = Math.max(1, Math.ceil(totalEntries / 10));
+                      if (totalPages > 1) {
+                        return (
+                          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', marginTop: '1.5rem', gap: '1rem' }}>
+                            <button onClick={() => setPagePopularVerses(p => Math.max(1, p - 1))} disabled={pagePopularVerses === 1} style={{ background: pagePopularVerses === 1 ? '#f1f5f9' : '#e2e8f0', color: pagePopularVerses === 1 ? '#cbd5e1' : '#475569', border: 'none', padding: '0.5rem 1rem', borderRadius: '4px', cursor: pagePopularVerses === 1 ? 'not-allowed' : 'pointer', fontWeight: 'bold' }}>{t("上一頁", "Prev")}</button>
+                            <span style={{ color: '#64748b', fontSize: '0.9rem', fontWeight: 'bold' }}>{pagePopularVerses} / {totalPages}</span>
+                            <button onClick={() => setPagePopularVerses(p => Math.min(totalPages, p + 1))} disabled={pagePopularVerses === totalPages} style={{ background: pagePopularVerses === totalPages ? '#f1f5f9' : '#e2e8f0', color: pagePopularVerses === totalPages ? '#cbd5e1' : '#475569', border: 'none', padding: '0.5rem 1rem', borderRadius: '4px', cursor: pagePopularVerses === totalPages ? 'not-allowed' : 'pointer', fontWeight: 'bold' }}>{t("下一頁", "Next")}</button>
+                          </div>
+                        );
+                      }
+                      return null;
+                    })()}
                   </div>
 
 
