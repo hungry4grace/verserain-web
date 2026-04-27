@@ -1792,7 +1792,15 @@ export default function App() {
     const runAutoPlayLoop = async () => {
       if (!isAutoPlay || gameState !== 'playing') return;
 
-      const TTS_LANG = version === 'kjv' ? 'en-US' : 'zh-TW';
+      const getVoiceLang = (v) => {
+        if (v === 'kjv') return 'en-US';
+        if (v === 'ko') return 'ko-KR';
+        if (v === 'ja') return 'ja-JP';
+        if (v === 'he') return 'he-IL';
+        if (v === 'fa') return 'fa-IR';
+        return 'zh-TW';
+      };
+      const TTS_LANG = getVoiceLang(version);
 
       // Start from current position (supports mid-game activation)
       const startFrom = currentSeqRef.current;
@@ -2176,7 +2184,15 @@ export default function App() {
       setCombo(c => c + 1);
 
       const nextSeq = currentSeqIndex + 1;
-      const TTS_LANG = version === 'kjv' ? 'en-US' : 'zh-TW';
+      const getVoiceLang = (v) => {
+        if (v === 'kjv') return 'en-US';
+        if (v === 'ko') return 'ko-KR';
+        if (v === 'ja') return 'ja-JP';
+        if (v === 'he') return 'he-IL';
+        if (v === 'fa') return 'fa-IR';
+        return 'zh-TW';
+      };
+      const TTS_LANG = getVoiceLang(version);
 
       speechRef.current = speakText(block.text, voiceRate, TTS_LANG);
       setCurrentSeqIndex(nextSeq);
@@ -7678,7 +7694,8 @@ export default function App() {
                   <span style={{ color: '#3b82f6' }}>{verseViewModal.reference}</span>
                   <button
                     onClick={() => {
-                      speakText(verseViewModal.text);
+                      const vLang = version === 'kjv' ? 'en-US' : (version === 'ko' ? 'ko-KR' : (version === 'ja' ? 'ja-JP' : (version === 'he' ? 'he-IL' : (version === 'fa' ? 'fa-IR' : 'zh-TW'))));
+                      speakText(verseViewModal.text, 1.0, vLang);
                     }}
                     title={t("朗讀經文", "Read aloud")}
                     style={{ background: '#ecfdf5', color: '#10b981', border: '1px solid #a7f3d0', borderRadius: '50%', width: '38px', height: '38px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'all 0.2s', padding: 0 }}
