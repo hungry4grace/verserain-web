@@ -3920,7 +3920,7 @@ export default function App() {
                     verserain
                   </div>
                   <div style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', marginTop: '4px', marginLeft: '2px' }}>
-                    v3.0.0
+                    v3.0.1
                   </div>
                 </div>
                 <select
@@ -5789,7 +5789,7 @@ export default function App() {
                   <div style={{ backgroundColor: '#ffffff', borderRadius: '8px', border: '1px solid #cbd5e1', padding: '2rem', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
                     <h2 style={{ color: '#1e293b', marginTop: 0, marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '10px' }}>
                       <Trophy color="#2563eb" /> {t("個人總積分排行榜", "Player Total Score Leaderboard")}
-                      <button 
+                      <button
                         onClick={() => {
                           const infoText = SKOOL_LEVELS.map(l => `Lv.${l.level} ${t(l.title, l.enTitle)} : ${l.points} ${t('次完成', 'clears')}`).join('\n');
                           alert(t('階層升級條件：\n\n', 'Level Up Requirements:\n\n') + infoText);
@@ -5831,37 +5831,37 @@ export default function App() {
                             .map(({ name, total, clears }, relativeIdx) => {
                               const idx = (pageGlobalLeaderboard - 1) * 10 + relativeIdx;
                               return (
-                              <tr key={idx} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                                <td style={{ padding: '0.8rem 1rem', fontWeight: 'bold', color: idx === 0 ? '#d97706' : idx === 1 ? '#94a3b8' : idx === 2 ? '#b45309' : '#64748b', fontSize: '1.2rem' }}>#{idx + 1}</td>
-                                <td style={{ padding: '0.8rem 1rem', fontWeight: 'bold', color: '#1e293b' }}>
-                                  {name} {name === playerName && <Crown size={14} style={{ color: '#fbbf24', marginLeft: '5px' }} />}
-                                  <button
-                                    onClick={async () => {
-                                      setViewingPlayerGarden({ playerName: name, gardenData: null, loading: true });
-                                      try {
-                                        const res = await fetch(`https://verserain-party.hungry4grace.partykit.dev/parties/main/global-auth-db/garden?player=${encodeURIComponent(name)}`);
-                                        const data = await res.json();
-                                        if (data.success) {
-                                          setViewingPlayerGarden({ playerName: name, gardenData: data.gardenData, loading: false });
-                                        } else {
-                                          setViewingPlayerGarden({ playerName: name, gardenData: {}, loading: false, error: t('該玩家尚未分享園地', 'This player has not shared their garden yet') });
+                                <tr key={idx} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                                  <td style={{ padding: '0.8rem 1rem', fontWeight: 'bold', color: idx === 0 ? '#d97706' : idx === 1 ? '#94a3b8' : idx === 2 ? '#b45309' : '#64748b', fontSize: '1.2rem' }}>#{idx + 1}</td>
+                                  <td style={{ padding: '0.8rem 1rem', fontWeight: 'bold', color: '#1e293b' }}>
+                                    {name} {name === playerName && <Crown size={14} style={{ color: '#fbbf24', marginLeft: '5px' }} />}
+                                    <button
+                                      onClick={async () => {
+                                        setViewingPlayerGarden({ playerName: name, gardenData: null, loading: true });
+                                        try {
+                                          const res = await fetch(`https://verserain-party.hungry4grace.partykit.dev/parties/main/global-auth-db/garden?player=${encodeURIComponent(name)}`);
+                                          const data = await res.json();
+                                          if (data.success) {
+                                            setViewingPlayerGarden({ playerName: name, gardenData: data.gardenData, loading: false });
+                                          } else {
+                                            setViewingPlayerGarden({ playerName: name, gardenData: {}, loading: false, error: t('該玩家尚未分享園地', 'This player has not shared their garden yet') });
+                                          }
+                                        } catch {
+                                          setViewingPlayerGarden({ playerName: name, gardenData: {}, loading: false, error: t('無法載入', 'Failed to load') });
                                         }
-                                      } catch {
-                                        setViewingPlayerGarden({ playerName: name, gardenData: {}, loading: false, error: t('無法載入', 'Failed to load') });
-                                      }
-                                    }}
-                                    style={{ marginLeft: '8px', fontSize: '0.8rem', backgroundColor: '#f1f5f9', color: '#2563eb', padding: '0.2rem 0.6rem', borderRadius: '12px', border: '1px solid #bfdbfe', whiteSpace: 'nowrap', cursor: 'pointer', fontWeight: 'bold', transition: 'all 0.2s' }}
-                                    onMouseOver={e => { e.currentTarget.style.backgroundColor = '#dbeafe'; e.currentTarget.style.borderColor = '#3b82f6'; }}
-                                    onMouseOut={e => { e.currentTarget.style.backgroundColor = '#f1f5f9'; e.currentTarget.style.borderColor = '#bfdbfe'; }}
-                                    title={t('點擊查看此玩家的園地', "Click to view this player's garden")}
-                                  >
-                                    🌱 Lv.{getSkoolLevel(alltimeClears[name] || clears).level} {t(getSkoolLevel(alltimeClears[name] || clears).title, getSkoolLevel(alltimeClears[name] || clears).enTitle)}
-                                  </button>
+                                      }}
+                                      style={{ marginLeft: '8px', fontSize: '0.8rem', backgroundColor: '#f1f5f9', color: '#2563eb', padding: '0.2rem 0.6rem', borderRadius: '12px', border: '1px solid #bfdbfe', whiteSpace: 'nowrap', cursor: 'pointer', fontWeight: 'bold', transition: 'all 0.2s' }}
+                                      onMouseOver={e => { e.currentTarget.style.backgroundColor = '#dbeafe'; e.currentTarget.style.borderColor = '#3b82f6'; }}
+                                      onMouseOut={e => { e.currentTarget.style.backgroundColor = '#f1f5f9'; e.currentTarget.style.borderColor = '#bfdbfe'; }}
+                                      title={t('點擊查看此玩家的園地', "Click to view this player's garden")}
+                                    >
+                                      🌱 Lv.{getSkoolLevel(alltimeClears[name] || clears).level} {t(getSkoolLevel(alltimeClears[name] || clears).title, getSkoolLevel(alltimeClears[name] || clears).enTitle)}
+                                    </button>
 
-                                </td>
-                                <td style={{ padding: '0.8rem 1rem', textAlign: 'right', fontWeight: 'bold', color: '#3b82f6' }}>{(total || 0).toLocaleString()}</td>
-                                <td style={{ padding: '0.8rem 1rem', textAlign: 'right', fontWeight: 'bold', color: '#059669' }}>{clears || 0}</td>
-                              </tr>
+                                  </td>
+                                  <td style={{ padding: '0.8rem 1rem', textAlign: 'right', fontWeight: 'bold', color: '#3b82f6' }}>{(total || 0).toLocaleString()}</td>
+                                  <td style={{ padding: '0.8rem 1rem', textAlign: 'right', fontWeight: 'bold', color: '#059669' }}>{clears || 0}</td>
+                                </tr>
                               );
                             });
                         })()}
@@ -5904,31 +5904,31 @@ export default function App() {
                           return paginatedSets.map((set, relativeIdx) => {
                             const idx = (pagePopularSets - 1) * 10 + relativeIdx;
                             return (
-                            <tr key={idx} style={{ borderBottom: '1px solid #f1f5f9', cursor: 'pointer', transition: 'background 0.2s' }} onClick={() => {
-                              setMainTab('versesets');
-                              setSelectedSetId(set.id);
-                              fetch("https://verserain-party.hungry4grace.partykit.dev/parties/main/global-auth-db/custom-sets/view", { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: set.id }) }).catch(e => e);
-                              setViewCounts(prev => ({ ...prev, [set.id]: (prev[set.id] || 0) + 1 }));
-                            }} onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#eff6ff'} onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}>
-                              <td style={{ padding: '0.8rem 1rem', fontWeight: 'bold', color: idx === 0 ? '#d97706' : idx === 1 ? '#94a3b8' : idx === 2 ? '#b45309' : '#64748b', fontSize: '1.2rem' }}>#{idx + 1}</td>
-                              <td style={{ padding: '0.8rem 1rem', fontWeight: 'bold', color: '#1e293b' }}>{set.title}</td>
-                              <td style={{ padding: '0.8rem 1rem', color: '#3b82f6' }}>{set.authorName && set.authorName !== "Anonymous" ? set.authorName : (String(set.id).startsWith("custom-") ? t('匿名玩家', 'Anonymous') : t('Verserain 官方', 'Official'))}</td>
-                              <td style={{ padding: '0.8rem 1rem', textAlign: 'right', fontWeight: 'bold', color: '#059669' }}>{viewCounts[set.id] || 0}</td>
-                              <td style={{ padding: '0.8rem 0' }}>
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setMainTab('versesets');
-                                    setSelectedSetId(set.id);
-                                    fetch("https://verserain-party.hungry4grace.partykit.dev/parties/main/global-auth-db/custom-sets/view", { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: set.id }) }).catch(e => e);
-                                    setViewCounts(prev => ({ ...prev, [set.id]: (prev[set.id] || 0) + 1 }));
-                                  }}
-                                  style={{ background: '#3b82f6', color: 'white', border: 'none', padding: '0.3rem 0.6rem', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '4px' }}
-                                >
-                                  <Play size={12} fill="white" /> {t("挑戰", "Play")}
-                                </button>
-                              </td>
-                            </tr>
+                              <tr key={idx} style={{ borderBottom: '1px solid #f1f5f9', cursor: 'pointer', transition: 'background 0.2s' }} onClick={() => {
+                                setMainTab('versesets');
+                                setSelectedSetId(set.id);
+                                fetch("https://verserain-party.hungry4grace.partykit.dev/parties/main/global-auth-db/custom-sets/view", { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: set.id }) }).catch(e => e);
+                                setViewCounts(prev => ({ ...prev, [set.id]: (prev[set.id] || 0) + 1 }));
+                              }} onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#eff6ff'} onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}>
+                                <td style={{ padding: '0.8rem 1rem', fontWeight: 'bold', color: idx === 0 ? '#d97706' : idx === 1 ? '#94a3b8' : idx === 2 ? '#b45309' : '#64748b', fontSize: '1.2rem' }}>#{idx + 1}</td>
+                                <td style={{ padding: '0.8rem 1rem', fontWeight: 'bold', color: '#1e293b' }}>{set.title}</td>
+                                <td style={{ padding: '0.8rem 1rem', color: '#3b82f6' }}>{set.authorName && set.authorName !== "Anonymous" ? set.authorName : (String(set.id).startsWith("custom-") ? t('匿名玩家', 'Anonymous') : t('Verserain 官方', 'Official'))}</td>
+                                <td style={{ padding: '0.8rem 1rem', textAlign: 'right', fontWeight: 'bold', color: '#059669' }}>{viewCounts[set.id] || 0}</td>
+                                <td style={{ padding: '0.8rem 0' }}>
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setMainTab('versesets');
+                                      setSelectedSetId(set.id);
+                                      fetch("https://verserain-party.hungry4grace.partykit.dev/parties/main/global-auth-db/custom-sets/view", { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: set.id }) }).catch(e => e);
+                                      setViewCounts(prev => ({ ...prev, [set.id]: (prev[set.id] || 0) + 1 }));
+                                    }}
+                                    style={{ background: '#3b82f6', color: 'white', border: 'none', padding: '0.3rem 0.6rem', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '4px' }}
+                                  >
+                                    <Play size={12} fill="white" /> {t("挑戰", "Play")}
+                                  </button>
+                                </td>
+                              </tr>
                             );
                           });
                         })()}
@@ -5968,60 +5968,60 @@ export default function App() {
                           const allVerses = Object.entries((globalVerseStats[globalLeaderboardTab] || {}))
                             .sort((a, b) => b[1].plays - a[1].plays || b[1].completes - a[1].completes);
                           const paginatedVerses = allVerses.slice((pagePopularVerses - 1) * 10, pagePopularVerses * 10);
-                          
+
                           if (allVerses.length === 0) {
-                             return <tr><td colSpan="5" style={{ padding: '1rem', textAlign: 'center', color: '#94a3b8' }}>{t("目前尚無經文紀錄", "No records yet")}</td></tr>;
+                            return <tr><td colSpan="5" style={{ padding: '1rem', textAlign: 'center', color: '#94a3b8' }}>{t("目前尚無經文紀錄", "No records yet")}</td></tr>;
                           }
 
                           return paginatedVerses.map(([ref, stats], relativeIdx) => {
                             const idx = (pagePopularVerses - 1) * 10 + relativeIdx;
                             return (
-                            <tr key={idx} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                              <td style={{ padding: '0.8rem 1rem', fontWeight: 'bold', color: idx === 0 ? '#d97706' : idx === 1 ? '#94a3b8' : idx === 2 ? '#b45309' : '#64748b', fontSize: '1.2rem' }}>#{idx + 1}</td>
-                              <td style={{ padding: '0.8rem 1rem', fontWeight: 'bold', color: '#1e293b' }}>{ref}</td>
-                              <td style={{ padding: '0.8rem 1rem', textAlign: 'right', fontWeight: 'bold', color: '#10b981' }}>{stats.plays}</td>
-                              <td style={{ padding: '0.8rem 1rem', textAlign: 'right', fontWeight: 'bold', color: '#059669' }}>{stats.completes}</td>
-                              <td style={{ padding: '0.8rem 0' }}>
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    // Search current set first, then ALL language pools (fixes iPhone 'verse not found')
-                                    let targetVerse = findVerseByRef(VERSES_DB, ref);
-                                    let detectedLang = null;
-                                    if (!targetVerse) {
-                                      const allCurrentVerses = safeActiveSets.flatMap(s => s.verses);
-                                      targetVerse = findVerseByRef(allCurrentVerses, ref);
-                                    }
-                                    if (!targetVerse) {
-                                      const langPools = [
-                                        { lang: 'kjv', verses: [...VERSE_SETS_KJV, ...VERSE_SETS_PROVERBS_KJV].flatMap(s => s.verses) },
-                                        { lang: 'cuv', verses: [...VERSE_SETS_CUV, ...VERSE_SETS_PROVERBS_ZH].flatMap(s => s.verses) },
-                                        { lang: 'ko', verses: [...VERSE_SETS_KO, ...VERSE_SETS_PROVERBS_KO].flatMap(s => s.verses) },
-                                        { lang: 'ja', verses: [...VERSE_SETS_JA, ...VERSE_SETS_PROVERBS_JA].flatMap(s => s.verses) },
-                                      ];
-                                      for (const pool of langPools) {
-                                        if (pool.lang === version) continue;
-                                        const found = findVerseByRef(pool.verses, ref);
-                                        if (found) { targetVerse = found; detectedLang = pool.lang; break; }
+                              <tr key={idx} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                                <td style={{ padding: '0.8rem 1rem', fontWeight: 'bold', color: idx === 0 ? '#d97706' : idx === 1 ? '#94a3b8' : idx === 2 ? '#b45309' : '#64748b', fontSize: '1.2rem' }}>#{idx + 1}</td>
+                                <td style={{ padding: '0.8rem 1rem', fontWeight: 'bold', color: '#1e293b' }}>{ref}</td>
+                                <td style={{ padding: '0.8rem 1rem', textAlign: 'right', fontWeight: 'bold', color: '#10b981' }}>{stats.plays}</td>
+                                <td style={{ padding: '0.8rem 1rem', textAlign: 'right', fontWeight: 'bold', color: '#059669' }}>{stats.completes}</td>
+                                <td style={{ padding: '0.8rem 0' }}>
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      // Search current set first, then ALL language pools (fixes iPhone 'verse not found')
+                                      let targetVerse = findVerseByRef(VERSES_DB, ref);
+                                      let detectedLang = null;
+                                      if (!targetVerse) {
+                                        const allCurrentVerses = safeActiveSets.flatMap(s => s.verses);
+                                        targetVerse = findVerseByRef(allCurrentVerses, ref);
                                       }
-                                    }
-                                    if (targetVerse) {
-                                      if (detectedLang) {
-                                        versionBeforeChallenge.current = version;
-                                        setVersion(detectedLang);
+                                      if (!targetVerse) {
+                                        const langPools = [
+                                          { lang: 'kjv', verses: [...VERSE_SETS_KJV, ...VERSE_SETS_PROVERBS_KJV].flatMap(s => s.verses) },
+                                          { lang: 'cuv', verses: [...VERSE_SETS_CUV, ...VERSE_SETS_PROVERBS_ZH].flatMap(s => s.verses) },
+                                          { lang: 'ko', verses: [...VERSE_SETS_KO, ...VERSE_SETS_PROVERBS_KO].flatMap(s => s.verses) },
+                                          { lang: 'ja', verses: [...VERSE_SETS_JA, ...VERSE_SETS_PROVERBS_JA].flatMap(s => s.verses) },
+                                        ];
+                                        for (const pool of langPools) {
+                                          if (pool.lang === version) continue;
+                                          const found = findVerseByRef(pool.verses, ref);
+                                          if (found) { targetVerse = found; detectedLang = pool.lang; break; }
+                                        }
                                       }
-                                      setActiveVerse(targetVerse);
-                                      setTimeout(() => startGame(), 50);
-                                    } else {
-                                      setToast(t('本機找不到此經文', 'Verse not found locally'));
-                                    }
-                                  }}
-                                  style={{ background: '#10b981', color: 'white', border: 'none', padding: '0.3rem 0.6rem', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '4px' }}
-                                >
-                                  <Play size={12} fill="white" /> {t("挑戰", "Play")}
-                                </button>
-                              </td>
-                            </tr>
+                                      if (targetVerse) {
+                                        if (detectedLang) {
+                                          versionBeforeChallenge.current = version;
+                                          setVersion(detectedLang);
+                                        }
+                                        setActiveVerse(targetVerse);
+                                        setTimeout(() => startGame(), 50);
+                                      } else {
+                                        setToast(t('本機找不到此經文', 'Verse not found locally'));
+                                      }
+                                    }}
+                                    style={{ background: '#10b981', color: 'white', border: 'none', padding: '0.3rem 0.6rem', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '4px' }}
+                                  >
+                                    <Play size={12} fill="white" /> {t("挑戰", "Play")}
+                                  </button>
+                                </td>
+                              </tr>
                             );
                           });
                         })()}
@@ -7469,7 +7469,7 @@ export default function App() {
                     const codeInput = document.getElementById('modalCodeInput');
                     const code = codeInput ? codeInput.value.trim() : '';
                     if (!code) { setAuthError("請輸入驗證碼 (Verification code required)"); return; }
-                    
+
                     setAuthLoading(true);
                     setAuthError("");
                     try {
