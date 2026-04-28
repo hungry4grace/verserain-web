@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Play, RotateCcw, Heart, Zap, Trophy, Crown, Star, Home, XCircle, Headphones, Music, VolumeX, Search, Share2, Dices, Mic, MicOff, Users, CloudRain, Info } from 'lucide-react';
+import { Play, RotateCcw, Heart, Zap, Trophy, Crown, Star, Home, XCircle, Headphones, Music, VolumeX, Search, Share2, Dices, Mic, MicOff, Users, CloudRain, Info, Edit } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import usePartySocket from 'partysocket/react';
 import PartySocket from 'partysocket';
@@ -253,6 +253,9 @@ import { VERSE_SETS_JA } from './verses_ja';
 import { VERSE_SETS_KO } from './verses_ko';
 import { VERSE_SETS_FA } from './verses_fa';
 import { VERSE_SETS_HE } from './verses_he';
+import { VERSE_SETS_ES } from './verses_es';
+import { VERSE_SETS_TR } from './verses_tr';
+import { VERSE_SETS_DE } from './verses_de';
 import {
   VERSE_SETS_PROVERBS_ZH,
   VERSE_SETS_PROVERBS_KJV,
@@ -372,6 +375,24 @@ export function formatVerseReferenceForSpeech(ref, version) {
   }
 }
 
+const parseVerseRef = (v) => {
+  if (v.book && v.verseInput) return v;
+  if (!v.reference) return v;
+  for (const book of BIBLE_BOOKS) {
+    const allNames = [...(book.names || []), book.ja, book.ko].filter(Boolean);
+    for (const name of allNames) {
+      if (v.reference.startsWith(name)) {
+        return {
+          ...v,
+          book: book.id,
+          verseInput: v.reference.slice(name.length).trim()
+        };
+      }
+    }
+  }
+  return v;
+};
+
 export default function App() {
   const VERSES_CUV = React.useMemo(() => VERSE_SETS_CUV.flatMap(s => s.verses), []);
   const VERSES_KJV = React.useMemo(() => VERSE_SETS_KJV.flatMap(s => s.verses), []);
@@ -379,6 +400,9 @@ export default function App() {
   const VERSES_KO = React.useMemo(() => VERSE_SETS_KO.flatMap(s => s.verses), []);
   const VERSES_FA = React.useMemo(() => VERSE_SETS_FA.flatMap(s => s.verses), []);
   const VERSES_HE = React.useMemo(() => VERSE_SETS_HE.flatMap(s => s.verses), []);
+  const VERSES_ES = React.useMemo(() => VERSE_SETS_ES.flatMap(s => s.verses), []);
+  const VERSES_TR = React.useMemo(() => VERSE_SETS_TR.flatMap(s => s.verses), []);
+  const VERSES_DE = React.useMemo(() => VERSE_SETS_DE.flatMap(s => s.verses), []);
 
   const [version, setVersion] = useState(() => localStorage.getItem('verseRain_version') || 'cuv');
   useEffect(() => {
@@ -528,6 +552,8 @@ export default function App() {
   });
 
   const [creatorPoints, setCreatorPoints] = useState(0);
+  const [creatorOnlyPoints, setCreatorOnlyPoints] = useState(0);
+  const [referralOnlyPoints, setReferralOnlyPoints] = useState(0);
   const [creatorHistory, setCreatorHistory] = useState([]);
   const [referralHistory, setReferralHistory] = useState([]);
   const [referralHistoryPage, setReferralHistoryPage] = useState(1);
@@ -543,12 +569,19 @@ export default function App() {
           ? fetch(`/api/get-creator-points?author=${encodeURIComponent(personalCode)}&history=true`).then(r => r.json())
           : Promise.resolve(null)
       ]).then(([d, dCode]) => {
-        const pts = (d?.points || 0) + (dCode?.points || 0) + (dCode?.referralPoints || 0);
-        if (pts > 0) setCreatorPoints(pts);
-        else if (d?.referralPoints) setCreatorPoints(d.referralPoints);
-        if (d?.creatorHistory) setCreatorHistory(d.creatorHistory);
-        const refHist = dCode?.referralHistory?.length ? dCode.referralHistory : (d?.referralHistory || []);
-        setReferralHistory(refHist);
+        const totalCreatorPts = (d?.points || 0) + (dCode?.points || 0);
+        const totalRefPts = (d?.referralPoints || 0) + (dCode?.referralPoints || 0);
+        setCreatorOnlyPoints(totalCreatorPts);
+        setReferralOnlyPoints(totalRefPts);
+        setCreatorPoints(totalCreatorPts + totalRefPts);
+        
+        const mergedCreatorHist = [...(d?.creatorHistory || []), ...(dCode?.creatorHistory || [])];
+        mergedCreatorHist.sort((a, b) => b.timestamp - a.timestamp);
+        setCreatorHistory(mergedCreatorHist);
+        
+        const mergedRefHist = [...(d?.referralHistory || []), ...(dCode?.referralHistory || [])];
+        mergedRefHist.sort((a, b) => b.timestamp - a.timestamp);
+        setReferralHistory(mergedRefHist);
       }).catch(e => console.error(e));
     }
   }, [playerName, personalCode]);
@@ -713,7 +746,13 @@ export default function App() {
             ? [...VERSE_SETS_FA]
             : version === 'he'
               ? [...VERSE_SETS_HE]
-              : [];
+              : version === 'es'
+                ? [...VERSE_SETS_ES]
+                : version === 'tr'
+                  ? [...VERSE_SETS_TR]
+                  : version === 'de'
+                    ? [...VERSE_SETS_DE]
+                    : [];
 
   const activeVerseSets = React.useMemo(() => {
     const merged = [];
@@ -755,8 +794,8 @@ export default function App() {
     }]
   }];
 
-  const currentSet = selectedSetId ? (safeActiveSets.find(s => s.id === selectedSetId) || customVerseSets.find(s => s.id === selectedSetId)) : null;
-  const VERSES_DB = currentSet ? currentSet.verses : safeActiveSets[0].verses;
+  const currentSet = (selectedSetId ? (safeActiveSets.find(s => s.id === selectedSetId) || customVerseSets.find(s => s.id === selectedSetId)) : null) || safeActiveSets[0];
+  const VERSES_DB = currentSet.verses;
 
   const [activeVerse, setActiveVerse] = useState(VERSES_DB[0] || { reference: "N/A", text: "" });
   const [selectedVerseRefs, setSelectedVerseRefs] = useState([VERSES_DB[0]?.reference || "N/A"]);
@@ -812,6 +851,9 @@ export default function App() {
     else if (newVer === 'kjv') setUiLangPersisted('en');
     else if (newVer === 'ja') setUiLangPersisted('ja');
     else if (newVer === 'ko') setUiLangPersisted('ko');
+    else if (newVer === 'es') setUiLangPersisted('es');
+    else if (newVer === 'tr') setUiLangPersisted('tr');
+    else if (newVer === 'de') setUiLangPersisted('de');
     else setUiLangPersisted('zh');
 
     let targetVerses = [];
@@ -1038,6 +1080,7 @@ export default function App() {
   const [pureBaseScore, setPureBaseScore] = useState(0);
   const [campaignQueue, setCampaignQueue] = useState(null);
   const [activeCampaignSetId, setActiveCampaignSetId] = useState(null);
+  const [activeCampaignSetTotal, setActiveCampaignSetTotal] = useState(0);
   const [showSetLeaderboard, setShowSetLeaderboard] = useState(false);
   const [leaderboardSetId, setLeaderboardSetId] = useState(null);
   const [leaderboardPage, setLeaderboardPage] = useState(0);
@@ -1212,7 +1255,10 @@ export default function App() {
         setScore(0);
         setCombo(0);
         setHealth(3);
-        setTimeLeft(6000);
+        const shouldSplitOnSpace = /[\u4e00-\u9fa5\uac00-\ud7af]/.test(localNextVerse.text);
+        const regex = shouldSplitOnSpace ? /[,，。；؛،：「」、;:\.\?!！？؟『』《》 ]/ : /[,，。；؛،：「」、;:\.\?!！？؟『』《》]/;
+        const phraseCount = localNextVerse.text.split(regex).filter(p => p.trim()).length;
+        setTimeLeft(500 + phraseCount * 500);
         setLocalNextVerse(null);
         setGameState('playing');
         if (multiplayerState.playMode === 'square_solo') {
@@ -1234,8 +1280,8 @@ export default function App() {
         }
       } else if (multiplayerState?.host === myClientId && multiplayerState.campaignQueue && multiplayerState.campaignQueue.length > 0) {
         const nextVerse = multiplayerState.campaignQueue[0];
-        const isEnglish = /^[a-zA-Z\s.,:;'"''‘’“”?!()\-]+$/.test(nextVerse.text.substring(0, 50));
-        const regex = isEnglish ? /[,，。；：「」、;:\.\?!]/ : /[,，。；：「」、;:\.\?!！？『』《》\s]/;
+        const shouldSplitOnSpace = /[\u4e00-\u9fa5\uac00-\ud7af]/.test(nextVerse.text);
+        const regex = shouldSplitOnSpace ? /[,，。；؛،：「」、;:\.\?!！？؟『』《》 ]/ : /[,，。；؛،：「」、;:\.\?!！？؟『』《》]/;
         const phrases = nextVerse.text.split(regex).map(p => p.trim()).filter(Boolean);
 
         const maxGridSize = multiplayerState.distractionLevel <= 1 ? 4 : 9;
@@ -1279,6 +1325,7 @@ export default function App() {
   }, [gameState, intermissionCountdown, multiplayerState, myClientId, multiplayerRoomId, localNextVerse]);
 
   const socketRef = useRef(null);
+  const pendingInvitePKRef = useRef(null);
 
   useEffect(() => {
     const targetRoom = multiplayerRoomId || "global-lobby";
@@ -1293,6 +1340,21 @@ export default function App() {
 
     const handleOpen = () => {
       setMyClientId(socket.id);
+      if (pendingInvitePKRef.current) {
+        const { queue, pm, dl } = pendingInvitePKRef.current;
+        setActiveVerse(queue[0]);
+        setPlayMode(pm);
+        setDistractionLevel(dl);
+        setInitAutoStart({ 
+          trigger: true, 
+          isAuto: false, 
+          isMultiplayerReadyCheck: true, 
+          campaignQueue: queue, 
+          verse: queue[0], 
+          playMode: pm 
+        });
+        pendingInvitePKRef.current = null;
+      }
     };
 
     const handleMessage = (e) => {
@@ -1331,7 +1393,10 @@ export default function App() {
             setHealth(3);
             setCombo(0);
             setScore(0);
-            setTimeLeft(6000);
+            const shouldSplitOnSpace = /[\u4e00-\u9fa5\uac00-\ud7af]/.test(msg.state.verseText);
+            const regex = shouldSplitOnSpace ? /[,，。；؛،：「」、;:\.\?!！？؟『』《》 ]/ : /[,，。；؛،：「」、;:\.\?!！？؟『』《》]/;
+            const phraseCount = msg.state.verseText.split(regex).filter(p => p.trim()).length;
+            setTimeLeft(500 + phraseCount * 500);
             setCurrentSeqIndex(0);
             currentSeqRef.current = 0;
             // For square_solo: store full ordered verse list so each player can advance independently.
@@ -1482,6 +1547,7 @@ export default function App() {
     const params = new URLSearchParams(window.location.search);
     const challengeRef = params.get('challenge');
     const setRef = params.get('set');
+    const rcParam = params.get('rc');
     const roomParam = params.get('room');
 
     if (roomParam) {
@@ -1501,11 +1567,17 @@ export default function App() {
           setSelectedSetId(foundSet.id);
           window.history.replaceState({}, document.title, window.location.pathname);
           setTimeout(() => {
-            const queue = [...foundSet.verses];
+            let queue = [...foundSet.verses];
+            if (rcParam) {
+              const count = parseInt(rcParam, 10);
+              if (!isNaN(count) && count > 0) {
+                queue = queue.sort(() => 0.5 - Math.random()).slice(0, Math.min(queue.length, count));
+              }
+            }
             setCampaignQueue(queue.slice(1));
             setCampaignResults([]);
             setActiveVerse(queue[0]);
-            setTimeout(() => startGame(false, queue), 50);
+            setInitAutoStart({ trigger: true, isAuto: false, overrideVerse: queue[0] });
           }, 300);
           return;
         }
@@ -1652,8 +1724,8 @@ export default function App() {
         } else if (initAutoStart.playMode === 'rain_solo' || initAutoStart.playMode === 'voice_solo') {
           if (socketRef.current) {
             const verse = initAutoStart.verse || activeVerse;
-            const isEnglish = /^[a-zA-Z\s.,:;'"''‘’“”?!()\-]+$/.test(verse.text.substring(0, 50));
-            const regex = isEnglish ? /[,，。；：「」、;:\.\?!]/ : /[,，。；：「」、;:\.\?!！？『』《》\s]/;
+            const shouldSplitOnSpace = /[\u4e00-\u9fa5\uac00-\ud7af]/.test(verse.text);
+            const regex = shouldSplitOnSpace ? /[,，。；؛،：「」、;:\.\?!！？؟『』《》 ]/ : /[,，。；؛،：「」、;:\.\?!！？؟『』《》]/;
             const phrases = verse.text.split(regex).map(p => p.trim()).filter(Boolean);
 
             socketRef.current.send(JSON.stringify({
@@ -1669,7 +1741,7 @@ export default function App() {
           }
         }
       } else {
-        startGame(initAutoStart.isAuto);
+        startGame(initAutoStart.isAuto, initAutoStart.overrideVerse);
       }
       setInitAutoStart(null);
     }
@@ -1679,8 +1751,8 @@ export default function App() {
     const verse = overrideVerse || activeVerse;
     let phrases;
     if (overrideVerse) {
-      const isEnglish = /^[a-zA-Z\s.,:;'"''‘’“”?!()\-]+$/.test(verse.text.substring(0, 50));
-      const regex = isEnglish ? /[,，。；：「」、;:\.\?!]/ : /[,，。；：「」、;:\.\?!！？『』《》\s]/;
+      const shouldSplitOnSpace = /[\u4e00-\u9fa5\uac00-\ud7af]/.test(verse.text);
+      const regex = shouldSplitOnSpace ? /[,，。；؛،：「」、;:\.\?!！？؟『』《》 ]/ : /[,，。；؛،：「」、;:\.\?!！？؟『』《》]/;
       phrases = verse.text.split(regex).map(p => p.trim()).filter(Boolean);
     } else {
       phrases = activePhrasesRef.current;
@@ -1752,14 +1824,22 @@ export default function App() {
     }
   };
 
-  const startGame = (isAuto = false) => {
+  const startGame = (isAuto = false, overrideVerse = null) => {
     initAudio();
     setGameState('playing');
     setIsAutoPlay(isAuto);
     setScore(0);
     setCombo(0);
     setHealth(3);
-    setTimeLeft(6000);
+    const initialVerse = overrideVerse || activeVerse;
+    if (initialVerse) {
+      const shouldSplitOnSpace = /[\u4e00-\u9fa5\uac00-\ud7af]/.test(initialVerse.text);
+      const regex = shouldSplitOnSpace ? /[,，。；؛،：「」、;:\.\?!！？؟『』《》 ]/ : /[,，。；؛،：「」、;:\.\?!！？؟『』《》]/;
+      const phraseCount = initialVerse.text.split(regex).filter(p => p.trim()).length;
+      setTimeLeft(500 + phraseCount * 500);
+    } else {
+      setTimeLeft(6000);
+    }
     setCurrentSeqIndex(0);
     currentSeqRef.current = 0;
     setBlocks([]);
@@ -1767,6 +1847,13 @@ export default function App() {
     setIsNewHighScore(false);
     setIsFailed(false);
     setTimeBonus(0);
+
+    const actualVerse = overrideVerse || activeVerse;
+    if (actualVerse) {
+      const shouldSplitOnSpace = /[\u4e00-\u9fa5\uac00-\ud7af]/.test(actualVerse.text);
+      const regex = shouldSplitOnSpace ? /[,，。；؛،：「」、;:\.\?!！？؟『』《》 ]/ : /[,，。；؛،：「」、;:\.\?!！？؟『』《》]/;
+      activePhrasesRef.current = actualVerse.text.split(regex).map(p => p.trim()).filter(Boolean);
+    }
 
     if (timerRef.current) clearInterval(timerRef.current);
 
@@ -1781,7 +1868,7 @@ export default function App() {
 
     if (!isAuto) {
       if (playMode.startsWith('square')) {
-        initSquareBlocks();
+        initSquareBlocks(false, null, actualVerse);
       } else {
         setTimeout(spawnNextBlock, 100);
         setTimeout(spawnNextBlock, 900);
@@ -1791,8 +1878,8 @@ export default function App() {
       }
     }
 
-    if (activeVerse && !isAuto) {
-      logEvent('versePlayed', { ref: activeVerse.reference, setId: selectedSetId });
+    if (actualVerse && !isAuto) {
+      logEvent('versePlayed', { ref: actualVerse.reference, setId: selectedSetId });
     }
   };
 
@@ -1808,6 +1895,9 @@ export default function App() {
         if (v === 'ja') return 'ja-JP';
         if (v === 'he') return 'he-IL';
         if (v === 'fa') return 'fa-IR';
+        if (v === 'es') return 'es-ES';
+        if (v === 'tr') return 'tr-TR';
+        if (v === 'de') return 'de-DE';
         return 'zh-TW';
       };
       const TTS_LANG = getVoiceLang(version);
@@ -1892,7 +1982,7 @@ export default function App() {
             setActiveVerse(currentQueue[0]);
             setCampaignQueue(currentQueue.slice(1));
             campaignQueueRef.current = currentQueue.slice(1);
-            startGame(true);
+            startGame(true, currentQueue[0]);
           } else {
             setGameState('menu');
           }
@@ -1963,29 +2053,31 @@ export default function App() {
           }
         }
 
+        const currentPlayerName = playerName || localStorage.getItem('verserain_playerName') || 'Guest';
+
         fetch("/api/submit-creator-point", {
           method: "POST", headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ author: authorToReward, amount: vCount, player: playerName, verseSetName })
+          body: JSON.stringify({ author: authorToReward, amount: vCount, player: currentPlayerName, verseSetName })
         }).catch(e => e);
 
         // Phase 1 Gamification: Reward Inviter & Invitee (Using Dedicated Points, NOT Fruits)
         const inviter = localStorage.getItem('verserain_inviter');
         const claimed = localStorage.getItem('verserain_invite_claimed');
         if (inviter && inviter !== personalCode && !claimed) {
-          // Reward the inviter (+5 points)
+          // Reward the inviter (+1 fruit, +5000 score)
           fetch("/api/submit-referral-point", {
             method: "POST", headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ author: inviter, amount: 5, player: playerName, type: 'referred' })
+            body: JSON.stringify({ author: inviter, amount: 1, scoreAmount: 5000, player: currentPlayerName, type: 'referred' })
           }).catch(e => e);
 
-          // Reward the new player (+3 points bonus)
+          // Reward the new player (+1 fruit)
           fetch("/api/submit-referral-point", {
             method: "POST", headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ author: personalCode, amount: 3, player: inviter, type: 'invited_by' })
+            body: JSON.stringify({ author: personalCode || currentPlayerName, amount: 1, scoreAmount: 0, player: inviter, type: 'invited_by' })
           }).catch(e => e);
 
           localStorage.setItem('verserain_invite_claimed', 'true');
-          setToast(`🎉 成功透過 ${inviter} 的邀請首次過關！雙方各獲推廣點數獎勵！`);
+          setToast(`🎉 成功透過 ${inviter} 的邀請首次過關！雙方各獲 1 顆果子，推薦者額外獲得 5000 積分！`);
           setTimeout(() => setToast(null), 4000);
         }
       }
@@ -2143,7 +2235,7 @@ export default function App() {
           setCurrentSeqIndex(0);
           currentSeqRef.current = 0;
           setTimeout(() => {
-            startGame(isAutoPlayRef.current);
+            startGame(isAutoPlayRef.current, nextVerse);
           }, 50);
         } else {
           endGame();
@@ -2156,8 +2248,8 @@ export default function App() {
   useEffect(() => {
     if (gameState === 'campaign-results' && activeCampaignSetId && playerName) {
       const totalScore = campaignResults.reduce((sum, r) => sum + r.score, 0);
-      const passedCount = campaignResults.filter(r => r.score > 0).length;
-      const totalCount = campaignResults.length;
+      const passedCount = campaignResults.filter(r => r.health > 0).length;
+      const totalCount = activeCampaignSetTotal || campaignResults.length;
       const actualModeName = distractionLevel > 0 ? `${playMode}-dx${distractionLevel}` : playMode;
 
       if (totalScore > 0) {
@@ -2246,6 +2338,9 @@ export default function App() {
         if (v === 'ja') return 'ja-JP';
         if (v === 'he') return 'he-IL';
         if (v === 'fa') return 'fa-IR';
+        if (v === 'es') return 'es-ES';
+        if (v === 'tr') return 'tr-TR';
+        if (v === 'de') return 'de-DE';
         return 'zh-TW';
       };
       const TTS_LANG = getVoiceLang(version);
@@ -3867,12 +3962,178 @@ export default function App() {
 
 
 
+const esDict = {
+    "我的園子": "Mi Jardín",
+    "🌳 我的園子": "🌳 Mi Jardín",
+    "多人連線": "Multijugador",
+    "🎮 多人連線": "🎮 Multijugador",
+    "排行榜": "Clasificación",
+    "🏆 排行榜": "🏆 Clasificación",
+    "搜尋": "Buscar",
+    "🔍 搜尋": "🔍 Buscar",
+    "地圖": "Mapa",
+    "🗺️ 地圖": "🗺️ Mapa",
+    "返回目錄": "Volver",
+    "目前選擇": "Selección actual",
+    "九宮格": "9-Cuadrículas",
+    "四宮格": "4-Cuadrículas",
+    "經文雨": "Lluvia de Versículos",
+    "單字干擾": "Interferencia de Palabras",
+    "無干擾": "Sin Interferencia",
+    "難度 0": "Dificultad 0",
+    "難度 1": "Dificultad 1",
+    "難度 2": "Dificultad 2",
+    "難度 3": "Dificultad 3",
+    "挑戰": "Jugar",
+    "播放全部": "Reproducir todo",
+    "邀人PK": "Invitar",
+    "經文出處(點擊觀看)": "Referencia (Click)",
+    "排行": "Rango",
+    "設定": "Ajustes",
+    "選擇比賽經文組": "Seleccionar Conjunto",
+    "沒有找到匹配的經文組。": "No se encontraron conjuntos coincidentes.",
+    "準備！": "¡Listo!",
+    "已準備": "Listo",
+    "開始": "Empezar",
+    "加入對戰": "Unirse a partida",
+    "建立對戰": "Crear partida",
+    "你的名字:": "Tu nombre:",
+    "登入 / 修改": "Iniciar / Modificar",
+    "登出": "Cerrar sesión",
+    "經文組": "Conjunto de Versículos",
+    "隨機挑戰所選題數": "Desafío aleatorio",
+    "自動播放全部經文圖卡與語音": "Reproducción automática con audio",
+    "邀請朋友一起玩": "Invitar amigos",
+    "分享挑戰連結": "Compartir enlace",
+    "經典挑戰": "Desafío clásico",
+    "立刻挑戰": "Desafiar ahora",
+    "最受歡迎": "Más populares",
+    "最新": "Más recientes",
+    "作者": "Autor",
+    "點閱次數": "Vistas",
+    "Verserain 官方": "Oficial de Verserain",
+    "匿名玩家": "Jugador anónimo",
+    "QR 碼": "Código QR"
+};
+
+const trDict = {
+    "我的園子": "Bahçem",
+    "🌳 我的園子": "🌳 Bahçem",
+    "多人連線": "Çok Oyunculu",
+    "🎮 多人連線": "🎮 Çok Oyunculu",
+    "排行榜": "Liderlik Tablosu",
+    "🏆 排行榜": "🏆 Liderlik Tablosu",
+    "搜尋": "Arama",
+    "🔍 搜尋": "🔍 Arama",
+    "地圖": "Harita",
+    "🗺️ 地圖": "🗺️ Harita",
+    "返回目錄": "Geri Dön",
+    "目前選擇": "Mevcut Seçim",
+    "九宮格": "9'lu Izgara",
+    "四宮格": "4'lü Izgara",
+    "經文雨": "Ayet Yağmuru",
+    "單字干擾": "Kelime Karışıklığı",
+    "無干擾": "Karışıklık Yok",
+    "難度 0": "Zorluk 0",
+    "難度 1": "Zorluk 1",
+    "難度 2": "Zorluk 2",
+    "難度 3": "Zorluk 3",
+    "挑戰": "Oyna",
+    "播放全部": "Hepsini Oynat",
+    "邀人PK": "Davet Et",
+    "經文出處(點擊觀看)": "Referans (Tıkla)",
+    "排行": "Sıra",
+    "設定": "Ayarlar",
+    "選擇比賽經文組": "Ayet Seti Seç",
+    "沒有找到匹配的經文組。": "Eşleşen set bulunamadı.",
+    "準備！": "Hazır!",
+    "已準備": "Hazır",
+    "開始": "Başla",
+    "加入對戰": "Maça Katıl",
+    "建立對戰": "Maç Oluştur",
+    "你的名字:": "Adın:",
+    "登入 / 修改": "Giriş / Değiştir",
+    "登出": "Çıkış Yap",
+    "經文組": "Ayet Seti",
+    "隨機挑戰所選題數": "Rastgele Meydan Okuma",
+    "自動播放全部經文圖卡與語音": "Sesli Otomatik Oynat",
+    "邀請朋友一起玩": "Arkadaşlarını Davet Et",
+    "分享挑戰連結": "Bağlantıyı Paylaş",
+    "經典挑戰": "Klasik Meydan Okuma",
+    "立刻挑戰": "Hemen Oyna",
+    "最受歡迎": "En Popüler",
+    "最新": "En Yeni",
+    "作者": "Yazar",
+    "點閱次數": "Görüntüleme",
+    "Verserain 官方": "Verserain Resmi",
+    "匿名玩家": "Anonim Oyuncu",
+    "QR 碼": "QR Kod"
+};
+
+const deDict = {
+    "我的園子": "Mein Garten",
+    "🌳 我的園子": "🌳 Mein Garten",
+    "多人連線": "Mehrspieler",
+    "🎮 多人連線": "🎮 Mehrspieler",
+    "排行榜": "Bestenliste",
+    "🏆 排行榜": "🏆 Bestenliste",
+    "搜尋": "Suche",
+    "🔍 搜尋": "🔍 Suche",
+    "地圖": "Karte",
+    "🗺️ 地圖": "🗺️ Karte",
+    "返回目錄": "Zurück",
+    "目前選擇": "Aktuelle Auswahl",
+    "九宮格": "9-Gitter",
+    "四宮格": "4-Gitter",
+    "經文雨": "Versregen",
+    "單字干擾": "Wortstörung",
+    "無干擾": "Ohne Störung",
+    "難度 0": "Schwierigkeit 0",
+    "難度 1": "Schwierigkeit 1",
+    "難度 2": "Schwierigkeit 2",
+    "難度 3": "Schwierigkeit 3",
+    "挑戰": "Spielen",
+    "播放全部": "Alle abspielen",
+    "邀人PK": "Einladen",
+    "經文出處(點擊觀看)": "Referenz (Klick)",
+    "排行": "Rang",
+    "設定": "Einstellungen",
+    "選擇比賽經文組": "Set auswählen",
+    "沒有找到匹配的經文組。": "Keine passenden Sets gefunden.",
+    "準備！": "Bereit!",
+    "已準備": "Bereit",
+    "開始": "Start",
+    "加入對戰": "Spiel beitreten",
+    "建立對戰": "Spiel erstellen",
+    "你的名字:": "Dein Name:",
+    "登入 / 修改": "Anmelden / Ändern",
+    "登出": "Abmelden",
+    "經文組": "Vers-Set",
+    "隨機挑戰所選題數": "Zufällige Herausforderung",
+    "自動播放全部經文圖卡與語音": "Automatische Wiedergabe",
+    "邀請朋友一起玩": "Freunde einladen",
+    "分享挑戰連結": "Link teilen",
+    "經典挑戰": "Klassische Herausforderung",
+    "立刻挑戰": "Jetzt spielen",
+    "最受歡迎": "Beliebteste",
+    "最新": "Neueste",
+    "作者": "Autor",
+    "點閱次數": "Aufrufe",
+    "Verserain 官方": "Verserain Offiziell",
+    "匿名玩家": "Anonymer Spieler",
+    "QR 碼": "QR-Code"
+};
+
   const t = (zh, en) => {
     if (uiLang === 'en') return en || zh;
     if (uiLang === 'fa') return faDict[zh] || en || zh;
     if (uiLang === 'he') return heDict[zh] || en || zh;
     if (uiLang === 'ja') return jaDict[zh] || zh;
     if (uiLang === 'ko') return koDict[zh] || zh;
+    if (uiLang === 'es') return esDict[zh] || en || zh;
+    if (uiLang === 'tr') return trDict[zh] || en || zh;
+    if (uiLang === 'de') return deDict[zh] || en || zh;
+    if (uiLang !== 'zh' && uiLang !== 'cuv') return en || zh;
     return zh; // default: 'zh'
   };
 
@@ -3976,7 +4237,7 @@ export default function App() {
                     verserain
                   </div>
                   <div style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', marginTop: '4px', marginLeft: '2px' }}>
-                    v3.0.2
+                    v3.2.0
                   </div>
                 </div>
                 <select
@@ -3991,6 +4252,9 @@ export default function App() {
                   <option value="he">עברית</option>
                   <option value="ja">日本語</option>
                   <option value="ko">한국어</option>
+                  <option value="es">Español</option>
+                  <option value="tr">Türkçe</option>
+                  <option value="de">Deutsch</option>
                 </select>
               </div>
               <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
@@ -4290,9 +4554,11 @@ export default function App() {
                                     </div>
                                   )}
 
-                                  <input type="text" value={v.verseInput || ''} onChange={e => {
+                                  <input type="text" value={v.verseInput !== undefined ? v.verseInput : (v.reference || '')} onChange={e => {
                                     const newVerses = [...editingCustomSet.verses];
-                                    newVerses[idx] = { ...newVerses[idx], verseInput: e.target.value };
+                                    const bookInfo = v.book ? BIBLE_BOOKS.find(b => b.id === v.book) : null;
+                                    const bookPrefix = bookInfo ? getBookAbbr(bookInfo, version) + ' ' : '';
+                                    newVerses[idx] = { ...newVerses[idx], verseInput: e.target.value, reference: v.book ? bookPrefix + e.target.value : e.target.value };
                                     setEditingCustomSet({ ...editingCustomSet, verses: newVerses });
                                   }} onKeyDown={async (e) => {
                                     if (e.key === 'Enter' || e.key === 'Tab') {
@@ -4426,7 +4692,7 @@ export default function App() {
                                       setSelectedSetId(set.id);
                                       setMainTab('versesets');
                                     }} style={{ background: '#10b981', border: '1px solid #059669', padding: '0.4rem 0.8rem', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', color: 'white' }}>{t("測試遊玩", "Play/Test")}</button>
-                                    <button type="button" onClick={() => setEditingCustomSet(set)} style={{ background: '#f1f5f9', border: '1px solid #cbd5e1', padding: '0.4rem 0.8rem', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', color: '#475569' }}>{t("編輯", "Edit")}</button>
+                                    <button type="button" onClick={() => setEditingCustomSet({ ...set, verses: set.verses?.map(parseVerseRef) || [] })} style={{ background: '#f1f5f9', border: '1px solid #cbd5e1', padding: '0.4rem 0.8rem', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', color: '#475569' }}>{t("編輯", "Edit")}</button>
                                     <button type="button" onClick={() => {
                                       if (window.confirm(t("確定要刪除嗎？", "Are you sure you want to delete?"))) {
                                         const updated = customVerseSets.filter(s => s.id !== set.id);
@@ -4568,7 +4834,7 @@ export default function App() {
 
                         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
                           <div style={{ background: 'white', padding: '0.5rem', borderRadius: '8px', border: '1px solid #cbd5e1' }}>
-                            <QRCodeSVG value={`${window.location.origin}${window.location.pathname}?room=${multiplayerRoomId}`} size={100} />
+                            <QRCodeSVG value={`${window.location.origin}${window.location.pathname}?room=${multiplayerRoomId}${personalCode ? '&ref=' + encodeURIComponent(personalCode) : ''}`} size={100} />
                           </div>
                           <p style={{ color: '#94a3b8', fontSize: '0.8rem', margin: 0 }}>{t("或掃描此 QR Code 快速加入", "or scan QR to join")}</p>
                         </div>
@@ -4860,7 +5126,7 @@ export default function App() {
 
                             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem', marginTop: '1rem' }}>
                               <div style={{ background: 'white', padding: '0.5rem', borderRadius: '8px', border: '1px dashed #cbd5e1' }}>
-                                <QRCodeSVG value={`${window.location.origin}${window.location.pathname}?room=${multiplayerRoomId}`} size={120} />
+                                <QRCodeSVG value={`${window.location.origin}${window.location.pathname}?room=${multiplayerRoomId}${personalCode ? '&ref=' + encodeURIComponent(personalCode) : ''}`} size={120} />
                               </div>
                               <p style={{ color: '#94a3b8', fontSize: '0.8rem', margin: 0 }}>{t("或掃描上方 QR Code 快速加入", "or scan QR to join")}</p>
                             </div>
@@ -4967,8 +5233,8 @@ export default function App() {
                                     const tsB = parseInt(String(b.id).replace('custom-', ''), 10) || 0;
                                     return tsB - tsA;
                                   }
-                                  // Both official: keep original order
-                                  return 0;
+                                  // Both official: sort by reverse original order (newer ones appended at the end come first)
+                                  return activeVerseSets.indexOf(b) - activeVerseSets.indexOf(a);
                                 });
                               }
 
@@ -4988,7 +5254,7 @@ export default function App() {
                                       <span style={{ marginLeft: '1rem', display: 'inline-flex', gap: '0.5rem' }}>
                                         <button onClick={(e) => {
                                           e.stopPropagation();
-                                          setEditingCustomSet({ ...set, isPublished: true });
+                                          setEditingCustomSet({ ...set, isPublished: true, verses: set.verses?.map(parseVerseRef) || [] });
                                           setMainTab('custom_verses');
                                         }} style={{ background: '#f1f5f9', border: '1px solid #cbd5e1', padding: '0.2rem 0.5rem', borderRadius: '4px', cursor: 'pointer', fontSize: '0.8rem', color: '#475569' }}>Admin 編輯</button>
                                         <button onClick={(e) => {
@@ -5082,7 +5348,7 @@ export default function App() {
 
                             <button
                               onClick={() => {
-                                const link = `${window.location.origin}${window.location.pathname}?set=${encodeURIComponent(currentSet.id)}&m=${playMode}&dx=${distractionLevel}`;
+                                const link = `${window.location.origin}${window.location.pathname}?set=${encodeURIComponent(currentSet.id)}&m=${playMode}&dx=${distractionLevel}&rc=${parseInt(randomPickCount) || 1}`;
                                 setQrShareModal({ url: link, reference: currentSet.title });
                               }}
                               title={t("分享整組經文連結", "Share the set link")}
@@ -5126,8 +5392,9 @@ export default function App() {
                                   setCampaignQueue(queue.slice(1));
                                   setCampaignResults([]);
                                   setActiveCampaignSetId(currentSet.id);
+                                  setActiveCampaignSetTotal(queue.length);
                                   setActiveVerse(queue[0]);
-                                  setTimeout(() => startGame(false, queue), 50);
+                                  setTimeout(() => startGame(false, queue[0]), 200);
                                 }}
                                 title={t("隨機挑戰所選題數", "Randomly challenge selected number")}
                                 style={{ backgroundColor: '#10b981', color: 'white', border: 'none', borderRadius: '4px', padding: '0 0.8rem', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'transform 0.1s', fontWeight: 'bold', gap: '5px' }}
@@ -5145,8 +5412,9 @@ export default function App() {
                                 setCampaignQueue(queue.slice(1));
                                 setCampaignResults([]);
                                 setActiveCampaignSetId(currentSet.id);
+                                setActiveCampaignSetTotal(queue.length);
                                 setActiveVerse(queue[0]);
-                                setTimeout(() => startGame(true, queue), 50);
+                                setTimeout(() => startGame(true, queue[0]), 200);
                               }}
                               title={t("自動播放全部經文圖卡與語音", "Auto-play all verses with audio")}
                               style={{ backgroundColor: '#8b5cf6', color: 'white', border: 'none', borderRadius: '6px', padding: '0 0.8rem', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'transform 0.1s', fontWeight: 'bold', gap: '5px' }}
@@ -5159,9 +5427,24 @@ export default function App() {
                             <button
                               onClick={() => {
                                 initAudio();
-                                const queue = [...VERSES_DB];
-                                setCampaignQueue(queue.slice(1));
+                                const queue = [...currentSet.verses];
+                                const selCount = parseInt(randomPickCount) || 1;
+                                const sel = queue.sort(() => 0.5 - Math.random()).slice(0, selCount);
+                                
+                                setCampaignQueue(sel);
                                 setActiveCampaignSetId(currentSet.id);
+                                setActiveCampaignSetTotal(sel.length);
+                                
+                                const pm = playMode === 'square' ? 'square_solo' : playMode === 'rain' ? 'rain_solo' : 'voice_solo';
+                                setMultiplayerPlayMode(pm);
+                                setMultiplayerDistractionLevel(distractionLevel);
+                                
+                                pendingInvitePKRef.current = {
+                                  queue: sel,
+                                  pm: pm,
+                                  dl: distractionLevel
+                                };
+                                
                                 setMainTab('multiplayer');
                                 const chars = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
                                 let newRoom = '';
@@ -5188,6 +5471,21 @@ export default function App() {
                             >
                               <Trophy size={16} fill="white" /> {t("通關紀錄", "Records")}
                             </button>
+
+                            {(playerName === currentSet?.authorName || playerName === 'hungry@G') && (
+                              <button
+                                onClick={() => {
+                                  setEditingCustomSet({ ...currentSet, isPublished: true, verses: currentSet.verses?.map(parseVerseRef) || [] });
+                                  setMainTab('custom_verses');
+                                }}
+                                title={t("編輯這個經文組", "Edit this verse set")}
+                                style={{ backgroundColor: '#10b981', color: 'white', border: 'none', borderRadius: '6px', padding: '0 0.8rem', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'transform 0.1s', fontWeight: 'bold', gap: '5px' }}
+                                onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
+                                onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                              >
+                                <Edit size={16} color="white" /> {t("編輯", "Edit")}
+                              </button>
+                            )}
                           </div>
                         </div>
                         {currentSet?.description && (
@@ -5262,7 +5560,7 @@ export default function App() {
                                           setCampaignQueue(null);
                                           setCampaignResults([]);
                                           setActiveVerse(v);
-                                          setTimeout(() => startGame(false), 50);
+                                          setTimeout(() => startGame(false, v), 50);
                                         }}
                                         style={{ backgroundColor: '#10b981', color: 'white', border: 'none', borderRadius: '6px', width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'transform 0.1s', margin: '0 auto' }}
                                         onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.1)'}
@@ -5612,6 +5910,9 @@ export default function App() {
                                                             { lang: 'ja', verses: [...VERSE_SETS_JA, ...VERSE_SETS_PROVERBS_JA].flatMap(s => s.verses) },
                                                             { lang: 'fa', verses: VERSE_SETS_FA.flatMap(s => s.verses) },
                                                             { lang: 'he', verses: VERSE_SETS_HE.flatMap(s => s.verses) },
+                                                            { lang: 'es', verses: VERSE_SETS_ES.flatMap(s => s.verses) },
+                                                            { lang: 'tr', verses: VERSE_SETS_TR.flatMap(s => s.verses) },
+                                                            { lang: 'de', verses: VERSE_SETS_DE.flatMap(s => s.verses) },
                                                           ];
                                                           for (const pool of langPools) {
                                                             if (pool.lang === version) continue;
@@ -5649,6 +5950,9 @@ export default function App() {
                                                           { lang: 'ja', verses: [...VERSE_SETS_JA, ...VERSE_SETS_PROVERBS_JA].flatMap(s => s.verses) },
                                                           { lang: 'fa', verses: VERSE_SETS_FA.flatMap(s => s.verses) },
                                                           { lang: 'he', verses: VERSE_SETS_HE.flatMap(s => s.verses) },
+                                                          { lang: 'es', verses: VERSE_SETS_ES.flatMap(s => s.verses) },
+                                                          { lang: 'tr', verses: VERSE_SETS_TR.flatMap(s => s.verses) },
+                                                          { lang: 'de', verses: VERSE_SETS_DE.flatMap(s => s.verses) },
                                                         ];
                                                         for (const pool of langPools) {
                                                           if (pool.lang === version) continue;
@@ -5665,7 +5969,7 @@ export default function App() {
                                                         setActiveVerse(targetVerse);
                                                         setSelectedVerseRefs([targetVerse.reference]);
                                                         if (cell.setId) setSelectedSetId(cell.setId);
-                                                        setTimeout(() => startGame(), 50);
+                                                        setTimeout(() => startGame(false, targetVerse), 50);
                                                       }
                                                     }
                                                   }}
@@ -5733,7 +6037,7 @@ export default function App() {
                                   setSelectedVerseRefs([selectedGardenCell.verse.reference]);
                                   if (selectedGardenCell.setId) setSelectedSetId(selectedGardenCell.setId);
                                   setSelectedGardenCell(null);
-                                  setTimeout(() => startGame(), 50);
+                                  setTimeout(() => startGame(false, selectedGardenCell.verse), 50);
                                 }
                               }} style={{ width: '100%', justifyContent: 'center', background: '#22c55e', color: 'white', border: 'none', padding: '0.8rem', borderRadius: '10px', fontWeight: 'bold', fontSize: '1.1rem', cursor: selectedGardenCell.verse ? 'pointer' : 'not-allowed', opacity: selectedGardenCell.verse ? 1 : 0.5, boxShadow: '0 4px 12px rgba(34,197,94,0.3)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                                 <Play size={20} /> {t('挑戰這節經文', 'Challenge this verse')}
@@ -5755,9 +6059,14 @@ export default function App() {
 
                   {/* Reciprocity History */}
                   <div style={{ marginTop: '2rem', padding: '1.5rem', background: '#f8fafc', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
-                    <h3 style={{ marginTop: 0, color: '#1e293b', display: 'flex', alignItems: 'center', gap: '8px', borderBottom: '1px solid #cbd5e1', paddingBottom: '0.5rem', marginBottom: '1.5rem' }}>
-                      📜 {t('互惠點數紀錄', 'Reciprocity History')}
-                    </h3>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '8px', borderBottom: '1px solid #cbd5e1', paddingBottom: '0.5rem', marginBottom: '1.5rem' }}>
+                      <h3 style={{ margin: 0, color: '#1e293b', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        📜 {t('互惠點數紀錄', 'Reciprocity History')}
+                      </h3>
+                      <div style={{ marginLeft: 'auto', fontSize: '0.9rem', color: '#475569', fontWeight: 'bold' }}>
+                        {t('推薦果子', 'Referral Fruits')} <span style={{ color: '#ea580c' }}>{referralOnlyPoints} 🍎</span> <span style={{ margin: '0 8px', color: '#cbd5e1' }}>|</span> {t('題庫被玩', 'Custom Sets Played')} <span style={{ color: '#ea580c' }}>{creatorOnlyPoints} 🍎</span>
+                      </div>
+                    </div>
 
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2rem' }}>
                       {/* Referrals */}
@@ -5935,12 +6244,24 @@ export default function App() {
                                       onClick={async () => {
                                         setViewingPlayerGarden({ playerName: name, gardenData: null, loading: true });
                                         try {
-                                          const res = await fetch(`https://verserain-party.hungry4grace.partykit.dev/parties/main/global-auth-db/garden?player=${encodeURIComponent(name)}`);
-                                          const data = await res.json();
+                                          const [gardenRes, pointsRes] = await Promise.all([
+                                            fetch(`https://verserain-party.hungry4grace.partykit.dev/parties/main/global-auth-db/garden?player=${encodeURIComponent(name)}`),
+                                            fetch(`/api/get-creator-points?author=${encodeURIComponent(name)}`).catch(() => null)
+                                          ]);
+                                          const data = await gardenRes.json();
+                                          let creatorPts = 0;
+                                          let refPts = 0;
+                                          if (pointsRes && pointsRes.ok) {
+                                            try {
+                                              const ptsData = await pointsRes.json();
+                                              creatorPts = ptsData.points || 0;
+                                              refPts = ptsData.referralPoints || 0;
+                                            } catch (e) {}
+                                          }
                                           if (data.success) {
-                                            setViewingPlayerGarden({ playerName: name, gardenData: data.gardenData, loading: false });
+                                            setViewingPlayerGarden({ playerName: name, gardenData: data.gardenData, creatorPoints: creatorPts, referralPoints: refPts, loading: false });
                                           } else {
-                                            setViewingPlayerGarden({ playerName: name, gardenData: {}, loading: false, error: t('該玩家尚未分享園地', 'This player has not shared their garden yet') });
+                                            setViewingPlayerGarden({ playerName: name, gardenData: {}, creatorPoints: creatorPts, referralPoints: refPts, loading: false, error: t('該玩家尚未分享園地', 'This player has not shared their garden yet') });
                                           }
                                         } catch {
                                           setViewingPlayerGarden({ playerName: name, gardenData: {}, loading: false, error: t('無法載入', 'Failed to load') });
@@ -6107,7 +6428,7 @@ export default function App() {
                                           setVersion(detectedLang);
                                         }
                                         setActiveVerse(targetVerse);
-                                        setTimeout(() => startGame(), 50);
+                                        setTimeout(() => startGame(false, targetVerse), 200);
                                       } else {
                                         setToast(t('本機找不到此經文', 'Verse not found locally'));
                                       }
@@ -6256,7 +6577,7 @@ export default function App() {
                                               setCampaignQueue(null);
                                               setCampaignResults([]);
                                               setActiveVerse(v);
-                                              setTimeout(() => startGame(false), 50);
+                                              setTimeout(() => startGame(false, v), 50);
                                             }}
                                             title={t("遊玩這篇經文", "Play this verse")}
                                             style={{ backgroundColor: '#10b981', color: 'white', border: 'none', borderRadius: '50%', width: '32px', height: '32px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}
@@ -7137,7 +7458,7 @@ export default function App() {
                         onClick={() => {
                           setActiveVerse(campaignQueue[0]);
                           setCampaignQueue(campaignQueue.slice(1));
-                          setTimeout(startGame, 50);
+                          setTimeout(() => startGame(false, campaignQueue[0]), 50);
                         }}
                         className="play-btn"
                         style={{
@@ -7273,7 +7594,7 @@ export default function App() {
                         onClick={() => {
                           setActiveVerse(campaignQueue[0]);
                           setCampaignQueue(campaignQueue.slice(1));
-                          setTimeout(startGame, 50);
+                          setTimeout(() => startGame(false, campaignQueue[0]), 50);
                         }}
                         className="play-btn"
                         style={{
@@ -7834,7 +8155,7 @@ export default function App() {
                     setCampaignQueue(null);
                     setCampaignResults([]);
                     setActiveVerse(verseViewModal);
-                    setTimeout(() => startGame(false), 50);
+                    setTimeout(() => startGame(false, verseViewModal), 50);
                   }}
                   style={{ background: '#3b82f6', color: 'white', border: 'none', padding: '0.6rem 1.5rem', borderRadius: '6px', fontSize: '1rem', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', transition: 'background 0.2s' }}
                   onMouseOver={(e) => e.target.style.background = '#2563eb'}
@@ -8111,6 +8432,10 @@ export default function App() {
           const vgData = viewingPlayerGarden.gardenData || {};
           const vgEntries = Object.entries(vgData);
           const vgTreeCount = vgEntries.length;
+          const vgGameFruits = vgEntries.reduce((sum, [, d]) => sum + (d.fruits || 0), 0);
+          const vgCreatorFruits = viewingPlayerGarden.creatorPoints || 0;
+          const vgReferralFruits = viewingPlayerGarden.referralPoints || 0;
+          const vgTotalFruits = vgGameFruits + vgCreatorFruits + vgReferralFruits;
           const vgCellsPerField = 100;
           const vgMaxGridIndex = vgEntries.reduce((max, [, data]) => Math.max(max, data.gridIndex), -1);
           const vgFieldCount = Math.max(1, Math.ceil((vgMaxGridIndex + 1) / vgCellsPerField));
@@ -8185,7 +8510,15 @@ export default function App() {
                       🌿 {viewingPlayerGarden.playerName} {t('的園地', "'s Garden")}
                     </h3>
                     <div style={{ fontSize: '0.85rem', opacity: 0.8, marginTop: '4px' }}>
-                      {vgTreeCount} {t('棵植物', 'plants')} · {t('點擊查看，雙擊挑戰！', 'Click to view, double-click to challenge!')}
+                      <div style={{ marginBottom: '4px' }}>
+                        {vgTreeCount} {t('棵植物', 'plants')} · {t('點擊查看，雙擊挑戰！', 'Click to view, double-click to challenge!')}
+                      </div>
+                      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
+                        <span>🍎 {t('總果子', 'Total Fruits')}: <strong>{vgTotalFruits}</strong></span>
+                        <span style={{ fontSize: '0.75rem', opacity: 0.8 }}>
+                          ( {t('經文', 'Verses')} {vgGameFruits} | {t('推薦', 'Referral')} {vgReferralFruits} | {t('經文組分享', 'Sets Shared')} {vgCreatorFruits} )
+                        </span>
+                      </div>
                     </div>
                   </div>
                   <button onClick={() => { setViewingPlayerGarden(null); setGuestGardenCell(null); }} style={{ background: 'rgba(255,255,255,0.2)', border: 'none', color: 'white', fontSize: '1.4rem', cursor: 'pointer', borderRadius: '50%', width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✕</button>
@@ -8317,7 +8650,7 @@ export default function App() {
                                                     setDistractionLevel(guestChallengeLevel);
                                                     setActiveVerse(targetVerse);
                                                     setSelectedVerseRefs([targetVerse.reference]);
-                                                    setTimeout(() => startGame(), 50);
+                                                    setTimeout(() => startGame(false, targetVerse), 50);
                                                   }
                                                 }}
                                                 style={{
