@@ -59,11 +59,11 @@ export default async function handler(req, res) {
       metadataArray = await redis.hmget(metaKey, ...members);
     }
 
-    const records = parsedPlayers.map((player, index) => {
+    const records = parsedPlayers.map((player) => {
       let meta = {};
       try {
-        if (metadataArray[index]) {
-            meta = JSON.parse(metadataArray[index]);
+        if (metadataArray && metadataArray[player.name]) {
+            meta = JSON.parse(metadataArray[player.name]);
         }
       } catch (e) {
         // Ignore parse error
