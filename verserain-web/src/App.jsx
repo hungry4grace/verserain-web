@@ -4852,7 +4852,7 @@ const deDict = {
                             localStorage.removeItem('verseRain_voiceName');
                           }
                           // Force re-render
-                          setToast({ message: t('語音已更新！', 'Voice updated!'), type: 'success' });
+                          setToast(t('語音已更新！', 'Voice updated!'));
                         }}
                         style={{ padding: '0.5rem 1rem', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '0.95rem', minWidth: '250px', maxWidth: '100%', color: '#1e293b', background: '#f8fafc' }}
                       >
