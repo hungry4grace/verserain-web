@@ -63,7 +63,8 @@ export default async function handler(req, res) {
       let meta = {};
       try {
         if (metadataArray && metadataArray[player.name]) {
-            meta = JSON.parse(metadataArray[player.name]);
+            let rawMeta = metadataArray[player.name];
+            meta = typeof rawMeta === 'string' ? JSON.parse(rawMeta) : rawMeta;
         }
       } catch (e) {
         // Ignore parse error
