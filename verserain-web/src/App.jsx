@@ -90,6 +90,16 @@ function speakText(text, rate = 1.0, lang = 'zh-TW') {
       utterance.lang = lang;
       utterance.rate = rate;
 
+      // Use user's preferred voice if set
+      try {
+        const savedVoiceName = localStorage.getItem('verseRain_voiceName');
+        if (savedVoiceName) {
+          const voices = window.speechSynthesis.getVoices();
+          const preferred = voices.find(v => v.name === savedVoiceName);
+          if (preferred) utterance.voice = preferred;
+        }
+      } catch (e) { /* localStorage unavailable */ }
+
       // Chrome GC bug workaround: keep a global reference to the utterance
       // so the garbage collector doesn't reap it before the audio finishes.
       window.__speech_utterances = window.__speech_utterances || [];
@@ -4736,20 +4746,15 @@ const deDict = {
                           </span>
                           <button
                             onClick={() => {
-                              if ('speechSynthesis' in window) {
-                                window.speechSynthesis.cancel();
-                                const utterance = new SpeechSynthesisUtterance(randomRainVerse.text);
-                                utterance.lang = version === 'kjv' ? 'en-US' : version === 'ja' ? 'ja-JP' : version === 'ko' ? 'ko-KR' : version === 'fa' ? 'fa-IR' : version === 'he' ? 'he-IL' : version === 'es' ? 'es-ES' : version === 'tr' ? 'tr-TR' : version === 'de' ? 'de-DE' : 'zh-TW';
-                                utterance.rate = 0.85;
-                                window.speechSynthesis.speak(utterance);
-                              }
+                              const lang = version === 'kjv' ? 'en-US' : version === 'ja' ? 'ja-JP' : version === 'ko' ? 'ko-KR' : version === 'fa' ? 'fa-IR' : version === 'he' ? 'he-IL' : version === 'es' ? 'es-ES' : version === 'tr' ? 'tr-TR' : version === 'de' ? 'de-DE' : 'zh-TW';
+                              speakText(randomRainVerse.text, 0.85, lang);
                             }}
                             style={{ background: 'linear-gradient(135deg, #60a5fa, #3b82f6)', color: 'white', border: 'none', padding: '0.35rem 0.9rem', borderRadius: '20px', fontSize: '0.85rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', fontWeight: '600', boxShadow: '0 2px 6px rgba(59,130,246,0.3)', transition: 'transform 0.15s, box-shadow 0.15s' }}
                             onMouseOver={(e) => { e.currentTarget.style.transform = 'scale(1.05)'; e.currentTarget.style.boxShadow = '0 4px 12px rgba(59,130,246,0.4)'; }}
                             onMouseOut={(e) => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = '0 2px 6px rgba(59,130,246,0.3)'; }}
                             title={t('朗讀經文', 'Read aloud')}
                           >
-                            🔊 {t('讀', 'Read')}
+                            🔊 {t('讀經', 'Read')}
                           </button>
                         </div>
                       </div>
@@ -4827,6 +4832,50 @@ const deDict = {
                         </div>
                       </div>
                     ))}
+                  </div>
+
+                  {/* Voice Picker */}
+                  <div style={{ marginTop: '1.5rem', background: 'white', borderRadius: '12px', padding: '1.5rem', border: '1px solid #e2e8f0' }}>
+                    <h3 style={{ margin: '0 0 0.8rem 0', color: '#1e293b', fontSize: '1.1rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      🔊 {t('朗讀語音設定', 'Text-to-Speech Voice')}
+                    </h3>
+                    <p style={{ margin: '0 0 0.8rem 0', color: '#64748b', fontSize: '0.9rem' }}>
+                      {t('選擇你喜歡的語音，首頁「讀經」及遊戲中的語音都會使用此設定。', 'Choose your preferred voice for the Read button and in-game speech.')}
+                    </p>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
+                      <select
+                        value={localStorage.getItem('verseRain_voiceName') || ''}
+                        onChange={(e) => {
+                          if (e.target.value) {
+                            localStorage.setItem('verseRain_voiceName', e.target.value);
+                          } else {
+                            localStorage.removeItem('verseRain_voiceName');
+                          }
+                          // Force re-render
+                          setToast({ message: t('語音已更新！', 'Voice updated!'), type: 'success' });
+                        }}
+                        style={{ padding: '0.5rem 1rem', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '0.95rem', minWidth: '250px', maxWidth: '100%', color: '#1e293b', background: '#f8fafc' }}
+                      >
+                        <option value="">{t('系統預設語音', 'System Default Voice')}</option>
+                        {('speechSynthesis' in window ? window.speechSynthesis.getVoices() : [])
+                          .filter(v => {
+                            const lang = version === 'kjv' ? 'en' : version === 'ja' ? 'ja' : version === 'ko' ? 'ko' : version === 'fa' ? 'fa' : version === 'he' ? 'he' : version === 'es' ? 'es' : version === 'tr' ? 'tr' : version === 'de' ? 'de' : 'zh';
+                            return v.lang.startsWith(lang);
+                          })
+                          .map(v => (
+                            <option key={v.name} value={v.name}>{v.name} {v.localService ? '' : '☁️'}</option>
+                          ))}
+                      </select>
+                      <button
+                        onClick={() => {
+                          const lang = version === 'kjv' ? 'en-US' : version === 'ja' ? 'ja-JP' : version === 'ko' ? 'ko-KR' : version === 'fa' ? 'fa-IR' : version === 'he' ? 'he-IL' : version === 'es' ? 'es-ES' : version === 'tr' ? 'tr-TR' : version === 'de' ? 'de-DE' : 'zh-TW';
+                          speakText(t('這是你選擇的語音試聽。', 'This is a preview of your selected voice.'), 0.9, lang);
+                        }}
+                        style={{ background: 'linear-gradient(135deg, #60a5fa, #3b82f6)', color: 'white', border: 'none', padding: '0.5rem 1.2rem', borderRadius: '8px', fontSize: '0.9rem', cursor: 'pointer', fontWeight: '600', whiteSpace: 'nowrap' }}
+                      >
+                        🔊 {t('試聽', 'Preview')}
+                      </button>
+                    </div>
                   </div>
                 </div>
               )}
