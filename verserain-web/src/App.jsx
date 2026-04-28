@@ -8387,16 +8387,28 @@ export default function App() {
                     </tr>
                   </thead>
                   <tbody>
-                    {leaderboardData.map((record, index) => (
+                    {leaderboardData.map((record, index) => {
+                      const formatModeName = (modeString) => {
+                        if (!modeString || modeString.includes('未知')) return t('未知', 'Unknown');
+                        let result = modeString;
+                        result = result.replace(/square_solo/i, t('九宮格', 'Square'));
+                        result = result.replace(/VerseRain/i, t('經文雨', 'VerseRain'));
+                        result = result.replace(/rain/i, t('經文雨', 'VerseRain'));
+                        result = result.replace(/VoiceMode/i, t('語音模式', 'Voice Mode'));
+                        result = result.replace(/-dx(\d+)/i, (match, p1) => ` ${t('難度', 'Difficulty')} ${p1}`);
+                        return result;
+                      };
+                      return (
                       <tr key={index} style={{ borderBottom: '1px solid #e2e8f0' }}>
                         <td style={{ padding: '1rem', fontWeight: 'bold', color: index === 0 ? '#fbbf24' : index === 1 ? '#94a3b8' : index === 2 ? '#b45309' : '#64748b' }}>#{leaderboardPage * 10 + index + 1}</td>
                         <td style={{ padding: '1rem', fontWeight: 'bold', color: '#334155' }}>{record.name}</td>
                         <td style={{ padding: '1rem', color: '#f59e0b', fontWeight: 'bold' }}>{record.score}</td>
                         <td style={{ padding: '1rem', color: '#64748b' }}>{record.passedCount} / {record.totalCount}</td>
-                        <td style={{ padding: '1rem', color: '#64748b' }}>{record.mode}</td>
+                        <td style={{ padding: '1rem', color: '#64748b' }}>{formatModeName(record.mode)}</td>
                         <td style={{ padding: '1rem', color: '#64748b', fontSize: '0.85rem' }}>{record.date ? new Date(record.date).toLocaleDateString() : ''}</td>
                       </tr>
-                    ))}
+                      );
+                    })}
                   </tbody>
                 </table>
                 
