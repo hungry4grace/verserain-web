@@ -6580,10 +6580,7 @@ const deDict = {
                     <h2 style={{ color: '#1e293b', marginTop: 0, marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '10px' }}>
                       <Trophy color="#2563eb" /> {t("個人總積分排行榜", "Player Total Score Leaderboard")}
                       <button
-                        onClick={() => {
-                          const infoText = SKOOL_LEVELS.map(l => `Lv.${l.level} ${t(l.title, l.enTitle)} : ${l.points} ${t('次完成', 'clears')}`).join('\n');
-                          alert(t('階層升級條件：\n\n', 'Level Up Requirements:\n\n') + infoText);
-                        }}
+                        onClick={() => setShowLevelInfo(true)}
                         style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center', color: '#94a3b8', transition: 'color 0.2s' }}
                         onMouseOver={(e) => e.currentTarget.style.color = '#3b82f6'}
                         onMouseOut={(e) => e.currentTarget.style.color = '#94a3b8'}
