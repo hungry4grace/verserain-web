@@ -1122,6 +1122,7 @@ export default function App() {
     setSearchVersesPage(1);
   }, [searchQuery]);
   const [globalLeaderboardData, setGlobalLeaderboardData] = useState({ alltime: [], monthly: [], daily: [] });
+  const [globalFruitsMap, setGlobalFruitsMap] = useState({});
   const [isFetchingGlobalLeaderboard, setIsFetchingGlobalLeaderboard] = useState(false);
   const [globalLeaderboardTab, setGlobalLeaderboardTab] = useState('daily');
   const [pageGlobalLeaderboard, setPageGlobalLeaderboard] = useState(1);
@@ -1133,10 +1134,14 @@ export default function App() {
     setIsFetchingGlobalLeaderboard(true);
     Promise.all([
       fetch('/api/get-all-scores').then(res => res.ok ? res.json() : {}).catch(() => ({})),
-      fetch('/api/get-top-verses').then(res => res.ok ? res.json() : {}).catch(() => ({}))
+      fetch('/api/get-top-verses').then(res => res.ok ? res.json() : {}).catch(() => ({})),
+      fetch('https://verserain-party.hungry4grace.partykit.dev/parties/main/global-auth-db/all-gardens').then(res => res.ok ? res.json() : {}).catch(() => ({}))
     ])
-      .then(([scoresData, versesData]) => {
+      .then(([scoresData, versesData, gardensData]) => {
         setGlobalLeaderboardData(scoresData && Array.isArray(scoresData.alltime) ? scoresData : { alltime: Array.isArray(scoresData) ? scoresData : [], monthly: [], daily: [] });
+        if (gardensData && gardensData.success && gardensData.fruitsMap) {
+          setGlobalFruitsMap(gardensData.fruitsMap);
+        }
         if (versesData && versesData.alltime) {
           // Merge server stats INTO local stats (don't replace — local history must be preserved)
           setGlobalVerseStats(prev => {
@@ -6657,7 +6662,13 @@ const deDict = {
                                       onMouseOut={e => { e.currentTarget.style.backgroundColor = '#f1f5f9'; e.currentTarget.style.borderColor = '#bfdbfe'; }}
                                       title={t('點擊查看此玩家的園地', "Click to view this player's garden")}
                                     >
-                                      🌱 Lv.{getSkoolLevel(alltimeClears[name] || clears).level} {t(getSkoolLevel(alltimeClears[name] || clears).title, getSkoolLevel(alltimeClears[name] || clears).enTitle)}
+                                      {(() => {
+                                        const gardenFruits = globalFruitsMap[name] || 0;
+                                        const creatorFruits = globalLeaderboardData.bonusFruitsMap?.[name]?.creatorPoints || 0;
+                                        const trueTotalFruits = gardenFruits + creatorFruits;
+                                        const computedLevel = getSkoolLevel(trueTotalFruits);
+                                        return `🌱 Lv.${computedLevel.level} ${t(computedLevel.title, computedLevel.enTitle)}`;
+                                      })()}
                                     </button>
 
                                   </td>
