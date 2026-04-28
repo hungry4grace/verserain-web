@@ -754,6 +754,15 @@ export default function App() {
                     ? [...VERSE_SETS_DE]
                     : [];
 
+  // Pick a random verse from the "rain-verses" set for the homepage subtitle
+  const randomRainVerse = React.useMemo(() => {
+    const rainSet = baseVerseSets.find(s => s.id && s.id.startsWith('rain-verses'));
+    if (rainSet && rainSet.verses && rainSet.verses.length > 0) {
+      return rainSet.verses[Math.floor(Math.random() * rainSet.verses.length)];
+    }
+    return null;
+  }, [baseVerseSets]);
+
   const activeVerseSets = React.useMemo(() => {
     const merged = [];
     customVerseSets.forEach(cs => {
@@ -4701,9 +4710,39 @@ const deDict = {
                     <h1 style={{ fontSize: '2.5rem', color: '#1e293b', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '1rem' }}>
                       <CloudRain size={40} color="#3b82f6" /> {t("VerseRain 經文雨", "VerseRain")}
                     </h1>
-                    <p style={{ fontSize: '0.95rem', color: '#94a3b8', lineHeight: '1.8', margin: 0 }}>
-                      {t("每天一句神的話，心意更新而變化", "One verse a day, keep the devil away")}
-                    </p>
+                    {randomRainVerse ? (
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem' }}>
+                        <p style={{ fontSize: '1rem', color: '#475569', lineHeight: '1.8', margin: 0, fontStyle: 'italic', maxWidth: '600px' }}>
+                          「{randomRainVerse.text}」
+                        </p>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', marginTop: '0.3rem' }}>
+                          <span style={{ fontSize: '0.85rem', color: '#94a3b8', fontWeight: '500' }}>
+                            — {randomRainVerse.reference}
+                          </span>
+                          <button
+                            onClick={() => {
+                              if ('speechSynthesis' in window) {
+                                window.speechSynthesis.cancel();
+                                const utterance = new SpeechSynthesisUtterance(randomRainVerse.text);
+                                utterance.lang = version === 'kjv' ? 'en-US' : version === 'ja' ? 'ja-JP' : version === 'ko' ? 'ko-KR' : version === 'fa' ? 'fa-IR' : version === 'he' ? 'he-IL' : version === 'es' ? 'es-ES' : version === 'tr' ? 'tr-TR' : version === 'de' ? 'de-DE' : 'zh-TW';
+                                utterance.rate = 0.85;
+                                window.speechSynthesis.speak(utterance);
+                              }
+                            }}
+                            style={{ background: 'linear-gradient(135deg, #60a5fa, #3b82f6)', color: 'white', border: 'none', padding: '0.35rem 0.9rem', borderRadius: '20px', fontSize: '0.85rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', fontWeight: '600', boxShadow: '0 2px 6px rgba(59,130,246,0.3)', transition: 'transform 0.15s, box-shadow 0.15s' }}
+                            onMouseOver={(e) => { e.currentTarget.style.transform = 'scale(1.05)'; e.currentTarget.style.boxShadow = '0 4px 12px rgba(59,130,246,0.4)'; }}
+                            onMouseOut={(e) => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = '0 2px 6px rgba(59,130,246,0.3)'; }}
+                            title={t('朗讀經文', 'Read aloud')}
+                          >
+                            🔊 {t('讀', 'Read')}
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <p style={{ fontSize: '0.95rem', color: '#94a3b8', lineHeight: '1.8', margin: 0 }}>
+                        {t("每天一句神的話，心意更新而變化", "One verse a day, keep the devil away")}
+                      </p>
+                    )}
                   </div>
 
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.5rem', width: '100%' }}>
