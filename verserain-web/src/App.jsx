@@ -6766,11 +6766,17 @@ const deDict = {
                                       title={t('點擊查看此玩家的園地', "Click to view this player's garden")}
                                     >
                                       {(() => {
-                                        const gardenFruits = (globalFruitsMap && globalFruitsMap[name]) || 0;
-                                        const bonus = globalLeaderboardData && globalLeaderboardData.bonusFruitsMap && globalLeaderboardData.bonusFruitsMap[name];
-                                        const creatorFruits = (bonus && bonus.creatorPoints) || 0;
-                                        const trueTotalFruits = gardenFruits + creatorFruits;
-                                        const lvl = trueTotalFruits > 0 ? getSkoolLevel(trueTotalFruits) : getSkoolLevel(alltimeClears[name] || clears);
+                                        // Only use true fruits when globalFruitsMap has been loaded
+                                        const hasGardenData = globalFruitsMap && Object.keys(globalFruitsMap).length > 0;
+                                        if (hasGardenData) {
+                                          const gardenFruits = globalFruitsMap[name] || 0;
+                                          const bonus = globalLeaderboardData && globalLeaderboardData.bonusFruitsMap && globalLeaderboardData.bonusFruitsMap[name];
+                                          const creatorFruits = (bonus && bonus.creatorPoints) || 0;
+                                          const lvl = getSkoolLevel(gardenFruits + creatorFruits);
+                                          return `🌱 Lv.${lvl.level} ${t(lvl.title, lvl.enTitle)}`;
+                                        }
+                                        // Fallback: garden data not loaded yet, use clears
+                                        const lvl = getSkoolLevel(alltimeClears[name] || clears);
                                         return `🌱 Lv.${lvl.level} ${t(lvl.title, lvl.enTitle)}`;
                                       })()}
                                     </button>
