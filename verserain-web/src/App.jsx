@@ -3976,7 +3976,7 @@ export default function App() {
                     verserain
                   </div>
                   <div style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', marginTop: '4px', marginLeft: '2px' }}>
-                    v3.0.1
+                    v3.0.2
                   </div>
                 </div>
                 <select
