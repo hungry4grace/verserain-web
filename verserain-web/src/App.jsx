@@ -1167,10 +1167,18 @@ export default function App() {
     setIsFetchingGlobalLeaderboard(true);
     Promise.all([
       fetch('/api/get-all-scores').then(res => res.ok ? res.json() : {}).catch(() => ({})),
-      fetch('/api/get-top-verses').then(res => res.ok ? res.json() : {}).catch(() => ({}))
+      fetch('/api/get-top-verses').then(res => res.ok ? res.json() : {}).catch(() => ({})),
+      fetch('https://verserain-party.hungry4grace.partykit.dev/parties/main/global-auth-db/all-gardens').then(r => r.ok ? r.json() : { fruitsMap: {} }).catch(() => ({ fruitsMap: {} }))
     ])
-      .then(([scoresData, versesData]) => {
-        setGlobalLeaderboardData(scoresData && Array.isArray(scoresData.alltime) ? scoresData : { alltime: Array.isArray(scoresData) ? scoresData : [], monthly: [], daily: [] });
+      .then(([scoresData, versesData, gardensData]) => {
+        const parsed = scoresData && Array.isArray(scoresData.alltime) ? scoresData : { alltime: Array.isArray(scoresData) ? scoresData : [], monthly: [], daily: [] };
+        // Preserve bonusFruitsMap for level calculation
+        if (scoresData && scoresData.bonusFruitsMap) parsed.bonusFruitsMap = scoresData.bonusFruitsMap;
+        setGlobalLeaderboardData(parsed);
+        // Populate globalFruitsMap for leaderboard Lv. display
+        if (gardensData && gardensData.fruitsMap) {
+          setGlobalFruitsMap(gardensData.fruitsMap);
+        }
         if (versesData && versesData.alltime) {
           // Merge server stats INTO local stats (don't replace — local history must be preserved)
           setGlobalVerseStats(prev => {
