@@ -594,6 +594,7 @@ export default function App() {
   const [showLevelInfo, setShowLevelInfo] = useState(false);
   const [showFruitInfo, setShowFruitInfo] = useState(false);
   const [levelCounts, setLevelCounts] = useState(null);
+  const [globalFruitsMap, setGlobalFruitsMap] = useState({});
   const [viewingPlayerGarden, setViewingPlayerGarden] = useState(null); // { playerName, gardenData } or null
   const [guestChallengeMode, setGuestChallengeMode] = useState('square');
   const [guestChallengeLevel, setGuestChallengeLevel] = useState(0);
@@ -601,31 +602,45 @@ export default function App() {
   const guestGardenClickTimer = useRef(null);
 
   useEffect(() => {
-    if (showLevelInfo) {
-      fetch('/api/get-creator-points?stats=true')
-        .then(res => res.json())
-        .then(data => {
-          if (data.allScores) {
-            const counts = {};
-            // Tally up the server-side global players
-            data.allScores.forEach(score => {
-              const lvl = getSkoolLevel(score).level;
-              counts[lvl] = (counts[lvl] || 0) + 1;
-            });
+    if (!showLevelInfo) return;
+    // Fetch fresh data every time the modal opens
+    Promise.all([
+      fetch('https://verserain-party.hungry4grace.partykit.dev/parties/main/global-auth-db/all-gardens')
+        .then(r => r.ok ? r.json() : { fruitsMap: {} }).catch(() => ({ fruitsMap: {} })),
+      fetch('/api/get-all-scores')
+        .then(r => r.ok ? r.json() : { bonusFruitsMap: {} }).catch(() => ({ bonusFruitsMap: {} }))
+    ]).then(([gardensData, scoresData]) => {
+      const fruitsMap = (gardensData && gardensData.fruitsMap) || {};
+      const bMap = (scoresData && scoresData.bonusFruitsMap) || {};
+      setGlobalFruitsMap(fruitsMap);
 
-            // Fix locally: Ensure the current user is at least represented in their own level
-            // Since localFruits aren't always fully synced to the server instantly,
-            // we guarantee the user sees themself in the count.
-            const myLvl = skoolLevel.level;
-            // Only add +1 if it seems we aren't already grouped in the server score (heuristically, to avoid over-counting, but ensuring at least 1)
-            counts[myLvl] = Math.max(counts[myLvl] || 0, 1);
+      const allPlayerNames = new Set([
+        ...Object.keys(fruitsMap),
+        ...Object.keys(bMap)
+      ]);
 
-            setLevelCounts(counts);
-          }
-        })
-        .catch(err => console.error("Could not fetch level stats", err));
-    }
-  }, [showLevelInfo, skoolLevel.level]);
+      const counts = {};
+      let total = 0;
+      if (allPlayerNames.size === 0) {
+        counts[skoolLevel.level] = 1;
+        total = 1;
+      } else {
+        allPlayerNames.forEach(name => {
+          const gardenF = fruitsMap[name] || 0;
+          const creatorF = (bMap[name] && bMap[name].creatorPoints) || 0;
+          const trueFruits = gardenF + creatorF;
+          const lvl = getSkoolLevel(trueFruits).level;
+          counts[lvl] = (counts[lvl] || 0) + 1;
+        });
+        if (playerName && !allPlayerNames.has(playerName)) {
+          counts[skoolLevel.level] = (counts[skoolLevel.level] || 0) + 1;
+        }
+        total = Object.values(counts).reduce((a, b) => a + b, 0);
+      }
+      counts._total = total;
+      setLevelCounts(counts);
+    }).catch(err => console.error('Could not fetch level stats', err));
+  }, [showLevelInfo, skoolLevel.level, playerName]);
   const gardenClickTimer = useRef(null);
   const versionBeforeChallenge = useRef(null); // saved version to restore after cross-lang challenge
   const updateGarden = React.useCallback((ref, type, setId, amount = 1) => {
@@ -6693,7 +6708,14 @@ const deDict = {
                                       onMouseOut={e => { e.currentTarget.style.backgroundColor = '#f1f5f9'; e.currentTarget.style.borderColor = '#bfdbfe'; }}
                                       title={t('點擊查看此玩家的園地', "Click to view this player's garden")}
                                     >
-                                      🌱 Lv.{getSkoolLevel(alltimeClears[name] || clears).level} {t(getSkoolLevel(alltimeClears[name] || clears).title, getSkoolLevel(alltimeClears[name] || clears).enTitle)}
+                                      {(() => {
+                                        const gardenFruits = (globalFruitsMap && globalFruitsMap[name]) || 0;
+                                        const bonus = globalLeaderboardData && globalLeaderboardData.bonusFruitsMap && globalLeaderboardData.bonusFruitsMap[name];
+                                        const creatorFruits = (bonus && bonus.creatorPoints) || 0;
+                                        const trueTotalFruits = gardenFruits + creatorFruits;
+                                        const lvl = trueTotalFruits > 0 ? getSkoolLevel(trueTotalFruits) : getSkoolLevel(alltimeClears[name] || clears);
+                                        return `🌱 Lv.${lvl.level} ${t(lvl.title, lvl.enTitle)}`;
+                                      })()}
                                     </button>
 
                                   </td>
@@ -8655,9 +8677,9 @@ const deDict = {
                             <div style={{ fontWeight: 'bold', color: isCurrent ? '#15803d' : (isUnlocked ? '#334155' : '#94a3b8'), fontSize: '1.1rem', display: 'flex', alignItems: 'center', flexWrap: 'wrap' }}>
                               {t(levelObj.title, levelObj.enTitle)}
 
-                              {levelCounts !== null && (
+                              {levelCounts !== null && levelCounts._total > 0 && (
                                 <span style={{ fontSize: '0.85rem', color: '#64748b', marginLeft: '12px', fontWeight: 'bold', background: '#f1f5f9', padding: '4px 10px', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
-                                  👥 {levelCounts[levelObj.level] || 0} {t("人", "players")}
+                                  👥 {levelCounts[levelObj.level] || 0} {t("人", "players")} ({levelCounts._total > 0 ? Math.round(((levelCounts[levelObj.level] || 0) / levelCounts._total) * 100) : 0}%)
                                 </span>
                               )}
 
