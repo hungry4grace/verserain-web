@@ -8,7 +8,7 @@ export default async function handler(req, res) {
   if (req.method === 'OPTIONS') { res.status(200).end(); return; }
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
-  const { author, amount = 1, player, type } = req.body;
+  const { author, amount = 1, scoreAmount = 0, player, type } = req.body;
   if (!author) return res.status(400).json({ error: 'Missing author' });
 
   const redisUrl = process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL;
@@ -21,16 +21,25 @@ export default async function handler(req, res) {
     const month = today.slice(0, 7);
 
     // Save referral gamification points to a separate set from 'creator_points'
-    const p1 = redis.zincrby('gamification:referrals:alltime', amount, author);
-    const p2 = redis.zincrby(`gamification:referrals:monthly:${month}`, amount, author);
+    const promises = [
+      redis.zincrby('gamification:referrals:alltime', amount, author),
+      redis.zincrby(`gamification:referrals:monthly:${month}`, amount, author)
+    ];
+
+    if (scoreAmount > 0) {
+      promises.push(
+        redis.zincrby('leaderboard_sum:alltime', scoreAmount, author),
+        redis.zincrby(`leaderboard_sum:monthly:${month}`, scoreAmount, author),
+        redis.zincrby(`leaderboard_sum:daily:${today}`, scoreAmount, author)
+      );
+    }
     
-    let p3 = Promise.resolve();
     if (player && type) {
-      const record = JSON.stringify({ player, amount, timestamp: Date.now(), type });
-      p3 = redis.lpush(`gamification:history:referral:${author}`, record);
+      const record = JSON.stringify({ player, amount, scoreAmount, timestamp: Date.now(), type });
+      promises.push(redis.lpush(`gamification:history:referral:${author}`, record));
     }
 
-    await Promise.all([p1, p2, p3]);
+    await Promise.all(promises);
     res.status(200).json({ success: true });
   } catch (error) {
     res.status(500).json({ error: error.message });

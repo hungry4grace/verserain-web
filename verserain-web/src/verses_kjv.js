@@ -1181,7 +1181,128 @@ export const VERSE_SETS_KJV = [
       { id: "psalm18-kjv-49", reference: "Psalm 18:49", title: "Psalm 18", text: "Therefore will I give thanks unto thee, O LORD, among the heathen, and sing praises unto thy name." },
       { id: "psalm18-kjv-50", reference: "Psalm 18:50", title: "Psalm 18", text: "Great deliverance giveth he to his king; and sheweth mercy to his anointed, to David, and to his seed for evermore." }
     ]
+  },
+    {
+        id: "rain-verses",
+        title: "Verses about Rain",
+        description: "A collection of verses about God's word being like rain and dew, bringing life and growth.",
+        verses: [
+  {
+    "id": "rain-1",
+    "reference": "Deuteronomy 32:2",
+    "title": "Verses about Rain",
+    "text": "My doctrine shall drop as the rain, my speech shall distil as the dew, as the small rain upon the tender herb, and as the showers upon the grass:"
+  },
+  {
+    "id": "rain-2",
+    "reference": "Isaiah 55:10-11",
+    "title": "Verses about Rain",
+    "text": "For as the rain cometh down, and the snow from heaven, and returneth not thither, but watereth the earth, and maketh it bring forth and bud, that it may give seed to the sower, and bread to the eater: So shall my word be that goeth forth out of my mouth: it shall not return unto me void, but it shall accomplish that which I please, and it shall prosper in the thing whereto I sent it."
+  },
+  {
+    "id": "rain-3",
+    "reference": "Hosea 6:3",
+    "title": "Verses about Rain",
+    "text": "Then shall we know, if we follow on to know the LORD: his going forth is prepared as the morning; and he shall come unto us as the rain, as the latter and former rain unto the earth."
+  },
+  {
+    "id": "rain-4",
+    "reference": "Psalm 72:6",
+    "title": "Verses about Rain",
+    "text": "He shall come down like rain upon the mown grass: as showers that water the earth."
+  },
+  {
+    "id": "rain-5",
+    "reference": "Psalm 133:3",
+    "title": "Verses about Rain",
+    "text": "As the dew of Hermon, and as the dew that descended upon the mountains of Zion: for there the LORD commanded the blessing, even life for evermore."
+  },
+  {
+    "id": "rain-6",
+    "reference": "Job 29:22-23",
+    "title": "Verses about Rain",
+    "text": "After my words they spake not again; and my speech dropped upon them. And they waited for me as for the rain; and they opened their mouth wide as for the latter rain."
+  },
+  {
+    "id": "rain-7",
+    "reference": "Micah 5:7",
+    "title": "Verses about Rain",
+    "text": "And the remnant of Jacob shall be in the midst of many people as a dew from the LORD, as the showers upon the grass, that tarrieth not for man, nor waiteth for the sons of men."
+  },
+  {
+    "id": "rain-8",
+    "reference": "Isaiah 58:11",
+    "title": "Verses about Rain",
+    "text": "And the LORD shall guide thee continually, and satisfy thy soul in drought, and make fat thy bones: and thou shalt be like a watered garden, and like a spring of water, whose waters fail not."
+  },
+  {
+    "id": "rain-9",
+    "reference": "Jeremiah 31:12",
+    "title": "Verses about Rain",
+    "text": "Therefore they shall come and sing in the height of Zion, and shall flow together to the goodness of the LORD, for wheat, and for wine, and for oil, and for the young of the flock and of the herd: and their soul shall be as a watered garden; and they shall not sorrow any more at all."
+  },
+  {
+    "id": "rain-10",
+    "reference": "Psalm 65:10",
+    "title": "Verses about Rain",
+    "text": "Thou waterest the ridges thereof abundantly: thou settlest the furrows thereof: thou makest it soft with showers: thou blessest the springing thereof."
+  },
+  {
+    "id": "rain-11",
+    "reference": "Psalm 1:3",
+    "title": "Verses about Rain",
+    "text": "And he shall be like a tree planted by the rivers of water, that bringeth forth his fruit in his season; his leaf also shall not wither; and whatsoever he doeth shall prosper."
+  },
+  {
+    "id": "rain-12",
+    "reference": "Jeremiah 17:8",
+    "title": "Verses about Rain",
+    "text": "For he shall be as a tree planted by the waters, and that spreadeth out her roots by the river, and shall not see when heat cometh, but her leaf shall be green; and shall not be careful in the year of drought, neither shall cease from yielding fruit."
+  },
+  {
+    "id": "rain-13",
+    "reference": "Proverbs 19:12",
+    "title": "Verses about Rain",
+    "text": "The king's wrath is as the roaring of a lion; but his favour is as dew upon the grass."
+  },
+  {
+    "id": "rain-14",
+    "reference": "Joel 2:23",
+    "title": "Verses about Rain",
+    "text": "Be glad then, ye children of Zion, and rejoice in the LORD your God: for he hath given you the former rain moderately, and he will cause to come down for you the rain, the former rain, and the latter rain in the first month."
+  },
+  {
+    "id": "rain-15",
+    "reference": "Ezekiel 34:26",
+    "title": "Verses about Rain",
+    "text": "And I will make them and the places round about my hill a blessing; and I will cause the shower to come down in his season; there shall be showers of blessing."
+  },
+  {
+    "id": "rain-16",
+    "reference": "Isaiah 44:3",
+    "title": "Verses about Rain",
+    "text": "For I will pour water upon him that is thirsty, and floods upon the dry ground: I will pour my spirit upon thy seed, and my blessing upon thine offspring:"
+  },
+  {
+    "id": "rain-17",
+    "reference": "Hebrews 6:7",
+    "title": "Verses about Rain",
+    "text": "For the earth which drinketh in the rain that cometh oft upon it, and bringeth forth herbs meet for them by whom it is dressed, receiveth blessing from God:"
+  },
+  {
+    "id": "rain-18",
+    "reference": "Zechariah 10:1",
+    "title": "Verses about Rain",
+    "text": "Ask ye of the LORD rain in the time of the latter rain; so the LORD shall make bright clouds, and give them showers of rain, to every one grass in the field."
+  },
+  {
+    "id": "rain-19",
+    "reference": "Psalm 147:8",
+    "title": "Verses about Rain",
+    "text": "Who covereth the heaven with clouds, who prepareth rain for the earth, who maketh grass to grow upon the mountains."
   }
+        ]
+    }
 ];
 
 // Fallback
