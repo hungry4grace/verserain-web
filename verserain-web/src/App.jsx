@@ -1037,6 +1037,13 @@ export default function App() {
   const [timeBonus, setTimeBonus] = useState(0);
   const [pureBaseScore, setPureBaseScore] = useState(0);
   const [campaignQueue, setCampaignQueue] = useState(null);
+  const [activeCampaignSetId, setActiveCampaignSetId] = useState(null);
+  const [showSetLeaderboard, setShowSetLeaderboard] = useState(false);
+  const [leaderboardSetId, setLeaderboardSetId] = useState(null);
+  const [leaderboardPage, setLeaderboardPage] = useState(0);
+  const [leaderboardData, setLeaderboardData] = useState([]);
+  const [leaderboardTotal, setLeaderboardTotal] = useState(0);
+  const [isLoadingLeaderboard, setIsLoadingLeaderboard] = useState(false);
   const campaignQueueRef = useRef(null);
   useEffect(() => { campaignQueueRef.current = campaignQueue; }, [campaignQueue]);
   const localCampaignListRef = useRef([]); // full ordered verse list for square_solo mp
@@ -2144,6 +2151,52 @@ export default function App() {
       }
     }
   }, [currentSeqIndex, gameState, activePhrases.length, multiplayerRoomId, multiplayerState?.playMode, campaignQueue, activeVerse, playerName, distractionLevel, playMode]);
+
+  // Submit Verse Set score when campaign finishes
+  useEffect(() => {
+    if (gameState === 'campaign-results' && activeCampaignSetId && playerName) {
+      const totalScore = campaignResults.reduce((sum, r) => sum + r.score, 0);
+      const passedCount = campaignResults.filter(r => r.score > 0).length;
+      const totalCount = campaignResults.length;
+      const actualModeName = distractionLevel > 0 ? `${playMode}-dx${distractionLevel}` : playMode;
+
+      if (totalScore > 0) {
+        fetch('/api/submit-set-score', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            setId: activeCampaignSetId,
+            name: playerName,
+            score: totalScore,
+            mode: actualModeName,
+            passedCount,
+            totalCount
+          })
+        }).catch(() => {});
+      }
+      
+      // Clear the tracking id so it doesn't submit multiple times if state changes for other reasons
+      setActiveCampaignSetId(null);
+    }
+  }, [gameState, activeCampaignSetId, playerName, campaignResults, playMode, distractionLevel]);
+
+  // Fetch Set Leaderboard Data
+  useEffect(() => {
+    if (showSetLeaderboard && leaderboardSetId) {
+      setIsLoadingLeaderboard(true);
+      fetch(`/api/get-set-scores?setId=${leaderboardSetId}&limit=10&offset=${leaderboardPage * 10}`)
+        .then(res => res.json())
+        .then(data => {
+          setLeaderboardData(data.records || []);
+          setLeaderboardTotal(data.totalRecords || 0);
+          setIsLoadingLeaderboard(false);
+        })
+        .catch(err => {
+          console.error(err);
+          setIsLoadingLeaderboard(false);
+        });
+    }
+  }, [showSetLeaderboard, leaderboardSetId, leaderboardPage]);
 
   // Sync individual progress for solo multiplayer mode
   useEffect(() => {
@@ -5072,6 +5125,7 @@ export default function App() {
                                   queue = queue.sort(() => 0.5 - Math.random()).slice(0, actualCount);
                                   setCampaignQueue(queue.slice(1));
                                   setCampaignResults([]);
+                                  setActiveCampaignSetId(currentSet.id);
                                   setActiveVerse(queue[0]);
                                   setTimeout(() => startGame(false, queue), 50);
                                 }}
@@ -5090,6 +5144,7 @@ export default function App() {
                                 const queue = [...VERSES_DB];
                                 setCampaignQueue(queue.slice(1));
                                 setCampaignResults([]);
+                                setActiveCampaignSetId(currentSet.id);
                                 setActiveVerse(queue[0]);
                                 setTimeout(() => startGame(true, queue), 50);
                               }}
@@ -5106,6 +5161,7 @@ export default function App() {
                                 initAudio();
                                 const queue = [...VERSES_DB];
                                 setCampaignQueue(queue.slice(1));
+                                setActiveCampaignSetId(currentSet.id);
                                 setMainTab('multiplayer');
                                 const chars = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
                                 let newRoom = '';
@@ -5118,6 +5174,19 @@ export default function App() {
                               onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
                             >
                               <Users size={16} /> {t("邀人PK", "Invite")}
+                            </button>
+
+                            <button
+                              onClick={() => {
+                                setLeaderboardSetId(currentSet.id);
+                                setShowSetLeaderboard(true);
+                              }}
+                              title={t("查看這個經文組的通關紀錄", "View clear records for this set")}
+                              style={{ backgroundColor: '#f59e0b', color: 'white', border: 'none', borderRadius: '6px', padding: '0 0.8rem', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'transform 0.1s', fontWeight: 'bold', gap: '5px' }}
+                              onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
+                              onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                            >
+                              <Trophy size={16} fill="white" /> {t("通關紀錄", "Records")}
                             </button>
                           </div>
                         </div>
@@ -8293,6 +8362,66 @@ export default function App() {
             </div>
           );
         })()}
+
+      {showSetLeaderboard && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 9999, padding: '1rem' }}>
+          <div style={{ background: 'white', padding: '2rem', borderRadius: '12px', width: '100%', maxWidth: '800px', maxHeight: '90vh', overflowY: 'auto', position: 'relative', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)' }}>
+            <button onClick={() => { setShowSetLeaderboard(false); setLeaderboardPage(0); setLeaderboardSetId(null); }} style={{ position: 'absolute', top: '1rem', right: '1rem', background: 'none', border: 'none', fontSize: '1.5rem', cursor: 'pointer', color: '#94a3b8' }}>✕</button>
+            <h2 style={{ color: '#1e293b', marginTop: 0, marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '10px' }}><Trophy color="#f59e0b" /> {t("經文組通關紀錄", "Verse Set Records")}</h2>
+            
+            {isLoadingLeaderboard ? (
+              <div style={{ textAlign: 'center', padding: '2rem', color: '#64748b' }}>{t('載入中...', 'Loading...')}</div>
+            ) : leaderboardData.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '2rem', color: '#64748b' }}>{t('目前還沒有通關紀錄', 'No records found yet')}</div>
+            ) : (
+              <>
+                <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', marginBottom: '1rem' }}>
+                  <thead>
+                    <tr style={{ backgroundColor: '#f8fafc', color: '#475569', fontSize: '0.9rem' }}>
+                      <th style={{ padding: '1rem', borderBottom: '2px solid #e2e8f0' }}>{t("排行", "Rank")}</th>
+                      <th style={{ padding: '1rem', borderBottom: '2px solid #e2e8f0' }}>{t("玩家", "Player")}</th>
+                      <th style={{ padding: '1rem', borderBottom: '2px solid #e2e8f0' }}>{t("總分", "Total Score")}</th>
+                      <th style={{ padding: '1rem', borderBottom: '2px solid #e2e8f0' }}>{t("通過經文數", "Passed")}</th>
+                      <th style={{ padding: '1rem', borderBottom: '2px solid #e2e8f0' }}>{t("模式", "Mode")}</th>
+                      <th style={{ padding: '1rem', borderBottom: '2px solid #e2e8f0' }}>{t("日期", "Date")}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {leaderboardData.map((record, index) => (
+                      <tr key={index} style={{ borderBottom: '1px solid #e2e8f0' }}>
+                        <td style={{ padding: '1rem', fontWeight: 'bold', color: index === 0 ? '#fbbf24' : index === 1 ? '#94a3b8' : index === 2 ? '#b45309' : '#64748b' }}>#{leaderboardPage * 10 + index + 1}</td>
+                        <td style={{ padding: '1rem', fontWeight: 'bold', color: '#334155' }}>{record.name}</td>
+                        <td style={{ padding: '1rem', color: '#f59e0b', fontWeight: 'bold' }}>{record.score}</td>
+                        <td style={{ padding: '1rem', color: '#64748b' }}>{record.passedCount} / {record.totalCount}</td>
+                        <td style={{ padding: '1rem', color: '#64748b' }}>{record.mode}</td>
+                        <td style={{ padding: '1rem', color: '#64748b', fontSize: '0.85rem' }}>{record.date ? new Date(record.date).toLocaleDateString() : ''}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                
+                <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '1rem' }}>
+                  <button 
+                    disabled={leaderboardPage === 0}
+                    onClick={() => setLeaderboardPage(p => p - 1)}
+                    style={{ padding: '0.5rem 1rem', borderRadius: '6px', border: '1px solid #cbd5e1', background: leaderboardPage === 0 ? '#f1f5f9' : '#ffffff', color: leaderboardPage === 0 ? '#94a3b8' : '#334155', cursor: leaderboardPage === 0 ? 'not-allowed' : 'pointer' }}
+                  >
+                    {t("上一頁", "Prev")}
+                  </button>
+                  <span style={{ color: '#64748b', fontSize: '0.9rem' }}>{t("第", "Page")} {leaderboardPage + 1} {t("頁", " ")} / {t("共", "Total")} {Math.ceil(leaderboardTotal / 10)} {t("頁", "Pages")}</span>
+                  <button 
+                    disabled={(leaderboardPage + 1) * 10 >= leaderboardTotal}
+                    onClick={() => setLeaderboardPage(p => p + 1)}
+                    style={{ padding: '0.5rem 1rem', borderRadius: '6px', border: '1px solid #cbd5e1', background: (leaderboardPage + 1) * 10 >= leaderboardTotal ? '#f1f5f9' : '#ffffff', color: (leaderboardPage + 1) * 10 >= leaderboardTotal ? '#94a3b8' : '#334155', cursor: (leaderboardPage + 1) * 10 >= leaderboardTotal ? 'not-allowed' : 'pointer' }}
+                  >
+                    {t("下一頁", "Next")}
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
 
       </div>{/* end RTL/font wrapper */}
     </>
