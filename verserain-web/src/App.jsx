@@ -602,41 +602,30 @@ export default function App() {
 
   useEffect(() => {
     if (showLevelInfo) {
-      // Calculate true total fruits for ALL known players
-      const counts = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0 };
-      
-      // Combine players from fruitsMap and bonusFruitsMap
-      const allPlayerNames = new Set([
-        ...Object.keys(globalFruitsMap || {}),
-        ...Object.keys(globalLeaderboardData.bonusFruitsMap || {})
-      ]);
+      fetch('/api/get-creator-points?stats=true')
+        .then(res => res.json())
+        .then(data => {
+          if (data.allScores) {
+            const counts = {};
+            // Tally up the server-side global players
+            data.allScores.forEach(score => {
+              const lvl = getSkoolLevel(score).level;
+              counts[lvl] = (counts[lvl] || 0) + 1;
+            });
 
-      if (allPlayerNames.size === 0) {
-          // Fallback if data not loaded
-          counts[skoolLevel.level] = 1;
-      } else {
-          allPlayerNames.forEach(name => {
-            const gardenF = (globalFruitsMap && globalFruitsMap[name]) || 0;
-            const creatorF = (globalLeaderboardData.bonusFruitsMap && globalLeaderboardData.bonusFruitsMap[name]?.creatorPoints) || 0;
-            const trueFruits = gardenF + creatorF;
-            const lvl = getSkoolLevel(trueFruits).level;
-            counts[lvl] = (counts[lvl] || 0) + 1;
-          });
-          
-          // Ensure current user is at least counted with their local fruit amount if not in server yet
-          if (!allPlayerNames.has(playerName)) {
-              counts[skoolLevel.level] = (counts[skoolLevel.level] || 0) + 1;
+            // Fix locally: Ensure the current user is at least represented in their own level
+            // Since localFruits aren't always fully synced to the server instantly,
+            // we guarantee the user sees themself in the count.
+            const myLvl = skoolLevel.level;
+            // Only add +1 if it seems we aren't already grouped in the server score (heuristically, to avoid over-counting, but ensuring at least 1)
+            counts[myLvl] = Math.max(counts[myLvl] || 0, 1);
+
+            setLevelCounts(counts);
           }
-      }
-      
-      const totalPlayers = Object.values(counts).reduce((a, b) => a + b, 0);
-      
-      setLevelCounts({
-        total: totalPlayers,
-        counts
-      });
+        })
+        .catch(err => console.error("Could not fetch level stats", err));
     }
-  }, [showLevelInfo, globalFruitsMap, globalLeaderboardData.bonusFruitsMap, skoolLevel.level, playerName]);
+  }, [showLevelInfo, skoolLevel.level]);
   const gardenClickTimer = useRef(null);
   const versionBeforeChallenge = useRef(null); // saved version to restore after cross-lang challenge
   const updateGarden = React.useCallback((ref, type, setId, amount = 1) => {
@@ -1133,7 +1122,6 @@ export default function App() {
     setSearchVersesPage(1);
   }, [searchQuery]);
   const [globalLeaderboardData, setGlobalLeaderboardData] = useState({ alltime: [], monthly: [], daily: [] });
-  const [globalFruitsMap, setGlobalFruitsMap] = useState({});
   const [isFetchingGlobalLeaderboard, setIsFetchingGlobalLeaderboard] = useState(false);
   const [globalLeaderboardTab, setGlobalLeaderboardTab] = useState('daily');
   const [pageGlobalLeaderboard, setPageGlobalLeaderboard] = useState(1);
@@ -1145,14 +1133,10 @@ export default function App() {
     setIsFetchingGlobalLeaderboard(true);
     Promise.all([
       fetch('/api/get-all-scores').then(res => res.ok ? res.json() : {}).catch(() => ({})),
-      fetch('/api/get-top-verses').then(res => res.ok ? res.json() : {}).catch(() => ({})),
-      fetch('https://verserain-party.hungry4grace.partykit.dev/parties/main/global-auth-db/all-gardens').then(res => res.ok ? res.json() : {}).catch(() => ({}))
+      fetch('/api/get-top-verses').then(res => res.ok ? res.json() : {}).catch(() => ({}))
     ])
-      .then(([scoresData, versesData, gardensData]) => {
+      .then(([scoresData, versesData]) => {
         setGlobalLeaderboardData(scoresData && Array.isArray(scoresData.alltime) ? scoresData : { alltime: Array.isArray(scoresData) ? scoresData : [], monthly: [], daily: [] });
-        if (gardensData && gardensData.success && gardensData.fruitsMap) {
-          setGlobalFruitsMap(gardensData.fruitsMap);
-        }
         if (versesData && versesData.alltime) {
           // Merge server stats INTO local stats (don't replace — local history must be preserved)
           setGlobalVerseStats(prev => {
@@ -6596,7 +6580,10 @@ const deDict = {
                     <h2 style={{ color: '#1e293b', marginTop: 0, marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '10px' }}>
                       <Trophy color="#2563eb" /> {t("個人總積分排行榜", "Player Total Score Leaderboard")}
                       <button
-                        onClick={() => setShowLevelInfo(true)}
+                        onClick={() => {
+                          const infoText = SKOOL_LEVELS.map(l => `Lv.${l.level} ${t(l.title, l.enTitle)} : ${l.points} ${t('次完成', 'clears')}`).join('\n');
+                          alert(t('階層升級條件：\n\n', 'Level Up Requirements:\n\n') + infoText);
+                        }}
                         style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center', color: '#94a3b8', transition: 'color 0.2s' }}
                         onMouseOver={(e) => e.currentTarget.style.color = '#3b82f6'}
                         onMouseOut={(e) => e.currentTarget.style.color = '#94a3b8'}
@@ -6670,13 +6657,7 @@ const deDict = {
                                       onMouseOut={e => { e.currentTarget.style.backgroundColor = '#f1f5f9'; e.currentTarget.style.borderColor = '#bfdbfe'; }}
                                       title={t('點擊查看此玩家的園地', "Click to view this player's garden")}
                                     >
-                                      {(() => {
-                                        const gardenFruits = globalFruitsMap[name] || 0;
-                                        const creatorFruits = globalLeaderboardData.bonusFruitsMap?.[name]?.creatorPoints || 0;
-                                        const trueTotalFruits = gardenFruits + creatorFruits;
-                                        const computedLevel = getSkoolLevel(trueTotalFruits);
-                                        return `🌱 Lv.${computedLevel.level} ${t(computedLevel.title, computedLevel.enTitle)}`;
-                                      })()}
+                                      🌱 Lv.{getSkoolLevel(alltimeClears[name] || clears).level} {t(getSkoolLevel(alltimeClears[name] || clears).title, getSkoolLevel(alltimeClears[name] || clears).enTitle)}
                                     </button>
 
                                   </td>
@@ -8638,9 +8619,9 @@ const deDict = {
                             <div style={{ fontWeight: 'bold', color: isCurrent ? '#15803d' : (isUnlocked ? '#334155' : '#94a3b8'), fontSize: '1.1rem', display: 'flex', alignItems: 'center', flexWrap: 'wrap' }}>
                               {t(levelObj.title, levelObj.enTitle)}
 
-                              {levelCounts !== null && levelCounts.total > 0 && (
+                              {levelCounts !== null && (
                                 <span style={{ fontSize: '0.85rem', color: '#64748b', marginLeft: '12px', fontWeight: 'bold', background: '#f1f5f9', padding: '4px 10px', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
-                                  {Math.round(((levelCounts.counts[levelObj.level] || 0) / levelCounts.total) * 100)}% of members
+                                  👥 {levelCounts[levelObj.level] || 0} {t("人", "players")}
                                 </span>
                               )}
 
