@@ -4684,7 +4684,7 @@ export default function App() {
                                 {setResults.map(set => (
                                   <button
                                     key={set.id}
-                                    onClick={() => { setPickerSelectedSet(set); setMultiplayerSearchText(''); }}
+                                    onClick={() => { setPickerSelectedSet(set); setMultiplayerSearchText(''); setShowPickerBrowser(true); }}
                                     style={{ padding: '0.9rem', border: '1px solid #cbd5e1', borderRadius: '8px', background: '#f8fafc', color: '#334155', fontWeight: 'bold', cursor: 'pointer', textAlign: 'center', transition: 'background 0.2s', fontSize: '0.9rem' }}
                                     onMouseOver={(e) => e.currentTarget.style.background = '#ede9fe'}
                                     onMouseOut={(e) => e.currentTarget.style.background = '#f8fafc'}
