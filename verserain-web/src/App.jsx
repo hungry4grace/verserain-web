@@ -4640,17 +4640,19 @@ export default function App() {
                       {/* ── Search Results ── */}
                       {multiplayerSearchText.trim().length > 0 ? (() => {
                         const q = multiplayerSearchText.trim().toLowerCase();
-                        const results = [];
+                        const verseResults = [];
+                        const setResults = [];
                         for (const set of activeVerseSets) {
-                          const setTitleMatches = (set.title || '').toLowerCase().includes(q);
+                          if ((set.title || '').toLowerCase().includes(q)) {
+                            setResults.push(set);
+                          }
                           for (const v of (set.verses || [])) {
                             if (
-                              setTitleMatches ||
                               (v.reference || '').toLowerCase().includes(q) ||
                               (v.title || '').toLowerCase().includes(q) ||
                               (v.text || '').toLowerCase().includes(q)
                             ) {
-                              if (!results.some(r => r.reference === v.reference)) results.push(v);
+                              if (!verseResults.some(r => r.reference === v.reference)) verseResults.push(v);
                             }
                           }
                         }
@@ -4658,7 +4660,7 @@ export default function App() {
                           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.3rem' }}>
                               <span style={{ fontSize: '0.85rem', color: '#64748b', fontWeight: 'bold' }}>
-                                {results.length > 0 ? `${t('找到', 'Found')} ${results.length} ${t('節', 'verses')}` : t('找不到符合的經文', 'No verses found')}
+                                {(setResults.length > 0 || verseResults.length > 0) ? `${t('找到', 'Found')} ${setResults.length > 0 ? setResults.length + ' ' + t('個經文組', 'sets') + (verseResults.length > 0 ? ' , ' : '') : ''}${verseResults.length > 0 ? verseResults.length + ' ' + t('節經文', 'verses') : ''}` : t('找不到符合的項目', 'No matches found')}
                               </span>
                               {multiplayerSelectedVerses.length > 0 && (
                                 <button
@@ -4675,33 +4677,55 @@ export default function App() {
                                 </button>
                               )}
                             </div>
-                            <div style={{ maxHeight: '380px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '0.4rem', paddingRight: '0.3rem' }}>
-                              {results.slice(0, 80).map(v => {
-                                const isSelected = multiplayerSelectedVerses.some(sv => sv.reference === v.reference);
-                                return (
-                                  <div
-                                    key={v.reference}
-                                    onClick={() => {
-                                      if (isSelected) {
-                                        setMultiplayerSelectedVerses(prev => prev.filter(sv => sv.reference !== v.reference));
-                                      } else {
-                                        setMultiplayerSelectedVerses(prev => [...prev, v]);
-                                      }
-                                    }}
-                                    style={{ padding: '0.8rem 1rem', border: `2px solid ${isSelected ? '#10b981' : '#e2e8f0'}`, borderRadius: '8px', background: isSelected ? '#ecfdf5' : '#fafafa', cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: '0.2rem', transition: 'all 0.15s' }}
-                                    onMouseOver={(e) => { if (!isSelected) e.currentTarget.style.borderColor = '#a78bfa'; e.currentTarget.style.boxShadow = '0 2px 6px rgba(0,0,0,0.08)'; }}
-                                    onMouseOut={(e) => { e.currentTarget.style.borderColor = isSelected ? '#10b981' : '#e2e8f0'; e.currentTarget.style.boxShadow = 'none'; }}
+                            
+                            {/* Matching Verse Sets */}
+                            {setResults.length > 0 && (
+                              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: '0.7rem', marginBottom: '1rem' }}>
+                                {setResults.map(set => (
+                                  <button
+                                    key={set.id}
+                                    onClick={() => { setPickerSelectedSet(set); setMultiplayerSearchText(''); }}
+                                    style={{ padding: '0.9rem', border: '1px solid #cbd5e1', borderRadius: '8px', background: '#f8fafc', color: '#334155', fontWeight: 'bold', cursor: 'pointer', textAlign: 'center', transition: 'background 0.2s', fontSize: '0.9rem' }}
+                                    onMouseOver={(e) => e.currentTarget.style.background = '#ede9fe'}
+                                    onMouseOut={(e) => e.currentTarget.style.background = '#f8fafc'}
                                   >
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                      <span style={{ fontWeight: 'bold', color: '#7c3aed', fontSize: '1rem' }}>{v.reference}</span>
-                                      {isSelected && <span style={{ color: '#10b981', fontWeight: 'bold', fontSize: '1.1rem' }}>✓</span>}
+                                    {customVerseSets.some(c => c.id === set.id) ? '👑 ' : ''}{set.title}
+                                    <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.4rem', fontWeight: 'normal' }}>{set.verses?.length || 0} {t('節', 'verses')}</div>
+                                  </button>
+                                ))}
+                              </div>
+                            )}
+
+                            {/* Matching Verses */}
+                            {verseResults.length > 0 && (
+                              <div style={{ maxHeight: '380px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '0.4rem', paddingRight: '0.3rem' }}>
+                                {verseResults.slice(0, 80).map(v => {
+                                  const isSelected = multiplayerSelectedVerses.some(sv => sv.reference === v.reference);
+                                  return (
+                                    <div
+                                      key={v.reference}
+                                      onClick={() => {
+                                        if (isSelected) {
+                                          setMultiplayerSelectedVerses(prev => prev.filter(sv => sv.reference !== v.reference));
+                                        } else {
+                                          setMultiplayerSelectedVerses(prev => [...prev, v]);
+                                        }
+                                      }}
+                                      style={{ padding: '0.8rem 1rem', border: `2px solid ${isSelected ? '#10b981' : '#e2e8f0'}`, borderRadius: '8px', background: isSelected ? '#ecfdf5' : '#fafafa', cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: '0.2rem', transition: 'all 0.15s' }}
+                                      onMouseOver={(e) => { if (!isSelected) e.currentTarget.style.borderColor = '#a78bfa'; e.currentTarget.style.boxShadow = '0 2px 6px rgba(0,0,0,0.08)'; }}
+                                      onMouseOut={(e) => { e.currentTarget.style.borderColor = isSelected ? '#10b981' : '#e2e8f0'; e.currentTarget.style.boxShadow = 'none'; }}
+                                    >
+                                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                        <span style={{ fontWeight: 'bold', color: '#7c3aed', fontSize: '1rem' }}>{v.reference}</span>
+                                        {isSelected && <span style={{ color: '#10b981', fontWeight: 'bold', fontSize: '1.1rem' }}>✓</span>}
+                                      </div>
+                                      {v.title && <span style={{ fontSize: '0.85rem', color: '#475569' }}>{v.title}</span>}
+                                      {v.text && <span style={{ fontSize: '0.78rem', color: '#94a3b8', fontStyle: 'italic', overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>{v.text}</span>}
                                     </div>
-                                    {v.title && <span style={{ fontSize: '0.85rem', color: '#475569' }}>{v.title}</span>}
-                                    {v.text && <span style={{ fontSize: '0.78rem', color: '#94a3b8', fontStyle: 'italic', overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>{v.text}</span>}
-                                  </div>
-                                );
-                              })}
-                            </div>
+                                  );
+                                })}
+                              </div>
+                            )}
                           </div>
                         );
                       })() : (
