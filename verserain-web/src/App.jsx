@@ -1209,6 +1209,19 @@ export default function App() {
   const [multiplayerDistractionLevel, setMultiplayerDistractionLevel] = useState(0);
 
   // Voice Control State
+  const [availableVoices, setAvailableVoices] = useState([]);
+  useEffect(() => {
+    const loadVoices = () => {
+      if ('speechSynthesis' in window) {
+        setAvailableVoices(window.speechSynthesis.getVoices());
+      }
+    };
+    loadVoices();
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.addEventListener('voiceschanged', loadVoices);
+      return () => window.speechSynthesis.removeEventListener('voiceschanged', loadVoices);
+    }
+  }, []);
   const [isMicOn, setIsMicOn] = useState(false);
   const [micStatusText, setMicStatusText] = useState("");
   const [liveTranscript, setLiveTranscript] = useState("");
@@ -4865,7 +4878,7 @@ const deDict = {
                         style={{ padding: '0.5rem 1rem', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '0.95rem', minWidth: '250px', maxWidth: '100%', color: '#1e293b', background: '#f8fafc' }}
                       >
                         <option value="">{t('系統預設語音', 'System Default Voice')}</option>
-                        {('speechSynthesis' in window ? window.speechSynthesis.getVoices() : [])
+                        {availableVoices
                           .filter(v => {
                             const lang = version === 'kjv' ? 'en' : version === 'ja' ? 'ja' : version === 'ko' ? 'ko' : version === 'fa' ? 'fa' : version === 'he' ? 'he' : version === 'es' ? 'es' : version === 'tr' ? 'tr' : version === 'de' ? 'de' : 'zh';
                             return v.lang.startsWith(lang);
@@ -4884,6 +4897,11 @@ const deDict = {
                         🔊 {t('試聽', 'Preview')}
                       </button>
                     </div>
+                    {localStorage.getItem('verseRain_voiceName') && (
+                      <p style={{ margin: '0.6rem 0 0 0', color: '#16a34a', fontSize: '0.85rem', fontWeight: '500' }}>
+                        ✅ {t('已記住你的語音偏好，下次回來會自動使用。', 'Your voice preference is saved and will be used automatically.')}
+                      </p>
+                    )}
                   </div>
                 </div>
               )}
