@@ -4752,7 +4752,25 @@ const deDict = {
 
               {mainTab === 'lobby' && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem', alignItems: 'center', marginTop: '1rem', paddingBottom: '3rem' }}>
-                  <div style={{ textAlign: 'center', marginBottom: '1.5rem', background: 'linear-gradient(135deg, #ffffff, #f8fafc)', padding: '2rem', borderRadius: '20px', width: '100%', boxShadow: '0 4px 15px rgba(0,0,0,0.05)' }}>
+                  <div style={{ textAlign: 'center', marginBottom: '1.5rem', background: 'linear-gradient(135deg, #ffffff, #f8fafc)', padding: '2rem', borderRadius: '20px', width: '100%', boxShadow: '0 4px 15px rgba(0,0,0,0.05)', position: 'relative' }}>
+                    {/* Referral QR Code - top right */}
+                    {personalCode && (
+                      <div
+                        style={{ position: 'absolute', top: '12px', right: '12px', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px', opacity: 0.85, transition: 'opacity 0.2s, transform 0.2s' }}
+                        onClick={() => {
+                          const url = `${window.location.origin}?ref=${encodeURIComponent(personalCode)}`;
+                          navigator.clipboard.writeText(url);
+                          setToast(t('邀請連結已複製！快發給好朋友吧！', 'Invite link copied! Share it with friends!'));
+                          setTimeout(() => setToast(null), 3500);
+                        }}
+                        onMouseOver={(e) => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.transform = 'scale(1.08)'; }}
+                        onMouseOut={(e) => { e.currentTarget.style.opacity = '0.85'; e.currentTarget.style.transform = 'scale(1)'; }}
+                        title={t('點擊複製你的邀請連結', 'Click to copy your invite link')}
+                      >
+                        <QRCodeSVG value={`${window.location.origin}?ref=${encodeURIComponent(personalCode)}`} size={64} bgColor="transparent" fgColor="#3b82f6" />
+                        <span style={{ fontSize: '0.6rem', color: '#94a3b8', fontWeight: '600' }}>{t('邀請碼', 'Invite')}</span>
+                      </div>
+                    )}
                     <h1 style={{ fontSize: '2.5rem', color: '#1e293b', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '1rem' }}>
                       <CloudRain size={40} color="#3b82f6" /> {t("VerseRain 經文雨", "VerseRain")}
                     </h1>
