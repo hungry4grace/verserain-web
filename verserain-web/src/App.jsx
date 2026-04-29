@@ -6164,17 +6164,26 @@ const deDict = {
                       </div>
                     )}
 
-                    {skoolLevel.level >= 3 && !isPremium && (
-                      <div style={{ marginTop: '2rem', padding: '1.5rem', background: 'linear-gradient(135deg, #ede9fe, #ddd6fe)', borderRadius: '12px', border: '1px solid #c4b5fd', animation: 'flashSuccess 2s infinite' }}>
-                        <div style={{ fontSize: '2.5rem', marginBottom: '0.5rem' }}>🎉</div>
-                        <h4 style={{ margin: 0, color: '#5b21b6', fontSize: '1.3rem', marginBottom: '0.5rem', fontWeight: 'bold' }}>
-                          {t("恭喜！你已解鎖專屬題庫功能！", "Congratulations! Custom Sets Unlocked!")}
-                        </h4>
-                        <p style={{ margin: 0, color: '#4c1d95', fontSize: '1rem', lineHeight: '1.5' }}>
-                          {t("身為 Lv.3 以上的實踐者，你現在可以前往「進階功能 ➔ 我的專屬題庫」自由創建與分享你專屬的經文組了！", "As a Level 3+ player, you can now freely create custom verse sets from the Advanced settings menu!")}
-                        </p>
-                      </div>
-                    )}
+                    {skoolLevel.level >= 3 && !isPremium && (() => {
+                      const dismissed = localStorage.getItem('verseRain_customSetUnlockSeen');
+                      return (
+                        <div style={{ marginTop: '2rem', padding: '1.5rem', background: 'linear-gradient(135deg, #ede9fe, #ddd6fe)', borderRadius: '12px', border: '1px solid #c4b5fd', animation: dismissed ? 'none' : 'flashSuccess 1s ease-in-out 3', position: 'relative' }}>
+                          {!dismissed && (
+                            <div style={{ position: 'absolute', top: '8px', right: '12px', cursor: 'pointer', fontSize: '1.2rem', color: '#7c3aed', opacity: 0.6 }}
+                              onClick={(e) => { e.stopPropagation(); localStorage.setItem('verseRain_customSetUnlockSeen', 'true'); setToast(t('已知悉', 'Got it!')); }}
+                              title={t('不再提醒', 'Dismiss')}
+                            >✕</div>
+                          )}
+                          <div style={{ fontSize: '2.5rem', marginBottom: '0.5rem' }}>🎉</div>
+                          <h4 style={{ margin: 0, color: '#5b21b6', fontSize: '1.3rem', marginBottom: '0.5rem', fontWeight: 'bold' }}>
+                            {t("恭喜！你已解鎖專屬題庫功能！", "Congratulations! Custom Sets Unlocked!")}
+                          </h4>
+                          <p style={{ margin: 0, color: '#4c1d95', fontSize: '1rem', lineHeight: '1.5' }}>
+                            {t("身為 Lv.3 以上的實踐者，你現在可以前往「進階功能 ➔ 我的專屬題庫」自由創建與分享你專屬的經文組了！", "As a Level 3+ player, you can now freely create custom verse sets from the Advanced settings menu!")}
+                          </p>
+                        </div>
+                      );
+                    })()}
 
                     {/* Gamification Invite Block (Unlocked for Lv.2+, Teaser for Lv.1) */}
                     <div style={{ marginTop: '2rem', padding: '1.5rem', background: '#f8fafc', borderRadius: '12px', border: '1px solid #e2e8f0', textAlign: 'left', position: 'relative', overflow: 'hidden' }}>
