@@ -3010,7 +3010,13 @@ export default function App() {
     ' 時，將自動解鎖「專屬題庫」的建立權限喔！': ' برسید، ایجاد مجموعه‌های آیات سفارشی به طور خودکار باز می‌شود!',
     '共識實踐者': 'Level 3',
 
-  };
+      "我的專屬題庫": "مجموعه‌های من",
+    "經文列表": "آیات",
+    "語音模式": "حالت صوتی",
+    "多人即時連線對戰": "چند نفره زنده",
+    "通關紀錄": "رکوردها",
+    "申請帳號": "ثبت نام",
+};
 
   // ─── Hebrew (עברית) UI Dictionary ────────────────────────────────────────
   const heDict = {
@@ -3280,7 +3286,20 @@ export default function App() {
     '在園子裡持續照顧樹苗並結出果子，就能提升你的互惠階級！當達到 ': 'שא פירות בגינה שלך כדי לעלות רמה! כאשר תגיע ל',
     ' 時，將自動解鎖「專屬題庫」的建立權限喔！': ' , יצירת סטי פסוקים מותאמים אישית תיפתח אוטומטית!',
     '共識實踐者': 'רמה 3',
-  };
+      "我的專屬題庫": "הסטים שלי",
+    "進階設定與學習": "הגדרות מתקדמות",
+    "簡介": "תיאור",
+    "經文列表": "פסוקים",
+    "新增一節經文": "הוסף פסוק",
+    "儲存題庫": "שמור",
+    "公開此題庫 (Publish to Global Verse Sets)": "פרסם לכולם",
+    "建立新題庫": "צור חדש",
+    "測試遊玩": "בדוק/שחק",
+    "設定": "הגדרות",
+    "語音模式": "מצב קולי",
+    "多人即時連線對戰": "רב משתתפים חי",
+    "通關紀錄": "שיאים",
+};
 
   // --- Hebrew comprehensive additions ---
   Object.assign(heDict, {
@@ -3770,7 +3789,16 @@ export default function App() {
     ' 時，將自動解鎖「專屬題庫」的建立權限喔！': 'に達すると、独自の経文セットの作成権限が自動的に解放されます！',
     '共識實踐者': 'レベル 3',
 
-  };
+      "我的專屬題庫": "マイ問題集",
+    "簡介": "説明",
+    "經文列表": "経文リスト",
+    "取消": "キャンセル",
+    "編輯": "編集",
+    "語音模式": "音声モード",
+    "多人即時連線對戰": "リアルタイム対戦",
+    "通關紀錄": "クリア記録",
+    "申請帳號": "サインアップ",
+};
 
   const koDict = {
     '挑戰': '도전',
@@ -4240,7 +4268,11 @@ export default function App() {
     '在園子裡持續照顧樹苗並結出果子，就能提升你的互惠階級！當達到 ': '레벨을 올리려면 정원에 열매를 맺으세요! 당신이 ',
     ' 時，將自動解鎖「專屬題庫」的建立權限喔！': '에 도달하면 맞춤형 구절 세트 작성이 자동으로 잠금 해제됩니다!',
     '共識實踐者': '레벨 3',
-  };
+      "經文列表": "구절 목록",
+    "語音模式": "음성 모드",
+    "多人即時連線對戰": "실시간 멀티플레이",
+    "通關紀錄": "기록",
+};
 
 
 
@@ -4320,7 +4352,24 @@ const myDict = {
     "與家人朋友分享房間碼來PK同樂！": "မိသားစု၊ သူငယ်ချင်းများနှင့် အခန်းကုဒ်ကို မျှဝေပြီး အတူတူကစားပါ!",
     "挑戰全球經文組，鍛鍊記憶力與專注力。": "ကမ္ဘာတစ်ဝှမ်းရှိ ကျမ်းချက်များကို စိန်ခေါ်ပြီး မှတ်ဉာဏ်နှင့် အာရုံစူးစိုက်မှုကို လေ့ကျင့်ပါ။",
     "檢視你已經學會並種下生命樹的經文。": "သင်လေ့လာပြီး စိုက်ပျိုးထားသော အသက်ပင်ကျမ်းချက်များကို ကြည့်ရှုပါ။",
-    "選擇你喜歡的語音，首頁「讀經」及遊戲中的語音都會使用此設定。": "သင်နှစ်သက်ရာ အသံကို ရွေးချယ်ပါ။"
+    "選擇你喜歡的語音，首頁「讀經」及遊戲中的語音都會使用此設定。": "သင်နှစ်သက်ရာ အသံကို ရွေးချယ်ပါ။",
+    "我的專屬題庫": "ကျွန်ုပ်၏ သီးသန့်အစုများ",
+    "新增題庫": "အစုသစ်",
+    "進階設定與學習": "အဆင့်မြင့် ဆက်တင်များ",
+    "標題": "ခေါင်းစဉ်",
+    "簡介": "ဖော်ပြချက်",
+    "經文列表": "ကျမ်းချက်များ",
+    "新增一節經文": "ကျမ်းချက်ထည့်ရန်",
+    "儲存題庫": "သိမ်းဆည်းရန်",
+    "取消": "ပယ်ဖျက်ရန်",
+    "公開此題庫 (Publish to Global Verse Sets)": "အများပြည်သူသို့ မျှဝေရန်",
+    "編輯題庫": "အစုကို ပြင်ဆင်ရန်",
+    "建立新題庫": "အသစ် ဖန်တီးရန်",
+    "測試遊玩": "စမ်းသပ်ရန်",
+    "編輯": "ပြင်ဆင်ရန်",
+    "刪除": "ဖျက်ရန်",
+    "語音模式": "အသံစနစ်",
+    "多人即時連線對戰": "တိုက်ရိုက်ကစားသမားအများ",
 };
 
 const esDict = {
@@ -4430,6 +4479,27 @@ const esDict = {
     '在園子裡持續照顧樹苗並結出果子，就能提升你的互惠階級！當達到 ': '¡Da frutos en tu jardín para subir de nivel! Al alcanzar el ',
     ' 時，將自動解鎖「專屬題庫」的建立權限喔！': ', ¡desbloquearás automáticamente la creación de Conjuntos de Versículos Personalizados!',
     '共識實踐者': 'Nivel 3',
+    "大廳": "Inicio",
+    "我的專屬題庫": "Mis Conjuntos",
+    "新增題庫": "Nuevo Conjunto",
+    "進階設定與學習": "Ajustes Avanzados",
+    "標題": "Título",
+    "簡介": "Descripción",
+    "經文列表": "Versículos",
+    "新增一節經文": "Añadir Versículo",
+    "儲存題庫": "Guardar",
+    "取消": "Cancelar",
+    "公開此題庫 (Publish to Global Verse Sets)": "Publicar Globalmente",
+    "編輯題庫": "Editar Conjunto",
+    "建立新題庫": "Crear Nuevo",
+    "測試遊玩": "Probar",
+    "編輯": "Editar",
+    "刪除": "Eliminar",
+    "語音模式": "Modo de Voz",
+    "多人即時連線對戰": "Multijugador en Vivo",
+    "通關紀錄": "Récords",
+    "登入": "Iniciar sesión",
+    "申請帳號": "Registrarse",
 };
 
 const trDict = {
@@ -4539,6 +4609,27 @@ const trDict = {
     '在園子裡持續照顧樹苗並結出果子，就能提升你的互惠階級！當達到 ': 'Seviye atlamak için bahçenizde meyve verin! ',
     ' 時，將自動解鎖「專屬題庫」的建立權限喔！': ' seviyesine ulaştığınızda, Özel Ayet Setleri otomatik olarak açılır!',
     '共識實踐者': 'Seviye 3',
+    "大廳": "Ana Sayfa",
+    "我的專屬題庫": "Özel Setlerim",
+    "新增題庫": "Yeni Set",
+    "進階設定與學習": "Gelişmiş Ayarlar",
+    "標題": "Başlık",
+    "簡介": "Açıklama",
+    "經文列表": "Ayetler",
+    "新增一節經文": "Ayet Ekle",
+    "儲存題庫": "Kaydet",
+    "取消": "İptal",
+    "公開此題庫 (Publish to Global Verse Sets)": "Herkese Açık Yayınla",
+    "編輯題庫": "Seti Düzenle",
+    "建立新題庫": "Yeni Oluştur",
+    "測試遊玩": "Test Et",
+    "編輯": "Düzenle",
+    "刪除": "Sil",
+    "語音模式": "Ses Modu",
+    "多人即時連線對戰": "Canlı Çok Oyunculu",
+    "通關紀錄": "Kayıtlar",
+    "登入": "Giriş Yap",
+    "申請帳號": "Kayıt Ol",
 };
 
 const deDict = {
@@ -4648,6 +4739,27 @@ const deDict = {
     '在園子裡持續照顧樹苗並結出果子，就能提升你的互惠階級！當達到 ': 'Tragen Sie Früchte in Ihrem Garten, um aufzusteigen! Wenn Sie ',
     ' 時，將自動解鎖「專屬題庫」的建立權限喔！': ' erreichen, wird das Erstellen von benutzerdefinierten Vers-Sets automatisch freigeschaltet!',
     '共識實踐者': 'Level 3',
+    "大廳": "Startseite",
+    "我的專屬題庫": "Meine Sets",
+    "新增題庫": "Neues Set",
+    "進階設定與學習": "Erweiterte Einstellungen",
+    "標題": "Titel",
+    "簡介": "Beschreibung",
+    "經文列表": "Verse",
+    "新增一節經文": "Vers Hinzufügen",
+    "儲存題庫": "Speichern",
+    "取消": "Abbrechen",
+    "公開此題庫 (Publish to Global Verse Sets)": "Global Veröffentlichen",
+    "編輯題庫": "Set Bearbeiten",
+    "建立新題庫": "Neu Erstellen",
+    "測試遊玩": "Testen",
+    "編輯": "Bearbeiten",
+    "刪除": "Löschen",
+    "語音模式": "Sprachmodus",
+    "多人即時連線對戰": "Live Mehrspieler",
+    "通關紀錄": "Rekorde",
+    "登入": "Anmelden",
+    "申請帳號": "Registrieren",
 };
 
   const t = (zh, en) => {
