@@ -6170,7 +6170,12 @@ const deDict = {
                                     return tsB - tsA;
                                   }
                                   // Both official: sort by reverse original order (newer ones appended at the end come first)
-                                  return activeVerseSets.indexOf(b) - activeVerseSets.indexOf(a);
+                                  const getBaseIndex = (set) => {
+                                    // Base sets are at the beginning of activeVerseSets, in the order they appear in baseVerseSets
+                                    const indexInBase = baseVerseSets.findIndex(b => b.id === set.id);
+                                    return indexInBase !== -1 ? indexInBase : -1;
+                                  };
+                                  return getBaseIndex(b) - getBaseIndex(a);
                                 });
                               }
 
