@@ -266,6 +266,7 @@ import { VERSE_SETS_HE } from './verses_he';
 import { VERSE_SETS_ES } from './verses_es';
 import { VERSE_SETS_TR } from './verses_tr';
 import { VERSE_SETS_DE } from './verses_de';
+import { VERSE_SETS_MY } from './verses_my';
 import {
   VERSE_SETS_PROVERBS_ZH,
   VERSE_SETS_PROVERBS_KJV,
@@ -413,6 +414,7 @@ export default function App() {
   const VERSES_ES = React.useMemo(() => VERSE_SETS_ES.flatMap(s => s.verses), []);
   const VERSES_TR = React.useMemo(() => VERSE_SETS_TR.flatMap(s => s.verses), []);
   const VERSES_DE = React.useMemo(() => VERSE_SETS_DE.flatMap(s => s.verses), []);
+  const VERSES_MY = React.useMemo(() => VERSE_SETS_MY.flatMap(s => s.verses), []);
 
   const [version, setVersion] = useState(() => localStorage.getItem('verseRain_version') || 'cuv');
   useEffect(() => {
@@ -777,16 +779,19 @@ export default function App() {
                   ? [...VERSE_SETS_TR]
                   : version === 'de'
                     ? [...VERSE_SETS_DE]
-                    : [];
+                    : version === 'my'
+                      ? [...VERSE_SETS_MY]
+                      : [];
 
   // Pick a random verse from the "rain-verses" set for the homepage subtitle
+  const [rainVerseIndex, setRainVerseIndex] = React.useState(() => Math.floor(Math.random() * 10000));
   const randomRainVerse = React.useMemo(() => {
     const rainSet = baseVerseSets.find(s => s.id && s.id.startsWith('rain-verses'));
     if (rainSet && rainSet.verses && rainSet.verses.length > 0) {
-      return rainSet.verses[Math.floor(Math.random() * rainSet.verses.length)];
+      return rainSet.verses[rainVerseIndex % rainSet.verses.length];
     }
     return null;
-  }, [baseVerseSets]);
+  }, [baseVerseSets, rainVerseIndex]);
 
   const activeVerseSets = React.useMemo(() => {
     const merged = [];
@@ -888,6 +893,7 @@ export default function App() {
     else if (newVer === 'es') setUiLangPersisted('es');
     else if (newVer === 'tr') setUiLangPersisted('tr');
     else if (newVer === 'de') setUiLangPersisted('de');
+    else if (newVer === 'my') setUiLangPersisted('my');
     else setUiLangPersisted('zh');
 
     let targetVerses = [];
@@ -1058,8 +1064,8 @@ export default function App() {
     // Other languages (English, Hebrew, Farsi, Japanese) use spaces between words — keep them intact.
     const shouldSplitOnSpace = version === 'cuv' || version === 'ko';
     const regex = shouldSplitOnSpace
-      ? /[,，。；؛،：「」、;:\.\?!！？؟『』《》 ]/
-      : /[,，。；؛،：「」、;:\.\?!！？؟『』《》]/;
+      ? /\.{2,}|[,，。；؛၊။،：「」、;:\.\?!！？؟『』《》 ]/
+      : /\.{2,}|[,，。；؛၊။،：「」、;:\.\?!！？؟『』《》]/;
     return activeVerse.text.split(regex).map(p => p.trim()).filter(Boolean);
   }, [activeVerse, version]);
 
@@ -1311,7 +1317,7 @@ export default function App() {
         setCombo(0);
         setHealth(3);
         const shouldSplitOnSpace = /[\u4e00-\u9fa5\uac00-\ud7af]/.test(localNextVerse.text);
-        const regex = shouldSplitOnSpace ? /[,，。；؛،：「」、;:\.\?!！？؟『』《》 ]/ : /[,，。；؛،：「」、;:\.\?!！？؟『』《》]/;
+        const regex = shouldSplitOnSpace ? /\.{2,}|[,，。；؛၊။،：「」、;:\.\?!！？؟『』《》 ]/ : /\.{2,}|[,，。；؛၊။،：「」、;:\.\?!！？؟『』《》]/;
         const phraseCount = localNextVerse.text.split(regex).filter(p => p.trim()).length;
         setTimeLeft(500 + phraseCount * 500);
         setLocalNextVerse(null);
@@ -1336,7 +1342,7 @@ export default function App() {
       } else if (multiplayerState?.host === myClientId && multiplayerState.campaignQueue && multiplayerState.campaignQueue.length > 0) {
         const nextVerse = multiplayerState.campaignQueue[0];
         const shouldSplitOnSpace = /[\u4e00-\u9fa5\uac00-\ud7af]/.test(nextVerse.text);
-        const regex = shouldSplitOnSpace ? /[,，。；؛،：「」、;:\.\?!！？؟『』《》 ]/ : /[,，。；؛،：「」、;:\.\?!！？؟『』《》]/;
+        const regex = shouldSplitOnSpace ? /\.{2,}|[,，。；؛၊။،：「」、;:\.\?!！？؟『』《》 ]/ : /\.{2,}|[,，。；؛၊။،：「」、;:\.\?!！？؟『』《》]/;
         const phrases = nextVerse.text.split(regex).map(p => p.trim()).filter(Boolean);
 
         const maxGridSize = multiplayerState.distractionLevel <= 1 ? 4 : 9;
@@ -1449,7 +1455,7 @@ export default function App() {
             setCombo(0);
             setScore(0);
             const shouldSplitOnSpace = /[\u4e00-\u9fa5\uac00-\ud7af]/.test(msg.state.verseText);
-            const regex = shouldSplitOnSpace ? /[,，。；؛،：「」、;:\.\?!！？؟『』《》 ]/ : /[,，。；؛،：「」、;:\.\?!！？؟『』《》]/;
+            const regex = shouldSplitOnSpace ? /\.{2,}|[,，。；؛၊။،：「」、;:\.\?!！？؟『』《》 ]/ : /\.{2,}|[,，。；؛၊။،：「」、;:\.\?!！？؟『』《》]/;
             const phraseCount = msg.state.verseText.split(regex).filter(p => p.trim()).length;
             setTimeLeft(500 + phraseCount * 500);
             setCurrentSeqIndex(0);
@@ -1780,7 +1786,7 @@ export default function App() {
           if (socketRef.current) {
             const verse = initAutoStart.verse || activeVerse;
             const shouldSplitOnSpace = /[\u4e00-\u9fa5\uac00-\ud7af]/.test(verse.text);
-            const regex = shouldSplitOnSpace ? /[,，。；؛،：「」、;:\.\?!！？؟『』《》 ]/ : /[,，。；؛،：「」、;:\.\?!！？؟『』《》]/;
+            const regex = shouldSplitOnSpace ? /\.{2,}|[,，。；؛၊။،：「」、;:\.\?!！？؟『』《》 ]/ : /\.{2,}|[,，。；؛၊။،：「」、;:\.\?!！？؟『』《》]/;
             const phrases = verse.text.split(regex).map(p => p.trim()).filter(Boolean);
 
             socketRef.current.send(JSON.stringify({
@@ -1807,7 +1813,7 @@ export default function App() {
     let phrases;
     if (overrideVerse) {
       const shouldSplitOnSpace = /[\u4e00-\u9fa5\uac00-\ud7af]/.test(verse.text);
-      const regex = shouldSplitOnSpace ? /[,，。；؛،：「」、;:\.\?!！？؟『』《》 ]/ : /[,，。；؛،：「」、;:\.\?!！？؟『』《》]/;
+      const regex = shouldSplitOnSpace ? /\.{2,}|[,，。；؛၊။،：「」、;:\.\?!！？؟『』《》 ]/ : /\.{2,}|[,，。；؛၊။،：「」、;:\.\?!！？؟『』《》]/;
       phrases = verse.text.split(regex).map(p => p.trim()).filter(Boolean);
     } else {
       phrases = activePhrasesRef.current;
@@ -1889,7 +1895,7 @@ export default function App() {
     const initialVerse = overrideVerse || activeVerse;
     if (initialVerse) {
       const shouldSplitOnSpace = /[\u4e00-\u9fa5\uac00-\ud7af]/.test(initialVerse.text);
-      const regex = shouldSplitOnSpace ? /[,，。；؛،：「」、;:\.\?!！？؟『』《》 ]/ : /[,，。；؛،：「」、;:\.\?!！？؟『』《》]/;
+      const regex = shouldSplitOnSpace ? /\.{2,}|[,，。；؛၊။،：「」、;:\.\?!！？؟『』《》 ]/ : /\.{2,}|[,，。；؛၊။،：「」、;:\.\?!！？؟『』《》]/;
       const phraseCount = initialVerse.text.split(regex).filter(p => p.trim()).length;
       setTimeLeft(500 + phraseCount * 500);
     } else {
@@ -1906,7 +1912,7 @@ export default function App() {
     const actualVerse = overrideVerse || activeVerse;
     if (actualVerse) {
       const shouldSplitOnSpace = /[\u4e00-\u9fa5\uac00-\ud7af]/.test(actualVerse.text);
-      const regex = shouldSplitOnSpace ? /[,，。；؛،：「」、;:\.\?!！？؟『』《》 ]/ : /[,，。；؛،：「」、;:\.\?!！？؟『』《》]/;
+      const regex = shouldSplitOnSpace ? /\.{2,}|[,，。；؛၊။،：「」、;:\.\?!！？؟『』《》 ]/ : /\.{2,}|[,，。；؛၊။،：「」、;:\.\?!！？؟『』《》]/;
       activePhrasesRef.current = actualVerse.text.split(regex).map(p => p.trim()).filter(Boolean);
     }
 
@@ -1953,6 +1959,7 @@ export default function App() {
         if (v === 'es') return 'es-ES';
         if (v === 'tr') return 'tr-TR';
         if (v === 'de') return 'de-DE';
+        if (v === 'my') return 'my-MM';
         return 'zh-TW';
       };
       const TTS_LANG = getVoiceLang(version);
@@ -2396,6 +2403,7 @@ export default function App() {
         if (v === 'es') return 'es-ES';
         if (v === 'tr') return 'tr-TR';
         if (v === 'de') return 'de-DE';
+        if (v === 'my') return 'my-MM';
         return 'zh-TW';
       };
       const TTS_LANG = getVoiceLang(version);
@@ -4237,6 +4245,84 @@ export default function App() {
 
 
 
+const myDict = {
+    "我的園子": "ကျွန်ုပ်၏ဥယျာဉ်",
+    "🌳 我的園子": "🌳 ကျွန်ုပ်၏ဥယျာဉ်",
+    "多人連線": "ကစားသမားအများ",
+    "🎮 多人連線": "🎮 ကစားသမားအများ",
+    "排行榜": "အဆင့်သတ်မှတ်ချက်",
+    "🏆 排行榜": "🏆 အဆင့်သတ်မှတ်ချက်",
+    "搜尋": "ရှာဖွေရန်",
+    "🔍 搜尋": "🔍 ရှာဖွေရန်",
+    "地圖": "မြေပုံ",
+    "🗺️ 地圖": "🗺️ မြေပုံ",
+    "返回目錄": "နောက်သို့",
+    "目前選擇": "လက်ရှိရွေးချယ်မှု",
+    "九宮格": "၉ ကွက်",
+    "四宮格": "၄ ကွက်",
+    "經文雨": "ကျမ်းချက်မိုး",
+    "單字干擾": "စကားလုံးအနှောင့်အယှက်",
+    "無干擾": "အနှောင့်အယှက်မရှိ",
+    "難度 0": "အခက်အခဲ ၀",
+    "難度 1": "အခက်အခဲ ၁",
+    "難度 2": "အခက်အခဲ ၂",
+    "難度 3": "အခက်အခဲ ၃",
+    "挑戰": "စတင်ကစားမည်",
+    "播放全部": "အားလုံးဖွင့်မည်",
+    "邀人PK": "ဖိတ်ခေါ်မည်",
+    "經文出處(點擊觀看)": "ကျမ်းချက်အရင်းအမြစ်",
+    "排行": "အဆင့်",
+    "設定": "ဆက်တင်များ",
+    "選擇比賽經文組": "ကျမ်းချက်ရွေးချယ်ရန်",
+    "沒有找到匹配的經文組。": "ကိုက်ညီသောကျမ်းချက်မရှိပါ။",
+    "準備！": "အဆင်သင့်!",
+    "已準備": "အဆင်သင့်",
+    "開始": "စတင်မည်",
+    "加入對戰": "ပူးပေါင်းမည်",
+    "建立對戰": "ဖန်တီးမည်",
+    "你的名字:": "သင်၏နာမည်:",
+    "登入 / 修改": "ဝင်ရောက် / ပြင်ဆင်",
+    "登出": "ထွက်မည်",
+    "經文組": "ကျမ်းချက်အစု",
+    "隨機挑戰所選題數": "ကျပန်းစိန်ခေါ်မှု",
+    "自動播放全部經文圖卡與語音": "အသံနှင့်အတူ အလိုအလျောက်ပြသခြင်း",
+    "邀請朋友一起玩": "သူငယ်ချင်းများကို ဖိတ်ခေါ်ရန်",
+    "分享挑戰連結": "လင့်ခ်ကို မျှဝေရန်",
+    "經典挑戰": "ဂန္ထဝင်စိန်ခေါ်မှု",
+    "立刻挑戰": "ယခုစိန်ခေါ်မည်",
+    "最受歡迎": "အထူးရေပန်းစားသော",
+    "最新": "နောက်ဆုံးရ",
+    "作者": "ရေးသားသူ",
+    "點閱次數": "ကြည့်ရှုသူ",
+    "Verserain 官方": "Verserain တရားဝင်",
+    "匿名玩家": "အမည်မသိကစားသမား",
+    "QR 碼": "QR ကုဒ်",
+    "通關紀錄": "မှတ်တမ်း",
+    "大廳": "ပင်မစာမျက်နှာ",
+    "回到大廳": "ပင်မစာမျက်နှာသို့ ပြန်သွားရန်",
+    "進階功能": "အဆင့်မြင့်လုပ်ဆောင်ချက်များ",
+    "解鎖進階功能": "အဆင့်မြင့်လုပ်ဆောင်ချက်များ ဖွင့်ရန်",
+    "身為 Lv.3 以上的實踐者，你現在可以前往「進階功能 ➔ 我的專屬題庫」自由創建與分享你專屬的經文組了！": "အဆင့် ၃ အထက်ကစားသမားအနေဖြင့် ယခုအခါ သင့်ကိုယ်ပိုင် ကျမ်းချက်များကို ဖန်တီးမျှဝေနိုင်ပါပြီ!",
+    "申請帳號": "အကောင့်ဖွင့်ရန်",
+    "登入帳號": "အကောင့်ဝင်ရန်",
+    "登入": "အကောင့်ဝင်ရန်",
+    "在此登入": "ဤနေရာတွင် အကောင့်ဝင်ရန်",
+    "請複製密碼後貼到上方密碼欄位登入": "ကျေးဇူးပြု၍ စကားဝှက်ကိုကူးယူပြီး အပေါ်ရှိ စကားဝှက်အကွက်တွင် ထည့်သွင်းပါ",
+    "返回登入": "အကောင့်ဝင်ရန်သို့ ပြန်သွားရန်",
+    "驗證": "အတည်ပြုရန်",
+    "建立新帳號 ": "အကောင့်အသစ်ဖွင့်ရန်",
+    "一起玩!": "အတူတူကစားကြစို့!",
+    "邀請朋友一起玩": "သူငယ်ချင်းများကို ဖိတ်ခေါ်ရန်",
+    "📨 邀請朋友一起玩": "📨 သူငယ်ချင်းများကို ဖိတ်ခေါ်ရန်",
+    "朗讀經文": "ကျမ်းချက်ဖတ်ပြရန်",
+    "讀經": "ဖတ်ရှုရန်",
+    "換一個": "ပြောင်းရန်",
+    "與家人朋友分享房間碼來PK同樂！": "မိသားစု၊ သူငယ်ချင်းများနှင့် အခန်းကုဒ်ကို မျှဝေပြီး အတူတူကစားပါ!",
+    "挑戰全球經文組，鍛鍊記憶力與專注力。": "ကမ္ဘာတစ်ဝှမ်းရှိ ကျမ်းချက်များကို စိန်ခေါ်ပြီး မှတ်ဉာဏ်နှင့် အာရုံစူးစိုက်မှုကို လေ့ကျင့်ပါ။",
+    "檢視你已經學會並種下生命樹的經文。": "သင်လေ့လာပြီး စိုက်ပျိုးထားသော အသက်ပင်ကျမ်းချက်များကို ကြည့်ရှုပါ။",
+    "選擇你喜歡的語音，首頁「讀經」及遊戲中的語音都會使用此設定。": "သင်နှစ်သက်ရာ အသံကို ရွေးချယ်ပါ။"
+};
+
 const esDict = {
     "我的園子": "Mi Jardín",
     "🌳 我的園子": "🌳 Mi Jardín",
@@ -4573,6 +4659,7 @@ const deDict = {
     if (uiLang === 'es') return esDict[zh] || en || zh;
     if (uiLang === 'tr') return trDict[zh] || en || zh;
     if (uiLang === 'de') return deDict[zh] || en || zh;
+    if (uiLang === 'my') return myDict[zh] || en || zh;
     if (uiLang !== 'zh' && uiLang !== 'cuv') return en || zh;
     return zh; // default: 'zh'
   };
@@ -4677,7 +4764,7 @@ const deDict = {
                     verserain
                   </div>
                   <div style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', marginTop: '4px', marginLeft: '2px' }}>
-                    v3.3.0
+                    v3.3.1
                   </div>
                 </div>
                 <select
@@ -4695,6 +4782,7 @@ const deDict = {
                   <option value="es">Español</option>
                   <option value="tr">Türkçe</option>
                   <option value="de">Deutsch</option>
+                  <option value="my">မြန်မာ</option>
                 </select>
               </div>
               <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
@@ -4753,24 +4841,7 @@ const deDict = {
               {mainTab === 'lobby' && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem', alignItems: 'center', marginTop: '1rem', paddingBottom: '3rem' }}>
                   <div style={{ textAlign: 'center', marginBottom: '1.5rem', background: 'linear-gradient(135deg, #ffffff, #f8fafc)', padding: '2rem', borderRadius: '20px', width: '100%', boxShadow: '0 4px 15px rgba(0,0,0,0.05)', position: 'relative' }}>
-                    {/* Referral QR Code - top right */}
-                    {personalCode && (
-                      <div
-                        style={{ position: 'absolute', top: '12px', right: '12px', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px', opacity: 0.85, transition: 'opacity 0.2s, transform 0.2s' }}
-                        onClick={() => {
-                          const url = `${window.location.origin}?ref=${encodeURIComponent(personalCode)}`;
-                          navigator.clipboard.writeText(url);
-                          setToast(t('邀請連結已複製！快發給好朋友吧！', 'Invite link copied! Share it with friends!'));
-                          setTimeout(() => setToast(null), 3500);
-                        }}
-                        onMouseOver={(e) => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.transform = 'scale(1.08)'; }}
-                        onMouseOut={(e) => { e.currentTarget.style.opacity = '0.85'; e.currentTarget.style.transform = 'scale(1)'; }}
-                        title={t('點擊複製你的邀請連結', 'Click to copy your invite link')}
-                      >
-                        <QRCodeSVG value={`${window.location.origin}?ref=${encodeURIComponent(personalCode)}`} size={64} bgColor="transparent" fgColor="#3b82f6" />
-                        <span style={{ fontSize: '0.6rem', color: '#94a3b8', fontWeight: '600' }}>{t('邀請碼', 'Invite')}</span>
-                      </div>
-                    )}
+
                     <h1 style={{ fontSize: '2.5rem', color: '#1e293b', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '1rem' }}>
                       <CloudRain size={40} color="#3b82f6" /> {t("VerseRain 經文雨", "VerseRain")}
                     </h1>
@@ -4779,13 +4850,13 @@ const deDict = {
                         <p style={{ fontSize: '1rem', color: '#475569', lineHeight: '1.8', margin: 0, fontStyle: 'italic', maxWidth: '600px' }}>
                           「{randomRainVerse.text}」
                         </p>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', marginTop: '0.3rem' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', marginTop: '0.3rem', flexWrap: 'wrap', justifyContent: 'center' }}>
                           <span style={{ fontSize: '0.85rem', color: '#94a3b8', fontWeight: '500' }}>
                             — {randomRainVerse.reference}
                           </span>
                           <button
                             onClick={() => {
-                              const lang = version === 'kjv' ? 'en-US' : version === 'ja' ? 'ja-JP' : version === 'ko' ? 'ko-KR' : version === 'fa' ? 'fa-IR' : version === 'he' ? 'he-IL' : version === 'es' ? 'es-ES' : version === 'tr' ? 'tr-TR' : version === 'de' ? 'de-DE' : 'zh-TW';
+                              const lang = version === 'kjv' ? 'en-US' : version === 'ja' ? 'ja-JP' : version === 'ko' ? 'ko-KR' : version === 'fa' ? 'fa-IR' : version === 'he' ? 'he-IL' : version === 'es' ? 'es-ES' : version === 'tr' ? 'tr-TR' : version === 'de' ? 'de-DE' : version === 'my' ? 'my-MM' : 'zh-TW';
                               speakText(randomRainVerse.text, 0.85, lang);
                             }}
                             style={{ background: 'linear-gradient(135deg, #60a5fa, #3b82f6)', color: 'white', border: 'none', padding: '0.35rem 0.9rem', borderRadius: '20px', fontSize: '0.85rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', fontWeight: '600', boxShadow: '0 2px 6px rgba(59,130,246,0.3)', transition: 'transform 0.15s, box-shadow 0.15s' }}
@@ -4795,6 +4866,58 @@ const deDict = {
                           >
                             🔊 {t('讀經', 'Read')}
                           </button>
+                          <button
+                            onClick={() => setRainVerseIndex(i => i + 1 + Math.floor(Math.random() * 5))}
+                            style={{ background: 'white', color: '#475569', border: '1.5px solid #cbd5e1', padding: '0.35rem 0.9rem', borderRadius: '20px', fontSize: '0.85rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', fontWeight: '600', boxShadow: '0 1px 3px rgba(0,0,0,0.08)', transition: 'transform 0.15s, box-shadow 0.15s, background 0.15s' }}
+                            onMouseOver={(e) => { e.currentTarget.style.transform = 'scale(1.05)'; e.currentTarget.style.background = '#f1f5f9'; }}
+                            onMouseOut={(e) => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.background = 'white'; }}
+                            title={t('換一句經文', 'Next verse')}
+                          >
+                            🔀 {t('換一個', 'Next')}
+                          </button>
+                          <button
+                            onClick={() => {
+                              if (!randomRainVerse) return;
+                              setActiveVerse(randomRainVerse);
+                              setSelectedVerseRefs([randomRainVerse.reference]);
+                              setTimeout(() => {
+                                setInitAutoStart({ trigger: true, isAuto: false, overrideVerse: randomRainVerse });
+                              }, 100);
+                            }}
+                            style={{ background: 'linear-gradient(135deg, #f97316, #ef4444)', color: 'white', border: 'none', padding: '0.35rem 0.9rem', borderRadius: '20px', fontSize: '0.85rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', fontWeight: '600', boxShadow: '0 2px 6px rgba(239,68,68,0.3)', transition: 'transform 0.15s, box-shadow 0.15s' }}
+                            onMouseOver={(e) => { e.currentTarget.style.transform = 'scale(1.05)'; e.currentTarget.style.boxShadow = '0 4px 12px rgba(239,68,68,0.4)'; }}
+                            onMouseOut={(e) => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = '0 2px 6px rgba(239,68,68,0.3)'; }}
+                            title={t('立刻挑戰這節經文', 'Challenge this verse now')}
+                          >
+                            ⚔️ {t('挑戰', 'Play')}
+                          </button>
+                          {/* QR Code - inline next to 讀經 button */}
+                          <div
+                            style={{ cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px', opacity: 0.85, transition: 'opacity 0.2s, transform 0.2s' }}
+                            onClick={() => {
+                              if (playerName && personalCode) {
+                                const url = `${window.location.origin}?ref=${encodeURIComponent(personalCode)}`;
+                                navigator.clipboard.writeText(url);
+                                setToast(t('邀請連結已複製！快發給好朋友吧！', 'Invite link copied! Share it with friends!'));
+                                setTimeout(() => setToast(null), 3500);
+                              } else {
+                                window.open('https://www.verserain.com', '_blank');
+                              }
+                            }}
+                            onMouseOver={(e) => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.transform = 'scale(1.08)'; }}
+                            onMouseOut={(e) => { e.currentTarget.style.opacity = '0.85'; e.currentTarget.style.transform = 'scale(1)'; }}
+                            title={playerName && personalCode ? t('點擊複製你的邀請連結', 'Click to copy your invite link') : 'verserain.com'}
+                          >
+                            <QRCodeSVG
+                              value={playerName && personalCode ? `${window.location.origin}?ref=${encodeURIComponent(personalCode)}` : 'https://www.verserain.com'}
+                              size={52}
+                              bgColor="transparent"
+                              fgColor="#3b82f6"
+                            />
+                            <span style={{ fontSize: '0.55rem', color: '#94a3b8', fontWeight: '600' }}>
+                              {playerName && personalCode ? t('邀請碼', 'Invite') : 'verserain.com'}
+                            </span>
+                          </div>
                         </div>
                       </div>
                     ) : (
@@ -4898,7 +5021,7 @@ const deDict = {
                         <option value="">{t('系統預設語音', 'System Default Voice')}</option>
                         {availableVoices
                           .filter(v => {
-                            const lang = version === 'kjv' ? 'en' : version === 'ja' ? 'ja' : version === 'ko' ? 'ko' : version === 'fa' ? 'fa' : version === 'he' ? 'he' : version === 'es' ? 'es' : version === 'tr' ? 'tr' : version === 'de' ? 'de' : 'zh';
+                            const lang = version === 'kjv' ? 'en' : version === 'ja' ? 'ja' : version === 'ko' ? 'ko' : version === 'fa' ? 'fa' : version === 'he' ? 'he' : version === 'es' ? 'es' : version === 'tr' ? 'tr' : version === 'de' ? 'de' : version === 'my' ? 'my' : 'zh';
                             return v.lang.startsWith(lang);
                           })
                           .map(v => (
@@ -4907,7 +5030,7 @@ const deDict = {
                       </select>
                       <button
                         onClick={() => {
-                          const lang = version === 'kjv' ? 'en-US' : version === 'ja' ? 'ja-JP' : version === 'ko' ? 'ko-KR' : version === 'fa' ? 'fa-IR' : version === 'he' ? 'he-IL' : version === 'es' ? 'es-ES' : version === 'tr' ? 'tr-TR' : version === 'de' ? 'de-DE' : 'zh-TW';
+                          const lang = version === 'kjv' ? 'en-US' : version === 'ja' ? 'ja-JP' : version === 'ko' ? 'ko-KR' : version === 'fa' ? 'fa-IR' : version === 'he' ? 'he-IL' : version === 'es' ? 'es-ES' : version === 'tr' ? 'tr-TR' : version === 'de' ? 'de-DE' : version === 'my' ? 'my-MM' : 'zh-TW';
                           speakText(t('這是你選擇的語音試聽。', 'This is a preview of your selected voice.'), 0.9, lang);
                         }}
                         style={{ background: 'linear-gradient(135deg, #60a5fa, #3b82f6)', color: 'white', border: 'none', padding: '0.5rem 1.2rem', borderRadius: '8px', fontSize: '0.9rem', cursor: 'pointer', fontWeight: '600', whiteSpace: 'nowrap' }}
@@ -6454,6 +6577,7 @@ const deDict = {
                                                             { lang: 'es', verses: VERSE_SETS_ES.flatMap(s => s.verses) },
                                                             { lang: 'tr', verses: VERSE_SETS_TR.flatMap(s => s.verses) },
                                                             { lang: 'de', verses: VERSE_SETS_DE.flatMap(s => s.verses) },
+                                                            { lang: 'my', verses: VERSE_SETS_MY.flatMap(s => s.verses) },
                                                           ];
                                                           for (const pool of langPools) {
                                                             if (pool.lang === version) continue;
@@ -6494,6 +6618,7 @@ const deDict = {
                                                           { lang: 'es', verses: VERSE_SETS_ES.flatMap(s => s.verses) },
                                                           { lang: 'tr', verses: VERSE_SETS_TR.flatMap(s => s.verses) },
                                                           { lang: 'de', verses: VERSE_SETS_DE.flatMap(s => s.verses) },
+                                                          { lang: 'my', verses: VERSE_SETS_MY.flatMap(s => s.verses) },
                                                         ];
                                                         for (const pool of langPools) {
                                                           if (pool.lang === version) continue;
