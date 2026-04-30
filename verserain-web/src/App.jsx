@@ -1619,6 +1619,17 @@ export default function App() {
       return;
     }
 
+    const viewSetRef = params.get('viewSet');
+    if (viewSetRef) {
+      const foundSet = activeVerseSets.find(s => s.id === viewSetRef);
+      if (foundSet) {
+        setSelectedSetId(foundSet.id);
+        setMainTab('versesets');
+        window.history.replaceState({}, document.title, window.location.pathname);
+      }
+      return;
+    }
+
     if (setRef) {
       if (!playerName) {
         setShowLoginModal('login');
@@ -6289,10 +6300,10 @@ const deDict = {
 
                             <button
                               onClick={() => {
-                                const link = `${window.location.origin}${window.location.pathname}?set=${encodeURIComponent(currentSet.id)}&m=${playMode}&dx=${distractionLevel}&rc=${parseInt(randomPickCount) || 1}`;
+                                const link = `${window.location.origin}${window.location.pathname}?viewSet=${encodeURIComponent(currentSet.id)}`;
                                 setQrShareModal({ url: link, reference: currentSet.title });
                               }}
-                              title={t("分享整組經文連結", "Share the set link")}
+                              title={t("分享此經文組", "Share this verse set")}
                               style={{ backgroundColor: '#ffffff', color: '#64748b', border: '1px solid #cbd5e1', borderRadius: '6px', width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'all 0.1s' }}
                               onMouseOver={(e) => { e.currentTarget.style.backgroundColor = '#f1f5f9'; e.currentTarget.style.color = '#3b82f6'; e.currentTarget.style.borderColor = '#3b82f6'; }}
                               onMouseOut={(e) => { e.currentTarget.style.backgroundColor = '#ffffff'; e.currentTarget.style.color = '#64748b'; e.currentTarget.style.borderColor = '#cbd5e1'; }}
