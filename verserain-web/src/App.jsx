@@ -5138,20 +5138,25 @@ const deDict = {
                       <CloudRain size={40} color="#3b82f6" /> {t("VerseRain 經文雨", "VerseRain")}
                     </h1>
                     {randomRainVerse ? (
-                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem' }}>
-                        <p style={{ fontSize: '1rem', color: '#475569', lineHeight: '1.8', margin: 0, fontStyle: 'italic', maxWidth: '600px' }}>
-                          「{randomRainVerse.text}」
-                        </p>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', marginTop: '0.3rem', flexWrap: 'wrap', justifyContent: 'center' }}>
-                          <span style={{ fontSize: '0.85rem', color: '#94a3b8', fontWeight: '500' }}>
-                            — {randomRainVerse.reference}
-                          </span>
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1.2rem' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', maxWidth: '650px', width: '100%' }}>
+                          <p style={{ fontSize: '1.05rem', color: '#475569', lineHeight: '1.8', margin: 0, fontStyle: 'italic', textAlign: 'center' }}>
+                            「{randomRainVerse.text}」
+                          </p>
+                          <div style={{ textAlign: 'right', paddingRight: '1rem' }}>
+                            <span style={{ fontSize: '0.9rem', color: '#64748b', fontWeight: '600' }}>
+                              — {randomRainVerse.reference}
+                            </span>
+                          </div>
+                        </div>
+                        
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', flexWrap: 'wrap', justifyContent: 'center' }}>
                           <button
                             onClick={() => {
                               const lang = version === 'kjv' ? 'en-US' : version === 'ja' ? 'ja-JP' : version === 'ko' ? 'ko-KR' : version === 'fa' ? 'fa-IR' : version === 'he' ? 'he-IL' : version === 'es' ? 'es-ES' : version === 'tr' ? 'tr-TR' : version === 'de' ? 'de-DE' : version === 'my' ? 'my-MM' : 'zh-TW';
                               speakText(randomRainVerse.text, 0.85, lang);
                             }}
-                            style={{ background: 'linear-gradient(135deg, #60a5fa, #3b82f6)', color: 'white', border: 'none', padding: '0.35rem 0.9rem', borderRadius: '20px', fontSize: '0.85rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', fontWeight: '600', boxShadow: '0 2px 6px rgba(59,130,246,0.3)', transition: 'transform 0.15s, box-shadow 0.15s' }}
+                            style={{ background: 'linear-gradient(135deg, #60a5fa, #3b82f6)', color: 'white', border: 'none', padding: '0.45rem 1.2rem', borderRadius: '20px', fontSize: '0.9rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', fontWeight: '600', boxShadow: '0 2px 6px rgba(59,130,246,0.3)', transition: 'transform 0.15s, box-shadow 0.15s' }}
                             onMouseOver={(e) => { e.currentTarget.style.transform = 'scale(1.05)'; e.currentTarget.style.boxShadow = '0 4px 12px rgba(59,130,246,0.4)'; }}
                             onMouseOut={(e) => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = '0 2px 6px rgba(59,130,246,0.3)'; }}
                             title={t('朗讀經文', 'Read aloud')}
@@ -5160,7 +5165,7 @@ const deDict = {
                           </button>
                           <button
                             onClick={() => setRainVerseIndex(i => i + 1 + Math.floor(Math.random() * 5))}
-                            style={{ background: 'white', color: '#475569', border: '1.5px solid #cbd5e1', padding: '0.35rem 0.9rem', borderRadius: '20px', fontSize: '0.85rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', fontWeight: '600', boxShadow: '0 1px 3px rgba(0,0,0,0.08)', transition: 'transform 0.15s, box-shadow 0.15s, background 0.15s' }}
+                            style={{ background: 'white', color: '#475569', border: '1.5px solid #cbd5e1', padding: '0.45rem 1.2rem', borderRadius: '20px', fontSize: '0.9rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', fontWeight: '600', boxShadow: '0 1px 3px rgba(0,0,0,0.08)', transition: 'transform 0.15s, box-shadow 0.15s, background 0.15s' }}
                             onMouseOver={(e) => { e.currentTarget.style.transform = 'scale(1.05)'; e.currentTarget.style.background = '#f1f5f9'; }}
                             onMouseOut={(e) => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.background = 'white'; }}
                             title={t('換一句經文', 'Next verse')}
@@ -5176,40 +5181,41 @@ const deDict = {
                                 setInitAutoStart({ trigger: true, isAuto: false, overrideVerse: randomRainVerse });
                               }, 100);
                             }}
-                            style={{ background: 'linear-gradient(135deg, #f97316, #ef4444)', color: 'white', border: 'none', padding: '0.35rem 0.9rem', borderRadius: '20px', fontSize: '0.85rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', fontWeight: '600', boxShadow: '0 2px 6px rgba(239,68,68,0.3)', transition: 'transform 0.15s, box-shadow 0.15s' }}
+                            style={{ background: 'linear-gradient(135deg, #f97316, #ef4444)', color: 'white', border: 'none', padding: '0.45rem 1.2rem', borderRadius: '20px', fontSize: '0.9rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', fontWeight: '600', boxShadow: '0 2px 6px rgba(239,68,68,0.3)', transition: 'transform 0.15s, box-shadow 0.15s' }}
                             onMouseOver={(e) => { e.currentTarget.style.transform = 'scale(1.05)'; e.currentTarget.style.boxShadow = '0 4px 12px rgba(239,68,68,0.4)'; }}
                             onMouseOut={(e) => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = '0 2px 6px rgba(239,68,68,0.3)'; }}
                             title={t('立刻挑戰這節經文', 'Challenge this verse now')}
                           >
                             ⚔️ {t('挑戰', 'Play')}
                           </button>
-                          {/* QR Code - inline next to 讀經 button */}
-                          <div
-                            style={{ cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px', opacity: 0.85, transition: 'opacity 0.2s, transform 0.2s' }}
-                            onClick={() => {
-                              if (playerName && personalCode) {
-                                const url = `${window.location.origin}?ref=${encodeURIComponent(personalCode)}`;
-                                navigator.clipboard.writeText(url);
-                                setToast(t('邀請連結已複製！快發給好朋友吧！', 'Invite link copied! Share it with friends!'));
-                                setTimeout(() => setToast(null), 3500);
-                              } else {
-                                window.open('https://www.verserain.com', '_blank');
-                              }
-                            }}
-                            onMouseOver={(e) => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.transform = 'scale(1.08)'; }}
-                            onMouseOut={(e) => { e.currentTarget.style.opacity = '0.85'; e.currentTarget.style.transform = 'scale(1)'; }}
-                            title={playerName && personalCode ? t('點擊複製你的邀請連結', 'Click to copy your invite link') : 'verserain.com'}
-                          >
-                            <QRCodeSVG
-                              value={playerName && personalCode ? `${window.location.origin}?ref=${encodeURIComponent(personalCode)}` : 'https://www.verserain.com'}
-                              size={52}
-                              bgColor="transparent"
-                              fgColor="#3b82f6"
-                            />
-                            <span style={{ fontSize: '0.55rem', color: '#94a3b8', fontWeight: '600' }}>
-                              {playerName && personalCode ? t('邀請碼', 'Invite') : 'verserain.com'}
-                            </span>
-                          </div>
+                        </div>
+
+                        {/* QR Code - positioned elegantly at the bottom right */}
+                        <div
+                          style={{ position: 'absolute', bottom: '1.5rem', right: '1.5rem', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px', opacity: 0.7, transition: 'opacity 0.2s, transform 0.2s' }}
+                          onClick={() => {
+                            if (playerName && personalCode) {
+                              const url = `${window.location.origin}?ref=${encodeURIComponent(personalCode)}`;
+                              navigator.clipboard.writeText(url);
+                              setToast(t('邀請連結已複製！快發給好朋友吧！', 'Invite link copied! Share it with friends!'));
+                              setTimeout(() => setToast(null), 3500);
+                            } else {
+                              window.open('https://www.verserain.com', '_blank');
+                            }
+                          }}
+                          onMouseOver={(e) => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.transform = 'scale(1.08)'; }}
+                          onMouseOut={(e) => { e.currentTarget.style.opacity = '0.7'; e.currentTarget.style.transform = 'scale(1)'; }}
+                          title={playerName && personalCode ? t('點擊複製你的邀請連結', 'Click to copy your invite link') : 'verserain.com'}
+                        >
+                          <QRCodeSVG
+                            value={playerName && personalCode ? `${window.location.origin}?ref=${encodeURIComponent(personalCode)}` : 'https://www.verserain.com'}
+                            size={44}
+                            bgColor="transparent"
+                            fgColor="#64748b"
+                          />
+                          <span style={{ fontSize: '0.55rem', color: '#94a3b8', fontWeight: '600' }}>
+                            {playerName && personalCode ? t('邀請碼', 'Invite') : 'verserain.com'}
+                          </span>
                         </div>
                       </div>
                     ) : (
