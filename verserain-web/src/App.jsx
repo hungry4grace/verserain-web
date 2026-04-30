@@ -3027,6 +3027,13 @@ export default function App() {
     "關閉 Debug": "غیرفعال کردن دیباگ",
     "打開 Debug": "فعال کردن دیباگ",
     "顯示除錯資訊": "نمایش اطلاعات دیباگ",
+    "朗讀語音設定": "تنظیمات صدای خواندن",
+    "選擇你喜歡的語音，首頁「讀經」及遊戲中的語音都會使用此設定。": "صدای ترجیحی خود را برای خواندن و بازی انتخاب کنید.",
+    "系統預設語音": "صدای پیش‌فرض سیستم",
+    "試聽": "پیش‌نمایش",
+    "語音已更新！": "صدا به‌روزرسانی شد!",
+    "這是你選擇的語音試聽。": "این پیش‌نمایشی از صدای انتخابی شماست.",
+    "已記住你的語音偏好，下次回來會自動使用。": "ترجیح صوتی شما ذخیره شد و به طور خودکار استفاده خواهد شد.",
 };
 
   // ─── Hebrew (עברית) UI Dictionary ────────────────────────────────────────
@@ -3321,6 +3328,13 @@ export default function App() {
     "關閉 Debug": "כבה דיבאג",
     "打開 Debug": "הפעל דיבאג",
     "顯示除錯資訊": "הצג מידע דיבאג",
+    "朗讀語音設定": "הגדרות קול",
+    "選擇你喜歡的語音，首頁「讀經」及遊戲中的語音都會使用此設定。": "בחר את הקול המועדף עליך לקריאה ולמשחק.",
+    "系統預設語音": "קול ברירת מחדל של המערכת",
+    "試聽": "האזן",
+    "語音已更新！": "הקול עודכן!",
+    "這是你選擇的語音試聽。": "זוהי תצוגה מקדימה של הקול שבחרת.",
+    "已記住你的語音偏好，下次回來會自動使用。": "העדפת הקול שלך נשמרה ותשמש אוטומטית.",
 };
 
   // --- Hebrew comprehensive additions ---
@@ -3836,6 +3850,13 @@ export default function App() {
     "關閉 Debug": "デバッグをオフ",
     "打開 Debug": "デバッグをオン",
     "顯示除錯資訊": "デバッグ情報を表示",
+    "朗讀語音設定": "音声読み上げ設定",
+    "選擇你喜歡的語音，首頁「讀經」及遊戲中的語音都會使用此設定。": "お好みの音声を選択してください。ホームの「読む」やゲーム内の音声で使用されます。",
+    "系統預設語音": "システムのデフォルト音声",
+    "試聽": "試聴",
+    "語音已更新！": "音声が更新されました！",
+    "這是你選擇的語音試聽。": "これは選択した音声の試聴です。",
+    "已記住你的語音偏好，下次回來會自動使用。": "音声設定が保存されました。次回から自動的に適用されます。",
 };
 
   const koDict = {
@@ -4316,6 +4337,13 @@ export default function App() {
     "關閉 Debug": "디버그 끄기",
     "打開 Debug": "디버그 켜기",
     "顯示除錯資訊": "디버그 정보 표시",
+    "朗讀語音設定": "음성 읽기 설정",
+    "選擇你喜歡的語音，首頁「讀經」及遊戲中的語音都會使用此設定。": "선호하는 음성을 선택하세요. 홈의 '읽기' 및 게임 내 음성에 사용됩니다.",
+    "系統預設語音": "시스템 기본 음성",
+    "試聽": "미리듣기",
+    "語音已更新！": "음성이 업데이트되었습니다!",
+    "這是你選擇的語音試聽。": "선택한 음성의 미리듣기입니다.",
+    "已記住你的語音偏好，下次回來會自動使用。": "음성 기본 설정이 저장되었으며 다음에 자동으로 사용됩니다.",
 };
 
 
@@ -4430,6 +4458,12 @@ const myDict = {
     "關閉 Debug": "ဒီဘတ်ဂ် ပိတ်ရန်",
     "打開 Debug": "ဒီဘတ်ဂ် ဖွင့်ရန်",
     "顯示除錯資訊": "ဒီဘတ်ဂ် အချက်အလက်များကို ပြရန်",
+    "朗讀語音設定": "အသံထွက်ဖတ်ခြင်း ဆက်တင်များ",
+    "系統預設語音": "စနစ် မူလအသံ",
+    "試聽": "နားထောင်ရန်",
+    "語音已更新！": "အသံကို အပ်ဒိတ်လုပ်ပြီးပါပြီ!",
+    "這是你選擇的語音試聽。": "၎င်းသည် သင်ရွေးချယ်ထားသော အသံ၏ နမူနာဖြစ်သည်။",
+    "已記住你的語音偏好，下次回來會自動使用。": "သင့်အသံရွေးချယ်မှုကို သိမ်းဆည်းထားပြီး အလိုအလျောက် အသုံးပြုပါမည်။",
 };
 
 const esDict = {
@@ -4578,6 +4612,13 @@ const esDict = {
     "關閉 Debug": "Desactivar Depuración",
     "打開 Debug": "Activar Depuración",
     "顯示除錯資訊": "Mostrar información de depuración",
+    "朗讀語音設定": "Ajustes de Voz",
+    "選擇你喜歡的語音，首頁「讀經」及遊戲中的語音都會使用此設定。": "Elige tu voz preferida para el botón Leer y el audio del juego.",
+    "系統預設語音": "Voz del sistema",
+    "試聽": "Escuchar",
+    "語音已更新！": "¡Voz actualizada!",
+    "這是你選擇的語音試聽。": "Esta es una vista previa de tu voz seleccionada.",
+    "已記住你的語音偏好，下次回來會自動使用。": "Tu preferencia de voz se ha guardado y se usará automáticamente.",
 };
 
 const trDict = {
@@ -4726,6 +4767,13 @@ const trDict = {
     "關閉 Debug": "Hata Ayıklamayı Kapat",
     "打開 Debug": "Hata Ayıklamayı Aç",
     "顯示除錯資訊": "Hata ayıklama bilgisini göster",
+    "朗讀語音設定": "Ses Ayarları",
+    "選擇你喜歡的語音，首頁「讀經」及遊戲中的語音都會使用此設定。": "Oku düğmesi ve oyun içi ses için tercih ettiğiniz sesi seçin.",
+    "系統預設語音": "Sistem Varsayılan Sesi",
+    "試聽": "Dinle",
+    "語音已更新！": "Ses güncellendi!",
+    "這是你選擇的語音試聽。": "Bu, seçtiğiniz sesin bir önizlemesidir.",
+    "已記住你的語音偏好，下次回來會自動使用。": "Ses tercihiniz kaydedildi ve otomatik olarak kullanılacaktır.",
 };
 
 const deDict = {
@@ -4874,6 +4922,13 @@ const deDict = {
     "關閉 Debug": "Debug Deaktivieren",
     "打開 Debug": "Debug Aktivieren",
     "顯示除錯資訊": "Debug-Informationen anzeigen",
+    "朗讀語音設定": "Spracheinstellungen",
+    "選擇你喜歡的語音，首頁「讀經」及遊戲中的語音都會使用此設定。": "Wählen Sie Ihre bevorzugte Stimme für die Schaltfläche 'Lesen' und das Audio im Spiel.",
+    "系統預設語音": "Systemstandardstimme",
+    "試聽": "Anhören",
+    "語音已更新！": "Stimme aktualisiert!",
+    "這是你選擇的語音試聽。": "Dies ist eine Vorschau Ihrer ausgewählten Stimme.",
+    "已記住你的語音偏好，下次回來會自動使用。": "Ihre Spracheinstellung wurde gespeichert und wird automatisch verwendet.",
 };
 
   const t = (zh, en) => {
