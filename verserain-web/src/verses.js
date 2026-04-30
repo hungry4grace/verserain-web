@@ -1181,6 +1181,315 @@ export const VERSE_SETS = [
   }
         ]
     }
+,
+  {
+    id: "fathers-love-zh",
+    title: "天父愛的言語",
+    description: "關於天父的愛、鼓勵、安慰、造就、醫治、接納與保護的精選經文。",
+    
+    verses: [
+      {
+            "id": "fathers-love-zh-love1",
+            "reference": "約 3:16",
+            "title": "天父愛的言語",
+            "text": "「神愛世人，甚至將他的獨生子賜給他們，叫一切信他的，不至滅亡，反得永生。"
+      },
+      {
+            "id": "fathers-love-zh-love2",
+            "reference": "耶 31:3",
+            "title": "天父愛的言語",
+            "text": "古時（或譯：從遠方）耶和華向以色列（原文是我）顯現，說：我以永遠的愛愛你，因此我以慈愛吸引你。"
+      },
+      {
+            "id": "fathers-love-zh-love3",
+            "reference": "羅 8:38",
+            "title": "天父愛的言語",
+            "text": "因為我深信無論是死，是生，是天使，是掌權的，是有能的，是現在的事，是將來的事，"
+      },
+      {
+            "id": "fathers-love-zh-love4",
+            "reference": "羅 8:39",
+            "title": "天父愛的言語",
+            "text": "是高處的，是低處的，是別的受造之物，都不能叫我們與神的愛隔絕；這愛是在我們的主基督耶穌裡的。"
+      },
+      {
+            "id": "fathers-love-zh-love5",
+            "reference": "約一 4:9",
+            "title": "天父愛的言語",
+            "text": "神差他獨生子到世間來，使我們藉著他得生，神愛我們的心在此就顯明了。"
+      },
+      {
+            "id": "fathers-love-zh-love6",
+            "reference": "約一 4:10",
+            "title": "天父愛的言語",
+            "text": "不是我們愛神，乃是神愛我們，差他的兒子為我們的罪作了挽回祭，這就是愛了。"
+      },
+      {
+            "id": "fathers-love-zh-love7",
+            "reference": "弗 2:4",
+            "title": "天父愛的言語",
+            "text": "然而，神既有豐富的憐憫，因他愛我們的大愛，"
+      },
+      {
+            "id": "fathers-love-zh-love8",
+            "reference": "弗 2:5",
+            "title": "天父愛的言語",
+            "text": "當我們死在過犯中的時候，便叫我們與基督一同活過來。你們得救是本乎恩。"
+      },
+      {
+            "id": "fathers-love-zh-enc1",
+            "reference": "賽 41:10",
+            "title": "天父愛的言語",
+            "text": "你不要害怕，因為我與你同在；不要驚惶，因為我是你的神。我必堅固你，我必幫助你；我必用我公義的右手扶持你。"
+      },
+      {
+            "id": "fathers-love-zh-enc2",
+            "reference": "書 1:9",
+            "title": "天父愛的言語",
+            "text": "我豈沒有吩咐你麼？你當剛強壯膽！不要懼怕，也不要驚惶；因為你無論往那裡去，耶和華─你的神必與你同在。"
+      },
+      {
+            "id": "fathers-love-zh-enc3",
+            "reference": "賽 43:1",
+            "title": "天父愛的言語",
+            "text": "雅各啊，創造你的耶和華，以色列啊，造成你的那位，現在如此說：你不要害怕！因為我救贖了你。我曾提你的名召你，你是屬我的。"
+      },
+      {
+            "id": "fathers-love-zh-enc4",
+            "reference": "賽 43:2",
+            "title": "天父愛的言語",
+            "text": "你從水中經過，我必與你同在；你逿過江河，水必不漫過你；你從火中行過，必不被燒，火燄也不著在你身上。"
+      },
+      {
+            "id": "fathers-love-zh-enc5",
+            "reference": "申 31:8",
+            "title": "天父愛的言語",
+            "text": "耶和華必在你前面行；他必與你同在，必不撇下你，也不丟棄你。不要懼怕，也不要驚惶。"
+      },
+      {
+            "id": "fathers-love-zh-enc6",
+            "reference": "詩 27:1",
+            "title": "天父愛的言語",
+            "text": "（大衛的詩。）耶和華是我的亮光，是我的拯救，我還怕誰呢？耶和華是我性命的保障（或譯：力量），我還懼誰呢？"
+      },
+      {
+            "id": "fathers-love-zh-enc7",
+            "reference": "詩 31:24",
+            "title": "天父愛的言語",
+            "text": "凡仰望耶和華的人，你們都要壯膽，堅固你們的心！"
+      },
+      {
+            "id": "fathers-love-zh-enc8",
+            "reference": "腓 4:13",
+            "title": "天父愛的言語",
+            "text": "我靠著那加給我力量的，凡事都能做。"
+      },
+      {
+            "id": "fathers-love-zh-comf1",
+            "reference": "太 11:28",
+            "title": "天父愛的言語",
+            "text": "凡勞苦擔重擔的人可以到我這裡來，我就使你們得安息。"
+      },
+      {
+            "id": "fathers-love-zh-comf2",
+            "reference": "太 11:29",
+            "title": "天父愛的言語",
+            "text": "我心裡柔和謙卑，你們當負我的軛，學我的樣式；這樣，你們心裡就必得享安息。"
+      },
+      {
+            "id": "fathers-love-zh-comf3",
+            "reference": "賽 49:15",
+            "title": "天父愛的言語",
+            "text": "婦人焉能忘記他吃奶的嬰孩，不憐恤他所生的兒子？即或有忘記的，我卻不忘記你。"
+      },
+      {
+            "id": "fathers-love-zh-comf4",
+            "reference": "賽 49:16",
+            "title": "天父愛的言語",
+            "text": "看哪，我將你銘刻在我掌上；你的牆垣常在我眼前。"
+      },
+      {
+            "id": "fathers-love-zh-comf5",
+            "reference": "詩 23:4",
+            "title": "天父愛的言語",
+            "text": "我雖然行過死蔭的幽谷，也不怕遭害，因為你與我同在；你的杖，你的竿，都安慰我。"
+      },
+      {
+            "id": "fathers-love-zh-comf6",
+            "reference": "林後 1:3",
+            "title": "天父愛的言語",
+            "text": "願頌讚歸與我們的主耶穌基督的父神，就是發慈悲的父，賜各樣安慰的神。"
+      },
+      {
+            "id": "fathers-love-zh-comf7",
+            "reference": "林後 1:4",
+            "title": "天父愛的言語",
+            "text": "我們在一切患難中，他就安慰我們，叫我們能用神所賜的安慰去安慰那遭各樣患難的人。"
+      },
+      {
+            "id": "fathers-love-zh-comf8",
+            "reference": "詩 34:18",
+            "title": "天父愛的言語",
+            "text": "耶和華靠近傷心的人，拯救靈性痛悔的人。"
+      },
+      {
+            "id": "fathers-love-zh-build1",
+            "reference": "耶 29:11",
+            "title": "天父愛的言語",
+            "text": "耶和華說：我知道我向你們所懷的意念是賜平安的意念，不是降災禍的意念，要叫你們末後有指望。"
+      },
+      {
+            "id": "fathers-love-zh-build2",
+            "reference": "詩 139:13",
+            "title": "天父愛的言語",
+            "text": "我的肺腑是你所造的；我在母腹中，你已覆庇我。"
+      },
+      {
+            "id": "fathers-love-zh-build3",
+            "reference": "詩 139:14",
+            "title": "天父愛的言語",
+            "text": "我要稱謝你，因我受造，奇妙可畏；你的作為奇妙，這是我心深知道的。"
+      },
+      {
+            "id": "fathers-love-zh-build4",
+            "reference": "賽 55:10",
+            "title": "天父愛的言語",
+            "text": "雨雪從天而降，並不返回，卻滋潤地土，使地上發芽結實，使撒種的有種，使要吃的有糧。"
+      },
+      {
+            "id": "fathers-love-zh-build5",
+            "reference": "賽 55:11",
+            "title": "天父愛的言語",
+            "text": "我口所出的話也必如此，決不徒然返回，卻要成就我所喜悅的，在我發他去成就（發他去成就：或譯所命定）的事上必然亨通。"
+      },
+      {
+            "id": "fathers-love-zh-build6",
+            "reference": "弗 2:10",
+            "title": "天父愛的言語",
+            "text": "我們原是他的工作，在基督耶穌裡造成的，為要叫我們行善，就是神所預備叫我們行的。"
+      },
+      {
+            "id": "fathers-love-zh-build7",
+            "reference": "腓 1:6",
+            "title": "天父愛的言語",
+            "text": "我深信那在你們心裡動了善工的，必成全這工，直到耶穌基督的日子。"
+      },
+      {
+            "id": "fathers-love-zh-heal1",
+            "reference": "出 15:26",
+            "title": "天父愛的言語",
+            "text": "又說：你若留意聽耶和華─你神的話，又行我眼中看為正的事，留心聽我的誡命，守我一切的律例，我就不將所加與埃及人的疾病加在你身上，因為我─耶和華是醫治你的。"
+      },
+      {
+            "id": "fathers-love-zh-heal2",
+            "reference": "賽 53:5",
+            "title": "天父愛的言語",
+            "text": "哪知他為我們的過犯受害，為我們的罪孽壓傷。因他受的刑罰，我們得平安；因他受的鞭傷，我們得醫治。"
+      },
+      {
+            "id": "fathers-love-zh-heal3",
+            "reference": "詩 103:2",
+            "title": "天父愛的言語",
+            "text": "我的心哪，你要稱頌耶和華！不可忘記他的一切恩惠！"
+      },
+      {
+            "id": "fathers-love-zh-heal4",
+            "reference": "詩 103:3",
+            "title": "天父愛的言語",
+            "text": "他赦免你的一切罪孽，醫治你的一切疾病。"
+      },
+      {
+            "id": "fathers-love-zh-heal5",
+            "reference": "耶 17:14",
+            "title": "天父愛的言語",
+            "text": "耶和華啊，求你醫治我，我便痊愈，拯救我，我便得救；因你是我所讚美的。"
+      },
+      {
+            "id": "fathers-love-zh-heal6",
+            "reference": "詩 147:3",
+            "title": "天父愛的言語",
+            "text": "他醫好傷心的人，裹好他們的傷處。"
+      },
+      {
+            "id": "fathers-love-zh-joy1",
+            "reference": "番 3:17",
+            "title": "天父愛的言語",
+            "text": "耶和華─你的神是施行拯救、大有能力的主。他在你中間必因你歡欣喜樂，默然愛你，且因你喜樂而歡呼。"
+      },
+      {
+            "id": "fathers-love-zh-joy2",
+            "reference": "賽 43:4",
+            "title": "天父愛的言語",
+            "text": "因我看你為寶為尊；又因我愛你，所以我使人代替你，使列邦人替換你的生命。"
+      },
+      {
+            "id": "fathers-love-zh-joy3",
+            "reference": "弗 1:4",
+            "title": "天父愛的言語",
+            "text": "就如神從創立世界以前，在基督裡揀選了我們，使我們在他面前成為聖潔，無有瑕疵；"
+      },
+      {
+            "id": "fathers-love-zh-joy4",
+            "reference": "弗 1:5",
+            "title": "天父愛的言語",
+            "text": "又因愛我們，就按著自己意旨所喜悅的，預定我們藉著耶穌基督得兒子的名分，"
+      },
+      {
+            "id": "fathers-love-zh-joy5",
+            "reference": "羅 15:7",
+            "title": "天父愛的言語",
+            "text": "所以，你們要彼此接納，如同基督接納你們一樣，使榮耀歸與神。"
+      },
+      {
+            "id": "fathers-love-zh-joy6",
+            "reference": "約 6:37",
+            "title": "天父愛的言語",
+            "text": "凡父所賜給我的人必到我這裡來；到我這裡來的，我總不丟棄他。"
+      },
+      {
+            "id": "fathers-love-zh-joy7",
+            "reference": "詩 149:4",
+            "title": "天父愛的言語",
+            "text": "因為耶和華喜愛他的百姓；他要用救恩當作謙卑人的妝飾。"
+      },
+      {
+            "id": "fathers-love-zh-prot1",
+            "reference": "詩 91:1",
+            "title": "天父愛的言語",
+            "text": "住在至高者隱密處的，必住在全能者的蔭下。"
+      },
+      {
+            "id": "fathers-love-zh-prot2",
+            "reference": "詩 91:2",
+            "title": "天父愛的言語",
+            "text": "我要論到耶和華說：他是我的避難所，是我的山寨，是我的神，是我所倚靠的。"
+      },
+      {
+            "id": "fathers-love-zh-prot3",
+            "reference": "民 6:24",
+            "title": "天父愛的言語",
+            "text": "願耶和華賜福給你，保護你。"
+      },
+      {
+            "id": "fathers-love-zh-prot4",
+            "reference": "民 6:25",
+            "title": "天父愛的言語",
+            "text": "願耶和華使他的臉光照你，賜恩給你。"
+      },
+      {
+            "id": "fathers-love-zh-prot5",
+            "reference": "民 6:26",
+            "title": "天父愛的言語",
+            "text": "願耶和華向你仰臉，賜你平安。"
+      },
+      {
+            "id": "fathers-love-zh-prot6",
+            "reference": "腓 4:6-7",
+            "title": "天父愛的言語",
+            "text": "應當一無罣慮，只要凡事藉著禱告、祈求，和感謝，將你們所要的告訴神。神所賜、出人意外的平安必在基督耶穌裡保守你們的心懷意念。"
+      }
+]
+  }
 ];
 
 // Fallback for backwards compatibility

@@ -693,4 +693,313 @@ export const VERSE_SETS_TR = [
       { id: "rain-tr-10", reference: "Yakup 5:7", title: "Yağmur", text: "Onun için kardeşler, Rab'bin gelişine dek sabredin. Çiftçi ilk ve son yağmurları alıncaya dek, toprağın değerli ürününü nasıl sabırla bekler, görün." }
     ]
   }
+,
+  {
+    id: "fathers-love-tr",
+    title: "Baba'nın Sevgi Sözleri",
+    description: "Baba'nın sevgisi, teşviki, tesellisi, inşası, şifası, kabulü ve koruması hakkında seçilmiş ayetler.",
+    language: "tr",
+    verses: [
+      {
+            "id": "fathers-love-tr-love1",
+            "reference": "Yu 3:16",
+            "title": "Baba'nın Sevgi Sözleri",
+            "text": "Çünkü Tanrı dünyayı o kadar çok sevdi ki, biricik Oğlu'nu verdi. Öyle ki, O'na iman edenlerin hiçbiri mahvolmasın, hepsi sonsuz yaşama kavuşsun."
+      },
+      {
+            "id": "fathers-love-tr-love2",
+            "reference": "Yer 31:3",
+            "title": "Baba'nın Sevgi Sözleri",
+            "text": "RAB bana uzaktan görünüp şöyle dedi: 'Sonsuz bir sevgiyle sevdim seni, Bu yüzden sevecenlikle kendime çektim.'"
+      },
+      {
+            "id": "fathers-love-tr-love3",
+            "reference": "Rom 8:38",
+            "title": "Baba'nın Sevgi Sözleri",
+            "text": "Eminim ki, ne ölüm, ne yaşam, ne melekler, ne yönetimler, ne şimdiki ne gelecek zaman, ne güçler,"
+      },
+      {
+            "id": "fathers-love-tr-love4",
+            "reference": "Rom 8:39",
+            "title": "Baba'nın Sevgi Sözleri",
+            "text": "ne yükseklik, ne derinlik, ne de yaratılmış başka bir şey bizi Rabbimiz Mesih İsa'da olan Tanrı sevgisinden ayırmaya yetecektir."
+      },
+      {
+            "id": "fathers-love-tr-love5",
+            "reference": "1Yu 4:9",
+            "title": "Baba'nın Sevgi Sözleri",
+            "text": "Tanrı biricik Oğlu aracılığıyla yaşayalım diye O'nu dünyaya gönderdi, ve böylece O'nun bize olan sevgisi açıkça görüldü."
+      },
+      {
+            "id": "fathers-love-tr-love6",
+            "reference": "1Yu 4:10",
+            "title": "Baba'nın Sevgi Sözleri",
+            "text": "Sevgi şudur: Tanrı'yı biz sevmiş değildik, ama O bizi sevdi ve Oğlu'nu günahlarımızı bağışlatan kurban olarak gönderdi."
+      },
+      {
+            "id": "fathers-love-tr-love7",
+            "reference": "Efe 2:4",
+            "title": "Baba'nın Sevgi Sözleri",
+            "text": "Ama merhameti bol olan Tanrı bizi çok sevdiği için,"
+      },
+      {
+            "id": "fathers-love-tr-love8",
+            "reference": "Efe 2:5",
+            "title": "Baba'nın Sevgi Sözleri",
+            "text": "suçlarımızdan ötürü ölü olduğumuz halde, bizi Mesih'le birlikte yaşama kavuşturdu. Lütufla kurtuldunuz."
+      },
+      {
+            "id": "fathers-love-tr-enc1",
+            "reference": "Yşa 41:10",
+            "title": "Baba'nın Sevgi Sözleri",
+            "text": "Korkma, çünkü ben seninleyim, Yılma, çünkü Tanrın benim. Seni güçlendireceğim, evet, sana yardım edeceğim; Zafer kazanan sağ elimle sana destek olacağım."
+      },
+      {
+            "id": "fathers-love-tr-enc2",
+            "reference": "Yşu 1:9",
+            "title": "Baba'nın Sevgi Sözleri",
+            "text": "Sana güçlü ve cesur ol demedim mi? Korkma, yılma. Çünkü nereye gidersen git, Tanrın RAB seninledir."
+      },
+      {
+            "id": "fathers-love-tr-enc3",
+            "reference": "Yşa 43:1",
+            "title": "Baba'nın Sevgi Sözleri",
+            "text": "Ama şimdi, ey Yakup, seni yaratan, Ey İsrail, sana biçim veren RAB şöyle diyor: 'Korkma, çünkü seni kurtardım, Seni adınla çağırdım, sen benimsin.'"
+      },
+      {
+            "id": "fathers-love-tr-enc4",
+            "reference": "Yşa 43:2",
+            "title": "Baba'nın Sevgi Sözleri",
+            "text": "Sulardan geçerken seninle olacağım, Irmaklardan geçerken sular seni boğmayacak. Ateşin içinden geçerken yanmayacaksın, Alevler seni yakmayacak."
+      },
+      {
+            "id": "fathers-love-tr-enc5",
+            "reference": "Yas 31:8",
+            "title": "Baba'nın Sevgi Sözleri",
+            "text": "RAB'bin kendisi önünüzden gidecek, sizinle birlikte olacak. Sizi yalnız bırakmayacak, yüzüstü terk etmeyecek. Korkmayın, yılmayın."
+      },
+      {
+            "id": "fathers-love-tr-enc6",
+            "reference": "Mez 27:1",
+            "title": "Baba'nın Sevgi Sözleri",
+            "text": "RAB benim ışığım, kurtuluşumdur, Kimden korkayım? RAB yaşamımın kalesidir, Kimden dehşete düşeyim?"
+      },
+      {
+            "id": "fathers-love-tr-enc7",
+            "reference": "Mez 31:24",
+            "title": "Baba'nın Sevgi Sözleri",
+            "text": "Ey RAB'be umut bağlayanlar, Güçlü ve yürekli olun!"
+      },
+      {
+            "id": "fathers-love-tr-enc8",
+            "reference": "Flp 4:13",
+            "title": "Baba'nın Sevgi Sözleri",
+            "text": "Beni güçlendirenin aracılığıyla her şeyi yapabilirim."
+      },
+      {
+            "id": "fathers-love-tr-comf1",
+            "reference": "Mat 11:28",
+            "title": "Baba'nın Sevgi Sözleri",
+            "text": "Ey bütün yorgunlar ve yükü ağır olanlar! Bana gelin, ben size rahat veririm."
+      },
+      {
+            "id": "fathers-love-tr-comf2",
+            "reference": "Mat 11:29",
+            "title": "Baba'nın Sevgi Sözleri",
+            "text": "Boyunduruğumu yüklenin, benden öğrenin. Çünkü ben yumuşak huylu, alçakgönüllüyüm. Böylece canlarınız rahata kavuşur."
+      },
+      {
+            "id": "fathers-love-tr-comf3",
+            "reference": "Yşa 49:15",
+            "title": "Baba'nın Sevgi Sözleri",
+            "text": "Bir kadın emzikteki çocuğunu unutabilir mi? Kendi rahminden çıkan çocuğa acımaz mı? Kadın unutabilir, Ama ben seni asla unutmam."
+      },
+      {
+            "id": "fathers-love-tr-comf4",
+            "reference": "Yşa 49:16",
+            "title": "Baba'nın Sevgi Sözleri",
+            "text": "Bak, adını avuçlarıma kazıdım, Duvarların sürekli gözümün önünde."
+      },
+      {
+            "id": "fathers-love-tr-comf5",
+            "reference": "Mez 23:4",
+            "title": "Baba'nın Sevgi Sözleri",
+            "text": "Karanlık ölüm vadisinden geçsem bile, Kötülükten korkmam. Çünkü sen benimlesin. Çomağın, değneğin güven verir bana."
+      },
+      {
+            "id": "fathers-love-tr-comf6",
+            "reference": "2Ko 1:3",
+            "title": "Baba'nın Sevgi Sözleri",
+            "text": "Rabbimiz İsa Mesih'in Tanrısı ve Babası'na, merhamet Babası'na ve her tesellinin Tanrısı'na övgüler olsun!"
+      },
+      {
+            "id": "fathers-love-tr-comf7",
+            "reference": "2Ko 1:4",
+            "title": "Baba'nın Sevgi Sözleri",
+            "text": "Kendimiz Tanrı'dan nasıl teselli buluyorsak, herhangi bir sıkıntıda olanları da aynı teselliyle teselli edebilmemiz için O, bütün sıkıntılarımızda bizi teselli eder."
+      },
+      {
+            "id": "fathers-love-tr-comf8",
+            "reference": "Mez 34:18",
+            "title": "Baba'nın Sevgi Sözleri",
+            "text": "RAB kırık yüreklilere yakındır, Ruhu ezik olanları kurtarır."
+      },
+      {
+            "id": "fathers-love-tr-build1",
+            "reference": "Yer 29:11",
+            "title": "Baba'nın Sevgi Sözleri",
+            "text": "Çünkü sizin için tasarladığım planları biliyorum diyor RAB. Bunlar, size umut dolu bir gelecek sağlamak için felaket değil, esenlik planlarıdır."
+      },
+      {
+            "id": "fathers-love-tr-build2",
+            "reference": "Mez 139:13",
+            "title": "Baba'nın Sevgi Sözleri",
+            "text": "İç varlığımı sen yarattın, Annemin rahminde beni sen ördün."
+      },
+      {
+            "id": "fathers-love-tr-build3",
+            "reference": "Mez 139:14",
+            "title": "Baba'nın Sevgi Sözleri",
+            "text": "Sana şükrederim, çünkü harika ve dehşet verici bir biçimde yaratıldım. İşlerin harikadır, bunu çok iyi biliyorum."
+      },
+      {
+            "id": "fathers-love-tr-build4",
+            "reference": "Yşa 55:10",
+            "title": "Baba'nın Sevgi Sözleri",
+            "text": "Gökten inen yağmur ve kar, Toprağı sulayıp yeşertmeden, Tohum ekene tohum, Yiyene ekmek vermeden, Göğe dönmez."
+      },
+      {
+            "id": "fathers-love-tr-build5",
+            "reference": "Yşa 55:11",
+            "title": "Baba'nın Sevgi Sözleri",
+            "text": "Ağzımdan çıkan söz de öyledir; Bana boş dönmez, İsteğimi yerine getirir, Yapması için onu gönderdiğim işi başarır."
+      },
+      {
+            "id": "fathers-love-tr-build6",
+            "reference": "Efe 2:10",
+            "title": "Baba'nın Sevgi Sözleri",
+            "text": "Çünkü biz, Tanrı'nın önceden hazırladığı iyi işleri yapmak üzere Mesih İsa'da yaratılmış olan Tanrı'nın eseriyiz."
+      },
+      {
+            "id": "fathers-love-tr-build7",
+            "reference": "Flp 1:6",
+            "title": "Baba'nın Sevgi Sözleri",
+            "text": "Sizde iyi bir işe başlamış olan Tanrı'nın, bunu Mesih İsa'nın gününe dek bitireceğine güvenim tamdır."
+      },
+      {
+            "id": "fathers-love-tr-heal1",
+            "reference": "Çık 15:26",
+            "title": "Baba'nın Sevgi Sözleri",
+            "text": "Şöyle dedi: 'Ben, Tanrınız RAB'bin sözünü dikkatle dinler, gözümde doğru olanı yapar, buyruklarıma kulak verir, bütün kurallarıma uyarsanız, Mısırlılar'a verdiğim hastalıkların hiçbirini size vermeyeceğim. Çünkü size şifa veren RAB benim.'"
+      },
+      {
+            "id": "fathers-love-tr-heal2",
+            "reference": "Yşa 53:5",
+            "title": "Baba'nın Sevgi Sözleri",
+            "text": "Oysa, bizim isyanlarımız yüzünden onun bedeni deşildi, Bizim suçlarımız yüzünden o ezildi. Esenliğimiz için gerekli olan ceza ona verildi. Bizler onun yaralarıyla şifa bulduk."
+      },
+      {
+            "id": "fathers-love-tr-heal3",
+            "reference": "Mez 103:2",
+            "title": "Baba'nın Sevgi Sözleri",
+            "text": "RAB'be övgüler sun, ey canım! Yaptığı iyiliklerin hiçbirini unutma!"
+      },
+      {
+            "id": "fathers-love-tr-heal4",
+            "reference": "Mez 103:3",
+            "title": "Baba'nın Sevgi Sözleri",
+            "text": "Bütün suçlarını bağışlayan, Bütün hastalıklarını iyileştiren O'dur."
+      },
+      {
+            "id": "fathers-love-tr-heal5",
+            "reference": "Yer 17:14",
+            "title": "Baba'nın Sevgi Sözleri",
+            "text": "Şifa ver bana, ya RAB, şifa bulurum, Kurtar beni, kurtulurum, Çünkü övgüm sensin."
+      },
+      {
+            "id": "fathers-love-tr-heal6",
+            "reference": "Mez 147:3",
+            "title": "Baba'nın Sevgi Sözleri",
+            "text": "Kırık yüreklileri iyileştirir, Yaralarını sarar."
+      },
+      {
+            "id": "fathers-love-tr-joy1",
+            "reference": "Sef 3:17",
+            "title": "Baba'nın Sevgi Sözleri",
+            "text": "Tanrın RAB, O güçlü kurtarıcı seninledir. Senin için sevinçle coşacak, Sevgisiyle seni yenileyecek, Senin için sevinç çığlıkları atacak."
+      },
+      {
+            "id": "fathers-love-tr-joy2",
+            "reference": "Yşa 43:4",
+            "title": "Baba'nın Sevgi Sözleri",
+            "text": "Gözümde değerli ve saygın olduğun, Seni sevdiğim için, Senin yerine insanlar, Canın yerine halklar vereceğim."
+      },
+      {
+            "id": "fathers-love-tr-joy3",
+            "reference": "Efe 1:4",
+            "title": "Baba'nın Sevgi Sözleri",
+            "text": "O'nun önünde sevgide kutsal ve kusursuz olmamız için, dünyanın kuruluşundan önce bizi Mesih'te seçti."
+      },
+      {
+            "id": "fathers-love-tr-joy4",
+            "reference": "Efe 1:5",
+            "title": "Baba'nın Sevgi Sözleri",
+            "text": "Kendi iyi amacı ve isteği uyarınca, İsa Mesih aracılığıyla kendi çocukları olmamız için bizi önceden belirledi."
+      },
+      {
+            "id": "fathers-love-tr-joy5",
+            "reference": "Rom 15:7",
+            "title": "Baba'nın Sevgi Sözleri",
+            "text": "Bu nedenle, Mesih sizi Tanrı'nın yüceliği için kabul ettiği gibi, siz de birbirinizi kabul edin."
+      },
+      {
+            "id": "fathers-love-tr-joy6",
+            "reference": "Yu 6:37",
+            "title": "Baba'nın Sevgi Sözleri",
+            "text": "Baba'nın bana verdiklerinin hepsi bana gelecek ve bana geleni asla kovmam."
+      },
+      {
+            "id": "fathers-love-tr-joy7",
+            "reference": "Mez 149:4",
+            "title": "Baba'nın Sevgi Sözleri",
+            "text": "Çünkü RAB halkından hoşnut kalır, Alçakgönüllüleri kurtuluşla taçlandırır."
+      },
+      {
+            "id": "fathers-love-tr-prot1",
+            "reference": "Mez 91:1",
+            "title": "Baba'nın Sevgi Sözleri",
+            "text": "Yüceler Yücesi'nin barınağında oturan, Her Şeye Gücü Yeten'in gölgesinde barınır."
+      },
+      {
+            "id": "fathers-love-tr-prot2",
+            "reference": "Mez 91:2",
+            "title": "Baba'nın Sevgi Sözleri",
+            "text": "RAB için, 'O benim sığınağım, kalemdir' derim, 'Güvendiğim Tanrım'dır.'"
+      },
+      {
+            "id": "fathers-love-tr-prot3",
+            "reference": "Çöl 6:24",
+            "title": "Baba'nın Sevgi Sözleri",
+            "text": "RAB seni kutsasın ve korusun;"
+      },
+      {
+            "id": "fathers-love-tr-prot4",
+            "reference": "Çöl 6:25",
+            "title": "Baba'nın Sevgi Sözleri",
+            "text": "RAB aydın yüzünü sana göstersin ve sana lütfetsin;"
+      },
+      {
+            "id": "fathers-love-tr-prot5",
+            "reference": "Çöl 6:26",
+            "title": "Baba'nın Sevgi Sözleri",
+            "text": "RAB yüzünü sana çevirsin ve sana esenlik versin."
+      },
+      {
+            "id": "fathers-love-tr-prot6",
+            "reference": "Flp 4:6-7",
+            "title": "Baba'nın Sevgi Sözleri",
+            "text": "Hiçbir kaygı çekmeyin; her konudaki dileklerinizi, duayla, yakarışla ve şükranla Tanrı'ya bildirin. Tanrı'nın her kavrayışı aşan esenliği, Mesih İsa'da yüreklerinizi ve düşüncelerinizi koruyacaktır."
+      }
+]
+  }
 ];

@@ -693,4 +693,313 @@ export const VERSE_SETS_ES = [
       { id: "rain-es-10", reference: "Santiago 5:7", title: "La Lluvia", text: "Por tanto, hermanos, tened paciencia hasta la venida del Señor. Mirad cómo el labrador espera el precioso fruto de la tierra, aguardando con paciencia hasta que reciba la lluvia temprana y la tardía." }
     ]
   }
+,
+  {
+    id: "fathers-love-es",
+    title: "Palabras del Amor del Padre",
+    description: "Versículos seleccionados sobre el amor, aliento, consuelo, edificación, sanidad, aceptación y protección del Padre.",
+    language: "es",
+    verses: [
+      {
+            "id": "fathers-love-es-love1",
+            "reference": "Jn 3:16",
+            "title": "Palabras del Amor del Padre",
+            "text": ""
+      },
+      {
+            "id": "fathers-love-es-love2",
+            "reference": "Jr 31:3",
+            "title": "Palabras del Amor del Padre",
+            "text": ""
+      },
+      {
+            "id": "fathers-love-es-love3",
+            "reference": "Ro 8:38",
+            "title": "Palabras del Amor del Padre",
+            "text": ""
+      },
+      {
+            "id": "fathers-love-es-love4",
+            "reference": "Ro 8:39",
+            "title": "Palabras del Amor del Padre",
+            "text": ""
+      },
+      {
+            "id": "fathers-love-es-love5",
+            "reference": "1Jn 4:9",
+            "title": "Palabras del Amor del Padre",
+            "text": ""
+      },
+      {
+            "id": "fathers-love-es-love6",
+            "reference": "1Jn 4:10",
+            "title": "Palabras del Amor del Padre",
+            "text": ""
+      },
+      {
+            "id": "fathers-love-es-love7",
+            "reference": "Ef 2:4",
+            "title": "Palabras del Amor del Padre",
+            "text": ""
+      },
+      {
+            "id": "fathers-love-es-love8",
+            "reference": "Ef 2:5",
+            "title": "Palabras del Amor del Padre",
+            "text": ""
+      },
+      {
+            "id": "fathers-love-es-enc1",
+            "reference": "Is 41:10",
+            "title": "Palabras del Amor del Padre",
+            "text": ""
+      },
+      {
+            "id": "fathers-love-es-enc2",
+            "reference": "Jos 1:9",
+            "title": "Palabras del Amor del Padre",
+            "text": ""
+      },
+      {
+            "id": "fathers-love-es-enc3",
+            "reference": "Is 43:1",
+            "title": "Palabras del Amor del Padre",
+            "text": ""
+      },
+      {
+            "id": "fathers-love-es-enc4",
+            "reference": "Is 43:2",
+            "title": "Palabras del Amor del Padre",
+            "text": ""
+      },
+      {
+            "id": "fathers-love-es-enc5",
+            "reference": "Dt 31:8",
+            "title": "Palabras del Amor del Padre",
+            "text": ""
+      },
+      {
+            "id": "fathers-love-es-enc6",
+            "reference": "Sal 27:1",
+            "title": "Palabras del Amor del Padre",
+            "text": ""
+      },
+      {
+            "id": "fathers-love-es-enc7",
+            "reference": "Sal 31:24",
+            "title": "Palabras del Amor del Padre",
+            "text": ""
+      },
+      {
+            "id": "fathers-love-es-enc8",
+            "reference": "Flp 4:13",
+            "title": "Palabras del Amor del Padre",
+            "text": ""
+      },
+      {
+            "id": "fathers-love-es-comf1",
+            "reference": "Mt 11:28",
+            "title": "Palabras del Amor del Padre",
+            "text": ""
+      },
+      {
+            "id": "fathers-love-es-comf2",
+            "reference": "Mt 11:29",
+            "title": "Palabras del Amor del Padre",
+            "text": ""
+      },
+      {
+            "id": "fathers-love-es-comf3",
+            "reference": "Is 49:15",
+            "title": "Palabras del Amor del Padre",
+            "text": ""
+      },
+      {
+            "id": "fathers-love-es-comf4",
+            "reference": "Is 49:16",
+            "title": "Palabras del Amor del Padre",
+            "text": ""
+      },
+      {
+            "id": "fathers-love-es-comf5",
+            "reference": "Sal 23:4",
+            "title": "Palabras del Amor del Padre",
+            "text": ""
+      },
+      {
+            "id": "fathers-love-es-comf6",
+            "reference": "2Co 1:3",
+            "title": "Palabras del Amor del Padre",
+            "text": ""
+      },
+      {
+            "id": "fathers-love-es-comf7",
+            "reference": "2Co 1:4",
+            "title": "Palabras del Amor del Padre",
+            "text": ""
+      },
+      {
+            "id": "fathers-love-es-comf8",
+            "reference": "Sal 34:18",
+            "title": "Palabras del Amor del Padre",
+            "text": ""
+      },
+      {
+            "id": "fathers-love-es-build1",
+            "reference": "Jr 29:11",
+            "title": "Palabras del Amor del Padre",
+            "text": ""
+      },
+      {
+            "id": "fathers-love-es-build2",
+            "reference": "Sal 139:13",
+            "title": "Palabras del Amor del Padre",
+            "text": ""
+      },
+      {
+            "id": "fathers-love-es-build3",
+            "reference": "Sal 139:14",
+            "title": "Palabras del Amor del Padre",
+            "text": ""
+      },
+      {
+            "id": "fathers-love-es-build4",
+            "reference": "Is 55:10",
+            "title": "Palabras del Amor del Padre",
+            "text": ""
+      },
+      {
+            "id": "fathers-love-es-build5",
+            "reference": "Is 55:11",
+            "title": "Palabras del Amor del Padre",
+            "text": ""
+      },
+      {
+            "id": "fathers-love-es-build6",
+            "reference": "Ef 2:10",
+            "title": "Palabras del Amor del Padre",
+            "text": ""
+      },
+      {
+            "id": "fathers-love-es-build7",
+            "reference": "Flp 1:6",
+            "title": "Palabras del Amor del Padre",
+            "text": ""
+      },
+      {
+            "id": "fathers-love-es-heal1",
+            "reference": "Ex 15:26",
+            "title": "Palabras del Amor del Padre",
+            "text": ""
+      },
+      {
+            "id": "fathers-love-es-heal2",
+            "reference": "Is 53:5",
+            "title": "Palabras del Amor del Padre",
+            "text": ""
+      },
+      {
+            "id": "fathers-love-es-heal3",
+            "reference": "Sal 103:2",
+            "title": "Palabras del Amor del Padre",
+            "text": ""
+      },
+      {
+            "id": "fathers-love-es-heal4",
+            "reference": "Sal 103:3",
+            "title": "Palabras del Amor del Padre",
+            "text": ""
+      },
+      {
+            "id": "fathers-love-es-heal5",
+            "reference": "Jr 17:14",
+            "title": "Palabras del Amor del Padre",
+            "text": ""
+      },
+      {
+            "id": "fathers-love-es-heal6",
+            "reference": "Sal 147:3",
+            "title": "Palabras del Amor del Padre",
+            "text": ""
+      },
+      {
+            "id": "fathers-love-es-joy1",
+            "reference": "Sof 3:17",
+            "title": "Palabras del Amor del Padre",
+            "text": ""
+      },
+      {
+            "id": "fathers-love-es-joy2",
+            "reference": "Is 43:4",
+            "title": "Palabras del Amor del Padre",
+            "text": ""
+      },
+      {
+            "id": "fathers-love-es-joy3",
+            "reference": "Ef 1:4",
+            "title": "Palabras del Amor del Padre",
+            "text": ""
+      },
+      {
+            "id": "fathers-love-es-joy4",
+            "reference": "Ef 1:5",
+            "title": "Palabras del Amor del Padre",
+            "text": ""
+      },
+      {
+            "id": "fathers-love-es-joy5",
+            "reference": "Ro 15:7",
+            "title": "Palabras del Amor del Padre",
+            "text": ""
+      },
+      {
+            "id": "fathers-love-es-joy6",
+            "reference": "Jn 6:37",
+            "title": "Palabras del Amor del Padre",
+            "text": ""
+      },
+      {
+            "id": "fathers-love-es-joy7",
+            "reference": "Sal 149:4",
+            "title": "Palabras del Amor del Padre",
+            "text": ""
+      },
+      {
+            "id": "fathers-love-es-prot1",
+            "reference": "Sal 91:1",
+            "title": "Palabras del Amor del Padre",
+            "text": ""
+      },
+      {
+            "id": "fathers-love-es-prot2",
+            "reference": "Sal 91:2",
+            "title": "Palabras del Amor del Padre",
+            "text": ""
+      },
+      {
+            "id": "fathers-love-es-prot3",
+            "reference": "Nm 6:24",
+            "title": "Palabras del Amor del Padre",
+            "text": ""
+      },
+      {
+            "id": "fathers-love-es-prot4",
+            "reference": "Nm 6:25",
+            "title": "Palabras del Amor del Padre",
+            "text": ""
+      },
+      {
+            "id": "fathers-love-es-prot5",
+            "reference": "Nm 6:26",
+            "title": "Palabras del Amor del Padre",
+            "text": ""
+      },
+      {
+            "id": "fathers-love-es-prot6",
+            "reference": "Flp 4:6-7",
+            "title": "Palabras del Amor del Padre",
+            "text": ""
+      }
+]
+  }
 ];

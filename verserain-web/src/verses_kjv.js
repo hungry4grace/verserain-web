@@ -1303,6 +1303,315 @@ export const VERSE_SETS_KJV = [
   }
         ]
     }
+,
+  {
+    id: "fathers-love-en",
+    title: "Words of Father's Love",
+    description: "Selected verses about the Father's love, encouragement, comfort, edification, healing, acceptance, and protection.",
+    language: "en",
+    verses: [
+      {
+            "id": "fathers-love-en-love1",
+            "reference": "約 3:16",
+            "title": "Words of Father's Love",
+            "text": "For God so loved the world, that he gave his only begotten Son, that whosoever believeth in him should not perish, but have everlasting life."
+      },
+      {
+            "id": "fathers-love-en-love2",
+            "reference": "耶 31:3",
+            "title": "Words of Father's Love",
+            "text": "The LORD hath appeared of old unto me, saying, Yea, I have loved thee with an everlasting love: therefore with lovingkindness have I drawn thee. of: Heb. from afar with lovingkindness: have I extended lovingkindness unto thee"
+      },
+      {
+            "id": "fathers-love-en-love3",
+            "reference": "羅 8:38",
+            "title": "Words of Father's Love",
+            "text": "For I am persuaded, that neither death, nor life, nor angels, nor principalities, nor powers, nor things present, nor things to come,"
+      },
+      {
+            "id": "fathers-love-en-love4",
+            "reference": "羅 8:39",
+            "title": "Words of Father's Love",
+            "text": "Nor height, nor depth, nor any other creature, shall be able to separate us from the love of God, which is in Christ Jesus our Lord."
+      },
+      {
+            "id": "fathers-love-en-love5",
+            "reference": "約一 4:9",
+            "title": "Words of Father's Love",
+            "text": "In this was manifested the love of God toward us, because that God sent his only begotten Son into the world, that we might live through him."
+      },
+      {
+            "id": "fathers-love-en-love6",
+            "reference": "約一 4:10",
+            "title": "Words of Father's Love",
+            "text": "Herein  is love, not that we loved God, but that he loved us, and sent his Son to be the propitiation for our sins."
+      },
+      {
+            "id": "fathers-love-en-love7",
+            "reference": "弗 2:4",
+            "title": "Words of Father's Love",
+            "text": "But God, who is rich in mercy, for his great love wherewith he loved us,"
+      },
+      {
+            "id": "fathers-love-en-love8",
+            "reference": "弗 2:5",
+            "title": "Words of Father's Love",
+            "text": "Even when we were dead in sins, hath quickened us together with Christ, (by grace ye are saved;) by: or, by whose grace"
+      },
+      {
+            "id": "fathers-love-en-enc1",
+            "reference": "賽 41:10",
+            "title": "Words of Father's Love",
+            "text": "Fear thou not; for I am with thee: be not dismayed; for I am thy God: I will strengthen thee; yea, I will help thee; yea, I will uphold thee with the right hand of my righteousness."
+      },
+      {
+            "id": "fathers-love-en-enc2",
+            "reference": "書 1:9",
+            "title": "Words of Father's Love",
+            "text": "Have not I commanded thee? Be strong and of a good courage; be not afraid, neither be thou dismayed: for the LORD thy God is with thee whithersoever thou goest."
+      },
+      {
+            "id": "fathers-love-en-enc3",
+            "reference": "賽 43:1",
+            "title": "Words of Father's Love",
+            "text": "But now thus saith the LORD that created thee, O Jacob, and he that formed thee, O Israel, Fear not: for I have redeemed thee, I have called thee by thy name; thou art mine."
+      },
+      {
+            "id": "fathers-love-en-enc4",
+            "reference": "賽 43:2",
+            "title": "Words of Father's Love",
+            "text": "When thou passest through the waters, I will be with thee; and through the rivers, they shall not overflow thee: when thou walkest through the fire, thou shalt not be burned; neither shall the flame kindle upon thee."
+      },
+      {
+            "id": "fathers-love-en-enc5",
+            "reference": "申 31:8",
+            "title": "Words of Father's Love",
+            "text": "And the LORD, he it is that doth go before thee; he will be with thee, he will not fail thee, neither forsake thee: fear not, neither be dismayed."
+      },
+      {
+            "id": "fathers-love-en-enc6",
+            "reference": "詩 27:1",
+            "title": "Words of Father's Love",
+            "text": "A Psalm of David. The LORD is my light and my salvation; whom shall I fear? the LORD is the strength of my life; of whom shall I be afraid?"
+      },
+      {
+            "id": "fathers-love-en-enc7",
+            "reference": "詩 31:24",
+            "title": "Words of Father's Love",
+            "text": "Be of good courage, and he shall strengthen your heart, all ye that hope in the LORD."
+      },
+      {
+            "id": "fathers-love-en-enc8",
+            "reference": "腓 4:13",
+            "title": "Words of Father's Love",
+            "text": "I can do all things through Christ which strengtheneth me."
+      },
+      {
+            "id": "fathers-love-en-comf1",
+            "reference": "太 11:28",
+            "title": "Words of Father's Love",
+            "text": "Come unto me, all ye that labour and are heavy laden, and I will give you rest."
+      },
+      {
+            "id": "fathers-love-en-comf2",
+            "reference": "太 11:29",
+            "title": "Words of Father's Love",
+            "text": "Take my yoke upon you, and learn of me; for I am meek and lowly in heart: and ye shall find rest unto your souls."
+      },
+      {
+            "id": "fathers-love-en-comf3",
+            "reference": "賽 49:15",
+            "title": "Words of Father's Love",
+            "text": "Can a woman forget her sucking child, that she should not have compassion on the son of her womb? yea, they may forget, yet will I not forget thee. that: Heb. from having compassion"
+      },
+      {
+            "id": "fathers-love-en-comf4",
+            "reference": "賽 49:16",
+            "title": "Words of Father's Love",
+            "text": "Behold, I have graven thee upon the palms of my hands; thy walls are continually before me."
+      },
+      {
+            "id": "fathers-love-en-comf5",
+            "reference": "詩 23:4",
+            "title": "Words of Father's Love",
+            "text": "Yea, though I walk through the valley of the shadow of death, I will fear no evil: for thou art with me; thy rod and thy staff they comfort me."
+      },
+      {
+            "id": "fathers-love-en-comf6",
+            "reference": "林後 1:3",
+            "title": "Words of Father's Love",
+            "text": "Blessed be God, even the Father of our Lord Jesus Christ, the Father of mercies, and the God of all comfort;"
+      },
+      {
+            "id": "fathers-love-en-comf7",
+            "reference": "林後 1:4",
+            "title": "Words of Father's Love",
+            "text": "Who comforteth us in all our tribulation, that we may be able to comfort them which are in any trouble, by the comfort wherewith we ourselves are comforted of God."
+      },
+      {
+            "id": "fathers-love-en-comf8",
+            "reference": "詩 34:18",
+            "title": "Words of Father's Love",
+            "text": "The LORD is nigh unto them that are of a broken heart; and saveth such as be of a contrite spirit. unto: Heb. to the broken of heart of a contrite: Heb. contrite of spirit"
+      },
+      {
+            "id": "fathers-love-en-build1",
+            "reference": "耶 29:11",
+            "title": "Words of Father's Love",
+            "text": "For I know the thoughts that I think toward you, saith the LORD, thoughts of peace, and not of evil, to give you an expected end. expected: Heb. end and expectation"
+      },
+      {
+            "id": "fathers-love-en-build2",
+            "reference": "詩 139:13",
+            "title": "Words of Father's Love",
+            "text": "For thou hast possessed my reins: thou hast covered me in my mother's womb."
+      },
+      {
+            "id": "fathers-love-en-build3",
+            "reference": "詩 139:14",
+            "title": "Words of Father's Love",
+            "text": "I will praise thee; for I am fearfully and wonderfully made: marvellous are thy works; and that my soul knoweth right well. right: Heb. greatly"
+      },
+      {
+            "id": "fathers-love-en-build4",
+            "reference": "賽 55:10",
+            "title": "Words of Father's Love",
+            "text": "For as the rain cometh down, and the snow from heaven, and returneth not thither, but watereth the earth, and maketh it bring forth and bud, that it may give seed to the sower, and bread to the eater:"
+      },
+      {
+            "id": "fathers-love-en-build5",
+            "reference": "賽 55:11",
+            "title": "Words of Father's Love",
+            "text": "So shall my word be that goeth forth out of my mouth: it shall not return unto me void, but it shall accomplish that which I please, and it shall prosper in the thing whereto I sent it."
+      },
+      {
+            "id": "fathers-love-en-build6",
+            "reference": "弗 2:10",
+            "title": "Words of Father's Love",
+            "text": "For we are his workmanship, created in Christ Jesus unto good works, which God hath before ordained that we should walk in them. ordained: or, prepared"
+      },
+      {
+            "id": "fathers-love-en-build7",
+            "reference": "腓 1:6",
+            "title": "Words of Father's Love",
+            "text": "Being confident of this very thing, that he which hath begun a good work in you will perform it until the day of Jesus Christ: perform: or, finish"
+      },
+      {
+            "id": "fathers-love-en-heal1",
+            "reference": "出 15:26",
+            "title": "Words of Father's Love",
+            "text": "And said, If thou wilt diligently hearken to the voice of the LORD thy God, and wilt do that which is right in his sight, and wilt give ear to his commandments, and keep all his statutes, I will put none of these diseases upon thee, which I have brought upon the Egyptians: for I am the LORD that healeth thee."
+      },
+      {
+            "id": "fathers-love-en-heal2",
+            "reference": "賽 53:5",
+            "title": "Words of Father's Love",
+            "text": "But he was wounded for our transgressions, he was bruised for our iniquities: the chastisement of our peace was upon him; and with his stripes we are healed. wounded: or, tormented stripes: Heb. bruise"
+      },
+      {
+            "id": "fathers-love-en-heal3",
+            "reference": "詩 103:2",
+            "title": "Words of Father's Love",
+            "text": "Bless the LORD, O my soul, and forget not all his benefits:"
+      },
+      {
+            "id": "fathers-love-en-heal4",
+            "reference": "詩 103:3",
+            "title": "Words of Father's Love",
+            "text": "Who forgiveth all thine iniquities; who healeth all thy diseases;"
+      },
+      {
+            "id": "fathers-love-en-heal5",
+            "reference": "耶 17:14",
+            "title": "Words of Father's Love",
+            "text": "Heal me, O LORD, and I shall be healed; save me, and I shall be saved: for thou art my praise."
+      },
+      {
+            "id": "fathers-love-en-heal6",
+            "reference": "詩 147:3",
+            "title": "Words of Father's Love",
+            "text": "He healeth the broken in heart, and bindeth up their wounds. wounds: Heb. griefs"
+      },
+      {
+            "id": "fathers-love-en-joy1",
+            "reference": "番 3:17",
+            "title": "Words of Father's Love",
+            "text": "The LORD thy God in the midst of thee is mighty; he will save, he will rejoice over thee with joy; he will rest in his love, he will joy over thee with singing. rest: Heb. be silent"
+      },
+      {
+            "id": "fathers-love-en-joy2",
+            "reference": "賽 43:4",
+            "title": "Words of Father's Love",
+            "text": "Since thou wast precious in my sight, thou hast been honourable, and I have loved thee: therefore will I give men for thee, and people for thy life. life: or, person"
+      },
+      {
+            "id": "fathers-love-en-joy3",
+            "reference": "弗 1:4",
+            "title": "Words of Father's Love",
+            "text": "According as he hath chosen us in him before the foundation of the world, that we should be holy and without blame before him in love:"
+      },
+      {
+            "id": "fathers-love-en-joy4",
+            "reference": "弗 1:5",
+            "title": "Words of Father's Love",
+            "text": "Having predestinated us unto the adoption of children by Jesus Christ to himself, according to the good pleasure of his will,"
+      },
+      {
+            "id": "fathers-love-en-joy5",
+            "reference": "羅 15:7",
+            "title": "Words of Father's Love",
+            "text": "Wherefore receive ye one another, as  Christ also received us to the glory of God."
+      },
+      {
+            "id": "fathers-love-en-joy6",
+            "reference": "約 6:37",
+            "title": "Words of Father's Love",
+            "text": "All that the Father giveth me shall come to me; and him that cometh to me I will in no wise cast out."
+      },
+      {
+            "id": "fathers-love-en-joy7",
+            "reference": "詩 149:4",
+            "title": "Words of Father's Love",
+            "text": "For the LORD taketh pleasure in his people: he will beautify the meek with salvation."
+      },
+      {
+            "id": "fathers-love-en-prot1",
+            "reference": "詩 91:1",
+            "title": "Words of Father's Love",
+            "text": "He that dwelleth in the secret place of the most High shall abide under the shadow of the Almighty. abide: Heb. lodge"
+      },
+      {
+            "id": "fathers-love-en-prot2",
+            "reference": "詩 91:2",
+            "title": "Words of Father's Love",
+            "text": "I will say of the LORD, He is my refuge and my fortress: my God; in him will I trust."
+      },
+      {
+            "id": "fathers-love-en-prot3",
+            "reference": "民 6:24",
+            "title": "Words of Father's Love",
+            "text": "The LORD bless thee, and keep thee:"
+      },
+      {
+            "id": "fathers-love-en-prot4",
+            "reference": "民 6:25",
+            "title": "Words of Father's Love",
+            "text": "The LORD make his face shine upon thee, and be gracious unto thee:"
+      },
+      {
+            "id": "fathers-love-en-prot5",
+            "reference": "民 6:26",
+            "title": "Words of Father's Love",
+            "text": "The LORD lift up his countenance upon thee, and give thee peace."
+      },
+      {
+            "id": "fathers-love-en-prot6",
+            "reference": "腓 4:6-7",
+            "title": "Words of Father's Love",
+            "text": "Be careful for nothing; but in every thing by prayer and supplication with thanksgiving let your requests be made known unto God. And the peace of God, which passeth all understanding, shall keep your hearts and minds  through Christ Jesus."
+      }
+]
+  }
 ];
 
 // Fallback

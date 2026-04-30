@@ -693,4 +693,313 @@ export const VERSE_SETS_DE = [
       { id: "rain-de-10", reference: "Jakobus 5:7", title: "Regen", text: "So harret nun aus, ihr Brüder, bis zur Wiederkunft des Herrn! Siehe, der Landmann wartet auf die köstliche Frucht der Erde und geduldet sich ihretwegen, bis sie den Frühregen und den Spätregen empfangen hat." }
     ]
   }
+,
+  {
+    id: "fathers-love-de",
+    title: "Worte der Vaterliebe",
+    description: "Ausgewählte Verse über die Liebe, Ermutigung, Trost, Erbauung, Heilung, Annahme und den Schutz des Vaters.",
+    language: "de",
+    verses: [
+      {
+            "id": "fathers-love-de-love1",
+            "reference": "Joh 3:16",
+            "title": "Worte der Vaterliebe",
+            "text": "Also hat Gott die Welt geliebt, daß er seinen eingeborenen Sohn gab, auf daß alle, die an ihn glauben, nicht verloren werden, sondern das ewige Leben haben."
+      },
+      {
+            "id": "fathers-love-de-love2",
+            "reference": "Jer 31:3",
+            "title": "Worte der Vaterliebe",
+            "text": "Der HERR ist mir erschienen von ferne: Ich habe dich je und je geliebt; darum habe ich dich zu mir gezogen aus lauter Güte."
+      },
+      {
+            "id": "fathers-love-de-love3",
+            "reference": "Röm 8:38",
+            "title": "Worte der Vaterliebe",
+            "text": "Denn ich bin gewiß, daß weder Tod noch Leben, weder Engel noch Fürstentümer noch Gewalten, weder Gegenwärtiges noch Zukünftiges,"
+      },
+      {
+            "id": "fathers-love-de-love4",
+            "reference": "Röm 8:39",
+            "title": "Worte der Vaterliebe",
+            "text": "weder Hohes noch Tiefes noch keine andere Kreatur mag uns scheiden von der Liebe Gottes, die in Christo Jesu ist, unserm HERRN."
+      },
+      {
+            "id": "fathers-love-de-love5",
+            "reference": "1Jo 4:9",
+            "title": "Worte der Vaterliebe",
+            "text": "Daran ist erschienen die Liebe Gottes gegen uns, daß Gott seinen eingeborenen Sohn gesandt hat in die Welt, daß wir durch ihn leben sollen."
+      },
+      {
+            "id": "fathers-love-de-love6",
+            "reference": "1Jo 4:10",
+            "title": "Worte der Vaterliebe",
+            "text": "Darin steht die Liebe: nicht, daß wir Gott geliebt haben, sondern daß er uns geliebt hat und gesandt seinen Sohn zur Versöhnung für unsre Sünden."
+      },
+      {
+            "id": "fathers-love-de-love7",
+            "reference": "Eph 2:4",
+            "title": "Worte der Vaterliebe",
+            "text": "Aber Gott, der da reich ist an Barmherzigkeit, durch seine große Liebe, damit er uns geliebt hat,"
+      },
+      {
+            "id": "fathers-love-de-love8",
+            "reference": "Eph 2:5",
+            "title": "Worte der Vaterliebe",
+            "text": "da wir tot waren in den Sünden, hat er uns samt Christo lebendig gemacht (denn aus Gnade seid ihr selig geworden)"
+      },
+      {
+            "id": "fathers-love-de-enc1",
+            "reference": "Jes 41:10",
+            "title": "Worte der Vaterliebe",
+            "text": "fürchte dich nicht, ich bin mit dir; weiche nicht, denn ich bin dein Gott; ich stärke dich, ich helfe dir auch, ich erhalte dich durch die rechte Hand meiner Gerechtigkeit."
+      },
+      {
+            "id": "fathers-love-de-enc2",
+            "reference": "Jos 1:9",
+            "title": "Worte der Vaterliebe",
+            "text": "Siehe, ich habe dir geboten, daß du getrost und freudig seist. Laß dir nicht grauen und entsetze dich nicht; denn der HERR, dein Gott, ist mit dir in allem, was du tun wirst."
+      },
+      {
+            "id": "fathers-love-de-enc3",
+            "reference": "Jes 43:1",
+            "title": "Worte der Vaterliebe",
+            "text": "Und nun spricht der HERR, der dich geschaffen hat, Jakob, und dich gemacht hat, Israel: Fürchte dich nicht, denn ich habe dich erlöst; ich habe dich bei deinem Namen gerufen; du bist mein!"
+      },
+      {
+            "id": "fathers-love-de-enc4",
+            "reference": "Jes 43:2",
+            "title": "Worte der Vaterliebe",
+            "text": "Denn so du durch Wasser gehst, will ich bei dir sein, daß dich die Ströme nicht sollen ersäufen; und so du ins Feuer gehst, sollst du nicht brennen, und die Flamme soll dich nicht versengen."
+      },
+      {
+            "id": "fathers-love-de-enc5",
+            "reference": "5Mo 31:8",
+            "title": "Worte der Vaterliebe",
+            "text": "Der HERR aber, der selber vor euch her geht, der wird mit dir sein und wird die Hand nicht abtun noch dich verlassen. Fürchte dich nicht und erschrick nicht."
+      },
+      {
+            "id": "fathers-love-de-enc6",
+            "reference": "Ps 27:1",
+            "title": "Worte der Vaterliebe",
+            "text": "Ein Psalm Davids. Der HERR ist mein Licht und mein Heil; vor wem sollte ich mich fürchten! Der HERR ist meines Lebens Kraft; vor wem sollte mir grauen!"
+      },
+      {
+            "id": "fathers-love-de-enc7",
+            "reference": "Ps 31:24",
+            "title": "Worte der Vaterliebe",
+            "text": "Seid getrost und unverzagt, alle, die ihr des HERRN harret!"
+      },
+      {
+            "id": "fathers-love-de-enc8",
+            "reference": "Phil 4:13",
+            "title": "Worte der Vaterliebe",
+            "text": "Ich vermag alles durch den, der mich mächtig macht, Christus."
+      },
+      {
+            "id": "fathers-love-de-comf1",
+            "reference": "Mt 11:28",
+            "title": "Worte der Vaterliebe",
+            "text": "Kommet her zu mir alle, die ihr mühselig und beladen seid; ich will euch erquicken."
+      },
+      {
+            "id": "fathers-love-de-comf2",
+            "reference": "Mt 11:29",
+            "title": "Worte der Vaterliebe",
+            "text": "Nehmet auf euch mein Joch und lernet von mir; denn ich bin sanftmütig und von Herzen demütig; so werdet ihr Ruhe finden für eure Seelen."
+      },
+      {
+            "id": "fathers-love-de-comf3",
+            "reference": "Jes 49:15",
+            "title": "Worte der Vaterliebe",
+            "text": "Kann auch ein Weib ihres Kindleins vergessen, daß sie sich nicht erbarme über den Sohn ihres Leibes? Und ob sie desselben vergäße, so will ich doch dein nicht vergessen."
+      },
+      {
+            "id": "fathers-love-de-comf4",
+            "reference": "Jes 49:16",
+            "title": "Worte der Vaterliebe",
+            "text": "Siehe, in die Hände habe ich dich gezeichnet; deine Mauern sind immerdar vor mir."
+      },
+      {
+            "id": "fathers-love-de-comf5",
+            "reference": "Ps 23:4",
+            "title": "Worte der Vaterliebe",
+            "text": "Und ob ich schon wanderte im finstern Tal, fürchte ich kein Unglück; denn du bist bei mir, dein Stecken und dein Stab trösten mich."
+      },
+      {
+            "id": "fathers-love-de-comf6",
+            "reference": "2Ko 1:3",
+            "title": "Worte der Vaterliebe",
+            "text": "Gelobet sei Gott und der Vater unsers HERRN Jesu Christi, der Vater der Barmherzigkeit und Gott alles Trostes,"
+      },
+      {
+            "id": "fathers-love-de-comf7",
+            "reference": "2Ko 1:4",
+            "title": "Worte der Vaterliebe",
+            "text": "der uns tröstet in aller unsrer Trübsal, daß auch wir trösten können, die da sind in allerlei Trübsal, mit dem Trost, damit wir getröstet werden von Gott."
+      },
+      {
+            "id": "fathers-love-de-comf8",
+            "reference": "Ps 34:18",
+            "title": "Worte der Vaterliebe",
+            "text": "Der HERR ist nahe bei denen, die zerbrochnes Herzens sind, und hilft denen, die ein zerschlagen Gemüt haben."
+      },
+      {
+            "id": "fathers-love-de-build1",
+            "reference": "Jer 29:11",
+            "title": "Worte der Vaterliebe",
+            "text": "Denn ich weiß wohl, was ich für Gedanken über euch habe, spricht der HERR: Gedanken des Friedens und nicht des Leidens, daß ich euch gebe das Ende, des ihr wartet."
+      },
+      {
+            "id": "fathers-love-de-build2",
+            "reference": "Ps 139:13",
+            "title": "Worte der Vaterliebe",
+            "text": "Denn du hast meine Nieren bereitet und hast mich gebildet im Mutterleib."
+      },
+      {
+            "id": "fathers-love-de-build3",
+            "reference": "Ps 139:14",
+            "title": "Worte der Vaterliebe",
+            "text": "Ich danke dir dafür, daß ich wunderbar gemacht bin; wunderbar sind deine Werke, und das erkennt meine Seele wohl."
+      },
+      {
+            "id": "fathers-love-de-build4",
+            "reference": "Jes 55:10",
+            "title": "Worte der Vaterliebe",
+            "text": "Denn gleichwie der Regen und Schnee vom Himmel fällt und nicht wieder dahinkommt, sondern feuchtet die Erde und macht sie fruchtbar und wachsend, daß sie gibt Samen, zu säen, und Brot, zu essen:"
+      },
+      {
+            "id": "fathers-love-de-build5",
+            "reference": "Jes 55:11",
+            "title": "Worte der Vaterliebe",
+            "text": "also soll das Wort, so aus meinem Munde geht, auch sein. Es soll nicht wieder zu mir leer kommen, sondern tun, was mir gefällt, und soll ihm gelingen, dazu ich's sende."
+      },
+      {
+            "id": "fathers-love-de-build6",
+            "reference": "Eph 2:10",
+            "title": "Worte der Vaterliebe",
+            "text": "Denn wir sind sein Werk, geschaffen in Christo Jesu zu guten Werken, zu welchen Gott uns zuvor bereitet hat, daß wir darin wandeln sollen."
+      },
+      {
+            "id": "fathers-love-de-build7",
+            "reference": "Phil 1:6",
+            "title": "Worte der Vaterliebe",
+            "text": "und bin desselben in guter Zuversicht, daß, der in euch angefangen hat das gute Werk, der wird's auch vollführen bis an den Tag Jesu Christi."
+      },
+      {
+            "id": "fathers-love-de-heal1",
+            "reference": "2Mo 15:26",
+            "title": "Worte der Vaterliebe",
+            "text": "und sprach: Wirst du der Stimme des HERRN, deines Gottes, gehorchen und tun, was recht ist vor ihm, und zu Ohren fassen seine Gebote und halten alle seine Gesetze, so will ich der Krankheiten keine auf dich legen, die ich auf Ägypten gelegt habe; denn ich bin der HERR, dein Arzt."
+      },
+      {
+            "id": "fathers-love-de-heal2",
+            "reference": "Jes 53:5",
+            "title": "Worte der Vaterliebe",
+            "text": "Aber er ist um unsrer Missetat willen verwundet und um unsrer Sünde willen zerschlagen. Die Strafe liegt auf ihm, auf daß wir Frieden hätten, und durch seine Wunden sind wir geheilt."
+      },
+      {
+            "id": "fathers-love-de-heal3",
+            "reference": "Ps 103:2",
+            "title": "Worte der Vaterliebe",
+            "text": "Lobe den HERRN, meine Seele, und vergiß nicht, was er dir Gutes getan hat:"
+      },
+      {
+            "id": "fathers-love-de-heal4",
+            "reference": "Ps 103:3",
+            "title": "Worte der Vaterliebe",
+            "text": "der dir alle deine Sünden vergibt und heilet alle deine Gebrechen,"
+      },
+      {
+            "id": "fathers-love-de-heal5",
+            "reference": "Jer 17:14",
+            "title": "Worte der Vaterliebe",
+            "text": "Heile du mich, HERR, so werde ich heil; hilf du mir, so ist mir geholfen; denn du bist mein Ruhm."
+      },
+      {
+            "id": "fathers-love-de-heal6",
+            "reference": "Ps 147:3",
+            "title": "Worte der Vaterliebe",
+            "text": "Er heilt, die zerbrochnes Herzens sind, und verbindet ihre Schmerzen."
+      },
+      {
+            "id": "fathers-love-de-joy1",
+            "reference": "Zef 3:17",
+            "title": "Worte der Vaterliebe",
+            "text": "denn der HERR, dein Gott, ist bei dir, ein starker Heiland; er wird sich über dich freuen und dir freundlich sein und vergeben und wird über dir mit Schall fröhlich sein."
+      },
+      {
+            "id": "fathers-love-de-joy2",
+            "reference": "Jes 43:4",
+            "title": "Worte der Vaterliebe",
+            "text": "Weil du so wert bist vor meinen Augen geachtet, mußt du auch herrlich sein, und ich habe dich lieb; darum gebe ich Menschen an deine Statt und Völker für deine Seele."
+      },
+      {
+            "id": "fathers-love-de-joy3",
+            "reference": "Eph 1:4",
+            "title": "Worte der Vaterliebe",
+            "text": "wie er uns denn erwählt hat durch denselben, ehe der Welt Grund gelegt war, daß wir sollten sein heilig und unsträflich vor ihm in der Liebe;"
+      },
+      {
+            "id": "fathers-love-de-joy4",
+            "reference": "Eph 1:5",
+            "title": "Worte der Vaterliebe",
+            "text": "und hat uns verordnet zur Kindschaft gegen sich selbst durch Jesum Christum nach dem Wohlgefallen seines Willens,"
+      },
+      {
+            "id": "fathers-love-de-joy5",
+            "reference": "Röm 15:7",
+            "title": "Worte der Vaterliebe",
+            "text": "Darum nehmet euch untereinander auf, gleichwie euch Christus hat aufgenommen zu Gottes Lobe."
+      },
+      {
+            "id": "fathers-love-de-joy6",
+            "reference": "Joh 6:37",
+            "title": "Worte der Vaterliebe",
+            "text": "Alles, was mir mein Vater gibt, das kommt zu mir; und wer zu mir kommt, den werde ich nicht hinausstoßen."
+      },
+      {
+            "id": "fathers-love-de-joy7",
+            "reference": "Ps 149:4",
+            "title": "Worte der Vaterliebe",
+            "text": "Denn der HERR hat Wohlgefallen an seinem Volk; er hilft den Elenden herrlich."
+      },
+      {
+            "id": "fathers-love-de-prot1",
+            "reference": "Ps 91:1",
+            "title": "Worte der Vaterliebe",
+            "text": "Wer unter dem Schirm des Höchsten sitzt und unter dem Schatten des Allmächtigen bleibt,"
+      },
+      {
+            "id": "fathers-love-de-prot2",
+            "reference": "Ps 91:2",
+            "title": "Worte der Vaterliebe",
+            "text": "der spricht zu dem HERRN: Meine Zuversicht und meine Burg, mein Gott, auf den ich hoffe."
+      },
+      {
+            "id": "fathers-love-de-prot3",
+            "reference": "4Mo 6:24",
+            "title": "Worte der Vaterliebe",
+            "text": "Der HERR segne dich und behüte dich;"
+      },
+      {
+            "id": "fathers-love-de-prot4",
+            "reference": "4Mo 6:25",
+            "title": "Worte der Vaterliebe",
+            "text": "der HERR lasse sein Angesicht leuchten über dir und sei dir gnädig;"
+      },
+      {
+            "id": "fathers-love-de-prot5",
+            "reference": "4Mo 6:26",
+            "title": "Worte der Vaterliebe",
+            "text": "der HERR hebe sein Angesicht über dich und gebe dir Frieden."
+      },
+      {
+            "id": "fathers-love-de-prot6",
+            "reference": "Phil 4:6-7",
+            "title": "Worte der Vaterliebe",
+            "text": "Sorget nichts! sondern in allen Dingen lasset eure Bitten im Gebet und Flehen mit Danksagung vor Gott kund werden. Und der Friede Gottes, welcher höher ist denn alle Vernunft, bewahre eure Herzen und Sinne in Christo Jesu!"
+      }
+]
+  }
 ];
