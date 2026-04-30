@@ -762,13 +762,13 @@ export default function App() {
   }, []);
 
   const baseVerseSets = version === 'cuv'
-    ? [...VERSE_SETS_CUV, ...VERSE_SETS_PROVERBS_ZH]
+    ? [...VERSE_SETS_PROVERBS_ZH, ...VERSE_SETS_CUV]
     : version === 'kjv'
-      ? [...VERSE_SETS_KJV, ...VERSE_SETS_PROVERBS_KJV]
+      ? [...VERSE_SETS_PROVERBS_KJV, ...VERSE_SETS_KJV]
       : version === 'ja'
-        ? [...VERSE_SETS_JA, ...VERSE_SETS_PROVERBS_JA]
+        ? [...VERSE_SETS_PROVERBS_JA, ...VERSE_SETS_JA]
         : version === 'ko'
-          ? [...VERSE_SETS_KO, ...VERSE_SETS_PROVERBS_KO]
+          ? [...VERSE_SETS_PROVERBS_KO, ...VERSE_SETS_KO]
           : version === 'fa'
             ? [...VERSE_SETS_FA]
             : version === 'he'
