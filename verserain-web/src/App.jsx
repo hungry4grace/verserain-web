@@ -390,30 +390,22 @@ const parseVerseRef = (v) => {
 };
 
 // --- Activity Heatmap Component ---
-const ActivityHeatmap = ({ t }) => {
+const ActivityHeatmap = ({ t, activityMap = {} }) => {
   const [data, setData] = useState([]);
   
   useEffect(() => {
-    const mockData = [];
+    const historicalData = [];
     const today = new Date();
-    // Generate 365 days of mock data
+    // Generate 365 days of data from activityMap
     for (let i = 364; i >= 0; i--) {
       const d = new Date(today);
       d.setDate(d.getDate() - i);
-      let val = 0;
-      const rand = Math.random();
-      // More recent activity has higher chance
-      if (i > 30) {
-         if (rand > 0.8) val = 1;
-         if (rand > 0.95) val = 2;
-      } else {
-         if (rand > 0.4) val = 1;
-         if (rand > 0.8) val = 2;
-      }
-      mockData.push({ date: d, value: val });
+      const dateStr = d.toLocaleDateString('en-CA');
+      const val = activityMap[dateStr] || 0;
+      historicalData.push({ date: d, value: val });
     }
-    setData(mockData);
-  }, []);
+    setData(historicalData);
+  }, [activityMap]);
 
   const weeks = [];
   let currentWeek = [];
@@ -730,7 +722,7 @@ export default function App() {
     }
   }, [playerName, personalCode]);
 
-  const localFruits = React.useMemo(() => Object.values(gardenData || {}).reduce((sum, curr) => sum + (curr.fruits || 0), 0), [gardenData]);
+  const localFruits = React.useMemo(() => Object.entries(gardenData || {}).filter(([k]) => k !== '_activity').reduce((sum, [, curr]) => sum + (curr.fruits || 0), 0), [gardenData]);
   const totalFruits = localFruits + creatorPoints;
   const skoolLevel = React.useMemo(() => getSkoolLevel(totalFruits), [totalFruits]);
   const hasPremiumAccess = isPremium || skoolLevel.level >= 3;
@@ -792,7 +784,7 @@ export default function App() {
     setGardenData(prev => {
       const updated = { ...prev };
       if (!updated[ref]) {
-        const used = new Set(Object.values(updated).map(v => v.gridIndex));
+        const used = new Set(Object.entries(updated).filter(([k]) => k !== '_activity').map(([,v]) => v.gridIndex));
         let idx = 0;
         while (used.has(idx)) idx++;
         updated[ref] = { gridIndex: idx, stage: 1, fruits: 0, setId: setId || null };
@@ -802,6 +794,15 @@ export default function App() {
         updated[ref] = { ...updated[ref], stage: 10 };
       } else if (type === 'champ') {
         updated[ref] = { ...updated[ref], stage: 10, fruits: Math.min((updated[ref].fruits || 0) + amount, 9) };
+      }
+
+      const todayStr = new Date().toLocaleDateString('en-CA'); // 'YYYY-MM-DD' local time
+      if (!updated._activity) updated._activity = {};
+      const currentAct = updated._activity[todayStr] || 0;
+      if (type === 'champ') {
+        updated._activity[todayStr] = 2;
+      } else if (currentAct < 2) {
+        updated._activity[todayStr] = 1;
       }
       localStorage.setItem('verseRain_gardenData', JSON.stringify(updated));
       // Sync to backend if logged in
@@ -6808,7 +6809,7 @@ const deDict = {
                   </div>
 
                   {(() => {
-                    const entries = Object.entries(gardenData);
+                    const entries = Object.entries(gardenData).filter(([k]) => k !== '_activity');
                     const treeCount = entries.length;
                     const cellsPerField = 100;
                     const maxGridIndex = entries.reduce((max, [, data]) => Math.max(max, data.gridIndex), -1);
@@ -7141,7 +7142,7 @@ const deDict = {
                     );
                   })()}
 
-                  <ActivityHeatmap t={t} />
+                  <ActivityHeatmap t={t} activityMap={gardenData?._activity || {}} />
 
                   {/* Reciprocity History */}
                   <div style={{ marginTop: '2rem', padding: '1.5rem', background: '#f8fafc', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
@@ -9368,7 +9369,7 @@ const deDict = {
         {/* Player Garden Viewer Modal */}
         {viewingPlayerGarden && (() => {
           const vgData = viewingPlayerGarden.gardenData || {};
-          const vgEntries = Object.entries(vgData);
+          const vgEntries = Object.entries(vgData).filter(([k]) => k !== '_activity');
           const vgTreeCount = vgEntries.length;
           const vgGameFruits = vgEntries.reduce((sum, [, d]) => sum + (d.fruits || 0), 0);
           const vgCreatorFruits = viewingPlayerGarden.creatorPoints || 0;
@@ -9631,7 +9632,7 @@ const deDict = {
                       )}
                       <div style={{ marginTop: '0.8rem', fontSize: '0.75rem', color: '#94a3b8', textAlign: 'center' }}>📱 {t('可用手指滑動來瀏覽園子', 'Swipe to browse the garden')}</div>
                       <div style={{ marginTop: '1.5rem' }}>
-                        <ActivityHeatmap t={t} />
+                        <ActivityHeatmap t={t} activityMap={vgData?._activity || {}} />
                       </div>
                     </>
                   )}
