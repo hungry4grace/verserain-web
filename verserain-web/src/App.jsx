@@ -389,6 +389,133 @@ const parseVerseRef = (v) => {
   return v;
 };
 
+// --- Activity Heatmap Component ---
+const ActivityHeatmap = ({ t }) => {
+  const [data, setData] = useState([]);
+  
+  useEffect(() => {
+    const mockData = [];
+    const today = new Date();
+    // Generate 365 days of mock data
+    for (let i = 364; i >= 0; i--) {
+      const d = new Date(today);
+      d.setDate(d.getDate() - i);
+      let val = 0;
+      const rand = Math.random();
+      // More recent activity has higher chance
+      if (i > 30) {
+         if (rand > 0.8) val = 1;
+         if (rand > 0.95) val = 2;
+      } else {
+         if (rand > 0.4) val = 1;
+         if (rand > 0.8) val = 2;
+      }
+      mockData.push({ date: d, value: val });
+    }
+    setData(mockData);
+  }, []);
+
+  const weeks = [];
+  let currentWeek = [];
+  data.forEach((day) => {
+    // 0 = Sunday, 1 = Monday ... 6 = Saturday
+    // Adjusting to start week on Monday
+    const isMonday = day.date.getDay() === 1;
+    if (isMonday && currentWeek.length > 0) {
+      weeks.push(currentWeek);
+      currentWeek = [];
+    }
+    currentWeek.push(day);
+  });
+  if (currentWeek.length > 0) {
+    weeks.push(currentWeek);
+  }
+
+  // Ensure first week is padded if it doesn't start on Monday
+  if (weeks.length > 0 && weeks[0].length < 7) {
+    const padCount = 7 - weeks[0].length;
+    const pad = Array(padCount).fill(null);
+    weeks[0] = [...pad, ...weeks[0]];
+  }
+
+  const getColor = (val) => {
+    if (val === 0) return '#334155'; // Empty (Dark gray)
+    if (val === 1) return '#4ade80'; // Active (Light green)
+    if (val === 2) return '#15803d'; // High score (Dark green)
+    return '#334155';
+  };
+
+  const getMonthLabels = () => {
+    const labels = [];
+    let currentMonth = -1;
+    weeks.forEach((week, index) => {
+      const firstValidDay = week.find(d => d !== null);
+      if (firstValidDay) {
+        const month = firstValidDay.date.getMonth();
+        if (month !== currentMonth) {
+          labels.push({ text: firstValidDay.date.toLocaleString('en-US', { month: 'short' }), index });
+          currentMonth = month;
+        }
+      }
+    });
+    return labels;
+  };
+
+  const monthLabels = getMonthLabels();
+
+  return (
+    <div style={{ marginTop: '2rem', padding: '1.5rem', background: '#1e293b', borderRadius: '12px', border: '1px solid #334155', color: '#cbd5e1', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}>
+      <h3 style={{ margin: '0 0 1rem 0', color: '#f8fafc', fontSize: '1rem', fontWeight: 'bold' }}>{t("活動", "Activity")}</h3>
+      <div style={{ overflowX: 'auto', paddingBottom: '0.5rem' }}>
+        <div style={{ position: 'relative', height: '15px', marginBottom: '4px' }}>
+          {monthLabels.map((lbl, i) => (
+            <span key={i} style={{ position: 'absolute', left: `${(lbl.index * 16) + 30}px`, fontSize: '0.75rem', color: '#94a3b8' }}>
+              {lbl.text}
+            </span>
+          ))}
+        </div>
+        <div style={{ display: 'inline-flex', gap: '4px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', justifyContent: 'space-between', fontSize: '0.7rem', color: '#94a3b8', paddingRight: '8px', height: '108px', paddingTop: '4px' }}>
+            <span>Mon</span>
+            <span>Wed</span>
+            <span>Fri</span>
+            <span>Sun</span>
+          </div>
+          {weeks.map((week, wIdx) => (
+            <div key={wIdx} style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+              {week.map((day, dIdx) => {
+                if (!day) return <div key={dIdx} style={{ width: '12px', height: '12px', borderRadius: '2px', background: 'transparent' }} />;
+                return (
+                  <div 
+                    key={dIdx} 
+                    style={{ 
+                      width: '12px', 
+                      height: '12px', 
+                      borderRadius: '2px', 
+                      background: getColor(day.value) 
+                    }} 
+                    title={`${day.date.toLocaleDateString()}: ${day.value === 2 ? 'New High Score' : day.value === 1 ? 'Active' : 'No Activity'}`}
+                  />
+                );
+              })}
+            </div>
+          ))}
+        </div>
+      </div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.75rem', color: '#94a3b8', marginTop: '0.8rem' }}>
+        <span style={{ cursor: 'pointer' }}>What is this?</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+          <span>Less</span>
+          <div style={{ width: '12px', height: '12px', background: '#334155', borderRadius: '2px' }} />
+          <div style={{ width: '12px', height: '12px', background: '#4ade80', borderRadius: '2px' }} />
+          <div style={{ width: '12px', height: '12px', background: '#15803d', borderRadius: '2px' }} />
+          <span>More</span>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 export default function App() {
   const [loadedLangs, setLoadedLangs] = useState({});
   const [isLangsLoading, setIsLangsLoading] = useState(true);
@@ -4975,6 +5102,18 @@ const deDict = {
 };
 
   const t = (zh, en) => {
+    if (zh === '活動') {
+      if (uiLang === 'en') return 'Activity';
+      if (uiLang === 'fa') return 'فعالیت';
+      if (uiLang === 'he') return 'פעילות';
+      if (uiLang === 'ja') return '活動';
+      if (uiLang === 'ko') return '활동';
+      if (uiLang === 'es') return 'Actividad';
+      if (uiLang === 'tr') return 'Aktivite';
+      if (uiLang === 'de') return 'Aktivität';
+      if (uiLang === 'my') return 'လှုပ်ရှားမှု';
+      return '活動';
+    }
     if (uiLang === 'en') return en || zh;
     if (uiLang === 'fa') return faDict[zh] || en || zh;
     if (uiLang === 'he') return heDict[zh] || en || zh;
@@ -5166,8 +5305,8 @@ const deDict = {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem', alignItems: 'center', marginTop: '1rem', paddingBottom: '3rem' }}>
                   <div style={{ textAlign: 'center', marginBottom: '1.5rem', background: 'linear-gradient(135deg, #ffffff, #f8fafc)', padding: '2rem', borderRadius: '20px', width: '100%', boxShadow: '0 4px 15px rgba(0,0,0,0.05)', position: 'relative' }}>
 
-                    <h1 style={{ fontSize: '2.5rem', color: '#1e293b', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '1rem' }}>
-                      <CloudRain size={40} color="#3b82f6" /> {t("VerseRain 經文雨", "VerseRain")}
+                    <h1 style={{ fontSize: 'clamp(1.8rem, 6vw, 2.5rem)', color: '#1e293b', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '1rem', whiteSpace: 'nowrap' }}>
+                      <CloudRain size={40} color="#3b82f6" style={{ flexShrink: 0 }} /> {t("VerseRain 經文雨", "VerseRain")}
                     </h1>
                     {randomRainVerse ? (
                       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1.2rem' }}>
@@ -5222,33 +5361,7 @@ const deDict = {
                           </button>
                         </div>
 
-                        {/* QR Code - positioned elegantly at the bottom right */}
-                        <div
-                          style={{ position: 'absolute', bottom: '1.5rem', right: '1.5rem', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px', opacity: 0.7, transition: 'opacity 0.2s, transform 0.2s' }}
-                          onClick={() => {
-                            if (playerName && personalCode) {
-                              const url = `${window.location.origin}?ref=${encodeURIComponent(personalCode)}`;
-                              navigator.clipboard.writeText(url);
-                              setToast(t('邀請連結已複製！快發給好朋友吧！', 'Invite link copied! Share it with friends!'));
-                              setTimeout(() => setToast(null), 3500);
-                            } else {
-                              window.open('https://www.verserain.com', '_blank');
-                            }
-                          }}
-                          onMouseOver={(e) => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.transform = 'scale(1.08)'; }}
-                          onMouseOut={(e) => { e.currentTarget.style.opacity = '0.7'; e.currentTarget.style.transform = 'scale(1)'; }}
-                          title={playerName && personalCode ? t('點擊複製你的邀請連結', 'Click to copy your invite link') : 'verserain.com'}
-                        >
-                          <QRCodeSVG
-                            value={playerName && personalCode ? `${window.location.origin}?ref=${encodeURIComponent(personalCode)}` : 'https://www.verserain.com'}
-                            size={44}
-                            bgColor="transparent"
-                            fgColor="#64748b"
-                          />
-                          <span style={{ fontSize: '0.55rem', color: '#94a3b8', fontWeight: '600' }}>
-                            {playerName && personalCode ? t('邀請碼', 'Invite') : 'verserain.com'}
-                          </span>
-                        </div>
+
                       </div>
                     ) : (
                       <p style={{ fontSize: '0.95rem', color: '#94a3b8', lineHeight: '1.8', margin: 0 }}>
@@ -7027,6 +7140,8 @@ const deDict = {
                       </div>
                     );
                   })()}
+
+                  <ActivityHeatmap t={t} />
 
                   {/* Reciprocity History */}
                   <div style={{ marginTop: '2rem', padding: '1.5rem', background: '#f8fafc', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
