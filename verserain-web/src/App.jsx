@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Play, RotateCcw, Heart, Zap, Trophy, Crown, Star, Home, XCircle, Headphones, Music, VolumeX, Search, Share2, Dices, Mic, MicOff, Users, CloudRain, Info, Edit } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import usePartySocket from 'partysocket/react';
@@ -28,7 +28,7 @@ let audioCtx = null;
 
 const ROOM_COLORS = ['#ef4444', '#f97316', '#eab308', '#22c55e', '#14b8a6', '#0ea5e9', '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16'];
 
-export const SKOOL_LEVELS = [
+const SKOOL_LEVELS = [
   { level: 1, title: '互惠種子', enTitle: 'Mutuality Seed', points: 0 },
   { level: 2, title: '探索學員', enTitle: 'Exploring Learner', points: 2 },
   { level: 3, title: '共識實踐者', enTitle: 'Consensus Practitioner', points: 20 },
@@ -40,7 +40,7 @@ export const SKOOL_LEVELS = [
   { level: 9, title: '生態系架構師', enTitle: 'Ecosystem Architect', points: 33015 },
 ];
 
-export function getSkoolLevel(points) {
+function getSkoolLevel(points) {
   for (let i = SKOOL_LEVELS.length - 1; i >= 0; i--) {
     if (points >= SKOOL_LEVELS[i].points) {
       return {
@@ -54,7 +54,7 @@ export function getSkoolLevel(points) {
   return { level: 1, title: '互惠種子', enTitle: 'Mutuality Seed', next: 2 };
 }
 
-export function getRoomColor(roomId) {
+function getRoomColor(roomId) {
   if (!roomId) return null;
   let hash = 0;
   for (const c of roomId) hash = (hash * 31 + c.charCodeAt(0)) % ROOM_COLORS.length;
@@ -257,22 +257,7 @@ function playFireworksSound() {
   osc.stop(audioCtx.currentTime + 0.5);
 }
 
-import { VERSE_SETS as VERSE_SETS_CUV } from './verses';
-import { VERSE_SETS_KJV } from './verses_kjv';
-import { VERSE_SETS_JA } from './verses_ja';
-import { VERSE_SETS_KO } from './verses_ko';
-import { VERSE_SETS_FA } from './verses_fa';
-import { VERSE_SETS_HE } from './verses_he';
-import { VERSE_SETS_ES } from './verses_es';
-import { VERSE_SETS_TR } from './verses_tr';
-import { VERSE_SETS_DE } from './verses_de';
-import { VERSE_SETS_MY } from './verses_my';
-import {
-  VERSE_SETS_PROVERBS_ZH,
-  VERSE_SETS_PROVERBS_KJV,
-  VERSE_SETS_PROVERBS_KO,
-  VERSE_SETS_PROVERBS_JA,
-} from './verses_proverbs';
+import { loadLanguageSets } from './verseLoader';
 import { getRandomFakePhrase } from './fakeLogic';
 
 const Tooltip = ({ text, children }) => (
@@ -310,7 +295,7 @@ const findVerseByRef = (allVerses, ref) => {
   }
   return target;
 };
-export const CHINESE_BOOK_MAP = {
+const CHINESE_BOOK_MAP = {
   '創': '創世記', '出': '出埃及記', '利': '利未記', '民': '民數記', '申': '申命記',
   '書': '約書亞記', '士': '士師記', '得': '路得記', '撒上': '撒母耳記上', '撒下': '撒母耳記下',
   '王上': '列王紀上', '王下': '列王紀下', '代上': '歷代志上', '代下': '歷代志下',
@@ -327,7 +312,7 @@ export const CHINESE_BOOK_MAP = {
   '約三': '約翰三書', '猶': '猶大書', '啟': '啟示錄'
 };
 
-export function formatVerseReferenceForDisplay(ref, version) {
+function formatVerseReferenceForDisplay(ref, version) {
   if (version !== 'cuv' && version !== 'zh') return ref;
   const match = ref.match(/(.+?)\s*(\d+)(?:\s*:\s*([\d,\s\-–]+))?/);
   if (!match) return ref;
@@ -344,7 +329,7 @@ export function formatVerseReferenceForDisplay(ref, version) {
   }
 }
 
-export function formatVerseReferenceForSpeech(ref, version) {
+function formatVerseReferenceForSpeech(ref, version) {
   const match = ref.match(/(.+?)\s*(\d+)(?:\s*:\s*([\d,\s\-–]+))?/);
   if (!match) return ref;
   const book = match[1].trim();
@@ -405,21 +390,42 @@ const parseVerseRef = (v) => {
 };
 
 export default function App() {
-  const VERSES_CUV = React.useMemo(() => VERSE_SETS_CUV.flatMap(s => s.verses), []);
-  const VERSES_KJV = React.useMemo(() => VERSE_SETS_KJV.flatMap(s => s.verses), []);
-  const VERSES_JA = React.useMemo(() => VERSE_SETS_JA.flatMap(s => s.verses), []);
-  const VERSES_KO = React.useMemo(() => VERSE_SETS_KO.flatMap(s => s.verses), []);
-  const VERSES_FA = React.useMemo(() => VERSE_SETS_FA.flatMap(s => s.verses), []);
-  const VERSES_HE = React.useMemo(() => VERSE_SETS_HE.flatMap(s => s.verses), []);
-  const VERSES_ES = React.useMemo(() => VERSE_SETS_ES.flatMap(s => s.verses), []);
-  const VERSES_TR = React.useMemo(() => VERSE_SETS_TR.flatMap(s => s.verses), []);
-  const VERSES_DE = React.useMemo(() => VERSE_SETS_DE.flatMap(s => s.verses), []);
-  const VERSES_MY = React.useMemo(() => VERSE_SETS_MY.flatMap(s => s.verses), []);
+  const [loadedLangs, setLoadedLangs] = useState({});
+  const [isLangsLoading, setIsLangsLoading] = useState(true);
 
   const [version, setVersion] = useState(() => localStorage.getItem('verseRain_version') || 'cuv');
   useEffect(() => {
     localStorage.setItem('verseRain_version', version);
   }, [version]);
+
+  useEffect(() => {
+    let mounted = true;
+    if (!loadedLangs[version]) {
+      setIsLangsLoading(true);
+      loadLanguageSets(version).then(data => {
+        if (mounted) {
+          setLoadedLangs(prev => ({ ...prev, [version]: data }));
+          setIsLangsLoading(false);
+        }
+      });
+    } else {
+      setIsLangsLoading(false);
+    }
+    return () => { mounted = false; };
+  }, [version]);
+
+  const VERSES_CUV = loadedLangs['cuv']?.verses || [];
+  const VERSES_KJV = loadedLangs['kjv']?.verses || [];
+  const VERSES_JA = loadedLangs['ja']?.verses || [];
+  const VERSES_KO = loadedLangs['ko']?.verses || [];
+  const VERSES_FA = loadedLangs['fa']?.verses || [];
+  const VERSES_HE = loadedLangs['he']?.verses || [];
+  const VERSES_ES = loadedLangs['es']?.verses || [];
+  const VERSES_TR = loadedLangs['tr']?.verses || [];
+  const VERSES_DE = loadedLangs['de']?.verses || [];
+  const VERSES_MY = loadedLangs['my']?.verses || [];
+
+
   const [playMode, setPlayMode] = useState('square_solo');
   const [distractionLevel, setDistractionLevel] = useState(0);
   const [performanceMode, setPerformanceMode] = useState(() => localStorage.getItem('verseRainPerformanceMode') === 'true');
@@ -761,27 +767,7 @@ export default function App() {
       .catch(err => console.error("Failed to fetch view counts", err));
   }, []);
 
-  const baseVerseSets = version === 'cuv'
-    ? [...VERSE_SETS_PROVERBS_ZH, ...VERSE_SETS_CUV]
-    : version === 'kjv'
-      ? [...VERSE_SETS_PROVERBS_KJV, ...VERSE_SETS_KJV]
-      : version === 'ja'
-        ? [...VERSE_SETS_PROVERBS_JA, ...VERSE_SETS_JA]
-        : version === 'ko'
-          ? [...VERSE_SETS_PROVERBS_KO, ...VERSE_SETS_KO]
-          : version === 'fa'
-            ? [...VERSE_SETS_FA]
-            : version === 'he'
-              ? [...VERSE_SETS_HE]
-              : version === 'es'
-                ? [...VERSE_SETS_ES]
-                : version === 'tr'
-                  ? [...VERSE_SETS_TR]
-                  : version === 'de'
-                    ? [...VERSE_SETS_DE]
-                    : version === 'my'
-                      ? [...VERSE_SETS_MY]
-                      : [];
+  const baseVerseSets = loadedLangs[version]?.sets || [];
 
   // Pick a random verse from the "rain-verses" set for the homepage subtitle
   const [rainVerseIndex, setRainVerseIndex] = React.useState(() => Math.floor(Math.random() * 10000));
@@ -814,7 +800,7 @@ export default function App() {
     return [...filteredBase, ...merged];
   }, [customVerseSets, publishedVerseSets, baseVerseSets, playerName, version]);
 
-  const safeActiveSets = activeVerseSets.length > 0 ? activeVerseSets : [{
+  const dummySet = useMemo(() => [{
     id: "dummy",
     title: version === 'ja' ? '経文セットが見つかりません'
       : version === 'ko' ? '성경 구절 세트를 찾을 수 없습니다'
@@ -831,13 +817,22 @@ export default function App() {
               : version === 'he' ? 'עדיין אין סטי פסוקים לשפה זו.'
                 : '目前此語言沒有經文組。請去 👑 我的題庫 中建立！'
     }]
-  }];
+  }], [version]);
+
+  const safeActiveSets = activeVerseSets.length > 0 ? activeVerseSets : dummySet;
 
   const currentSet = (selectedSetId ? (safeActiveSets.find(s => s.id === selectedSetId) || customVerseSets.find(s => s.id === selectedSetId)) : null) || safeActiveSets[0];
   const VERSES_DB = currentSet.verses;
 
   const [activeVerse, setActiveVerse] = useState(VERSES_DB[0] || { reference: "N/A", text: "" });
   const [selectedVerseRefs, setSelectedVerseRefs] = useState([VERSES_DB[0]?.reference || "N/A"]);
+
+  useEffect(() => {
+    if (activeVerse?.reference === "N/A" && VERSES_DB && VERSES_DB.length > 0 && VERSES_DB[0].reference !== "N/A") {
+      setActiveVerse(VERSES_DB[0]);
+      setSelectedVerseRefs([VERSES_DB[0].reference]);
+    }
+  }, [VERSES_DB, activeVerse]);
 
   const [initAutoStart, setInitAutoStart] = useState(null);
 
@@ -882,7 +877,13 @@ export default function App() {
     };
   }, [autoplayBlocked]);
 
-  const handleVersionChange = (newVer) => {
+  const handleVersionChange = async (newVer) => {
+    setIsLangsLoading(true);
+    let data = loadedLangs[newVer];
+    if (!data) {
+      data = await loadLanguageSets(newVer);
+      setLoadedLangs(prev => ({ ...prev, [newVer]: data }));
+    }
     setVersion(newVer);
     // Auto-sync UI language when switching Bible version
     if (newVer === 'fa') setUiLangPersisted('fa');
@@ -897,10 +898,10 @@ export default function App() {
     else setUiLangPersisted('zh');
 
     let targetVerses = [];
-    if (newVer === 'cuv') targetVerses = VERSES_CUV;
-    else if (newVer === 'kjv') targetVerses = VERSES_KJV;
-    else if (newVer === 'fa') targetVerses = VERSES_FA;
-    else if (newVer === 'he') targetVerses = VERSES_HE;
+    if (newVer === 'cuv') targetVerses = loadedLangs['cuv']?.verses || data.verses;
+    else if (newVer === 'kjv') targetVerses = loadedLangs['kjv']?.verses || data.verses;
+    else if (newVer === 'fa') targetVerses = loadedLangs['fa']?.verses || data.verses;
+    else if (newVer === 'he') targetVerses = loadedLangs['he']?.verses || data.verses;
 
     if (targetVerses.length === 0) {
       targetVerses = [{ reference: "N/A", text: newVer === 'fa' ? 'آیه‌ای یافت نشد.' : (newVer === 'he' ? 'לא נמצא פסוק.' : (newVer === 'ja' ? '経文が見つかりません。' : (newVer === 'ko' ? '성경 구절을 찾을 수 없습니다.' : (newVer === 'kjv' ? 'No verses found.' : '目前的分類下沒有經文。')))) }];
@@ -908,6 +909,7 @@ export default function App() {
     setActiveVerse(targetVerses[0]);
     setSelectedVerseRefs([targetVerses[0].reference]);
     setCampaignQueue(null);
+    setIsLangsLoading(false);
   };
 
 
@@ -986,13 +988,23 @@ export default function App() {
         const refs = cleanV.split(';').map(s => s.trim()).filter(Boolean);
 
         for (let r of refs) {
-          let foundCuv = VERSES_CUV.find(v => v.reference.toLowerCase().includes(r.toLowerCase()));
+          let cuvData = loadedLangs['cuv'];
+          if (!cuvData) {
+            cuvData = await loadLanguageSets('cuv');
+            setLoadedLangs(prev => ({ ...prev, cuv: cuvData }));
+          }
+          let foundCuv = cuvData.verses.find(v => v.reference.toLowerCase().includes(r.toLowerCase()));
           if (foundCuv) {
             loadedVerses.push(foundCuv);
             if (!overrideVersion) overrideVersion = 'cuv';
             continue;
           }
-          let foundKjv = VERSES_KJV.find(v => v.reference.toLowerCase().includes(r.toLowerCase()));
+          let kjvData = loadedLangs['kjv'];
+          if (!kjvData) {
+            kjvData = await loadLanguageSets('kjv');
+            setLoadedLangs(prev => ({ ...prev, kjv: kjvData }));
+          }
+          let foundKjv = kjvData.verses.find(v => v.reference.toLowerCase().includes(r.toLowerCase()));
           if (foundKjv) {
             loadedVerses.push(foundKjv);
             if (!overrideVersion) overrideVersion = 'kjv';
@@ -1764,7 +1776,7 @@ export default function App() {
 
       const newBlock = {
         id: Math.random().toString(36).substr(2, 9),
-        text: isFake ? getRandomFakePhrase(version) : phrases[seqToSpawn],
+        text: isFake ? getRandomFakePhrase(version, VERSES_DB) : phrases[seqToSpawn],
         seqIndex: seqToSpawn,
         xPos: xPos,
         duration: 7.5 + Math.random() * 3,
@@ -1853,7 +1865,7 @@ export default function App() {
       for (let i = 0; i < fakesCount; i++) {
         newBlocks.push({
           id: Math.random().toString(36).substr(2, 9),
-          text: getRandomFakePhrase(version),
+          text: getRandomFakePhrase(version, VERSES_DB),
           seqIndex: -1,
           isSquare: true,
           error: false,
@@ -2456,7 +2468,7 @@ export default function App() {
               if (spawnFake) {
                 const newFake = {
                   id: Math.random().toString(36).substr(2, 9),
-                  text: getRandomFakePhrase(version),
+                  text: getRandomFakePhrase(version, VERSES_DB),
                   seqIndex: -1,
                   isSquare: true, error: false, correct: false, hidden: false, isFake: true
                 };
@@ -2816,8 +2828,8 @@ export default function App() {
     '直接遊玩': 'بازی مستقیم',
     '立刻挑戰': 'چالش فوری',
     '測試遊玩': 'تست بازی',
-    '播放全部': 'پخش همه',
-    '自動播放全部經文圖卡與語音': 'پخش خودکار همه کارت‌های آیه با صدا',
+    '隨機播放': 'پخش تصادفی',
+    '隨機播放所選數量的經文圖卡與語音': 'پخش تصادفی تعداد آیات انتخاب شده با صدا',
     '遊玩這篇經文': 'بازی با این آیه',
     '分享挑戰連結': 'اشتراک‌گذاری لینک چالش',
     '分享整組經文連結': 'اشتراک‌گذاری لینک مجموعه',
@@ -3365,8 +3377,8 @@ export default function App() {
     '直接遊玩': 'שחק ישיר',
     '立刻挑戰': 'אתגר עכשיו',
     '測試遊玩': 'שחק ניסיון',
-    '播放全部': 'השמע הכל',
-    '自動播放全部經文圖卡與語音': 'השמע אוטומטית של כל הפסוקים',
+    '隨機播放': 'השמע באקראי',
+    '隨機播放所選數量的經文圖卡與語音': 'השמע באקראי את מספר הפסוקים הנבחר עם שמע',
     '遊玩這篇經文': 'שחק פסוק זה',
     '分享挑戰連結': 'שתף קישור אתגר',
     '分享整組經文連結': 'שתף קישור הסט',
@@ -3646,8 +3658,8 @@ export default function App() {
     '直接遊玩': '直接プレイ',
     '立刻挑戰': '今すぐ挑戦',
     '測試遊玩': 'テストプレイ',
-    '播放全部': '全部再生',
-    '自動播放全部經文圖卡與語音': '全ての経文カードを自動再生',
+    '隨機播放': 'シャッフル再生',
+    '隨機播放所選數量的經文圖卡與語音': '選択した数の経文カードと音声をランダム再生',
     '遊玩這篇經文': 'この経文をプレイ',
     '分享挑戰連結': '挑戦リンクをシェア',
     '分享整組經文連結': 'セットリンクをシェア',
@@ -3917,8 +3929,8 @@ export default function App() {
     '直接遊玩': '직접 플레이',
     '立刻挑戰': '지금 도전',
     '測試遊玩': '테스트 플레이',
-    '播放全部': '전체 재생',
-    '自動播放全部經文圖卡與語音': '모든 구절 카드 자동 재생',
+    '隨機播放': '랜덤 재생',
+    '隨機播放所選數量的經文圖卡與語音': '선택한 수의 구절과 오디오를 무작위로 재생',
     '遊玩這篇經文': '이 구절 플레이',
     '分享挑戰連結': '도전 링크 공유',
     '分享整組經文連結': '세트 링크 공유',
@@ -4383,7 +4395,7 @@ const myDict = {
     "難度 2": "အခက်အခဲ ၂",
     "難度 3": "အခက်အခဲ ၃",
     "挑戰": "စတင်ကစားမည်",
-    "播放全部": "အားလုံးဖွင့်မည်",
+    "隨機播放": "ကျပန်းဖွင့်မည်",
     "邀人PK": "ဖိတ်ခေါ်မည်",
     "經文出處(點擊觀看)": "ကျမ်းချက်အရင်းအမြစ်",
     "排行": "အဆင့်",
@@ -4400,7 +4412,7 @@ const myDict = {
     "登出": "ထွက်မည်",
     "經文組": "ကျမ်းချက်အစု",
     "隨機挑戰所選題數": "ကျပန်းစိန်ခေါ်မှု",
-    "自動播放全部經文圖卡與語音": "အသံနှင့်အတူ အလိုအလျောက်ပြသခြင်း",
+    "隨機播放所選數量的經文圖卡與語音": "ရွေးချယ်ထားသောကျမ်းပိုဒ်အရေအတွက်ကိုအသံဖြင့်ကျပန်းဖွင့်မည်",
     "邀請朋友一起玩": "သူငယ်ချင်းများကို ဖိတ်ခေါ်ရန်",
     "分享挑戰連結": "လင့်ခ်ကို မျှဝေရန်",
     "經典挑戰": "ဂန္ထဝင်စိန်ခေါ်မှု",
@@ -4500,7 +4512,7 @@ const esDict = {
     "難度 2": "Dificultad 2",
     "難度 3": "Dificultad 3",
     "挑戰": "Jugar",
-    "播放全部": "Reproducir todo",
+    "隨機播放": "Reproducción aleatoria",
     "邀人PK": "Invitar",
     "經文出處(點擊觀看)": "Referencia (Click)",
     "排行": "Rango",
@@ -4517,7 +4529,7 @@ const esDict = {
     "登出": "Cerrar sesión",
     "經文組": "Conjunto de Versículos",
     "隨機挑戰所選題數": "Desafío aleatorio",
-    "自動播放全部經文圖卡與語音": "Reproducción automática con audio",
+    "隨機播放所選數量的經文圖卡與語音": "Reproducción aleatoria de los versículos seleccionados con audio",
     "邀請朋友一起玩": "Invitar amigos",
     "分享挑戰連結": "Compartir enlace",
     "經典挑戰": "Desafío clásico",
@@ -4655,7 +4667,7 @@ const trDict = {
     "難度 2": "Zorluk 2",
     "難度 3": "Zorluk 3",
     "挑戰": "Oyna",
-    "播放全部": "Hepsini Oynat",
+    "隨機播放": "Karışık Çal",
     "邀人PK": "Davet Et",
     "經文出處(點擊觀看)": "Referans (Tıkla)",
     "排行": "Sıra",
@@ -4672,7 +4684,7 @@ const trDict = {
     "登出": "Çıkış Yap",
     "經文組": "Ayet Seti",
     "隨機挑戰所選題數": "Rastgele Meydan Okuma",
-    "自動播放全部經文圖卡與語音": "Sesli Otomatik Oynat",
+    "隨機播放所選數量的經文圖卡與語音": "Seçili sayıdaki ayeti sesli olarak rastgele oynat",
     "邀請朋友一起玩": "Arkadaşlarını Davet Et",
     "分享挑戰連結": "Bağlantıyı Paylaş",
     "經典挑戰": "Klasik Meydan Okuma",
@@ -4810,7 +4822,7 @@ const deDict = {
     "難度 2": "Schwierigkeit 2",
     "難度 3": "Schwierigkeit 3",
     "挑戰": "Spielen",
-    "播放全部": "Alle abspielen",
+    "隨機播放": "Zufällige Wiedergabe",
     "邀人PK": "Einladen",
     "經文出處(點擊觀看)": "Referenz (Klick)",
     "排行": "Rang",
@@ -4827,7 +4839,7 @@ const deDict = {
     "登出": "Abmelden",
     "經文組": "Vers-Set",
     "隨機挑戰所選題數": "Zufällige Herausforderung",
-    "自動播放全部經文圖卡與語音": "Automatische Wiedergabe",
+    "隨機播放所選數量的經文圖卡與語音": "Zufällige Wiedergabe der ausgewählten Anzahl von Versen mit Audio",
     "邀請朋友一起玩": "Freunde einladen",
     "分享挑戰連結": "Link teilen",
     "經典挑戰": "Klassische Herausforderung",
@@ -5056,7 +5068,7 @@ const deDict = {
                     verserain
                   </div>
                   <div style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', marginTop: '4px', marginLeft: '2px' }}>
-                    v3.3.1
+                    v3.4.0
                   </div>
                 </div>
                 <select
@@ -5424,7 +5436,7 @@ const deDict = {
                                   nv[verseIdx] = { ...nv[verseIdx], reference: refStr, book: bookInfo.id, verseInput: sanitized };
                                   return { ...prev, verses: nv };
                                 });
-                                const db = version === 'cuv' ? VERSES_CUV : (version === 'kjv' ? VERSES_KJV : (version === 'ja' ? VERSES_JA : VERSES_KO));
+                                const db = loadedLangs[version]?.verses || [];
                                 const sanitizeRef = (str) => str.toString().replace(/\s+/g, '').replace(/[–—~]/g, '-').replace(/[：]/g, ':').toLowerCase();
                                 const searchRef = sanitizeRef(refStr);
                                 let foundText = '';
@@ -5663,7 +5675,7 @@ const deDict = {
                                   </div>
                                   <h3 style={{ margin: '0 0 0.5rem 0', color: '#1e293b', paddingRight: '120px' }}>{set.title}</h3>
                                   <div style={{ color: '#64748b', fontSize: '0.9rem', marginBottom: '1rem' }} dangerouslySetInnerHTML={{ __html: set.description }} />
-                                  <div style={{ color: '#3b82f6', fontSize: '0.85rem', fontWeight: 'bold' }}>{set.verses.length} {t("節經文", "verses")}</div>
+                                  <div style={{ color: '#3b82f6', fontSize: '0.85rem', fontWeight: 'bold' }}>{set.verses?.length || 0} {t("節經文", "verses")}</div>
                                 </div>
                               ))}
                             </div>
@@ -6366,7 +6378,9 @@ const deDict = {
                             <button
                               onClick={() => {
                                 initAudio();
-                                const queue = [...VERSES_DB];
+                                let queue = [...VERSES_DB];
+                                let actualCount = Math.min(VERSES_DB.length, Math.max(1, parseInt(randomPickCount) || 1));
+                                queue = queue.sort(() => 0.5 - Math.random()).slice(0, actualCount);
                                 setCampaignQueue(queue.slice(1));
                                 setCampaignResults([]);
                                 setActiveCampaignSetId(currentSet.id);
@@ -6374,12 +6388,12 @@ const deDict = {
                                 setActiveVerse(queue[0]);
                                 setTimeout(() => startGame(true, queue[0]), 200);
                               }}
-                              title={t("自動播放全部經文圖卡與語音", "Auto-play all verses with audio")}
+                              title={t("隨機播放所選數量的經文圖卡與語音", "Shuffle play selected number of verses with audio")}
                               style={{ backgroundColor: '#8b5cf6', color: 'white', border: 'none', borderRadius: '6px', padding: '0 0.8rem', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'transform 0.1s', fontWeight: 'bold', gap: '5px' }}
                               onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
                               onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
                             >
-                              <Headphones size={16} fill="white" /> {t("播放全部", "Play All")}
+                              <Headphones size={16} fill="white" /> {t("隨機播放", "Shuffle Play")}
                             </button>
 
                             <button
@@ -6454,8 +6468,7 @@ const deDict = {
                             <tr style={{ backgroundColor: '#f8fafc', color: '#475569', fontSize: '0.9rem' }}>
                               <th style={{ padding: '1rem', borderBottom: '2px solid #e2e8f0' }}>{t("經文出處 (點擊觀看)", "Reference (Click to View)")}</th>
                               <th style={{ padding: '1rem', borderBottom: '2px solid #e2e8f0', textAlign: 'center', width: '100px' }}>{t("排行", "Rank")}</th>
-                              <th style={{ padding: '1rem', borderBottom: '2px solid #e2e8f0', textAlign: 'right', minWidth: '120px' }}>{t("設定", "Settings")}</th>
-                              <th style={{ padding: '1rem', borderBottom: '2px solid #e2e8f0', width: '80px', textAlign: 'center' }}>{t("操作", "Action")}</th>
+                              <th style={{ padding: '1rem', borderBottom: '2px solid #e2e8f0', width: '100px', textAlign: 'center' }}>{t("操作", "Action")}</th>
                             </tr>
                           </thead>
                           <tbody>
@@ -6486,31 +6499,8 @@ const deDict = {
                                       <Trophy size={11} style={{ display: 'inline', verticalAlign: 'middle', marginRight: '3px' }} /> {vBest > 0 ? vBest : t('排行榜', 'Rank')}
                                     </button>
                                   </td>
-                                  <td style={{ padding: '0.8rem 1rem', textAlign: 'right' }} onClick={(e) => e.stopPropagation()}>
-                                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.2rem' }}>
-                                      <select
-                                        onChange={(e) => setPlayMode(e.target.value)}
-                                        value={playMode}
-                                        style={{ padding: '0.1rem 0.2rem', borderRadius: '4px', border: '1px solid #cbd5e1', fontSize: '0.75rem', color: '#334155', backgroundColor: '#fff', width: '80px' }}
-                                      >
-                                        <option value="square">{t('九宮格', 'Square')}</option>
-                                        <option value="rain">{t('經文雨', 'Verse Rain')}</option>
-                                        <option value="voice">{t('語音模式', 'Voice Mode')}</option>
-                                      </select>
-                                      <select
-                                        onChange={(e) => setDistractionLevel(Number(e.target.value))}
-                                        value={distractionLevel}
-                                        style={{ padding: '0.1rem 0.2rem', borderRadius: '4px', border: '1px solid #cbd5e1', fontSize: '0.75rem', color: '#334155', backgroundColor: '#fff', width: '80px' }}
-                                      >
-                                        <option value={0}>{t("難度 0", "Level 0")}</option>
-                                        <option value={1}>{t("難度 1", "Level 1")}</option>
-                                        <option value={2}>{t("難度 2", "Level 2")}</option>
-                                        <option value={3}>{t("難度 3", "Level 3")}</option>
-                                      </select>
-                                    </div>
-                                  </td>
                                   <td style={{ padding: '0.8rem 1rem', textAlign: 'center' }} onClick={(e) => e.stopPropagation()}>
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', alignItems: 'center' }}>
+                                    <div style={{ display: 'flex', flexDirection: 'row', gap: '0.4rem', justifyContent: 'center' }}>
                                       <button
                                         onClick={(e) => {
                                           e.stopPropagation();
@@ -6520,11 +6510,11 @@ const deDict = {
                                           setActiveVerse(v);
                                           setTimeout(() => startGame(false, v), 50);
                                         }}
-                                        style={{ backgroundColor: '#10b981', color: 'white', border: 'none', borderRadius: '6px', width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'transform 0.1s', margin: '0 auto' }}
+                                        style={{ backgroundColor: '#10b981', color: 'white', border: 'none', borderRadius: '6px', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'transform 0.1s' }}
                                         onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.1)'}
                                         onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
                                       >
-                                        <Zap size={16} fill="white" />
+                                        <Zap size={14} fill="white" />
                                       </button>
                                       <button
                                         onClick={(e) => {
@@ -6533,11 +6523,11 @@ const deDict = {
                                           setQrShareModal({ url: link, reference: v.reference });
                                         }}
                                         title={t("分享挑戰連結", "Share challenge link")}
-                                        style={{ backgroundColor: '#ffffff', color: '#64748b', border: '1px solid #cbd5e1', borderRadius: '6px', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'all 0.1s', margin: '0 auto' }}
+                                        style={{ backgroundColor: '#ffffff', color: '#64748b', border: '1px solid #cbd5e1', borderRadius: '6px', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'all 0.1s' }}
                                         onMouseOver={(e) => { e.currentTarget.style.backgroundColor = '#f1f5f9'; e.currentTarget.style.color = '#3b82f6'; e.currentTarget.style.borderColor = '#3b82f6'; }}
                                         onMouseOut={(e) => { e.currentTarget.style.backgroundColor = '#ffffff'; e.currentTarget.style.color = '#64748b'; e.currentTarget.style.borderColor = '#cbd5e1'; }}
                                       >
-                                        <Share2 size={16} />
+                                        <Share2 size={14} />
                                       </button>
                                     </div>
                                   </td>
@@ -6864,29 +6854,25 @@ const deDict = {
                                                   onClick={() => {
                                                     if (cell) {
                                                       if (gardenClickTimer.current) { clearTimeout(gardenClickTimer.current); gardenClickTimer.current = null; return; }
-                                                      gardenClickTimer.current = setTimeout(() => {
+                                                      gardenClickTimer.current = setTimeout(async () => {
                                                         gardenClickTimer.current = null;
                                                         const allCurrentVerses = [...safeActiveSets, ...customVerseSets].flatMap(s => s.verses);
                                                         let targetVerse = findVerseByRef(allCurrentVerses, cell.ref);
                                                         let detectedLang = version;
                                                         if (!targetVerse) {
-                                                          const langPools = [
-                                                            { lang: 'kjv', verses: [...VERSE_SETS_KJV, ...VERSE_SETS_PROVERBS_KJV].flatMap(s => s.verses) },
-                                                            { lang: 'cuv', verses: [...VERSE_SETS_CUV, ...VERSE_SETS_PROVERBS_ZH].flatMap(s => s.verses) },
-                                                            { lang: 'ko', verses: [...VERSE_SETS_KO, ...VERSE_SETS_PROVERBS_KO].flatMap(s => s.verses) },
-                                                            { lang: 'ja', verses: [...VERSE_SETS_JA, ...VERSE_SETS_PROVERBS_JA].flatMap(s => s.verses) },
-                                                            { lang: 'fa', verses: VERSE_SETS_FA.flatMap(s => s.verses) },
-                                                            { lang: 'he', verses: VERSE_SETS_HE.flatMap(s => s.verses) },
-                                                            { lang: 'es', verses: VERSE_SETS_ES.flatMap(s => s.verses) },
-                                                            { lang: 'tr', verses: VERSE_SETS_TR.flatMap(s => s.verses) },
-                                                            { lang: 'de', verses: VERSE_SETS_DE.flatMap(s => s.verses) },
-                                                            { lang: 'my', verses: VERSE_SETS_MY.flatMap(s => s.verses) },
-                                                          ];
-                                                          for (const pool of langPools) {
-                                                            if (pool.lang === version) continue;
-                                                            const found = findVerseByRef(pool.verses, cell.ref);
-                                                            if (found) { targetVerse = found; detectedLang = pool.lang; break; }
+                                                          setIsLangsLoading(true);
+                                                          const langKeys = ['kjv', 'cuv', 'ko', 'ja', 'fa', 'he', 'es', 'tr', 'de', 'my'];
+                                                          for (const lang of langKeys) {
+                                                            if (lang === version) continue;
+                                                            let data = loadedLangs[lang];
+                                                            if (!data) {
+                                                              data = await loadLanguageSets(lang);
+                                                              setLoadedLangs(prev => ({ ...prev, [lang]: data }));
+                                                            }
+                                                            const found = findVerseByRef(data.verses, cell.ref);
+                                                            if (found) { targetVerse = found; detectedLang = lang; break; }
                                                           }
+                                                          setIsLangsLoading(false);
                                                         }
                                                         setSelectedGardenCell({
                                                           ref: cell.ref,
@@ -6904,30 +6890,26 @@ const deDict = {
                                                       }, 300);
                                                     }
                                                   }}
-                                                  onDoubleClick={() => {
+                                                  onDoubleClick={async () => {
                                                     if (cell) {
                                                       if (gardenClickTimer.current) { clearTimeout(gardenClickTimer.current); gardenClickTimer.current = null; }
                                                       const allCurrentVerses = [...safeActiveSets, ...customVerseSets].flatMap(s => s.verses);
                                                       let targetVerse = findVerseByRef(allCurrentVerses, cell.ref);
                                                       let detectedLang = version;
                                                       if (!targetVerse) {
-                                                        const langPools = [
-                                                          { lang: 'kjv', verses: [...VERSE_SETS_KJV, ...VERSE_SETS_PROVERBS_KJV].flatMap(s => s.verses) },
-                                                          { lang: 'cuv', verses: [...VERSE_SETS_CUV, ...VERSE_SETS_PROVERBS_ZH].flatMap(s => s.verses) },
-                                                          { lang: 'ko', verses: [...VERSE_SETS_KO, ...VERSE_SETS_PROVERBS_KO].flatMap(s => s.verses) },
-                                                          { lang: 'ja', verses: [...VERSE_SETS_JA, ...VERSE_SETS_PROVERBS_JA].flatMap(s => s.verses) },
-                                                          { lang: 'fa', verses: VERSE_SETS_FA.flatMap(s => s.verses) },
-                                                          { lang: 'he', verses: VERSE_SETS_HE.flatMap(s => s.verses) },
-                                                          { lang: 'es', verses: VERSE_SETS_ES.flatMap(s => s.verses) },
-                                                          { lang: 'tr', verses: VERSE_SETS_TR.flatMap(s => s.verses) },
-                                                          { lang: 'de', verses: VERSE_SETS_DE.flatMap(s => s.verses) },
-                                                          { lang: 'my', verses: VERSE_SETS_MY.flatMap(s => s.verses) },
-                                                        ];
-                                                        for (const pool of langPools) {
-                                                          if (pool.lang === version) continue;
-                                                          const found = findVerseByRef(pool.verses, cell.ref);
-                                                          if (found) { targetVerse = found; detectedLang = pool.lang; break; }
+                                                        setIsLangsLoading(true);
+                                                        const langKeys = ['kjv', 'cuv', 'ko', 'ja', 'fa', 'he', 'es', 'tr', 'de', 'my'];
+                                                        for (const lang of langKeys) {
+                                                          if (lang === version) continue;
+                                                          let data = loadedLangs[lang];
+                                                          if (!data) {
+                                                            data = await loadLanguageSets(lang);
+                                                            setLoadedLangs(prev => ({ ...prev, [lang]: data }));
+                                                          }
+                                                          const found = findVerseByRef(data.verses, cell.ref);
+                                                          if (found) { targetVerse = found; detectedLang = lang; break; }
                                                         }
+                                                        setIsLangsLoading(false);
                                                       }
                                                       if (targetVerse) {
                                                         setSelectedGardenCell(null);
@@ -7379,7 +7361,7 @@ const deDict = {
                                 <td style={{ padding: '0.8rem 1rem', textAlign: 'right', fontWeight: 'bold', color: '#059669' }}>{stats.completes}</td>
                                 <td style={{ padding: '0.8rem 0' }}>
                                   <button
-                                    onClick={(e) => {
+                                    onClick={async (e) => {
                                       e.stopPropagation();
                                       // Search current set first, then ALL language pools (fixes iPhone 'verse not found')
                                       let targetVerse = findVerseByRef(VERSES_DB, ref);
@@ -7389,17 +7371,19 @@ const deDict = {
                                         targetVerse = findVerseByRef(allCurrentVerses, ref);
                                       }
                                       if (!targetVerse) {
-                                        const langPools = [
-                                          { lang: 'kjv', verses: [...VERSE_SETS_KJV, ...VERSE_SETS_PROVERBS_KJV].flatMap(s => s.verses) },
-                                          { lang: 'cuv', verses: [...VERSE_SETS_CUV, ...VERSE_SETS_PROVERBS_ZH].flatMap(s => s.verses) },
-                                          { lang: 'ko', verses: [...VERSE_SETS_KO, ...VERSE_SETS_PROVERBS_KO].flatMap(s => s.verses) },
-                                          { lang: 'ja', verses: [...VERSE_SETS_JA, ...VERSE_SETS_PROVERBS_JA].flatMap(s => s.verses) },
-                                        ];
-                                        for (const pool of langPools) {
-                                          if (pool.lang === version) continue;
-                                          const found = findVerseByRef(pool.verses, ref);
-                                          if (found) { targetVerse = found; detectedLang = pool.lang; break; }
+                                        setIsLangsLoading(true);
+                                        const langKeys = ['kjv', 'cuv', 'ko', 'ja'];
+                                        for (const lang of langKeys) {
+                                          if (lang === version) continue;
+                                          let data = loadedLangs[lang];
+                                          if (!data) {
+                                            data = await loadLanguageSets(lang);
+                                            setLoadedLangs(prev => ({ ...prev, [lang]: data }));
+                                          }
+                                          const found = findVerseByRef(data.verses, ref);
+                                          if (found) { targetVerse = found; detectedLang = lang; break; }
                                         }
+                                        setIsLangsLoading(false);
                                       }
                                       if (targetVerse) {
                                         if (detectedLang) {
@@ -9424,42 +9408,46 @@ const deDict = {
                                                 onClick={() => {
                                                   if (!cell) return;
                                                   if (guestGardenClickTimer.current) { clearTimeout(guestGardenClickTimer.current); guestGardenClickTimer.current = null; return; }
-                                                  guestGardenClickTimer.current = setTimeout(() => {
+                                                  guestGardenClickTimer.current = setTimeout(async () => {
                                                     guestGardenClickTimer.current = null;
                                                     const allVerses = [...safeActiveSets, ...customVerseSets].flatMap(s => s.verses);
                                                     let targetVerse = findVerseByRef(allVerses, cell.ref);
                                                     if (!targetVerse) {
-                                                      const langPools = [
-                                                        { lang: 'kjv', verses: [...VERSE_SETS_KJV, ...VERSE_SETS_PROVERBS_KJV].flatMap(s => s.verses) },
-                                                        { lang: 'cuv', verses: [...VERSE_SETS_CUV, ...VERSE_SETS_PROVERBS_ZH].flatMap(s => s.verses) },
-                                                        { lang: 'ko', verses: [...VERSE_SETS_KO, ...VERSE_SETS_PROVERBS_KO].flatMap(s => s.verses) },
-                                                        { lang: 'ja', verses: [...VERSE_SETS_JA, ...VERSE_SETS_PROVERBS_JA].flatMap(s => s.verses) },
-                                                      ];
-                                                      for (const pool of langPools) {
-                                                        const found = findVerseByRef(pool.verses, cell.ref);
+                                                      setIsLangsLoading(true);
+                                                      const langKeys = ['kjv', 'cuv', 'ko', 'ja'];
+                                                      for (const lang of langKeys) {
+                                                        let data = loadedLangs[lang];
+                                                        if (!data) {
+                                                          data = await loadLanguageSets(lang);
+                                                          setLoadedLangs(prev => ({ ...prev, [lang]: data }));
+                                                        }
+                                                        const found = findVerseByRef(data.verses, cell.ref);
                                                         if (found) { targetVerse = found; break; }
                                                       }
+                                                      setIsLangsLoading(false);
                                                     }
                                                     setGuestGardenCell({ ref: cell.ref, text: targetVerse?.text || '', stage: cell.stage, fruits: cell.fruits || 0 });
                                                   }, 250);
                                                 }}
-                                                onDoubleClick={() => {
+                                                onDoubleClick={async () => {
                                                   if (!cell) return;
                                                   if (guestGardenClickTimer.current) { clearTimeout(guestGardenClickTimer.current); guestGardenClickTimer.current = null; }
                                                   const allVerses = [...safeActiveSets, ...customVerseSets].flatMap(s => s.verses);
                                                   let targetVerse = findVerseByRef(allVerses, cell.ref);
                                                   let detectedLang = version;
                                                   if (!targetVerse) {
-                                                    const langPools = [
-                                                      { lang: 'kjv', verses: [...VERSE_SETS_KJV, ...VERSE_SETS_PROVERBS_KJV].flatMap(s => s.verses) },
-                                                      { lang: 'cuv', verses: [...VERSE_SETS_CUV, ...VERSE_SETS_PROVERBS_ZH].flatMap(s => s.verses) },
-                                                      { lang: 'ko', verses: [...VERSE_SETS_KO, ...VERSE_SETS_PROVERBS_KO].flatMap(s => s.verses) },
-                                                      { lang: 'ja', verses: [...VERSE_SETS_JA, ...VERSE_SETS_PROVERBS_JA].flatMap(s => s.verses) },
-                                                    ];
-                                                    for (const pool of langPools) {
-                                                      const found = findVerseByRef(pool.verses, cell.ref);
-                                                      if (found) { targetVerse = found; detectedLang = pool.lang; break; }
+                                                    setIsLangsLoading(true);
+                                                    const langKeys = ['kjv', 'cuv', 'ko', 'ja'];
+                                                    for (const lang of langKeys) {
+                                                      let data = loadedLangs[lang];
+                                                      if (!data) {
+                                                        data = await loadLanguageSets(lang);
+                                                        setLoadedLangs(prev => ({ ...prev, [lang]: data }));
+                                                      }
+                                                      const found = findVerseByRef(data.verses, cell.ref);
+                                                      if (found) { targetVerse = found; detectedLang = lang; break; }
                                                     }
+                                                    setIsLangsLoading(false);
                                                   }
                                                   if (targetVerse) {
                                                     setGuestGardenCell(null);
