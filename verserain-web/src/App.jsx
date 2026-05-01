@@ -9630,6 +9630,9 @@ const deDict = {
                         </div>
                       )}
                       <div style={{ marginTop: '0.8rem', fontSize: '0.75rem', color: '#94a3b8', textAlign: 'center' }}>📱 {t('可用手指滑動來瀏覽園子', 'Swipe to browse the garden')}</div>
+                      <div style={{ marginTop: '1.5rem' }}>
+                        <ActivityHeatmap t={t} />
+                      </div>
                     </>
                   )}
                 </div>
