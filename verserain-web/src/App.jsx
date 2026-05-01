@@ -2253,18 +2253,38 @@ export default function App() {
     if (currentSeqIndex >= activePhrases.length && activePhrases.length > 0 && gameState === 'playing') {
       if (multiplayerRoomId) {
         if (multiplayerState?.playMode?.endsWith('_solo')) {
+          // Calculate time bonus for multiplayer verse completion
+          let calculatedTimeBonus = 0;
+          if (healthRef.current > 0) {
+            calculatedTimeBonus = Math.floor(Math.max(0, timeLeftRef.current) * 0.5);
+          }
+          let finalCalculatedScore = scoreRef.current + calculatedTimeBonus;
+          if (distractionLevel > 0 && finalCalculatedScore > 0) {
+            finalCalculatedScore = Math.floor(finalCalculatedScore * (1 + distractionLevel * 0.1));
+          }
+
+          // Submit the score to the daily leaderboard if the user is logged in
+          if (playerName && finalCalculatedScore > 0 && healthRef.current > 0) {
+            const actualModeName = distractionLevel > 0 ? `${playMode}-dx${distractionLevel}` : playMode;
+            fetch('/api/submit-score', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ name: playerName, score: finalCalculatedScore, verseRef: activeVerse.reference, mode: actualModeName })
+            }).catch(() => { });
+          }
+
           // Report this verse's score to server (server accumulates campaign results)
           if (socketRef.current) {
             socketRef.current.send(JSON.stringify({
               type: 'PLAYER_PROGRESS',
-              score: scoreRef.current,
+              score: finalCalculatedScore,
               health: healthRef.current,
               seqIndex: currentSeqIndex
             }));
             socketRef.current.send(JSON.stringify({
               type: 'PLAYER_FINISHED_VERSE',
               verseRef: activeVerse.reference,
-              score: scoreRef.current,
+              score: finalCalculatedScore,
               verseIndex: localVerseIndexRef.current
             }));
           }
