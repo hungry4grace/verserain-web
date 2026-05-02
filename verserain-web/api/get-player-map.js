@@ -23,8 +23,10 @@ export default async function handler(req, res) {
     }
     const results = await pipeline.exec();
 
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
     const players = results
-      .filter(r => r && r.lat && r.lng)
+      .filter(r => r && r.lat && r.lng && !uuidRegex.test(r.name))
       .map(r => {
         const updatedAt = r.updatedAt ? parseInt(r.updatedAt) : 0;
         // If the player's last update was more than 15 minutes ago, they are no longer in an active room
