@@ -187,7 +187,6 @@ export default function WorldMap2D({ t, playerName, onJoinRoom, onToggleMode, cu
         });
 
         // Bind custom map interactions
-        let map = leafletMapRef.current;
         if (map) {
           map.off('click');
           map.off('dblclick');

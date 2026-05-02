@@ -251,6 +251,8 @@ export default class Server {
               return new Response(JSON.stringify({ error: 'System error' }), { status: 500, headers: corsHeaders });
            }
         }
+
+
       }
 
       // 3.9 View Counts Endpoint
