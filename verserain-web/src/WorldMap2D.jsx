@@ -85,8 +85,8 @@ export default function WorldMap2D({ t, playerName, onJoinRoom, onToggleMode, cu
           }
           
           map = L.map(mapRef.current, {
-            center: [20, 105],
-            zoom: 3,
+            center: [20, 0],
+            zoom: 2,
             minZoom: 2,
             maxZoom: 19,
             zoomControl: true,
@@ -252,7 +252,7 @@ export default function WorldMap2D({ t, playerName, onJoinRoom, onToggleMode, cu
           <button
             onClick={() => {
               if (leafletMapRef.current) {
-                leafletMapRef.current.setView([20, 105], 3, { animate: true });
+                leafletMapRef.current.setView([20, 0], 2, { animate: true });
                 setSelectedRoom(null);
               }
             }}
