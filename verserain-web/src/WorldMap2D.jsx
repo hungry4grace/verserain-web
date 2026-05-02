@@ -91,6 +91,7 @@ export default function WorldMap2D({ t, playerName, onJoinRoom, onToggleMode, cu
             maxZoom: 19,
             zoomControl: true,
             attributionControl: true,
+            doubleClickZoom: false
           });
 
           L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png', {
@@ -106,6 +107,8 @@ export default function WorldMap2D({ t, playerName, onJoinRoom, onToggleMode, cu
 
         // Clear existing markers for this update
         markersGroupRef.current.clearLayers();
+
+        const playerMarkers = [];
 
         players.forEach(p => {
           if (p.lat == null || p.lng == null || isNaN(p.lat) || isNaN(p.lng)) return;
@@ -180,7 +183,37 @@ export default function WorldMap2D({ t, playerName, onJoinRoom, onToggleMode, cu
           marker.bindPopup(popup);
 
           marker.addTo(markersGroupRef.current);
+          playerMarkers.push({ p, marker });
         });
+
+        // Bind custom map interactions
+        let map = leafletMapRef.current;
+        if (map) {
+          map.off('click');
+          map.off('dblclick');
+
+          map.on('dblclick', function(e) {
+            const currentZoom = map.getZoom();
+            map.flyTo(e.latlng, Math.min(currentZoom + 5, map.getMaxZoom()), { animate: true, duration: 0.5 });
+          });
+
+          map.on('click', function(e) {
+            let closestMarker = null;
+            let minDistance = Infinity;
+            
+            playerMarkers.forEach(item => {
+              const dist = map.distance(e.latlng, [item.p.lat, item.p.lng]);
+              if (dist < minDistance) {
+                minDistance = dist;
+                closestMarker = item.marker;
+              }
+            });
+
+            if (closestMarker) {
+              closestMarker.openPopup();
+            }
+          });
+        }
 
         if (!initialFlyDone.current && players.length > 0) {
           if (focusLocation) {
