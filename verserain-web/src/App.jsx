@@ -738,6 +738,33 @@ export default function App() {
   const [guestGardenCell, setGuestGardenCell] = useState(null);
   const guestGardenClickTimer = useRef(null);
 
+  const handleViewPlayerGarden = async (name) => {
+    setViewingPlayerGarden({ playerName: name, gardenData: null, loading: true });
+    try {
+      const [gardenRes, pointsRes] = await Promise.all([
+        fetch(`https://verserain-party.hungry4grace.partykit.dev/parties/main/global-auth-db/garden?player=${encodeURIComponent(name)}`),
+        fetch(`/api/get-creator-points?author=${encodeURIComponent(name)}`).catch(() => null)
+      ]);
+      const data = await gardenRes.json();
+      let creatorPts = 0;
+      let refPts = 0;
+      if (pointsRes && pointsRes.ok) {
+        try {
+          const ptsData = await pointsRes.json();
+          creatorPts = ptsData.points || 0;
+          refPts = ptsData.referralPoints || 0;
+        } catch (e) {}
+      }
+      if (data.success) {
+        setViewingPlayerGarden({ playerName: name, gardenData: data.gardenData, creatorPoints: creatorPts, referralPoints: refPts, loading: false });
+      } else {
+        setViewingPlayerGarden({ playerName: name, gardenData: {}, creatorPoints: creatorPts, referralPoints: refPts, loading: false, error: t('該玩家尚未分享園地', 'This player has not shared their garden yet') });
+      }
+    } catch {
+      setViewingPlayerGarden({ playerName: name, gardenData: {}, loading: false, error: t('無法載入', 'Failed to load') });
+    }
+  };
+
   useEffect(() => {
     if (!showLevelInfo) return;
     // Fetch fresh data every time the modal opens
@@ -7740,7 +7767,10 @@ const deDict = {
                         <p style={{ margin: '2px 0 0', color: '#64748b', fontSize: '0.85rem' }}>{t('點擊標記查看玩家成績，雙擊遊戲房間加入戰局！', 'Click a marker to see scores, double click a room to join!')}</p>
                       </div>
                     </div>
-                    <WorldMap t={t} playerName={playerName} onJoinRoom={(roomId) => {
+                    <WorldMap t={t} playerName={playerName} onViewGarden={(name) => {
+                      handleViewPlayerGarden(name);
+                      setMainTab('home'); // Switch back to home tab to show the modal properly if needed, actually the modal overlays the whole screen so tab doesn't strictly matter, but good to be on home. Wait, the garden modal handles itself over everything.
+                    }} onJoinRoom={(roomId) => {
                       setMainTab('multiplayer');
                       setJoinRoomError(null);
                       isGuestJoinRef.current = true;

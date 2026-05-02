@@ -39,7 +39,7 @@ function loadLeafletAndCluster() {
   });
 }
 
-export default function WorldMap2D({ t, playerName, onJoinRoom, onToggleMode, currentMode, focusLocation }) {
+export default function WorldMap2D({ t, playerName, onJoinRoom, onViewGarden, onToggleMode, currentMode, focusLocation }) {
   const mapRef = useRef(null);
   const leafletMapRef = useRef(null);
   const [players, setPlayers] = useState([]);
@@ -173,7 +173,10 @@ export default function WorldMap2D({ t, playerName, onJoinRoom, onToggleMode, cu
 
           const popup = L.popup({ maxWidth: 220, className: 'verse-map-popup' }).setContent(`
             <div style="font-family: system-ui, sans-serif; text-align:center; min-width: 120px;">
-              <div style="font-weight:bold; font-size:1.1rem; color:#1e293b; margin-bottom:4px;">${p.name}</div>
+              <div style="font-weight:bold; font-size:1.1rem; color:#1e293b; margin-bottom:4px; display:flex; flex-direction:column; align-items:center; gap:5px;">
+                ${p.name}
+                <button class="map-garden-btn" data-name="${p.name}" style="font-size: 0.8rem; background-color: #f1f5f9; color: #2563eb; padding: 0.2rem 0.6rem; border-radius: 12px; border: 1px solid #bfdbfe; cursor: pointer; font-weight: bold; margin-top:2px;">🌳 ${p.name} 的園子</button>
+              </div>
               <div style="font-size:0.85rem; color:#64748b;">📍 ${p.city ? p.city + ', ' : ''}${p.country || 'Unknown'}</div>
               ${roomBadge}
               <div style="margin-top:8px; font-size:0.75rem; color:#94a3b8;">🕒 ${t('最後上線', 'Last Online')}: ${lastOnline}</div>
@@ -190,6 +193,18 @@ export default function WorldMap2D({ t, playerName, onJoinRoom, onToggleMode, cu
         if (map) {
           map.off('click');
           map.off('dblclick');
+          map.off('popupopen');
+
+          map.on('popupopen', function(e) {
+            if (e.popup && e.popup._contentNode) {
+              const btn = e.popup._contentNode.querySelector('.map-garden-btn');
+              if (btn && onViewGarden) {
+                btn.onclick = () => {
+                  onViewGarden(btn.getAttribute('data-name'));
+                };
+              }
+            }
+          });
 
           map.on('dblclick', function(e) {
             const currentZoom = map.getZoom();
