@@ -1436,8 +1436,8 @@ export default function App() {
           score: 0,
           lat: parseFloat(geo.latitude),
           lng: parseFloat(geo.longitude),
-          country: geo.country_name || geo.country || '',
-          city: geo.city || '',
+          country: localStorage.getItem('verserain_custom_country') || geo.country_name || geo.country || '',
+          city: localStorage.getItem('verserain_custom_city') || geo.city || '',
           verseRef: '',
           roomId: activeRoomId || null
         })
@@ -8931,6 +8931,31 @@ const deDict = {
                         localStorage.setItem('verserain_player_name', data.user.name || email.split('@')[0]);
                         localStorage.setItem('verserain_player_email', data.user.email);
                         localStorage.setItem('verserain_is_premium', isPrem ? 'true' : 'false');
+                        
+                        if (data.user.city) localStorage.setItem('verserain_custom_city', data.user.city);
+                        else localStorage.removeItem('verserain_custom_city');
+                        
+                        if (data.user.country) localStorage.setItem('verserain_custom_country', data.user.country);
+                        else localStorage.removeItem('verserain_custom_country');
+                        
+                        // Force a submit to update map immediately with correct location
+                        if (geoRef.current) {
+                          fetch('/api/submit-location', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                              name: data.user.name || email.split('@')[0],
+                              score: 0,
+                              lat: parseFloat(geoRef.current.latitude),
+                              lng: parseFloat(geoRef.current.longitude),
+                              country: data.user.country || geoRef.current.country_name || geoRef.current.country || '',
+                              city: data.user.city || geoRef.current.city || '',
+                              verseRef: '',
+                              roomId: multiplayerRoomRef.current || null
+                            })
+                          }).catch(() => {});
+                        }
+                        
                         setShowLoginModal(null);
                       }
                     } else {
@@ -9140,7 +9165,7 @@ const deDict = {
         {/* Name Edit Modal */}
         {showNameEditModal && (
           <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.6)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1100, padding: '1rem' }}>
-            <div style={{ background: '#ffffff', borderRadius: '12px', padding: '2rem', width: '100%', maxWidth: '400px', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)', display: 'flex', flexDirection: 'column', gap: '1.5rem', border: '1px solid #e2e8f0' }}>
+            <div style={{ background: '#ffffff', borderRadius: '12px', padding: '2rem', width: '100%', maxWidth: '400px', maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)', display: 'flex', flexDirection: 'column', gap: '1.5rem', border: '1px solid #e2e8f0' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <h2 style={{ margin: 0, color: '#1e293b', fontSize: '1.5rem', fontWeight: 'bold' }}>
                   {t("修改個人資料", "Edit Profile")}
@@ -9188,6 +9213,29 @@ const deDict = {
                     </div>
                   </>
                 )}
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.9rem', color: '#64748b', marginBottom: '0.3rem', fontWeight: 'bold' }}>{t("目前城市 (選填)", "Current City (Optional)")}</label>
+                  <input
+                    id="cityEditInput"
+                    type="text"
+                    maxLength={30}
+                    placeholder={t("輸入您的城市...", "Enter your city...")}
+                    defaultValue={localStorage.getItem('verserain_custom_city') || ""}
+                    style={{ width: '100%', padding: '0.8rem', borderRadius: '6px', border: '1px solid #cbd5e1', background: '#f8fafc', color: '#1e293b', fontSize: '1rem', outline: 'none', boxSizing: 'border-box' }}
+                  />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.9rem', color: '#64748b', marginBottom: '0.3rem', fontWeight: 'bold' }}>{t("目前國家 (選填)", "Current Country (Optional)")}</label>
+                  <input
+                    id="countryEditInput"
+                    type="text"
+                    maxLength={30}
+                    placeholder={t("輸入您的國家...", "Enter your country...")}
+                    defaultValue={localStorage.getItem('verserain_custom_country') || ""}
+                    style={{ width: '100%', padding: '0.8rem', borderRadius: '6px', border: '1px solid #cbd5e1', background: '#f8fafc', color: '#1e293b', fontSize: '1rem', outline: 'none', boxSizing: 'border-box' }}
+                  />
+                </div>
               </div>
 
               <button
@@ -9198,14 +9246,46 @@ const deDict = {
                   const inputName = document.getElementById('nameEditInput');
                   const newName = inputName ? inputName.value.trim() : "";
 
+                  const inputCity = document.getElementById('cityEditInput');
+                  const inputCountry = document.getElementById('countryEditInput');
+                  const newCity = inputCity ? inputCity.value.trim() : "";
+                  const newCountry = inputCountry ? inputCountry.value.trim() : "";
+
+                  const updateLocalLocation = () => {
+                    if (newCity) localStorage.setItem('verserain_custom_city', newCity);
+                    else localStorage.removeItem('verserain_custom_city');
+                    
+                    if (newCountry) localStorage.setItem('verserain_custom_country', newCountry);
+                    else localStorage.removeItem('verserain_custom_country');
+                    
+                    // Trigger location re-submit to update the map instantly
+                    if (geoRef.current && playerNameRef.current) {
+                      fetch('/api/submit-location', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                          name: playerNameRef.current,
+                          score: 0,
+                          lat: parseFloat(geoRef.current.latitude),
+                          lng: parseFloat(geoRef.current.longitude),
+                          country: newCountry || geoRef.current.country_name || geoRef.current.country || '',
+                          city: newCity || geoRef.current.city || '',
+                          verseRef: '',
+                          roomId: multiplayerRoomRef.current || null
+                        })
+                      }).catch(() => {});
+                    }
+                  };
+
                   if (!userEmail) {
-                    // Guest user, only update local name
+                    // Guest user, only update local name and location
                     if (newName) {
                       setPlayerName(newName);
                       localStorage.setItem('verserain_player_name', newName);
-                      setToast(t("設定成功！觀迎遊玩，", "Name set! Welcome, ") + newName);
+                      setToast(t("設定成功！歡迎遊玩，", "Name set! Welcome, ") + newName);
                       setTimeout(() => setToast(null), 3000);
                     }
+                    updateLocalLocation();
                     setShowNameEditModal(false);
                     return;
                   }
@@ -9233,7 +9313,9 @@ const deDict = {
                         email: userEmail,
                         password: oldPassword,
                         newName: newName,
-                        newPassword: newPassword || undefined
+                        newPassword: newPassword || undefined,
+                        newCity,
+                        newCountry
                       })
                     });
                     const data = await res.json();
@@ -9241,6 +9323,7 @@ const deDict = {
                     if (data.success) {
                       setPlayerName(data.user.name);
                       localStorage.setItem('verserain_player_name', data.user.name);
+                      updateLocalLocation();
                       setToast(t("個人資料修改成功！", "Profile updated successfully!"));
                       setTimeout(() => setToast(null), 3000);
                       setShowNameEditModal(false);

@@ -180,7 +180,7 @@ export default class Server {
         // 3.5. Update Profile
         if (url.pathname.endsWith('/update-profile')) {
            try {
-              const { email, password, newPassword, newName } = await request.json();
+              const { email, password, newPassword, newName, newCity, newCountry } = await request.json();
               if (!email || !password) return new Response(JSON.stringify({ error: 'Email and current password required' }), { status: 400, headers: corsHeaders });
               
               let user = await this.room.storage.get(`user:${email.toLowerCase()}`);
@@ -190,6 +190,8 @@ export default class Server {
               
               if (newPassword) user.password = newPassword;
               if (newName) user.name = newName;
+              if (newCity !== undefined) user.city = newCity;
+              if (newCountry !== undefined) user.country = newCountry;
               
               await this.room.storage.put(`user:${email.toLowerCase()}`, user);
               return new Response(JSON.stringify({ success: true, user }), { status: 200, headers: corsHeaders });
