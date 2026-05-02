@@ -7769,7 +7769,6 @@ const deDict = {
                     </div>
                     <WorldMap t={t} playerName={playerName} onViewGarden={(name) => {
                       handleViewPlayerGarden(name);
-                      setMainTab('home'); // Switch back to home tab to show the modal properly if needed, actually the modal overlays the whole screen so tab doesn't strictly matter, but good to be on home. Wait, the garden modal handles itself over everything.
                     }} onJoinRoom={(roomId) => {
                       setMainTab('multiplayer');
                       setJoinRoomError(null);

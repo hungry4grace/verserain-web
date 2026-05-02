@@ -174,8 +174,7 @@ export default function WorldMap2D({ t, playerName, onJoinRoom, onViewGarden, on
           const popup = L.popup({ maxWidth: 220, className: 'verse-map-popup' }).setContent(`
             <div style="font-family: system-ui, sans-serif; text-align:center; min-width: 120px;">
               <div style="font-weight:bold; font-size:1.1rem; color:#1e293b; margin-bottom:4px; display:flex; flex-direction:column; align-items:center; gap:5px;">
-                ${p.name}
-                <button class="map-garden-btn" data-name="${p.name}" style="font-size: 0.8rem; background-color: #f1f5f9; color: #2563eb; padding: 0.2rem 0.6rem; border-radius: 12px; border: 1px solid #bfdbfe; cursor: pointer; font-weight: bold; margin-top:2px;">🌳 ${p.name} 的園子</button>
+                <button class="map-garden-btn" data-name="${p.name}" style="font-size: 0.95rem; background-color: #f1f5f9; color: #2563eb; padding: 0.3rem 0.8rem; border-radius: 16px; border: 1px solid #bfdbfe; cursor: pointer; font-weight: bold; margin-top:2px; display:flex; align-items:center; gap:4px;">🌳 ${p.name} 的園子</button>
               </div>
               <div style="font-size:0.85rem; color:#64748b;">📍 ${p.city ? p.city + ', ' : ''}${p.country || 'Unknown'}</div>
               ${roomBadge}
