@@ -193,7 +193,7 @@ export default function WorldMap2D({ t, playerName, onJoinRoom, onToggleMode, cu
 
           map.on('dblclick', function(e) {
             const currentZoom = map.getZoom();
-            map.flyTo(e.latlng, Math.min(currentZoom + 5, map.getMaxZoom()), { animate: true, duration: 0.5 });
+            map.flyTo(e.latlng, Math.min(currentZoom + 3, map.getMaxZoom()), { animate: true, duration: 0.5 });
           });
 
           map.on('click', function(e) {
