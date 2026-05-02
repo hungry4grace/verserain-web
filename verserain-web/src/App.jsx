@@ -431,9 +431,11 @@ const ActivityHeatmap = ({ t, activityMap = {} }) => {
   }
 
   const getColor = (val) => {
-    if (val === 0) return '#334155'; // Empty (Dark gray)
-    if (val === 1) return '#4ade80'; // Active (Light green)
-    if (val === 2) return '#15803d'; // High score (Dark green)
+    if (val === 0) return '#334155'; // Level 0: Empty (Dark gray)
+    if (val === 10) return '#0e4429'; // Level 1: Logged in (Pale green)
+    if (val === 1 || val === 11 || val === 12) return '#006d32'; // Level 2: Played 1-2 verses (Medium-light green)
+    if (val >= 13 && val < 100) return '#26a641'; // Level 3: Played >= 3 verses (Bright green)
+    if (val === 2 || val >= 100) return '#39d353'; // Level 4: Broke record (Brightest green)
     return '#334155';
   };
 
@@ -486,7 +488,7 @@ const ActivityHeatmap = ({ t, activityMap = {} }) => {
                       borderRadius: '2px', 
                       background: getColor(day.value) 
                     }} 
-                    title={`${day.date.toLocaleDateString()}: ${day.value === 2 ? 'New High Score' : day.value === 1 ? 'Active' : 'No Activity'}`}
+                    title={`${day.date.toLocaleDateString()}: ${(day.value === 2 || day.value >= 100) ? 'New High Score' : (day.value >= 13 && day.value < 100) ? 'Played 3+ Verses' : (day.value === 1 || day.value === 11 || day.value === 12) ? 'Played/Listened 1-2 Verses' : day.value === 10 ? 'Logged In' : 'No Activity'}`}
                   />
                 );
               })}
@@ -499,8 +501,10 @@ const ActivityHeatmap = ({ t, activityMap = {} }) => {
         <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
           <span>Less</span>
           <div style={{ width: '12px', height: '12px', background: '#334155', borderRadius: '2px' }} />
-          <div style={{ width: '12px', height: '12px', background: '#4ade80', borderRadius: '2px' }} />
-          <div style={{ width: '12px', height: '12px', background: '#15803d', borderRadius: '2px' }} />
+          <div style={{ width: '12px', height: '12px', background: '#0e4429', borderRadius: '2px' }} />
+          <div style={{ width: '12px', height: '12px', background: '#006d32', borderRadius: '2px' }} />
+          <div style={{ width: '12px', height: '12px', background: '#26a641', borderRadius: '2px' }} />
+          <div style={{ width: '12px', height: '12px', background: '#39d353', borderRadius: '2px' }} />
           <span>More</span>
         </div>
       </div>
@@ -810,27 +814,38 @@ export default function App() {
   const updateGarden = React.useCallback((ref, type, setId, amount = 1) => {
     setGardenData(prev => {
       const updated = { ...prev };
-      if (!updated[ref]) {
-        const used = new Set(Object.entries(updated).filter(([k]) => k !== '_activity').map(([,v]) => v.gridIndex));
-        let idx = 0;
-        while (used.has(idx)) idx++;
-        updated[ref] = { gridIndex: idx, stage: 1, fruits: 0, setId: setId || null };
-      } else if (type === 'played' && updated[ref].stage < 9) {
-        updated[ref] = { ...updated[ref], stage: updated[ref].stage + 1 };
-      } else if (type === 'completed') {
-        updated[ref] = { ...updated[ref], stage: 10 };
-      } else if (type === 'champ') {
-        updated[ref] = { ...updated[ref], stage: 10, fruits: Math.min((updated[ref].fruits || 0) + amount, 9) };
+      if (ref && ref !== 'activity_only') {
+        if (!updated[ref]) {
+          const used = new Set(Object.entries(updated).filter(([k]) => k !== '_activity').map(([,v]) => v.gridIndex));
+          let idx = 0;
+          while (used.has(idx)) idx++;
+          updated[ref] = { gridIndex: idx, stage: 1, fruits: 0, setId: setId || null };
+        } else if (type === 'played' && updated[ref].stage < 9) {
+          updated[ref] = { ...updated[ref], stage: updated[ref].stage + 1 };
+        } else if (type === 'completed') {
+          updated[ref] = { ...updated[ref], stage: 10 };
+        } else if (type === 'champ') {
+          updated[ref] = { ...updated[ref], stage: 10, fruits: Math.min((updated[ref].fruits || 0) + amount, 9) };
+        }
       }
 
       const todayStr = new Date().toLocaleDateString('en-CA'); // 'YYYY-MM-DD' local time
       if (!updated._activity) updated._activity = {};
-      const currentAct = updated._activity[todayStr] || 0;
-      if (type === 'champ') {
-        updated._activity[todayStr] = 2;
-      } else if (currentAct < 2) {
-        updated._activity[todayStr] = 1;
+      
+      let currentAct = updated._activity[todayStr] || 0;
+      if (currentAct === 1) currentAct = 11;
+      if (currentAct === 2) currentAct = 100;
+      
+      if (type === 'login') {
+        if (currentAct < 10) currentAct = 10;
+      } else if (type === 'champ') {
+        currentAct = 100;
+      } else if (type === 'played' || type === 'completed' || type === 'listen') {
+        if (currentAct < 100) {
+          currentAct = Math.max(10, currentAct) + 1;
+        }
       }
+      updated._activity[todayStr] = currentAct;
       localStorage.setItem('verseRain_gardenData', JSON.stringify(updated));
       // Sync to backend if logged in
       const pn = playerNameRef.current;
@@ -844,6 +859,12 @@ export default function App() {
       return updated;
     });
   }, []);
+
+  React.useEffect(() => {
+    if (playerName) {
+      updateGarden('activity_only', 'login');
+    }
+  }, [playerName, updateGarden]);
 
   const logEvent = (type, args) => {
     const today = new Date().toISOString().split('T')[0];
@@ -5378,6 +5399,7 @@ const deDict = {
                             onClick={() => {
                               const lang = version === 'kjv' ? 'en-US' : version === 'ja' ? 'ja-JP' : version === 'ko' ? 'ko-KR' : version === 'fa' ? 'fa-IR' : version === 'he' ? 'he-IL' : version === 'es' ? 'es-ES' : version === 'tr' ? 'tr-TR' : version === 'de' ? 'de-DE' : version === 'my' ? 'my-MM' : 'zh-TW';
                               speakText(randomRainVerse.text, 0.85, lang);
+                              updateGarden('activity_only', 'listen');
                             }}
                             style={{ background: 'linear-gradient(135deg, #60a5fa, #3b82f6)', color: 'white', border: 'none', padding: '0.45rem 1.2rem', borderRadius: '20px', fontSize: '0.9rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', fontWeight: '600', boxShadow: '0 2px 6px rgba(59,130,246,0.3)', transition: 'transform 0.15s, box-shadow 0.15s' }}
                             onMouseOver={(e) => { e.currentTarget.style.transform = 'scale(1.05)'; e.currentTarget.style.boxShadow = '0 4px 12px rgba(59,130,246,0.4)'; }}
@@ -9130,6 +9152,7 @@ const deDict = {
                     onClick={() => {
                       const vLang = version === 'kjv' ? 'en-US' : (version === 'ko' ? 'ko-KR' : (version === 'ja' ? 'ja-JP' : (version === 'he' ? 'he-IL' : (version === 'fa' ? 'fa-IR' : 'zh-TW'))));
                       speakText(verseViewModal.text, 1.0, vLang);
+                      updateGarden('activity_only', 'listen');
                     }}
                     title={t("朗讀經文", "Read aloud")}
                     style={{ background: '#ecfdf5', color: '#10b981', border: '1px solid #a7f3d0', borderRadius: '50%', width: '38px', height: '38px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'all 0.2s', padding: 0 }}
