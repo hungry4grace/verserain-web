@@ -1533,4 +1533,4 @@ export const VERSE_SETS_CUVS = [
 ];
 
 // Fallback for backwards compatibility
-export const VERSES_DB = VERSE_SETS[0].verses;
+export const VERSES_DB = VERSE_SETS_CUVS[0].verses;
