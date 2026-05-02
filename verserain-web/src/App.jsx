@@ -4712,7 +4712,10 @@ const zhcnDict = {
   "試聽": "试听",
   "語音已更新！": "语音已更新！",
   "這是你選擇的語音試聽。": "这是你选择的语音试听。",
-  "已記住你的語音偏好，下次回來會自動使用。": "已记住你的语音偏好，下次回来会自动使用。"
+  "已記住你的語音偏好，下次回來會自動使用。": "已记住你的语音偏好，下次回来会自动使用。",
+  "舊約": "旧约",
+  "新約": "新约",
+  "選擇書卷": "选择书卷"
 };
 
 const myDict = {
@@ -5801,9 +5804,16 @@ const deDict = {
                                   const json = await res.json();
                                   const filtered = json.filter(vv => vv.verse >= startVerse && vv.verse <= endVerse);
                                   if (filtered.length === 0) throw new Error("No verses");
-                                  const combined = (version === 'cuv' || version === 'cuvs')
+                                  let combined = (version === 'cuv' || version === 'cuvs')
                                     ? filtered.map(vv => vv.text.replace(/<[^>]+>/g, '').replace(/\s+/g, '')).join('')
                                     : filtered.map(vv => vv.text.replace(/<[^>]+>/g, '').trim()).join(' ');
+                                    
+                                  if (version === 'cuvs') {
+                                    const OpenCC = await import('opencc-js');
+                                    const converter = OpenCC.Converter({ from: 'tw', to: 'cn' });
+                                    combined = converter(combined);
+                                  }
+                                  
                                   setEditingCustomSet(prev => {
                                     const nv = [...prev.verses]; nv[verseIdx] = { ...nv[verseIdx], text: combined }; return { ...prev, verses: nv };
                                   });
