@@ -1453,7 +1453,18 @@ export default function App() {
           async () => { const r = await fetch('https://ip-api.com/json/?fields=lat,lon,country,city,status'); const d = await r.json(); if (d?.status === 'success') return { latitude: d.lat, longitude: d.lon, country_name: d.country, city: d.city }; throw new Error('no data'); },
         ];
         for (const svc of services) {
-          try { const geo = await svc(); geoRef.current = geo; doSubmit(geo); return; } catch { }
+          try { 
+            const geo = await svc(); 
+            const customLat = localStorage.getItem('verserain_custom_lat');
+            const customLng = localStorage.getItem('verserain_custom_lng');
+            if (customLat && customLng) {
+              geo.latitude = customLat;
+              geo.longitude = customLng;
+            }
+            geoRef.current = geo; 
+            doSubmit(geo); 
+            return; 
+          } catch { }
         }
       };
       tryGeo();
@@ -1660,7 +1671,20 @@ export default function App() {
                   for (const svc of [
                     async () => { const d = await (await fetch('https://ipapi.co/json/')).json(); if (d?.latitude) return d; throw 0; },
                     async () => { const d = await (await fetch('https://ip-api.com/json/?fields=lat,lon,country,city,status')).json(); if (d?.status === 'success') return { latitude: d.lat, longitude: d.lon, country_name: d.country, city: d.city }; throw 0; }
-                  ]) { try { const g = await svc(); geoRef.current = g; submitLoc(g); return; } catch { } }
+                  ]) { 
+                    try { 
+                      const g = await svc(); 
+                      const customLat = localStorage.getItem('verserain_custom_lat');
+                      const customLng = localStorage.getItem('verserain_custom_lng');
+                      if (customLat && customLng) {
+                        g.latitude = customLat;
+                        g.longitude = customLng;
+                      }
+                      geoRef.current = g; 
+                      submitLoc(g); 
+                      return; 
+                    } catch { } 
+                  }
                 })();
               }
             }
@@ -9251,29 +9275,52 @@ const deDict = {
                   const newCity = inputCity ? inputCity.value.trim() : "";
                   const newCountry = inputCountry ? inputCountry.value.trim() : "";
 
-                  const updateLocalLocation = () => {
+                  const updateLocalLocation = async () => {
                     if (newCity) localStorage.setItem('verserain_custom_city', newCity);
                     else localStorage.removeItem('verserain_custom_city');
                     
                     if (newCountry) localStorage.setItem('verserain_custom_country', newCountry);
                     else localStorage.removeItem('verserain_custom_country');
                     
-                    // Trigger location re-submit to update the map instantly
-                    if (geoRef.current && playerNameRef.current) {
-                      fetch('/api/submit-location', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                          name: playerNameRef.current,
-                          score: 0,
-                          lat: parseFloat(geoRef.current.latitude),
-                          lng: parseFloat(geoRef.current.longitude),
-                          country: newCountry || geoRef.current.country_name || geoRef.current.country || '',
-                          city: newCity || geoRef.current.city || '',
-                          verseRef: '',
-                          roomId: multiplayerRoomRef.current || null
-                        })
-                      }).catch(() => {});
+                    if (geoRef.current) {
+                      let latToUse = geoRef.current.latitude;
+                      let lngToUse = geoRef.current.longitude;
+
+                      if (newCity || newCountry) {
+                        try {
+                          const q = encodeURIComponent((newCity || '') + ' ' + (newCountry || '')).trim();
+                          const r = await fetch(`https://nominatim.openstreetmap.org/search?q=${q}&format=json&limit=1`);
+                          const d = await r.json();
+                          if (d && d.length > 0) {
+                            latToUse = d[0].lat;
+                            lngToUse = d[0].lon;
+                            localStorage.setItem('verserain_custom_lat', latToUse);
+                            localStorage.setItem('verserain_custom_lng', lngToUse);
+                            geoRef.current.latitude = latToUse;
+                            geoRef.current.longitude = lngToUse;
+                          }
+                        } catch (e) { console.error("Geocoding failed", e); }
+                      } else {
+                        localStorage.removeItem('verserain_custom_lat');
+                        localStorage.removeItem('verserain_custom_lng');
+                      }
+
+                      if (playerNameRef.current) {
+                        fetch('/api/submit-location', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({
+                            name: playerNameRef.current,
+                            score: 0,
+                            lat: parseFloat(latToUse),
+                            lng: parseFloat(lngToUse),
+                            country: newCountry || geoRef.current.country_name || geoRef.current.country || '',
+                            city: newCity || geoRef.current.city || '',
+                            verseRef: '',
+                            roomId: multiplayerRoomRef.current || null
+                          })
+                        }).catch(() => {});
+                      }
                     }
                   };
 
