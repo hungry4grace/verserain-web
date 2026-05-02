@@ -613,32 +613,39 @@ export default function App() {
             };
           }
         });
-        const mergedCount = Object.keys(merged).length;
-        const localCount = Object.keys(localGd).length;
-        const remoteCount = Object.keys(remoteGd).length;
-        if (mergedCount > 0) {
-          localStorage.setItem('verseRain_gardenData', JSON.stringify(merged));
-          setGardenData(merged);
-          // If merged has more data than what was on the server, push the update back
-          if (mergedCount > remoteCount) {
-            fetch('https://verserain-party.hungry4grace.partykit.dev/parties/main/global-auth-db/save-garden', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ playerName, gardenData: merged })
-            }).catch(() => { });
-          }
-        } else if (localCount > 0) {
-          // Local has data but remote is empty — push local up
-          fetch('https://verserain-party.hungry4grace.partykit.dev/parties/main/global-auth-db/save-garden', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ playerName, gardenData: localGd })
-          }).catch(() => { });
-        }
+
+        // Handle daily login activity inside the merge to prevent race conditions
+        const todayStr = new Date().toLocaleDateString('en-CA');
+        if (!merged._activity) merged._activity = {};
+        let currentAct = merged._activity[todayStr] || 0;
+        if (currentAct < 10) currentAct = 10;
+        merged._activity[todayStr] = currentAct;
+
+        // Always save to localStorage and state
+        localStorage.setItem('verseRain_gardenData', JSON.stringify(merged));
+        setGardenData(merged);
+
+        // Always push to backend after merge to ensure login activity is recorded and data is fully synced
+        fetch('https://verserain-party.hungry4grace.partykit.dev/parties/main/global-auth-db/save-garden', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ playerName, gardenData: merged })
+        }).catch(() => { });
       })
       .catch(() => {
         // Network error — fall back to local only, and try to push it up
         if (Object.keys(localGd).length > 0) {
+          
+          // Apply daily login activity to local data
+          const todayStr = new Date().toLocaleDateString('en-CA');
+          if (!localGd._activity) localGd._activity = {};
+          let currentAct = localGd._activity[todayStr] || 0;
+          if (currentAct < 10) currentAct = 10;
+          localGd._activity[todayStr] = currentAct;
+          
+          localStorage.setItem('verseRain_gardenData', JSON.stringify(localGd));
+          setGardenData(localGd);
+
           fetch('https://verserain-party.hungry4grace.partykit.dev/parties/main/global-auth-db/save-garden', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -861,10 +868,9 @@ export default function App() {
   }, []);
 
   React.useEffect(() => {
-    if (playerName) {
-      updateGarden('activity_only', 'login');
-    }
-  }, [playerName, updateGarden]);
+    // Activity tracking on login has been moved to the data merge block 
+    // to prevent race conditions overwriting backend data.
+  }, [playerName]);
 
   const logEvent = (type, args) => {
     const today = new Date().toISOString().split('T')[0];
