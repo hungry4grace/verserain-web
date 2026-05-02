@@ -41,16 +41,25 @@ export default async function handler(req, res) {
     const metas = await redis.hgetall(`leaderboard_meta:${verseRef}`) || {};
 
     async function getFormatted(key) {
-      const elements = await redis.zrange(key, 0, 9, { rev: true, withScores: true });
+      const elements = await redis.zrange(key, 0, 99, { rev: true, withScores: true });
       const result = [];
+      // Strict regex for 10-char alphanumeric personal codes (must have upper, lower, and digit from specific charset)
+      const codeRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*[2-9])[A-HJ-NP-Za-km-z2-9]{10}$/; 
       if (elements.length > 0 && typeof elements[0] === 'object') {
-         elements.forEach(el => result.push({ name: el.member, score: el.score, mode: metas[el.member] || 'rain' }));
+         elements.forEach(el => {
+           if (!codeRegex.test(el.member)) {
+             result.push({ name: el.member, score: el.score, mode: metas[el.member] || 'rain' });
+           }
+         });
       } else {
          for (let i = 0; i < elements.length; i += 2) {
-           result.push({ name: elements[i], score: elements[i + 1], mode: metas[elements[i]] || 'rain' });
+           const member = elements[i];
+           if (!codeRegex.test(member)) {
+             result.push({ name: member, score: elements[i + 1], mode: metas[member] || 'rain' });
+           }
          }
       }
-      return result;
+      return result.slice(0, 50); // Return top 50 valid names
     }
 
     const [alltime, monthly, daily] = await Promise.all([

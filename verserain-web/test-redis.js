@@ -1,30 +1,20 @@
 import { Redis } from '@upstash/redis';
-import fs from 'fs';
-import path from 'path';
-
-// Parse .env.local
-const envPath = path.resolve('.env.local');
-if (fs.existsSync(envPath)) {
-  const envConfig = fs.readFileSync(envPath, 'utf8');
-  envConfig.split('\n').forEach(line => {
-    const match = line.match(/^([^=]+)=(.*)$/);
-    if (match) {
-      process.env[match[1].trim()] = match[2].trim().replace(/^"(.*)"$/, '$1').replace(/^'(.*)'$/, '$1');
-    }
-  });
-}
-
-async function test() {
-  const redis = new Redis({ url: process.env.KV_REST_API_URL, token: process.env.KV_REST_API_TOKEN });
-  for (let i = 0; i < 5; i++) {
-      try {
-         await redis.set('test_limit', '123');
-         console.log('Success set');
-         return;
-      } catch (e) {
-         console.error(`Attempt ${i+1} failed: ` + e.message);
+const redis = new Redis({
+  url: "https://glowing-bedbug-94912.upstash.io",
+  token: "gQAAAAAAAXLAAAIncDEyNGM0NjRiZjY2MDQ0NjQ1OTkyOGM5Y2RlNGI1ZWJlY3AxOTQ5MTI",
+});
+async function run() {
+  const elements = await redis.zrange('leaderboard_sum:alltime', 0, 100, { rev: true, withScores: true });
+  const result = [];
+  // strict personalCode format: exactly 10 chars, drawn from the specific alphabet, MUST contain at least one upper, one lower, one digit.
+  const codeRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*[2-9])[A-HJ-NP-Za-km-z2-9]{10}$/; 
+  for (let i = 0; i < elements.length; i += 2) {
+      const member = elements[i];
+      if (!codeRegex.test(member)) {
+          result.push(member);
+      } else {
+          console.log("Filtered out:", member);
       }
-      await new Promise(r => setTimeout(r, 5000));
   }
 }
-test();
+run();

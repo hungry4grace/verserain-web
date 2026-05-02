@@ -5960,7 +5960,7 @@ const deDict = {
 
                         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
                           <div style={{ background: 'white', padding: '0.5rem', borderRadius: '8px', border: '1px solid #cbd5e1' }}>
-                            <QRCodeSVG value={`${window.location.origin}${window.location.pathname}?room=${multiplayerRoomId}${personalCode ? '&ref=' + encodeURIComponent(personalCode) : ''}`} size={100} />
+                            <QRCodeSVG value={`${window.location.origin}${window.location.pathname}?room=${multiplayerRoomId}${personalCode ? '&ref=' + encodeURIComponent(playerName || personalCode) : ''}`} size={100} />
                           </div>
                           <p style={{ color: '#94a3b8', fontSize: '0.8rem', margin: 0 }}>{t("或掃描此 QR Code 快速加入", "or scan QR to join")}</p>
                         </div>
@@ -6252,7 +6252,7 @@ const deDict = {
 
                             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem', marginTop: '1rem' }}>
                               <div style={{ background: 'white', padding: '0.5rem', borderRadius: '8px', border: '1px dashed #cbd5e1' }}>
-                                <QRCodeSVG value={`${window.location.origin}${window.location.pathname}?room=${multiplayerRoomId}${personalCode ? '&ref=' + encodeURIComponent(personalCode) : ''}`} size={120} />
+                                <QRCodeSVG value={`${window.location.origin}${window.location.pathname}?room=${multiplayerRoomId}${personalCode ? '&ref=' + encodeURIComponent(playerName || personalCode) : ''}`} size={120} />
                               </div>
                               <p style={{ color: '#94a3b8', fontSize: '0.8rem', margin: 0 }}>{t("或掃描上方 QR Code 快速加入", "or scan QR to join")}</p>
                             </div>
@@ -6794,12 +6794,12 @@ const deDict = {
                           <div style={{ display: 'flex', gap: '10px', alignItems: 'stretch', flexWrap: 'wrap' }}>
                             <input
                               readOnly
-                              value={`${window.location.origin}?ref=${encodeURIComponent(personalCode)}`}
+                              value={`${window.location.origin}?ref=${encodeURIComponent(playerName || personalCode)}`}
                               style={{ flex: 1, minWidth: '220px', padding: '0.8rem', borderRadius: '8px', border: '1px solid #cbd5e1', backgroundColor: '#fff', color: '#334155', fontSize: '0.95rem' }}
                             />
                             <button
                               onClick={() => {
-                                navigator.clipboard.writeText(`${window.location.origin}?ref=${encodeURIComponent(personalCode)}`);
+                                navigator.clipboard.writeText(`${window.location.origin}?ref=${encodeURIComponent(playerName || personalCode)}`);
                                 setToast(t("邀請連結已複製！快發給好朋友吧！", "Invite link copied! Share it with friends!"));
                                 setTimeout(() => setToast(null), 3500);
                               }}
@@ -6811,7 +6811,7 @@ const deDict = {
                             </button>
                             {typeof QRCodeSVG !== 'undefined' && (
                               <button
-                                onClick={() => setQrShareModal({ url: `${window.location.origin}?ref=${encodeURIComponent(personalCode)}`, reference: 'VerseRain 遊戲邀請' })}
+                                onClick={() => setQrShareModal({ url: `${window.location.origin}?ref=${encodeURIComponent(playerName || personalCode)}`, reference: 'VerseRain 遊戲邀請' })}
                                 style={{ background: '#10b981', color: 'white', border: 'none', padding: '0 1.5rem', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', transition: 'background 0.2s', minHeight: '44px' }}
                               >
                                 {t("QR 碼", "QR Code")}
