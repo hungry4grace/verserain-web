@@ -1002,4 +1002,44 @@ export const VERSE_SETS_DE = [
       }
 ]
   }
+
+  ,{
+    id: "identity-manifestation-mission-de",
+    title: "Vom Erwachen der Identität zur Offenbarung der Herrlichkeit",
+    description: "Dies ist ein wunderbares Thema. Diese 30 Verse werden uns helfen, vom 'Erwachen der Identität' zur 'Offenbarung der Herrlichkeit' zu gelangen und letztendlich die Mission der 'Jüngerschaft aller Nationen' zu erfüllen.",
+    language: "de",
+    verses: [
+      { id: "imm-de-1", reference: "1 Johannes 3:1", title: "Vom Erwachen der Identität zur Offenbarung der Herrlichkeit", text: "Seht, welch eine Liebe hat uns der Vater erzeigt, dass wir Gottes Kinder heißen sollen - und wir sind es auch!" },
+      { id: "imm-de-2", reference: "Johannes 1:12", title: "Vom Erwachen der Identität zur Offenbarung der Herrlichkeit", text: "Wie viele ihn aber aufnahmen, denen gab er Macht, Gottes Kinder zu werden, denen, die an seinen Namen glauben;" },
+      { id: "imm-de-3", reference: "Römer 8:15", title: "Vom Erwachen der Identität zur Offenbarung der Herrlichkeit", text: "Denn ihr habt nicht einen Geist der Knechtschaft empfangen, dass ihr euch abermals fürchten müsstet; sondern ihr habt einen Geist der Kindschaft empfangen, durch den wir rufen: Abba, lieber Vater!" },
+      { id: "imm-de-4", reference: "Galater 4:6-7", title: "Vom Erwachen der Identität zur Offenbarung der Herrlichkeit", text: "Weil ihr nun Kinder seid, hat Gott den Geist seines Sohnes gesandt in unsre Herzen, der da ruft: Abba, lieber Vater! So bist du nun nicht mehr Knecht, sondern Kind." },
+      { id: "imm-de-5", reference: "Epheser 1:5", title: "Vom Erwachen der Identität zur Offenbarung der Herrlichkeit", text: "und hat uns dazu vorherbestimmt, seine Kinder zu sein durch Jesus Christus nach dem Wohlgefallen seines Willens," },
+      { id: "imm-de-6", reference: "Epheser 5:1", title: "Vom Erwachen der Identität zur Offenbarung der Herrlichkeit", text: "So folgt nun Gottes Beispiel als die geliebten Kinder" },
+      { id: "imm-de-7", reference: "2 Korinther 6:18", title: "Vom Erwachen der Identität zur Offenbarung der Herrlichkeit", text: "und will euer Vater sein und ihr sollt meine Söhne und Töchter sein, spricht der allmächtige Herr." },
+      { id: "imm-de-8", reference: "Jesaja 43:4", title: "Vom Erwachen der Identität zur Offenbarung der Herrlichkeit", text: "Weil du in meinen Augen so wertvoll bist und ich dich ehre und liebe, gebe ich Menschen an deiner Stelle und Völker für dein Leben." },
+      { id: "imm-de-9", reference: "Jeremia 31:3", title: "Vom Erwachen der Identität zur Offenbarung der Herrlichkeit", text: "Der HERR ist mir erschienen von ferne: Ich habe dich je und je geliebt, darum habe ich dich zu mir gezogen aus lauter Güte." },
+      { id: "imm-de-10", reference: "Zefanja 3:17", title: "Vom Erwachen der Identität zur Offenbarung der Herrlichkeit", text: "Denn der HERR, dein Gott, ist in deiner Mitte, ein Held, der rettet. Er wird sich über dich freuen mit Wonne, er wird schweigen in seiner Liebe, er wird über dich jubeln mit Jauchzen." },
+      { id: "imm-de-11", reference: "Römer 8:19", title: "Vom Erwachen der Identität zur Offenbarung der Herrlichkeit", text: "Denn das sehnsüchtige Harren der Schöpfung wartet auf die Offenbarung der Kinder Gottes." },
+      { id: "imm-de-12", reference: "Römer 8:21", title: "Vom Erwachen der Identität zur Offenbarung der Herrlichkeit", text: "dass auch die Schöpfung frei werden wird von der Knechtschaft der Vergänglichkeit zu der herrlichen Freiheit der Kinder Gottes." },
+      { id: "imm-de-13", reference: "Römer 8:30", title: "Vom Erwachen der Identität zur Offenbarung der Herrlichkeit", text: "Die er aber vorherbestimmt hat, die hat er auch berufen; die er aber berufen hat, die hat er auch gerecht gemacht; die er aber gerecht gemacht hat, die hat er auch verherrlicht." },
+      { id: "imm-de-14", reference: "Matthäus 5:14", title: "Vom Erwachen der Identität zur Offenbarung der Herrlichkeit", text: "Ihr seid das Licht der Welt. Es kann die Stadt, die auf einem Berge liegt, nicht verborgen sein." },
+      { id: "imm-de-15", reference: "Matthäus 5:16", title: "Vom Erwachen der Identität zur Offenbarung der Herrlichkeit", text: "So lasst euer Licht leuchten vor den Leuten, damit sie eure guten Werke sehen und euren Vater im Himmel preisen." },
+      { id: "imm-de-16", reference: "Jesaja 60:1", title: "Vom Erwachen der Identität zur Offenbarung der Herrlichkeit", text: "Mache dich auf, werde licht; denn dein Licht kommt, und die Herrlichkeit des HERRN geht auf über dir!" },
+      { id: "imm-de-17", reference: "Philipper 2:15", title: "Vom Erwachen der Identität zur Offenbarung der Herrlichkeit", text: "damit ihr ohne Tadel und unlauter seid, Gottes Kinder, makellos inmitten eines verdrehten und verkehrten Geschlechts, unter welchem ihr leuchtet als Lichter in der Welt," },
+      { id: "imm-de-18", reference: "1 Petrus 2:9", title: "Vom Erwachen der Identität zur Offenbarung der Herrlichkeit", text: "Ihr aber seid ein auserwähltes Geschlecht, ein königliches Priestertum, ein heiliges Volk, ein Volk des Eigentums, dass ihr verkündigen sollt die Wohltaten dessen, der euch berufen hat von der Finsternis zu seinem wunderbaren Licht;" },
+      { id: "imm-de-19", reference: "2 Korinther 3:18", title: "Vom Erwachen der Identität zur Offenbarung der Herrlichkeit", text: "Wir alle aber spiegeln mit aufgedecktem Angesicht die Herrlichkeit des Herrn wider, und wir werden verwandelt in sein Bild von einer Herrlichkeit zur andern von dem Herrn, der der Geist ist." },
+      { id: "imm-de-20", reference: "Epheser 2:10", title: "Vom Erwachen der Identität zur Offenbarung der Herrlichkeit", text: "Denn wir sind sein Werk, geschaffen in Christus Jesus zu guten Werken, die Gott zuvor bereitet hat, dass wir darin wandeln sollen." },
+      { id: "imm-de-21", reference: "Matthäus 28:18", title: "Vom Erwachen der Identität zur Offenbarung der Herrlichkeit", text: "Und Jesus trat herzu und sprach zu ihnen: Mir ist gegeben alle Gewalt im Himmel und auf Erden." },
+      { id: "imm-de-22", reference: "Matthäus 28:19", title: "Vom Erwachen der Identität zur Offenbarung der Herrlichkeit", text: "Darum gehet hin und machet zu Jüngern alle Völker: Taufet sie auf den Namen des Vaters und des Sohnes und des Heiligen Geistes" },
+      { id: "imm-de-23", reference: "Matthäus 28:20", title: "Vom Erwachen der Identität zur Offenbarung der Herrlichkeit", text: "und lehret sie halten alles, was ich euch befohlen habe. Und siehe, ich bin bei euch alle Tage bis an der Welt Ende." },
+      { id: "imm-de-24", reference: "Apostelgeschichte 1:8", title: "Vom Erwachen der Identität zur Offenbarung der Herrlichkeit", text: "aber ihr werdet die Kraft des Heiligen Geistes empfangen, der auf euch kommen wird, und werdet meine Zeugen sein in Jerusalem und in ganz Judäa und Samarien und bis an das Ende der Erde." },
+      { id: "imm-de-25", reference: "Psalm 2:8", title: "Vom Erwachen der Identität zur Offenbarung der Herrlichkeit", text: "Bitte mich, so will ich dir Völker zum Erbe geben und der Welt Enden zum Eigentum." },
+      { id: "imm-de-26", reference: "1 Mose 12:3", title: "Vom Erwachen der Identität zur Offenbarung der Herrlichkeit", text: "Ich will segnen, die dich segnen, und verfluchen, die dich verfluchen; und in dir sollen gesegnet werden alle Geschlechter auf Erden." },
+      { id: "imm-de-27", reference: "Jesaja 2:2", title: "Vom Erwachen der Identität zur Offenbarung der Herrlichkeit", text: "Es wird zur letzten Zeit der Berg, da des HERRN Haus ist, fest stehen, höher als alle Berge und über alle Hügel erhaben, und alle Heiden werden herzulaufen," },
+      { id: "imm-de-28", reference: "Matthäus 24:14", title: "Vom Erwachen der Identität zur Offenbarung der Herrlichkeit", text: "Und es wird gepredigt werden dies Evangelium vom Reich in der ganzen Welt zum Zeugnis für alle Völker, und dann wird das Ende kommen." },
+      { id: "imm-de-29", reference: "Offenbarung 7:9", title: "Vom Erwachen der Identität zur Offenbarung der Herrlichkeit", text: "Danach sah ich, und siehe, eine große Schar, die niemand zählen konnte, aus allen Nationen und Stämmen und Völkern und Sprachen; die standen vor dem Thron und vor dem Lamm," },
+      { id: "imm-de-30", reference: "Habakuk 2:14", title: "Vom Erwachen der Identität zur Offenbarung der Herrlichkeit", text: "Denn die Erde wird voll werden von Erkenntnis der Ehre des HERRN, wie Wasser das Meer bedeckt." }
+    ]
+  }
+
 ];

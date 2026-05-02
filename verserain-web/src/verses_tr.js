@@ -1002,4 +1002,44 @@ export const VERSE_SETS_TR = [
       }
 ]
   }
+
+  ,{
+    id: "identity-manifestation-mission-tr",
+    title: "Kimliğin Uyanışından Yüceliğin Tezahürüne",
+    description: "Bu harika bir tema. Bu 30 ayet, 'Kimliğin Uyanışından' 'Yüceliğin Tezahürüne' geçmemize ve nihayetinde 'Ulusları Öğrenci Yapma' görevini yerine getirmemize yardımcı olacaktır.",
+    language: "tr",
+    verses: [
+      { id: "imm-tr-1", reference: "1 Yuhanna 3:1", title: "Kimliğin Uyanışından Yüceliğin Tezahürüne", text: "Bakın, Baba bizi o kadar çok seviyor ki, bize 'Tanrı'nın çocukları' deniyor! Ve gerçekten de öyleyiz." },
+      { id: "imm-tr-2", reference: "Yuhanna 1:12", title: "Kimliğin Uyanışından Yüceliğin Tezahürüne", text: "Ancak, kendisini kabul edip adına iman edenlerin hepsine Tanrı'nın çocukları olma hakkını verdi." },
+      { id: "imm-tr-3", reference: "Romalılar 8:15", title: "Kimliğin Uyanışından Yüceliğin Tezahürüne", text: "Sizi tekrar korkuya sürükleyecek kölelik ruhunu almadınız, evlatlık ruhunu aldınız. Bu ruhla, 'Abba, Baba!' diye sesleniriz." },
+      { id: "imm-tr-4", reference: "Galatyalılar 4:6-7", title: "Kimliğin Uyanışından Yüceliğin Tezahürüne", text: "Oğullar olduğunuz için Tanrı, 'Abba, Baba!' diye seslenen Oğlu'nun Ruhunu yüreklerinize gönderdi. Bu nedenle artık köle değil, oğulsun." },
+      { id: "imm-tr-5", reference: "Efesliler 1:5", title: "Kimliğin Uyanışından Yüceliğin Tezahürüne", text: "Kendi isteği ve iyi amacı uyarınca İsa Mesih aracılığıyla bizi kendine oğullar evlat edinmeyi önceden belirledi." },
+      { id: "imm-tr-6", reference: "Efesliler 5:1", title: "Kimliğin Uyanışından Yüceliğin Tezahürüne", text: "Bu nedenle, sevgili çocuklar olarak Tanrı'yı örnek alın." },
+      { id: "imm-tr-7", reference: "2 Korintliler 6:18", title: "Kimliğin Uyanışından Yüceliğin Tezahürüne", text: "Her Şeye Gücü Yeten Rab diyor ki, 'Ben size Baba olacağım, siz de bana oğullar ve kızlar olacaksınız.'" },
+      { id: "imm-tr-8", reference: "Yeşaya 43:4", title: "Kimliğin Uyanışından Yüceliğin Tezahürüne", text: "Gözümde değerli ve saygın olduğun, seni sevdiğim için, senin yerine insanlar, canın yerine halklar vereceğim." },
+      { id: "imm-tr-9", reference: "Yeremya 31:3", title: "Kimliğin Uyanışından Yüceliğin Tezahürüne", text: "Seni sonsuz bir sevgiyle sevdim, bu yüzden sana olan sadakatimi sürdürdüm." },
+      { id: "imm-tr-10", reference: "Sefanya 3:17", title: "Kimliğin Uyanışından Yüceliğin Tezahürüne", text: "Tanrın RAB seninledir, O kurtaran bir kahramandır. Seninle büyük sevinç duyacak, sevgisiyle seni yenileyecek, senin için sevinç çığlıkları atacak." },
+      { id: "imm-tr-11", reference: "Romalılar 8:19", title: "Kimliğin Uyanışından Yüceliğin Tezahürüne", text: "Yaratılış, Tanrı oğullarının ortaya çıkmasını büyük bir özlemle bekliyor." },
+      { id: "imm-tr-12", reference: "Romalılar 8:21", title: "Kimliğin Uyanışından Yüceliğin Tezahürüne", text: "Yaratılışın kendisi de yozlaşmanın köleliğinden kurtulup Tanrı çocuklarının yüce özgürlüğüne kavuşacaktır." },
+      { id: "imm-tr-13", reference: "Romalılar 8:30", title: "Kimliğin Uyanışından Yüceliğin Tezahürüne", text: "Önceden belirlediklerini çağırdı, çağırdıklarını akladı, akladıklarını da yüceltti." },
+      { id: "imm-tr-14", reference: "Matta 5:14", title: "Kimliğin Uyanışından Yüceliğin Tezahürüne", text: "Dünyanın ışığı sizsiniz. Tepeye kurulan kent gizlenemez." },
+      { id: "imm-tr-15", reference: "Matta 5:16", title: "Kimliğin Uyanışından Yüceliğin Tezahürüne", text: "Sizin ışığınız da insanların önünde öyle parlasın ki, iyi işlerinizi görerek göklerdeki Babanız'ı yüceltsinler." },
+      { id: "imm-tr-16", reference: "Yeşaya 60:1", title: "Kimliğin Uyanışından Yüceliğin Tezahürüne", text: "Kalk, parla; çünkü ışığın geldi, RAB'bin yüceliği senin üzerine doğdu." },
+      { id: "imm-tr-17", reference: "Filipililer 2:15", title: "Kimliğin Uyanışından Yüceliğin Tezahürüne", text: "Öyle ki, yaşam sözüne sımsıkı sarılarak bu eğri ve sapık kuşağın ortasında kusursuz ve saf, Tanrı'nın lekesiz çocukları olasınız. Onların arasında dünyada yıldızlar gibi parlıyorsunuz." },
+      { id: "imm-tr-18", reference: "1 Petrus 2:9", title: "Kimliğin Uyanışından Yüceliğin Tezahürüne", text: "Ama siz seçilmiş soy, Kral'ın kâhinleri, kutsal ulus, Tanrı'nın öz halkısınız. Sizi karanlıktan şaşılası ışığına çağıran Tanrı'nın erdemlerini duyurmak için seçildiniz." },
+      { id: "imm-tr-19", reference: "2 Korintliler 3:18", title: "Kimliğin Uyanışından Yüceliğin Tezahürüne", text: "Ve hepimiz peçesiz yüzle Rab'bin yüceliğini yansıtarak, Rab olan Ruh'un aracılığıyla aynı öze, yücelik üstüne yücelikle dönüştürülüyoruz." },
+      { id: "imm-tr-20", reference: "Efesliler 2:10", title: "Kimliğin Uyanışından Yüceliğin Tezahürüne", text: "Çünkü biz Tanrı'nın yapıtıyız, O'nun önceden hazırladığı iyi işleri yapmak üzere Mesih İsa'da yaratıldık." },
+      { id: "imm-tr-21", reference: "Matta 28:18", title: "Kimliğin Uyanışından Yüceliğin Tezahürüne", text: "İsa yanlarına gelip onlara şöyle dedi: 'Gökte ve yeryüzünde bütün yetki bana verildi.'" },
+      { id: "imm-tr-22", reference: "Matta 28:19", title: "Kimliğin Uyanışından Yüceliğin Tezahürüne", text: "Bu nedenle gidin, bütün ulusları öğrencilerim olarak yetiştirin; onları Baba, Oğul ve Kutsal Ruh'un adıyla vaftiz edin." },
+      { id: "imm-tr-23", reference: "Matta 28:20", title: "Kimliğin Uyanışından Yüceliğin Tezahürüne", text: "Size buyurduğum her şeye uymayı onlara öğretin. İşte ben, dünyanın sonuna dek her an sizinle birlikteyim." },
+      { id: "imm-tr-24", reference: "Elçilerin İşleri 1:8", title: "Kimliğin Uyanışından Yüceliğin Tezahürüne", text: "Ama Kutsal Ruh üzerinize inince güç alacaksınız; Yeruşalim'de, bütün Yahudiye ve Samiriye'de ve dünyanın dört bucağında benim tanıklarım olacaksınız." },
+      { id: "imm-tr-25", reference: "Mezmur 2:8", title: "Kimliğin Uyanışından Yüceliğin Tezahürüne", text: "Dile benden, miras olarak sana ulusları, mülk olarak yeryüzünün uçlarını vereyim." },
+      { id: "imm-tr-26", reference: "Yaratılış 12:3", title: "Kimliğin Uyanışından Yüceliğin Tezahürüne", text: "Seni kutsayanları kutsayacağım, seni lanetleyeni lanetleyeceğim. Yeryüzündeki bütün halklar senin aracılığınla kutsanacak." },
+      { id: "imm-tr-27", reference: "Yeşaya 2:2", title: "Kimliğin Uyanışından Yüceliğin Tezahürüne", text: "Son günlerde RAB'bin Tapınağı'nın kurulduğu dağ, dağların en yücesi, tepelerin en yükseği olacak; Bütün uluslar oraya akın edecek." },
+      { id: "imm-tr-28", reference: "Matta 24:14", title: "Kimliğin Uyanışından Yüceliğin Tezahürüne", text: "Göksel egemenliğin bu müjdesi bütün uluslara bir tanıklık olmak üzere dünyanın her yerinde duyurulacak. İşte o zaman son gelecektir." },
+      { id: "imm-tr-29", reference: "Vahiy 7:9", title: "Kimliğin Uyanışından Yüceliğin Tezahürüne", text: "Bundan sonra baktım, tahtın ve Kuzu'nun önünde her ulustan, her oymaktan, her halktan, her dilden oluşan, kimsenin sayamayacağı kadar büyük bir kalabalık duruyordu." },
+      { id: "imm-tr-30", reference: "Habakkuk 2:14", title: "Kimliğin Uyanışından Yüceliğin Tezahürüne", text: "Sular denizi nasıl dolduruyorsa, dünya da RAB'bin yüceliğinin bilgisiyle öyle dolacak." }
+    ]
+  }
+
 ];

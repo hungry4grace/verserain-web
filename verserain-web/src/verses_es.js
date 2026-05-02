@@ -1002,4 +1002,44 @@ export const VERSE_SETS_ES = [
       }
 ]
   }
+
+  ,{
+    id: "identity-manifestation-mission-es",
+    title: "El Despertar de la Identidad a la Manifestación de la Gloria",
+    description: "Este es un tema maravilloso. Estos 30 versículos nos ayudarán a pasar del 'Despertar de la Identidad' a la 'Manifestación de la Gloria', cumpliendo finalmente la misión de 'Discipular a las Naciones'.",
+    language: "es",
+    verses: [
+      { id: "imm-es-1", reference: "1 Juan 3:1", title: "El Despertar de la Identidad a la Manifestación de la Gloria", text: "Mirad cuál amor nos ha dado el Padre, para que seamos llamados hijos de Dios; por esto el mundo no nos conoce, porque no le conoció a él." },
+      { id: "imm-es-2", reference: "Juan 1:12", title: "El Despertar de la Identidad a la Manifestación de la Gloria", text: "Mas a todos los que le recibieron, a los que creen en su nombre, les dio potestad de ser hechos hijos de Dios." },
+      { id: "imm-es-3", reference: "Romanos 8:15", title: "El Despertar de la Identidad a la Manifestación de la Gloria", text: "Pues no habéis recibido el espíritu de esclavitud para estar otra vez en temor, sino que habéis recibido el espíritu de adopción, por el cual clamamos: ¡Abba, Padre!" },
+      { id: "imm-es-4", reference: "Gálatas 4:6-7", title: "El Despertar de la Identidad a la Manifestación de la Gloria", text: "Y por cuanto sois hijos, Dios envió a vuestros corazones el Espíritu de su Hijo, el cual clama: ¡Abba, Padre! Así que ya no eres esclavo, sino hijo." },
+      { id: "imm-es-5", reference: "Efesios 1:5", title: "El Despertar de la Identidad a la Manifestación de la Gloria", text: "en amor habiéndonos predestinado para ser adoptados hijos suyos por medio de Jesucristo, según el puro afecto de su voluntad," },
+      { id: "imm-es-6", reference: "Efesios 5:1", title: "El Despertar de la Identidad a la Manifestación de la Gloria", text: "Sed, pues, imitadores de Dios como hijos amados." },
+      { id: "imm-es-7", reference: "2 Corintios 6:18", title: "El Despertar de la Identidad a la Manifestación de la Gloria", text: "Y seré para vosotros por Padre, Y vosotros me seréis hijos e hijas, dice el Señor Todopoderoso." },
+      { id: "imm-es-8", reference: "Isaías 43:4", title: "El Despertar de la Identidad a la Manifestación de la Gloria", text: "Porque a mis ojos fuiste de gran estima, fuiste honorable, y yo te amé; daré, pues, hombres por ti, y naciones por tu vida." },
+      { id: "imm-es-9", reference: "Jeremías 31:3", title: "El Despertar de la Identidad a la Manifestación de la Gloria", text: "Jehová se manifestó a mí hace ya mucho tiempo, diciendo: Con amor eterno te he amado; por tanto, te prolongué mi misericordia." },
+      { id: "imm-es-10", reference: "Sofonías 3:17", title: "El Despertar de la Identidad a la Manifestación de la Gloria", text: "Jehová en medio de ti, poderoso, él salvará; se gozará sobre ti con alegría, callará de amor, se regocijará sobre ti con cánticos." },
+      { id: "imm-es-11", reference: "Romanos 8:19", title: "El Despertar de la Identidad a la Manifestación de la Gloria", text: "Porque el anhelo ardiente de la creación es el aguardar la manifestación de los hijos de Dios." },
+      { id: "imm-es-12", reference: "Romanos 8:21", title: "El Despertar de la Identidad a la Manifestación de la Gloria", text: "porque también la creación misma será libertada de la esclavitud de corrupción, a la libertad gloriosa de los hijos de Dios." },
+      { id: "imm-es-13", reference: "Romanos 8:30", title: "El Despertar de la Identidad a la Manifestación de la Gloria", text: "Y a los que predestinó, a éstos también llamó; y a los que llamó, a éstos también justificó; y a los que justificó, a éstos también glorificó." },
+      { id: "imm-es-14", reference: "Mateo 5:14", title: "El Despertar de la Identidad a la Manifestación de la Gloria", text: "Vosotros sois la luz del mundo; una ciudad asentada sobre un monte no se puede esconder." },
+      { id: "imm-es-15", reference: "Mateo 5:16", title: "El Despertar de la Identidad a la Manifestación de la Gloria", text: "Así alumbre vuestra luz delante de los hombres, para que vean vuestras buenas obras, y glorifiquen a vuestro Padre que está en los cielos." },
+      { id: "imm-es-16", reference: "Isaías 60:1", title: "El Despertar de la Identidad a la Manifestación de la Gloria", text: "Levántate, resplandece; porque ha venido tu luz, y la gloria de Jehová ha nacido sobre ti." },
+      { id: "imm-es-17", reference: "Filipenses 2:15", title: "El Despertar de la Identidad a la Manifestación de la Gloria", text: "para que seáis irreprensibles y sencillos, hijos de Dios sin mancha en medio de una generación maligna y perversa, en medio de la cual resplandecéis como luminares en el mundo;" },
+      { id: "imm-es-18", reference: "1 Pedro 2:9", title: "El Despertar de la Identidad a la Manifestación de la Gloria", text: "Mas vosotros sois linaje escogido, real sacerdocio, nación santa, pueblo adquirido por Dios, para que anunciéis las virtudes de aquel que os llamó de las tinieblas a su luz admirable;" },
+      { id: "imm-es-19", reference: "2 Corintios 3:18", title: "El Despertar de la Identidad a la Manifestación de la Gloria", text: "Por tanto, nosotros todos, mirando a cara descubierta como en un espejo la gloria del Señor, somos transformados de gloria en gloria en la misma imagen, como por el Espíritu del Señor." },
+      { id: "imm-es-20", reference: "Efesios 2:10", title: "El Despertar de la Identidad a la Manifestación de la Gloria", text: "Porque somos hechura suya, creados en Cristo Jesús para buenas obras, las cuales Dios preparó de antemano para que anduviésemos en ellas." },
+      { id: "imm-es-21", reference: "Mateo 28:18", title: "El Despertar de la Identidad a la Manifestación de la Gloria", text: "Y Jesús se acercó y les habló diciendo: Toda potestad me es dada en el cielo y en la tierra." },
+      { id: "imm-es-22", reference: "Mateo 28:19", title: "El Despertar de la Identidad a la Manifestación de la Gloria", text: "Por tanto, id, y haced discípulos a todas las naciones, bautizándolos en el nombre del Padre, y del Hijo, y del Espíritu Santo;" },
+      { id: "imm-es-23", reference: "Mateo 28:20", title: "El Despertar de la Identidad a la Manifestación de la Gloria", text: "enseñándoles que guarden todas las cosas que os he mandado; y he aquí yo estoy con vosotros todos los días, hasta el fin del mundo. Amén." },
+      { id: "imm-es-24", reference: "Hechos 1:8", title: "El Despertar de la Identidad a la Manifestación de la Gloria", text: "pero recibiréis poder, cuando haya venido sobre vosotros el Espíritu Santo, y me seréis testigos en Jerusalén, en toda Judea, en Samaria, y hasta lo último de la tierra." },
+      { id: "imm-es-25", reference: "Salmos 2:8", title: "El Despertar de la Identidad a la Manifestación de la Gloria", text: "Pídeme, y te daré por herencia las naciones, Y como posesión tuya los confines de la tierra." },
+      { id: "imm-es-26", reference: "Génesis 12:3", title: "El Despertar de la Identidad a la Manifestación de la Gloria", text: "Bendeciré a los que te bendijeren, y a los que te maldijeren maldeciré; y serán benditas en ti todas las familias de la tierra." },
+      { id: "imm-es-27", reference: "Isaías 2:2", title: "El Despertar de la Identidad a la Manifestación de la Gloria", text: "Acontecerá en lo postrero de los tiempos, que será confirmado el monte de la casa de Jehová como cabeza de los montes, y será exaltado sobre los collados, y correrán a él todas las naciones." },
+      { id: "imm-es-28", reference: "Mateo 24:14", title: "El Despertar de la Identidad a la Manifestación de la Gloria", text: "Y será predicado este evangelio del reino en todo el mundo, para testimonio a todas las naciones; y entonces vendrá el fin." },
+      { id: "imm-es-29", reference: "Apocalipsis 7:9", title: "El Despertar de la Identidad a la Manifestación de la Gloria", text: "Después de esto miré, y he aquí una gran multitud, la cual nadie podía contar, de todas naciones y tribus y pueblos y lenguas, que estaban delante del trono y en la presencia del Cordero." },
+      { id: "imm-es-30", reference: "Habacuc 2:14", title: "El Despertar de la Identidad a la Manifestación de la Gloria", text: "Porque la tierra será llena del conocimiento de la gloria de Jehová, como las aguas cubren el mar." }
+    ]
+  }
+
 ];

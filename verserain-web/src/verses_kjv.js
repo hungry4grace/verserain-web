@@ -1612,6 +1612,46 @@ export const VERSE_SETS_KJV = [
       }
 ]
   }
+
+  ,{
+    id: "identity-manifestation-mission-en",
+    title: "Awakening of Identity to Manifestation of Glory",
+    description: "This is a wonderful theme. These 30 verses will help us move from the 'Awakening of Identity' to the 'Manifestation of Glory', ultimately fulfilling the mission of 'Discipling the Nations'.",
+    language: "en",
+    verses: [
+      { id: "imm-en-1", reference: "1 John 3:1", title: "Awakening of Identity to Manifestation of Glory", text: "See what kind of love the Father has given to us, that we should be called children of God; and so we are." },
+      { id: "imm-en-2", reference: "John 1:12", title: "Awakening of Identity to Manifestation of Glory", text: "But to all who did receive him, who believed in his name, he gave the right to become children of God." },
+      { id: "imm-en-3", reference: "Romans 8:15", title: "Awakening of Identity to Manifestation of Glory", text: "For you did not receive the spirit of slavery to fall back into fear, but you have received the Spirit of adoption as sons, by whom we cry, 'Abba! Father!'" },
+      { id: "imm-en-4", reference: "Galatians 4:6-7", title: "Awakening of Identity to Manifestation of Glory", text: "And because you are sons, God has sent the Spirit of his Son into our hearts, crying, 'Abba! Father!' So you are no longer a slave, but a son." },
+      { id: "imm-en-5", reference: "Ephesians 1:5", title: "Awakening of Identity to Manifestation of Glory", text: "He predestined us for adoption to himself as sons through Jesus Christ, according to the purpose of his will." },
+      { id: "imm-en-6", reference: "Ephesians 5:1", title: "Awakening of Identity to Manifestation of Glory", text: "Therefore be imitators of God, as beloved children." },
+      { id: "imm-en-7", reference: "2 Corinthians 6:18", title: "Awakening of Identity to Manifestation of Glory", text: "And I will be a father to you, and you shall be sons and daughters to me, says the Lord Almighty." },
+      { id: "imm-en-8", reference: "Isaiah 43:4", title: "Awakening of Identity to Manifestation of Glory", text: "Because you are precious in my eyes, and honored, and I love you, I give men in return for you, peoples in exchange for your life." },
+      { id: "imm-en-9", reference: "Jeremiah 31:3", title: "Awakening of Identity to Manifestation of Glory", text: "I have loved you with an everlasting love; therefore I have continued my faithfulness to you." },
+      { id: "imm-en-10", reference: "Zephaniah 3:17", title: "Awakening of Identity to Manifestation of Glory", text: "The LORD your God is in your midst, a mighty one who will save; he will rejoice over you with gladness; he will quiet you by his love; he will exult over you with loud singing." },
+      { id: "imm-en-11", reference: "Romans 8:19", title: "Awakening of Identity to Manifestation of Glory", text: "For the creation waits with eager longing for the revealing of the sons of God." },
+      { id: "imm-en-12", reference: "Romans 8:21", title: "Awakening of Identity to Manifestation of Glory", text: "That the creation itself will be set free from its bondage to corruption and obtain the freedom of the glory of the children of God." },
+      { id: "imm-en-13", reference: "Romans 8:30", title: "Awakening of Identity to Manifestation of Glory", text: "And those whom he predestined he also called, and those whom he called he also justified, and those whom he justified he also glorified." },
+      { id: "imm-en-14", reference: "Matthew 5:14", title: "Awakening of Identity to Manifestation of Glory", text: "You are the light of the world. A city set on a hill cannot be hidden." },
+      { id: "imm-en-15", reference: "Matthew 5:16", title: "Awakening of Identity to Manifestation of Glory", text: "In the same way, let your light shine before others, so that they may see your good works and give glory to your Father who is in heaven." },
+      { id: "imm-en-16", reference: "Isaiah 60:1", title: "Awakening of Identity to Manifestation of Glory", text: "Arise, shine, for your light has come, and the glory of the LORD has risen upon you." },
+      { id: "imm-en-17", reference: "Philippians 2:15", title: "Awakening of Identity to Manifestation of Glory", text: "That you may be blameless and innocent, children of God without blemish in the midst of a crooked and twisted generation, among whom you shine as lights in the world." },
+      { id: "imm-en-18", reference: "1 Peter 2:9", title: "Awakening of Identity to Manifestation of Glory", text: "But you are a chosen race, a royal priesthood, a holy nation, a people for his own possession, that you may proclaim the excellencies of him who called you out of darkness into his marvelous light." },
+      { id: "imm-en-19", reference: "2 Corinthians 3:18", title: "Awakening of Identity to Manifestation of Glory", text: "And we all, with unveiled face, beholding the glory of the Lord, are being transformed into the same image from one degree of glory to another. For this comes from the Lord who is the Spirit." },
+      { id: "imm-en-20", reference: "Ephesians 2:10", title: "Awakening of Identity to Manifestation of Glory", text: "For we are his workmanship, created in Christ Jesus for good works, which God prepared beforehand, that we should walk in them." },
+      { id: "imm-en-21", reference: "Matthew 28:18", title: "Awakening of Identity to Manifestation of Glory", text: "And Jesus came and said to them, 'All authority in heaven and on earth has been given to me.'" },
+      { id: "imm-en-22", reference: "Matthew 28:19", title: "Awakening of Identity to Manifestation of Glory", text: "Go therefore and make disciples of all nations, baptizing them in the name of the Father and of the Son and of the Holy Spirit." },
+      { id: "imm-en-23", reference: "Matthew 28:20", title: "Awakening of Identity to Manifestation of Glory", text: "Teaching them to observe all that I have commanded you. And behold, I am with you always, to the end of the age." },
+      { id: "imm-en-24", reference: "Acts 1:8", title: "Awakening of Identity to Manifestation of Glory", text: "But you will receive power when the Holy Spirit has come upon you, and you will be my witnesses in Jerusalem and in all Judea and Samaria, and to the end of the earth." },
+      { id: "imm-en-25", reference: "Psalm 2:8", title: "Awakening of Identity to Manifestation of Glory", text: "Ask of me, and I will make the nations your heritage, and the ends of the earth your possession." },
+      { id: "imm-en-26", reference: "Genesis 12:3", title: "Awakening of Identity to Manifestation of Glory", text: "I will bless those who bless you, and him who dishonors you I will curse, and in you all the families of the earth shall be blessed." },
+      { id: "imm-en-27", reference: "Isaiah 2:2", title: "Awakening of Identity to Manifestation of Glory", text: "It shall come to pass in the latter days that the mountain of the house of the LORD shall be established as the highest of the mountains, and shall be lifted up above the hills; and all the nations shall flow to it." },
+      { id: "imm-en-28", reference: "Matthew 24:14", title: "Awakening of Identity to Manifestation of Glory", text: "And this gospel of the kingdom will be proclaimed throughout the whole world as a testimony to all nations, and then the end will come." },
+      { id: "imm-en-29", reference: "Revelation 7:9", title: "Awakening of Identity to Manifestation of Glory", text: "After this I looked, and behold, a great multitude that no one could number, from every nation, from all tribes and peoples and languages, standing before the throne and before the Lamb." },
+      { id: "imm-en-30", reference: "Habakkuk 2:14", title: "Awakening of Identity to Manifestation of Glory", text: "For the earth will be filled with the knowledge of the glory of the LORD as the waters cover the sea." }
+    ]
+  }
+
 ];
 
 // Fallback
