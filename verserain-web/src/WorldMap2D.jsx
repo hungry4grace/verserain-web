@@ -93,9 +93,10 @@ export default function WorldMap2D({ t, playerName, onJoinRoom, onToggleMode, cu
             attributionControl: true,
           });
 
-          L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
-            maxZoom: 19
+          L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png', {
+            attribution: '© OpenStreetMap contributors © CARTO',
+            subdomains: 'abcd',
+            maxZoom: 20
           }).addTo(map);
 
           // Use MarkerClusterGroup instead of regular layerGroup
@@ -106,10 +107,11 @@ export default function WorldMap2D({ t, playerName, onJoinRoom, onToggleMode, cu
             zoomToBoundsOnClick: true,
             iconCreateFunction: function(cluster) {
               const sr = selectedRoomRef.current;
-              let bgColor = '#1e293b';
-              let borderColor = '#334155';
-              let opacity = 1.0;
+              let bgColor = '#fbbf24';
+              let borderColor = '#f59e0b';
+              let opacity = 0.9;
               let filter = 'none';
+              let glowStyle = 'box-shadow: 0 0 10px rgba(251,191,36,0.6);';
 
               if (sr) {
                 const childMarkers = cluster.getAllChildMarkers();
@@ -118,14 +120,18 @@ export default function WorldMap2D({ t, playerName, onJoinRoom, onToggleMode, cu
                   const rc = getRoomColor(sr);
                   bgColor = rc;
                   borderColor = rc;
+                  glowStyle = `box-shadow: 0 0 10px ${rc}88;`;
                 } else {
+                  bgColor = '#1e293b';
+                  borderColor = '#334155';
                   opacity = 0.3;
                   filter = 'grayscale(100%)';
+                  glowStyle = 'none';
                 }
               }
 
               return L.divIcon({ 
-                html: `<div class="custom-cluster" style="background-color: ${bgColor}; border-color: ${borderColor}; opacity: ${opacity}; filter: ${filter};">` + cluster.getChildCount() + '</div>', 
+                html: `<div class="custom-cluster" style="background-color: ${bgColor}; border-color: ${borderColor}; opacity: ${opacity}; filter: ${filter}; ${glowStyle}">` + cluster.getChildCount() + '</div>', 
                 className: 'custom-cluster-icon', 
                 iconSize: [36, 36] 
               });
@@ -147,14 +153,18 @@ export default function WorldMap2D({ t, playerName, onJoinRoom, onToggleMode, cu
           const isCurrentUser = p.name === playerName;
           const roomColor = getRoomColor(p.roomId);
           
-          let bgColor = roomColor || (isCurrentUser ? '#f59e0b' : '#1e293b');
-          let borderColor = roomColor ? roomColor : (isCurrentUser ? '#fbbf24' : '#475569');
-          let glowStyle = roomColor ? `box-shadow: 0 0 0 3px ${roomColor}55, 0 0 12px ${roomColor}88;` : 'box-shadow: 0 2px 6px rgba(0,0,0,0.3);';
-          let opacity = 1.0;
+          let bgColor = roomColor || (isCurrentUser ? '#f59e0b' : '#fbbf24');
+          let borderColor = roomColor ? roomColor : (isCurrentUser ? '#fbbf24' : '#f59e0b');
+          let glowStyle = roomColor ? `box-shadow: 0 0 0 3px ${roomColor}55, 0 0 12px ${roomColor}88;` : 'box-shadow: 0 0 8px rgba(251,191,36,0.8);';
+          let opacity = 0.9;
           let filter = 'none';
+          let textColor = roomColor ? 'white' : '#78350f'; // Dark brown text on gold background
 
           if (selectedRoom) {
             if (p.roomId !== selectedRoom) {
+               bgColor = '#1e293b';
+               borderColor = '#334155';
+               textColor = 'white';
                opacity = 0.3;
                filter = 'grayscale(100%)';
                glowStyle = 'none';
@@ -169,7 +179,7 @@ export default function WorldMap2D({ t, playerName, onJoinRoom, onToggleMode, cu
               border:2px solid ${borderColor};
               border-radius:20px;
               padding: 4px 10px;
-              color:white; font-weight:bold; font-size:12px;
+              color:${textColor}; font-weight:bold; font-size:12px;
               opacity: ${opacity};
               filter: ${filter};
               ${glowStyle}
@@ -311,14 +321,15 @@ export default function WorldMap2D({ t, playerName, onJoinRoom, onToggleMode, cu
         <div style={{ height: '500px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#94a3b8', fontSize: '1.1rem', background: '#f8fafc' }}>
           ⏳ {t('載入地圖中...', 'Loading map...')}
         </div>
-      ) : error ? (
-        <div style={{ height: '400px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#ef4444' }}>
-          ⚠️ {error}
-        </div>
       ) : (
-        <div dir="ltr">
-          <div ref={mapRef} style={{ height: '520px', width: '100%', background: '#e0f2fe' }} />
-          {players.length === 0 && (
+        <div dir="ltr" style={{ position: 'relative' }}>
+          {error && (
+            <div style={{ position: 'absolute', top: '10px', left: '50%', transform: 'translateX(-50%)', zIndex: 1000, background: '#ef4444', color: 'white', padding: '4px 12px', borderRadius: '20px', fontSize: '0.8rem', boxShadow: '0 2px 4px rgba(0,0,0,0.2)' }}>
+              ⚠️ {error}
+            </div>
+          )}
+          <div ref={mapRef} style={{ height: '520px', width: '100%', background: '#0f172a' }} />
+          {players.length === 0 && !error && (
             <div style={{ position: 'relative', top: '-260px', textAlign: 'center', color: '#94a3b8', pointerEvents: 'none', fontSize: '1rem' }}>
               {t('還沒有玩家資料，完成一局遊戲後你的位置就會出現！', 'No players yet — complete a game to appear on the map!')}
             </div>

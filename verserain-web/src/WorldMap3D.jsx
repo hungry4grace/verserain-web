@@ -321,12 +321,13 @@ export default function WorldMap3D({ t, playerName, onJoinRoom, onToggleMode, cu
           <div style={{ height: '520px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#94a3b8', fontSize: '1.1rem' }}>
             ⏳ {t('載入地球中...', 'Loading globe...')}
           </div>
-        ) : error ? (
-          <div style={{ height: '520px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#ef4444' }}>
-            ⚠️ {error}
-          </div>
         ) : (
           <div style={{ position: 'relative' }}>
+            {error && (
+              <div style={{ position: 'absolute', top: '10px', left: '50%', transform: 'translateX(-50%)', zIndex: 10, background: '#ef4444', color: 'white', padding: '4px 12px', borderRadius: '20px', fontSize: '0.8rem', boxShadow: '0 2px 4px rgba(0,0,0,0.2)' }}>
+                ⚠️ {error}
+              </div>
+            )}
             <Globe
               ref={globeEl}
               width={dimensions.width}
@@ -340,7 +341,7 @@ export default function WorldMap3D({ t, playerName, onJoinRoom, onToggleMode, cu
               htmlAltitude={0.05}
               htmlTransitionDuration={100}
             />
-            {players.length === 0 && (
+            {players.length === 0 && !error && (
               <div style={{ position: 'absolute', top: '1rem', left: '50%', transform: 'translateX(-50%)', textAlign: 'center', color: '#fff', textShadow: '0 2px 4px rgba(0,0,0,0.5)', pointerEvents: 'none', fontSize: '1rem', background: 'rgba(0,0,0,0.5)', padding: '0.5rem 1rem', borderRadius: '20px' }}>
                 {t('還沒有玩家資料，完成一局遊戲後你的位置就會出現！', 'No players yet — complete a game to appear on the map!')}
               </div>
