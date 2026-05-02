@@ -38,10 +38,19 @@ export default async function handler(req, res) {
     if (history === 'true') {
       const p1 = redis.lrange(`gamification:history:creator:${author}`, 0, 499);
       const p2 = redis.lrange(`gamification:history:referral:${author}`, 0, 499);
-      const [cHist, rHist] = await Promise.all([p1, p2]);
+      const p3 = redis.hgetall('player_mapping');
+      const [cHist, rHist, mappings] = await Promise.all([p1, p2, p3]);
+      
+      const mappingDict = mappings || {};
       
       creatorHistory = (cHist || []).map(s => typeof s === 'string' ? JSON.parse(s) : s);
-      referralHistory = (rHist || []).map(s => typeof s === 'string' ? JSON.parse(s) : s);
+      referralHistory = (rHist || []).map(s => {
+        const item = typeof s === 'string' ? JSON.parse(s) : s;
+        if (item.player && mappingDict[item.player]) {
+          item.player = mappingDict[item.player]; // Resolve nickname
+        }
+        return item;
+      });
     }
 
     res.status(200).json({ 

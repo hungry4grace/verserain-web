@@ -590,6 +590,17 @@ export default function App() {
   };
   useEffect(() => { playerNameRef.current = playerName; }, [playerName]);
 
+  // Sync personalCode to playerName mapping
+  useEffect(() => {
+    if (playerName && personalCode && personalCode !== playerName) {
+      fetch('/api/submit-name-mapping', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code: personalCode, name: playerName })
+      }).catch(e => e);
+    }
+  }, [playerName, personalCode]);
+
   // On login: fetch garden from backend and merge with localStorage
   // This ensures data is not lost when using different browsers (e.g. LINE in-app browser)
   useEffect(() => {
