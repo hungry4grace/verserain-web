@@ -99,44 +99,7 @@ export default function WorldMap2D({ t, playerName, onJoinRoom, onToggleMode, cu
             maxZoom: 20
           }).addTo(map);
 
-          // Use MarkerClusterGroup instead of regular layerGroup
-          markersGroupRef.current = L.markerClusterGroup({
-            maxClusterRadius: 40,
-            spiderfyOnMaxZoom: true,
-            showCoverageOnHover: false,
-            zoomToBoundsOnClick: true,
-            iconCreateFunction: function(cluster) {
-              const sr = selectedRoomRef.current;
-              let bgColor = '#fbbf24';
-              let borderColor = '#f59e0b';
-              let opacity = 0.9;
-              let filter = 'none';
-              let glowStyle = 'box-shadow: 0 0 10px rgba(251,191,36,0.6);';
-
-              if (sr) {
-                const childMarkers = cluster.getAllChildMarkers();
-                const hasSelected = childMarkers.some(m => m.options.myRoomId === sr);
-                if (hasSelected) {
-                  const rc = getRoomColor(sr);
-                  bgColor = rc;
-                  borderColor = rc;
-                  glowStyle = `box-shadow: 0 0 10px ${rc}88;`;
-                } else {
-                  bgColor = '#1e293b';
-                  borderColor = '#334155';
-                  opacity = 0.3;
-                  filter = 'grayscale(100%)';
-                  glowStyle = 'none';
-                }
-              }
-
-              return L.divIcon({ 
-                html: `<div class="custom-cluster" style="background-color: ${bgColor}; border-color: ${borderColor}; opacity: ${opacity}; filter: ${filter}; ${glowStyle}">` + cluster.getChildCount() + '</div>', 
-                className: 'custom-cluster-icon', 
-                iconSize: [36, 36] 
-              });
-            }
-          }).addTo(map);
+          markersGroupRef.current = L.layerGroup().addTo(map);
 
           leafletMapRef.current = map;
         }
@@ -154,17 +117,13 @@ export default function WorldMap2D({ t, playerName, onJoinRoom, onToggleMode, cu
           const roomColor = getRoomColor(p.roomId);
           
           let bgColor = roomColor || (isCurrentUser ? '#f59e0b' : '#fbbf24');
-          let borderColor = roomColor ? roomColor : (isCurrentUser ? '#fbbf24' : '#f59e0b');
-          let glowStyle = roomColor ? `box-shadow: 0 0 0 3px ${roomColor}55, 0 0 12px ${roomColor}88;` : 'box-shadow: 0 0 8px rgba(251,191,36,0.8);';
-          let opacity = 0.9;
+          let glowStyle = roomColor ? `box-shadow: 0 0 0 3px ${roomColor}55, 0 0 12px ${roomColor}88;` : 'box-shadow: 0 0 10px rgba(251,191,36,0.9);';
+          let opacity = 0.8;
           let filter = 'none';
-          let textColor = roomColor ? 'white' : '#78350f'; // Dark brown text on gold background
 
           if (selectedRoom) {
             if (p.roomId !== selectedRoom) {
                bgColor = '#1e293b';
-               borderColor = '#334155';
-               textColor = 'white';
                opacity = 0.3;
                filter = 'grayscale(100%)';
                glowStyle = 'none';
@@ -174,19 +133,15 @@ export default function WorldMap2D({ t, playerName, onJoinRoom, onToggleMode, cu
           const icon = L.divIcon({
             className: '',
             html: `<div style="
-              display:flex; align-items:center; justify-content:center;
+              width: 8px; height: 8px;
               background:${bgColor};
-              border:2px solid ${borderColor};
-              border-radius:20px;
-              padding: 4px 10px;
-              color:${textColor}; font-weight:bold; font-size:12px;
+              border-radius: 50%;
               opacity: ${opacity};
               filter: ${filter};
               ${glowStyle}
               cursor:pointer;
-              white-space: nowrap;
-            ">${p.name} ${isCurrentUser ? '★' : ''}</div>`,
-            iconSize: null // Allows it to size itself based on contents
+            "></div>`,
+            iconSize: [8, 8]
           });
 
           const marker = L.marker([finalLat, finalLng], { icon, myRoomId: p.roomId });
@@ -208,13 +163,6 @@ export default function WorldMap2D({ t, playerName, onJoinRoom, onToggleMode, cu
 
           marker.bindPopup(popup);
 
-          // Click to zoom in is handled automatically by cluster, but we can preserve it for unclustered individual markers
-          marker.on('click', function () {
-            const currentZoom = map.getZoom();
-            const targetZoom = Math.min(currentZoom + 3, map.getMaxZoom());
-            map.flyTo([finalLat, finalLng], targetZoom);
-          });
-          
           marker.addTo(markersGroupRef.current);
         });
 
@@ -303,15 +251,14 @@ export default function WorldMap2D({ t, playerName, onJoinRoom, onToggleMode, cu
         <div style={{ marginLeft: 'auto', display: 'flex', gap: '10px' }}>
           <button
             onClick={() => {
-              setLoading(true);
-              fetch('/api/get-player-map').then(r => r.json()).then(data => {
-                setPlayers(Array.isArray(data) ? data : []);
-                setLoading(false);
-              }).catch(() => setLoading(false));
+              if (leafletMapRef.current) {
+                leafletMapRef.current.setView([20, 105], 3, { animate: true });
+                setSelectedRoom(null);
+              }
             }}
-            style={{ background: '#0ea5e9', color: 'white', border: 'none', padding: '0.3rem 0.8rem', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.8rem' }}
+            style={{ background: '#fbbf24', color: '#78350f', border: 'none', padding: '0.3rem 0.8rem', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.8rem' }}
           >
-            🔄 {t('重新整理', 'Refresh')}
+            🌍 {t('全球', 'Global')}
           </button>
         </div>
       </div>
@@ -344,32 +291,6 @@ export default function WorldMap2D({ t, playerName, onJoinRoom, onToggleMode, cu
           border: 1px solid #e2e8f0;
         }
         .verse-map-popup .leaflet-popup-tip { background: white; }
-        
-        .custom-cluster-icon {
-          display: flex !important;
-          align-items: center;
-          justify-content: center;
-        }
-        .custom-cluster {
-          background-color: #1e293b;
-          color: white;
-          border-radius: 50%;
-          width: 36px;
-          height: 36px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-weight: bold;
-          font-family: system-ui, sans-serif;
-          font-size: 14px;
-          box-shadow: 0 4px 10px rgba(0,0,0,0.4);
-          border: 2px solid #334155;
-          transition: transform 0.2s;
-        }
-        .custom-cluster:hover {
-          transform: scale(1.1);
-          background-color: #0f172a;
-        }
       `}</style>
     </div>
   );
