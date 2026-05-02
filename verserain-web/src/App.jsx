@@ -1071,10 +1071,11 @@ export default function App() {
     else if (newVer === 'tr') setUiLangPersisted('tr');
     else if (newVer === 'de') setUiLangPersisted('de');
     else if (newVer === 'my') setUiLangPersisted('my');
+    else if (newVer === 'cuvs') setUiLangPersisted('cuvs');
     else setUiLangPersisted('zh');
 
     let targetVerses = [];
-    if (newVer === 'cuv') targetVerses = loadedLangs['cuv']?.verses || data.verses;
+    if (newVer === 'cuv' || newVer === 'cuvs') targetVerses = loadedLangs[newVer]?.verses || data.verses;
     else if (newVer === 'kjv') targetVerses = loadedLangs['kjv']?.verses || data.verses;
     else if (newVer === 'fa') targetVerses = loadedLangs['fa']?.verses || data.verses;
     else if (newVer === 'he') targetVerses = loadedLangs['he']?.verses || data.verses;
@@ -1250,7 +1251,7 @@ export default function App() {
   const activePhrases = React.useMemo(() => {
     // Chinese (cuv) and Korean (ko): split on spaces to break down long sentences without punctuation.
     // Other languages (English, Hebrew, Farsi, Japanese) use spaces between words — keep them intact.
-    const shouldSplitOnSpace = version === 'cuv' || version === 'ko';
+    const shouldSplitOnSpace = version === 'cuv' || version === 'cuvs' || version === 'ko';
     const regex = shouldSplitOnSpace
       ? /\.{2,}|[,，。；؛၊။،：「」、;:\.\?!！？؟『』《》 ]/
       : /\.{2,}|[,，。；؛၊။،：「」、;:\.\?!！？؟『』《》]/;
@@ -4592,6 +4593,122 @@ export default function App() {
 
 
 
+const zhcnDict = {
+  "我的園子": "我的园子",
+  "🌳 我的園子": "🌳 我的园子",
+  "多人連線": "多人连线",
+  "🎮 多人連線": "🎮 多人连线",
+  "排行榜": "排行榜",
+  "🏆 排行榜": "🏆 排行榜",
+  "搜尋": "搜寻",
+  "🔍 搜尋": "🔍 搜寻",
+  "地圖": "地图",
+  "🗺️ 地圖": "🗺️ 地图",
+  "返回目錄": "返回目录",
+  "目前選擇": "目前选择",
+  "九宮格": "九宫格",
+  "四宮格": "四宫格",
+  "經文雨": "经文雨",
+  "單字干擾": "单字干扰",
+  "無干擾": "无干扰",
+  "難度 0": "难度 0",
+  "難度 1": "难度 1",
+  "難度 2": "难度 2",
+  "難度 3": "难度 3",
+  "挑戰": "挑战",
+  "隨機播放": "随机播放",
+  "邀人PK": "邀人PK",
+  "經文出處(點擊觀看)": "经文出处(点击观看)",
+  "排行": "排行",
+  "設定": "设定",
+  "選擇比賽經文組": "选择比赛经文组",
+  "沒有找到匹配的經文組。": "没有找到匹配的经文组。",
+  "準備！": "准备！",
+  "已準備": "已准备",
+  "開始": "开始",
+  "加入對戰": "加入对战",
+  "建立對戰": "建立对战",
+  "你的名字:": "你的名字:",
+  "登入 / 修改": "登入 / 修改",
+  "登出": "登出",
+  "經文組": "经文组",
+  "隨機挑戰所選題數": "随机挑战所选题数",
+  "隨機播放所選數量的經文圖卡與語音": "随机播放所选数量的经文图卡与语音",
+  "邀請朋友一起玩": "邀请朋友一起玩",
+  "分享挑戰連結": "分享挑战连结",
+  "經典挑戰": "经典挑战",
+  "立刻挑戰": "立刻挑战",
+  "最受歡迎": "最受欢迎",
+  "最新": "最新",
+  "作者": "作者",
+  "點閱次數": "点阅次数",
+  "Verserain 官方": "Verserain 官方",
+  "匿名玩家": "匿名玩家",
+  "QR 碼": "QR 码",
+  "通關紀錄": "通关纪录",
+  "大廳": "大厅",
+  "回到大廳": "回到大厅",
+  "進階功能": "进阶功能",
+  "解鎖進階功能": "解锁进阶功能",
+  "身為 Lv.3 以上的實踐者，你現在可以前往「進階功能 ➔ 我的專屬題庫」自由創建與分享你專屬的經文組了！": "身为 Lv.3 以上的实践者，你现在可以前往“进阶功能 ➔ 我的专属题库”自由创建与分享你专属的经文组了！",
+  "申請帳號": "申请账号",
+  "登入帳號": "登入账号",
+  "登入": "登入",
+  "在此登入": "在此登入",
+  "請複製密碼後貼到上方密碼欄位登入": "请复制密码后贴到上方密码字段登入",
+  "返回登入": "返回登入",
+  "驗證": "验证",
+  "建立新帳號 ": "建立新账号 ",
+  "一起玩!": "一起玩!",
+  "📨 邀請朋友一起玩": "📨 邀请朋友一起玩",
+  "朗讀經文": "朗读经文",
+  "讀經": "读经",
+  "換一個": "换一个",
+  "與家人朋友分享房間碼來PK同樂！": "与家人朋友分享房间码来PK同乐！",
+  "挑戰全球經文組，鍛鍊記憶力與專注力。": "挑战全球经文组，锻炼记忆力与专注力。",
+  "檢視你已經學會並種下生命樹的經文。": "检视你已经学会并种下生命树的经文。",
+  "選擇你喜歡的語音，首頁「讀經」及遊戲中的語音都會使用此設定。": "选择你喜欢的语音，首页“读经”及游戏中的语音都会使用此设定。",
+  "我的專屬題庫": "我的专属题库",
+  "新增題庫": "新增题库",
+  "進階設定與學習": "进阶设定与学习",
+  "標題": "标题",
+  "簡介": "简介",
+  "經文列表": "经文列表",
+  "新增一節經文": "新增一节经文",
+  "儲存題庫": "储存题库",
+  "取消": "取消",
+  "公開此題庫 (Publish to Global Verse Sets)": "公开此题库 (Publish to Global Verse Sets)",
+  "編輯題庫": "编辑题库",
+  "建立新題庫": "建立新题库",
+  "測試遊玩": "测试游玩",
+  "編輯": "编辑",
+  "刪除": "删除",
+  "語音模式": "语音模式",
+  "多人即時連線對戰": "多人即时连线对战",
+  "使用說明": "使用说明",
+  "操作詳解": "操作详解",
+  "關於我們": "关于我们",
+  "VerseRain 開發資訊": "VerseRain 开发资讯",
+  "加入進階群組": "加入进阶群组",
+  "意見回饋": "意见回馈",
+  "聯絡與建議": "联络与建议",
+  "關閉視障經文雨": "关闭视障经文雨",
+  "打開視障經文雨": "打开视障经文雨",
+  "為視覺障礙朋友設計的語音模式": "为视觉障碍朋友设计的语音模式",
+  "關閉效能模式": "关闭效能模式",
+  "打開效能模式": "打开效能模式",
+  "關閉華麗特效以提升流暢度": "关闭华丽特效以提升流畅度",
+  "關閉 Debug": "关闭 Debug",
+  "打開 Debug": "打开 Debug",
+  "顯示除錯資訊": "显示除错资讯",
+  "朗讀語音設定": "朗读语音设定",
+  "系統預設語音": "系统预设语音",
+  "試聽": "试听",
+  "語音已更新！": "语音已更新！",
+  "這是你選擇的語音試聽。": "这是你选择的语音试听。",
+  "已記住你的語音偏好，下次回來會自動使用。": "已记住你的语音偏好，下次回来会自动使用。"
+};
+
 const myDict = {
     "我的園子": "ကျွန်ုပ်၏ဥယျာဉ်",
     "🌳 我的園子": "🌳 ကျွန်ုပ်၏ဥယျာဉ်",
@@ -5185,6 +5302,7 @@ const deDict = {
       if (uiLang === 'tr') return 'Aktivite';
       if (uiLang === 'de') return 'Aktivität';
       if (uiLang === 'my') return 'လှုပ်ရှားမှု';
+      if (uiLang === 'cuvs') return '活动';
       return '活動';
     }
     if (uiLang === 'en') return en || zh;
@@ -5196,7 +5314,8 @@ const deDict = {
     if (uiLang === 'tr') return trDict[zh] || en || zh;
     if (uiLang === 'de') return deDict[zh] || en || zh;
     if (uiLang === 'my') return myDict[zh] || en || zh;
-    if (uiLang !== 'zh' && uiLang !== 'cuv') return en || zh;
+    if (uiLang === 'cuvs') return zhcnDict[zh] || zh;
+    if (uiLang !== 'zh' && uiLang !== 'cuv' && uiLang !== 'cuvs') return en || zh;
     return zh; // default: 'zh'
   };
 
@@ -5309,7 +5428,8 @@ const deDict = {
                   title="語言 / Language / זבאن / שפה"
                   style={{ padding: '0.3rem 0.5rem', borderRadius: '4px', border: '1px solid #cbd5e1', background: '#3b82f6', color: '#fff', fontWeight: 'bold', cursor: 'pointer', fontSize: '0.8rem' }}
                 >
-                  <option value="cuv">中文</option>
+                  <option value="cuv">繁體中文</option>
+                  <option value="cuvs">简体中文</option>
                   <option value="kjv">English</option>
                   <option value="fa">فارسی</option>
                   <option value="he">עברית</option>
@@ -7068,7 +7188,7 @@ const deDict = {
                                                         let detectedLang = version;
                                                         if (!targetVerse) {
                                                           setIsLangsLoading(true);
-                                                          const langKeys = ['kjv', 'cuv', 'ko', 'ja', 'fa', 'he', 'es', 'tr', 'de', 'my'];
+                                                          const langKeys = ['kjv', 'cuv', 'cuvs', 'ko', 'ja', 'fa', 'he', 'es', 'tr', 'de', 'my'];
                                                           for (const lang of langKeys) {
                                                             if (lang === version) continue;
                                                             let data = loadedLangs[lang];
@@ -7105,7 +7225,7 @@ const deDict = {
                                                       let detectedLang = version;
                                                       if (!targetVerse) {
                                                         setIsLangsLoading(true);
-                                                        const langKeys = ['kjv', 'cuv', 'ko', 'ja', 'fa', 'he', 'es', 'tr', 'de', 'my'];
+                                                        const langKeys = ['kjv', 'cuv', 'cuvs', 'ko', 'ja', 'fa', 'he', 'es', 'tr', 'de', 'my'];
                                                         for (const lang of langKeys) {
                                                           if (lang === version) continue;
                                                           let data = loadedLangs[lang];
@@ -7583,7 +7703,7 @@ const deDict = {
                                       }
                                       if (!targetVerse) {
                                         setIsLangsLoading(true);
-                                        const langKeys = ['kjv', 'cuv', 'ko', 'ja'];
+                                        const langKeys = ['kjv', 'cuv', 'cuvs', 'ko', 'ja', 'fa', 'he', 'es', 'tr', 'de', 'my'];
                                         for (const lang of langKeys) {
                                           if (lang === version) continue;
                                           let data = loadedLangs[lang];
@@ -9736,7 +9856,7 @@ const deDict = {
                                                     let targetVerse = findVerseByRef(allVerses, cell.ref);
                                                     if (!targetVerse) {
                                                       setIsLangsLoading(true);
-                                                      const langKeys = ['kjv', 'cuv', 'ko', 'ja'];
+                                                      const langKeys = ['kjv', 'cuv', 'cuvs', 'ko', 'ja', 'fa', 'he', 'es', 'tr', 'de', 'my'];
                                                       for (const lang of langKeys) {
                                                         let data = loadedLangs[lang];
                                                         if (!data) {
@@ -9759,7 +9879,7 @@ const deDict = {
                                                   let detectedLang = version;
                                                   if (!targetVerse) {
                                                     setIsLangsLoading(true);
-                                                    const langKeys = ['kjv', 'cuv', 'ko', 'ja'];
+                                                    const langKeys = ['kjv', 'cuv', 'cuvs', 'ko', 'ja', 'fa', 'he', 'es', 'tr', 'de', 'my'];
                                                     for (const lang of langKeys) {
                                                       let data = loadedLangs[lang];
                                                       if (!data) {
