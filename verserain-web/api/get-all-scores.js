@@ -35,11 +35,19 @@ export default async function handler(req, res) {
 
     const formatAggregatedData = async (sumDataArray, clearsKey) => {
         let players = [];
+        const codeRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*[2-9])[A-HJ-NP-Za-km-z2-9]{10}$/;
         if (sumDataArray.length > 0 && typeof sumDataArray[0] === 'object') {
-            players = sumDataArray.map(el => ({ name: el.member, total: el.score, clears: 0 }));
+            sumDataArray.forEach(el => {
+                if (!codeRegex.test(el.member)) {
+                    players.push({ name: el.member, total: el.score, clears: 0 });
+                }
+            });
         } else {
             for (let i = 0; i < sumDataArray.length; i += 2) {
-                players.push({ name: sumDataArray[i], total: parseFloat(sumDataArray[i + 1]), clears: 0 });
+                const member = sumDataArray[i];
+                if (!codeRegex.test(member)) {
+                    players.push({ name: member, total: parseFloat(sumDataArray[i + 1]), clears: 0 });
+                }
             }
         }
         

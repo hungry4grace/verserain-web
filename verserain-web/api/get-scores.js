@@ -34,9 +34,15 @@ export default async function handler(req, res) {
     const today = new Date().toISOString().split('T')[0];
     const month = today.slice(0, 7);
 
-    const allTimeKey = `leaderboard:${verseRef}`;
-    const monthlyKey = `leaderboard:monthly:${month}:${verseRef}`;
-    const dailyKey = `leaderboard:daily:${today}:${verseRef}`;
+    let allTimeKey = `leaderboard:${verseRef}`;
+    let monthlyKey = `leaderboard:monthly:${month}:${verseRef}`;
+    let dailyKey = `leaderboard:daily:${today}:${verseRef}`;
+
+    if (verseRef === 'sum') {
+      allTimeKey = 'leaderboard_sum:alltime';
+      monthlyKey = `leaderboard_sum:monthly:${month}`;
+      dailyKey = `leaderboard_sum:daily:${today}`;
+    }
 
     const metas = await redis.hgetall(`leaderboard_meta:${verseRef}`) || {};
 
