@@ -119,6 +119,8 @@ export default function BlindModeGame({
 
     const [hintLevel, setHintLevel] = useState(0);
 
+    const isSpeakingRef = useRef(false);
+
     const startTimer = () => {
         if (timerRef.current) clearTimeout(timerRef.current);
         if (countdownRef.current) clearInterval(countdownRef.current);
@@ -146,12 +148,16 @@ export default function BlindModeGame({
                         try { recognitionRef.current.stop(); } catch (e) {}
                     }
 
-                    // System reads the phrase out loud
+                    isSpeakingRef.current = true;
+                    // System reads the phrase out loud, then waits for the user to say it
                     const blockText = typeof currentBlockRef.current === 'string' ? currentBlockRef.current : (currentBlockRef.current?.text || '');
                     speakText(blockText, 1.0, TTS_LANG).then(() => {
                         if (!isMountedRef.current) return;
-                        // Auto-advance after reading
-                        onWordMatchRef.current(currentBlockRef.current, true);
+                        isSpeakingRef.current = false;
+                        // DO NOT auto-advance. We wait for the user to say it correctly.
+                        if (recognitionRef.current) {
+                            try { recognitionRef.current.start(); } catch (e) {}
+                        }
                     });
                 }
             }
@@ -371,6 +377,8 @@ export default function BlindModeGame({
         };
 
         recognition.onresult = (event) => {
+            if (isSpeakingRef.current) return; // ignore our own TTS
+            
             if (pauseTimeoutRef.current) {
                 clearTimeout(pauseTimeoutRef.current);
             }
