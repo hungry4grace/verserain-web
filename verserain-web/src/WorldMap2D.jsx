@@ -116,8 +116,24 @@ export default function WorldMap2D({ t, playerName, onJoinRoom, onToggleMode, cu
           const isCurrentUser = p.name === playerName;
           const roomColor = getRoomColor(p.roomId);
           
-          let bgColor = roomColor || (isCurrentUser ? '#f59e0b' : '#fbbf24');
-          let glowStyle = roomColor ? `box-shadow: 0 0 0 3px ${roomColor}55, 0 0 12px ${roomColor}88;` : 'box-shadow: 0 0 10px rgba(251,191,36,0.9);';
+          let baseColor = '#f97316'; // Orange-Red for Historical
+          let glowColor = 'rgba(249,115,22,0.9)';
+          
+          if (p.updatedAt) {
+            const upDate = new Date(p.updatedAt);
+            const now = new Date();
+            
+            if (upDate.toDateString() === now.toDateString() || (now - upDate) < 24 * 60 * 60 * 1000) {
+              baseColor = '#ffffff'; // White for Today
+              glowColor = 'rgba(255,255,255,0.9)';
+            } else if (upDate.getMonth() === now.getMonth() && upDate.getFullYear() === now.getFullYear()) {
+              baseColor = '#fbbf24'; // Gold for This Month
+              glowColor = 'rgba(251,191,36,0.9)';
+            }
+          }
+
+          let bgColor = roomColor || baseColor;
+          let glowStyle = roomColor ? `box-shadow: 0 0 0 3px ${roomColor}55, 0 0 12px ${roomColor}88;` : `box-shadow: 0 0 10px ${glowColor};`;
           let opacity = 0.8;
           let filter = 'none';
 
