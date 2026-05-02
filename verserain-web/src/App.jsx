@@ -5801,7 +5801,7 @@ const deDict = {
                                   const json = await res.json();
                                   const filtered = json.filter(vv => vv.verse >= startVerse && vv.verse <= endVerse);
                                   if (filtered.length === 0) throw new Error("No verses");
-                                  const combined = version === 'cuv'
+                                  const combined = (version === 'cuv' || version === 'cuvs')
                                     ? filtered.map(vv => vv.text.replace(/<[^>]+>/g, '').replace(/\s+/g, '')).join('')
                                     : filtered.map(vv => vv.text.replace(/<[^>]+>/g, '').trim()).join(' ');
                                   setEditingCustomSet(prev => {
