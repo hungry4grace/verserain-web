@@ -149,10 +149,20 @@ export default function WorldMap2D({ t, playerName, onJoinRoom, onViewGarden, on
             }
           }
 
+          let size = 8;
+          
+          if (isCurrentUser) {
+            bgColor = '#eab308'; // Yellow
+            glowStyle = 'box-shadow: 0 0 0 3px white, 0 0 12px #eab308;';
+            opacity = 1;
+            filter = 'none';
+            size = 12; // slightly larger for visibility
+          }
+
           const icon = L.divIcon({
             className: '',
             html: `<div style="
-              width: 8px; height: 8px;
+              width: ${size}px; height: ${size}px;
               background:${bgColor};
               border-radius: 50%;
               opacity: ${opacity};
@@ -160,7 +170,7 @@ export default function WorldMap2D({ t, playerName, onJoinRoom, onViewGarden, on
               ${glowStyle}
               cursor:pointer;
             "></div>`,
-            iconSize: [8, 8]
+            iconSize: [size, size]
           });
 
           const marker = L.marker([finalLat, finalLng], { icon, myRoomId: p.roomId });
@@ -242,7 +252,7 @@ export default function WorldMap2D({ t, playerName, onJoinRoom, onViewGarden, on
               // Wait a small moment for map to settle
               setTimeout(() => {
                 if (leafletMapRef.current) {
-                  leafletMapRef.current.flyTo([myPlayer.lat, myPlayer.lng], 4, { animate: true, duration: 1.5 });
+                  leafletMapRef.current.flyTo([myPlayer.lat, myPlayer.lng], 10, { animate: true, duration: 1.5 });
                 }
               }, 500);
             }
