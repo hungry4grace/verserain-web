@@ -755,7 +755,7 @@ export default function App() {
   const [levelCounts, setLevelCounts] = useState(null);
   const [globalFruitsMap, setGlobalFruitsMap] = useState({});
   const [viewingPlayerGarden, setViewingPlayerGarden] = useState(null); // { playerName, gardenData } or null
-  const [guestChallengeMode, setGuestChallengeMode] = useState('square');
+  const [guestChallengeMode, setGuestChallengeMode] = useState('square_solo');
   const [guestChallengeLevel, setGuestChallengeLevel] = useState(0);
   const [guestGardenCell, setGuestGardenCell] = useState(null);
   const guestGardenClickTimer = useRef(null);
@@ -1128,11 +1128,13 @@ export default function App() {
       if (mParam) {
         const cleanM = mParam.replace(/['"]/gi, '').toLowerCase();
         if (cleanM === 'verse square' || cleanM === 'square') {
-          setPlayMode('square');
+          setPlayMode('square_solo');
+        } else if (cleanM === 'rain') {
+          setPlayMode('rain_solo');
         } else if (cleanM === 'blind') {
-          setPlayMode('blind');
+          setPlayMode('blind'); // deprecated but keeping for safety
         } else if (cleanM === 'voice') {
-          setPlayMode('voice');
+          setPlayMode('voice_solo');
         } else if (cleanM === 'voice_prompt') {
           setPlayMode('voice_prompt');
         } else if (cleanM === 'auto-played' || cleanM === 'auto-play') {
@@ -1690,7 +1692,7 @@ export default function App() {
             // Set a placeholder activeVerse so HUD works
             const fakeVerse = { reference: msg.state.verseRef, title: "Multiplayer", text: msg.state.verseText || msg.state.blocks.filter(b => !b.isFake).map(b => b.text).join('') };
             setActiveVerse(fakeVerse);
-            setPlayMode(msg.state.playMode || 'square');
+            setPlayMode(msg.state.playMode || 'square_solo');
             if (msg.state.distractionLevel !== undefined) {
               setDistractionLevel(msg.state.distractionLevel);
             }
@@ -2022,7 +2024,7 @@ export default function App() {
           multiplayerSoloActiveRef.current = true;
         }
         if (initAutoStart.playMode === 'square_solo') {
-          initSquareBlocks(true, initAutoStart.campaignQueue, initAutoStart.verse);
+          initSquareBlocks(true, initAutoStart.campaignQueue, initAutoStart.verse, initAutoStart.playMode);
         } else if (initAutoStart.playMode === 'rain_solo' || initAutoStart.playMode === 'voice_solo') {
           if (socketRef.current) {
             const verse = initAutoStart.verse || activeVerse;
@@ -2049,8 +2051,9 @@ export default function App() {
     }
   }, [initAutoStart]);
 
-  const initSquareBlocks = (isMultiplayerReadyCheck = false, campaignQueue = null, overrideVerse = null) => {
+  const initSquareBlocks = (isMultiplayerReadyCheck = false, campaignQueue = null, overrideVerse = null, passedPlayMode = null) => {
     const verse = overrideVerse || activeVerse;
+    const actualPlayMode = passedPlayMode || playMode;
     let phrases;
     if (overrideVerse) {
       const shouldSplitOnSpace = /[\u4e00-\u9fa5\uac00-\ud7af]/.test(verse.text);
@@ -2116,7 +2119,7 @@ export default function App() {
         blocks: newBlocks,
         verseRef: verse.reference,
         verseText: verse.text,
-        playMode: playMode,
+        playMode: actualPlayMode,
         distractionLevel: distractionLevel,
         phrases: phrases,
         campaignQueue: campaignQueue
@@ -6654,9 +6657,9 @@ const deDict = {
                                 value={playMode}
                                 style={{ padding: '0.4rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.85rem', color: '#334155', backgroundColor: '#fff', fontWeight: 'bold', cursor: 'pointer' }}
                               >
-                                <option value="square">{t('九宮格', 'Square')}</option>
-                                <option value="rain">{t('經文雨', 'Verse Rain')}</option>
-                                <option value="voice">{t('語音模式', 'Voice Mode')}</option>
+                                <option value="square_solo">{t('九宮格', 'Square')}</option>
+                                <option value="rain_solo">{t('經文雨', 'Verse Rain')}</option>
+                                <option value="voice_solo">{t('語音模式', 'Voice Mode')}</option>
                               </select>
                               <select
                                 onChange={(e) => setDistractionLevel(Number(e.target.value))}
@@ -6761,7 +6764,7 @@ const deDict = {
                                 setActiveCampaignSetId(currentSet.id);
                                 setActiveCampaignSetTotal(sel.length);
                                 
-                                const pm = playMode === 'square' ? 'square_solo' : playMode === 'rain' ? 'rain_solo' : 'voice_solo';
+                                const pm = playMode.endsWith('_solo') ? playMode : playMode === 'square' ? 'square_solo' : playMode === 'rain' ? 'rain_solo' : 'voice_solo';
                                 setMultiplayerPlayMode(pm);
                                 setMultiplayerDistractionLevel(distractionLevel);
                                 
@@ -7134,9 +7137,9 @@ const deDict = {
                               value={playMode}
                               style={{ padding: '0.4rem 0.6rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.85rem', color: '#334155', backgroundColor: '#fff', fontWeight: 'bold', cursor: 'pointer' }}
                             >
-                              <option value="square">{t('九宮格', 'Square')}</option>
-                              <option value="rain">{t('經文雨', 'Verse Rain')}</option>
-                              <option value="voice">{t('語音模式', 'Voice Mode')}</option>
+                              <option value="square_solo">{t('九宮格', 'Square')}</option>
+                              <option value="rain_solo">{t('經文雨', 'Verse Rain')}</option>
+                              <option value="voice_solo">{t('語音模式', 'Voice Mode')}</option>
                             </select>
                           </div>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
@@ -9812,9 +9815,9 @@ const deDict = {
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
                           <label style={{ fontSize: '0.85rem', color: '#64748b' }}>{t('模式', 'Mode')}</label>
                           <select value={guestChallengeMode} onChange={e => setGuestChallengeMode(e.target.value)} style={{ padding: '0.4rem 0.6rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.85rem', color: '#334155', backgroundColor: '#fff', fontWeight: 'bold', cursor: 'pointer' }}>
-                            <option value="square">{t('九宮格', 'Square')}</option>
-                            <option value="rain">{t('經文雨', 'Verse Rain')}</option>
-                            <option value="voice">{t('語音模式', 'Voice Mode')}</option>
+                            <option value="square_solo">{t('九宮格', 'Square')}</option>
+                            <option value="rain_solo">{t('經文雨', 'Verse Rain')}</option>
+                            <option value="voice_solo">{t('語音模式', 'Voice Mode')}</option>
                           </select>
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
