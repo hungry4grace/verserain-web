@@ -1088,6 +1088,7 @@ export default function App() {
     else if (newVer === 'tr') setUiLangPersisted('tr');
     else if (newVer === 'de') setUiLangPersisted('de');
     else if (newVer === 'my') setUiLangPersisted('my');
+    else if (newVer === 'vi') setUiLangPersisted('vi');
     else if (newVer === 'cuvs') setUiLangPersisted('cuvs');
     else setUiLangPersisted('zh');
 
@@ -4732,6 +4733,136 @@ const zhcnDict = {
   "選擇書卷": "选择书卷"
 };
 
+// ─── Vietnamese (Tiếng Việt) UI Dictionary ────────────────────────────────────────
+const viDict = {
+    "我的園子": "Khu vườn của tôi",
+    "🌳 我的園子": "🌳 Khu vườn của tôi",
+    "多人連線": "Nhiều người chơi",
+    "🎮 多人連線": "🎮 Nhiều người chơi",
+    "排行榜": "Bảng xếp hạng",
+    "🏆 排行榜": "🏆 Bảng xếp hạng",
+    "搜尋": "Tìm kiếm",
+    "🔍 搜尋": "🔍 Tìm kiếm",
+    "地圖": "Bản đồ",
+    "🗺️ 地圖": "🗺️ Bản đồ",
+    "返回目錄": "Trở về danh mục",
+    "目前選擇": "Đang chọn",
+    "九宮格": "9 ô",
+    "四宮格": "4 ô",
+    "經文雨": "Mưa Kinh Thánh",
+    "單字干擾": "Nhiễu từ vựng",
+    "無干擾": "Không nhiễu",
+    "難度 0": "Độ khó 0",
+    "難度 1": "Độ khó 1",
+    "難度 2": "Độ khó 2",
+    "難度 3": "Độ khó 3",
+    "挑戰": "Thử thách",
+    "隨機播放": "Phát ngẫu nhiên",
+    "邀人PK": "Mời PK",
+    "經文出處(點擊觀看)": "Nguồn Kinh Thánh",
+    "排行": "Hạng",
+    "設定": "Cài đặt",
+    "選擇比賽經文組": "Chọn bộ Kinh Thánh",
+    "沒有找到匹配的經文組。": "Không tìm thấy bộ Kinh Thánh phù hợp.",
+    "準備！": "Chuẩn bị!",
+    "已準備": "Đã chuẩn bị",
+    "開始": "Bắt đầu",
+    "加入對戰": "Tham gia trận đấu",
+    "建立對戰": "Tạo trận đấu",
+    "你的名字:": "Tên của bạn:",
+    "登入 / 修改": "Đăng nhập / Sửa",
+    "登出": "Đăng xuất",
+    "經文組": "Bộ Kinh Thánh",
+    "隨機挑戰所選題數": "Thử thách ngẫu nhiên",
+    "隨機播放所選數量的經文圖卡與語音": "Phát ngẫu nhiên số câu Kinh Thánh và âm thanh đã chọn",
+    "邀請朋友一起玩": "Mời bạn bè cùng chơi",
+    "分享挑戰連結": "Chia sẻ liên kết",
+    "經典挑戰": "Thử thách kinh điển",
+    "立刻挑戰": "Thử thách ngay",
+    "最受歡迎": "Phổ biến nhất",
+    "最新": "Mới nhất",
+    "作者": "Tác giả",
+    "點閱次數": "Lượt xem",
+    "Verserain 官方": "Verserain chính thức",
+    "匿名玩家": "Người chơi ẩn danh",
+    "QR 碼": "Mã QR",
+    "通關紀錄": "Kỷ lục vượt ải",
+    "大廳": "Sảnh",
+    "回到大廳": "Trở về sảnh",
+    "進階功能": "Chức năng nâng cao",
+    "解鎖進階功能": "Mở khóa chức năng nâng cao",
+    "身為 Lv.3 以上的實踐者，你現在可以前往「進階功能 ➔ 我的專屬題庫」自由創建與分享你專屬的經文組了！": "Là người thực hành cấp 3 trở lên, bạn có thể tạo và chia sẻ bộ Kinh Thánh của riêng mình!",
+    "申請帳號": "Đăng ký tài khoản",
+    "登入帳號": "Đăng nhập",
+    "登入": "Đăng nhập",
+    "在此登入": "Đăng nhập tại đây",
+    "請複製密碼後貼到上方密碼欄位登入": "Vui lòng sao chép mật khẩu và dán vào ô mật khẩu phía trên để đăng nhập",
+    "返回登入": "Quay lại đăng nhập",
+    "驗證": "Xác minh",
+    "建立新帳號 ": "Tạo tài khoản mới",
+    "一起玩!": "Cùng chơi nhé!",
+    "邀請朋友一起玩": "Mời bạn bè cùng chơi",
+    "📨 邀請朋友一起玩": "📨 Mời bạn bè cùng chơi",
+    "朗讀經文": "Đọc Kinh Thánh",
+    "讀經": "Đọc Kinh Thánh",
+    "換一個": "Đổi",
+    "與家人朋友分享房間碼來PK同樂！": "Chia sẻ mã phòng với gia đình, bạn bè để cùng PK!",
+    "挑戰全球經文組，鍛鍊記憶力與專注力。": "Thử thách các bộ Kinh Thánh, rèn luyện trí nhớ và sự tập trung.",
+    "檢視你已經學會並種下生命樹的經文。": "Xem các câu Kinh Thánh bạn đã học và trồng cây sự sống.",
+    "選擇你喜歡的語音，首頁「讀經」及遊戲中的語音都會使用此設定。": "Chọn giọng đọc bạn thích, sẽ dùng cho chức năng 'Đọc' và trong trò chơi.",
+    "我的專屬題庫": "Bộ câu hỏi riêng của tôi",
+    "新增題庫": "Thêm bộ câu hỏi",
+    "進階設定與學習": "Cài đặt nâng cao",
+    "標題": "Tiêu đề",
+    "簡介": "Giới thiệu",
+    "經文列表": "Danh sách Kinh Thánh",
+    "新增一節經文": "Thêm một câu",
+    "儲存題庫": "Lưu bộ câu hỏi",
+    "取消": "Hủy",
+    "公開此題庫 (Publish to Global Verse Sets)": "Công khai bộ câu hỏi này",
+    "編輯題庫": "Sửa bộ câu hỏi",
+    "建立新題庫": "Tạo bộ câu hỏi mới",
+    "測試遊玩": "Chơi thử",
+    "編輯": "Sửa",
+    "刪除": "Xóa",
+    "語音模式": "Chế độ âm thanh",
+    "多人即時連線對戰": "Nhiều người chơi thời gian thực",
+    "使用說明": "Hướng dẫn sử dụng",
+    "操作詳解": "Chi tiết thao tác",
+    "關於我們": "Về chúng tôi",
+    "VerseRain 開發資訊": "Thông tin phát triển Verserain",
+    "加入進階群組": "Tham gia nhóm nâng cao",
+    "意見回饋": "Phản hồi",
+    "聯絡與建議": "Liên hệ & Góp ý",
+    "關閉視障經文雨": "Tắt Mưa Kinh Thánh cho người khiếm thị",
+    "打開視障經文雨": "Bật Mưa Kinh Thánh cho người khiếm thị",
+    "為視覺障礙朋友設計的語音模式": "Chế độ âm thanh dành cho người khiếm thị",
+    "關閉效能模式": "Tắt chế độ hiệu suất",
+    "打開效能模式": "Bật chế độ hiệu suất",
+    "關閉華麗特效以提升流暢度": "Tắt hiệu ứng đẹp mắt để tăng độ mượt mà",
+    "關閉 Debug": "Tắt Debug",
+    "打開 Debug": "Bật Debug",
+    "顯示除錯資訊": "Hiển thị thông tin gỡ lỗi",
+    "朗讀語音設定": "Cài đặt giọng đọc",
+    "系統預設語音": "Giọng đọc mặc định của hệ thống",
+    "試聽": "Nghe thử",
+    "語音已更新！": "Giọng đọc đã được cập nhật!",
+    "這是你選擇的語音試聽。": "Đây là mẫu giọng đọc bạn đã chọn.",
+    "已記住你的語音偏好，下次回來會自動使用。": "Đã ghi nhớ tùy chọn giọng đọc của bạn, sẽ tự động sử dụng cho lần sau.",
+    "哈囉": "Xin chào",
+    "您的密碼如下：": "Mật khẩu của bạn là:",
+    "請複製密碼後貼到上方密碼欄位登入": "Vui lòng sao chép mật khẩu và dán vào ô đăng nhập phía trên",
+    "複製密碼": "Sao chép mật khẩu",
+    "在輸入框打下你想要的 <strong>新經文組名稱</strong>。": "Nhập <strong>Tên bộ Kinh Thánh mới</strong> bạn muốn vào ô nhập liệu.",
+    "利用強大的 <strong>魔法一鍵抓取功能</strong>：在區塊中輸入經文章節出處（如：<code>約 3:16</code>），點擊旁邊的魔法星號按鈕。": "Sử dụng <strong>chức năng lấy dữ liệu một chạm ma thuật</strong>: Nhập chương/câu Kinh Thánh (ví dụ: <code>Giăng 3:16</code>) và nhấp vào biểu tượng ngôi sao bên cạnh.",
+    "在左上角確認一切無誤後，點擊 <strong>「發佈 (Publish)」</strong>。": "Sau khi kiểm tra ở góc trên bên trái, nhấp vào <strong>「Phát hành (Publish)」</strong>.",
+    "舊約": "Cựu Ước",
+    "新約": "Tân Ước",
+    "選擇書卷": "Chọn sách",
+    "章:節 (如 3:16)": "Chương:Câu (VD 3:16)",
+    "請先在前方選定書卷並輸入章節，按下 Enter 或 Tab 後即可解鎖此欄位": "Chọn sách & chương:câu, nhấn Enter/Tab để mở khóa"
+};
+
 const myDict = {
     "我的園子": "ကျွန်ုပ်၏ဥယျာဉ်",
     "🌳 我的園子": "🌳 ကျွန်ုပ်၏ဥယျာဉ်",
@@ -5325,6 +5456,7 @@ const deDict = {
       if (uiLang === 'tr') return 'Aktivite';
       if (uiLang === 'de') return 'Aktivität';
       if (uiLang === 'my') return 'လှုပ်ရှားမှု';
+      if (uiLang === 'vi') return 'Hoạt động';
       if (uiLang === 'cuvs') return '活动';
       return '活動';
     }
@@ -5337,6 +5469,7 @@ const deDict = {
     if (uiLang === 'tr') return trDict[zh] || en || zh;
     if (uiLang === 'de') return deDict[zh] || en || zh;
     if (uiLang === 'my') return myDict[zh] || en || zh;
+    if (uiLang === 'vi') return viDict[zh] || en || zh;
     if (uiLang === 'cuvs') return zhcnDict[zh] || zh;
     if (uiLang !== 'zh' && uiLang !== 'cuv' && uiLang !== 'cuvs') return en || zh;
     return zh; // default: 'zh'
@@ -5455,7 +5588,7 @@ const deDict = {
                     verserain
                   </div>
                   <div style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', marginTop: '4px', marginLeft: '2px' }}>
-                    v3.5.5
+                    v3.5.6
                   </div>
                 </div>
                 <select
@@ -5475,6 +5608,7 @@ const deDict = {
                   <option value="tr">Türkçe</option>
                   <option value="de">Deutsch</option>
                   <option value="my">မြန်မာ</option>
+                  <option value="vi">Tiếng Việt</option>
                 </select>
               </div>
               <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
@@ -9060,12 +9194,12 @@ const deDict = {
 
               {recoveredPassword && (
                 <div style={{ background: '#ecfdf5', border: '2px solid #10b981', borderRadius: '10px', padding: '1rem', textAlign: 'center' }}>
-                  <div style={{ fontSize: '0.85rem', color: '#065f46', marginBottom: '0.4rem', fontWeight: 'bold' }}>哈囉 {recoveredPassword.name}！您的密碼如下：</div>
+                  <div style={{ fontSize: '0.85rem', color: '#065f46', marginBottom: '0.4rem', fontWeight: 'bold' }}>{t("哈囉", "Hello")} {recoveredPassword.name}！{t("您的密碼如下：", "Your password is below:")}</div>
                   <div style={{ fontFamily: 'monospace', fontSize: '1.4rem', fontWeight: 'bold', color: '#047857', letterSpacing: '2px', background: '#d1fae5', padding: '0.5rem 1rem', borderRadius: '6px', marginBottom: '0.6rem', userSelect: 'all' }}>
                     {recoveredPassword.password}
                   </div>
-                  <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>請複製密碼後貼到上方密碼欄位登入</div>
-                  <button onClick={() => { navigator.clipboard.writeText(recoveredPassword.password); }} style={{ marginTop: '0.5rem', background: '#10b981', color: 'white', border: 'none', padding: '0.4rem 1rem', borderRadius: '6px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 'bold' }}>📋 複製密碼</button>
+                  <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>{t("請複製密碼後貼到上方密碼欄位登入", "Please copy and paste the password above to login.")}</div>
+                  <button onClick={() => { navigator.clipboard.writeText(recoveredPassword.password); }} style={{ marginTop: '0.5rem', background: '#10b981', color: 'white', border: 'none', padding: '0.4rem 1rem', borderRadius: '6px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 'bold' }}>📋 {t("複製密碼", "Copy Password")}</button>
                 </div>
               )}
 
