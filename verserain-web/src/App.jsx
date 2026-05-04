@@ -2310,7 +2310,7 @@ export default function App() {
 
     if (isSuccess) {
       setPureBaseScore(finalCalculatedScore);
-      let timeMultiplier = playMode === 'blind' ? 0.65 : 0.5;
+      let timeMultiplier = (playMode === 'blind' || playMode?.startsWith('voice')) ? 0.65 : 0.5;
       const calculatedTimeBonus = Math.floor(Math.max(0, timeLeft) * timeMultiplier);
       setTimeBonus(calculatedTimeBonus);
       finalCalculatedScore += calculatedTimeBonus;
@@ -8863,8 +8863,8 @@ const deDict = {
                       </div>
                       {timeBonus > 0 && (
                         <div style={{ fontSize: 'clamp(0.85rem, 1.8vh, 1rem)', color: '#34d399', marginBottom: '0.3rem', fontWeight: 'bold' }}>
-                          {t("時間加成", "Time Bonus")}: {(timeLeft / 100).toFixed(2)}s × {playMode === 'blind' ? '65' : '50'} = +{timeBonus}
-                          {playMode === 'blind' && (
+                          {t("時間加成", "Time Bonus")}: {(timeLeft / 100).toFixed(2)}s × {(playMode === 'blind' || playMode?.startsWith('voice')) ? '65' : '50'} = +{timeBonus}
+                          {(playMode === 'blind' || playMode?.startsWith('voice')) && (
                             <div style={{ fontSize: 'clamp(0.7rem, 1.5vh, 0.8rem)', color: '#fbbf24', marginTop: '0.1rem' }}>
                               ({t("語音權重 +30%", "Voice +30%")})
                             </div>
