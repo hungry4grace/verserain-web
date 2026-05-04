@@ -382,12 +382,13 @@ body {
   margin: auto 0;
 }
 
-@media (orientation: landscape) and (max-height: 600px) {
+@media (orientation: landscape) and (max-height: 800px) {
   .square-grid-container {
-    padding-top: 4.5rem;
-    justify-content: flex-start;
+    padding-top: 60px !important;
+    bottom: 0px !important;
+    justify-content: flex-start !important;
   }
   .square-grid-inner {
-    margin: 1vh auto auto auto;
+    margin: 0px auto auto auto !important;
   }
 }
