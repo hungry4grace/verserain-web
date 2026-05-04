@@ -5367,6 +5367,19 @@ const deDict = {
         }}
         className={performanceMode ? 'performance-mode' : ''}
       >
+        <style>
+          {`
+            @media (orientation: landscape) and (max-height: 800px) {
+              .landscape-compact-header { padding: 4px 16px !important; }
+              .landscape-compact-nav { padding: 4px 16px !important; }
+              .landscape-compact-content { margin-top: 8px !important; }
+              .landscape-compact-header > div > div > div:first-child { font-size: 1.2rem !important; }
+              .landscape-compact-nav > div { padding: 0.3rem 0.8rem !important; font-size: 0.85rem !important; }
+              .square-grid-container { padding-top: 60px !important; bottom: 0px !important; justify-content: flex-start !important; }
+              .square-grid-inner { margin: 0px auto auto auto !important; }
+            }
+          `}
+        </style>
         <div className={`bg-layer ${combo >= 3 ? 'golden-bg' : ''}`} />
         <div className={`rain-system ${combo >= 3 ? 'golden-rain' : ''}`}>
           <div className="rain-layer back" />
@@ -5442,7 +5455,7 @@ const deDict = {
                     verserain
                   </div>
                   <div style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', marginTop: '4px', marginLeft: '2px' }}>
-                    v3.5.3
+                    v3.5.4
                   </div>
                 </div>
                 <select

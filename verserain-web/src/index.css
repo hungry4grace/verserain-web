@@ -382,6 +382,18 @@ body {
   margin: auto 0;
 }
 
+/* Default styles for portrait or large screens */
+.landscape-compact-header {
+  padding: 1rem 2rem;
+}
+.landscape-compact-nav {
+  padding: 0.8rem 1rem;
+}
+.landscape-compact-content {
+  margin: 2rem auto;
+  padding: 0 1rem;
+}
+
 @media (orientation: landscape) and (max-height: 800px) {
   .square-grid-container {
     padding-top: 60px !important;
@@ -401,16 +413,4 @@ body {
     margin: 0.5rem auto !important;
     padding: 0 1rem;
   }
-}
-
-/* Default styles for portrait or large screens */
-.landscape-compact-header {
-  padding: 1rem 2rem;
-}
-.landscape-compact-nav {
-  padding: 0.8rem 1rem;
-}
-.landscape-compact-content {
-  margin: 2rem auto;
-  padding: 0 1rem;
 }
