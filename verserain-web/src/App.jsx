@@ -1272,8 +1272,8 @@ export default function App() {
     // Other languages (English, Hebrew, Farsi, Japanese) use spaces between words — keep them intact.
     const shouldSplitOnSpace = version === 'cuv' || version === 'cuvs' || version === 'ko';
     const regex = shouldSplitOnSpace
-      ? /\.{2,}|[,，。；؛၊။،：「」、;:\.\?!！？؟『』《》 ]/
-      : /\.{2,}|[,，。；؛၊။،：「」、;:\.\?!！？؟『』《》]/;
+      ? /\.{2,}|[,，。；؛၊။،：「」、;:\.\?!！？؟『』《》'\"‘’”"“ ]/
+      : /\.{2,}|[,，。；؛၊။،：「」、;:\.\?!！？؟『』《》'\"‘’”"“]/;
     return activeVerse.text.split(regex).map(p => p.trim()).filter(Boolean);
   }, [activeVerse, version]);
 
@@ -1536,7 +1536,7 @@ export default function App() {
         setCombo(0);
         setHealth(3);
         const shouldSplitOnSpace = /[\u4e00-\u9fa5\uac00-\ud7af]/.test(localNextVerse.text);
-        const regex = shouldSplitOnSpace ? /\.{2,}|[,，。；؛၊။،：「」、;:\.\?!！？؟『』《》 ]/ : /\.{2,}|[,，。；؛၊။،：「」、;:\.\?!！？؟『』《》]/;
+        const regex = shouldSplitOnSpace ? /\.{2,}|[,，。；؛၊။،：「」、;:\.\?!！？؟『』《》'\"‘’”"“ ]/ : /\.{2,}|[,，。；؛၊။،：「」、;:\.\?!！？؟『』《》'\"‘’”"“]/;
         const phraseCount = localNextVerse.text.split(regex).filter(p => p.trim()).length;
         setTimeLeft(500 + phraseCount * 500);
         setLocalNextVerse(null);
@@ -1561,7 +1561,7 @@ export default function App() {
       } else if (multiplayerState?.host === myClientId && multiplayerState.campaignQueue && multiplayerState.campaignQueue.length > 0) {
         const nextVerse = multiplayerState.campaignQueue[0];
         const shouldSplitOnSpace = /[\u4e00-\u9fa5\uac00-\ud7af]/.test(nextVerse.text);
-        const regex = shouldSplitOnSpace ? /\.{2,}|[,，。；؛၊။،：「」、;:\.\?!！？؟『』《》 ]/ : /\.{2,}|[,，。；؛၊။،：「」、;:\.\?!！？؟『』《》]/;
+        const regex = shouldSplitOnSpace ? /\.{2,}|[,，。；؛၊။،：「」、;:\.\?!！？؟『』《》'\"‘’”"“ ]/ : /\.{2,}|[,，。；؛၊။،：「」、;:\.\?!！？؟『』《》'\"‘’”"“]/;
         const phrases = nextVerse.text.split(regex).map(p => p.trim()).filter(Boolean);
 
         const maxGridSize = multiplayerState.distractionLevel <= 1 ? 4 : 9;
@@ -1674,7 +1674,7 @@ export default function App() {
             setCombo(0);
             setScore(0);
             const shouldSplitOnSpace = /[\u4e00-\u9fa5\uac00-\ud7af]/.test(msg.state.verseText);
-            const regex = shouldSplitOnSpace ? /\.{2,}|[,，。；؛၊။،：「」、;:\.\?!！？؟『』《》 ]/ : /\.{2,}|[,，。；؛၊။،：「」、;:\.\?!！？؟『』《》]/;
+            const regex = shouldSplitOnSpace ? /\.{2,}|[,，。；؛၊။،：「」、;:\.\?!！？؟『』《》'\"‘’”"“ ]/ : /\.{2,}|[,，。；؛၊။،：「」、;:\.\?!！？؟『』《》'\"‘’”"“]/;
             const phraseCount = msg.state.verseText.split(regex).filter(p => p.trim()).length;
             setTimeLeft(500 + phraseCount * 500);
             setCurrentSeqIndex(0);
@@ -2029,7 +2029,7 @@ export default function App() {
           if (socketRef.current) {
             const verse = initAutoStart.verse || activeVerse;
             const shouldSplitOnSpace = /[\u4e00-\u9fa5\uac00-\ud7af]/.test(verse.text);
-            const regex = shouldSplitOnSpace ? /\.{2,}|[,，。；؛၊။،：「」、;:\.\?!！？؟『』《》 ]/ : /\.{2,}|[,，。；؛၊။،：「」、;:\.\?!！？؟『』《》]/;
+            const regex = shouldSplitOnSpace ? /\.{2,}|[,，。；؛၊။،：「」、;:\.\?!！？؟『』《》'\"‘’”"“ ]/ : /\.{2,}|[,，。；؛၊။،：「」、;:\.\?!！？؟『』《》'\"‘’”"“]/;
             const phrases = verse.text.split(regex).map(p => p.trim()).filter(Boolean);
 
             socketRef.current.send(JSON.stringify({
@@ -2057,7 +2057,7 @@ export default function App() {
     let phrases;
     if (overrideVerse) {
       const shouldSplitOnSpace = /[\u4e00-\u9fa5\uac00-\ud7af]/.test(verse.text);
-      const regex = shouldSplitOnSpace ? /\.{2,}|[,，。；؛၊။،：「」、;:\.\?!！？؟『』《》 ]/ : /\.{2,}|[,，。；؛၊။،：「」、;:\.\?!！？؟『』《》]/;
+      const regex = shouldSplitOnSpace ? /\.{2,}|[,，。；؛၊။،：「」、;:\.\?!！？؟『』《》'\"‘’”"“ ]/ : /\.{2,}|[,，。；؛၊။،：「」、;:\.\?!！？؟『』《》'\"‘’”"“]/;
       phrases = verse.text.split(regex).map(p => p.trim()).filter(Boolean);
     } else {
       phrases = activePhrasesRef.current;
@@ -2139,7 +2139,7 @@ export default function App() {
     const initialVerse = overrideVerse || activeVerse;
     if (initialVerse) {
       const shouldSplitOnSpace = /[\u4e00-\u9fa5\uac00-\ud7af]/.test(initialVerse.text);
-      const regex = shouldSplitOnSpace ? /\.{2,}|[,，。；؛၊။،：「」、;:\.\?!！？؟『』《》 ]/ : /\.{2,}|[,，。；؛၊။،：「」、;:\.\?!！？؟『』《》]/;
+      const regex = shouldSplitOnSpace ? /\.{2,}|[,，。；؛၊။،：「」、;:\.\?!！？؟『』《》'\"‘’”"“ ]/ : /\.{2,}|[,，。；؛၊။،：「」、;:\.\?!！？؟『』《》'\"‘’”"“]/;
       const phraseCount = initialVerse.text.split(regex).filter(p => p.trim()).length;
       setTimeLeft(500 + phraseCount * 500);
     } else {
@@ -2156,7 +2156,7 @@ export default function App() {
     const actualVerse = overrideVerse || activeVerse;
     if (actualVerse) {
       const shouldSplitOnSpace = /[\u4e00-\u9fa5\uac00-\ud7af]/.test(actualVerse.text);
-      const regex = shouldSplitOnSpace ? /\.{2,}|[,，。；؛၊။،：「」、;:\.\?!！？؟『』《》 ]/ : /\.{2,}|[,，。；؛၊။،：「」、;:\.\?!！？؟『』《》]/;
+      const regex = shouldSplitOnSpace ? /\.{2,}|[,，。；؛၊။،：「」、;:\.\?!！？؟『』《》'\"‘’”"“ ]/ : /\.{2,}|[,，。；؛၊။،：「」、;:\.\?!！？؟『』《》'\"‘’”"“]/;
       activePhrasesRef.current = actualVerse.text.split(regex).map(p => p.trim()).filter(Boolean);
     }
 
