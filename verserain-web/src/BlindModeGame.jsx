@@ -112,6 +112,7 @@ export default function BlindModeGame({
         const heartbeat = setInterval(() => {
             if (!isMountedRef.current) return;
             if (isCompleteRef.current) return;
+            if (isSpeakingRef.current) return;
             ensureMicAlive();
         }, 2000);
         return () => clearInterval(heartbeat);
@@ -143,9 +144,9 @@ export default function BlindModeGame({
                     setMissedIndices([...missedIndicesRef.current]);
                     onWordMissRef.current(true); // true = shouldNotAdvance
 
-                    // Stop listening temporarily while system reads
+                    // Stop listening temporarily and clear buffer while system reads
                     if (recognitionRef.current) {
-                        try { recognitionRef.current.stop(); } catch (e) {}
+                        try { recognitionRef.current.abort(); } catch (e) {}
                     }
 
                     isSpeakingRef.current = true;
@@ -409,7 +410,7 @@ export default function BlindModeGame({
         recognition.onend = () => {
             if (isMountedRef.current && recognitionRef.current) {
                 setTimeout(() => {
-                    if (isMountedRef.current && recognitionRef.current) {
+                    if (isMountedRef.current && recognitionRef.current && !isSpeakingRef.current) {
                         try {
                             recognitionRef.current.start();
                         } catch (e) {}
@@ -431,7 +432,7 @@ export default function BlindModeGame({
         recognitionRef.current = recognition;
 
         let heartbeat = setInterval(() => {
-            if (recognitionRef.current && isMountedRef.current) {
+            if (recognitionRef.current && isMountedRef.current && !isSpeakingRef.current) {
                 try {
                     recognitionRef.current.start();
                 } catch(e) {}
