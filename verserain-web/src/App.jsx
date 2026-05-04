@@ -2314,7 +2314,7 @@ export default function App() {
 
     if (isSuccess) {
       setPureBaseScore(finalCalculatedScore);
-      let timeMultiplier = (playMode === 'blind' || playMode?.startsWith('voice')) ? 0.65 : 0.5;
+      let timeMultiplier = (playMode === 'blind' || playMode?.startsWith('voice')) ? 0.75 : 0.5;
       const calculatedTimeBonus = Math.floor(Math.max(0, timeLeft) * timeMultiplier);
       setTimeBonus(calculatedTimeBonus);
       finalCalculatedScore += calculatedTimeBonus;
@@ -3258,7 +3258,7 @@ export default function App() {
     '除了點擊方塊，您現在可以直接<strong>用「唸」的來背經文！</strong>': 'علاوه بر کلیک روی بلوک‌ها، اکنون می‌توانید مستقیماً <strong>با استفاده از صدای خود</strong> آیات را تلاوت کنید!',
     '<strong>智慧模糊辨識：</strong> 系統內建強大的中文拼音模糊比對。就算有台灣國語、捲舌平舌音不分，只要發音相近就能過關！': '<strong>تشخیص هوشمند فازی:</strong> سیستم دارای تطبیق قدرتمند پین‌یین فازی است. حتی با لهجه‌ها یا تلفظ غیردقیق، صداهای مشابه عبور خواهند کرد!',
     '<strong>貼心提示系統：</strong> 如果卡詞了，系統會在 3 秒後自動給予局部提示，幫助您順利接下去。': '<strong>سیستم راهنمای مفید:</strong> اگر گیر کردید، سیستم پس از 3 ثانیه به طور خودکار یک راهنمایی جزئی ارائه می‌دهد تا به شما در ادامه کمک کند.',
-    '<strong>分數加成獎勵：</strong> 為了鼓勵大家開口宣告神的話語，在語音模式中，您的<strong>「剩餘時間加成」權重會大幅提升 30%</strong>！': '<strong>امتیاز اضافی:</strong> برای تشویق به اعلام بلند کلام خدا، وزن <strong>«پاداش زمان باقیمانده» شما در حالت صوتی ۳۰ درصد افزایش می‌یابد</strong>!',
+    '<strong>分數加成獎勵：</strong> 為了鼓勵大家開口宣告神的話語，在語音模式中，您的<strong>「剩餘時間加成」權重會大幅提升 50%</strong>！': '<strong>امتیاز اضافی:</strong> برای تشویق به اعلام بلند کلام خدا، وزن <strong>«پاداش زمان باقیمانده» شما در حالت صوتی ۵۰ درصد افزایش می‌یابد</strong>!',
     '⚔️ 五、多人即時連線對戰': '⚔️ ۵. نبرد چند نفره در زمان واقعی',
     '背經文不再是一個人孤單的事！': 'حفظ آیات دیگر یک کار انفرادی نیست!',
     '點擊 <strong>「多人連線」</strong> 創建專屬房間，邀請小組成員或家人一起加入。': 'برای ایجاد یک اتاق خصوصی و دعوت از اعضای گروه یا خانواده خود برای پیوستن، روی <strong>«چند نفره»</strong> کلیک کنید.',
@@ -3274,7 +3274,7 @@ export default function App() {
     '提供多種挑戰難度，無論是小孩還是成人都非常適合來挑戰自己的極限。': 'سطوح دشواری چندگانه‌ای ارائه شده است که توسط کودکان تا بزرگسالان قابل بازی است.',
     '挑戰模式有助於加強記憶同一個經文組中的多段相關經文。': 'حالت چالش به تقویت حافظه برای چندین آیه مرتبط در یک مجموعه آیه کمک می‌کند.',
     '線上排行榜能激勵會眾、青年團契和小組成員一起參與遊玩、共同精進！': 'جدول امتیازات آنلاین برای ایجاد انگیزه در جماعت، گروه‌های جوانان و اعضای گروه‌های کوچک برای مشارکت و پیشرفت با هم!',
-    '<strong>全新語音模式：</strong> 結合最先進的拼音模糊辨識技術，您可以直接開口背誦！即使發音不夠標準也能智慧通關，用語音大聲宣告神的話語，還能獲得額外的 30% 分數加成。': '<strong>حالت صوتی جدید:</strong> با ترکیب پیشرفته‌ترین تشخیص پین‌یین فازی، می‌توانید مستقیماً با صدای خود تلاوت کنید! حتی با تلفظ غیراستاندارد، می‌توانید هوشمندانه سطح را پاس کنید. کلام خدا را با صدای بلند اعلام کنید و 30% امتیاز اضافی دریافت کنید.',
+    '<strong>全新語音模式：</strong> 結合最先進的拼音模糊辨識技術，您可以直接開口背誦！即使發音不夠標準也能智慧通關，用語音大聲宣告神的話語，還能獲得額外的 50% 分數加成。': '<strong>حالت صوتی جدید:</strong> با ترکیب پیشرفته‌ترین تشخیص پین‌یین فازی، می‌توانید مستقیماً با صدای خود تلاوت کنید! حتی با تلفظ غیراستاندارد، می‌توانید هوشمندانه سطح را پاس کنید. کلام خدا را با صدای بلند اعلام کنید و 50% امتیاز اضافی دریافت کنید.',
     '<strong>多人即時連線對戰：</strong> 支援創建專屬房間，讓全家大小或小組成員在各自的手機上，同步挑戰同一組經文，享受刺激的即時競技樂趣！': '<strong>نبرد چند نفره در زمان واقعی:</strong> از ایجاد اتاق‌های خصوصی پشتیبانی می‌کند و به اعضای خانواده یا گروه اجازه می‌دهد تا به طور همزمان آیات یکسانی را در تلفن‌های خود به چالش بکشند و از هیجان رقابت در زمان واقعی لذت ببرند!',
     '在園子裡持續照顧樹苗並結出果子，就能提升你的互惠階級！當達到 ': 'برای ارتقای سطح، در باغ خود میوه به ثمر برسانید! وقتی به ',
     ' 時，將自動解鎖「專屬題庫」的建立權限喔！': ' برسید، ایجاد مجموعه‌های آیات سفارشی به طور خودکار باز می‌شود!',
@@ -3553,7 +3553,7 @@ export default function App() {
     '除了點擊方塊，您現在可以直接<strong>用「唸」的來背經文！</strong>': 'מלבד לחיצה על בלוקים, כעת אתה יכול לדקלם פסוקים ישירות <strong>באמצעות הקול שלך!</strong>',
     '<strong>智慧模糊辨識：</strong> 系統內建強大的中文拼音模糊比對。就算有台灣國語、捲舌平舌音不分，只要發音相近就能過關！': '<strong>זיהוי עמום חכם:</strong> המערכת כוללת התאמת פין-יין עמומה חזקה. אפילו עם מבטאים או הגייה לא מדויקת, צלילים דומים יעברו!',
     '<strong>貼心提示系統：</strong> 如果卡詞了，系統會在 3 秒後自動給予局部提示，幫助您順利接下去。': '<strong>מערכת רמזים מועילה:</strong> אם תיתקע, המערכת תספק באופן אוטומטי רמז חלקי לאחר 3 שניות כדי לעזור לך להמשיך.',
-    '<strong>分數加成獎勵：</strong> 為了鼓勵大家開口宣告神的話語，在語音模式中，您的<strong>「剩餘時間加成」權重會大幅提升 30%</strong>！': '<strong>בונוס ניקוד:</strong> כדי לעודד להכריז את דבר אלוהים בקול רם, המשקל של <strong>"בונוס זמן נותר" שלך מוגדל ב-30%</strong> במצב הקולי!',
+    '<strong>分數加成獎勵：</strong> 為了鼓勵大家開口宣告神的話語，在語音模式中，您的<strong>「剩餘時間加成」權重會大幅提升 50%</strong>！': '<strong>בונוס ניקוד:</strong> כדי לעודד להכריז את דבר אלוהים בקול רם, המשקל של <strong>"בונוס זמן נותר" שלך מוגדל ב-50%</strong> במצב הקולי!',
     '⚔️ 五、多人即時連線對戰': '⚔️ 5. קרב מרובה משתתפים בזמן אמת',
     '背經文不再是一個人孤單的事！': 'שינון פסוקים הוא כבר לא משימה בודדת!',
     '點擊 <strong>「多人連線」</strong> 創建專屬房間，邀請小組成員或家人一起加入。': 'לחץ על <strong>"מרובה משתתפים"</strong> כדי ליצור חדר פרטי ולהזמין את חברי הקבוצה או המשפחה שלך להצטרף.',
@@ -3569,7 +3569,7 @@ export default function App() {
     '提供多種挑戰難度，無論是小孩還是成人都非常適合來挑戰自己的極限。': 'מוצעות רמות קושי מרובות למשחק על ידי ילדים ומבוגרים כאחד.',
     '挑戰模式有助於加強記憶同一個經文組中的多段相關經文。': 'מצב האתגר עוזר לחזק את הזיכרון של מספר פסוקים קשורים באותו סט פסוקים.',
     '線上排行榜能激勵會眾、青年團契和小組成員一起參與遊玩、共同精進！': 'טבלת מובילים מקוונת כדי להניע את הקהילה, קבוצות נוער וחברי קבוצות קטנות להשתתף ולהשתפר יחד!',
-    '<strong>全新語音模式：</strong> 結合最先進的拼音模糊辨識技術，您可以直接開口背誦！即使發音不夠標準也能智慧通關，用語音大聲宣告神的話語，還能獲得額外的 30% 分數加成。': '<strong>מצב קולי חדש:</strong> בשילוב זיהוי עמום מתקדם ביותר, אתה יכול לדקלם ישירות עם הקול שלך! אפילו עם הגייה לא סטנדרטית, אתה יכול לעבור את השלב בצורה חכמה. הכרז את דבר אלוהים בקול רם וקבל בונוס ניקוד נוסף של 30%.',
+    '<strong>全新語音模式：</strong> 結合最先進的拼音模糊辨識技術，您可以直接開口背誦！即使發音不夠標準也能智慧通關，用語音大聲宣告神的話語，還能獲得額外的 50% 分數加成。': '<strong>מצב קולי חדש:</strong> בשילוב זיהוי עמום מתקדם ביותר, אתה יכול לדקלם ישירות עם הקול שלך! אפילו עם הגייה לא סטנדרטית, אתה יכול לעבור את השלב בצורה חכמה. הכרז את דבר אלוהים בקול רם וקבל בונוס ניקוד נוסף של 50%.',
     '<strong>多人即時連線對戰：</strong> 支援創建專屬房間，讓全家大小或小組成員在各自的手機上，同步挑戰同一組經文，享受刺激的即時競技樂趣！': '<strong>קרב מרובה משתתפים בזמן אמת:</strong> תומך ביצירת חדרים פרטיים, המאפשר לבני משפחה או חברי קבוצה לאתגר בו-זמנית את אותם פסוקים בטלפונים שלהם, וליהנות מהריגוש של תחרות בזמן אמת!',
     '在園子裡持續照顧樹苗並結出果子，就能提升你的互惠階級！當達到 ': 'שא פירות בגינה שלך כדי לעלות רמה! כאשר תגיע ל',
     ' 時，將自動解鎖「專屬題庫」的建立權限喔！': ' , יצירת סטי פסוקים מותאמים אישית תיפתח אוטומטית!',
@@ -4073,7 +4073,7 @@ export default function App() {
     '除了點擊方塊，您現在可以直接<strong>用「唸」的來背經文！</strong>': 'ブロックをクリックするだけでなく、自分の声で直接<strong>経文を暗唱できるようになりました！</strong>',
     '<strong>智慧模糊辨識：</strong> 系統內建強大的中文拼音模糊比對。就算有台灣國語、捲舌平舌音不分，只要發音相近就能過關！': '<strong>スマートな曖昧認識：</strong> システムには強力な曖昧な音声認識機能が組み込まれています。不正確な発音や訛りがあっても、似た音であれば通過できます！',
     '<strong>貼心提示系統：</strong> 如果卡詞了，系統會在 3 秒後自動給予局部提示，幫助您順利接下去。': '<strong>役立つヒントシステム：</strong> もし行き詰まったら、システムは3秒後に自動的に部分的なヒントを出してくれます。',
-    '<strong>分數加成獎勵：</strong> 為了鼓勵大家開口宣告神的話語，在語音模式中，您的<strong>「剩餘時間加成」權重會大幅提升 30%</strong>！': '<strong>スコアボーナス：</strong> 神の言葉を声に出して宣言することを奨励するために、音声モードでは<strong>「残り時間ボーナス」の比重が30%増加します</strong>！',
+    '<strong>分數加成獎勵：</strong> 為了鼓勵大家開口宣告神的話語，在語音模式中，您的<strong>「剩餘時間加成」權重會大幅提升 50%</strong>！': '<strong>スコアボーナス：</strong> 神の言葉を声に出して宣言することを奨励するために、音声モードでは<strong>「残り時間ボーナス」の比重が50%増加します</strong>！',
     '⚔️ 五、多人即時連線對戰': '⚔️ 5. リアルタイムマルチプレイ',
     '背經文不再是一個人孤單的事！': '経文の暗唱はもう孤独な作業ではありません！',
     '點擊 <strong>「多人連線」</strong> 創建專屬房間，邀請小組成員或家人一起加入。': '<strong>「マルチプレイ」</strong>をクリックして専用の部屋を作成し、グループメンバーや家族を招待して参加させましょう。',
@@ -4089,7 +4089,7 @@ export default function App() {
     '提供多種挑戰難度，無論是小孩還是成人都非常適合來挑戰自己的極限。': '複数の難易度が用意されており、子供から大人まで自分の限界に挑戦するのに最適です。',
     '挑戰模式有助於加強記憶同一個經文組中的多段相關經文。': 'チャレンジモードは、同じ経文セット内の関連する複数の経文の記憶を強化するのに役立ちます。',
     '線上排行榜能激勵會眾、青年團契和小組成員一起參與遊玩、共同精進！': 'オンラインリーダーボードは、会衆、青年フェローシップ、小グループのメンバーが一緒に参加して改善するよう動機付けます！',
-    '<strong>全新語音模式：</strong> 結合最先進的拼音模糊辨識技術，您可以直接開口背誦！即使發音不夠標準也能智慧通關，用語音大聲宣告神的話語，還能獲得額外的 30% 分數加成。': '<strong>新しい音声モード：</strong> 最新の曖昧な音声認識技術を組み合わせることで、声に出して直接暗唱することができます！標準的でない発音でも、スマートにレベルをクリアできます。神の言葉を大声で宣言し、さらに30%のスコアボーナスを獲得しましょう。',
+    '<strong>全新語音模式：</strong> 結合最先進的拼音模糊辨識技術，您可以直接開口背誦！即使發音不夠標準也能智慧通關，用語音大聲宣告神的話語，還能獲得額外的 50% 分數加成。': '<strong>新しい音声モード：</strong> 最新の曖昧な音声認識技術を組み合わせることで、声に出して直接暗唱することができます！標準的でない発音でも、スマートにレベルをクリアできます。神の言葉を大声で宣言し、さらに50%のスコアボーナスを獲得しましょう。',
     '<strong>多人即時連線對戰：</strong> 支援創建專屬房間，讓全家大小或小組成員在各自的手機上，同步挑戰同一組經文，享受刺激的即時競技樂趣！': '<strong>リアルタイムマルチプレイ：</strong> 専用の部屋の作成をサポートし、家族やグループメンバーがそれぞれの携帯電話で同時に同じ経文に挑戦し、リアルタイムでの競争の楽しさを味わうことができます！',
     '在園子裡持續照顧樹苗並結出果子，就能提升你的互惠階級！當達到 ': 'レベルを上げるために、あなたの庭で実を結びましょう！あなたが',
     ' 時，將自動解鎖「專屬題庫」的建立權限喔！': 'に達すると、独自の経文セットの作成権限が自動的に解放されます！',
@@ -4576,7 +4576,7 @@ export default function App() {
     '除了點擊方塊，您現在可以直接<strong>用「唸」的來背經文！</strong>': '블록을 클릭하는 것 외에도 이제 직접 <strong>음성으로 구절을 암송할 수 있습니다!</strong>',
     '<strong>智慧模糊辨識：</strong> 系統內建強大的中文拼音模糊比對。就算有台灣國語、捲舌平舌音不分，只要發音相近就能過關！': '<strong>스마트 흐림 인식:</strong> 시스템은 강력한 모호한 음성 일치를 갖추고 있습니다. 부정확한 발음이나 억양에도 비슷한 소리가 통과됩니다!',
     '<strong>貼心提示系統：</strong> 如果卡詞了，系統會在 3 秒後自動給予局部提示，幫助您順利接下去。': '<strong>도움말 힌트 시스템:</strong> 막히면 3초 후 시스템이 자동으로 부분 힌트를 주어 계속할 수 있도록 도와줍니다.',
-    '<strong>分數加成獎勵：</strong> 為了鼓勵大家開口宣告神的話語，在語音模式中，您的<strong>「剩餘時間加成」權重會大幅提升 30%</strong>！': '<strong>점수 보너스:</strong> 하나님의 말씀을 소리내어 선포하도록 장려하기 위해 음성 모드에서 <strong>"남은 시간 보너스" 가중치가 30% 증가합니다!</strong>',
+    '<strong>分數加成獎勵：</strong> 為了鼓勵大家開口宣告神的話語，在語音模式中，您的<strong>「剩餘時間加成」權重會大幅提升 50%</strong>！': '<strong>점수 보너스:</strong> 하나님의 말씀을 소리내어 선포하도록 장려하기 위해 음성 모드에서 <strong>"남은 시간 보너스" 가중치가 50% 증가합니다!</strong>',
     '⚔️ 五、多人即時連線對戰': '⚔️ 5. 멀티플레이어 실시간 대전',
     '背經文不再是一個人孤單的事！': '성경 암송은 더 이상 혼자 하는 일이 아닙니다!',
     '點擊 <strong>「多人連線」</strong> 創建專屬房間，邀請小組成員或家人一起加入。': '<strong>"멀티플레이"</strong>를 클릭하여 비공개 방을 만들고 그룹 멤버나 가족을 초대하여 참여하세요.',
@@ -4592,7 +4592,7 @@ export default function App() {
     '提供多種挑戰難度，無論是小孩還是成人都非常適合來挑戰自己的極限。': '어린이부터 어른까지 자신의 한계에 도전하기에 적합한 다양한 난이도를 제공합니다.',
     '挑戰模式有助於加強記憶同一個經文組中的多段相關經文。': '챌린지 모드는 같은 구절 세트 내 여러 관련 구절의 기억을 강화하는 데 도움이 됩니다.',
     '線上排行榜能激勵會眾、青年團契和小組成員一起參與遊玩、共同精進！': '온라인 리더보드는 성도, 청년부, 소그룹 구성원이 함께 참여하고 성장하도록 동기를 부여합니다!',
-    '<strong>全新語音模式：</strong> 結合最先進的拼音模糊辨識技術，您可以直接開口背誦！即使發音不夠標準也能智慧通關，用語音大聲宣告神的話語，還能獲得額外的 30% 分數加成。': '<strong>새로운 음성 모드：</strong> 최첨단 모호한 음성 인식을 결합하여 음성으로 직접 암송할 수 있습니다! 발음이 표준이 아니더라도 스마트하게 레벨을 통과할 수 있습니다. 하나님의 말씀을 큰 소리로 선포하고 30%의 추가 점수 보너스를 받으세요.',
+    '<strong>全新語音模式：</strong> 結合最先進的拼音模糊辨識技術，您可以直接開口背誦！即使發音不夠標準也能智慧通關，用語音大聲宣告神的話語，還能獲得額外的 50% 分數加成。': '<strong>새로운 음성 모드：</strong> 최첨단 모호한 음성 인식을 결합하여 음성으로 직접 암송할 수 있습니다! 발음이 표준이 아니더라도 스마트하게 레벨을 통과할 수 있습니다. 하나님의 말씀을 큰 소리로 선포하고 50%의 추가 점수 보너스를 받으세요.',
     '<strong>多人即時連線對戰：</strong> 支援創建專屬房間，讓全家大小或小組成員在各自的手機上，同步挑戰同一組經文，享受刺激的即時競技樂趣！': '<strong>멀티플레이어 실시간 대전：</strong> 비공개 방 만들기를 지원하여 가족이나 그룹 멤버가 각자의 전화기에서 동시에 동일한 구절에 도전하고 실시간 경쟁의 스릴을 즐길 수 있습니다!',
     '在園子裡持續照顧樹苗並結出果子，就能提升你的互惠階級！當達到 ': '레벨을 올리려면 정원에 열매를 맺으세요! 당신이 ',
     ' 時，將自動解鎖「專屬題庫」的建立權限喔！': '에 도달하면 맞춤형 구절 세트 작성이 자동으로 잠금 해제됩니다!',
@@ -5071,7 +5071,7 @@ const esDict = {
     '除了點擊方塊，您現在可以直接<strong>用「唸」的來背經文！</strong>': 'Además de hacer clic en los bloques, ¡ahora puedes recitar versículos directamente <strong>usando tu voz!</strong>',
     '<strong>智慧模糊辨識：</strong> 系統內建強大的中文拼音模糊比對。就算有台灣國語、捲舌平舌音不分，只要發音相近就能過關！': '<strong>Reconocimiento Inteligente Difuso:</strong> El sistema cuenta con un potente emparejamiento pinyin difuso. ¡Incluso con acentos o pronunciación imprecisa, los sonidos similares pasarán!',
     '<strong>貼心提示系統：</strong> 如果卡詞了，系統會在 3 秒後自動給予局部提示，幫助您順利接下去。': '<strong>Sistema de Ayuda:</strong> Si te atascas, el sistema te proporcionará automáticamente una pista parcial después de 3 segundos para ayudarte a continuar.',
-    '<strong>分數加成獎勵：</strong> 為了鼓勵大家開口宣告神的話語，在語音模式中，您的<strong>「剩餘時間加成」權重會大幅提升 30%</strong>！': '<strong>Bonus de Puntuación:</strong> Para animar a proclamar en voz alta la palabra de Dios, ¡el peso de tu <strong>"Bono de Tiempo Restante" aumenta un 30%</strong> en el Modo de Voz!',
+    '<strong>分數加成獎勵：</strong> 為了鼓勵大家開口宣告神的話語，在語音模式中，您的<strong>「剩餘時間加成」權重會大幅提升 50%</strong>！': '<strong>Bonus de Puntuación:</strong> Para animar a proclamar en voz alta la palabra de Dios, ¡el peso de tu <strong>"Bono de Tiempo Restante" aumenta un 50%</strong> en el Modo de Voz!',
     '⚔️ 五、多人即時連線對戰': '⚔️ 5. Batalla Multijugador en Tiempo Real',
     '背經文不再是一個人孤單的事！': '¡Memorizar las Escrituras ya no es una tarea solitaria!',
     '點擊 <strong>「多人連線」</strong> 創建專屬房間，邀請小組成員或家人一起加入。': 'Haz clic en <strong>"Multijugador"</strong> para crear una sala privada e invitar a los miembros de tu grupo o familia a unirse.',
@@ -5087,7 +5087,7 @@ const esDict = {
     '提供多種挑戰難度，無論是小孩還是成人都非常適合來挑戰自己的極限。': 'Se ofrecen múltiples niveles de dificultad para ser jugados tanto por niños como por adultos.',
     '挑戰模式有助於加強記憶同一個經文組中的多段相關經文。': 'El modo desafío ayuda a fortalecer la memoria de varios versículos relacionados en el mismo conjunto de versículos.',
     '線上排行榜能激勵會眾、青年團契和小組成員一起參與遊玩、共同精進！': '¡Tabla de Clasificación en línea para motivar a la congregación, grupos de jóvenes y miembros de pequeños grupos a participar y mejorar juntos!',
-    '<strong>全新語音模式：</strong> 結合最先進的拼音模糊辨識技術，您可以直接開口背誦！即使發音不夠標準也能智慧通關，用語音大聲宣告神的話語，還能獲得額外的 30% 分數加成。': '<strong>Nuevo Modo de Voz:</strong> Combinando el reconocimiento de pinyin difuso más avanzado, ¡puedes recitar directamente con tu voz! Incluso con una pronunciación no estándar, puedes pasar el nivel de forma inteligente. Proclama en voz alta la palabra de Dios y obtén un bono de puntuación adicional del 30%.',
+    '<strong>全新語音模式：</strong> 結合最先進的拼音模糊辨識技術，您可以直接開口背誦！即使發音不夠標準也能智慧通關，用語音大聲宣告神的話語，還能獲得額外的 50% 分數加成。': '<strong>Nuevo Modo de Voz:</strong> Combinando el reconocimiento de pinyin difuso más avanzado, ¡puedes recitar directamente con tu voz! Incluso con una pronunciación no estándar, puedes pasar el nivel de forma inteligente. Proclama en voz alta la palabra de Dios y obtén un bono de puntuación adicional del 50%.',
     '<strong>多人即時連線對戰：</strong> 支援創建專屬房間，讓全家大小或小組成員在各自的手機上，同步挑戰同一組經文，享受刺激的即時競技樂趣！': '<strong>Batalla Multijugador en Tiempo Real:</strong> Admite la creación de salas privadas, permitiendo a la familia o miembros del grupo desafiar simultáneamente los mismos versículos en sus teléfonos, ¡disfrutando de la emoción de la competencia en tiempo real!',
     '在園子裡持續照顧樹苗並結出果子，就能提升你的互惠階級！當達到 ': '¡Da frutos en tu jardín para subir de nivel! Al alcanzar el ',
     ' 時，將自動解鎖「專屬題庫」的建立權限喔！': ', ¡desbloquearás automáticamente la creación de Conjuntos de Versículos Personalizados!',
@@ -5226,7 +5226,7 @@ const trDict = {
     '除了點擊方塊，您現在可以直接<strong>用「唸」的來背經文！</strong>': 'Bloklara tıklamanın yanı sıra, artık <strong>sesinizi kullanarak</strong> ayetleri doğrudan ezberden okuyabilirsiniz!',
     '<strong>智慧模糊辨識：</strong> 系統內建強大的中文拼音模糊比對。就算有台灣國語、捲舌平舌音不分，只要發音相近就能過關！': '<strong>Akıllı Bulanık Tanıma:</strong> Sistem güçlü bir bulanık eşleştirme özelliğine sahiptir. Aksanlarla veya kesin olmayan telaffuzla bile, benzer sesler geçecektir!',
     '<strong>貼心提示系統：</strong> 如果卡詞了，系統會在 3 秒後自動給予局部提示，幫助您順利接下去。': '<strong>Yardımcı İpucu Sistemi:</strong> Takılırsanız, devam etmenize yardımcı olmak için sistem 3 saniye sonra otomatik olarak kısmi bir ipucu sağlayacaktır.',
-    '<strong>分數加成獎勵：</strong> 為了鼓勵大家開口宣告神的話語，在語音模式中，您的<strong>「剩餘時間加成」權重會大幅提升 30%</strong>！': '<strong>Puan Bonusu:</strong> Tanrı\'nın sözünü yüksek sesle duyurmayı teşvik etmek için, Ses Modunda <strong>"Kalan Süre Bonusu" ağırlığınız %30 artırılır</strong>!',
+    '<strong>分數加成獎勵：</strong> 為了鼓勵大家開口宣告神的話語，在語音模式中，您的<strong>「剩餘時間加成」權重會大幅提升 50%</strong>！': '<strong>Puan Bonusu:</strong> Tanrı\'nın sözünü yüksek sesle duyurmayı teşvik etmek için, Ses Modunda <strong>"Kalan Süre Bonusu" ağırlığınız %30 artırılır</strong>!',
     '⚔️ 五、多人即時連線對戰': '⚔️ 5. Çok Oyunculu Gerçek Zamanlı Savaş',
     '背經文不再是一個人孤單的事！': 'Kutsal metinleri ezberlemek artık yalnız yapılan bir iş değil!',
     '點擊 <strong>「多人連線」</strong> 創建專屬房間，邀請小組成員或家人一起加入。': 'Özel bir oda oluşturmak ve grup üyelerinizi veya ailenizi katılmaya davet etmek için <strong>"Çok Oyunculu"</strong> seçeneğine tıklayın.',
@@ -5242,7 +5242,7 @@ const trDict = {
     '提供多種挑戰難度，無論是小孩還是成人都非常適合來挑戰自己的極限。': 'Çocuklardan yetişkinlere kadar oynanabilen birden fazla zorluk seviyesi sunulmaktadır.',
     '挑戰模式有助於加強記憶同一個經文組中的多段相關經文。': 'Meydan okuma modu, aynı ayet setindeki birden fazla ilgili ayetin hafızasını güçlendirmeye yardımcı olur.',
     '線上排行榜能激勵會眾、青年團契和小組成員一起參與遊玩、共同精進！': 'Cemaati, gençlik gruplarını ve küçük grup üyelerini birlikte katılmaya ve gelişmeye motive etmek için Çevrimiçi Liderlik Tablosu!',
-    '<strong>全新語音模式：</strong> 結合最先進的拼音模糊辨識技術，您可以直接開口背誦！即使發音不夠標準也能智慧通關，用語音大聲宣告神的話語，還能獲得額外的 30% 分數加成。': '<strong>Yeni Ses Modu:</strong> En gelişmiş bulanık tanıma teknolojisi ile doğrudan sesinizle ezber okuyabilirsiniz! Standart olmayan telaffuzla bile seviyeyi akıllıca geçebilirsiniz. Tanrı\'nın sözünü yüksek sesle ilan edin ve ekstra %30 puan bonusu kazanın.',
+    '<strong>全新語音模式：</strong> 結合最先進的拼音模糊辨識技術，您可以直接開口背誦！即使發音不夠標準也能智慧通關，用語音大聲宣告神的話語，還能獲得額外的 50% 分數加成。': '<strong>Yeni Ses Modu:</strong> En gelişmiş bulanık tanıma teknolojisi ile doğrudan sesinizle ezber okuyabilirsiniz! Standart olmayan telaffuzla bile seviyeyi akıllıca geçebilirsiniz. Tanrı\'nın sözünü yüksek sesle ilan edin ve ekstra %30 puan bonusu kazanın.',
     '<strong>多人即時連線對戰：</strong> 支援創建專屬房間，讓全家大小或小組成員在各自的手機上，同步挑戰同一組經文，享受刺激的即時競技樂趣！': '<strong>Çok Oyunculu Gerçek Zamanlı Savaş:</strong> Özel odalar oluşturmayı destekler; ailenin veya grup üyelerinin kendi telefonlarında aynı ayetlere aynı anda meydan okumasına izin vererek gerçek zamanlı rekabetin heyecanını yaşatır!',
     '在園子裡持續照顧樹苗並結出果子，就能提升你的互惠階級！當達到 ': 'Seviye atlamak için bahçenizde meyve verin! ',
     ' 時，將自動解鎖「專屬題庫」的建立權限喔！': ' seviyesine ulaştığınızda, Özel Ayet Setleri otomatik olarak açılır!',
@@ -5381,7 +5381,7 @@ const deDict = {
     '除了點擊方塊，您現在可以直接<strong>用「唸」的來背經文！</strong>': 'Neben dem Klicken auf Blöcke können Sie Verse jetzt direkt <strong>mit Ihrer Stimme rezitieren!</strong>',
     '<strong>智慧模糊辨識：</strong> 系統內建強大的中文拼音模糊比對。就算有台灣國語、捲舌平舌音不分，只要發音相近就能過關！': '<strong>Intelligente unscharfe Erkennung:</strong> Das System verfügt über eine leistungsstarke unscharfe Pinyin-Übereinstimmung. Selbst bei ungenauer Aussprache werden ähnliche Töne akzeptiert!',
     '<strong>貼心提示系統：</strong> 如果卡詞了，系統會在 3 秒後自動給予局部提示，幫助您順利接下去。': '<strong>Hilfreiches Hinweissystem:</strong> Wenn Sie stecken bleiben, gibt Ihnen das System nach 3 Sekunden automatisch einen teilweisen Hinweis, damit Sie fortfahren können.',
-    '<strong>分數加成獎勵：</strong> 為了鼓勵大家開口宣告神的話語，在語音模式中，您的<strong>「剩餘時間加成」權重會大幅提升 30%</strong>！': '<strong>Punkte-Bonus:</strong> Um die laute Verkündigung von Gottes Wort zu fördern, wird Ihr <strong>"Verbleibender Zeitbonus"-Gewicht im Sprachmodus um 30 % erhöht!</strong>',
+    '<strong>分數加成獎勵：</strong> 為了鼓勵大家開口宣告神的話語，在語音模式中，您的<strong>「剩餘時間加成」權重會大幅提升 50%</strong>！': '<strong>Punkte-Bonus:</strong> Um die laute Verkündigung von Gottes Wort zu fördern, wird Ihr <strong>"Verbleibender Zeitbonus"-Gewicht im Sprachmodus um 50 % erhöht!</strong>',
     '⚔️ 五、多人即時連線對戰': '⚔️ 5. Mehrspieler-Echtzeitkampf',
     '背經文不再是一個人孤單的事！': 'Das Auswendiglernen von Bibelversen ist keine einsame Aufgabe mehr!',
     '點擊 <strong>「多人連線」</strong> 創建專屬房間，邀請小組成員或家人一起加入。': 'Klicken Sie auf <strong>"Mehrspieler"</strong>, um einen privaten Raum zu erstellen und Ihre Gruppenmitglieder oder Familie einzuladen.',
@@ -5397,7 +5397,7 @@ const deDict = {
     '提供多種挑戰難度，無論是小孩還是成人都非常適合來挑戰自己的極限。': 'Es werden mehrere Schwierigkeitsgrade angeboten, die von Kindern bis zu Erwachsenen gespielt werden können.',
     '挑戰模式有助於加強記憶同一個經文組中的多段相關經文。': 'Der Herausforderungsmodus hilft, die Erinnerung an mehrere verwandte Verse im selben Vers-Set zu stärken.',
     '線上排行榜能激勵會眾、青年團契和小組成員一起參與遊玩、共同精進！': 'Online-Bestenliste, um die Gemeinde, Jugendgruppen und Kleingruppenmitglieder zur gemeinsamen Teilnahme und Verbesserung zu motivieren!',
-    '<strong>全新語音模式：</strong> 結合最先進的拼音模糊辨識技術，您可以直接開口背誦！即使發音不夠標準也能智慧通關，用語音大聲宣告神的話語，還能獲得額外的 30% 分數加成。': '<strong>Neuer Sprachmodus:</strong> In Kombination mit modernster unscharfer Pinyin-Erkennung können Sie direkt mit Ihrer Stimme rezitieren! Selbst bei nicht standardgemäßer Aussprache können Sie das Level auf intelligente Weise bestehen. Verkünden Sie Gottes Wort laut und erhalten Sie einen zusätzlichen Punktebonus von 30 %.',
+    '<strong>全新語音模式：</strong> 結合最先進的拼音模糊辨識技術，您可以直接開口背誦！即使發音不夠標準也能智慧通關，用語音大聲宣告神的話語，還能獲得額外的 50% 分數加成。': '<strong>Neuer Sprachmodus:</strong> In Kombination mit modernster unscharfer Pinyin-Erkennung können Sie direkt mit Ihrer Stimme rezitieren! Selbst bei nicht standardgemäßer Aussprache können Sie das Level auf intelligente Weise bestehen. Verkünden Sie Gottes Wort laut und erhalten Sie einen zusätzlichen Punktebonus von 50 %.',
     '<strong>多人即時連線對戰：</strong> 支援創建專屬房間，讓全家大小或小組成員在各自的手機上，同步挑戰同一組經文，享受刺激的即時競技樂趣！': '<strong>Mehrspieler-Echtzeitkampf:</strong> Unterstützt die Erstellung privater Räume, sodass Familien- oder Gruppenmitglieder gleichzeitig dieselben Verse auf ihren Telefonen herausfordern können und die Spannung des Echtzeitwettbewerbs genießen können!',
     '在園子裡持續照顧樹苗並結出果子，就能提升你的互惠階級！當達到 ': 'Tragen Sie Früchte in Ihrem Garten, um aufzusteigen! Wenn Sie ',
     ' 時，將自動解鎖「專屬題庫」的建立權限喔！': ' erreichen, wird das Erstellen von benutzerdefinierten Vers-Sets automatisch freigeschaltet!',
@@ -8195,7 +8195,7 @@ const deDict = {
                     <ul style={{ paddingLeft: '1.5rem', marginBottom: '2rem' }}>
                       <li><span dangerouslySetInnerHTML={{ __html: t("<strong>智慧模糊辨識：</strong> 系統內建強大的中文拼音模糊比對。就算有台灣國語、捲舌平舌音不分，只要發音相近就能過關！", "<strong>Smart Fuzzy Recognition:</strong> The system features powerful fuzzy pinyin matching. Even with accents or imprecise pronunciation, similar sounds will pass!") }} /></li>
                       <li><span dangerouslySetInnerHTML={{ __html: t("<strong>貼心提示系統：</strong> 如果卡詞了，系統會在 3 秒後自動給予局部提示，幫助您順利接下去。", "<strong>Helpful Hint System:</strong> If you get stuck, the system will automatically provide a partial hint after 3 seconds to help you continue.") }} /></li>
-                      <li><span dangerouslySetInnerHTML={{ __html: t("<strong>分數加成獎勵：</strong> 為了鼓勵大家開口宣告神的話語，在語音模式中，您的<strong>「剩餘時間加成」權重會大幅提升 30%</strong>！", "<strong>Score Bonus:</strong> To encourage proclaiming God's word out loud, your <strong>\"Remaining Time Bonus\" weight is increased by 30%</strong> in Voice Mode!") }} /></li>
+                      <li><span dangerouslySetInnerHTML={{ __html: t("<strong>分數加成獎勵：</strong> 為了鼓勵大家開口宣告神的話語，在語音模式中，您的<strong>「剩餘時間加成」權重會大幅提升 50%</strong>！", "<strong>Score Bonus:</strong> To encourage proclaiming God's word out loud, your <strong>\"Remaining Time Bonus\" weight is increased by 50%</strong> in Voice Mode!") }} /></li>
                     </ul>
 
                     <h2 style={{ borderBottom: '2px solid #e2e8f0', paddingBottom: '0.5rem', marginTop: '2rem' }}>{t("⚔️ 五、多人即時連線對戰", "⚔️ 5. Multiplayer Real-time Battle")}</h2>
@@ -8236,7 +8236,7 @@ const deDict = {
                     <li>{t('提供多種挑戰難度，無論是小孩還是成人都非常適合來挑戰自己的極限。', 'Multiple difficulty levels offered to be played by kids to adults.')}</li>
                     <li>{t('挑戰模式有助於加強記憶同一個經文組中的多段相關經文。', 'Challenge mode helps to strengthen the memory of multiple related verses in the same verse set.')}</li>
                     <li>{t('線上排行榜能激勵會眾、青年團契和小組成員一起參與遊玩、共同精進！', 'Online Leaderboard to motivate congregation, youth fellowships and small group members to participate and improve together!')}</li>
-                    <li><span dangerouslySetInnerHTML={{ __html: t("<strong>全新語音模式：</strong> 結合最先進的拼音模糊辨識技術，您可以直接開口背誦！即使發音不夠標準也能智慧通關，用語音大聲宣告神的話語，還能獲得額外的 30% 分數加成。", "<strong>New Voice Mode:</strong> Combining state-of-the-art fuzzy pinyin recognition, you can recite directly with your voice! Even with non-standard pronunciation, you can intelligently pass the level. Proclaim God's word loudly and gain an extra 30% score bonus.") }} /></li>
+                    <li><span dangerouslySetInnerHTML={{ __html: t("<strong>全新語音模式：</strong> 結合最先進的拼音模糊辨識技術，您可以直接開口背誦！即使發音不夠標準也能智慧通關，用語音大聲宣告神的話語，還能獲得額外的 50% 分數加成。", "<strong>New Voice Mode:</strong> Combining state-of-the-art fuzzy pinyin recognition, you can recite directly with your voice! Even with non-standard pronunciation, you can intelligently pass the level. Proclaim God's word loudly and gain an extra 50% score bonus.") }} /></li>
                     <li><span dangerouslySetInnerHTML={{ __html: t("<strong>多人即時連線對戰：</strong> 支援創建專屬房間，讓全家大小或小組成員在各自的手機上，同步挑戰同一組經文，享受刺激的即時競技樂趣！", "<strong>Multiplayer Real-time Battle:</strong> Support creating private rooms, allowing family or group members to simultaneously challenge the same verses on their phones, enjoying the thrill of real-time competition!") }} /></li>
                   </ul>
 
@@ -8868,10 +8868,10 @@ const deDict = {
                       </div>
                       {timeBonus > 0 && (
                         <div style={{ fontSize: 'clamp(0.85rem, 1.8vh, 1rem)', color: '#34d399', marginBottom: '0.3rem', fontWeight: 'bold' }}>
-                          {t("時間加成", "Time Bonus")}: {(timeLeft / 100).toFixed(2)}s × {(playMode === 'blind' || playMode?.startsWith('voice')) ? '65' : '50'} = +{timeBonus}
+                          {t("時間加成", "Time Bonus")}: {(timeLeft / 100).toFixed(2)}s × {(playMode === 'blind' || playMode?.startsWith('voice')) ? '75' : '50'} = +{timeBonus}
                           {(playMode === 'blind' || playMode?.startsWith('voice')) && (
                             <div style={{ fontSize: 'clamp(0.7rem, 1.5vh, 0.8rem)', color: '#fbbf24', marginTop: '0.1rem' }}>
-                              ({t("語音權重 +30%", "Voice +30%")})
+                              ({t("語音權重 +50%", "Voice +50%")})
                             </div>
                           )}
                         </div>
