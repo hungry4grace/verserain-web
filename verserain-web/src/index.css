@@ -391,4 +391,26 @@ body {
   .square-grid-inner {
     margin: 0px auto auto auto !important;
   }
+  .landscape-compact-header {
+    padding: 0.2rem 1rem !important;
+  }
+  .landscape-compact-nav {
+    padding: 0.4rem 1rem !important;
+  }
+  .landscape-compact-content {
+    margin: 0.5rem auto !important;
+    padding: 0 1rem;
+  }
+}
+
+/* Default styles for portrait or large screens */
+.landscape-compact-header {
+  padding: 1rem 2rem;
+}
+.landscape-compact-nav {
+  padding: 0.8rem 1rem;
+}
+.landscape-compact-content {
+  margin: 2rem auto;
+  padding: 0 1rem;
 }

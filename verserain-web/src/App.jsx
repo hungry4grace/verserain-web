@@ -5435,14 +5435,14 @@ const deDict = {
           <div style={{ position: 'relative', width: '100vw', height: '100dvh', overflowY: 'auto', WebkitOverflowScrolling: 'touch', backgroundColor: '#f4f6f8', zIndex: 10, fontFamily: 'Arial, sans-serif' }}>
 
             {/* Header */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem 2rem', backgroundColor: '#ffffff', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
+            <div className="landscape-compact-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#ffffff', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
                   <div style={{ fontSize: '1.8rem', fontWeight: 'bold', color: '#3b82f6', fontFamily: 'cursive', lineHeight: '1' }}>
                     verserain
                   </div>
                   <div style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', marginTop: '4px', marginLeft: '2px' }}>
-                    v3.5.2
+                    v3.5.3
                   </div>
                 </div>
                 <select
@@ -5489,7 +5489,7 @@ const deDict = {
 
 
             {/* Navigation Bar */}
-            <div style={{ display: 'flex', backgroundColor: '#e2e8f0', color: '#334155', padding: '0.8rem 1rem', overflowX: 'auto', borderBottom: '2px solid #cbd5e1', gap: '0.8rem', alignItems: 'center' }}>
+            <div className="landscape-compact-nav" style={{ display: 'flex', backgroundColor: '#e2e8f0', color: '#334155', overflowX: 'auto', borderBottom: '2px solid #cbd5e1', gap: '0.8rem', alignItems: 'center' }}>
               <div className="block-tile" onClick={() => setMainTab('lobby')} style={{ display: 'flex', alignItems: 'center', padding: '0.5rem 1.2rem', cursor: 'pointer', backgroundColor: mainTab === 'lobby' ? '#3b82f6' : 'white', color: mainTab === 'lobby' ? 'white' : '#475569', borderRadius: '20px', fontWeight: 'bold', whiteSpace: 'nowrap', transition: 'all 0.2s' }}>
                 🏠 {t('大廳', 'Home')}
               </div>
@@ -5515,7 +5515,7 @@ const deDict = {
             </div>
 
             {/* Main Content Area */}
-            <div style={{ maxWidth: '1000px', margin: '2rem auto', padding: '0 1rem' }}>
+            <div className="landscape-compact-content" style={{ maxWidth: '1000px', margin: '0 auto' }}>
 
               {mainTab === 'lobby' && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem', alignItems: 'center', marginTop: '1rem', paddingBottom: '3rem' }}>
