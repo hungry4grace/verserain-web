@@ -20,7 +20,8 @@ export default function BlindModeGame({
     health,
     timeLeft,
     score,
-    combo
+    combo,
+    onResumeTimer
 }) {
     const [micStatus, setMicStatus] = useState("初始化中...");
     const [heardText, setHeardText] = useState("");
@@ -213,6 +214,8 @@ export default function BlindModeGame({
                 const formattedRef = formatVerseReferenceForSpeech ? formatVerseReferenceForSpeech(activeVerse.reference, version) : activeVerse.reference;
                 speakText(formattedRef, 1.0, TTS_LANG).then(() => {
                     if (!isMountedRef.current) return;
+                    if (playDing) playDing();
+                    if (onResumeTimer) onResumeTimer();
                     startTimer();
                 });
             }, readyDelay);

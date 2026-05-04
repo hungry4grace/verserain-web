@@ -1916,6 +1916,7 @@ export default function App() {
   }, [playerName, activeVerseSets, version, setActiveVerse, setSelectedVerseRefs, setInitAutoStart, setShowLoginModal, setVersion]);
 
   const timerRef = useRef(null);
+  const isGameTimerPausedRef = useRef(false);
   const speechRef = useRef(null);
 
   useEffect(() => {
@@ -2162,9 +2163,12 @@ export default function App() {
       activePhrasesRef.current = actualVerse.text.split(regex).map(p => p.trim()).filter(Boolean);
     }
 
+    isGameTimerPausedRef.current = playMode?.startsWith('voice') || isBlindMode;
+
     if (timerRef.current) clearInterval(timerRef.current);
 
     timerRef.current = setInterval(() => {
+      if (isGameTimerPausedRef.current) return;
       setTimeLeft(t => {
         if (t <= 1 && !isAutoPlayRef.current) {
           return 0; // The game now allows users to keep going past the time limit
@@ -8277,6 +8281,7 @@ const deDict = {
             speakText={speakText}
             formatVerseReferenceForSpeech={formatVerseReferenceForSpeech}
             formatVerseReferenceForDisplay={formatVerseReferenceForDisplay}
+            onResumeTimer={() => { isGameTimerPausedRef.current = false; }}
             isDebugMode={isDebugMode}
             playMode={playMode}
             playDing={() => {
