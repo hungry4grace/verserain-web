@@ -8297,7 +8297,7 @@ const deDict = {
                 </div>
               </div>
             ) : playMode.startsWith('square') ? (
-              <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: playMode.startsWith('square') ? 'clamp(80px, 25vh, 200px)' : 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-start', paddingTop: 'clamp(3.5rem, 12vh, 5.5rem)', paddingBottom: '1rem', overflowY: 'auto', pointerEvents: 'none' }}>
+              <div className="square-grid-container" style={{ bottom: playMode.startsWith('square') ? 'clamp(80px, 25vh, 200px)' : 0, paddingTop: 'clamp(3.5rem, 12vh, 5.5rem)' }}>
                 <div style={{ display: 'grid', gridTemplateColumns: `repeat(${distractionLevel <= 1 ? 2 : 3}, minmax(0, 1fr))`, gap: 'clamp(0.4rem, 2vh, 0.75rem)', width: '95%', maxWidth: distractionLevel <= 1 ? '600px' : '900px', pointerEvents: 'auto', margin: 'auto 0' }}>
                   {blocks.map(block => {
                     let appliedClasses = 'falling-block-inner';

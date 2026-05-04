@@ -361,3 +361,28 @@ body {
   transform: rotateZ(45deg) rotateX(-60deg) translateY(-10px) scale(1.1);
   z-index: 99;
 }
+
+/* Square Grid Container Responsive Layout */
+.square-grid-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  padding-bottom: 1rem;
+  overflow-y: auto;
+  pointer-events: none;
+}
+
+@media (orientation: landscape) and (max-height: 500px) {
+  .square-grid-container {
+    padding-top: 4.5rem !important;
+    justify-content: flex-start !important;
+  }
+  .square-grid-container > div {
+    margin: 1vh auto auto auto !important;
+  }
+}
