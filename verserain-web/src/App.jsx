@@ -5455,7 +5455,7 @@ const deDict = {
                     verserain
                   </div>
                   <div style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', marginTop: '4px', marginLeft: '2px' }}>
-                    v3.5.4
+                    v3.5.5
                   </div>
                 </div>
                 <select
@@ -8701,9 +8701,9 @@ const deDict = {
                   )}
                 </div>
 
-                <div style={{ background: 'rgba(0,0,0,0.3)', padding: 'clamp(1rem, 3vw, 2rem)', borderRadius: '16px', margin: 'clamp(0.5rem, 2vh, 2rem) 0', overflowY: 'auto', flex: 1 }}>
-                  <p style={{ fontSize: 'clamp(1.1rem, 3vh, 2rem)', color: '#fff', fontWeight: 'bold', marginBottom: 'clamp(0.5rem, 2vh, 1rem)', textTransform: 'uppercase', letterSpacing: '1px' }}>{activeVerse.reference}</p>
-                  <div style={{ fontSize: 'clamp(1.1rem, 3vh, 2rem)', color: '#fff', lineHeight: '1.5', fontWeight: 'bold' }}>
+                <div style={{ background: 'rgba(0,0,0,0.3)', padding: 'clamp(1rem, 3vw, 2rem)', borderRadius: '16px', margin: 'clamp(0.5rem, 2vh, 2rem) 0', overflowY: 'auto', flex: 1, minHeight: '150px' }}>
+                  <p style={{ fontSize: 'clamp(1.3rem, 3.5vh, 2.2rem)', color: '#fff', fontWeight: 'bold', marginBottom: 'clamp(0.5rem, 2vh, 1rem)', textTransform: 'uppercase', letterSpacing: '1px' }}>{activeVerse.reference}</p>
+                  <div style={{ fontSize: 'clamp(1.3rem, 3.5vh, 2.2rem)', color: '#fff', lineHeight: '1.5', fontWeight: 'bold' }}>
                     {activePhrases.map((phrase, idx) => (
                       <span key={idx} style={{ color: idx % 2 === 0 ? '#93c5fd' : '#cbd5e1' }}>{phrase}{" "}</span>
                     ))}
@@ -8711,26 +8711,35 @@ const deDict = {
                 </div>
 
                 <div style={{ flexShrink: 0 }}>
-                  <div style={{ fontSize: 'clamp(0.9rem, 2vh, 1.1rem)', color: '#93c5fd', marginBottom: 'clamp(0.2rem, 1vh, 0.5rem)', fontWeight: 'bold' }}>
-                    {t("通關基礎分", "Base Score")}: {pureBaseScore}
-                  </div>
-                  {timeBonus > 0 && (
-                    <div style={{ fontSize: 'clamp(0.9rem, 2vh, 1.1rem)', color: '#34d399', marginBottom: 'clamp(0.2rem, 1vh, 0.5rem)', fontWeight: 'bold' }}>
-                      {t("時間加成", "Time Bonus")}: {(timeLeft / 100).toFixed(2)}s × {playMode === 'blind' ? '65' : '50'} = +{timeBonus}
-                      {playMode === 'blind' && (
-                        <div style={{ fontSize: 'clamp(0.75rem, 1.5vh, 0.85rem)', color: '#fbbf24', marginTop: '0.2rem' }}>
-                          ({t("語音模式專屬：時間權重增加 30%", "Voice Mode Bonus: Time weight increased by 30%")})
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 'clamp(1rem, 3vw, 2.5rem)', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: 'clamp(0.5rem, 2vh, 1rem)', marginTop: '0.5rem' }}>
+                    
+                    {/* Left: Final Score */}
+                    <div style={{ textAlign: 'center' }}>
+                      <div style={{ fontSize: 'clamp(0.9rem, 2vh, 1.1rem)', color: '#cbd5e1' }}>{t("最終得分", "Final Score")}</div>
+                      <strong style={{ color: isNewHighScore ? '#fbbf24' : '#fff', fontSize: 'clamp(2.5rem, 6vh, 3.5rem)', display: 'block', marginTop: '0.2rem', lineHeight: '1' }}>{score}</strong>
+                    </div>
+
+                    {/* Right: Breakdown */}
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', textAlign: 'left', borderLeft: '1px solid rgba(255,255,255,0.2)', paddingLeft: 'clamp(1rem, 3vw, 2.5rem)' }}>
+                      <div style={{ fontSize: 'clamp(0.85rem, 1.8vh, 1rem)', color: '#93c5fd', marginBottom: '0.3rem', fontWeight: 'bold' }}>
+                        {t("通關基礎分", "Base Score")}: {pureBaseScore}
+                      </div>
+                      {timeBonus > 0 && (
+                        <div style={{ fontSize: 'clamp(0.85rem, 1.8vh, 1rem)', color: '#34d399', marginBottom: '0.3rem', fontWeight: 'bold' }}>
+                          {t("時間加成", "Time Bonus")}: {(timeLeft / 100).toFixed(2)}s × {playMode === 'blind' ? '65' : '50'} = +{timeBonus}
+                          {playMode === 'blind' && (
+                            <div style={{ fontSize: 'clamp(0.7rem, 1.5vh, 0.8rem)', color: '#fbbf24', marginTop: '0.1rem' }}>
+                              ({t("語音權重 +30%", "Voice +30%")})
+                            </div>
+                          )}
+                        </div>
+                      )}
+                      {distractionLevel > 0 && !isFailed && (
+                        <div style={{ fontSize: 'clamp(0.85rem, 1.8vh, 1rem)', color: '#f59e0b', fontWeight: 'bold' }}>
+                          {t("難度加成", "Difficulty Multiplier")}: × {(1 + distractionLevel * 0.1).toFixed(1)} {t(`(難度 ${distractionLevel})`, `(Lv ${distractionLevel})`)}
                         </div>
                       )}
                     </div>
-                  )}
-                  {distractionLevel > 0 && !isFailed && (
-                    <div style={{ fontSize: 'clamp(0.9rem, 2vh, 1.1rem)', color: '#f59e0b', marginBottom: 'clamp(0.5rem, 2vh, 1rem)', fontWeight: 'bold' }}>
-                      {t("難度加成", "Difficulty Multiplier")}: × {(1 + distractionLevel * 0.1).toFixed(1)} {t(`(難度 ${distractionLevel})`, `(Lv ${distractionLevel})`)}
-                    </div>
-                  )}
-                  <div style={{ fontSize: 'clamp(1rem, 2.5vh, 1.25rem)', color: '#cbd5e1', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '0.5rem', marginTop: '0.5rem' }}>
-                    {t("最終得分", "Final Score")}: <strong style={{ color: isNewHighScore ? '#fbbf24' : '#fff', fontSize: 'clamp(2rem, 5vh, 2.5rem)', display: 'block', marginTop: '0.2rem' }}>{score}</strong>
                   </div>
 
                   {/* Home and Play Again buttons placed HERE — always visible above the leaderboard */}
