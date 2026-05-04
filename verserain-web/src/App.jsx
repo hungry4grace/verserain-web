@@ -749,6 +749,7 @@ export default function App() {
   const skoolLevel = React.useMemo(() => getSkoolLevel(totalFruits), [totalFruits]);
   const hasPremiumAccess = isPremium || skoolLevel.level >= 3;
   const isAdmin = ['samhsiung@gmail.com', 'davidhwang1125@gmail.com', 'hsiungsam@gmail.com', 'hungry4grace@gmail.com'].includes(userEmail.toLowerCase()) || skoolLevel.level >= 5;
+  const isSuperAdmin = ['samhsiung@gmail.com', 'davidhwang1125@gmail.com', 'hsiungsam@gmail.com', 'hungry4grace@gmail.com'].includes(userEmail.toLowerCase());
   const [selectedGardenCell, setSelectedGardenCell] = useState(null);
   const [showLevelInfo, setShowLevelInfo] = useState(false);
   const [showFruitInfo, setShowFruitInfo] = useState(false);
@@ -6731,17 +6732,19 @@ const deDict = {
                                           setEditingCustomSet({ ...set, isPublished: true, verses: set.verses?.map(parseVerseRef) || [] });
                                           setMainTab('custom_verses');
                                         }} style={{ background: '#f1f5f9', border: '1px solid #cbd5e1', padding: '0.2rem 0.5rem', borderRadius: '4px', cursor: 'pointer', fontSize: '0.8rem', color: '#475569' }}>Admin 編輯</button>
-                                        <button onClick={(e) => {
-                                          e.stopPropagation();
-                                          if (window.confirm("Admin: 確定要從全域資料庫強制刪除這份經文組？")) {
-                                            fetch("https://verserain-party.hungry4grace.partykit.dev/parties/main/global-auth-db/custom-sets", {
-                                              method: "DELETE",
-                                              headers: { "Content-Type": "application/json" },
-                                              body: JSON.stringify({ id: set.id })
-                                            }).catch(e => console.error(e));
-                                            setPublishedVerseSets(prev => prev.filter(p => p.id !== set.id));
-                                          }
-                                        }} style={{ background: '#fee2e2', border: '1px solid #fca5a5', color: '#ef4444', padding: '0.2rem 0.5rem', borderRadius: '4px', cursor: 'pointer', fontSize: '0.8rem' }}>Admin 刪除</button>
+                                        {isSuperAdmin && (
+                                          <button onClick={(e) => {
+                                            e.stopPropagation();
+                                            if (window.confirm("Admin: 確定要從全域資料庫強制刪除這份經文組？")) {
+                                              fetch("https://verserain-party.hungry4grace.partykit.dev/parties/main/global-auth-db/custom-sets", {
+                                                method: "DELETE",
+                                                headers: { "Content-Type": "application/json" },
+                                                body: JSON.stringify({ id: set.id })
+                                              }).catch(e => console.error(e));
+                                              setPublishedVerseSets(prev => prev.filter(p => p.id !== set.id));
+                                            }
+                                          }} style={{ background: '#fee2e2', border: '1px solid #fca5a5', color: '#ef4444', padding: '0.2rem 0.5rem', borderRadius: '4px', cursor: 'pointer', fontSize: '0.8rem' }}>Admin 刪除</button>
+                                        )}
                                       </span>
                                     )}
                                   </td>
