@@ -373,16 +373,21 @@ body {
   align-items: center;
   justify-content: flex-start;
   padding-bottom: 1rem;
+  padding-top: clamp(3.5rem, 12vh, 5.5rem);
   overflow-y: auto;
   pointer-events: none;
 }
 
-@media (orientation: landscape) and (max-height: 500px) {
+.square-grid-inner {
+  margin: auto 0;
+}
+
+@media (orientation: landscape) and (max-height: 600px) {
   .square-grid-container {
-    padding-top: 4.5rem !important;
-    justify-content: flex-start !important;
+    padding-top: 4.5rem;
+    justify-content: flex-start;
   }
-  .square-grid-container > div {
-    margin: 1vh auto auto auto !important;
+  .square-grid-inner {
+    margin: 1vh auto auto auto;
   }
 }
