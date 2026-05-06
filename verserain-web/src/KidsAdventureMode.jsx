@@ -1,5 +1,5 @@
 import React from 'react';
-import { BookOpen, CheckCircle2, CloudRain, Crown, Dices, Map, Play, RotateCcw, Sparkles, Star, Trophy, Wand2, X, Zap } from 'lucide-react';
+import { CheckCircle2, CloudRain, Crown, Dices, Map, Play, RotateCcw, Sparkles, Star, Trophy, Wand2, X, Zap } from 'lucide-react';
 
 const routeThemes = [
   {
@@ -95,16 +95,24 @@ export default function KidsAdventureMode({
   const [puzzleSlots, setPuzzleSlots] = React.useState([]);
   const [selectedPieceId, setSelectedPieceId] = React.useState(null);
   const [showTeacherDesigner, setShowTeacherDesigner] = React.useState(false);
-  const selectedSet = React.useMemo(
-    () => verseSets.find(set => set.id === selectedSetId) || currentSet || verseSets[0],
-    [currentSet, selectedSetId, verseSets]
-  );
+  const [teacherRoutes, setTeacherRoutes] = React.useState(loadTeacherRoutes);
+  const [teacherDraft, setTeacherDraft] = React.useState(() => createTeacherDraft(verseSets[0]));
+
+  React.useEffect(() => {
+    localStorage.setItem('verseRain_teacherAdventureRoutes', JSON.stringify(teacherRoutes));
+  }, [teacherRoutes]);
 
   React.useEffect(() => {
     if (currentSet?.id) setSelectedSetId(currentSet.id);
   }, [currentSet?.id]);
 
-  const featuredRoutes = React.useMemo(() => {
+  React.useEffect(() => {
+    if (!teacherDraft.sourceSetId && verseSets[0]?.id) {
+      setTeacherDraft(createTeacherDraft(verseSets[0]));
+    }
+  }, [teacherDraft.sourceSetId, verseSets]);
+
+  const officialRoutes = React.useMemo(() => {
     const sets = [...verseSets];
     sets.sort((a, b) => {
       const aKid = /兒童|孩子|主日學|比賽|核心/.test(`${a.title || ''} ${a.description || ''}`) ? 1 : 0;
@@ -115,9 +123,20 @@ export default function KidsAdventureMode({
     return sets.slice(0, 6).map((set, index) => buildAdventureRoute(set, index));
   }, [verseSets, viewCounts]);
 
+  const designedRoutes = React.useMemo(() => teacherRoutes.map(route => hydrateTeacherRoute(route)), [teacherRoutes]);
+  const featuredRoutes = React.useMemo(() => [...designedRoutes, ...officialRoutes], [designedRoutes, officialRoutes]);
+  const selectedRouteFromList = React.useMemo(
+    () => featuredRoutes.find(route => route.set.id === selectedSetId),
+    [featuredRoutes, selectedSetId]
+  );
+  const selectedSet = selectedRouteFromList?.set || verseSets.find(set => set.id === selectedSetId) || currentSet || verseSets[0];
   const selectedRoute = React.useMemo(
-    () => featuredRoutes.find(route => route.set.id === selectedSet?.id) || buildAdventureRoute(selectedSet, 0),
-    [featuredRoutes, selectedSet]
+    () => selectedRouteFromList || buildAdventureRoute(selectedSet, 0),
+    [selectedRouteFromList, selectedSet]
+  );
+  const sourceSet = React.useMemo(
+    () => verseSets.find(set => set.id === teacherDraft.sourceSetId) || verseSets[0],
+    [teacherDraft.sourceSetId, verseSets]
   );
 
   const verses = selectedSet?.verses || [];
@@ -131,7 +150,7 @@ export default function KidsAdventureMode({
 
   const startVerse = (verse) => {
     if (!verse || !selectedSet) return;
-    onSelectSet(selectedSet.id);
+    if (!selectedRoute?.isTeacherRoute) onSelectSet(selectedSet.id);
     onChallengeVerse(verse, selectedSet);
   };
 
@@ -142,7 +161,7 @@ export default function KidsAdventureMode({
 
   const openPuzzle = (verse) => {
     if (!verse || !selectedSet) return;
-    onSelectSet(selectedSet.id);
+    if (!selectedRoute?.isTeacherRoute) onSelectSet(selectedSet.id);
     const phrases = splitVerseForPuzzle(verse.text);
     const pieces = phrases.map((text, order) => ({ id: `${verse.reference}-${order}-${text}`, text, order }));
     setPuzzleVerse(verse);
@@ -189,6 +208,78 @@ export default function KidsAdventureMode({
   };
 
   const puzzleComplete = puzzleSlots.length > 0 && puzzleSlots.every((piece, index) => piece?.order === index);
+  const selectedDraftVerses = React.useMemo(() => {
+    const selected = new Set(teacherDraft.verseIds || []);
+    return (sourceSet?.verses || []).filter(verse => selected.has(verse.id || verse.reference));
+  }, [sourceSet, teacherDraft.verseIds]);
+
+  const updateTeacherDraft = (patch) => {
+    setTeacherDraft(prev => ({ ...prev, ...patch }));
+  };
+
+  const changeTeacherSourceSet = (setId) => {
+    const nextSet = verseSets.find(set => set.id === setId) || verseSets[0];
+    setTeacherDraft(prev => ({
+      ...prev,
+      sourceSetId: nextSet?.id || '',
+      verseIds: (nextSet?.verses || []).slice(0, 8).map(verse => verse.id || verse.reference)
+    }));
+  };
+
+  const toggleTeacherVerse = (verse) => {
+    const verseId = verse.id || verse.reference;
+    setTeacherDraft(prev => {
+      const selected = new Set(prev.verseIds || []);
+      if (selected.has(verseId)) selected.delete(verseId);
+      else selected.add(verseId);
+      return { ...prev, verseIds: Array.from(selected) };
+    });
+  };
+
+  const saveTeacherRoute = () => {
+    if (!sourceSet || selectedDraftVerses.length === 0) return;
+    const routeId = teacherDraft.id || `teacher-route-${Date.now()}`;
+    const route = {
+      ...teacherDraft,
+      id: routeId,
+      title: teacherDraft.title.trim() || '老師自訂探險路線',
+      badge: teacherDraft.badge.trim() || '老師路線',
+      description: teacherDraft.description.trim() || '老師為班級安排的經文探險任務。',
+      sourceSetTitle: sourceSet.title,
+      verses: selectedDraftVerses.map((verse, index) => ({
+        ...verse,
+        id: `${routeId}-verse-${index + 1}`,
+        originalId: verse.id,
+      }))
+    };
+    setTeacherRoutes(prev => {
+      const others = prev.filter(item => item.id !== routeId);
+      return [route, ...others].slice(0, 12);
+    });
+    setSelectedSetId(routeId);
+    setTeacherDraft(createTeacherDraft(sourceSet));
+    setShowTeacherDesigner(false);
+  };
+
+  const editTeacherRoute = (route) => {
+    setTeacherDraft({
+      id: route.id,
+      title: route.title,
+      badge: route.badge,
+      grade: route.grade,
+      recommendedMode: route.recommendedMode,
+      description: route.description,
+      icon: route.icon,
+      color: route.color,
+      sourceSetId: route.sourceSetId || sourceSet?.id || verseSets[0]?.id || '',
+      verseIds: (route.verses || []).map(verse => verse.originalId || verse.id || verse.reference)
+    });
+  };
+
+  const deleteTeacherRoute = (routeId) => {
+    setTeacherRoutes(prev => prev.filter(route => route.id !== routeId));
+    if (selectedSetId === routeId) setSelectedSetId(currentSet?.id || verseSets[0]?.id);
+  };
 
   return (
     <div style={{ padding: '1rem 0 3rem', color: '#123047' }}>
@@ -271,7 +362,7 @@ export default function KidsAdventureMode({
                   key={route.set.id}
                   onClick={() => {
                     setSelectedSetId(route.set.id);
-                    onSelectSet(route.set.id);
+                    if (!route.isTeacherRoute) onSelectSet(route.set.id);
                   }}
                   style={{
                     display: 'grid',
@@ -291,7 +382,7 @@ export default function KidsAdventureMode({
                   <span style={{ minWidth: 0 }}>
                     <span style={{ display: 'block', color: '#0f172a', fontWeight: 900, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{route.routeTitle}</span>
                     <span style={{ display: 'block', color: '#475569', fontSize: '0.76rem', fontWeight: 800 }}>{route.grade} · {route.set.verses?.length || 0} 關</span>
-                    <span style={{ display: 'block', color: route.color, fontSize: '0.72rem', fontWeight: 900, marginTop: '0.16rem' }}>{route.badge}</span>
+                    <span style={{ display: 'block', color: route.color, fontSize: '0.72rem', fontWeight: 900, marginTop: '0.16rem' }}>{route.isTeacherRoute ? '老師路線 · ' : ''}{route.badge}</span>
                   </span>
                 </button>
               );
@@ -480,10 +571,10 @@ export default function KidsAdventureMode({
       )}
       {showTeacherDesigner && (
         <div style={{ position: 'fixed', inset: 0, zIndex: 9999, background: 'rgba(15, 23, 42, 0.58)', display: 'grid', placeItems: 'center', padding: '1rem' }}>
-          <div style={{ width: 'min(760px, 100%)', background: '#ffffff', border: '2px solid #99f6e4', borderRadius: '18px', boxShadow: '0 26px 70px rgba(15, 23, 42, 0.28)', overflow: 'hidden' }}>
-            <div style={{ background: 'linear-gradient(135deg, #ccfbf1, #fef9c3)', padding: '1rem 1.2rem', display: 'flex', justifyContent: 'space-between', gap: '1rem', alignItems: 'flex-start' }}>
+          <div style={{ width: 'min(1040px, 100%)', maxHeight: '92vh', overflowY: 'auto', background: '#ffffff', border: '2px solid #99f6e4', borderRadius: '18px', boxShadow: '0 26px 70px rgba(15, 23, 42, 0.28)' }}>
+            <div style={{ position: 'sticky', top: 0, zIndex: 3, background: 'linear-gradient(135deg, #ccfbf1, #fef9c3)', padding: '1rem 1.2rem', display: 'flex', justifyContent: 'space-between', gap: '1rem', alignItems: 'flex-start', borderBottom: '1px solid #99f6e4' }}>
               <div>
-                <div style={{ color: '#0f766e', fontWeight: 900, fontSize: '0.86rem' }}>老師路線設計器草稿</div>
+                <div style={{ color: '#0f766e', fontWeight: 900, fontSize: '0.86rem' }}>老師路線設計器</div>
                 <h2 style={{ margin: '0.2rem 0 0', color: '#0f172a', fontSize: '1.45rem' }}>把經文組變成主日學探險路線</h2>
               </div>
               <button onClick={() => setShowTeacherDesigner(false)} style={{ width: 36, height: 36, borderRadius: '10px', border: '1px solid #5eead4', background: '#ffffff', color: '#0f766e', cursor: 'pointer', display: 'grid', placeItems: 'center' }}>
@@ -491,28 +582,147 @@ export default function KidsAdventureMode({
               </button>
             </div>
             <div style={{ padding: '1.2rem', display: 'grid', gap: '1rem' }}>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: '0.75rem' }}>
-                {[
-                  ['1', '選經文組', '從現有題庫或老師自訂題庫開始。'],
-                  ['2', '設定對象', '幼兒、低年級、中高年級或比賽班。'],
-                  ['3', '安排玩法', '每關可指定拼圖、方塊路或經文雨。'],
-                  ['4', '分享路線', '之後可產生連結或 QR code 給孩子。']
-                ].map(([num, title, desc]) => (
-                  <div key={num} style={{ border: '1px solid #ccfbf1', background: '#f8fafc', borderRadius: '14px', padding: '0.85rem' }}>
-                    <div style={{ width: 32, height: 32, borderRadius: '10px', display: 'grid', placeItems: 'center', background: '#14b8a6', color: '#ffffff', fontWeight: 900 }}>{num}</div>
-                    <div style={{ marginTop: '0.55rem', color: '#0f172a', fontWeight: 900 }}>{title}</div>
-                    <div style={{ marginTop: '0.25rem', color: '#64748b', fontWeight: 800, fontSize: '0.86rem', lineHeight: 1.5 }}>{desc}</div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1rem', alignItems: 'start' }}>
+                <section style={{ display: 'grid', gap: '0.9rem' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 140px', gap: '0.75rem' }}>
+                    <label style={fieldLabel()}>
+                      路線名稱
+                      <input value={teacherDraft.title} onChange={(e) => updateTeacherDraft({ title: e.target.value })} placeholder="例如：低年級信心闖關" style={fieldInput()} />
+                    </label>
+                    <label style={fieldLabel()}>
+                      圖示
+                      <select value={teacherDraft.icon} onChange={(e) => updateTeacherDraft({ icon: e.target.value })} style={fieldInput()}>
+                        {['🏘️', '🌲', '⛰️', '⛵', '💛', '💎', '🏅', '🛡️', '🌈', '⭐'].map(icon => <option key={icon} value={icon}>{icon}</option>)}
+                      </select>
+                    </label>
                   </div>
-                ))}
+
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.75rem' }}>
+                    <label style={fieldLabel()}>
+                      年級
+                      <select value={teacherDraft.grade} onChange={(e) => updateTeacherDraft({ grade: e.target.value })} style={fieldInput()}>
+                        {['幼兒', '低年級', '中低年級', '中高年級', '比賽班'].map(item => <option key={item} value={item}>{item}</option>)}
+                      </select>
+                    </label>
+                    <label style={fieldLabel()}>
+                      推薦玩法
+                      <select value={teacherDraft.recommendedMode} onChange={(e) => updateTeacherDraft({ recommendedMode: e.target.value })} style={fieldInput()}>
+                        {['拼圖優先', '拼圖 + 挑戰', '方塊路', '經文雨', '聽一聽'].map(item => <option key={item} value={item}>{item}</option>)}
+                      </select>
+                    </label>
+                    <label style={fieldLabel()}>
+                      主題標籤
+                      <input value={teacherDraft.badge} onChange={(e) => updateTeacherDraft({ badge: e.target.value })} placeholder="信靠神" style={fieldInput()} />
+                    </label>
+                  </div>
+
+                  <label style={fieldLabel()}>
+                    路線故事
+                    <textarea value={teacherDraft.description} onChange={(e) => updateTeacherDraft({ description: e.target.value })} placeholder="用一句話告訴孩子這條路線要去哪裡冒險。" style={{ ...fieldInput(), minHeight: 78, resize: 'vertical', lineHeight: 1.5 }} />
+                  </label>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 170px', gap: '0.75rem' }}>
+                    <label style={fieldLabel()}>
+                      從哪個經文組選關卡
+                      <select value={teacherDraft.sourceSetId} onChange={(e) => changeTeacherSourceSet(e.target.value)} style={fieldInput()}>
+                        {verseSets.map(set => <option key={set.id} value={set.id}>{set.title}</option>)}
+                      </select>
+                    </label>
+                    <label style={fieldLabel()}>
+                      主色
+                      <input type="color" value={teacherDraft.color} onChange={(e) => updateTeacherDraft({ color: e.target.value })} style={{ ...fieldInput(), height: 44, padding: '0.25rem' }} />
+                    </label>
+                  </div>
+
+                  <div style={{ border: '1px solid #e2e8f0', background: '#f8fafc', borderRadius: '14px', padding: '0.8rem' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.75rem', marginBottom: '0.65rem', flexWrap: 'wrap' }}>
+                      <div style={{ color: '#0f172a', fontWeight: 900 }}>選擇經文關卡</div>
+                      <div style={{ display: 'flex', gap: '0.45rem', flexWrap: 'wrap' }}>
+                        <button onClick={() => updateTeacherDraft({ verseIds: (sourceSet?.verses || []).map(verse => verse.id || verse.reference) })} style={smallTeacherButton('#0ea5e9')}>全選</button>
+                        <button onClick={() => updateTeacherDraft({ verseIds: (sourceSet?.verses || []).slice(0, 8).map(verse => verse.id || verse.reference) })} style={smallTeacherButton('#f97316')}>前 8 關</button>
+                        <button onClick={() => updateTeacherDraft({ verseIds: [] })} style={smallTeacherButton('#64748b')}>清空</button>
+                      </div>
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(210px, 1fr))', gap: '0.5rem', maxHeight: '290px', overflowY: 'auto', paddingRight: '0.2rem' }}>
+                      {(sourceSet?.verses || []).map((verse, index) => {
+                        const verseId = verse.id || verse.reference;
+                        const checked = (teacherDraft.verseIds || []).includes(verseId);
+                        return (
+                          <label key={verseId} style={{
+                            display: 'grid',
+                            gridTemplateColumns: '22px minmax(0, 1fr)',
+                            gap: '0.45rem',
+                            alignItems: 'start',
+                            border: checked ? '2px solid #14b8a6' : '1px solid #e2e8f0',
+                            background: checked ? '#f0fdfa' : '#ffffff',
+                            borderRadius: '10px',
+                            padding: '0.55rem',
+                            cursor: 'pointer'
+                          }}>
+                            <input type="checkbox" checked={checked} onChange={() => toggleTeacherVerse(verse)} style={{ marginTop: 3 }} />
+                            <span style={{ minWidth: 0 }}>
+                              <span style={{ display: 'block', color: '#0f172a', fontWeight: 900, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{String(index + 1).padStart(2, '0')} {verse.reference}</span>
+                              <span style={{ display: 'block', color: '#64748b', fontSize: '0.78rem', fontWeight: 800, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{verse.text}</span>
+                            </span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'flex', gap: '0.65rem', flexWrap: 'wrap' }}>
+                    <button onClick={saveTeacherRoute} disabled={selectedDraftVerses.length === 0} style={{ ...primaryButton('#14b8a6', '#22c55e'), opacity: selectedDraftVerses.length === 0 ? 0.55 : 1 }}>
+                      <Wand2 size={18} /> {teacherDraft.id ? '更新路線' : '儲存路線'}
+                    </button>
+                    <button onClick={() => setTeacherDraft(createTeacherDraft(sourceSet))} style={secondaryButton('#64748b')}>
+                      <RotateCcw size={17} /> 清空草稿
+                    </button>
+                  </div>
+                </section>
+
+                <aside style={{ display: 'grid', gap: '0.8rem' }}>
+                  <div style={{ border: '1px solid #ccfbf1', background: '#f0fdfa', borderRadius: '14px', padding: '0.9rem' }}>
+                    <div style={{ color: '#0f766e', fontWeight: 900, marginBottom: '0.5rem' }}>路線預覽</div>
+                    <div style={{ border: `2px solid ${teacherDraft.color}`, background: makeTeacherRouteBg(teacherDraft.color), borderRadius: '14px', padding: '0.85rem' }}>
+                      <div style={{ fontSize: '2.1rem' }}>{teacherDraft.icon}</div>
+                      <div style={{ color: '#0f172a', fontWeight: 900, fontSize: '1.1rem', marginTop: '0.35rem' }}>{teacherDraft.title || '老師自訂探險路線'}</div>
+                      <div style={{ color: teacherDraft.color, fontWeight: 900, marginTop: '0.25rem', fontSize: '0.8rem' }}>{teacherDraft.badge || '老師路線'}</div>
+                      <div style={{ color: '#475569', fontWeight: 800, marginTop: '0.35rem', fontSize: '0.86rem' }}>{teacherDraft.grade} · {teacherDraft.recommendedMode} · {selectedDraftVerses.length} 關</div>
+                    </div>
+                  </div>
+
+                  <div style={{ border: '1px solid #e2e8f0', background: '#ffffff', borderRadius: '14px', padding: '0.9rem' }}>
+                    <div style={{ color: '#0f172a', fontWeight: 900, marginBottom: '0.65rem' }}>已儲存路線</div>
+                    {teacherRoutes.length === 0 ? (
+                      <div style={{ color: '#94a3b8', fontWeight: 800, lineHeight: 1.5 }}>還沒有老師路線。儲存後會出現在左側探險路線最上方。</div>
+                    ) : (
+                      <div style={{ display: 'grid', gap: '0.5rem' }}>
+                        {teacherRoutes.map(route => (
+                          <div key={route.id} style={{ border: '1px solid #e2e8f0', borderRadius: '10px', padding: '0.55rem', display: 'grid', gap: '0.45rem' }}>
+                            <div style={{ display: 'flex', gap: '0.45rem', alignItems: 'center', minWidth: 0 }}>
+                              <span>{route.icon}</span>
+                              <span style={{ color: '#0f172a', fontWeight: 900, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{route.title}</span>
+                            </div>
+                            <div style={{ color: '#64748b', fontWeight: 800, fontSize: '0.78rem' }}>{route.grade} · {route.verses?.length || 0} 關</div>
+                            <div style={{ display: 'flex', gap: '0.4rem' }}>
+                              <button onClick={() => editTeacherRoute(route)} style={smallTeacherButton('#0ea5e9')}>編輯</button>
+                              <button onClick={() => {
+                                setSelectedSetId(route.id);
+                                setShowTeacherDesigner(false);
+                              }} style={smallTeacherButton('#14b8a6')}>使用</button>
+                              <button onClick={() => deleteTeacherRoute(route.id)} style={smallTeacherButton('#ef4444')}>刪除</button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </aside>
               </div>
 
-              <div style={{ background: '#f0fdfa', border: '1px dashed #14b8a6', borderRadius: '14px', padding: '1rem', color: '#115e59', fontWeight: 800, lineHeight: 1.7 }}>
-                這一版先把官方路線包裝好。下一步若要開放老師設計，我建議先做「本機草稿 + 分享連結」，等老師們真的開始使用後，再把路線存到雲端帳號。
+              <div style={{ background: '#fffbeb', border: '1px dashed #f59e0b', borderRadius: '14px', padding: '0.85rem 1rem', color: '#92400e', fontWeight: 800, lineHeight: 1.6 }}>
+                目前老師路線會存在這台裝置的瀏覽器。等確認老師們喜歡這個流程後，再把分享連結、QR code、雲端同步接上去。
               </div>
-
-              <button onClick={() => setShowTeacherDesigner(false)} style={{ ...primaryButton('#14b8a6', '#22c55e'), justifyContent: 'center' }}>
-                <BookOpen size={18} /> 先使用官方路線
-              </button>
             </div>
           </div>
         </div>
@@ -538,6 +748,65 @@ function buildAdventureRoute(set, index = 0) {
     bg: fallback[6],
     description: `${set?.title || '經文'}被整理成適合孩子闖關的探險路線。`
   };
+}
+
+function loadTeacherRoutes() {
+  try {
+    const parsed = JSON.parse(localStorage.getItem('verseRain_teacherAdventureRoutes') || '[]');
+    return Array.isArray(parsed) ? parsed.filter(route => route?.id && Array.isArray(route.verses)) : [];
+  } catch {
+    return [];
+  }
+}
+
+function createTeacherDraft(sourceSet) {
+  return {
+    id: null,
+    title: '',
+    icon: '🏘️',
+    badge: '老師路線',
+    grade: '低年級',
+    recommendedMode: '拼圖 + 挑戰',
+    description: '',
+    color: '#14b8a6',
+    sourceSetId: sourceSet?.id || '',
+    verseIds: (sourceSet?.verses || []).slice(0, 8).map(verse => verse.id || verse.reference)
+  };
+}
+
+function hydrateTeacherRoute(route) {
+  const set = {
+    id: route.id,
+    title: route.title,
+    description: route.description,
+    authorName: '老師自訂',
+    verses: route.verses || []
+  };
+  return {
+    set,
+    isTeacherRoute: true,
+    routeTitle: route.title,
+    icon: route.icon || '🏘️',
+    badge: route.badge || '老師路線',
+    grade: route.grade || '低年級',
+    recommendedMode: route.recommendedMode || '拼圖 + 挑戰',
+    color: route.color || '#14b8a6',
+    bg: makeTeacherRouteBg(route.color || '#14b8a6'),
+    description: route.description || '老師為班級安排的經文探險任務。'
+  };
+}
+
+function makeTeacherRouteBg(color) {
+  return `linear-gradient(135deg, ${hexToRgba(color, 0.16)}, #fef9c3)`;
+}
+
+function hexToRgba(hex, alpha) {
+  const safe = /^#[0-9a-f]{6}$/i.test(hex) ? hex : '#14b8a6';
+  const value = safe.slice(1);
+  const r = parseInt(value.slice(0, 2), 16);
+  const g = parseInt(value.slice(2, 4), 16);
+  const b = parseInt(value.slice(4, 6), 16);
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
 
 function splitVerseForPuzzle(text) {
@@ -660,6 +929,43 @@ function miniButton(color, bg) {
     color,
     borderRadius: '8px',
     padding: '0.3rem 0.45rem',
+    cursor: 'pointer',
+    fontWeight: 900,
+    fontSize: '0.78rem'
+  };
+}
+
+function fieldLabel() {
+  return {
+    display: 'grid',
+    gap: '0.35rem',
+    color: '#334155',
+    fontWeight: 900,
+    fontSize: '0.86rem'
+  };
+}
+
+function fieldInput() {
+  return {
+    width: '100%',
+    boxSizing: 'border-box',
+    border: '1px solid #cbd5e1',
+    borderRadius: '10px',
+    background: '#ffffff',
+    color: '#0f172a',
+    padding: '0.65rem 0.75rem',
+    fontWeight: 800,
+    fontSize: '0.95rem'
+  };
+}
+
+function smallTeacherButton(color) {
+  return {
+    border: `1px solid ${color}`,
+    background: '#ffffff',
+    color,
+    borderRadius: '8px',
+    padding: '0.35rem 0.55rem',
     cursor: 'pointer',
     fontWeight: 900,
     fontSize: '0.78rem'
