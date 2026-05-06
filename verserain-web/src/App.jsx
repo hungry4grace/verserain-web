@@ -5661,7 +5661,7 @@ const deDict = {
                 🌳 {t('我的園子', 'My Garden')}
               </div>
               <div className="block-tile" onClick={() => setMainTab('kids')} style={{ display: 'flex', alignItems: 'center', padding: '0.5rem 1.2rem', cursor: 'pointer', backgroundColor: mainTab === 'kids' ? '#f97316' : 'white', color: mainTab === 'kids' ? 'white' : '#475569', borderRadius: '20px', fontWeight: 'bold', whiteSpace: 'nowrap', transition: 'all 0.2s' }}>
-                ✨ {t('兒童冒險', 'Kids')}
+                ✨ 兒童冒險
               </div>
               <div className="block-tile" onClick={() => setMainTab('multiplayer')} style={{ display: 'flex', alignItems: 'center', padding: '0.5rem 1.2rem', cursor: 'pointer', backgroundColor: mainTab === 'multiplayer' ? '#ec4899' : 'white', color: mainTab === 'multiplayer' ? 'white' : '#475569', borderRadius: '20px', fontWeight: 'bold', whiteSpace: 'nowrap', transition: 'all 0.2s' }}>
                 🎮 {t('多人連線', 'Multiplayer')}
@@ -5764,8 +5764,8 @@ const deDict = {
 
                     <div className="primary-button" onClick={() => setMainTab('kids')} style={{ background: 'linear-gradient(135deg, #facc15, #f97316)', borderRadius: '16px', padding: '2.5rem 2rem', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', color: 'white', textAlign: 'center' }}>
                       <div style={{ fontSize: '4.5rem', marginBottom: '1rem' }}>🗺️</div>
-                      <h2 style={{ fontSize: '2rem', margin: 0, marginBottom: '0.5rem', textShadow: '0 2px 4px rgba(0,0,0,0.2)' }}>{t("兒童冒險", "Kids Adventure")}</h2>
-                      <p style={{ fontSize: '1rem', margin: 0, opacity: 0.9 }}>{t("用關卡地圖一步一步完成經文任務。", "Complete verse quests on a map.")}</p>
+                      <h2 style={{ fontSize: '2rem', margin: 0, marginBottom: '0.5rem', textShadow: '0 2px 4px rgba(0,0,0,0.2)' }}>兒童冒險</h2>
+                      <p style={{ fontSize: '1rem', margin: 0, opacity: 0.9 }}>用關卡地圖一步一步完成經文任務。</p>
                     </div>
 
                     {/* Host Party */}
@@ -5787,7 +5787,6 @@ const deDict = {
 
               {mainTab === 'kids' && (
                 <KidsAdventureMode
-                  t={t}
                   verseSets={safeActiveSets}
                   currentSet={currentSet}
                   gardenData={gardenData}

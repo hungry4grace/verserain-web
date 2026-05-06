@@ -4,7 +4,6 @@ import { CloudRain, Crown, Dices, Map, Play, Sparkles, Star, Trophy, Zap } from 
 const pathColors = ['#ef4444', '#0ea5e9', '#16a34a', '#f59e0b', '#8b5cf6', '#db2777'];
 
 export default function KidsAdventureMode({
-  t,
   verseSets,
   currentSet,
   gardenData,
@@ -73,20 +72,20 @@ export default function KidsAdventureMode({
         <div style={{ position: 'relative', display: 'grid', gridTemplateColumns: 'minmax(0, 1.1fr) minmax(280px, .9fr)', gap: '1rem', alignItems: 'stretch' }}>
           <section style={{ padding: '1rem', minWidth: 0 }}>
             <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', color: '#0369a1', fontWeight: 900, marginBottom: '0.55rem' }}>
-              <Map size={19} /> {t('兒童冒險', 'Kids Adventure')}
+              <Map size={19} /> 兒童冒險
             </div>
             <h1 style={{ margin: 0, color: '#0f172a', fontSize: 'clamp(2rem, 5vw, 3.2rem)', lineHeight: 1.03, letterSpacing: 0 }}>
-              {t('經文探險島', 'Verse Adventure Island')}
+              經文探險島
             </h1>
             <div style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap', marginTop: '1rem' }}>
               <button onClick={randomVerse} style={primaryButton('#f97316', '#facc15')}>
-                <Dices size={18} /> {t('抽一關', 'Pick a Quest')}
+                <Dices size={18} /> 抽一關
               </button>
               <button onClick={() => verses[0] && startVerse(verses[0])} style={primaryButton('#10b981', '#38bdf8')}>
-                <Play size={18} fill="white" /> {t('開始冒險', 'Start')}
+                <Play size={18} fill="white" /> 開始冒險
               </button>
               <button onClick={onOpenMultiplayer} style={secondaryButton('#7c3aed')}>
-                <Crown size={18} /> {t('全班一起玩', 'Class Play')}
+                <Crown size={18} /> 全班一起玩
               </button>
             </div>
           </section>
@@ -94,7 +93,7 @@ export default function KidsAdventureMode({
           <section style={{ background: 'rgba(255,255,255,0.76)', border: '1px solid rgba(14, 116, 144, 0.16)', borderRadius: '14px', padding: '1rem', display: 'grid', gap: '0.75rem' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.8rem' }}>
               <div style={{ minWidth: 0 }}>
-                <div style={{ color: '#64748b', fontSize: '0.8rem', fontWeight: 900 }}>{t('目前路線', 'Current Path')}</div>
+                <div style={{ color: '#64748b', fontSize: '0.8rem', fontWeight: 900 }}>目前路線</div>
                 <div style={{ color: '#0f172a', fontSize: '1.1rem', fontWeight: 900, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{selectedSet?.title}</div>
               </div>
               <button onClick={onOpenGarden} style={{ ...secondaryButton('#059669'), padding: '0.55rem 0.75rem' }}>
@@ -111,8 +110,8 @@ export default function KidsAdventureMode({
               </div>
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
-              <button onClick={() => onSetPlayMode('square_solo')} style={modeButton(playMode === 'square_solo')}>{t('方塊路', 'Blocks')}</button>
-              <button onClick={() => onSetPlayMode('rain_solo')} style={modeButton(playMode === 'rain_solo')}>{t('經文雨', 'Rain')}</button>
+              <button onClick={() => onSetPlayMode('square_solo')} style={modeButton(playMode === 'square_solo')}>方塊路</button>
+              <button onClick={() => onSetPlayMode('rain_solo')} style={modeButton(playMode === 'rain_solo')}>經文雨</button>
             </div>
           </section>
         </div>
@@ -121,7 +120,7 @@ export default function KidsAdventureMode({
       <div style={{ display: 'grid', gridTemplateColumns: '260px minmax(0, 1fr)', gap: '1rem' }}>
         <aside style={{ background: '#ffffff', border: '1px solid #dbeafe', borderRadius: '14px', padding: '0.9rem', boxShadow: '0 8px 24px rgba(15, 23, 42, 0.06)', alignSelf: 'start' }}>
           <div style={{ color: '#0f172a', fontWeight: 900, marginBottom: '0.7rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-            <CloudRain size={18} color="#0ea5e9" /> {t('探險路線', 'Paths')}
+            <CloudRain size={18} color="#0ea5e9" /> 探險路線
           </div>
           <div style={{ display: 'grid', gap: '0.55rem' }}>
             {featuredSets.map((set, idx) => {
@@ -150,7 +149,7 @@ export default function KidsAdventureMode({
                   <span style={{ width: 28, height: 28, borderRadius: '8px', display: 'grid', placeItems: 'center', color: '#fff', fontWeight: 900, background: pathColors[idx % pathColors.length] }}>{idx + 1}</span>
                   <span style={{ minWidth: 0 }}>
                     <span style={{ display: 'block', color: '#0f172a', fontWeight: 900, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{set.title}</span>
-                    <span style={{ display: 'block', color: '#64748b', fontSize: '0.76rem' }}>{set.verses?.length || 0} {t('關', 'quests')}</span>
+                    <span style={{ display: 'block', color: '#64748b', fontSize: '0.76rem' }}>{set.verses?.length || 0} 關</span>
                   </span>
                 </button>
               );
@@ -161,7 +160,7 @@ export default function KidsAdventureMode({
         <section style={{ background: '#ffffff', border: '1px solid #dbeafe', borderRadius: '14px', padding: '1rem', boxShadow: '0 8px 24px rgba(15, 23, 42, 0.06)', minWidth: 0 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', gap: '1rem', alignItems: 'center', marginBottom: '1rem' }}>
             <div style={{ minWidth: 0 }}>
-              <div style={{ color: '#64748b', fontWeight: 900, fontSize: '0.82rem' }}>{t('關卡地圖', 'Quest Map')}</div>
+              <div style={{ color: '#64748b', fontWeight: 900, fontSize: '0.82rem' }}>關卡地圖</div>
               <h2 style={{ margin: 0, color: '#0f172a', fontSize: '1.35rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{selectedSet?.title}</h2>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', color: '#b45309', fontWeight: 900 }}>
