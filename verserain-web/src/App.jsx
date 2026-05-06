@@ -8304,7 +8304,7 @@ const deDict = {
           </div>
         )}
 
-        {gameState === 'playing' && (isBlindMode || playMode?.startsWith('voice')) && (
+        {gameState === 'playing' && !isAutoPlay && (isBlindMode || playMode?.startsWith('voice')) && (
           <BlindModeGame
             key={activeVerse?.reference}
             activeVerse={activeVerse}
@@ -8362,7 +8362,7 @@ const deDict = {
           />
         )}
 
-        {gameState === 'playing' && !isBlindMode && !playMode?.startsWith('voice') && (
+        {gameState === 'playing' && (isAutoPlay || (!isBlindMode && !playMode?.startsWith('voice'))) && (
           <div
             key={`${playMode}-${activeVerse.reference}-${distractionLevel}`}
             onClick={handleGlobalClick}
