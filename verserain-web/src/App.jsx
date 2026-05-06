@@ -6788,18 +6788,26 @@ const deDict = {
                     ) : (
                       <>
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem', borderBottom: '1px solid #e2e8f0', backgroundColor: '#f8fafc', flexWrap: 'wrap', gap: '1rem' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flex: '1 1 360px', minWidth: 0 }}>
                             <button
                               onClick={() => setSelectedSetId(null)}
-                              style={{ background: '#ffffff', border: '1px solid #cbd5e1', padding: '0.4rem 0.8rem', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', color: '#475569', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '5px' }}
+                              style={{ background: '#ffffff', border: '1px solid #cbd5e1', padding: '0.4rem 0.8rem', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', color: '#475569', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '5px', flexShrink: 0 }}
                               onMouseOver={(e) => e.target.style.backgroundColor = '#f1f5f9'}
                               onMouseOut={(e) => e.target.style.backgroundColor = '#ffffff'}
                             >
                               <Home size={14} /> {t("返回目錄", "Back to Menu")}
                             </button>
-                            <div style={{ display: 'flex', flexDirection: 'column' }}>
-                              <span style={{ fontSize: '0.8rem', color: '#64748b', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{t("目前選擇", "Current Set")}</span>
-                              <span style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#1e293b' }}>{currentSet?.title}</span>
+                            <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: '1rem', flex: 1, minWidth: 0 }}>
+                              <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+                                <span style={{ fontSize: '0.8rem', color: '#64748b', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{t("目前選擇", "Current Set")}</span>
+                                <span style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#1e293b', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{currentSet?.title}</span>
+                              </div>
+                              <div style={{ marginLeft: 'auto', textAlign: 'right', color: '#64748b', fontSize: '0.85rem', fontWeight: 'bold', flexShrink: 0, maxWidth: '260px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                <span style={{ color: '#94a3b8', marginRight: '0.35rem' }}>{t("作者", "Author")}</span>
+                                <span style={{ color: '#337ab7' }}>
+                                  {currentSet?.authorName && currentSet.authorName !== "Anonymous" ? currentSet.authorName : (String(currentSet?.id).startsWith("custom-") ? t('匿名玩家', 'Anonymous') : t('Verserain 官方', 'Official'))}
+                                </span>
+                              </div>
                             </div>
                           </div>
 

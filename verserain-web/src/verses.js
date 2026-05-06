@@ -114,6 +114,7 @@ export const VERSE_SETS = [
     {
         id: "chiayi-sunday-school-competition",
         title: "嘉義聖教會兒童主日學聖經比賽",
+        authorName: "嘉義聖教會兒童主日學",
         description: "本系列包含 20 節經典必背經文，適合兒童主日學聖經比賽與默想。",
         verses: [
             { id: "chiayi-1", reference: "約翰福音 3:16", title: "嘉義聖教會兒童主日學", text: "神愛世人，甚至將他的獨生子 賜給他們，叫一切信他的，不至滅亡，反得永生。" },
