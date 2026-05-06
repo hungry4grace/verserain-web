@@ -1,7 +1,81 @@
 import React from 'react';
-import { CheckCircle2, CloudRain, Crown, Dices, Map, Play, RotateCcw, Sparkles, Star, Trophy, X, Zap } from 'lucide-react';
+import { BookOpen, CheckCircle2, CloudRain, Crown, Dices, Map, Play, RotateCcw, Sparkles, Star, Trophy, Wand2, X, Zap } from 'lucide-react';
 
-const pathColors = ['#ef4444', '#0ea5e9', '#16a34a', '#f59e0b', '#8b5cf6', '#db2777'];
+const routeThemes = [
+  {
+    test: /約翰福音|John|Juan|Johannes/i,
+    routeTitle: '生命光森林',
+    icon: '🌲',
+    badge: '耶穌是光',
+    grade: '中低年級',
+    recommendedMode: '拼圖優先',
+    description: '跟著約翰福音找到生命、光、道路與真理。',
+    color: '#0ea5e9',
+    bg: 'linear-gradient(135deg, #e0f2fe, #dcfce7)'
+  },
+  {
+    test: /嘉義|兒童|主日學|Sunday|Children/i,
+    routeTitle: '勇氣小鎮',
+    icon: '🏘️',
+    badge: '主日學任務',
+    grade: '低年級',
+    recommendedMode: '拼圖 + 挑戰',
+    description: '用短句拼圖先認識經文，再一步一步完成背誦。',
+    color: '#f97316',
+    bg: 'linear-gradient(135deg, #fff7ed, #fef9c3)'
+  },
+  {
+    test: /箴言|Proverbs|Proverbios/i,
+    routeTitle: '智慧礦坑',
+    icon: '⛏️',
+    badge: '智慧選擇',
+    grade: '中高年級',
+    recommendedMode: '方塊路',
+    description: '挖出智慧寶石，練習說話、選擇與敬畏神。',
+    color: '#8b5cf6',
+    bg: 'linear-gradient(135deg, #ede9fe, #ecfeff)'
+  },
+  {
+    test: /互惠|經濟|Mutual|Econom/i,
+    routeTitle: '愛心市場',
+    icon: '🤝',
+    badge: '彼此幫助',
+    grade: '中高年級',
+    recommendedMode: '經文雨',
+    description: '學習慷慨、分享、工作與祝福人的道路。',
+    color: '#16a34a',
+    bg: 'linear-gradient(135deg, #dcfce7, #fef3c7)'
+  },
+  {
+    test: /價值|value|Worth/i,
+    routeTitle: '寶貝山谷',
+    icon: '💎',
+    badge: '我是寶貴',
+    grade: '低年級',
+    recommendedMode: '拼圖優先',
+    description: '讓孩子知道自己被神愛、被神看為寶貴。',
+    color: '#db2777',
+    bg: 'linear-gradient(135deg, #fce7f3, #e0f2fe)'
+  },
+  {
+    test: /療癒|醫治|Healing|Sanidad/i,
+    routeTitle: '平安泉水',
+    icon: '💧',
+    badge: '安慰與醫治',
+    grade: '中低年級',
+    recommendedMode: '聽一聽',
+    description: '在神的應許裡領受平安、盼望與安慰。',
+    color: '#0891b2',
+    bg: 'linear-gradient(135deg, #cffafe, #dcfce7)'
+  }
+];
+
+const fallbackRoutes = [
+  ['信心山谷', '⛰️', '信靠神', '中低年級', '拼圖 + 挑戰', '#0ea5e9', 'linear-gradient(135deg, #e0f2fe, #fef9c3)'],
+  ['愛心小鎮', '💛', '彼此相愛', '低年級', '拼圖優先', '#f59e0b', 'linear-gradient(135deg, #fef3c7, #dcfce7)'],
+  ['禱告海灣', '⛵', '禱告生活', '中低年級', '聽一聽', '#14b8a6', 'linear-gradient(135deg, #ccfbf1, #e0f2fe)'],
+  ['品格徽章路', '🏅', '好品格', '中高年級', '方塊路', '#8b5cf6', 'linear-gradient(135deg, #ede9fe, #fce7f3)']
+];
 
 export default function KidsAdventureMode({
   verseSets,
@@ -20,6 +94,7 @@ export default function KidsAdventureMode({
   const [puzzlePieces, setPuzzlePieces] = React.useState([]);
   const [puzzleSlots, setPuzzleSlots] = React.useState([]);
   const [selectedPieceId, setSelectedPieceId] = React.useState(null);
+  const [showTeacherDesigner, setShowTeacherDesigner] = React.useState(false);
   const selectedSet = React.useMemo(
     () => verseSets.find(set => set.id === selectedSetId) || currentSet || verseSets[0],
     [currentSet, selectedSetId, verseSets]
@@ -29,7 +104,7 @@ export default function KidsAdventureMode({
     if (currentSet?.id) setSelectedSetId(currentSet.id);
   }, [currentSet?.id]);
 
-  const featuredSets = React.useMemo(() => {
+  const featuredRoutes = React.useMemo(() => {
     const sets = [...verseSets];
     sets.sort((a, b) => {
       const aKid = /兒童|孩子|主日學|比賽|核心/.test(`${a.title || ''} ${a.description || ''}`) ? 1 : 0;
@@ -37,8 +112,13 @@ export default function KidsAdventureMode({
       if (aKid !== bKid) return bKid - aKid;
       return (viewCounts[b.id] || 0) - (viewCounts[a.id] || 0);
     });
-    return sets.slice(0, 6);
+    return sets.slice(0, 6).map((set, index) => buildAdventureRoute(set, index));
   }, [verseSets, viewCounts]);
+
+  const selectedRoute = React.useMemo(
+    () => featuredRoutes.find(route => route.set.id === selectedSet?.id) || buildAdventureRoute(selectedSet, 0),
+    [featuredRoutes, selectedSet]
+  );
 
   const verses = selectedSet?.verses || [];
   const completedCount = React.useMemo(() => {
@@ -117,7 +197,7 @@ export default function KidsAdventureMode({
         overflow: 'hidden',
         borderRadius: '18px',
         border: '2px solid #bae6fd',
-        background: 'linear-gradient(135deg, #ecfeff 0%, #fef9c3 46%, #dcfce7 100%)',
+        background: selectedRoute?.bg || 'linear-gradient(135deg, #ecfeff 0%, #fef9c3 46%, #dcfce7 100%)',
         boxShadow: '0 18px 50px rgba(14, 116, 144, 0.16)',
         padding: '1.2rem',
         marginBottom: '1rem'
@@ -126,11 +206,14 @@ export default function KidsAdventureMode({
         <div style={{ position: 'relative', display: 'grid', gridTemplateColumns: 'minmax(0, 1.1fr) minmax(280px, .9fr)', gap: '1rem', alignItems: 'stretch' }}>
           <section style={{ padding: '1rem', minWidth: 0 }}>
             <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', color: '#0369a1', fontWeight: 900, marginBottom: '0.55rem' }}>
-              <Map size={19} /> 兒童冒險
+              <Map size={19} /> 兒童冒險 · {selectedRoute?.badge}
             </div>
             <h1 style={{ margin: 0, color: '#0f172a', fontSize: 'clamp(2rem, 5vw, 3.2rem)', lineHeight: 1.03, letterSpacing: 0 }}>
-              經文探險島
+              {selectedRoute?.icon} {selectedRoute?.routeTitle || '經文探險島'}
             </h1>
+            <p style={{ margin: '0.65rem 0 0', color: '#334155', fontWeight: 800, fontSize: '1.05rem', lineHeight: 1.55, maxWidth: '680px' }}>
+              {selectedRoute?.description}
+            </p>
             <div style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap', marginTop: '1rem' }}>
               <button onClick={randomVerse} style={primaryButton('#f97316', '#facc15')}>
                 <Dices size={18} /> 抽一關
@@ -141,6 +224,9 @@ export default function KidsAdventureMode({
               <button onClick={onOpenMultiplayer} style={secondaryButton('#7c3aed')}>
                 <Crown size={18} /> 全班一起玩
               </button>
+              <button onClick={() => setShowTeacherDesigner(true)} style={secondaryButton('#0f766e')}>
+                <Wand2 size={18} /> 老師設計路線
+              </button>
             </div>
           </section>
 
@@ -148,7 +234,8 @@ export default function KidsAdventureMode({
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.8rem' }}>
               <div style={{ minWidth: 0 }}>
                 <div style={{ color: '#64748b', fontSize: '0.8rem', fontWeight: 900 }}>目前路線</div>
-                <div style={{ color: '#0f172a', fontSize: '1.1rem', fontWeight: 900, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{selectedSet?.title}</div>
+                <div style={{ color: '#0f172a', fontSize: '1.1rem', fontWeight: 900, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{selectedRoute?.routeTitle}</div>
+                <div style={{ color: '#64748b', fontSize: '0.78rem', fontWeight: 800, marginTop: '0.2rem' }}>{selectedRoute?.grade} · {selectedRoute?.recommendedMode}</div>
               </div>
               <button onClick={onOpenGarden} style={{ ...secondaryButton('#059669'), padding: '0.55rem 0.75rem' }}>
                 <Sparkles size={17} /> {fruitCount}
@@ -177,37 +264,56 @@ export default function KidsAdventureMode({
             <CloudRain size={18} color="#0ea5e9" /> 探險路線
           </div>
           <div style={{ display: 'grid', gap: '0.55rem' }}>
-            {featuredSets.map((set, idx) => {
-              const active = set.id === selectedSet?.id;
+            {featuredRoutes.map((route, idx) => {
+              const active = route.set.id === selectedSet?.id;
               return (
                 <button
-                  key={set.id}
+                  key={route.set.id}
                   onClick={() => {
-                    setSelectedSetId(set.id);
-                    onSelectSet(set.id);
+                    setSelectedSetId(route.set.id);
+                    onSelectSet(route.set.id);
                   }}
                   style={{
                     display: 'grid',
-                    gridTemplateColumns: '28px minmax(0, 1fr)',
+                    gridTemplateColumns: '42px minmax(0, 1fr)',
                     gap: '0.55rem',
                     alignItems: 'center',
                     width: '100%',
                     textAlign: 'left',
-                    border: active ? `2px solid ${pathColors[idx % pathColors.length]}` : '1px solid #e2e8f0',
-                    background: active ? '#f0f9ff' : '#ffffff',
-                    borderRadius: '10px',
-                    padding: '0.55rem',
+                    border: active ? `2px solid ${route.color}` : '1px solid #e2e8f0',
+                    background: active ? route.bg : '#ffffff',
+                    borderRadius: '14px',
+                    padding: '0.65rem',
                     cursor: 'pointer'
                   }}
                 >
-                  <span style={{ width: 28, height: 28, borderRadius: '8px', display: 'grid', placeItems: 'center', color: '#fff', fontWeight: 900, background: pathColors[idx % pathColors.length] }}>{idx + 1}</span>
+                  <span style={{ width: 42, height: 42, borderRadius: '13px', display: 'grid', placeItems: 'center', color: '#fff', fontWeight: 900, background: route.color, fontSize: '1.35rem' }}>{route.icon}</span>
                   <span style={{ minWidth: 0 }}>
-                    <span style={{ display: 'block', color: '#0f172a', fontWeight: 900, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{set.title}</span>
-                    <span style={{ display: 'block', color: '#64748b', fontSize: '0.76rem' }}>{set.verses?.length || 0} 關</span>
+                    <span style={{ display: 'block', color: '#0f172a', fontWeight: 900, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{route.routeTitle}</span>
+                    <span style={{ display: 'block', color: '#475569', fontSize: '0.76rem', fontWeight: 800 }}>{route.grade} · {route.set.verses?.length || 0} 關</span>
+                    <span style={{ display: 'block', color: route.color, fontSize: '0.72rem', fontWeight: 900, marginTop: '0.16rem' }}>{route.badge}</span>
                   </span>
                 </button>
               );
             })}
+            <button
+              onClick={() => setShowTeacherDesigner(true)}
+              style={{
+                border: '1px dashed #14b8a6',
+                background: '#f0fdfa',
+                color: '#0f766e',
+                borderRadius: '14px',
+                padding: '0.75rem',
+                cursor: 'pointer',
+                fontWeight: 900,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '0.4rem'
+              }}
+            >
+              <Wand2 size={17} /> 老師設計路線
+            </button>
           </div>
         </aside>
 
@@ -215,7 +321,10 @@ export default function KidsAdventureMode({
           <div style={{ display: 'flex', justifyContent: 'space-between', gap: '1rem', alignItems: 'center', marginBottom: '1rem' }}>
             <div style={{ minWidth: 0 }}>
               <div style={{ color: '#64748b', fontWeight: 900, fontSize: '0.82rem' }}>關卡地圖</div>
-              <h2 style={{ margin: 0, color: '#0f172a', fontSize: '1.35rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{selectedSet?.title}</h2>
+              <h2 style={{ margin: 0, color: '#0f172a', fontSize: '1.35rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{selectedRoute?.routeTitle}</h2>
+              <div style={{ marginTop: '0.25rem', color: '#64748b', fontWeight: 800, fontSize: '0.86rem' }}>
+                原經文組：{selectedSet?.title}
+              </div>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', color: '#b45309', fontWeight: 900 }}>
               <Trophy size={18} /> {viewCounts[selectedSet?.id] || 0}
@@ -369,8 +478,66 @@ export default function KidsAdventureMode({
           </div>
         </div>
       )}
+      {showTeacherDesigner && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 9999, background: 'rgba(15, 23, 42, 0.58)', display: 'grid', placeItems: 'center', padding: '1rem' }}>
+          <div style={{ width: 'min(760px, 100%)', background: '#ffffff', border: '2px solid #99f6e4', borderRadius: '18px', boxShadow: '0 26px 70px rgba(15, 23, 42, 0.28)', overflow: 'hidden' }}>
+            <div style={{ background: 'linear-gradient(135deg, #ccfbf1, #fef9c3)', padding: '1rem 1.2rem', display: 'flex', justifyContent: 'space-between', gap: '1rem', alignItems: 'flex-start' }}>
+              <div>
+                <div style={{ color: '#0f766e', fontWeight: 900, fontSize: '0.86rem' }}>老師路線設計器草稿</div>
+                <h2 style={{ margin: '0.2rem 0 0', color: '#0f172a', fontSize: '1.45rem' }}>把經文組變成主日學探險路線</h2>
+              </div>
+              <button onClick={() => setShowTeacherDesigner(false)} style={{ width: 36, height: 36, borderRadius: '10px', border: '1px solid #5eead4', background: '#ffffff', color: '#0f766e', cursor: 'pointer', display: 'grid', placeItems: 'center' }}>
+                <X size={20} />
+              </button>
+            </div>
+            <div style={{ padding: '1.2rem', display: 'grid', gap: '1rem' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: '0.75rem' }}>
+                {[
+                  ['1', '選經文組', '從現有題庫或老師自訂題庫開始。'],
+                  ['2', '設定對象', '幼兒、低年級、中高年級或比賽班。'],
+                  ['3', '安排玩法', '每關可指定拼圖、方塊路或經文雨。'],
+                  ['4', '分享路線', '之後可產生連結或 QR code 給孩子。']
+                ].map(([num, title, desc]) => (
+                  <div key={num} style={{ border: '1px solid #ccfbf1', background: '#f8fafc', borderRadius: '14px', padding: '0.85rem' }}>
+                    <div style={{ width: 32, height: 32, borderRadius: '10px', display: 'grid', placeItems: 'center', background: '#14b8a6', color: '#ffffff', fontWeight: 900 }}>{num}</div>
+                    <div style={{ marginTop: '0.55rem', color: '#0f172a', fontWeight: 900 }}>{title}</div>
+                    <div style={{ marginTop: '0.25rem', color: '#64748b', fontWeight: 800, fontSize: '0.86rem', lineHeight: 1.5 }}>{desc}</div>
+                  </div>
+                ))}
+              </div>
+
+              <div style={{ background: '#f0fdfa', border: '1px dashed #14b8a6', borderRadius: '14px', padding: '1rem', color: '#115e59', fontWeight: 800, lineHeight: 1.7 }}>
+                這一版先把官方路線包裝好。下一步若要開放老師設計，我建議先做「本機草稿 + 分享連結」，等老師們真的開始使用後，再把路線存到雲端帳號。
+              </div>
+
+              <button onClick={() => setShowTeacherDesigner(false)} style={{ ...primaryButton('#14b8a6', '#22c55e'), justifyContent: 'center' }}>
+                <BookOpen size={18} /> 先使用官方路線
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
+}
+
+function buildAdventureRoute(set, index = 0) {
+  const haystack = `${set?.title || ''} ${set?.description || ''} ${set?.authorName || ''}`;
+  const matched = routeThemes.find(theme => theme.test.test(haystack));
+  if (matched) return { ...matched, set };
+
+  const fallback = fallbackRoutes[index % fallbackRoutes.length];
+  return {
+    set,
+    routeTitle: fallback[0],
+    icon: fallback[1],
+    badge: fallback[2],
+    grade: fallback[3],
+    recommendedMode: fallback[4],
+    color: fallback[5],
+    bg: fallback[6],
+    description: `${set?.title || '經文'}被整理成適合孩子闖關的探險路線。`
+  };
 }
 
 function splitVerseForPuzzle(text) {
