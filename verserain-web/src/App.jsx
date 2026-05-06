@@ -12,6 +12,7 @@ import 'react-quill-new/dist/quill.snow.css';
 import { PREMIUM_EMAILS } from './premiumEmails';
 import WorldMap from './WorldMap';
 import BlindModeGame from './BlindModeGame';
+import KidsAdventureMode from './KidsAdventureMode';
 import { TransformWrapper, TransformComponent } from 'react-zoom-pan-pinch';
 
 const quillModules = {
@@ -5659,6 +5660,9 @@ const deDict = {
               <div className="block-tile" onClick={() => setMainTab('garden')} style={{ display: 'flex', alignItems: 'center', padding: '0.5rem 1.2rem', cursor: 'pointer', backgroundColor: mainTab === 'garden' ? '#10b981' : 'white', color: mainTab === 'garden' ? 'white' : '#475569', borderRadius: '20px', fontWeight: 'bold', whiteSpace: 'nowrap', transition: 'all 0.2s' }}>
                 🌳 {t('我的園子', 'My Garden')}
               </div>
+              <div className="block-tile" onClick={() => setMainTab('kids')} style={{ display: 'flex', alignItems: 'center', padding: '0.5rem 1.2rem', cursor: 'pointer', backgroundColor: mainTab === 'kids' ? '#f97316' : 'white', color: mainTab === 'kids' ? 'white' : '#475569', borderRadius: '20px', fontWeight: 'bold', whiteSpace: 'nowrap', transition: 'all 0.2s' }}>
+                ✨ {t('兒童冒險', 'Kids')}
+              </div>
               <div className="block-tile" onClick={() => setMainTab('multiplayer')} style={{ display: 'flex', alignItems: 'center', padding: '0.5rem 1.2rem', cursor: 'pointer', backgroundColor: mainTab === 'multiplayer' ? '#ec4899' : 'white', color: mainTab === 'multiplayer' ? 'white' : '#475569', borderRadius: '20px', fontWeight: 'bold', whiteSpace: 'nowrap', transition: 'all 0.2s' }}>
                 🎮 {t('多人連線', 'Multiplayer')}
               </div>
@@ -5758,6 +5762,12 @@ const deDict = {
                       <p style={{ fontSize: '1rem', margin: 0, opacity: 0.9 }}>{t("挑戰全球經文組，鍛鍊記憶力與專注力。", "Challenge global sets, hone memory & focus.")}</p>
                     </div>
 
+                    <div className="primary-button" onClick={() => setMainTab('kids')} style={{ background: 'linear-gradient(135deg, #facc15, #f97316)', borderRadius: '16px', padding: '2.5rem 2rem', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', color: 'white', textAlign: 'center' }}>
+                      <div style={{ fontSize: '4.5rem', marginBottom: '1rem' }}>🗺️</div>
+                      <h2 style={{ fontSize: '2rem', margin: 0, marginBottom: '0.5rem', textShadow: '0 2px 4px rgba(0,0,0,0.2)' }}>{t("兒童冒險", "Kids Adventure")}</h2>
+                      <p style={{ fontSize: '1rem', margin: 0, opacity: 0.9 }}>{t("用關卡地圖一步一步完成經文任務。", "Complete verse quests on a map.")}</p>
+                    </div>
+
                     {/* Host Party */}
                     <div className="primary-button" onClick={() => setMainTab('multiplayer')} style={{ background: 'linear-gradient(135deg, #f472b6, #ec4899)', borderRadius: '16px', padding: '2.5rem 2rem', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', color: 'white', textAlign: 'center' }}>
                       <div style={{ fontSize: '4.5rem', marginBottom: '1rem' }}>👨‍👩‍👧‍👦</div>
@@ -5773,6 +5783,36 @@ const deDict = {
                     </div>
                   </div>
                 </div>
+              )}
+
+              {mainTab === 'kids' && (
+                <KidsAdventureMode
+                  t={t}
+                  verseSets={safeActiveSets}
+                  currentSet={currentSet}
+                  gardenData={gardenData}
+                  viewCounts={viewCounts}
+                  playMode={playMode}
+                  onSetPlayMode={setPlayMode}
+                  onOpenGarden={() => setMainTab('garden')}
+                  onOpenMultiplayer={() => setMainTab('multiplayer')}
+                  onSelectSet={(setId) => {
+                    setSelectedSetId(setId);
+                    fetch("https://verserain-party.hungry4grace.partykit.dev/parties/main/global-auth-db/custom-sets/view", { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: setId }) }).catch(e => e);
+                    setViewCounts(prev => ({ ...prev, [setId]: (prev[setId] || 0) + 1 }));
+                  }}
+                  onChallengeVerse={(verse, set) => {
+                    initAudio();
+                    setSelectedSetId(set.id);
+                    setCampaignQueue(null);
+                    setCampaignResults([]);
+                    setActiveCampaignSetId(set.id);
+                    setActiveCampaignSetTotal(1);
+                    setActiveVerse(verse);
+                    setSelectedVerseRefs([verse.reference]);
+                    setTimeout(() => startGame(false, verse), 50);
+                  }}
+                />
               )}
 
               {mainTab === 'advanced' && (
