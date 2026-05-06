@@ -541,11 +541,64 @@ function buildAdventureRoute(set, index = 0) {
 }
 
 function splitVerseForPuzzle(text) {
-  const spaced = String(text || '').split(/\s+/).map(item => item.trim()).filter(Boolean);
-  if (spaced.length >= 2) return spaced;
-  const punctuated = String(text || '').split(/[，。；、：！？,.?!;:]+/).map(item => item.trim()).filter(Boolean);
-  if (punctuated.length >= 2) return punctuated;
-  return String(text || '').split('').filter(Boolean);
+  const raw = String(text || '').trim();
+  if (!raw) return [];
+
+  const hasCjk = /[\u3400-\u9fff]/.test(raw);
+  if (hasCjk) {
+    const normalized = raw
+      .replace(/([\u3400-\u9fff])\s+([\u3400-\u9fff])/g, '$1$2')
+      .replace(/\s+/g, ' ');
+    const clauses = (normalized.match(/[^，。；、：！？,.?!;:]+[，。；、：！？,.?!;:]?/g) || [])
+      .map(item => item.trim())
+      .filter(Boolean)
+      .flatMap(item => splitLongChinesePhrase(item, 14));
+
+    if (clauses.length <= 1) return normalized.split('').filter(Boolean);
+
+    const targetCount = Math.min(8, Math.max(3, Math.ceil(normalized.replace(/\s/g, '').length / 10)));
+    return mergePuzzleClauses(clauses, targetCount, 18);
+  }
+
+  const words = raw.split(/\s+/).map(item => item.trim()).filter(Boolean);
+  if (words.length <= 7) return words.length >= 2 ? words : raw.split('').filter(Boolean);
+
+  const chunks = [];
+  for (let i = 0; i < words.length; i += 6) {
+    chunks.push(words.slice(i, i + 6).join(' '));
+  }
+  return chunks;
+}
+
+function splitLongChinesePhrase(phrase, maxLength) {
+  const clean = phrase.trim();
+  if (clean.length <= maxLength) return [clean];
+  const chunks = [];
+  for (let i = 0; i < clean.length; i += maxLength) {
+    chunks.push(clean.slice(i, i + maxLength));
+  }
+  return chunks;
+}
+
+function mergePuzzleClauses(clauses, targetCount, maxLength) {
+  const merged = [...clauses];
+  while (merged.length > targetCount) {
+    let bestIndex = -1;
+    let bestScore = Infinity;
+    for (let i = 0; i < merged.length - 1; i += 1) {
+      const combined = `${merged[i]}${merged[i + 1]}`;
+      const overLimitPenalty = combined.length > maxLength ? 80 + combined.length : 0;
+      const finalSentencePenalty = /[。！？.!?]$/.test(merged[i + 1]) ? 8 : 0;
+      const score = Math.abs(combined.length - 12) + overLimitPenalty + finalSentencePenalty;
+      if (score < bestScore) {
+        bestScore = score;
+        bestIndex = i;
+      }
+    }
+    if (bestIndex < 0) break;
+    merged.splice(bestIndex, 2, `${merged[bestIndex]}${merged[bestIndex + 1]}`);
+  }
+  return merged;
 }
 
 function shufflePieces(pieces) {
