@@ -13,6 +13,7 @@ import { PREMIUM_EMAILS } from './premiumEmails';
 import WorldMap from './WorldMap';
 import BlindModeGame from './BlindModeGame';
 import KidsAdventureMode from './KidsAdventureMode';
+import KidsGardenMode from './KidsGardenMode';
 import { TransformWrapper, TransformComponent } from 'react-zoom-pan-pinch';
 
 const quillModules = {
@@ -5663,6 +5664,9 @@ const deDict = {
               <div className="block-tile" onClick={() => setMainTab('kids')} style={{ display: 'flex', alignItems: 'center', padding: '0.5rem 1.2rem', cursor: 'pointer', backgroundColor: mainTab === 'kids' ? '#f97316' : 'white', color: mainTab === 'kids' ? 'white' : '#475569', borderRadius: '20px', fontWeight: 'bold', whiteSpace: 'nowrap', transition: 'all 0.2s' }}>
                 ✨ 兒童冒險
               </div>
+              <div className="block-tile" onClick={() => setMainTab('kidsGarden')} style={{ display: 'flex', alignItems: 'center', padding: '0.5rem 1.2rem', cursor: 'pointer', backgroundColor: mainTab === 'kidsGarden' ? '#22c55e' : 'white', color: mainTab === 'kidsGarden' ? 'white' : '#475569', borderRadius: '20px', fontWeight: 'bold', whiteSpace: 'nowrap', transition: 'all 0.2s' }}>
+                🏡 兒童園子
+              </div>
               <div className="block-tile" onClick={() => setMainTab('multiplayer')} style={{ display: 'flex', alignItems: 'center', padding: '0.5rem 1.2rem', cursor: 'pointer', backgroundColor: mainTab === 'multiplayer' ? '#ec4899' : 'white', color: mainTab === 'multiplayer' ? 'white' : '#475569', borderRadius: '20px', fontWeight: 'bold', whiteSpace: 'nowrap', transition: 'all 0.2s' }}>
                 🎮 {t('多人連線', 'Multiplayer')}
               </div>
@@ -5781,6 +5785,12 @@ const deDict = {
                       <h2 style={{ fontSize: '2rem', margin: 0, marginBottom: '0.5rem', textShadow: '0 2px 4px rgba(0,0,0,0.2)' }}>{t("我的園子", "My Garden")}</h2>
                       <p style={{ fontSize: '1rem', margin: 0, opacity: 0.9 }}>{t("檢視你已經學會並種下生命樹的經文。", "View your living scripture trees.")}</p>
                     </div>
+
+                    <div className="primary-button" onClick={() => setMainTab('kidsGarden')} style={{ background: 'linear-gradient(135deg, #86efac, #0ea5e9)', borderRadius: '16px', padding: '2.5rem 2rem', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', color: 'white', textAlign: 'center' }}>
+                      <div style={{ fontSize: '4.5rem', marginBottom: '1rem' }}>🏡</div>
+                      <h2 style={{ fontSize: '2rem', margin: 0, marginBottom: '0.5rem', textShadow: '0 2px 4px rgba(0,0,0,0.2)' }}>兒童園子</h2>
+                      <p style={{ fontSize: '1rem', margin: 0, opacity: 0.9 }}>把經文樹變成自己的小島世界。</p>
+                    </div>
                   </div>
                 </div>
               )}
@@ -5793,7 +5803,7 @@ const deDict = {
                   viewCounts={viewCounts}
                   playMode={playMode}
                   onSetPlayMode={setPlayMode}
-                  onOpenGarden={() => setMainTab('garden')}
+                  onOpenGarden={() => setMainTab('kidsGarden')}
                   onOpenMultiplayer={() => setMainTab('multiplayer')}
                   onSelectSet={(setId) => {
                     setSelectedSetId(setId);
@@ -5806,6 +5816,26 @@ const deDict = {
                     setCampaignQueue(null);
                     setCampaignResults([]);
                     setActiveCampaignSetId(set.id);
+                    setActiveCampaignSetTotal(1);
+                    setActiveVerse(verse);
+                    setSelectedVerseRefs([verse.reference]);
+                    setTimeout(() => startGame(false, verse), 50);
+                  }}
+                />
+              )}
+
+              {mainTab === 'kidsGarden' && (
+                <KidsGardenMode
+                  gardenData={gardenData}
+                  verseSets={[...safeActiveSets, ...customVerseSets]}
+                  playerName={playerName}
+                  onBackToKids={() => setMainTab('kids')}
+                  onChallengeVerse={(verse, set) => {
+                    initAudio();
+                    if (set?.id) setSelectedSetId(set.id);
+                    setCampaignQueue(null);
+                    setCampaignResults([]);
+                    setActiveCampaignSetId(set?.id || null);
                     setActiveCampaignSetTotal(1);
                     setActiveVerse(verse);
                     setSelectedVerseRefs([verse.reference]);
