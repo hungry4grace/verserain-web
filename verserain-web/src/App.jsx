@@ -5660,9 +5660,6 @@ const deDict = {
               <div className="block-tile" onClick={() => setMainTab('garden')} style={{ display: 'flex', alignItems: 'center', padding: '0.5rem 1.2rem', cursor: 'pointer', backgroundColor: mainTab === 'garden' ? '#10b981' : 'white', color: mainTab === 'garden' ? 'white' : '#475569', borderRadius: '20px', fontWeight: 'bold', whiteSpace: 'nowrap', transition: 'all 0.2s' }}>
                 🌳 {t('我的園子', 'My Garden')}
               </div>
-              <div className="block-tile" onClick={() => setMainTab('kids')} style={{ display: 'flex', alignItems: 'center', padding: '0.5rem 1.2rem', cursor: 'pointer', backgroundColor: mainTab === 'kids' ? '#f97316' : 'white', color: mainTab === 'kids' ? 'white' : '#475569', borderRadius: '20px', fontWeight: 'bold', whiteSpace: 'nowrap', transition: 'all 0.2s' }}>
-                ✨ 兒童冒險
-              </div>
               <div className="block-tile" onClick={() => setMainTab('multiplayer')} style={{ display: 'flex', alignItems: 'center', padding: '0.5rem 1.2rem', cursor: 'pointer', backgroundColor: mainTab === 'multiplayer' ? '#ec4899' : 'white', color: mainTab === 'multiplayer' ? 'white' : '#475569', borderRadius: '20px', fontWeight: 'bold', whiteSpace: 'nowrap', transition: 'all 0.2s' }}>
                 🎮 {t('多人連線', 'Multiplayer')}
               </div>
@@ -5762,12 +5759,6 @@ const deDict = {
                       <p style={{ fontSize: '1rem', margin: 0, opacity: 0.9 }}>{t("挑戰全球經文組，鍛鍊記憶力與專注力。", "Challenge global sets, hone memory & focus.")}</p>
                     </div>
 
-                    <div className="primary-button" onClick={() => setMainTab('kids')} style={{ background: 'linear-gradient(135deg, #facc15, #f97316)', borderRadius: '16px', padding: '2.5rem 2rem', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', color: 'white', textAlign: 'center' }}>
-                      <div style={{ fontSize: '4.5rem', marginBottom: '1rem' }}>🗺️</div>
-                      <h2 style={{ fontSize: '2rem', margin: 0, marginBottom: '0.5rem', textShadow: '0 2px 4px rgba(0,0,0,0.2)' }}>兒童冒險</h2>
-                      <p style={{ fontSize: '1rem', margin: 0, opacity: 0.9 }}>用關卡地圖一步一步完成經文任務。</p>
-                    </div>
-
                     {/* Host Party */}
                     <div className="primary-button" onClick={() => setMainTab('multiplayer')} style={{ background: 'linear-gradient(135deg, #f472b6, #ec4899)', borderRadius: '16px', padding: '2.5rem 2rem', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', color: 'white', textAlign: 'center' }}>
                       <div style={{ fontSize: '4.5rem', marginBottom: '1rem' }}>👨‍👩‍👧‍👦</div>
@@ -5819,6 +5810,7 @@ const deDict = {
                   <h2 style={{ color: '#1e293b', marginBottom: '1.5rem', borderBottom: '2px solid #e2e8f0', paddingBottom: '0.8rem' }}>⚙️ {t("進階設定與學習", "Advanced Settings & Learning")}</h2>
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1rem', width: '100%' }}>
                     {[
+                      { id: 'kids', icon: '✨', label: '兒童冒險', desc: '給孩子使用的探險路線、拼圖模式與老師路線設計器' },
                       { id: 'blindMode', icon: isBlindMode ? '👁️‍🗨️' : '🦯', label: isBlindMode ? t('關閉視障經文雨', 'Disable Blind Mode') : t('打開視障經文雨', 'Enable Blind Mode'), desc: t('為視覺障礙朋友設計的語音模式', 'Voice mode for visually impaired') },
                       { id: 'performanceMode', icon: performanceMode ? '⚡' : '🔋', label: performanceMode ? t('關閉效能模式', 'Disable Performance Mode') : t('打開效能模式', 'Enable Performance Mode'), desc: t('關閉華麗特效以提升流暢度', 'Disable effects for better performance') },
                       { id: 'debugMode', icon: isDebugMode ? '🐞' : '🐛', label: isDebugMode ? t('關閉 Debug', 'Disable Debug') : t('打開 Debug', 'Enable Debug'), desc: t('顯示除錯資訊', 'Show debug info') },
