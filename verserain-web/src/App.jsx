@@ -2030,6 +2030,17 @@ export default function App() {
     startGame();
   };
 
+  const playSingleVerseCard = (verse) => {
+    initAudio();
+    setCampaignQueue(null);
+    campaignQueueRef.current = null;
+    setCampaignResults([]);
+    setActiveCampaignSetId(null);
+    setActiveCampaignSetTotal(1);
+    setActiveVerse(verse);
+    setTimeout(() => startGame(true, verse), 50);
+  };
+
   useEffect(() => {
     if (initAutoStart?.trigger) {
       if (initAutoStart.isMultiplayerReadyCheck) {
@@ -7036,7 +7047,7 @@ const deDict = {
                             <tr style={{ backgroundColor: '#f8fafc', color: '#475569', fontSize: '0.9rem' }}>
                               <th style={{ padding: '1rem', borderBottom: '2px solid #e2e8f0' }}>{t("經文出處 (點擊觀看)", "Reference (Click to View)")}</th>
                               <th style={{ padding: '1rem', borderBottom: '2px solid #e2e8f0', textAlign: 'center', width: '100px' }}>{t("排行", "Rank")}</th>
-                              <th style={{ padding: '1rem', borderBottom: '2px solid #e2e8f0', width: '100px', textAlign: 'center' }}>{t("操作", "Action")}</th>
+                              <th style={{ padding: '1rem', borderBottom: '2px solid #e2e8f0', width: '140px', textAlign: 'center' }}>{t("操作", "Action")}</th>
                             </tr>
                           </thead>
                           <tbody>
@@ -7069,6 +7080,18 @@ const deDict = {
                                   </td>
                                   <td style={{ padding: '0.8rem 1rem', textAlign: 'center' }} onClick={(e) => e.stopPropagation()}>
                                     <div style={{ display: 'flex', flexDirection: 'row', gap: '0.4rem', justifyContent: 'center' }}>
+                                      <button
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          playSingleVerseCard(v);
+                                        }}
+                                        title={t("播放這節經文", "Play this verse")}
+                                        style={{ backgroundColor: '#8b5cf6', color: 'white', border: 'none', borderRadius: '6px', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'transform 0.1s' }}
+                                        onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.1)'}
+                                        onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                                      >
+                                        <Headphones size={14} fill="white" />
+                                      </button>
                                       <button
                                         onClick={(e) => {
                                           e.stopPropagation();
