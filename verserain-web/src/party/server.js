@@ -286,6 +286,13 @@ export default class Server {
                return new Response(JSON.stringify(sets), { status: 200, headers: corsHeaders });
             } else if (request.method === "POST") {
                const payload = await request.json();
+               const existing = await this.room.storage.get(`verseset:${payload.id}`);
+               if (existing && existing.authorName && existing.authorName !== "Anonymous") {
+                  payload.authorName = existing.authorName;
+               }
+               if (payload.lastEditorName) {
+                  payload.lastEditedAt = payload.lastEditedAt || new Date().toISOString();
+               }
                await this.room.storage.put(`verseset:${payload.id}`, payload);
                return new Response(JSON.stringify({ success: true }), { status: 200, headers: corsHeaders });
             } else if (request.method === "DELETE") {

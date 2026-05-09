@@ -135,6 +135,8 @@ function speakText(text, rate = 1.0, lang = 'zh-TW') {
   });
 }
 
+const AUTO_PLAY_VERSE_PAUSE_MS = 2000;
+
 function playShuffleSound() {
   initAudio();
   for (let i = 0; i < 4; i++) {
@@ -981,7 +983,12 @@ export default function App() {
       const csLang = cs.language || 'cuv';
       if (csLang === version) {
         const pub = publishedVerseSets.find(p => p.id === cs.id);
-        merged.push({ ...cs, authorName: (pub && pub.authorName !== "Anonymous") ? pub.authorName : (cs.authorName || playerName || "匿名玩家") });
+        merged.push({
+          ...cs,
+          authorName: (pub && pub.authorName !== "Anonymous") ? pub.authorName : (cs.authorName || playerName || "匿名玩家"),
+          lastEditorName: pub?.lastEditorName || cs.lastEditorName,
+          lastEditedAt: pub?.lastEditedAt || cs.lastEditedAt
+        });
       }
     });
     publishedVerseSets.forEach(ps => {
@@ -1023,7 +1030,13 @@ export default function App() {
     if (set.authorName && set.authorName !== "Anonymous") return set.authorName;
     return String(set.id).startsWith("custom-") ? '匿名玩家' : 'Verserain 官方';
   }, []);
+  const getVerseSetLastEditorName = React.useCallback((set) => {
+    if (!set?.lastEditorName || set.lastEditorName === "Anonymous") return "";
+    const author = getVerseSetAuthorName(set);
+    return set.lastEditorName === author ? "" : set.lastEditorName;
+  }, [getVerseSetAuthorName]);
   const currentSetAuthorName = getVerseSetAuthorName(currentSet);
+  const currentSetLastEditorName = getVerseSetLastEditorName(currentSet);
   const authorVerseSets = React.useMemo(() => {
     if (!authorSetsModal?.authorName) return [];
     return activeVerseSets.filter(set => getVerseSetAuthorName(set) === authorSetsModal.authorName);
@@ -2582,16 +2595,24 @@ export default function App() {
             }).catch(() => { });
           }
 
-          playTada();
-
           const nextVerse = campaignQueue[0];
-          setActiveVerse(nextVerse);
-          setCampaignQueue(campaignQueue.slice(1));
-          setCurrentSeqIndex(0);
-          currentSeqRef.current = 0;
-          setTimeout(() => {
+          const nextQueue = campaignQueue.slice(1);
+          const advanceToNextVerse = () => {
+            if (gameStateRef.current !== 'playing') return;
+            setActiveVerse(nextVerse);
+            setCampaignQueue(nextQueue);
+            campaignQueueRef.current = nextQueue;
+            setCurrentSeqIndex(0);
+            currentSeqRef.current = 0;
             startGame(isAutoPlayRef.current, nextVerse);
-          }, 50);
+          };
+
+          if (isAutoPlayRef.current) {
+            setTimeout(advanceToNextVerse, AUTO_PLAY_VERSE_PAUSE_MS);
+          } else {
+            playTada();
+            setTimeout(advanceToNextVerse, 50);
+          }
         } else {
           endGame();
         }
@@ -6151,7 +6172,10 @@ const deDict = {
                               const setObj = {
                                 ...editingCustomSet,
                                 language: version,
-                                id: editingCustomSet.id || `custom-${Date.now()}`
+                                id: editingCustomSet.id || `custom-${Date.now()}`,
+                                authorName: (editingCustomSet.authorName && editingCustomSet.authorName !== "Anonymous")
+                                  ? editingCustomSet.authorName
+                                  : (playerName || "Anonymous")
                               };
 
                               let updatedSets;
@@ -6170,7 +6194,16 @@ const deDict = {
 
                               // Handle publishing sync
                               if (setObj.isPublished) {
-                                const publishedObj = { ...setObj, authorName: playerName || "Anonymous" };
+                                const existingPublishedSet = publishedVerseSets.find(p => p.id === setObj.id);
+                                const originalAuthorName = (existingPublishedSet?.authorName && existingPublishedSet.authorName !== "Anonymous")
+                                  ? existingPublishedSet.authorName
+                                  : ((setObj.authorName && setObj.authorName !== "Anonymous") ? setObj.authorName : (playerName || "Anonymous"));
+                                const publishedObj = {
+                                  ...setObj,
+                                  authorName: originalAuthorName,
+                                  lastEditorName: playerName || "Anonymous",
+                                  lastEditedAt: new Date().toISOString()
+                                };
                                 fetch("https://verserain-party.hungry4grace.partykit.dev/parties/main/global-auth-db/custom-sets", {
                                   method: "POST",
                                   headers: { "Content-Type": "application/json" },
@@ -6855,18 +6888,25 @@ const deDict = {
                                 <span style={{ fontSize: '0.8rem', color: '#64748b', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{t("目前選擇", "Current Set")}</span>
                                 <span style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#1e293b', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{currentSet?.title}</span>
                               </div>
-                              <div style={{ marginLeft: 'auto', textAlign: 'right', color: '#64748b', fontSize: '0.85rem', fontWeight: 'bold', flexShrink: 0, maxWidth: '260px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                <span style={{ color: '#94a3b8', marginRight: '0.35rem' }}>{t("作者", "Author")}</span>
-                                <button
-                                  type="button"
-                                  onClick={() => setAuthorSetsModal({ authorName: currentSetAuthorName })}
-                                  style={{ background: 'none', border: 'none', padding: 0, color: '#337ab7', fontSize: 'inherit', fontWeight: 'inherit', cursor: 'pointer', textDecoration: 'none' }}
-                                  onMouseOver={(e) => { e.currentTarget.style.color = '#1d4ed8'; e.currentTarget.style.textDecoration = 'underline'; }}
-                                  onMouseOut={(e) => { e.currentTarget.style.color = '#337ab7'; e.currentTarget.style.textDecoration = 'none'; }}
-                                  title={t("查看這位作者的經文組", "View this author's verse sets")}
-                                >
-                                  {currentSetAuthorName === '匿名玩家' ? t('匿名玩家', 'Anonymous') : currentSetAuthorName === 'Verserain 官方' ? t('Verserain 官方', 'Official') : currentSetAuthorName}
-                                </button>
+                              <div style={{ marginLeft: 'auto', textAlign: 'right', color: '#64748b', fontSize: '0.85rem', fontWeight: 'bold', flexShrink: 0, maxWidth: '360px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                <div>
+                                  <span style={{ color: '#94a3b8', marginRight: '0.35rem' }}>{t("作者", "Author")}</span>
+                                  <button
+                                    type="button"
+                                    onClick={() => setAuthorSetsModal({ authorName: currentSetAuthorName })}
+                                    style={{ background: 'none', border: 'none', padding: 0, color: '#337ab7', fontSize: 'inherit', fontWeight: 'inherit', cursor: 'pointer', textDecoration: 'none' }}
+                                    onMouseOver={(e) => { e.currentTarget.style.color = '#1d4ed8'; e.currentTarget.style.textDecoration = 'underline'; }}
+                                    onMouseOut={(e) => { e.currentTarget.style.color = '#337ab7'; e.currentTarget.style.textDecoration = 'none'; }}
+                                    title={t("查看這位作者的經文組", "View this author's verse sets")}
+                                  >
+                                    {currentSetAuthorName === '匿名玩家' ? t('匿名玩家', 'Anonymous') : currentSetAuthorName === 'Verserain 官方' ? t('Verserain 官方', 'Official') : currentSetAuthorName}
+                                  </button>
+                                </div>
+                                {currentSetLastEditorName && (
+                                  <div style={{ marginTop: '0.18rem', color: '#94a3b8', fontSize: '0.78rem', fontWeight: 'bold' }}>
+                                    {t("最後編輯", "Last edited by")} <span style={{ color: '#64748b' }}>{currentSetLastEditorName}</span>
+                                  </div>
+                                )}
                               </div>
                             </div>
                           </div>
