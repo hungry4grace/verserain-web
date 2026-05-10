@@ -136,6 +136,7 @@ function speakText(text, rate = 1.0, lang = 'zh-TW') {
 }
 
 const AUTO_PLAY_VERSE_PAUSE_MS = 2000;
+const AUTO_PLAY_REFERENCE_PAUSE_MS = 2000;
 
 function playShuffleSound() {
   initAudio();
@@ -2259,7 +2260,7 @@ export default function App() {
         speechRef.current = speakText(formatVerseReferenceForSpeech(activeVerse.reference, version), 1.0, TTS_LANG);
         await speechRef.current;
         setSpeakingTitle(false);
-        await new Promise(r => setTimeout(r, 400));
+        await new Promise(r => setTimeout(r, AUTO_PLAY_REFERENCE_PAUSE_MS));
       }
       for (let i = startFrom; i < activePhrasesRef.current.length; i++) {
         if (cancelAutoPlay || gameStateRef.current !== 'playing') break;
