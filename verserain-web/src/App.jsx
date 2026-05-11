@@ -375,6 +375,132 @@ function formatVerseReferenceForSpeech(ref, version) {
   }
 }
 
+function AccessibleBlindHome({
+  verseSets,
+  currentSet,
+  randomPickCount,
+  setRandomPickCount,
+  onSelectSet,
+  onStart,
+  onReadGuide,
+  t
+}) {
+  const [localSetId, setLocalSetId] = React.useState(currentSet?.id || verseSets?.[0]?.id || '');
+  const selectedSet = React.useMemo(
+    () => verseSets.find(set => set.id === localSetId) || currentSet || verseSets[0],
+    [verseSets, localSetId, currentSet]
+  );
+  const verseCount = selectedSet?.verses?.length || 0;
+
+  React.useEffect(() => {
+    if (currentSet?.id) setLocalSetId(currentSet.id);
+  }, [currentSet?.id]);
+
+  const startCount = Math.min(verseCount || 1, Math.max(1, parseInt(randomPickCount) || 1));
+
+  return (
+    <section
+      role="region"
+      aria-labelledby="accessible-blind-title"
+      onKeyDown={(e) => {
+        if (e.key === 'Enter') onStart(selectedSet, startCount);
+        if (e.key.toLowerCase() === 'h') onReadGuide(selectedSet, startCount);
+      }}
+      tabIndex={0}
+      style={{
+        minHeight: 'calc(100dvh - 120px)',
+        background: '#050505',
+        color: '#f8fafc',
+        margin: '-0.5rem',
+        padding: 'clamp(1rem, 4vw, 3rem)',
+        borderRadius: '12px',
+        outline: '4px solid #facc15',
+        outlineOffset: '-4px'
+      }}
+    >
+      <div aria-live="polite" style={{ position: 'absolute', left: '-9999px' }}>
+        {t('你在視障友善版。按 Enter 開始，按 H 聽操作說明。', 'Accessible mode. Press Enter to start, H for instructions.')}
+      </div>
+
+      <div style={{ maxWidth: '980px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+        <div style={{ borderBottom: '3px solid #facc15', paddingBottom: '1rem' }}>
+          <p style={{ margin: '0 0 0.5rem', color: '#facc15', fontWeight: 'bold', fontSize: '1rem' }}>
+            {t('完全視障友善版', 'Fully Accessible Mode')}
+          </p>
+          <h1 id="accessible-blind-title" style={{ margin: 0, fontSize: 'clamp(2.2rem, 7vw, 4.5rem)', lineHeight: 1.05, letterSpacing: 0 }}>
+            {t('聽見、背誦、通關', 'Listen, Recite, Complete')}
+          </h1>
+        </div>
+
+        <p style={{ margin: 0, color: '#e2e8f0', fontSize: 'clamp(1.15rem, 3vw, 1.6rem)', lineHeight: 1.7, maxWidth: '820px' }}>
+          {t('這一版不需要看方塊。系統會讀出經文出處，停頓，然後用語音引導你背誦。請允許麥克風，照著提示開口唸出經文。', 'This version does not require seeing blocks. The app reads the reference, pauses, then guides you by voice. Allow microphone access and recite aloud.')}
+        </p>
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '1rem' }}>
+          <label style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', fontWeight: 'bold', fontSize: '1.1rem' }}>
+            {t('選擇經文組', 'Choose Verse Set')}
+            <select
+              value={localSetId}
+              onChange={(e) => {
+                setLocalSetId(e.target.value);
+                onSelectSet(e.target.value);
+              }}
+              aria-label={t('選擇經文組', 'Choose verse set')}
+              style={{ fontSize: '1.2rem', padding: '1rem', borderRadius: '8px', border: '3px solid #facc15', background: '#111827', color: '#fff', fontWeight: 'bold' }}
+            >
+              {verseSets.map(set => (
+                <option key={set.id} value={set.id}>{set.title} ({set.verses?.length || 0})</option>
+              ))}
+            </select>
+          </label>
+
+          <label style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', fontWeight: 'bold', fontSize: '1.1rem' }}>
+            {t('本次經文數量', 'Number of Verses')}
+            <input
+              type="number"
+              min="1"
+              max={Math.max(1, verseCount)}
+              value={startCount}
+              onChange={(e) => setRandomPickCount(Math.min(Math.max(1, parseInt(e.target.value) || 1), Math.max(1, verseCount)))}
+              aria-label={t('本次經文數量', 'Number of verses')}
+              style={{ fontSize: '1.4rem', padding: '1rem', borderRadius: '8px', border: '3px solid #facc15', background: '#111827', color: '#fff', fontWeight: 'bold' }}
+            />
+          </label>
+        </div>
+
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem' }}>
+          <button
+            onClick={() => onStart(selectedSet, startCount)}
+            style={{ flex: '1 1 280px', background: '#facc15', color: '#050505', border: 'none', borderRadius: '10px', padding: '1.4rem 1.6rem', fontSize: '1.35rem', fontWeight: 900, cursor: 'pointer' }}
+            aria-label={t(`開始視障版，${selectedSet?.title || ''}，${startCount}節經文`, `Start accessible mode, ${selectedSet?.title || ''}, ${startCount} verses`)}
+          >
+            {t('開始視障版', 'Start Accessible Mode')}
+          </button>
+          <button
+            onClick={() => onReadGuide(selectedSet, startCount)}
+            style={{ flex: '1 1 220px', background: '#0f172a', color: '#fff', border: '3px solid #93c5fd', borderRadius: '10px', padding: '1.4rem 1.6rem', fontSize: '1.2rem', fontWeight: 800, cursor: 'pointer' }}
+          >
+            {t('朗讀操作說明', 'Read Instructions')}
+          </button>
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '0.8rem' }}>
+          {[
+            t('Enter：開始挑戰', 'Enter: Start'),
+            t('H：朗讀說明', 'H: Read help'),
+            t('Esc：遊戲中離開', 'Esc: Exit in game'),
+            t('請先允許麥克風', 'Allow microphone first')
+          ].map((item) => (
+            <div key={item} style={{ border: '2px solid #334155', background: '#0f172a', borderRadius: '8px', padding: '1rem', fontSize: '1.05rem', fontWeight: 'bold' }}>
+              {item}
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
 const parseVerseRef = (v) => {
   if (v.book && v.verseInput) return v;
   if (!v.reference) return v;
@@ -5525,6 +5651,35 @@ const deDict = {
     return zh; // default: 'zh'
   };
 
+  const startAccessibleBlindGame = (set, count = 1) => {
+    if (!set?.verses?.length) return;
+    initAudio();
+    const n = Math.min(set.verses.length, Math.max(1, parseInt(count) || 1));
+    const queue = [...set.verses].sort(() => 0.5 - Math.random()).slice(0, n);
+    setSelectedSetId(set.id);
+    setIsBlindMode(true);
+    localStorage.setItem('verseRain_blindMode', 'true');
+    setPlayMode('voice_solo');
+    setDistractionLevel(0);
+    setCampaignQueue(queue.slice(1));
+    campaignQueueRef.current = queue.slice(1);
+    setCampaignResults([]);
+    setActiveCampaignSetId(set.id);
+    setActiveCampaignSetTotal(queue.length);
+    setActiveVerse(queue[0]);
+    setSelectedVerseRefs([queue[0].reference]);
+    speakText(t('視障版開始。請允許麥克風。聽到提示音後，開口背誦經文。', 'Accessible mode starting. Please allow microphone access. After the prompt sound, recite the verse aloud.'), 0.95, version === 'kjv' ? 'en-US' : 'zh-TW');
+    setTimeout(() => startGame(false, queue[0]), 700);
+  };
+
+  const readAccessibleGuide = (set, count = 1) => {
+    const message = t(
+      `這是視障友善版。現在選擇的是 ${set?.title || currentSet?.title}，本次 ${count} 節經文。按開始後，系統會先讀經文出處，停頓兩秒，再等你開口背誦。若一段時間沒有答對，系統會朗讀提示。遊戲中按 Escape 可以離開。`,
+      `This is the accessible mode. The selected set is ${set?.title || currentSet?.title}, ${count} verses. After starting, the app reads the reference, pauses for two seconds, then waits for your recitation. If you need help, the app will read a prompt. Press Escape during the game to leave.`
+    );
+    speakText(message, 0.95, version === 'kjv' ? 'en-US' : 'zh-TW');
+  };
+
   // Sync handleBlockClick to ref so Speech can fire it
   useEffect(() => {
     handleBlockClickRef.current = handleBlockClick;
@@ -5690,6 +5845,9 @@ const deDict = {
               <div className="block-tile" onClick={() => setMainTab('lobby')} style={{ display: 'flex', alignItems: 'center', padding: '0.5rem 1.2rem', cursor: 'pointer', backgroundColor: mainTab === 'lobby' ? '#3b82f6' : 'white', color: mainTab === 'lobby' ? 'white' : '#475569', borderRadius: '20px', fontWeight: 'bold', whiteSpace: 'nowrap', transition: 'all 0.2s' }}>
                 🏠 {t('大廳', 'Home')}
               </div>
+              <div className="block-tile" onClick={() => setMainTab('accessible')} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter') setMainTab('accessible'); }} style={{ display: 'flex', alignItems: 'center', padding: '0.5rem 1.2rem', cursor: 'pointer', backgroundColor: mainTab === 'accessible' ? '#111827' : '#fff7ed', color: mainTab === 'accessible' ? '#facc15' : '#111827', borderRadius: '20px', fontWeight: 'bold', whiteSpace: 'nowrap', transition: 'all 0.2s', border: '2px solid #facc15' }}>
+                🦯 {t('視障版', 'Accessible')}
+              </div>
               <div className="block-tile" onClick={() => setMainTab('garden')} style={{ display: 'flex', alignItems: 'center', padding: '0.5rem 1.2rem', cursor: 'pointer', backgroundColor: mainTab === 'garden' ? '#10b981' : 'white', color: mainTab === 'garden' ? 'white' : '#475569', borderRadius: '20px', fontWeight: 'bold', whiteSpace: 'nowrap', transition: 'all 0.2s' }}>
                 🌳 {t('我的園子', 'My Garden')}
               </div>
@@ -5809,6 +5967,19 @@ const deDict = {
                 </div>
               )}
 
+              {mainTab === 'accessible' && (
+                <AccessibleBlindHome
+                  verseSets={safeActiveSets}
+                  currentSet={currentSet}
+                  randomPickCount={randomPickCount}
+                  setRandomPickCount={setRandomPickCount}
+                  onSelectSet={(setId) => setSelectedSetId(setId)}
+                  onStart={startAccessibleBlindGame}
+                  onReadGuide={readAccessibleGuide}
+                  t={t}
+                />
+              )}
+
               {mainTab === 'kids' && (
                 <KidsAdventureMode
                   verseSets={safeActiveSets}
@@ -5844,6 +6015,7 @@ const deDict = {
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1rem', width: '100%' }}>
                     {[
                       { id: 'kids', icon: '✨', label: '兒童冒險', desc: '給孩子使用的探險路線、拼圖模式與老師路線設計器' },
+                      { id: 'accessible', icon: '🦯', label: t('視障友善版', 'Accessible Version'), desc: t('高對比、鍵盤操作、語音提示與麥克風背誦流程', 'High contrast, keyboard controls, voice prompts, and microphone recitation') },
                       { id: 'blindMode', icon: isBlindMode ? '👁️‍🗨️' : '🦯', label: isBlindMode ? t('關閉視障經文雨', 'Disable Blind Mode') : t('打開視障經文雨', 'Enable Blind Mode'), desc: t('為視覺障礙朋友設計的語音模式', 'Voice mode for visually impaired') },
                       { id: 'performanceMode', icon: performanceMode ? '⚡' : '🔋', label: performanceMode ? t('關閉效能模式', 'Disable Performance Mode') : t('打開效能模式', 'Enable Performance Mode'), desc: t('關閉華麗特效以提升流暢度', 'Disable effects for better performance') },
                       { id: 'debugMode', icon: isDebugMode ? '🐞' : '🐛', label: isDebugMode ? t('關閉 Debug', 'Disable Debug') : t('打開 Debug', 'Enable Debug'), desc: t('顯示除錯資訊', 'Show debug info') },

@@ -2,5 +2,9 @@
   "buildCommand": "npm install --include=dev && npm run build",
   "outputDirectory": "dist",
   "framework": "vite",
-  "installCommand": "npm install --include=dev"
+  "installCommand": "npm install --include=dev",
+  "rewrites": [
+    { "source": "/blind", "destination": "/index.html" },
+    { "source": "/blind/:path*", "destination": "/index.html" }
+  ]
 }

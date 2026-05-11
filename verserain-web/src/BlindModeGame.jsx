@@ -43,6 +43,7 @@ export default function BlindModeGame({
     const latestTranscriptRef = useRef(null);
     const activeBlockRef = useRef(null);
     const pauseTimeoutRef = useRef(null);
+    const gameRootRef = useRef(null);
 
     const currentBlock = activePhrases[currentSeqIndex] || null;
     const currentBlockRef = useRef(currentBlock);
@@ -77,6 +78,7 @@ export default function BlindModeGame({
         missedIndicesRef.current = [];
         isSuccessFlashRef.current = false;
         if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+        setTimeout(() => gameRootRef.current?.focus(), 50);
         return () => { isMountedRef.current = false; };
     }, []);
 
@@ -472,8 +474,47 @@ export default function BlindModeGame({
         };
     }, []);
 
+    const speakAccessiblePrompt = (kind = 'status') => {
+        if (!speakText) return;
+        if (recognitionRef.current) {
+            try { recognitionRef.current.abort(); } catch (e) {}
+        }
+        isSpeakingRef.current = true;
+        const reference = formatVerseReferenceForSpeech ? formatVerseReferenceForSpeech(activeVerse?.reference || '', version) : activeVerse?.reference;
+        const blockText = typeof currentBlockRef.current === 'string' ? currentBlockRef.current : (currentBlockRef.current?.text || '');
+        const message = kind === 'help'
+            ? t('視障模式說明。請聽提示音後唸出經文。按 R 可以重聽目前片段，按 H 可以重聽說明，按 Escape 離開遊戲。', 'Accessible mode help. Recite after the prompt. Press R to hear the current phrase, H for help, Escape to exit.')
+            : kind === 'repeat'
+                ? `${t('目前片段：', 'Current phrase: ')}${blockText}`
+                : `${reference}。${t('目前進度', 'Progress')} ${Math.min(currentSeqIndexRef.current + 1, activePhrases.length)} / ${activePhrases.length}。`;
+        speakText(message, 1.0, TTS_LANG).then(() => {
+            if (!isMountedRef.current) return;
+            isSpeakingRef.current = false;
+            if (recognitionRef.current) {
+                try { recognitionRef.current.start(); } catch (e) {}
+            }
+        });
+    };
+
     return (
-        <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', backgroundColor: '#000', zIndex: 9999, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '2rem' }}>
+        <div
+            ref={gameRootRef}
+            role="application"
+            aria-label={t("VerseRain 視障語音背誦模式", "VerseRain accessible voice recitation mode")}
+            tabIndex={0}
+            onKeyDown={(e) => {
+                if (e.key === 'Escape') {
+                    if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+                    if (onFail) onFail();
+                }
+                if (e.key.toLowerCase() === 'r') speakAccessiblePrompt('repeat');
+                if (e.key.toLowerCase() === 'h') speakAccessiblePrompt('help');
+            }}
+            style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', backgroundColor: '#000', zIndex: 9999, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '2rem', outline: 'none' }}
+        >
+            <div aria-live="polite" style={{ position: 'absolute', left: '-9999px' }}>
+                {`${micStatus}. ${t('進度', 'Progress')} ${Math.min(currentSeqIndex + 1, activePhrases.length)} / ${activePhrases.length}. ${currentBlock ? t('請背誦目前片段', 'Recite the current phrase') : t('完成', 'Complete')}`}
+            </div>
             
             <div style={{ position: 'absolute', top: 0, left: 0, right: 0, padding: '0.5rem 1rem', display: 'flex', flexDirection: 'row', flexWrap: 'wrap', gap: '0.75rem', alignItems: 'center', zIndex: 10 }}>
                 <div style={{ display: 'flex', gap: '0.75rem' }}>
@@ -484,9 +525,35 @@ export default function BlindModeGame({
                             if ('speechSynthesis' in window) window.speechSynthesis.cancel();
                             if (onFail) onFail();
                         }}
+                        aria-label={t("離開視障模式", "Exit accessible mode")}
+                        title={t("離開視障模式", "Exit accessible mode")}
                         style={{ padding: '0.75rem', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#f87171' }}
                     >
                         <XCircle size={22} />
+                    </button>
+                    <button
+                        className="hud-glass"
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            speakAccessiblePrompt('repeat');
+                        }}
+                        aria-label={t("重聽目前片段", "Repeat current phrase")}
+                        title={t("重聽目前片段", "Repeat current phrase")}
+                        style={{ padding: '0.75rem 1rem', border: 'none', cursor: 'pointer', color: '#facc15', fontWeight: 'bold' }}
+                    >
+                        R
+                    </button>
+                    <button
+                        className="hud-glass"
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            speakAccessiblePrompt('help');
+                        }}
+                        aria-label={t("朗讀操作說明", "Read help")}
+                        title={t("朗讀操作說明", "Read help")}
+                        style={{ padding: '0.75rem 1rem', border: 'none', cursor: 'pointer', color: '#93c5fd', fontWeight: 'bold' }}
+                    >
+                        H
                     </button>
                 </div>
                 
