@@ -8696,6 +8696,33 @@ const deDict = {
             <div className="hud-glass" style={{ background: 'rgba(15, 23, 42, 0.95)', borderRadius: '12px', padding: '3rem 2rem', width: '100%', maxWidth: '600px', border: '1px solid rgba(16, 185, 129, 0.4)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1.5rem', textAlign: 'center' }}>
               <h2 style={{ fontSize: '2rem', color: '#10b981', fontWeight: 'bold', margin: 0 }}>{t("你完成了所有經文！", "You finished all verses!")}</h2>
               <p style={{ color: '#94a3b8', fontSize: '1rem', margin: 0, animation: 'bounce 2s infinite' }}>{t("等待其他玩家完成...", "Waiting for others to finish...")}</p>
+              <div style={{ display: 'flex', gap: '1rem', width: '100%', justifyContent: 'center', flexWrap: 'wrap' }}>
+                {multiplayerState?.host === myClientId && (
+                  <button
+                    onClick={() => {
+                      if (socketRef.current) socketRef.current.send(JSON.stringify({ type: 'FORCE_END_GAME' }));
+                    }}
+                    style={{ background: '#ef4444', color: 'white', border: 'none', padding: '0.75rem 2rem', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', fontSize: '1rem', transition: 'all 0.2s', boxShadow: '0 4px 6px -1px rgba(239, 68, 68, 0.5)' }}
+                  >
+                    {t("比賽結束", "End Match Now")}
+                  </button>
+                )}
+                <button
+                  onClick={() => {
+                    if (socketRef.current) {
+                      socketRef.current.close();
+                      socketRef.current = null;
+                    }
+                    multiplayerSoloActiveRef.current = false;
+                    setGameState('menu');
+                    setMultiplayerRoomId(null);
+                    setMultiplayerState(null);
+                  }}
+                  style={{ background: 'rgba(239,68,68,0.15)', color: '#f87171', border: '1px solid rgba(239,68,68,0.3)', padding: '0.75rem 2rem', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', fontSize: '1rem', transition: 'all 0.2s' }}
+                >
+                  {t("離開遊戲", "Leave Game")}
+                </button>
+              </div>
               <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '0.8rem', marginTop: '0.5rem' }}>
                 {Object.values(multiplayerState.players || {}).filter(p => p.connected).map(p => {
                   const totalVerses = localCampaignListRef.current.length || 1;
@@ -8723,34 +8750,6 @@ const deDict = {
                   );
                 })}
               </div>
-              <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
-                <button
-                  onClick={() => {
-                    if (socketRef.current) {
-                      socketRef.current.close();
-                      socketRef.current = null;
-                    }
-                    multiplayerSoloActiveRef.current = false;
-                    setGameState('menu');
-                    setMultiplayerRoomId(null);
-                    setMultiplayerState(null);
-                  }}
-                  style={{ background: 'rgba(239,68,68,0.15)', color: '#f87171', border: '1px solid rgba(239,68,68,0.3)', padding: '0.7rem 2rem', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', fontSize: '1rem', transition: 'all 0.2s' }}
-                >
-                  {t("離開遊戲", "Leave Game")}
-                </button>
-
-                {multiplayerState?.host === myClientId && (
-                  <button
-                    onClick={() => {
-                      if (socketRef.current) socketRef.current.send(JSON.stringify({ type: 'FORCE_END_GAME' }));
-                    }}
-                    style={{ background: '#ef4444', color: 'white', border: 'none', padding: '0.7rem 2rem', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', fontSize: '1rem', transition: 'all 0.2s', boxShadow: '0 4px 6px -1px rgba(239, 68, 68, 0.5)' }}
-                  >
-                    {t("比賽結束", "End Match Now")}
-                  </button>
-                )}
-              </div>
             </div>
           </div>
         )}
@@ -8759,6 +8758,32 @@ const deDict = {
           <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.85)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000, padding: '1rem', flexDirection: 'column' }}>
             <div className="hud-glass" style={{ background: 'rgba(15, 23, 42, 0.95)', borderRadius: '12px', padding: '3rem 2rem', width: '100%', maxWidth: '800px', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1.5rem', textAlign: 'center', border: '1px solid rgba(59, 130, 246, 0.3)' }}>
               <h2 style={{ fontSize: '2.5rem', fontWeight: 'bold', margin: 0, color: '#e2e8f0', display: 'flex', alignItems: 'center', gap: '12px' }}><Trophy size={40} color="#fbbf24" fill="#fbbf24" /> {multiplayerState.campaignResults?.length > 1 ? t("連戰結束！", "Marathon Completed!") : t("對局結束！", "Game Over!")}</h2>
+              <div style={{ display: 'flex', gap: '1rem', width: '100%', flexWrap: 'wrap' }}>
+                <button
+                  onClick={() => {
+                    multiplayerSoloActiveRef.current = false;
+                    setGameState('menu');
+                    setMultiplayerRoomId(null);
+                    if (socketRef.current) socketRef.current.close();
+                  }}
+                  style={{ flex: '1 1 180px', padding: '1rem', background: 'rgba(255,255,255,0.1)', color: '#cbd5e1', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '8px', fontSize: '1.1rem', fontWeight: 'bold', cursor: 'pointer', transition: 'all 0.2s' }}
+                >
+                  {t("離開對戰", "Leave Match")}
+                </button>
+
+                {multiplayerState?.host === myClientId && (
+                  <button
+                    onClick={() => {
+                      multiplayerSoloActiveRef.current = false;
+                      socketRef.current.send(JSON.stringify({ type: 'RESTART_GAME' }));
+                      setGameState('menu');
+                    }}
+                    style={{ flex: '1 1 180px', padding: '1rem', background: '#3b82f6', color: 'white', border: 'none', borderRadius: '8px', fontSize: '1.1rem', fontWeight: 'bold', cursor: 'pointer', transition: 'all 0.2s' }}
+                  >
+                    {t("回到大廳", "Return to Lobby")}
+                  </button>
+                )}
+              </div>
 
               <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '1.5rem', margin: '1.5rem 0', maxHeight: '60vh', overflowY: 'auto', paddingRight: '0.5rem' }}>
 
@@ -8811,32 +8836,6 @@ const deDict = {
                 )}
               </div>
 
-              <div style={{ display: 'flex', gap: '1rem', width: '100%', marginTop: 'auto' }}>
-                <button
-                  onClick={() => {
-                    multiplayerSoloActiveRef.current = false;
-                    setGameState('menu');
-                    setMultiplayerRoomId(null);
-                    if (socketRef.current) socketRef.current.close();
-                  }}
-                  style={{ flex: 1, padding: '1rem', background: 'rgba(255,255,255,0.1)', color: '#cbd5e1', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '8px', fontSize: '1.1rem', fontWeight: 'bold', cursor: 'pointer', transition: 'all 0.2s' }}
-                >
-                  {t("離開對戰", "Leave Match")}
-                </button>
-
-                {multiplayerState?.host === myClientId && (
-                  <button
-                    onClick={() => {
-                      multiplayerSoloActiveRef.current = false;
-                      socketRef.current.send(JSON.stringify({ type: 'RESTART_GAME' }));
-                      setGameState('menu');
-                    }}
-                    style={{ flex: 1, padding: '1rem', background: '#3b82f6', color: 'white', border: 'none', borderRadius: '8px', fontSize: '1.1rem', fontWeight: 'bold', cursor: 'pointer', transition: 'all 0.2s' }}
-                  >
-                    {t("回到大廳", "Return to Lobby")}
-                  </button>
-                )}
-              </div>
             </div>
           </div>
         )}

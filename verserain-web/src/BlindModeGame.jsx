@@ -211,12 +211,27 @@ export default function BlindModeGame({
             // 2. Wait 2 seconds, then speak verse reference
             setTimeout(() => {
                 if (!isMountedRef.current) return;
+                if (recognitionRef.current) {
+                    try { recognitionRef.current.abort(); } catch(e) {}
+                }
+                isSpeakingRef.current = true;
                 const formattedRef = formatVerseReferenceForSpeech ? formatVerseReferenceForSpeech(activeVerse.reference, version) : activeVerse.reference;
                 speakText(formattedRef, 1.0, TTS_LANG).then(() => {
                     if (!isMountedRef.current) return;
-                    if (playDing) playDing();
-                    if (onResumeTimer) onResumeTimer();
-                    startTimer();
+                    isSpeakingRef.current = false;
+                    latestTranscriptRef.current = { transcript: '' };
+                    lastMatchedLengthRef.current = 0;
+                    
+                    if (recognitionRef.current) {
+                        try { recognitionRef.current.start(); } catch(e) {}
+                    }
+                    
+                    setTimeout(() => {
+                        if (!isMountedRef.current) return;
+                        if (playDing) playDing();
+                        if (onResumeTimer) onResumeTimer();
+                        startTimer();
+                    }, 500);
                 });
             }, readyDelay);
             
