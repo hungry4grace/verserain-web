@@ -2734,7 +2734,9 @@ export default function App() {
             startGame(isAutoPlayRef.current, nextVerse);
           };
 
-          if (isAutoPlayRef.current) {
+          const shouldPauseBeforeNextVerse = isAutoPlayRef.current || playMode?.startsWith('voice') || isBlindMode;
+          if (shouldPauseBeforeNextVerse) {
+            if (!isAutoPlayRef.current) playTada();
             setTimeout(advanceToNextVerse, AUTO_PLAY_VERSE_PAUSE_MS);
           } else {
             playTada();
@@ -2745,7 +2747,7 @@ export default function App() {
         }
       }
     }
-  }, [currentSeqIndex, gameState, activePhrases.length, multiplayerRoomId, multiplayerState?.playMode, campaignQueue, activeVerse, playerName, distractionLevel, playMode]);
+  }, [currentSeqIndex, gameState, activePhrases.length, multiplayerRoomId, multiplayerState?.playMode, campaignQueue, activeVerse, playerName, distractionLevel, playMode, isBlindMode]);
 
   // Submit Verse Set score when campaign finishes
   useEffect(() => {

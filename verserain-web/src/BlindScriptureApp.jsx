@@ -48,6 +48,15 @@ function pickVerses(set, count) {
   return verses.sort(() => 0.5 - Math.random()).slice(0, Math.min(count, verses.length));
 }
 
+function formatReferenceForSpeech(reference) {
+  const match = String(reference || '').match(/^(.+?)\s*(\d+)(?::([\d,\s\-–]+))?$/);
+  if (!match) return reference || '';
+  const [, book, chapter, verses] = match;
+  if (!verses) return `${book}第${chapter}章`;
+  const spokenVerses = verses.replace(/-/g, '至').replace(/–/g, '至').replace(/\s+/g, '');
+  return `${book}第${chapter}章${spokenVerses}節`;
+}
+
 export default function BlindScriptureApp() {
   const [sets, setSets] = useState([]);
   const [setId, setSetId] = useState(sets[0]?.id || '');
@@ -142,8 +151,9 @@ export default function BlindScriptureApp() {
     stopListening();
     setTranscript('');
     setAccuracy(0);
-    setStatus(`第 ${index + 1} 節，${verse.reference}。`);
-    await speak(`第 ${index + 1} 節。${verse.reference}`);
+    const spokenReference = formatReferenceForSpeech(verse.reference);
+    setStatus(`第 ${index + 1} 節，${spokenReference}。`);
+    await speak(`第 ${index + 1} 節。${spokenReference}`);
     await wait(2000);
     await speak('請背誦。準備好後，按空白鍵開始聆聽。');
   };
@@ -207,7 +217,7 @@ export default function BlindScriptureApp() {
         introduceVerse();
       } else if (key === 'a') {
         stopListening();
-        speak(`${currentVerse?.reference || ''}。${currentVerse?.text || ''}`);
+        speak(`${formatReferenceForSpeech(currentVerse?.reference)}。${currentVerse?.text || ''}`);
       } else if (key === 'c') {
         markCorrect();
       } else if (key === 'n') {
@@ -258,6 +268,23 @@ export default function BlindScriptureApp() {
     color: '#fff',
     borderColor: '#93c5fd'
   };
+  const maxVerseCount = Math.max(1, selectedSet?.verses?.length || 1);
+  const currentCount = Math.min(maxVerseCount, Math.max(1, parseInt(count) || 1));
+  const setClampedCount = (nextCount) => {
+    setCount(Math.min(maxVerseCount, Math.max(1, parseInt(nextCount) || 1)));
+  };
+  const stepButtonStyle = {
+    minHeight: '72px',
+    minWidth: '72px',
+    border: '4px solid #facc15',
+    borderRadius: '12px',
+    background: '#facc15',
+    color: '#000',
+    fontSize: '2.4rem',
+    fontWeight: 900,
+    cursor: 'pointer',
+    lineHeight: 1
+  };
 
   if (!sets.length) {
     return (
@@ -291,7 +318,42 @@ export default function BlindScriptureApp() {
 
           <label style={{ fontSize: '1.2rem', fontWeight: 800 }}>
             本次經文數量
-            <input type="number" min="1" max={selectedSet?.verses?.length || 1} value={count} onChange={(e) => setCount(e.target.value)} style={{ display: 'block', width: '100%', marginTop: '0.5rem', padding: '1rem', fontSize: '1.3rem', background: '#111827', color: '#fff', border: '3px solid #facc15', borderRadius: '8px' }} />
+            <div
+              role="group"
+              aria-label="調整本次經文數量"
+              style={{ display: 'grid', gridTemplateColumns: '88px 1fr 88px', gap: '0.8rem', alignItems: 'stretch', marginTop: '0.5rem' }}
+            >
+              <button
+                type="button"
+                onClick={() => setClampedCount(currentCount - 1)}
+                aria-label="減少一節經文"
+                style={stepButtonStyle}
+              >
+                −
+              </button>
+              <input
+                type="number"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                min="1"
+                max={maxVerseCount}
+                value={currentCount}
+                onChange={(e) => setClampedCount(e.target.value)}
+                aria-label="本次經文數量"
+                style={{ width: '100%', minHeight: '72px', padding: '0 1rem', textAlign: 'center', fontSize: '2rem', background: '#111827', color: '#fff', border: '4px solid #facc15', borderRadius: '12px', fontWeight: 900 }}
+              />
+              <button
+                type="button"
+                onClick={() => setClampedCount(currentCount + 1)}
+                aria-label="增加一節經文"
+                style={stepButtonStyle}
+              >
+                +
+              </button>
+            </div>
+            <span style={{ display: 'block', marginTop: '0.45rem', color: '#d1d5db', fontSize: '0.95rem', fontWeight: 700 }}>
+              可選 1 至 {maxVerseCount} 節
+            </span>
           </label>
 
           <button onClick={startGame} style={buttonStyle}>開始遊戲，Enter</button>
@@ -312,14 +374,19 @@ export default function BlindScriptureApp() {
       {screen === 'playing' && currentVerse && (
         <section style={panelStyle}>
           <p style={{ color: '#facc15', fontWeight: 900, fontSize: '1.2rem', margin: 0 }}>第 {index + 1} / {queue.length} 節</p>
-          <h1 style={{ fontSize: 'clamp(2rem, 7vw, 4rem)', margin: 0 }}>{currentVerse.reference}</h1>
+          <h1
+            aria-label={formatReferenceForSpeech(currentVerse.reference)}
+            style={{ fontSize: 'clamp(2rem, 7vw, 4rem)', margin: 0 }}
+          >
+            {currentVerse.reference}
+          </h1>
           <p style={{ fontSize: '1.25rem', lineHeight: 1.8, color: '#e5e7eb', margin: 0 }}>{status}</p>
 
           <button onClick={isListening ? stopListening : startListening} style={buttonStyle}>
             {isListening ? '停止聆聽，空白鍵' : '開始聆聽，空白鍵'}
           </button>
           <button onClick={() => introduceVerse()} style={secondaryButtonStyle}>重聽出處與提示，R</button>
-          <button onClick={() => speak(`${currentVerse.reference}。${currentVerse.text}`)} style={secondaryButtonStyle}>聽完整答案，A</button>
+          <button onClick={() => speak(`${formatReferenceForSpeech(currentVerse.reference)}。${currentVerse.text}`)} style={secondaryButtonStyle}>聽完整答案，A</button>
           <button onClick={markCorrect} style={secondaryButtonStyle}>我背對了，C</button>
           <button onClick={nextVerse} style={buttonStyle}>下一節，N</button>
 
