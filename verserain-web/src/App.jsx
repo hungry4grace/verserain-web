@@ -5847,9 +5847,6 @@ const deDict = {
               <div className="block-tile" onClick={() => setMainTab('lobby')} style={{ display: 'flex', alignItems: 'center', padding: '0.5rem 1.2rem', cursor: 'pointer', backgroundColor: mainTab === 'lobby' ? '#3b82f6' : 'white', color: mainTab === 'lobby' ? 'white' : '#475569', borderRadius: '20px', fontWeight: 'bold', whiteSpace: 'nowrap', transition: 'all 0.2s' }}>
                 🏠 {t('大廳', 'Home')}
               </div>
-              <div className="block-tile" onClick={() => setMainTab('accessible')} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter') setMainTab('accessible'); }} style={{ display: 'flex', alignItems: 'center', padding: '0.5rem 1.2rem', cursor: 'pointer', backgroundColor: mainTab === 'accessible' ? '#111827' : '#fff7ed', color: mainTab === 'accessible' ? '#facc15' : '#111827', borderRadius: '20px', fontWeight: 'bold', whiteSpace: 'nowrap', transition: 'all 0.2s', border: '2px solid #facc15' }}>
-                🦯 {t('視障版', 'Accessible')}
-              </div>
               <div className="block-tile" onClick={() => setMainTab('garden')} style={{ display: 'flex', alignItems: 'center', padding: '0.5rem 1.2rem', cursor: 'pointer', backgroundColor: mainTab === 'garden' ? '#10b981' : 'white', color: mainTab === 'garden' ? 'white' : '#475569', borderRadius: '20px', fontWeight: 'bold', whiteSpace: 'nowrap', transition: 'all 0.2s' }}>
                 🌳 {t('我的園子', 'My Garden')}
               </div>
