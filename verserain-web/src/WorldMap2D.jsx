@@ -9,6 +9,8 @@ function getRoomColor(roomId) {
   return ROOM_COLORS[hash];
 }
 
+const MAP_TILE_URL = 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager_nolabels/{z}/{x}/{y}{r}.png';
+
 // Load Leaflet and MarkerCluster Plugin dynamically
 function loadLeafletAndCluster() {
   return new Promise((resolve, reject) => {
@@ -94,7 +96,8 @@ export default function WorldMap2D({ t, playerName, onJoinRoom, onViewGarden, on
             doubleClickZoom: false
           });
 
-          L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png', {
+          L.tileLayer(MAP_TILE_URL, {
+            className: 'verse-map-tiles',
             attribution: '© OpenStreetMap contributors © CARTO',
             subdomains: 'abcd',
             maxZoom: 20
@@ -119,44 +122,46 @@ export default function WorldMap2D({ t, playerName, onJoinRoom, onViewGarden, on
           const isCurrentUser = p.name === playerName;
           const roomColor = getRoomColor(p.roomId);
           
-          let baseColor = '#f97316'; // Orange-Red for Historical
-          let glowColor = 'rgba(249,115,22,0.9)';
+          let baseColor = '#fb923c'; // Warm amber for historical players
+          let glowColor = 'rgba(251,146,60,0.95)';
           
           if (p.updatedAt) {
             const upDate = new Date(p.updatedAt);
             const now = new Date();
             
             if (upDate.toDateString() === now.toDateString() || (now - upDate) < 24 * 60 * 60 * 1000) {
-              baseColor = '#ffffff'; // White for Today
-              glowColor = 'rgba(255,255,255,0.9)';
+              baseColor = '#ffffff'; // White for today
+              glowColor = 'rgba(186,230,253,0.98)';
             } else if (upDate.getMonth() === now.getMonth() && upDate.getFullYear() === now.getFullYear()) {
-              baseColor = '#fbbf24'; // Gold for This Month
-              glowColor = 'rgba(251,191,36,0.9)';
+              baseColor = '#fbbf24'; // Gold for this month
+              glowColor = 'rgba(251,191,36,0.95)';
             }
           }
 
           let bgColor = roomColor || baseColor;
-          let glowStyle = roomColor ? `box-shadow: 0 0 0 3px ${roomColor}55, 0 0 12px ${roomColor}88;` : `box-shadow: 0 0 10px ${glowColor};`;
-          let opacity = 0.8;
+          let glowStyle = roomColor
+            ? `border: 1px solid rgba(255,255,255,0.9); box-shadow: 0 0 0 3px ${roomColor}66, 0 0 18px ${roomColor}dd;`
+            : `border: 1px solid rgba(255,255,255,0.85); box-shadow: 0 0 0 2px rgba(7,89,133,0.7), 0 0 16px ${glowColor};`;
+          let opacity = 0.92;
           let filter = 'none';
 
           if (selectedRoom) {
             if (p.roomId !== selectedRoom) {
-               bgColor = '#1e293b';
-               opacity = 0.3;
+               bgColor = '#0f2d3b';
+               opacity = 0.28;
                filter = 'grayscale(100%)';
                glowStyle = 'none';
             }
           }
 
-          let size = 8;
+          let size = 10;
           
           if (isCurrentUser) {
-            bgColor = '#eab308'; // Yellow
-            glowStyle = 'box-shadow: 0 0 0 3px white, 0 0 12px #eab308;';
+            bgColor = '#fde047'; // Yellow
+            glowStyle = 'border: 2px solid white; box-shadow: 0 0 0 4px rgba(8,47,63,0.95), 0 0 22px #fde047;';
             opacity = 1;
             filter = 'none';
-            size = 12; // slightly larger for visibility
+            size = 14; // slightly larger for visibility
           }
 
           const icon = L.divIcon({
@@ -347,7 +352,7 @@ export default function WorldMap2D({ t, playerName, onJoinRoom, onViewGarden, on
               ⚠️ {error}
             </div>
           )}
-          <div ref={mapRef} style={{ height: '520px', width: '100%', background: '#0f172a' }} />
+          <div className="verse-map-frame" ref={mapRef} style={{ height: '520px', width: '100%', background: '#082f3f' }} />
           {players.length === 0 && !error && (
             <div style={{ position: 'relative', top: '-260px', textAlign: 'center', color: '#94a3b8', pointerEvents: 'none', fontSize: '1rem' }}>
               {t('還沒有玩家資料，完成一局遊戲後你的位置就會出現！', 'No players yet — complete a game to appear on the map!')}
@@ -357,6 +362,39 @@ export default function WorldMap2D({ t, playerName, onJoinRoom, onViewGarden, on
       )}
 
       <style>{`
+        .verse-map-frame {
+          isolation: isolate;
+        }
+        .verse-map-frame::after {
+          content: '';
+          position: absolute;
+          inset: 0;
+          z-index: 450;
+          pointer-events: none;
+          background:
+            radial-gradient(circle at 24% 24%, rgba(14, 165, 233, 0.12), transparent 33%),
+            radial-gradient(circle at 78% 70%, rgba(16, 185, 129, 0.1), transparent 34%),
+            linear-gradient(180deg, rgba(236, 253, 245, 0.08), rgba(8, 47, 63, 0.12));
+          mix-blend-mode: multiply;
+        }
+        .verse-map-frame .leaflet-tile-pane {
+          background: #082f3f;
+        }
+        .verse-map-frame .verse-map-tiles {
+          filter: saturate(1.18) brightness(0.92) contrast(1.06);
+        }
+        .verse-map-frame .leaflet-control-zoom a {
+          background: rgba(236, 253, 245, 0.94);
+          color: #0f3f4a;
+          border-bottom-color: rgba(15, 63, 74, 0.18);
+        }
+        .verse-map-frame .leaflet-control-attribution {
+          background: rgba(8, 47, 63, 0.72);
+          color: rgba(224, 242, 254, 0.78);
+        }
+        .verse-map-frame .leaflet-control-attribution a {
+          color: #bae6fd;
+        }
         .verse-map-popup .leaflet-popup-content-wrapper {
           border-radius: 10px;
           box-shadow: 0 8px 24px rgba(0,0,0,0.2);
