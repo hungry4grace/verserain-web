@@ -2,8 +2,31 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 
 const LANG = 'zh-TW';
 
-function speak(text, rate = 0.92) {
+function loadSpeechVoices() {
   return new Promise(resolve => {
+    if (!('speechSynthesis' in window)) {
+      resolve([]);
+      return;
+    }
+    const voices = window.speechSynthesis.getVoices();
+    if (voices.length > 0) {
+      resolve(voices);
+      return;
+    }
+    const handleVoicesChanged = () => {
+      window.speechSynthesis.removeEventListener('voiceschanged', handleVoicesChanged);
+      resolve(window.speechSynthesis.getVoices());
+    };
+    window.speechSynthesis.addEventListener('voiceschanged', handleVoicesChanged);
+    setTimeout(() => {
+      window.speechSynthesis.removeEventListener('voiceschanged', handleVoicesChanged);
+      resolve(window.speechSynthesis.getVoices());
+    }, 700);
+  });
+}
+
+function speak(text, rate = 0.92) {
+  return new Promise(async resolve => {
     if (!('speechSynthesis' in window)) {
       resolve();
       return;
@@ -12,6 +35,21 @@ function speak(text, rate = 0.92) {
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.lang = LANG;
     utterance.rate = rate;
+
+    try {
+      const savedVoiceName = localStorage.getItem('verseRain_voiceName');
+      if (savedVoiceName) {
+        const voices = await loadSpeechVoices();
+        const preferredVoice = voices.find(voice => voice.name === savedVoiceName);
+        if (preferredVoice) {
+          utterance.voice = preferredVoice;
+          utterance.lang = preferredVoice.lang || LANG;
+        }
+      }
+    } catch {
+      // Keep system default when localStorage or voices are unavailable.
+    }
+
     utterance.onend = resolve;
     utterance.onerror = resolve;
     window.speechSynthesis.speak(utterance);
