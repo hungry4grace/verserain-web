@@ -29,10 +29,15 @@ let audioCtx = null;
 
 const ROOM_COLORS = ['#ef4444', '#f97316', '#eab308', '#22c55e', '#14b8a6', '#0ea5e9', '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16'];
 const TEAM_OPTIONS = [
-  { id: 'fire', emoji: '🔥', name: '火隊', enName: 'Fire Team', color: '#ef4444' },
-  { id: 'wave', emoji: '🌊', name: '水隊', enName: 'Wave Team', color: '#0ea5e9' },
-  { id: 'sprout', emoji: '🌱', name: '樹隊', enName: 'Sprout Team', color: '#22c55e' },
-  { id: 'spark', emoji: '⚡', name: '雷隊', enName: 'Spark Team', color: '#f59e0b' }
+  { id: 'love', name: '仁愛隊', enName: 'Love Team', color: '#ef4444' },
+  { id: 'joy', name: '喜樂隊', enName: 'Joy Team', color: '#f59e0b' },
+  { id: 'peace', name: '和平隊', enName: 'Peace Team', color: '#0ea5e9' },
+  { id: 'patience', name: '忍耐隊', enName: 'Patience Team', color: '#8b5cf6' },
+  { id: 'kindness', name: '恩慈隊', enName: 'Kindness Team', color: '#ec4899' },
+  { id: 'goodness', name: '良善隊', enName: 'Goodness Team', color: '#22c55e' },
+  { id: 'faithfulness', name: '信實隊', enName: 'Faithfulness Team', color: '#14b8a6' },
+  { id: 'gentleness', name: '溫柔隊', enName: 'Gentleness Team', color: '#a855f7' },
+  { id: 'self-control', name: '節制隊', enName: 'Self-Control Team', color: '#64748b' }
 ];
 
 const getTeamById = (teamId, stateTeams = TEAM_OPTIONS) => {
@@ -1618,6 +1623,7 @@ export default function App() {
   const [multiplayerRoomId, setMultiplayerRoomId] = useState(null);
   const [multiplayerRoomMode, setMultiplayerRoomMode] = useState(null);
   const [multiplayerRoomRole, setMultiplayerRoomRole] = useState('player');
+  const [multiplayerTeamCount, setMultiplayerTeamCount] = useState(4);
   const geoRef = useRef(null); // cached IP geolocation
   const [showMultiplayerVersePicker, setShowMultiplayerVersePicker] = useState(false);
   const [pickerSelectedSet, setPickerSelectedSet] = useState(null);
@@ -1816,6 +1822,7 @@ export default function App() {
     if (multiplayerRoomId) {
       if (multiplayerRoomMode) socketQuery.mode = multiplayerRoomMode;
       if (multiplayerRoomRole) socketQuery.role = multiplayerRoomRole;
+      if (multiplayerRoomMode === 'team' && multiplayerRoomRole === 'host') socketQuery.teamCount = multiplayerTeamCount;
     }
 
     const socket = new PartySocket({
@@ -2047,7 +2054,7 @@ export default function App() {
       socketRef.current = null;
       multiplayerSoloActiveRef.current = false;
     };
-  }, [multiplayerRoomId, multiplayerRoomMode, multiplayerRoomRole, playerName, triggerLightning]);
+  }, [multiplayerRoomId, multiplayerRoomMode, multiplayerRoomRole, multiplayerTeamCount, playerName, triggerLightning]);
 
 
   // Process Challenge URL parameter
@@ -2264,6 +2271,7 @@ export default function App() {
             socketRef.current.send(JSON.stringify({
               type: 'INIT_GAME',
               matchType: multiplayerState?.matchType || multiplayerRoomMode || 'team',
+              teamCount: multiplayerState?.teamCount || multiplayerTeamCount,
               blocks: [],
               verseRef: verse.reference,
               verseText: verse.text,
@@ -2347,6 +2355,7 @@ export default function App() {
       socketRef.current.send(JSON.stringify({
         type: 'INIT_GAME',
         matchType: multiplayerState?.matchType || multiplayerRoomMode || 'team',
+        teamCount: multiplayerState?.teamCount || multiplayerTeamCount,
         blocks: newBlocks,
         verseRef: verse.reference,
         verseText: verse.text,
@@ -6553,7 +6562,31 @@ const deDict = {
                   ) : !multiplayerRoomId ? (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', alignItems: 'center' }}>
                       <div style={{ fontSize: '2rem', marginBottom: '-1rem' }}>{playerName.substring(0, 2)}</div>
-                      <p style={{ color: '#64748b', fontSize: '1.1rem', maxWidth: '520px', lineHeight: 1.6 }}>{t("老師建立房間，學生選一個表情隊伍加入。每個人各自完成挑戰，最後用隊伍平均分排名。", "The teacher hosts a room, students join one emoji team, and final standings are ranked by team average score.")}</p>
+                      <p style={{ color: '#64748b', fontSize: '1.1rem', maxWidth: '520px', lineHeight: 1.6 }}>{t("老師先選擇隊伍數量，再建立房間。學生加入一個聖靈果子隊伍，最後用隊伍平均分排名。", "The teacher chooses the number of teams, then hosts a room. Students join a Fruit of the Spirit team, and final standings are ranked by team average score.")}</p>
+
+                      <div style={{ width: '100%', maxWidth: '520px', background: '#f8fafc', border: '1px solid #dbeafe', borderRadius: '12px', padding: '1rem', textAlign: 'left' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem', marginBottom: '0.75rem' }}>
+                          <label htmlFor="teamCountSelect" style={{ color: '#334155', fontWeight: 'bold' }}>{t("隊伍數量", "Number of Teams")}</label>
+                          <select
+                            id="teamCountSelect"
+                            value={multiplayerTeamCount}
+                            onChange={(e) => setMultiplayerTeamCount(Number(e.target.value))}
+                            style={{ padding: '0.55rem 0.75rem', borderRadius: '8px', border: '1px solid #cbd5e1', background: 'white', color: '#1e293b', fontWeight: 'bold', fontSize: '1rem' }}
+                          >
+                            {Array.from({ length: 8 }, (_, i) => i + 2).map(count => (
+                              <option key={count} value={count}>{count}</option>
+                            ))}
+                          </select>
+                        </div>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(92px, 1fr))', gap: '0.5rem' }}>
+                          {TEAM_OPTIONS.slice(0, multiplayerTeamCount).map(team => (
+                            <div key={team.id} style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', padding: '0.45rem 0.55rem', background: 'white', border: `1px solid ${team.color}55`, borderRadius: '8px', color: '#334155', fontWeight: 'bold', fontSize: '0.9rem' }}>
+                              <span style={{ width: '10px', height: '10px', borderRadius: '50%', background: team.color, flex: '0 0 auto' }} />
+                              <span>{t(team.name, team.enName)}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
 
                       <button
                         onClick={() => {
@@ -6666,7 +6699,7 @@ const deDict = {
                                   style={{ border: `2px solid ${selected ? team.color : '#e2e8f0'}`, background: selected ? `${team.color}18` : 'white', borderRadius: '10px', padding: '0.9rem', cursor: locked ? 'default' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.75rem', opacity: locked && !selected ? 0.55 : 1 }}
                                 >
                                   <span style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', minWidth: 0 }}>
-                                    <span style={{ fontSize: '1.8rem' }}>{team.emoji}</span>
+                                    <span style={{ width: '12px', height: '12px', borderRadius: '50%', background: team.color, flex: '0 0 auto' }} />
                                     <span style={{ color: '#1e293b', fontWeight: 'bold', fontSize: '1rem' }}>{t(team.name, team.enName || team.name)}</span>
                                   </span>
                                   <span style={{ color: selected ? team.color : '#64748b', fontWeight: 'bold', whiteSpace: 'nowrap' }}>{selected ? t("已選", "Picked") : `${members.length}`}</span>
@@ -6687,7 +6720,7 @@ const deDict = {
                             return (
                               <div key={team.id} style={{ background: `${team.color}12`, border: `1px solid ${team.color}55`, borderRadius: '10px', padding: '0.85rem', textAlign: 'left' }}>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-                                  <strong style={{ color: '#1e293b' }}>{team.emoji} {t(team.name, team.enName || team.name)}</strong>
+                                  <strong style={{ color: '#1e293b', display: 'flex', alignItems: 'center', gap: '0.45rem' }}><span style={{ width: '10px', height: '10px', borderRadius: '50%', background: team.color, flex: '0 0 auto' }} />{t(team.name, team.enName || team.name)}</strong>
                                   <span style={{ color: team.color, fontWeight: 'bold' }}>{members.length}</span>
                                 </div>
                                 <div style={{ color: '#64748b', fontSize: '0.85rem', minHeight: '1.2rem' }}>
@@ -6752,7 +6785,7 @@ const deDict = {
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', minWidth: 0 }}>
                                   <div style={{ width: '16px', height: '16px', borderRadius: '50%', backgroundColor: team?.color || p.color, boxShadow: '0 0 0 2px white, 0 0 0 4px ' + (team?.color || p.color) }}></div>
                                   <span style={{ fontWeight: 'bold', color: '#1e293b', fontSize: '1.1rem', minWidth: 0 }}>{p.name} {multiplayerState.host === p.id ? '(Host)' : ''}</span>
-                                  {team && <span style={{ color: team.color, background: `${team.color}16`, border: `1px solid ${team.color}55`, borderRadius: '999px', padding: '0.15rem 0.5rem', fontWeight: 'bold', fontSize: '0.8rem', whiteSpace: 'nowrap' }}>{team.emoji} {t(team.name, team.enName || team.name)}</span>}
+                                  {team && <span style={{ color: team.color, background: `${team.color}16`, border: `1px solid ${team.color}55`, borderRadius: '999px', padding: '0.15rem 0.5rem', fontWeight: 'bold', fontSize: '0.8rem', whiteSpace: 'nowrap' }}>{t(team.name, team.enName || team.name)}</span>}
                                 </div>
                                 <span style={{ fontSize: '0.9rem', fontWeight: 'bold', color: p.isReady ? '#15803d' : '#94a3b8', whiteSpace: 'nowrap' }}>
                                   {p.isReady ? t("✔️ 已準備", "✔️ READY") : t("等待中...", "WAITING")}
@@ -7055,7 +7088,7 @@ const deDict = {
                                       style={{ border: `2px solid ${selected ? team.color : '#e2e8f0'}`, background: selected ? `${team.color}18` : 'white', borderRadius: '10px', padding: '0.9rem', cursor: locked ? 'default' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.75rem', opacity: locked && !selected ? 0.55 : 1 }}
                                     >
                                       <span style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', minWidth: 0 }}>
-                                        <span style={{ fontSize: '1.8rem' }}>{team.emoji}</span>
+                                        <span style={{ width: '12px', height: '12px', borderRadius: '50%', background: team.color, flex: '0 0 auto' }} />
                                         <span style={{ color: '#1e293b', fontWeight: 'bold', fontSize: '1rem' }}>{t(team.name, team.enName || team.name)}</span>
                                       </span>
                                       <span style={{ color: selected ? team.color : '#64748b', fontWeight: 'bold', whiteSpace: 'nowrap' }}>{selected ? t("已選", "Picked") : `${members.length}`}</span>
@@ -7077,7 +7110,7 @@ const deDict = {
                                   return (
                                     <div key={team.id} style={{ background: `${team.color}12`, border: `1px solid ${team.color}55`, borderRadius: '10px', padding: '0.85rem' }}>
                                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-                                        <strong style={{ color: '#1e293b' }}>{team.emoji} {t(team.name, team.enName || team.name)}</strong>
+                                        <strong style={{ color: '#1e293b', display: 'flex', alignItems: 'center', gap: '0.45rem' }}><span style={{ width: '10px', height: '10px', borderRadius: '50%', background: team.color, flex: '0 0 auto' }} />{t(team.name, team.enName || team.name)}</strong>
                                         <span style={{ color: team.color, fontWeight: 'bold' }}>{members.length}</span>
                                       </div>
                                       <div style={{ color: '#64748b', fontSize: '0.85rem', minHeight: '1.2rem' }}>
@@ -7098,7 +7131,7 @@ const deDict = {
                                     <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', padding: '0.8rem', backgroundColor: '#f1f5f9', borderRadius: '6px' }}>
                                       <div style={{ width: '16px', height: '16px', borderRadius: '50%', backgroundColor: team?.color || p.color, boxShadow: '0 0 0 2px white, 0 0 0 4px ' + (team?.color || p.color) }}></div>
                                       <span style={{ fontWeight: 'bold', color: '#1e293b', fontSize: '1.1rem' }}>{p.name} {multiplayerState.host === p.id ? '(Host)' : ''}</span>
-                                      {team && <span style={{ color: team.color, background: `${team.color}16`, border: `1px solid ${team.color}55`, borderRadius: '999px', padding: '0.15rem 0.5rem', fontWeight: 'bold', fontSize: '0.8rem', whiteSpace: 'nowrap' }}>{team.emoji} {t(team.name, team.enName || team.name)}</span>}
+                                      {team && <span style={{ color: team.color, background: `${team.color}16`, border: `1px solid ${team.color}55`, borderRadius: '999px', padding: '0.15rem 0.5rem', fontWeight: 'bold', fontSize: '0.8rem', whiteSpace: 'nowrap' }}>{t(team.name, team.enName || team.name)}</span>}
                                     </div>
                                   );
                                 })}
@@ -9104,7 +9137,7 @@ const deDict = {
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem' }}>
                           <span style={{ display: 'flex', alignItems: 'center', gap: '0.7rem', minWidth: 0 }}>
                             <span style={{ color: idx === 0 ? '#fbbf24' : '#64748b', fontWeight: 'bold', fontSize: '1.1rem' }}>#{idx + 1}</span>
-                            <span style={{ fontSize: '1.8rem' }}>{team.emoji}</span>
+                            <span style={{ width: '12px', height: '12px', borderRadius: '50%', background: team.color, flex: '0 0 auto' }} />
                             <strong style={{ color: '#e2e8f0', fontSize: '1.1rem' }}>{t(team.name, team.enName || team.name)}</strong>
                           </span>
                           <span style={{ color: team.color, fontWeight: 'bold', whiteSpace: 'nowrap' }}>{team.averageScore} avg</span>
@@ -9195,7 +9228,7 @@ const deDict = {
                       <div key={team.id} style={{ display: 'grid', gridTemplateColumns: 'auto 1fr auto', alignItems: 'center', gap: '1rem', padding: '1.2rem', backgroundColor: idx === 0 ? 'rgba(251, 191, 36, 0.12)' : 'rgba(255,255,255,0.03)', border: `1px solid ${idx === 0 ? '#fbbf24' : `${team.color}66`}`, borderRadius: '10px' }}>
                         <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: idx === 0 ? '#fbbf24' : '#64748b' }}>#{idx + 1}</div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.9rem', minWidth: 0 }}>
-                          <span style={{ fontSize: '2rem' }}>{team.emoji}</span>
+                          <span style={{ width: '14px', height: '14px', borderRadius: '50%', background: team.color, flex: '0 0 auto' }} />
                           <div style={{ textAlign: 'left', minWidth: 0 }}>
                             <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: '#e2e8f0' }}>{t(team.name, team.enName || team.name)}</div>
                             <div style={{ color: '#94a3b8', fontSize: '0.9rem', marginTop: '0.2rem' }}>{team.playerCount} {t("人", "players")} · {t("總分", "Total")} {team.totalScore}</div>

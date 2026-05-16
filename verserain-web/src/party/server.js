@@ -10,19 +10,31 @@ export default class Server {
       host: null,
       hostName: null,
       matchType: null, // team, individual
+      teamCount: 9,
       teams: this.getDefaultTeams(),
       teamResults: [],
       verseRef: null
     };
   }
 
-  getDefaultTeams() {
-    return [
-      { id: 'fire', emoji: '🔥', name: '火隊', color: '#ef4444' },
-      { id: 'wave', emoji: '🌊', name: '水隊', color: '#0ea5e9' },
-      { id: 'sprout', emoji: '🌱', name: '樹隊', color: '#22c55e' },
-      { id: 'spark', emoji: '⚡', name: '雷隊', color: '#f59e0b' }
+  getDefaultTeams(count = 9) {
+    const teams = [
+      { id: 'love', name: '仁愛隊', enName: 'Love Team', color: '#ef4444' },
+      { id: 'joy', name: '喜樂隊', enName: 'Joy Team', color: '#f59e0b' },
+      { id: 'peace', name: '和平隊', enName: 'Peace Team', color: '#0ea5e9' },
+      { id: 'patience', name: '忍耐隊', enName: 'Patience Team', color: '#8b5cf6' },
+      { id: 'kindness', name: '恩慈隊', enName: 'Kindness Team', color: '#ec4899' },
+      { id: 'goodness', name: '良善隊', enName: 'Goodness Team', color: '#22c55e' },
+      { id: 'faithfulness', name: '信實隊', enName: 'Faithfulness Team', color: '#14b8a6' },
+      { id: 'gentleness', name: '溫柔隊', enName: 'Gentleness Team', color: '#a855f7' },
+      { id: 'self-control', name: '節制隊', enName: 'Self-Control Team', color: '#64748b' }
     ];
+    return teams.slice(0, Math.min(9, Math.max(2, Number(count) || 9)));
+  }
+
+  setTeamCount(count) {
+    this.state.teamCount = Math.min(9, Math.max(2, Number(count) || 9));
+    this.state.teams = this.getDefaultTeams(this.state.teamCount);
   }
 
   getPlayerColor(index) {
@@ -416,11 +428,14 @@ export default class Server {
     const name = url.searchParams.get("name") || "Player" + Math.floor(Math.random() * 100);
     const requestedRole = url.searchParams.get("role") || "player";
     const requestedMode = url.searchParams.get("mode");
+    const requestedTeamCount = parseInt(url.searchParams.get("teamCount") || "", 10);
     if (!this.state.matchType) {
       this.state.matchType = requestedMode === 'individual' ? 'individual' : 'team';
     }
-    if (!this.state.teams) {
-      this.state.teams = this.getDefaultTeams();
+    if (this.state.matchType === 'team' && requestedRole === 'host' && Number.isFinite(requestedTeamCount)) {
+      this.setTeamCount(requestedTeamCount);
+    } else if (!this.state.teams) {
+      this.setTeamCount(this.state.teamCount || 9);
     }
     
     // Team rooms use a teacher/controller host that is not counted as a player.
@@ -480,7 +495,7 @@ export default class Server {
           console.log(`[PARTY] Game initialized by host, moving to ready check.`);
           this.state.status = 'ready_check';
           this.state.matchType = this.state.matchType || data.matchType || 'individual';
-          if (!this.state.teams) this.state.teams = this.getDefaultTeams();
+          if (!this.state.teams) this.setTeamCount(this.state.teamCount || data.teamCount || 9);
           this.state.blocks = data.blocks;
           this.state.currentSeqIndex = 0;
           this.state.verseRef = data.verseRef;
@@ -755,7 +770,7 @@ export default class Server {
 
   broadcastState() {
     if (this.state.matchType === 'team') {
-      this.state.teams = this.state.teams || this.getDefaultTeams();
+      this.state.teams = this.state.teams || this.getDefaultTeams(this.state.teamCount || 9);
       this.state.teamResults = this.getTeamResults();
     }
     this.room.broadcast(JSON.stringify({
