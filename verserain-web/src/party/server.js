@@ -8,8 +8,58 @@ export default class Server {
       currentSeqIndex: 0,
       players: {}, // Map of connection.id -> { id, name, score, connected }
       host: null,
+      hostName: null,
+      matchType: null, // team, individual
+      teams: this.getDefaultTeams(),
+      teamResults: [],
       verseRef: null
     };
+  }
+
+  getDefaultTeams() {
+    return [
+      { id: 'fire', emoji: '🔥', name: '火隊', color: '#ef4444' },
+      { id: 'wave', emoji: '🌊', name: '水隊', color: '#0ea5e9' },
+      { id: 'sprout', emoji: '🌱', name: '樹隊', color: '#22c55e' },
+      { id: 'spark', emoji: '⚡', name: '雷隊', color: '#f59e0b' }
+    ];
+  }
+
+  getPlayerColor(index) {
+    const colors = ['#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#14b8a6', '#f97316'];
+    return colors[index % colors.length];
+  }
+
+  getTeamResults() {
+    const teams = this.state.teams || this.getDefaultTeams();
+    const results = teams.map(team => {
+      const members = Object.values(this.state.players || {}).filter(p => p.teamId === team.id);
+      const membersWithScores = members.map(player => {
+        const scoreFromRounds = (this.state.campaignResults || []).reduce((sum, round) => {
+          return sum + Math.max(0, round.scores?.[player.id] || 0);
+        }, 0);
+        return { ...player, totalScore: scoreFromRounds || player.score || 0 };
+      });
+      const totalScore = membersWithScores.reduce((sum, p) => sum + p.totalScore, 0);
+      return {
+        ...team,
+        playerCount: members.length,
+        completedCount: members.filter(p => p.isFinished).length,
+        totalScore,
+        averageScore: members.length > 0 ? Math.round(totalScore / members.length) : 0
+      };
+    }).filter(team => team.playerCount > 0);
+
+    return results.sort((a, b) => {
+      if (b.averageScore !== a.averageScore) return b.averageScore - a.averageScore;
+      return b.playerCount - a.playerCount;
+    });
+  }
+
+  canStartTeamGame() {
+    const players = Object.values(this.state.players || {}).filter(p => p.connected);
+    const teamsWithPlayers = new Set(players.map(p => p.teamId).filter(Boolean));
+    return players.length >= 2 && players.every(p => p.teamId && p.isReady) && teamsWithPlayers.size >= 2;
   }
 
   // --- Email Utility Function ---
@@ -364,10 +414,31 @@ export default class Server {
     // Player connected to the room
     const url = new URL(ctx.request.url);
     const name = url.searchParams.get("name") || "Player" + Math.floor(Math.random() * 100);
+    const requestedRole = url.searchParams.get("role") || "player";
+    const requestedMode = url.searchParams.get("mode");
+    if (!this.state.matchType) {
+      this.state.matchType = requestedMode === 'individual' ? 'individual' : 'team';
+    }
+    if (!this.state.teams) {
+      this.state.teams = this.getDefaultTeams();
+    }
     
-    // First person is host
-    if (!this.state.host) {
+    // Team rooms use a teacher/controller host that is not counted as a player.
+    if (this.state.matchType === 'team' && requestedRole === 'host' && (!this.state.host || !this.state.hostConnected || this.state.hostName === name)) {
       this.state.host = conn.id;
+      this.state.hostName = name;
+    } else if (!this.state.host) {
+      this.state.host = conn.id;
+      this.state.hostName = name;
+    }
+
+    const isTeamHostController = this.state.matchType === 'team' && requestedRole === 'host' && this.state.host === conn.id;
+    if (isTeamHostController) {
+      this.state.hostName = name;
+      this.state.hostConnected = true;
+      console.log(`[PARTY] Room [${this.room.id}] - Teacher host connected: ${name} (${conn.id})`);
+      this.broadcastState();
+      return;
     }
 
     this.state.players[conn.id] = { 
@@ -378,7 +449,8 @@ export default class Server {
       seqIndex: 0,
       isFinished: false,
       connected: true,
-      color: Object.keys(this.state.players).length === 0 ? '#3b82f6' : '#ef4444' // Host is Blue, Guest is Red
+      teamId: null,
+      color: this.getPlayerColor(Object.keys(this.state.players).length)
     };
 
     console.log(`[PARTY] Room [${this.room.id}] - Player joined: ${name} (${conn.id}) - Host: ${this.state.host === conn.id}`);
@@ -390,6 +462,8 @@ export default class Server {
     console.log(`[PARTY] Player left: ${conn.id}`);
     if (this.state.players[conn.id]) {
       this.state.players[conn.id].connected = false;
+    } else if (this.state.host === conn.id && this.state.matchType === 'team') {
+      this.state.hostConnected = false;
     }
     
     // If hose leaves, maybe reassign host or just end game. For now, just mark disconnected.
@@ -405,6 +479,8 @@ export default class Server {
         if (sender.id === this.state.host) {
           console.log(`[PARTY] Game initialized by host, moving to ready check.`);
           this.state.status = 'ready_check';
+          this.state.matchType = this.state.matchType || data.matchType || 'individual';
+          if (!this.state.teams) this.state.teams = this.getDefaultTeams();
           this.state.blocks = data.blocks;
           this.state.currentSeqIndex = 0;
           this.state.verseRef = data.verseRef;
@@ -425,6 +501,16 @@ export default class Server {
              p.versesCompleted = 0;
           });
           
+          this.broadcastState();
+        }
+      }
+
+      if (data.type === 'SELECT_TEAM' && this.state.matchType === 'team' && ['waiting', 'ready_check'].includes(this.state.status)) {
+        const player = this.state.players[sender.id];
+        const teamExists = (this.state.teams || []).some(team => team.id === data.teamId);
+        if (player && teamExists && !player.teamId) {
+          player.teamId = data.teamId;
+          console.log(`[PARTY] Player ${player.name} joined team ${data.teamId}`);
           this.broadcastState();
         }
       }
@@ -451,6 +537,9 @@ export default class Server {
 
       if (data.type === 'PLAYER_READY' && this.state.status === 'ready_check') {
          if (this.state.players[sender.id]) {
+            if (this.state.matchType === 'team' && !this.state.players[sender.id].teamId) {
+              return;
+            }
             this.state.players[sender.id].isReady = true;
             console.log(`[PARTY] Player ${this.state.players[sender.id].name} is ready!`);
             
@@ -461,6 +550,11 @@ export default class Server {
       }
 
       if (data.type === 'HOST_START_GAME' && this.state.status === 'ready_check' && sender.id === this.state.host) {
+         if (this.state.matchType === 'team' && !this.canStartTeamGame()) {
+            console.log(`[PARTY] Team game start blocked until players choose teams and ready up.`);
+            this.broadcastState();
+            return;
+         }
          console.log(`[PARTY] Host forced start game!`);
          this.state.status = 'playing';
          this.state.currentSeqIndex = 0;
@@ -618,6 +712,7 @@ export default class Server {
               if (allFinished) {
                   console.log(`[PARTY] All players finished all verses! Game over.`);
                   this.state.status = 'finished';
+                  if (this.state.matchType === 'team') this.state.teamResults = this.getTeamResults();
               }
               this.broadcastState();
           }
@@ -626,6 +721,7 @@ export default class Server {
       if (data.type === 'FORCE_END_GAME' && this.state.status === 'playing' && sender.id === this.state.host) {
           console.log(`[PARTY] Host forced end game.`);
           this.state.status = 'finished';
+          if (this.state.matchType === 'team') this.state.teamResults = this.getTeamResults();
           this.broadcastState();
       }
 
@@ -638,6 +734,7 @@ export default class Server {
         this.state.phrases = [];
         this.state.campaignQueue = [];
         this.state.campaignResults = [];
+        this.state.teamResults = [];
         // Reset player states
         Object.values(this.state.players).forEach(p => {
           p.isReady = false;
@@ -646,6 +743,7 @@ export default class Server {
           p.isFinished = false;
           p.seqIndex = 0;
           p.versesCompleted = 0;
+          if (this.state.matchType === 'team') p.teamId = null;
         });
         this.broadcastState();
       }
@@ -656,6 +754,10 @@ export default class Server {
   }
 
   broadcastState() {
+    if (this.state.matchType === 'team') {
+      this.state.teams = this.state.teams || this.getDefaultTeams();
+      this.state.teamResults = this.getTeamResults();
+    }
     this.room.broadcast(JSON.stringify({
       type: 'STATE_UPDATE',
       state: this.state

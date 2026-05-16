@@ -28,6 +28,53 @@ const quillModules = {
 let audioCtx = null;
 
 const ROOM_COLORS = ['#ef4444', '#f97316', '#eab308', '#22c55e', '#14b8a6', '#0ea5e9', '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16'];
+const TEAM_OPTIONS = [
+  { id: 'fire', emoji: '🔥', name: '火隊', enName: 'Fire Team', color: '#ef4444' },
+  { id: 'wave', emoji: '🌊', name: '水隊', enName: 'Wave Team', color: '#0ea5e9' },
+  { id: 'sprout', emoji: '🌱', name: '樹隊', enName: 'Sprout Team', color: '#22c55e' },
+  { id: 'spark', emoji: '⚡', name: '雷隊', enName: 'Spark Team', color: '#f59e0b' }
+];
+
+const getTeamById = (teamId, stateTeams = TEAM_OPTIONS) => {
+  return (stateTeams || TEAM_OPTIONS).find(team => team.id === teamId) || TEAM_OPTIONS.find(team => team.id === teamId);
+};
+
+const getTeamResultsFromState = (state) => {
+  if (!state) return [];
+  if (Array.isArray(state.teamResults) && state.teamResults.length > 0) return state.teamResults;
+  const teams = state.teams || TEAM_OPTIONS;
+  return teams.map(team => {
+    const members = Object.values(state.players || {}).filter(p => p.teamId === team.id);
+    const totalScore = members.reduce((sum, player) => {
+      const scoreFromRounds = (state.campaignResults || []).reduce((roundSum, round) => {
+        return roundSum + Math.max(0, round.scores?.[player.id] || 0);
+      }, 0);
+      return sum + (scoreFromRounds || player.score || 0);
+    }, 0);
+    return {
+      ...team,
+      playerCount: members.length,
+      completedCount: members.filter(p => p.isFinished).length,
+      totalScore,
+      averageScore: members.length > 0 ? Math.round(totalScore / members.length) : 0
+    };
+  }).filter(team => team.playerCount > 0).sort((a, b) => {
+    if (b.averageScore !== a.averageScore) return b.averageScore - a.averageScore;
+    return b.playerCount - a.playerCount;
+  });
+};
+
+const canStartTeamMatch = (state) => {
+  const players = Object.values(state?.players || {}).filter(p => p.connected);
+  const teamsWithPlayers = new Set(players.map(p => p.teamId).filter(Boolean));
+  return players.length >= 2 && players.every(p => p.teamId && p.isReady) && teamsWithPlayers.size >= 2;
+};
+
+const hasEnoughTeamPlayers = (state) => {
+  const players = Object.values(state?.players || {}).filter(p => p.connected);
+  const teamsWithPlayers = new Set(players.map(p => p.teamId).filter(Boolean));
+  return players.length >= 2 && players.every(p => p.teamId) && teamsWithPlayers.size >= 2;
+};
 
 const SKOOL_LEVELS = [
   { level: 1, title: '互惠種子', enTitle: 'Mutuality Seed', points: 0 },
@@ -1569,6 +1616,8 @@ export default function App() {
   const [showNameEditModal, setShowNameEditModal] = useState(false);
   const [qrShareModal, setQrShareModal] = useState(null); // { url, reference }
   const [multiplayerRoomId, setMultiplayerRoomId] = useState(null);
+  const [multiplayerRoomMode, setMultiplayerRoomMode] = useState(null);
+  const [multiplayerRoomRole, setMultiplayerRoomRole] = useState('player');
   const geoRef = useRef(null); // cached IP geolocation
   const [showMultiplayerVersePicker, setShowMultiplayerVersePicker] = useState(false);
   const [pickerSelectedSet, setPickerSelectedSet] = useState(null);
@@ -1763,11 +1812,16 @@ export default function App() {
 
   useEffect(() => {
     const targetRoom = multiplayerRoomId || "global-lobby";
+    const socketQuery = { name: playerName || "Player" + Math.floor(Math.random() * 999) };
+    if (multiplayerRoomId) {
+      if (multiplayerRoomMode) socketQuery.mode = multiplayerRoomMode;
+      if (multiplayerRoomRole) socketQuery.role = multiplayerRoomRole;
+    }
 
     const socket = new PartySocket({
       host: "verserain-party.hungry4grace.partykit.dev", // Production Cloudflare Worker URL
       room: targetRoom,
-      query: { name: playerName || "Player" + Math.floor(Math.random() * 999) }
+      query: socketQuery
     });
 
     socketRef.current = socket;
@@ -1803,7 +1857,8 @@ export default function App() {
           if (isGuestJoinRef.current) {
             const players = msg.state.players || {};
             const playerCount = Object.keys(players).length;
-            if (playerCount > 1 || msg.state.status !== 'waiting') {
+            const hasSeparateHost = msg.state.host && msg.state.host !== socket.id;
+            if (playerCount > 1 || msg.state.status !== 'waiting' || hasSeparateHost) {
               // Room has a host — it's valid
               if (joinRoomTimeoutRef.current) {
                 clearTimeout(joinRoomTimeoutRef.current);
@@ -1817,6 +1872,12 @@ export default function App() {
 
           // Only init game if we are NOT already in any game-active state
           const isGameActive = ['playing', 'intermission', 'waiting_for_others'].includes(gameStateRef.current);
+          const isTeamHostSpectator = msg.state.matchType === 'team' && msg.state.host === socket.id && !msg.state.players?.[socket.id];
+          if (msg.state.status === 'playing' && isTeamHostSpectator) {
+            setGameState('waiting_for_others');
+            if (timerRef.current) clearInterval(timerRef.current);
+            return;
+          }
           if (msg.state.status === 'playing' && !isGameActive) {
             // Fix: always reset autoplay when a multiplayer game starts
             setIsAutoPlay(false);
@@ -1986,7 +2047,7 @@ export default function App() {
       socketRef.current = null;
       multiplayerSoloActiveRef.current = false;
     };
-  }, [multiplayerRoomId, playerName, triggerLightning]);
+  }, [multiplayerRoomId, multiplayerRoomMode, multiplayerRoomRole, playerName, triggerLightning]);
 
 
   // Process Challenge URL parameter
@@ -1999,6 +2060,8 @@ export default function App() {
 
     if (roomParam) {
       setMainTab('multiplayer');
+      setMultiplayerRoomMode(null);
+      setMultiplayerRoomRole('player');
       setMultiplayerRoomId(roomParam.toUpperCase().trim());
       // Small timeout to allow state applied before url replace
       setTimeout(() => window.history.replaceState({}, document.title, window.location.pathname), 100);
@@ -2200,6 +2263,7 @@ export default function App() {
 
             socketRef.current.send(JSON.stringify({
               type: 'INIT_GAME',
+              matchType: multiplayerState?.matchType || multiplayerRoomMode || 'team',
               blocks: [],
               verseRef: verse.reference,
               verseText: verse.text,
@@ -2282,6 +2346,7 @@ export default function App() {
     if (isMultiplayerReadyCheck && socketRef.current) {
       socketRef.current.send(JSON.stringify({
         type: 'INIT_GAME',
+        matchType: multiplayerState?.matchType || multiplayerRoomMode || 'team',
         blocks: newBlocks,
         verseRef: verse.reference,
         verseText: verse.text,
@@ -2653,8 +2718,10 @@ export default function App() {
             finalCalculatedScore = Math.floor(finalCalculatedScore * (1 + distractionLevel * 0.1));
           }
 
-          // Submit the score to the daily leaderboard if the user is logged in
-          if (playerName && finalCalculatedScore > 0 && healthRef.current > 0) {
+          const isTeamCompetition = multiplayerState?.matchType === 'team';
+
+          // Submit personal scores only for individual PK rooms. Team competition is an ephemeral classroom result.
+          if (!isTeamCompetition && playerName && finalCalculatedScore > 0 && healthRef.current > 0) {
             const actualModeName = distractionLevel > 0 ? `${playMode}-dx${distractionLevel}` : playMode;
             fetch('/api/submit-score', {
               method: 'POST',
@@ -2747,7 +2814,7 @@ export default function App() {
         }
       }
     }
-  }, [currentSeqIndex, gameState, activePhrases.length, multiplayerRoomId, multiplayerState?.playMode, campaignQueue, activeVerse, playerName, distractionLevel, playMode, isBlindMode]);
+  }, [currentSeqIndex, gameState, activePhrases.length, multiplayerRoomId, multiplayerState?.playMode, multiplayerState?.matchType, campaignQueue, activeVerse, playerName, distractionLevel, playMode, isBlindMode]);
 
   // Submit Verse Set score when campaign finishes
   useEffect(() => {
@@ -6456,7 +6523,7 @@ const deDict = {
 
               {mainTab === 'multiplayer' && (
                 <div style={{ backgroundColor: '#ffffff', borderRadius: '8px', border: '1px solid #cbd5e1', padding: '2rem', boxShadow: '0 1px 3px rgba(0,0,0,0.05)', textAlign: 'center' }}>
-                  <h2 style={{ color: '#1e293b', marginTop: 0, marginBottom: '1.5rem', fontFamily: 'cursive', color: '#8b5cf6' }}>{t("多人即時對戰", "Live Multiplayer")}</h2>
+                  <h2 style={{ color: '#1e293b', marginTop: 0, marginBottom: '1.5rem', fontFamily: 'cursive', color: '#8b5cf6' }}>{(multiplayerState?.matchType === 'individual' || multiplayerRoomMode === 'individual') ? t("邀人PK", "Invite PK") : t("團隊競賽", "Team Competition")}</h2>
 
                   {!playerName ? (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', alignItems: 'center', background: '#f8fafc', padding: '2rem', borderRadius: '16px', border: '2px dashed #cbd5e1' }}>
@@ -6486,13 +6553,15 @@ const deDict = {
                   ) : !multiplayerRoomId ? (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', alignItems: 'center' }}>
                       <div style={{ fontSize: '2rem', marginBottom: '-1rem' }}>{playerName.substring(0, 2)}</div>
-                      <p style={{ color: '#64748b', fontSize: '1.1rem' }}>{t("與朋友一起挑戰九宮格模式！最快拼出經文的人獲勝。", "Challenge your friends in Square mode! The fastest to assemble the verse wins.")}</p>
+                      <p style={{ color: '#64748b', fontSize: '1.1rem', maxWidth: '520px', lineHeight: 1.6 }}>{t("老師建立房間，學生選一個表情隊伍加入。每個人各自完成挑戰，最後用隊伍平均分排名。", "The teacher hosts a room, students join one emoji team, and final standings are ranked by team average score.")}</p>
 
                       <button
                         onClick={() => {
                           const chars = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
                           let newRoom = '';
                           for (let i = 0; i < 4; i++) newRoom += chars.charAt(Math.floor(Math.random() * chars.length));
+                          setMultiplayerRoomMode('team');
+                          setMultiplayerRoomRole('host');
                           setMultiplayerRoomId(newRoom);
                         }}
                         style={{ background: '#3b82f6', color: 'white', border: 'none', padding: '1rem 2rem', borderRadius: '8px', fontSize: '1.1rem', fontWeight: 'bold', cursor: 'pointer', transition: 'background 0.2s', width: '100%', maxWidth: '300px' }}
@@ -6524,12 +6593,16 @@ const deDict = {
                               const roomCode = code.substring(0, 4);
                               setJoinRoomError(null);
                               isGuestJoinRef.current = true;
+                              setMultiplayerRoomMode(null);
+                              setMultiplayerRoomRole('player');
                               setMultiplayerRoomId(roomCode);
                               // Start 5s timeout — if no STATE_UPDATE arrives, room likely doesn't exist
                               if (joinRoomTimeoutRef.current) clearTimeout(joinRoomTimeoutRef.current);
                               joinRoomTimeoutRef.current = setTimeout(() => {
                                 if (isGuestJoinRef.current) {
                                   setJoinRoomError(roomCode);
+                                  setMultiplayerRoomMode(null);
+                                  setMultiplayerRoomRole('player');
                                   setMultiplayerRoomId(null);
                                   isGuestJoinRef.current = false;
                                 }
@@ -6559,8 +6632,8 @@ const deDict = {
                     </div>
                   ) : multiplayerState?.status === 'ready_check' ? (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', alignItems: 'center' }}>
-                      <div style={{ padding: '1.5rem', backgroundColor: '#fdf4ff', borderRadius: '8px', border: '2px dashed #d946ef', width: '100%', maxWidth: '400px' }}>
-                        <h3 style={{ margin: '0 0 0.5rem 0', color: '#86198f' }}>{t("準備比賽！", "Get Ready!")}</h3>
+                      <div style={{ padding: '1.5rem', backgroundColor: '#fdf4ff', borderRadius: '8px', border: '2px dashed #d946ef', width: '100%', maxWidth: '460px' }}>
+                        <h3 style={{ margin: '0 0 0.5rem 0', color: '#86198f' }}>{multiplayerState.matchType === 'team' ? t("團隊競賽準備！", "Team Competition Ready!") : t("準備比賽！", "Get Ready!")}</h3>
                         <div style={{ fontSize: '1.8rem', fontWeight: 'bold', color: getRoomColor(multiplayerRoomId) || '#3b82f6', letterSpacing: '6px', marginBottom: '0.5rem', background: (getRoomColor(multiplayerRoomId) || '#3b82f6') + '18', borderRadius: '6px', padding: '0.3rem 1rem', display: 'inline-block', border: `2px solid ${getRoomColor(multiplayerRoomId) || '#3b82f6'}` }}>{multiplayerRoomId}</div>
                         <p style={{ fontSize: '0.8rem', color: '#94a3b8', margin: '0 0 0.8rem 0' }}>{t("分享此代碼讓更多人加入", "Share this code to let others join")}</p>
 
@@ -6572,12 +6645,63 @@ const deDict = {
                         </div>
                         <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#c026d3', marginBottom: '0.5rem' }}>{multiplayerState.verseRef}</div>
                         <div style={{ fontSize: '1rem', color: '#701a75', marginBottom: '1rem', fontStyle: 'italic', maxWidth: '300px', lineHeight: '1.4' }}>"{multiplayerState.verseText}"</div>
-                        <p style={{ color: '#a21caf', fontSize: '0.9rem', margin: 0 }}>{t("雙方準備就緒後即將開始", "Match starts when both are ready")}</p>
+                        <p style={{ color: '#a21caf', fontSize: '0.9rem', margin: 0 }}>{multiplayerState.matchType === 'team' ? t("選好隊伍並準備後，老師就可以開始。", "Choose a team, get ready, then the teacher can start.") : t("雙方準備就緒後即將開始", "Match starts when both are ready")}</p>
                       </div>
+
+                      {multiplayerState.matchType === 'team' && multiplayerState.host !== myClientId && (
+                        <div style={{ width: '100%', maxWidth: '520px', background: '#f8fafc', border: '1px solid #dbeafe', borderRadius: '12px', padding: '1rem' }}>
+                          <h4 style={{ margin: '0 0 0.75rem 0', color: '#334155', textAlign: 'left' }}>{t("選擇你的隊伍", "Choose Your Team")}</h4>
+                          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: '0.75rem' }}>
+                            {(multiplayerState.teams || TEAM_OPTIONS).map(team => {
+                              const selected = multiplayerState.players[myClientId]?.teamId === team.id;
+                              const locked = Boolean(multiplayerState.players[myClientId]?.teamId);
+                              const members = Object.values(multiplayerState.players || {}).filter(p => p.teamId === team.id);
+                              return (
+                                <button
+                                  key={team.id}
+                                  onClick={() => {
+                                    if (!locked && socketRef.current) socketRef.current.send(JSON.stringify({ type: 'SELECT_TEAM', teamId: team.id }));
+                                  }}
+                                  disabled={locked}
+                                  style={{ border: `2px solid ${selected ? team.color : '#e2e8f0'}`, background: selected ? `${team.color}18` : 'white', borderRadius: '10px', padding: '0.9rem', cursor: locked ? 'default' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.75rem', opacity: locked && !selected ? 0.55 : 1 }}
+                                >
+                                  <span style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', minWidth: 0 }}>
+                                    <span style={{ fontSize: '1.8rem' }}>{team.emoji}</span>
+                                    <span style={{ color: '#1e293b', fontWeight: 'bold', fontSize: '1rem' }}>{t(team.name, team.enName || team.name)}</span>
+                                  </span>
+                                  <span style={{ color: selected ? team.color : '#64748b', fontWeight: 'bold', whiteSpace: 'nowrap' }}>{selected ? t("已選", "Picked") : `${members.length}`}</span>
+                                </button>
+                              );
+                            })}
+                          </div>
+                          {multiplayerState.players[myClientId]?.teamId && (
+                            <p style={{ margin: '0.75rem 0 0 0', color: '#16a34a', fontWeight: 'bold', fontSize: '0.9rem' }}>{t("隊伍已鎖定，請按準備。", "Team locked. Press ready when you are set.")}</p>
+                          )}
+                        </div>
+                      )}
+
+                      {multiplayerState.matchType === 'team' && multiplayerState.host === myClientId && (
+                        <div style={{ width: '100%', maxWidth: '520px', display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: '0.75rem' }}>
+                          {(multiplayerState.teams || TEAM_OPTIONS).map(team => {
+                            const members = Object.values(multiplayerState.players || {}).filter(p => p.teamId === team.id);
+                            return (
+                              <div key={team.id} style={{ background: `${team.color}12`, border: `1px solid ${team.color}55`, borderRadius: '10px', padding: '0.85rem', textAlign: 'left' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                                  <strong style={{ color: '#1e293b' }}>{team.emoji} {t(team.name, team.enName || team.name)}</strong>
+                                  <span style={{ color: team.color, fontWeight: 'bold' }}>{members.length}</span>
+                                </div>
+                                <div style={{ color: '#64748b', fontSize: '0.85rem', minHeight: '1.2rem' }}>
+                                  {members.length > 0 ? members.map(p => p.name).join('、') : t("等待加入", "Waiting")}
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
 
                       {multiplayerState.host !== myClientId && !multiplayerState.players[myClientId]?.isReady && (
                         <div style={{ textAlign: 'center', marginTop: '1rem', color: '#3b82f6', fontWeight: 'bold', fontSize: '1.05rem', backgroundColor: '#eff6ff', padding: '0.6rem 1rem', borderRadius: '8px', border: '1px solid #bfdbfe' }}>
-                          👉 {t("如果你準備好了，請按下「我準備好了」的鍵", "If you are ready, please press the 'I am ready' button")} 👈
+                          👉 {multiplayerState.matchType === 'team' && !multiplayerState.players[myClientId]?.teamId ? t("請先選一個隊伍", "Choose one team first") : t("如果你準備好了，請按下「我準備好了」的鍵", "If you are ready, please press the 'I am ready' button")} 👈
                         </div>
                       )}
 
@@ -6585,6 +6709,8 @@ const deDict = {
                         <button
                           onClick={() => {
                             if (socketRef.current) socketRef.current.close();
+                            setMultiplayerRoomMode(null);
+                            setMultiplayerRoomRole('player');
                             setMultiplayerRoomId(null);
                             setMultiplayerState(null);
                           }}
@@ -6598,7 +6724,8 @@ const deDict = {
                             onClick={() => {
                               if (socketRef.current) socketRef.current.send(JSON.stringify({ type: 'HOST_START_GAME' }));
                             }}
-                            style={{ background: '#ec4899', color: 'white', border: 'none', padding: '0.8rem 2rem', borderRadius: '6px', fontSize: '1.1rem', fontWeight: 'bold', cursor: 'pointer', transition: 'all 0.2s', boxShadow: '0 4px 6px -1px rgba(236, 72, 153, 0.5)' }}
+                            disabled={multiplayerState.matchType === 'team' && !canStartTeamMatch(multiplayerState)}
+                            style={{ background: '#ec4899', color: 'white', border: 'none', padding: '0.8rem 2rem', borderRadius: '6px', fontSize: '1.1rem', fontWeight: 'bold', cursor: multiplayerState.matchType === 'team' && !canStartTeamMatch(multiplayerState) ? 'not-allowed' : 'pointer', opacity: multiplayerState.matchType === 'team' && !canStartTeamMatch(multiplayerState) ? 0.55 : 1, transition: 'all 0.2s', boxShadow: '0 4px 6px -1px rgba(236, 72, 153, 0.5)' }}
                           >
                             {t("比賽開始", "Start Game")}
                           </button>
@@ -6607,8 +6734,8 @@ const deDict = {
                             onClick={() => {
                               if (socketRef.current) socketRef.current.send(JSON.stringify({ type: 'PLAYER_READY' }));
                             }}
-                            disabled={multiplayerState.players[myClientId]?.isReady}
-                            style={{ background: multiplayerState.players[myClientId]?.isReady ? '#10b981' : '#3b82f6', color: 'white', border: 'none', padding: '0.8rem 2rem', borderRadius: '6px', fontSize: '1.1rem', fontWeight: 'bold', cursor: multiplayerState.players[myClientId]?.isReady ? 'default' : 'pointer', transition: 'all 0.2s', boxShadow: multiplayerState.players[myClientId]?.isReady ? 'none' : '0 4px 6px -1px rgba(59, 130, 246, 0.5)' }}
+                            disabled={multiplayerState.players[myClientId]?.isReady || (multiplayerState.matchType === 'team' && !multiplayerState.players[myClientId]?.teamId)}
+                            style={{ background: multiplayerState.players[myClientId]?.isReady ? '#10b981' : '#3b82f6', color: 'white', border: 'none', padding: '0.8rem 2rem', borderRadius: '6px', fontSize: '1.1rem', fontWeight: 'bold', cursor: multiplayerState.players[myClientId]?.isReady || (multiplayerState.matchType === 'team' && !multiplayerState.players[myClientId]?.teamId) ? 'default' : 'pointer', opacity: multiplayerState.matchType === 'team' && !multiplayerState.players[myClientId]?.teamId ? 0.55 : 1, transition: 'all 0.2s', boxShadow: multiplayerState.players[myClientId]?.isReady ? 'none' : '0 4px 6px -1px rgba(59, 130, 246, 0.5)' }}
                           >
                             {multiplayerState.players[myClientId]?.isReady ? t("✔️ 已準備", "✔️ Ready") : t("我準備好了", "I am ready")}
                           </button>
@@ -6618,17 +6745,21 @@ const deDict = {
                       <div style={{ width: '100%', maxWidth: '400px', textAlign: 'left' }}>
                         <h4 style={{ color: '#475569', marginBottom: '0.5rem' }}>{t("玩家狀態:", "Player Status:")}</h4>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                          {Object.values(multiplayerState.players).map(p => (
-                            <div key={p.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.8rem', backgroundColor: p.isReady ? '#dcfce7' : '#f1f5f9', borderRadius: '6px', border: p.isReady ? '1px solid #86efac' : '1px solid transparent' }}>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
-                                <div style={{ width: '16px', height: '16px', borderRadius: '50%', backgroundColor: p.color, boxShadow: '0 0 0 2px white, 0 0 0 4px ' + p.color }}></div>
-                                <span style={{ fontWeight: 'bold', color: '#1e293b', fontSize: '1.1rem' }}>{p.name} {multiplayerState.host === p.id ? '(Host)' : ''}</span>
+                          {Object.values(multiplayerState.players).map(p => {
+                            const team = getTeamById(p.teamId, multiplayerState.teams);
+                            return (
+                              <div key={p.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.8rem', backgroundColor: p.isReady ? '#dcfce7' : '#f1f5f9', borderRadius: '6px', border: p.isReady ? '1px solid #86efac' : '1px solid transparent' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', minWidth: 0 }}>
+                                  <div style={{ width: '16px', height: '16px', borderRadius: '50%', backgroundColor: team?.color || p.color, boxShadow: '0 0 0 2px white, 0 0 0 4px ' + (team?.color || p.color) }}></div>
+                                  <span style={{ fontWeight: 'bold', color: '#1e293b', fontSize: '1.1rem', minWidth: 0 }}>{p.name} {multiplayerState.host === p.id ? '(Host)' : ''}</span>
+                                  {team && <span style={{ color: team.color, background: `${team.color}16`, border: `1px solid ${team.color}55`, borderRadius: '999px', padding: '0.15rem 0.5rem', fontWeight: 'bold', fontSize: '0.8rem', whiteSpace: 'nowrap' }}>{team.emoji} {t(team.name, team.enName || team.name)}</span>}
+                                </div>
+                                <span style={{ fontSize: '0.9rem', fontWeight: 'bold', color: p.isReady ? '#15803d' : '#94a3b8', whiteSpace: 'nowrap' }}>
+                                  {p.isReady ? t("✔️ 已準備", "✔️ READY") : t("等待中...", "WAITING")}
+                                </span>
                               </div>
-                              <span style={{ fontSize: '0.9rem', fontWeight: 'bold', color: p.isReady ? '#15803d' : '#94a3b8' }}>
-                                {p.isReady ? t("✔️ 已準備", "✔️ READY") : t("等待中...", "WAITING")}
-                              </span>
-                            </div>
-                          ))}
+                            );
+                          })}
                         </div>
                       </div>
                     </div>
@@ -6878,6 +7009,8 @@ const deDict = {
                         <button
                           onClick={() => {
                             if (socketRef.current) socketRef.current.close();
+                            setMultiplayerRoomMode(null);
+                            setMultiplayerRoomRole('player');
                             setMultiplayerRoomId(null);
                             setMultiplayerState(null);
                           }}
@@ -6894,8 +7027,8 @@ const deDict = {
                               setMultiplayerSearchText('');
                               setShowPickerBrowser(false);
                             }}
-                            disabled={!multiplayerState || Object.keys(multiplayerState.players).length < 2}
-                            style={{ background: '#3b82f6', color: 'white', border: 'none', padding: '0.8rem 2rem', borderRadius: '6px', fontSize: '1.1rem', fontWeight: 'bold', cursor: Object.keys(multiplayerState?.players || {}).length < 2 ? 'not-allowed' : 'pointer', opacity: Object.keys(multiplayerState?.players || {}).length < 2 ? 0.5 : 1 }}
+                            disabled={!multiplayerState || (multiplayerState.matchType === 'team' ? !hasEnoughTeamPlayers(multiplayerState) : Object.keys(multiplayerState.players).length < 2)}
+                            style={{ background: '#3b82f6', color: 'white', border: 'none', padding: '0.8rem 2rem', borderRadius: '6px', fontSize: '1.1rem', fontWeight: 'bold', cursor: !multiplayerState || (multiplayerState.matchType === 'team' ? !hasEnoughTeamPlayers(multiplayerState) : Object.keys(multiplayerState?.players || {}).length < 2) ? 'not-allowed' : 'pointer', opacity: !multiplayerState || (multiplayerState.matchType === 'team' ? !hasEnoughTeamPlayers(multiplayerState) : Object.keys(multiplayerState?.players || {}).length < 2) ? 0.5 : 1 }}
                           >
                             {t("選擇比賽經文", "Select Verse")}
                           </button>
@@ -6903,16 +7036,75 @@ const deDict = {
                       </div>
 
                       {multiplayerState && multiplayerState.players && (
-                        <div style={{ width: '100%', maxWidth: '400px', textAlign: 'left', marginTop: '1rem' }}>
-                          <h4 style={{ color: '#475569', marginBottom: '0.5rem' }}>{t("已加入的玩家:", "Players Joined:")}</h4>
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                            {Object.values(multiplayerState.players).map(p => (
-                              <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', padding: '0.8rem', backgroundColor: '#f1f5f9', borderRadius: '6px' }}>
-                                <div style={{ width: '16px', height: '16px', borderRadius: '50%', backgroundColor: p.color, boxShadow: '0 0 0 2px white, 0 0 0 4px ' + p.color }}></div>
-                                <span style={{ fontWeight: 'bold', color: '#1e293b', fontSize: '1.1rem' }}>{p.name} {multiplayerState.host === p.id ? '(Host)' : ''}</span>
+                        <div style={{ width: '100%', maxWidth: '520px', textAlign: 'left', marginTop: '1rem' }}>
+                          {multiplayerState.matchType === 'team' && multiplayerState.host !== myClientId && (
+                            <div style={{ background: '#f8fafc', border: '1px solid #dbeafe', borderRadius: '12px', padding: '1rem', marginBottom: '1rem' }}>
+                              <h4 style={{ margin: '0 0 0.75rem 0', color: '#334155' }}>{t("選擇你的隊伍", "Choose Your Team")}</h4>
+                              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: '0.75rem' }}>
+                                {(multiplayerState.teams || TEAM_OPTIONS).map(team => {
+                                  const selected = multiplayerState.players[myClientId]?.teamId === team.id;
+                                  const locked = Boolean(multiplayerState.players[myClientId]?.teamId);
+                                  const members = Object.values(multiplayerState.players || {}).filter(p => p.teamId === team.id);
+                                  return (
+                                    <button
+                                      key={team.id}
+                                      onClick={() => {
+                                        if (!locked && socketRef.current) socketRef.current.send(JSON.stringify({ type: 'SELECT_TEAM', teamId: team.id }));
+                                      }}
+                                      disabled={locked}
+                                      style={{ border: `2px solid ${selected ? team.color : '#e2e8f0'}`, background: selected ? `${team.color}18` : 'white', borderRadius: '10px', padding: '0.9rem', cursor: locked ? 'default' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.75rem', opacity: locked && !selected ? 0.55 : 1 }}
+                                    >
+                                      <span style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', minWidth: 0 }}>
+                                        <span style={{ fontSize: '1.8rem' }}>{team.emoji}</span>
+                                        <span style={{ color: '#1e293b', fontWeight: 'bold', fontSize: '1rem' }}>{t(team.name, team.enName || team.name)}</span>
+                                      </span>
+                                      <span style={{ color: selected ? team.color : '#64748b', fontWeight: 'bold', whiteSpace: 'nowrap' }}>{selected ? t("已選", "Picked") : `${members.length}`}</span>
+                                    </button>
+                                  );
+                                })}
                               </div>
-                            ))}
-                          </div>
+                              {multiplayerState.players[myClientId]?.teamId && (
+                                <p style={{ margin: '0.75rem 0 0 0', color: '#16a34a', fontWeight: 'bold', fontSize: '0.9rem' }}>{t("隊伍已鎖定，等老師選經文。", "Team locked. Wait for the teacher to choose verses.")}</p>
+                              )}
+                            </div>
+                          )}
+                          {multiplayerState.matchType === 'team' && multiplayerState.host === myClientId ? (
+                            <>
+                              <h4 style={{ color: '#475569', marginBottom: '0.5rem' }}>{t("隊伍狀態:", "Team Status:")}</h4>
+                              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: '0.75rem' }}>
+                                {(multiplayerState.teams || TEAM_OPTIONS).map(team => {
+                                  const members = Object.values(multiplayerState.players || {}).filter(p => p.teamId === team.id);
+                                  return (
+                                    <div key={team.id} style={{ background: `${team.color}12`, border: `1px solid ${team.color}55`, borderRadius: '10px', padding: '0.85rem' }}>
+                                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                                        <strong style={{ color: '#1e293b' }}>{team.emoji} {t(team.name, team.enName || team.name)}</strong>
+                                        <span style={{ color: team.color, fontWeight: 'bold' }}>{members.length}</span>
+                                      </div>
+                                      <div style={{ color: '#64748b', fontSize: '0.85rem', minHeight: '1.2rem' }}>
+                                        {members.length > 0 ? members.map(p => p.name).join('、') : t("等待加入", "Waiting")}
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </>
+                          ) : (
+                            <>
+                              <h4 style={{ color: '#475569', marginBottom: '0.5rem' }}>{t("已加入的玩家:", "Players Joined:")}</h4>
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                                {Object.values(multiplayerState.players).map(p => {
+                                  const team = getTeamById(p.teamId, multiplayerState.teams);
+                                  return (
+                                    <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', padding: '0.8rem', backgroundColor: '#f1f5f9', borderRadius: '6px' }}>
+                                      <div style={{ width: '16px', height: '16px', borderRadius: '50%', backgroundColor: team?.color || p.color, boxShadow: '0 0 0 2px white, 0 0 0 4px ' + (team?.color || p.color) }}></div>
+                                      <span style={{ fontWeight: 'bold', color: '#1e293b', fontSize: '1.1rem' }}>{p.name} {multiplayerState.host === p.id ? '(Host)' : ''}</span>
+                                      {team && <span style={{ color: team.color, background: `${team.color}16`, border: `1px solid ${team.color}55`, borderRadius: '999px', padding: '0.15rem 0.5rem', fontWeight: 'bold', fontSize: '0.8rem', whiteSpace: 'nowrap' }}>{team.emoji} {t(team.name, team.enName || team.name)}</span>}
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </>
+                          )}
                         </div>
                       )}
 
@@ -7212,6 +7404,8 @@ const deDict = {
                                 const chars = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
                                 let newRoom = '';
                                 for (let i = 0; i < 4; i++) newRoom += chars.charAt(Math.floor(Math.random() * chars.length));
+                                setMultiplayerRoomMode('individual');
+                                setMultiplayerRoomRole('player');
                                 setMultiplayerRoomId(newRoom);
                               }}
                               title={t("開房間邀請連線遊玩", "Invite players for the whole set")}
@@ -8419,11 +8613,15 @@ const deDict = {
                       setMainTab('multiplayer');
                       setJoinRoomError(null);
                       isGuestJoinRef.current = true;
+                      setMultiplayerRoomMode(null);
+                      setMultiplayerRoomRole('player');
                       setMultiplayerRoomId(roomId);
                       if (joinRoomTimeoutRef.current) clearTimeout(joinRoomTimeoutRef.current);
                       joinRoomTimeoutRef.current = setTimeout(() => {
                         if (isGuestJoinRef.current) {
                           setJoinRoomError(roomId);
+                          setMultiplayerRoomMode(null);
+                          setMultiplayerRoomRole('player');
                           setMultiplayerRoomId(null);
                           isGuestJoinRef.current = false;
                         }
@@ -8865,8 +9063,8 @@ const deDict = {
         {gameState === 'waiting_for_others' && multiplayerState && (
           <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.85)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000, padding: '1rem', flexDirection: 'column' }}>
             <div className="hud-glass" style={{ background: 'rgba(15, 23, 42, 0.95)', borderRadius: '12px', padding: '3rem 2rem', width: '100%', maxWidth: '600px', border: '1px solid rgba(16, 185, 129, 0.4)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1.5rem', textAlign: 'center' }}>
-              <h2 style={{ fontSize: '2rem', color: '#10b981', fontWeight: 'bold', margin: 0 }}>{t("你完成了所有經文！", "You finished all verses!")}</h2>
-              <p style={{ color: '#94a3b8', fontSize: '1rem', margin: 0, animation: 'bounce 2s infinite' }}>{t("等待其他玩家完成...", "Waiting for others to finish...")}</p>
+              <h2 style={{ fontSize: '2rem', color: '#10b981', fontWeight: 'bold', margin: 0 }}>{multiplayerState.matchType === 'team' && multiplayerState.host === myClientId ? t("團隊競賽進行中", "Team Competition in Progress") : t("你完成了所有經文！", "You finished all verses!")}</h2>
+              <p style={{ color: '#94a3b8', fontSize: '1rem', margin: 0, animation: 'bounce 2s infinite' }}>{multiplayerState.matchType === 'team' ? t("等待所有隊伍完成，結果會用隊伍平均分排名。", "Waiting for everyone to finish. Teams are ranked by average score.") : t("等待其他玩家完成...", "Waiting for others to finish...")}</p>
               <div style={{ display: 'flex', gap: '1rem', width: '100%', justifyContent: 'center', flexWrap: 'wrap' }}>
                 {multiplayerState?.host === myClientId && (
                   <button
@@ -8886,6 +9084,8 @@ const deDict = {
                     }
                     multiplayerSoloActiveRef.current = false;
                     setGameState('menu');
+                    setMultiplayerRoomMode(null);
+                    setMultiplayerRoomRole('player');
                     setMultiplayerRoomId(null);
                     setMultiplayerState(null);
                   }}
@@ -8894,8 +9094,35 @@ const deDict = {
                   {t("離開遊戲", "Leave Game")}
                 </button>
               </div>
-              <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '0.8rem', marginTop: '0.5rem' }}>
-                {Object.values(multiplayerState.players || {}).filter(p => p.connected).map(p => {
+              {multiplayerState.matchType === 'team' ? (
+                <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '0.8rem', marginTop: '0.5rem' }}>
+                  {getTeamResultsFromState(multiplayerState).map((team, idx) => {
+                    const totalMembers = team.playerCount || 1;
+                    const completedPct = Math.min(100, ((team.completedCount || 0) / totalMembers) * 100);
+                    return (
+                      <div key={team.id} style={{ background: idx === 0 ? 'rgba(251,191,36,0.12)' : 'rgba(255,255,255,0.04)', border: `1px solid ${idx === 0 ? '#fbbf24' : `${team.color}66`}`, borderRadius: '10px', padding: '0.9rem 1.1rem', display: 'flex', flexDirection: 'column', gap: '0.55rem' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem' }}>
+                          <span style={{ display: 'flex', alignItems: 'center', gap: '0.7rem', minWidth: 0 }}>
+                            <span style={{ color: idx === 0 ? '#fbbf24' : '#64748b', fontWeight: 'bold', fontSize: '1.1rem' }}>#{idx + 1}</span>
+                            <span style={{ fontSize: '1.8rem' }}>{team.emoji}</span>
+                            <strong style={{ color: '#e2e8f0', fontSize: '1.1rem' }}>{t(team.name, team.enName || team.name)}</strong>
+                          </span>
+                          <span style={{ color: team.color, fontWeight: 'bold', whiteSpace: 'nowrap' }}>{team.averageScore} avg</span>
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', color: '#94a3b8', fontSize: '0.9rem' }}>
+                          <span>{team.playerCount} {t("人", "players")}</span>
+                          <span>{team.completedCount || 0} / {team.playerCount} {t("完成", "done")}</span>
+                        </div>
+                        <div style={{ width: '100%', height: '5px', background: 'rgba(255,255,255,0.1)', borderRadius: '3px', overflow: 'hidden' }}>
+                          <div style={{ width: `${completedPct}%`, height: '100%', background: team.color, transition: 'width 0.5s' }} />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '0.8rem', marginTop: '0.5rem' }}>
+                  {Object.values(multiplayerState.players || {}).filter(p => p.connected).map(p => {
                   const totalVerses = localCampaignListRef.current.length || 1;
                   const versesCompleted = p.isFinished ? totalVerses : (p.versesCompleted || 0);
                   const totalScore = multiplayerState.campaignResults?.reduce((acc, round) => acc + Math.max(0, round.scores?.[p.id] || 0), 0) || 0;
@@ -8919,8 +9146,9 @@ const deDict = {
                       </div>
                     </div>
                   );
-                })}
-              </div>
+                  })}
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -8928,12 +9156,14 @@ const deDict = {
         {gameState === 'multiplayer_results' && multiplayerState && (
           <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.85)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000, padding: '1rem', flexDirection: 'column' }}>
             <div className="hud-glass" style={{ background: 'rgba(15, 23, 42, 0.95)', borderRadius: '12px', padding: '3rem 2rem', width: '100%', maxWidth: '800px', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1.5rem', textAlign: 'center', border: '1px solid rgba(59, 130, 246, 0.3)' }}>
-              <h2 style={{ fontSize: '2.5rem', fontWeight: 'bold', margin: 0, color: '#e2e8f0', display: 'flex', alignItems: 'center', gap: '12px' }}><Trophy size={40} color="#fbbf24" fill="#fbbf24" /> {multiplayerState.campaignResults?.length > 1 ? t("連戰結束！", "Marathon Completed!") : t("對局結束！", "Game Over!")}</h2>
+              <h2 style={{ fontSize: '2.5rem', fontWeight: 'bold', margin: 0, color: '#e2e8f0', display: 'flex', alignItems: 'center', gap: '12px' }}><Trophy size={40} color="#fbbf24" fill="#fbbf24" /> {multiplayerState.matchType === 'team' ? t("團隊競賽結束！", "Team Competition Complete!") : multiplayerState.campaignResults?.length > 1 ? t("連戰結束！", "Marathon Completed!") : t("對局結束！", "Game Over!")}</h2>
               <div style={{ display: 'flex', gap: '1rem', width: '100%', flexWrap: 'wrap' }}>
                 <button
                   onClick={() => {
                     multiplayerSoloActiveRef.current = false;
                     setGameState('menu');
+                    setMultiplayerRoomMode(null);
+                    setMultiplayerRoomRole('player');
                     setMultiplayerRoomId(null);
                     if (socketRef.current) socketRef.current.close();
                   }}
@@ -8958,27 +9188,48 @@ const deDict = {
 
               <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '1.5rem', margin: '1.5rem 0', maxHeight: '60vh', overflowY: 'auto', paddingRight: '0.5rem' }}>
 
-                <h3 style={{ margin: 0, textAlign: 'left', color: '#94a3b8', borderBottom: '2px solid rgba(255,255,255,0.1)', paddingBottom: '0.5rem' }}>{t("總排名", "Final Standings")}</h3>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                  {Object.values(multiplayerState.players)
-                    .map(p => {
-                      const totalScore = multiplayerState.campaignResults?.reduce((acc, round) => acc + Math.max(0, round.scores[p.id] || 0), 0) || p.score;
-                      return { ...p, totalScore };
-                    })
-                    .sort((a, b) => b.totalScore - a.totalScore)
-                    .map((p, idx) => (
-                      <div key={p.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1.2rem', backgroundColor: idx === 0 ? 'rgba(251, 191, 36, 0.1)' : 'rgba(255,255,255,0.03)', border: `1px solid ${idx === 0 ? '#fbbf24' : 'rgba(255,255,255,0.1)'}`, borderRadius: '8px' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                          <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: idx === 0 ? '#fbbf24' : '#64748b' }}>#{idx + 1}</div>
-                          <div style={{ width: '16px', height: '16px', borderRadius: '50%', backgroundColor: p.color, boxShadow: '0 0 0 2px rgba(255,255,255,0.2)' }}></div>
-                          <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: '#e2e8f0' }}>{p.name} {p.id === myClientId ? '(You)' : ''}</div>
+                <h3 style={{ margin: 0, textAlign: 'left', color: '#94a3b8', borderBottom: '2px solid rgba(255,255,255,0.1)', paddingBottom: '0.5rem' }}>{multiplayerState.matchType === 'team' ? t("隊伍排名", "Team Standings") : t("總排名", "Final Standings")}</h3>
+                {multiplayerState.matchType === 'team' ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                    {getTeamResultsFromState(multiplayerState).map((team, idx) => (
+                      <div key={team.id} style={{ display: 'grid', gridTemplateColumns: 'auto 1fr auto', alignItems: 'center', gap: '1rem', padding: '1.2rem', backgroundColor: idx === 0 ? 'rgba(251, 191, 36, 0.12)' : 'rgba(255,255,255,0.03)', border: `1px solid ${idx === 0 ? '#fbbf24' : `${team.color}66`}`, borderRadius: '10px' }}>
+                        <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: idx === 0 ? '#fbbf24' : '#64748b' }}>#{idx + 1}</div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.9rem', minWidth: 0 }}>
+                          <span style={{ fontSize: '2rem' }}>{team.emoji}</span>
+                          <div style={{ textAlign: 'left', minWidth: 0 }}>
+                            <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: '#e2e8f0' }}>{t(team.name, team.enName || team.name)}</div>
+                            <div style={{ color: '#94a3b8', fontSize: '0.9rem', marginTop: '0.2rem' }}>{team.playerCount} {t("人", "players")} · {t("總分", "Total")} {team.totalScore}</div>
+                          </div>
                         </div>
-                        <div style={{ fontSize: '1.8rem', fontWeight: 'bold', color: '#3b82f6', fontFamily: 'monospace' }}>{p.totalScore}</div>
+                        <div style={{ textAlign: 'right' }}>
+                          <div style={{ fontSize: '2rem', fontWeight: 'bold', color: team.color, fontFamily: 'monospace' }}>{team.averageScore}</div>
+                          <div style={{ color: '#94a3b8', fontSize: '0.8rem', fontWeight: 'bold' }}>{t("平均分", "AVG")}</div>
+                        </div>
                       </div>
                     ))}
-                </div>
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                    {Object.values(multiplayerState.players)
+                      .map(p => {
+                        const totalScore = multiplayerState.campaignResults?.reduce((acc, round) => acc + Math.max(0, round.scores[p.id] || 0), 0) || p.score;
+                        return { ...p, totalScore };
+                      })
+                      .sort((a, b) => b.totalScore - a.totalScore)
+                      .map((p, idx) => (
+                        <div key={p.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1.2rem', backgroundColor: idx === 0 ? 'rgba(251, 191, 36, 0.1)' : 'rgba(255,255,255,0.03)', border: `1px solid ${idx === 0 ? '#fbbf24' : 'rgba(255,255,255,0.1)'}`, borderRadius: '8px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                            <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: idx === 0 ? '#fbbf24' : '#64748b' }}>#{idx + 1}</div>
+                            <div style={{ width: '16px', height: '16px', borderRadius: '50%', backgroundColor: p.color, boxShadow: '0 0 0 2px rgba(255,255,255,0.2)' }}></div>
+                            <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: '#e2e8f0' }}>{p.name} {p.id === myClientId ? '(You)' : ''}</div>
+                          </div>
+                          <div style={{ fontSize: '1.8rem', fontWeight: 'bold', color: '#3b82f6', fontFamily: 'monospace' }}>{p.totalScore}</div>
+                        </div>
+                      ))}
+                  </div>
+                )}
 
-                {multiplayerState.campaignResults?.length > 1 && (
+                {multiplayerState.matchType !== 'team' && multiplayerState.campaignResults?.length > 1 && (
                   <>
                     <h3 style={{ margin: '1rem 0 0 0', textAlign: 'left', color: '#94a3b8', borderBottom: '2px solid rgba(255,255,255,0.1)', paddingBottom: '0.5rem' }}>{t("回合紀錄", "Round History")}</h3>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
