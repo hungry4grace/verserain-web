@@ -6026,8 +6026,8 @@ const deDict = {
                     {/* Host Party */}
                     <div className="primary-button" onClick={() => setMainTab('multiplayer')} style={{ background: 'linear-gradient(135deg, #f472b6, #ec4899)', borderRadius: '16px', padding: '2.5rem 2rem', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', color: 'white', textAlign: 'center' }}>
                       <div style={{ fontSize: '4.5rem', marginBottom: '1rem' }}>👨‍👩‍👧‍👦</div>
-                      <h2 style={{ fontSize: '2rem', margin: 0, marginBottom: '0.5rem', textShadow: '0 2px 4px rgba(0,0,0,0.2)' }}>{t("一起玩!", "Host a Party")}</h2>
-                      <p style={{ fontSize: '1rem', margin: 0, opacity: 0.9 }}>{t("與家人朋友分享房間碼來PK同樂！", "Share room code with family and friends!")}</p>
+                      <h2 style={{ fontSize: '2rem', margin: 0, marginBottom: '0.5rem', textShadow: '0 2px 4px rgba(0,0,0,0.2)' }}>{t("團隊競賽", "Team Competition")}</h2>
+                      <p style={{ fontSize: '1rem', margin: 0, opacity: 0.9 }}>{t("建立房間，分隊一起挑戰經文。", "Create a room and compete in teams.")}</p>
                     </div>
 
                     {/* My Garden */}
