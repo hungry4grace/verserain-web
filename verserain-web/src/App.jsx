@@ -417,11 +417,16 @@ function formatVerseReferenceForSpeech(ref, version) {
     const chapterSuffix = fullBookName === '詩篇' ? '篇' : '章';
 
     if (!verses) {
-      return `${fullBookName} ${chapter}${chapterSuffix}`;
+      return `${fullBookName} 第 ${chapter} ${chapterSuffix}。`;
     }
 
-    const versesStr = verses.replace(/-/g, '至').replace(/–/g, '至').trim();
-    return `${fullBookName} ${chapter}${chapterSuffix}${versesStr}節`;
+    const versesStr = verses
+      .replace(/\s+/g, '')
+      .replace(/-/g, ' 至 ')
+      .replace(/–/g, ' 至 ')
+      .replace(/,/g, '、')
+      .trim();
+    return `${fullBookName} 第 ${chapter} ${chapterSuffix}，第 ${versesStr} 節。`;
   }
 }
 

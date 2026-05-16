@@ -2,6 +2,8 @@ import React, { useEffect, useState, useRef, useMemo } from 'react';
 import { Heart, Zap, XCircle } from 'lucide-react';
 import { pinyin } from 'pinyin-pro';
 
+const REFERENCE_TO_RECITE_PAUSE_MS = 2000;
+
 export default function BlindModeGame({
     activeVerse,
     activePhrases,
@@ -233,7 +235,7 @@ export default function BlindModeGame({
                         if (playDing) playDing();
                         if (onResumeTimer) onResumeTimer();
                         startTimer();
-                    }, 500);
+                    }, REFERENCE_TO_RECITE_PAUSE_MS);
                 });
             }, readyDelay);
             
