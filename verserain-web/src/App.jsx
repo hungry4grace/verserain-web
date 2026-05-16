@@ -5697,6 +5697,76 @@ const deDict = {
     "已記住你的語音偏好，下次回來會自動使用。": "Ihre Spracheinstellung wurde gespeichert und wird automatisch verwendet.",
 };
 
+  Object.assign(faDict, {
+    '團隊競賽': 'رقابت تیمی',
+    '經文庫': 'کتابخانه آیات',
+    '瀏覽全球經文組，挑選經文開始練習。': 'مجموعه‌های جهانی آیات را مرور کنید و آیاتی را برای تمرین انتخاب کنید.',
+    '建立房間，分隊一起挑戰經文。': 'اتاقی بسازید، تیم‌ها را تشکیل دهید و با هم آیات را به چالش بکشید.',
+  });
+
+  Object.assign(heDict, {
+    '團隊競賽': 'תחרות קבוצתית',
+    '經文庫': 'ספריית פסוקים',
+    '瀏覽全球經文組，挑選經文開始練習。': 'עיין בערכות פסוקים גלובליות ובחר פסוקים לתרגול.',
+    '建立房間，分隊一起挑戰經文。': 'צור חדר, התחלקו לקבוצות ואתגרו פסוקים יחד.',
+  });
+
+  Object.assign(jaDict, {
+    '團隊競賽': 'チーム対戦',
+    '經文庫': '聖句ライブラリ',
+    '瀏覽全球經文組，挑選經文開始練習。': '世界の聖句セットを閲覧し、練習する聖句を選びましょう。',
+    '建立房間，分隊一起挑戰經文。': '部屋を作成し、チームに分かれて一緒に聖句に挑戦しましょう。',
+  });
+
+  Object.assign(koDict, {
+    '團隊競賽': '팀 대회',
+    '經文庫': '말씀 보관함',
+    '瀏覽全球經文組，挑選經文開始練習。': '전 세계 말씀 세트를 둘러보고 연습할 말씀을 선택하세요.',
+    '建立房間，分隊一起挑戰經文。': '방을 만들고 팀을 나누어 함께 말씀에 도전하세요.',
+  });
+
+  Object.assign(zhcnDict, {
+    '團隊競賽': '团队竞赛',
+    '經文庫': '经文库',
+    '瀏覽全球經文組，挑選經文開始練習。': '浏览全球经文组，挑选经文开始练习。',
+    '建立房間，分隊一起挑戰經文。': '建立房间，分队一起挑战经文。',
+  });
+
+  Object.assign(viDict, {
+    '團隊競賽': 'Thi đấu đội',
+    '經文庫': 'Thư viện Kinh Thánh',
+    '瀏覽全球經文組，挑選經文開始練習。': 'Duyệt các bộ câu Kinh Thánh toàn cầu và chọn câu để luyện tập.',
+    '建立房間，分隊一起挑戰經文。': 'Tạo phòng, chia đội và cùng thử thách Kinh Thánh.',
+  });
+
+  Object.assign(myDict, {
+    '團隊競賽': 'အသင်းပြိုင်ပွဲ',
+    '經文庫': 'ကျမ်းချက်စာကြည့်တိုက်',
+    '瀏覽全球經文組，挑選經文開始練習。': 'ကမ္ဘာလုံးဆိုင်ရာ ကျမ်းချက်စုများကို ကြည့်ရှုပြီး လေ့ကျင့်ရန် ကျမ်းချက်များကို ရွေးချယ်ပါ။',
+    '建立房間，分隊一起挑戰經文。': 'အခန်းတစ်ခု ဖန်တီးပြီး အသင်းများခွဲကာ ကျမ်းချက်များကို အတူတကွ စိန်ခေါ်ပါ။',
+  });
+
+  Object.assign(esDict, {
+    '團隊競賽': 'Competencia por equipos',
+    '經文庫': 'Biblioteca de versículos',
+    '瀏覽全球經文組，挑選經文開始練習。': 'Explora conjuntos globales de versículos y elige pasajes para practicar.',
+    '建立房間，分隊一起挑戰經文。': 'Crea una sala, formen equipos y desafíen versículos juntos.',
+  });
+
+  Object.assign(trDict, {
+    '團隊競賽': 'Takım Yarışması',
+    '經文庫': 'Ayet Kütüphanesi',
+    '瀏覽全球經文組，挑選經文開始練習。': 'Küresel ayet setlerine göz atın ve çalışmak için ayetler seçin.',
+    '建立房間，分隊一起挑戰經文。': 'Bir oda oluşturun, takımlara ayrılın ve ayetlerde birlikte yarışın.',
+  });
+
+  Object.assign(deDict, {
+    '團隊競賽': 'Teamwettbewerb',
+    '經文庫': 'Versbibliothek',
+    '瀏覽全球經文組，挑選經文開始練習。': 'Durchstöbere globale Vers-Sets und wähle Verse zum Üben aus.',
+    '建立房間，分隊一起挑戰經文。': 'Erstelle einen Raum, bildet Teams und tretet gemeinsam mit Versen an.',
+  });
+
   const t = (zh, en) => {
     if (zh === '活動') {
       if (uiLang === 'en') return 'Activity';
