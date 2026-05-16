@@ -70,9 +70,7 @@ const getTeamResultsFromState = (state) => {
 };
 
 const canStartTeamMatch = (state) => {
-  const players = Object.values(state?.players || {}).filter(p => p.connected);
-  const teamsWithPlayers = new Set(players.map(p => p.teamId).filter(Boolean));
-  return players.length >= 2 && players.every(p => p.teamId && p.isReady) && teamsWithPlayers.size >= 2;
+  return hasEnoughTeamPlayers(state);
 };
 
 const hasEnoughTeamPlayers = (state) => {
@@ -9097,7 +9095,7 @@ const deDict = {
           <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.85)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000, padding: '1rem', flexDirection: 'column' }}>
             <div className="hud-glass" style={{ background: 'rgba(15, 23, 42, 0.95)', borderRadius: '12px', padding: '3rem 2rem', width: '100%', maxWidth: '600px', border: '1px solid rgba(16, 185, 129, 0.4)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1.5rem', textAlign: 'center' }}>
               <h2 style={{ fontSize: '2rem', color: '#10b981', fontWeight: 'bold', margin: 0 }}>{multiplayerState.matchType === 'team' && multiplayerState.host === myClientId ? t("團隊競賽進行中", "Team Competition in Progress") : t("你完成了所有經文！", "You finished all verses!")}</h2>
-              <p style={{ color: '#94a3b8', fontSize: '1rem', margin: 0, animation: 'bounce 2s infinite' }}>{multiplayerState.matchType === 'team' ? t("等待所有隊伍完成，結果會用隊伍平均分排名。", "Waiting for everyone to finish. Teams are ranked by average score.") : t("等待其他玩家完成...", "Waiting for others to finish...")}</p>
+              <p style={{ color: '#94a3b8', fontSize: '1rem', margin: 0, animation: 'bounce 2s infinite' }}>{multiplayerState.matchType === 'team' && multiplayerState.host === myClientId ? t("可隨時結束比賽，結果會用隊伍平均分排名。", "You can end the match anytime. Teams are ranked by average score.") : multiplayerState.matchType === 'team' ? t("等待比賽結束，結果會用隊伍平均分排名。", "Waiting for the match to end. Teams are ranked by average score.") : t("等待其他玩家完成...", "Waiting for others to finish...")}</p>
               <div style={{ display: 'flex', gap: '1rem', width: '100%', justifyContent: 'center', flexWrap: 'wrap' }}>
                 {multiplayerState?.host === myClientId && (
                   <button

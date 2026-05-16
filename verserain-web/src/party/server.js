@@ -71,7 +71,7 @@ export default class Server {
   canStartTeamGame() {
     const players = Object.values(this.state.players || {}).filter(p => p.connected);
     const teamsWithPlayers = new Set(players.map(p => p.teamId).filter(Boolean));
-    return players.length >= 2 && players.every(p => p.teamId && p.isReady) && teamsWithPlayers.size >= 2;
+    return players.length >= 2 && teamsWithPlayers.size >= 2;
   }
 
   // --- Email Utility Function ---
@@ -566,7 +566,7 @@ export default class Server {
 
       if (data.type === 'HOST_START_GAME' && this.state.status === 'ready_check' && sender.id === this.state.host) {
          if (this.state.matchType === 'team' && !this.canStartTeamGame()) {
-            console.log(`[PARTY] Team game start blocked until players choose teams and ready up.`);
+            console.log(`[PARTY] Team game start blocked until at least two teams have players.`);
             this.broadcastState();
             return;
          }
