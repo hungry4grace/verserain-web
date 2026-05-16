@@ -9,7 +9,8 @@ function getRoomColor(roomId) {
   return ROOM_COLORS[hash];
 }
 
-const MAP_TILE_URL = 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager_nolabels/{z}/{x}/{y}{r}.png';
+const LAND_GEOJSON_URL = 'https://cdn.jsdelivr.net/gh/johan/world.geo.json@master/countries.geo.json';
+const LABEL_TILE_URL = 'https://{s}.basemaps.cartocdn.com/rastertiles/dark_only_labels/{z}/{x}/{y}{r}.png';
 
 // Load Leaflet and MarkerCluster Plugin dynamically
 function loadLeafletAndCluster() {
@@ -96,8 +97,37 @@ export default function WorldMap2D({ t, playerName, onJoinRoom, onViewGarden, on
             doubleClickZoom: false
           });
 
-          L.tileLayer(MAP_TILE_URL, {
-            className: 'verse-map-tiles',
+          map.createPane('landPane');
+          map.getPane('landPane').style.zIndex = 250;
+          map.createPane('labelPane');
+          map.getPane('labelPane').style.zIndex = 360;
+
+          fetch(LAND_GEOJSON_URL)
+            .then(response => response.json())
+            .then(geojson => {
+              L.geoJSON(geojson, {
+                pane: 'landPane',
+                style: {
+                  color: '#2f7a4a',
+                  weight: 0.55,
+                  opacity: 0.8,
+                  fillColor: '#174a2f',
+                  fillOpacity: 0.94
+                }
+              }).addTo(map);
+            })
+            .catch(() => {
+              L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager_nolabels/{z}/{x}/{y}{r}.png', {
+                className: 'verse-map-fallback-tiles',
+                attribution: '© OpenStreetMap contributors © CARTO',
+                subdomains: 'abcd',
+                maxZoom: 20
+              }).addTo(map);
+            });
+
+          L.tileLayer(LABEL_TILE_URL, {
+            className: 'verse-map-labels',
+            pane: 'labelPane',
             attribution: '© OpenStreetMap contributors © CARTO',
             subdomains: 'abcd',
             maxZoom: 20
@@ -141,7 +171,7 @@ export default function WorldMap2D({ t, playerName, onJoinRoom, onViewGarden, on
           let bgColor = roomColor || baseColor;
           let glowStyle = roomColor
             ? `border: 1px solid rgba(255,255,255,0.9); box-shadow: 0 0 0 3px ${roomColor}66, 0 0 18px ${roomColor}dd;`
-            : `border: 1px solid rgba(255,255,255,0.85); box-shadow: 0 0 0 2px rgba(7,89,133,0.7), 0 0 16px ${glowColor};`;
+            : `border: 1px solid rgba(255,255,255,0.95); box-shadow: 0 0 0 3px rgba(2,8,23,0.85), 0 0 18px ${glowColor};`;
           let opacity = 0.92;
           let filter = 'none';
 
@@ -352,7 +382,7 @@ export default function WorldMap2D({ t, playerName, onJoinRoom, onViewGarden, on
               ⚠️ {error}
             </div>
           )}
-          <div className="verse-map-frame" ref={mapRef} style={{ height: '520px', width: '100%', background: '#082f3f' }} />
+          <div className="verse-map-frame" ref={mapRef} style={{ height: '520px', width: '100%', background: '#051936' }} />
           {players.length === 0 && !error && (
             <div style={{ position: 'relative', top: '-260px', textAlign: 'center', color: '#94a3b8', pointerEvents: 'none', fontSize: '1rem' }}>
               {t('還沒有玩家資料，完成一局遊戲後你的位置就會出現！', 'No players yet — complete a game to appear on the map!')}
@@ -364,24 +394,37 @@ export default function WorldMap2D({ t, playerName, onJoinRoom, onViewGarden, on
       <style>{`
         .verse-map-frame {
           isolation: isolate;
+          background:
+            radial-gradient(circle at 22% 26%, rgba(29, 78, 216, 0.28), transparent 34%),
+            radial-gradient(circle at 78% 72%, rgba(20, 83, 45, 0.18), transparent 35%),
+            #051936 !important;
         }
         .verse-map-frame::after {
           content: '';
           position: absolute;
           inset: 0;
-          z-index: 450;
+          z-index: 390;
           pointer-events: none;
           background:
-            radial-gradient(circle at 24% 24%, rgba(14, 165, 233, 0.12), transparent 33%),
-            radial-gradient(circle at 78% 70%, rgba(16, 185, 129, 0.1), transparent 34%),
-            linear-gradient(180deg, rgba(236, 253, 245, 0.08), rgba(8, 47, 63, 0.12));
-          mix-blend-mode: multiply;
+            radial-gradient(circle at 48% 12%, rgba(14, 165, 233, 0.09), transparent 26%),
+            linear-gradient(180deg, rgba(5, 25, 54, 0.04), rgba(5, 25, 54, 0.22));
         }
         .verse-map-frame .leaflet-tile-pane {
-          background: #082f3f;
+          background: #051936;
         }
-        .verse-map-frame .verse-map-tiles {
-          filter: saturate(1.18) brightness(0.92) contrast(1.06);
+        .verse-map-frame .verse-map-labels {
+          opacity: 0.56;
+          filter: saturate(0.35) brightness(1.45) contrast(0.9);
+          mix-blend-mode: screen;
+        }
+        .verse-map-frame .verse-map-fallback-tiles {
+          filter: sepia(0.52) saturate(2.7) hue-rotate(54deg) brightness(0.42) contrast(1.34);
+        }
+        .verse-map-frame .leaflet-marker-pane,
+        .verse-map-frame .leaflet-popup-pane,
+        .verse-map-frame .leaflet-control-container {
+          position: relative;
+          z-index: 500;
         }
         .verse-map-frame .leaflet-control-zoom a {
           background: rgba(236, 253, 245, 0.94);
