@@ -6019,8 +6019,8 @@ const deDict = {
                     {/* Play Solo */}
                     <div className="primary-button" onClick={() => setMainTab('versesets')} style={{ background: 'linear-gradient(135deg, #60a5fa, #3b82f6)', borderRadius: '16px', padding: '2.5rem 2rem', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', color: 'white', textAlign: 'center' }}>
                       <div style={{ fontSize: '4.5rem', marginBottom: '1rem' }}>👤</div>
-                      <h2 style={{ fontSize: '2rem', margin: 0, marginBottom: '0.5rem', textShadow: '0 2px 4px rgba(0,0,0,0.2)' }}>{t("經典挑戰", "Play Solo")}</h2>
-                      <p style={{ fontSize: '1rem', margin: 0, opacity: 0.9 }}>{t("挑戰全球經文組，鍛鍊記憶力與專注力。", "Challenge global sets, hone memory & focus.")}</p>
+                      <h2 style={{ fontSize: '2rem', margin: 0, marginBottom: '0.5rem', textShadow: '0 2px 4px rgba(0,0,0,0.2)' }}>{t("經文庫", "Scripture Library")}</h2>
+                      <p style={{ fontSize: '1rem', margin: 0, opacity: 0.9 }}>{t("瀏覽全球經文組，挑選經文開始練習。", "Browse global verse sets and choose scriptures to practice.")}</p>
                     </div>
 
                     {/* Host Party */}
