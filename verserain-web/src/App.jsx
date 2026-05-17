@@ -9019,20 +9019,26 @@ const deDict = {
             onWordMatch={(block) => {
               setScore(s => s + 100 + (combo * 50));
               setCombo(c => c + 1);
-              const nextSeq = currentSeqIndex + 1;
-              setCurrentSeqIndex(nextSeq);
-              currentSeqRef.current = nextSeq;
+              setCurrentSeqIndex(prev => {
+                const nextSeq = prev + 1;
+                currentSeqRef.current = nextSeq;
+                return nextSeq;
+              });
             }}
-            onWordMiss={() => {
+            onWordMiss={(shouldNotAdvance = false) => {
               setCombo(0);
               setHealth(h => {
                 const newHealth = Math.max(0, h - 1);
                 healthRef.current = newHealth;
                 return newHealth;
               });
-              const nextSeq = currentSeqIndex + 1;
-              setCurrentSeqIndex(nextSeq);
-              currentSeqRef.current = nextSeq;
+              if (!shouldNotAdvance) {
+                setCurrentSeqIndex(prev => {
+                  const nextSeq = prev + 1;
+                  currentSeqRef.current = nextSeq;
+                  return nextSeq;
+                });
+              }
             }}
             onFail={() => {
               setGameState('menu');

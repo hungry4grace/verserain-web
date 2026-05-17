@@ -368,7 +368,7 @@ export default function BlindModeGame({
                         setIsSuccessFlash(false);
                         const wasMissed = missedIndicesRef.current.includes(currentSeqIndexRef.current);
                         onWordMatchRef.current(block, wasMissed);
-                    }, 250); // Reduced timeout for faster combo passing
+                    }, currentSeqIndexRef.current >= activePhrases.length - 1 ? 0 : 250);
                 }
             }
         };
