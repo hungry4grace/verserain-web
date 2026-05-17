@@ -75,8 +75,7 @@ const canStartTeamMatch = (state) => {
 
 const hasEnoughTeamPlayers = (state) => {
   const players = Object.values(state?.players || {}).filter(p => p.connected);
-  const teamsWithPlayers = new Set(players.map(p => p.teamId).filter(Boolean));
-  return players.length >= 2 && teamsWithPlayers.size >= 2;
+  return players.some(p => p.teamId);
 };
 
 const SKOOL_LEVELS = [
@@ -7300,8 +7299,8 @@ const deDict = {
                               setMultiplayerSearchText('');
                               setShowPickerBrowser(false);
                             }}
-                            disabled={!multiplayerState || (multiplayerState.matchType === 'team' ? !hasEnoughTeamPlayers(multiplayerState) : Object.keys(multiplayerState.players).length < 2)}
-                            style={{ background: '#3b82f6', color: 'white', border: 'none', padding: '0.8rem 2rem', borderRadius: '6px', fontSize: '1.1rem', fontWeight: 'bold', cursor: !multiplayerState || (multiplayerState.matchType === 'team' ? !hasEnoughTeamPlayers(multiplayerState) : Object.keys(multiplayerState?.players || {}).length < 2) ? 'not-allowed' : 'pointer', opacity: !multiplayerState || (multiplayerState.matchType === 'team' ? !hasEnoughTeamPlayers(multiplayerState) : Object.keys(multiplayerState?.players || {}).length < 2) ? 0.5 : 1 }}
+                            disabled={!multiplayerState || (multiplayerState.matchType !== 'team' && Object.keys(multiplayerState.players).length < 2)}
+                            style={{ background: '#3b82f6', color: 'white', border: 'none', padding: '0.8rem 2rem', borderRadius: '6px', fontSize: '1.1rem', fontWeight: 'bold', cursor: !multiplayerState || (multiplayerState.matchType !== 'team' && Object.keys(multiplayerState?.players || {}).length < 2) ? 'not-allowed' : 'pointer', opacity: !multiplayerState || (multiplayerState.matchType !== 'team' && Object.keys(multiplayerState?.players || {}).length < 2) ? 0.5 : 1 }}
                           >
                             {t("選擇比賽經文", "Select Verse")}
                           </button>
