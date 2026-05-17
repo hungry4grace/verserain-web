@@ -49,7 +49,7 @@ const getTeamResultsFromState = (state) => {
   if (Array.isArray(state.teamResults) && state.teamResults.length > 0) return state.teamResults;
   const teams = state.teams || TEAM_OPTIONS;
   return teams.map(team => {
-    const members = Object.values(state.players || {}).filter(p => p.teamId === team.id);
+    const members = Object.values(state.players || {}).filter(p => p.connected && p.teamId === team.id);
     const totalScore = members.reduce((sum, player) => {
       const scoreFromRounds = (state.campaignResults || []).reduce((roundSum, round) => {
         return roundSum + Math.max(0, round.scores?.[player.id] || 0);
@@ -76,7 +76,7 @@ const canStartTeamMatch = (state) => {
 const hasEnoughTeamPlayers = (state) => {
   const players = Object.values(state?.players || {}).filter(p => p.connected);
   const teamsWithPlayers = new Set(players.map(p => p.teamId).filter(Boolean));
-  return players.length >= 2 && players.every(p => p.teamId) && teamsWithPlayers.size >= 2;
+  return players.length >= 2 && teamsWithPlayers.size >= 2;
 };
 
 const SKOOL_LEVELS = [
@@ -6928,7 +6928,7 @@ const deDict = {
                             {(multiplayerState.teams || TEAM_OPTIONS).map(team => {
                               const selected = multiplayerState.players[myClientId]?.teamId === team.id;
                               const locked = Boolean(multiplayerState.players[myClientId]?.teamId);
-                              const members = Object.values(multiplayerState.players || {}).filter(p => p.teamId === team.id);
+                              const members = Object.values(multiplayerState.players || {}).filter(p => p.connected && p.teamId === team.id);
                               return (
                                 <button
                                   key={team.id}
@@ -6956,7 +6956,7 @@ const deDict = {
                       {multiplayerState.matchType === 'team' && multiplayerState.host === myClientId && (
                         <div style={{ width: '100%', maxWidth: '520px', display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: '0.75rem' }}>
                           {(multiplayerState.teams || TEAM_OPTIONS).map(team => {
-                            const members = Object.values(multiplayerState.players || {}).filter(p => p.teamId === team.id);
+                            const members = Object.values(multiplayerState.players || {}).filter(p => p.connected && p.teamId === team.id);
                             return (
                               <div key={team.id} style={{ background: `${team.color}12`, border: `1px solid ${team.color}55`, borderRadius: '10px', padding: '0.85rem', textAlign: 'left' }}>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
@@ -7317,7 +7317,7 @@ const deDict = {
                                 {(multiplayerState.teams || TEAM_OPTIONS).map(team => {
                                   const selected = multiplayerState.players[myClientId]?.teamId === team.id;
                                   const locked = Boolean(multiplayerState.players[myClientId]?.teamId);
-                                  const members = Object.values(multiplayerState.players || {}).filter(p => p.teamId === team.id);
+                                  const members = Object.values(multiplayerState.players || {}).filter(p => p.connected && p.teamId === team.id);
                                   return (
                                     <button
                                       key={team.id}
@@ -7346,7 +7346,7 @@ const deDict = {
                               <h4 style={{ color: '#475569', marginBottom: '0.5rem' }}>{t("隊伍狀態:", "Team Status:")}</h4>
                               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: '0.75rem' }}>
                                 {(multiplayerState.teams || TEAM_OPTIONS).map(team => {
-                                  const members = Object.values(multiplayerState.players || {}).filter(p => p.teamId === team.id);
+                                  const members = Object.values(multiplayerState.players || {}).filter(p => p.connected && p.teamId === team.id);
                                   return (
                                     <div key={team.id} style={{ background: `${team.color}12`, border: `1px solid ${team.color}55`, borderRadius: '10px', padding: '0.85rem' }}>
                                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
