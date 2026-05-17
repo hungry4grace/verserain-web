@@ -6148,8 +6148,6 @@ const deDict = {
               .landscape-compact-content { margin-top: 8px !important; }
               .landscape-compact-header > div > div > div:first-child { font-size: 1.2rem !important; }
               .landscape-compact-nav > div { padding: 0.3rem 0.8rem !important; font-size: 0.85rem !important; }
-              .square-grid-container { padding-top: 60px !important; bottom: 0px !important; justify-content: flex-start !important; }
-              .square-grid-inner { margin: 0px auto auto auto !important; }
             }
           `}
         </style>
@@ -9195,10 +9193,10 @@ const deDict = {
             onClick={handleGlobalClick}
             style={{ position: 'absolute', width: '100vw', height: '100dvh', top: 0, left: 0, overflow: 'hidden' }}
           >
-            <div style={{ position: 'absolute', top: 0, left: 0, right: 0, padding: '0.5rem 1rem', display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) auto minmax(0, 1fr)', gap: '0.75rem', alignItems: 'start', zIndex: 10, pointerEvents: 'none' }}>
-              <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', alignItems: 'center', pointerEvents: 'auto', minWidth: 0 }}>
+            <div className="game-hud" style={{ position: 'absolute', top: 0, left: 0, right: 0, padding: '0.5rem 1rem', display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) auto minmax(0, 1fr)', gap: '0.75rem', alignItems: 'start', zIndex: 10, pointerEvents: 'none' }}>
+              <div className="game-hud-row game-hud-left" style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', alignItems: 'center', pointerEvents: 'auto', minWidth: 0 }}>
                 <button
-                  className="hud-glass"
+                  className="hud-glass game-hud-chip game-exit-button"
                   onClick={(e) => {
                     e.stopPropagation();
                     if (timerRef.current) clearInterval(timerRef.current);
@@ -9211,7 +9209,7 @@ const deDict = {
                 </button>
                 {!isAutoPlay && !multiplayerRoomId && (
                   <button
-                    className="hud-glass"
+                    className="hud-glass game-hud-chip game-demo-button"
                     onClick={(e) => {
                       e.stopPropagation();
                       // Stop the countdown timer
@@ -9234,7 +9232,7 @@ const deDict = {
                 )}
 
                 {!isAutoPlay && !multiplayerRoomId && (
-                  <div className="hud-glass" style={{ padding: '0.3rem 0.8rem', display: 'flex', gap: '0.8rem', alignItems: 'center', height: '100%', minHeight: '36px' }}>
+                  <div className="hud-glass game-hud-chip game-status-chip" style={{ padding: '0.3rem 0.8rem', display: 'flex', gap: '0.8rem', alignItems: 'center', height: '100%', minHeight: '36px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.2rem', color: '#f87171' }}>
                       {[...Array(3)].map((_, i) => (
                         <Heart key={i} size={16} fill={i < health ? '#f87171' : 'transparent'} strokeWidth={i < health ? 0 : 2} />
@@ -9247,7 +9245,7 @@ const deDict = {
                 )}
 
                 {!isAutoPlay && !multiplayerRoomId && (
-                  <div className="hud-glass" style={{ padding: '0.3rem 0.8rem', display: 'flex', alignItems: 'center', gap: '1rem', minHeight: '36px' }}>
+                  <div className="hud-glass game-hud-chip game-score-chip" style={{ padding: '0.3rem 0.8rem', display: 'flex', alignItems: 'center', gap: '1rem', minHeight: '36px' }}>
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
                       <div style={{ color: '#fbbf24', fontSize: '0.65rem', display: 'flex', alignItems: 'center', gap: '3px', marginBottom: '-2px' }}>
                         <Crown size={10} /> {bestScore}
@@ -9261,7 +9259,7 @@ const deDict = {
 
                 {/* Multiplayer HUD */}
                 {!isAutoPlay && multiplayerRoomId && multiplayerState && multiplayerState.players && (
-                  <div className="hud-glass" style={{ padding: '0.3rem 0.8rem', display: 'flex', alignItems: 'center', gap: '1rem', minHeight: '36px', border: '1px solid rgba(59, 130, 246, 0.5)' }}>
+                  <div className="hud-glass game-hud-chip game-multiplayer-chip" style={{ padding: '0.3rem 0.8rem', display: 'flex', alignItems: 'center', gap: '1rem', minHeight: '36px', border: '1px solid rgba(59, 130, 246, 0.5)' }}>
                     <div style={{ color: '#93c5fd', fontSize: '0.8rem', fontWeight: 'bold', marginRight: '-0.3rem' }}>{t("我", "Me")}</div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.1rem', color: '#f87171' }}>
                       {[...Array(3)].map((_, i) => (
@@ -9276,14 +9274,14 @@ const deDict = {
               </div>
 
               {!isAutoPlay && (
-                <div className="hud-glass" style={{ justifySelf: 'center', padding: '0.45rem 1.4rem', display: 'flex', alignItems: 'center', minHeight: '52px', pointerEvents: 'none' }}>
+                <div className="hud-glass game-hud-reference" style={{ justifySelf: 'center', padding: '0.45rem 1.4rem', display: 'flex', alignItems: 'center', minHeight: '52px', pointerEvents: 'none' }}>
                   <span style={{ fontSize: 'clamp(2.2rem, 4.5vw, 3.4rem)', lineHeight: 1, fontWeight: 900, color: '#bfdbfe', textShadow: '0 3px 16px rgba(147, 197, 253, 0.45)', whiteSpace: 'nowrap' }}>{activeVerse.reference}</span>
                 </div>
               )}
 
-              <div style={{ justifySelf: 'end', display: 'flex', alignItems: 'center', gap: '0.75rem', pointerEvents: 'auto' }}>
+              <div className="game-hud-row game-hud-right" style={{ justifySelf: 'end', display: 'flex', alignItems: 'center', gap: '0.75rem', pointerEvents: 'auto' }}>
                 {!isAutoPlay && (
-                  <div className="hud-glass" style={{ padding: '0.45rem 0.85rem', display: 'flex', alignItems: 'center', gap: '0.55rem', minHeight: '42px' }}>
+                  <div className="hud-glass game-hud-chip game-timer-chip" style={{ padding: '0.45rem 0.85rem', display: 'flex', alignItems: 'center', gap: '0.55rem', minHeight: '42px' }}>
                     <div style={{ fontSize: '0.85rem', color: '#94a3b8', fontWeight: 'bold' }}>T</div>
                     <div style={{ fontSize: 'clamp(1.25rem, 2vw, 1.7rem)', color: timeLeft <= 1000 ? '#f87171' : '#cbd5e1', fontFamily: 'monospace', fontWeight: 'bold', lineHeight: 1 }}>
                       {String(Math.floor(timeLeft / 100)).padStart(2, '0')}.{String(timeLeft % 100).padStart(2, '0')}
@@ -9299,9 +9297,9 @@ const deDict = {
               const currentPhrasesWindow = activePhrases.slice(startIdx, currentSeqIndex);
 
               return (
-                <div style={{ position: 'absolute', left: 0, right: 0, bottom: 0, zIndex: 10, pointerEvents: 'auto', display: 'flex', flexDirection: 'column' }}>
-                  <div className="hud-glass" style={{ padding: '0.5rem 5vw', background: 'rgba(15, 23, 42, 0.85)', borderRadius: '16px 16px 0 0', borderTop: '1px solid rgba(255,255,255,0.1)', borderLeft: '1px solid rgba(255,255,255,0.1)', borderRight: '1px solid rgba(255,255,255,0.1)', borderBottom: 'none' }}>
-                    <div style={{ fontSize: 'clamp(1rem, 4vw, 1.4rem)', lineHeight: '1.8', color: '#cbd5e1', wordBreak: 'break-word', alignContent: 'flex-start' }}>
+                <div className="game-next-bar" style={{ position: 'absolute', left: 0, right: 0, bottom: 0, zIndex: 10, pointerEvents: 'auto', display: 'flex', flexDirection: 'column' }}>
+                  <div className="hud-glass game-next-panel" style={{ padding: '0.5rem 5vw', background: 'rgba(15, 23, 42, 0.85)', borderRadius: '16px 16px 0 0', borderTop: '1px solid rgba(255,255,255,0.1)', borderLeft: '1px solid rgba(255,255,255,0.1)', borderRight: '1px solid rgba(255,255,255,0.1)', borderBottom: 'none' }}>
+                    <div className="game-next-text" style={{ fontSize: 'clamp(1rem, 4vw, 1.4rem)', lineHeight: '1.8', color: '#cbd5e1', wordBreak: 'break-word', alignContent: 'flex-start' }}>
                       {currentPhrasesWindow.map((phrase, localIdx) => (
                         <span key={startIdx + localIdx} style={{ color: '#fbbf24', fontWeight: 'bold' }}>{phrase} </span>
                       ))}

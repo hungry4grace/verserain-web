@@ -363,6 +363,10 @@ body {
 }
 
 /* Square Grid Container Responsive Layout */
+.game-hud {
+  --game-hud-height: clamp(4.75rem, 10vh, 7.25rem);
+}
+
 .square-grid-container {
   position: absolute;
   top: clamp(4.75rem, 10vh, 7.25rem);
@@ -391,6 +395,15 @@ body {
   line-height: 1.12;
   letter-spacing: 0;
   overflow: hidden;
+}
+
+.game-hud-row,
+.game-hud-chip,
+.game-hud-reference,
+.game-next-bar,
+.game-next-panel,
+.game-next-text {
+  min-width: 0;
 }
 
 /* Default styles for portrait or large screens */
@@ -424,5 +437,183 @@ body {
   .landscape-compact-content {
     margin: 0.5rem auto !important;
     padding: 0 1rem;
+  }
+}
+
+@media (max-width: 900px), (max-height: 520px) {
+  .game-hud {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) auto !important;
+    grid-template-rows: auto auto !important;
+    gap: 0.2rem !important;
+    align-items: stretch !important;
+    padding: max(0.3rem, env(safe-area-inset-top)) 0.35rem 0 !important;
+  }
+
+  .game-hud-left {
+    order: 1;
+    grid-column: 1 !important;
+    grid-row: 1 !important;
+    width: 100%;
+    flex-wrap: nowrap !important;
+    gap: 0.35rem !important;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding-bottom: 0.1rem;
+    scrollbar-width: none;
+  }
+
+  .game-hud-left::-webkit-scrollbar {
+    display: none;
+  }
+
+  .game-hud-right {
+    order: 1;
+    grid-column: 2 !important;
+    grid-row: 1 !important;
+    justify-self: end !important;
+    align-self: start;
+    margin-left: auto;
+  }
+
+  .game-hud-chip {
+    min-height: 34px !important;
+    flex: 0 0 auto;
+    border-radius: 10px !important;
+    padding: 0.35rem 0.55rem !important;
+  }
+
+  .game-exit-button {
+    width: 42px !important;
+    height: 42px !important;
+    padding: 0 !important;
+  }
+
+  .game-demo-button {
+    height: 42px !important;
+    padding: 0.35rem 0.6rem !important;
+  }
+
+  .game-status-chip,
+  .game-score-chip,
+  .game-multiplayer-chip {
+    height: 42px !important;
+  }
+
+  .game-score-chip {
+    padding-right: 0.7rem !important;
+  }
+
+  .game-timer-chip {
+    height: 42px !important;
+    min-width: 112px;
+    justify-content: center;
+    margin-left: 0.35rem;
+    background: rgba(15, 23, 42, 0.72);
+  }
+
+  .game-hud-reference {
+    order: 2;
+    grid-column: 1 / -1 !important;
+    grid-row: 2 !important;
+    justify-self: center !important;
+    align-self: center !important;
+    width: fit-content;
+    max-width: calc(100vw - 1rem);
+    min-height: 40px !important;
+    padding: 0.25rem 0.85rem !important;
+    border-radius: 12px !important;
+  }
+
+  .game-hud-reference span {
+    font-size: clamp(2.1rem, 8.4vw, 3.8rem) !important;
+  }
+
+  .square-grid-container {
+    top: calc(env(safe-area-inset-top) + 6.2rem) !important;
+    bottom: calc(env(safe-area-inset-bottom) + 4.55rem) !important;
+    padding: 0.3rem !important;
+    justify-content: center !important;
+  }
+
+  .square-grid-inner {
+    width: min(99vw, 1600px) !important;
+    gap: clamp(0.35rem, 1.3vmin, 0.85rem) !important;
+  }
+
+  .square-block-tile {
+    border-radius: clamp(12px, 2vmin, 22px) !important;
+    padding: clamp(0.45rem, 1.7vmin, 1.25rem) !important;
+  }
+
+  .game-next-panel {
+    padding: 0.35rem max(0.6rem, env(safe-area-inset-right)) calc(0.45rem + env(safe-area-inset-bottom)) max(0.6rem, env(safe-area-inset-left)) !important;
+    border-radius: 12px 12px 0 0 !important;
+  }
+
+  .game-next-text {
+    font-size: clamp(0.95rem, 3.6vw, 1.25rem) !important;
+    line-height: 1.35 !important;
+  }
+}
+
+@media (orientation: landscape) and (max-height: 520px) {
+  .game-hud {
+    padding-top: max(0.2rem, env(safe-area-inset-top)) !important;
+    gap: 0.12rem !important;
+  }
+
+  .game-hud-left {
+    gap: 0.3rem !important;
+  }
+
+  .game-hud-chip {
+    min-height: 30px !important;
+    height: 34px !important;
+    padding: 0.25rem 0.5rem !important;
+  }
+
+  .game-exit-button,
+  .game-demo-button {
+    height: 34px !important;
+  }
+
+  .game-exit-button {
+    width: 36px !important;
+  }
+
+  .game-timer-chip {
+    min-width: 104px;
+    margin-left: 0.3rem;
+  }
+
+  .game-hud-reference {
+    min-height: 34px !important;
+    padding: 0.18rem 0.75rem !important;
+  }
+
+  .game-hud-reference span {
+    font-size: clamp(1.85rem, 7vh, 2.8rem) !important;
+  }
+
+  .square-grid-container {
+    top: calc(env(safe-area-inset-top) + 4.85rem) !important;
+    bottom: calc(env(safe-area-inset-bottom) + 2.75rem) !important;
+    padding: 0.2rem 0.35rem !important;
+  }
+
+  .square-grid-inner {
+    width: min(99vw, 1700px) !important;
+    gap: clamp(0.25rem, 1.1vmin, 0.65rem) !important;
+  }
+
+  .game-next-panel {
+    padding-top: 0.22rem !important;
+    padding-bottom: calc(0.25rem + env(safe-area-inset-bottom)) !important;
+  }
+
+  .game-next-text {
+    font-size: clamp(0.85rem, 3.5vh, 1.05rem) !important;
+    line-height: 1.2 !important;
   }
 }
