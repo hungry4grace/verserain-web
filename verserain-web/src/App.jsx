@@ -6138,7 +6138,7 @@ const deDict = {
                     verserain
                   </div>
                   <div style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', marginTop: '4px', marginLeft: '2px' }}>
-                    v3.5.6
+                    v3.6.0
                   </div>
                 </div>
                 <select
