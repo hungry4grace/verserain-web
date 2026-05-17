@@ -1743,17 +1743,31 @@ export default function App() {
   const [multiplayerState, setMultiplayerState] = useState(null);
   const [myClientId, setMyClientId] = useState(null);
   const [intermissionCountdown, setIntermissionCountdown] = useState(0);
+  const [intermissionEndsAt, setIntermissionEndsAt] = useState(null);
   const [joinRoomError, setJoinRoomError] = useState(null);
   const joinRoomTimeoutRef = useRef(null);
   const isGuestJoinRef = useRef(false);
 
+  const startLocalIntermissionCountdown = (seconds) => {
+    const duration = Math.max(1, Number(seconds) || 1);
+    setIntermissionCountdown(duration);
+    setIntermissionEndsAt(Date.now() + duration * 1000);
+  };
+
   useEffect(() => {
-    if (gameState === 'intermission' && intermissionCountdown > 0) {
-      const timer = setTimeout(() => {
-        setIntermissionCountdown(c => c - 1);
-      }, 1000);
-      return () => clearTimeout(timer);
-    } else if (gameState === 'intermission' && intermissionCountdown === 0) {
+    if (gameState !== 'intermission' || !intermissionEndsAt) return;
+    const updateCountdown = () => {
+      const remaining = Math.max(0, Math.ceil((intermissionEndsAt - Date.now()) / 1000));
+      setIntermissionCountdown(remaining);
+      if (remaining === 0) setIntermissionEndsAt(null);
+    };
+    updateCountdown();
+    const timer = setInterval(updateCountdown, 200);
+    return () => clearInterval(timer);
+  }, [gameState, intermissionEndsAt]);
+
+  useEffect(() => {
+    if (gameState === 'intermission' && intermissionCountdown === 0 && intermissionEndsAt === null) {
       // square_solo: each player advances to their next verse independently
       if (multiplayerRoomId && multiplayerState?.playMode?.endsWith('_solo') && localNextVerse) {
         const verseObj = { reference: localNextVerse.reference, text: localNextVerse.text, title: 'Multiplayer' };
@@ -1830,7 +1844,7 @@ export default function App() {
         }
       }
     }
-  }, [gameState, intermissionCountdown, multiplayerState, myClientId, multiplayerRoomId, localNextVerse]);
+  }, [gameState, intermissionCountdown, intermissionEndsAt, multiplayerState, myClientId, multiplayerRoomId, localNextVerse]);
 
   const socketRef = useRef(null);
   const pendingInvitePKRef = useRef(null);
@@ -1998,7 +2012,8 @@ export default function App() {
           }
           if (msg.state.status === 'intermission' && gameStateRef.current !== 'intermission') {
             setGameState('intermission');
-            setIntermissionCountdown(0);
+            const countdownByLevel = [5, 3, 2, 1];
+            startLocalIntermissionCountdown(countdownByLevel[msg.state.distractionLevel || 0] || 5);
             if (timerRef.current) clearInterval(timerRef.current);
           }
           if (msg.state.status === 'waiting') {
@@ -2782,7 +2797,7 @@ export default function App() {
             setGameState('intermission');
             // Countdown duration scales with difficulty level
             const countdownByLevel = [5, 3, 2, 1];
-            setIntermissionCountdown(countdownByLevel[distractionLevel] || 5);
+            startLocalIntermissionCountdown(countdownByLevel[distractionLevel] || 5);
           } else {
             // All verses done — tell server and show the waiting room
             if (socketRef.current) {
@@ -3036,7 +3051,7 @@ export default function App() {
                 setLocalNextVerse(nextVerse);
                 setGameState('intermission');
                 const countdownByLevel = [5, 3, 2, 1];
-                setIntermissionCountdown(countdownByLevel[distractionLevel] || 5);
+                startLocalIntermissionCountdown(countdownByLevel[distractionLevel] || 5);
               } else {
                 if (socketRef.current) {
                   socketRef.current.send(JSON.stringify({ type: 'PLAYER_FINISHED_ALL' }));
