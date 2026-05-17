@@ -147,24 +147,10 @@ export default function BlindModeGame({
                 if (!missedIndicesRef.current.includes(currentSeqIndexRef.current)) {
                     missedIndicesRef.current.push(currentSeqIndexRef.current);
                     setMissedIndices([...missedIndicesRef.current]);
-                    onWordMissRef.current(true); // true = shouldNotAdvance
-
-                    // Stop listening temporarily and clear buffer while system reads
-                    if (recognitionRef.current) {
-                        try { recognitionRef.current.abort(); } catch (e) {}
-                    }
-
-                    isSpeakingRef.current = true;
-                    // System reads the phrase out loud, then waits for the user to say it
-                    const blockText = typeof currentBlockRef.current === 'string' ? currentBlockRef.current : (currentBlockRef.current?.text || '');
-                    speakText(blockText, 1.0, TTS_LANG).then(() => {
-                        if (!isMountedRef.current) return;
-                        isSpeakingRef.current = false;
-                        // DO NOT auto-advance. We wait for the user to say it correctly.
-                        if (recognitionRef.current) {
-                            try { recognitionRef.current.start(); } catch (e) {}
-                        }
-                    });
+                    isSpeakingRef.current = false;
+                    latestTranscriptRef.current = { transcript: '' };
+                    lastMatchedLengthRef.current = 0;
+                    onWordMissRef.current();
                 }
             }
         }, 1000);
