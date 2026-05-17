@@ -416,17 +416,34 @@ function formatVerseReferenceForSpeech(ref, version) {
     const fullBookName = CHINESE_BOOK_MAP[book] || book;
     const chapterSuffix = fullBookName === '詩篇' ? '篇' : '章';
 
+    const toChineseNumber = (value) => {
+      const num = Number(value);
+      if (!Number.isFinite(num)) return value;
+      const digits = ['', '一', '二', '三', '四', '五', '六', '七', '八', '九'];
+      if (num === 0) return '零';
+      if (num < 10) return digits[num];
+      if (num < 20) return `十${digits[num % 10]}`;
+      if (num < 100) {
+        const ones = num % 10;
+        return `${digits[Math.floor(num / 10)]}十${ones ? digits[ones] : ''}`;
+      }
+      const hundreds = Math.floor(num / 100);
+      const rest = num % 100;
+      return `${digits[hundreds]}百${rest ? (rest < 10 ? '零' : '') + toChineseNumber(rest) : ''}`;
+    };
+
     if (!verses) {
-      return `${fullBookName} 第 ${chapter} ${chapterSuffix}。`;
+      return `${fullBookName}第${toChineseNumber(chapter)}${chapterSuffix}`;
     }
 
     const versesStr = verses
       .replace(/\s+/g, '')
-      .replace(/-/g, ' 至 ')
-      .replace(/–/g, ' 至 ')
+      .replace(/-/g, '至')
+      .replace(/–/g, '至')
       .replace(/,/g, '、')
+      .replace(/\d+/g, (num) => toChineseNumber(num))
       .trim();
-    return `${fullBookName} 第 ${chapter} ${chapterSuffix}，第 ${versesStr} 節。`;
+    return `${fullBookName}第${toChineseNumber(chapter)}${chapterSuffix}第${versesStr}節`;
   }
 }
 
