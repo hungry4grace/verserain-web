@@ -60,18 +60,21 @@ const getTeamResultsFromState = (state) => {
   const teams = state.teams || TEAM_OPTIONS;
   return teams.map(team => {
     const members = Object.values(state.players || {}).filter(p => p.connected && p.teamId === team.id);
-    const totalScore = members.reduce((sum, player) => {
+    const membersWithScores = members.map(player => {
       const scoreFromRounds = (state.campaignResults || []).reduce((roundSum, round) => {
         return roundSum + Math.max(0, round.scores?.[player.id] || 0);
       }, 0);
-      return sum + Math.max(scoreFromRounds, player.bestScore || 0, player.score || 0);
-    }, 0);
+      return { ...player, totalScore: Math.max(scoreFromRounds, player.bestScore || 0, player.score || 0) };
+    });
+    const scoringMembers = membersWithScores.filter(p => (p.versesCompleted || 0) > 0 || p.isFinished || p.totalScore > 0);
+    const totalScore = scoringMembers.reduce((sum, player) => sum + player.totalScore, 0);
     return {
       ...team,
       playerCount: members.length,
+      scoringCount: scoringMembers.length,
       completedCount: members.filter(p => p.isFinished).length,
       totalScore,
-      averageScore: members.length > 0 ? Math.round(totalScore / members.length) : 0
+      averageScore: scoringMembers.length > 0 ? Math.round(totalScore / scoringMembers.length) : 0
     };
   }).filter(team => team.playerCount > 0).sort((a, b) => {
     if (b.averageScore !== a.averageScore) return b.averageScore - a.averageScore;
@@ -1935,6 +1938,7 @@ export default function App() {
             && msg.state.players?.[socket.id]
             && !msg.state.players[socket.id].teamId;
           if (needsTeamBeforeStart) {
+            setGameState('menu');
             setMainTab('multiplayer');
             if (timerRef.current) clearInterval(timerRef.current);
             return;
@@ -7604,85 +7608,81 @@ const deDict = {
                         {(() => {
                           const totalPages = Math.ceil(activeVerseSets.length / 10) || 1;
                           if (totalPages <= 1) return null;
+                          const PAGE_GROUP_SIZE = 10;
+                          const groupStart = Math.floor((versesetsPage - 1) / PAGE_GROUP_SIZE) * PAGE_GROUP_SIZE + 1;
+                          const groupEnd = Math.min(totalPages, groupStart + PAGE_GROUP_SIZE - 1);
+                          const visiblePages = Array.from({ length: groupEnd - groupStart + 1 }, (_, idx) => groupStart + idx);
+                          const canGoPreviousGroup = groupStart > 1;
+                          const canGoNextGroup = groupEnd < totalPages;
                           return (
                             <div className="versesets-pagination" style={{ padding: '1rem', display: 'grid', gridTemplateColumns: 'auto minmax(0, 1fr) auto', alignItems: 'center', gap: '0.5rem', borderTop: '1px solid #e2e8f0' }}>
                               <button
-                                onClick={() => setVersesetsPage(p => Math.max(1, p - 1))}
-                                disabled={versesetsPage <= 1}
+                                onClick={() => setVersesetsPage(Math.max(1, groupStart - PAGE_GROUP_SIZE))}
+                                disabled={!canGoPreviousGroup}
                                 className="versesets-page-step"
+                                title={t("前 10 頁", "Previous 10 pages")}
                                 style={{
                                   padding: '0.55rem 0.9rem',
                                   borderRadius: '8px',
                                   border: '1px solid #cbd5e1',
-                                  background: versesetsPage <= 1 ? '#f1f5f9' : '#ffffff',
-                                  color: versesetsPage <= 1 ? '#94a3b8' : '#475569',
+                                  background: !canGoPreviousGroup ? '#f1f5f9' : '#ffffff',
+                                  color: !canGoPreviousGroup ? '#94a3b8' : '#475569',
                                   fontWeight: 'bold',
-                                  cursor: versesetsPage <= 1 ? 'not-allowed' : 'pointer',
+                                  cursor: !canGoPreviousGroup ? 'not-allowed' : 'pointer',
                                   whiteSpace: 'nowrap'
                                 }}
                               >
-                                ‹ <span className="versesets-page-step-label">{t("上一頁", "Prev")}</span>
+                                {'<'}
                               </button>
 
-                              <div className="versesets-page-scroll" style={{ display: 'flex', gap: '0.5rem', overflowX: 'auto', padding: '0.35rem 0.1rem', scrollSnapType: 'x proximity', WebkitOverflowScrolling: 'touch' }}>
-                                {Array.from({ length: totalPages }).map((_, idx) => {
-                                  const pageNumber = idx + 1;
-                                  const isCurrent = versesetsPage === pageNumber;
-                                  return (
-                                    <button
-                                      key={pageNumber}
-                                      onClick={() => setVersesetsPage(pageNumber)}
-                                      className="versesets-page-button"
-                                      style={{
-                                        padding: '0.55rem 0.9rem',
-                                        borderRadius: '8px',
-                                        border: isCurrent ? 'none' : '1px solid #cbd5e1',
-                                        background: isCurrent ? '#3b82f6' : '#ffffff',
-                                        color: isCurrent ? '#ffffff' : '#475569',
-                                        fontWeight: 'bold',
-                                        cursor: 'pointer',
-                                        transition: 'all 0.2s',
-                                        minWidth: '44px',
-                                        flex: '0 0 auto',
-                                        scrollSnapAlign: 'center'
-                                      }}
-                                    >
-                                      {pageNumber}
-                                    </button>
-                                  );
-                                })}
+                              <div className="versesets-page-window" style={{ display: 'flex', justifyContent: 'center', minWidth: 0 }}>
+                                <div className="versesets-page-scroll" style={{ display: 'flex', gap: '0.5rem', overflowX: 'auto', padding: '0.35rem 0.1rem', scrollSnapType: 'x proximity', WebkitOverflowScrolling: 'touch' }}>
+                                  {visiblePages.map((pageNumber) => {
+                                    const isCurrent = versesetsPage === pageNumber;
+                                    return (
+                                      <button
+                                        key={pageNumber}
+                                        onClick={() => setVersesetsPage(pageNumber)}
+                                        className="versesets-page-button"
+                                        style={{
+                                          padding: '0.55rem 0.9rem',
+                                          borderRadius: '8px',
+                                          border: isCurrent ? 'none' : '1px solid #cbd5e1',
+                                          background: isCurrent ? '#3b82f6' : '#ffffff',
+                                          color: isCurrent ? '#ffffff' : '#475569',
+                                          fontWeight: 'bold',
+                                          cursor: 'pointer',
+                                          transition: 'all 0.2s',
+                                          minWidth: '44px',
+                                          flex: '0 0 auto',
+                                          scrollSnapAlign: 'center'
+                                        }}
+                                      >
+                                        {pageNumber}
+                                      </button>
+                                    );
+                                  })}
+                                </div>
                               </div>
 
                               <button
-                                onClick={() => setVersesetsPage(p => Math.min(totalPages, p + 1))}
-                                disabled={versesetsPage >= totalPages}
+                                onClick={() => setVersesetsPage(Math.min(totalPages, groupEnd + 1))}
+                                disabled={!canGoNextGroup}
                                 className="versesets-page-step"
+                                title={t("後 10 頁", "Next 10 pages")}
                                 style={{
                                   padding: '0.55rem 0.9rem',
                                   borderRadius: '8px',
                                   border: '1px solid #cbd5e1',
-                                  background: versesetsPage >= totalPages ? '#f1f5f9' : '#ffffff',
-                                  color: versesetsPage >= totalPages ? '#94a3b8' : '#475569',
+                                  background: !canGoNextGroup ? '#f1f5f9' : '#ffffff',
+                                  color: !canGoNextGroup ? '#94a3b8' : '#475569',
                                   fontWeight: 'bold',
-                                  cursor: versesetsPage >= totalPages ? 'not-allowed' : 'pointer',
+                                  cursor: !canGoNextGroup ? 'not-allowed' : 'pointer',
                                   whiteSpace: 'nowrap'
                                 }}
                               >
-                                <span className="versesets-page-step-label">{t("下一頁", "Next")}</span> ›
+                                {'>'}
                               </button>
-
-                              <label className="versesets-page-select-wrap" style={{ gridColumn: '1 / -1', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.5rem', color: '#64748b', fontWeight: 'bold', fontSize: '0.9rem' }}>
-                                <span>{versesetsPage} / {totalPages}</span>
-                                <select
-                                  value={versesetsPage}
-                                  onChange={(e) => setVersesetsPage(Number(e.target.value))}
-                                  style={{ padding: '0.45rem 0.75rem', borderRadius: '8px', border: '1px solid #cbd5e1', background: '#ffffff', color: '#334155', fontWeight: 'bold' }}
-                                >
-                                  {Array.from({ length: totalPages }).map((_, idx) => (
-                                    <option key={idx + 1} value={idx + 1}>{t("第", "Page")} {idx + 1} {t("頁", "")}</option>
-                                  ))}
-                                </select>
-                              </label>
                             </div>
                           );
                         })()}
@@ -9576,7 +9576,7 @@ const deDict = {
                         </div>
                         <div style={{ display: 'flex', justifyContent: 'space-between', color: '#94a3b8', fontSize: '0.9rem' }}>
                           <span>{team.playerCount} {t("人", "players")}</span>
-                          <span>{team.completedCount || 0} / {team.playerCount} {t("完成", "done")}</span>
+                          <span>{t("計分", "Scoring")} {team.scoringCount || 0} · {team.completedCount || 0} / {team.playerCount} {t("完成", "done")}</span>
                         </div>
                         <div style={{ width: '100%', height: '5px', background: 'rgba(255,255,255,0.1)', borderRadius: '3px', overflow: 'hidden' }}>
                           <div style={{ width: `${completedPct}%`, height: '100%', background: team.color, transition: 'width 0.5s' }} />
@@ -9663,7 +9663,7 @@ const deDict = {
                           <span style={{ width: '14px', height: '14px', borderRadius: '50%', background: team.color, flex: '0 0 auto' }} />
                           <div style={{ textAlign: 'left', minWidth: 0 }}>
                             <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: '#e2e8f0' }}>{t(team.name, team.enName || team.name)}</div>
-                            <div style={{ color: '#94a3b8', fontSize: '0.9rem', marginTop: '0.2rem' }}>{team.playerCount} {t("人", "players")} · {t("總分", "Total")} {team.totalScore}</div>
+                            <div style={{ color: '#94a3b8', fontSize: '0.9rem', marginTop: '0.2rem' }}>{team.playerCount} {t("人", "players")} · {t("計分", "Scoring")} {team.scoringCount || 0} · {t("總分", "Total")} {team.totalScore}</div>
                           </div>
                         </div>
                         <div style={{ textAlign: 'right' }}>

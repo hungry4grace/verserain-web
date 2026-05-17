@@ -52,13 +52,15 @@ export default class Server {
         }, 0);
         return { ...player, totalScore: Math.max(scoreFromRounds, player.bestScore || 0, player.score || 0) };
       });
-      const totalScore = membersWithScores.reduce((sum, p) => sum + p.totalScore, 0);
+      const scoringMembers = membersWithScores.filter(p => (p.versesCompleted || 0) > 0 || p.isFinished || p.totalScore > 0);
+      const totalScore = scoringMembers.reduce((sum, p) => sum + p.totalScore, 0);
       return {
         ...team,
         playerCount: members.length,
+        scoringCount: scoringMembers.length,
         completedCount: members.filter(p => p.isFinished).length,
         totalScore,
-        averageScore: members.length > 0 ? Math.round(totalScore / members.length) : 0
+        averageScore: scoringMembers.length > 0 ? Math.round(totalScore / scoringMembers.length) : 0
       };
     }).filter(team => team.playerCount > 0);
 
@@ -479,11 +481,11 @@ export default class Server {
         id: conn.id,
         name,
         connected: true,
-        score: 0,
-        health: 3,
-        seqIndex: 0,
-        isFinished: false,
-        versesCompleted: 0,
+        score: this.state.status === 'playing' && this.state.playMode?.endsWith('_solo') ? (existingPlayer.score || 0) : 0,
+        health: this.state.status === 'playing' && this.state.playMode?.endsWith('_solo') ? (existingPlayer.health ?? 3) : 3,
+        seqIndex: this.state.status === 'playing' && this.state.playMode?.endsWith('_solo') ? (existingPlayer.seqIndex || 0) : 0,
+        isFinished: this.state.status === 'playing' && this.state.playMode?.endsWith('_solo') ? Boolean(existingPlayer.isFinished) : false,
+        versesCompleted: this.state.status === 'playing' && this.state.playMode?.endsWith('_solo') ? (existingPlayer.versesCompleted || 0) : 0,
         playerKey
       };
     } else {
