@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef, useMemo } from 'react';
 import { Heart, Zap, XCircle } from 'lucide-react';
 import { pinyin } from 'pinyin-pro';
 
-const REFERENCE_TO_RECITE_PAUSE_MS = 2000;
+const REFERENCE_TO_RECITE_PAUSE_MS = 4000;
 
 export default function BlindModeGame({
     activeVerse,
@@ -222,16 +222,16 @@ export default function BlindModeGame({
                 const formattedRef = formatVerseReferenceForSpeech ? formatVerseReferenceForSpeech(activeVerse.reference, version) : activeVerse.reference;
                 speakText(formattedRef, 1.0, TTS_LANG).then(() => {
                     if (!isMountedRef.current) return;
-                    isSpeakingRef.current = false;
-                    latestTranscriptRef.current = { transcript: '' };
-                    lastMatchedLengthRef.current = 0;
-                    
-                    if (recognitionRef.current) {
-                        try { recognitionRef.current.start(); } catch(e) {}
-                    }
-                    
                     setTimeout(() => {
                         if (!isMountedRef.current) return;
+                        isSpeakingRef.current = false;
+                        latestTranscriptRef.current = { transcript: '' };
+                        lastMatchedLengthRef.current = 0;
+
+                        if (recognitionRef.current) {
+                            try { recognitionRef.current.start(); } catch(e) {}
+                        }
+
                         if (playDing) playDing();
                         if (onResumeTimer) onResumeTimer();
                         startTimer();

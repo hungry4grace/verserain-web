@@ -171,8 +171,8 @@ function speakText(text, rate = 1.0, lang = 'zh-TW') {
       utterance.onend = safeResolve;
       utterance.onerror = safeResolve;
 
-      // Safety fallback — scale with text length but cap reasonably
-      const timeoutMs = Math.max(3000, Math.min(text.length * 300, 15000));
+      // Safety fallback — keep this generous so slower voices are not cut off early.
+      const timeoutMs = Math.max(8000, Math.min(text.length * 500, 30000));
       setTimeout(safeResolve, timeoutMs);
 
       // Small delay to let iOS audio session settle after cancel(), then speak
