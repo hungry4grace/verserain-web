@@ -28,6 +28,16 @@ const quillModules = {
 let audioCtx = null;
 
 const ROOM_COLORS = ['#ef4444', '#f97316', '#eab308', '#22c55e', '#14b8a6', '#0ea5e9', '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16'];
+const ROOM_CODE_CHARS = 'ABCDEFGHJKMNPQRSTUVWXYZ';
+
+function createRoomCode(length = 4) {
+  return Array.from({ length }, () => ROOM_CODE_CHARS[Math.floor(Math.random() * ROOM_CODE_CHARS.length)]).join('');
+}
+
+function sanitizeRoomCode(value) {
+  return String(value || '').replace(/[^a-zA-Z]/g, '').toUpperCase().slice(0, 4);
+}
+
 const TEAM_OPTIONS = [
   { id: 'love', name: '仁愛隊', enName: 'Love Team', color: '#ef4444' },
   { id: 'joy', name: '喜樂隊', enName: 'Joy Team', color: '#f59e0b' },
@@ -2100,10 +2110,13 @@ export default function App() {
     const roomParam = params.get('room');
 
     if (roomParam) {
-      setMainTab('multiplayer');
-      setMultiplayerRoomMode(null);
-      setMultiplayerRoomRole('player');
-      setMultiplayerRoomId(roomParam.toUpperCase().trim());
+      const roomCode = sanitizeRoomCode(roomParam);
+      if (roomCode.length === 4) {
+        setMainTab('multiplayer');
+        setMultiplayerRoomMode(null);
+        setMultiplayerRoomRole('player');
+        setMultiplayerRoomId(roomCode);
+      }
       // Small timeout to allow state applied before url replace
       setTimeout(() => window.history.replaceState({}, document.title, window.location.pathname), 100);
       return;
@@ -6844,9 +6857,7 @@ const deDict = {
 
                       <button
                         onClick={() => {
-                          const chars = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
-                          let newRoom = '';
-                          for (let i = 0; i < 4; i++) newRoom += chars.charAt(Math.floor(Math.random() * chars.length));
+                          const newRoom = createRoomCode();
                           setMultiplayerRoomMode('team');
                           setMultiplayerRoomRole('host');
                           setMultiplayerRoomId(newRoom);
@@ -6867,16 +6878,18 @@ const deDict = {
                           id="joinRoomInput"
                           type="text"
                           placeholder={t("輸入房間代碼", "Enter Room Code")}
-                          maxLength={5}
+                          maxLength={4}
+                          inputMode="latin"
+                          autoCapitalize="characters"
                           style={{ flex: 1, padding: '0.8rem', borderRadius: '6px', border: '1px solid #cbd5e1', textTransform: 'uppercase', textAlign: 'center', fontSize: '1.1rem', fontWeight: 'bold' }}
-                          onChange={(e) => e.target.value = e.target.value.replace(/\s+/g, '')}
+                          onChange={(e) => e.target.value = sanitizeRoomCode(e.target.value)}
                           onKeyDown={(e) => { if (e.key === 'Enter') document.getElementById('joinRoomBtn')?.click(); }}
                         />
                         <button
                           id="joinRoomBtn"
                           onClick={() => {
-                            const code = document.getElementById('joinRoomInput')?.value.replace(/\s+/g, '').toUpperCase();
-                            if (code && code.length > 0) {
+                            const code = sanitizeRoomCode(document.getElementById('joinRoomInput')?.value);
+                            if (code && code.length === 4) {
                               const roomCode = code.substring(0, 4);
                               setJoinRoomError(null);
                               isGuestJoinRef.current = true;
@@ -7688,9 +7701,7 @@ const deDict = {
                                 };
                                 
                                 setMainTab('multiplayer');
-                                const chars = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
-                                let newRoom = '';
-                                for (let i = 0; i < 4; i++) newRoom += chars.charAt(Math.floor(Math.random() * chars.length));
+                                const newRoom = createRoomCode();
                                 setMultiplayerRoomMode('individual');
                                 setMultiplayerRoomRole('player');
                                 setMultiplayerRoomId(newRoom);
