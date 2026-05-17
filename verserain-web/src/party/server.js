@@ -50,7 +50,7 @@ export default class Server {
         const scoreFromRounds = (this.state.campaignResults || []).reduce((sum, round) => {
           return sum + Math.max(0, round.scores?.[player.id] || 0);
         }, 0);
-        return { ...player, totalScore: scoreFromRounds || player.score || 0 };
+        return { ...player, totalScore: Math.max(scoreFromRounds, player.bestScore || 0, player.score || 0) };
       });
       const totalScore = membersWithScores.reduce((sum, p) => sum + p.totalScore, 0);
       return {
@@ -66,6 +66,12 @@ export default class Server {
       if (b.averageScore !== a.averageScore) return b.averageScore - a.averageScore;
       return b.playerCount - a.playerCount;
     });
+  }
+
+  getPlayerTotalScore(playerId) {
+    return (this.state.campaignResults || []).reduce((sum, round) => {
+      return sum + Math.max(0, round.scores?.[playerId] || 0);
+    }, 0);
   }
 
   canStartTeamGame() {
@@ -427,6 +433,7 @@ export default class Server {
     const name = url.searchParams.get("name") || "Player" + Math.floor(Math.random() * 100);
     const requestedRole = url.searchParams.get("role") || "player";
     const requestedMode = url.searchParams.get("mode");
+    const playerKey = url.searchParams.get("playerKey") || conn.id;
     const requestedTeamCount = parseInt(url.searchParams.get("teamCount") || "", 10);
     if (!this.state.matchType) {
       this.state.matchType = requestedMode === 'individual' ? 'individual' : 'team';
@@ -455,17 +462,45 @@ export default class Server {
       return;
     }
 
-    this.state.players[conn.id] = { 
-      id: conn.id, 
-      name, 
-      score: 0, 
-      health: 3,
-      seqIndex: 0,
-      isFinished: false,
-      connected: true,
-      teamId: null,
-      color: this.getPlayerColor(Object.keys(this.state.players).length)
-    };
+    const existingEntry = Object.entries(this.state.players || {}).find(([, player]) => player.playerKey === playerKey);
+    if (existingEntry) {
+      const [oldId, existingPlayer] = existingEntry;
+      if (oldId !== conn.id) {
+        delete this.state.players[oldId];
+        (this.state.campaignResults || []).forEach(round => {
+          if (round.scores?.[oldId] !== undefined) {
+            round.scores[conn.id] = Math.max(round.scores[conn.id] || 0, round.scores[oldId] || 0);
+            delete round.scores[oldId];
+          }
+        });
+      }
+      this.state.players[conn.id] = {
+        ...existingPlayer,
+        id: conn.id,
+        name,
+        connected: true,
+        score: 0,
+        health: 3,
+        seqIndex: 0,
+        isFinished: false,
+        versesCompleted: 0,
+        playerKey
+      };
+    } else {
+      this.state.players[conn.id] = { 
+        id: conn.id, 
+        playerKey,
+        name, 
+        score: 0, 
+        bestScore: 0,
+        health: 3,
+        seqIndex: 0,
+        isFinished: false,
+        connected: true,
+        teamId: null,
+        color: this.getPlayerColor(Object.keys(this.state.players).length)
+      };
+    }
 
     console.log(`[PARTY] Room [${this.room.id}] - Player joined: ${name} (${conn.id}) - Host: ${this.state.host === conn.id}`);
     console.log(`[PARTY] Room [${this.room.id}] - Total players in room: ${Object.keys(this.state.players).length}`);
@@ -508,6 +543,7 @@ export default class Server {
           // Reset scores, health, and readiness
           Object.values(this.state.players).forEach(p => {
              p.score = 0;
+             p.bestScore = 0;
              p.health = 3;
              p.isReady = false;
              p.isFinished = false;
@@ -519,7 +555,7 @@ export default class Server {
         }
       }
 
-      if (data.type === 'SELECT_TEAM' && this.state.matchType === 'team' && ['waiting', 'ready_check'].includes(this.state.status)) {
+      if (data.type === 'SELECT_TEAM' && this.state.matchType === 'team' && ['waiting', 'ready_check', 'playing'].includes(this.state.status)) {
         const player = this.state.players[sender.id];
         const teamExists = (this.state.teams || []).some(team => team.id === data.teamId);
         if (player && teamExists && !player.teamId) {
@@ -687,17 +723,18 @@ export default class Server {
         }
       }
 
-      if (data.type === 'PLAYER_PROGRESS' && this.state.status === 'playing' && this.state.playMode === 'square_solo') {
+      if (data.type === 'PLAYER_PROGRESS' && this.state.status === 'playing' && this.state.playMode?.endsWith('_solo')) {
           if (this.state.players[sender.id]) {
              this.state.players[sender.id].score = data.score;
              this.state.players[sender.id].health = data.health;
              this.state.players[sender.id].seqIndex = data.seqIndex;
+             this.state.players[sender.id].isFinished = false;
              this.broadcastState();
           }
       }
 
       // Player finished one verse — record score and let them keep going on their own
-      if (data.type === 'PLAYER_FINISHED_VERSE' && this.state.status === 'playing' && this.state.playMode === 'square_solo') {
+      if (data.type === 'PLAYER_FINISHED_VERSE' && this.state.status === 'playing' && this.state.playMode?.endsWith('_solo')) {
           if (this.state.players[sender.id]) {
               const { verseRef, score, verseIndex } = data;
               console.log(`[PARTY] Player ${this.state.players[sender.id].name} finished verse ${verseIndex} (${verseRef}) score=${score}`);
@@ -706,27 +743,30 @@ export default class Server {
               if (!this.state.campaignResults) this.state.campaignResults = [];
               const existing = this.state.campaignResults.find(r => r.verseIndex === verseIndex);
               if (existing) {
-                  existing.scores[sender.id] = score;
+                  existing.scores[sender.id] = Math.max(existing.scores[sender.id] || 0, score || 0);
               } else {
                   this.state.campaignResults.push({ verseRef, verseIndex, scores: { [sender.id]: score } });
                   this.state.campaignResults.sort((a, b) => a.verseIndex - b.verseIndex);
               }
+              const totalScore = this.getPlayerTotalScore(sender.id);
+              this.state.players[sender.id].bestScore = Math.max(this.state.players[sender.id].bestScore || 0, totalScore);
               this.broadcastState();
           }
       }
 
-      // Player finished ALL verses — when everyone is done, end the game
-      if (data.type === 'PLAYER_FINISHED_ALL' && this.state.status === 'playing' && this.state.playMode === 'square_solo') {
+      // Player finished ALL verses. Team rooms stay open until the host ends the match.
+      if (data.type === 'PLAYER_FINISHED_ALL' && this.state.status === 'playing' && this.state.playMode?.endsWith('_solo')) {
           if (this.state.players[sender.id]) {
               console.log(`[PARTY] Player ${this.state.players[sender.id].name} finished ALL verses`);
               this.state.players[sender.id].isFinished = true;
+              const totalScore = this.getPlayerTotalScore(sender.id);
+              this.state.players[sender.id].bestScore = Math.max(this.state.players[sender.id].bestScore || 0, totalScore);
 
               const connectedPlayers = Object.values(this.state.players).filter(p => p.connected);
               const allFinished = connectedPlayers.length > 0 && connectedPlayers.every(p => p.isFinished);
-              if (allFinished) {
+              if (allFinished && this.state.matchType !== 'team') {
                   console.log(`[PARTY] All players finished all verses! Game over.`);
                   this.state.status = 'finished';
-                  if (this.state.matchType === 'team') this.state.teamResults = this.getTeamResults();
               }
               this.broadcastState();
           }
@@ -753,6 +793,7 @@ export default class Server {
         Object.values(this.state.players).forEach(p => {
           p.isReady = false;
           p.score = 0;
+          p.bestScore = 0;
           p.health = 3;
           p.isFinished = false;
           p.seqIndex = 0;

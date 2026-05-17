@@ -64,7 +64,7 @@ const getTeamResultsFromState = (state) => {
       const scoreFromRounds = (state.campaignResults || []).reduce((roundSum, round) => {
         return roundSum + Math.max(0, round.scores?.[player.id] || 0);
       }, 0);
-      return sum + (scoreFromRounds || player.score || 0);
+      return sum + Math.max(scoreFromRounds, player.bestScore || 0, player.score || 0);
     }, 0);
     return {
       ...team,
@@ -1863,6 +1863,7 @@ export default function App() {
     const targetRoom = multiplayerRoomId || "global-lobby";
     const socketQuery = { name: playerName || "Player" + Math.floor(Math.random() * 999) };
     if (multiplayerRoomId) {
+      socketQuery.playerKey = personalCode;
       if (multiplayerRoomMode) socketQuery.mode = multiplayerRoomMode;
       if (multiplayerRoomRole) socketQuery.role = multiplayerRoomRole;
       if (multiplayerRoomMode === 'team' && multiplayerRoomRole === 'host') socketQuery.teamCount = multiplayerTeamCount;
@@ -1925,6 +1926,16 @@ export default function App() {
           const isTeamHostSpectator = msg.state.matchType === 'team' && msg.state.host === socket.id && !msg.state.players?.[socket.id];
           if (msg.state.status === 'playing' && isTeamHostSpectator) {
             setGameState('waiting_for_others');
+            if (timerRef.current) clearInterval(timerRef.current);
+            return;
+          }
+          const needsTeamBeforeStart = msg.state.status === 'playing'
+            && msg.state.matchType === 'team'
+            && msg.state.host !== socket.id
+            && msg.state.players?.[socket.id]
+            && !msg.state.players[socket.id].teamId;
+          if (needsTeamBeforeStart) {
+            setMainTab('multiplayer');
             if (timerRef.current) clearInterval(timerRef.current);
             return;
           }
@@ -2098,7 +2109,7 @@ export default function App() {
       socketRef.current = null;
       multiplayerSoloActiveRef.current = false;
     };
-  }, [multiplayerRoomId, multiplayerRoomMode, multiplayerRoomRole, multiplayerTeamCount, playerName, triggerLightning]);
+  }, [multiplayerRoomId, multiplayerRoomMode, multiplayerRoomRole, multiplayerTeamCount, playerName, personalCode, triggerLightning]);
 
 
   // Process Challenge URL parameter
@@ -6025,6 +6036,55 @@ const deDict = {
     speakText(message, 0.95, version === 'kjv' ? 'en-US' : 'zh-TW');
   };
 
+  const restartTeamSoloRun = () => {
+    if (!multiplayerState?.playMode?.endsWith('_solo')) return;
+    const queue = (multiplayerState.campaignQueue && multiplayerState.campaignQueue.length > 0)
+      ? multiplayerState.campaignQueue
+      : [{ reference: multiplayerState.verseRef, text: multiplayerState.verseText, title: 'Multiplayer' }];
+    const firstVerse = queue[0];
+    if (!firstVerse?.text) return;
+
+    const verseObj = { reference: firstVerse.reference, text: firstVerse.text, title: firstVerse.title || 'Multiplayer' };
+    const nextPlayMode = multiplayerState.playMode || 'square_solo';
+    const nextDifficulty = multiplayerState.distractionLevel || 0;
+    const shouldSplitOnSpace = /[\u4e00-\u9fa5\uac00-\ud7af]/.test(verseObj.text);
+    const regex = shouldSplitOnSpace ? /\.{2,}|[,，。；؛၊။،：「」、;:\.\?!！？؟『』《》'\"‘’”"“ ]/ : /\.{2,}|[,，。；؛၊။،：「」、;:\.\?!！？؟『』《》'\"‘’”"“]/;
+    const phraseCount = verseObj.text.split(regex).filter(p => p.trim()).length;
+
+    multiplayerSoloActiveRef.current = true;
+    localCampaignListRef.current = queue;
+    localVerseIndexRef.current = 0;
+    setLocalNextVerse(null);
+    setActiveVerse(verseObj);
+    setPlayMode(nextPlayMode);
+    setDistractionLevel(nextDifficulty);
+    setCurrentSeqIndex(0);
+    currentSeqRef.current = 0;
+    setScore(0);
+    setCombo(0);
+    setHealth(3);
+    setTimeLeft(500 + phraseCount * 500);
+    setGameState('playing');
+
+    if (nextPlayMode === 'square_solo') {
+      initSquareBlocks(false, null, verseObj, nextPlayMode);
+    } else if (nextPlayMode === 'rain_solo') {
+      setBlocks([]);
+      const spawnWhenReady = () => {
+        if (activePhrasesRef.current.length > 0) {
+          setTimeout(spawnNextBlock, 100);
+          setTimeout(spawnNextBlock, 900);
+          setTimeout(spawnNextBlock, 1700);
+          setTimeout(spawnNextBlock, 2500);
+          setTimeout(spawnNextBlock, 3300);
+        } else if (gameStateRef.current === 'playing') {
+          setTimeout(spawnWhenReady, 100);
+        }
+      };
+      setTimeout(spawnWhenReady, 100);
+    }
+  };
+
   // Sync handleBlockClick to ref so Speech can fire it
   useEffect(() => {
     handleBlockClickRef.current = handleBlockClick;
@@ -7296,10 +7356,12 @@ const deDict = {
                           </>
                         ) : (
                           <>
-                            <h3 style={{ margin: '0 0 1rem 0', color: '#3b82f6' }}>{t("等待遊戲開始...", "Waiting for game...")}</h3>
+                            <h3 style={{ margin: '0 0 1rem 0', color: '#3b82f6' }}>{multiplayerState?.status === 'playing' ? t("比賽進行中", "Match in progress") : t("等待遊戲開始...", "Waiting for game...")}</h3>
                             <div style={{ fontSize: '2.5rem', fontWeight: 'bold', color: getRoomColor(multiplayerRoomId) || '#3b82f6', letterSpacing: '6px', marginBottom: '0.8rem', background: (getRoomColor(multiplayerRoomId) || '#3b82f6') + '18', borderRadius: '8px', padding: '0.4rem 1.2rem', display: 'inline-block', border: `3px solid ${getRoomColor(multiplayerRoomId) || '#3b82f6'}`, boxShadow: `0 0 16px ${getRoomColor(multiplayerRoomId) || '#3b82f6'}44` }}>{multiplayerRoomId}</div>
                             <p style={{ color: '#0ea5e9', fontSize: '1.05rem', margin: '1rem 0 0 0', fontWeight: 'bold', lineHeight: 1.5 }}>
-                              {t("現在等候遊戲主人選好經文，", "Waiting for the host to")} <br /> {t("請稍後。。。", "select verses, please wait...")}
+                              {multiplayerState?.status === 'playing'
+                                ? t("請先選擇隊伍，", "Choose a team first,")
+                                : t("現在等候遊戲主人選好經文，", "Waiting for the host to")} <br /> {multiplayerState?.status === 'playing' ? t("就可以加入這場比賽。", "then you can join this match.") : t("請稍後。。。", "select verses, please wait...")}
                             </p>
                           </>
                         )}
@@ -7364,7 +7426,7 @@ const deDict = {
                                 })}
                               </div>
                               {multiplayerState.players[myClientId]?.teamId && (
-                                <p style={{ margin: '0.75rem 0 0 0', color: '#16a34a', fontWeight: 'bold', fontSize: '0.9rem' }}>{t("隊伍已鎖定，等老師選經文。", "Team locked. Wait for the teacher to choose verses.")}</p>
+                                <p style={{ margin: '0.75rem 0 0 0', color: '#16a34a', fontWeight: 'bold', fontSize: '0.9rem' }}>{multiplayerState.status === 'playing' ? t("隊伍已鎖定，正在加入比賽。", "Team locked. Joining the match.") : t("隊伍已鎖定，等老師選經文。", "Team locked. Wait for the teacher to choose verses.")}</p>
                               )}
                             </div>
                           )}
@@ -9378,6 +9440,14 @@ const deDict = {
                     {t("比賽結束", "End Match Now")}
                   </button>
                 )}
+                {multiplayerState.matchType === 'team' && multiplayerState.host !== myClientId && multiplayerState.status === 'playing' && multiplayerState.playMode?.endsWith('_solo') && (
+                  <button
+                    onClick={restartTeamSoloRun}
+                    style={{ background: '#10b981', color: 'white', border: 'none', padding: '0.75rem 2rem', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', fontSize: '1rem', transition: 'all 0.2s', boxShadow: '0 4px 6px -1px rgba(16, 185, 129, 0.5)' }}
+                  >
+                    {t("再挑戰一次", "Play Again")}
+                  </button>
+                )}
                 <button
                   onClick={() => {
                     if (socketRef.current) {
@@ -9427,7 +9497,7 @@ const deDict = {
                   {Object.values(multiplayerState.players || {}).filter(p => p.connected).map(p => {
                   const totalVerses = localCampaignListRef.current.length || 1;
                   const versesCompleted = p.isFinished ? totalVerses : (p.versesCompleted || 0);
-                  const totalScore = multiplayerState.campaignResults?.reduce((acc, round) => acc + Math.max(0, round.scores?.[p.id] || 0), 0) || 0;
+                  const totalScore = Math.max(multiplayerState.campaignResults?.reduce((acc, round) => acc + Math.max(0, round.scores?.[p.id] || 0), 0) || 0, p.bestScore || 0);
                   const isMe = p.id === myClientId;
                   return (
                     <div key={p.id} style={{ background: isMe ? 'rgba(16,185,129,0.1)' : 'rgba(255,255,255,0.04)', border: `1px solid ${isMe ? 'rgba(16,185,129,0.4)' : 'rgba(255,255,255,0.1)'}`, borderRadius: '10px', padding: '0.8rem 1.2rem', display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
