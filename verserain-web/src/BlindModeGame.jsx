@@ -3,6 +3,7 @@ import { Heart, Zap, XCircle } from 'lucide-react';
 import { pinyin } from 'pinyin-pro';
 
 const REFERENCE_TO_RECITE_PAUSE_MS = 4000;
+const FINAL_BLOCK_REVIEW_MS = 3000;
 
 export default function BlindModeGame({
     activeVerse,
@@ -147,10 +148,24 @@ export default function BlindModeGame({
                 if (!missedIndicesRef.current.includes(currentSeqIndexRef.current)) {
                     missedIndicesRef.current.push(currentSeqIndexRef.current);
                     setMissedIndices([...missedIndicesRef.current]);
+                    const isFinalBlock = currentSeqIndexRef.current >= activePhrases.length - 1;
                     isSpeakingRef.current = false;
                     latestTranscriptRef.current = { transcript: '' };
                     lastMatchedLengthRef.current = 0;
-                    onWordMissRef.current();
+                    if (isFinalBlock) {
+                        isSpeakingRef.current = true;
+                        const blockText = typeof currentBlockRef.current === 'string' ? currentBlockRef.current : (currentBlockRef.current?.text || '');
+                        speakText(blockText, 1.0, TTS_LANG).then(() => {
+                            if (!isMountedRef.current) return;
+                            setTimeout(() => {
+                                if (!isMountedRef.current) return;
+                                isSpeakingRef.current = false;
+                                onWordMissRef.current();
+                            }, FINAL_BLOCK_REVIEW_MS);
+                        });
+                    } else {
+                        onWordMissRef.current();
+                    }
                 }
             }
         }, 1000);
@@ -354,7 +369,7 @@ export default function BlindModeGame({
                         setIsSuccessFlash(false);
                         const wasMissed = missedIndicesRef.current.includes(currentSeqIndexRef.current);
                         onWordMatchRef.current(block, wasMissed);
-                    }, currentSeqIndexRef.current >= activePhrases.length - 1 ? 0 : 250);
+                    }, currentSeqIndexRef.current >= activePhrases.length - 1 ? FINAL_BLOCK_REVIEW_MS : 250);
                 }
             }
         };
