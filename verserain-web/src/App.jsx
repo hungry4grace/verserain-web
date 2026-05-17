@@ -7507,7 +7507,7 @@ const deDict = {
                 <>
 
                   {/* The Verse Sets Table */}
-                  <div style={{ backgroundColor: '#ffffff', overflowX: 'auto', borderRadius: '8px', border: '1px solid #cbd5e1', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+                  <div className="versesets-table-card" style={{ backgroundColor: '#ffffff', overflowX: 'auto', borderRadius: '8px', border: '1px solid #cbd5e1', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
                     {selectedSetId === null ? (
                       <>
                         <div style={{ display: 'flex', justifyContent: 'flex-end', padding: '1rem', borderBottom: '1px solid #e2e8f0' }}>
@@ -7601,29 +7601,91 @@ const deDict = {
                         </table>
 
                         {/* Pagination for Verse Sets */}
-                        {Math.ceil(activeVerseSets.length / 10) > 1 && (
-                          <div style={{ padding: '1.5rem', display: 'flex', justifyContent: 'center', gap: '0.5rem', borderTop: '1px solid #e2e8f0' }}>
-                            {Array.from({ length: Math.ceil(activeVerseSets.length / 10) }).map((_, idx) => (
+                        {(() => {
+                          const totalPages = Math.ceil(activeVerseSets.length / 10) || 1;
+                          if (totalPages <= 1) return null;
+                          return (
+                            <div className="versesets-pagination" style={{ padding: '1rem', display: 'grid', gridTemplateColumns: 'auto minmax(0, 1fr) auto', alignItems: 'center', gap: '0.5rem', borderTop: '1px solid #e2e8f0' }}>
                               <button
-                                key={idx}
-                                onClick={() => setVersesetsPage(idx + 1)}
+                                onClick={() => setVersesetsPage(p => Math.max(1, p - 1))}
+                                disabled={versesetsPage <= 1}
+                                className="versesets-page-step"
                                 style={{
-                                  padding: '0.5rem 1rem',
+                                  padding: '0.55rem 0.9rem',
                                   borderRadius: '8px',
-                                  border: versesetsPage === idx + 1 ? 'none' : '1px solid #cbd5e1',
-                                  background: versesetsPage === idx + 1 ? '#3b82f6' : '#ffffff',
-                                  color: versesetsPage === idx + 1 ? '#ffffff' : '#475569',
+                                  border: '1px solid #cbd5e1',
+                                  background: versesetsPage <= 1 ? '#f1f5f9' : '#ffffff',
+                                  color: versesetsPage <= 1 ? '#94a3b8' : '#475569',
                                   fontWeight: 'bold',
-                                  cursor: 'pointer',
-                                  transition: 'all 0.2s',
-                                  minWidth: '40px'
+                                  cursor: versesetsPage <= 1 ? 'not-allowed' : 'pointer',
+                                  whiteSpace: 'nowrap'
                                 }}
                               >
-                                {idx + 1}
+                                ‹ <span className="versesets-page-step-label">{t("上一頁", "Prev")}</span>
                               </button>
-                            ))}
-                          </div>
-                        )}
+
+                              <div className="versesets-page-scroll" style={{ display: 'flex', gap: '0.5rem', overflowX: 'auto', padding: '0.35rem 0.1rem', scrollSnapType: 'x proximity', WebkitOverflowScrolling: 'touch' }}>
+                                {Array.from({ length: totalPages }).map((_, idx) => {
+                                  const pageNumber = idx + 1;
+                                  const isCurrent = versesetsPage === pageNumber;
+                                  return (
+                                    <button
+                                      key={pageNumber}
+                                      onClick={() => setVersesetsPage(pageNumber)}
+                                      className="versesets-page-button"
+                                      style={{
+                                        padding: '0.55rem 0.9rem',
+                                        borderRadius: '8px',
+                                        border: isCurrent ? 'none' : '1px solid #cbd5e1',
+                                        background: isCurrent ? '#3b82f6' : '#ffffff',
+                                        color: isCurrent ? '#ffffff' : '#475569',
+                                        fontWeight: 'bold',
+                                        cursor: 'pointer',
+                                        transition: 'all 0.2s',
+                                        minWidth: '44px',
+                                        flex: '0 0 auto',
+                                        scrollSnapAlign: 'center'
+                                      }}
+                                    >
+                                      {pageNumber}
+                                    </button>
+                                  );
+                                })}
+                              </div>
+
+                              <button
+                                onClick={() => setVersesetsPage(p => Math.min(totalPages, p + 1))}
+                                disabled={versesetsPage >= totalPages}
+                                className="versesets-page-step"
+                                style={{
+                                  padding: '0.55rem 0.9rem',
+                                  borderRadius: '8px',
+                                  border: '1px solid #cbd5e1',
+                                  background: versesetsPage >= totalPages ? '#f1f5f9' : '#ffffff',
+                                  color: versesetsPage >= totalPages ? '#94a3b8' : '#475569',
+                                  fontWeight: 'bold',
+                                  cursor: versesetsPage >= totalPages ? 'not-allowed' : 'pointer',
+                                  whiteSpace: 'nowrap'
+                                }}
+                              >
+                                <span className="versesets-page-step-label">{t("下一頁", "Next")}</span> ›
+                              </button>
+
+                              <label className="versesets-page-select-wrap" style={{ gridColumn: '1 / -1', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.5rem', color: '#64748b', fontWeight: 'bold', fontSize: '0.9rem' }}>
+                                <span>{versesetsPage} / {totalPages}</span>
+                                <select
+                                  value={versesetsPage}
+                                  onChange={(e) => setVersesetsPage(Number(e.target.value))}
+                                  style={{ padding: '0.45rem 0.75rem', borderRadius: '8px', border: '1px solid #cbd5e1', background: '#ffffff', color: '#334155', fontWeight: 'bold' }}
+                                >
+                                  {Array.from({ length: totalPages }).map((_, idx) => (
+                                    <option key={idx + 1} value={idx + 1}>{t("第", "Page")} {idx + 1} {t("頁", "")}</option>
+                                  ))}
+                                </select>
+                              </label>
+                            </div>
+                          );
+                        })()}
                       </>
                     ) : (
                       <>

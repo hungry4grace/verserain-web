@@ -406,6 +406,30 @@ body {
   min-width: 0;
 }
 
+.versesets-pagination {
+  background: #ffffff;
+  min-width: 0;
+}
+
+.versesets-page-scroll {
+  min-width: 0;
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 transparent;
+}
+
+.versesets-page-scroll::-webkit-scrollbar {
+  height: 6px;
+}
+
+.versesets-page-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.versesets-page-scroll::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 999px;
+}
+
 /* Default styles for portrait or large screens */
 .landscape-compact-header {
   padding: 1rem 2rem;
@@ -441,6 +465,47 @@ body {
 }
 
 @media (max-width: 900px), (max-height: 520px) {
+  .versesets-table-card {
+    overflow-x: auto;
+  }
+
+  .versesets-pagination {
+    position: sticky;
+    left: 0;
+    width: calc(100vw - 2rem);
+    max-width: 100%;
+    grid-template-columns: auto minmax(0, 1fr) auto !important;
+    gap: 0.35rem !important;
+    padding: 0.85rem 0.5rem !important;
+  }
+
+  .versesets-page-step {
+    min-width: 42px;
+    padding: 0.55rem 0.65rem !important;
+    font-size: 0.9rem;
+  }
+
+  .versesets-page-step-label {
+    display: none;
+  }
+
+  .versesets-page-button {
+    min-width: 42px !important;
+    padding: 0.55rem 0.75rem !important;
+  }
+
+  .versesets-page-scroll {
+    flex-wrap: wrap;
+    justify-content: center;
+    overflow-x: visible !important;
+    padding: 0.35rem 0.15rem !important;
+    scroll-snap-type: none !important;
+  }
+
+  .versesets-page-select-wrap {
+    padding-top: 0.15rem;
+  }
+
   .game-hud {
     display: grid !important;
     grid-template-columns: minmax(0, 1fr) auto !important;
