@@ -6085,6 +6085,36 @@ const deDict = {
     }
   };
 
+  const squareGridSize = distractionLevel <= 1 ? 2 : 3;
+  const squareBlockFontSize = useMemo(() => {
+    const measureText = (text) => {
+      const value = String(text || '').trim();
+      if (!value) return 1;
+      const cjkCount = (value.match(/[\u3400-\u9fff\u3040-\u30ff\uac00-\ud7af]/g) || []).length;
+      const latinCount = Math.max(0, value.length - cjkCount);
+      return cjkCount + Math.ceil(latinCount * 0.58);
+    };
+    const textCandidates = [
+      ...activePhrases,
+      ...blocks.filter(block => block.isFake && !block.hidden).map(block => block.text)
+    ];
+    const longest = Math.max(1, ...textCandidates.map(measureText));
+
+    if (squareGridSize === 2) {
+      if (longest <= 4) return 'clamp(2.6rem, min(7vw, 10vh), 6.25rem)';
+      if (longest <= 7) return 'clamp(2.1rem, min(5.5vw, 8vh), 4.9rem)';
+      if (longest <= 10) return 'clamp(1.75rem, min(4.5vw, 6.6vh), 3.9rem)';
+      if (longest <= 14) return 'clamp(1.45rem, min(3.6vw, 5.4vh), 3.1rem)';
+      return 'clamp(1.15rem, min(2.9vw, 4.4vh), 2.4rem)';
+    }
+
+    if (longest <= 4) return 'clamp(1.75rem, min(4.2vw, 6.2vh), 4rem)';
+    if (longest <= 7) return 'clamp(1.45rem, min(3.3vw, 5vh), 3rem)';
+    if (longest <= 10) return 'clamp(1.2rem, min(2.65vw, 4vh), 2.35rem)';
+    if (longest <= 14) return 'clamp(1.05rem, min(2.15vw, 3.25vh), 1.95rem)';
+    return 'clamp(0.9rem, min(1.75vw, 2.6vh), 1.55rem)';
+  }, [activePhrases, blocks, squareGridSize]);
+
   // Sync handleBlockClick to ref so Speech can fire it
   useEffect(() => {
     handleBlockClickRef.current = handleBlockClick;
@@ -6198,7 +6228,7 @@ const deDict = {
                     verserain
                   </div>
                   <div style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', marginTop: '4px', marginLeft: '2px' }}>
-                    v3.6.0
+                    v3.6.1
                   </div>
                 </div>
                 <select
@@ -9165,8 +9195,8 @@ const deDict = {
             onClick={handleGlobalClick}
             style={{ position: 'absolute', width: '100vw', height: '100dvh', top: 0, left: 0, overflow: 'hidden' }}
           >
-            <div style={{ position: 'absolute', top: 0, left: 0, right: 0, padding: '0.5rem 1rem', display: 'flex', flexDirection: 'row', flexWrap: 'wrap', gap: '0.75rem', alignItems: 'center', zIndex: 10 }}>
-              <div style={{ display: 'flex', gap: '0.75rem' }}>
+            <div style={{ position: 'absolute', top: 0, left: 0, right: 0, padding: '0.5rem 1rem', display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) auto minmax(0, 1fr)', gap: '0.75rem', alignItems: 'start', zIndex: 10, pointerEvents: 'none' }}>
+              <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', alignItems: 'center', pointerEvents: 'auto', minWidth: 0 }}>
                 <button
                   className="hud-glass"
                   onClick={(e) => {
@@ -9202,48 +9232,35 @@ const deDict = {
                     <span style={{ fontSize: '0.8rem' }}>{t('示範', 'Play')}</span>
                   </button>
                 )}
-                {!isAutoPlay && (
-                  <div className="hud-glass" style={{ padding: '0.3rem 0.8rem', display: 'flex', alignItems: 'center' }}>
-                    <span style={{ fontSize: '0.95rem', fontWeight: 'bold', color: '#93c5fd' }}>{activeVerse.reference}</span>
+
+                {!isAutoPlay && !multiplayerRoomId && (
+                  <div className="hud-glass" style={{ padding: '0.3rem 0.8rem', display: 'flex', gap: '0.8rem', alignItems: 'center', height: '100%', minHeight: '36px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.2rem', color: '#f87171' }}>
+                      {[...Array(3)].map((_, i) => (
+                        <Heart key={i} size={16} fill={i < health ? '#f87171' : 'transparent'} strokeWidth={i < health ? 0 : 2} />
+                      ))}
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.2rem', fontSize: '1rem', fontWeight: 'bold', color: '#fbbf24' }}>
+                      <Zap size={16} fill="#fbbf24" strokeWidth={0} /> {combo}x
+                    </div>
                   </div>
                 )}
-              </div>
 
-              {!isAutoPlay && !multiplayerRoomId && (
-                <div className="hud-glass" style={{ padding: '0.3rem 0.8rem', display: 'flex', gap: '0.8rem', alignItems: 'center', height: '100%', minHeight: '36px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.2rem', color: '#f87171' }}>
-                    {[...Array(3)].map((_, i) => (
-                      <Heart key={i} size={16} fill={i < health ? '#f87171' : 'transparent'} strokeWidth={i < health ? 0 : 2} />
-                    ))}
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.2rem', fontSize: '1rem', fontWeight: 'bold', color: '#fbbf24' }}>
-                    <Zap size={16} fill="#fbbf24" strokeWidth={0} /> {combo}x
-                  </div>
-                </div>
-              )}
-
-              {!isAutoPlay && !multiplayerRoomId && (
-                <div className="hud-glass" style={{ padding: '0.3rem 0.8rem', display: 'flex', alignItems: 'center', gap: '1rem', minHeight: '36px' }}>
-                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
-                    <div style={{ color: '#fbbf24', fontSize: '0.65rem', display: 'flex', alignItems: 'center', gap: '3px', marginBottom: '-2px' }}>
-                      <Crown size={10} /> {bestScore}
-                    </div>
-                    <div style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#fff', fontFamily: 'monospace' }}>
-                      {String(score).padStart(6, '0')}
+                {!isAutoPlay && !multiplayerRoomId && (
+                  <div className="hud-glass" style={{ padding: '0.3rem 0.8rem', display: 'flex', alignItems: 'center', gap: '1rem', minHeight: '36px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+                      <div style={{ color: '#fbbf24', fontSize: '0.65rem', display: 'flex', alignItems: 'center', gap: '3px', marginBottom: '-2px' }}>
+                        <Crown size={10} /> {bestScore}
+                      </div>
+                      <div style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#fff', fontFamily: 'monospace' }}>
+                        {String(score).padStart(6, '0')}
+                      </div>
                     </div>
                   </div>
-                  <div style={{ padding: '0.2rem 0.6rem', background: 'rgba(0,0,0,0.5)', borderRadius: '6px', display: 'flex', alignItems: 'center', gap: '0.4rem', border: '1px solid rgba(255,255,255,0.1)' }}>
-                    <div style={{ fontSize: '0.7rem', color: '#94a3b8' }}>T</div>
-                    <div style={{ fontSize: '0.95rem', color: timeLeft <= 1000 ? '#f87171' : '#cbd5e1', fontFamily: 'monospace' }}>
-                      {String(Math.floor(timeLeft / 100)).padStart(2, '0')}.{String(timeLeft % 100).padStart(2, '0')}
-                    </div>
-                  </div>
-                </div>
-              )}
+                )}
 
-              {/* Multiplayer HUD */}
-              {!isAutoPlay && multiplayerRoomId && multiplayerState && multiplayerState.players && (
-                <>
+                {/* Multiplayer HUD */}
+                {!isAutoPlay && multiplayerRoomId && multiplayerState && multiplayerState.players && (
                   <div className="hud-glass" style={{ padding: '0.3rem 0.8rem', display: 'flex', alignItems: 'center', gap: '1rem', minHeight: '36px', border: '1px solid rgba(59, 130, 246, 0.5)' }}>
                     <div style={{ color: '#93c5fd', fontSize: '0.8rem', fontWeight: 'bold', marginRight: '-0.3rem' }}>{t("我", "Me")}</div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.1rem', color: '#f87171' }}>
@@ -9255,9 +9272,25 @@ const deDict = {
                       {String(score).padStart(6, '0')}
                     </div>
                   </div>
+                )}
+              </div>
 
-                </>
+              {!isAutoPlay && (
+                <div className="hud-glass" style={{ justifySelf: 'center', padding: '0.45rem 1.4rem', display: 'flex', alignItems: 'center', minHeight: '52px', pointerEvents: 'none' }}>
+                  <span style={{ fontSize: 'clamp(2.2rem, 4.5vw, 3.4rem)', lineHeight: 1, fontWeight: 900, color: '#bfdbfe', textShadow: '0 3px 16px rgba(147, 197, 253, 0.45)', whiteSpace: 'nowrap' }}>{activeVerse.reference}</span>
+                </div>
               )}
+
+              <div style={{ justifySelf: 'end', display: 'flex', alignItems: 'center', gap: '0.75rem', pointerEvents: 'auto' }}>
+                {!isAutoPlay && (
+                  <div className="hud-glass" style={{ padding: '0.45rem 0.85rem', display: 'flex', alignItems: 'center', gap: '0.55rem', minHeight: '42px' }}>
+                    <div style={{ fontSize: '0.85rem', color: '#94a3b8', fontWeight: 'bold' }}>T</div>
+                    <div style={{ fontSize: 'clamp(1.25rem, 2vw, 1.7rem)', color: timeLeft <= 1000 ? '#f87171' : '#cbd5e1', fontFamily: 'monospace', fontWeight: 'bold', lineHeight: 1 }}>
+                      {String(Math.floor(timeLeft / 100)).padStart(2, '0')}.{String(timeLeft % 100).padStart(2, '0')}
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
 
             {!isAutoPlay && (() => {
@@ -9306,14 +9339,14 @@ const deDict = {
                 </div>
               </div>
             ) : playMode.startsWith('square') ? (
-              <div className="square-grid-container" style={{ bottom: playMode.startsWith('square') ? 'clamp(80px, 25vh, 200px)' : 0 }}>
-                <div className="square-grid-inner" style={{ display: 'grid', gridTemplateColumns: `repeat(${distractionLevel <= 1 ? 2 : 3}, minmax(0, 1fr))`, gap: 'clamp(0.4rem, 2vh, 0.75rem)', width: '95%', maxWidth: distractionLevel <= 1 ? '600px' : '900px', pointerEvents: 'auto' }}>
+              <div className="square-grid-container">
+                <div className="square-grid-inner" style={{ display: 'grid', gridTemplateColumns: `repeat(${squareGridSize}, minmax(0, 1fr))`, gridTemplateRows: `repeat(${squareGridSize}, minmax(0, 1fr))`, gap: 'clamp(0.5rem, 1.6vmin, 1.25rem)', width: 'min(98vw, 1600px)', height: '100%', pointerEvents: 'auto' }}>
                   {blocks.map(block => {
-                    let appliedClasses = 'falling-block-inner';
+                    let appliedClasses = 'falling-block-inner square-block-tile';
                     if (block.error) appliedClasses += ' error-shake';
                     if (block.correct && (!block.claimedBy || block.claimedBy === myClientId)) appliedClasses += ' success-flash';
 
-                    let blockStyle = { cursor: 'pointer', padding: 'clamp(0.4rem, 2vh, 1.5rem)', fontSize: 'clamp(0.9rem, 2.5vw, 1.5rem)', display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 'clamp(2.5rem, 12vh, 100px)', wordBreak: 'break-word', hyphens: 'auto', textAlign: 'center', visibility: block.hidden ? 'hidden' : 'visible' };
+                    let blockStyle = { cursor: 'pointer', padding: 'clamp(0.6rem, 2.2vmin, 2rem)', fontSize: squareBlockFontSize, display: 'flex', alignItems: 'center', justifyContent: 'center', wordBreak: 'break-word', overflowWrap: 'anywhere', hyphens: 'auto', textAlign: 'center', visibility: block.hidden ? 'hidden' : 'visible', borderRadius: 'clamp(16px, 2.2vmin, 30px)' };
 
                     if (block.claimedBy) {
                       // Block instantly disappears physically so the flying clone can animate
