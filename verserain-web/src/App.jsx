@@ -9025,20 +9025,18 @@ const deDict = {
                 return nextSeq;
               });
             }}
-            onWordMiss={(shouldNotAdvance = false) => {
+            onWordMiss={() => {
               setCombo(0);
               setHealth(h => {
                 const newHealth = Math.max(0, h - 1);
                 healthRef.current = newHealth;
                 return newHealth;
               });
-              if (!shouldNotAdvance) {
-                setCurrentSeqIndex(prev => {
-                  const nextSeq = prev + 1;
-                  currentSeqRef.current = nextSeq;
-                  return nextSeq;
-                });
-              }
+              setCurrentSeqIndex(prev => {
+                const nextSeq = prev + 1;
+                currentSeqRef.current = nextSeq;
+                return nextSeq;
+              });
             }}
             onFail={() => {
               setGameState('menu');
