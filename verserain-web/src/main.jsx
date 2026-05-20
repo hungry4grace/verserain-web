@@ -3,8 +3,13 @@ import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.jsx'
 import BlindScriptureApp from './BlindScriptureApp.jsx'
+import PrivacyPage from './PrivacyPage.jsx'
 
-const RootApp = window.location.pathname.startsWith('/blind') ? BlindScriptureApp : App
+const RootApp = window.location.pathname.startsWith('/privacy')
+  ? PrivacyPage
+  : window.location.pathname.startsWith('/blind')
+    ? BlindScriptureApp
+    : App
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>

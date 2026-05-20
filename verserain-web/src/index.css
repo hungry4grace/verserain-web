@@ -1,10 +1,13 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Noto+Sans+TC:wght@400;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Noto+Sans:wght@400;500;600;700;800&family=Noto+Sans+JP:wght@400;700&family=Noto+Sans+KR:wght@400;700&family=Noto+Sans+Myanmar:wght@400;700&family=Noto+Sans+SC:wght@400;700&family=Noto+Sans+TC:wght@400;700&display=swap');
 
 :root {
   --primary-glow: #3b82f6;
   --bg-gradient: linear-gradient(180deg, #0d1321 0%, #1e293b 100%);
   --glass-bg: rgba(255, 255, 255, 0.1);
   --glass-border: rgba(255, 255, 255, 0.2);
+  --app-font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Noto Sans', 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Yu Gothic', YuGothic, 'Noto Sans JP', 'Apple SD Gothic Neo', 'Noto Sans KR', 'Noto Sans Myanmar', 'Noto Sans Hebrew', 'Vazirmatn', 'PingFang SC', 'PingFang TC', 'Hiragino Sans GB', 'Noto Sans SC', 'Noto Sans TC', 'Microsoft YaHei', 'Segoe UI', 'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji', sans-serif;
+  --control-font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Noto Sans', 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Yu Gothic', YuGothic, 'Noto Sans JP', 'Apple SD Gothic Neo', 'Noto Sans KR', 'Noto Sans Myanmar', 'Noto Sans Hebrew', 'Vazirmatn', 'PingFang SC', 'PingFang TC', 'Hiragino Sans GB', 'Noto Sans SC', 'Noto Sans TC', 'Microsoft YaHei', 'Segoe UI', 'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji', sans-serif;
+  --game-safe-top: max(env(safe-area-inset-top), 44px);
 }
 
 * {
@@ -15,12 +18,19 @@
 
 body {
   margin: 0;
-  font-family: 'Inter', 'Noto Sans TC', sans-serif;
+  font-family: var(--app-font-family);
   background: var(--bg-gradient);
   color: white;
   overflow: hidden; /* game canvas */
   height: 100vh;
   width: 100vw;
+}
+
+button,
+input,
+select,
+textarea {
+  font-family: var(--control-font-family);
 }
 
 .hud-glass {
@@ -247,6 +257,12 @@ body {
 }
 
 /* ReactQuill overrides */
+.ql-editor,
+.ql-editor-content,
+.ql-editor-content * {
+  font-family: var(--app-font-family) !important;
+}
+
 .ql-editor {
   font-size: 20px !important;
 }
@@ -512,7 +528,7 @@ body {
     grid-template-rows: auto auto !important;
     gap: 0.2rem !important;
     align-items: stretch !important;
-    padding: max(0.3rem, env(safe-area-inset-top)) 0.35rem 0 !important;
+    padding: calc(var(--game-safe-top) + 0.35rem) max(0.35rem, env(safe-area-inset-right)) 0 max(0.35rem, env(safe-area-inset-left)) !important;
   }
 
   .game-hud-left {
@@ -595,7 +611,7 @@ body {
   }
 
   .square-grid-container {
-    top: calc(env(safe-area-inset-top) + 6.2rem) !important;
+    top: calc(var(--game-safe-top) + 6.2rem) !important;
     bottom: calc(env(safe-area-inset-bottom) + 4.55rem) !important;
     padding: 0.3rem !important;
     justify-content: center !important;
@@ -623,8 +639,12 @@ body {
 }
 
 @media (orientation: landscape) and (max-height: 520px) {
+  :root {
+    --game-safe-top: max(env(safe-area-inset-top), 12px);
+  }
+
   .game-hud {
-    padding-top: max(0.2rem, env(safe-area-inset-top)) !important;
+    padding-top: calc(var(--game-safe-top) + 0.2rem) !important;
     gap: 0.12rem !important;
   }
 
@@ -662,7 +682,7 @@ body {
   }
 
   .square-grid-container {
-    top: calc(env(safe-area-inset-top) + 4.85rem) !important;
+    top: calc(var(--game-safe-top) + 4.85rem) !important;
     bottom: calc(env(safe-area-inset-bottom) + 2.75rem) !important;
     padding: 0.2rem 0.35rem !important;
   }
@@ -680,5 +700,187 @@ body {
   .game-next-text {
     font-size: clamp(0.85rem, 3.5vh, 1.05rem) !important;
     line-height: 1.2 !important;
+  }
+}
+
+.privacy-page {
+  min-height: 100vh;
+  overflow-x: hidden;
+  background:
+    radial-gradient(circle at 12% 0%, rgba(59, 130, 246, 0.18), transparent 32rem),
+    linear-gradient(180deg, #f8fbff 0%, #eef4fb 48%, #f8fafc 100%);
+  color: #172033;
+  font-family: var(--app-font-family);
+  padding: clamp(1rem, 3vw, 2rem);
+}
+
+.privacy-hero,
+.privacy-grid,
+.privacy-content {
+  width: min(1060px, 100%);
+  margin: 0 auto;
+}
+
+.privacy-hero {
+  padding: clamp(2rem, 7vw, 5rem) 0 clamp(1.25rem, 4vw, 2.5rem);
+}
+
+.privacy-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.65rem;
+  color: #2563eb;
+  text-decoration: none;
+  font-size: clamp(1.35rem, 3vw, 1.8rem);
+  font-weight: 900;
+}
+
+.privacy-kicker {
+  margin: 2.5rem 0 0.75rem;
+  color: #0f766e;
+  font-size: 0.86rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.privacy-hero h1 {
+  max-width: 850px;
+  margin: 0;
+  color: #0f172a;
+  font-size: clamp(2.25rem, 7vw, 5rem);
+  line-height: 0.98;
+  letter-spacing: 0;
+}
+
+.privacy-lede {
+  max-width: 760px;
+  margin: 1.4rem 0 0;
+  color: #475569;
+  font-size: clamp(1.05rem, 2.3vw, 1.35rem);
+  line-height: 1.65;
+}
+
+.privacy-updated {
+  margin-top: 1.3rem;
+  color: #64748b;
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+.privacy-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.85rem;
+  margin-bottom: clamp(1.2rem, 4vw, 2.5rem);
+}
+
+.privacy-grid article,
+.privacy-section,
+.privacy-contact {
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  background: rgba(255, 255, 255, 0.78);
+  box-shadow: 0 18px 60px rgba(15, 23, 42, 0.08);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+
+.privacy-grid article {
+  border-radius: 8px;
+  padding: 1rem;
+}
+
+.privacy-grid svg {
+  color: #2563eb;
+}
+
+.privacy-grid h2 {
+  margin: 0.75rem 0 0.35rem;
+  color: #0f172a;
+  font-size: 1rem;
+  line-height: 1.25;
+}
+
+.privacy-grid p,
+.privacy-section p,
+.privacy-section li,
+.privacy-contact p {
+  color: #475569;
+  line-height: 1.72;
+}
+
+.privacy-grid p {
+  margin: 0;
+  font-size: 0.93rem;
+}
+
+.privacy-content {
+  display: grid;
+  gap: 0.9rem;
+  padding-bottom: 4rem;
+}
+
+.privacy-section,
+.privacy-contact {
+  border-radius: 8px;
+  padding: clamp(1.15rem, 3vw, 1.8rem);
+}
+
+.privacy-section h2,
+.privacy-contact h2 {
+  margin: 0 0 0.65rem;
+  color: #0f172a;
+  font-size: clamp(1.18rem, 2.5vw, 1.45rem);
+}
+
+.privacy-section p,
+.privacy-contact p {
+  margin: 0.45rem 0 0;
+}
+
+.privacy-section ul {
+  margin: 0.7rem 0 0;
+  padding-left: 1.2rem;
+}
+
+.privacy-section li + li {
+  margin-top: 0.4rem;
+}
+
+.privacy-contact {
+  display: flex;
+  gap: 0.9rem;
+  align-items: flex-start;
+  border-color: rgba(37, 99, 235, 0.28);
+}
+
+.privacy-contact svg {
+  flex: 0 0 auto;
+  color: #2563eb;
+  margin-top: 0.15rem;
+}
+
+.privacy-contact a {
+  color: #2563eb;
+  font-weight: 800;
+}
+
+@media (max-width: 860px) {
+  .privacy-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 560px) {
+  .privacy-page {
+    padding: 1rem;
+  }
+
+  .privacy-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .privacy-hero h1 {
+    font-size: clamp(2.1rem, 14vw, 3.7rem);
   }
 }

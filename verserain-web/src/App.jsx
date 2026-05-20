@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { Play, RotateCcw, Heart, Zap, Trophy, Crown, Star, Home, XCircle, Headphones, Music, VolumeX, Search, Share2, Dices, Mic, MicOff, Users, CloudRain, Info, Edit } from 'lucide-react';
+import { Play, RotateCcw, Heart, Zap, Trophy, Crown, Star, Home, XCircle, Headphones, Music, VolumeX, Search, Share2, Dices, Mic, MicOff, Users, CloudRain, Info, Edit, TreePine, Gamepad2, Map, Settings, Library, Volume2, Shuffle, Swords, ShoppingBasket, Apple, Mail, Lock, PartyPopper, Sprout, Leaf, RotateCw, Smartphone, Hourglass, Frown, X } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import usePartySocket from 'partysocket/react';
 import PartySocket from 'partysocket';
@@ -199,6 +199,11 @@ function speakText(text, rate = 1.0, lang = 'zh-TW') {
 
 const AUTO_PLAY_VERSE_PAUSE_MS = 2000;
 const AUTO_PLAY_REFERENCE_PAUSE_MS = 2000;
+const HIDDEN_PHRASE_MARK = '•';
+
+function maskPhraseForPreview(phrase = '') {
+  return String(phrase).replace(/[^\s.,?!;:，。？！；：]/g, HIDDEN_PHRASE_MARK);
+}
 
 function playShuffleSound() {
   initAudio();
@@ -2688,7 +2693,7 @@ export default function App() {
           }).catch(e => e);
 
           localStorage.setItem('verserain_invite_claimed', 'true');
-          setToast(`🎉 成功透過 ${inviter} 的邀請首次過關！雙方各獲 1 顆果子，推薦者額外獲得 5000 積分！`);
+          setToast(`成功透過 ${inviter} 的邀請首次過關！雙方各獲 1 顆果子，推薦者額外獲得 5000 積分！`);
           setTimeout(() => setToast(null), 4000);
         }
       }
@@ -6132,15 +6137,48 @@ const deDict = {
   }, [isMicOn, version]);
   */
 
+  const mixedScriptFallbackFontStack = "'Noto Sans Hebrew', 'Noto Sans', 'Vazirmatn', 'PingFang TC', 'PingFang SC', 'Noto Sans TC', 'Noto Sans SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Apple Color Emoji', 'Segoe UI Emoji', sans-serif";
+  const cjkDataFontStack = "'PingFang TC', 'PingFang SC', 'Noto Sans TC', 'Noto Sans SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Noto Sans', 'Apple Color Emoji', 'Segoe UI Emoji', sans-serif";
+  const simplifiedChineseFontStack = `'PingFang SC', 'Hiragino Sans GB', 'Noto Sans SC', 'Microsoft YaHei', -apple-system, BlinkMacSystemFont, 'Segoe UI', ${mixedScriptFallbackFontStack}`;
+  const traditionalChineseFontStack = `'PingFang TC', 'Noto Sans TC', -apple-system, BlinkMacSystemFont, 'Segoe UI', ${mixedScriptFallbackFontStack}`;
+  const japaneseFontStack = `'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Yu Gothic', YuGothic, 'Noto Sans JP', -apple-system, BlinkMacSystemFont, 'Segoe UI', ${mixedScriptFallbackFontStack}`;
+  const koreanFontStack = `'Apple SD Gothic Neo', 'Noto Sans KR', -apple-system, BlinkMacSystemFont, 'Segoe UI', ${mixedScriptFallbackFontStack}`;
+  const myanmarFontStack = `'Noto Sans Myanmar', 'Myanmar MN', 'Padauk', -apple-system, BlinkMacSystemFont, 'Segoe UI', ${mixedScriptFallbackFontStack}`;
+  const latinFontStack = `-apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', 'Helvetica Neue', Arial, ${mixedScriptFallbackFontStack}`;
+  const isActiveLanguage = (code) => uiLang === code || version === code;
+  const documentLang =
+    isActiveLanguage('ja') ? 'ja' :
+      isActiveLanguage('ko') ? 'ko' :
+        isActiveLanguage('fa') ? 'fa' :
+          isActiveLanguage('he') ? 'he' :
+            isActiveLanguage('es') ? 'es' :
+              isActiveLanguage('tr') ? 'tr' :
+                isActiveLanguage('de') ? 'de' :
+                  isActiveLanguage('my') ? 'my' :
+                    isActiveLanguage('vi') ? 'vi' :
+                      isActiveLanguage('cuvs') ? 'zh-Hans' :
+                        (isActiveLanguage('zh') || isActiveLanguage('cuv')) ? 'zh-Hant' :
+                          'en';
+  const activeFontStack =
+    isActiveLanguage('fa') ? `'Vazirmatn', Tahoma, Arial, ${mixedScriptFallbackFontStack}` :
+      isActiveLanguage('he') ? `'Noto Sans Hebrew', Tahoma, Arial, ${mixedScriptFallbackFontStack}` :
+        isActiveLanguage('ja') ? japaneseFontStack :
+          isActiveLanguage('ko') ? koreanFontStack :
+            isActiveLanguage('my') ? myanmarFontStack :
+              isActiveLanguage('cuvs') ? simplifiedChineseFontStack :
+                (isActiveLanguage('zh') || isActiveLanguage('cuv')) ? traditionalChineseFontStack :
+                  latinFontStack;
+  const scriptureQuoteMarks = ['zh-Hans', 'zh-Hant', 'ja'].includes(documentLang) ? ['「', '」'] : ['"', '"'];
+
   return (
     <>
       <div
-        dir={uiLang === 'fa' || uiLang === 'he' ? 'rtl' : 'ltr'}
+        lang={documentLang}
+        dir={isActiveLanguage('fa') || isActiveLanguage('he') ? 'rtl' : 'ltr'}
         style={{
-          fontFamily:
-            uiLang === 'fa' ? "'Vazirmatn', Tahoma, Arial, sans-serif" :
-              uiLang === 'he' ? "'Noto Sans Hebrew', Tahoma, Arial, sans-serif" :
-                undefined
+          fontFamily: activeFontStack,
+          '--app-font-family': activeFontStack,
+          '--control-font-family': activeFontStack
         }}
         className={performanceMode ? 'performance-mode' : ''}
       >
@@ -6220,7 +6258,7 @@ const deDict = {
         )}
 
         {gameState === 'menu' && (
-          <div style={{ position: 'relative', width: '100vw', height: '100dvh', overflowY: 'auto', WebkitOverflowScrolling: 'touch', backgroundColor: '#f4f6f8', zIndex: 10, fontFamily: 'Arial, sans-serif' }}>
+          <div style={{ position: 'relative', width: '100vw', height: '100dvh', overflowY: 'auto', WebkitOverflowScrolling: 'touch', backgroundColor: '#f4f6f8', zIndex: 10, fontFamily: 'var(--app-font-family)' }}>
 
             {/* Header */}
             <div className="landscape-compact-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#ffffff', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
@@ -6237,7 +6275,7 @@ const deDict = {
                   value={version}
                   onChange={(e) => handleVersionChange(e.target.value)}
                   title="語言 / Language / זבאن / שפה"
-                  style={{ padding: '0.3rem 0.5rem', borderRadius: '4px', border: '1px solid #cbd5e1', background: '#3b82f6', color: '#fff', fontWeight: 'bold', cursor: 'pointer', fontSize: '0.8rem' }}
+                  style={{ padding: '0.3rem 0.5rem', borderRadius: '4px', border: '1px solid #cbd5e1', background: '#3b82f6', color: '#fff', fontWeight: 'bold', cursor: 'pointer', fontSize: '0.8rem', fontFamily: 'var(--control-font-family)' }}
                 >
                   <option value="cuv">繁體中文</option>
                   <option value="cuvs">简体中文</option>
@@ -6279,27 +6317,27 @@ const deDict = {
 
             {/* Navigation Bar */}
             <div className="landscape-compact-nav" style={{ display: 'flex', backgroundColor: '#e2e8f0', color: '#334155', overflowX: 'auto', borderBottom: '2px solid #cbd5e1', gap: '0.8rem', alignItems: 'center' }}>
-              <div className="block-tile" onClick={() => setMainTab('lobby')} style={{ display: 'flex', alignItems: 'center', padding: '0.5rem 1.2rem', cursor: 'pointer', backgroundColor: mainTab === 'lobby' ? '#3b82f6' : 'white', color: mainTab === 'lobby' ? 'white' : '#475569', borderRadius: '20px', fontWeight: 'bold', whiteSpace: 'nowrap', transition: 'all 0.2s' }}>
-                🏠 {t('大廳', 'Home')}
+              <div className="block-tile" onClick={() => setMainTab('lobby')} style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', padding: '0.5rem 1.2rem', cursor: 'pointer', backgroundColor: mainTab === 'lobby' ? '#3b82f6' : 'white', color: mainTab === 'lobby' ? 'white' : '#475569', borderRadius: '20px', fontWeight: 'bold', whiteSpace: 'nowrap', transition: 'all 0.2s' }}>
+                <Home size={18} /> {t('大廳', 'Home')}
               </div>
-              <div className="block-tile" onClick={() => setMainTab('garden')} style={{ display: 'flex', alignItems: 'center', padding: '0.5rem 1.2rem', cursor: 'pointer', backgroundColor: mainTab === 'garden' ? '#10b981' : 'white', color: mainTab === 'garden' ? 'white' : '#475569', borderRadius: '20px', fontWeight: 'bold', whiteSpace: 'nowrap', transition: 'all 0.2s' }}>
-                🌳 {t('我的園子', 'My Garden')}
+              <div className="block-tile" onClick={() => setMainTab('garden')} style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', padding: '0.5rem 1.2rem', cursor: 'pointer', backgroundColor: mainTab === 'garden' ? '#10b981' : 'white', color: mainTab === 'garden' ? 'white' : '#475569', borderRadius: '20px', fontWeight: 'bold', whiteSpace: 'nowrap', transition: 'all 0.2s' }}>
+                <TreePine size={18} /> {t('我的園子', 'My Garden')}
               </div>
-              <div className="block-tile" onClick={() => setMainTab('multiplayer')} style={{ display: 'flex', alignItems: 'center', padding: '0.5rem 1.2rem', cursor: 'pointer', backgroundColor: mainTab === 'multiplayer' ? '#ec4899' : 'white', color: mainTab === 'multiplayer' ? 'white' : '#475569', borderRadius: '20px', fontWeight: 'bold', whiteSpace: 'nowrap', transition: 'all 0.2s' }}>
-                🎮 {t('團隊競賽', 'Team Competition')}
+              <div className="block-tile" onClick={() => setMainTab('multiplayer')} style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', padding: '0.5rem 1.2rem', cursor: 'pointer', backgroundColor: mainTab === 'multiplayer' ? '#ec4899' : 'white', color: mainTab === 'multiplayer' ? 'white' : '#475569', borderRadius: '20px', fontWeight: 'bold', whiteSpace: 'nowrap', transition: 'all 0.2s' }}>
+                <Gamepad2 size={18} /> {t('團隊競賽', 'Team Competition')}
               </div>
-              <div className="block-tile" onClick={() => { setMainTab('leaderboard'); fetchGlobalLeaderboard(); }} style={{ display: 'flex', alignItems: 'center', padding: '0.5rem 1.2rem', cursor: 'pointer', backgroundColor: mainTab === 'leaderboard' ? '#f59e0b' : 'white', color: mainTab === 'leaderboard' ? 'white' : '#475569', borderRadius: '20px', fontWeight: 'bold', whiteSpace: 'nowrap', transition: 'all 0.2s' }}>
-                🏆 {t('排行榜', 'Ranks')}
+              <div className="block-tile" onClick={() => { setMainTab('leaderboard'); fetchGlobalLeaderboard(); }} style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', padding: '0.5rem 1.2rem', cursor: 'pointer', backgroundColor: mainTab === 'leaderboard' ? '#f59e0b' : 'white', color: mainTab === 'leaderboard' ? 'white' : '#475569', borderRadius: '20px', fontWeight: 'bold', whiteSpace: 'nowrap', transition: 'all 0.2s' }}>
+                <Trophy size={18} /> {t('排行榜', 'Ranks')}
               </div>
-              <div className="block-tile" onClick={() => setMainTab('search')} style={{ display: 'flex', alignItems: 'center', padding: '0.5rem 1.2rem', cursor: 'pointer', backgroundColor: mainTab === 'search' ? '#8b5cf6' : 'white', color: mainTab === 'search' ? 'white' : '#475569', borderRadius: '20px', fontWeight: 'bold', whiteSpace: 'nowrap', transition: 'all 0.2s' }}>
-                🔍 {t('搜尋', 'Search')}
+              <div className="block-tile" onClick={() => setMainTab('search')} style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', padding: '0.5rem 1.2rem', cursor: 'pointer', backgroundColor: mainTab === 'search' ? '#8b5cf6' : 'white', color: mainTab === 'search' ? 'white' : '#475569', borderRadius: '20px', fontWeight: 'bold', whiteSpace: 'nowrap', transition: 'all 0.2s' }}>
+                <Search size={18} /> {t('搜尋', 'Search')}
               </div>
-              <div className="block-tile" onClick={() => { setMainTab('map'); }} style={{ display: 'flex', alignItems: 'center', padding: '0.5rem 1.2rem', cursor: 'pointer', backgroundColor: mainTab === 'map' ? '#0ea5e9' : 'white', color: mainTab === 'map' ? 'white' : '#475569', borderRadius: '20px', fontWeight: 'bold', whiteSpace: 'nowrap', transition: 'all 0.2s' }}>
-                🗺️ {t('地圖', 'Map')}
+              <div className="block-tile" onClick={() => { setMainTab('map'); }} style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', padding: '0.5rem 1.2rem', cursor: 'pointer', backgroundColor: mainTab === 'map' ? '#0ea5e9' : 'white', color: mainTab === 'map' ? 'white' : '#475569', borderRadius: '20px', fontWeight: 'bold', whiteSpace: 'nowrap', transition: 'all 0.2s' }}>
+                <Map size={18} /> {t('地圖', 'Map')}
               </div>
               <div style={{ flex: 1, minWidth: '20px' }}></div>
-              <div className="block-tile" onClick={() => setMainTab('advanced')} style={{ display: 'flex', alignItems: 'center', padding: '0.5rem 1.2rem', cursor: 'pointer', backgroundColor: mainTab === 'advanced' ? '#475569' : 'white', color: mainTab === 'advanced' ? 'white' : '#64748b', borderRadius: '20px', fontWeight: 'bold', whiteSpace: 'nowrap', transition: 'all 0.2s' }}>
-                ⚙️ {t('進階功能', 'Advanced')}
+              <div className="block-tile" onClick={() => setMainTab('advanced')} style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', padding: '0.5rem 1.2rem', cursor: 'pointer', backgroundColor: mainTab === 'advanced' ? '#475569' : 'white', color: mainTab === 'advanced' ? 'white' : '#64748b', borderRadius: '20px', fontWeight: 'bold', whiteSpace: 'nowrap', transition: 'all 0.2s' }}>
+                <Settings size={18} /> {t('進階功能', 'Advanced')}
               </div>
             </div>
 
@@ -6317,7 +6355,7 @@ const deDict = {
                       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1.2rem' }}>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', maxWidth: '650px', width: '100%' }}>
                           <p style={{ fontSize: '1.05rem', color: '#475569', lineHeight: '1.8', margin: 0, fontStyle: 'italic', textAlign: 'center' }}>
-                            「{randomRainVerse.text}」
+                            {scriptureQuoteMarks[0]}{randomRainVerse.text}{scriptureQuoteMarks[1]}
                           </p>
                           <div style={{ textAlign: 'right', paddingRight: '1rem' }}>
                             <span style={{ fontSize: '0.9rem', color: '#64748b', fontWeight: '600' }}>
@@ -6338,7 +6376,7 @@ const deDict = {
                             onMouseOut={(e) => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = '0 2px 6px rgba(59,130,246,0.3)'; }}
                             title={t('朗讀經文', 'Read aloud')}
                           >
-                            🔊 {t('讀經', 'Read')}
+                            <Volume2 size={17} /> {t('讀經', 'Read')}
                           </button>
                           <button
                             onClick={() => setRainVerseIndex(i => i + 1 + Math.floor(Math.random() * 5))}
@@ -6347,7 +6385,7 @@ const deDict = {
                             onMouseOut={(e) => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.background = 'white'; }}
                             title={t('換一句經文', 'Next verse')}
                           >
-                            🔀 {t('換一個', 'Next')}
+                            <Shuffle size={17} /> {t('換一個', 'Next')}
                           </button>
                           <button
                             onClick={() => {
@@ -6363,7 +6401,7 @@ const deDict = {
                             onMouseOut={(e) => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = '0 2px 6px rgba(239,68,68,0.3)'; }}
                             title={t('立刻挑戰這節經文', 'Challenge this verse now')}
                           >
-                            ⚔️ {t('挑戰', 'Play')}
+                            <Swords size={17} /> {t('挑戰', 'Play')}
                           </button>
                         </div>
 
@@ -6379,21 +6417,21 @@ const deDict = {
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.5rem', width: '100%' }}>
                     {/* Play Solo */}
                     <div className="primary-button" onClick={() => setMainTab('versesets')} style={{ background: 'linear-gradient(135deg, #60a5fa, #3b82f6)', borderRadius: '16px', padding: '2.5rem 2rem', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', color: 'white', textAlign: 'center' }}>
-                      <div style={{ fontSize: '4.5rem', marginBottom: '1rem' }}>👤</div>
+                      <Library size={72} style={{ marginBottom: '1rem' }} />
                       <h2 style={{ fontSize: '2rem', margin: 0, marginBottom: '0.5rem', textShadow: '0 2px 4px rgba(0,0,0,0.2)' }}>{t("經文庫", "Scripture Library")}</h2>
                       <p style={{ fontSize: '1rem', margin: 0, opacity: 0.9 }}>{t("瀏覽全球經文組，挑選經文開始練習。", "Browse global verse sets and choose scriptures to practice.")}</p>
                     </div>
 
                     {/* Host Party */}
                     <div className="primary-button" onClick={() => setMainTab('multiplayer')} style={{ background: 'linear-gradient(135deg, #f472b6, #ec4899)', borderRadius: '16px', padding: '2.5rem 2rem', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', color: 'white', textAlign: 'center' }}>
-                      <div style={{ fontSize: '4.5rem', marginBottom: '1rem' }}>👨‍👩‍👧‍👦</div>
+                      <Users size={72} style={{ marginBottom: '1rem' }} />
                       <h2 style={{ fontSize: '2rem', margin: 0, marginBottom: '0.5rem', textShadow: '0 2px 4px rgba(0,0,0,0.2)' }}>{t("團隊競賽", "Team Competition")}</h2>
                       <p style={{ fontSize: '1rem', margin: 0, opacity: 0.9 }}>{t("建立房間，分隊一起挑戰經文。", "Create a room and compete in teams.")}</p>
                     </div>
 
                     {/* My Garden */}
                     <div className="primary-button" onClick={() => setMainTab('garden')} style={{ background: 'linear-gradient(135deg, #34d399, #10b981)', borderRadius: '16px', padding: '2.5rem 2rem', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', color: 'white', textAlign: 'center' }}>
-                      <div style={{ fontSize: '4.5rem', marginBottom: '1rem' }}>🌳</div>
+                      <TreePine size={72} style={{ marginBottom: '1rem' }} />
                       <h2 style={{ fontSize: '2rem', margin: 0, marginBottom: '0.5rem', textShadow: '0 2px 4px rgba(0,0,0,0.2)' }}>{t("我的園子", "My Garden")}</h2>
                       <p style={{ fontSize: '1rem', margin: 0, opacity: 0.9 }}>{t("檢視你已經學會並種下生命樹的經文。", "View your living scripture trees.")}</p>
                     </div>
@@ -6445,20 +6483,24 @@ const deDict = {
 
               {mainTab === 'advanced' && (
                 <div style={{ paddingBottom: '3rem' }}>
-                  <h2 style={{ color: '#1e293b', marginBottom: '1.5rem', borderBottom: '2px solid #e2e8f0', paddingBottom: '0.8rem' }}>⚙️ {t("進階設定與學習", "Advanced Settings & Learning")}</h2>
+                  <h2 style={{ color: '#1e293b', marginBottom: '1.5rem', borderBottom: '2px solid #e2e8f0', paddingBottom: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <Settings size={30} /> {t("進階設定與學習", "Advanced Settings & Learning")}
+                  </h2>
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1rem', width: '100%' }}>
                     {[
-                      { id: 'kids', icon: '✨', label: '兒童冒險', desc: '給孩子使用的探險路線、拼圖模式與老師路線設計器' },
-                      { id: 'accessible', icon: '🦯', label: t('視障友善版', 'Accessible Version'), desc: t('高對比、鍵盤操作、語音提示與麥克風背誦流程', 'High contrast, keyboard controls, voice prompts, and microphone recitation') },
-                      { id: 'blindMode', icon: isBlindMode ? '👁️‍🗨️' : '🦯', label: isBlindMode ? t('關閉視障經文雨', 'Disable Blind Mode') : t('打開視障經文雨', 'Enable Blind Mode'), desc: t('為視覺障礙朋友設計的語音模式', 'Voice mode for visually impaired') },
-                      { id: 'performanceMode', icon: performanceMode ? '⚡' : '🔋', label: performanceMode ? t('關閉效能模式', 'Disable Performance Mode') : t('打開效能模式', 'Enable Performance Mode'), desc: t('關閉華麗特效以提升流暢度', 'Disable effects for better performance') },
-                      { id: 'debugMode', icon: isDebugMode ? '🐞' : '🐛', label: isDebugMode ? t('關閉 Debug', 'Disable Debug') : t('打開 Debug', 'Enable Debug'), desc: t('顯示除錯資訊', 'Show debug info') },
-                      { id: 'custom_verses', icon: '👑', label: t('我的專屬題庫', 'My Custom Sets'), desc: t('建立自訂經文組', 'Create custom sets') },
-                      { id: 'manual', icon: '📖', label: t('使用說明', 'Manual'), desc: t('操作詳解', 'Detailed instructions') },
-                      { id: 'about', icon: 'ℹ️', label: t('關於我們', 'About'), desc: t('VerseRain 開發資訊', 'Info & Credits') },
-                      { id: 'donate', link: 'https://www.skool.com/mutualizedeconomy/classroom', icon: '🔓', label: t('解鎖進階功能', 'Unlock Premium'), desc: t('加入進階群組', 'Join Premium Community') },
-                      { id: 'feedback', link: 'mailto:hungry4grace@gmail.com?cc=samhsiung@gmail.com,davidhwang1125@gmail.com,hsiungsam@gmail.com', icon: '✉️', label: t('意見回饋', 'Feedback'), desc: t('聯絡與建議', 'Bugs & Suggestions') }
-                    ].map(item => (
+                      { id: 'kids', Icon: Star, label: '兒童冒險', desc: '給孩子使用的探險路線、拼圖模式與老師路線設計器', color: '#f59e0b' },
+                      { id: 'accessible', Icon: Headphones, label: t('視障友善版', 'Accessible Version'), desc: t('高對比、鍵盤操作、語音提示與麥克風背誦流程', 'High contrast, keyboard controls, voice prompts, and microphone recitation'), color: '#0ea5e9' },
+                      { id: 'blindMode', Icon: Mic, label: isBlindMode ? t('關閉視障經文雨', 'Disable Blind Mode') : t('打開視障經文雨', 'Enable Blind Mode'), desc: t('為視覺障礙朋友設計的語音模式', 'Voice mode for visually impaired'), color: '#8b5cf6' },
+                      { id: 'performanceMode', Icon: Zap, label: performanceMode ? t('關閉效能模式', 'Disable Performance Mode') : t('打開效能模式', 'Enable Performance Mode'), desc: t('關閉華麗特效以提升流暢度', 'Disable effects for better performance'), color: '#22c55e' },
+                      { id: 'debugMode', Icon: Settings, label: isDebugMode ? t('關閉 Debug', 'Disable Debug') : t('打開 Debug', 'Enable Debug'), desc: t('顯示除錯資訊', 'Show debug info'), color: '#64748b' },
+                      { id: 'custom_verses', Icon: Crown, label: t('我的專屬題庫', 'My Custom Sets'), desc: t('建立自訂經文組', 'Create custom sets'), color: '#a855f7' },
+                      { id: 'manual', Icon: Library, label: t('使用說明', 'Manual'), desc: t('操作詳解', 'Detailed instructions'), color: '#3b82f6' },
+                      { id: 'about', Icon: Info, label: t('關於我們', 'About'), desc: t('VerseRain 開發資訊', 'Info & Credits'), color: '#14b8a6' },
+                      { id: 'donate', link: 'https://www.skool.com/mutualizedeconomy/classroom', Icon: Lock, label: t('解鎖進階功能', 'Unlock Premium'), desc: t('加入進階群組', 'Join Premium Community'), color: '#f97316' },
+                      { id: 'feedback', link: 'mailto:hungry4grace@gmail.com?cc=samhsiung@gmail.com,davidhwang1125@gmail.com,hsiungsam@gmail.com', Icon: Mail, label: t('意見回饋', 'Feedback'), desc: t('聯絡與建議', 'Bugs & Suggestions'), color: '#ec4899' }
+                    ].map(item => {
+                      const Icon = item.Icon;
+                      return (
                       <div key={item.id} className="block-tile" onClick={() => {
                         if (item.id === 'blindMode') {
                           const n = !isBlindMode;
@@ -6480,19 +6522,21 @@ const deDict = {
                         setMainTab(item.id);
                         if (item.id === 'leaderboard') fetchGlobalLeaderboard();
                       }} style={{ background: 'white', borderRadius: '12px', padding: '1.5rem', border: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', gap: '1rem', cursor: 'pointer' }}>
-                        <div style={{ fontSize: '2.5rem' }}>{item.icon}</div>
+                        <div style={{ color: item.color, width: '2.75rem', height: '2.75rem', display: 'grid', placeItems: 'center', flexShrink: 0 }}>
+                          <Icon size={40} strokeWidth={2.2} />
+                        </div>
                         <div>
                           <h3 style={{ margin: 0, color: '#1e293b', fontSize: '1.2rem', marginBottom: '0.2rem' }}>{item.label}</h3>
                           <p style={{ margin: 0, color: '#64748b', fontSize: '0.95rem' }}>{item.desc}</p>
                         </div>
                       </div>
-                    ))}
+                    )})}
                   </div>
 
                   {/* Voice Picker */}
                   <div style={{ marginTop: '1.5rem', background: 'white', borderRadius: '12px', padding: '1.5rem', border: '1px solid #e2e8f0' }}>
                     <h3 style={{ margin: '0 0 0.8rem 0', color: '#1e293b', fontSize: '1.1rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      🔊 {t('朗讀語音設定', 'Text-to-Speech Voice')}
+                      <Volume2 size={20} /> {t('朗讀語音設定', 'Text-to-Speech Voice')}
                     </h3>
                     <p style={{ margin: '0 0 0.8rem 0', color: '#64748b', fontSize: '0.9rem' }}>
                       {t('選擇你喜歡的語音，首頁「讀經」及遊戲中的語音都會使用此設定。', 'Choose your preferred voice for the Read button and in-game speech.')}
@@ -6518,7 +6562,7 @@ const deDict = {
                             return v.lang.startsWith(lang);
                           })
                           .map(v => (
-                            <option key={v.name} value={v.name}>{v.name} {v.localService ? '' : '☁️'}</option>
+                            <option key={v.name} value={v.name}>{v.name} {v.localService ? '' : '(Cloud)'}</option>
                           ))}
                       </select>
                       <button
@@ -6528,12 +6572,12 @@ const deDict = {
                         }}
                         style={{ background: 'linear-gradient(135deg, #60a5fa, #3b82f6)', color: 'white', border: 'none', padding: '0.5rem 1.2rem', borderRadius: '8px', fontSize: '0.9rem', cursor: 'pointer', fontWeight: '600', whiteSpace: 'nowrap' }}
                       >
-                        🔊 {t('試聽', 'Preview')}
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}><Volume2 size={16} /> {t('試聽', 'Preview')}</span>
                       </button>
                     </div>
                     {localStorage.getItem('verseRain_voiceName') && (
-                      <p style={{ margin: '0.6rem 0 0 0', color: '#16a34a', fontSize: '0.85rem', fontWeight: '500' }}>
-                        ✅ {t('已記住你的語音偏好，下次回來會自動使用。', 'Your voice preference is saved and will be used automatically.')}
+                      <p style={{ margin: '0.6rem 0 0 0', color: '#16a34a', fontSize: '0.85rem', fontWeight: '500', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                        <Info size={16} /> {t('已記住你的語音偏好，下次回來會自動使用。', 'Your voice preference is saved and will be used automatically.')}
                       </p>
                     )}
                   </div>
@@ -6543,15 +6587,15 @@ const deDict = {
               {mainTab === 'custom_verses' && (
                 <div style={{ backgroundColor: '#ffffff', borderRadius: '8px', border: '1px solid #cbd5e1', padding: '2rem', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-                    <h2 style={{ color: '#1e293b', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>👑 {t("我的專屬題庫", "My Custom Sets")}</h2>
-                    <div style={{ background: '#f8fafc', border: '1px solid #cbd5e1', padding: '0.3rem 0.6rem', borderRadius: '4px', fontSize: '0.85rem', color: hasPremiumAccess ? '#fbbf24' : '#64748b', fontWeight: 'bold' }}>
-                      {isPremium ? t("✨ Premium 認證", "✨ Premium Active") : (skoolLevel.level >= 3 ? t(`🌟 Lv.${skoolLevel.level} 權限解鎖`, `🌟 Lv.${skoolLevel.level} Unlocked`) : t("🔒 基本帳號", "🔒 Basic Account"))}
+                    <h2 style={{ color: '#1e293b', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Crown size={28} /> {t("我的專屬題庫", "My Custom Sets")}</h2>
+                    <div style={{ background: '#f8fafc', border: '1px solid #cbd5e1', padding: '0.3rem 0.6rem', borderRadius: '4px', fontSize: '0.85rem', color: hasPremiumAccess ? '#fbbf24' : '#64748b', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                      {isPremium ? <><Star size={16} /> {t("Premium 認證", "Premium Active")}</> : (skoolLevel.level >= 3 ? <><Star size={16} /> {t(`Lv.${skoolLevel.level} 權限解鎖`, `Lv.${skoolLevel.level} Unlocked`)}</> : <><Lock size={16} /> {t("基本帳號", "Basic Account")}</>)}
                     </div>
                   </div>
 
                   {!hasPremiumAccess ? (
                     <div style={{ textAlign: 'center', padding: '3rem 1rem', background: 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-                      <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>🔒</div>
+                      <div style={{ marginBottom: '1rem', color: '#64748b' }}><Lock size={64} /></div>
                       <h3 style={{ color: '#334155', marginBottom: '1rem' }}>{t("解鎖自訂經文組功能！", "Unlock Custom Verse Sets!")}</h3>
                       <p style={{ color: '#64748b', marginBottom: '1rem', maxWidth: '400px', margin: '0 auto 1rem', lineHeight: '1.6' }}>
                         {t("你目前還沒有權限建立專屬題庫。有兩種方式可以解鎖：", "You do not have access to create custom verse sets. There are two ways to unlock this:")}
@@ -6570,7 +6614,7 @@ const deDict = {
                         <div>
                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
                             <h3 style={{ margin: 0, color: '#3b82f6' }}>{editingCustomSet.id ? t("編輯題庫", "Edit Set") : t("新增題庫", "New Set")}</h3>
-                            <button type="button" onClick={() => setEditingCustomSet(null)} style={{ background: 'transparent', border: 'none', color: '#64748b', cursor: 'pointer', fontWeight: 'bold' }}>✕ {t("取消", "Cancel")}</button>
+                            <button type="button" onClick={() => setEditingCustomSet(null)} style={{ background: 'transparent', border: 'none', color: '#64748b', cursor: 'pointer', fontWeight: 'bold', display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }}><X size={16} /> {t("取消", "Cancel")}</button>
                           </div>
 
 
@@ -6670,14 +6714,14 @@ const deDict = {
                               return (
                                 <div key={idx} style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.8rem', alignItems: 'flex-start', position: 'relative' }}>
                                   <button type="button" onClick={() => setBookPickerIdx(bookPickerIdx === idx ? null : idx)}
-                                    style={{ padding: '0.5rem 0.7rem', borderRadius: '4px', border: '1px solid #cbd5e1', background: v.book ? '#3b82f6' : '#f1f5f9', color: v.book ? '#fff' : '#475569', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.85rem', whiteSpace: 'nowrap', minWidth: '50px', textAlign: 'center' }}>
-                                    {v.book ? getBookAbbr(BIBLE_BOOKS.find(b => b.id === v.book), version) : '📖'}
+                                    style={{ padding: '0.5rem 0.7rem', borderRadius: '4px', border: '1px solid #cbd5e1', background: v.book ? '#3b82f6' : '#f1f5f9', color: v.book ? '#fff' : '#475569', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.85rem', whiteSpace: 'nowrap', minWidth: '50px', textAlign: 'center', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '0.25rem' }}>
+                                    {v.book ? getBookAbbr(BIBLE_BOOKS.find(b => b.id === v.book), version) : <Library size={16} />}
                                   </button>
 
                                   {bookPickerIdx === idx && (
                                     <div style={{ position: 'absolute', top: '100%', left: 0, zIndex: 100, background: '#1e293b', borderRadius: '8px', padding: '0.8rem', boxShadow: '0 10px 30px rgba(0,0,0,0.4)', width: '320px', maxHeight: '400px', overflowY: 'auto' }}>
                                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-                                        <span style={{ color: '#10b981', fontWeight: 'bold', fontSize: '0.9rem' }}>📖 {t("選擇書卷", "Books")}</span>
+                                        <span style={{ color: '#10b981', fontWeight: 'bold', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.35rem' }}><Library size={16} /> {t("選擇書卷", "Books")}</span>
                                         <button type="button" onClick={() => setBookPickerIdx(null)} style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer', fontWeight: 'bold' }}>{t("取消", "Cancel")}</button>
                                       </div>
                                       <div style={{ color: '#e2e8f0', fontWeight: 'bold', fontSize: '0.85rem', padding: '0.3rem 0', borderBottom: '1px solid rgba(255,255,255,0.1)', marginBottom: '0.3rem' }}>{t("舊約", "Old Testament")}</div>
@@ -6876,7 +6920,7 @@ const deDict = {
                                     }} style={{ background: '#fee2e2', border: '1px solid #fca5a5', padding: '0.4rem 0.8rem', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', color: '#ef4444' }}>{t("刪除", "Delete")}</button>
                                   </div>
                                   <h3 style={{ margin: '0 0 0.5rem 0', color: '#1e293b', paddingRight: '120px' }}>{set.title}</h3>
-                                  <div style={{ color: '#64748b', fontSize: '0.9rem', marginBottom: '1rem' }} dangerouslySetInnerHTML={{ __html: set.description }} />
+                                  <div className="ql-editor-content" style={{ color: '#64748b', fontSize: '0.9rem', marginBottom: '1rem' }} dangerouslySetInnerHTML={{ __html: set.description }} />
                                   <div style={{ color: '#3b82f6', fontSize: '0.85rem', fontWeight: 'bold' }}>{set.verses?.length || 0} {t("節經文", "verses")}</div>
                                 </div>
                               ))}
@@ -6891,18 +6935,33 @@ const deDict = {
 
               {mainTab === 'multiplayer' && (
                 <div style={{ backgroundColor: '#ffffff', borderRadius: '8px', border: '1px solid #cbd5e1', padding: '2rem', boxShadow: '0 1px 3px rgba(0,0,0,0.05)', textAlign: 'center' }}>
-                  <h2 style={{ color: '#1e293b', marginTop: 0, marginBottom: '1.5rem', fontFamily: 'cursive', color: '#8b5cf6' }}>{(multiplayerState?.matchType === 'individual' || multiplayerRoomMode === 'individual') ? t("邀人PK", "Invite PK") : t("團隊競賽", "Team Competition")}</h2>
+                  <h2 style={{ marginTop: 0, marginBottom: '1.5rem', fontFamily: 'var(--app-font-family)', color: '#8b5cf6' }}>{(multiplayerState?.matchType === 'individual' || multiplayerRoomMode === 'individual') ? t("邀人PK", "Invite PK") : t("團隊競賽", "Team Competition")}</h2>
 
                   {!playerName ? (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', alignItems: 'center', background: '#f8fafc', padding: '2rem', borderRadius: '16px', border: '2px dashed #cbd5e1' }}>
                       <h3 style={{ color: '#475569', margin: 0, fontSize: '1.5rem' }}>{t("請先告訴我們你的名字！", "First, what's your name?")}</h3>
                       <p style={{ color: '#94a3b8', margin: 0 }}>{t("選一個頭像，或直接輸入文字", "Pick an avatar, or just type your name")}</p>
                       <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', justifyContent: 'center', maxWidth: '350px' }}>
-                        {['🦁', '🐶', '🐰', '🐱', '🐸', '🐼', '🦊', '🐵', '🦄', '🦖', '🐙', '🦋'].map(emj => (
-                          <div key={emj} className="block-tile" onClick={() => {
+                        {[
+                          { id: 'brave', label: t('勇敢', 'Brave'), Icon: Crown, color: '#f59e0b' },
+                          { id: 'joy', label: t('喜樂', 'Joy'), Icon: Star, color: '#f97316' },
+                          { id: 'team', label: t('隊友', 'Teammate'), Icon: Users, color: '#3b82f6' },
+                          { id: 'quick', label: t('快手', 'Quick'), Icon: Zap, color: '#eab308' },
+                          { id: 'learner', label: t('學習', 'Learner'), Icon: Library, color: '#8b5cf6' },
+                          { id: 'love', label: t('愛心', 'Love'), Icon: Heart, color: '#ef4444' },
+                          { id: 'listener', label: t('聆聽', 'Listener'), Icon: Headphones, color: '#06b6d4' },
+                          { id: 'rain', label: t('雨滴', 'Rain'), Icon: CloudRain, color: '#0ea5e9' }
+                        ].map(({ id, label, Icon, color }) => (
+                          <button key={id} type="button" className="block-tile" onClick={() => {
                             const input = document.getElementById('guestNameInput');
-                            if (!input.value.includes(emj)) input.value = emj + " " + input.value;
-                          }} style={{ fontSize: '2rem', cursor: 'pointer', padding: '0.5rem', background: 'white', borderRadius: '12px', border: '1px solid #e2e8f0' }}>{emj}</div>
+                            if (input) {
+                              input.value = label;
+                              input.focus();
+                            }
+                          }} style={{ cursor: 'pointer', padding: '0.65rem', background: 'white', borderRadius: '12px', border: '1px solid #e2e8f0', color, minWidth: '72px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.25rem' }}>
+                            <Icon size={26} />
+                            <span style={{ color: '#475569', fontSize: '0.75rem', fontWeight: 700 }}>{label}</span>
+                          </button>
                         ))}
                       </div>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem', width: '100%', maxWidth: '300px', marginTop: '1rem' }}>
@@ -7018,7 +7077,7 @@ const deDict = {
                               {t('請確認房間代碼是否正確', 'Please check the room code and try again')}
                             </div>
                           </div>
-                          <button onClick={() => setJoinRoomError(null)} style={{ marginLeft: 'auto', background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer', fontSize: '1rem', padding: '0 0.2rem' }}>✕</button>
+                          <button onClick={() => setJoinRoomError(null)} style={{ marginLeft: 'auto', background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer', fontSize: '1rem', padding: '0 0.2rem' }}><X size={16} /></button>
                         </div>
                       )}
                     </div>
@@ -7092,8 +7151,8 @@ const deDict = {
                       )}
 
                       {multiplayerState.host !== myClientId && !multiplayerState.players[myClientId]?.isReady && (
-                        <div style={{ textAlign: 'center', marginTop: '1rem', color: '#3b82f6', fontWeight: 'bold', fontSize: '1.05rem', backgroundColor: '#eff6ff', padding: '0.6rem 1rem', borderRadius: '8px', border: '1px solid #bfdbfe' }}>
-                          👉 {multiplayerState.matchType === 'team' && !multiplayerState.players[myClientId]?.teamId ? t("請先選一個隊伍", "Choose one team first") : t("如果你準備好了，請按下「我準備好了」的鍵", "If you are ready, please press the 'I am ready' button")} 👈
+                        <div style={{ textAlign: 'center', marginTop: '1rem', color: '#3b82f6', fontWeight: 'bold', fontSize: '1.05rem', backgroundColor: '#eff6ff', padding: '0.6rem 1rem', borderRadius: '8px', border: '1px solid #bfdbfe', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem' }}>
+                          <Info size={18} /> {multiplayerState.matchType === 'team' && !multiplayerState.players[myClientId]?.teamId ? t("請先選一個隊伍", "Choose one team first") : t("如果你準備好了，請按下「我準備好了」的鍵", "If you are ready, please press the 'I am ready' button")}
                         </div>
                       )}
 
@@ -7195,7 +7254,7 @@ const deDict = {
                       {/* ── Search Bar ── */}
                       <div style={{ marginBottom: '1rem' }}>
                         <div style={{ position: 'relative' }}>
-                          <span style={{ position: 'absolute', left: '0.9rem', top: '50%', transform: 'translateY(-50%)', fontSize: '1.1rem', pointerEvents: 'none' }}>🔍</span>
+                          <span style={{ position: 'absolute', left: '0.9rem', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: '#94a3b8', display: 'flex', alignItems: 'center' }}><Search size={18} /></span>
                           <input
                             id="mpVerseSearchInput"
                             type="text"
@@ -7206,7 +7265,7 @@ const deDict = {
                             style={{ width: '100%', padding: '0.75rem 0.9rem 0.75rem 2.4rem', borderRadius: '8px', border: '2px solid #a78bfa', fontSize: '1rem', outline: 'none', boxSizing: 'border-box', boxShadow: '0 0 0 3px #ede9fe' }}
                           />
                           {multiplayerSearchText && (
-                            <button onClick={() => setMultiplayerSearchText('')} style={{ position: 'absolute', right: '0.7rem', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', fontSize: '1.1rem', padding: '0' }}>✕</button>
+                            <button onClick={() => setMultiplayerSearchText('')} style={{ position: 'absolute', right: '0.7rem', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', fontSize: '1.1rem', padding: '0' }}><X size={18} /></button>
                           )}
                         </div>
                       </div>
@@ -7263,7 +7322,10 @@ const deDict = {
                                     onMouseOver={(e) => e.currentTarget.style.background = '#ede9fe'}
                                     onMouseOut={(e) => e.currentTarget.style.background = '#f8fafc'}
                                   >
-                                    {customVerseSets.some(c => c.id === set.id) ? '👑 ' : ''}{set.title}
+                                    <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '0.35rem' }}>
+                                      {customVerseSets.some(c => c.id === set.id) && <Crown size={16} />}
+                                      {set.title}
+                                    </span>
                                     <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.4rem', fontWeight: 'normal' }}>{set.verses?.length || 0} {t('節', 'verses')}</div>
                                   </button>
                                 ))}
@@ -7309,7 +7371,7 @@ const deDict = {
                             onClick={() => setShowPickerBrowser(v => !v)}
                             style={{ width: '100%', background: '#f1f5f9', border: '1px dashed #cbd5e1', borderRadius: '8px', padding: '0.75rem 1rem', cursor: 'pointer', color: '#64748b', fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.95rem' }}
                           >
-                            <span>📚 {t('瀏覽經文組', 'Browse Verse Sets')}</span>
+                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}><Library size={16} /> {t('瀏覽經文組', 'Browse Verse Sets')}</span>
                             <span style={{ fontSize: '0.8rem' }}>{showPickerBrowser ? '▲' : '▼'}</span>
                           </button>
                           {showPickerBrowser && (
@@ -7323,7 +7385,10 @@ const deDict = {
                                     onMouseOver={(e) => e.currentTarget.style.background = '#ede9fe'}
                                     onMouseOut={(e) => e.currentTarget.style.background = '#f8fafc'}
                                   >
-                                    {customVerseSets.some(c => c.id === set.id) ? '👑 ' : ''}{set.title}
+                                    <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '0.35rem' }}>
+                                      {customVerseSets.some(c => c.id === set.id) && <Crown size={16} />}
+                                      {set.title}
+                                    </span>
                                     <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.4rem', fontWeight: 'normal' }}>{set.verses?.length || 0} {t('節', 'verses')}</div>
                                   </button>
                                 ))}
@@ -7527,7 +7592,7 @@ const deDict = {
                         <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
                           <thead>
                             <tr style={{ backgroundColor: '#f8fafc', color: '#475569', fontSize: '0.9rem' }}>
-                              <th style={{ padding: '1rem', borderBottom: '2px solid #e2e8f0', width: '50px' }}>📁</th>
+                              <th style={{ padding: '1rem', borderBottom: '2px solid #e2e8f0', width: '50px' }}><Library size={18} /></th>
                               <th style={{ padding: '1rem', borderBottom: '2px solid #e2e8f0' }}>{t("標題", "Title")}</th>
                               <th style={{ padding: '1rem', borderBottom: '2px solid #e2e8f0' }}>{t("作者", "Author")}</th>
                               <th style={{ padding: '1rem', borderBottom: '2px solid #e2e8f0', textAlign: 'right' }}>{t("點閱次數", "Views")}</th>
@@ -7570,7 +7635,7 @@ const deDict = {
                                   fetch("https://verserain-party.hungry4grace.partykit.dev/parties/main/global-auth-db/custom-sets/view", { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: set.id }) }).catch(e => e);
                                   setViewCounts(prev => ({ ...prev, [set.id]: (prev[set.id] || 0) + 1 }));
                                 }} onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#eff6ff'} onMouseOut={(e) => e.currentTarget.style.backgroundColor = i % 2 === 0 ? '#ffffff' : '#f8fafc'}>
-                                  <td style={{ padding: '1rem', textAlign: 'center', color: '#3b82f6', fontSize: '1.2rem' }}>{customVerseSets.some(c => c.id === set.id) ? '👑' : '📁'}</td>
+                                  <td style={{ padding: '1rem', textAlign: 'center', color: '#3b82f6', fontSize: '1.2rem' }}>{customVerseSets.some(c => c.id === set.id) ? <Crown size={22} /> : <Library size={22} />}</td>
                                   <td style={{ padding: '1rem', fontWeight: 'bold', color: '#1e293b', fontSize: '1.05rem' }}>
                                     <span>{set.title}</span>
                                     {isAdmin && !customVerseSets.some(c => c.id === set.id) && (
@@ -7993,14 +8058,14 @@ const deDict = {
 
               {mainTab === 'garden' && (
                 <div style={{ backgroundColor: '#ffffff', borderRadius: '8px', border: '1px solid #cbd5e1', padding: '1.5rem', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
-                  <h2 style={{ color: '#1e293b', marginTop: 0, marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '10px' }}>🌳 {t("我的園子", "My Garden")}</h2>
+                  <h2 style={{ color: '#1e293b', marginTop: 0, marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '10px' }}><TreePine size={28} color="#10b981" /> {t("我的園子", "My Garden")}</h2>
                   <p style={{ color: '#64748b', fontSize: '0.9rem', marginBottom: '1rem' }}>
-                    {t("每挑戰一節新經文，就會在空地上長出嫩芽。持續練習讓它長大！通過經文變成大樹，創新高則結出果子🍎", "Each new verse you challenge sprouts a seedling. Keep practicing to grow it! Clearing a verse makes it a full tree; new high scores bear fruit 🍎")}
+                    {t("每挑戰一節新經文，就會在空地上長出嫩芽。持續練習讓它長大！通過經文變成大樹，創新高則結出果子。", "Each new verse you challenge sprouts a seedling. Keep practicing to grow it! Clearing a verse makes it a full tree; new high scores bear fruit.")}
                   </p>
 
                   {/* My Harvest Basket Header */}
                   <div style={{ background: 'linear-gradient(135deg, #fffbeb, #fef3c7)', padding: '2rem', borderRadius: '16px', border: '1px solid #fde68a', marginBottom: '2rem', textAlign: 'center', boxShadow: '0 4px 10px rgba(0,0,0,0.05)' }}>
-                    <div style={{ fontSize: '4rem', marginBottom: '0.5rem', animation: 'bounce 2s infinite' }}>🧺</div>
+                    <ShoppingBasket size={64} color="#d97706" style={{ marginBottom: '0.5rem', animation: 'bounce 2s infinite' }} />
                     <h3 style={{ margin: 0, fontSize: '1.8rem', color: '#b45309', marginBottom: '0.5rem' }}>{t("我的收成", "My Harvest")}</h3>
                     <p style={{ margin: 0, color: '#92400e', fontSize: '1.1rem', marginBottom: '1.5rem' }}>
                       {t("過關斬將結出果子，提升你的互惠階級！", "Clear verses to bear fruit and level up!")}
@@ -8014,9 +8079,9 @@ const deDict = {
                             onClick={() => setShowFruitInfo(true)}
                             title={t("查看果子來源說明", "How are fruits counted?")}
                             style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '0', lineHeight: '1', fontSize: '1rem', animation: 'pulse 2s infinite', display: 'flex', alignItems: 'center', color: '#94a3b8' }}
-                          >ⓘ</button>
+                          ><Info size={16} /></button>
                         </span>
-                        <span style={{ fontSize: '2.5rem', fontWeight: 'bold', color: '#d97706', lineHeight: '1' }}>{totalFruits} <span style={{ fontSize: '1.5rem' }}>🍎</span></span>
+                        <span style={{ fontSize: '2.5rem', fontWeight: 'bold', color: '#d97706', lineHeight: '1', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>{totalFruits} <Apple size={28} /></span>
                       </div>
                       <button
                         onClick={() => setShowLevelInfo(true)}
@@ -8025,7 +8090,7 @@ const deDict = {
                         style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '0.5rem 1rem', background: 'transparent', border: 'none', cursor: 'pointer', transition: 'all 0.2s', borderRadius: '12px' }}
                       >
                         <span style={{ fontSize: '0.9rem', color: '#94a3b8', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                          {t("目前階級", "Current Level")} <span style={{ fontSize: '1rem', animation: 'pulse 2s infinite' }}>ℹ️</span>
+                          {t("目前階級", "Current Level")} <Info size={16} style={{ animation: 'pulse 2s infinite' }} />
                         </span>
                         <span style={{ fontSize: '1.5rem', fontWeight: 'bold', color: skoolLevel.level >= 3 ? '#8b5cf6' : '#2563eb' }}>
                           Lv.{skoolLevel.level} {t(skoolLevel.title, skoolLevel.enTitle)}
@@ -8037,7 +8102,7 @@ const deDict = {
                       <div style={{ marginTop: '1.5rem', maxWidth: '400px', margin: '1.5rem auto 0' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', color: '#92400e', marginBottom: '0.3rem', fontWeight: 'bold' }}>
                           <span>Lv.{skoolLevel.level}</span>
-                          <span>Lv.{skoolLevel.level + 1} ({skoolLevel.next}🍎)</span>
+                          <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>Lv.{skoolLevel.level + 1} ({skoolLevel.next}<Apple size={14} />)</span>
                         </div>
                         <div style={{ width: '100%', height: '14px', background: '#fef3c7', border: '1px solid #fde68a', borderRadius: '10px', overflow: 'hidden' }}>
                           <div style={{ width: `${Math.min(100, (totalFruits / skoolLevel.next) * 100)}%`, height: '100%', background: 'linear-gradient(90deg, #fbbf24, #f59e0b)', transition: 'width 1s ease-in-out' }} />
@@ -8050,12 +8115,12 @@ const deDict = {
                       return (
                         <div style={{ marginTop: '2rem', padding: '1.5rem', background: 'linear-gradient(135deg, #ede9fe, #ddd6fe)', borderRadius: '12px', border: '1px solid #c4b5fd', animation: dismissed ? 'none' : 'flashSuccess 1s ease-in-out 3', position: 'relative' }}>
                           {!dismissed && (
-                            <div style={{ position: 'absolute', top: '8px', right: '12px', cursor: 'pointer', fontSize: '1.2rem', color: '#7c3aed', opacity: 0.6 }}
+                            <div style={{ position: 'absolute', top: '8px', right: '12px', cursor: 'pointer', color: '#7c3aed', opacity: 0.6 }}
                               onClick={(e) => { e.stopPropagation(); localStorage.setItem('verseRain_customSetUnlockSeen', 'true'); setToast(t('已知悉', 'Got it!')); }}
                               title={t('不再提醒', 'Dismiss')}
-                            >✕</div>
+                            ><X size={20} /></div>
                           )}
-                          <div style={{ fontSize: '2.5rem', marginBottom: '0.5rem' }}>🎉</div>
+                          <PartyPopper size={44} color="#7c3aed" style={{ marginBottom: '0.5rem' }} />
                           <h4 style={{ margin: 0, color: '#5b21b6', fontSize: '1.3rem', marginBottom: '0.5rem', fontWeight: 'bold' }}>
                             {t("恭喜！你已解鎖專屬題庫功能！", "Congratulations! Custom Sets Unlocked!")}
                           </h4>
@@ -8069,7 +8134,7 @@ const deDict = {
                     {/* Gamification Invite Block (Unlocked for Lv.2+, Teaser for Lv.1) */}
                     <div style={{ marginTop: '2rem', padding: '1.5rem', background: '#f8fafc', borderRadius: '12px', border: '1px solid #e2e8f0', textAlign: 'left', position: 'relative', overflow: 'hidden' }}>
                       <h4 style={{ margin: 0, color: skoolLevel.level >= 2 ? '#10b981' : '#94a3b8', fontSize: '1.3rem', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <span style={{ fontSize: '1.5rem' }}>📨</span> {t("邀請朋友一起玩", "Invite Friends to Play")}
+                        <Mail size={24} /> {t("邀請朋友一起玩", "Invite Friends to Play")}
                       </h4>
 
                       {skoolLevel.level >= 2 ? (
@@ -8111,9 +8176,9 @@ const deDict = {
                             {t("想要擁有你的個人推薦碼並賺取推廣點數嗎？", "Want to get your personal invite code and earn referral points?")}
                           </p>
                           <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: '#f1f5f9', padding: '0.6rem 1rem', borderRadius: '8px', border: '1px dashed #cbd5e1' }}>
-                            <span>🔒</span>
+                            <Lock size={18} />
                             <span style={{ color: '#475569', fontSize: '0.95rem' }}>
-                              {t("再結出 ", "Bear ")} <strong>{2 - totalFruits}</strong> {t(" 個果子 🍎，達到 Lv.2 即可解鎖個人專屬連結！", " more fruits 🍎 to reach Lv.2 and unlock your invite link!")}
+                              {t("再結出 ", "Bear ")} <strong>{2 - totalFruits}</strong> {t(" 個果子，達到 Lv.2 即可解鎖個人專屬連結！", " more fruits to reach Lv.2 and unlock your invite link!")}
                             </span>
                           </div>
                         </div>
@@ -8169,9 +8234,7 @@ const deDict = {
                                   filter: 'drop-shadow(0 2px 2px rgba(0,0,0,0.4))',
                                   zIndex: 2,
                                   pointerEvents: 'none',
-                                }}>
-                                  🍎
-                                </div>
+                                }}><Apple size={14} fill="#dc2626" color="#b91c1c" /></div>
                               ))}
                             </div>
                             {fruits > 9 && (
@@ -8207,19 +8270,19 @@ const deDict = {
                         {/* Stats bar */}
                         <div style={{ display: 'flex', gap: '1.5rem', marginBottom: '1rem', flexWrap: 'wrap' }}>
                           <div style={{ padding: '0.5rem 1rem', background: '#f0fdf4', borderRadius: '8px', border: '1px solid #bbf7d0', color: '#0f172a', fontWeight: '500' }}>
-                            🌱 {t("種植", "Planted")}: <strong>{treeCount}</strong>
+                            <Sprout size={18} /> {t("種植", "Planted")}: <strong>{treeCount}</strong>
                           </div>
                           <div style={{ padding: '0.5rem 1rem', background: '#f0fdf4', borderRadius: '8px', border: '1px solid #bbf7d0', color: '#4c1d95', fontWeight: '500' }}>
-                            🌳 {t("大樹", "Full Trees")}: <strong>{entries.filter(([, d]) => d.stage >= 10).length}</strong>
+                            <TreePine size={18} /> {t("大樹", "Full Trees")}: <strong>{entries.filter(([, d]) => d.stage >= 10).length}</strong>
                           </div>
                           <div style={{ padding: '0.5rem 1rem', background: '#fef3c7', borderRadius: '8px', border: '1px solid #fde68a', color: '#7f1d1d', fontWeight: '500' }}>
-                            🍎 {t("果子", "Fruits")}: <strong>{entries.reduce((sum, [, d]) => sum + (d.fruits || 0), 0)}</strong>
+                            <Apple size={18} /> {t("果子", "Fruits")}: <strong>{entries.reduce((sum, [, d]) => sum + (d.fruits || 0), 0)}</strong>
                           </div>
                         </div>
 
                         {/* Mode & Level Controls */}
                         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem', flexWrap: 'wrap', padding: '0.8rem 1rem', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-                          <span style={{ fontWeight: 'bold', color: '#475569', fontSize: '0.9rem' }}>⚙️ {t("挑戰設定", "Challenge Settings")}:</span>
+                          <span style={{ fontWeight: 'bold', color: '#475569', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.35rem' }}><Settings size={17} /> {t("挑戰設定", "Challenge Settings")}:</span>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
                             <label style={{ fontSize: '0.85rem', color: '#64748b' }}>{t("模式", "Mode")}</label>
                             <select
@@ -8234,7 +8297,7 @@ const deDict = {
                           </div>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
                             <Tooltip text={t("等級越高，會有越多錯誤的干擾方塊混在裡面！", "Higher levels mix in more fake blocks!")}>
-                              <label style={{ fontSize: '0.85rem', color: '#64748b', cursor: 'help', borderBottom: '1px dotted #94a3b8' }}>{t("難度", "Level")} ⓘ</label>
+                              <label style={{ fontSize: '0.85rem', color: '#64748b', cursor: 'help', borderBottom: '1px dotted #94a3b8', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>{t("難度", "Level")} <Info size={14} /></label>
                             </Tooltip>
                             <select
                               onChange={(e) => setDistractionLevel(Number(e.target.value))}
@@ -8276,7 +8339,7 @@ const deDict = {
                                     <div style={{ position: 'absolute', bottom: '15px', right: '15px', zIndex: 10, display: 'flex', gap: '8px', background: 'rgba(255,255,255,0.8)', padding: '5px', borderRadius: '8px', boxShadow: '0 2px 5px rgba(0,0,0,0.2)' }}>
                                       <button onClick={() => zoomIn()} style={{ width: '32px', height: '32px', borderRadius: '4px', border: '1px solid #cbd5e1', background: '#fff', cursor: 'pointer', fontSize: '18px', fontWeight: 'bold', color: '#475569', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>+</button>
                                       <button onClick={() => zoomOut()} style={{ width: '32px', height: '32px', borderRadius: '4px', border: '1px solid #cbd5e1', background: '#fff', cursor: 'pointer', fontSize: '18px', fontWeight: 'bold', color: '#475569', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>−</button>
-                                      <button onClick={() => resetTransform()} style={{ width: '32px', height: '32px', borderRadius: '4px', border: '1px solid #cbd5e1', background: '#fff', cursor: 'pointer', fontSize: '16px', fontWeight: 'bold', color: '#475569', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>🔄</button>
+                                      <button onClick={() => resetTransform()} style={{ width: '32px', height: '32px', borderRadius: '4px', border: '1px solid #cbd5e1', background: '#fff', cursor: 'pointer', fontSize: '16px', fontWeight: 'bold', color: '#475569', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><RotateCw size={18} /></button>
                                     </div>
                                     <TransformComponent wrapperStyle={{ width: '100%', height: '100%' }} contentStyle={{ width: '100%', height: '100%', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '20px' }}>
                                       <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '40px', maxWidth: '100%' }}>
@@ -8371,7 +8434,7 @@ const deDict = {
                                                       }
                                                     }
                                                   }}
-                                                  title={cell ? `${cell.ref} — ${stageLabel(cell.stage)}${cell.fruits ? ` 🍎×${cell.fruits}` : ''}` : t('空地', 'Empty')}
+                                                  title={cell ? `${cell.ref} — ${stageLabel(cell.stage)}${cell.fruits ? ` fruit x ${cell.fruits}` : ''}` : t('空地', 'Empty')}
                                                   style={{
                                                     width: '48px', height: '48px', borderRadius: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center',
                                                     fontSize: cell ? '20px' : '10px',
@@ -8396,13 +8459,13 @@ const deDict = {
                             </div>
                           );
                         })()}
-                        <p style={{ fontSize: '0.8rem', color: '#94a3b8', marginTop: '0.5rem' }}>📱 {t("可用手指滑動來瀏覽園子", "Swipe to pan around the garden")}</p>
+                        <p style={{ fontSize: '0.8rem', color: '#94a3b8', marginTop: '0.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.35rem' }}><Smartphone size={15} /> {t("可用手指滑動來瀏覽園子", "Swipe to pan around the garden")}</p>
 
                         {/* Verse Info Popup Modal */}
                         {selectedGardenCell && (
                           <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }} onClick={() => setSelectedGardenCell(null)}>
                             <div id="garden-verse-popup" onClick={e => e.stopPropagation()} style={{ width: '100%', maxWidth: '400px', padding: '1.5rem', background: 'linear-gradient(135deg, #f0fdf4, #ecfdf5)', borderRadius: '15px', border: '3px solid #86efac', boxShadow: '0 10px 30px rgba(0,0,0,0.3)', position: 'relative', animation: 'flashSuccess 0.3s ease-out' }}>
-                              <button onClick={() => setSelectedGardenCell(null)} style={{ position: 'absolute', top: '10px', right: '15px', background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer', fontSize: '1.4rem', fontWeight: 'bold' }}>✕</button>
+                              <button onClick={() => setSelectedGardenCell(null)} style={{ position: 'absolute', top: '10px', right: '15px', background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer', fontSize: '1.4rem', fontWeight: 'bold' }}><X size={22} /></button>
                               <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.8rem', flexWrap: 'wrap' }}>
                                 <div style={{ width: '60px', height: '60px', position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                                   <div style={{ width: '100%', height: '100%', position: 'absolute', bottom: '0', display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
@@ -8422,7 +8485,7 @@ const deDict = {
                               </p>
                               {selectedGardenCell.detectedLang && selectedGardenCell.detectedLang !== version && (
                                 <p style={{ fontSize: '0.78rem', color: '#64748b', margin: '0 0 1rem', textAlign: 'center' }}>
-                                  💡 {t('將暫時切換語言來挑戰，完成後自動恢復', 'Will temporarily switch language for this challenge, then restore')}
+                                  {t('將暫時切換語言來挑戰，完成後自動恢復', 'Will temporarily switch language for this challenge, then restore')}
                                 </p>
                               )}
                               <button onClick={() => {
@@ -8449,7 +8512,7 @@ const deDict = {
                           <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><img src="/assets/garden/tree-seedling.png" style={{ height: '28px', filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.2))' }} alt="seedling" /> {t("幼苗 (練習中)", "Sprout (practicing)")}</span>
                           <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><img src="/assets/garden/tree-sapling.png" style={{ height: '32px', filter: 'drop-shadow(0 3px 5px rgba(0,0,0,0.2))' }} alt="sapling" /> {t("小樹 (持續成長)", "Sapling (growing)")}</span>
                           <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><img src="/assets/garden/tree-mature.png" style={{ height: '36px', filter: 'drop-shadow(0 4px 6px rgba(0,0,0,0.3))' }} alt="mature tree" /> {t("大樹 (通過!)", "Full tree (cleared!)")}</span>
-                          <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>🍎 {t("結果子 (創新高!)", "Fruit (new record!)")}</span>
+                          <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><Apple size={18} /> {t("結果子 (創新高!)", "Fruit (new record!)")}</span>
                         </div>
                       </div>
                     );
@@ -8461,10 +8524,10 @@ const deDict = {
                   <div style={{ marginTop: '2rem', padding: '1.5rem', background: '#f8fafc', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
                     <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '8px', borderBottom: '1px solid #cbd5e1', paddingBottom: '0.5rem', marginBottom: '1.5rem' }}>
                       <h3 style={{ margin: 0, color: '#1e293b', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        📜 {t('互惠點數紀錄', 'Reciprocity History')}
+                        <Info size={18} /> {t('互惠點數紀錄', 'Reciprocity History')}
                       </h3>
                       <div style={{ marginLeft: 'auto', fontSize: '0.9rem', color: '#475569', fontWeight: 'bold' }}>
-                        {t('推薦果子', 'Referral Fruits')} <span style={{ color: '#ea580c' }}>{referralOnlyPoints} 🍎</span> <span style={{ margin: '0 8px', color: '#cbd5e1' }}>|</span> {t('題庫被玩', 'Custom Sets Played')} <span style={{ color: '#ea580c' }}>{creatorOnlyPoints} 🍎</span>
+                        {t('推薦果子', 'Referral Fruits')} <span style={{ color: '#ea580c' }}>{referralOnlyPoints}</span> <span style={{ margin: '0 8px', color: '#cbd5e1' }}>|</span> {t('題庫被玩', 'Custom Sets Played')} <span style={{ color: '#ea580c' }}>{creatorOnlyPoints}</span>
                       </div>
                     </div>
 
@@ -8472,7 +8535,7 @@ const deDict = {
                       {/* Referrals */}
                       <div>
                         <h4 style={{ color: '#0369a1', marginTop: 0, marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                          👫 {t('推薦紀錄', 'Referrals')}
+                          <Users size={18} /> {t('推薦紀錄', 'Referrals')}
                         </h4>
                         {referralHistory && referralHistory.length > 0 ? (() => {
                           // Group: same player + same type → sum amounts, keep latest timestamp
@@ -8527,7 +8590,7 @@ const deDict = {
                       {/* Custom set plays */}
                       <div>
                         <h4 style={{ color: '#b45309', marginTop: 0, marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                          💡 {t('專屬題庫遊玩紀錄', 'Custom Set Plays')}
+                          <Info size={18} /> {t('專屬題庫遊玩紀錄', 'Custom Set Plays')}
                         </h4>
                         {creatorHistory && creatorHistory.length > 0 ? (() => {
                           // Group: same player + same verseSetName → sum amounts, keep latest timestamp
@@ -8607,7 +8670,7 @@ const deDict = {
                     <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
                       <thead>
                         <tr style={{ borderBottom: '2px solid #e2e8f0', color: '#64748b', fontSize: '0.9rem' }}>
-                          <th style={{ padding: '0.8rem 1rem', width: '50px' }}>🏆</th>
+                          <th style={{ padding: '0.8rem 1rem', width: '50px' }}><Trophy size={18} /></th>
                           <th style={{ padding: '0.8rem 1rem' }}>{t("玩家名稱", "Player Name")}</th>
                           <th style={{ padding: '0.8rem 1rem', textAlign: 'right' }}>{t("總積分", "Total Score")}</th>
                           <th style={{ padding: '0.8rem 1rem', textAlign: 'right' }}>{t("完成次數", "Clears")}</th>
@@ -8617,7 +8680,7 @@ const deDict = {
                         {(() => {
                           const entries = globalLeaderboardData[globalLeaderboardTab] || [];
                           if (isFetchingGlobalLeaderboard) {
-                            return <tr><td colSpan="4" style={{ padding: '1rem', textAlign: 'center', color: '#94a3b8' }}>⏳ {t("載入中...", "Loading...")}</td></tr>;
+                            return <tr><td colSpan="4" style={{ padding: '1rem', textAlign: 'center', color: '#94a3b8' }}><span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}><Hourglass size={16} /> {t("載入中...", "Loading...")}</span></td></tr>;
                           }
                           if (entries.length === 0) {
                             return <tr><td colSpan="4" style={{ padding: '1rem', textAlign: 'center', color: '#94a3b8' }}>{t("目前尚無紀錄", "No records yet")}</td></tr>;
@@ -8635,8 +8698,8 @@ const deDict = {
                               return (
                                 <tr key={idx} style={{ borderBottom: '1px solid #f1f5f9' }}>
                                   <td style={{ padding: '0.8rem 1rem', fontWeight: 'bold', color: idx === 0 ? '#d97706' : idx === 1 ? '#94a3b8' : idx === 2 ? '#b45309' : '#64748b', fontSize: '1.2rem' }}>#{idx + 1}</td>
-                                  <td style={{ padding: '0.8rem 1rem', fontWeight: 'bold', color: '#1e293b' }}>
-                                    {name} {name === playerName && <Crown size={14} style={{ color: '#fbbf24', marginLeft: '5px' }} />}
+                                  <td style={{ padding: '0.8rem 1rem', fontWeight: 'bold', color: '#1e293b', fontFamily: cjkDataFontStack }}>
+                                    <span style={{ fontFamily: cjkDataFontStack }}>{name}</span> {name === playerName && <Crown size={14} style={{ color: '#fbbf24', marginLeft: '5px' }} />}
                                     <button
                                       onClick={async () => {
                                         setViewingPlayerGarden({ playerName: name, gardenData: null, loading: true });
@@ -8677,11 +8740,11 @@ const deDict = {
                                           const bonus = globalLeaderboardData && globalLeaderboardData.bonusFruitsMap && globalLeaderboardData.bonusFruitsMap[name];
                                           const creatorFruits = (bonus && bonus.creatorPoints) || 0;
                                           const lvl = getSkoolLevel(gardenFruits + creatorFruits);
-                                          return `🌱 Lv.${lvl.level} ${t(lvl.title, lvl.enTitle)}`;
+                                          return <><Sprout size={15} /> Lv.{lvl.level} {t(lvl.title, lvl.enTitle)}</>;
                                         }
                                         // Fallback: garden data not loaded yet, use clears
                                         const lvl = getSkoolLevel(alltimeClears[name] || clears);
-                                        return `🌱 Lv.${lvl.level} ${t(lvl.title, lvl.enTitle)}`;
+                                        return <><Sprout size={15} /> Lv.{lvl.level} {t(lvl.title, lvl.enTitle)}</>;
                                       })()}
                                     </button>
 
@@ -8716,7 +8779,7 @@ const deDict = {
                     <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
                       <thead>
                         <tr style={{ borderBottom: '2px solid #e2e8f0', color: '#64748b', fontSize: '0.9rem' }}>
-                          <th style={{ padding: '0.8rem 1rem', width: '50px' }}>🏆</th>
+                          <th style={{ padding: '0.8rem 1rem', width: '50px' }}><Trophy size={18} /></th>
                           <th style={{ padding: '0.8rem 1rem' }}>{t("標題", "Title")}</th>
                           <th style={{ padding: '0.8rem 1rem' }}>{t("作者", "Author")}</th>
                           <th style={{ padding: '0.8rem 1rem', textAlign: 'right' }}>{t("點閱次數", "Views")}</th>
@@ -8785,7 +8848,7 @@ const deDict = {
                     <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
                       <thead>
                         <tr style={{ borderBottom: '2px solid #e2e8f0', color: '#64748b', fontSize: '0.9rem' }}>
-                          <th style={{ padding: '0.8rem 1rem', width: '50px' }}>🏆</th>
+                          <th style={{ padding: '0.8rem 1rem', width: '50px' }}><Trophy size={18} /></th>
                           <th style={{ padding: '0.8rem 1rem' }}>{t("經文出處", "Reference")}</th>
                           <th style={{ padding: '0.8rem 1rem', textAlign: 'right' }}>{t("遊玩次數", "Plays")}</th>
                           <th style={{ padding: '0.8rem 1rem', textAlign: 'right' }}>{t("完成次數", "Completes")}</th>
@@ -8923,10 +8986,10 @@ const deDict = {
                                 const paginatedSets = matchingSets.slice((searchSetsPage - 1) * 10, searchSetsPage * 10);
                                 return paginatedSets.map(set => (
                                   <div key={set.id} onClick={() => { setSelectedSetId(set.id); setMainTab('versesets'); }} style={{ padding: '1.5rem', border: '1px solid #e2e8f0', borderRadius: '8px', cursor: 'pointer', backgroundColor: '#f8fafc', display: 'flex', alignItems: 'center', gap: '1rem', transition: 'background-color 0.2s' }} onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#eff6ff'} onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#f8fafc'}>
-                                    <div style={{ fontSize: '2rem' }}>📁</div>
+                                    <div style={{ color: '#3b82f6' }}><Library size={34} /></div>
                                     <div>
                                       <div style={{ fontWeight: 'bold', color: '#1e293b', fontSize: '1.1rem' }}>{set.title}</div>
-                                      <div style={{ color: '#64748b', fontSize: '0.9rem', marginTop: '0.3rem', maxHeight: '4.5em', overflow: 'hidden', textOverflow: 'ellipsis' }} dangerouslySetInnerHTML={{ __html: set.description }} />
+                                      <div className="ql-editor-content" style={{ color: '#64748b', fontSize: '0.9rem', marginTop: '0.3rem', maxHeight: '4.5em', overflow: 'hidden', textOverflow: 'ellipsis' }} dangerouslySetInnerHTML={{ __html: set.description }} />
                                     </div>
                                   </div>
                                 ));
@@ -9051,7 +9114,7 @@ const deDict = {
                 return (
                   <div style={{ backgroundColor: '#ffffff', borderRadius: '8px', border: '1px solid #cbd5e1', overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
                     <div style={{ padding: '1.5rem 2rem 1rem', borderBottom: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                      <span style={{ fontSize: '1.5rem' }}>🗺️</span>
+                      <Map size={24} />
                       <div>
                         <h2 style={{ margin: 0, color: '#1e293b', fontSize: '1.2rem' }}>{t('全球玩家地圖', 'Global Player Map')}</h2>
                         <p style={{ margin: '2px 0 0', color: '#64748b', fontSize: '0.85rem' }}>{t('點擊標記查看玩家成績，雙擊遊戲房間加入戰局！', 'Click a marker to see scores, double click a room to join!')}</p>
@@ -9084,12 +9147,12 @@ const deDict = {
                             {mainTab === 'manual' && (
                 <div style={{ padding: '2rem', maxWidth: '800px', margin: '0 auto', color: '#1e293b', lineHeight: '1.8' }}>
                   <>
-                    <h1 style={{ color: '#3b82f6', marginBottom: '1.5rem', textAlign: 'center' }}>{t("🌧️ VerseRain 經文雨 操作手冊", "🌧️ VerseRain User Manual")}</h1>
+                    <h1 style={{ color: '#3b82f6', marginBottom: '1.5rem', textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}><CloudRain size={32} /> {t("VerseRain 經文雨 操作手冊", "VerseRain User Manual")}</h1>
                     <p style={{ textAlign: 'center', fontSize: '1.1rem', marginBottom: '3rem' }}>
                       <span dangerouslySetInnerHTML={{ __html: t("歡迎進入 <strong>VerseRain 經文雨</strong>！這是一個結合挑戰與學習的互動背經平台。<br />在這裡您可以挑戰全球經文組、建立個人專屬的題庫，同時登上互惠經濟的全球排行榜！", "Welcome to <strong>VerseRain</strong>! An interactive scripture memorization platform combining challenge and learning.<br />Here you can challenge global verse sets, create your own personal library, and climb the Global Leaderboard of the Mutualized Economics!") }} />
                     </p>
 
-                    <h2 style={{ borderBottom: '2px solid #e2e8f0', paddingBottom: '0.5rem', marginTop: '2rem' }}>{t("🎯 一、如何開始遊玩？", "🎯 1. How to Play?")}</h2>
+                    <h2 style={{ borderBottom: '2px solid #e2e8f0', paddingBottom: '0.5rem', marginTop: '2rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Play size={22} /> {t("一、如何開始遊玩？", "1. How to Play?")}</h2>
                     <p>{t("只需簡單三步，您就能進入背經的挑戰中！", "Just three simple steps to start your scripture memorization challenge!")}</p>
 
                     <h3 style={{ marginTop: '1.5rem', color: '#0f172a' }}>{t("1. 切換至「經文組」", "1. Switch to \"Verse Sets\"")}</h3>
@@ -9104,14 +9167,14 @@ const deDict = {
                     <p>{t("點選該經文組底下的任何一節關卡旁邊的「排行榜/遊玩圖示」，三秒鐘後，滿天掉落的經文雨就會傾盆而下！", "Click the \"Leaderboard/Play icon\" next to any verse level under the verse set. The verse rain will start falling in 3 seconds!")}</p>
                     <img src="/manual/step3.png" alt={t("開始遊戲", "Start Game")} style={{ width: '100%', borderRadius: '8px', boxShadow: '0 4px 6px rgba(0,0,0,0.1)', marginBottom: '2rem' }} />
 
-                    <h3 style={{ marginTop: '1.5rem', color: '#0f172a' }}>{t("🎬 實際遊玩流程示範（動畫）：", "🎬 Gameplay Demonstration (Animation):")}</h3>
+                    <h3 style={{ marginTop: '1.5rem', color: '#0f172a', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Play size={20} /> {t("實際遊玩流程示範（動畫）：", "Gameplay Demonstration (Animation):")}</h3>
                     <p>{t("這是一段實際進入遊戲的流程示範！", "Here is an actual demonstration of the gameplay!")}</p>
                     <img src="/manual/play.webp" alt={t("遊戲流程動畫", "Gameplay Animation")} style={{ width: '100%', borderRadius: '8px', boxShadow: '0 4px 6px rgba(0,0,0,0.1)', marginBottom: '3rem' }} />
 
-                    <h2 style={{ borderBottom: '2px solid #e2e8f0', paddingBottom: '0.5rem', marginTop: '2rem' }}>{t("👑 二、如何自建專屬「經文組」？（Premium 會員獨享）", "👑 2. How to create custom \"Verse Sets\"? (Premium Only)")}</h2>
+                    <h2 style={{ borderBottom: '2px solid #e2e8f0', paddingBottom: '0.5rem', marginTop: '2rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Crown size={24} /> {t("二、如何自建專屬「經文組」？（Premium 會員獨享）", "2. How to create custom \"Verse Sets\"? (Premium Only)")}</h2>
                     <p>{t("如果您是「互惠經濟」社群的尊榮會員，就可以盡情打造自己的主日學或小組背經專屬題庫！", "If you are a Premium Member of the \"Mutualized Economics\" community, you can freely create your own customized scripture libraries for Sunday school or cell groups!")}</p>
                     <ol style={{ paddingLeft: '1.5rem', marginBottom: '2rem' }}>
-                      <li><span dangerouslySetInnerHTML={{ __html: t("點擊上方導航列的 <strong>「👑 我的題庫」</strong>。", "Click <strong>\"👑 Custom Sets\"</strong> in the top navigation bar.") }} /></li>
+                      <li><span dangerouslySetInnerHTML={{ __html: t("點擊上方導航列的 <strong>「我的題庫」</strong>。", "Click <strong>\"Custom Sets\"</strong> in the top navigation bar.") }} /></li>
                       <li><span dangerouslySetInnerHTML={{ __html: t("在輸入框打下你想要的 <strong>新經文組名稱</strong>。", "Type your desired <strong>New Verse Set Title</strong> in the input box.") }} /></li>
                       <li><span dangerouslySetInnerHTML={{ __html: t("利用強大的 <strong>魔法一鍵抓取功能</strong>：在區塊中輸入經文章節出處（如：<code>約 3:16</code>），點擊旁邊的魔法星號按鈕。", "Use the powerful <strong>Magic One-Click Fetch Feature</strong>: Enter the scripture reference in the section (e.g., <code>John 3:16</code>), and click the magic star button next to it.") }} /></li>
                       <li>{t("系統將為您自動帶入完整的經文內容！", "The system will automatically import the complete verse content for you!")}</li>
@@ -9119,10 +9182,10 @@ const deDict = {
                       <li>{t("恭喜！這份經文組就會瞬間上傳到全球資料庫，供大眾在「經文組」挑戰了！", "Congratulations! This verse set will be instantly uploaded to the global database, available for public challenge in \"Verse Sets\"!")}</li>
                     </ol>
                     <div style={{ backgroundColor: '#f0fdf4', borderLeft: '4px solid #22c55e', padding: '1rem', borderRadius: '4px', marginBottom: '3rem' }}>
-                      <span dangerouslySetInnerHTML={{ __html: t("<strong>💡 提示：</strong> 魔法一鍵抓取功能串接了精準的華語聖經資料庫，能夠大幅省去手動打字、校稿的時間。您可以直接嘗試輸入「創世紀 1:1」，感受一秒匯入的流暢度！", "<strong>💡 Tip:</strong> The Magic One-Click Fetch connects to an accurate Bible database, saving a significant amount of manual typing and proofreading time. Try entering \"Genesis 1:1\" to experience the smooth 1-second import!") }} />
+                      <span dangerouslySetInnerHTML={{ __html: t("<strong>提示：</strong> 魔法一鍵抓取功能串接了精準的華語聖經資料庫，能夠大幅省去手動打字、校稿的時間。您可以直接嘗試輸入「創世紀 1:1」，感受一秒匯入的流暢度！", "<strong>Tip:</strong> The Magic One-Click Fetch connects to an accurate Bible database, saving a significant amount of manual typing and proofreading time. Try entering \"Genesis 1:1\" to experience the smooth 1-second import!") }} />
                     </div>
 
-                    <h2 style={{ borderBottom: '2px solid #e2e8f0', paddingBottom: '0.5rem', marginTop: '2rem' }}>{t("🏆 三、個人積分全球排行榜", "🏆 3. Global Leaderboard")}</h2>
+                    <h2 style={{ borderBottom: '2px solid #e2e8f0', paddingBottom: '0.5rem', marginTop: '2rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Trophy size={24} /> {t("三、個人積分全球排行榜", "3. Global Leaderboard")}</h2>
                     <p><span dangerouslySetInnerHTML={{ __html: t("點選 <strong>「排行榜」</strong>，您將會看到三大首頁看板：", "Click <strong>\"Leaderboard\"</strong> to view the main top rankings:") }} /></p>
                     <ul style={{ paddingLeft: '1.5rem', marginBottom: '2rem' }}>
                       <li><span dangerouslySetInnerHTML={{ __html: t("<strong>個人過關積點排行：</strong> 只要完成挑戰就能累積積分，破自己的紀錄也算分！", "<strong>Personal Clear Points Ranking:</strong> Accumulate points by completing challenges. Beating your own record also counts!") }} /></li>
@@ -9130,7 +9193,7 @@ const deDict = {
                     </ul>
                     <p style={{ textAlign: 'center', fontSize: '1.1rem', fontWeight: 'bold', color: '#3b82f6' }}>{t("想獲得好名次？那就持之以恆地回來挑戰，或是創建讓大家愛不釋手的經文組合吧！", "Want a good rank? Keep challenging constantly, or create a verse set that everyone loves!")}</p>
 
-                    <h2 style={{ borderBottom: '2px solid #e2e8f0', paddingBottom: '0.5rem', marginTop: '2rem' }}>{t("🎤 四、全新語音模式 (Voice Mode)", "🎤 4. New Voice Mode")}</h2>
+                    <h2 style={{ borderBottom: '2px solid #e2e8f0', paddingBottom: '0.5rem', marginTop: '2rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Mic size={22} /> {t("四、全新語音模式 (Voice Mode)", "4. New Voice Mode")}</h2>
                     <p><span dangerouslySetInnerHTML={{ __html: t("除了點擊方塊，您現在可以直接<strong>用「唸」的來背經文！</strong>", "Besides clicking blocks, you can now recite verses directly <strong>using your voice!</strong>") }} /></p>
                     <ul style={{ paddingLeft: '1.5rem', marginBottom: '2rem' }}>
                       <li><span dangerouslySetInnerHTML={{ __html: t("<strong>智慧模糊辨識：</strong> 系統內建強大的中文拼音模糊比對。就算有台灣國語、捲舌平舌音不分，只要發音相近就能過關！", "<strong>Smart Fuzzy Recognition:</strong> The system features powerful fuzzy pinyin matching. Even with accents or imprecise pronunciation, similar sounds will pass!") }} /></li>
@@ -9151,7 +9214,7 @@ const deDict = {
 
               {mainTab === 'about' && (
                 <div style={{ backgroundColor: '#ffffff', borderRadius: '8px', border: '1px solid #cbd5e1', padding: '2rem', boxShadow: '0 1px 3px rgba(0,0,0,0.05)', color: '#334155', lineHeight: '1.6' }}>
-                  <h2 style={{ color: '#1e293b', marginTop: 0, marginBottom: '1.5rem', borderBottom: '2px solid #e2e8f0', paddingBottom: '0.5rem', fontFamily: 'cursive', color: '#3b82f6' }}>
+                  <h2 style={{ marginTop: 0, marginBottom: '1.5rem', borderBottom: '2px solid #e2e8f0', paddingBottom: '0.5rem', fontFamily: 'var(--app-font-family)', color: '#3b82f6' }}>
                     {t('Verse Rain 讓背記經文變得生動有趣！', 'VerseRain makes scripture memorization fun!')}
                   </h2>
 
@@ -9367,7 +9430,7 @@ const deDict = {
                       ))}
                       {currentSeqIndex < activePhrases.length && (
                         <span id="stack-cursor" style={{ display: 'inline-block', color: '#94a3b8', fontWeight: 'bold', padding: '0 0.4rem', border: '2px dashed rgba(251, 191, 36, 0.4)', borderRadius: '6px', margin: '0 0.2rem', background: 'rgba(251, 191, 36, 0.05)', transition: 'all 0.3s' }}>
-                          Next: {activePhrases[currentSeqIndex].replace(/[^\s\.,\?!;:，。？！；：]/g, '〇')}
+                          Next: {maskPhraseForPreview(activePhrases[currentSeqIndex])}
                         </span>
                       )}
                     </div>
@@ -9596,7 +9659,7 @@ const deDict = {
                     <div key={p.id} style={{ background: isMe ? 'rgba(16,185,129,0.1)' : 'rgba(255,255,255,0.04)', border: `1px solid ${isMe ? 'rgba(16,185,129,0.4)' : 'rgba(255,255,255,0.1)'}`, borderRadius: '10px', padding: '0.8rem 1.2rem', display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <span style={{ fontWeight: 'bold', color: isMe ? '#10b981' : '#e2e8f0', fontSize: '1rem' }}>{p.name}{isMe ? ` ${t("(你)", "(You)")}` : ''}</span>
-                        <span style={{ color: p.isFinished ? '#10b981' : '#fbbf24', fontWeight: 'bold', fontSize: '0.9rem' }}>{p.isFinished ? `✅ ${t("完成！", "Done!")}` : `${versesCompleted} / ${totalVerses}`}</span>
+                        <span style={{ color: p.isFinished ? '#10b981' : '#fbbf24', fontWeight: 'bold', fontSize: '0.9rem', display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>{p.isFinished ? <><Trophy size={14} /> {t("完成！", "Done!")}</> : `${versesCompleted} / ${totalVerses}`}</span>
                       </div>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <span style={{ fontFamily: 'monospace', color: '#93c5fd', fontSize: '1rem' }}>{totalScore} pts</span>
@@ -9967,11 +10030,23 @@ const deDict = {
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', alignItems: 'center' }}>
                           <p style={{ margin: 0, fontSize: '0.95rem', color: '#e2e8f0', textAlign: 'center' }}>{t("想要將神聖高分刻在群組榜單上嗎？", "Want to carve your high score on the leaderboard?")}</p>
                           <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap', justifyContent: 'center' }}>
-                            {['🦁', '🐶', '🐰', '🦊', '🐼'].map(emj => (
-                              <div key={emj} onClick={() => {
+                            {[
+                              { id: 'brave', label: t('勇敢', 'Brave'), Icon: Crown },
+                              { id: 'joy', label: t('喜樂', 'Joy'), Icon: Star },
+                              { id: 'quick', label: t('快手', 'Quick'), Icon: Zap },
+                              { id: 'love', label: t('愛心', 'Love'), Icon: Heart },
+                              { id: 'rain', label: t('雨滴', 'Rain'), Icon: CloudRain }
+                            ].map(({ id, label, Icon }) => (
+                              <button key={id} type="button" onClick={() => {
                                 const input = document.getElementById('playerNameInput');
-                                if (!input.value.includes(emj)) input.value = emj + " " + input.value;
-                              }} style={{ fontSize: '1.5rem', cursor: 'pointer', padding: '0.3rem', background: 'rgba(255,255,255,0.1)', borderRadius: '8px', transition: 'background 0.2s' }}>{emj}</div>
+                                if (input) {
+                                  input.value = label;
+                                  input.focus();
+                                }
+                              }} style={{ cursor: 'pointer', padding: '0.45rem', background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.16)', borderRadius: '8px', transition: 'background 0.2s', color: '#f8fafc', display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
+                                <Icon size={18} />
+                                <span style={{ fontSize: '0.75rem', fontWeight: 700 }}>{label}</span>
+                              </button>
                             ))}
                           </div>
                           <div style={{ display: 'flex', gap: '0.5rem', width: '100%' }}>
@@ -10214,7 +10289,7 @@ const deDict = {
                     {recoveredPassword.password}
                   </div>
                   <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>{t("請複製密碼後貼到上方密碼欄位登入", "Please copy and paste the password above to login.")}</div>
-                  <button onClick={() => { navigator.clipboard.writeText(recoveredPassword.password); }} style={{ marginTop: '0.5rem', background: '#10b981', color: 'white', border: 'none', padding: '0.4rem 1rem', borderRadius: '6px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 'bold' }}>📋 {t("複製密碼", "Copy Password")}</button>
+                  <button onClick={() => { navigator.clipboard.writeText(recoveredPassword.password); }} style={{ marginTop: '0.5rem', background: '#10b981', color: 'white', border: 'none', padding: '0.4rem 1rem', borderRadius: '6px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 'bold', display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}><Share2 size={15} /> {t("複製密碼", "Copy Password")}</button>
                 </div>
               )}
 
@@ -10416,7 +10491,7 @@ const deDict = {
               </div>
 
               <div style={{ color: '#fbbf24', fontSize: 'clamp(1.1rem, 3vw, 1.4rem)', fontWeight: 'bold', textAlign: 'center' }}>
-                📖 {qrShareModal.reference}
+                <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem' }}><Library size={22} /> {qrShareModal.reference}</span>
               </div>
 
               <canvas
@@ -10451,7 +10526,7 @@ const deDict = {
                   onMouseOver={(e) => { e.currentTarget.style.background = 'rgba(59,130,246,0.25)'; }}
                   onMouseOut={(e) => { e.currentTarget.style.background = 'rgba(59,130,246,0.15)'; }}
                 >
-                  {t("📋 複製連結", "📋 Copy Link")}
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}><Share2 size={15} /> {t("複製連結", "Copy Link")}</span>
                 </button>
                 <button
                   onClick={() => setQrShareModal(null)}
@@ -10498,7 +10573,7 @@ const deDict = {
                 </button>
               </div>
 
-              <div style={{ color: '#475569', fontSize: '1.2rem', lineHeight: '1.8', overflowY: 'auto', paddingRight: '1rem', fontWeight: '500', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
+              <div style={{ color: '#475569', fontSize: '1.2rem', lineHeight: '1.8', overflowY: 'auto', paddingRight: '1rem', fontWeight: '500', fontFamily: 'var(--app-font-family)', wordBreak: 'break-word' }}>
                 {verseViewModal.text}
               </div>
 
@@ -10755,9 +10830,9 @@ const deDict = {
             <div style={{ background: '#fff', borderRadius: '16px', width: '100%', maxWidth: '480px', boxShadow: '0 20px 40px rgba(0,0,0,0.2)', overflow: 'hidden' }} onClick={e => e.stopPropagation()}>
               <div style={{ padding: '1.5rem', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'linear-gradient(135deg, #fffbeb, #fef3c7)' }}>
                 <h3 style={{ margin: 0, color: '#b45309', fontSize: '1.3rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  🍎 {t("果子數量怎麼算？", "How are fruits counted?")}
+                  <Apple size={22} /> {t("果子數量怎麼算？", "How are fruits counted?")}
                 </h3>
-                <button onClick={() => setShowFruitInfo(false)} style={{ background: 'transparent', border: 'none', fontSize: '1.5rem', color: '#94a3b8', cursor: 'pointer' }}>✕</button>
+                <button onClick={() => setShowFruitInfo(false)} style={{ background: 'transparent', border: 'none', fontSize: '1.5rem', color: '#94a3b8', cursor: 'pointer' }}><X size={24} /></button>
               </div>
               <div style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                 <p style={{ margin: 0, color: '#475569', lineHeight: '1.7', fontSize: '0.97rem' }}>
@@ -10765,10 +10840,10 @@ const deDict = {
                 </p>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                   <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem', background: '#f0fdf4', borderRadius: '10px', padding: '0.9rem 1rem', border: '1px solid #bbf7d0' }}>
-                    <span style={{ fontSize: '1.5rem', flexShrink: 0 }}>🌳</span>
+                    <TreePine size={24} style={{ flexShrink: 0 }} />
                     <div>
                       <div style={{ fontWeight: 'bold', color: '#166534', marginBottom: '0.2rem' }}>
-                        {t("遊戲果子", "Game Fruits")} — <span style={{ color: '#d97706' }}>{localFruits} 🍎</span>
+                        {t("遊戲果子", "Game Fruits")} — <span style={{ color: '#d97706' }}>{localFruits}</span>
                       </div>
                       <div style={{ color: '#475569', fontSize: '0.9rem', lineHeight: '1.5' }}>
                         {t("每次挑戰一節已「過關」的經文並創下個人最高分，這棵樹就會結出一顆果子。果子數量就是你在「我的園子」裡所有樹上果子的總和。", "Each time you beat your personal best on a verse you've already cleared, that tree bears a fruit. This total counts all fruits across every tree in your garden.")}
@@ -10776,10 +10851,10 @@ const deDict = {
                     </div>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem', background: '#eff6ff', borderRadius: '10px', padding: '0.9rem 1rem', border: '1px solid #bfdbfe' }}>
-                    <span style={{ fontSize: '1.5rem', flexShrink: 0 }}>🤝</span>
+                    <Share2 size={24} style={{ flexShrink: 0 }} />
                     <div>
                       <div style={{ fontWeight: 'bold', color: '#1d4ed8', marginBottom: '0.2rem' }}>
-                        {t("推廣點數", "Referral Points")} — <span style={{ color: '#d97706' }}>{creatorPoints} 🍎</span>
+                        {t("推廣點數", "Referral Points")} — <span style={{ color: '#d97706' }}>{creatorPoints}</span>
                       </div>
                       <div style={{ color: '#475569', fontSize: '0.9rem', lineHeight: '1.5' }}>
                         {t("當你分享的邀請連結帶來新玩家，或你創作了廣受歡迎的自訂題庫，系統會自動為你累積推廣點數。", "When your invite link brings in new players, or your custom verse sets are widely used, the system automatically adds referral points to your total.")}
@@ -10789,10 +10864,10 @@ const deDict = {
                 </div>
                 <div style={{ background: 'linear-gradient(135deg, #fffbeb, #fef3c7)', borderRadius: '10px', padding: '0.9rem 1rem', border: '1px solid #fde68a', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
                   <span style={{ color: '#92400e', fontWeight: 'bold', fontSize: '0.95rem' }}>
-                    🍎 {t("遊戲果子", "Game")} {localFruits} + 🤝 {t("推廣點數", "Referral")} {creatorPoints}
+                    <Apple size={18} /> {t("遊戲果子", "Game")} {localFruits} + {t("推廣點數", "Referral")} {creatorPoints}
                   </span>
                   <span style={{ color: '#b45309', fontWeight: 'bold', fontSize: '1.1rem' }}>
-                    = {totalFruits} 🍎
+                    = {totalFruits}
                   </span>
                 </div>
               </div>
@@ -10806,9 +10881,9 @@ const deDict = {
             <div style={{ background: '#fff', borderRadius: '16px', width: '100%', maxWidth: '600px', maxHeight: '90vh', display: 'flex', flexDirection: 'column', overflow: 'hidden', boxShadow: '0 20px 40px rgba(0,0,0,0.2)' }} onClick={e => e.stopPropagation()}>
               <div style={{ padding: '1.5rem', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#f8fafc' }}>
                 <h3 style={{ margin: 0, color: '#1e293b', fontSize: '1.5rem', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  🏅 {t("互惠階級說明", "Level System")}
+                  <Trophy size={24} /> {t("互惠階級說明", "Level System")}
                 </h3>
-                <button onClick={() => setShowLevelInfo(false)} style={{ background: 'transparent', border: 'none', fontSize: '1.5rem', color: '#94a3b8', cursor: 'pointer' }}>✕</button>
+                <button onClick={() => setShowLevelInfo(false)} style={{ background: 'transparent', border: 'none', fontSize: '1.5rem', color: '#94a3b8', cursor: 'pointer' }}><X size={24} /></button>
               </div>
 
               <div style={{ padding: '1.5rem', overflowY: 'auto' }}>
@@ -10841,22 +10916,22 @@ const deDict = {
                               {t(levelObj.title, levelObj.enTitle)}
 
                               {levelCounts !== null && levelCounts._total > 0 && (
-                                <span style={{ fontSize: '0.85rem', color: '#64748b', marginLeft: '12px', fontWeight: 'bold', background: '#f1f5f9', padding: '4px 10px', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
-                                  👥 {levelCounts[levelObj.level] || 0} {t("人", "players")} ({levelCounts._total > 0 ? Math.round(((levelCounts[levelObj.level] || 0) / levelCounts._total) * 100) : 0}%)
+                                <span style={{ fontSize: '0.85rem', color: '#64748b', marginLeft: '12px', fontWeight: 'bold', background: '#f1f5f9', padding: '4px 10px', borderRadius: '12px', border: '1px solid #e2e8f0', display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
+                                  <Users size={14} /> {levelCounts[levelObj.level] || 0} {t("人", "players")} ({levelCounts._total > 0 ? Math.round(((levelCounts[levelObj.level] || 0) / levelCounts._total) * 100) : 0}%)
                                 </span>
                               )}
 
-                              {isCurrent && <span style={{ fontSize: '0.9rem', color: '#059669', marginLeft: '8px' }}>👈 {t("目前階級", "You are here")}</span>}
+                              {isCurrent && <span style={{ fontSize: '0.9rem', color: '#059669', marginLeft: '8px', display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}><Info size={14} /> {t("目前階級", "You are here")}</span>}
                             </div>
                             {levelObj.level === 3 && (
-                              <div style={{ fontSize: '0.85rem', color: '#8b5cf6', fontWeight: 'bold', marginTop: '4px' }}>
-                                🔓 {t("解鎖建立專屬題庫", "Unlocks Custom Sets")}
+                              <div style={{ fontSize: '0.85rem', color: '#8b5cf6', fontWeight: 'bold', marginTop: '4px', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                                <Lock size={15} /> {t("解鎖建立專屬題庫", "Unlocks Custom Sets")}
                               </div>
                             )}
                           </div>
                         </div>
                         <div style={{ fontWeight: 'bold', color: isUnlocked ? '#d97706' : '#cbd5e1', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                          <span style={{ fontSize: '1.2rem' }}>🍎</span> {levelObj.points}
+                          <Apple size={18} /> {levelObj.points}
                         </div>
                       </div>
                     );
@@ -10922,9 +10997,7 @@ const deDict = {
                         filter: 'drop-shadow(0 2px 2px rgba(0,0,0,0.4))',
                         zIndex: 2,
                         pointerEvents: 'none',
-                      }}>
-                        🍎
-                      </div>
+                      }}><Apple size={14} fill="#dc2626" color="#b91c1c" /></div>
                     ))}
                   </div>
                   {fruits > 9 && (
@@ -10953,36 +11026,36 @@ const deDict = {
                 <div style={{ padding: '1.2rem 1.5rem', background: 'linear-gradient(135deg, #065f46, #047857)', color: 'white', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <div>
                     <h3 style={{ margin: 0, fontSize: '1.3rem', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                      🌿 {viewingPlayerGarden.playerName} {t('的園地', "'s Garden")}
+                      <Leaf size={24} /> {viewingPlayerGarden.playerName} {t('的園地', "'s Garden")}
                     </h3>
                     <div style={{ fontSize: '0.85rem', opacity: 0.8, marginTop: '4px' }}>
                       <div style={{ marginBottom: '4px' }}>
                         {vgTreeCount} {t('棵植物', 'plants')} · {t('點擊查看，雙擊挑戰！', 'Click to view, double-click to challenge!')}
                       </div>
                       <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
-                        <span>🍎 {t('總果子', 'Total Fruits')}: <strong>{vgTotalFruits}</strong></span>
+                        <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}><Apple size={16} /> {t('總果子', 'Total Fruits')}: <strong>{vgTotalFruits}</strong></span>
                         <span style={{ fontSize: '0.75rem', opacity: 0.8 }}>
                           ( {t('經文', 'Verses')} {vgGameFruits} | {t('推薦', 'Referral')} {vgReferralFruits} | {t('經文組分享', 'Sets Shared')} {vgCreatorFruits} )
                         </span>
                       </div>
                     </div>
                   </div>
-                  <button onClick={() => { setViewingPlayerGarden(null); setGuestGardenCell(null); }} style={{ background: 'rgba(255,255,255,0.2)', border: 'none', color: 'white', fontSize: '1.4rem', cursor: 'pointer', borderRadius: '50%', width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✕</button>
+                  <button onClick={() => { setViewingPlayerGarden(null); setGuestGardenCell(null); }} style={{ background: 'rgba(255,255,255,0.2)', border: 'none', color: 'white', fontSize: '1.4rem', cursor: 'pointer', borderRadius: '50%', width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><X size={22} /></button>
                 </div>
 
                 {/* Body */}
                 <div style={{ flex: 1, overflowY: 'auto', padding: '1.2rem' }}>
                   {viewingPlayerGarden.loading ? (
-                    <div style={{ textAlign: 'center', padding: '3rem', color: '#94a3b8', fontSize: '1.1rem' }}>⏳ {t('載入中...', 'Loading...')}</div>
+                    <div style={{ textAlign: 'center', padding: '3rem', color: '#94a3b8', fontSize: '1.1rem', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.5rem' }}><Hourglass size={20} /> {t('載入中...', 'Loading...')}</div>
                   ) : viewingPlayerGarden.error ? (
-                    <div style={{ textAlign: 'center', padding: '3rem', color: '#f43f5e', fontSize: '1rem' }}>😕 {viewingPlayerGarden.error}</div>
+                    <div style={{ textAlign: 'center', padding: '3rem', color: '#f43f5e', fontSize: '1rem', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.5rem' }}><Frown size={20} /> {viewingPlayerGarden.error}</div>
                   ) : vgTreeCount === 0 ? (
-                    <div style={{ textAlign: 'center', padding: '3rem', color: '#94a3b8', fontSize: '1rem' }}>🌾 {t('這個玩家的園地還是空的！', 'This player\'s garden is empty!')}</div>
+                    <div style={{ textAlign: 'center', padding: '3rem', color: '#94a3b8', fontSize: '1rem', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.5rem' }}><Sprout size={20} /> {t('這個玩家的園地還是空的！', 'This player\'s garden is empty!')}</div>
                   ) : (
                     <>
                       {/* Challenge Settings */}
                       <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem', flexWrap: 'wrap', padding: '0.8rem 1rem', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-                        <span style={{ fontWeight: 'bold', color: '#475569', fontSize: '0.9rem' }}>⚙️ {t('挑戰設定', 'Challenge Settings')}:</span>
+                        <span style={{ fontWeight: 'bold', color: '#475569', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.35rem' }}><Settings size={17} /> {t('挑戰設定', 'Challenge Settings')}:</span>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
                           <label style={{ fontSize: '0.85rem', color: '#64748b' }}>{t('模式', 'Mode')}</label>
                           <select value={guestChallengeMode} onChange={e => setGuestChallengeMode(e.target.value)} style={{ padding: '0.4rem 0.6rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.85rem', color: '#334155', backgroundColor: '#fff', fontWeight: 'bold', cursor: 'pointer' }}>
@@ -11028,7 +11101,7 @@ const deDict = {
                                   <div style={{ position: 'absolute', bottom: '15px', right: '15px', zIndex: 10, display: 'flex', gap: '8px', background: 'rgba(255,255,255,0.8)', padding: '5px', borderRadius: '8px', boxShadow: '0 2px 5px rgba(0,0,0,0.2)' }}>
                                     <button onClick={() => zoomIn()} style={{ width: '32px', height: '32px', borderRadius: '4px', border: '1px solid #cbd5e1', background: '#fff', cursor: 'pointer', fontSize: '18px', fontWeight: 'bold', color: '#475569', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>+</button>
                                     <button onClick={() => zoomOut()} style={{ width: '32px', height: '32px', borderRadius: '4px', border: '1px solid #cbd5e1', background: '#fff', cursor: 'pointer', fontSize: '18px', fontWeight: 'bold', color: '#475569', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>−</button>
-                                    <button onClick={() => resetTransform()} style={{ width: '32px', height: '32px', borderRadius: '4px', border: '1px solid #cbd5e1', background: '#fff', cursor: 'pointer', fontSize: '16px', fontWeight: 'bold', color: '#475569', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>🔄</button>
+                                    <button onClick={() => resetTransform()} style={{ width: '32px', height: '32px', borderRadius: '4px', border: '1px solid #cbd5e1', background: '#fff', cursor: 'pointer', fontSize: '16px', fontWeight: 'bold', color: '#475569', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><RotateCw size={18} /></button>
                                   </div>
                                   <TransformComponent wrapperStyle={{ width: '100%', height: '100%' }} contentStyle={{ width: '100%', height: '100%', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '20px' }}>
                                     <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '40px', maxWidth: '100%' }}>
@@ -11131,13 +11204,13 @@ const deDict = {
                       {/* Verse preview on single click */}
                       {guestGardenCell && (
                         <div style={{ marginTop: '1rem', padding: '1rem 1.5rem', background: '#f0fdf4', borderRadius: '10px', border: '1px solid #86efac', position: 'relative' }}>
-                          <button onClick={() => setGuestGardenCell(null)} style={{ position: 'absolute', top: '8px', right: '12px', background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer', fontSize: '1.2rem' }}>✕</button>
+                          <button onClick={() => setGuestGardenCell(null)} style={{ position: 'absolute', top: '8px', right: '12px', background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer', fontSize: '1.2rem' }}><X size={20} /></button>
                           <div style={{ fontWeight: 'bold', color: '#166534', marginBottom: '6px' }}>{guestGardenCell.ref}</div>
                           <div style={{ color: '#1e293b', lineHeight: '1.8', fontSize: '1rem' }}>{guestGardenCell.text || t('（在此裝置上未找到經文文字，但仍可雙擊挑戰）', '(Text not found on this device, but you can still double-click to challenge)')}</div>
-                          <div style={{ fontSize: '0.8rem', color: '#94a3b8', marginTop: '8px' }}>💡 {t('雙擊格子開始挑戰！', 'Double-click the cell to start challenging!')}</div>
+                          <div style={{ fontSize: '0.8rem', color: '#94a3b8', marginTop: '8px' }}>{t('雙擊格子開始挑戰！', 'Double-click the cell to start challenging!')}</div>
                         </div>
                       )}
-                      <div style={{ marginTop: '0.8rem', fontSize: '0.75rem', color: '#94a3b8', textAlign: 'center' }}>📱 {t('可用手指滑動來瀏覽園子', 'Swipe to browse the garden')}</div>
+                      <div style={{ marginTop: '0.8rem', fontSize: '0.75rem', color: '#94a3b8', textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.35rem' }}><Smartphone size={14} /> {t('可用手指滑動來瀏覽園子', 'Swipe to browse the garden')}</div>
                       <div style={{ marginTop: '1.5rem' }}>
                         <ActivityHeatmap t={t} activityMap={vgData?._activity || {}} />
                       </div>
@@ -11164,7 +11237,7 @@ const deDict = {
                 style={{ background: '#ffffff', border: '1px solid #cbd5e1', color: '#64748b', width: '36px', height: '36px', borderRadius: '8px', cursor: 'pointer', fontSize: '1.2rem', lineHeight: 1, flexShrink: 0 }}
                 title={t("關閉", "Close")}
               >
-                ✕
+                <X size={20} />
               </button>
             </div>
             <div style={{ padding: '1rem 1.75rem 1.5rem', overflowY: 'auto', maxHeight: 'calc(88vh - 104px)' }}>
@@ -11208,7 +11281,7 @@ const deDict = {
       {showSetLeaderboard && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 9999, padding: '1rem' }}>
           <div style={{ background: 'white', padding: '2rem', borderRadius: '12px', width: '100%', maxWidth: '800px', maxHeight: '90vh', overflowY: 'auto', position: 'relative', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)' }}>
-            <button onClick={() => { setShowSetLeaderboard(false); setLeaderboardPage(0); setLeaderboardSetId(null); }} style={{ position: 'absolute', top: '1rem', right: '1rem', background: 'none', border: 'none', fontSize: '1.5rem', cursor: 'pointer', color: '#94a3b8' }}>✕</button>
+            <button onClick={() => { setShowSetLeaderboard(false); setLeaderboardPage(0); setLeaderboardSetId(null); }} style={{ position: 'absolute', top: '1rem', right: '1rem', background: 'none', border: 'none', fontSize: '1.5rem', cursor: 'pointer', color: '#94a3b8' }}><X size={24} /></button>
             <h2 style={{ color: '#1e293b', marginTop: 0, marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '10px' }}><Trophy color="#f59e0b" /> {t("經文組通關紀錄", "Verse Set Records")}</h2>
             
             {isLoadingLeaderboard ? (

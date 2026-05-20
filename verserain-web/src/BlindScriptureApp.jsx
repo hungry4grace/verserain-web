@@ -279,7 +279,7 @@ export default function BlindScriptureApp() {
     overflowY: 'auto',
     background: '#000',
     color: '#fff',
-    fontFamily: '"Noto Sans TC", system-ui, sans-serif',
+    fontFamily: 'var(--app-font-family)',
     padding: 'clamp(1rem, 4vw, 3rem)'
   };
   const panelStyle = {
