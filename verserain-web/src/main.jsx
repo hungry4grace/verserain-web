@@ -5,10 +5,7 @@ import App from './App.jsx'
 import BlindScriptureApp from './BlindScriptureApp.jsx'
 import PrivacyPage from './PrivacyPage.jsx'
 
-const localPreviewHosts = new Set(['localhost', '127.0.0.1', '::1'])
-if (localPreviewHosts.has(window.location.hostname)) {
-  document.documentElement.dataset.localFontScale = '2x'
-}
+document.documentElement.dataset.fontScale = '2x'
 
 const RootApp = window.location.pathname.startsWith('/privacy')
   ? PrivacyPage

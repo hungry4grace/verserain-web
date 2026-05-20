@@ -10,7 +10,7 @@
   --game-safe-top: max(env(safe-area-inset-top), 44px);
 }
 
-html[data-local-font-scale="2x"] {
+html[data-font-scale="2x"] {
   font-size: 200%;
 }
 
