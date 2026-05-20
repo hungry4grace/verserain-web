@@ -29,6 +29,18 @@ let audioCtx = null;
 
 const ROOM_COLORS = ['#ef4444', '#f97316', '#eab308', '#22c55e', '#14b8a6', '#0ea5e9', '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16'];
 const ROOM_CODE_CHARS = 'ABCDEFGHJKMNPQRSTUVWXYZ';
+const PUBLIC_APP_ORIGIN = 'https://www.verserain.com';
+
+function buildPublicShareUrl(path = '/', params = {}) {
+  const normalizedPath = path && path.startsWith('/') ? path : '/';
+  const url = new URL(normalizedPath, PUBLIC_APP_ORIGIN);
+  Object.entries(params).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && value !== '') {
+      url.searchParams.set(key, String(value));
+    }
+  });
+  return url.toString();
+}
 
 function createRoomCode(length = 4) {
   return Array.from({ length }, () => ROOM_CODE_CHARS[Math.floor(Math.random() * ROOM_CODE_CHARS.length)]).join('');
@@ -7091,7 +7103,7 @@ const deDict = {
 
                         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
                           <div style={{ background: 'white', padding: '0.5rem', borderRadius: '8px', border: '1px solid #cbd5e1' }}>
-                            <QRCodeSVG value={`${window.location.origin}${window.location.pathname}?room=${multiplayerRoomId}${personalCode ? '&ref=' + encodeURIComponent(personalCode) : ''}`} size={100} />
+                            <QRCodeSVG value={buildPublicShareUrl(window.location.pathname, { room: multiplayerRoomId, ref: personalCode })} size={100} />
                           </div>
                           <p style={{ color: '#94a3b8', fontSize: '0.8rem', margin: 0 }}>{t("或掃描此 QR Code 快速加入", "or scan QR to join")}</p>
                         </div>
@@ -7447,7 +7459,7 @@ const deDict = {
 
                             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem', marginTop: '1rem' }}>
                               <div style={{ background: 'white', padding: '0.5rem', borderRadius: '8px', border: '1px dashed #cbd5e1' }}>
-                                <QRCodeSVG value={`${window.location.origin}${window.location.pathname}?room=${multiplayerRoomId}${personalCode ? '&ref=' + encodeURIComponent(personalCode) : ''}`} size={120} />
+                                <QRCodeSVG value={buildPublicShareUrl(window.location.pathname, { room: multiplayerRoomId, ref: personalCode })} size={120} />
                               </div>
                               <p style={{ color: '#94a3b8', fontSize: '0.8rem', margin: 0 }}>{t("或掃描上方 QR Code 快速加入", "or scan QR to join")}</p>
                             </div>
@@ -7819,7 +7831,7 @@ const deDict = {
 
                             <button
                               onClick={() => {
-                                const link = `${window.location.origin}${window.location.pathname}?viewSet=${encodeURIComponent(currentSet.id)}`;
+                                const link = buildPublicShareUrl(window.location.pathname, { viewSet: currentSet.id });
                                 setQrShareModal({ url: link, reference: currentSet.title });
                               }}
                               title={t("分享此經文組", "Share this verse set")}
@@ -8032,7 +8044,7 @@ const deDict = {
                                       <button
                                         onClick={(e) => {
                                           e.stopPropagation();
-                                          const link = `${window.location.origin}${window.location.pathname}?challenge=${encodeURIComponent(v.reference)}&m=${playMode}&dx=${distractionLevel}`;
+                                          const link = buildPublicShareUrl(window.location.pathname, { challenge: v.reference, m: playMode, dx: distractionLevel });
                                           setQrShareModal({ url: link, reference: v.reference });
                                         }}
                                         title={t("分享挑戰連結", "Share challenge link")}
@@ -8146,12 +8158,12 @@ const deDict = {
                           <div style={{ display: 'flex', gap: '10px', alignItems: 'stretch', flexWrap: 'wrap' }}>
                             <input
                               readOnly
-                              value={`${window.location.origin}?ref=${encodeURIComponent(personalCode)}`}
+                              value={buildPublicShareUrl('/', { ref: personalCode })}
                               style={{ flex: 1, minWidth: '220px', padding: '0.8rem', borderRadius: '8px', border: '1px solid #cbd5e1', backgroundColor: '#fff', color: '#334155', fontSize: '0.95rem' }}
                             />
                             <button
                               onClick={() => {
-                                navigator.clipboard.writeText(`${window.location.origin}?ref=${encodeURIComponent(personalCode)}`);
+                                navigator.clipboard.writeText(buildPublicShareUrl('/', { ref: personalCode }));
                                 setToast(t("邀請連結已複製！快發給好朋友吧！", "Invite link copied! Share it with friends!"));
                                 setTimeout(() => setToast(null), 3500);
                               }}
@@ -8163,7 +8175,7 @@ const deDict = {
                             </button>
                             {typeof QRCodeSVG !== 'undefined' && (
                               <button
-                                onClick={() => setQrShareModal({ url: `${window.location.origin}?ref=${encodeURIComponent(personalCode)}`, reference: 'VerseRain 遊戲邀請' })}
+                                onClick={() => setQrShareModal({ url: buildPublicShareUrl('/', { ref: personalCode }), reference: 'VerseRain 遊戲邀請' })}
                                 style={{ background: '#10b981', color: 'white', border: 'none', padding: '0 1.5rem', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', transition: 'background 0.2s', minHeight: '44px' }}
                               >
                                 {t("QR 碼", "QR Code")}

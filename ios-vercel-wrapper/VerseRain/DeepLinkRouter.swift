@@ -1,7 +1,7 @@
 import Foundation
 
 enum DeepLinkRouter {
-    private static let baseURL = URL(string: "https://verserain-web.vercel.app/")!
+    private static let baseURL = URL(string: "https://www.verserain.com/")!
 
     static func webURL(for incomingURL: URL) -> URL {
         if incomingURL.scheme == "http" || incomingURL.scheme == "https" {

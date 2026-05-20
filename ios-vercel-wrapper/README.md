@@ -5,8 +5,8 @@ This is a small native iOS shell for the existing App Store app:
 - App name: `Verse Rain`
 - Bundle ID: `com.hopeofglory.verserain`
 - Version: `3.6.1`
-- Build: `41`
-- Hosted app URL: `https://verserain-web.vercel.app/`
+- Build: `42`
+- Hosted app URL: `https://www.verserain.com/`
 
 The app uses `WKWebView`, keeps the `verserain://` URL scheme, and forwards supported deep links into the hosted Vercel app.
 
@@ -30,6 +30,6 @@ Apple references:
 
 ## Review Note Suggestion
 
-Verse Rain is now powered by the hosted VerseRain learning game at `https://verserain-web.vercel.app/`. The app includes scripture memorization gameplay, multiplayer rooms, accessible voice recitation, custom verse sets, progress/garden rewards, and referral links. Microphone and speech recognition permissions are requested only when a user chooses voice recitation modes.
+Verse Rain is now powered by the hosted VerseRain learning game at `https://www.verserain.com/`. The app includes scripture memorization gameplay, multiplayer rooms, accessible voice recitation, custom verse sets, progress/garden rewards, and referral links. Microphone and speech recognition permissions are requested only when a user chooses voice recitation modes.
 
 Because App Review Guideline 4.2 expects apps to offer functionality beyond a repackaged website, test the build on a real device and make sure the game, voice modes, login, and sharing flows are working before submission.

@@ -4,7 +4,7 @@ import WebKit
 
 @MainActor
 final class WebViewModel: ObservableObject {
-    static let homeURL = URL(string: "https://verserain-web.vercel.app/?iosApp=3.6.1-build41")!
+    static let homeURL = URL(string: "https://www.verserain.com/?iosApp=3.6.1-build42")!
 
     @Published private(set) var url: URL = homeURL
     weak var webView: WKWebView?
@@ -59,6 +59,8 @@ struct WebView: UIViewRepresentable {
 
     final class Coordinator: NSObject, WKNavigationDelegate, WKUIDelegate {
         private let allowedHosts: Set<String> = [
+            "www.verserain.com",
+            "verserain.com",
             "verserain-web.vercel.app"
         ]
 
