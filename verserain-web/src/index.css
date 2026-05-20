@@ -448,7 +448,7 @@ textarea {
 
 /* Default styles for portrait or large screens */
 .landscape-compact-header {
-  padding: 1rem 2rem;
+  padding: calc(env(safe-area-inset-top) + 1rem) max(2rem, env(safe-area-inset-right)) 1rem max(2rem, env(safe-area-inset-left));
 }
 .landscape-compact-nav {
   padding: 0.8rem 1rem;
@@ -477,6 +477,100 @@ textarea {
   .landscape-compact-content {
     margin: 0.5rem auto !important;
     padding: 0 1rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .app-shell-header {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 0.45rem 0.55rem !important;
+    align-items: start !important;
+    padding: max(calc(env(safe-area-inset-top) + 0.85rem), 3.35rem) max(0.85rem, env(safe-area-inset-right)) 0.7rem max(0.85rem, env(safe-area-inset-left)) !important;
+    min-height: calc(env(safe-area-inset-top) + 6.25rem);
+  }
+
+  .app-header-primary {
+    min-width: 0;
+    width: 100%;
+    flex-wrap: wrap;
+    gap: 0.35rem 0.55rem !important;
+  }
+
+  .app-brand-lockup {
+    flex: 0 0 auto;
+    min-width: 6.7rem;
+  }
+
+  .app-brand-wordmark {
+    font-size: clamp(1.7rem, 9.2vw, 2.25rem) !important;
+    line-height: 0.9 !important;
+  }
+
+  .app-brand-version {
+    font-size: 0.62rem !important;
+    margin-top: 0.3rem !important;
+  }
+
+  .app-language-select {
+    order: 2;
+    width: min(12.6rem, 100%) !important;
+    max-width: 100%;
+    min-height: 44px;
+    padding: 0.45rem 0.65rem !important;
+    font-size: 0.95rem !important;
+    touch-action: manipulation;
+  }
+
+  .app-auth-actions {
+    justify-self: end;
+    align-self: start;
+    flex: 0 0 auto;
+    gap: 0.45rem !important;
+    padding-top: 0.05rem;
+    white-space: nowrap;
+    z-index: 2;
+  }
+
+  .app-login-link,
+  .app-signup-link {
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    touch-action: manipulation;
+  }
+
+  .app-login-link {
+    padding: 0.35rem 0.2rem !important;
+    font-size: 1rem !important;
+  }
+
+  .app-signup-link {
+    padding: 0.45rem 0.65rem !important;
+    border-radius: 8px !important;
+    font-size: 0.95rem !important;
+  }
+
+  .landscape-compact-nav {
+    padding: 0.7rem max(0.85rem, env(safe-area-inset-right)) 0.75rem max(0.85rem, env(safe-area-inset-left)) !important;
+    gap: 0.7rem !important;
+    scroll-padding-inline: max(0.85rem, env(safe-area-inset-left));
+  }
+}
+
+@media (max-width: 380px) {
+  .app-shell-header {
+    grid-template-columns: 1fr;
+  }
+
+  .app-auth-actions {
+    justify-self: start;
+    grid-row: 2;
+  }
+
+  .app-language-select {
+    width: min(13.5rem, 100%) !important;
   }
 }
 

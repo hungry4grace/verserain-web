@@ -5,7 +5,7 @@ This is a small native iOS shell for the existing App Store app:
 - App name: `Verse Rain`
 - Bundle ID: `com.hopeofglory.verserain`
 - Version: `3.6.1`
-- Build: `40`
+- Build: `41`
 - Hosted app URL: `https://verserain-web.vercel.app/`
 
 The app uses `WKWebView`, keeps the `verserain://` URL scheme, and forwards supported deep links into the hosted Vercel app.

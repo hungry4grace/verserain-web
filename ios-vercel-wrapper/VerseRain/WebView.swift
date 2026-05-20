@@ -4,7 +4,7 @@ import WebKit
 
 @MainActor
 final class WebViewModel: ObservableObject {
-    static let homeURL = URL(string: "https://verserain-web.vercel.app/?iosApp=3.6.1-build40")!
+    static let homeURL = URL(string: "https://verserain-web.vercel.app/?iosApp=3.6.1-build41")!
 
     @Published private(set) var url: URL = homeURL
     weak var webView: WKWebView?

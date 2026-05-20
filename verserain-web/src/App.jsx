@@ -6185,10 +6185,10 @@ const deDict = {
         <style>
           {`
             @media (orientation: landscape) and (max-height: 800px) {
-              .landscape-compact-header { padding: 4px 16px !important; }
-              .landscape-compact-nav { padding: 4px 16px !important; }
+              .landscape-compact-header { padding: calc(env(safe-area-inset-top) + 4px) max(16px, env(safe-area-inset-right)) 4px max(16px, env(safe-area-inset-left)) !important; }
+              .landscape-compact-nav { padding: 4px max(16px, env(safe-area-inset-right)) 4px max(16px, env(safe-area-inset-left)) !important; }
               .landscape-compact-content { margin-top: 8px !important; }
-              .landscape-compact-header > div > div > div:first-child { font-size: 1.2rem !important; }
+              .app-brand-wordmark { font-size: 1.2rem !important; }
               .landscape-compact-nav > div { padding: 0.3rem 0.8rem !important; font-size: 0.85rem !important; }
             }
           `}
@@ -6261,17 +6261,18 @@ const deDict = {
           <div style={{ position: 'relative', width: '100vw', height: '100dvh', overflowY: 'auto', WebkitOverflowScrolling: 'touch', backgroundColor: '#f4f6f8', zIndex: 10, fontFamily: 'var(--app-font-family)' }}>
 
             {/* Header */}
-            <div className="landscape-compact-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#ffffff', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
-                  <div style={{ fontSize: '1.8rem', fontWeight: 'bold', color: '#3b82f6', fontFamily: 'cursive', lineHeight: '1' }}>
+            <div className="landscape-compact-header app-shell-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#ffffff', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
+              <div className="app-header-primary" style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
+                <div className="app-brand-lockup" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+                  <div className="app-brand-wordmark" style={{ fontSize: '1.8rem', fontWeight: 'bold', color: '#3b82f6', fontFamily: 'cursive', lineHeight: '1' }}>
                     verserain
                   </div>
-                  <div style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', marginTop: '4px', marginLeft: '2px' }}>
+                  <div className="app-brand-version" style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', marginTop: '4px', marginLeft: '2px' }}>
                     v3.6.1
                   </div>
                 </div>
                 <select
+                  className="app-language-select"
                   value={version}
                   onChange={(e) => handleVersionChange(e.target.value)}
                   title="語言 / Language / זבאن / שפה"
@@ -6291,7 +6292,7 @@ const deDict = {
                   <option value="vi">Tiếng Việt</option>
                 </select>
               </div>
-              <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+              <div className="app-auth-actions" style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
                 {playerName ? (
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', cursor: 'pointer', padding: '0.3rem 0.6rem', borderRadius: '6px', transition: 'background 0.2s' }}
@@ -6307,8 +6308,8 @@ const deDict = {
                   </div>
                 ) : (
                   <>
-                    <a href="#" onClick={(e) => { e.preventDefault(); setShowLoginModal('login'); }} style={{ color: '#0056b3', textDecoration: 'none', fontWeight: 'bold', fontSize: '0.95rem' }}>{t("登入", "Login")}</a>
-                    <a href="#" onClick={(e) => { e.preventDefault(); setShowLoginModal('signup'); }} style={{ background: '#3b82f6', color: 'white', padding: '0.3rem 0.8rem', borderRadius: '4px', textDecoration: 'none', fontWeight: 'bold', fontSize: '0.95rem' }}>{t("申請帳號", "Sign Up")}</a>
+                    <a className="app-login-link" href="#" onClick={(e) => { e.preventDefault(); setShowLoginModal('login'); }} style={{ color: '#0056b3', textDecoration: 'none', fontWeight: 'bold', fontSize: '0.95rem' }}>{t("登入", "Login")}</a>
+                    <a className="app-signup-link" href="#" onClick={(e) => { e.preventDefault(); setShowLoginModal('signup'); }} style={{ background: '#3b82f6', color: 'white', padding: '0.3rem 0.8rem', borderRadius: '4px', textDecoration: 'none', fontWeight: 'bold', fontSize: '0.95rem' }}>{t("申請帳號", "Sign Up")}</a>
                   </>
                 )}
               </div>
