@@ -10,6 +10,10 @@
   --game-safe-top: max(env(safe-area-inset-top), 44px);
 }
 
+html[data-local-font-scale="2x"] {
+  font-size: 200%;
+}
+
 * {
   box-sizing: border-box;
   margin: 0;
