@@ -153,6 +153,78 @@ function initAudio() {
   }
 }
 
+function pickSpeechVoice(lang) {
+  if (!('speechSynthesis' in window)) return null;
+  const voices = window.speechSynthesis.getVoices();
+  const savedVoiceName = localStorage.getItem('verseRain_voiceName');
+  if (savedVoiceName) {
+    const preferred = voices.find(v => v.name === savedVoiceName);
+    if (preferred) return preferred;
+  }
+  const langPrefix = String(lang || '').toLowerCase().split('-')[0];
+  return voices.find(v => v.lang?.toLowerCase() === String(lang).toLowerCase())
+    || voices.find(v => v.lang?.toLowerCase().startsWith(langPrefix))
+    || null;
+}
+
+function ensureSpeechVoices() {
+  return new Promise(resolve => {
+    if (!('speechSynthesis' in window)) {
+      resolve([]);
+      return;
+    }
+    const voices = window.speechSynthesis.getVoices();
+    if (voices.length > 0) {
+      resolve(voices);
+      return;
+    }
+    const finish = () => resolve(window.speechSynthesis.getVoices());
+    window.speechSynthesis.addEventListener?.('voiceschanged', finish, { once: true });
+    setTimeout(finish, 900);
+  });
+}
+
+function estimateSpeechDuration(text, lang) {
+  const value = String(text || '');
+  const hasCjk = /[\u3400-\u9fff]/.test(value) || String(lang || '').startsWith('zh');
+  return Math.max(1100, Math.min(hasCjk ? value.length * 180 : value.length * 85, 5500));
+}
+
+function speakTextTimed(text, rate = 1.0, lang = 'zh-TW') {
+  return new Promise(resolve => {
+    if (!('speechSynthesis' in window)) {
+      resolve();
+      return;
+    }
+
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = lang;
+    utterance.rate = rate;
+    utterance.volume = 1;
+    const voice = pickSpeechVoice(lang);
+    if (voice) utterance.voice = voice;
+
+    window.__speech_utterances = window.__speech_utterances || [];
+    window.__speech_utterances.push(utterance);
+
+    let resolved = false;
+    const safeResolve = () => {
+      if (resolved) return;
+      resolved = true;
+      utterance.onend = null;
+      utterance.onerror = null;
+      const idx = window.__speech_utterances.indexOf(utterance);
+      if (idx !== -1) window.__speech_utterances.splice(idx, 1);
+      resolve();
+    };
+
+    utterance.onend = safeResolve;
+    utterance.onerror = safeResolve;
+    setTimeout(safeResolve, estimateSpeechDuration(text, lang));
+    window.speechSynthesis.speak(utterance);
+  });
+}
+
 function speakText(text, rate = 1.0, lang = 'zh-TW') {
   return new Promise(resolve => {
     if ('speechSynthesis' in window) {
@@ -215,6 +287,294 @@ const HIDDEN_PHRASE_MARK = '•';
 
 function maskPhraseForPreview(phrase = '') {
   return String(phrase).replace(/[^\s.,?!;:，。？！；：]/g, HIDDEN_PHRASE_MARK);
+}
+
+function getVoiceLangForVersion(v) {
+  if (v === 'kjv') return 'en-US';
+  if (v === 'ko') return 'ko-KR';
+  if (v === 'ja') return 'ja-JP';
+  if (v === 'he') return 'he-IL';
+  if (v === 'fa') return 'fa-IR';
+  if (v === 'es') return 'es-ES';
+  if (v === 'tr') return 'tr-TR';
+  if (v === 'de') return 'de-DE';
+  if (v === 'my') return 'my-MM';
+  return 'zh-TW';
+}
+
+function splitVersePhrases(text, version) {
+  const regex = /\.{2,}|[,，。；؛၊။،;:\.\?!！？؟]/;
+  return String(text || '').split(regex).map(p => p.trim()).filter(Boolean);
+}
+
+function getDailyVerseIndex(length, date = new Date()) {
+  if (!length) return 0;
+  const target = new Date(date);
+  const start = new Date(target.getFullYear(), 0, 0);
+  const day = Math.floor((target - start) / 86400000);
+  return (target.getFullYear() * 37 + day) % length;
+}
+
+function getDailyVerseRemoteVersion(version) {
+  if (version === 'kjv') return 'kjv';
+  if (version === 'cuv' || version === 'cuvs') return version;
+  return 'niv';
+}
+
+function formatLocalDate(date) {
+  const d = new Date(date);
+  if (Number.isNaN(d.getTime())) return '';
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+function addDays(date, amount) {
+  const d = new Date(date);
+  d.setDate(d.getDate() + amount);
+  return d;
+}
+
+function getDailyVerseImageUrl(verse, dateLabel, version) {
+  const cacheKey = `verseRain_dailyImage_v2_${version}_${dateLabel}_${verse?.reference || 'none'}`;
+  try {
+    const cached = localStorage.getItem(cacheKey);
+    if (cached) return cached;
+  } catch (error) { /* localStorage unavailable */ }
+
+  const seedSource = `${dateLabel}-${version}-${verse?.reference || ''}`;
+  let seed = 0;
+  for (let i = 0; i < seedSource.length; i++) seed = (seed * 31 + seedSource.charCodeAt(i)) >>> 0;
+  const prompt = [
+    'peaceful cinematic biblical devotional background',
+    'beautiful natural landscape',
+    'soft morning light',
+    'gentle atmosphere',
+    'no people',
+    'no text',
+    `inspired by ${verse?.reference || 'daily scripture'}`
+  ].join(', ');
+  const url = `https://gen.pollinations.ai/image/${encodeURIComponent(prompt)}?width=1600&height=900&seed=${seed}&nologo=true&enhance=true`;
+  try {
+    localStorage.setItem(cacheKey, url);
+  } catch (error) { /* localStorage unavailable */ }
+  return url;
+}
+
+const DAILY_RAIN_DROPS = Array.from({ length: 58 }, (_, index) => {
+  const wave = Math.sin((index + 3) * 12.9898) * 43758.5453;
+  const rand = wave - Math.floor(wave);
+  const wave2 = Math.sin((index + 11) * 78.233) * 24634.6345;
+  const rand2 = wave2 - Math.floor(wave2);
+  const depth = index % 7 === 0 ? 3 : index % 3 === 0 ? 2 : 1;
+  const length = depth === 3 ? 18 + rand * 18 : depth === 2 ? 10 + rand * 10 : 5 + rand * 6;
+  const width = depth === 3 ? 1.9 + rand2 * 1.2 : depth === 2 ? 1.2 + rand2 * 0.8 : 0.7 + rand2 * 0.5;
+  const duration = depth === 3 ? 0.82 + rand * 0.34 : depth === 2 ? 1.18 + rand * 0.42 : 1.75 + rand * 0.9;
+  return {
+    left: `${(rand * 94 + (index * 7.3) % 6).toFixed(2)}%`,
+    top: `${(-28 - rand2 * 95).toFixed(2)}%`,
+    length: `${length.toFixed(1)}px`,
+    width: `${width.toFixed(2)}px`,
+    opacity: (depth === 3 ? 0.42 + rand * 0.28 : depth === 2 ? 0.28 + rand * 0.22 : 0.16 + rand * 0.18).toFixed(2),
+    duration: `${duration.toFixed(2)}s`,
+    delay: `${(-(rand * 2.8 + index * 0.035)).toFixed(2)}s`,
+    drift: `${(depth === 3 ? 14 + rand2 * 18 : depth === 2 ? 8 + rand2 * 12 : 4 + rand2 * 8).toFixed(1)}px`,
+    blur: `${(depth === 1 ? 0.4 + rand * 0.8 : depth === 2 ? 0.1 + rand * 0.35 : 0).toFixed(2)}px`,
+    depth
+  };
+});
+
+function DailyVerseRainExperience({ verse, version, t, onRead, onChallenge, onShare, onListenLogged, dateLabel, onPrevious, onNext, nextDisabled, sourceLabel }) {
+  const phrases = useMemo(() => splitVersePhrases(verse?.text || '', version), [verse, version]);
+  const backgroundImageUrl = useMemo(() => getDailyVerseImageUrl(verse, dateLabel, version), [verse?.reference, dateLabel, version]);
+  const [imageOk, setImageOk] = useState(true);
+  const [imageLoaded, setImageLoaded] = useState(false);
+  const [playKey, setPlayKey] = useState(0);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [activePhrase, setActivePhrase] = useState(-1);
+  const [isSettled, setIsSettled] = useState(false);
+  const [musicEnabled, setMusicEnabled] = useState(true);
+  const [voiceEnabled, setVoiceEnabled] = useState(true);
+  const bgmRef = useRef(null);
+  const runRef = useRef(0);
+
+  useEffect(() => {
+    setPlayKey(k => k + 1);
+    setActivePhrase(-1);
+    setIsSettled(false);
+    setIsPlaying(false);
+    setImageOk(true);
+    setImageLoaded(false);
+  }, [verse?.reference, dateLabel]);
+
+  useEffect(() => {
+    if (!bgmRef.current) {
+      bgmRef.current = new Audio('/bgm.mp3');
+      bgmRef.current.loop = true;
+      bgmRef.current.volume = 0.24;
+    }
+    return () => {
+      bgmRef.current?.pause();
+      runRef.current += 1;
+    };
+  }, []);
+
+  const stopAtmosphere = () => {
+    bgmRef.current?.pause();
+  };
+
+  const playExperience = async () => {
+    if (!verse || isPlaying) return;
+    initAudio();
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+      window.speechSynthesis.resume?.();
+    }
+    const runId = runRef.current + 1;
+    runRef.current = runId;
+    setPlayKey(k => k + 1);
+    setIsPlaying(true);
+    setIsSettled(false);
+    setActivePhrase(-1);
+
+    try {
+      if (musicEnabled) {
+        if (bgmRef.current) {
+          bgmRef.current.currentTime = 0;
+          bgmRef.current.play().catch(() => {});
+        }
+      }
+
+      const lang = getVoiceLangForVersion(version);
+      if (voiceEnabled) {
+        await speakTextTimed(formatVerseReferenceForSpeech(verse.reference, version), 0.9, lang);
+        await new Promise(r => setTimeout(r, 400));
+      }
+
+      for (let i = 0; i < phrases.length; i++) {
+        if (runRef.current !== runId) return;
+        setActivePhrase(i);
+        if (voiceEnabled) {
+          await speakTextTimed(phrases[i], 0.86, lang);
+        } else {
+          await new Promise(r => setTimeout(r, Math.max(850, phrases[i].length * 90)));
+        }
+        await new Promise(r => setTimeout(r, 160));
+      }
+
+      if (runRef.current !== runId) return;
+      setActivePhrase(phrases.length);
+      setIsSettled(true);
+      onListenLogged?.();
+    } finally {
+      if (runRef.current === runId) {
+        setIsPlaying(false);
+        stopAtmosphere();
+      }
+    }
+  };
+
+  if (!verse) {
+    return (
+      <div className="daily-verse-rain-shell daily-verse-rain-empty">
+        {t('目前沒有可播放的每日經文', 'No daily verse is available yet.')}
+      </div>
+    );
+  }
+
+  return (
+    <div className="daily-verse-rain-shell">
+      <div
+        className="daily-verse-rain-scene"
+        key={`${verse.reference}-${playKey}`}
+      >
+        {imageOk && (
+          <img
+            className="daily-verse-rain-image"
+            src={backgroundImageUrl}
+            alt=""
+            aria-hidden="true"
+            loading="eager"
+            decoding="async"
+            referrerPolicy="no-referrer"
+            onLoad={() => setImageLoaded(true)}
+            onError={() => setImageOk(false)}
+          />
+        )}
+        <div className={`daily-verse-rain-sky ${imageLoaded ? 'has-ai-image' : ''}`} />
+        <div className="daily-verse-rain-glow" />
+        <div className="daily-verse-rain-drops">
+          {DAILY_RAIN_DROPS.map((drop, index) => (
+            <span
+              key={index}
+              className={`depth-${drop.depth}`}
+              style={{
+                '--x': drop.left,
+                '--y': drop.top,
+                '--drop-length': drop.length,
+                '--drop-width': drop.width,
+                '--drop-opacity': drop.opacity,
+                '--drop-duration': drop.duration,
+                '--drop-delay': drop.delay,
+                '--drop-drift': drop.drift,
+                '--drop-blur': drop.blur
+              }}
+            />
+          ))}
+        </div>
+        <div className="daily-verse-rain-content">
+          <div className="daily-verse-rain-topbar">
+            <button type="button" onClick={onPrevious} aria-label={t('前一天', 'Previous day')}>‹</button>
+            <div>
+              <div className="daily-verse-rain-kicker">{t('今日經文雨', 'Daily VerseRain')}</div>
+              {dateLabel && <div className="daily-verse-rain-date">{dateLabel}</div>}
+            </div>
+            <button type="button" onClick={onNext} disabled={nextDisabled} aria-label={t('後一天', 'Next day')}>›</button>
+          </div>
+          <h2>{verse.reference}</h2>
+          <div className={`daily-verse-rain-phrases ${isPlaying ? 'is-playing' : ''} ${isSettled ? 'is-settled' : ''}`} aria-live="polite">
+            {phrases.map((phrase, index) => (
+              <span
+                key={`${phrase}-${index}`}
+                className={`${index === activePhrase ? 'is-active' : ''} ${index < activePhrase || isSettled ? 'has-landed' : ''}`}
+                style={{
+                  '--delay': `${Math.min(index * 0.42, 6.2)}s`,
+                  '--drift': `${((index % 5) - 2) * 9}px`
+                }}
+              >
+                {phrase}
+              </span>
+            ))}
+          </div>
+        </div>
+        <div className="daily-verse-rain-actions">
+          <button type="button" onClick={playExperience} disabled={isPlaying}>
+            <Headphones size={18} /> {t('讀經', 'Read')}
+          </button>
+          <button type="button" onClick={onChallenge}>
+            <Play size={18} fill="currentColor" /> {t('挑戰', 'Challenge')}
+          </button>
+          <button type="button" onClick={onShare}>
+            <Share2 size={18} /> {t('分享', 'Share')}
+          </button>
+        </div>
+      </div>
+
+      <div className="daily-verse-rain-controls" aria-label={t('每日經文雨設定', 'Daily VerseRain settings')}>
+        {sourceLabel && <span>{sourceLabel}</span>}
+        <button type="button" onClick={playExperience} disabled={isPlaying} className="is-on">
+          {isPlaying ? t('讀經中', 'Reading') : t('播放經文', 'Play verse')}
+        </button>
+        <button type="button" onClick={() => setVoiceEnabled(v => !v)} className={voiceEnabled ? 'is-on' : ''}>
+          {voiceEnabled ? t('語音開', 'Voice on') : t('語音關', 'Voice off')}
+        </button>
+        <button type="button" onClick={() => setMusicEnabled(v => !v)} className={musicEnabled ? 'is-on' : ''}>
+          {musicEnabled ? t('音樂開', 'Music on') : t('音樂關', 'Music off')}
+        </button>
+      </div>
+    </div>
+  );
 }
 
 function playShuffleSound() {
@@ -663,11 +1023,21 @@ const ActivityHeatmap = ({ t, activityMap = {} }) => {
 
   const getColor = (val) => {
     if (val === 0) return '#334155'; // Level 0: Empty (Dark gray)
-    if (val === 10) return '#0e4429'; // Level 1: Logged in (Pale green)
-    if (val === 1 || val === 11 || val === 12) return '#006d32'; // Level 2: Played 1-2 verses (Medium-light green)
-    if (val >= 13 && val < 100) return '#26a641'; // Level 3: Played >= 3 verses (Bright green)
-    if (val === 2 || val >= 100) return '#39d353'; // Level 4: Broke record (Brightest green)
+    if (val < 200) return '#0e4429'; // Level 1: Opened the app/site
+    if (val < 1000) return '#006d32'; // Level 2: Listened to verses
+    if (val < 3000) return '#26a641'; // Level 3: Challenged new verses
+    if (val >= 3000) return '#39d353'; // Level 4: High activity day
     return '#334155';
+  };
+
+  const getActivityTitle = (day) => {
+    const value = day.value || 0;
+    let label = 'No Activity';
+    if (value >= 3000) label = 'High Activity';
+    else if (value >= 1000) label = 'New Verse Challenge';
+    else if (value >= 200) label = 'Listened to Verse';
+    else if (value >= 100) label = 'Opened VerseRain';
+    return `${day.date.toLocaleDateString()}: ${label}${value > 0 ? ` (${value} pts)` : ''}`;
   };
 
   const getMonthLabels = () => {
@@ -719,7 +1089,7 @@ const ActivityHeatmap = ({ t, activityMap = {} }) => {
                       borderRadius: '2px', 
                       background: getColor(day.value) 
                     }} 
-                    title={`${day.date.toLocaleDateString()}: ${(day.value === 2 || day.value >= 100) ? 'New High Score' : (day.value >= 13 && day.value < 100) ? 'Played 3+ Verses' : (day.value === 1 || day.value === 11 || day.value === 12) ? 'Played/Listened 1-2 Verses' : day.value === 10 ? 'Logged In' : 'No Activity'}`}
+                    title={getActivityTitle(day)}
                   />
                 );
               })}
@@ -861,7 +1231,7 @@ export default function App() {
         const todayStr = new Date().toLocaleDateString('en-CA');
         if (!merged._activity) merged._activity = {};
         let currentAct = merged._activity[todayStr] || 0;
-        if (currentAct < 10) currentAct = 10;
+        if (currentAct < 100) currentAct = 100;
         merged._activity[todayStr] = currentAct;
 
         // Always save to localStorage and state
@@ -883,7 +1253,7 @@ export default function App() {
           const todayStr = new Date().toLocaleDateString('en-CA');
           if (!localGd._activity) localGd._activity = {};
           let currentAct = localGd._activity[todayStr] || 0;
-          if (currentAct < 10) currentAct = 10;
+          if (currentAct < 100) currentAct = 100;
           localGd._activity[todayStr] = currentAct;
           
           localStorage.setItem('verseRain_gardenData', JSON.stringify(localGd));
@@ -1065,7 +1435,9 @@ export default function App() {
   const updateGarden = React.useCallback((ref, type, setId, amount = 1) => {
     setGardenData(prev => {
       const updated = { ...prev };
+      let isNewVerseChallenge = false;
       if (ref && ref !== 'activity_only') {
+        isNewVerseChallenge = !updated[ref] && type === 'played';
         if (!updated[ref]) {
           const used = new Set(Object.entries(updated).filter(([k]) => k !== '_activity').map(([,v]) => v.gridIndex));
           let idx = 0;
@@ -1084,17 +1456,14 @@ export default function App() {
       if (!updated._activity) updated._activity = {};
       
       let currentAct = updated._activity[todayStr] || 0;
-      if (currentAct === 1) currentAct = 11;
-      if (currentAct === 2) currentAct = 100;
+      if (currentAct > 0 && currentAct < 100) currentAct = 100;
       
       if (type === 'login') {
-        if (currentAct < 10) currentAct = 10;
-      } else if (type === 'champ') {
-        currentAct = 100;
-      } else if (type === 'played' || type === 'completed' || type === 'listen') {
-        if (currentAct < 100) {
-          currentAct = Math.max(10, currentAct) + 1;
-        }
+        if (currentAct < 100) currentAct = 100;
+      } else if (type === 'listen') {
+        currentAct += 100;
+      } else if (isNewVerseChallenge) {
+        currentAct += 1000;
       }
       updated._activity[todayStr] = currentAct;
       localStorage.setItem('verseRain_gardenData', JSON.stringify(updated));
@@ -1112,9 +1481,8 @@ export default function App() {
   }, []);
 
   React.useEffect(() => {
-    // Activity tracking on login has been moved to the data merge block 
-    // to prevent race conditions overwriting backend data.
-  }, [playerName]);
+    updateGarden('activity_only', 'login');
+  }, [updateGarden]);
 
   const logEvent = (type, args) => {
     const today = new Date().toISOString().split('T')[0];
@@ -1204,6 +1572,48 @@ export default function App() {
     }
     return null;
   }, [baseVerseSets, rainVerseIndex]);
+
+  const [dailyVerseDate, setDailyVerseDate] = useState(() => formatLocalDate(new Date()));
+  const [remoteDailyVerse, setRemoteDailyVerse] = useState(null);
+  const [isDailyVerseLoading, setIsDailyVerseLoading] = useState(false);
+  const dailyVerseRemoteVersion = getDailyVerseRemoteVersion(version);
+  const dailyVerse = React.useMemo(() => {
+    const rainSet = baseVerseSets.find(s => s.id && s.id.startsWith('rain-verses'));
+    const pool = rainSet?.verses?.length ? rainSet.verses : baseVerseSets.flatMap(s => s.verses || []);
+    return pool[getDailyVerseIndex(pool.length, `${dailyVerseDate}T00:00:00`)] || null;
+  }, [baseVerseSets, dailyVerseDate]);
+
+  useEffect(() => {
+    let cancelled = false;
+    const remoteVersion = dailyVerseRemoteVersion;
+    setRemoteDailyVerse(null);
+    setIsDailyVerseLoading(true);
+    fetch(`/api/daily-verse?date=${dailyVerseDate}&version=${remoteVersion}`)
+      .then(res => res.ok ? res.json() : Promise.reject(new Error(`Daily verse ${res.status}`)))
+      .then(data => {
+        if (cancelled) return;
+        if (data?.text && data?.reference) {
+          setRemoteDailyVerse({
+            id: `dailyverses-${data.date || dailyVerseDate}-${remoteVersion}`,
+            reference: data.reference,
+            text: data.text,
+            title: 'DailyVerses.net',
+            sourceUrl: data.sourceUrl,
+            date: data.date || dailyVerseDate,
+            translation: data.translation || remoteVersion
+          });
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setRemoteDailyVerse(null);
+      })
+      .finally(() => {
+        if (!cancelled) setIsDailyVerseLoading(false);
+      });
+    return () => { cancelled = true; };
+  }, [dailyVerseDate, dailyVerseRemoteVersion]);
+
+  const displayedDailyVerse = remoteDailyVerse?.translation === dailyVerseRemoteVersion ? remoteDailyVerse : dailyVerse;
 
   const activeVerseSets = React.useMemo(() => {
     const merged = [];
@@ -6494,6 +6904,61 @@ const deDict = {
                 />
               )}
 
+              {mainTab === 'daily_verse' && (
+                <div style={{ paddingBottom: '3rem' }}>
+                  <button
+                    onClick={() => setMainTab('advanced')}
+                    style={{ marginBottom: '1rem', background: 'white', color: '#475569', border: '1px solid #cbd5e1', borderRadius: '8px', padding: '0.55rem 0.9rem', cursor: 'pointer', fontWeight: 800 }}
+                  >
+                    ← {t('返回進階功能', 'Back to Advanced')}
+                  </button>
+                  {isDailyVerseLoading && (
+                    <div style={{ marginBottom: '0.75rem', color: '#64748b', fontWeight: 800 }}>
+                      {t('正在載入 DailyVerses.net 經文...', 'Loading DailyVerses.net verse...')}
+                    </div>
+                  )}
+                  <DailyVerseRainExperience
+                    verse={displayedDailyVerse}
+                    version={version}
+                    t={t}
+                    dateLabel={remoteDailyVerse?.date || dailyVerseDate}
+                    sourceLabel={remoteDailyVerse?.translation === dailyVerseRemoteVersion ? 'DailyVerses.net' : t('暫用本機經文', 'Local fallback')}
+                    onPrevious={() => setDailyVerseDate(prev => formatLocalDate(addDays(`${prev}T00:00:00`, -1)))}
+                    onNext={() => setDailyVerseDate(prev => formatLocalDate(addDays(`${prev}T00:00:00`, 1)))}
+                    nextDisabled={dailyVerseDate >= formatLocalDate(new Date())}
+                    onRead={() => displayedDailyVerse && setVerseViewModal(displayedDailyVerse)}
+                    onChallenge={() => {
+                      if (!displayedDailyVerse) return;
+                      initAudio();
+                      setCampaignQueue(null);
+                      setCampaignResults([]);
+                      setActiveVerse(displayedDailyVerse);
+                      setSelectedVerseRefs([displayedDailyVerse.reference]);
+                      setTimeout(() => startGame(false, displayedDailyVerse), 50);
+                    }}
+                    onShare={async () => {
+                      if (!displayedDailyVerse) return;
+                      const url = buildPublicShareUrl('/', { v: displayedDailyVerse.reference, version });
+                      const shareText = `${displayedDailyVerse.reference}\n${displayedDailyVerse.text}`;
+                      try {
+                        if (navigator.share) {
+                          await navigator.share({ title: displayedDailyVerse.reference, text: shareText, url });
+                        } else {
+                          await navigator.clipboard.writeText(`${shareText}\n${url}`);
+                          setToast(t('今日經文已複製到剪貼簿！', 'Daily verse copied!'));
+                          setTimeout(() => setToast(null), 3000);
+                        }
+                      } catch (error) {
+                        if (error?.name !== 'AbortError') {
+                          setQrShareModal({ url, reference: displayedDailyVerse.reference });
+                        }
+                      }
+                    }}
+                    onListenLogged={() => updateGarden('activity_only', 'listen')}
+                  />
+                </div>
+              )}
+
               {mainTab === 'advanced' && (
                 <div style={{ paddingBottom: '3rem' }}>
                   <h2 style={{ color: '#1e293b', marginBottom: '1.5rem', borderBottom: '2px solid #e2e8f0', paddingBottom: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -6501,6 +6966,7 @@ const deDict = {
                   </h2>
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1rem', width: '100%' }}>
                     {[
+                      { id: 'daily_verse', Icon: CloudRain, label: t('今日經文雨', 'Daily VerseRain'), desc: t('每日經文、經文雨動畫、語音朗讀與安靜背景音樂', 'A daily verse with rain animation, voice, and quiet background music'), color: '#2563eb' },
                       { id: 'kids', Icon: Star, label: '兒童冒險', desc: '給孩子使用的探險路線、拼圖模式與老師路線設計器', color: '#f59e0b' },
                       { id: 'accessible', Icon: Headphones, label: t('視障友善版', 'Accessible Version'), desc: t('高對比、鍵盤操作、語音提示與麥克風背誦流程', 'High contrast, keyboard controls, voice prompts, and microphone recitation'), color: '#0ea5e9' },
                       { id: 'blindMode', Icon: Mic, label: isBlindMode ? t('關閉視障經文雨', 'Disable Blind Mode') : t('打開視障經文雨', 'Enable Blind Mode'), desc: t('為視覺障礙朋友設計的語音模式', 'Voice mode for visually impaired'), color: '#8b5cf6' },
