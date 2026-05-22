@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "generate:dailyverse-backgrounds": "node scripts/generate-dailyverse-backgrounds.mjs",
     "lint": "eslint .",
     "preview": "vite preview"
   },

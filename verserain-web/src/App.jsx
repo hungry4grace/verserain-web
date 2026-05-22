@@ -191,12 +191,13 @@ function estimateSpeechDuration(text, lang) {
 }
 
 function speakTextTimed(text, rate = 1.0, lang = 'zh-TW') {
-  return new Promise(resolve => {
+  return new Promise(async resolve => {
     if (!('speechSynthesis' in window)) {
       resolve();
       return;
     }
 
+    await ensureSpeechVoices();
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.lang = lang;
     utterance.rate = rate;
@@ -221,17 +222,25 @@ function speakTextTimed(text, rate = 1.0, lang = 'zh-TW') {
     utterance.onend = safeResolve;
     utterance.onerror = safeResolve;
     setTimeout(safeResolve, estimateSpeechDuration(text, lang));
-    window.speechSynthesis.speak(utterance);
+    setTimeout(() => {
+      window.speechSynthesis.resume?.();
+      window.speechSynthesis.speak(utterance);
+    }, 50);
   });
 }
 
+function stopSpeechIfActive() {
+  if (!('speechSynthesis' in window)) return;
+  if (window.speechSynthesis.speaking || window.speechSynthesis.pending) {
+    window.speechSynthesis.cancel();
+  }
+}
+
 function speakText(text, rate = 1.0, lang = 'zh-TW') {
-  return new Promise(resolve => {
+  return new Promise(async resolve => {
     if ('speechSynthesis' in window) {
-      // Only cancel if something is actually speaking/pending — blind cancel() corrupts iOS audio
-      if (window.speechSynthesis.speaking || window.speechSynthesis.pending) {
-        window.speechSynthesis.cancel();
-      }
+      await ensureSpeechVoices();
+      stopSpeechIfActive();
 
       const utterance = new SpeechSynthesisUtterance(text);
       utterance.lang = lang;
@@ -336,30 +345,67 @@ function addDays(date, amount) {
   return d;
 }
 
-function getDailyVerseImageUrl(verse, dateLabel, version) {
-  const cacheKey = `verseRain_dailyImage_v2_${version}_${dateLabel}_${verse?.reference || 'none'}`;
-  try {
-    const cached = localStorage.getItem(cacheKey);
-    if (cached) return cached;
-  } catch (error) { /* localStorage unavailable */ }
+function getDailyVerseFallbackImageUrl(verse, dateLabel, version, seed) {
+  const hue = seed % 360;
+  const accent = (hue + 38) % 360;
+  const deep = (hue + 210) % 360;
+  const glow = (hue + 68) % 360;
+  const svg = `
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <linearGradient id="sky" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0" stop-color="hsl(${hue}, 58%, 28%)"/>
+      <stop offset="0.45" stop-color="hsl(${accent}, 72%, 52%)"/>
+      <stop offset="1" stop-color="hsl(${deep}, 62%, 16%)"/>
+    </linearGradient>
+    <radialGradient id="sun" cx="68%" cy="22%" r="42%">
+      <stop offset="0" stop-color="hsl(${glow}, 100%, 82%)" stop-opacity="0.95"/>
+      <stop offset="0.36" stop-color="hsl(${glow}, 94%, 62%)" stop-opacity="0.46"/>
+      <stop offset="1" stop-color="hsl(${deep}, 64%, 14%)" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="river" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0" stop-color="hsl(${accent}, 86%, 78%)" stop-opacity="0.72"/>
+      <stop offset="0.55" stop-color="hsl(${hue}, 78%, 50%)" stop-opacity="0.46"/>
+      <stop offset="1" stop-color="hsl(${deep}, 78%, 18%)" stop-opacity="0.94"/>
+    </linearGradient>
+    <filter id="soften">
+      <feGaussianBlur stdDeviation="10"/>
+    </filter>
+  </defs>
+  <rect width="1600" height="900" fill="url(#sky)"/>
+  <rect width="1600" height="900" fill="url(#sun)"/>
+  <path d="M0 520 C190 360 280 315 430 438 C560 545 615 315 780 420 C930 515 1015 270 1210 372 C1360 450 1465 362 1600 300 L1600 900 L0 900 Z" fill="hsl(${deep}, 54%, 19%)" opacity="0.72"/>
+  <path d="M0 610 C210 468 330 490 490 585 C640 675 800 492 950 565 C1120 648 1290 504 1600 560 L1600 900 L0 900 Z" fill="hsl(${hue}, 54%, 20%)" opacity="0.68"/>
+  <path d="M660 900 C720 760 760 630 835 552 C910 630 938 760 1030 900 Z" fill="url(#river)" opacity="0.9"/>
+  <path d="M680 900 C748 785 785 660 838 586 C890 674 940 800 1004 900 Z" fill="white" opacity="0.18" filter="url(#soften)"/>
+  <path d="M1070 160 L1600 42 L1600 172 L1110 240 Z" fill="white" opacity="0.13" filter="url(#soften)"/>
+  <path d="M960 230 L1600 185 L1600 330 L1000 300 Z" fill="white" opacity="0.1" filter="url(#soften)"/>
+  <circle cx="1120" cy="188" r="118" fill="hsl(${glow}, 100%, 74%)" opacity="0.22" filter="url(#soften)"/>
+  <g opacity="0.2" fill="none" stroke="white" stroke-width="2">
+    <path d="M160 690 C360 640 480 660 650 610"/>
+    <path d="M900 520 C1050 470 1220 500 1420 430"/>
+    <path d="M80 210 C230 185 360 205 500 170"/>
+  </g>
+</svg>`;
+  return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg.replace(/\s+/g, ' ').trim())}`;
+}
 
+function getDailyVerseBackgroundDay(dateLabel) {
+  const parsed = new Date(`${dateLabel || ''}T00:00:00`);
+  const day = Number.isNaN(parsed.getTime()) ? new Date().getDate() : parsed.getDate();
+  return Math.min(31, Math.max(1, day));
+}
+
+function getDailyVerseImageUrls(verse, dateLabel, version) {
   const seedSource = `${dateLabel}-${version}-${verse?.reference || ''}`;
   let seed = 0;
   for (let i = 0; i < seedSource.length; i++) seed = (seed * 31 + seedSource.charCodeAt(i)) >>> 0;
-  const prompt = [
-    'peaceful cinematic biblical devotional background',
-    'beautiful natural landscape',
-    'soft morning light',
-    'gentle atmosphere',
-    'no people',
-    'no text',
-    `inspired by ${verse?.reference || 'daily scripture'}`
-  ].join(', ');
-  const url = `https://gen.pollinations.ai/image/${encodeURIComponent(prompt)}?width=1600&height=900&seed=${seed}&nologo=true&enhance=true`;
-  try {
-    localStorage.setItem(cacheKey, url);
-  } catch (error) { /* localStorage unavailable */ }
-  return url;
+  const day = String(getDailyVerseBackgroundDay(dateLabel)).padStart(2, '0');
+
+  return [
+    `/dailyverse/day-${day}.svg`,
+    getDailyVerseFallbackImageUrl(verse, dateLabel, version, seed)
+  ];
 }
 
 const DAILY_RAIN_DROPS = Array.from({ length: 58 }, (_, index) => {
@@ -387,7 +433,8 @@ const DAILY_RAIN_DROPS = Array.from({ length: 58 }, (_, index) => {
 
 function DailyVerseRainExperience({ verse, version, t, onRead, onChallenge, onShare, onListenLogged, dateLabel, onPrevious, onNext, nextDisabled, sourceLabel }) {
   const phrases = useMemo(() => splitVersePhrases(verse?.text || '', version), [verse, version]);
-  const backgroundImageUrl = useMemo(() => getDailyVerseImageUrl(verse, dateLabel, version), [verse?.reference, dateLabel, version]);
+  const backgroundImageUrls = useMemo(() => getDailyVerseImageUrls(verse, dateLabel, version), [verse?.reference, dateLabel, version]);
+  const [imageIndex, setImageIndex] = useState(0);
   const [imageOk, setImageOk] = useState(true);
   const [imageLoaded, setImageLoaded] = useState(false);
   const [playKey, setPlayKey] = useState(0);
@@ -404,9 +451,21 @@ function DailyVerseRainExperience({ verse, version, t, onRead, onChallenge, onSh
     setActivePhrase(-1);
     setIsSettled(false);
     setIsPlaying(false);
+    setImageIndex(0);
     setImageOk(true);
     setImageLoaded(false);
   }, [verse?.reference, dateLabel]);
+
+  useEffect(() => {
+    if (imageLoaded || !imageOk || backgroundImageUrls[imageIndex]?.startsWith('data:')) return undefined;
+    const timeout = window.setTimeout(() => {
+      setImageIndex(current => {
+        if (current < backgroundImageUrls.length - 1) return current + 1;
+        return current;
+      });
+    }, 4500);
+    return () => window.clearTimeout(timeout);
+  }, [backgroundImageUrls, imageIndex, imageLoaded, imageOk]);
 
   useEffect(() => {
     if (!bgmRef.current) {
@@ -427,10 +486,7 @@ function DailyVerseRainExperience({ verse, version, t, onRead, onChallenge, onSh
   const playExperience = async () => {
     if (!verse || isPlaying) return;
     initAudio();
-    if ('speechSynthesis' in window) {
-      window.speechSynthesis.cancel();
-      window.speechSynthesis.resume?.();
-    }
+    window.speechSynthesis?.resume?.();
     const runId = runRef.current + 1;
     runRef.current = runId;
     setPlayKey(k => k + 1);
@@ -492,14 +548,21 @@ function DailyVerseRainExperience({ verse, version, t, onRead, onChallenge, onSh
         {imageOk && (
           <img
             className="daily-verse-rain-image"
-            src={backgroundImageUrl}
+            src={backgroundImageUrls[imageIndex]}
             alt=""
             aria-hidden="true"
             loading="eager"
             decoding="async"
             referrerPolicy="no-referrer"
             onLoad={() => setImageLoaded(true)}
-            onError={() => setImageOk(false)}
+            onError={() => {
+              setImageLoaded(false);
+              setImageIndex(current => {
+                if (current < backgroundImageUrls.length - 1) return current + 1;
+                setImageOk(false);
+                return current;
+              });
+            }}
           />
         )}
         <div className={`daily-verse-rain-sky ${imageLoaded ? 'has-ai-image' : ''}`} />
