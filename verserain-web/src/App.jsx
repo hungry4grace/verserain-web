@@ -888,6 +888,11 @@ function VerseSetContinuousRainPlayer({
     setShowTopicPicker(false);
     onSelectTopicSet(set);
   };
+  const currentTopicLabel = (label || verseSet?.title || t('經文組', 'Verse Set'));
+  const normalizedTopicButtonLabel = currentTopicLabel.startsWith('主題：')
+    ? currentTopicLabel
+    : `主題：${currentTopicLabel}`;
+  const stripTopicPrefix = (title = '') => String(title).replace(/^主題：\s*/, '');
 
   if (!currentVerse) {
     return (
@@ -961,9 +966,9 @@ function VerseSetContinuousRainPlayer({
                   type="button"
                   onClick={() => setShowTopicPicker(prev => !prev)}
                   className="daily-verse-rain-date continuous-rain-set-title"
-                  style={{ border: 'none', background: 'rgba(15, 23, 42, 0.25)', color: 'inherit', borderRadius: '999px', padding: '0.35rem 0.9rem', cursor: 'pointer', fontWeight: 700 }}
+                  style={{ border: 'none', background: 'rgba(15, 23, 42, 0.25)', color: 'inherit', borderRadius: '999px', padding: '0.35rem 0.9rem', cursor: 'pointer', fontWeight: 700, fontSize: '0.95rem', maxWidth: '52vw', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
                 >
-                  {label || verseSet?.title || t('經文組', 'Verse Set')}
+                  {normalizedTopicButtonLabel}
                 </button>
                 {showTopicPicker && (
                   <div style={{ position: 'absolute', top: 'calc(100% + 8px)', left: '50%', transform: 'translateX(-50%)', width: 'min(88vw, 340px)', maxHeight: '50vh', overflowY: 'auto', background: 'rgba(15, 23, 42, 0.94)', border: '1px solid rgba(148, 163, 184, 0.45)', borderRadius: '14px', boxShadow: '0 16px 36px rgba(2,6,23,.45)', zIndex: 30, padding: '0.35rem' }}>
@@ -974,7 +979,7 @@ function VerseSetContinuousRainPlayer({
                         onClick={() => handleSelectTopicSet(set)}
                         style={{ width: '100%', textAlign: 'left', border: 'none', borderRadius: '10px', margin: '0.15rem 0', background: set.id === verseSet?.id ? 'rgba(59,130,246,.28)' : 'transparent', color: '#e2e8f0', padding: '0.55rem 0.65rem', fontSize: '0.95rem', cursor: 'pointer' }}
                       >
-                        {set.title}
+                        {stripTopicPrefix(set.title)}
                       </button>
                     ))}
                   </div>
