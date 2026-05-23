@@ -691,9 +691,25 @@ function DailyVerseRainExperience({ verse, version, t, onRead, onChallenge, onSh
   );
 }
 
-function VerseSetContinuousRainPlayer({ verseSet, version, t, onStop, onListenLogged }) {
+function VerseSetContinuousRainPlayer({
+  verseSet,
+  version,
+  t,
+  onStop,
+  onListenLogged,
+  playOnce = false,
+  onComplete,
+  label,
+  showNav = true,
+  startVerse = null,
+  onPrevious = null,
+  onNext = null,
+  nextDisabled = false,
+  onChallengeVerse = null,
+  onShareVerse = null
+}) {
   const verses = useMemo(() => verseSet?.verses?.filter(Boolean) || [], [verseSet]);
-  const [currentVerse, setCurrentVerse] = useState(() => pickRandomVerse(verses));
+  const [currentVerse, setCurrentVerse] = useState(() => startVerse || pickRandomVerse(verses));
   const phrases = useMemo(() => splitVersePhrases(currentVerse?.text || '', version), [currentVerse, version]);
   const imageDateLabel = useMemo(() => {
     const day = (getStableNumber(`${verseSet?.id || verseSet?.title}-${currentVerse?.reference || ''}`) % 31) + 1;
@@ -711,6 +727,7 @@ function VerseSetContinuousRainPlayer({ verseSet, version, t, onStop, onListenLo
   const bgmRef = useRef(null);
   const runRef = useRef(0);
   const verseSetIdRef = useRef(verseSet?.id);
+  const verseSourceRef = useRef(`${verseSet?.id || ''}-${startVerse?.reference || ''}-${startVerse?.text || ''}`);
   const onListenLoggedRef = useRef(onListenLogged);
   const phraseContainerRef = useRef(null);
   const phraseNodeRefs = useRef([]);
@@ -720,10 +737,12 @@ function VerseSetContinuousRainPlayer({ verseSet, version, t, onStop, onListenLo
   }, [onListenLogged]);
 
   useEffect(() => {
-    if (verseSetIdRef.current === verseSet?.id) return;
+    const sourceKey = `${verseSet?.id || ''}-${startVerse?.reference || ''}-${startVerse?.text || ''}`;
+    if (verseSetIdRef.current === verseSet?.id && verseSourceRef.current === sourceKey) return;
     verseSetIdRef.current = verseSet?.id;
-    setCurrentVerse(pickRandomVerse(verses));
-  }, [verseSet?.id, verses]);
+    verseSourceRef.current = sourceKey;
+    setCurrentVerse(startVerse || pickRandomVerse(verses));
+  }, [verseSet?.id, verses, startVerse]);
 
   useEffect(() => {
     if (!bgmRef.current) {
@@ -812,6 +831,11 @@ function VerseSetContinuousRainPlayer({ verseSet, version, t, onStop, onListenLo
       onListenLoggedRef.current?.();
       await wait(4300);
       if (cancelled || runRef.current !== runId) return;
+      if (playOnce) {
+        bgmRef.current?.pause();
+        onComplete?.();
+        return;
+      }
       setCurrentVerse(pickRandomVerse(verses, currentVerse.reference));
     };
 
@@ -822,12 +846,37 @@ function VerseSetContinuousRainPlayer({ verseSet, version, t, onStop, onListenLo
       runRef.current += 1;
       stopSpeechIfActive();
     };
-  }, [currentVerse?.reference, phrases, version, verses]);
+  }, [currentVerse?.reference, phrases, version, verses, playOnce, onComplete]);
+
+  const haltPlayback = () => {
+    runRef.current += 1;
+    bgmRef.current?.pause();
+    stopSpeechIfActive();
+  };
 
   const skipVerse = () => {
-    runRef.current += 1;
-    stopSpeechIfActive();
+    if (!showNav) return;
+    haltPlayback();
     setCurrentVerse(pickRandomVerse(verses, currentVerse?.reference));
+  };
+
+  const handlePrevious = () => {
+    haltPlayback();
+    if (onPrevious) {
+      onPrevious();
+      return;
+    }
+    skipVerse();
+  };
+
+  const handleNext = () => {
+    if (nextDisabled) return;
+    haltPlayback();
+    if (onNext) {
+      onNext();
+      return;
+    }
+    skipVerse();
   };
 
   if (!currentVerse) {
@@ -845,7 +894,7 @@ function VerseSetContinuousRainPlayer({ verseSet, version, t, onStop, onListenLo
 
   return (
     <div className="continuous-rain-overlay">
-      <button type="button" className="continuous-rain-stop" onClick={onStop}>
+      <button type="button" className="continuous-rain-stop" onClick={() => { haltPlayback(); onStop?.(); }}>
         <XCircle size={24} /> {t('停止播放', 'Stop')}
       </button>
       <div className={`daily-verse-rain-shell continuous-rain-shell rain-font-${fontSizeLevel}`}>
@@ -896,11 +945,11 @@ function VerseSetContinuousRainPlayer({ verseSet, version, t, onStop, onListenLo
           </div>
           <div className="daily-verse-rain-content continuous-rain-content">
             <div className="daily-verse-rain-topbar continuous-rain-topbar">
-              <button type="button" onClick={skipVerse} aria-label={t('上一節隨機經文', 'Previous random verse')}>‹</button>
+              {showNav && <button type="button" onClick={handlePrevious} aria-label={onPrevious ? t('前一天', 'Previous day') : t('上一節隨機經文', 'Previous random verse')}>‹</button>}
               <div>
-                <div className="daily-verse-rain-date continuous-rain-set-title">{verseSet?.title || t('經文組', 'Verse Set')}</div>
+                <div className="daily-verse-rain-date continuous-rain-set-title">{label || verseSet?.title || t('經文組', 'Verse Set')}</div>
               </div>
-              <button type="button" onClick={skipVerse} aria-label={t('下一節隨機經文', 'Next random verse')}>›</button>
+              {showNav && <button type="button" onClick={handleNext} disabled={nextDisabled} aria-label={onNext ? t('後一天', 'Next day') : t('下一節隨機經文', 'Next random verse')}>›</button>}
             </div>
             <h2>{currentVerse.reference}</h2>
             <div
@@ -936,6 +985,30 @@ function VerseSetContinuousRainPlayer({ verseSet, version, t, onStop, onListenLo
         t={t}
         className="continuous-rain-font-controls"
       />
+      {(onChallengeVerse || onShareVerse) && (
+        <div className="continuous-rain-action-controls" aria-label={t('播放操作', 'Playback actions')}>
+          {onChallengeVerse && (
+            <button
+              type="button"
+              className="is-primary"
+              onClick={() => {
+                haltPlayback();
+                onChallengeVerse(currentVerse);
+              }}
+            >
+              <Play size={20} fill="currentColor" /> {t('挑戰', 'Challenge')}
+            </button>
+          )}
+          {onShareVerse && (
+            <button
+              type="button"
+              onClick={() => onShareVerse(currentVerse)}
+            >
+              <Share2 size={20} /> {t('分享', 'Share')}
+            </button>
+          )}
+        </div>
+      )}
     </div>
   );
 }
@@ -2914,6 +2987,15 @@ export default function App() {
     const setRef = params.get('set');
     const rcParam = params.get('rc');
     const roomParam = params.get('room');
+    const listenDaily = params.get('listenDaily');
+    const listenSetRef = params.get('listenSet');
+    const listenVerseRef = params.get('listenVerse');
+    const requestedVersion = params.get('version');
+
+    if ((listenDaily || listenSetRef) && requestedVersion && requestedVersion !== version) {
+      setVersion(requestedVersion);
+      return;
+    }
 
     if (roomParam) {
       const roomCode = sanitizeRoomCode(roomParam);
@@ -2925,6 +3007,33 @@ export default function App() {
       }
       // Small timeout to allow state applied before url replace
       setTimeout(() => window.history.replaceState({}, document.title, window.location.pathname), 100);
+      return;
+    }
+
+    if (listenDaily) {
+      setDailyVerseDate(listenDaily);
+      setContinuousRainSet(null);
+      setMainTab('daily_verse');
+      window.history.replaceState({}, document.title, window.location.pathname);
+      return;
+    }
+
+    if (listenSetRef) {
+      const foundSet = activeVerseSets.find(s => s.id === listenSetRef);
+      if (foundSet) {
+        const startVerse = listenVerseRef
+          ? (foundSet.verses || []).find(v => v.reference === listenVerseRef)
+          : null;
+        setSelectedSetId(foundSet.id);
+        setMainTab('versesets');
+        setContinuousRainSet({
+          id: foundSet.id,
+          title: foundSet.title,
+          verses: foundSet.verses || [],
+          startVerse
+        });
+        window.history.replaceState({}, document.title, window.location.pathname);
+      }
       return;
     }
 
@@ -3102,6 +3211,31 @@ export default function App() {
     setActiveCampaignSetTotal(1);
     setActiveVerse(verse);
     setTimeout(() => startGame(true, verse), 50);
+  };
+
+  const challengeVerseFromReader = (verse) => {
+    if (!verse) return;
+    initAudio();
+    setContinuousRainSet(null);
+    setCampaignQueue(null);
+    campaignQueueRef.current = null;
+    setCampaignResults([]);
+    setActiveCampaignSetId(null);
+    setActiveCampaignSetTotal(1);
+    setActiveVerse(verse);
+    setSelectedVerseRefs([verse.reference]);
+    setTimeout(() => startGame(false, verse), 50);
+  };
+
+  const openListeningShare = async (url, reference) => {
+    setQrShareModal({ url, reference });
+    try {
+      await navigator.clipboard?.writeText(url);
+      setToast(t('讀經連結已複製！', 'Reading link copied!'));
+      setTimeout(() => setToast(null), 3000);
+    } catch {
+      // QR modal remains available when clipboard permission is unavailable.
+    }
   };
 
   useEffect(() => {
@@ -6989,10 +7123,21 @@ const deDict = {
         {continuousRainSet && (
           <VerseSetContinuousRainPlayer
             verseSet={continuousRainSet}
+            startVerse={continuousRainSet.startVerse || null}
             version={version}
             t={t}
             onStop={() => setContinuousRainSet(null)}
             onListenLogged={() => updateGarden('activity_only', 'listen')}
+            onChallengeVerse={challengeVerseFromReader}
+            onShareVerse={(verse) => {
+              if (!verse || !continuousRainSet?.id) return;
+              const link = buildPublicShareUrl('/', {
+                listenSet: continuousRainSet.id,
+                listenVerse: verse.reference,
+                version
+              });
+              openListeningShare(link, `${continuousRainSet.title || t('經文組', 'Verse Set')} · ${verse.reference}`);
+            }}
           />
         )}
 
@@ -7279,52 +7424,36 @@ const deDict = {
               )}
 
               {mainTab === 'daily_verse' && (
-                <div style={{ paddingBottom: '3rem' }}>
-                  <button
-                    onClick={() => setMainTab('advanced')}
-                    style={{ marginBottom: '1rem', background: 'white', color: '#475569', border: '1px solid #cbd5e1', borderRadius: '8px', padding: '0.55rem 0.9rem', cursor: 'pointer', fontWeight: 800 }}
-                  >
-                    ← {t('返回進階功能', 'Back to Advanced')}
-                  </button>
-                  <DailyVerseRainExperience
-                    verse={displayedDailyVerse}
+                displayedDailyVerse ? (
+                  <VerseSetContinuousRainPlayer
+                    verseSet={{
+                      id: `daily-${remoteDailyVerse?.date || dailyVerseDate}`,
+                      title: remoteDailyVerse?.date || dailyVerseDate,
+                      verses: [displayedDailyVerse]
+                    }}
+                    startVerse={displayedDailyVerse}
                     version={version}
                     t={t}
-                    dateLabel={remoteDailyVerse?.date || dailyVerseDate}
+                    label={remoteDailyVerse?.date || dailyVerseDate}
+                    showNav
                     onPrevious={() => setDailyVerseDate(prev => formatLocalDate(addDays(`${prev}T00:00:00`, -1)))}
                     onNext={() => setDailyVerseDate(prev => formatLocalDate(addDays(`${prev}T00:00:00`, 1)))}
                     nextDisabled={dailyVerseDate >= formatLocalDate(new Date())}
-                    onRead={() => displayedDailyVerse && setVerseViewModal(displayedDailyVerse)}
-                    onChallenge={() => {
-                      if (!displayedDailyVerse) return;
-                      initAudio();
-                      setCampaignQueue(null);
-                      setCampaignResults([]);
-                      setActiveVerse(displayedDailyVerse);
-                      setSelectedVerseRefs([displayedDailyVerse.reference]);
-                      setTimeout(() => startGame(false, displayedDailyVerse), 50);
-                    }}
-                    onShare={async () => {
-                      if (!displayedDailyVerse) return;
-                      const url = buildPublicShareUrl('/', { v: displayedDailyVerse.reference, version });
-                      const shareText = `${displayedDailyVerse.reference}\n${displayedDailyVerse.text}`;
-                      try {
-                        if (navigator.share) {
-                          await navigator.share({ title: displayedDailyVerse.reference, text: shareText, url });
-                        } else {
-                          await navigator.clipboard.writeText(`${shareText}\n${url}`);
-                          setToast(t('今日經文已複製到剪貼簿！', 'Daily verse copied!'));
-                          setTimeout(() => setToast(null), 3000);
-                        }
-                      } catch (error) {
-                        if (error?.name !== 'AbortError') {
-                          setQrShareModal({ url, reference: displayedDailyVerse.reference });
-                        }
-                      }
-                    }}
+                    onStop={() => setMainTab('advanced')}
                     onListenLogged={() => updateGarden('activity_only', 'listen')}
+                    onChallengeVerse={challengeVerseFromReader}
+                    onShareVerse={(verse) => {
+                      if (!verse) return;
+                      const dateLabel = remoteDailyVerse?.date || dailyVerseDate;
+                      const link = buildPublicShareUrl('/', { listenDaily: dateLabel, version });
+                      openListeningShare(link, `${dateLabel} · ${verse.reference}`);
+                    }}
                   />
-                </div>
+                ) : (
+                  <div style={{ padding: '2rem', color: '#64748b', fontWeight: 800 }}>
+                    {t('目前沒有可播放的每日經文', 'No daily verse is available yet.')}
+                  </div>
+                )
               )}
 
               {mainTab === 'advanced' && (
@@ -11360,7 +11489,7 @@ const deDict = {
                   onClick={async () => {
                     try {
                       await navigator.clipboard.writeText(qrShareModal.url);
-                      setToast(t("挑戰連結已複製到剪貼簿！", "Challenge link copied!"));
+                      setToast(t("分享連結已複製到剪貼簿！", "Share link copied!"));
                       setTimeout(() => setToast(null), 3000);
                     } catch (err) {
                       alert(qrShareModal.url);

@@ -1366,6 +1366,27 @@ textarea {
   font-size: clamp(1.5em, 4.2vw, 2.18em);
 }
 
+.continuous-rain-phrases span.is-active {
+  animation: continuousVersePhraseDrop 1.35s cubic-bezier(.18, .86, .22, 1) both;
+}
+
+@keyframes continuousVersePhraseDrop {
+  from {
+    transform: translate3d(var(--drift), -52vh, 0);
+    opacity: 0;
+  }
+
+  68% {
+    transform: translate3d(0, 6px, 0);
+    opacity: 1;
+  }
+
+  to {
+    transform: translate3d(0, 0, 0);
+    opacity: 1;
+  }
+}
+
 .continuous-rain-topbar button {
   width: 66px;
   height: 66px;
@@ -1380,6 +1401,48 @@ textarea {
   box-shadow: 0 12px 34px rgba(0, 0, 0, 0.28);
 }
 
+.continuous-rain-action-controls {
+  position: fixed;
+  left: 50%;
+  bottom: max(0.9rem, env(safe-area-inset-bottom));
+  transform: translateX(-50%);
+  z-index: 2606;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+}
+
+.continuous-rain-action-controls button {
+  min-height: 48px;
+  min-width: 116px;
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  border-radius: 999px;
+  padding: 0.58rem 1.1rem;
+  background: rgba(248, 250, 252, 0.9);
+  color: #0f172a;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  font-size: 1rem;
+  font-weight: 900;
+  cursor: pointer;
+  box-shadow: 0 12px 34px rgba(0, 0, 0, 0.28);
+  backdrop-filter: blur(14px);
+}
+
+.continuous-rain-action-controls button.is-primary {
+  border-color: rgba(147, 197, 253, 0.9);
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  color: #ffffff;
+}
+
+.continuous-rain-action-controls button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.34);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .daily-verse-rain-drops span {
     animation: none;
@@ -1388,6 +1451,10 @@ textarea {
   .daily-verse-rain-phrases span {
     transform: none;
     opacity: 1;
+  }
+
+  .continuous-rain-phrases span.is-active {
+    animation: none;
   }
 }
 
@@ -1435,6 +1502,25 @@ textarea {
 
   .continuous-rain-content {
     padding-top: 4.5rem;
+  }
+
+  .continuous-rain-action-controls {
+    left: max(0.75rem, env(safe-area-inset-left));
+    bottom: max(0.75rem, env(safe-area-inset-bottom));
+    transform: none;
+    gap: 0.45rem;
+  }
+
+  .continuous-rain-action-controls button {
+    min-width: 86px;
+    min-height: 44px;
+    padding: 0.48rem 0.72rem;
+    font-size: 0.9rem;
+  }
+
+  .continuous-rain-font-controls {
+    right: max(0.75rem, env(safe-area-inset-right));
+    bottom: max(0.75rem, env(safe-area-inset-bottom));
   }
 }
 
