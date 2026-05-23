@@ -2011,13 +2011,21 @@ export default function App() {
 
   const [dailyVerseDate, setDailyVerseDate] = useState(() => formatLocalDate(new Date()));
   const [remoteDailyVerse, setRemoteDailyVerse] = useState(null);
-  const [isDailyVerseLoading, setIsDailyVerseLoading] = useState(false);
+  const [isDailyVerseLoading, setIsDailyVerseLoading] = useState(true);
   const dailyVerseRemoteVersion = getDailyVerseRemoteVersion(version);
   const dailyVerse = React.useMemo(() => {
     const rainSet = baseVerseSets.find(s => s.id && s.id.startsWith('rain-verses'));
     const pool = rainSet?.verses?.length ? rainSet.verses : baseVerseSets.flatMap(s => s.verses || []);
     return pool[getDailyVerseIndex(pool.length, `${dailyVerseDate}T00:00:00`)] || null;
   }, [baseVerseSets, dailyVerseDate]);
+  const changeDailyVerseDate = React.useCallback((nextDateOrUpdater) => {
+    setRemoteDailyVerse(null);
+    setIsDailyVerseLoading(true);
+    setDailyVerseDate(prev => {
+      const nextDate = typeof nextDateOrUpdater === 'function' ? nextDateOrUpdater(prev) : nextDateOrUpdater;
+      return nextDate || prev;
+    });
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -2049,7 +2057,10 @@ export default function App() {
     return () => { cancelled = true; };
   }, [dailyVerseDate, dailyVerseRemoteVersion]);
 
-  const displayedDailyVerse = remoteDailyVerse?.translation === dailyVerseRemoteVersion ? remoteDailyVerse : dailyVerse;
+  const remoteDailyVerseMatches =
+    remoteDailyVerse?.translation === dailyVerseRemoteVersion &&
+    remoteDailyVerse?.date === dailyVerseDate;
+  const displayedDailyVerse = remoteDailyVerseMatches ? remoteDailyVerse : (isDailyVerseLoading ? null : dailyVerse);
 
   const activeVerseSets = React.useMemo(() => {
     const merged = [];
@@ -3011,7 +3022,7 @@ export default function App() {
     }
 
     if (listenDaily) {
-      setDailyVerseDate(listenDaily);
+      changeDailyVerseDate(listenDaily);
       setContinuousRainSet(null);
       setMainTab('daily_verse');
       window.history.replaceState({}, document.title, window.location.pathname);
@@ -3097,7 +3108,7 @@ export default function App() {
         }
       }
     }
-  }, [playerName, activeVerseSets, version, setActiveVerse, setSelectedVerseRefs, setInitAutoStart, setShowLoginModal, setVersion]);
+  }, [playerName, activeVerseSets, version, changeDailyVerseDate, setActiveVerse, setSelectedVerseRefs, setInitAutoStart, setShowLoginModal, setVersion]);
 
   const timerRef = useRef(null);
   const isGameTimerPausedRef = useRef(false);
@@ -7436,8 +7447,8 @@ const deDict = {
                     t={t}
                     label={remoteDailyVerse?.date || dailyVerseDate}
                     showNav
-                    onPrevious={() => setDailyVerseDate(prev => formatLocalDate(addDays(`${prev}T00:00:00`, -1)))}
-                    onNext={() => setDailyVerseDate(prev => formatLocalDate(addDays(`${prev}T00:00:00`, 1)))}
+                    onPrevious={() => changeDailyVerseDate(prev => formatLocalDate(addDays(`${prev}T00:00:00`, -1)))}
+                    onNext={() => changeDailyVerseDate(prev => formatLocalDate(addDays(`${prev}T00:00:00`, 1)))}
                     nextDisabled={dailyVerseDate >= formatLocalDate(new Date())}
                     onStop={() => setMainTab('advanced')}
                     onListenLogged={() => updateGarden('activity_only', 'listen')}
@@ -7450,8 +7461,51 @@ const deDict = {
                     }}
                   />
                 ) : (
-                  <div style={{ padding: '2rem', color: '#64748b', fontWeight: 800 }}>
-                    {t('目前沒有可播放的每日經文', 'No daily verse is available yet.')}
+                  <div className="continuous-rain-overlay">
+                    <button type="button" className="continuous-rain-stop" onClick={() => setMainTab('advanced')}>
+                      <XCircle size={24} /> {t('停止播放', 'Stop')}
+                    </button>
+                    <div className="daily-verse-rain-shell continuous-rain-shell">
+                      <div className="daily-verse-rain-scene continuous-rain-scene">
+                        <div className="daily-verse-rain-sky" />
+                        <div className="daily-verse-rain-glow" />
+                        <div className="daily-verse-rain-drops">
+                          {DAILY_RAIN_DROPS.map((drop, index) => (
+                            <span
+                              key={index}
+                              className={`depth-${drop.depth}`}
+                              style={{
+                                '--x': drop.left,
+                                '--y': drop.top,
+                                '--drop-length': drop.length,
+                                '--drop-width': drop.width,
+                                '--drop-opacity': drop.opacity,
+                                '--drop-duration': drop.duration,
+                                '--drop-delay': drop.delay,
+                                '--drop-drift': drop.drift,
+                                '--drop-blur': drop.blur
+                              }}
+                            />
+                          ))}
+                        </div>
+                        <div className="daily-verse-rain-content continuous-rain-content">
+                          <div className="daily-verse-rain-topbar continuous-rain-topbar">
+                            <button type="button" onClick={() => changeDailyVerseDate(prev => formatLocalDate(addDays(`${prev}T00:00:00`, -1)))} aria-label={t('前一天', 'Previous day')}>‹</button>
+                            <div>
+                              <div className="daily-verse-rain-date continuous-rain-set-title">{dailyVerseDate}</div>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => changeDailyVerseDate(prev => formatLocalDate(addDays(`${prev}T00:00:00`, 1)))}
+                              disabled={dailyVerseDate >= formatLocalDate(new Date())}
+                              aria-label={t('後一天', 'Next day')}
+                            >
+                              ›
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 )
               )}
