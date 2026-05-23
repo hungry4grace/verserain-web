@@ -729,6 +729,7 @@ function VerseSetContinuousRainPlayer({
   const [showTopicPicker, setShowTopicPicker] = useState(false);
   const bgmRef = useRef(null);
   const runRef = useRef(0);
+  const topicPickerRef = useRef(null);
   const verseSetIdRef = useRef(verseSet?.id);
   const verseSourceRef = useRef(`${verseSet?.id || ''}-${startVerse?.reference || ''}-${startVerse?.text || ''}`);
   const onListenLoggedRef = useRef(onListenLogged);
@@ -738,6 +739,18 @@ function VerseSetContinuousRainPlayer({
   useEffect(() => {
     onListenLoggedRef.current = onListenLogged;
   }, [onListenLogged]);
+
+  useEffect(() => {
+    if (!showTopicPicker) return undefined;
+
+    const closeTopicPickerOnOutsideClick = (event) => {
+      if (topicPickerRef.current?.contains(event.target)) return;
+      setShowTopicPicker(false);
+    };
+
+    document.addEventListener('pointerdown', closeTopicPickerOnOutsideClick);
+    return () => document.removeEventListener('pointerdown', closeTopicPickerOnOutsideClick);
+  }, [showTopicPicker]);
 
   useEffect(() => {
     const sourceKey = `${verseSet?.id || ''}-${startVerse?.reference || ''}-${startVerse?.text || ''}`;
@@ -1020,7 +1033,7 @@ function VerseSetContinuousRainPlayer({
           <div className="daily-verse-rain-content continuous-rain-content">
             <div className="daily-verse-rain-topbar continuous-rain-topbar">
               {showNav && <button type="button" onClick={handlePrevious} aria-label={onPrevious ? t('前一天', 'Previous day') : t('上一節隨機經文', 'Previous random verse')}>‹</button>}
-              <div style={{ position: 'relative' }}>
+              <div ref={topicPickerRef} style={{ position: 'relative' }}>
                 <button
                   type="button"
                   onClick={() => setShowTopicPicker(prev => !prev)}
@@ -7554,18 +7567,11 @@ const deDict = {
                   </div>
 
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.5rem', width: '100%' }}>
-                    {/* Play Solo */}
-                    <div className="primary-button" onClick={() => setMainTab('versesets')} style={{ background: 'linear-gradient(135deg, #60a5fa, #3b82f6)', borderRadius: '16px', padding: '2.5rem 2rem', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', color: 'white', textAlign: 'center' }}>
-                      <Library size={72} style={{ marginBottom: '1rem' }} />
-                      <h2 style={{ fontSize: '2rem', margin: 0, marginBottom: '0.5rem', textShadow: '0 2px 4px rgba(0,0,0,0.2)' }}>{t("經文庫", "Scripture Library")}</h2>
-                      <p style={{ fontSize: '1rem', margin: 0, opacity: 0.9 }}>{t("瀏覽全球經文組，挑選經文開始練習。", "Browse global verse sets and choose scriptures to practice.")}</p>
-                    </div>
-
-                    {/* Host Party */}
-                    <div className="primary-button" onClick={() => setMainTab('multiplayer')} style={{ background: 'linear-gradient(135deg, #f472b6, #ec4899)', borderRadius: '16px', padding: '2.5rem 2rem', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', color: 'white', textAlign: 'center' }}>
-                      <Users size={72} style={{ marginBottom: '1rem' }} />
-                      <h2 style={{ fontSize: '2rem', margin: 0, marginBottom: '0.5rem', textShadow: '0 2px 4px rgba(0,0,0,0.2)' }}>{t("團隊競賽", "Team Competition")}</h2>
-                      <p style={{ fontSize: '1rem', margin: 0, opacity: 0.9 }}>{t("建立房間，分隊一起挑戰經文。", "Create a room and compete in teams.")}</p>
+                    {/* Daily VerseRain */}
+                    <div className="primary-button" onClick={() => setMainTab('daily_verse')} style={{ background: 'linear-gradient(135deg, #818cf8, #6366f1 55%, #4338ca)', borderRadius: '16px', padding: '2.5rem 2rem', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', color: 'white', textAlign: 'center', boxShadow: '0 10px 28px rgba(79, 70, 229, 0.35)' }}>
+                      <CloudRain size={72} style={{ marginBottom: '1rem' }} />
+                      <h2 style={{ fontSize: '2rem', margin: 0, marginBottom: '0.5rem', textShadow: '0 2px 4px rgba(0,0,0,0.2)' }}>{t("今日經文雨", "Daily VerseRain")}</h2>
+                      <p style={{ fontSize: '1rem', margin: 0, opacity: 0.95 }}>{t("每日一句神的話，心意更新而變化。", "A verse a day to renew your mind.")}</p>
                     </div>
 
                     {/* My Garden */}
@@ -7573,6 +7579,20 @@ const deDict = {
                       <TreePine size={72} style={{ marginBottom: '1rem' }} />
                       <h2 style={{ fontSize: '2rem', margin: 0, marginBottom: '0.5rem', textShadow: '0 2px 4px rgba(0,0,0,0.2)' }}>{t("我的園子", "My Garden")}</h2>
                       <p style={{ fontSize: '1rem', margin: 0, opacity: 0.9 }}>{t("檢視你已經學會並種下生命樹的經文。", "View your living scripture trees.")}</p>
+                    </div>
+
+                    {/* Scripture Library */}
+                    <div className="primary-button" onClick={() => setMainTab('versesets')} style={{ background: 'linear-gradient(135deg, #60a5fa, #3b82f6)', borderRadius: '16px', padding: '2.5rem 2rem', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', color: 'white', textAlign: 'center' }}>
+                      <Library size={72} style={{ marginBottom: '1rem' }} />
+                      <h2 style={{ fontSize: '2rem', margin: 0, marginBottom: '0.5rem', textShadow: '0 2px 4px rgba(0,0,0,0.2)' }}>{t("經文庫", "Scripture Library")}</h2>
+                      <p style={{ fontSize: '1rem', margin: 0, opacity: 0.9 }}>{t("瀏覽全球經文組，挑選經文開始練習。", "Browse global verse sets and choose scriptures to practice.")}</p>
+                    </div>
+
+                    {/* Team Competition */}
+                    <div className="primary-button" onClick={() => setMainTab('multiplayer')} style={{ background: 'linear-gradient(135deg, #f472b6, #ec4899)', borderRadius: '16px', padding: '2.5rem 2rem', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', color: 'white', textAlign: 'center' }}>
+                      <Users size={72} style={{ marginBottom: '1rem' }} />
+                      <h2 style={{ fontSize: '2rem', margin: 0, marginBottom: '0.5rem', textShadow: '0 2px 4px rgba(0,0,0,0.2)' }}>{t("團隊競賽", "Team Competition")}</h2>
+                      <p style={{ fontSize: '1rem', margin: 0, opacity: 0.9 }}>{t("建立房間，分隊一起挑戰經文。", "Create a room and compete in teams.")}</p>
                     </div>
                   </div>
                 </div>
@@ -7632,11 +7652,20 @@ const deDict = {
                     version={version}
                     t={t}
                     label={remoteDailyVerse?.date || dailyVerseDate}
+                    topicSets={topicVerseSets}
                     showNav
                     onPrevious={() => changeDailyVerseDate(prev => formatLocalDate(addDays(`${prev}T00:00:00`, -1)))}
                     onNext={() => changeDailyVerseDate(prev => formatLocalDate(addDays(`${prev}T00:00:00`, 1)))}
                     nextDisabled={dailyVerseDate >= formatLocalDate(new Date())}
                     onStop={() => setMainTab('advanced')}
+                    onSelectTopicSet={(set) => {
+                      setSelectedSetId(set.id);
+                      setMainTab('advanced');
+                      setContinuousRainSet({
+                        ...set,
+                        startVerse: pickRandomVerse(set.verses || [])
+                      });
+                    }}
                     onListenLogged={() => updateGarden('activity_only', 'listen')}
                     onChallengeVerse={challengeVerseFromReader}
                     onShareVerse={(verse) => {
