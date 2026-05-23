@@ -966,7 +966,7 @@ function VerseSetContinuousRainPlayer({
                   type="button"
                   onClick={() => setShowTopicPicker(prev => !prev)}
                   className="daily-verse-rain-date continuous-rain-set-title"
-                  style={{ border: 'none', background: 'rgba(15, 23, 42, 0.25)', color: 'inherit', borderRadius: '999px', padding: '0.35rem 0.9rem', cursor: 'pointer', fontWeight: 700, fontSize: '0.95rem', maxWidth: '52vw', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
+                  style={{ border: '1px solid rgba(255,255,255,0.2)', background: 'rgba(15, 23, 42, 0.35)', color: 'inherit', borderRadius: '12px', padding: '0.45rem 0.9rem', cursor: 'pointer', fontWeight: 700, fontSize: '0.9rem', maxWidth: '62vw', minWidth: '140px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', lineHeight: 1.2 }}
                 >
                   {normalizedTopicButtonLabel}
                 </button>
