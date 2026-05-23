@@ -446,6 +446,42 @@ const DAILY_RAIN_DROPS = Array.from({ length: 58 }, (_, index) => {
   };
 });
 
+const RAIN_FONT_LEVELS = ['small', 'normal', 'large', 'xlarge'];
+
+function RainFontControls({ value, onChange, t, className = '' }) {
+  const currentIndex = Math.max(0, RAIN_FONT_LEVELS.indexOf(value));
+  const setLevel = (index) => onChange(RAIN_FONT_LEVELS[Math.min(RAIN_FONT_LEVELS.length - 1, Math.max(0, index))]);
+
+  return (
+    <div className={`rain-font-controls ${className}`} aria-label={t('字體大小', 'Font size')}>
+      <button
+        type="button"
+        onClick={() => setLevel(currentIndex - 1)}
+        disabled={currentIndex === 0}
+        aria-label={t('縮小字體', 'Decrease font size')}
+      >
+        A-
+      </button>
+      <button
+        type="button"
+        onClick={() => setLevel(1)}
+        className={value === 'normal' ? 'is-on' : ''}
+        aria-label={t('標準字體', 'Normal font size')}
+      >
+        A
+      </button>
+      <button
+        type="button"
+        onClick={() => setLevel(currentIndex + 1)}
+        disabled={currentIndex === RAIN_FONT_LEVELS.length - 1}
+        aria-label={t('放大字體', 'Increase font size')}
+      >
+        A+
+      </button>
+    </div>
+  );
+}
+
 function DailyVerseRainExperience({ verse, version, t, onRead, onChallenge, onShare, onListenLogged, dateLabel, onPrevious, onNext, nextDisabled }) {
   const phrases = useMemo(() => splitVersePhrases(verse?.text || '', version), [verse, version]);
   const backgroundImageUrls = useMemo(() => getDailyVerseImageUrls(verse, dateLabel, version), [verse?.reference, dateLabel, version]);
@@ -458,6 +494,7 @@ function DailyVerseRainExperience({ verse, version, t, onRead, onChallenge, onSh
   const [isSettled, setIsSettled] = useState(false);
   const [musicEnabled, setMusicEnabled] = useState(true);
   const [voiceEnabled, setVoiceEnabled] = useState(true);
+  const [fontSizeLevel, setFontSizeLevel] = useState('normal');
   const bgmRef = useRef(null);
   const runRef = useRef(0);
 
@@ -555,7 +592,7 @@ function DailyVerseRainExperience({ verse, version, t, onRead, onChallenge, onSh
   }
 
   return (
-    <div className="daily-verse-rain-shell">
+    <div className={`daily-verse-rain-shell rain-font-${fontSizeLevel}`}>
       <div
         className="daily-verse-rain-scene"
         key={`${verse.reference}-${playKey}`}
@@ -648,6 +685,7 @@ function DailyVerseRainExperience({ verse, version, t, onRead, onChallenge, onSh
         <button type="button" onClick={() => setMusicEnabled(v => !v)} className={musicEnabled ? 'is-on' : ''}>
           {musicEnabled ? t('音樂開', 'Music on') : t('音樂關', 'Music off')}
         </button>
+        <RainFontControls value={fontSizeLevel} onChange={setFontSizeLevel} t={t} />
       </div>
     </div>
   );
@@ -669,6 +707,7 @@ function VerseSetContinuousRainPlayer({ verseSet, version, t, onStop, onListenLo
   const [activePhrase, setActivePhrase] = useState(-1);
   const [phrasePageStart, setPhrasePageStart] = useState(0);
   const [isSettled, setIsSettled] = useState(false);
+  const [fontSizeLevel, setFontSizeLevel] = useState('normal');
   const bgmRef = useRef(null);
   const runRef = useRef(0);
   const verseSetIdRef = useRef(verseSet?.id);
@@ -722,29 +761,19 @@ function VerseSetContinuousRainPlayer({ verseSet, version, t, onStop, onListenLo
   useEffect(() => {
     if (activePhrase < 0 || activePhrase < phrasePageStart) return undefined;
     const frame = window.requestAnimationFrame(() => {
+      const container = phraseContainerRef.current;
       const activeNode = phraseNodeRefs.current[activePhrase];
-      if (!phraseContainerRef.current || !activeNode) return;
+      if (!container || !activeNode) return;
 
-      const visibleNodes = phraseNodeRefs.current
-        .slice(phrasePageStart, activePhrase + 1)
-        .filter(Boolean);
-      const rowTops = [];
-      visibleNodes.forEach(node => {
-        const top = Math.round(node.offsetTop);
-        if (!rowTops.some(rowTop => Math.abs(rowTop - top) <= 8)) {
-          rowTops.push(top);
-        }
-      });
-
-      const activeTop = Math.round(activeNode.offsetTop);
-      const activeRow = rowTops.findIndex(rowTop => Math.abs(rowTop - activeTop) <= 8);
-      if (activeRow >= 6) {
+      const activeBottom = activeNode.offsetTop + activeNode.offsetHeight;
+      const bottomRoom = Math.max(10, container.clientHeight * 0.04);
+      if (activePhrase > phrasePageStart && activeBottom > container.clientHeight - bottomRoom) {
         setPhrasePageStart(activePhrase);
       }
     });
 
     return () => window.cancelAnimationFrame(frame);
-  }, [activePhrase, phrasePageStart, currentVerse?.reference]);
+  }, [activePhrase, phrasePageStart, currentVerse?.reference, fontSizeLevel]);
 
   useEffect(() => {
     if (!currentVerse) return undefined;
@@ -817,7 +846,7 @@ function VerseSetContinuousRainPlayer({ verseSet, version, t, onStop, onListenLo
       <button type="button" className="continuous-rain-stop" onClick={onStop}>
         <XCircle size={24} /> {t('停止播放', 'Stop')}
       </button>
-      <div className="daily-verse-rain-shell continuous-rain-shell">
+      <div className={`daily-verse-rain-shell continuous-rain-shell rain-font-${fontSizeLevel}`}>
         <div
           className="daily-verse-rain-scene continuous-rain-scene"
           key={`${currentVerse.reference}-${playKey}`}
@@ -899,6 +928,12 @@ function VerseSetContinuousRainPlayer({ verseSet, version, t, onStop, onListenLo
           </div>
         </div>
       </div>
+      <RainFontControls
+        value={fontSizeLevel}
+        onChange={setFontSizeLevel}
+        t={t}
+        className="continuous-rain-font-controls"
+      />
     </div>
   );
 }

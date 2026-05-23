@@ -964,7 +964,13 @@ textarea {
   gap: 0.8rem;
   width: 100%;
   color: #f8fafc;
+  font-size: 16px;
 }
+
+.daily-verse-rain-shell.rain-font-small { font-size: 13px; }
+.daily-verse-rain-shell.rain-font-normal { font-size: 16px; }
+.daily-verse-rain-shell.rain-font-large { font-size: 20px; }
+.daily-verse-rain-shell.rain-font-xlarge { font-size: 24px; }
 
 .daily-verse-rain-empty {
   min-height: 280px;
@@ -1109,7 +1115,7 @@ textarea {
   padding: 0.4rem 0.8rem;
   background: rgba(15, 23, 42, 0.38);
   color: #dbeafe;
-  font-size: 0.84rem;
+  font-size: 0.84em;
   font-weight: 900;
   backdrop-filter: blur(12px);
 }
@@ -1117,7 +1123,7 @@ textarea {
 .daily-verse-rain-content h2 {
   margin: 0;
   color: #ffffff;
-  font-size: clamp(1.35rem, 4vw, 2.5rem);
+  font-size: clamp(1.35em, 4vw, 2.5em);
   line-height: 1.1;
   letter-spacing: 0;
   text-shadow: 0 3px 18px rgba(0, 0, 0, 0.46);
@@ -1142,7 +1148,7 @@ textarea {
   padding: 0.45rem 0.7rem;
   background: rgba(15, 23, 42, 0.46);
   color: rgba(255, 255, 255, 0.88);
-  font-size: clamp(1rem, 2.8vw, 1.45rem);
+  font-size: clamp(1em, 2.8vw, 1.45em);
   font-weight: 800;
   line-height: 1.45;
   text-shadow: 0 2px 14px rgba(0, 0, 0, 0.45);
@@ -1189,6 +1195,36 @@ textarea {
   cursor: pointer;
   font-weight: 900;
   letter-spacing: 0;
+}
+
+.rain-font-controls {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 999px;
+  background: #ffffff;
+}
+
+.rain-font-controls button {
+  min-width: 40px;
+  min-height: 32px;
+  border-radius: 999px;
+  padding: 0.35rem 0.55rem;
+  background: #f8fafc;
+  color: #334155;
+  border-color: transparent;
+}
+
+.rain-font-controls button.is-on {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.rain-font-controls button:disabled {
+  cursor: not-allowed;
+  opacity: 0.42;
 }
 
 .daily-verse-rain-actions button {
@@ -1310,7 +1346,7 @@ textarea {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: clamp(1.43rem, 3.6vw, 2.03rem);
+  font-size: clamp(1.43em, 3.6vw, 2.03em);
 }
 
 .continuous-rain-phrases {
@@ -1320,19 +1356,27 @@ textarea {
 }
 
 .continuous-rain-content h2 {
-  font-size: clamp(2.03rem, 6vw, 3.75rem);
+  font-size: clamp(2.03em, 6vw, 3.75em);
 }
 
 .continuous-rain-phrases span {
-  min-height: 3.68rem;
-  padding: 0.68rem 1.05rem;
-  font-size: clamp(1.5rem, 4.2vw, 2.18rem);
+  min-height: 1.7em;
+  padding: 0.31em 0.48em;
+  font-size: clamp(1.5em, 4.2vw, 2.18em);
 }
 
 .continuous-rain-topbar button {
   width: 66px;
   height: 66px;
   font-size: 3rem;
+}
+
+.continuous-rain-font-controls {
+  position: fixed;
+  right: max(0.9rem, env(safe-area-inset-right));
+  bottom: max(0.9rem, env(safe-area-inset-bottom));
+  z-index: 2606;
+  box-shadow: 0 12px 34px rgba(0, 0, 0, 0.28);
 }
 
 @media (prefers-reduced-motion: reduce) {
