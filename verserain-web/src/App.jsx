@@ -296,7 +296,7 @@ const AUTO_PLAY_REFERENCE_PAUSE_MS = 2000;
 const HIDDEN_PHRASE_MARK = '•';
 
 function maskPhraseForPreview(phrase = '') {
-  return String(phrase).replace(/[^\s.,?!;:，。？！；：]/g, HIDDEN_PHRASE_MARK);
+  return String(phrase).replace(/[^\s.,?!;:：﹕︰，。？！；：]/g, HIDDEN_PHRASE_MARK);
 }
 
 function getVoiceLangForVersion(v) {
@@ -313,7 +313,7 @@ function getVoiceLangForVersion(v) {
 }
 
 function splitVersePhrases(text, version) {
-  const regex = /\.{2,}|[,，。；؛၊။،;:\.\?!！？؟]/;
+  const regex = /\.{2,}|[,，。；؛၊။،;:：﹕︰\.\?!！？؟]/;
   return String(text || '').split(regex).map(p => p.trim()).filter(Boolean);
 }
 
@@ -782,21 +782,88 @@ function VerseSetContinuousRainPlayer({
 
   useEffect(() => {
     if (activePhrase < 0 || activePhrase < phrasePageStart) return undefined;
-    const frame = window.requestAnimationFrame(() => {
+    const measureAndTrim = () => {
       const container = phraseContainerRef.current;
-      const activeNode = phraseNodeRefs.current[activePhrase];
-      if (!container || !activeNode) return;
+      if (!container) return;
 
       const containerRect = container.getBoundingClientRect();
-      const activeRect = activeNode.getBoundingClientRect();
-      const activeBottom = activeRect.bottom - containerRect.top;
-      const bottomRoom = Math.max(10, container.clientHeight * 0.04);
-      if (activePhrase > phrasePageStart && activeBottom > container.clientHeight - bottomRoom) {
+      const actionControls = document.querySelector('.continuous-rain-action-controls');
+      const actionControlsTop = actionControls
+        ? actionControls.getBoundingClientRect().top
+        : window.innerHeight;
+      const visualBottomLimit = Math.min(containerRect.bottom, actionControlsTop - 16);
+
+      const visibleNodes = [];
+      for (let i = phrasePageStart; i <= activePhrase; i += 1) {
+        const node = phraseNodeRefs.current[i];
+        if (node) visibleNodes.push({ index: i, rect: node.getBoundingClientRect() });
+      }
+      if (!visibleNodes.length) return;
+
+      const bottomMost = visibleNodes.reduce((max, item) => Math.max(max, item.rect.bottom), 0);
+      if (bottomMost <= visualBottomLimit || activePhrase <= phrasePageStart) return;
+
+      // When blocks overflow the page, clear it entirely and restart from the
+      // top with the current phrase as the new page's first block.
+      const nextStart = activePhrase;
+      if (nextStart !== phrasePageStart) {
+        setPhrasePageStart(nextStart);
+      }
+    };
+
+    const rafs = [];
+    const timers = [];
+    const scheduleMeasure = (delay = 0) => {
+      if (delay > 0) {
+        const timer = window.setTimeout(() => {
+          rafs.push(window.requestAnimationFrame(measureAndTrim));
+        }, delay);
+        timers.push(timer);
+      } else {
+        rafs.push(window.requestAnimationFrame(measureAndTrim));
+      }
+    };
+
+    scheduleMeasure();
+    scheduleMeasure(460);
+    scheduleMeasure(980);
+    scheduleMeasure(1420);
+    const interval = window.setInterval(measureAndTrim, 260);
+
+    return () => {
+      rafs.forEach(frame => window.cancelAnimationFrame(frame));
+      timers.forEach(timer => window.clearTimeout(timer));
+      window.clearInterval(interval);
+    };
+  }, [activePhrase, phrasePageStart, currentVerse?.reference, fontSizeLevel, isSettled]);
+
+  useEffect(() => {
+    const trimOnResize = () => {
+      const container = phraseContainerRef.current;
+      if (!container || activePhrase < 0) return;
+      const actionControls = document.querySelector('.continuous-rain-action-controls');
+      const actionControlsTop = actionControls
+        ? actionControls.getBoundingClientRect().top
+        : window.innerHeight;
+      const visibleNodes = [];
+      for (let i = phrasePageStart; i <= activePhrase; i += 1) {
+        const node = phraseNodeRefs.current[i];
+        if (node) visibleNodes.push({ index: i, rect: node.getBoundingClientRect() });
+      }
+      let hasOverflow = false;
+      for (let i = visibleNodes.length - 1; i >= 0; i -= 1) {
+        if (visibleNodes[i].rect.bottom > actionControlsTop - 16) {
+          hasOverflow = true;
+          break;
+        }
+      }
+      if (hasOverflow && phrasePageStart < activePhrase) {
+        // Clear the page and restart from the current phrase.
         setPhrasePageStart(activePhrase);
       }
-    });
-
-    return () => window.cancelAnimationFrame(frame);
+    };
+    window.addEventListener('resize', trimOnResize);
+    return () => window.removeEventListener('resize', trimOnResize);
   }, [activePhrase, phrasePageStart, currentVerse?.reference, fontSizeLevel]);
 
   useEffect(() => {
@@ -888,18 +955,13 @@ function VerseSetContinuousRainPlayer({
     setShowTopicPicker(false);
     onSelectTopicSet(set);
   };
-  const currentTopicLabel = (label || verseSet?.title || t('經文組', 'Verse Set'));
-  const normalizedTopicButtonLabel = currentTopicLabel.startsWith('主題：')
-    ? currentTopicLabel
-    : `主題：${currentTopicLabel}`;
   const stripTopicPrefix = (title = '') => String(title).replace(/^主題：\s*/, '');
+  const currentTopicLabel = (label || verseSet?.title || t('經文組', 'Verse Set'));
+  const normalizedTopicButtonLabel = stripTopicPrefix(currentTopicLabel);
 
   if (!currentVerse) {
     return (
       <div className="continuous-rain-overlay">
-        <button type="button" className="continuous-rain-stop" onClick={onStop}>
-          <XCircle size={24} /> {t('停止播放', 'Stop')}
-        </button>
         <div className="daily-verse-rain-shell daily-verse-rain-empty">
           {t('這個經文組目前沒有可播放的經文', 'This verse set has no verses to play.')}
         </div>
@@ -909,9 +971,6 @@ function VerseSetContinuousRainPlayer({
 
   return (
     <div className="continuous-rain-overlay">
-      <button type="button" className="continuous-rain-stop" onClick={() => { haltPlayback(); onStop?.(); }}>
-        <XCircle size={24} /> {t('停止播放', 'Stop')}
-      </button>
       <div className={`daily-verse-rain-shell continuous-rain-shell rain-font-${fontSizeLevel}`}>
         <div
           className="daily-verse-rain-scene continuous-rain-scene"
@@ -966,18 +1025,28 @@ function VerseSetContinuousRainPlayer({
                   type="button"
                   onClick={() => setShowTopicPicker(prev => !prev)}
                   className="daily-verse-rain-date continuous-rain-set-title"
-                  style={{ border: '1px solid rgba(255,255,255,0.2)', background: 'rgba(15, 23, 42, 0.35)', color: 'inherit', borderRadius: '12px', padding: '0.45rem 0.9rem', cursor: 'pointer', fontWeight: 700, fontSize: '0.9rem', maxWidth: '62vw', minWidth: '140px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', lineHeight: 1.2 }}
+                  style={{ border: '1px solid rgba(255,255,255,0.2)', background: 'rgba(15, 23, 42, 0.35)', color: 'inherit', borderRadius: '12px', padding: '0.5rem 1rem', cursor: 'pointer', fontWeight: 800, fontSize: '1.08rem', maxWidth: '70vw', minWidth: '150px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', lineHeight: 1.2 }}
                 >
                   {normalizedTopicButtonLabel}
                 </button>
                 {showTopicPicker && (
-                  <div style={{ position: 'absolute', top: 'calc(100% + 8px)', left: '50%', transform: 'translateX(-50%)', width: 'min(88vw, 340px)', maxHeight: '50vh', overflowY: 'auto', background: 'rgba(15, 23, 42, 0.94)', border: '1px solid rgba(148, 163, 184, 0.45)', borderRadius: '14px', boxShadow: '0 16px 36px rgba(2,6,23,.45)', zIndex: 30, padding: '0.35rem' }}>
-                    {topicSets.map(set => (
+                  <div style={{ position: 'absolute', top: 'calc(100% + 8px)', left: '50%', transform: 'translateX(-50%)', width: 'min(92vw, 540px)', maxHeight: '60vh', overflowY: 'auto', background: 'rgba(15, 23, 42, 0.94)', border: '1px solid rgba(148, 163, 184, 0.45)', borderRadius: '14px', boxShadow: '0 16px 36px rgba(2,6,23,.45)', zIndex: 30, padding: '0.5rem', display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: '0.35rem' }}>
+                    {[...topicSets]
+                      .sort((a, b) => {
+                        const ta = stripTopicPrefix(a.title) || '';
+                        const tb = stripTopicPrefix(b.title) || '';
+                        try {
+                          return new Intl.Collator('zh-Hant', { collation: 'stroke' }).compare(ta, tb);
+                        } catch {
+                          return ta.localeCompare(tb, 'zh-Hant');
+                        }
+                      })
+                      .map(set => (
                       <button
                         key={set.id}
                         type="button"
                         onClick={() => handleSelectTopicSet(set)}
-                        style={{ width: '100%', textAlign: 'left', border: 'none', borderRadius: '10px', margin: '0.15rem 0', background: set.id === verseSet?.id ? 'rgba(59,130,246,.28)' : 'transparent', color: '#e2e8f0', padding: '0.55rem 0.65rem', fontSize: '0.95rem', cursor: 'pointer' }}
+                        style={{ width: '100%', textAlign: 'center', border: 'none', borderRadius: '10px', background: set.id === verseSet?.id ? 'rgba(59,130,246,.28)' : 'rgba(148,163,184,0.08)', color: '#e2e8f0', padding: '0.5rem 0.4rem', fontSize: '0.9rem', cursor: 'pointer', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
                       >
                         {stripTopicPrefix(set.title)}
                       </button>
@@ -1021,30 +1090,38 @@ function VerseSetContinuousRainPlayer({
         t={t}
         className="continuous-rain-font-controls"
       />
-      {(onChallengeVerse || onShareVerse) && (
-        <div className="continuous-rain-action-controls" aria-label={t('播放操作', 'Playback actions')}>
-          {onChallengeVerse && (
-            <button
-              type="button"
-              className="is-primary"
-              onClick={() => {
-                haltPlayback();
-                onChallengeVerse(currentVerse);
-              }}
-            >
-              <Play size={20} fill="currentColor" /> {t('挑戰', 'Challenge')}
-            </button>
-          )}
-          {onShareVerse && (
-            <button
-              type="button"
-              onClick={() => onShareVerse(currentVerse)}
-            >
-              <Share2 size={20} /> {t('分享', 'Share')}
-            </button>
-          )}
-        </div>
-      )}
+      <div className="continuous-rain-action-controls" aria-label={t('播放操作', 'Playback actions')}>
+        <button
+          type="button"
+          className="is-stop"
+          onClick={() => {
+            haltPlayback();
+            onStop?.();
+          }}
+        >
+          <XCircle size={20} /> {t('停止播放', 'Stop')}
+        </button>
+        {onChallengeVerse && (
+          <button
+            type="button"
+            className="is-primary"
+            onClick={() => {
+              haltPlayback();
+              onChallengeVerse(currentVerse);
+            }}
+          >
+            <Play size={20} fill="currentColor" /> {t('挑戰', 'Challenge')}
+          </button>
+        )}
+        {onShareVerse && (
+          <button
+            type="button"
+            onClick={() => onShareVerse(currentVerse)}
+          >
+            <Share2 size={20} /> {t('分享', 'Share')}
+          </button>
+        )}
+      </div>
     </div>
   );
 }
@@ -1210,6 +1287,26 @@ const findVerseByRef = (allVerses, ref) => {
   }
   return target;
 };
+
+const topicStrokeCollator = (() => {
+  try {
+    return new Intl.Collator(['zh-Hant-u-co-stroke', 'zh-u-co-stroke'], {
+      usage: 'sort',
+      sensitivity: 'base',
+      numeric: true
+    });
+  } catch {
+    return new Intl.Collator('zh-Hant', { usage: 'sort', sensitivity: 'base', numeric: true });
+  }
+})();
+
+const extractVerseSetTopic = (title = '') => {
+  const plainTitle = String(title).replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+  const match = plainTitle.match(/主題\s*[：:]\s*([^，,。；;、/／|｜\s]+)/);
+  return match?.[1]?.trim() || '';
+};
+
+const getFirstTopicChar = (topic = '') => Array.from(topic.trim())[0] || '';
 const CHINESE_BOOK_MAP = {
   '創': '創世記', '出': '出埃及記', '利': '利未記', '民': '民數記', '申': '申命記',
   '書': '約書亞記', '士': '士師記', '得': '路得記', '撒上': '撒母耳記上', '撒下': '撒母耳記下',
@@ -2162,6 +2259,46 @@ export default function App() {
   }, [getVerseSetAuthorName]);
   const currentSetAuthorName = getVerseSetAuthorName(currentSet);
   const currentSetLastEditorName = getVerseSetLastEditorName(currentSet);
+  const sortedVerseSetList = React.useMemo(() => {
+    let sortedSets = [...activeVerseSets];
+    if (versesetsSort === 'topic') {
+      sortedSets = sortedSets.filter(set => extractVerseSetTopic(set.title));
+      sortedSets.sort((a, b) => {
+        const aTopic = extractVerseSetTopic(a.title);
+        const bTopic = extractVerseSetTopic(b.title);
+        const firstCompare = topicStrokeCollator.compare(getFirstTopicChar(aTopic), getFirstTopicChar(bTopic));
+        if (firstCompare !== 0) return firstCompare;
+        const topicCompare = topicStrokeCollator.compare(aTopic, bTopic);
+        if (topicCompare !== 0) return topicCompare;
+        return topicStrokeCollator.compare(String(a.title || ''), String(b.title || ''));
+      });
+      return sortedSets;
+    }
+    if (versesetsSort === 'popular') {
+      sortedSets.sort((a, b) => (viewCounts[b.id] || 0) - (viewCounts[a.id] || 0));
+      return sortedSets;
+    }
+    sortedSets.sort((a, b) => {
+      const aIsCustom = String(a.id).startsWith('custom-');
+      const bIsCustom = String(b.id).startsWith('custom-');
+      // Custom sets come before official sets
+      if (aIsCustom && !bIsCustom) return -1;
+      if (!aIsCustom && bIsCustom) return 1;
+      // Both custom: sort by timestamp (higher = newer = first)
+      if (aIsCustom && bIsCustom) {
+        const tsA = parseInt(String(a.id).replace('custom-', ''), 10) || 0;
+        const tsB = parseInt(String(b.id).replace('custom-', ''), 10) || 0;
+        return tsB - tsA;
+      }
+      // Both official: sort by reverse original order (newer ones appended at the end come first)
+      const getBaseIndex = (set) => {
+        const indexInBase = baseVerseSets.findIndex(b => b.id === set.id);
+        return indexInBase !== -1 ? indexInBase : -1;
+      };
+      return getBaseIndex(b) - getBaseIndex(a);
+    });
+    return sortedSets;
+  }, [activeVerseSets, baseVerseSets, versesetsSort, viewCounts]);
   const authorVerseSets = React.useMemo(() => {
     if (!authorSetsModal?.authorName) return [];
     return activeVerseSets.filter(set => getVerseSetAuthorName(set) === authorSetsModal.authorName);
@@ -2424,8 +2561,8 @@ export default function App() {
     // Other languages (English, Hebrew, Farsi, Japanese) use spaces between words — keep them intact.
     const shouldSplitOnSpace = version === 'cuv' || version === 'cuvs' || version === 'ko';
     const regex = shouldSplitOnSpace
-      ? /\.{2,}|[,，。；؛၊။،：「」、;:\.\?!！？؟『』《》'\"‘’”"“ ]/
-      : /\.{2,}|[,，。；؛၊။،：「」、;:\.\?!！？؟『』《》'\"‘’”"“]/;
+      ? /\.{2,}|[,，。；؛၊။،：「」、;:：﹕︰\.\?!！？؟『』《》'\"‘’”"“ ]/
+      : /\.{2,}|[,，。；؛၊။،：「」、;:：﹕︰\.\?!！？؟『』《》'\"‘’”"“]/;
     return activeVerse.text.split(regex).map(p => p.trim()).filter(Boolean);
   }, [activeVerse, version]);
 
@@ -2706,7 +2843,7 @@ export default function App() {
         setCombo(0);
         setHealth(3);
         const shouldSplitOnSpace = /[\u4e00-\u9fa5\uac00-\ud7af]/.test(localNextVerse.text);
-        const regex = shouldSplitOnSpace ? /\.{2,}|[,，。；؛၊။،：「」、;:\.\?!！？؟『』《》'\"‘’”"“ ]/ : /\.{2,}|[,，。；؛၊။،：「」、;:\.\?!！？؟『』《》'\"‘’”"“]/;
+        const regex = shouldSplitOnSpace ? /\.{2,}|[,，。；؛၊။،：「」、;:：﹕︰\.\?!！？؟『』《》'\"‘’”"“ ]/ : /\.{2,}|[,，。；؛၊။،：「」、;:：﹕︰\.\?!！？؟『』《》'\"‘’”"“]/;
         const phraseCount = localNextVerse.text.split(regex).filter(p => p.trim()).length;
         setTimeLeft(500 + phraseCount * 500);
         setLocalNextVerse(null);
@@ -2731,7 +2868,7 @@ export default function App() {
       } else if (multiplayerState?.host === myClientId && multiplayerState.campaignQueue && multiplayerState.campaignQueue.length > 0) {
         const nextVerse = multiplayerState.campaignQueue[0];
         const shouldSplitOnSpace = /[\u4e00-\u9fa5\uac00-\ud7af]/.test(nextVerse.text);
-        const regex = shouldSplitOnSpace ? /\.{2,}|[,，。；؛၊။،：「」、;:\.\?!！？؟『』《》'\"‘’”"“ ]/ : /\.{2,}|[,，。；؛၊။،：「」、;:\.\?!！？؟『』《》'\"‘’”"“]/;
+        const regex = shouldSplitOnSpace ? /\.{2,}|[,，。；؛၊။،：「」、;:：﹕︰\.\?!！？؟『』《》'\"‘’”"“ ]/ : /\.{2,}|[,，。；؛၊။،：「」、;:：﹕︰\.\?!！？؟『』《》'\"‘’”"“]/;
         const phrases = nextVerse.text.split(regex).map(p => p.trim()).filter(Boolean);
 
         const maxGridSize = multiplayerState.distractionLevel <= 1 ? 4 : 9;
@@ -2869,7 +3006,7 @@ export default function App() {
             setCombo(0);
             setScore(0);
             const shouldSplitOnSpace = /[\u4e00-\u9fa5\uac00-\ud7af]/.test(msg.state.verseText);
-            const regex = shouldSplitOnSpace ? /\.{2,}|[,，。；؛၊။،：「」、;:\.\?!！？؟『』《》'\"‘’”"“ ]/ : /\.{2,}|[,，。；؛၊။،：「」、;:\.\?!！？؟『』《》'\"‘’”"“]/;
+            const regex = shouldSplitOnSpace ? /\.{2,}|[,，。；؛၊။،：「」、;:：﹕︰\.\?!！？؟『』《》'\"‘’”"“ ]/ : /\.{2,}|[,，。；؛၊။،：「」、;:：﹕︰\.\?!！？؟『』《》'\"‘’”"“]/;
             const phraseCount = msg.state.verseText.split(regex).filter(p => p.trim()).length;
             setTimeLeft(500 + phraseCount * 500);
             setCurrentSeqIndex(0);
@@ -3303,7 +3440,7 @@ export default function App() {
           if (socketRef.current) {
             const verse = initAutoStart.verse || activeVerse;
             const shouldSplitOnSpace = /[\u4e00-\u9fa5\uac00-\ud7af]/.test(verse.text);
-            const regex = shouldSplitOnSpace ? /\.{2,}|[,，。；؛၊။،：「」、;:\.\?!！？؟『』《》'\"‘’”"“ ]/ : /\.{2,}|[,，。；؛၊။،：「」、;:\.\?!！？؟『』《》'\"‘’”"“]/;
+            const regex = shouldSplitOnSpace ? /\.{2,}|[,，。；؛၊။،：「」、;:：﹕︰\.\?!！？؟『』《》'\"‘’”"“ ]/ : /\.{2,}|[,，。；؛၊။،：「」、;:：﹕︰\.\?!！？؟『』《》'\"‘’”"“]/;
             const phrases = verse.text.split(regex).map(p => p.trim()).filter(Boolean);
 
             socketRef.current.send(JSON.stringify({
@@ -3333,7 +3470,7 @@ export default function App() {
     let phrases;
     if (overrideVerse) {
       const shouldSplitOnSpace = /[\u4e00-\u9fa5\uac00-\ud7af]/.test(verse.text);
-      const regex = shouldSplitOnSpace ? /\.{2,}|[,，。；؛၊။،：「」、;:\.\?!！？؟『』《》'\"‘’”"“ ]/ : /\.{2,}|[,，。；؛၊။،：「」、;:\.\?!！？؟『』《》'\"‘’”"“]/;
+      const regex = shouldSplitOnSpace ? /\.{2,}|[,，。；؛၊။،：「」、;:：﹕︰\.\?!！？؟『』《》'\"‘’”"“ ]/ : /\.{2,}|[,，。；؛၊။،：「」、;:：﹕︰\.\?!！？؟『』《》'\"‘’”"“]/;
       phrases = verse.text.split(regex).map(p => p.trim()).filter(Boolean);
     } else {
       phrases = activePhrasesRef.current;
@@ -3417,7 +3554,7 @@ export default function App() {
     const initialVerse = overrideVerse || activeVerse;
     if (initialVerse) {
       const shouldSplitOnSpace = /[\u4e00-\u9fa5\uac00-\ud7af]/.test(initialVerse.text);
-      const regex = shouldSplitOnSpace ? /\.{2,}|[,，。；؛၊။،：「」、;:\.\?!！？؟『』《》'\"‘’”"“ ]/ : /\.{2,}|[,，。；؛၊။،：「」、;:\.\?!！？؟『』《》'\"‘’”"“]/;
+      const regex = shouldSplitOnSpace ? /\.{2,}|[,，。；؛၊။،：「」、;:：﹕︰\.\?!！？؟『』《》'\"‘’”"“ ]/ : /\.{2,}|[,，。；؛၊။،：「」、;:：﹕︰\.\?!！？؟『』《》'\"‘’”"“]/;
       const phraseCount = initialVerse.text.split(regex).filter(p => p.trim()).length;
       setTimeLeft(500 + phraseCount * 500);
     } else {
@@ -3434,7 +3571,7 @@ export default function App() {
     const actualVerse = overrideVerse || activeVerse;
     if (actualVerse) {
       const shouldSplitOnSpace = /[\u4e00-\u9fa5\uac00-\ud7af]/.test(actualVerse.text);
-      const regex = shouldSplitOnSpace ? /\.{2,}|[,，。；؛၊။،：「」、;:\.\?!！？؟『』《》'\"‘’”"“ ]/ : /\.{2,}|[,，。；؛၊။،：「」、;:\.\?!！？؟『』《》'\"‘’”"“]/;
+      const regex = shouldSplitOnSpace ? /\.{2,}|[,，。；؛၊။،：「」、;:：﹕︰\.\?!！？؟『』《》'\"‘’”"“ ]/ : /\.{2,}|[,，。；؛၊။،：「」、;:：﹕︰\.\?!！？؟『』《》'\"‘’”"“]/;
       activePhrasesRef.current = actualVerse.text.split(regex).map(p => p.trim()).filter(Boolean);
     }
 
@@ -5952,6 +6089,7 @@ const zhcnDict = {
   "經典挑戰": "经典挑战",
   "立刻挑戰": "立刻挑战",
   "最受歡迎": "最受欢迎",
+  "主題": "主题",
   "最新": "最新",
   "作者": "作者",
   "點閱次數": "点阅次数",
@@ -7028,7 +7166,7 @@ const deDict = {
     const nextPlayMode = multiplayerState.playMode || 'square_solo';
     const nextDifficulty = multiplayerState.distractionLevel || 0;
     const shouldSplitOnSpace = /[\u4e00-\u9fa5\uac00-\ud7af]/.test(verseObj.text);
-    const regex = shouldSplitOnSpace ? /\.{2,}|[,，。；؛၊။،：「」、;:\.\?!！？؟『』《》'\"‘’”"“ ]/ : /\.{2,}|[,，。；؛၊။،：「」、;:\.\?!！？؟『』《》'\"‘’”"“]/;
+    const regex = shouldSplitOnSpace ? /\.{2,}|[,，。；؛၊။،：「」、;:：﹕︰\.\?!！？؟『』《》'\"‘’”"“ ]/ : /\.{2,}|[,，。；؛၊။،：「」、;:：﹕︰\.\?!！？؟『』《》'\"‘’”"“]/;
     const phraseCount = verseObj.text.split(regex).filter(p => p.trim()).length;
 
     multiplayerSoloActiveRef.current = true;
@@ -7268,7 +7406,7 @@ const deDict = {
                     verserain
                   </div>
                   <div className="app-brand-version" style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', marginTop: '4px', marginLeft: '2px' }}>
-                    v3.6.1
+                    v3.7.0
                   </div>
                 </div>
                 <select
@@ -8665,6 +8803,7 @@ const deDict = {
                           >
                             <option value="popular">{t("最受歡迎", "Most Popular")}</option>
                             <option value="newest">{t("最新", "Newest")}</option>
+                            <option value="topic">{t("主題", "Topic")}</option>
                           </select>
                         </div>
                         <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
@@ -8678,34 +8817,9 @@ const deDict = {
                           </thead>
                           <tbody>
                             {(() => {
-                              let sortedSets = [...activeVerseSets];
-                              if (versesetsSort === 'popular') {
-                                sortedSets.sort((a, b) => (viewCounts[b.id] || 0) - (viewCounts[a.id] || 0));
-                              } else {
-                                sortedSets.sort((a, b) => {
-                                  const aIsCustom = String(a.id).startsWith('custom-');
-                                  const bIsCustom = String(b.id).startsWith('custom-');
-                                  // Custom sets come before official sets
-                                  if (aIsCustom && !bIsCustom) return -1;
-                                  if (!aIsCustom && bIsCustom) return 1;
-                                  // Both custom: sort by timestamp (higher = newer = first)
-                                  if (aIsCustom && bIsCustom) {
-                                    const tsA = parseInt(String(a.id).replace('custom-', ''), 10) || 0;
-                                    const tsB = parseInt(String(b.id).replace('custom-', ''), 10) || 0;
-                                    return tsB - tsA;
-                                  }
-                                  // Both official: sort by reverse original order (newer ones appended at the end come first)
-                                  const getBaseIndex = (set) => {
-                                    // Base sets are at the beginning of activeVerseSets, in the order they appear in baseVerseSets
-                                    const indexInBase = baseVerseSets.findIndex(b => b.id === set.id);
-                                    return indexInBase !== -1 ? indexInBase : -1;
-                                  };
-                                  return getBaseIndex(b) - getBaseIndex(a);
-                                });
-                              }
-
-                              const totalPages = Math.ceil(sortedSets.length / 10) || 1;
-                              const currentSetList = sortedSets.slice((versesetsPage - 1) * 10, versesetsPage * 10);
+                              const totalPages = Math.ceil(sortedVerseSetList.length / 10) || 1;
+                              const currentPage = Math.min(versesetsPage, totalPages);
+                              const currentSetList = sortedVerseSetList.slice((currentPage - 1) * 10, currentPage * 10);
 
                               return currentSetList.map((set, i) => (
                                 <tr key={i} style={{ borderBottom: '1px solid #e2e8f0', backgroundColor: i % 2 === 0 ? '#ffffff' : '#f8fafc', transition: 'background 0.2s', cursor: 'pointer' }} onClick={() => {
@@ -8749,7 +8863,7 @@ const deDict = {
 
                         {/* Pagination for Verse Sets */}
                         {(() => {
-                          const totalPages = Math.ceil(activeVerseSets.length / 10) || 1;
+                          const totalPages = Math.ceil(sortedVerseSetList.length / 10) || 1;
                           if (totalPages <= 1) return null;
                           const PAGE_GROUP_SIZE = 10;
                           const groupStart = Math.floor((versesetsPage - 1) / PAGE_GROUP_SIZE) * PAGE_GROUP_SIZE + 1;
