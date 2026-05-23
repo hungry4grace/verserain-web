@@ -187,7 +187,8 @@ function ensureSpeechVoices() {
 function estimateSpeechDuration(text, lang) {
   const value = String(text || '');
   const hasCjk = /[\u3400-\u9fff]/.test(value) || String(lang || '').startsWith('zh');
-  return Math.max(1100, Math.min(hasCjk ? value.length * 180 : value.length * 85, 5500));
+  const estimated = hasCjk ? value.length * 280 : value.length * 120;
+  return Math.max(1800, Math.min(estimated + 2200, 30000));
 }
 
 function speakTextTimed(text, rate = 1.0, lang = 'zh-TW') {
@@ -408,6 +409,20 @@ function getDailyVerseImageUrls(verse, dateLabel, version) {
   ];
 }
 
+function getStableNumber(value) {
+  let hash = 0;
+  const source = String(value || '');
+  for (let i = 0; i < source.length; i++) hash = (hash * 31 + source.charCodeAt(i)) >>> 0;
+  return hash;
+}
+
+function pickRandomVerse(verses = [], previousReference = '') {
+  const candidates = Array.isArray(verses) ? verses.filter(Boolean) : [];
+  if (candidates.length <= 1) return candidates[0] || null;
+  const pool = candidates.filter(v => v.reference !== previousReference);
+  return pool[Math.floor(Math.random() * pool.length)] || candidates[Math.floor(Math.random() * candidates.length)];
+}
+
 const DAILY_RAIN_DROPS = Array.from({ length: 58 }, (_, index) => {
   const wave = Math.sin((index + 3) * 12.9898) * 43758.5453;
   const rand = wave - Math.floor(wave);
@@ -431,7 +446,7 @@ const DAILY_RAIN_DROPS = Array.from({ length: 58 }, (_, index) => {
   };
 });
 
-function DailyVerseRainExperience({ verse, version, t, onRead, onChallenge, onShare, onListenLogged, dateLabel, onPrevious, onNext, nextDisabled, sourceLabel }) {
+function DailyVerseRainExperience({ verse, version, t, onRead, onChallenge, onShare, onListenLogged, dateLabel, onPrevious, onNext, nextDisabled }) {
   const phrases = useMemo(() => splitVersePhrases(verse?.text || '', version), [verse, version]);
   const backgroundImageUrls = useMemo(() => getDailyVerseImageUrls(verse, dateLabel, version), [verse?.reference, dateLabel, version]);
   const [imageIndex, setImageIndex] = useState(0);
@@ -590,7 +605,6 @@ function DailyVerseRainExperience({ verse, version, t, onRead, onChallenge, onSh
           <div className="daily-verse-rain-topbar">
             <button type="button" onClick={onPrevious} aria-label={t('前一天', 'Previous day')}>‹</button>
             <div>
-              <div className="daily-verse-rain-kicker">{t('今日經文雨', 'Daily VerseRain')}</div>
               {dateLabel && <div className="daily-verse-rain-date">{dateLabel}</div>}
             </div>
             <button type="button" onClick={onNext} disabled={nextDisabled} aria-label={t('後一天', 'Next day')}>›</button>
@@ -625,7 +639,6 @@ function DailyVerseRainExperience({ verse, version, t, onRead, onChallenge, onSh
       </div>
 
       <div className="daily-verse-rain-controls" aria-label={t('每日經文雨設定', 'Daily VerseRain settings')}>
-        {sourceLabel && <span>{sourceLabel}</span>}
         <button type="button" onClick={playExperience} disabled={isPlaying} className="is-on">
           {isPlaying ? t('讀經中', 'Reading') : t('播放經文', 'Play verse')}
         </button>
@@ -635,6 +648,256 @@ function DailyVerseRainExperience({ verse, version, t, onRead, onChallenge, onSh
         <button type="button" onClick={() => setMusicEnabled(v => !v)} className={musicEnabled ? 'is-on' : ''}>
           {musicEnabled ? t('音樂開', 'Music on') : t('音樂關', 'Music off')}
         </button>
+      </div>
+    </div>
+  );
+}
+
+function VerseSetContinuousRainPlayer({ verseSet, version, t, onStop, onListenLogged }) {
+  const verses = useMemo(() => verseSet?.verses?.filter(Boolean) || [], [verseSet]);
+  const [currentVerse, setCurrentVerse] = useState(() => pickRandomVerse(verses));
+  const phrases = useMemo(() => splitVersePhrases(currentVerse?.text || '', version), [currentVerse, version]);
+  const imageDateLabel = useMemo(() => {
+    const day = (getStableNumber(`${verseSet?.id || verseSet?.title}-${currentVerse?.reference || ''}`) % 31) + 1;
+    return `2026-05-${String(day).padStart(2, '0')}`;
+  }, [verseSet?.id, verseSet?.title, currentVerse?.reference]);
+  const backgroundImageUrls = useMemo(() => getDailyVerseImageUrls(currentVerse, imageDateLabel, version), [currentVerse, imageDateLabel, version]);
+  const [imageIndex, setImageIndex] = useState(0);
+  const [imageOk, setImageOk] = useState(true);
+  const [imageLoaded, setImageLoaded] = useState(false);
+  const [playKey, setPlayKey] = useState(0);
+  const [activePhrase, setActivePhrase] = useState(-1);
+  const [phrasePageStart, setPhrasePageStart] = useState(0);
+  const [isSettled, setIsSettled] = useState(false);
+  const bgmRef = useRef(null);
+  const runRef = useRef(0);
+  const verseSetIdRef = useRef(verseSet?.id);
+  const onListenLoggedRef = useRef(onListenLogged);
+  const phraseContainerRef = useRef(null);
+  const phraseNodeRefs = useRef([]);
+
+  useEffect(() => {
+    onListenLoggedRef.current = onListenLogged;
+  }, [onListenLogged]);
+
+  useEffect(() => {
+    if (verseSetIdRef.current === verseSet?.id) return;
+    verseSetIdRef.current = verseSet?.id;
+    setCurrentVerse(pickRandomVerse(verses));
+  }, [verseSet?.id, verses]);
+
+  useEffect(() => {
+    if (!bgmRef.current) {
+      bgmRef.current = new Audio('/bgm.mp3');
+      bgmRef.current.loop = true;
+      bgmRef.current.volume = 0.22;
+    }
+
+    return () => {
+      runRef.current += 1;
+      bgmRef.current?.pause();
+      stopSpeechIfActive();
+    };
+  }, []);
+
+  useEffect(() => {
+    setPlayKey(k => k + 1);
+    setActivePhrase(-1);
+    setPhrasePageStart(0);
+    phraseNodeRefs.current = [];
+    setIsSettled(false);
+    setImageIndex(0);
+    setImageOk(true);
+    setImageLoaded(false);
+  }, [currentVerse?.reference]);
+
+  useEffect(() => {
+    if (imageLoaded || !imageOk || backgroundImageUrls[imageIndex]?.startsWith('data:')) return undefined;
+    const timeout = window.setTimeout(() => {
+      setImageIndex(current => current < backgroundImageUrls.length - 1 ? current + 1 : current);
+    }, 4500);
+    return () => window.clearTimeout(timeout);
+  }, [backgroundImageUrls, imageIndex, imageLoaded, imageOk]);
+
+  useEffect(() => {
+    if (activePhrase < 0 || activePhrase < phrasePageStart) return undefined;
+    const frame = window.requestAnimationFrame(() => {
+      const activeNode = phraseNodeRefs.current[activePhrase];
+      if (!phraseContainerRef.current || !activeNode) return;
+
+      const visibleNodes = phraseNodeRefs.current
+        .slice(phrasePageStart, activePhrase + 1)
+        .filter(Boolean);
+      const rowTops = [];
+      visibleNodes.forEach(node => {
+        const top = Math.round(node.offsetTop);
+        if (!rowTops.some(rowTop => Math.abs(rowTop - top) <= 8)) {
+          rowTops.push(top);
+        }
+      });
+
+      const activeTop = Math.round(activeNode.offsetTop);
+      const activeRow = rowTops.findIndex(rowTop => Math.abs(rowTop - activeTop) <= 8);
+      if (activeRow >= 6) {
+        setPhrasePageStart(activePhrase);
+      }
+    });
+
+    return () => window.cancelAnimationFrame(frame);
+  }, [activePhrase, phrasePageStart, currentVerse?.reference]);
+
+  useEffect(() => {
+    if (!currentVerse) return undefined;
+    let cancelled = false;
+    const runId = runRef.current + 1;
+    runRef.current = runId;
+
+    const wait = (ms) => new Promise(resolve => window.setTimeout(resolve, ms));
+
+    const playVerse = async () => {
+      await wait(350);
+      if (cancelled || runRef.current !== runId) return;
+
+      initAudio();
+      window.speechSynthesis?.resume?.();
+      bgmRef.current?.play().catch(() => {});
+
+      const lang = getVoiceLangForVersion(version);
+      await speakTextTimed(formatVerseReferenceForSpeech(currentVerse.reference, version), 0.9, lang);
+      if (cancelled || runRef.current !== runId) return;
+      await wait(500);
+
+      for (let i = 0; i < phrases.length; i++) {
+        if (cancelled || runRef.current !== runId) return;
+        setActivePhrase(i);
+        await speakTextTimed(phrases[i], 0.86, lang);
+        if (cancelled || runRef.current !== runId) return;
+        await wait(180);
+      }
+
+      if (cancelled || runRef.current !== runId) return;
+      setActivePhrase(phrases.length);
+      setIsSettled(true);
+      onListenLoggedRef.current?.();
+      await wait(4300);
+      if (cancelled || runRef.current !== runId) return;
+      setCurrentVerse(pickRandomVerse(verses, currentVerse.reference));
+    };
+
+    playVerse();
+
+    return () => {
+      cancelled = true;
+      runRef.current += 1;
+      stopSpeechIfActive();
+    };
+  }, [currentVerse?.reference, phrases, version, verses]);
+
+  const skipVerse = () => {
+    runRef.current += 1;
+    stopSpeechIfActive();
+    setCurrentVerse(pickRandomVerse(verses, currentVerse?.reference));
+  };
+
+  if (!currentVerse) {
+    return (
+      <div className="continuous-rain-overlay">
+        <button type="button" className="continuous-rain-stop" onClick={onStop}>
+          <XCircle size={24} /> {t('停止播放', 'Stop')}
+        </button>
+        <div className="daily-verse-rain-shell daily-verse-rain-empty">
+          {t('這個經文組目前沒有可播放的經文', 'This verse set has no verses to play.')}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="continuous-rain-overlay">
+      <button type="button" className="continuous-rain-stop" onClick={onStop}>
+        <XCircle size={24} /> {t('停止播放', 'Stop')}
+      </button>
+      <div className="daily-verse-rain-shell continuous-rain-shell">
+        <div
+          className="daily-verse-rain-scene continuous-rain-scene"
+          key={`${currentVerse.reference}-${playKey}`}
+        >
+          {imageOk && (
+            <img
+              className="daily-verse-rain-image"
+              src={backgroundImageUrls[imageIndex]}
+              alt=""
+              aria-hidden="true"
+              loading="eager"
+              decoding="async"
+              referrerPolicy="no-referrer"
+              onLoad={() => setImageLoaded(true)}
+              onError={() => {
+                setImageLoaded(false);
+                setImageIndex(current => {
+                  if (current < backgroundImageUrls.length - 1) return current + 1;
+                  setImageOk(false);
+                  return current;
+                });
+              }}
+            />
+          )}
+          <div className={`daily-verse-rain-sky ${imageLoaded ? 'has-ai-image' : ''}`} />
+          <div className="daily-verse-rain-glow" />
+          <div className="daily-verse-rain-drops">
+            {DAILY_RAIN_DROPS.map((drop, index) => (
+              <span
+                key={index}
+                className={`depth-${drop.depth}`}
+                style={{
+                  '--x': drop.left,
+                  '--y': drop.top,
+                  '--drop-length': drop.length,
+                  '--drop-width': drop.width,
+                  '--drop-opacity': drop.opacity,
+                  '--drop-duration': drop.duration,
+                  '--drop-delay': drop.delay,
+                  '--drop-drift': drop.drift,
+                  '--drop-blur': drop.blur
+                }}
+              />
+            ))}
+          </div>
+          <div className="daily-verse-rain-content continuous-rain-content">
+            <div className="daily-verse-rain-topbar continuous-rain-topbar">
+              <button type="button" onClick={skipVerse} aria-label={t('上一節隨機經文', 'Previous random verse')}>‹</button>
+              <div>
+                <div className="daily-verse-rain-date continuous-rain-set-title">{verseSet?.title || t('經文組', 'Verse Set')}</div>
+              </div>
+              <button type="button" onClick={skipVerse} aria-label={t('下一節隨機經文', 'Next random verse')}>›</button>
+            </div>
+            <h2>{currentVerse.reference}</h2>
+            <div
+              ref={phraseContainerRef}
+              className={`daily-verse-rain-phrases continuous-rain-phrases ${isSettled ? 'is-settled' : ''}`}
+              aria-live="polite"
+            >
+              {phrases.map((phrase, index) => {
+                if (index < phrasePageStart || index > activePhrase) return null;
+                return (
+                <span
+                  key={`${phrase}-${index}`}
+                  ref={node => {
+                    phraseNodeRefs.current[index] = node;
+                  }}
+                  className={`${index === activePhrase ? 'is-active' : ''} ${index < activePhrase || isSettled ? 'has-landed' : ''}`}
+                  style={{
+                    '--delay': `${Math.min(index * 0.42, 6.2)}s`,
+                    '--drift': `${((index % 5) - 2) * 9}px`
+                  }}
+                >
+                  {phrase}
+                </span>
+                );
+              })}
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -1660,7 +1923,7 @@ export default function App() {
             id: `dailyverses-${data.date || dailyVerseDate}-${remoteVersion}`,
             reference: data.reference,
             text: data.text,
-            title: 'DailyVerses.net',
+            title: 'Daily Verse',
             sourceUrl: data.sourceUrl,
             date: data.date || dailyVerseDate,
             translation: data.translation || remoteVersion
@@ -2188,6 +2451,7 @@ export default function App() {
   }, [isMicOn, activePhrases, currentSeqIndex, blocks, gameState]);
   const [multiplayerSelectedVerses, setMultiplayerSelectedVerses] = useState([]);
   const [randomPickCount, setRandomPickCount] = useState(1);
+  const [continuousRainSet, setContinuousRainSet] = useState(null);
   const [multiplayerSearchText, setMultiplayerSearchText] = useState('');
   const [showPickerBrowser, setShowPickerBrowser] = useState(false);
 
@@ -6685,6 +6949,16 @@ const deDict = {
           <div className="rain-layer front" />
         </div>
 
+        {continuousRainSet && (
+          <VerseSetContinuousRainPlayer
+            verseSet={continuousRainSet}
+            version={version}
+            t={t}
+            onStop={() => setContinuousRainSet(null)}
+            onListenLogged={() => updateGarden('activity_only', 'listen')}
+          />
+        )}
+
         {combo >= 3 && gameState === 'playing' && (
           <div className="particles-system">
             {Array.from({ length: 20 }).map((_, i) => (
@@ -6975,17 +7249,11 @@ const deDict = {
                   >
                     ← {t('返回進階功能', 'Back to Advanced')}
                   </button>
-                  {isDailyVerseLoading && (
-                    <div style={{ marginBottom: '0.75rem', color: '#64748b', fontWeight: 800 }}>
-                      {t('正在載入 DailyVerses.net 經文...', 'Loading DailyVerses.net verse...')}
-                    </div>
-                  )}
                   <DailyVerseRainExperience
                     verse={displayedDailyVerse}
                     version={version}
                     t={t}
                     dateLabel={remoteDailyVerse?.date || dailyVerseDate}
-                    sourceLabel={remoteDailyVerse?.translation === dailyVerseRemoteVersion ? 'DailyVerses.net' : t('暫用本機經文', 'Local fallback')}
                     onPrevious={() => setDailyVerseDate(prev => formatLocalDate(addDays(`${prev}T00:00:00`, -1)))}
                     onNext={() => setDailyVerseDate(prev => formatLocalDate(addDays(`${prev}T00:00:00`, 1)))}
                     nextDisabled={dailyVerseDate >= formatLocalDate(new Date())}
@@ -8420,17 +8688,14 @@ const deDict = {
                             <button
                               onClick={() => {
                                 initAudio();
-                                let queue = [...VERSES_DB];
-                                let actualCount = Math.min(VERSES_DB.length, Math.max(1, parseInt(randomPickCount) || 1));
-                                queue = queue.sort(() => 0.5 - Math.random()).slice(0, actualCount);
-                                setCampaignQueue(queue.slice(1));
-                                setCampaignResults([]);
-                                setActiveCampaignSetId(currentSet.id);
-                                setActiveCampaignSetTotal(queue.length);
-                                setActiveVerse(queue[0]);
-                                setTimeout(() => startGame(true, queue[0]), 200);
+                                if (!currentSet?.verses?.length) return;
+                                setContinuousRainSet({
+                                  id: currentSet.id,
+                                  title: currentSet.title,
+                                  verses: currentSet.verses
+                                });
                               }}
-                              title={t("隨機播放所選數量的經文圖卡與語音", "Shuffle play selected number of verses with audio")}
+                              title={t("連續隨機播放這個經文組", "Continuously shuffle-play this verse set")}
                               style={{ backgroundColor: '#8b5cf6', color: 'white', border: 'none', borderRadius: '6px', padding: '0 0.8rem', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'transform 0.1s', fontWeight: 'bold', gap: '5px' }}
                               onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
                               onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
