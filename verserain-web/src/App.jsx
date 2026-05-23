@@ -12,7 +12,6 @@ import 'react-quill-new/dist/quill.snow.css';
 import { PREMIUM_EMAILS } from './premiumEmails';
 import WorldMap from './WorldMap';
 import BlindModeGame from './BlindModeGame';
-import KidsAdventureMode from './KidsAdventureMode';
 import { TransformWrapper, TransformComponent } from 'react-zoom-pan-pinch';
 
 const quillModules = {
@@ -7611,35 +7610,6 @@ const deDict = {
                 />
               )}
 
-              {mainTab === 'kids' && (
-                <KidsAdventureMode
-                  verseSets={safeActiveSets}
-                  currentSet={currentSet}
-                  gardenData={gardenData}
-                  viewCounts={viewCounts}
-                  playMode={playMode}
-                  onSetPlayMode={setPlayMode}
-                  onOpenGarden={() => setMainTab('garden')}
-                  onOpenMultiplayer={() => setMainTab('multiplayer')}
-                  onSelectSet={(setId) => {
-                    setSelectedSetId(setId);
-                    fetch("https://verserain-party.hungry4grace.partykit.dev/parties/main/global-auth-db/custom-sets/view", { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: setId }) }).catch(e => e);
-                    setViewCounts(prev => ({ ...prev, [setId]: (prev[setId] || 0) + 1 }));
-                  }}
-                  onChallengeVerse={(verse, set) => {
-                    initAudio();
-                    setSelectedSetId(set.id);
-                    setCampaignQueue(null);
-                    setCampaignResults([]);
-                    setActiveCampaignSetId(set.id);
-                    setActiveCampaignSetTotal(1);
-                    setActiveVerse(verse);
-                    setSelectedVerseRefs([verse.reference]);
-                    setTimeout(() => startGame(false, verse), 50);
-                  }}
-                />
-              )}
-
               {mainTab === 'daily_verse' && (
                 displayedDailyVerse ? (
                   <VerseSetContinuousRainPlayer
@@ -7732,13 +7702,10 @@ const deDict = {
                   </h2>
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1rem', width: '100%' }}>
                     {[
-                      { id: 'daily_verse', Icon: CloudRain, label: t('今日經文雨', 'Daily VerseRain'), desc: t('每日經文、經文雨動畫、語音朗讀與安靜背景音樂', 'A daily verse with rain animation, voice, and quiet background music'), color: '#2563eb' },
-                      { id: 'kids', Icon: Star, label: '兒童冒險', desc: '給孩子使用的探險路線、拼圖模式與老師路線設計器', color: '#f59e0b' },
                       { id: 'accessible', Icon: Headphones, label: t('視障友善版', 'Accessible Version'), desc: t('高對比、鍵盤操作、語音提示與麥克風背誦流程', 'High contrast, keyboard controls, voice prompts, and microphone recitation'), color: '#0ea5e9' },
                       { id: 'blindMode', Icon: Mic, label: isBlindMode ? t('關閉視障經文雨', 'Disable Blind Mode') : t('打開視障經文雨', 'Enable Blind Mode'), desc: t('為視覺障礙朋友設計的語音模式', 'Voice mode for visually impaired'), color: '#8b5cf6' },
                       { id: 'performanceMode', Icon: Zap, label: performanceMode ? t('關閉效能模式', 'Disable Performance Mode') : t('打開效能模式', 'Enable Performance Mode'), desc: t('關閉華麗特效以提升流暢度', 'Disable effects for better performance'), color: '#22c55e' },
                       { id: 'debugMode', Icon: Settings, label: isDebugMode ? t('關閉 Debug', 'Disable Debug') : t('打開 Debug', 'Enable Debug'), desc: t('顯示除錯資訊', 'Show debug info'), color: '#64748b' },
-                      { id: 'custom_verses', Icon: Crown, label: t('我的專屬題庫', 'My Custom Sets'), desc: t('建立自訂經文組', 'Create custom sets'), color: '#a855f7' },
                       { id: 'manual', Icon: Library, label: t('使用說明', 'Manual'), desc: t('操作詳解', 'Detailed instructions'), color: '#3b82f6' },
                       { id: 'about', Icon: Info, label: t('關於我們', 'About'), desc: t('VerseRain 開發資訊', 'Info & Credits'), color: '#14b8a6' },
                       { id: 'donate', link: 'https://www.skool.com/mutualizedeconomy/classroom', Icon: Lock, label: t('解鎖進階功能', 'Unlock Premium'), desc: t('加入進階群組', 'Join Premium Community'), color: '#f97316' },
@@ -8824,7 +8791,19 @@ const deDict = {
                   <div className="versesets-table-card" style={{ backgroundColor: '#ffffff', overflowX: 'auto', borderRadius: '8px', border: '1px solid #cbd5e1', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
                     {selectedSetId === null ? (
                       <>
-                        <div style={{ display: 'flex', justifyContent: 'flex-end', padding: '1rem', borderBottom: '1px solid #e2e8f0' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem', padding: '1rem', borderBottom: '1px solid #e2e8f0', flexWrap: 'wrap' }}>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setEditingCustomSet(null);
+                              setMainTab('custom_verses');
+                            }}
+                            style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.65rem 1rem', borderRadius: '8px', border: '1px solid #c4b5fd', background: hasPremiumAccess ? 'linear-gradient(135deg, #8b5cf6, #7c3aed)' : '#f8fafc', color: hasPremiumAccess ? '#ffffff' : '#475569', fontWeight: 'bold', cursor: 'pointer', boxShadow: hasPremiumAccess ? '0 4px 10px rgba(124, 58, 237, 0.22)' : 'none' }}
+                            title={hasPremiumAccess ? t('建立自訂經文組', 'Create custom sets') : t('達到 Level 3 或加入 Premium 即可建立自訂經文組', 'Reach Level 3 or join Premium to create custom sets')}
+                          >
+                            {hasPremiumAccess ? <Crown size={18} /> : <Lock size={18} />}
+                            {t('我的專屬題庫', 'My Custom Sets')}
+                          </button>
                           <select
                             value={versesetsSort}
                             onChange={(e) => { setVersesetsSort(e.target.value); setVersesetsPage(1); }}
@@ -9343,7 +9322,7 @@ const deDict = {
                             {t("恭喜！你已解鎖專屬題庫功能！", "Congratulations! Custom Sets Unlocked!")}
                           </h4>
                           <p style={{ margin: 0, color: '#4c1d95', fontSize: '1rem', lineHeight: '1.5' }}>
-                            {t("身為 Lv.3 以上的實踐者，你現在可以前往「進階功能 ➔ 我的專屬題庫」自由創建與分享你專屬的經文組了！", "As a Level 3+ player, you can now freely create custom verse sets from the Advanced settings menu!")}
+                            {t("身為 Lv.3 以上的實踐者，你現在可以前往「經文庫」上方的「我的專屬題庫」自由創建與分享你專屬的經文組了！", "As a Level 3+ player, you can now use the My Custom Sets button above the Scripture Library list to create and share your own verse sets!")}
                           </p>
                         </div>
                       );
