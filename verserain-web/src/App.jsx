@@ -765,7 +765,9 @@ function VerseSetContinuousRainPlayer({ verseSet, version, t, onStop, onListenLo
       const activeNode = phraseNodeRefs.current[activePhrase];
       if (!container || !activeNode) return;
 
-      const activeBottom = activeNode.offsetTop + activeNode.offsetHeight;
+      const containerRect = container.getBoundingClientRect();
+      const activeRect = activeNode.getBoundingClientRect();
+      const activeBottom = activeRect.bottom - containerRect.top;
       const bottomRoom = Math.max(10, container.clientHeight * 0.04);
       if (activePhrase > phrasePageStart && activeBottom > container.clientHeight - bottomRoom) {
         setPhrasePageStart(activePhrase);

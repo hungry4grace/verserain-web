@@ -1350,6 +1350,7 @@ textarea {
 }
 
 .continuous-rain-phrases {
+  height: min(58vh, 34rem);
   max-height: min(58vh, 34rem);
   overflow: hidden;
   align-content: flex-start;
