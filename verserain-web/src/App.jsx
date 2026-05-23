@@ -693,6 +693,7 @@ function DailyVerseRainExperience({ verse, version, t, onRead, onChallenge, onSh
 
 function VerseSetContinuousRainPlayer({
   verseSet,
+  topicSets = [],
   version,
   t,
   onStop,
@@ -706,7 +707,8 @@ function VerseSetContinuousRainPlayer({
   onNext = null,
   nextDisabled = false,
   onChallengeVerse = null,
-  onShareVerse = null
+  onShareVerse = null,
+  onSelectTopicSet = null
 }) {
   const verses = useMemo(() => verseSet?.verses?.filter(Boolean) || [], [verseSet]);
   const [currentVerse, setCurrentVerse] = useState(() => startVerse || pickRandomVerse(verses));
@@ -724,6 +726,7 @@ function VerseSetContinuousRainPlayer({
   const [phrasePageStart, setPhrasePageStart] = useState(0);
   const [isSettled, setIsSettled] = useState(false);
   const [fontSizeLevel, setFontSizeLevel] = useState('normal');
+  const [showTopicPicker, setShowTopicPicker] = useState(false);
   const bgmRef = useRef(null);
   const runRef = useRef(0);
   const verseSetIdRef = useRef(verseSet?.id);
@@ -879,6 +882,13 @@ function VerseSetContinuousRainPlayer({
     skipVerse();
   };
 
+  const handleSelectTopicSet = (set) => {
+    if (!set?.id || !onSelectTopicSet) return;
+    haltPlayback();
+    setShowTopicPicker(false);
+    onSelectTopicSet(set);
+  };
+
   if (!currentVerse) {
     return (
       <div className="continuous-rain-overlay">
@@ -946,8 +956,29 @@ function VerseSetContinuousRainPlayer({
           <div className="daily-verse-rain-content continuous-rain-content">
             <div className="daily-verse-rain-topbar continuous-rain-topbar">
               {showNav && <button type="button" onClick={handlePrevious} aria-label={onPrevious ? t('前一天', 'Previous day') : t('上一節隨機經文', 'Previous random verse')}>‹</button>}
-              <div>
-                <div className="daily-verse-rain-date continuous-rain-set-title">{label || verseSet?.title || t('經文組', 'Verse Set')}</div>
+              <div style={{ position: 'relative' }}>
+                <button
+                  type="button"
+                  onClick={() => setShowTopicPicker(prev => !prev)}
+                  className="daily-verse-rain-date continuous-rain-set-title"
+                  style={{ border: 'none', background: 'rgba(15, 23, 42, 0.25)', color: 'inherit', borderRadius: '999px', padding: '0.35rem 0.9rem', cursor: 'pointer', fontWeight: 700 }}
+                >
+                  {label || verseSet?.title || t('經文組', 'Verse Set')}
+                </button>
+                {showTopicPicker && (
+                  <div style={{ position: 'absolute', top: 'calc(100% + 8px)', left: '50%', transform: 'translateX(-50%)', width: 'min(88vw, 340px)', maxHeight: '50vh', overflowY: 'auto', background: 'rgba(15, 23, 42, 0.94)', border: '1px solid rgba(148, 163, 184, 0.45)', borderRadius: '14px', boxShadow: '0 16px 36px rgba(2,6,23,.45)', zIndex: 30, padding: '0.35rem' }}>
+                    {topicSets.map(set => (
+                      <button
+                        key={set.id}
+                        type="button"
+                        onClick={() => handleSelectTopicSet(set)}
+                        style={{ width: '100%', textAlign: 'left', border: 'none', borderRadius: '10px', margin: '0.15rem 0', background: set.id === verseSet?.id ? 'rgba(59,130,246,.28)' : 'transparent', color: '#e2e8f0', padding: '0.55rem 0.65rem', fontSize: '0.95rem', cursor: 'pointer' }}
+                      >
+                        {set.title}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
               {showNav && <button type="button" onClick={handleNext} disabled={nextDisabled} aria-label={onNext ? t('後一天', 'Next day') : t('下一節隨機經文', 'Next random verse')}>›</button>}
             </div>
@@ -2108,6 +2139,10 @@ export default function App() {
   }], [version]);
 
   const safeActiveSets = activeVerseSets.length > 0 ? activeVerseSets : dummySet;
+  const topicVerseSets = React.useMemo(
+    () => safeActiveSets.filter(set => String(set?.title || '').trim().startsWith('主題：')),
+    [safeActiveSets]
+  );
 
   const currentSet = (selectedSetId ? (safeActiveSets.find(s => s.id === selectedSetId) || customVerseSets.find(s => s.id === selectedSetId)) : null) || safeActiveSets[0];
   const getVerseSetAuthorName = React.useCallback((set) => {
@@ -7134,10 +7169,18 @@ const deDict = {
         {continuousRainSet && (
           <VerseSetContinuousRainPlayer
             verseSet={continuousRainSet}
+            topicSets={topicVerseSets}
             startVerse={continuousRainSet.startVerse || null}
             version={version}
             t={t}
             onStop={() => setContinuousRainSet(null)}
+            onSelectTopicSet={(set) => {
+              setSelectedSetId(set.id);
+              setContinuousRainSet({
+                ...set,
+                startVerse: pickRandomVerse(set.verses || [])
+              });
+            }}
             onListenLogged={() => updateGarden('activity_only', 'listen')}
             onChallengeVerse={challengeVerseFromReader}
             onShareVerse={(verse) => {
