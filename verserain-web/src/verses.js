@@ -141,7 +141,7 @@ export const VERSE_SETS = [
     },
     {
         id: "mutualized-economics",
-        title: "互惠經濟 重要經文",
+        title: "主題：互惠经济 | Mutualized Economics 重要經文",
         description: "關於上帝的形像與管家職分、禧年與重置機制等核心原則。",
         verses: [
             {
