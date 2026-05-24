@@ -1552,7 +1552,13 @@ function AccessibleBlindHome({
 }
 
 const parseVerseRef = (v) => {
-  if (v.book && v.verseInput) return v;
+  if (v.book && v.verseInput) {
+    const fixedVerseInput = String(v.verseInput).replace(/^\s*alm\s+/i, '').trim();
+    if (fixedVerseInput !== v.verseInput) {
+      return { ...v, verseInput: fixedVerseInput };
+    }
+    return v;
+  }
   if (!v.reference) return v;
   for (const book of BIBLE_BOOKS) {
     const allNames = [...(book.names || []), book.ja, book.ko]
