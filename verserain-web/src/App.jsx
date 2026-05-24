@@ -193,7 +193,7 @@ function estimateSpeechDuration(text, lang) {
 function speakTextTimed(text, rate = 1.0, lang = 'zh-TW') {
   return new Promise(async resolve => {
     if (!('speechSynthesis' in window)) {
-      resolve();
+      setTimeout(resolve, Math.min(estimateSpeechDuration(text, lang), 2500));
       return;
     }
 
@@ -209,6 +209,8 @@ function speakTextTimed(text, rate = 1.0, lang = 'zh-TW') {
     window.__speech_utterances.push(utterance);
 
     let resolved = false;
+    let started = false;
+    let ended = false;
     const safeResolve = () => {
       if (resolved) return;
       resolved = true;
@@ -219,9 +221,21 @@ function speakTextTimed(text, rate = 1.0, lang = 'zh-TW') {
       resolve();
     };
 
-    utterance.onend = safeResolve;
-    utterance.onerror = safeResolve;
+    utterance.onstart = () => { started = true; };
+    utterance.onend = () => { ended = true; safeResolve(); };
+    // Chrome may fire onerror immediately when audio is blocked.
+    // Keep a human pace fallback instead of resolving instantly.
+    utterance.onerror = () => {
+      const fallbackMs = Math.min(estimateSpeechDuration(text, lang), 2800);
+      setTimeout(safeResolve, fallbackMs);
+    };
     setTimeout(safeResolve, estimateSpeechDuration(text, lang));
+    // If speech never starts, still wait a bit so blocks don't "speed-run".
+    setTimeout(() => {
+      if (!started && !ended) {
+        setTimeout(safeResolve, Math.min(estimateSpeechDuration(text, lang), 2200));
+      }
+    }, 600);
     setTimeout(() => {
       window.speechSynthesis.resume?.();
       window.speechSynthesis.speak(utterance);
