@@ -1,7 +1,7 @@
 """
 把繁體中文「主題：XX」經文組翻譯成多國語言，並上傳到 PartyKit API。
 """
-import json, os, time, urllib.request, urllib.parse, re
+import json, os, time, urllib.request, urllib.parse, re, subprocess
 
 API_URL = "https://verserain-party.hungry4grace.partykit.dev/parties/main/global-auth-db/custom-sets"
 
@@ -31,7 +31,7 @@ def load_env_local(path=".env.local"):
             key, value = line.split("=", 1)
             key = key.strip()
             value = value.strip().strip('"').strip("'")
-            if key and key not in os.environ:
+            if key and (key not in os.environ or not os.environ.get(key)):
                 os.environ[key] = value
 
 def get_auth_headers():
@@ -76,16 +76,19 @@ def make_lang_id(original_id, app_lang):
     return f"{original_id}-{app_lang}"
 
 def publish_set(set_obj):
-    """POST 上傳經文組到 PartyKit。"""
-    body = json.dumps(set_obj, ensure_ascii=False).encode("utf-8")
-    req = urllib.request.Request(
-        API_URL,
-        data=body,
-        method="POST",
-        headers=get_auth_headers()
-    )
-    with urllib.request.urlopen(req, timeout=15) as resp:
-        return resp.status
+    """POST 上傳經文組到 PartyKit（使用 curl，避免 urllib 被邊緣層拒絕）。"""
+    headers = get_auth_headers()
+    cmd = [
+        "curl", "-sS", "-o", "/tmp/vr_publish_resp.json", "-w", "%{http_code}",
+        "-X", "POST", API_URL,
+        "-H", "Content-Type: application/json",
+        "-H", f"Authorization: {headers.get('Authorization', '')}",
+        "-H", f"x-admin-token: {headers.get('x-admin-token', '')}",
+        "-H", f"x-api-key: {headers.get('x-api-key', '')}",
+        "--data-raw", json.dumps(set_obj, ensure_ascii=False)
+    ]
+    out = subprocess.check_output(cmd, text=True, timeout=25).strip()
+    return int(out)
 
 def main():
     load_env_local()

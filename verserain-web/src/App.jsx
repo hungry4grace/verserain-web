@@ -2375,14 +2375,8 @@ export default function App() {
   }, [autoplayBlocked]);
 
   const handleVersionChange = async (newVer) => {
-    setIsLangsLoading(true);
-    let data = loadedLangs[newVer];
-    if (!data) {
-      data = await loadLanguageSets(newVer);
-      setLoadedLangs(prev => ({ ...prev, [newVer]: data }));
-    }
     setVersion(newVer);
-    // Auto-sync UI language when switching Bible version
+    // Auto-sync UI language immediately so mobile users get instant feedback.
     if (newVer === 'fa') setUiLangPersisted('fa');
     else if (newVer === 'he') setUiLangPersisted('he');
     else if (newVer === 'kjv') setUiLangPersisted('en');
@@ -2396,19 +2390,26 @@ export default function App() {
     else if (newVer === 'cuvs') setUiLangPersisted('cuvs');
     else setUiLangPersisted('zh');
 
-    let targetVerses = [];
-    if (newVer === 'cuv' || newVer === 'cuvs') targetVerses = loadedLangs[newVer]?.verses || data.verses;
-    else if (newVer === 'kjv') targetVerses = loadedLangs['kjv']?.verses || data.verses;
-    else if (newVer === 'fa') targetVerses = loadedLangs['fa']?.verses || data.verses;
-    else if (newVer === 'he') targetVerses = loadedLangs['he']?.verses || data.verses;
+    setIsLangsLoading(true);
+    try {
+      let data = loadedLangs[newVer];
+      if (!data) {
+        data = await loadLanguageSets(newVer);
+        setLoadedLangs(prev => ({ ...prev, [newVer]: data }));
+      }
 
-    if (targetVerses.length === 0) {
-      targetVerses = [{ reference: "N/A", text: newVer === 'fa' ? 'آیه‌ای یافت نشد.' : (newVer === 'he' ? 'לא נמצא פסוק.' : (newVer === 'ja' ? '経文が見つかりません。' : (newVer === 'ko' ? '성경 구절을 찾을 수 없습니다.' : (newVer === 'kjv' ? 'No verses found.' : '目前的分類下沒有經文。')))) }];
+      let targetVerses = data?.verses || [];
+      if (targetVerses.length === 0) {
+        targetVerses = [{ reference: "N/A", text: newVer === 'fa' ? 'آیه‌ای یافت نشد.' : (newVer === 'he' ? 'לא נמצא פסוק.' : (newVer === 'ja' ? '経文が見つかりません。' : (newVer === 'ko' ? '성경 구절을 찾을 수 없습니다.' : (newVer === 'kjv' ? 'No verses found.' : '目前的分類下沒有經文。')))) }];
+      }
+      setActiveVerse(targetVerses[0]);
+      setSelectedVerseRefs([targetVerses[0].reference]);
+      setCampaignQueue(null);
+    } catch (error) {
+      console.error('Failed to load language sets', newVer, error);
+    } finally {
+      setIsLangsLoading(false);
     }
-    setActiveVerse(targetVerses[0]);
-    setSelectedVerseRefs([targetVerses[0].reference]);
-    setCampaignQueue(null);
-    setIsLangsLoading(false);
   };
 
 
