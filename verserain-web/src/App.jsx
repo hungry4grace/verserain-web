@@ -1734,6 +1734,10 @@ const ActivityHeatmap = ({ t, activityMap = {} }) => {
 export default function App() {
   const [loadedLangs, setLoadedLangs] = useState({});
   const [isLangsLoading, setIsLangsLoading] = useState(true);
+  const [speechReady, setSpeechReady] = useState(() => {
+    if (typeof window === 'undefined') return true;
+    return !!window.__speechUnlocked;
+  });
 
   const [version, setVersion] = useState(() => localStorage.getItem('verseRain_version') || 'cuv');
   useEffect(() => {
@@ -1755,6 +1759,19 @@ export default function App() {
     }
     return () => { mounted = false; };
   }, [version]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const sync = () => {
+      if (window.__speechUnlocked) setSpeechReady(true);
+    };
+    window.addEventListener('click', sync);
+    window.addEventListener('touchstart', sync);
+    return () => {
+      window.removeEventListener('click', sync);
+      window.removeEventListener('touchstart', sync);
+    };
+  }, []);
 
   const VERSES_CUV = loadedLangs['cuv']?.verses || [];
   const VERSES_KJV = loadedLangs['kjv']?.verses || [];
@@ -7666,7 +7683,31 @@ const deDict = {
               )}
 
               {mainTab === 'daily_verse' && (
-                displayedDailyVerse ? (
+                !speechReady ? (
+                  <div className="continuous-rain-overlay">
+                    <button type="button" className="continuous-rain-stop" onClick={() => setMainTab('lobby')}>
+                      <XCircle size={24} /> {t('停止播放', 'Stop')}
+                    </button>
+                    <div className="daily-verse-rain-shell continuous-rain-shell" style={{ display: 'grid', placeItems: 'center', padding: '2rem' }}>
+                      <div className="hud-glass" style={{ maxWidth: '560px', textAlign: 'center', padding: '1.5rem' }}>
+                        <h3 style={{ marginTop: 0 }}>{t('啟用語音播放', 'Enable Voice Playback')}</h3>
+                        <p style={{ color: '#cbd5e1' }}>{t('Chrome 第一次需要你點一下，才能正常朗讀每日經文。', 'Chrome needs one tap before it can read Daily Verse aloud.')}</p>
+                        <button
+                          type="button"
+                          className="rain-action-btn play-btn"
+                          onClick={async () => {
+                            initAudio();
+                            const lang = getVoiceLangForVersion(version);
+                            await speakTextTimed(t('語音已啟用', 'Voice is enabled'), 1.0, lang);
+                            setSpeechReady(true);
+                          }}
+                        >
+                          <Volume2 size={18} /> {t('點我啟用語音', 'Tap to enable voice')}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ) : displayedDailyVerse ? (
                   <VerseSetContinuousRainPlayer
                     verseSet={{
                       id: `daily-${remoteDailyVerse?.date || dailyVerseDate}`,
