@@ -2195,23 +2195,32 @@ export default function App() {
 
   // Pick a random verse from the "rain-verses" set for the homepage subtitle
   const [rainVerseIndex, setRainVerseIndex] = React.useState(() => Math.floor(Math.random() * 10000));
+  const preferredRainSet = React.useMemo(() => {
+    const rainSets = activeVerseSets.filter(s => s.id && s.id.startsWith('rain-verses'));
+    if (!rainSets.length) return null;
+    return (
+      rainSets.find(s => s.language === version && s.id.endsWith(`-${version}`)) ||
+      rainSets.find(s => s.language === version) ||
+      rainSets[0]
+    );
+  }, [activeVerseSets, version]);
   const randomRainVerse = React.useMemo(() => {
-    const rainSet = activeVerseSets.find(s => s.id && s.id.startsWith('rain-verses'));
-    if (rainSet && rainSet.verses && rainSet.verses.length > 0) {
-      return rainSet.verses[rainVerseIndex % rainSet.verses.length];
+    if (preferredRainSet && preferredRainSet.verses && preferredRainSet.verses.length > 0) {
+      return preferredRainSet.verses[rainVerseIndex % preferredRainSet.verses.length];
     }
     return null;
-  }, [activeVerseSets, rainVerseIndex]);
+  }, [preferredRainSet, rainVerseIndex]);
 
   const [dailyVerseDate, setDailyVerseDate] = useState(() => formatLocalDate(new Date()));
   const [remoteDailyVerse, setRemoteDailyVerse] = useState(null);
   const [isDailyVerseLoading, setIsDailyVerseLoading] = useState(true);
   const dailyVerseRemoteVersion = getDailyVerseRemoteVersion(version);
   const dailyVerse = React.useMemo(() => {
-    const rainSet = baseVerseSets.find(s => s.id && s.id.startsWith('rain-verses'));
-    const pool = rainSet?.verses?.length ? rainSet.verses : baseVerseSets.flatMap(s => s.verses || []);
+    const pool = preferredRainSet?.verses?.length
+      ? preferredRainSet.verses
+      : activeVerseSets.flatMap(s => s.verses || []);
     return pool[getDailyVerseIndex(pool.length, `${dailyVerseDate}T00:00:00`)] || null;
-  }, [baseVerseSets, dailyVerseDate]);
+  }, [preferredRainSet, activeVerseSets, dailyVerseDate]);
   const changeDailyVerseDate = React.useCallback((nextDateOrUpdater) => {
     setRemoteDailyVerse(null);
     setIsDailyVerseLoading(true);
