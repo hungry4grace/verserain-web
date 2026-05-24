@@ -1555,7 +1555,9 @@ const parseVerseRef = (v) => {
   if (v.book && v.verseInput) return v;
   if (!v.reference) return v;
   for (const book of BIBLE_BOOKS) {
-    const allNames = [...(book.names || []), book.ja, book.ko].filter(Boolean);
+    const allNames = [...(book.names || []), book.ja, book.ko]
+      .filter(Boolean)
+      .sort((a, b) => b.length - a.length);
     for (const name of allNames) {
       if (v.reference.startsWith(name)) {
         return {
@@ -2159,16 +2161,41 @@ export default function App() {
   }, []);
 
   const baseVerseSets = loadedLangs[version]?.sets || [];
+  const activeVerseSets = React.useMemo(() => {
+    const merged = [];
+    customVerseSets.forEach(cs => {
+      const csLang = cs.language || 'cuv';
+      if (csLang === version) {
+        const pub = publishedVerseSets.find(p => p.id === cs.id);
+        merged.push({
+          ...cs,
+          authorName: (pub && pub.authorName !== "Anonymous") ? pub.authorName : (cs.authorName || playerName || "匿名玩家"),
+          lastEditorName: pub?.lastEditorName || cs.lastEditorName,
+          lastEditedAt: pub?.lastEditedAt || cs.lastEditedAt
+        });
+      }
+    });
+    publishedVerseSets.forEach(ps => {
+      const psLang = ps.language || 'cuv';
+      if (psLang === version) {
+        if (!merged.some(cs => cs.id === ps.id)) {
+          merged.push(ps);
+        }
+      }
+    });
+    const filteredBase = baseVerseSets.filter(bs => !merged.some(m => m.id === bs.id) && !hiddenOfficialSetIds.includes(bs.id));
+    return [...filteredBase, ...merged];
+  }, [customVerseSets, publishedVerseSets, baseVerseSets, playerName, version, hiddenOfficialSetIds]);
 
   // Pick a random verse from the "rain-verses" set for the homepage subtitle
   const [rainVerseIndex, setRainVerseIndex] = React.useState(() => Math.floor(Math.random() * 10000));
   const randomRainVerse = React.useMemo(() => {
-    const rainSet = baseVerseSets.find(s => s.id && s.id.startsWith('rain-verses'));
+    const rainSet = activeVerseSets.find(s => s.id && s.id.startsWith('rain-verses'));
     if (rainSet && rainSet.verses && rainSet.verses.length > 0) {
       return rainSet.verses[rainVerseIndex % rainSet.verses.length];
     }
     return null;
-  }, [baseVerseSets, rainVerseIndex]);
+  }, [activeVerseSets, rainVerseIndex]);
 
   const [dailyVerseDate, setDailyVerseDate] = useState(() => formatLocalDate(new Date()));
   const [remoteDailyVerse, setRemoteDailyVerse] = useState(null);
@@ -2222,32 +2249,6 @@ export default function App() {
     remoteDailyVerse?.translation === dailyVerseRemoteVersion &&
     remoteDailyVerse?.date === dailyVerseDate;
   const displayedDailyVerse = remoteDailyVerseMatches ? remoteDailyVerse : (isDailyVerseLoading ? null : dailyVerse);
-
-  const activeVerseSets = React.useMemo(() => {
-    const merged = [];
-    customVerseSets.forEach(cs => {
-      const csLang = cs.language || 'cuv';
-      if (csLang === version) {
-        const pub = publishedVerseSets.find(p => p.id === cs.id);
-        merged.push({
-          ...cs,
-          authorName: (pub && pub.authorName !== "Anonymous") ? pub.authorName : (cs.authorName || playerName || "匿名玩家"),
-          lastEditorName: pub?.lastEditorName || cs.lastEditorName,
-          lastEditedAt: pub?.lastEditedAt || cs.lastEditedAt
-        });
-      }
-    });
-    publishedVerseSets.forEach(ps => {
-      const psLang = ps.language || 'cuv';
-      if (psLang === version) {
-        if (!merged.some(cs => cs.id === ps.id)) {
-          merged.push(ps);
-        }
-      }
-    });
-    const filteredBase = baseVerseSets.filter(bs => !merged.some(m => m.id === bs.id) && !hiddenOfficialSetIds.includes(bs.id));
-    return [...filteredBase, ...merged];
-  }, [customVerseSets, publishedVerseSets, baseVerseSets, playerName, version, hiddenOfficialSetIds]);
 
   const dummySet = useMemo(() => [{
     id: "dummy",
@@ -8874,7 +8875,7 @@ const deDict = {
                                   <td style={{ padding: '1rem', textAlign: 'center', color: '#3b82f6', fontSize: '1.2rem' }}>{customVerseSets.some(c => c.id === set.id) ? <Crown size={22} /> : <Library size={22} />}</td>
                                   <td style={{ padding: '1rem', fontWeight: 'bold', color: '#1e293b', fontSize: '1.05rem' }}>
                                     <span>{set.title}</span>
-                                    {isAdmin && !customVerseSets.some(c => c.id === set.id) && (
+                                    {isAdmin && (
                                       <span style={{ marginLeft: '1rem', display: 'inline-flex', gap: '0.5rem' }}>
                                         <button onClick={(e) => {
                                           e.stopPropagation();
