@@ -7695,10 +7695,9 @@ const deDict = {
                         <button
                           type="button"
                           className="rain-action-btn play-btn"
-                          onClick={async () => {
+                          onClick={() => {
                             initAudio();
-                            const lang = getVoiceLangForVersion(version);
-                            await speakTextTimed(t('語音已啟用', 'Voice is enabled'), 1.0, lang);
+                            // Do not speak here to avoid competing utterances with auto playback.
                             setSpeechReady(true);
                           }}
                         >
