@@ -4500,7 +4500,7 @@ export default function App() {
     '一起玩!': 'با هم بازی کنید!',
     '與家人朋友分享房間碼來PK同樣！': 'کد اتاق را با خانواده و دوستان به اشتراک بگذارید!',
     '與家人朋友分享房間碼來PK同樂！': 'کد اتاق را با خانواده و دوستان به اشتراک بگذارید!',
-    '檢視你已經學會並種下生命樹的經文。': 'آیاتی که آموخته‌اید و به عنوان درخت حیات کاشته‌اید را ببینید.',
+    '主話如霖澆我田，歲歲結果到豐年。': 'آیاتی که آموخته‌اید و به عنوان درخت حیات کاشته‌اید را ببینید.',
 
     // Manual / About
     '使用說明': 'راهنمای کاربر',
@@ -4964,7 +4964,7 @@ export default function App() {
     '一起玩!': 'בוא נשחק ביחד!',
     '與家人朋友分享房間碼來PK同樂！': 'שתף קוד חדר עם משפחה וחברים!',
     '與家人朋友分享房間碼來PK同樣！': 'שתף קוד חדר עם משפחה וחברים!',
-    '檢視你已經學會並種下生命樹的經文。': 'צפה בפסוקים שלמדת ושתלת כעץ חיים.',
+    '主話如霖澆我田，歲歲結果到豐年。': 'צפה בפסוקים שלמדת ושתלת כעץ חיים.',
 
     // Manual / About
     '使用說明': 'מדריך למשתמש',
@@ -5357,7 +5357,7 @@ export default function App() {
     '挑戰全球經文組，鍛鍊記憶力與專注力。': '世界の経文セットに挑戦し、記憶力と集中力を鍛えよう。',
     '一起玩!': '一緒に遊ぼう!',
     '與家人朋友分享房間碼來PK同樂！': '家族や友人とルームコードを共有して一緒に対戦しよう！',
-    '檢視你已經學會並種下生命樹的經文。': 'あなたが学び、生命の樹として植えた経文をご覧ください。',
+    '主話如霖澆我田，歲歲結果到豐年。': 'あなたが学び、生命の樹として植えた経文をご覧ください。',
     // Comprehensive ja additions batch 2
     '開始': '開始',
     '跳過': 'スキップ',
@@ -5875,7 +5875,7 @@ export default function App() {
     '一起玩!': '함께 놀아요!',
     '與家人朋友分享房間碼來PK同樂！': '가족, 친구와 방 코드를 공유하고 함께 대결하세요!',
     '與家人朋友分享房間碼來PK同樣！': '가족, 친구와 방 코드를 공유하고 함께 대결하세요!',
-    '檢視你已經學會並種下生命樹的經文。': '당신이 배우고 생명나무로 심은 구절을 확인하세요.',
+    '主話如霖澆我田，歲歲結果到豐年。': '당신이 배우고 생명나무로 심은 구절을 확인하세요.',
 
     // ─── 누락된 번역 일괄 추가 ─────────────────────
     // Game modes
@@ -6162,7 +6162,7 @@ const zhcnDict = {
   "換一個": "换一个",
   "與家人朋友分享房間碼來PK同樂！": "与家人朋友分享房间码来PK同乐！",
   "挑戰全球經文組，鍛鍊記憶力與專注力。": "挑战全球经文组，锻炼记忆力与专注力。",
-  "檢視你已經學會並種下生命樹的經文。": "检视你已经学会并种下生命树的经文。",
+  "主話如霖澆我田，歲歲結果到豐年。": "检视你已经学会并种下生命树的经文。",
   "選擇你喜歡的語音，首頁「讀經」及遊戲中的語音都會使用此設定。": "选择你喜欢的语音，首页“读经”及游戏中的语音都会使用此设定。",
   "我的專屬題庫": "我的专属题库",
   "新增題庫": "新增题库",
@@ -6283,7 +6283,7 @@ const viDict = {
     "換一個": "Đổi",
     "與家人朋友分享房間碼來PK同樂！": "Chia sẻ mã phòng với gia đình, bạn bè để cùng PK!",
     "挑戰全球經文組，鍛鍊記憶力與專注力。": "Thử thách các bộ Kinh Thánh, rèn luyện trí nhớ và sự tập trung.",
-    "檢視你已經學會並種下生命樹的經文。": "Xem các câu Kinh Thánh bạn đã học và trồng cây sự sống.",
+    "主話如霖澆我田，歲歲結果到豐年。": "Xem các câu Kinh Thánh bạn đã học và trồng cây sự sống.",
     "選擇你喜歡的語音，首頁「讀經」及遊戲中的語音都會使用此設定。": "Chọn giọng đọc bạn thích, sẽ dùng cho chức năng 'Đọc' và trong trò chơi.",
     "我的專屬題庫": "Bộ câu hỏi riêng của tôi",
     "新增題庫": "Thêm bộ câu hỏi",
@@ -6412,7 +6412,7 @@ const myDict = {
     "換一個": "ပြောင်းရန်",
     "與家人朋友分享房間碼來PK同樂！": "မိသားစု၊ သူငယ်ချင်းများနှင့် အခန်းကုဒ်ကို မျှဝေပြီး အတူတူကစားပါ!",
     "挑戰全球經文組，鍛鍊記憶力與專注力。": "ကမ္ဘာတစ်ဝှမ်းရှိ ကျမ်းချက်များကို စိန်ခေါ်ပြီး မှတ်ဉာဏ်နှင့် အာရုံစူးစိုက်မှုကို လေ့ကျင့်ပါ။",
-    "檢視你已經學會並種下生命樹的經文。": "သင်လေ့လာပြီး စိုက်ပျိုးထားသော အသက်ပင်ကျမ်းချက်များကို ကြည့်ရှုပါ။",
+    "主話如霖澆我田，歲歲結果到豐年。": "သင်လေ့လာပြီး စိုက်ပျိုးထားသော အသက်ပင်ကျမ်းချက်များကို ကြည့်ရှုပါ။",
     "選擇你喜歡的語音，首頁「讀經」及遊戲中的語音都會使用此設定。": "သင်နှစ်သက်ရာ အသံကို ရွေးချယ်ပါ။",
     "我的專屬題庫": "ကျွန်ုပ်၏ သီးသန့်အစုများ",
     "新增題庫": "အစုသစ်",
@@ -6923,8 +6923,8 @@ const deDict = {
   Object.assign(faDict, {
     '團隊競賽': 'رقابت تیمی',
     '經文庫': 'کتابخانه آیات',
-    '瀏覽全球經文組，挑選經文開始練習。': 'مجموعه‌های جهانی آیات را مرور کنید و آیاتی را برای تمرین انتخاب کنید.',
-    '建立房間，分隊一起挑戰經文。': 'اتاقی بسازید، تیم‌ها را تشکیل دهید و با هم آیات را به چالش بکشید.',
+    '經題萬卷勤溫故，句句生光照此程。': 'مجموعه‌های جهانی آیات را مرور کنید و آیاتی را برای تمرین انتخاب کنید.',
+    '同心競走天路程，並肩得勝主名榮。': 'اتاقی بسازید، تیم‌ها را تشکیل دهید و با هم آیات را به چالش بکشید.',
     '老師先選擇隊伍數量，再建立房間。學生加入一個聖靈果子隊伍，最後用隊伍平均分排名。': 'معلم ابتدا تعداد تیم‌ها را انتخاب می‌کند و سپس اتاق را می‌سازد. دانش‌آموزان به یکی از تیم‌های میوه روح می‌پیوندند و رتبه نهایی بر اساس میانگین امتیاز تیم است.',
     '隊伍數量': 'تعداد تیم‌ها',
     '仁愛隊': 'تیم محبت',
@@ -6945,8 +6945,8 @@ const deDict = {
   Object.assign(heDict, {
     '團隊競賽': 'תחרות קבוצתית',
     '經文庫': 'ספריית פסוקים',
-    '瀏覽全球經文組，挑選經文開始練習。': 'עיין בערכות פסוקים גלובליות ובחר פסוקים לתרגול.',
-    '建立房間，分隊一起挑戰經文。': 'צור חדר, התחלקו לקבוצות ואתגרו פסוקים יחד.',
+    '經題萬卷勤溫故，句句生光照此程。': 'עיין בערכות פסוקים גלובליות ובחר פסוקים לתרגול.',
+    '同心競走天路程，並肩得勝主名榮。': 'צור חדר, התחלקו לקבוצות ואתגרו פסוקים יחד.',
     '老師先選擇隊伍數量，再建立房間。學生加入一個聖靈果子隊伍，最後用隊伍平均分排名。': 'המורה בוחר תחילה את מספר הקבוצות ואז יוצר חדר. התלמידים מצטרפים לקבוצת פרי הרוח, והדירוג הסופי נקבע לפי ממוצע הניקוד של הקבוצה.',
     '隊伍數量': 'מספר הקבוצות',
     '仁愛隊': 'צוות אהבה',
@@ -6967,8 +6967,8 @@ const deDict = {
   Object.assign(jaDict, {
     '團隊競賽': 'チーム対戦',
     '經文庫': '聖句ライブラリ',
-    '瀏覽全球經文組，挑選經文開始練習。': '世界の聖句セットを閲覧し、練習する聖句を選びましょう。',
-    '建立房間，分隊一起挑戰經文。': '部屋を作成し、チームに分かれて一緒に聖句に挑戦しましょう。',
+    '經題萬卷勤溫故，句句生光照此程。': '世界の聖句セットを閲覧し、練習する聖句を選びましょう。',
+    '同心競走天路程，並肩得勝主名榮。': '部屋を作成し、チームに分かれて一緒に聖句に挑戦しましょう。',
     '老師先選擇隊伍數量，再建立房間。學生加入一個聖靈果子隊伍，最後用隊伍平均分排名。': '先生がチーム数を選んでから部屋を作成します。生徒は御霊の実のチームに参加し、最後はチームの平均点で順位が決まります。',
     '隊伍數量': 'チーム数',
     '仁愛隊': '愛チーム',
@@ -6989,8 +6989,8 @@ const deDict = {
   Object.assign(koDict, {
     '團隊競賽': '팀 대회',
     '經文庫': '말씀 보관함',
-    '瀏覽全球經文組，挑選經文開始練習。': '전 세계 말씀 세트를 둘러보고 연습할 말씀을 선택하세요.',
-    '建立房間，分隊一起挑戰經文。': '방을 만들고 팀을 나누어 함께 말씀에 도전하세요.',
+    '經題萬卷勤溫故，句句生光照此程。': '전 세계 말씀 세트를 둘러보고 연습할 말씀을 선택하세요.',
+    '同心競走天路程，並肩得勝主名榮。': '방을 만들고 팀을 나누어 함께 말씀에 도전하세요.',
     '老師先選擇隊伍數量，再建立房間。學生加入一個聖靈果子隊伍，最後用隊伍平均分排名。': '선생님이 먼저 팀 수를 선택한 뒤 방을 만듭니다. 학생들은 성령의 열매 팀에 참여하고, 최종 순위는 팀 평균 점수로 정해집니다.',
     '隊伍數量': '팀 수',
     '仁愛隊': '사랑 팀',
@@ -7011,8 +7011,8 @@ const deDict = {
   Object.assign(zhcnDict, {
     '團隊競賽': '团队竞赛',
     '經文庫': '经文库',
-    '瀏覽全球經文組，挑選經文開始練習。': '浏览全球经文组，挑选经文开始练习。',
-    '建立房間，分隊一起挑戰經文。': '建立房间，分队一起挑战经文。',
+    '經題萬卷勤溫故，句句生光照此程。': '浏览全球经文组，挑选经文开始练习。',
+    '同心競走天路程，並肩得勝主名榮。': '建立房间，分队一起挑战经文。',
     '老師先選擇隊伍數量，再建立房間。學生加入一個聖靈果子隊伍，最後用隊伍平均分排名。': '老师先选择队伍数量，再建立房间。学生加入一个圣灵果子队伍，最后用队伍平均分排名。',
     '隊伍數量': '队伍数量',
     '仁愛隊': '仁爱队',
@@ -7033,8 +7033,8 @@ const deDict = {
   Object.assign(viDict, {
     '團隊競賽': 'Thi đấu đội',
     '經文庫': 'Thư viện Kinh Thánh',
-    '瀏覽全球經文組，挑選經文開始練習。': 'Duyệt các bộ câu Kinh Thánh toàn cầu và chọn câu để luyện tập.',
-    '建立房間，分隊一起挑戰經文。': 'Tạo phòng, chia đội và cùng thử thách Kinh Thánh.',
+    '經題萬卷勤溫故，句句生光照此程。': 'Duyệt các bộ câu Kinh Thánh toàn cầu và chọn câu để luyện tập.',
+    '同心競走天路程，並肩得勝主名榮。': 'Tạo phòng, chia đội và cùng thử thách Kinh Thánh.',
     '老師先選擇隊伍數量，再建立房間。學生加入一個聖靈果子隊伍，最後用隊伍平均分排名。': 'Giáo viên chọn số đội trước, sau đó tạo phòng. Học sinh tham gia một đội Bông Trái Thánh Linh, và thứ hạng cuối cùng dựa trên điểm trung bình của đội.',
     '隊伍數量': 'Số đội',
     '仁愛隊': 'Đội Yêu Thương',
@@ -7055,8 +7055,8 @@ const deDict = {
   Object.assign(myDict, {
     '團隊競賽': 'အသင်းပြိုင်ပွဲ',
     '經文庫': 'ကျမ်းချက်စာကြည့်တိုက်',
-    '瀏覽全球經文組，挑選經文開始練習。': 'ကမ္ဘာလုံးဆိုင်ရာ ကျမ်းချက်စုများကို ကြည့်ရှုပြီး လေ့ကျင့်ရန် ကျမ်းချက်များကို ရွေးချယ်ပါ။',
-    '建立房間，分隊一起挑戰經文。': 'အခန်းတစ်ခု ဖန်တီးပြီး အသင်းများခွဲကာ ကျမ်းချက်များကို အတူတကွ စိန်ခေါ်ပါ။',
+    '經題萬卷勤溫故，句句生光照此程。': 'ကမ္ဘာလုံးဆိုင်ရာ ကျမ်းချက်စုများကို ကြည့်ရှုပြီး လေ့ကျင့်ရန် ကျမ်းချက်များကို ရွေးချယ်ပါ။',
+    '同心競走天路程，並肩得勝主名榮。': 'အခန်းတစ်ခု ဖန်တီးပြီး အသင်းများခွဲကာ ကျမ်းချက်များကို အတူတကွ စိန်ခေါ်ပါ။',
     '老師先選擇隊伍數量，再建立房間。學生加入一個聖靈果子隊伍，最後用隊伍平均分排名。': 'ဆရာက အသင်းအရေအတွက်ကို ပထမရွေးပြီးနောက် အခန်းဖန်တီးပါသည်။ ကျောင်းသားများသည် သန့်ရှင်းသောဝိညာဉ်၏ အသီးအသင်းတစ်ခုကို ဝင်ရောက်ပြီး နောက်ဆုံးအဆင့်ကို အသင်းပျမ်းမျှရမှတ်ဖြင့် စီထားပါသည်။',
     '隊伍數量': 'အသင်းအရေအတွက်',
     '仁愛隊': 'ချစ်ခြင်းမေတ္တာအသင်း',
@@ -7077,8 +7077,8 @@ const deDict = {
   Object.assign(esDict, {
     '團隊競賽': 'Competencia por equipos',
     '經文庫': 'Biblioteca de versículos',
-    '瀏覽全球經文組，挑選經文開始練習。': 'Explora conjuntos globales de versículos y elige pasajes para practicar.',
-    '建立房間，分隊一起挑戰經文。': 'Crea una sala, formen equipos y desafíen versículos juntos.',
+    '經題萬卷勤溫故，句句生光照此程。': 'Explora conjuntos globales de versículos y elige pasajes para practicar.',
+    '同心競走天路程，並肩得勝主名榮。': 'Crea una sala, formen equipos y desafíen versículos juntos.',
     '老師先選擇隊伍數量，再建立房間。學生加入一個聖靈果子隊伍，最後用隊伍平均分排名。': 'El maestro elige primero el número de equipos y luego crea una sala. Los estudiantes se unen a un equipo del Fruto del Espíritu, y la clasificación final se ordena por el puntaje promedio del equipo.',
     '隊伍數量': 'Número de equipos',
     '仁愛隊': 'Equipo Amor',
@@ -7099,8 +7099,8 @@ const deDict = {
   Object.assign(trDict, {
     '團隊競賽': 'Takım Yarışması',
     '經文庫': 'Ayet Kütüphanesi',
-    '瀏覽全球經文組，挑選經文開始練習。': 'Küresel ayet setlerine göz atın ve çalışmak için ayetler seçin.',
-    '建立房間，分隊一起挑戰經文。': 'Bir oda oluşturun, takımlara ayrılın ve ayetlerde birlikte yarışın.',
+    '經題萬卷勤溫故，句句生光照此程。': 'Küresel ayet setlerine göz atın ve çalışmak için ayetler seçin.',
+    '同心競走天路程，並肩得勝主名榮。': 'Bir oda oluşturun, takımlara ayrılın ve ayetlerde birlikte yarışın.',
     '老師先選擇隊伍數量，再建立房間。學生加入一個聖靈果子隊伍，最後用隊伍平均分排名。': 'Öğretmen önce takım sayısını seçer, ardından bir oda oluşturur. Öğrenciler Ruhun Meyvesi takımlarından birine katılır ve son sıralama takımın ortalama puanına göre yapılır.',
     '隊伍數量': 'Takım Sayısı',
     '仁愛隊': 'Sevgi Takımı',
@@ -7121,8 +7121,8 @@ const deDict = {
   Object.assign(deDict, {
     '團隊競賽': 'Teamwettbewerb',
     '經文庫': 'Versbibliothek',
-    '瀏覽全球經文組，挑選經文開始練習。': 'Durchstöbere globale Vers-Sets und wähle Verse zum Üben aus.',
-    '建立房間，分隊一起挑戰經文。': 'Erstelle einen Raum, bildet Teams und tretet gemeinsam mit Versen an.',
+    '經題萬卷勤溫故，句句生光照此程。': 'Durchstöbere globale Vers-Sets und wähle Verse zum Üben aus.',
+    '同心競走天路程，並肩得勝主名榮。': 'Erstelle einen Raum, bildet Teams und tretet gemeinsam mit Versen an.',
     '老師先選擇隊伍數量，再建立房間。學生加入一個聖靈果子隊伍，最後用隊伍平均分排名。': 'Die Lehrkraft wählt zuerst die Anzahl der Teams und erstellt dann einen Raum. Die Schüler treten einem Team der Frucht des Geistes bei, und die Endplatzierung richtet sich nach dem durchschnittlichen Team-Punktestand.',
     '隊伍數量': 'Anzahl der Teams',
     '仁愛隊': 'Team Liebe',
@@ -7603,7 +7603,7 @@ const deDict = {
                     {/* Daily VerseRain */}
                     <div className="primary-button" onClick={() => setMainTab('daily_verse')} style={{ background: 'linear-gradient(135deg, #818cf8, #6366f1 55%, #4338ca)', borderRadius: '16px', padding: '2.5rem 2rem', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', color: 'white', textAlign: 'center', boxShadow: '0 10px 28px rgba(79, 70, 229, 0.35)' }}>
                       <CloudRain size={72} style={{ marginBottom: '1rem' }} />
-                      <h2 style={{ fontSize: '2rem', margin: 0, marginBottom: '0.5rem', textShadow: '0 2px 4px rgba(0,0,0,0.2)' }}>{t("今日經文雨", "Daily VerseRain")}</h2>
+                      <h2 style={{ fontSize: '2rem', margin: 0, marginBottom: '0.5rem', textShadow: '0 2px 4px rgba(0,0,0,0.2)' }}>{t("每日經文", "Daily Verse")}</h2>
                       <p style={{ fontSize: '1rem', margin: 0, opacity: 0.95 }}>{t("每日一句神的話，心意更新而變化。", "A verse a day to renew your mind.")}</p>
                     </div>
 
@@ -7611,21 +7611,21 @@ const deDict = {
                     <div className="primary-button" onClick={() => setMainTab('garden')} style={{ background: 'linear-gradient(135deg, #34d399, #10b981)', borderRadius: '16px', padding: '2.5rem 2rem', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', color: 'white', textAlign: 'center' }}>
                       <TreePine size={72} style={{ marginBottom: '1rem' }} />
                       <h2 style={{ fontSize: '2rem', margin: 0, marginBottom: '0.5rem', textShadow: '0 2px 4px rgba(0,0,0,0.2)' }}>{t("我的園子", "My Garden")}</h2>
-                      <p style={{ fontSize: '1rem', margin: 0, opacity: 0.9 }}>{t("檢視你已經學會並種下生命樹的經文。", "View your living scripture trees.")}</p>
+                      <p style={{ fontSize: '1rem', margin: 0, opacity: 0.9 }}>{t("主話如霖澆我田，歲歲結果到豐年。", "View your living scripture trees.")}</p>
                     </div>
 
                     {/* Scripture Library */}
                     <div className="primary-button" onClick={() => setMainTab('versesets')} style={{ background: 'linear-gradient(135deg, #60a5fa, #3b82f6)', borderRadius: '16px', padding: '2.5rem 2rem', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', color: 'white', textAlign: 'center' }}>
                       <Library size={72} style={{ marginBottom: '1rem' }} />
-                      <h2 style={{ fontSize: '2rem', margin: 0, marginBottom: '0.5rem', textShadow: '0 2px 4px rgba(0,0,0,0.2)' }}>{t("經文庫", "Scripture Library")}</h2>
-                      <p style={{ fontSize: '1rem', margin: 0, opacity: 0.9 }}>{t("瀏覽全球經文組，挑選經文開始練習。", "Browse global verse sets and choose scriptures to practice.")}</p>
+                      <h2 style={{ fontSize: '2rem', margin: 0, marginBottom: '0.5rem', textShadow: '0 2px 4px rgba(0,0,0,0.2)' }}>{t("經文題庫", "Scripture Sets")}</h2>
+                      <p style={{ fontSize: '1rem', margin: 0, opacity: 0.9 }}>{t("經題萬卷勤溫故，句句生光照此程。", "Browse global verse sets and choose scriptures to practice.")}</p>
                     </div>
 
                     {/* Team Competition */}
                     <div className="primary-button" onClick={() => setMainTab('multiplayer')} style={{ background: 'linear-gradient(135deg, #f472b6, #ec4899)', borderRadius: '16px', padding: '2.5rem 2rem', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', color: 'white', textAlign: 'center' }}>
                       <Users size={72} style={{ marginBottom: '1rem' }} />
                       <h2 style={{ fontSize: '2rem', margin: 0, marginBottom: '0.5rem', textShadow: '0 2px 4px rgba(0,0,0,0.2)' }}>{t("團隊競賽", "Team Competition")}</h2>
-                      <p style={{ fontSize: '1rem', margin: 0, opacity: 0.9 }}>{t("建立房間，分隊一起挑戰經文。", "Create a room and compete in teams.")}</p>
+                      <p style={{ fontSize: '1rem', margin: 0, opacity: 0.9 }}>{t("同心競走天路程，並肩得勝主名榮。", "Create a room and compete in teams.")}</p>
                     </div>
                   </div>
                 </div>
@@ -9391,7 +9391,7 @@ const deDict = {
                             {t("恭喜！你已解鎖專屬題庫功能！", "Congratulations! Custom Sets Unlocked!")}
                           </h4>
                           <p style={{ margin: 0, color: '#4c1d95', fontSize: '1rem', lineHeight: '1.5' }}>
-                            {t("身為 Lv.3 以上的實踐者，你現在可以前往「經文庫」上方的「我的專屬題庫」自由創建與分享你專屬的經文組了！", "As a Level 3+ player, you can now use the My Custom Sets button above the Scripture Library list to create and share your own verse sets!")}
+                            {t("身為 Lv.3 以上的實踐者，你現在可以前往「經文題庫」上方的「我的專屬題庫」自由創建與分享你專屬的經文組了！", "As a Level 3+ player, you can now use the My Custom Sets button above the Scripture Sets list to create and share your own verse sets!")}
                           </p>
                         </div>
                       );
