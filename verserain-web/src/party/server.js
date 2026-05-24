@@ -337,6 +337,17 @@ export default class Server {
         const xApiKey = request.headers.get("x-api-key") || "";
         return bearerToken === configuredToken || xAdminToken === configuredToken || xApiKey === configuredToken;
       };
+      const isTrustedAdminEmail = (email = "") => {
+        const normalized = String(email || "").trim().toLowerCase();
+        if (!normalized) return false;
+        return [
+          "samhsiung@gmail.com",
+          "davidhwang1125@gmail.com",
+          "hsiungsam@gmail.com",
+          "hungry4grace@gmail.com",
+          "verserain.admin@gmail.com"
+        ].includes(normalized);
+      };
 
       // 3.9 View Counts Endpoint
       if (url.pathname.endsWith('/custom-sets/view')) {
@@ -366,10 +377,10 @@ export default class Server {
                const sets = Array.from(list.values());
                return new Response(JSON.stringify(sets), { status: 200, headers: corsHeaders });
             } else if (request.method === "POST") {
-               if (!isCustomSetWriteAuthorized()) {
+               const payload = await request.json();
+               if (!isCustomSetWriteAuthorized() && !isTrustedAdminEmail(payload?.adminEmail)) {
                   return new Response(JSON.stringify({ error: "Forbidden" }), { status: 403, headers: corsHeaders });
                }
-               const payload = await request.json();
                const existing = await this.room.storage.get(`verseset:${payload.id}`);
                if (existing && existing.authorName && existing.authorName !== "Anonymous") {
                   payload.authorName = existing.authorName;
@@ -380,10 +391,10 @@ export default class Server {
                await this.room.storage.put(`verseset:${payload.id}`, payload);
                return new Response(JSON.stringify({ success: true }), { status: 200, headers: corsHeaders });
             } else if (request.method === "DELETE") {
-               if (!isCustomSetWriteAuthorized()) {
+               const { id, adminEmail } = await request.json();
+               if (!isCustomSetWriteAuthorized() && !isTrustedAdminEmail(adminEmail)) {
                   return new Response(JSON.stringify({ error: "Forbidden" }), { status: 403, headers: corsHeaders });
                }
-               const { id } = await request.json();
                await this.room.storage.delete(`verseset:${id}`);
                return new Response(JSON.stringify({ success: true }), { status: 200, headers: corsHeaders });
             }

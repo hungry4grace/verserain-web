@@ -8081,7 +8081,7 @@ const deDict = {
                                 fetch("https://verserain-party.hungry4grace.partykit.dev/parties/main/global-auth-db/custom-sets", {
                                   method: "POST",
                                   headers: { "Content-Type": "application/json" },
-                                  body: JSON.stringify(publishedObj)
+                                  body: JSON.stringify({ ...publishedObj, adminEmail: userEmail })
                                 }).catch(e => console.error("Publish failed", e));
 
                                 setPublishedVerseSets(prev => {
@@ -8093,7 +8093,7 @@ const deDict = {
                                 fetch("https://verserain-party.hungry4grace.partykit.dev/parties/main/global-auth-db/custom-sets", {
                                   method: "DELETE",
                                   headers: { "Content-Type": "application/json" },
-                                  body: JSON.stringify({ id: setObj.id })
+                                  body: JSON.stringify({ id: setObj.id, adminEmail: userEmail })
                                 }).catch(e => console.error("Unpublish failed", e));
 
                                 setPublishedVerseSets(prev => prev.filter(p => p.id !== setObj.id));
@@ -8136,7 +8136,7 @@ const deDict = {
                                         fetch("https://verserain-party.hungry4grace.partykit.dev/parties/main/global-auth-db/custom-sets", {
                                           method: "DELETE",
                                           headers: { "Content-Type": "application/json" },
-                                          body: JSON.stringify({ id: set.id })
+                                          body: JSON.stringify({ id: set.id, adminEmail: userEmail })
                                         }).catch(e => console.error(e));
                                         setPublishedVerseSets(prev => prev.filter(p => p.id !== set.id));
                                       }
@@ -8843,7 +8843,7 @@ const deDict = {
                               return currentSetList.map((set, i) => (
                                 <tr key={i} style={{ borderBottom: '1px solid #e2e8f0', backgroundColor: i % 2 === 0 ? '#ffffff' : '#f8fafc', transition: 'background 0.2s', cursor: 'pointer' }} onClick={() => {
                                   setSelectedSetId(set.id);
-                                  fetch("https://verserain-party.hungry4grace.partykit.dev/parties/main/global-auth-db/custom-sets/view", { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: set.id }) }).catch(e => e);
+                                  fetch("https://verserain-party.hungry4grace.partykit.dev/parties/main/global-auth-db/custom-sets/view", { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: set.id, adminEmail: userEmail }) }).catch(e => e);
                                   setViewCounts(prev => ({ ...prev, [set.id]: (prev[set.id] || 0) + 1 }));
                                 }} onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#eff6ff'} onMouseOut={(e) => e.currentTarget.style.backgroundColor = i % 2 === 0 ? '#ffffff' : '#f8fafc'}>
                                   <td style={{ padding: '1rem', textAlign: 'center', color: '#3b82f6', fontSize: '1.2rem' }}>{customVerseSets.some(c => c.id === set.id) ? <Crown size={22} /> : <Library size={22} />}</td>
@@ -8860,14 +8860,24 @@ const deDict = {
                                           <button onClick={(e) => {
                                             e.stopPropagation();
                                             if (window.confirm("Admin: 確定要從全域資料庫強制刪除這份經文組？")) {
-                                              fetch("https://verserain-party.hungry4grace.partykit.dev/parties/main/global-auth-db/custom-sets", {
-                                                method: "DELETE",
-                                                headers: { "Content-Type": "application/json" },
-                                                body: JSON.stringify({ id: set.id })
-                                              }).catch(e => console.error(e));
-                                              setPublishedVerseSets(prev => prev.filter(p => p.id !== set.id));
+                                        fetch("https://verserain-party.hungry4grace.partykit.dev/parties/main/global-auth-db/custom-sets", {
+                                          method: "DELETE",
+                                          headers: { "Content-Type": "application/json" },
+                                          body: JSON.stringify({ id: set.id, adminEmail: userEmail })
+                                        })
+                                          .then(async (res) => {
+                                            if (!res.ok) {
+                                              const msg = await res.text().catch(() => '');
+                                              throw new Error(msg || `HTTP ${res.status}`);
                                             }
-                                          }} style={{ background: '#fee2e2', border: '1px solid #fca5a5', color: '#ef4444', padding: '0.2rem 0.5rem', borderRadius: '4px', cursor: 'pointer', fontSize: '0.8rem' }}>Admin 刪除</button>
+                                            setPublishedVerseSets(prev => prev.filter(p => p.id !== set.id));
+                                          })
+                                          .catch((e) => {
+                                            console.error(e);
+                                            alert(t("刪除失敗，請重新登入後再試。", "Delete failed. Please log in again and try once more."));
+                                          });
+                                      }
+                                    }} style={{ background: '#fee2e2', border: '1px solid #fca5a5', color: '#ef4444', padding: '0.2rem 0.5rem', borderRadius: '4px', cursor: 'pointer', fontSize: '0.8rem' }}>Admin 刪除</button>
                                         )}
                                       </span>
                                     )}
@@ -10005,7 +10015,7 @@ const deDict = {
                               <tr key={idx} style={{ borderBottom: '1px solid #f1f5f9', cursor: 'pointer', transition: 'background 0.2s' }} onClick={() => {
                                 setMainTab('versesets');
                                 setSelectedSetId(set.id);
-                                fetch("https://verserain-party.hungry4grace.partykit.dev/parties/main/global-auth-db/custom-sets/view", { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: set.id }) }).catch(e => e);
+                                fetch("https://verserain-party.hungry4grace.partykit.dev/parties/main/global-auth-db/custom-sets/view", { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: set.id, adminEmail: userEmail }) }).catch(e => e);
                                 setViewCounts(prev => ({ ...prev, [set.id]: (prev[set.id] || 0) + 1 }));
                               }} onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#eff6ff'} onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}>
                                 <td style={{ padding: '0.8rem 1rem', fontWeight: 'bold', color: idx === 0 ? '#d97706' : idx === 1 ? '#94a3b8' : idx === 2 ? '#b45309' : '#64748b', fontSize: '1.2rem' }}>#{idx + 1}</td>
@@ -10018,7 +10028,7 @@ const deDict = {
                                       e.stopPropagation();
                                       setMainTab('versesets');
                                       setSelectedSetId(set.id);
-                                      fetch("https://verserain-party.hungry4grace.partykit.dev/parties/main/global-auth-db/custom-sets/view", { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: set.id }) }).catch(e => e);
+                                      fetch("https://verserain-party.hungry4grace.partykit.dev/parties/main/global-auth-db/custom-sets/view", { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: set.id, adminEmail: userEmail }) }).catch(e => e);
                                       setViewCounts(prev => ({ ...prev, [set.id]: (prev[set.id] || 0) + 1 }));
                                     }}
                                     style={{ backgroundColor: '#10b981', color: 'white', border: 'none', borderRadius: '6px', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'transform 0.1s' }}
@@ -12461,7 +12471,7 @@ const deDict = {
                         setSelectedSetId(set.id);
                         setAuthorSetsModal(null);
                         setMainTab('versesets');
-                        fetch("https://verserain-party.hungry4grace.partykit.dev/parties/main/global-auth-db/custom-sets/view", { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: set.id }) }).catch(e => e);
+                        fetch("https://verserain-party.hungry4grace.partykit.dev/parties/main/global-auth-db/custom-sets/view", { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: set.id, adminEmail: userEmail }) }).catch(e => e);
                         setViewCounts(prev => ({ ...prev, [set.id]: (prev[set.id] || 0) + 1 }));
                       }}
                       style={{ width: '100%', textAlign: 'left', background: set.id === currentSet?.id ? '#eff6ff' : '#ffffff', border: set.id === currentSet?.id ? '1px solid #93c5fd' : '1px solid #e2e8f0', borderRadius: '10px', padding: '1rem', cursor: 'pointer', display: 'grid', gridTemplateColumns: '1fr auto', gap: '1rem', alignItems: 'center', boxShadow: '0 1px 2px rgba(15, 23, 42, 0.04)' }}
