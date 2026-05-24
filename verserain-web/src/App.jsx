@@ -192,8 +192,10 @@ function estimateSpeechDuration(text, lang) {
 
 function speakTextTimed(text, rate = 1.0, lang = 'zh-TW') {
   return new Promise(async resolve => {
+    const startedAt = Date.now();
+    const minHoldMs = Math.min(estimateSpeechDuration(text, lang), 2200);
     if (!('speechSynthesis' in window)) {
-      setTimeout(resolve, Math.min(estimateSpeechDuration(text, lang), 2500));
+      setTimeout(resolve, minHoldMs);
       return;
     }
 
@@ -213,6 +215,11 @@ function speakTextTimed(text, rate = 1.0, lang = 'zh-TW') {
     let ended = false;
     const safeResolve = () => {
       if (resolved) return;
+      const elapsed = Date.now() - startedAt;
+      if (elapsed < minHoldMs) {
+        setTimeout(safeResolve, minHoldMs - elapsed);
+        return;
+      }
       resolved = true;
       utterance.onend = null;
       utterance.onerror = null;
