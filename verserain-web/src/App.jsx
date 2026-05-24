@@ -1869,6 +1869,13 @@ export default function App() {
       return [];
     }
   });
+  const [hiddenOfficialSetIds, setHiddenOfficialSetIds] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem('verseRain_hidden_official_sets') || '[]');
+    } catch {
+      return [];
+    }
+  });
   const [editingCustomSet, setEditingCustomSet] = useState(null);
   const [bookPickerIdx, setBookPickerIdx] = useState(null); // which verse row has the book picker open
 
@@ -2238,9 +2245,9 @@ export default function App() {
         }
       }
     });
-    const filteredBase = baseVerseSets.filter(bs => !merged.some(m => m.id === bs.id));
+    const filteredBase = baseVerseSets.filter(bs => !merged.some(m => m.id === bs.id) && !hiddenOfficialSetIds.includes(bs.id));
     return [...filteredBase, ...merged];
-  }, [customVerseSets, publishedVerseSets, baseVerseSets, playerName, version]);
+  }, [customVerseSets, publishedVerseSets, baseVerseSets, playerName, version, hiddenOfficialSetIds]);
 
   const dummySet = useMemo(() => [{
     id: "dummy",
@@ -8860,24 +8867,31 @@ const deDict = {
                                           <button onClick={(e) => {
                                             e.stopPropagation();
                                             if (window.confirm("Admin: 確定要從全域資料庫強制刪除這份經文組？")) {
-                                        fetch("https://verserain-party.hungry4grace.partykit.dev/parties/main/global-auth-db/custom-sets", {
-                                          method: "DELETE",
-                                          headers: { "Content-Type": "application/json" },
-                                          body: JSON.stringify({ id: set.id, adminEmail: userEmail, adminName: playerName })
-                                        })
-                                          .then(async (res) => {
-                                            if (!res.ok) {
-                                              const msg = await res.text().catch(() => '');
-                                              throw new Error(msg || `HTTP ${res.status}`);
+                                              const publishedExists = publishedVerseSets.some(p => p.id === set.id);
+                                              if (!publishedExists) {
+                                                const nextHidden = Array.from(new Set([...(hiddenOfficialSetIds || []), set.id]));
+                                                setHiddenOfficialSetIds(nextHidden);
+                                                localStorage.setItem('verseRain_hidden_official_sets', JSON.stringify(nextHidden));
+                                                return;
+                                              }
+                                              fetch("https://verserain-party.hungry4grace.partykit.dev/parties/main/global-auth-db/custom-sets", {
+                                                method: "DELETE",
+                                                headers: { "Content-Type": "application/json" },
+                                                body: JSON.stringify({ id: set.id, adminEmail: userEmail, adminName: playerName })
+                                              })
+                                                .then(async (res) => {
+                                                  if (!res.ok) {
+                                                    const msg = await res.text().catch(() => '');
+                                                    throw new Error(msg || `HTTP ${res.status}`);
+                                                  }
+                                                  setPublishedVerseSets(prev => prev.filter(p => p.id !== set.id));
+                                                })
+                                                .catch((e) => {
+                                                  console.error(e);
+                                                  alert(t("刪除失敗，請重新登入後再試。", "Delete failed. Please log in again and try once more."));
+                                                });
                                             }
-                                            setPublishedVerseSets(prev => prev.filter(p => p.id !== set.id));
-                                          })
-                                          .catch((e) => {
-                                            console.error(e);
-                                            alert(t("刪除失敗，請重新登入後再試。", "Delete failed. Please log in again and try once more."));
-                                          });
-                                      }
-                                    }} style={{ background: '#fee2e2', border: '1px solid #fca5a5', color: '#ef4444', padding: '0.2rem 0.5rem', borderRadius: '4px', cursor: 'pointer', fontSize: '0.8rem' }}>Admin 刪除</button>
+                                          }} style={{ background: '#fee2e2', border: '1px solid #fca5a5', color: '#ef4444', padding: '0.2rem 0.5rem', borderRadius: '4px', cursor: 'pointer', fontSize: '0.8rem' }}>Admin 刪除</button>
                                         )}
                                       </span>
                                     )}
