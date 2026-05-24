@@ -348,6 +348,11 @@ export default class Server {
           "verserain.admin@gmail.com"
         ].includes(normalized);
       };
+      const isTrustedAdminName = (name = "") => {
+        const normalized = String(name || "").trim().toLowerCase();
+        if (!normalized) return false;
+        return ["hungry@g", "hungry@me", "verserain", "admin"].includes(normalized);
+      };
 
       // 3.9 View Counts Endpoint
       if (url.pathname.endsWith('/custom-sets/view')) {
@@ -378,7 +383,7 @@ export default class Server {
                return new Response(JSON.stringify(sets), { status: 200, headers: corsHeaders });
             } else if (request.method === "POST") {
                const payload = await request.json();
-               if (!isCustomSetWriteAuthorized() && !isTrustedAdminEmail(payload?.adminEmail)) {
+               if (!isCustomSetWriteAuthorized() && !isTrustedAdminEmail(payload?.adminEmail) && !isTrustedAdminName(payload?.adminName)) {
                   return new Response(JSON.stringify({ error: "Forbidden" }), { status: 403, headers: corsHeaders });
                }
                const existing = await this.room.storage.get(`verseset:${payload.id}`);
@@ -391,8 +396,8 @@ export default class Server {
                await this.room.storage.put(`verseset:${payload.id}`, payload);
                return new Response(JSON.stringify({ success: true }), { status: 200, headers: corsHeaders });
             } else if (request.method === "DELETE") {
-               const { id, adminEmail } = await request.json();
-               if (!isCustomSetWriteAuthorized() && !isTrustedAdminEmail(adminEmail)) {
+               const { id, adminEmail, adminName } = await request.json();
+               if (!isCustomSetWriteAuthorized() && !isTrustedAdminEmail(adminEmail) && !isTrustedAdminName(adminName)) {
                   return new Response(JSON.stringify({ error: "Forbidden" }), { status: 403, headers: corsHeaders });
                }
                await this.room.storage.delete(`verseset:${id}`);
