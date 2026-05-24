@@ -7632,10 +7632,10 @@ const deDict = {
                     onPrevious={() => changeDailyVerseDate(prev => formatLocalDate(addDays(`${prev}T00:00:00`, -1)))}
                     onNext={() => changeDailyVerseDate(prev => formatLocalDate(addDays(`${prev}T00:00:00`, 1)))}
                     nextDisabled={dailyVerseDate >= formatLocalDate(new Date())}
-                    onStop={() => setMainTab('advanced')}
+                    onStop={() => setMainTab('lobby')}
                     onSelectTopicSet={(set) => {
                       setSelectedSetId(set.id);
-                      setMainTab('advanced');
+                      setMainTab('lobby');
                       setContinuousRainSet({
                         ...set,
                         startVerse: pickRandomVerse(set.verses || [])
@@ -7652,7 +7652,7 @@ const deDict = {
                   />
                 ) : (
                   <div className="continuous-rain-overlay">
-                    <button type="button" className="continuous-rain-stop" onClick={() => setMainTab('advanced')}>
+                    <button type="button" className="continuous-rain-stop" onClick={() => setMainTab('lobby')}>
                       <XCircle size={24} /> {t('停止播放', 'Stop')}
                     </button>
                     <div className="daily-verse-rain-shell continuous-rain-shell">
