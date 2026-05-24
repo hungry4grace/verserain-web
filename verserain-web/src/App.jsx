@@ -967,7 +967,7 @@ function VerseSetContinuousRainPlayer({
     setShowTopicPicker(false);
     onSelectTopicSet(set);
   };
-  const stripTopicPrefix = (title = '') => String(title).replace(/^主題：\s*/, '');
+  const stripTopicPrefix = (title = '') => stripTopicPrefixLabel(title);
   const currentTopicLabel = (label || verseSet?.title || t('經文組', 'Verse Set'));
   const normalizedTopicButtonLabel = stripTopicPrefix(currentTopicLabel);
 
@@ -1312,9 +1312,13 @@ const topicStrokeCollator = (() => {
   }
 })();
 
+const TOPIC_PREFIX_REGEX = /^(主題|主题|Topic|Tema|Thema|Konu|موضوع|נושא|テーマ|주제|ခေါင်းစဉ်)\s*[：:]\s*/i;
+
+const stripTopicPrefixLabel = (title = '') => String(title).replace(TOPIC_PREFIX_REGEX, '');
+
 const extractVerseSetTopic = (title = '') => {
   const plainTitle = String(title).replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
-  const match = plainTitle.match(/主題\s*[：:]\s*([^，,。；;、/／|｜\s]+)/);
+  const match = plainTitle.match(/(?:主題|主题|Topic|Tema|Thema|Konu|موضوع|נושא|テーマ|주제|ခေါင်းစဉ်)\s*[：:]\s*([^，,。；;、/／|｜\s]+)/i);
   return match?.[1]?.trim() || '';
 };
 
@@ -2254,7 +2258,7 @@ export default function App() {
 
   const safeActiveSets = activeVerseSets.length > 0 ? activeVerseSets : dummySet;
   const topicVerseSets = React.useMemo(
-    () => safeActiveSets.filter(set => String(set?.title || '').trim().startsWith('主題：')),
+    () => safeActiveSets.filter(set => TOPIC_PREFIX_REGEX.test(String(set?.title || '').trim())),
     [safeActiveSets]
   );
 
