@@ -326,6 +326,18 @@ export default class Server {
 
       }
 
+      const isCustomSetWriteAuthorized = () => {
+        const configuredToken = this.room.env.ADMIN_TOKEN || this.room.env.PARTYKIT_ADMIN_TOKEN;
+        if (!configuredToken) return false;
+        const authHeader = request.headers.get("authorization") || "";
+        const bearerToken = authHeader.toLowerCase().startsWith("bearer ")
+          ? authHeader.slice(7).trim()
+          : "";
+        const xAdminToken = request.headers.get("x-admin-token") || "";
+        const xApiKey = request.headers.get("x-api-key") || "";
+        return bearerToken === configuredToken || xAdminToken === configuredToken || xApiKey === configuredToken;
+      };
+
       // 3.9 View Counts Endpoint
       if (url.pathname.endsWith('/custom-sets/view')) {
          try {
@@ -354,6 +366,9 @@ export default class Server {
                const sets = Array.from(list.values());
                return new Response(JSON.stringify(sets), { status: 200, headers: corsHeaders });
             } else if (request.method === "POST") {
+               if (!isCustomSetWriteAuthorized()) {
+                  return new Response(JSON.stringify({ error: "Forbidden" }), { status: 403, headers: corsHeaders });
+               }
                const payload = await request.json();
                const existing = await this.room.storage.get(`verseset:${payload.id}`);
                if (existing && existing.authorName && existing.authorName !== "Anonymous") {
@@ -365,6 +380,9 @@ export default class Server {
                await this.room.storage.put(`verseset:${payload.id}`, payload);
                return new Response(JSON.stringify({ success: true }), { status: 200, headers: corsHeaders });
             } else if (request.method === "DELETE") {
+               if (!isCustomSetWriteAuthorized()) {
+                  return new Response(JSON.stringify({ error: "Forbidden" }), { status: 403, headers: corsHeaders });
+               }
                const { id } = await request.json();
                await this.room.storage.delete(`verseset:${id}`);
                return new Response(JSON.stringify({ success: true }), { status: 200, headers: corsHeaders });
