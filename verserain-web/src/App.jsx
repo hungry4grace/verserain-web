@@ -1931,7 +1931,7 @@ export default function App() {
   const totalFruits = localFruits + creatorPoints;
   const skoolLevel = React.useMemo(() => getSkoolLevel(totalFruits), [totalFruits]);
   const hasPremiumAccess = isPremium || skoolLevel.level >= 3;
-  const isAdmin = ['samhsiung@gmail.com', 'davidhwang1125@gmail.com', 'hsiungsam@gmail.com', 'hungry4grace@gmail.com'].includes(userEmail.toLowerCase()) || skoolLevel.level >= 5;
+  const isAdmin = ['samhsiung@gmail.com', 'davidhwang1125@gmail.com', 'hsiungsam@gmail.com', 'hungry4grace@gmail.com', 'verserain.admin@gmail.com'].includes(userEmail.toLowerCase()) || skoolLevel.level >= 5;
   const isSuperAdmin = ['samhsiung@gmail.com', 'davidhwang1125@gmail.com', 'hsiungsam@gmail.com', 'hungry4grace@gmail.com'].includes(userEmail.toLowerCase());
   const [selectedGardenCell, setSelectedGardenCell] = useState(null);
   const [showLevelInfo, setShowLevelInfo] = useState(false);
@@ -7709,7 +7709,7 @@ const deDict = {
                       { id: 'manual', Icon: Library, label: t('使用說明', 'Manual'), desc: t('操作詳解', 'Detailed instructions'), color: '#3b82f6' },
                       { id: 'about', Icon: Info, label: t('關於我們', 'About'), desc: t('VerseRain 開發資訊', 'Info & Credits'), color: '#14b8a6' },
                       { id: 'donate', link: 'https://www.skool.com/mutualizedeconomy/classroom', Icon: Lock, label: t('解鎖進階功能', 'Unlock Premium'), desc: t('加入進階群組', 'Join Premium Community'), color: '#f97316' },
-                      { id: 'feedback', link: 'mailto:hungry4grace@gmail.com?cc=samhsiung@gmail.com,davidhwang1125@gmail.com,hsiungsam@gmail.com', Icon: Mail, label: t('意見回饋', 'Feedback'), desc: t('聯絡與建議', 'Bugs & Suggestions'), color: '#ec4899' }
+                      { id: 'feedback', link: 'mailto:verserain.admin@gmail.com', Icon: Mail, label: t('意見回饋', 'Feedback'), desc: t('聯絡與建議', 'Bugs & Suggestions'), color: '#ec4899' }
                     ].map(item => {
                       const Icon = item.Icon;
                       return (
