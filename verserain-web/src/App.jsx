@@ -7919,6 +7919,19 @@ const deDict = {
                                   return;
                                 }
                                 try {
+                                  if (version === 'esv') {
+                                    const esvRef = `${bookInfo.names?.[2] || bookInfo.names?.[0] || bookAbbr} ${sanitized}`;
+                                    const esvRes = await fetch(`/api/esv-passage?q=${encodeURIComponent(esvRef)}`);
+                                    if (!esvRes.ok) throw new Error("ESV API error");
+                                    const esvJson = await esvRes.json();
+                                    const combined = String(esvJson.text || '').replace(/\s+/g, ' ').trim();
+                                    if (!combined) throw new Error("No verses");
+                                    setEditingCustomSet(prev => {
+                                      const nv = [...prev.verses]; nv[verseIdx] = { ...nv[verseIdx], text: combined }; return { ...prev, verses: nv };
+                                    });
+                                    return;
+                                  }
+
                                   const bollsVersion = isEnglishBibleVersion(version) ? 'KJV' : 'CUV';
                                   const res = await fetch(`https://bolls.life/get-text/${bollsVersion}/${bookInfo.id}/${chapter}/`);
                                   if (!res.ok) throw new Error("API error");
@@ -7928,7 +7941,12 @@ const deDict = {
                                   let combined = (version === 'cuv' || version === 'cuvs')
                                     ? filtered.map(vv => vv.text.replace(/<[^>]+>/g, '').replace(/\s+/g, '')).join('')
                                     : filtered.map(vv => vv.text.replace(/<[^>]+>/g, '').trim()).join(' ');
-                                    
+
+                                  combined = combined
+                                    .replace(/([A-Za-z])(\d{2,5})(?=\s|[.,;:!?]|$)/g, '$1')
+                                    .replace(/\s+/g, ' ')
+                                    .trim();
+
                                   if (version === 'cuvs') {
                                     const OpenCC = await import('opencc-js');
                                     const converter = OpenCC.Converter({ from: 'tw', to: 'cn' });
