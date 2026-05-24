@@ -1,5 +1,5 @@
 export const getRandomFakePhrase = (version, allVerses) => {
-    const isEnglish = version === 'kjv';
+    const isEnglish = version === 'kjv' || version === 'esv';
     const regex = isEnglish ? /[,，。；：「」、;:\.\?!]/ : /[\s,，。；：「」、;:\.\?!！？『』《》]/;
     
     if (!allVerses || allVerses.length === 0) return "阿門";

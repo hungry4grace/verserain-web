@@ -298,8 +298,12 @@ function maskPhraseForPreview(phrase = '') {
   return String(phrase).replace(/[^\s.,?!;:：﹕︰，。？！；：]/g, HIDDEN_PHRASE_MARK);
 }
 
+function isEnglishBibleVersion(v) {
+  return v === 'kjv' || v === 'esv';
+}
+
 function getVoiceLangForVersion(v) {
-  if (v === 'kjv') return 'en-US';
+  if (isEnglishBibleVersion(v)) return 'en-US';
   if (v === 'ko') return 'ko-KR';
   if (v === 'ja') return 'ja-JP';
   if (v === 'he') return 'he-IL';
@@ -325,7 +329,7 @@ function getDailyVerseIndex(length, date = new Date()) {
 }
 
 function getDailyVerseRemoteVersion(version) {
-  if (version === 'kjv') return 'kjv';
+  if (isEnglishBibleVersion(version)) return 'kjv';
   if (version === 'cuv' || version === 'cuvs') return version;
   return 'niv';
 }
@@ -1364,7 +1368,7 @@ function formatVerseReferenceForSpeech(ref, version) {
   const chapter = match[2];
   const verses = match[3];
 
-  if (version === 'kjv') {
+  if (isEnglishBibleVersion(version)) {
     if (!verses) return `${book} chapter ${chapter}`;
     const versesStr = verses.replace(/-/g, ' to ').replace(/–/g, ' to ').trim();
     const isPlural = versesStr.includes('to') || versesStr.includes(',');
@@ -1725,6 +1729,7 @@ export default function App() {
 
   const VERSES_CUV = loadedLangs['cuv']?.verses || [];
   const VERSES_KJV = loadedLangs['kjv']?.verses || [];
+  const VERSES_ESV = loadedLangs['esv']?.verses || [];
   const VERSES_JA = loadedLangs['ja']?.verses || [];
   const VERSES_KO = loadedLangs['ko']?.verses || [];
   const VERSES_FA = loadedLangs['fa']?.verses || [];
@@ -1766,7 +1771,7 @@ export default function App() {
     if (stored) return stored;
     // Backwards-compatible: derive from Bible version on first load
     const bv = localStorage.getItem('verseRain_version') || 'cuv';
-    if (bv === 'kjv') return 'en';
+    if (bv === 'kjv' || bv === 'esv') return 'en';
     if (bv === 'ja') return 'ja';
     if (bv === 'ko') return 'ko';
     return 'zh';
@@ -2241,7 +2246,7 @@ export default function App() {
     id: "dummy",
     title: version === 'ja' ? '経文セットが見つかりません'
       : version === 'ko' ? '성경 구절 세트를 찾을 수 없습니다'
-        : version === 'kjv' ? 'No Verse Sets Found'
+        : isEnglishBibleVersion(version) ? 'No Verse Sets Found'
           : version === 'fa' ? 'مجموعه‌ای یافت نشد'
             : version === 'he' ? 'לא נמצא סט פסוקים'
               : '尚未發現經文組',
@@ -2249,7 +2254,7 @@ export default function App() {
     verses: [{
       reference: "N/A", text: version === 'ja' ? '現在この言語には経文セットがありません。👑 マイ問題集から作成してください。'
         : version === 'ko' ? '현재 이 언어에 대한 구절 세트가 없습니다. 👑 내 문제집에서 만드십시오.'
-          : version === 'kjv' ? 'There are no verse sets for this language yet. Create one in 👑 Custom Sets.'
+          : isEnglishBibleVersion(version) ? 'There are no verse sets for this language yet. Create one in 👑 Custom Sets.'
             : version === 'fa' ? 'هنوز مجموعه‌ای برای این زبان وجود ندارد.'
               : version === 'he' ? 'עדיין אין סטי פסוקים לשפה זו.'
                 : '目前此語言沒有經文組。請去 👑 我的題庫 中建立！'
@@ -2379,7 +2384,7 @@ export default function App() {
     // Auto-sync UI language immediately so mobile users get instant feedback.
     if (newVer === 'fa') setUiLangPersisted('fa');
     else if (newVer === 'he') setUiLangPersisted('he');
-    else if (newVer === 'kjv') setUiLangPersisted('en');
+    else if (newVer === 'kjv' || newVer === 'esv') setUiLangPersisted('en');
     else if (newVer === 'ja') setUiLangPersisted('ja');
     else if (newVer === 'ko') setUiLangPersisted('ko');
     else if (newVer === 'es') setUiLangPersisted('es');
@@ -2400,7 +2405,7 @@ export default function App() {
 
       let targetVerses = data?.verses || [];
       if (targetVerses.length === 0) {
-        targetVerses = [{ reference: "N/A", text: newVer === 'fa' ? 'آیه‌ای یافت نشد.' : (newVer === 'he' ? 'לא נמצא פסוק.' : (newVer === 'ja' ? '経文が見つかりません。' : (newVer === 'ko' ? '성경 구절을 찾을 수 없습니다.' : (newVer === 'kjv' ? 'No verses found.' : '目前的分類下沒有經文。')))) }];
+        targetVerses = [{ reference: "N/A", text: newVer === 'fa' ? 'آیه‌ای یافت نشد.' : (newVer === 'he' ? 'לא נמצא פסוק.' : (newVer === 'ja' ? '経文が見つかりません。' : (newVer === 'ko' ? '성경 구절을 찾을 수 없습니다.' : (newVer === 'kjv' || newVer === 'esv' ? 'No verses found.' : '目前的分類下沒有經文。')))) }];
       }
       setActiveVerse(targetVerses[0]);
       setSelectedVerseRefs([targetVerses[0].reference]);
@@ -7159,7 +7164,7 @@ const deDict = {
     setActiveCampaignSetTotal(queue.length);
     setActiveVerse(queue[0]);
     setSelectedVerseRefs([queue[0].reference]);
-    speakText(t('視障版開始。請允許麥克風。聽到提示音後，開口背誦經文。', 'Accessible mode starting. Please allow microphone access. After the prompt sound, recite the verse aloud.'), 0.95, version === 'kjv' ? 'en-US' : 'zh-TW');
+    speakText(t('視障版開始。請允許麥克風。聽到提示音後，開口背誦經文。', 'Accessible mode starting. Please allow microphone access. After the prompt sound, recite the verse aloud.'), 0.95, isEnglishBibleVersion(version) ? 'en-US' : 'zh-TW');
     setTimeout(() => startGame(false, queue[0]), 700);
   };
 
@@ -7168,7 +7173,7 @@ const deDict = {
       `這是視障友善版。現在選擇的是 ${set?.title || currentSet?.title}，本次 ${count} 節經文。按開始後，系統會先讀經文出處，停頓兩秒，再等你開口背誦。若一段時間沒有答對，系統會朗讀提示。遊戲中按 Escape 可以離開。`,
       `This is the accessible mode. The selected set is ${set?.title || currentSet?.title}, ${count} verses. After starting, the app reads the reference, pauses for two seconds, then waits for your recitation. If you need help, the app will read a prompt. Press Escape during the game to leave.`
     );
-    speakText(message, 0.95, version === 'kjv' ? 'en-US' : 'zh-TW');
+    speakText(message, 0.95, isEnglishBibleVersion(version) ? 'en-US' : 'zh-TW');
   };
 
   const restartTeamSoloRun = () => {
@@ -7435,7 +7440,8 @@ const deDict = {
                 >
                   <option value="cuv">繁體中文</option>
                   <option value="cuvs">简体中文</option>
-                  <option value="kjv">English</option>
+                  <option value="kjv">English - KJV</option>
+                  <option value="esv">English - ESV</option>
                   <option value="fa">فارسی</option>
                   <option value="he">עברית</option>
                   <option value="ja">日本語</option>
@@ -7523,7 +7529,7 @@ const deDict = {
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', flexWrap: 'wrap', justifyContent: 'center' }}>
                           <button
                             onClick={() => {
-                              const lang = version === 'kjv' ? 'en-US' : version === 'ja' ? 'ja-JP' : version === 'ko' ? 'ko-KR' : version === 'fa' ? 'fa-IR' : version === 'he' ? 'he-IL' : version === 'es' ? 'es-ES' : version === 'tr' ? 'tr-TR' : version === 'de' ? 'de-DE' : version === 'my' ? 'my-MM' : 'zh-TW';
+                              const lang = isEnglishBibleVersion(version) ? 'en-US' : version === 'ja' ? 'ja-JP' : version === 'ko' ? 'ko-KR' : version === 'fa' ? 'fa-IR' : version === 'he' ? 'he-IL' : version === 'es' ? 'es-ES' : version === 'tr' ? 'tr-TR' : version === 'de' ? 'de-DE' : version === 'my' ? 'my-MM' : 'zh-TW';
                               speakText(randomRainVerse.text, 0.85, lang);
                               updateGarden('activity_only', 'listen');
                             }}
@@ -7775,7 +7781,7 @@ const deDict = {
                         <option value="">{t('系統預設語音', 'System Default Voice')}</option>
                         {availableVoices
                           .filter(v => {
-                            const lang = version === 'kjv' ? 'en' : version === 'ja' ? 'ja' : version === 'ko' ? 'ko' : version === 'fa' ? 'fa' : version === 'he' ? 'he' : version === 'es' ? 'es' : version === 'tr' ? 'tr' : version === 'de' ? 'de' : version === 'my' ? 'my' : 'zh';
+                            const lang = isEnglishBibleVersion(version) ? 'en' : version === 'ja' ? 'ja' : version === 'ko' ? 'ko' : version === 'fa' ? 'fa' : version === 'he' ? 'he' : version === 'es' ? 'es' : version === 'tr' ? 'tr' : version === 'de' ? 'de' : version === 'my' ? 'my' : 'zh';
                             return v.lang.startsWith(lang);
                           })
                           .map(v => (
@@ -7784,7 +7790,7 @@ const deDict = {
                       </select>
                       <button
                         onClick={() => {
-                          const lang = version === 'kjv' ? 'en-US' : version === 'ja' ? 'ja-JP' : version === 'ko' ? 'ko-KR' : version === 'fa' ? 'fa-IR' : version === 'he' ? 'he-IL' : version === 'es' ? 'es-ES' : version === 'tr' ? 'tr-TR' : version === 'de' ? 'de-DE' : version === 'my' ? 'my-MM' : 'zh-TW';
+                          const lang = isEnglishBibleVersion(version) ? 'en-US' : version === 'ja' ? 'ja-JP' : version === 'ko' ? 'ko-KR' : version === 'fa' ? 'fa-IR' : version === 'he' ? 'he-IL' : version === 'es' ? 'es-ES' : version === 'tr' ? 'tr-TR' : version === 'de' ? 'de-DE' : version === 'my' ? 'my-MM' : 'zh-TW';
                           speakText(t('這是你選擇的語音試聽。', 'This is a preview of your selected voice.'), 0.9, lang);
                         }}
                         style={{ background: 'linear-gradient(135deg, #60a5fa, #3b82f6)', color: 'white', border: 'none', padding: '0.5rem 1.2rem', borderRadius: '8px', fontSize: '0.9rem', cursor: 'pointer', fontWeight: '600', whiteSpace: 'nowrap' }}
@@ -7906,7 +7912,7 @@ const deDict = {
                                   return;
                                 }
                                 try {
-                                  const bollsVersion = version === 'kjv' ? 'KJV' : 'CUV';
+                                  const bollsVersion = isEnglishBibleVersion(version) ? 'KJV' : 'CUV';
                                   const res = await fetch(`https://bolls.life/get-text/${bollsVersion}/${bookInfo.id}/${chapter}/`);
                                   if (!res.ok) throw new Error("API error");
                                   const json = await res.json();
@@ -10647,7 +10653,7 @@ const deDict = {
                   <h2 style={{ fontSize: 'clamp(1.2rem, 3vh, 2rem)', color: speakingTitle ? '#fbbf24' : '#93c5fd', transition: 'color 0.3s', marginBottom: '1rem', fontWeight: 'bold' }}>{activeVerse.reference}</h2>
                   <div style={{
                     fontSize: (() => {
-                      const lengthWeight = version === 'kjv' ? activeVerse.text.length / 2.5 : activeVerse.text.length;
+                      const lengthWeight = isEnglishBibleVersion(version) ? activeVerse.text.length / 2.5 : activeVerse.text.length;
                       if (lengthWeight > 120) return 'clamp(1rem, min(4.5vw, 3vh), 1.5rem)';
                       if (lengthWeight > 70) return 'clamp(1.2rem, min(5vw, 3.5vh), 2rem)';
                       return 'clamp(1.5rem, min(6vw, 4vh), 3rem)';
@@ -11752,7 +11758,7 @@ const deDict = {
                   <span style={{ color: '#3b82f6' }}>{verseViewModal.reference}</span>
                   <button
                     onClick={() => {
-                      const vLang = version === 'kjv' ? 'en-US' : (version === 'ko' ? 'ko-KR' : (version === 'ja' ? 'ja-JP' : (version === 'he' ? 'he-IL' : (version === 'fa' ? 'fa-IR' : 'zh-TW'))));
+                      const vLang = isEnglishBibleVersion(version) ? 'en-US' : (version === 'ko' ? 'ko-KR' : (version === 'ja' ? 'ja-JP' : (version === 'he' ? 'he-IL' : (version === 'fa' ? 'fa-IR' : 'zh-TW'))));
                       speakText(verseViewModal.text, 1.0, vLang);
                       updateGarden('activity_only', 'listen');
                     }}

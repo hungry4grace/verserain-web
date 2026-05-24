@@ -80,7 +80,7 @@ export function getBookAbbr(book, version) {
   if (version === 'he') return book.he;
   if (version === 'my') return book.my;
   if (version === 'vi') return book.vi || book.names[3]; // Fallback to English abbr
-  if (version === 'kjv') return book.names[3]; // English abbr
+  if (version === 'kjv' || version === 'esv') return book.names[3]; // English abbr
   if (version === 'cuvs') return book.cn[1]; // Simplified Chinese abbr
   return book.names[1]; // Chinese abbr
 }
@@ -96,7 +96,7 @@ export function getBookFullName(book, version) {
   if (version === 'he') return book.he;
   if (version === 'my') return book.my;
   if (version === 'vi') return book.vi || book.names[2]; // Fallback to English full name
-  if (version === 'kjv') return book.names[2]; // English full
+  if (version === 'kjv' || version === 'esv') return book.names[2]; // English full
   if (version === 'cuvs') return book.cn[0]; // Simplified Chinese full
   return book.names[0]; // Chinese full
 }
