@@ -1349,13 +1349,13 @@ const topicStrokeCollator = (() => {
   }
 })();
 
-const TOPIC_PREFIX_REGEX = /^(主題|主题|Topic|Tema|Thema|Konu|موضوع|נושא|テーマ|주제|ခေါင်းစဉ်)\s*[：:]\s*/i;
+const TOPIC_PREFIX_REGEX = /^(主題|主题|Topic|Tema|Thema|Konu|موضوع|נושא|テーマ|주제|ခေါင်းစဉ်|Chủ đề)\s*[：:]\s*/i;
 
 const stripTopicPrefixLabel = (title = '') => String(title).replace(TOPIC_PREFIX_REGEX, '');
 
 const extractVerseSetTopic = (title = '') => {
   const plainTitle = String(title).replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
-  const match = plainTitle.match(/(?:主題|主题|Topic|Tema|Thema|Konu|موضوع|נושא|テーマ|주제|ခေါင်းစဉ်)\s*[：:]\s*([^，,。；;、/／|｜\s]+)/i);
+  const match = plainTitle.match(/(?:主題|主题|Topic|Tema|Thema|Konu|موضوع|נושא|テーマ|주제|ခေါင်းစဉ်|Chủ đề)\s*[：:]\s*([^，,。；;、/／|｜\s]+)/i);
   return match?.[1]?.trim() || '';
 };
 
