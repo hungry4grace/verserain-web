@@ -671,7 +671,7 @@ function DailyVerseRainExperience({ verse, version, t, onRead, onChallenge, onSh
             </div>
             <button type="button" onClick={onNext} disabled={nextDisabled} aria-label={t('後一天', 'Next day')}>›</button>
           </div>
-          <h2>{verse.reference}</h2>
+          <h2>{formatVerseReferenceForDisplay(verse.reference, version)}</h2>
           <div className={`daily-verse-rain-phrases ${isPlaying ? 'is-playing' : ''} ${isSettled ? 'is-settled' : ''}`} aria-live="polite">
             {phrases.map((phrase, index) => (
               <span
@@ -1105,7 +1105,7 @@ function VerseSetContinuousRainPlayer({
               </div>
               {showNav && <button type="button" onClick={handleNext} disabled={nextDisabled} aria-label={onNext ? t('後一天', 'Next day') : t('下一節隨機經文', 'Next random verse')}>›</button>}
             </div>
-            <h2>{currentVerse.reference}</h2>
+            <h2>{formatVerseReferenceForDisplay(currentVerse.reference, version)}</h2>
             <div
               ref={phraseContainerRef}
               className={`daily-verse-rain-phrases continuous-rain-phrases ${isSettled ? 'is-settled' : ''}`}
@@ -1377,21 +1377,178 @@ const CHINESE_BOOK_MAP = {
   '約三': '約翰三書', '猶': '猶大書', '啟': '啟示錄'
 };
 
-function formatVerseReferenceForDisplay(ref, version) {
-  if (version !== 'cuv' && version !== 'zh') return ref;
-  const match = ref.match(/(.+?)\s*(\d+)(?:\s*:\s*([\d,\s\-–]+))?/);
-  if (!match) return ref;
-  const book = match[1].trim();
-  const chapter = match[2];
-  const verses = match[3];
-  const fullBookName = CHINESE_BOOK_MAP[book] || book;
-  const chapterSuffix = fullBookName === '詩篇' ? '篇' : '章';
+// Maps normalized English book key → localized abbreviation by language code
+// Key: lowercase English book name/abbreviation (no spaces, no periods, number prefix attached)
+const ENGLISH_BOOK_LOCALIZATION_MAP = {
+  // ── Old Testament ──
+  'genesis':        { vi:'St',    ko:'창',   ja:'創',    es:'Gén',  de:'1.Mo', tr:'Yar', fa:'پيد',     he:'בר',    my:'က' },
+  'gen':            { vi:'St',    ko:'창',   ja:'創',    es:'Gén',  de:'1.Mo', tr:'Yar', fa:'پيد',     he:'בר',    my:'က' },
+  'exodus':         { vi:'Xh',   ko:'출',   ja:'出',    es:'Éx',   de:'2.Mo', tr:'Mıs', fa:'خر',      he:'שמ',   my:'ထွ' },
+  'exod':           { vi:'Xh',   ko:'출',   ja:'出',    es:'Éx',   de:'2.Mo', tr:'Mıs', fa:'خر',      he:'שמ',   my:'ထွ' },
+  'ex':             { vi:'Xh',   ko:'출',   ja:'出',    es:'Éx',   de:'2.Mo', tr:'Mıs', fa:'خر',      he:'שמ',   my:'ထွ' },
+  'leviticus':      { vi:'Lv',   ko:'레',   ja:'レビ',  es:'Lv',   de:'3.Mo', tr:'Lev', fa:'لا',      he:'ויק',  my:'ဝ' },
+  'lev':            { vi:'Lv',   ko:'레',   ja:'レビ',  es:'Lv',   de:'3.Mo', tr:'Lev', fa:'لا',      he:'ויק',  my:'ဝ' },
+  'numbers':        { vi:'Ds',   ko:'민',   ja:'民',    es:'Nm',   de:'4.Mo', tr:'Say', fa:'اع',      he:'במ',   my:'တော' },
+  'num':            { vi:'Ds',   ko:'민',   ja:'民',    es:'Nm',   de:'4.Mo', tr:'Say', fa:'اع',      he:'במ',   my:'တော' },
+  'deuteronomy':    { vi:'Đnl',  ko:'신',   ja:'申',    es:'Dt',   de:'5.Mo', tr:'Yes', fa:'تث',      he:'דב',   my:'တရားဟောရာ' },
+  'deut':           { vi:'Đnl',  ko:'신',   ja:'申',    es:'Dt',   de:'5.Mo', tr:'Yes', fa:'تث',      he:'דב',   my:'တရားဟောရာ' },
+  'dt':             { vi:'Đnl',  ko:'신',   ja:'申',    es:'Dt',   de:'5.Mo', tr:'Yes', fa:'تث',      he:'דב',   my:'တရားဟောရာ' },
+  'joshua':         { vi:'Gs',   ko:'수',   ja:'ヨシュ', es:'Jos',  de:'Jos',  tr:'Yşu', fa:'يش',      he:'יהו',  my:'ယောရှ' },
+  'josh':           { vi:'Gs',   ko:'수',   ja:'ヨシュ', es:'Jos',  de:'Jos',  tr:'Yşu', fa:'يش',      he:'יהו',  my:'ယောရှ' },
+  'judges':         { vi:'Tl',   ko:'삿',   ja:'士師',  es:'Jue',  de:'Ri',   tr:'Hak', fa:'داو',     he:'שוף',  my:'တရားသူကြီး' },
+  'judg':           { vi:'Tl',   ko:'삿',   ja:'士師',  es:'Jue',  de:'Ri',   tr:'Hak', fa:'داو',     he:'שוף',  my:'တရားသူကြီး' },
+  'ruth':           { vi:'R',    ko:'룻',   ja:'ルツ',  es:'Rt',   de:'Rut',  tr:'Rut', fa:'روت',     he:'רות',  my:'ရုသ' },
+  '1samuel':        { vi:'1Sm',  ko:'삼상', ja:'サム上', es:'1Sa',  de:'1Sam', tr:'1Sa', fa:'اول سم',  he:'שמ״א', my:'၁ ဓမ္မ' },
+  '1sam':           { vi:'1Sm',  ko:'삼상', ja:'サム上', es:'1Sa',  de:'1Sam', tr:'1Sa', fa:'اول سم',  he:'שמ״א', my:'၁ ဓမ္မ' },
+  '2samuel':        { vi:'2Sm',  ko:'삼하', ja:'サム下', es:'2Sa',  de:'2Sam', tr:'2Sa', fa:'دوم سم', he:'שמ״ב', my:'၂ ဓမ္မ' },
+  '2sam':           { vi:'2Sm',  ko:'삼하', ja:'サム下', es:'2Sa',  de:'2Sam', tr:'2Sa', fa:'دوم سم', he:'שמ״ב', my:'၂ ဓမ္မ' },
+  '1kings':         { vi:'1V',   ko:'왕상', ja:'王上',  es:'1Re',  de:'1Kö',  tr:'1Kr', fa:'اول پاد', he:'מל״א', my:'၁ ရာဇ' },
+  '1kgs':           { vi:'1V',   ko:'왕상', ja:'王上',  es:'1Re',  de:'1Kö',  tr:'1Kr', fa:'اول پاد', he:'מל״א', my:'၁ ရာဇ' },
+  '2kings':         { vi:'2V',   ko:'왕하', ja:'王下',  es:'2Re',  de:'2Kö',  tr:'2Kr', fa:'دوم پاد', he:'מל״ב', my:'၂ ရာဇ' },
+  '2kgs':           { vi:'2V',   ko:'왕하', ja:'王下',  es:'2Re',  de:'2Kö',  tr:'2Kr', fa:'دوم پاد', he:'מל״ב', my:'၂ ရာဇ' },
+  '1chronicles':    { vi:'1Sb',  ko:'대상', ja:'歴上',  es:'1Cr',  de:'1Chr', tr:'1Ta', fa:'اول تو',  he:'דה״א', my:'၁ ရာဇ်ချုပ်' },
+  '1chr':           { vi:'1Sb',  ko:'대상', ja:'歴上',  es:'1Cr',  de:'1Chr', tr:'1Ta', fa:'اول تو',  he:'דה״א', my:'၁ ရာဇ်ချုပ်' },
+  '2chronicles':    { vi:'2Sb',  ko:'대하', ja:'歴下',  es:'2Cr',  de:'2Chr', tr:'2Ta', fa:'دوم تو',  he:'דה״ב', my:'၂ ရာဇ်ချုပ်' },
+  '2chr':           { vi:'2Sb',  ko:'대하', ja:'歴下',  es:'2Cr',  de:'2Chr', tr:'2Ta', fa:'دوم تو',  he:'דה״ב', my:'၂ ရာဇ်ချုပ်' },
+  '2chron':         { vi:'2Sb',  ko:'대하', ja:'歴下',  es:'2Cr',  de:'2Chr', tr:'2Ta', fa:'دوم تو',  he:'דה״ב', my:'၂ ရာဇ်ချုပ်' },
+  'ezra':           { vi:'Er',   ko:'스',   ja:'エズ',  es:'Esd',  de:'Esr',  tr:'Ezr', fa:'عزر',     he:'עזר',  my:'ဧဇရ' },
+  'nehemiah':       { vi:'Nkm',  ko:'느',   ja:'ネヘ',  es:'Neh',  de:'Neh',  tr:'Neh', fa:'نح',      he:'נחמ',  my:'နေဟမိ' },
+  'neh':            { vi:'Nkm',  ko:'느',   ja:'ネヘ',  es:'Neh',  de:'Neh',  tr:'Neh', fa:'نح',      he:'נחמ',  my:'နေဟမိ' },
+  'esther':         { vi:'Et',   ko:'에',   ja:'エス',  es:'Est',  de:'Est',  tr:'Est', fa:'است',     he:'אסת',  my:'ဧသ' },
+  'esth':           { vi:'Et',   ko:'에',   ja:'エス',  es:'Est',  de:'Est',  tr:'Est', fa:'است',     he:'אסת',  my:'ဧသ' },
+  'job':            { vi:'G',    ko:'욥',   ja:'ヨブ',  es:'Job',  de:'Hiob', tr:'Eyy', fa:'ايوب',    he:'איוב', my:'ယောဘ' },
+  'psalms':         { vi:'Tv',   ko:'시',   ja:'詩',    es:'Sal',  de:'Ps',   tr:'Mez', fa:'مز',      he:'תה',   my:'ဆာလံ' },
+  'psalm':          { vi:'Tv',   ko:'시',   ja:'詩',    es:'Sal',  de:'Ps',   tr:'Mez', fa:'مز',      he:'תה',   my:'ဆာလံ' },
+  'ps':             { vi:'Tv',   ko:'시',   ja:'詩',    es:'Sal',  de:'Ps',   tr:'Mez', fa:'مز',      he:'תה',   my:'ဆာလံ' },
+  'psa':            { vi:'Tv',   ko:'시',   ja:'詩',    es:'Sal',  de:'Ps',   tr:'Mez', fa:'مز',      he:'תה',   my:'ဆာလံ' },
+  'proverbs':       { vi:'Cn',   ko:'잠',   ja:'箴',    es:'Prov', de:'Spr',  tr:'Süz', fa:'ام',      he:'משל',  my:'သုတ္တံ' },
+  'prov':           { vi:'Cn',   ko:'잠',   ja:'箴',    es:'Prov', de:'Spr',  tr:'Süz', fa:'ام',      he:'משל',  my:'သုတ္တံ' },
+  'ecclesiastes':   { vi:'Gv',   ko:'전',   ja:'伝',    es:'Ecl',  de:'Pred', tr:'Vaa', fa:'جامعه',   he:'קה',   my:'ဒေသနာ' },
+  'eccles':         { vi:'Gv',   ko:'전',   ja:'伝',    es:'Ecl',  de:'Pred', tr:'Vaa', fa:'جامعه',   he:'קה',   my:'ဒေသနာ' },
+  'ecc':            { vi:'Gv',   ko:'전',   ja:'伝',    es:'Ecl',  de:'Pred', tr:'Vaa', fa:'جامعه',   he:'קה',   my:'ဒေသနာ' },
+  'songofsolomon':  { vi:'Dc',   ko:'아',   ja:'雅',    es:'Cnt',  de:'Hl',   tr:'Ezg', fa:'غزل',     he:'שה"ש', my:'သီချင်း' },
+  'song':           { vi:'Dc',   ko:'아',   ja:'雅',    es:'Cnt',  de:'Hl',   tr:'Ezg', fa:'غزل',     he:'שה"ש', my:'သီချင်း' },
+  'isaiah':         { vi:'Is',   ko:'사',   ja:'イザ',  es:'Is',   de:'Jes',  tr:'Esa', fa:'اشع',     he:'יש',   my:'ဟေရှာယ' },
+  'isa':            { vi:'Is',   ko:'사',   ja:'イザ',  es:'Is',   de:'Jes',  tr:'Esa', fa:'اشع',     he:'יש',   my:'ဟေရှာယ' },
+  'jeremiah':       { vi:'Gr',   ko:'렘',   ja:'エレ',  es:'Jer',  de:'Jer',  tr:'Yer', fa:'ار',      he:'ירמ',  my:'ယေရမိ' },
+  'jer':            { vi:'Gr',   ko:'렘',   ja:'エレ',  es:'Jer',  de:'Jer',  tr:'Yer', fa:'ار',      he:'ירמ',  my:'ယေရမိ' },
+  'lamentations':   { vi:'Ac',   ko:'애',   ja:'哀',    es:'Lm',   de:'Klag', tr:'Mer', fa:'مر',      he:'איכ',  my:'မြည်တမ်းစ' },
+  'lam':            { vi:'Ac',   ko:'애',   ja:'哀',    es:'Lm',   de:'Klag', tr:'Mer', fa:'مر',      he:'איכ',  my:'မြည်တမ်းစ' },
+  'ezekiel':        { vi:'Ed',   ko:'겔',   ja:'エゼ',  es:'Ez',   de:'Ez',   tr:'Hzk', fa:'حز',      he:'יחז',  my:'ယေဇကျေး' },
+  'ezek':           { vi:'Ed',   ko:'겔',   ja:'エゼ',  es:'Ez',   de:'Ez',   tr:'Hzk', fa:'حز',      he:'יחז',  my:'ယေဇကျေး' },
+  'daniel':         { vi:'Đn',   ko:'단',   ja:'ダニ',  es:'Dn',   de:'Dan',  tr:'Dan', fa:'دان',     he:'דנ',   my:'ဒံယေလ' },
+  'dan':            { vi:'Đn',   ko:'단',   ja:'ダニ',  es:'Dn',   de:'Dan',  tr:'Dan', fa:'دان',     he:'דנ',   my:'ဒံယေလ' },
+  'hosea':          { vi:'Os',   ko:'호',   ja:'ホセ',  es:'Os',   de:'Hos',  tr:'Hoş', fa:'هو',      he:'הוש',  my:'ဟောရှေ' },
+  'hos':            { vi:'Os',   ko:'호',   ja:'ホセ',  es:'Os',   de:'Hos',  tr:'Hoş', fa:'هو',      he:'הוש',  my:'ဟောရှေ' },
+  'joel':           { vi:'Ge',   ko:'욜',   ja:'ヨエ',  es:'Jl',   de:'Joel', tr:'Yol', fa:'يوئ',     he:'יואל', my:'ယောလ' },
+  'amos':           { vi:'Am',   ko:'암',   ja:'アモ',  es:'Am',   de:'Am',   tr:'Amo', fa:'عا',      he:'עמ',   my:'အာမုတ်' },
+  'obadiah':        { vi:'Ap',   ko:'옵',   ja:'オバ',  es:'Ab',   de:'Ob',   tr:'Abd', fa:'عوب',     he:'עוב',  my:'သောဒိ' },
+  'jonah':          { vi:'Gn',   ko:'욘',   ja:'ヨナ',  es:'Jon',  de:'Jona', tr:'Yun', fa:'يون',     he:'יונ',  my:'ယောနာ' },
+  'micah':          { vi:'Mk',   ko:'미',   ja:'ミカ',  es:'Mi',   de:'Mi',   tr:'Mik', fa:'ميکا',    he:'מי',   my:'မိကာ' },
+  'nahum':          { vi:'Na',   ko:'나',   ja:'ナホ',  es:'Na',   de:'Nah',  tr:'Nah', fa:'نا',      he:'נח',   my:'နာဟုမ်' },
+  'habakkuk':       { vi:'Hab',  ko:'합',   ja:'ハバ',  es:'Hab',  de:'Hab',  tr:'Hab', fa:'حب',      he:'חב',   my:'ဟဗက္ကုတ်' },
+  'zephaniah':      { vi:'Xp',   ko:'습',   ja:'ゼパ',  es:'Sof',  de:'Zef',  tr:'Sef', fa:'صف',      he:'צפ',   my:'ဇေဖနိ' },
+  'haggai':         { vi:'Kg',   ko:'학',   ja:'ハガ',  es:'Ag',   de:'Hag',  tr:'Hag', fa:'حج',      he:'חג',   my:'ဟဂ္ဂဲ' },
+  'zechariah':      { vi:'Dcr',  ko:'슥',   ja:'ゼカ',  es:'Zac',  de:'Sach', tr:'Zek', fa:'زک',      he:'זכ',   my:'ဇာခရိ' },
+  'zech':           { vi:'Dcr',  ko:'슥',   ja:'ゼカ',  es:'Zac',  de:'Sach', tr:'Zek', fa:'زک',      he:'זכ',   my:'ဇာခရိ' },
+  'malachi':        { vi:'Ml',   ko:'말',   ja:'マラ',  es:'Mal',  de:'Mal',  tr:'Mal', fa:'ملا',     he:'מל',   my:'မာလခိ' },
+  'mal':            { vi:'Ml',   ko:'말',   ja:'マラ',  es:'Mal',  de:'Mal',  tr:'Mal', fa:'ملا',     he:'מל',   my:'မာလခိ' },
+  // ── New Testament ──
+  'matthew':        { vi:'Mt',   ko:'마',   ja:'マタ',  es:'Mt',   de:'Mt',   tr:'Mat', fa:'مت',      he:'מת',   my:'မဿဲ' },
+  'matt':           { vi:'Mt',   ko:'마',   ja:'マタ',  es:'Mt',   de:'Mt',   tr:'Mat', fa:'مت',      he:'מת',   my:'မဿဲ' },
+  'mark':           { vi:'Mc',   ko:'막',   ja:'マコ',  es:'Mr',   de:'Mk',   tr:'Mar', fa:'مرق',     he:'מרק',  my:'မာကု' },
+  'mrk':            { vi:'Mc',   ko:'막',   ja:'マコ',  es:'Mr',   de:'Mk',   tr:'Mar', fa:'مرق',     he:'מרק',  my:'မာကု' },
+  'luke':           { vi:'Lc',   ko:'눅',   ja:'ルカ',  es:'Lc',   de:'Lk',   tr:'Luk', fa:'لو',      he:'לוק',  my:'လုကာ' },
+  'luk':            { vi:'Lc',   ko:'눅',   ja:'ルカ',  es:'Lc',   de:'Lk',   tr:'Luk', fa:'لو',      he:'לוק',  my:'လုကာ' },
+  'john':           { vi:'Ga',   ko:'요',   ja:'ヨハ',  es:'Jn',   de:'Joh',  tr:'Yuh', fa:'يو',      he:'יוח',  my:'ယောဟန်' },
+  'jn':             { vi:'Ga',   ko:'요',   ja:'ヨハ',  es:'Jn',   de:'Joh',  tr:'Yuh', fa:'يو',      he:'יוח',  my:'ယောဟန်' },
+  'joh':            { vi:'Ga',   ko:'요',   ja:'ヨハ',  es:'Jn',   de:'Joh',  tr:'Yuh', fa:'يو',      he:'יוח',  my:'ယောဟန်' },
+  'acts':           { vi:'Cv',   ko:'행',   ja:'使',    es:'Hch',  de:'Apg',  tr:'Elç', fa:'اعم',     he:'מעש',  my:'တမန်တော်' },
+  'act':            { vi:'Cv',   ko:'행',   ja:'使',    es:'Hch',  de:'Apg',  tr:'Elç', fa:'اعم',     he:'מעש',  my:'တမန်တော်' },
+  'romans':         { vi:'Rm',   ko:'롬',   ja:'ロマ',  es:'Ro',   de:'Röm',  tr:'Rom', fa:'رو',      he:'רומ',  my:'ရောမ' },
+  'rom':            { vi:'Rm',   ko:'롬',   ja:'ロマ',  es:'Ro',   de:'Röm',  tr:'Rom', fa:'رو',      he:'רומ',  my:'ရောမ' },
+  '1corinthians':   { vi:'1Cr',  ko:'고전', ja:'コリ前', es:'1Co',  de:'1Kor', tr:'1Ko', fa:'اول قر',  he:'א קור', my:'၁ ကောရိ' },
+  '1cor':           { vi:'1Cr',  ko:'고전', ja:'コリ前', es:'1Co',  de:'1Kor', tr:'1Ko', fa:'اول قر',  he:'א קור', my:'၁ ကောရိ' },
+  '2corinthians':   { vi:'2Cr',  ko:'고후', ja:'コリ後', es:'2Co',  de:'2Kor', tr:'2Ko', fa:'دوم قر',  he:'ב קור', my:'၂ ကောရိ' },
+  '2cor':           { vi:'2Cr',  ko:'고후', ja:'コリ後', es:'2Co',  de:'2Kor', tr:'2Ko', fa:'دوم قر',  he:'ב קור', my:'၂ ကောရိ' },
+  'galatians':      { vi:'Gl',   ko:'갈',   ja:'ガラ',  es:'Gá',   de:'Gal',  tr:'Gal', fa:'غل',      he:'גלט',  my:'ဂလာတိ' },
+  'gal':            { vi:'Gl',   ko:'갈',   ja:'ガラ',  es:'Gá',   de:'Gal',  tr:'Gal', fa:'غل',      he:'גלט',  my:'ဂလာတိ' },
+  'ephesians':      { vi:'Ep',   ko:'엡',   ja:'エペ',  es:'Ef',   de:'Eph',  tr:'Efe', fa:'اف',      he:'אפס',  my:'ဧဖက်' },
+  'eph':            { vi:'Ep',   ko:'엡',   ja:'エペ',  es:'Ef',   de:'Eph',  tr:'Efe', fa:'اف',      he:'אפס',  my:'ဧဖက်' },
+  'philippians':    { vi:'Pl',   ko:'빌',   ja:'ピリ',  es:'Fil',  de:'Phil', tr:'Fil', fa:'فل',      he:'פיל',  my:'ဖိလိပ္ပိ' },
+  'phil':           { vi:'Pl',   ko:'빌',   ja:'ピリ',  es:'Fil',  de:'Phil', tr:'Fil', fa:'فل',      he:'פיל',  my:'ဖိလိပ္ပိ' },
+  'colossians':     { vi:'Cl',   ko:'골',   ja:'コロ',  es:'Col',  de:'Kol',  tr:'Kol', fa:'کل',      he:'קול',  my:'ကောလောသဲ' },
+  'col':            { vi:'Cl',   ko:'골',   ja:'コロ',  es:'Col',  de:'Kol',  tr:'Kol', fa:'کل',      he:'קול',  my:'ကောလောသဲ' },
+  '1thessalonians': { vi:'1Tx',  ko:'살전', ja:'テサ前', es:'1Ts',  de:'1Thes',tr:'1Se', fa:'اول تس',  he:'א תס', my:'၁ သက်သာ' },
+  '1thess':         { vi:'1Tx',  ko:'살전', ja:'テサ前', es:'1Ts',  de:'1Thes',tr:'1Se', fa:'اول تس',  he:'א תס', my:'၁ သက်သာ' },
+  '1th':            { vi:'1Tx',  ko:'살전', ja:'テサ前', es:'1Ts',  de:'1Thes',tr:'1Se', fa:'اول تس',  he:'א תס', my:'၁ သက်သာ' },
+  '2thessalonians': { vi:'2Tx',  ko:'살후', ja:'テサ後', es:'2Ts',  de:'2Thes',tr:'2Se', fa:'دوم تس',  he:'ב תס', my:'၂ သက်သာ' },
+  '2thess':         { vi:'2Tx',  ko:'살후', ja:'テサ後', es:'2Ts',  de:'2Thes',tr:'2Se', fa:'دوم تس',  he:'ב תס', my:'၂ သက်သာ' },
+  '1timothy':       { vi:'1Tm',  ko:'딤전', ja:'テモ前', es:'1Ti',  de:'1Tim', tr:'1Ti', fa:'اول تي',  he:'א טים', my:'၁ တိမောသေ' },
+  '1tim':           { vi:'1Tm',  ko:'딤전', ja:'テモ前', es:'1Ti',  de:'1Tim', tr:'1Ti', fa:'اول تي',  he:'א טים', my:'၁ တိမောသေ' },
+  '2timothy':       { vi:'2Tm',  ko:'딤후', ja:'テモ後', es:'2Ti',  de:'2Tim', tr:'2Ti', fa:'دوم تي',  he:'ב טים', my:'၂ တိမောသေ' },
+  '2tim':           { vi:'2Tm',  ko:'딤후', ja:'テモ後', es:'2Ti',  de:'2Tim', tr:'2Ti', fa:'دوم تي',  he:'ב טים', my:'၂ တိမောသေ' },
+  'titus':          { vi:'Tt',   ko:'딛',   ja:'テト',  es:'Tit',  de:'Tit',  tr:'Tit', fa:'تيت',     he:'טיט',  my:'တိတု' },
+  'tit':            { vi:'Tt',   ko:'딛',   ja:'テト',  es:'Tit',  de:'Tit',  tr:'Tit', fa:'تيت',     he:'טיט',  my:'တိတု' },
+  'philemon':       { vi:'Plm',  ko:'몬',   ja:'ピレ',  es:'Flm',  de:'Phlm', tr:'Flm', fa:'فلم',     he:'פלמ',  my:'ဖိလေမုန်' },
+  'phlm':           { vi:'Plm',  ko:'몬',   ja:'ピレ',  es:'Flm',  de:'Phlm', tr:'Flm', fa:'فلم',     he:'פלמ',  my:'ဖိလေမုန်' },
+  'hebrews':        { vi:'Dt',   ko:'히',   ja:'ヘブ',  es:'He',   de:'Hebr', tr:'İbr', fa:'عب',      he:'עבר',  my:'ဟေဗြဲ' },
+  'heb':            { vi:'Dt',   ko:'히',   ja:'ヘブ',  es:'He',   de:'Hebr', tr:'İbr', fa:'عب',      he:'עבר',  my:'ဟေဗြဲ' },
+  'james':          { vi:'Gc',   ko:'약',   ja:'ヤコ',  es:'Stg',  de:'Jak',  tr:'Yak', fa:'يع',      he:'יעק',  my:'ယာကုပ်' },
+  'jas':            { vi:'Gc',   ko:'약',   ja:'ヤコ',  es:'Stg',  de:'Jak',  tr:'Yak', fa:'يع',      he:'יעק',  my:'ယာကုပ်' },
+  '1peter':         { vi:'1Pr',  ko:'벧전', ja:'ペテ前', es:'1P',   de:'1Petr',tr:'1Pe', fa:'اول پط',  he:'א פט', my:'၁ ပေတ ရု' },
+  '1pet':           { vi:'1Pr',  ko:'벧전', ja:'ペテ前', es:'1P',   de:'1Petr',tr:'1Pe', fa:'اول پط',  he:'א פט', my:'၁ ပေတ ရု' },
+  '2peter':         { vi:'2Pr',  ko:'벧후', ja:'ペテ後', es:'2P',   de:'2Petr',tr:'2Pe', fa:'دوم پط',  he:'ב פט', my:'၂ ပေတ ရု' },
+  '2pet':           { vi:'2Pr',  ko:'벧후', ja:'ペテ後', es:'2P',   de:'2Petr',tr:'2Pe', fa:'دوم پط',  he:'ב פט', my:'၂ ပေတ ရု' },
+  '1john':          { vi:'1Ga',  ko:'요일', ja:'ヨハ一', es:'1Jn',  de:'1Joh', tr:'1Yh', fa:'اول يو',  he:'א יוח', my:'၁ ယောဟန်' },
+  '1jn':            { vi:'1Ga',  ko:'요일', ja:'ヨハ一', es:'1Jn',  de:'1Joh', tr:'1Yh', fa:'اول يو',  he:'א יוח', my:'၁ ယောဟန်' },
+  '2john':          { vi:'2Ga',  ko:'요이', ja:'ヨハ二', es:'2Jn',  de:'2Joh', tr:'2Yh', fa:'دوم يو',  he:'ב יוח', my:'၂ ယောဟန်' },
+  '2jn':            { vi:'2Ga',  ko:'요이', ja:'ヨハ二', es:'2Jn',  de:'2Joh', tr:'2Yh', fa:'دوم يو',  he:'ב יוח', my:'၂ ယောဟန်' },
+  '3john':          { vi:'3Ga',  ko:'요삼', ja:'ヨハ三', es:'3Jn',  de:'3Joh', tr:'3Yh', fa:'سوم يو',  he:'ג יוח', my:'၃ ယောဟန်' },
+  '3jn':            { vi:'3Ga',  ko:'요삼', ja:'ヨハ三', es:'3Jn',  de:'3Joh', tr:'3Yh', fa:'سوم يو',  he:'ג יוח', my:'၃ ယောဟန်' },
+  'jude':           { vi:'Gđ',   ko:'유',   ja:'ユダ',  es:'Jud',  de:'Jud',  tr:'Yah', fa:'يهو',     he:'יהוד', my:'ယုဒ' },
+  'jud':            { vi:'Gđ',   ko:'유',   ja:'ユダ',  es:'Jud',  de:'Jud',  tr:'Yah', fa:'يهو',     he:'יהוד', my:'ယုဒ' },
+  'revelation':     { vi:'Kh',   ko:'계',   ja:'黙',    es:'Ap',   de:'Offb', tr:'Vah', fa:'مک',      he:'חז',   my:'ဗျာဒိတ်' },
+  'rev':            { vi:'Kh',   ko:'계',   ja:'黙',    es:'Ap',   de:'Offb', tr:'Vah', fa:'مک',      he:'חז',   my:'ဗျာဒိတ်' },
+};
 
-  if (verses) {
-    return `${fullBookName} ${chapter}:${verses}`;
-  } else {
+function formatVerseReferenceForDisplay(ref, version) {
+  // Chinese: expand abbreviation to full book name
+  if (version === 'cuv' || version === 'zh') {
+    const match = ref.match(/(.+?)\s*(\d+)(?:\s*:\s*([\d,\s\-–]+))?/);
+    if (!match) return ref;
+    const book = match[1].trim();
+    const chapter = match[2];
+    const verses = match[3];
+    const fullBookName = CHINESE_BOOK_MAP[book] || book;
+    const chapterSuffix = fullBookName === '詩篇' ? '篇' : '章';
+    if (verses) return `${fullBookName} ${chapter}:${verses}`;
     return `${fullBookName} ${chapter}${chapterSuffix}`;
   }
+
+  // For localized non-English versions: translate English book abbreviation
+  const LOCALIZED_LANGS = ['vi','ko','ja','es','de','tr','fa','he','my'];
+  if (LOCALIZED_LANGS.includes(version)) {
+    // Parse: optional leading digit(s) (1/2/3) immediately attached or space-separated from book
+    // Handles: "Eph 3:19", "1Thessalonians 4:16", "2 Cor 4:17", "Ps 23:1-6"
+    const m = ref.match(/^(\d+\s*)([A-Za-z]+)\s+(.+)$/) || ref.match(/^([A-Za-z]+)\s+(.+)$/);
+    if (m) {
+      let key, chapterVerse;
+      if (m.length === 4) {
+        // Numbered book: m[1]=number, m[2]=bookName, m[3]=chapterVerse
+        key = m[1].trim() + m[2].toLowerCase().replace(/\./g, '');
+        chapterVerse = m[3].trim();
+      } else {
+        // Non-numbered book: m[1]=bookName, m[2]=chapterVerse
+        key = m[1].toLowerCase().replace(/\./g, '');
+        chapterVerse = m[2].trim();
+      }
+      const localizedBook = ENGLISH_BOOK_LOCALIZATION_MAP[key]?.[version];
+      if (localizedBook) return `${localizedBook} ${chapterVerse}`;
+    }
+  }
+
+  return ref;
 }
 
 function formatVerseReferenceForSpeech(ref, version) {
@@ -11000,7 +11157,7 @@ const deDict = {
                           </p>
                           <div style={{ textAlign: 'right', paddingRight: '1rem' }}>
                             <span style={{ fontSize: '0.9rem', color: '#64748b', fontWeight: '600' }}>
-                              — {randomRainVerse.reference}
+                              — {formatVerseReferenceForDisplay(randomRainVerse.reference, version)}
                             </span>
                           </div>
                         </div>
@@ -12150,7 +12307,7 @@ const deDict = {
                                       onMouseOut={(e) => { e.currentTarget.style.borderColor = isSelected ? '#10b981' : '#e2e8f0'; e.currentTarget.style.boxShadow = 'none'; }}
                                     >
                                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                        <span style={{ fontWeight: 'bold', color: '#7c3aed', fontSize: '1rem' }}>{v.reference}</span>
+                                        <span style={{ fontWeight: 'bold', color: '#7c3aed', fontSize: '1rem' }}>{formatVerseReferenceForDisplay(v.reference, version)}</span>
                                         {isSelected && <span style={{ color: '#10b981', fontWeight: 'bold', fontSize: '1.1rem' }}>✓</span>}
                                       </div>
                                       {v.title && <span style={{ fontSize: '0.85rem', color: '#475569' }}>{v.title}</span>}
@@ -12219,7 +12376,7 @@ const deDict = {
                                   return (
                                     <div key={v.reference} onClick={() => { if (isSelected) { setMultiplayerSelectedVerses(prev => prev.filter(sv => sv.reference !== v.reference)); } else { setMultiplayerSelectedVerses(prev => [...prev, v]); } }} style={{ padding: '0.8rem 1rem', border: `2px solid ${isSelected ? '#10b981' : '#e2e8f0'}`, borderRadius: '8px', background: isSelected ? '#ecfdf5' : '#fafafa', cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: '0.2rem', transition: 'all 0.15s' }} onMouseOver={(e) => { if (!isSelected) e.currentTarget.style.borderColor = '#a78bfa'; }} onMouseOut={(e) => { e.currentTarget.style.borderColor = isSelected ? '#10b981' : '#e2e8f0'; }}>
                                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                        <span style={{ fontWeight: 'bold', color: '#7c3aed', fontSize: '1rem' }}>{v.reference}</span>
+                                        <span style={{ fontWeight: 'bold', color: '#7c3aed', fontSize: '1rem' }}>{formatVerseReferenceForDisplay(v.reference, version)}</span>
                                         {isSelected && <span style={{ color: '#10b981', fontWeight: 'bold' }}>✓</span>}
                                       </div>
                                       {v.title && <span style={{ fontSize: '0.85rem', color: '#475569' }}>{v.title}</span>}
@@ -12780,7 +12937,7 @@ const deDict = {
                                 <tr key={i} style={{ borderBottom: '1px solid #e2e8f0', backgroundColor: isSelected ? '#eff6ff' : (i % 2 === 0 ? '#ffffff' : '#f8fafc'), transition: 'background 0.2s', cursor: 'pointer' }} onClick={() => toggleSelection(v.reference)}>
                                   <td style={{ padding: '0.8rem 1rem', fontWeight: 'bold', color: '#1e293b', fontSize: '0.95rem' }} onClick={(e) => { e.stopPropagation(); setVerseViewModal(v); }}>
                                     <button style={{ background: 'none', border: 'none', padding: 0, margin: 0, color: '#3b82f6', textDecoration: 'underline', cursor: 'pointer', fontWeight: 'bold', fontSize: 'inherit', fontFamily: 'inherit' }}>
-                                      {v.reference}
+                                      {formatVerseReferenceForDisplay(v.reference, version)}
                                     </button>
                                   </td>
                                   <td style={{ padding: '0.8rem 1rem', textAlign: 'center' }} onClick={(e) => e.stopPropagation()}>
@@ -13856,7 +14013,7 @@ const deDict = {
                                         <td style={{ padding: '0.8rem 1rem', color: '#64748b', fontSize: '0.85rem' }}>{v.setName}</td>
                                         <td style={{ padding: '0.8rem 1rem', fontWeight: 'bold', color: '#0369a1', fontSize: '0.95rem' }}>
                                           <button onClick={(e) => { e.stopPropagation(); setVerseViewModal(v); }} style={{ background: 'transparent', border: 'none', color: '#0ea5e9', fontWeight: 'bold', fontSize: '0.95rem', cursor: 'pointer', padding: 0, textAlign: 'left' }} onMouseOver={(e) => e.target.style.textDecoration = 'underline'} onMouseOut={(e) => e.target.style.textDecoration = 'none'}>
-                                            {v.reference}
+                                            {formatVerseReferenceForDisplay(v.reference, version)}
                                           </button>
                                         </td>
                                         <td style={{ padding: '0.8rem 1rem', color: '#475569', fontSize: '0.9rem' }}>{v.text.substring(0, 35)}...</td>
@@ -14211,7 +14368,7 @@ const deDict = {
 
               {!isAutoPlay && (
                 <div className="hud-glass game-hud-reference" style={{ justifySelf: 'center', padding: '0.45rem 1.4rem', display: 'flex', alignItems: 'center', minHeight: '52px', pointerEvents: 'none' }}>
-                  <span style={{ fontSize: 'clamp(2.2rem, 4.5vw, 3.4rem)', lineHeight: 1, fontWeight: 900, color: '#bfdbfe', textShadow: '0 3px 16px rgba(147, 197, 253, 0.45)', whiteSpace: 'nowrap' }}>{activeVerse.reference}</span>
+                  <span style={{ fontSize: 'clamp(2.2rem, 4.5vw, 3.4rem)', lineHeight: 1, fontWeight: 900, color: '#bfdbfe', textShadow: '0 3px 16px rgba(147, 197, 253, 0.45)', whiteSpace: 'nowrap' }}>{formatVerseReferenceForDisplay(activeVerse.reference, version)}</span>
                 </div>
               )}
 
@@ -14253,7 +14410,7 @@ const deDict = {
             {isAutoPlay ? (
               <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '6rem 5vw 2rem' }}>
                 <div className="hud-glass" style={{ padding: 'clamp(1.5rem, 4vw, 3rem)', textAlign: 'center', maxWidth: '1000px', width: '90%', maxHeight: '85vh', overflowY: 'auto' }}>
-                  <h2 style={{ fontSize: 'clamp(1.2rem, 3vh, 2rem)', color: speakingTitle ? '#fbbf24' : '#93c5fd', transition: 'color 0.3s', marginBottom: '1rem', fontWeight: 'bold' }}>{activeVerse.reference}</h2>
+                  <h2 style={{ fontSize: 'clamp(1.2rem, 3vh, 2rem)', color: speakingTitle ? '#fbbf24' : '#93c5fd', transition: 'color 0.3s', marginBottom: '1rem', fontWeight: 'bold' }}>{formatVerseReferenceForDisplay(activeVerse.reference, version)}</h2>
                   <div style={{
                     fontSize: (() => {
                       const lengthWeight = isEnglishBibleVersion(version) ? activeVerse.text.length / 2.5 : activeVerse.text.length;
@@ -14636,7 +14793,7 @@ const deDict = {
               <div className="hud-glass" style={{ padding: 'clamp(1.5rem, 4vw, 3rem)', textAlign: 'center', width: '90%', maxWidth: '900px', border: '1px solid #f87171', maxHeight: '95dvh', display: 'flex', flexDirection: 'column' }}>
                 <h2 style={{ fontSize: 'clamp(1.2rem, 3vh, 1.8rem)', color: '#f87171', marginBottom: 'clamp(0.5rem, 2vh, 1rem)' }}>{t("再接再厲！", "Try Again!")}</h2>
                 <div style={{ background: 'rgba(0,0,0,0.5)', padding: 'clamp(1rem, 3vw, 2.5rem)', borderRadius: '16px', marginBottom: 'clamp(1rem, 3vh, 2.5rem)', overflowY: 'auto', flex: 1 }}>
-                  <p style={{ fontSize: 'clamp(1.2rem, 3.5vh, 2.2rem)', color: '#fff', fontWeight: 'bold', marginBottom: 'clamp(0.5rem, 2vh, 1.5rem)', textTransform: 'uppercase', letterSpacing: '2px' }}>{activeVerse.reference}</p>
+                  <p style={{ fontSize: 'clamp(1.2rem, 3.5vh, 2.2rem)', color: '#fff', fontWeight: 'bold', marginBottom: 'clamp(0.5rem, 2vh, 1.5rem)', textTransform: 'uppercase', letterSpacing: '2px' }}>{formatVerseReferenceForDisplay(activeVerse.reference, version)}</p>
                   <div style={{ fontSize: 'clamp(1.2rem, 3.5vh, 2.2rem)', color: '#fff', lineHeight: '1.6', fontWeight: 'bold' }}>
                     {activePhrases.map((phrase, idx) => (
                       <span key={idx} style={{ color: idx % 2 === 0 ? '#93c5fd' : '#cbd5e1' }}>{phrase}{" "}</span>
@@ -14725,7 +14882,7 @@ const deDict = {
                 </div>
 
                 <div style={{ background: 'rgba(0,0,0,0.3)', padding: 'clamp(1rem, 3vw, 2rem)', borderRadius: '16px', margin: 'clamp(0.5rem, 2vh, 2rem) 0', overflowY: 'auto', flex: 1, minHeight: '150px' }}>
-                  <p style={{ fontSize: 'clamp(1.3rem, 3.5vh, 2.2rem)', color: '#fff', fontWeight: 'bold', marginBottom: 'clamp(0.5rem, 2vh, 1rem)', textTransform: 'uppercase', letterSpacing: '1px' }}>{activeVerse.reference}</p>
+                  <p style={{ fontSize: 'clamp(1.3rem, 3.5vh, 2.2rem)', color: '#fff', fontWeight: 'bold', marginBottom: 'clamp(0.5rem, 2vh, 1rem)', textTransform: 'uppercase', letterSpacing: '1px' }}>{formatVerseReferenceForDisplay(activeVerse.reference, version)}</p>
                   <div style={{ fontSize: 'clamp(1.3rem, 3.5vh, 2.2rem)', color: '#fff', lineHeight: '1.5', fontWeight: 'bold' }}>
                     {activePhrases.map((phrase, idx) => (
                       <span key={idx} style={{ color: idx % 2 === 0 ? '#93c5fd' : '#cbd5e1' }}>{phrase}{" "}</span>
