@@ -1613,7 +1613,15 @@ const parseVerseRef = (v) => {
 // --- Activity Heatmap Component ---
 const ActivityHeatmap = ({ t, activityMap = {} }) => {
   const [data, setData] = useState([]);
-  
+  const scrollRef = useRef(null);
+
+  // Scroll to rightmost (current date) after data loads
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollLeft = scrollRef.current.scrollWidth;
+    }
+  }, [data]);
+
   useEffect(() => {
     const historicalData = [];
     const today = new Date();
@@ -1691,7 +1699,7 @@ const ActivityHeatmap = ({ t, activityMap = {} }) => {
   return (
     <div style={{ marginTop: '2rem', padding: '1.5rem', background: '#1e293b', borderRadius: '12px', border: '1px solid #334155', color: '#cbd5e1', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}>
       <h3 style={{ margin: '0 0 1rem 0', color: '#f8fafc', fontSize: '1rem', fontWeight: 'bold' }}>{t("活動", "Activity")}</h3>
-      <div style={{ overflowX: 'auto', paddingBottom: '0.5rem' }}>
+      <div ref={scrollRef} style={{ overflowX: 'auto', paddingBottom: '0.5rem' }}>
         <div style={{ position: 'relative', height: '15px', marginBottom: '4px' }}>
           {monthLabels.map((lbl, i) => (
             <span key={i} style={{ position: 'absolute', left: `${(lbl.index * 16) + 30}px`, fontSize: '0.75rem', color: '#94a3b8' }}>
@@ -13117,6 +13125,13 @@ const deDict = {
                           const fieldRows = Math.ceil(Math.sqrt(fieldCount));
                           const fieldCols = Math.ceil(fieldCount / fieldRows);
 
+                          // Auto-zoom to fit all fields: each field = 10×48 + 9×2 = 498px
+                          const FIELD_PX = 498, FIELD_GAP = 40;
+                          const contentW = fieldCols * FIELD_PX + Math.max(0, fieldCols - 1) * FIELD_GAP;
+                          const contentH = fieldRows * FIELD_PX + Math.max(0, fieldRows - 1) * FIELD_GAP;
+                          const fitScale = Math.min(520 / (contentW + 40), 460 / (contentH + 40), 1);
+                          const gardenInitialScale = Math.max(0.25, Math.round(fitScale * 0.85 * 100) / 100);
+
                           return (
                             <div style={{
                               overflow: 'hidden',
@@ -13129,7 +13144,7 @@ const deDict = {
                               position: 'relative',
                               boxShadow: 'inset 0 10px 30px rgba(0,0,0,0.1)'
                             }}>
-                              <TransformWrapper initialScale={1} minScale={0.3} maxScale={4} centerOnInit={true} doubleClick={{ disabled: true }}>
+                              <TransformWrapper initialScale={gardenInitialScale} minScale={0.2} maxScale={4} centerOnInit={true} doubleClick={{ disabled: true }}>
                                 {({ zoomIn, zoomOut, resetTransform }) => (
                                   <>
                                     <div style={{ position: 'absolute', bottom: '15px', right: '15px', zIndex: 10, display: 'flex', gap: '8px', background: 'rgba(255,255,255,0.8)', padding: '5px', borderRadius: '8px', boxShadow: '0 2px 5px rgba(0,0,0,0.2)' }}>
@@ -15883,6 +15898,12 @@ const deDict = {
                         const vgFieldRows = Math.ceil(Math.sqrt(vgFieldCount));
                         const vgFieldCols = Math.ceil(vgFieldCount / vgFieldRows);
 
+                        // Auto-zoom to fit all fields
+                        const vgContentW = vgFieldCols * 498 + Math.max(0, vgFieldCols - 1) * 40;
+                        const vgContentH = vgFieldRows * 498 + Math.max(0, vgFieldRows - 1) * 40;
+                        const vgFitScale = Math.min(520 / (vgContentW + 40), 420 / (vgContentH + 40), 1);
+                        const vgInitialScale = Math.max(0.25, Math.round(vgFitScale * 0.85 * 100) / 100);
+
                         return (
                           <div style={{
                             overflow: 'hidden',
@@ -15895,7 +15916,7 @@ const deDict = {
                             position: 'relative',
                             boxShadow: 'inset 0 10px 30px rgba(0,0,0,0.1)'
                           }}>
-                            <TransformWrapper initialScale={1} minScale={0.3} maxScale={4} centerOnInit={true} doubleClick={{ disabled: true }}>
+                            <TransformWrapper initialScale={vgInitialScale} minScale={0.2} maxScale={4} centerOnInit={true} doubleClick={{ disabled: true }}>
                               {({ zoomIn, zoomOut, resetTransform }) => (
                                 <>
                                   <div style={{ position: 'absolute', bottom: '15px', right: '15px', zIndex: 10, display: 'flex', gap: '8px', background: 'rgba(255,255,255,0.8)', padding: '5px', borderRadius: '8px', boxShadow: '0 2px 5px rgba(0,0,0,0.2)' }}>
