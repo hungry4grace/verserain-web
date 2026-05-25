@@ -3005,6 +3005,7 @@ export default function App() {
       localStorage.setItem('verseRain_voiceByVersion', JSON.stringify(byVersion));
       setSelectedVoiceName(voiceName || '');
       setToast(t('語音已更新！', 'Voice updated!'));
+      setTimeout(() => setToast(null), 1000);
     } catch (e) {}
   };
   useEffect(() => {
