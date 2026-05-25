@@ -13113,6 +13113,10 @@ const deDict = {
                           else if (hour >= 17) envBg = 'linear-gradient(to bottom, #fca5a5, #fef08a)'; // Sunset
                           else if (hour >= 5 && hour < 8) envBg = 'linear-gradient(to bottom, #fce7f3, #fef08a)'; // Sunrise
 
+                          // Square-ish field layout: rows = ceil(sqrt(n)), cols = ceil(n/rows)
+                          const fieldRows = Math.ceil(Math.sqrt(fieldCount));
+                          const fieldCols = Math.ceil(fieldCount / fieldRows);
+
                           return (
                             <div style={{
                               overflow: 'hidden',
@@ -13134,7 +13138,7 @@ const deDict = {
                                       <button onClick={() => resetTransform()} style={{ width: '32px', height: '32px', borderRadius: '4px', border: '1px solid #cbd5e1', background: '#fff', cursor: 'pointer', fontSize: '16px', fontWeight: 'bold', color: '#475569', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><RotateCw size={18} /></button>
                                     </div>
                                     <TransformComponent wrapperStyle={{ width: '100%', height: '100%' }} contentStyle={{ width: '100%', height: '100%', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '20px' }}>
-                                      <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '40px', maxWidth: '100%' }}>
+                                      <div style={{ display: 'grid', gridTemplateColumns: `repeat(${fieldCols}, auto)`, justifyContent: 'center', gap: '40px' }}>
                                         {Array.from({ length: fieldCount }).map((_, fieldIdx) => (
                                           <div key={fieldIdx} style={{
                                             display: 'grid',
@@ -15875,6 +15879,10 @@ const deDict = {
                         else if (hour >= 17) envBg = 'linear-gradient(to bottom, #fca5a5, #fef08a)'; // Sunset
                         else if (hour >= 5 && hour < 8) envBg = 'linear-gradient(to bottom, #fce7f3, #fef08a)'; // Sunrise
 
+                        // Square-ish field layout
+                        const vgFieldRows = Math.ceil(Math.sqrt(vgFieldCount));
+                        const vgFieldCols = Math.ceil(vgFieldCount / vgFieldRows);
+
                         return (
                           <div style={{
                             overflow: 'hidden',
@@ -15896,7 +15904,7 @@ const deDict = {
                                     <button onClick={() => resetTransform()} style={{ width: '32px', height: '32px', borderRadius: '4px', border: '1px solid #cbd5e1', background: '#fff', cursor: 'pointer', fontSize: '16px', fontWeight: 'bold', color: '#475569', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><RotateCw size={18} /></button>
                                   </div>
                                   <TransformComponent wrapperStyle={{ width: '100%', height: '100%' }} contentStyle={{ width: '100%', height: '100%', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '20px' }}>
-                                    <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '40px', maxWidth: '100%' }}>
+                                    <div style={{ display: 'grid', gridTemplateColumns: `repeat(${vgFieldCols}, auto)`, justifyContent: 'center', gap: '40px' }}>
                                       {Array.from({ length: vgFieldCount }).map((_, fieldIdx) => (
                                         <div key={fieldIdx} style={{
                                           display: 'grid',
