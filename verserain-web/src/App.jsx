@@ -2543,10 +2543,12 @@ export default function App() {
       return sortedSets;
     }
     // Unified "newest" ordering — anything with a real timestamp competes head-to-head:
-    //   1. set.createdAt (explicit ISO date on official sets)        → Date.parse → ms
+    //   1. set.createdAt (explicit ISO date on the set)               → Date.parse → ms
     //   2. custom- IDs                                                → numeric suffix → ms
-    //   3. official sets without createdAt                            → baseIndex (small number)
-    // Buckets 1 & 2 use real epoch ms so they always rank above bucket 3.
+    //   3. published-over-official: look up createdAt from base       → official's ISO date
+    //   4. anything else without timestamp                            → baseIndex (small number)
+    // Buckets 1-3 use real epoch ms so they always rank above bucket 4.
+    // Bucket 3 matters because admin-edited published officials lack createdAt themselves.
     const getEffectiveCreatedAt = (set) => {
       if (set?.createdAt) {
         const t = Date.parse(set.createdAt);
@@ -2555,6 +2557,11 @@ export default function App() {
       if (String(set?.id || '').startsWith('custom-')) {
         const ts = parseInt(String(set.id).replace('custom-', ''), 10);
         if (Number.isFinite(ts)) return ts;
+      }
+      const baseMatch = baseVerseSets.find(b => b.id === set?.id);
+      if (baseMatch?.createdAt) {
+        const t = Date.parse(baseMatch.createdAt);
+        if (Number.isFinite(t)) return t;
       }
       const indexInBase = baseVerseSets.findIndex(b => b.id === set?.id);
       return indexInBase !== -1 ? indexInBase : -1;
