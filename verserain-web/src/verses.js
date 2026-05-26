@@ -1534,6 +1534,7 @@ export const VERSE_SETS = [
   ,{
     id: "holy-of-holies-john-20-zh-TW",
     title: "主題：至聖所的細節｜約翰福音二十章中的大祭司",
+    createdAt: "2026-05-26",
     description: `<h2>講道：至聖所的細節 — 約翰福音二十章中的大祭司</h2>
 <p><strong>經文：約翰福音 20:1-29</strong></p>
 

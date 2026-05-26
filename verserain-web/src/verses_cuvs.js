@@ -1533,6 +1533,7 @@ export const VERSE_SETS_CUVS = [
   ,{
     id: "holy-of-holies-john-20-zh-TW",
     title: "主题：至圣所的细节｜约翰福音二十章中的大祭司",
+    createdAt: "2026-05-26",
     description: `<h2>讲道：至圣所的细节 — 约翰福音二十章中的大祭司</h2>
 <p><strong>经文：约翰福音 20:1-29</strong></p>
 

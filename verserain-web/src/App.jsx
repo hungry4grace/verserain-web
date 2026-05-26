@@ -2542,25 +2542,24 @@ export default function App() {
       sortedSets.sort((a, b) => (viewCounts[b.id] || 0) - (viewCounts[a.id] || 0));
       return sortedSets;
     }
-    sortedSets.sort((a, b) => {
-      const aIsCustom = String(a.id).startsWith('custom-');
-      const bIsCustom = String(b.id).startsWith('custom-');
-      // Custom sets come before official sets
-      if (aIsCustom && !bIsCustom) return -1;
-      if (!aIsCustom && bIsCustom) return 1;
-      // Both custom: sort by timestamp (higher = newer = first)
-      if (aIsCustom && bIsCustom) {
-        const tsA = parseInt(String(a.id).replace('custom-', ''), 10) || 0;
-        const tsB = parseInt(String(b.id).replace('custom-', ''), 10) || 0;
-        return tsB - tsA;
+    // Unified "newest" ordering — anything with a real timestamp competes head-to-head:
+    //   1. set.createdAt (explicit ISO date on official sets)        → Date.parse → ms
+    //   2. custom- IDs                                                → numeric suffix → ms
+    //   3. official sets without createdAt                            → baseIndex (small number)
+    // Buckets 1 & 2 use real epoch ms so they always rank above bucket 3.
+    const getEffectiveCreatedAt = (set) => {
+      if (set?.createdAt) {
+        const t = Date.parse(set.createdAt);
+        if (Number.isFinite(t)) return t;
       }
-      // Both official: sort by reverse original order (newer ones appended at the end come first)
-      const getBaseIndex = (set) => {
-        const indexInBase = baseVerseSets.findIndex(b => b.id === set.id);
-        return indexInBase !== -1 ? indexInBase : -1;
-      };
-      return getBaseIndex(b) - getBaseIndex(a);
-    });
+      if (String(set?.id || '').startsWith('custom-')) {
+        const ts = parseInt(String(set.id).replace('custom-', ''), 10);
+        if (Number.isFinite(ts)) return ts;
+      }
+      const indexInBase = baseVerseSets.findIndex(b => b.id === set?.id);
+      return indexInBase !== -1 ? indexInBase : -1;
+    };
+    sortedSets.sort((a, b) => getEffectiveCreatedAt(b) - getEffectiveCreatedAt(a));
     return sortedSets;
   }, [activeVerseSets, baseVerseSets, versesetsSort, viewCounts]);
   const authorVerseSets = React.useMemo(() => {
