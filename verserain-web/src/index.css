@@ -1491,10 +1491,12 @@ textarea {
 
   .continuous-rain-action-controls {
     left: max(0.75rem, env(safe-area-inset-left));
-    right: max(0.75rem, env(safe-area-inset-right));
     bottom: max(0.75rem, env(safe-area-inset-bottom));
     gap: 0.45rem;
-    max-width: none;
+    /* Cap width so the row never overlaps .continuous-rain-font-controls (A-/A/A+)
+       on the right. Without this, the action-controls box covered the font-size
+       buttons even though they were visually separate, making A-/A/A+ unclickable. */
+    max-width: calc(100vw - max(0.75rem, env(safe-area-inset-left)) - max(0.75rem, env(safe-area-inset-right)) - 160px);
   }
 
   .continuous-rain-phrases {
