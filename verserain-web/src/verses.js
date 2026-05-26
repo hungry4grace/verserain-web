@@ -11,6 +11,7 @@ export const VERSE_SETS = [
     {
         id: "gospel-of-john",
         title: "約翰福音 核心經文",
+        createdAt: "2026-04-13",
         description: "精選約翰福音中最為關鍵的宣告、應許與真理。",
         verses: [
     {
@@ -115,6 +116,7 @@ export const VERSE_SETS = [
         id: "chiayi-sunday-school-competition",
         title: "嘉義聖教會兒童主日學聖經比賽",
         authorName: "嘉義聖教會兒童主日學",
+        createdAt: "2026-04-11",
         description: "本系列包含 20 節經典必背經文，適合兒童主日學聖經比賽與默想。",
         verses: [
             { id: "chiayi-1", reference: "約翰福音 3:16", title: "嘉義聖教會兒童主日學", text: "神愛世人，甚至將他的獨生子 賜給他們，叫一切信他的，不至滅亡，反得永生。" },
@@ -142,6 +144,7 @@ export const VERSE_SETS = [
     {
         id: "mutualized-economics",
         title: "主題：互惠经济 | Mutualized Economics 重要經文",
+        createdAt: "2026-04-11",
         description: "關於上帝的形像與管家職分、禧年與重置機制等核心原則。",
         verses: [
             {
@@ -304,6 +307,7 @@ export const VERSE_SETS = [
     {
         id: "sid-roth-healing",
         title: "醫治的默想經文",
+        createdAt: "2026-04-11",
         description: "Sid Roth：我發現醫治和信心對很多的基督徒來說就像奧秘一般。雖然有許多的書在討論這個主題，但它們仍然是教許多人困惑。我在40年前，開始我自己的研經。我發現最好的就是我自己研讀整本的聖經...",
         verses: [
   {
@@ -437,6 +441,7 @@ export const VERSE_SETS = [
     {
         id: "matthew-important",
         title: "馬太福音 重要經文",
+        createdAt: "2026-04-11",
         description: "馬太福音中的重要經文測驗與默想集合。",
         verses: [
   {
@@ -1007,6 +1012,7 @@ export const VERSE_SETS = [
   {
     id: "psalm18-zh",
     title: "詩篇18篇 (Psalm 18 verses)",
+    createdAt: "2026-05-02",
     description: "詩篇第18篇全篇（50節每一節為一個經文雨）。",
     verses: [
       { id: "psalm18-zh-1", reference: "詩篇 18:1", title: "詩篇18篇", text: "耶和華，我的力量啊，我愛你！" },
@@ -1064,6 +1070,7 @@ export const VERSE_SETS = [
     {
         id: "rain-verses",
         title: "聖經中有關經文雨的經文",
+        createdAt: "2026-04-28",
         description: "這是一組關於上帝的話語如雨露滋潤、帶來生命與生長的聖經經文。",
         verses: [
   {
@@ -1186,6 +1193,7 @@ export const VERSE_SETS = [
   {
     id: "fathers-love-zh",
     title: "天父愛的言語",
+    createdAt: "2026-05-02",
     description: "關於天父的愛、鼓勵、安慰、造就、醫治、接納與保護的精選經文。",
     
     verses: [
@@ -1495,6 +1503,7 @@ export const VERSE_SETS = [
   ,{
     id: "identity-manifestation-mission-zh-TW",
     title: "身分的覺醒到榮耀顯現",
+    createdAt: "2026-05-02",
     description: "這是一個非常美好的主題。這 30 節經文將幫助我們從「身分的覺醒」走向「榮耀的顯現」，最終達成「門訓列國」的使命。",
     language: "zh-TW",
     verses: [

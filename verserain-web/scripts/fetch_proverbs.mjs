@@ -73,8 +73,10 @@ function esc(t) {
   return (t || '').replace(/\\/g, '\\\\').replace(/`/g, '\\`').replace(/\$\{/g, '\\${');
 }
 
-function makeSet(exportName, id, title, desc, langProp, chapterTexts, refFn, titleFn) {
-  let s = `export const ${exportName} = [\n  {\n    id: "${id}",\n    title: "${title}",\n    description: "${desc}",\n`;
+function makeSet(exportName, id, title, desc, langProp, chapterTexts, refFn, titleFn, createdAt) {
+  let s = `export const ${exportName} = [\n  {\n    id: "${id}",\n    title: "${title}",\n`;
+  if (createdAt) s += `    createdAt: "${createdAt}",\n`;
+  s += `    description: "${desc}",\n`;
   if (langProp) s += `    language: "${langProp}",\n`;
   s += `    verses: [\n`;
   chapterTexts.forEach((t, i) => {
@@ -98,32 +100,38 @@ async function main() {
 // Complete Proverbs chapters 1-30 in Chinese (CUV), English (KJV), Korean (KRV), Japanese (JPKJV)
 // Each entry = one full chapter, intended for Rain Mode one-chapter-per-game\n\n`;
 
+  const PROVERBS_CREATED_AT = '2026-04-16';
+
   out += makeSet('VERSE_SETS_PROVERBS_ZH', 'proverbs-zh',
     '箴言 1–30（和合本）',
     '箴言一至三十章，每章一局，雨滴模式逐章背誦挑戰。',
     null, zh,
-    ch => `箴言 ${ch}`, ch => `箴言第${ch}章`);
+    ch => `箴言 ${ch}`, ch => `箴言第${ch}章`,
+    PROVERBS_CREATED_AT);
   out += '\n';
 
   out += makeSet('VERSE_SETS_PROVERBS_KJV', 'proverbs-kjv',
     'Proverbs 1–30 (KJV)',
     'Complete Proverbs chapters 1–30, one chapter per round for Rain Mode.',
     null, kjv,
-    ch => `Proverbs ${ch}`, ch => `Proverbs Chapter ${ch}`);
+    ch => `Proverbs ${ch}`, ch => `Proverbs Chapter ${ch}`,
+    PROVERBS_CREATED_AT);
   out += '\n';
 
   out += makeSet('VERSE_SETS_PROVERBS_KO', 'proverbs-ko',
     '잠언 1–30',
     '잠언 1장부터 30장까지, 한 챕터씩 말씀비(Rain Mode) 암송 도전.',
     'ko', ko,
-    ch => `잠언 ${ch}`, ch => `잠언 ${ch}장`);
+    ch => `잠언 ${ch}`, ch => `잠언 ${ch}장`,
+    PROVERBS_CREATED_AT);
   out += '\n';
 
   out += makeSet('VERSE_SETS_PROVERBS_JA', 'proverbs-ja',
     '箴言 1–30（日本語）',
     '箴言1章から30章まで、1章ずつ御言葉の雨モードで暗唱にチャレンジ。',
     'ja', ja,
-    ch => `箴言 ${ch}`, ch => `箴言第${ch}章`);
+    ch => `箴言 ${ch}`, ch => `箴言第${ch}章`,
+    PROVERBS_CREATED_AT);
 
   const outPath = new URL('../src/verses_proverbs.js', import.meta.url).pathname;
   fs.writeFileSync(outPath, out, 'utf8');

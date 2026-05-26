@@ -11,6 +11,7 @@ export const VERSE_SETS_CUVS = [
     {
         id: "gospel-of-john-cuvs",
         title: "约翰福音 核心经文",
+        createdAt: "2026-04-13",
         description: "精选约翰福音中最为关键的宣告、应许与真理。",
         verses: [
     {
@@ -114,6 +115,7 @@ export const VERSE_SETS_CUVS = [
     {
         id: "chiayi-sunday-school-competition",
         title: "嘉义圣教会儿童主日学圣经比赛",
+        createdAt: "2026-04-11",
         description: "本系列包含 20 节经典必背经文，适合儿童主日学圣经比赛与默想。",
         verses: [
             { id: "chiayi-1", reference: "约翰福音 3:16", title: "嘉义圣教会儿童主日学", text: "神爱世人，甚至将他的独生子 赐给他们，叫一切信他的，不至灭亡，反得永生。" },
@@ -141,6 +143,7 @@ export const VERSE_SETS_CUVS = [
     {
         id: "mutualized-economics",
         title: "主題：互惠经济 | Mutualized Economics 重要经文",
+        createdAt: "2026-04-11",
         description: "关于上帝的形像与管家职分、禧年与重置机制等核心原则。",
         verses: [
             {
@@ -303,6 +306,7 @@ export const VERSE_SETS_CUVS = [
     {
         id: "sid-roth-healing",
         title: "医治的默想经文",
+        createdAt: "2026-04-11",
         description: "Sid Roth：我发现医治和信心对很多的基督徒来说就像奥秘一般。虽然有许多的书在讨论这个主题，但它们仍然是教许多人困惑。我在40年前，开始我自己的研经。我发现最好的就是我自己研读整本的圣经...",
         verses: [
   {
@@ -436,6 +440,7 @@ export const VERSE_SETS_CUVS = [
     {
         id: "matthew-important",
         title: "马太福音 重要经文",
+        createdAt: "2026-04-11",
         description: "马太福音中的重要经文测验与默想集合。",
         verses: [
   {
@@ -1006,6 +1011,7 @@ export const VERSE_SETS_CUVS = [
   {
     id: "psalm18-zh",
     title: "诗篇18篇 (Psalm 18 verses)",
+    createdAt: "2026-05-02",
     description: "诗篇第18篇全篇（50节每一节为一个经文雨）。",
     verses: [
       { id: "psalm18-zh-1", reference: "诗篇 18:1", title: "诗篇18篇", text: "耶和华，我的力量啊，我爱你！" },
@@ -1063,6 +1069,7 @@ export const VERSE_SETS_CUVS = [
     {
         id: "rain-verses-cuvs",
         title: "圣经中有关经文雨的经文",
+        createdAt: "2026-04-28",
         description: "这是一组关于上帝的话语如雨露滋润、带来生命与生长的圣经经文。",
         verses: [
   {
@@ -1185,6 +1192,7 @@ export const VERSE_SETS_CUVS = [
   {
     id: "fathers-love-zh",
     title: "天父爱的言语",
+    createdAt: "2026-05-02",
     description: "关于天父的爱、鼓励、安慰、造就、医治、接纳与保护的精选经文。",
     
     verses: [
@@ -1494,6 +1502,7 @@ export const VERSE_SETS_CUVS = [
   ,{
     id: "identity-manifestation-mission-zh-TW",
     title: "身份的觉醒到荣耀显现",
+    createdAt: "2026-05-02",
     description: "这是一个非常美好的主题。这 30 节经文将帮助我们从“身份的觉醒”走向“荣耀的显现”，最终达成“门训列国”的使命。",
     language: "zh-TW",
     verses: [

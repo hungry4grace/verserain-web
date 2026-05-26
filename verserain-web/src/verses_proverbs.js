@@ -6,6 +6,7 @@ export const VERSE_SETS_PROVERBS_ZH = [
   {
     id: "proverbs-zh",
     title: "箴言 1–30（和合本）",
+    createdAt: "2026-04-16",
     description: "箴言一至三十章，每章一局，雨滴模式逐章背誦挑戰。",
     verses: [
       { id: "prv-zh-1", reference: "箴言 1", title: "箴言第1章", text: `以色列王大衛兒子所羅門的箴言：要使人曉得智慧和訓誨，分辨通達的言語，使人處事領受智慧、仁義、公平、正直的訓誨，使愚人靈明，使少年人有知識和謀略，使智慧人聽見，增長學問，使聰明人得著智謀使人明白箴言和譬喻，懂得智慧人的言詞和謎語。敬畏耶和華是知識的開端；愚妄人藐視智慧和訓誨。我兒，要聽你父親的訓誨，不可離棄你母親的法則（或譯：指教）；因為這要作你頭上的華冠，你項上的金鍊。我兒，惡人若引誘你，你不可隨從。他們若說：你與我們同去，我們要埋伏流人之血，要蹲伏害無罪之人；我們好像陰間，把他們活活吞下；他們如同下坑的人，被我們囫圇吞了；我們必得各樣寶物，將所擄來的，裝滿房屋；你與我們大家同分，我們共用一個囊袋；我兒，不要與他們同行一道，禁止你腳走他們的路。因為，他們的腳奔跑行惡；他們急速流人的血，好像飛鳥，網羅設在眼前仍不躲避。這些人埋伏，是為自流己血；蹲伏，是為自害己命。凡貪戀財利的，所行之路都是如此；這貪戀之心乃奪去得財者之命。智慧在街市上呼喊，在寬闊處發聲，在熱鬧街頭喊叫，在城門口，在城中發出言語，說：你們愚昧人喜愛愚昧，褻慢人喜歡褻慢，愚頑人恨惡知識，要到幾時呢？你們當因我的責備回轉；我要將我的靈澆灌你們，將我的話指示你們。我呼喚，你們不肯聽從；我伸手，無人理會；反輕棄我一切的勸戒，不肯受我的責備。你們遭災難，我就發笑；驚恐臨到你們，我必嗤笑。驚恐臨到你們，好像狂風；災難來到，如同暴風；急難痛苦臨到你們身上。那時，你們必呼求我，我卻不答應，懇切地尋找我，卻尋不見。因為，你們恨惡知識，不喜愛敬畏耶和華，不聽我的勸戒，藐視我一切的責備，所以必吃自結的果子，充滿自設的計謀 . 。愚昧人背道，必殺己身；愚頑人安逸，必害己命。惟有聽從我的，必安然居住，得享安靜，不怕災禍。` },
@@ -46,6 +47,7 @@ export const VERSE_SETS_PROVERBS_KJV = [
  {
  id: "proverbs-kjv",
  title: "Proverbs 1–30 (KJV)",
+ createdAt: "2026-04-16",
  description: "Complete Proverbs chapters 1–30, one chapter per round for Rain Mode.",
  verses: [
  { id: "prv-kjv-1", reference: "Proverbs 1", title: "Proverbs Chapter 1", text: `The proverbs of Solomon the son of David, king of Israel; To know wisdom and instruction; to perceive the words of understanding; To receive the instruction of wisdom, justice, and judgment, and equity; To give subtilty to the simple, to the young man knowledge and discretion. A wise man will hear, and will increase learning; and a man of understanding shall attain unto wise counsels: To understand a proverb, and the interpretation; the words of the wise, and their dark sayings. The fear of the LORD is the beginning of knowledge: but fools despise wisdom and instruction. My son, hear the instruction of thy father, and forsake not the law of thy mother: For they shall be an ornament of grace unto thy head, and chains about thy neck. My son, if sinners entice thee, consent thou not. If they say, Come with us, let us lay wait for blood, let us lurk privily for the innocent without cause: Let us swallow them up alive as the grave; and whole, as those that go down into the pit: We shall find all precious substance, we shall fill our houses with spoil: Cast in thy lot among us; let us all have one purse: My son, walk not thou in the way with them; refrain thy foot from their path: For their feet run to evil, and make haste to shed blood. Surely in vain the net is spread in the sight of any bird. And they lay wait for their own blood; they lurk privily for their own lives. So are the ways of every one that is greedy of gain; which taketh away the life of the owners thereof. Wisdom crieth without; she uttereth her voice in the streets: She crieth in the chief place of concourse, in the openings of the gates: in the city she uttereth her words, saying, How long, ye simple ones, will ye love simplicity? and the scorners delight in their scorning, and fools hate knowledge? Turn you at my reproof: behold, I will pour out my spirit unto you, I will make known my words unto you. Because I have called, and ye refused; I have stretched out my hand, and no man regarded; But ye have set at nought all my counsel, and would none of my reproof: I also will laugh at your calamity; I will mock when your fear cometh; When your fear cometh as desolation, and your destruction cometh as a whirlwind; when distress and anguish cometh upon you. Then shall they call upon me, but I will not answer; they shall seek me early, but they shall not find me: For that they hated knowledge, and did not choose the fear of the LORD: They would none of my counsel: they despised all my reproof. Therefore shall they eat of the fruit of their own way, and be filled with their own devices. For the turning away of the simple shall slay them, and the prosperity of fools shall destroy them. But whoso hearkeneth unto me shall dwell safely, and shall be quiet from fear of evil.` },
@@ -86,6 +88,7 @@ export const VERSE_SETS_PROVERBS_KO = [
   {
     id: "proverbs-ko",
     title: "잠언 1–30",
+    createdAt: "2026-04-16",
     description: "잠언 1장부터 30장까지, 한 챕터씩 말씀비(Rain Mode) 암송 도전.",
     language: "ko",
     verses: [
@@ -127,6 +130,7 @@ export const VERSE_SETS_PROVERBS_JA = [
   {
     id: "proverbs-ja",
     title: "箴言 1–30（日本語）",
+    createdAt: "2026-04-16",
     description: "箴言1章から30章まで、1章ずつ御言葉の雨モードで暗唱にチャレンジ。",
     language: "ja",
     verses: [
