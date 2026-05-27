@@ -338,9 +338,103 @@ function getVoiceLangForVersion(v) {
   return 'zh-TW';
 }
 
+const BIBLE_LANGUAGE_OPTIONS = [
+  { value: 'cuv', label: '繁體中文' },
+  { value: 'cuvs', label: '简体中文' },
+  { value: 'kjv', label: 'English - KJV' },
+  { value: 'esv', label: 'English - ESV' },
+  { value: 'fa', label: 'فارسی' },
+  { value: 'he', label: 'עברית' },
+  { value: 'ja', label: '日本語' },
+  { value: 'ko', label: '한국어' },
+  { value: 'es', label: 'Español' },
+  { value: 'tr', label: 'Türkçe' },
+  { value: 'de', label: 'Deutsch' },
+  { value: 'my', label: 'မြန်မာ' },
+  { value: 'vi', label: 'Tiếng Việt' }
+];
+
+function cleanPhraseBlock(phrase = '') {
+  return String(phrase || '')
+    .trim()
+    .replace(/^[「」『』《》〈〉“”"‘’'（）()【】\[\]\s]+/u, '')
+    .replace(/[「」『』《》〈〉“”"‘’'（）()【】\[\]\s]+$/u, '')
+    .trim();
+}
+
+function hasReadablePhraseContent(phrase = '') {
+  return /[\p{L}\p{N}\u3400-\u9fff]/u.test(String(phrase || ''));
+}
+
 function splitVersePhrases(text, version) {
   const regex = /\.{2,}|[,，。；؛၊။،;:：﹕︰\.\?!！？؟]/;
-  return String(text || '').split(regex).map(p => p.trim()).filter(Boolean);
+  return String(text || '')
+    .split(regex)
+    .map(cleanPhraseBlock)
+    .filter(phrase => phrase && hasReadablePhraseContent(phrase));
+}
+
+function getSecondaryPhrasesForIndex(primaryIndex, primaryLength, secondaryPhrases) {
+  if (!secondaryPhrases?.length) return '';
+  if (primaryLength <= 1) return secondaryPhrases.join(' ');
+  if (primaryLength === secondaryPhrases.length) return secondaryPhrases[primaryIndex] || '';
+
+  const start = Math.floor((primaryIndex * secondaryPhrases.length) / primaryLength);
+  const end = primaryIndex === primaryLength - 1
+    ? secondaryPhrases.length
+    : Math.max(start + 1, Math.floor(((primaryIndex + 1) * secondaryPhrases.length) / primaryLength));
+  return secondaryPhrases.slice(start, end).join(' ');
+}
+
+function normalizeVerseReferenceKey(reference = '') {
+  const value = String(reference || '')
+    .replace(/[–—]/g, '-')
+    .replace(/\s+/g, ' ')
+    .trim();
+  if (!value) return '';
+
+  const verseMatch = value.match(/(\d+)\s*:\s*([\d,\-\s]+)/);
+  if (!verseMatch) return value.toLowerCase();
+
+  const bookPart = value.slice(0, verseMatch.index).trim().replace(/[：:]+$/, '');
+  const normalizedBookPart = bookPart.toLowerCase().replace(/\./g, '').replace(/\s+/g, ' ');
+  const book = BIBLE_BOOKS.find(b => {
+    const names = [
+      ...(b.names || []),
+      ...(b.cn || []),
+      b.ja,
+      b.ko,
+      b.es,
+      b.de,
+      b.tr,
+      b.fa,
+      b.he,
+      b.my,
+      b.vi
+    ].filter(Boolean);
+    return names.some(name => {
+      const normalizedName = String(name).toLowerCase().replace(/\./g, '').replace(/\s+/g, ' ');
+      return normalizedBookPart === normalizedName || normalizedBookPart.endsWith(` ${normalizedName}`);
+    });
+  });
+  const chapterVerse = `${verseMatch[1]}:${verseMatch[2].replace(/\s+/g, '')}`;
+  return `${book?.id || normalizedBookPart}|${chapterVerse}`;
+}
+
+function findMatchingVerse(primaryVerse, primaryVerses = [], secondaryVerses = [], options = {}) {
+  if (!primaryVerse || !secondaryVerses?.length) return null;
+  const { allowIndexFallback = true } = options;
+  const primaryIndex = primaryVerses.findIndex(v =>
+    (primaryVerse.id && v.id === primaryVerse.id) ||
+    (v.reference === primaryVerse.reference && v.text === primaryVerse.text)
+  );
+  const primaryKey = normalizeVerseReferenceKey(primaryVerse.reference);
+  return (
+    secondaryVerses.find(v => primaryVerse.id && v.id === primaryVerse.id) ||
+    secondaryVerses.find(v => normalizeVerseReferenceKey(v.reference) === primaryKey) ||
+    (allowIndexFallback && primaryIndex >= 0 ? secondaryVerses[primaryIndex] : null) ||
+    null
+  );
 }
 
 function getDailyVerseIndex(length, date = new Date()) {
@@ -720,6 +814,9 @@ function VerseSetContinuousRainPlayer({
   verseSet,
   topicSets = [],
   version,
+  secondaryVerseSet = null,
+  secondaryVersion = null,
+  onSecondaryVersionChange = null,
   t,
   onStop,
   onListenLogged,
@@ -738,6 +835,15 @@ function VerseSetContinuousRainPlayer({
   const verses = useMemo(() => verseSet?.verses?.filter(Boolean) || [], [verseSet]);
   const [currentVerse, setCurrentVerse] = useState(() => startVerse || pickRandomVerse(verses));
   const phrases = useMemo(() => splitVersePhrases(currentVerse?.text || '', version), [currentVerse, version]);
+  const secondaryVerse = useMemo(() => {
+    const secondaryVerses = secondaryVerseSet?.verses?.filter(Boolean) || [];
+    return findMatchingVerse(currentVerse, verses, secondaryVerses);
+  }, [currentVerse, secondaryVerseSet, verses]);
+  const secondaryPhrases = useMemo(
+    () => splitVersePhrases(secondaryVerse?.text || '', secondaryVersion),
+    [secondaryVerse, secondaryVersion]
+  );
+  const hasSecondaryPhrases = Boolean(secondaryVersion && secondaryVerse && secondaryPhrases.length);
   const imageDateLabel = useMemo(() => {
     const day = (getStableNumber(`${verseSet?.id || verseSet?.title}-${currentVerse?.reference || ''}`) % 31) + 1;
     return `2026-05-${String(day).padStart(2, '0')}`;
@@ -880,7 +986,7 @@ function VerseSetContinuousRainPlayer({
       timers.forEach(timer => window.clearTimeout(timer));
       window.clearInterval(interval);
     };
-  }, [activePhrase, phrasePageStart, currentVerse?.reference, fontSizeLevel, isSettled]);
+  }, [activePhrase, phrasePageStart, currentVerse?.reference, fontSizeLevel, isSettled, hasSecondaryPhrases]);
 
   useEffect(() => {
     const trimOnResize = () => {
@@ -909,7 +1015,7 @@ function VerseSetContinuousRainPlayer({
     };
     window.addEventListener('resize', trimOnResize);
     return () => window.removeEventListener('resize', trimOnResize);
-  }, [activePhrase, phrasePageStart, currentVerse?.reference, fontSizeLevel]);
+  }, [activePhrase, phrasePageStart, currentVerse?.reference, fontSizeLevel, hasSecondaryPhrases]);
 
   useEffect(() => {
     if (!currentVerse) return undefined;
@@ -1105,14 +1211,24 @@ function VerseSetContinuousRainPlayer({
               </div>
               {showNav && <button type="button" onClick={handleNext} disabled={nextDisabled} aria-label={onNext ? t('後一天', 'Next day') : t('下一節隨機經文', 'Next random verse')}>›</button>}
             </div>
-            <h2>{formatVerseReferenceForDisplay(currentVerse.reference, version)}</h2>
+            <h2>
+              {formatVerseReferenceForDisplay(currentVerse.reference, version)}
+              {secondaryVerse && (
+                <small className="continuous-rain-secondary-reference">
+                  {formatVerseReferenceForDisplay(secondaryVerse.reference, secondaryVersion)}
+                </small>
+              )}
+            </h2>
             <div
               ref={phraseContainerRef}
-              className={`daily-verse-rain-phrases continuous-rain-phrases ${isSettled ? 'is-settled' : ''}`}
+              className={`daily-verse-rain-phrases continuous-rain-phrases ${hasSecondaryPhrases ? 'has-secondary' : ''} ${isSettled ? 'is-settled' : ''}`}
               aria-live="polite"
             >
               {phrases.map((phrase, index) => {
                 if (index < phrasePageStart || index > activePhrase) return null;
+                const secondaryPhrase = hasSecondaryPhrases
+                  ? getSecondaryPhrasesForIndex(index, phrases.length, secondaryPhrases)
+                  : '';
                 return (
                 <span
                   key={`${phrase}-${index}`}
@@ -1125,7 +1241,8 @@ function VerseSetContinuousRainPlayer({
                     '--drift': `${((index % 5) - 2) * 9}px`
                   }}
                 >
-                  {phrase}
+                  <b>{phrase}</b>
+                  {secondaryPhrase && <small>{secondaryPhrase}</small>}
                 </span>
                 );
               })}
@@ -1139,6 +1256,19 @@ function VerseSetContinuousRainPlayer({
         t={t}
         className="continuous-rain-font-controls"
       />
+      {onSecondaryVersionChange && (
+        <label className="continuous-rain-secondary-picker">
+          <span>{t('第二聖經版本', 'Second Bible')}</span>
+          <select
+            value={secondaryVersion || ''}
+            onChange={(event) => onSecondaryVersionChange(event.target.value)}
+          >
+            {BIBLE_LANGUAGE_OPTIONS.filter(option => option.value !== version).map(option => (
+              <option key={option.value} value={option.value}>{option.label}</option>
+            ))}
+          </select>
+        </label>
+      )}
       <div className="continuous-rain-action-controls" aria-label={t('播放操作', 'Playback actions')}>
         <button
           type="button"
@@ -1917,9 +2047,18 @@ export default function App() {
   });
 
   const [version, setVersion] = useState(() => localStorage.getItem('verseRain_version') || 'cuv');
+  const [bilingualSecondaryVersion, setBilingualSecondaryVersion] = useState(() => localStorage.getItem('verseRain_bilingualSecondaryVersion') || 'kjv');
   useEffect(() => {
     localStorage.setItem('verseRain_version', version);
   }, [version]);
+  useEffect(() => {
+    localStorage.setItem('verseRain_bilingualSecondaryVersion', bilingualSecondaryVersion);
+  }, [bilingualSecondaryVersion]);
+  useEffect(() => {
+    if (bilingualSecondaryVersion !== version) return;
+    const fallback = BIBLE_LANGUAGE_OPTIONS.find(option => option.value !== version)?.value || 'kjv';
+    setBilingualSecondaryVersion(fallback);
+  }, [version, bilingualSecondaryVersion]);
 
   useEffect(() => {
     let mounted = true;
@@ -1936,6 +2075,20 @@ export default function App() {
     }
     return () => { mounted = false; };
   }, [version]);
+
+  useEffect(() => {
+    let mounted = true;
+    if (bilingualSecondaryVersion && !loadedLangs[bilingualSecondaryVersion]) {
+      loadLanguageSets(bilingualSecondaryVersion).then(data => {
+        if (mounted) {
+          setLoadedLangs(prev => ({ ...prev, [bilingualSecondaryVersion]: data }));
+        }
+      }).catch(error => {
+        console.error('Failed to load bilingual secondary language', bilingualSecondaryVersion, error);
+      });
+    }
+    return () => { mounted = false; };
+  }, [bilingualSecondaryVersion, loadedLangs]);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -2419,6 +2572,62 @@ export default function App() {
       rainSets[0]
     );
   }, [activeVerseSets, version]);
+  const getSetsForVersion = React.useCallback((targetVersion) => {
+    const localSets = loadedLangs[targetVersion]?.sets || [];
+    const customSets = customVerseSets.filter(set => (set.language || 'cuv') === targetVersion);
+    const publishedSets = publishedVerseSets.filter(set => (set.language || 'cuv') === targetVersion);
+    const byId = new globalThis.Map();
+    [...localSets, ...customSets, ...publishedSets].forEach(set => {
+      if (set?.id) byId.set(set.id, set);
+    });
+    return Array.from(byId.values());
+  }, [customVerseSets, publishedVerseSets, loadedLangs]);
+
+  const findSecondarySetForPrimarySet = React.useCallback((primarySet) => {
+    if (!primarySet || !bilingualSecondaryVersion || bilingualSecondaryVersion === version) return null;
+    const secondarySets = getSetsForVersion(bilingualSecondaryVersion);
+    if (!secondarySets.length) return null;
+    const primaryId = primarySet.id || '';
+    const normalizedTitle = String(primarySet.title || '')
+      .replace(/\s*\((KJV|ESV)\)\s*/gi, '')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .toLowerCase();
+    const primaryRefs = new Set((primarySet.verses || []).map(v => normalizeVerseReferenceKey(v.reference)).filter(Boolean));
+
+    const candidates = [
+      secondarySets.find(set => set.id === `${primaryId}-${bilingualSecondaryVersion}`),
+      secondarySets.find(set => set.id === primaryId.replace(/-(cuv|cuvs|kjv|esv|ja|ko|fa|he|es|tr|de|my|vi)$/i, `-${bilingualSecondaryVersion}`)),
+      secondarySets.find(set => primaryId === 'rain-verses' && set.id === `rain-verses-${bilingualSecondaryVersion}`),
+      secondarySets.find(set => set.id === primaryId),
+      secondarySets.find(set => String(set.title || '').replace(/\s*\((KJV|ESV)\)\s*/gi, '').replace(/\s+/g, ' ').trim().toLowerCase() === normalizedTitle)
+    ].filter(Boolean);
+    if (candidates[0]) return candidates[0];
+
+    let bestSet = null;
+    let bestScore = 0;
+    secondarySets.forEach(set => {
+      const refs = (set.verses || []).map(v => normalizeVerseReferenceKey(v.reference)).filter(Boolean);
+      const score = refs.reduce((sum, ref) => sum + (primaryRefs.has(ref) ? 1 : 0), 0);
+      if (score > bestScore) {
+        bestScore = score;
+        bestSet = set;
+      }
+    });
+    return bestScore > 0 ? bestSet : null;
+  }, [bilingualSecondaryVersion, version, getSetsForVersion]);
+
+  const secondaryRainSet = React.useMemo(() => {
+    const secondarySets = getSetsForVersion(bilingualSecondaryVersion);
+    const rainSets = secondarySets.filter(s => s.id && s.id.startsWith('rain-verses'));
+    if (!rainSets.length) return null;
+    return (
+      rainSets.find(s => s.language === bilingualSecondaryVersion && s.id.endsWith(`-${bilingualSecondaryVersion}`)) ||
+      rainSets.find(s => s.language === bilingualSecondaryVersion) ||
+      rainSets.find(s => s.id === preferredRainSet?.id) ||
+      rainSets[0]
+    );
+  }, [getSetsForVersion, bilingualSecondaryVersion, preferredRainSet?.id]);
   const randomRainVerse = React.useMemo(() => {
     if (preferredRainSet && preferredRainSet.verses && preferredRainSet.verses.length > 0) {
       return preferredRainSet.verses[rainVerseIndex % preferredRainSet.verses.length];
@@ -2484,6 +2693,21 @@ export default function App() {
     remoteDailyVerse?.translation === dailyVerseRemoteVersion &&
     remoteDailyVerse?.date === dailyVerseDate;
   const displayedDailyVerse = remoteDailyVerseMatches ? remoteDailyVerse : (isDailyVerseLoading ? null : dailyVerse);
+  const dailySecondaryVerseSet = React.useMemo(() => {
+    if (!displayedDailyVerse || !bilingualSecondaryVersion || bilingualSecondaryVersion === version) return null;
+    const secondarySets = getSetsForVersion(bilingualSecondaryVersion);
+    for (const set of secondarySets) {
+      const match = findMatchingVerse(displayedDailyVerse, [displayedDailyVerse], set.verses || [], { allowIndexFallback: false });
+      if (match) {
+        return {
+          id: `daily-secondary-${bilingualSecondaryVersion}-${dailyVerseDate}`,
+          title: set.title || BIBLE_LANGUAGE_OPTIONS.find(option => option.value === bilingualSecondaryVersion)?.label || bilingualSecondaryVersion,
+          verses: [match]
+        };
+      }
+    }
+    return null;
+  }, [displayedDailyVerse, bilingualSecondaryVersion, version, getSetsForVersion, dailyVerseDate]);
 
   const dummySet = useMemo(() => [{
     id: "dummy",
@@ -2834,7 +3058,10 @@ export default function App() {
     const regex = shouldSplitOnSpace
       ? /\.{2,}|[,，。；؛၊။،：「」、;:：﹕︰\.\?!！？؟『』《》'\"‘’”"“ ]/
       : /\.{2,}|[,，。；؛၊။،：「」、;:：﹕︰\.\?!！？؟『』《》'\"‘’”"“]/;
-    return activeVerse.text.split(regex).map(p => p.trim()).filter(Boolean);
+    return activeVerse.text
+      .split(regex)
+      .map(cleanPhraseBlock)
+      .filter(phrase => phrase && hasReadablePhraseContent(phrase));
   }, [activeVerse, version]);
 
   const activePhrasesRef = useRef([]);
@@ -2922,6 +3149,7 @@ export default function App() {
   const [leaderboardModalTab, setLeaderboardModalTab] = useState('alltime'); // 'daily', 'monthly', 'alltime'
   const [isFetchingLeaderboard, setIsFetchingLeaderboard] = useState(false);
   const [mainTab, setMainTab] = useState('lobby');
+  const [bilingualRainActive, setBilingualRainActive] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
   // Reset search pages when query changes
@@ -10965,6 +11193,9 @@ const deDict = {
         {continuousRainSet && (
           <VerseSetContinuousRainPlayer
             verseSet={continuousRainSet}
+            secondaryVerseSet={findSecondarySetForPrimarySet(continuousRainSet)}
+            secondaryVersion={bilingualSecondaryVersion}
+            onSecondaryVersionChange={setBilingualSecondaryVersion}
             topicSets={topicVerseSets}
             startVerse={continuousRainSet.startVerse || null}
             version={version}
@@ -11363,6 +11594,9 @@ const deDict = {
                       title: remoteDailyVerse?.date || dailyVerseDate,
                       verses: [displayedDailyVerse]
                     }}
+                    secondaryVerseSet={dailySecondaryVerseSet}
+                    secondaryVersion={bilingualSecondaryVersion}
+                    onSecondaryVersionChange={setBilingualSecondaryVersion}
                     startVerse={displayedDailyVerse}
                     version={version}
                     t={t}
@@ -11440,6 +11674,104 @@ const deDict = {
                 )
               )}
 
+              {mainTab === 'bilingual_rain' && (
+                bilingualRainActive && preferredRainSet ? (
+                  <VerseSetContinuousRainPlayer
+                    verseSet={preferredRainSet}
+                    secondaryVerseSet={secondaryRainSet}
+                    version={version}
+                    secondaryVersion={bilingualSecondaryVersion}
+                    onSecondaryVersionChange={setBilingualSecondaryVersion}
+                    t={t}
+                    label={t('雙語經文雨 Beta', 'Bilingual VerseRain Beta')}
+                    topicSets={topicVerseSets}
+                    showNav
+                    onStop={() => {
+                      setBilingualRainActive(false);
+                      setMainTab('advanced');
+                    }}
+                    onSelectTopicSet={(set) => {
+                      setSelectedSetId(set.id);
+                      setBilingualRainActive(false);
+                      setMainTab('lobby');
+                      setContinuousRainSet({
+                        ...set,
+                        startVerse: pickRandomVerse(set.verses || [])
+                      });
+                    }}
+                    onListenLogged={() => updateGarden('activity_only', 'listen')}
+                    onChallengeVerse={challengeVerseFromReader}
+                    onShareVerse={(verse) => {
+                      if (!verse) return;
+                      const link = buildPublicShareUrl('/', { listenSet: preferredRainSet.id, version });
+                      openListeningShare(link, `${preferredRainSet.title} · ${verse.reference}`);
+                    }}
+                  />
+                ) : (
+                  <div style={{ paddingBottom: '3rem' }}>
+                    <button
+                      onClick={() => setMainTab('advanced')}
+                      style={{ marginBottom: '1rem', background: 'white', color: '#475569', border: '1px solid #cbd5e1', borderRadius: '8px', padding: '0.55rem 0.9rem', cursor: 'pointer', fontWeight: 800 }}
+                    >
+                      ← {t('返回進階功能', 'Back to Advanced')}
+                    </button>
+                    <div style={{ background: 'white', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '1.5rem', maxWidth: '760px' }}>
+                      <h2 style={{ margin: '0 0 0.5rem 0', color: '#1e293b', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <CloudRain size={28} /> {t('雙語經文雨 Beta', 'Bilingual VerseRain Beta')}
+                      </h2>
+                      <p style={{ margin: '0 0 1.2rem 0', color: '#64748b', lineHeight: 1.7 }}>
+                        {t('測試版會用主要語言朗讀經文，並在每個方塊下方顯示第二語言。第二行目前是短句估算對齊，適合先測試閱讀感。', 'This beta reads the main language and shows a second language under each block. The second line uses estimated phrase alignment so we can test the reading experience first.')}
+                      </p>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem', marginBottom: '1rem' }}>
+                        <label style={{ display: 'grid', gap: '0.4rem', color: '#334155', fontWeight: 800 }}>
+                          {t('主要語言與語音', 'Main language and voice')}
+                          <select
+                            value={version}
+                            onChange={(e) => handleVersionChange(e.target.value)}
+                            style={{ padding: '0.65rem 0.8rem', borderRadius: '8px', border: '1px solid #cbd5e1', background: '#f8fafc', color: '#1e293b', fontWeight: 800 }}
+                          >
+                            {BIBLE_LANGUAGE_OPTIONS.map(option => (
+                              <option key={option.value} value={option.value}>{option.label}</option>
+                            ))}
+                          </select>
+                        </label>
+                        <label style={{ display: 'grid', gap: '0.4rem', color: '#334155', fontWeight: 800 }}>
+                          {t('第二語言顯示', 'Second language display')}
+                          <select
+                            value={bilingualSecondaryVersion}
+                            onChange={(e) => setBilingualSecondaryVersion(e.target.value)}
+                            style={{ padding: '0.65rem 0.8rem', borderRadius: '8px', border: '1px solid #cbd5e1', background: '#f8fafc', color: '#1e293b', fontWeight: 800 }}
+                          >
+                            {BIBLE_LANGUAGE_OPTIONS.filter(option => option.value !== version).map(option => (
+                              <option key={option.value} value={option.value}>{option.label}</option>
+                            ))}
+                          </select>
+                        </label>
+                      </div>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem', alignItems: 'center' }}>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            initAudio();
+                            setSpeechReady(true);
+                            setBilingualRainActive(true);
+                          }}
+                          disabled={!preferredRainSet || !secondaryRainSet}
+                          style={{ display: 'inline-flex', alignItems: 'center', gap: '0.45rem', background: '#2563eb', color: 'white', border: 'none', borderRadius: '10px', padding: '0.75rem 1.1rem', fontWeight: 900, cursor: preferredRainSet && secondaryRainSet ? 'pointer' : 'wait' }}
+                        >
+                          <Play size={18} fill="currentColor" /> {t('開始雙語經文雨', 'Start Bilingual VerseRain')}
+                        </button>
+                        <span style={{ color: '#64748b', fontSize: '0.9rem', fontWeight: 700 }}>
+                          {preferredRainSet && secondaryRainSet
+                            ? t('目前使用「經文雨」官方經文組做測試。', 'Using the official VerseRain set for this beta.')
+                            : t('正在載入語言資料...', 'Loading language data...')}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                )
+              )}
+
               {mainTab === 'advanced' && (
                 <div style={{ paddingBottom: '3rem' }}>
                   <h2 style={{ color: '#1e293b', marginBottom: '1.5rem', borderBottom: '2px solid #e2e8f0', paddingBottom: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -11447,6 +11779,7 @@ const deDict = {
                   </h2>
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1rem', width: '100%' }}>
                     {[
+                      { id: 'bilingual_rain', Icon: CloudRain, label: t('雙語經文雨 Beta', 'Bilingual VerseRain Beta'), desc: t('主要語言朗讀，第二語言在方塊下方輔助顯示', 'Read the main language while showing a second language under each block'), color: '#2563eb' },
                       { id: 'accessible', Icon: Headphones, label: t('視障友善版', 'Accessible Version'), desc: t('高對比、鍵盤操作、語音提示與麥克風背誦流程', 'High contrast, keyboard controls, voice prompts, and microphone recitation'), color: '#0ea5e9' },
                       { id: 'blindMode', Icon: Mic, label: isBlindMode ? t('關閉視障經文雨', 'Disable Blind Mode') : t('打開視障經文雨', 'Enable Blind Mode'), desc: t('為視覺障礙朋友設計的語音模式', 'Voice mode for visually impaired'), color: '#8b5cf6' },
                       { id: 'performanceMode', Icon: Zap, label: performanceMode ? t('關閉效能模式', 'Disable Performance Mode') : t('打開效能模式', 'Enable Performance Mode'), desc: t('關閉華麗特效以提升流暢度', 'Disable effects for better performance'), color: '#22c55e' },
