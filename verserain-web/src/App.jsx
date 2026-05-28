@@ -1793,14 +1793,25 @@ const ENGLISH_BOOK_LOCALIZATION_MAP = {
 
 function formatVerseReferenceForDisplay(ref, version) {
   // Chinese: expand abbreviation to full book name
-  if (version === 'cuv' || version === 'zh') {
+  if (version === 'cuv' || version === 'zh' || version === 'cuvs') {
     const match = ref.match(/(.+?)\s*(\d+)(?:\s*:\s*([\d,\s\-–]+))?/);
     if (!match) return ref;
     const book = match[1].trim();
     const chapter = match[2];
     const verses = match[3];
-    const fullBookName = CHINESE_BOOK_MAP[book] || book;
-    const chapterSuffix = fullBookName === '詩篇' ? '篇' : '章';
+    let fullBookName = CHINESE_BOOK_MAP[book];
+    // Fallback: English abbreviation → look up via BIBLE_BOOKS
+    if (!fullBookName) {
+      const lowerBook = book.toLowerCase().replace(/\./g, '');
+      const found = BIBLE_BOOKS.find(b =>
+        (b.names || []).some(n => n.toLowerCase().replace(/\./g, '').replace(/\s+/g, '') === lowerBook)
+      );
+      if (found) {
+        fullBookName = version === 'cuvs' ? (found.cn?.[0] || found.names[0]) : found.names[0];
+      }
+    }
+    if (!fullBookName) fullBookName = book;
+    const chapterSuffix = fullBookName === '詩篇' || fullBookName === '诗篇' ? '篇' : '章';
     if (verses) return `${fullBookName} ${chapter}:${verses}`;
     return `${fullBookName} ${chapter}${chapterSuffix}`;
   }
@@ -1860,8 +1871,16 @@ function formatVerseReferenceForSpeech(ref, version) {
     return `${book} פרק ${chapter} פסוק ${versesStr}`;
   } else {
     // Chinese (cuv, default)
-    const fullBookName = CHINESE_BOOK_MAP[book] || book;
-    const chapterSuffix = fullBookName === '詩篇' ? '篇' : '章';
+    let fullBookName = CHINESE_BOOK_MAP[book];
+    if (!fullBookName) {
+      const lowerBook = book.toLowerCase().replace(/\./g, '');
+      const found = BIBLE_BOOKS.find(b =>
+        (b.names || []).some(n => n.toLowerCase().replace(/\./g, '').replace(/\s+/g, '') === lowerBook)
+      );
+      if (found) fullBookName = found.names[0];
+    }
+    if (!fullBookName) fullBookName = book;
+    const chapterSuffix = fullBookName === '詩篇' || fullBookName === '诗篇' ? '篇' : '章';
 
     const toChineseNumber = (value) => {
       const num = Number(value);
