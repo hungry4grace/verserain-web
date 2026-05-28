@@ -1347,7 +1347,7 @@ textarea {
   display: block;
   margin-top: 0.28rem;
   color: rgba(219, 234, 254, 0.82);
-  font-size: 0.34em;
+  font-size: 0.46em;
   font-weight: 800;
   letter-spacing: 0;
   text-transform: none;
@@ -1368,8 +1368,8 @@ textarea {
 .continuous-rain-phrases.has-secondary span {
   flex-direction: column;
   align-items: center;
-  gap: 0.16em;
-  min-height: 2.45em;
+  gap: 0.18em;
+  min-height: 2.85em;
   max-width: min(92vw, 860px);
   text-align: center;
 }
@@ -1380,9 +1380,9 @@ textarea {
 
 .continuous-rain-phrases.has-secondary span small {
   color: rgba(219, 234, 254, 0.86);
-  font-size: 0.52em;
-  font-weight: 750;
-  line-height: 1.28;
+  font-size: 0.72em;
+  font-weight: 800;
+  line-height: 1.22;
   text-shadow: 0 2px 12px rgba(0, 0, 0, 0.5);
 }
 

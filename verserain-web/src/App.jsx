@@ -327,6 +327,7 @@ function isEnglishBibleVersion(v) {
 
 function getVoiceLangForVersion(v) {
   if (isEnglishBibleVersion(v)) return 'en-US';
+  if (v === 'cuvs') return 'zh-CN';
   if (v === 'ko') return 'ko-KR';
   if (v === 'ja') return 'ja-JP';
   if (v === 'he') return 'he-IL';
@@ -335,6 +336,7 @@ function getVoiceLangForVersion(v) {
   if (v === 'tr') return 'tr-TR';
   if (v === 'de') return 'de-DE';
   if (v === 'my') return 'my-MM';
+  if (v === 'vi') return 'vi-VN';
   return 'zh-TW';
 }
 
@@ -497,6 +499,38 @@ function findMatchingVerse(primaryVerse, primaryVerses = [], secondaryVerses = [
     (allowIndexFallback && primaryIndex >= 0 ? secondaryVerses[primaryIndex] : null) ||
     null
   );
+}
+
+function normalizeVerseSetIdentity(value = '') {
+  return String(value || '')
+    .replace(/\s*\((KJV|ESV)\)\s*/gi, '')
+    .replace(/-(cuv|cuvs|kjv|esv|ja|ko|fa|he|es|tr|de|my|vi)$/i, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .toLowerCase();
+}
+
+function areLikelyParallelVerseSets(primarySet, secondarySet) {
+  if (!primarySet || !secondarySet) return false;
+  const primaryLength = primarySet.verses?.length || 0;
+  const secondaryLength = secondarySet.verses?.length || 0;
+  if (!primaryLength || primaryLength !== secondaryLength) return false;
+
+  const primaryId = normalizeVerseSetIdentity(primarySet.id);
+  const secondaryId = normalizeVerseSetIdentity(secondarySet.id);
+  if (primaryId && secondaryId && primaryId === secondaryId) return true;
+  if (secondarySet.sourceSetId && normalizeVerseSetIdentity(secondarySet.sourceSetId) === primaryId) return true;
+
+  const primaryTitle = normalizeVerseSetIdentity(primarySet.title);
+  const secondaryTitle = normalizeVerseSetIdentity(secondarySet.title);
+  if (primaryTitle && secondaryTitle && primaryTitle === secondaryTitle) return true;
+
+  const primaryRefs = new Set((primarySet.verses || []).map(v => normalizeVerseReferenceKey(v.reference)).filter(Boolean));
+  const matchCount = (secondarySet.verses || []).reduce((sum, verse) => {
+    const key = normalizeVerseReferenceKey(verse.reference);
+    return sum + (key && primaryRefs.has(key) ? 1 : 0);
+  }, 0);
+  return matchCount >= Math.max(2, Math.ceil(primaryLength * 0.35));
 }
 
 function getDailyVerseIndex(length, date = new Date()) {
@@ -900,14 +934,16 @@ function VerseSetContinuousRainPlayer({
   const phrases = useMemo(() => splitVersePhrases(currentVerse?.text || '', version), [currentVerse, version]);
   const secondaryVerse = useMemo(() => {
     const secondaryVerses = secondaryVerseSet?.verses?.filter(Boolean) || [];
-    return findMatchingVerse(currentVerse, verses, secondaryVerses, { allowIndexFallback: false });
-  }, [currentVerse, secondaryVerseSet, verses]);
+    return findMatchingVerse(currentVerse, verses, secondaryVerses, {
+      allowIndexFallback: areLikelyParallelVerseSets(verseSet, secondaryVerseSet)
+    });
+  }, [currentVerse, secondaryVerseSet, verseSet, verses]);
   const secondaryPhrases = useMemo(
     () => splitVersePhrases(secondaryVerse?.text || '', secondaryVersion),
     [secondaryVerse, secondaryVersion]
   );
 
-  // --- Cross-language verse lookup (real Bible text, not machine translation) ---
+  // --- Cross-language verse lookup ---
   // Build a fast lookup map: normalizedKey → verse for all loaded secondary-language verses
   const secondaryVerseByRef = useMemo(() => {
     const map = new globalThis.Map();
