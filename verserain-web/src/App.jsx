@@ -401,6 +401,74 @@ async function fetchBibleVerseFromAPI(englishRef, targetVersion) {
   return null;
 }
 
+// bolls.life free Bible API — covers CUV/CUVS/KO/JA/DE/ES/FA/HE/VI
+const BOLLS_TRANSLATIONS = {
+  cuv:  'CUNP',   // Traditional Chinese (新標點和合本)
+  cuvs: 'CUNPS',  // Simplified Chinese (新标点和合本)
+  ko:   'KRV',    // Korean Revised Version (개역개정)
+  ja:   'NJB',    // Japanese New Interconfessional Bible (新共同訳)
+  de:   'SCH',    // German Schlachter 1951
+  es:   'RV1960', // Spanish Reina-Valera 1960
+  fa:   'POV',    // Persian Old Version
+  vi:   'VI1934', // Vietnamese 1934
+  // he: OT → HAC, NT → DHNT  (handled below)
+  // tr, my: not available on bolls.life
+};
+
+function getBollsSlug(targetVersion, bookId) {
+  if (targetVersion === 'he') return bookId <= 39 ? 'HAC' : 'DHNT';
+  return BOLLS_TRANSLATIONS[targetVersion] || null;
+}
+
+async function fetchVerseFromBolls(normalizedKey, targetVersion) {
+  const [bookPart, chapterVerse] = (normalizedKey || '').split('|');
+  if (!chapterVerse) return null;
+  const bookId = parseInt(bookPart, 10);
+  if (Number.isNaN(bookId)) return null;
+  const slug = getBollsSlug(targetVersion, bookId);
+  if (!slug) return null;
+
+  const colonIdx = chapterVerse.indexOf(':');
+  if (colonIdx < 0) return null;
+  const chapter = parseInt(chapterVerse.slice(0, colonIdx), 10);
+  const verseRange = chapterVerse.slice(colonIdx + 1);
+  if (Number.isNaN(chapter) || !verseRange) return null;
+
+  // Build list of verse numbers (handle ranges like "14-15")
+  const verseNums = [];
+  if (verseRange.includes('-')) {
+    const [startV, endV] = verseRange.split('-').map(Number);
+    if (!Number.isNaN(startV) && !Number.isNaN(endV)) {
+      for (let v = startV; v <= Math.min(endV, startV + 8); v++) verseNums.push(v);
+    }
+  } else {
+    const v = parseInt(verseRange, 10);
+    if (!Number.isNaN(v)) verseNums.push(v);
+  }
+  if (!verseNums.length) return null;
+
+  try {
+    const texts = await Promise.all(
+      verseNums.map(v =>
+        fetch(`https://bolls.life/get-verse/${slug}/${bookId}/${chapter}/${v}/`)
+          .then(r => r.ok ? r.json() : null)
+          .then(d => {
+            if (!d?.text) return null;
+            return String(d.text)
+              .replace(/<S>\d+<\/S>/g, '')   // strip Strong's numbers
+              .replace(/\s+/g, ' ')
+              .trim();
+          })
+          .catch(() => null)
+      )
+    );
+    const combined = texts.filter(Boolean).join(' ').trim();
+    return combined || null;
+  } catch {
+    return null;
+  }
+}
+
 function cleanPhraseBlock(phrase = '') {
   return String(phrase || '')
     .trim()
@@ -987,18 +1055,27 @@ function VerseSetContinuousRainPlayer({
       return;
     }
 
-    // 3) Fetch from external Bible API (ESV / KJV only — real Bible text)
+    // 3) Fetch from external Bible API — ESV/KJV via dedicated endpoints,
+    //    all other languages via bolls.life free API (real Bible text, not translation)
     setLookedUpText('');
     setLookedUpRef('');
     const englishRef = getEnglishReferenceFromKey(normalizedKey);
-    if (englishRef && (secondaryVersion === 'esv' || secondaryVersion === 'kjv')) {
-      fetchBibleVerseFromAPI(englishRef, secondaryVersion).then(text => {
-        if (cancelled || !text) return;
-        setCachedBibleVerse(secondaryVersion, normalizedKey, text);
-        setLookedUpText(text);
-        setLookedUpRef(englishRef);
-      });
-    }
+
+    (async () => {
+      let text = null;
+      let ref = englishRef || currentVerse.reference;
+
+      if (secondaryVersion === 'esv' || secondaryVersion === 'kjv') {
+        if (englishRef) text = await fetchBibleVerseFromAPI(englishRef, secondaryVersion);
+      } else {
+        text = await fetchVerseFromBolls(normalizedKey, secondaryVersion);
+      }
+
+      if (cancelled || !text) return;
+      setCachedBibleVerse(secondaryVersion, normalizedKey, text);
+      setLookedUpText(text);
+      setLookedUpRef(ref);
+    })();
 
     return () => { cancelled = true; };
   }, [currentVerse, secondaryVerse, secondaryVersion, secondaryVerseByRef]);
