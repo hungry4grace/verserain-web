@@ -900,7 +900,7 @@ function VerseSetContinuousRainPlayer({
   const phrases = useMemo(() => splitVersePhrases(currentVerse?.text || '', version), [currentVerse, version]);
   const secondaryVerse = useMemo(() => {
     const secondaryVerses = secondaryVerseSet?.verses?.filter(Boolean) || [];
-    return findMatchingVerse(currentVerse, verses, secondaryVerses);
+    return findMatchingVerse(currentVerse, verses, secondaryVerses, { allowIndexFallback: false });
   }, [currentVerse, secondaryVerseSet, verses]);
   const secondaryPhrases = useMemo(
     () => splitVersePhrases(secondaryVerse?.text || '', secondaryVersion),
