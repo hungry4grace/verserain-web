@@ -1227,10 +1227,19 @@ function VerseSetContinuousRainPlayer({
     stopSpeechIfActive();
   };
 
-  const skipVerse = () => {
+  const navigateVerse = (direction) => {
     if (!showNav) return;
     haltPlayback();
-    setCurrentVerse(pickRandomVerse(verses, currentVerse?.reference));
+    const idx = verses.findIndex(v =>
+      v.reference === currentVerse?.reference && v.text === currentVerse?.text
+    );
+    const nextIdx = idx + direction;
+    if (nextIdx >= 0 && nextIdx < verses.length) {
+      setCurrentVerse(verses[nextIdx]);
+    } else {
+      // At boundary — replay current verse
+      setPlayKey(k => k + 1);
+    }
   };
 
   const handlePrevious = () => {
@@ -1239,7 +1248,7 @@ function VerseSetContinuousRainPlayer({
       onPrevious();
       return;
     }
-    skipVerse();
+    navigateVerse(-1);
   };
 
   const handleNext = () => {
@@ -1249,7 +1258,7 @@ function VerseSetContinuousRainPlayer({
       onNext();
       return;
     }
-    skipVerse();
+    navigateVerse(1);
   };
 
   const handleSelectTopicSet = (set) => {
