@@ -377,13 +377,30 @@ function splitVersePhrases(text, version) {
 function getSecondaryPhrasesForIndex(primaryIndex, primaryLength, secondaryPhrases) {
   if (!secondaryPhrases?.length) return '';
   if (primaryLength <= 1) return secondaryPhrases.join(' ');
-  if (primaryLength === secondaryPhrases.length) return secondaryPhrases[primaryIndex] || '';
 
-  const start = Math.floor((primaryIndex * secondaryPhrases.length) / primaryLength);
-  const end = primaryIndex === primaryLength - 1
-    ? secondaryPhrases.length
-    : Math.max(start + 1, Math.floor(((primaryIndex + 1) * secondaryPhrases.length) / primaryLength));
-  return secondaryPhrases.slice(start, end).join(' ');
+  const secondaryLength = secondaryPhrases.length;
+  if (primaryLength === secondaryLength) return secondaryPhrases[primaryIndex] || '';
+
+  if (secondaryLength < primaryLength) {
+    // 英文片語較少：把每個英文片語投射到最近的中文位置（1對1，不重複）
+    // 沒配對到的中文顯示空白
+    if (secondaryLength === 1) {
+      return primaryIndex === 0 ? secondaryPhrases[0] : '';
+    }
+    const collected = [];
+    for (let j = 0; j < secondaryLength; j++) {
+      const target = Math.round(j * (primaryLength - 1) / (secondaryLength - 1));
+      if (target === primaryIndex) collected.push(secondaryPhrases[j]);
+    }
+    return collected.join(' ');
+  } else {
+    // 英文片語較多：把連續英文片語集中到對應的中文位置
+    const start = Math.floor(primaryIndex * secondaryLength / primaryLength);
+    const end = primaryIndex === primaryLength - 1
+      ? secondaryLength
+      : Math.max(start + 1, Math.floor((primaryIndex + 1) * secondaryLength / primaryLength));
+    return secondaryPhrases.slice(start, end).join(' ');
+  }
 }
 
 function normalizeVerseReferenceKey(reference = '') {
