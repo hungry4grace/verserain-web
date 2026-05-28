@@ -354,6 +354,51 @@ const BIBLE_LANGUAGE_OPTIONS = [
   { value: 'vi', label: 'Tiếng Việt' }
 ];
 
+// --- Bible verse cross-language lookup utilities ---
+function getEnglishReferenceFromKey(normalizedKey) {
+  if (!normalizedKey) return null;
+  const [bookPart, chapterVerse] = normalizedKey.split('|');
+  if (!chapterVerse) return null;
+  const bookId = parseInt(bookPart, 10);
+  if (Number.isNaN(bookId)) return null;
+  const book = BIBLE_BOOKS.find(b => b.id === bookId);
+  if (!book) return null;
+  return `${book.names[2]} ${chapterVerse}`;
+}
+
+function getCachedBibleVerse(version, normalizedKey) {
+  try {
+    const raw = localStorage.getItem('verserain_bible_cache');
+    if (!raw) return null;
+    const cache = JSON.parse(raw);
+    return cache[`${version}|${normalizedKey}`] || null;
+  } catch { return null; }
+}
+
+function setCachedBibleVerse(version, normalizedKey, text) {
+  try {
+    const raw = localStorage.getItem('verserain_bible_cache');
+    const cache = raw ? JSON.parse(raw) : {};
+    cache[`${version}|${normalizedKey}`] = text;
+    localStorage.setItem('verserain_bible_cache', JSON.stringify(cache));
+  } catch { /* quota exceeded or parse error — ignore */ }
+}
+
+async function fetchBibleVerseFromAPI(englishRef, targetVersion) {
+  if (!englishRef) return null;
+  try {
+    if (targetVersion === 'esv') {
+      const res = await fetch(`/api/esv-passage?q=${encodeURIComponent(englishRef)}`);
+      if (res.ok) { const d = await res.json(); return d.text || null; }
+    }
+    if (targetVersion === 'kjv') {
+      const res = await fetch(`https://bible-api.com/${encodeURIComponent(englishRef)}?translation=kjv`);
+      if (res.ok) { const d = await res.json(); return d.text?.replace(/\n/g, ' ').trim() || null; }
+    }
+  } catch { /* network error — ignore */ }
+  return null;
+}
+
 function cleanPhraseBlock(phrase = '') {
   return String(phrase || '')
     .trim()
@@ -847,7 +892,8 @@ function VerseSetContinuousRainPlayer({
   nextDisabled = false,
   onChallengeVerse = null,
   onShareVerse = null,
-  onSelectTopicSet = null
+  onSelectTopicSet = null,
+  allSecondaryVerses = []
 }) {
   const verses = useMemo(() => verseSet?.verses?.filter(Boolean) || [], [verseSet]);
   const [currentVerse, setCurrentVerse] = useState(() => startVerse || pickRandomVerse(verses));
@@ -860,7 +906,80 @@ function VerseSetContinuousRainPlayer({
     () => splitVersePhrases(secondaryVerse?.text || '', secondaryVersion),
     [secondaryVerse, secondaryVersion]
   );
-  const hasSecondaryPhrases = Boolean(secondaryVersion && secondaryVerse && secondaryPhrases.length);
+
+  // --- Cross-language verse lookup (real Bible text, not machine translation) ---
+  // Build a fast lookup map: normalizedKey → verse for all loaded secondary-language verses
+  const secondaryVerseByRef = useMemo(() => {
+    const map = new globalThis.Map();
+    for (const v of allSecondaryVerses) {
+      const key = normalizeVerseReferenceKey(v.reference);
+      if (key && !map.has(key)) map.set(key, v);
+    }
+    return map;
+  }, [allSecondaryVerses]);
+
+  const [lookedUpText, setLookedUpText] = useState('');
+  const [lookedUpRef, setLookedUpRef] = useState('');
+
+  useEffect(() => {
+    // Already have a match from the paired secondary set → nothing to look up
+    if (secondaryVerse || !secondaryVersion || !currentVerse?.reference) {
+      setLookedUpText('');
+      setLookedUpRef('');
+      return;
+    }
+
+    let cancelled = false;
+    const normalizedKey = normalizeVerseReferenceKey(currentVerse.reference);
+    if (!normalizedKey) return;
+
+    // 1) Search all loaded verse sets in the secondary language (instant, real Bible text)
+    const localMatch = secondaryVerseByRef.get(normalizedKey);
+    if (localMatch) {
+      setLookedUpText(localMatch.text);
+      setLookedUpRef(localMatch.reference);
+      // Also persist to localStorage for future sessions
+      setCachedBibleVerse(secondaryVersion, normalizedKey, localMatch.text);
+      return;
+    }
+
+    // 2) Check localStorage cache (previously found verses)
+    const cached = getCachedBibleVerse(secondaryVersion, normalizedKey);
+    if (cached) {
+      setLookedUpText(cached);
+      setLookedUpRef(formatVerseReferenceForDisplay(currentVerse.reference, secondaryVersion));
+      return;
+    }
+
+    // 3) Fetch from external Bible API (ESV / KJV only — real Bible text)
+    setLookedUpText('');
+    setLookedUpRef('');
+    const englishRef = getEnglishReferenceFromKey(normalizedKey);
+    if (englishRef && (secondaryVersion === 'esv' || secondaryVersion === 'kjv')) {
+      fetchBibleVerseFromAPI(englishRef, secondaryVersion).then(text => {
+        if (cancelled || !text) return;
+        setCachedBibleVerse(secondaryVersion, normalizedKey, text);
+        setLookedUpText(text);
+        setLookedUpRef(englishRef);
+      });
+    }
+
+    return () => { cancelled = true; };
+  }, [currentVerse, secondaryVerse, secondaryVersion, secondaryVerseByRef]);
+
+  const effectiveSecondaryPhrases = useMemo(() => {
+    if (secondaryVerse && secondaryPhrases.length) return secondaryPhrases;
+    if (lookedUpText) return splitVersePhrases(lookedUpText, secondaryVersion);
+    return [];
+  }, [secondaryPhrases, secondaryVerse, lookedUpText, secondaryVersion]);
+
+  const hasSecondaryPhrases = Boolean(secondaryVersion && effectiveSecondaryPhrases.length);
+  const effectiveSecondaryRef = useMemo(() => {
+    if (secondaryVerse) return secondaryVerse.reference;
+    if (lookedUpRef) return lookedUpRef;
+    return null;
+  }, [secondaryVerse, lookedUpRef]);
+
   const imageDateLabel = useMemo(() => {
     const day = (getStableNumber(`${verseSet?.id || verseSet?.title}-${currentVerse?.reference || ''}`) % 31) + 1;
     return `2026-05-${String(day).padStart(2, '0')}`;
@@ -939,6 +1058,13 @@ function VerseSetContinuousRainPlayer({
     setImageOk(true);
     setImageLoaded(false);
   }, [currentVerse?.reference]);
+
+  // Reset animation state for single-verse repeat (playKey changes but reference stays the same)
+  useEffect(() => {
+    setActivePhrase(-1);
+    setPhrasePageStart(0);
+    setIsSettled(false);
+  }, [playKey]);
 
   useEffect(() => {
     if (imageLoaded || !imageOk || backgroundImageUrls[imageIndex]?.startsWith('data:')) return undefined;
@@ -1075,7 +1201,13 @@ function VerseSetContinuousRainPlayer({
         onCompleteRef.current?.();
         return;
       }
-      setCurrentVerse(pickRandomVerse(versesRef.current, currentVerse.reference));
+      const nextVerse = pickRandomVerse(versesRef.current, currentVerse.reference);
+      if (nextVerse?.reference === currentVerse.reference) {
+        // Single-verse set — bump playKey to force replay
+        setPlayKey(k => k + 1);
+      } else {
+        setCurrentVerse(nextVerse);
+      }
     };
 
     playVerse();
@@ -1085,10 +1217,9 @@ function VerseSetContinuousRainPlayer({
       runRef.current += 1;
       stopSpeechIfActive();
     };
-  // Only restart playback when the verse reference or language version actually changes.
-  // phrases/verses/playOnce/onComplete are accessed via refs to avoid spurious re-triggers.
+  // playKey is included so single-verse sets can loop via setPlayKey.
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentVerse?.reference, version]);
+  }, [currentVerse?.reference, version, playKey]);
 
   const haltPlayback = () => {
     runRef.current += 1;
@@ -1230,9 +1361,9 @@ function VerseSetContinuousRainPlayer({
             </div>
             <h2>
               {formatVerseReferenceForDisplay(currentVerse.reference, version)}
-              {secondaryVerse && (
+              {effectiveSecondaryRef && (
                 <small className="continuous-rain-secondary-reference">
-                  {formatVerseReferenceForDisplay(secondaryVerse.reference, secondaryVersion)}
+                  {formatVerseReferenceForDisplay(effectiveSecondaryRef, secondaryVersion)}
                 </small>
               )}
             </h2>
@@ -1244,7 +1375,7 @@ function VerseSetContinuousRainPlayer({
               {phrases.map((phrase, index) => {
                 if (index < phrasePageStart || index > activePhrase) return null;
                 const secondaryPhrase = hasSecondaryPhrases
-                  ? getSecondaryPhrasesForIndex(index, phrases.length, secondaryPhrases)
+                  ? getSecondaryPhrasesForIndex(index, phrases.length, effectiveSecondaryPhrases)
                   : '';
                 return (
                 <span
@@ -1267,25 +1398,6 @@ function VerseSetContinuousRainPlayer({
           </div>
         </div>
       </div>
-      <RainFontControls
-        value={fontSizeLevel}
-        onChange={setFontSizeLevel}
-        t={t}
-        className="continuous-rain-font-controls"
-      />
-      {onSecondaryVersionChange && (
-        <label className="continuous-rain-secondary-picker">
-          <span>{t('第二聖經版本', 'Second Bible')}</span>
-          <select
-            value={secondaryVersion || ''}
-            onChange={(event) => onSecondaryVersionChange(event.target.value)}
-          >
-            {BIBLE_LANGUAGE_OPTIONS.filter(option => option.value !== version).map(option => (
-              <option key={option.value} value={option.value}>{option.label}</option>
-            ))}
-          </select>
-        </label>
-      )}
       <div className="continuous-rain-action-controls" aria-label={t('播放操作', 'Playback actions')}>
         <button
           type="button"
@@ -1316,6 +1428,17 @@ function VerseSetContinuousRainPlayer({
           >
             <Share2 size={20} /> {t('分享', 'Share')}
           </button>
+        )}
+        {onSecondaryVersionChange && (
+          <select
+            value={secondaryVersion || ''}
+            onChange={(event) => onSecondaryVersionChange(event.target.value)}
+            style={{ padding: '0.4rem 0.6rem', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.25)', background: 'rgba(15,23,42,0.6)', color: '#e2e8f0', fontSize: '0.85rem', cursor: 'pointer' }}
+          >
+            {BIBLE_LANGUAGE_OPTIONS.filter(option => option.value !== version).map(option => (
+              <option key={option.value} value={option.value}>{option.label}</option>
+            ))}
+          </select>
         )}
       </div>
     </div>
@@ -2599,6 +2722,13 @@ export default function App() {
     });
     return Array.from(byId.values());
   }, [customVerseSets, publishedVerseSets, loadedLangs]);
+
+  // Flat list of all verses loaded for the secondary language (built-in + custom + published)
+  const allSecondaryVerses = React.useMemo(() => {
+    if (!bilingualSecondaryVersion) return [];
+    const sets = getSetsForVersion(bilingualSecondaryVersion);
+    return sets.flatMap(s => s.verses || []).filter(Boolean);
+  }, [bilingualSecondaryVersion, getSetsForVersion]);
 
   const findSecondarySetForPrimarySet = React.useCallback((primarySet) => {
     if (!primarySet || !bilingualSecondaryVersion || bilingualSecondaryVersion === version) return null;
@@ -3943,13 +4073,12 @@ export default function App() {
 
   const playSingleVerseCard = (verse) => {
     initAudio();
-    setCampaignQueue(null);
-    campaignQueueRef.current = null;
-    setCampaignResults([]);
-    setActiveCampaignSetId(null);
-    setActiveCampaignSetTotal(1);
-    setActiveVerse(verse);
-    setTimeout(() => startGame(true, verse), 50);
+    setContinuousRainSet({
+      id: `single-${verse.reference}`,
+      title: verse.reference,
+      verses: [verse],
+      startVerse: verse
+    });
   };
 
   const challengeVerseFromReader = (verse) => {
@@ -11213,6 +11342,7 @@ const deDict = {
             secondaryVerseSet={findSecondarySetForPrimarySet(continuousRainSet)}
             secondaryVersion={bilingualSecondaryVersion}
             onSecondaryVersionChange={setBilingualSecondaryVersion}
+            allSecondaryVerses={allSecondaryVerses}
             topicSets={topicVerseSets}
             startVerse={continuousRainSet.startVerse || null}
             version={version}
@@ -11614,6 +11744,7 @@ const deDict = {
                     secondaryVerseSet={dailySecondaryVerseSet}
                     secondaryVersion={bilingualSecondaryVersion}
                     onSecondaryVersionChange={setBilingualSecondaryVersion}
+                    allSecondaryVerses={allSecondaryVerses}
                     startVerse={displayedDailyVerse}
                     version={version}
                     t={t}
@@ -11699,6 +11830,7 @@ const deDict = {
                     version={version}
                     secondaryVersion={bilingualSecondaryVersion}
                     onSecondaryVersionChange={setBilingualSecondaryVersion}
+                    allSecondaryVerses={allSecondaryVerses}
                     t={t}
                     label={t('雙語經文雨 Beta', 'Bilingual VerseRain Beta')}
                     topicSets={topicVerseSets}
