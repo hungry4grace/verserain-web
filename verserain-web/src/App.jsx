@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { Play, RotateCcw, Heart, Zap, Trophy, Crown, Star, Home, XCircle, Headphones, Music, VolumeX, Search, Share2, Dices, Mic, MicOff, Users, CloudRain, Info, Edit, TreePine, Gamepad2, Map, Settings, Library, Volume2, Shuffle, Swords, ShoppingBasket, Apple, Mail, Lock, PartyPopper, Sprout, Leaf, RotateCw, Smartphone, Hourglass, Frown, X } from 'lucide-react';
+import { Play, Pause, RotateCcw, Heart, Zap, Trophy, Crown, Star, Home, XCircle, Headphones, Music, VolumeX, Search, Share2, Dices, Mic, MicOff, Users, CloudRain, Info, Edit, TreePine, Gamepad2, Map, Settings, Library, Volume2, Shuffle, Swords, ShoppingBasket, Apple, Mail, Lock, PartyPopper, Sprout, Leaf, RotateCw, Smartphone, Hourglass, Frown, X } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import usePartySocket from 'partysocket/react';
 import PartySocket from 'partysocket';
@@ -1102,6 +1102,7 @@ function VerseSetContinuousRainPlayer({
   const [imageOk, setImageOk] = useState(true);
   const [imageLoaded, setImageLoaded] = useState(false);
   const [playKey, setPlayKey] = useState(0);
+  const [isPaused, setIsPaused] = useState(false);
   const [activePhrase, setActivePhrase] = useState(-1);
   const [phrasePageStart, setPhrasePageStart] = useState(0);
   const [isSettled, setIsSettled] = useState(false);
@@ -1340,6 +1341,16 @@ function VerseSetContinuousRainPlayer({
     stopSpeechIfActive();
   };
 
+  const togglePause = () => {
+    if (isPaused) {
+      setIsPaused(false);
+      setPlayKey(k => k + 1);
+    } else {
+      haltPlayback();
+      setIsPaused(true);
+    }
+  };
+
   const navigateVerse = (direction) => {
     if (!showNav) return;
     haltPlayback();
@@ -1523,32 +1534,44 @@ function VerseSetContinuousRainPlayer({
       <div className="continuous-rain-action-controls" aria-label={t('播放操作', 'Playback actions')}>
         <button
           type="button"
-          className="is-stop"
+          className="is-icon is-play-pause"
+          title={isPaused ? t('繼續', 'Resume') : t('暫停', 'Pause')}
+          onClick={togglePause}
+        >
+          {isPaused ? <Play size={22} fill="currentColor" /> : <Pause size={22} />}
+        </button>
+        <button
+          type="button"
+          className="is-icon is-stop"
+          title={t('停止播放', 'Stop')}
           onClick={() => {
             haltPlayback();
             onStop?.();
           }}
         >
-          <XCircle size={20} /> {t('停止播放', 'Stop')}
+          <XCircle size={22} />
         </button>
         {onChallengeVerse && (
           <button
             type="button"
-            className="is-primary"
+            className="is-icon is-primary"
+            title={t('挑戰', 'Challenge')}
             onClick={() => {
               haltPlayback();
               onChallengeVerse(currentVerse);
             }}
           >
-            <Play size={20} fill="currentColor" /> {t('挑戰', 'Challenge')}
+            <Zap size={22} />
           </button>
         )}
         {onShareVerse && (
           <button
             type="button"
+            className="is-icon"
+            title={t('分享', 'Share')}
             onClick={() => onShareVerse(currentVerse)}
           >
-            <Share2 size={20} /> {t('分享', 'Share')}
+            <Share2 size={22} />
           </button>
         )}
         {onSecondaryVersionChange && (

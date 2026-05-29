@@ -1466,40 +1466,46 @@ textarea {
   max-width: calc(100vw - max(1.8rem, env(safe-area-inset-left) + env(safe-area-inset-right)) - 240px);
 }
 
-.continuous-rain-action-controls button {
+.continuous-rain-action-controls button.is-icon {
+  width: 48px;
+  height: 48px;
+  min-width: 48px;
   min-height: 48px;
-  min-width: 116px;
-  border: 1px solid rgba(226, 232, 240, 0.8);
-  border-radius: 999px;
-  padding: 0.58rem 1.1rem;
+  border-radius: 50%;
+  padding: 0;
+  border: 1.5px solid rgba(226, 232, 240, 0.7);
   background: rgba(248, 250, 252, 0.9);
   color: #0f172a;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 0.45rem;
-  font-size: 1rem;
-  font-weight: 900;
   cursor: pointer;
-  box-shadow: 0 12px 34px rgba(0, 0, 0, 0.28);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.28);
   backdrop-filter: blur(14px);
+  transition: transform 0.12s, box-shadow 0.12s;
 }
 
-.continuous-rain-action-controls button.is-stop {
+.continuous-rain-action-controls button.is-icon.is-play-pause {
+  background: rgba(248, 250, 252, 0.95);
+  color: #1e40af;
+  border-color: rgba(147, 197, 253, 0.8);
+}
+
+.continuous-rain-action-controls button.is-icon.is-stop {
   border-color: rgba(248, 113, 113, 0.6);
   background: rgba(15, 23, 42, 0.74);
   color: #fecaca;
 }
 
-.continuous-rain-action-controls button.is-primary {
+.continuous-rain-action-controls button.is-icon.is-primary {
   border-color: rgba(147, 197, 253, 0.9);
   background: linear-gradient(135deg, #2563eb, #1d4ed8);
   color: #ffffff;
 }
 
-.continuous-rain-action-controls button:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.34);
+.continuous-rain-action-controls button.is-icon:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 14px 36px rgba(0, 0, 0, 0.36);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -1571,11 +1577,11 @@ textarea {
     padding-bottom: clamp(8.8rem, 22vh, 11rem);
   }
 
-  .continuous-rain-action-controls button {
-    min-width: 78px;
+  .continuous-rain-action-controls button.is-icon {
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
     min-height: 44px;
-    padding: 0.44rem 0.62rem;
-    font-size: 0.86rem;
   }
 
   .continuous-rain-font-controls {
