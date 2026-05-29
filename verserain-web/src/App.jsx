@@ -2876,6 +2876,8 @@ export default function App() {
 
   // Pick a random verse from the "rain-verses" set for the homepage subtitle
   const [rainVerseIndex, setRainVerseIndex] = React.useState(() => Math.floor(Math.random() * 10000));
+  const [isLobbyReading, setIsLobbyReading] = React.useState(false);
+  const lobbyReadRunRef = React.useRef(0);
   const preferredRainSet = React.useMemo(() => {
     const rainSets = activeVerseSets.filter(s => s.id && s.id.startsWith('rain-verses'));
     if (!rainSets.length) return null;
@@ -11723,19 +11725,30 @@ const deDict = {
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', flexWrap: 'wrap', justifyContent: 'center' }}>
                           <button
                             onClick={() => {
-                              const lang = isEnglishBibleVersion(version) ? 'en-US' : version === 'ja' ? 'ja-JP' : version === 'ko' ? 'ko-KR' : version === 'fa' ? 'fa-IR' : version === 'he' ? 'he-IL' : version === 'es' ? 'es-ES' : version === 'tr' ? 'tr-TR' : version === 'de' ? 'de-DE' : version === 'my' ? 'my-MM' : 'zh-TW';
-                              speakText(randomRainVerse.text, 0.85, lang);
-                              updateGarden('activity_only', 'listen');
+                              if (isLobbyReading) {
+                                lobbyReadRunRef.current += 1;
+                                stopSpeechIfActive();
+                                setIsLobbyReading(false);
+                              } else {
+                                const runId = ++lobbyReadRunRef.current;
+                                setIsLobbyReading(true);
+                                updateGarden('activity_only', 'listen');
+                                const lang = getVoiceLangForVersion(version);
+                                initAudio();
+                                speakTextTimed(randomRainVerse.text, 0.85, lang).then(() => {
+                                  if (lobbyReadRunRef.current === runId) setIsLobbyReading(false);
+                                });
+                              }
                             }}
-                            style={{ background: 'linear-gradient(135deg, #60a5fa, #3b82f6)', color: 'white', border: 'none', padding: '0.45rem 1.2rem', borderRadius: '20px', fontSize: '0.9rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', fontWeight: '600', boxShadow: '0 2px 6px rgba(59,130,246,0.3)', transition: 'transform 0.15s, box-shadow 0.15s' }}
+                            style={{ background: isLobbyReading ? 'linear-gradient(135deg, #93c5fd, #60a5fa)' : 'linear-gradient(135deg, #60a5fa, #3b82f6)', color: 'white', border: 'none', padding: '0.45rem 1.2rem', borderRadius: '20px', fontSize: '0.9rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', fontWeight: '600', boxShadow: '0 2px 6px rgba(59,130,246,0.3)', transition: 'transform 0.15s, box-shadow 0.15s' }}
                             onMouseOver={(e) => { e.currentTarget.style.transform = 'scale(1.05)'; e.currentTarget.style.boxShadow = '0 4px 12px rgba(59,130,246,0.4)'; }}
                             onMouseOut={(e) => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = '0 2px 6px rgba(59,130,246,0.3)'; }}
-                            title={t('朗讀經文', 'Read aloud')}
+                            title={isLobbyReading ? t('暫停', 'Pause') : t('朗讀經文', 'Read aloud')}
                           >
-                            <Volume2 size={17} /> {t('讀經', 'Read')}
+                            {isLobbyReading ? <Pause size={17} /> : <Play size={17} fill="currentColor" />} {isLobbyReading ? t('暫停', 'Pause') : t('讀經', 'Read')}
                           </button>
                           <button
-                            onClick={() => setRainVerseIndex(i => i + 1 + Math.floor(Math.random() * 5))}
+                            onClick={() => { lobbyReadRunRef.current += 1; stopSpeechIfActive(); setIsLobbyReading(false); setRainVerseIndex(i => i + 1 + Math.floor(Math.random() * 5)); }}
                             style={{ background: 'white', color: '#475569', border: '1.5px solid #cbd5e1', padding: '0.45rem 1.2rem', borderRadius: '20px', fontSize: '0.9rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', fontWeight: '600', boxShadow: '0 1px 3px rgba(0,0,0,0.08)', transition: 'transform 0.15s, box-shadow 0.15s, background 0.15s' }}
                             onMouseOver={(e) => { e.currentTarget.style.transform = 'scale(1.05)'; e.currentTarget.style.background = '#f1f5f9'; }}
                             onMouseOut={(e) => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.background = 'white'; }}
