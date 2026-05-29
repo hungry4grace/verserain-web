@@ -676,7 +676,7 @@ function getDailyVerseIndex(length, date = new Date()) {
 }
 
 function getDailyVerseRemoteVersion(version) {
-  if (version === 'kjv' || version === 'esv' || version === 'cuv' || version === 'cuvs') return version;
+  if (version === 'kjv' || version === 'esv' || version === 'niv' || version === 'cuv' || version === 'cuvs') return version;
   return null;
 }
 
@@ -1142,7 +1142,7 @@ function VerseSetContinuousRainPlayer({
       let text = null;
       let ref = englishRef || currentVerse.reference;
 
-      if (secondaryVersion === 'esv' || secondaryVersion === 'kjv') {
+      if (secondaryVersion === 'esv' || secondaryVersion === 'kjv' || secondaryVersion === 'niv') {
         if (englishRef) text = await fetchBibleVerseFromAPI(englishRef, secondaryVersion);
       } else {
         text = await fetchVerseFromBolls(normalizedKey, secondaryVersion);
@@ -3349,8 +3349,8 @@ export default function App() {
           }
         }
 
-        const isEnglish = /^[a-zA-Z\s.,:;'"''‘’“”?!()\-]+$/.test(cleanText.substring(0, 50));
-        setVersion(isEnglish ? 'kjv' : 'cuv');
+        const isEnglish = /^[a-zA-Z\s.,:;’”’’’’””?!()\-]+$/.test(cleanText.substring(0, 50));
+        setVersion(isEnglish ? (isEnglishBibleVersion(version) ? version : 'kjv') : 'cuv');
 
         setActiveVerse({
           reference: title,
@@ -4203,7 +4203,7 @@ export default function App() {
         if (targetVerse) {
           const isEnglish = /^[a-zA-Z]/.test(targetVerse.reference);
           // If the verse belongs to the opposite language, setting version triggers activeVerseSets change
-          if ((isEnglish && version !== 'kjv') || (!isEnglish && version !== 'cuv')) {
+          if ((isEnglish && !isEnglishBibleVersion(version)) || (!isEnglish && version !== 'cuv')) {
             setVersion(isEnglish ? 'kjv' : 'cuv');
             return; // Wait for activeVerseSets to update on next render
           }
