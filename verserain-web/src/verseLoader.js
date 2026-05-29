@@ -59,12 +59,8 @@ export const loadLanguageSets = async (lang) => {
       return { sets: m.VERSE_SETS_VI, verses: m.VERSE_SETS_VI.flatMap(s => s.verses) };
     }
     case 'niv': {
-      // NIV uses the same verse references / set structure as KJV.
-      // Verse text will be fetched from the NIV API at display time.
-      const [m, p] = await Promise.all([import('./verses_kjv'), import('./verses_proverbs')]);
-      const rawSets = [...p.VERSE_SETS_PROVERBS_KJV, ...m.VERSE_SETS_KJV];
-      // Relabel language to 'niv' so set filtering works correctly
-      const sets = rawSets.map(s => ({ ...s, language: 'niv' }));
+      const [m, p] = await Promise.all([import('./verses_niv'), import('./verses_proverbs_niv')]);
+      const sets = [...p.VERSE_SETS_PROVERBS_NIV, ...m.VERSE_SETS_NIV];
       return { sets, verses: sets.flatMap(s => s.verses) };
     }
     default:

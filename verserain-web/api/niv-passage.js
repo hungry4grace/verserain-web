@@ -73,22 +73,39 @@ const BOOK_OSIS = {
 };
 
 function parseReference(ref) {
-  // Handles: "Psalms 23:1", "Ps 23:1", "1 Cor 13:4", "John 3:16-17", etc.
+  // Handles: "Psalms 23:1", "Ps 23:1", "1 Cor 13:4", "John 3:16-17",
+  //          "Proverbs 1" (whole chapter), "Leviticus 25:10, 23" (comma-separated verses)
   const clean = String(ref || '').replace(/[–—]/g, '-').trim();
-  const m = clean.match(/^(\d\s*)?([A-Za-z]+(?:\s+[A-Za-z]+)?)\s+(\d+)\s*:\s*([\d\-]+)$/);
+
+  // Try full chapter reference: "Proverbs 1", "Genesis 1"
+  const chapterOnly = clean.match(/^(\d\s*)?([A-Za-z]+(?:\s+[A-Za-z]+)?)\s+(\d+)$/);
+  if (chapterOnly) {
+    const num = chapterOnly[1] ? chapterOnly[1].trim() : '';
+    const bookRaw = (num + chapterOnly[2]).toLowerCase().replace(/\s+/g, ' ').trim();
+    const book = BOOK_OSIS[bookRaw] || BOOK_OSIS[bookRaw.replace(/\s/g, '')] || null;
+    if (book) return { book, chapter: chapterOnly[3], verse: null }; // whole chapter
+  }
+
+  // Try verse reference (with optional comma-separated: "Lev 25:10, 23")
+  const m = clean.match(/^(\d\s*)?([A-Za-z]+(?:\s+[A-Za-z]+)?)\s+(\d+)\s*:\s*([\d,\s\-]+)$/);
   if (!m) return null;
   const num = m[1] ? m[1].trim() : '';
   const bookRaw = (num + m[2]).toLowerCase().replace(/\s+/g, ' ').trim();
   const book = BOOK_OSIS[bookRaw] || BOOK_OSIS[bookRaw.replace(/\s/g, '')] || null;
   if (!book) return null;
   const chapter = m[3];
-  const verse = m[4]; // may contain range like "16-17"
+  // Normalize comma-separated verses like "10, 23" into range "10-23"
+  const rawVerse = m[4].trim();
+  const verse = rawVerse.includes(',')
+    ? rawVerse.split(',').map(v => v.trim()).filter(Boolean).join('-').replace(/(\d+)-(\d+)-(\d+)/, (_, a, _b, c) => `${a}-${c}`)
+    : rawVerse.replace(/\s/g, '');
   return { book, chapter, verse };
 }
 
 function buildPassageId(parsed) {
-  // API.Bible passage ID format: BOOK.chapter.verse or BOOK.chapter.verseStart-BOOK.chapter.verseEnd
+  // API.Bible passage ID format: BOOK.chapter or BOOK.chapter.verse or range
   const { book, chapter, verse } = parsed;
+  if (!verse) return `${book}.${chapter}`; // whole chapter
   if (verse.includes('-')) {
     const [start, end] = verse.split('-');
     return `${book}.${chapter}.${start}-${book}.${chapter}.${end}`;
