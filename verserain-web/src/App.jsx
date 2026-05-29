@@ -322,7 +322,7 @@ function maskPhraseForPreview(phrase = '') {
 }
 
 function isEnglishBibleVersion(v) {
-  return v === 'kjv' || v === 'esv';
+  return v === 'kjv' || v === 'esv' || v === 'niv';
 }
 
 function getVoiceLangForVersion(v) {
@@ -345,6 +345,7 @@ const BIBLE_LANGUAGE_OPTIONS = [
   { value: 'cuvs', label: '简体中文' },
   { value: 'kjv', label: 'English - KJV' },
   { value: 'esv', label: 'English - ESV' },
+  { value: 'niv', label: 'English - NIV' },
   { value: 'fa', label: 'فارسی' },
   { value: 'he', label: 'עברית' },
   { value: 'ja', label: '日本語' },
@@ -396,6 +397,10 @@ async function fetchBibleVerseFromAPI(englishRef, targetVersion) {
     if (targetVersion === 'kjv') {
       const res = await fetch(`https://bible-api.com/${encodeURIComponent(englishRef)}?translation=kjv`);
       if (res.ok) { const d = await res.json(); return d.text?.replace(/\n/g, ' ').trim() || null; }
+    }
+    if (targetVersion === 'niv') {
+      const res = await fetch(`/api/niv-passage?reference=${encodeURIComponent(englishRef)}`);
+      if (res.ok) { const d = await res.json(); return d.text || null; }
     }
   } catch { /* network error — ignore */ }
   return null;
@@ -632,7 +637,7 @@ function findMatchingVerse(primaryVerse, primaryVerses = [], secondaryVerses = [
 
 function normalizeVerseSetIdentity(value = '') {
   return String(value || '')
-    .replace(/\s*\((KJV|ESV)\)\s*/gi, '')
+    .replace(/\s*\((KJV|ESV|NIV)\)\s*/gi, '')
     .replace(/-(cuv|cuvs|kjv|esv|ja|ko|fa|he|es|tr|de|my|vi)$/i, '')
     .replace(/\s+/g, ' ')
     .trim()
@@ -2982,7 +2987,7 @@ export default function App() {
     if (!secondarySets.length) return null;
     const primaryId = primarySet.id || '';
     const normalizedTitle = String(primarySet.title || '')
-      .replace(/\s*\((KJV|ESV)\)\s*/gi, '')
+      .replace(/\s*\((KJV|ESV|NIV)\)\s*/gi, '')
       .replace(/\s+/g, ' ')
       .trim()
       .toLowerCase();
@@ -2990,10 +2995,10 @@ export default function App() {
 
     const candidates = [
       secondarySets.find(set => set.id === `${primaryId}-${bilingualSecondaryVersion}`),
-      secondarySets.find(set => set.id === primaryId.replace(/-(cuv|cuvs|kjv|esv|ja|ko|fa|he|es|tr|de|my|vi)$/i, `-${bilingualSecondaryVersion}`)),
+      secondarySets.find(set => set.id === primaryId.replace(/-(cuv|cuvs|kjv|esv|niv|ja|ko|fa|he|es|tr|de|my|vi)$/i, `-${bilingualSecondaryVersion}`)),
       secondarySets.find(set => primaryId === 'rain-verses' && set.id === `rain-verses-${bilingualSecondaryVersion}`),
       secondarySets.find(set => set.id === primaryId),
-      secondarySets.find(set => String(set.title || '').replace(/\s*\((KJV|ESV)\)\s*/gi, '').replace(/\s+/g, ' ').trim().toLowerCase() === normalizedTitle)
+      secondarySets.find(set => String(set.title || '').replace(/\s*\((KJV|ESV|NIV)\)\s*/gi, '').replace(/\s+/g, ' ').trim().toLowerCase() === normalizedTitle)
     ].filter(Boolean);
     if (candidates[0]) return candidates[0];
 
@@ -3250,7 +3255,7 @@ export default function App() {
     // Auto-sync UI language immediately so mobile users get instant feedback.
     if (newVer === 'fa') setUiLangPersisted('fa');
     else if (newVer === 'he') setUiLangPersisted('he');
-    else if (newVer === 'kjv' || newVer === 'esv') setUiLangPersisted('en');
+    else if (newVer === 'kjv' || newVer === 'esv' || newVer === 'niv') setUiLangPersisted('en');
     else if (newVer === 'ja') setUiLangPersisted('ja');
     else if (newVer === 'ko') setUiLangPersisted('ko');
     else if (newVer === 'es') setUiLangPersisted('es');
@@ -3271,7 +3276,7 @@ export default function App() {
 
       let targetVerses = data?.verses || [];
       if (targetVerses.length === 0) {
-        targetVerses = [{ reference: "N/A", text: newVer === 'fa' ? 'آیه‌ای یافت نشد.' : (newVer === 'he' ? 'לא נמצא פסוק.' : (newVer === 'ja' ? '経文が見つかりません。' : (newVer === 'ko' ? '성경 구절을 찾을 수 없습니다.' : (newVer === 'kjv' || newVer === 'esv' ? 'No verses found.' : '目前的分類下沒有經文。')))) }];
+        targetVerses = [{ reference: "N/A", text: newVer === 'fa' ? 'آیه‌ای یافت نشد.' : (newVer === 'he' ? 'לא נמצא פסוק.' : (newVer === 'ja' ? '経文が見つかりません。' : (newVer === 'ko' ? '성경 구절을 찾을 수 없습니다.' : (newVer === 'kjv' || newVer === 'esv' || newVer === 'niv' ? 'No verses found.' : '目前的分類下沒有經文。')))) }];
       }
       setActiveVerse(targetVerses[0]);
       setSelectedVerseRefs([targetVerses[0].reference]);
@@ -11697,6 +11702,7 @@ const deDict = {
                   <option value="cuvs">简体中文</option>
                   <option value="kjv">English - KJV</option>
                   <option value="esv">English - ESV</option>
+                  <option value="niv">English - NIV</option>
                   <option value="fa">فارسی</option>
                   <option value="he">עברית</option>
                   <option value="ja">日本語</option>
@@ -11932,6 +11938,7 @@ const deDict = {
                             <option value="cuvs">简体中文</option>
                             <option value="kjv">English - KJV</option>
                             <option value="esv">English - ESV</option>
+                            <option value="niv">English - NIV</option>
                             <option value="fa">فارسی</option>
                             <option value="he">עברית</option>
                             <option value="ja">日本語</option>

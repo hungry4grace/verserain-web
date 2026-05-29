@@ -4,6 +4,7 @@ import { readFileSync } from 'fs'
 import { resolve } from 'path'
 import dailyVerseHandler from './api/daily-verse.js'
 import esvPassageHandler from './api/esv-passage.js'
+import nivPassageHandler from './api/niv-passage.js'
 
 // Load .env.local so process.env is available for API handlers in dev
 try {
@@ -51,6 +52,12 @@ export default defineConfig({
           const url = new URL(req.url || '', 'http://127.0.0.1');
           const mockReq = { method: req.method, query: Object.fromEntries(url.searchParams.entries()) };
           await esvPassageHandler(mockReq, makeMockRes(res));
+        });
+
+        server.middlewares.use('/api/niv-passage', async (req, res) => {
+          const url = new URL(req.url || '', 'http://127.0.0.1');
+          const mockReq = { method: req.method, query: Object.fromEntries(url.searchParams.entries()) };
+          await nivPassageHandler(mockReq, makeMockRes(res));
         });
       }
     }
