@@ -551,6 +551,32 @@ function getSecondaryPhrasesForIndex(primaryIndex, primaryLength, secondaryPhras
   }
 }
 
+// Full Hebrew book names → book ID (1-66).
+// BIBLE_BOOKS.he only stores abbreviations (e.g. "תה"), but Hebrew verse sets
+// store full names (e.g. "תהילים"). This map bridges the gap.
+const HEBREW_FULL_BOOK_ID = {
+  'בראשית':1,'שמות':2,'ויקרא':3,'במדבר':4,'דברים':5,
+  'יהושע':6,'שופטים':7,'רות':8,
+  'שמואל א':9,'א שמואל':9,'שמואל ב':10,'ב שמואל':10,
+  'מלכים א':11,'א מלכים':11,'מלכים ב':12,'ב מלכים':12,
+  'דברי הימים א':13,'א דברי הימים':13,'דברי הימים ב':14,'ב דברי הימים':14,
+  'עזרא':15,'נחמיה':16,'אסתר':17,'איוב':18,'תהילים':19,
+  'משלי':20,'קהלת':21,'שיר השירים':22,'ישעיהו':23,'ירמיהו':24,
+  'איכה':25,'יחזקאל':26,'דניאל':27,'הושע':28,'יואל':29,
+  'עמוס':30,'עובדיה':31,'יונה':32,'מיכה':33,'נחום':34,
+  'חבקוק':35,'צפניה':36,'חגי':37,'זכריה':38,'מלאכי':39,
+  'מתי':40,'מתיאוס':40,'מרקוס':41,'לוקס':42,'יוחנן':43,
+  'מעשי השליחים':44,'מעשים':44,'רומים':45,
+  'קורינתים א':46,'א קורינתים':46,'קורינתים ב':47,'ב קורינתים':47,
+  'גלטים':48,'אפסים':49,'פיליפים':50,'קולסים':51,
+  'תסלוניקים א':52,'א תסלוניקים':52,'תסלוניקים ב':53,'ב תסלוניקים':53,
+  'טימותיאוס א':54,'א טימותיאוס':54,'טימותיאוס ב':55,'ב טימותיאוס':55,
+  'טיטוס':56,'פילמון':57,'עברים':58,'יעקב':59,
+  'פטרוס א':60,'א פטרוס':60,'פטרוס ב':61,'ב פטרוס':61,
+  'יוחנן א':62,'א יוחנן':62,'יוחנן ב':63,'ב יוחנן':63,'יוחנן ג':64,'ג יוחנן':64,
+  'יהודה':65,'חזון יוחנן':66,'התגלות':66,'חזון':66,
+};
+
 function normalizeVerseReferenceKey(reference = '') {
   const value = String(reference || '')
     .replace(/[–—]/g, '-')
@@ -583,7 +609,9 @@ function normalizeVerseReferenceKey(reference = '') {
     });
   });
   const chapterVerse = `${verseMatch[1]}:${verseMatch[2].replace(/\s+/g, '')}`;
-  return `${book?.id || normalizedBookPart}|${chapterVerse}`;
+  // If not found via BIBLE_BOOKS, try the full Hebrew name lookup table
+  const bookId = book?.id ?? HEBREW_FULL_BOOK_ID[bookPart] ?? HEBREW_FULL_BOOK_ID[bookPart.trim()];
+  return `${bookId || normalizedBookPart}|${chapterVerse}`;
 }
 
 function findMatchingVerse(primaryVerse, primaryVerses = [], secondaryVerses = [], options = {}) {
