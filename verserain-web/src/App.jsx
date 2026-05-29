@@ -3817,6 +3817,27 @@ export default function App() {
             // sign-in without an email round-trip.
             result = { ok: true, data: { success: true, user: { email, name: displayName, isPremium: PREMIUM_EMAILS.includes(email) } } };
           }
+        } else {
+          // Register failed — most likely because the email is already taken
+          // by an account that was created via classic email/password before
+          // OAuth was enabled. We can't link without backend changes, so guide
+          // the user to log in with their existing password instead.
+          const regErr = String(reg.data?.error || '').toLowerCase();
+          const emailExists = regErr.includes('exist') || regErr.includes('already') || regErr.includes('註冊') || regErr.includes('已存在');
+          if (emailExists) {
+            // Pre-fill the email field and surface a clear, actionable message.
+            setTimeout(() => {
+              const emailEl = document.getElementById('modalEmailInput');
+              const passEl = document.getElementById('modalPasswordInput');
+              if (emailEl) emailEl.value = email;
+              if (passEl) passEl.focus();
+            }, 0);
+            setAuthError(t(
+              `這個 email (${email}) 已用密碼註冊過。請在下方輸入您的 VerseRain 密碼登入。`,
+              `This email (${email}) is already registered with a password. Please enter your VerseRain password below.`
+            ));
+            return;
+          }
         }
       }
 
