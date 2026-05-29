@@ -31,21 +31,39 @@ const ROOM_COLORS = ['#ef4444', '#f97316', '#eab308', '#22c55e', '#14b8a6', '#0e
 const ROOM_CODE_CHARS = 'ABCDEFGHJKMNPQRSTUVWXYZ';
 const PUBLIC_APP_ORIGIN = 'https://www.verserain.com';
 
+// Detect whether the page is running inside the VerseRain iOS WKWebView.
+// We use three signals: a URL query marker the native app sets, the presence
+// of a native bridge handler the Swift app injects, and a fallback UA sniff.
+function isInIosNativeApp() {
+  if (typeof window === 'undefined') return false;
+  try {
+    if (new URL(window.location.href).searchParams.has('iosApp')) return true;
+  } catch { /* ignore */ }
+  if (window.webkit?.messageHandlers?.googleSignIn) return true;
+  return false;
+}
+
 // ─── Google + Apple OAuth buttons ───────────────────────────────────────────
 // We render our own styled buttons (instead of the GIS iframe button) because
 // Google's renderButton iframe is unreliable on iOS Safari (ITP blocks the
 // cross-origin frame and the button silently renders blank). Click flow:
-//   Google → google.accounts.oauth2.initTokenClient → popup → access_token
-//   Apple  → window.AppleID.auth.signIn → popup → id_token
+//   Google web → google.accounts.oauth2.initTokenClient → popup → access_token
+//   Google app → window.webkit.messageHandlers.googleSignIn → native
+//                ASWebAuthenticationSession → access_token via JS callback
+//   Apple      → window.AppleID.auth.signIn → popup → id_token
 // We hand the credential up to the parent, which forwards it to the backend
 // /oauth-login endpoint for verification.
 function OAuthButtons({ onGoogleCredential, onAppleCredential, disabled, t }) {
+  const inIosApp = isInIosNativeApp();
+  const nativeBridge = inIosApp && typeof window !== 'undefined' && window.webkit?.messageHandlers?.googleSignIn;
   const googleClientRef = useRef(null);
   const appleInitialized = useRef(false);
 
   // Initialize Google OAuth2 token client once the gsi script is loaded.
+  // Skipped when running inside the iOS app — Google blocks OAuth in WebViews,
+  // so we instead use a native bridge (see handleGoogleClick).
   useEffect(() => {
-    if (!GOOGLE_CLIENT_ID) return;
+    if (!GOOGLE_CLIENT_ID || inIosApp) return;
     let cancelled = false;
     const init = () => {
       if (cancelled) return false;
@@ -66,7 +84,18 @@ function OAuthButtons({ onGoogleCredential, onAppleCredential, disabled, t }) {
     const interval = setInterval(() => { if (init()) clearInterval(interval); }, 200);
     const stop = setTimeout(() => clearInterval(interval), 8000);
     return () => { cancelled = true; clearInterval(interval); clearTimeout(stop); };
-  }, [onGoogleCredential]);
+  }, [onGoogleCredential, inIosApp]);
+
+  // Register a global callback the native app calls after completing the
+  // ASWebAuthenticationSession OAuth flow. The Swift code evaluates:
+  //   window.__verseRainNativeOAuth('google', '<access_token>')
+  useEffect(() => {
+    if (!inIosApp) return;
+    window.__verseRainNativeOAuth = (provider, accessToken) => {
+      if (provider === 'google' && accessToken) onGoogleCredential(accessToken);
+    };
+    return () => { try { delete window.__verseRainNativeOAuth; } catch {} };
+  }, [inIosApp, onGoogleCredential]);
 
   // Initialize Apple SDK; the button itself is rendered with our own styles.
   useEffect(() => {
@@ -92,7 +121,22 @@ function OAuthButtons({ onGoogleCredential, onAppleCredential, disabled, t }) {
   }, []);
 
   const handleGoogleClick = () => {
-    if (disabled || !googleClientRef.current) return;
+    if (disabled) return;
+    if (nativeBridge) {
+      // Native iOS app with bridge — let Swift open ASWebAuthenticationSession.
+      try { window.webkit.messageHandlers.googleSignIn.postMessage({}); } catch {}
+      return;
+    }
+    if (inIosApp) {
+      // iOS app without the native bridge yet (i.e. running an older build).
+      // Inform the user the app needs to be updated.
+      alert(t(
+        '此版本 App 尚不支援 Google 登入。請更新 App，或先用下方 email / 密碼登入。',
+        'This app version does not yet support Google sign-in. Please update the app, or use email / password below.'
+      ));
+      return;
+    }
+    if (!googleClientRef.current) return;
     googleClientRef.current.requestAccessToken();
   };
 

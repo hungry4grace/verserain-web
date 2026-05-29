@@ -46,6 +46,15 @@ struct WebView: UIViewRepresentable {
             webView.isInspectable = true
         }
 
+        // Wire the native Google sign-in bridge so the web app's
+        // "Continue with Google" button can hand the OAuth flow over to a
+        // system Safari window via ASWebAuthenticationSession. Google blocks
+        // OAuth in embedded WebViews, so this hand-off is required for the
+        // web button to actually log a user in from inside the app.
+        let googleBridge = GoogleSignInBridge(webView: webView)
+        configuration.userContentController.add(googleBridge, name: "googleSignIn")
+        context.coordinator.googleBridge = googleBridge
+
         model.webView = webView
         webView.load(URLRequest(url: model.url))
         return webView
@@ -65,6 +74,9 @@ struct WebView: UIViewRepresentable {
         ]
 
         private weak var model: WebViewModel?
+
+        // Strong reference; required to keep the WKScriptMessageHandler alive.
+        var googleBridge: GoogleSignInBridge?
 
         init(model: WebViewModel) {
             self.model = model
