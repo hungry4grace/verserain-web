@@ -123,11 +123,20 @@ export default class Server {
   static _googleJwksCache = null;
   static _googleJwksCacheAt = 0;
 
-  // The same OAuth Client ID used by the verserain.com web frontend. Must be
-  // hard-coded here so the backend can validate the `aud` claim — otherwise an
-  // attacker could log in as anyone using a token signed for their own Google
-  // OAuth app.
-  static GOOGLE_CLIENT_ID = "761845973381-2eqaapf2m64voq5gvod1vo5p48o1niua.apps.googleusercontent.com";
+  // Allowed Google OAuth Client IDs. Tokens whose `aud` (and `azp` for access
+  // tokens) doesn't match one of these are rejected — otherwise an attacker
+  // could log in as anyone using a token they minted in their own OAuth app.
+  //   [0] Web client used by https://verserain.com
+  //   [1] iOS client used by the VerseRain iOS app (Bundle ID
+  //       com.hopeofglory.verserain). Fill in after creating the iOS OAuth
+  //       client in Google Cloud Console.
+  static GOOGLE_CLIENT_IDS = [
+    "761845973381-2eqaapf2m64voq5gvod1vo5p48o1niua.apps.googleusercontent.com",
+    "" // TODO: iOS Client ID
+  ].filter(Boolean);
+
+  // Convenience alias for code that only needs to refer to the primary one.
+  static get GOOGLE_CLIENT_ID() { return this.GOOGLE_CLIENT_IDS[0]; }
 
   async fetchGoogleJwks() {
     const now = Date.now();
@@ -169,7 +178,8 @@ export default class Server {
       );
       if (!tokenInfoRes.ok) return null;
       const tokenInfo = await tokenInfoRes.json();
-      if (tokenInfo.aud !== Server.GOOGLE_CLIENT_ID && tokenInfo.azp !== Server.GOOGLE_CLIENT_ID) {
+      const allowedIds = Server.GOOGLE_CLIENT_IDS;
+      if (!allowedIds.includes(tokenInfo.aud) && !allowedIds.includes(tokenInfo.azp)) {
         return null;
       }
       if (tokenInfo.expires_in && Number(tokenInfo.expires_in) <= 0) return null;
@@ -223,7 +233,7 @@ export default class Server {
       const now = Math.floor(Date.now() / 1000);
       if (payload.exp && payload.exp < now) return null;
       if (payload.iss !== "https://accounts.google.com" && payload.iss !== "accounts.google.com") return null;
-      if (payload.aud !== Server.GOOGLE_CLIENT_ID) return null;
+      if (!Server.GOOGLE_CLIENT_IDS.includes(payload.aud)) return null;
       if (!payload.email) return null;
       if (payload.email_verified === false) return null;
 
