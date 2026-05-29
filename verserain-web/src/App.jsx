@@ -366,6 +366,7 @@ function getEnglishReferenceFromKey(normalizedKey) {
   if (Number.isNaN(bookId)) return null;
   const book = BIBLE_BOOKS.find(b => b.id === bookId);
   if (!book) return null;
+  // chapterVerse may be "35:1-3" (verse) or just "35" (whole chapter)
   return `${book.names[2]} ${chapterVerse}`;
 }
 
@@ -590,7 +591,30 @@ function normalizeVerseReferenceKey(reference = '') {
   if (!value) return '';
 
   const verseMatch = value.match(/(\d+)\s*:\s*([\d,\-\s]+)/);
-  if (!verseMatch) return value.toLowerCase();
+  if (!verseMatch) {
+    // Try chapter-only reference: "Psalm 35", "詩篇 35", "Proverbs 1"
+    // Pattern: optional leading digit (for "1 Kings"), book name(s), then chapter number at end
+    const chapMatch = value.match(/^(\d\s+)?([^\d]+?)\s+(\d+)$/);
+    if (chapMatch) {
+      const numPrefix = chapMatch[1] ? chapMatch[1].trim() : '';
+      const bookRaw = (numPrefix + chapMatch[2]).trim();
+      const normalizedBookRaw = bookRaw.toLowerCase().replace(/\./g, '').replace(/\s+/g, ' ');
+      const book = BIBLE_BOOKS.find(b => {
+        const names = [
+          ...(b.names || []),
+          ...(b.cn || []),
+          b.ja, b.ko, b.es, b.de, b.tr, b.fa, b.he, b.my, b.vi
+        ].filter(Boolean);
+        return names.some(name => {
+          const n = String(name).toLowerCase().replace(/\./g, '').replace(/\s+/g, ' ');
+          return normalizedBookRaw === n || normalizedBookRaw.endsWith(` ${n}`);
+        });
+      });
+      const bookId = book?.id ?? HEBREW_FULL_BOOK_ID[bookRaw] ?? HEBREW_FULL_BOOK_ID[bookRaw.trim()];
+      if (bookId) return `${bookId}|${chapMatch[3]}`;
+    }
+    return value.toLowerCase();
+  }
 
   const bookPart = value.slice(0, verseMatch.index).trim().replace(/[：:]+$/, '');
   const normalizedBookPart = bookPart.toLowerCase().replace(/\./g, '').replace(/\s+/g, ' ');
@@ -638,7 +662,7 @@ function findMatchingVerse(primaryVerse, primaryVerses = [], secondaryVerses = [
 function normalizeVerseSetIdentity(value = '') {
   return String(value || '')
     .replace(/\s*\((KJV|ESV|NIV)\)\s*/gi, '')
-    .replace(/-(cuv|cuvs|kjv|esv|ja|ko|fa|he|es|tr|de|my|vi)$/i, '')
+    .replace(/-(cuv|cuvs|kjv|esv|niv|ja|ko|fa|he|es|tr|de|my|vi)$/i, '')
     .replace(/\s+/g, ' ')
     .trim()
     .toLowerCase();
