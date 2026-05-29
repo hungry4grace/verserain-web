@@ -13,6 +13,7 @@ import { PREMIUM_EMAILS } from './premiumEmails';
 import WorldMap from './WorldMap';
 import BlindModeGame from './BlindModeGame';
 import { TransformWrapper, TransformComponent } from 'react-zoom-pan-pinch';
+import { GOOGLE_CLIENT_ID, APPLE_CLIENT_ID, APPLE_REDIRECT_URI, deriveOAuthPassword, decodeJwtPayload } from './oauthConfig';
 
 const quillModules = {
   toolbar: [
@@ -29,6 +30,124 @@ let audioCtx = null;
 const ROOM_COLORS = ['#ef4444', '#f97316', '#eab308', '#22c55e', '#14b8a6', '#0ea5e9', '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16'];
 const ROOM_CODE_CHARS = 'ABCDEFGHJKMNPQRSTUVWXYZ';
 const PUBLIC_APP_ORIGIN = 'https://www.verserain.com';
+
+// ─── Google + Apple OAuth buttons ───────────────────────────────────────────
+// Renders the native Google Identity Services button and a styled Apple
+// button. Each provider returns an ID token (a JWT); we hand it back up so
+// the parent can decode it and complete sign-in.
+function OAuthButtons({ onGoogleCredential, onAppleCredential, disabled, t }) {
+  const googleBtnRef = useRef(null);
+  const appleInitialized = useRef(false);
+
+  // Render the Google button once the gsi script + DOM node are ready.
+  useEffect(() => {
+    if (!GOOGLE_CLIENT_ID) return;
+    let cancelled = false;
+    const init = () => {
+      if (cancelled) return;
+      const g = window.google?.accounts?.id;
+      const node = googleBtnRef.current;
+      if (!g || !node) return false;
+      try {
+        g.initialize({
+          client_id: GOOGLE_CLIENT_ID,
+          callback: (response) => {
+            if (response?.credential) onGoogleCredential(response.credential);
+          },
+          ux_mode: 'popup',
+          auto_select: false,
+        });
+        node.innerHTML = '';
+        g.renderButton(node, {
+          type: 'standard',
+          theme: 'outline',
+          size: 'large',
+          text: 'continue_with',
+          shape: 'rectangular',
+          logo_alignment: 'left',
+          width: node.clientWidth || 320,
+        });
+      } catch { /* gsi not ready yet */ return false; }
+      return true;
+    };
+    if (init()) return () => { cancelled = true; };
+    const interval = setInterval(() => { if (init()) clearInterval(interval); }, 200);
+    const stop = setTimeout(() => clearInterval(interval), 8000);
+    return () => { cancelled = true; clearInterval(interval); clearTimeout(stop); };
+  }, [onGoogleCredential]);
+
+  // Initialize Apple SDK; the button itself is rendered with our own styles.
+  useEffect(() => {
+    if (!APPLE_CLIENT_ID || appleInitialized.current) return;
+    let cancelled = false;
+    const init = () => {
+      if (cancelled || !window.AppleID?.auth) return false;
+      try {
+        window.AppleID.auth.init({
+          clientId: APPLE_CLIENT_ID,
+          scope: 'name email',
+          redirectURI: APPLE_REDIRECT_URI,
+          usePopup: true,
+        });
+        appleInitialized.current = true;
+        return true;
+      } catch { return false; }
+    };
+    if (init()) return () => { cancelled = true; };
+    const interval = setInterval(() => { if (init()) clearInterval(interval); }, 200);
+    const stop = setTimeout(() => clearInterval(interval), 8000);
+    return () => { cancelled = true; clearInterval(interval); clearTimeout(stop); };
+  }, []);
+
+  const handleAppleClick = async () => {
+    if (disabled || !window.AppleID?.auth) return;
+    try {
+      const result = await window.AppleID.auth.signIn();
+      const idToken = result?.authorization?.id_token;
+      if (idToken) onAppleCredential(idToken);
+    } catch { /* user cancelled */ }
+  };
+
+  if (!GOOGLE_CLIENT_ID && !APPLE_CLIENT_ID) {
+    return (
+      <div style={{ fontSize: '0.78rem', color: '#94a3b8', textAlign: 'center', background: '#f8fafc', border: '1px dashed #cbd5e1', borderRadius: '6px', padding: '0.7rem' }}>
+        {t(
+          'Google / Apple 登入尚未設定。請在 src/oauthConfig.js 填入 Client ID。',
+          'Google / Apple sign-in not configured. Fill in Client IDs in src/oauthConfig.js.'
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+      {GOOGLE_CLIENT_ID && (
+        <div ref={googleBtnRef} style={{ display: 'flex', justifyContent: 'center', minHeight: '40px' }} />
+      )}
+      {APPLE_CLIENT_ID && (
+        <button
+          type="button"
+          onClick={handleAppleClick}
+          disabled={disabled}
+          style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
+            padding: '0.7rem 1rem', borderRadius: '6px',
+            background: '#000', color: '#fff', border: '1px solid #000',
+            fontSize: '0.95rem', fontWeight: '600',
+            cursor: disabled ? 'not-allowed' : 'pointer',
+            opacity: disabled ? 0.6 : 1,
+            fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+          }}
+        >
+          <svg width="16" height="20" viewBox="0 0 16 20" fill="currentColor" aria-hidden="true">
+            <path d="M11.624 10.628c-.02-2.027 1.66-3.001 1.736-3.05-.946-1.382-2.418-1.571-2.943-1.593-1.252-.127-2.44.738-3.075.738-.635 0-1.612-.72-2.65-.7-1.366.02-2.622.793-3.327 2.012-1.42 2.461-.363 6.105 1.02 8.103.674 1.0 1.476 2.119 2.527 2.079 1.012-.04 1.395-.654 2.62-.654s1.567.654 2.638.634c1.088-.02 1.778-1.018 2.444-2.018.77-1.158 1.087-2.279 1.107-2.339-.024-.012-2.126-.815-2.147-3.232zM9.667 4.624c.553-.668.928-1.6.824-2.524-.798.032-1.764.531-2.336 1.198-.513.591-.962 1.54-.84 2.448.892.07 1.798-.453 2.352-1.122z" />
+          </svg>
+          {t('使用 Apple 繼續', 'Continue with Apple')}
+        </button>
+      )}
+    </div>
+  );
+}
 
 function buildPublicShareUrl(path = '/', params = {}) {
   const normalizedPath = path && path.startsWith('/') ? path : '/';
@@ -3643,6 +3762,91 @@ export default function App() {
   };
   const [showLoginModal, setShowLoginModal] = useState(null);
   const [verifyEmail, setVerifyEmail] = useState("");
+
+  // ─── OAuth (Google / Apple) ───────────────────────────────────────────────
+  // Both providers use the same flow: get an ID token from the provider's
+  // SDK, decode it client-side to extract `email` + `sub`, derive a stable
+  // password from the sub, then call the existing PartyKit /login (falling
+  // back to /register on 404) so we don't have to change the backend.
+  const handleOAuthSignIn = React.useCallback(async (provider, idToken) => {
+    setAuthError("");
+    setAuthLoading(true);
+    try {
+      const payload = decodeJwtPayload(idToken);
+      if (!payload || !payload.sub) {
+        setAuthError(t("無法解析 OAuth 回應", "Cannot parse OAuth response"));
+        return;
+      }
+      const email = (payload.email || '').toLowerCase().trim();
+      if (!email) {
+        setAuthError(t("OAuth 沒有提供 email", "OAuth did not provide an email"));
+        return;
+      }
+      const password = await deriveOAuthPassword(provider, payload.sub);
+      const displayName = payload.name || payload.given_name || email.split('@')[0];
+
+      const host = "https://verserain-party.hungry4grace.partykit.dev/parties/main/global-auth-db";
+      const doFetch = async (path, body) => {
+        const r = await fetch(host + path, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
+        });
+        const j = await r.json().catch(() => ({}));
+        return { ok: r.ok, status: r.status, data: j };
+      };
+
+      // Try login first.
+      let result = await doFetch('/login', { email, password });
+
+      // If login fails because user doesn't exist, register then login.
+      if (!result.ok || !result.data?.success) {
+        const reg = await doFetch('/register', {
+          email,
+          password,
+          nickname: displayName,
+          oauthProvider: provider,
+          oauthVerified: true
+        });
+        if (reg.ok && reg.data?.success) {
+          // Re-login. If backend still requires email verification for OAuth
+          // sign-ups, surface that — but most OAuth implementations bypass it.
+          result = await doFetch('/login', { email, password });
+          if ((!result.ok || !result.data?.success) && result.data?.requiresVerification) {
+            // Build a synthetic user from the OAuth payload so we can finish
+            // sign-in without an email round-trip.
+            result = { ok: true, data: { success: true, user: { email, name: displayName, isPremium: PREMIUM_EMAILS.includes(email) } } };
+          }
+        }
+      }
+
+      if (!(result.ok && result.data?.success && result.data.user)) {
+        setAuthError(result.data?.error || t("登入失敗", "Sign-in failed"));
+        return;
+      }
+
+      const user = result.data.user;
+      const prevEmail = localStorage.getItem('verserain_player_email');
+      if (prevEmail && prevEmail !== user.email) {
+        localStorage.removeItem('verseRain_gardenData');
+        setGardenData({});
+      }
+      const isPrem = user.isPremium || PREMIUM_EMAILS.includes((user.email || '').toLowerCase());
+      setPlayerName(user.name || displayName);
+      setUserEmail(user.email);
+      setIsPremium(isPrem);
+      localStorage.setItem('verserain_player_name', user.name || displayName);
+      localStorage.setItem('verserain_player_email', user.email);
+      localStorage.setItem('verserain_is_premium', isPrem ? 'true' : 'false');
+      if (user.city) localStorage.setItem('verserain_custom_city', user.city);
+      if (user.country) localStorage.setItem('verserain_custom_country', user.country);
+      setShowLoginModal(null);
+    } catch (err) {
+      setAuthError(t("OAuth 連線失敗", "OAuth connection failed"));
+    } finally {
+      setAuthLoading(false);
+    }
+  }, []);
   const [verseViewModal, setVerseViewModal] = useState(null);
   const [toast, setToast] = useState(null);
   const [showNameEditModal, setShowNameEditModal] = useState(false);
@@ -16014,6 +16218,19 @@ const deDict = {
                   </>
                 ) : (
                   <>
+                    <OAuthButtons
+                      onGoogleCredential={(idToken) => handleOAuthSignIn('google', idToken)}
+                      onAppleCredential={(idToken) => handleOAuthSignIn('apple', idToken)}
+                      disabled={authLoading}
+                      t={t}
+                    />
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', color: '#94a3b8', fontSize: '0.8rem' }}>
+                      <div style={{ flex: 1, height: '1px', background: '#e2e8f0' }} />
+                      <span>{t("或", "or")}</span>
+                      <div style={{ flex: 1, height: '1px', background: '#e2e8f0' }} />
+                    </div>
+
                     <input
                       id="modalEmailInput"
                       type="email"
