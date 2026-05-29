@@ -435,7 +435,29 @@ async function fetchVerseFromBolls(normalizedKey, targetVersion) {
   if (!slug) return null;
 
   const colonIdx = chapterVerse.indexOf(':');
-  if (colonIdx < 0) return null;
+
+  // Chapter-only reference (no colon, e.g. "91") — fetch whole chapter
+  if (colonIdx < 0) {
+    const chapter = parseInt(chapterVerse, 10);
+    if (Number.isNaN(chapter)) return null;
+    try {
+      const res = await fetch(`https://bolls.life/get-text/${slug}/${bookId}/${chapter}/`);
+      if (!res.ok) return null;
+      const verses = await res.json();
+      if (!Array.isArray(verses) || !verses.length) return null;
+      return verses
+        .map(v => String(v.text || '')
+          .replace(/<S>\d+<\/S>/g, '')
+          .replace(/<br\s*\/?>/gi, ' ')
+          .replace(/<[^>]+>/g, '')
+          .replace(/\s+/g, ' ')
+          .trim()
+        )
+        .filter(Boolean)
+        .join(' ') || null;
+    } catch { return null; }
+  }
+
   const chapter = parseInt(chapterVerse.slice(0, colonIdx), 10);
   const verseRange = chapterVerse.slice(colonIdx + 1);
   if (Number.isNaN(chapter) || !verseRange) return null;
