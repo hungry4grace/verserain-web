@@ -118,11 +118,12 @@ function OAuthButtons({ onGoogleCredential, onAppleCredential, disabled, t }) {
 
   const baseBtnStyle = {
     display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.6rem',
-    width: '100%', padding: '0.7rem 1rem', borderRadius: '6px',
+    width: '100%', padding: '0.85rem 1rem', borderRadius: '8px',
     fontSize: '0.95rem', fontWeight: '600',
     cursor: disabled ? 'not-allowed' : 'pointer',
     opacity: disabled ? 0.6 : 1,
     fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+    boxShadow: '0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04)',
   };
 
   return (
@@ -11912,7 +11913,7 @@ const deDict = {
                     verserain
                   </div>
                   <div className="app-brand-version" style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', marginTop: '4px', marginLeft: '2px' }}>
-                    v3.8.0
+                    v3.9.0
                   </div>
                 </div>
                 <select
