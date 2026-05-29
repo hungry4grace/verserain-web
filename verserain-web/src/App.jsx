@@ -818,6 +818,15 @@ function DailyVerseRainExperience({ verse, version, t, onRead, onChallenge, onSh
     bgmRef.current?.pause();
   };
 
+  const pauseExperience = () => {
+    runRef.current += 1;
+    bgmRef.current?.pause();
+    stopSpeechIfActive();
+    setIsPlaying(false);
+    setActivePhrase(-1);
+    setIsSettled(false);
+  };
+
   const playExperience = async () => {
     if (!verse || isPlaying) return;
     initAudio();
@@ -946,8 +955,8 @@ function DailyVerseRainExperience({ verse, version, t, onRead, onChallenge, onSh
           </div>
         </div>
         <div className="daily-verse-rain-actions">
-          <button type="button" onClick={playExperience} disabled={isPlaying}>
-            <Headphones size={18} /> {t('讀經', 'Read')}
+          <button type="button" onClick={isPlaying ? pauseExperience : playExperience}>
+            {isPlaying ? <Pause size={18} /> : <Play size={18} fill="currentColor" />} {isPlaying ? t('暫停', 'Pause') : t('讀經', 'Read')}
           </button>
           <button type="button" onClick={onChallenge}>
             <Play size={18} fill="currentColor" /> {t('挑戰', 'Challenge')}
@@ -959,8 +968,8 @@ function DailyVerseRainExperience({ verse, version, t, onRead, onChallenge, onSh
       </div>
 
       <div className="daily-verse-rain-controls" aria-label={t('每日經文雨設定', 'Daily VerseRain settings')}>
-        <button type="button" onClick={playExperience} disabled={isPlaying} className="is-on">
-          {isPlaying ? t('讀經中', 'Reading') : t('播放經文', 'Play verse')}
+        <button type="button" onClick={isPlaying ? pauseExperience : playExperience} className="is-on">
+          {isPlaying ? t('暫停', 'Pause') : t('播放經文', 'Play verse')}
         </button>
         <button type="button" onClick={() => setVoiceEnabled(v => !v)} className={voiceEnabled ? 'is-on' : ''}>
           {voiceEnabled ? t('語音開', 'Voice on') : t('語音關', 'Voice off')}
