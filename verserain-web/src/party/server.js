@@ -131,8 +131,8 @@ export default class Server {
   //       com.hopeofglory.verserain). Fill in after creating the iOS OAuth
   //       client in Google Cloud Console.
   static GOOGLE_CLIENT_IDS = [
-    "761845973381-2eqaapf2m64voq5gvod1vo5p48o1niua.apps.googleusercontent.com",
-    "" // TODO: iOS Client ID
+    "761845973381-2eqaapf2m64voq5gvod1vo5p48o1niua.apps.googleusercontent.com", // web
+    "761845973381-2gakrrvbmtqg66ds3uo5dscdleggevml.apps.googleusercontent.com"  // iOS
   ].filter(Boolean);
 
   // Convenience alias for code that only needs to refer to the primary one.

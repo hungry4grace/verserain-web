@@ -9,13 +9,15 @@ import WebKit
 /// access_token from the callback URL fragment, and feed it back to the
 /// web app via `window.__verseRainNativeOAuth('google', '<token>')`.
 final class GoogleSignInBridge: NSObject, WKScriptMessageHandler, ASWebAuthenticationPresentationContextProviding {
-    // Same OAuth Client ID as the web frontend (src/oauthConfig.js).
-    static let clientId = "761845973381-2eqaapf2m64voq5gvod1vo5p48o1niua.apps.googleusercontent.com"
+    // iOS OAuth Client ID (Application type: iOS, Bundle ID
+    // com.hopeofglory.verserain). Google auto-registers a reverse-DNS
+    // redirect URI based on this client ID — no manual URI configuration
+    // needed in Google Cloud Console.
+    static let clientId = "761845973381-2gakrrvbmtqg66ds3uo5dscdleggevml.apps.googleusercontent.com"
 
-    // Redirect URI must be registered in Google Cloud Console for the same
-    // OAuth client. For native iOS the convention is reverse-DNS scheme:
-    //   com.googleusercontent.apps.<numeric prefix>
-    static let redirectScheme = "com.googleusercontent.apps.761845973381-2eqaapf2m64voq5gvod1vo5p48o1niua"
+    // Reverse-DNS form of the iOS client ID, used as the custom URL scheme
+    // for ASWebAuthenticationSession's callback.
+    static let redirectScheme = "com.googleusercontent.apps.761845973381-2gakrrvbmtqg66ds3uo5dscdleggevml"
     static let redirectURI = "\(redirectScheme):/oauth2redirect/google"
 
     private weak var webView: WKWebView?
