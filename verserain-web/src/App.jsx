@@ -13,7 +13,7 @@ import { PREMIUM_EMAILS } from './premiumEmails';
 import WorldMap from './WorldMap';
 import BlindModeGame from './BlindModeGame';
 import { TransformWrapper, TransformComponent } from 'react-zoom-pan-pinch';
-import { GOOGLE_CLIENT_ID, APPLE_CLIENT_ID, APPLE_REDIRECT_URI, deriveOAuthPassword, decodeJwtPayload } from './oauthConfig';
+import { GOOGLE_CLIENT_ID, APPLE_CLIENT_ID, APPLE_REDIRECT_URI } from './oauthConfig';
 
 const quillModules = {
   toolbar: [
@@ -3764,89 +3764,29 @@ export default function App() {
   const [verifyEmail, setVerifyEmail] = useState("");
 
   // ─── OAuth (Google / Apple) ───────────────────────────────────────────────
-  // Both providers use the same flow: get an ID token from the provider's
-  // SDK, decode it client-side to extract `email` + `sub`, derive a stable
-  // password from the sub, then call the existing PartyKit /login (falling
-  // back to /register on 404) so we don't have to change the backend.
+  // Hand the provider's ID token to the PartyKit /oauth-login endpoint, which
+  // verifies the token's signature against the provider's public keys, then
+  // matches by email or auto-creates a verified user. No password is needed
+  // because the OAuth provider has already verified the email.
   const handleOAuthSignIn = React.useCallback(async (provider, idToken) => {
     setAuthError("");
     setAuthLoading(true);
     try {
-      const payload = decodeJwtPayload(idToken);
-      if (!payload || !payload.sub) {
-        setAuthError(t("無法解析 OAuth 回應", "Cannot parse OAuth response"));
-        return;
-      }
-      const email = (payload.email || '').toLowerCase().trim();
-      if (!email) {
-        setAuthError(t("OAuth 沒有提供 email", "OAuth did not provide an email"));
-        return;
-      }
-      const password = await deriveOAuthPassword(provider, payload.sub);
-      const displayName = payload.name || payload.given_name || email.split('@')[0];
-
       const host = "https://verserain-party.hungry4grace.partykit.dev/parties/main/global-auth-db";
-      const doFetch = async (path, body) => {
-        const r = await fetch(host + path, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(body)
-        });
-        const j = await r.json().catch(() => ({}));
-        return { ok: r.ok, status: r.status, data: j };
-      };
+      const response = await fetch(host + '/oauth-login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ provider, idToken })
+      });
+      const data = await response.json().catch(() => ({}));
 
-      // Try login first.
-      let result = await doFetch('/login', { email, password });
-
-      // If login fails because user doesn't exist, register then login.
-      if (!result.ok || !result.data?.success) {
-        const reg = await doFetch('/register', {
-          email,
-          password,
-          nickname: displayName,
-          oauthProvider: provider,
-          oauthVerified: true
-        });
-        if (reg.ok && reg.data?.success) {
-          // Re-login. If backend still requires email verification for OAuth
-          // sign-ups, surface that — but most OAuth implementations bypass it.
-          result = await doFetch('/login', { email, password });
-          if ((!result.ok || !result.data?.success) && result.data?.requiresVerification) {
-            // Build a synthetic user from the OAuth payload so we can finish
-            // sign-in without an email round-trip.
-            result = { ok: true, data: { success: true, user: { email, name: displayName, isPremium: PREMIUM_EMAILS.includes(email) } } };
-          }
-        } else {
-          // Register failed — most likely because the email is already taken
-          // by an account that was created via classic email/password before
-          // OAuth was enabled. We can't link without backend changes, so guide
-          // the user to log in with their existing password instead.
-          const regErr = String(reg.data?.error || '').toLowerCase();
-          const emailExists = regErr.includes('exist') || regErr.includes('already') || regErr.includes('註冊') || regErr.includes('已存在');
-          if (emailExists) {
-            // Pre-fill the email field and surface a clear, actionable message.
-            setTimeout(() => {
-              const emailEl = document.getElementById('modalEmailInput');
-              const passEl = document.getElementById('modalPasswordInput');
-              if (emailEl) emailEl.value = email;
-              if (passEl) passEl.focus();
-            }, 0);
-            setAuthError(t(
-              `這個 email (${email}) 已用密碼註冊過。請在下方輸入您的 VerseRain 密碼登入。`,
-              `This email (${email}) is already registered with a password. Please enter your VerseRain password below.`
-            ));
-            return;
-          }
-        }
-      }
-
-      if (!(result.ok && result.data?.success && result.data.user)) {
-        setAuthError(result.data?.error || t("登入失敗", "Sign-in failed"));
+      if (!(response.ok && data.success && data.user)) {
+        setAuthError(data.error || t("OAuth 登入失敗", "OAuth sign-in failed"));
         return;
       }
 
-      const user = result.data.user;
+      const user = data.user;
+      const displayName = user.name || (user.email || '').split('@')[0];
       const prevEmail = localStorage.getItem('verserain_player_email');
       if (prevEmail && prevEmail !== user.email) {
         localStorage.removeItem('verseRain_gardenData');

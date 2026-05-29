@@ -113,6 +113,95 @@ export default class Server {
     }
   }
 
+  // ─── OAuth ID Token verification ────────────────────────────────────────────
+  // Verifies a Google ID token end-to-end: signature, issuer, audience, expiry,
+  // and email_verified. Returns the decoded payload on success or null on any
+  // failure. Never trusts an unverified JWT body — Google's RSA signature is
+  // the only thing that proves the token wasn't forged by an attacker.
+
+  // Module-level cache for Google's JWKS (~1h TTL).
+  static _googleJwksCache = null;
+  static _googleJwksCacheAt = 0;
+
+  // The same OAuth Client ID used by the verserain.com web frontend. Must be
+  // hard-coded here so the backend can validate the `aud` claim — otherwise an
+  // attacker could log in as anyone using a token signed for their own Google
+  // OAuth app.
+  static GOOGLE_CLIENT_ID = "761845973381-2eqaapf2m64voq5gvod1vo5p48o1niua.apps.googleusercontent.com";
+
+  async fetchGoogleJwks() {
+    const now = Date.now();
+    if (Server._googleJwksCache && now - Server._googleJwksCacheAt < 60 * 60 * 1000) {
+      return Server._googleJwksCache;
+    }
+    const res = await fetch("https://www.googleapis.com/oauth2/v3/certs");
+    if (!res.ok) return null;
+    const jwks = await res.json();
+    Server._googleJwksCache = jwks;
+    Server._googleJwksCacheAt = now;
+    return jwks;
+  }
+
+  base64UrlToUint8Array(b64u) {
+    const b64 = b64u.replace(/-/g, "+").replace(/_/g, "/");
+    const padded = b64 + "===".slice((b64.length + 3) % 4);
+    const bin = atob(padded);
+    const bytes = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    return bytes;
+  }
+
+  base64UrlDecodeJson(b64u) {
+    const bytes = this.base64UrlToUint8Array(b64u);
+    const json = new TextDecoder().decode(bytes);
+    return JSON.parse(json);
+  }
+
+  async verifyGoogleIdToken(idToken) {
+    try {
+      const parts = String(idToken || "").split(".");
+      if (parts.length !== 3) return null;
+      const [headerB64, payloadB64, signatureB64] = parts;
+
+      const header = this.base64UrlDecodeJson(headerB64);
+      const payload = this.base64UrlDecodeJson(payloadB64);
+      if (!header || !payload) return null;
+
+      // Find the matching key by kid.
+      const jwks = await this.fetchGoogleJwks();
+      if (!jwks || !Array.isArray(jwks.keys)) return null;
+      const jwk = jwks.keys.find(k => k.kid === header.kid && k.kty === "RSA");
+      if (!jwk) return null;
+
+      // Import the JWK as a verification key.
+      const publicKey = await crypto.subtle.importKey(
+        "jwk",
+        { kty: jwk.kty, n: jwk.n, e: jwk.e, alg: jwk.alg || "RS256", ext: true },
+        { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" },
+        false,
+        ["verify"]
+      );
+
+      const data = new TextEncoder().encode(`${headerB64}.${payloadB64}`);
+      const signature = this.base64UrlToUint8Array(signatureB64);
+      const valid = await crypto.subtle.verify("RSASSA-PKCS1-v1_5", publicKey, signature, data);
+      if (!valid) return null;
+
+      // Claim checks.
+      const now = Math.floor(Date.now() / 1000);
+      if (payload.exp && payload.exp < now) return null;
+      if (payload.iss !== "https://accounts.google.com" && payload.iss !== "accounts.google.com") return null;
+      if (payload.aud !== Server.GOOGLE_CLIENT_ID) return null;
+      if (!payload.email) return null;
+      if (payload.email_verified === false) return null;
+
+      return payload;
+    } catch (e) {
+      console.error("Google ID token verify failed", e);
+      return null;
+    }
+  }
+
   // --- HTTP Authentication API & Webhook Endpoints ---
   async onRequest(request) {
     // We only process auth requests on a dedicated "auth" room to keep the DB cohesive
@@ -243,6 +332,78 @@ export default class Server {
               return new Response(JSON.stringify({ success: true, user: { email: user.email, name: user.name, isPremium: user.isPremium } }), { status: 200, headers: corsHeaders });
            } catch(e) {
               return new Response(JSON.stringify({ error: 'Login failed' }), { status: 500, headers: corsHeaders });
+           }
+        }
+
+        // 3.2. OAuth Login (Google, future: Apple).
+        // Verifies a signed ID token end-to-end on the server, then matches
+        // or auto-creates a user by email. No password is required because
+        // the OAuth provider has already verified the email — and the JWT
+        // signature proves the token came from Google itself.
+        if (url.pathname.endsWith('/oauth-login')) {
+           try {
+              const { provider, idToken } = await request.json();
+              if (!provider || !idToken) {
+                 return new Response(JSON.stringify({ error: 'provider and idToken required' }), { status: 400, headers: corsHeaders });
+              }
+
+              let payload = null;
+              if (provider === 'google') {
+                 payload = await this.verifyGoogleIdToken(idToken);
+              } else {
+                 return new Response(JSON.stringify({ error: 'Unsupported OAuth provider' }), { status: 400, headers: corsHeaders });
+              }
+
+              if (!payload) {
+                 return new Response(JSON.stringify({ error: 'Invalid OAuth token' }), { status: 401, headers: corsHeaders });
+              }
+
+              const email = String(payload.email || '').toLowerCase().trim();
+              const sub = payload.sub;
+              const displayName = payload.name || payload.given_name || email.split('@')[0];
+              if (!email || !sub) {
+                 return new Response(JSON.stringify({ error: 'OAuth token missing email or sub' }), { status: 401, headers: corsHeaders });
+              }
+
+              let user = await this.room.storage.get(`user:${email}`);
+              if (!user) {
+                 // First-time OAuth user — auto-create as verified.
+                 user = {
+                    email,
+                    password: null,
+                    name: displayName,
+                    isPremium: false,
+                    verified: true,
+                    oauthProvider: provider,
+                    oauthSub: sub,
+                    createdAt: new Date().toISOString()
+                 };
+                 await this.room.storage.put(`user:${email}`, user);
+              } else {
+                 // Existing user — record OAuth identity so future logins can
+                 // be tracked, mark as verified (Google already verified the
+                 // email so old unverified accounts can finish onboarding),
+                 // but never overwrite their existing password or display name.
+                 let dirty = false;
+                 if (!user.verified) { user.verified = true; user.verificationCode = null; dirty = true; }
+                 if (!user.oauthProvider) { user.oauthProvider = provider; dirty = true; }
+                 if (!user.oauthSub) { user.oauthSub = sub; dirty = true; }
+                 if (dirty) await this.room.storage.put(`user:${email}`, user);
+              }
+
+              return new Response(JSON.stringify({
+                 success: true,
+                 user: {
+                    email: user.email,
+                    name: user.name || displayName,
+                    isPremium: user.isPremium || false,
+                    city: user.city,
+                    country: user.country
+                 }
+              }), { status: 200, headers: corsHeaders });
+           } catch (e) {
+              console.error("OAuth login failed", e);
+              return new Response(JSON.stringify({ error: 'OAuth login failed' }), { status: 500, headers: corsHeaders });
            }
         }
 
