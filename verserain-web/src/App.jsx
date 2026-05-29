@@ -1125,12 +1125,17 @@ function VerseSetContinuousRainPlayer({
   }, [currentVerse, secondaryVerse, secondaryVersion, secondaryVerseByRef]);
 
   const effectiveSecondaryPhrases = useMemo(() => {
+    let phrases = [];
     // Only trust secondaryVerse if its text is in the correct script for the version
     if (secondaryVerse && secondaryPhrases.length && isTextLikelyForVersion(secondaryVerse.text, secondaryVersion)) {
-      return secondaryPhrases;
+      phrases = secondaryPhrases;
+    } else if (lookedUpText) {
+      phrases = splitVersePhrases(lookedUpText, secondaryVersion);
     }
-    if (lookedUpText) return splitVersePhrases(lookedUpText, secondaryVersion);
-    return [];
+    // Per-phrase validation: replace any phrase in the wrong script with '' so it
+    // doesn't render. This handles stored verse texts that mix Hebrew with embedded
+    // KJV English (or similar cross-language contamination).
+    return phrases.map(p => isTextLikelyForVersion(p, secondaryVersion) ? p : '');
   }, [secondaryPhrases, secondaryVerse, lookedUpText, secondaryVersion]);
 
   const hasSecondaryPhrases = Boolean(secondaryVersion && effectiveSecondaryPhrases.length);
