@@ -481,6 +481,39 @@ function hasReadablePhraseContent(phrase = '') {
   return /[\p{L}\p{N}\u3400-\u9fff]/u.test(String(phrase || ''));
 }
 
+// Check that a piece of text is likely written in the expected script for the given version.
+// Used to reject local verse-set matches that accidentally contain the wrong language (e.g. KJV
+// text stored inside a Hebrew-labelled set).
+function isTextLikelyForVersion(text, version) {
+  if (!text) return false;
+  const s = String(text);
+  switch (String(version || '').toLowerCase()) {
+    case 'he':
+      // Must contain Hebrew letters
+      return /[א-תיִ-פֿ]/.test(s);
+    case 'fa':
+      // Must contain Arabic/Persian letters
+      return /[؀-ۿ]/.test(s);
+    case 'ja':
+      // Must contain kana or CJK
+      return /[぀-ヿ一-鿿]/.test(s);
+    case 'ko':
+      // Must contain Hangul
+      return /[가-힯ᄀ-ᇿ]/.test(s);
+    case 'my':
+      // Must contain Myanmar script
+      return /[က-႟]/.test(s);
+    case 'cuv':
+    case 'cuvs':
+    case 'zh':
+      // Must contain CJK
+      return /[一-鿿]/.test(s);
+    default:
+      // Latin-script languages (en, de, es, tr, vi, kjv, esv) — accept anything
+      return true;
+  }
+}
+
 function splitVersePhrases(text, version) {
   const regex = /\.{2,}|[,，。；؛၊။،;:：﹕︰\.\?!！？؟]/;
   return String(text || '')
@@ -1046,9 +1079,11 @@ function VerseSetContinuousRainPlayer({
     const normalizedKey = normalizeVerseReferenceKey(currentVerse.reference);
     if (!normalizedKey) return;
 
-    // 1) Search all loaded verse sets in the secondary language (instant, real Bible text)
+    // 1) Search all loaded verse sets in the secondary language (instant, real Bible text).
+    //    Validate that the text is actually in the expected script — verse sets sometimes contain
+    //    wrong-language text (e.g. KJV English stored in a Hebrew-labelled set).
     const localMatch = secondaryVerseByRef.get(normalizedKey);
-    if (localMatch) {
+    if (localMatch && isTextLikelyForVersion(localMatch.text, secondaryVersion)) {
       setLookedUpText(localMatch.text);
       setLookedUpRef(localMatch.reference);
       // Also persist to localStorage for future sessions
@@ -1056,9 +1091,9 @@ function VerseSetContinuousRainPlayer({
       return;
     }
 
-    // 2) Check localStorage cache (previously found verses)
+    // 2) Check localStorage cache (previously found verses) — validate script too
     const cached = getCachedBibleVerse(secondaryVersion, normalizedKey);
-    if (cached) {
+    if (cached && isTextLikelyForVersion(cached, secondaryVersion)) {
       setLookedUpText(cached);
       setLookedUpRef(formatVerseReferenceForDisplay(currentVerse.reference, secondaryVersion));
       return;
@@ -1090,7 +1125,10 @@ function VerseSetContinuousRainPlayer({
   }, [currentVerse, secondaryVerse, secondaryVersion, secondaryVerseByRef]);
 
   const effectiveSecondaryPhrases = useMemo(() => {
-    if (secondaryVerse && secondaryPhrases.length) return secondaryPhrases;
+    // Only trust secondaryVerse if its text is in the correct script for the version
+    if (secondaryVerse && secondaryPhrases.length && isTextLikelyForVersion(secondaryVerse.text, secondaryVersion)) {
+      return secondaryPhrases;
+    }
     if (lookedUpText) return splitVersePhrases(lookedUpText, secondaryVersion);
     return [];
   }, [secondaryPhrases, secondaryVerse, lookedUpText, secondaryVersion]);
