@@ -445,6 +445,7 @@ async function fetchVerseFromBolls(normalizedKey, targetVersion) {
       if (!res.ok) return null;
       const verses = await res.json();
       if (!Array.isArray(verses) || !verses.length) return null;
+      // Join with Arabic semicolon so splitVersePhrases() can split on verse boundaries
       return verses
         .map(v => String(v.text || '')
           .replace(/<S>\d+<\/S>/g, '')
@@ -454,7 +455,7 @@ async function fetchVerseFromBolls(normalizedKey, targetVersion) {
           .trim()
         )
         .filter(Boolean)
-        .join(' ') || null;
+        .join('؛ ') || null;
     } catch { return null; }
   }
 
