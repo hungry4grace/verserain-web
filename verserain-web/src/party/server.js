@@ -157,6 +157,38 @@ export default class Server {
     return JSON.parse(json);
   }
 
+  // Validate a Google access token by calling tokeninfo + userinfo. tokeninfo
+  // tells us which client_id and scopes the token was issued for; userinfo
+  // gives us the user's verified email. Both succeed only for live tokens
+  // from Google.
+  async verifyGoogleAccessToken(accessToken) {
+    try {
+      // 1. tokeninfo confirms the audience (which OAuth client issued it)
+      const tokenInfoRes = await fetch(
+        `https://oauth2.googleapis.com/tokeninfo?access_token=${encodeURIComponent(accessToken)}`
+      );
+      if (!tokenInfoRes.ok) return null;
+      const tokenInfo = await tokenInfoRes.json();
+      if (tokenInfo.aud !== Server.GOOGLE_CLIENT_ID && tokenInfo.azp !== Server.GOOGLE_CLIENT_ID) {
+        return null;
+      }
+      if (tokenInfo.expires_in && Number(tokenInfo.expires_in) <= 0) return null;
+
+      // 2. userinfo gives us the email + sub + name
+      const userInfoRes = await fetch("https://www.googleapis.com/oauth2/v3/userinfo", {
+        headers: { Authorization: `Bearer ${accessToken}` }
+      });
+      if (!userInfoRes.ok) return null;
+      const userInfo = await userInfoRes.json();
+      if (!userInfo.email) return null;
+      if (userInfo.email_verified === false) return null;
+      return userInfo; // { sub, email, email_verified, name, given_name, picture }
+    } catch (e) {
+      console.error("Google access token verify failed", e);
+      return null;
+    }
+  }
+
   async verifyGoogleIdToken(idToken) {
     try {
       const parts = String(idToken || "").split(".");
@@ -336,20 +368,32 @@ export default class Server {
         }
 
         // 3.2. OAuth Login (Google, future: Apple).
-        // Verifies a signed ID token end-to-end on the server, then matches
-        // or auto-creates a user by email. No password is required because
-        // the OAuth provider has already verified the email — and the JWT
-        // signature proves the token came from Google itself.
+        // Verifies the provider credential on the server, then matches or
+        // auto-creates a user by email. No password is required because the
+        // OAuth provider has already verified the email. Two credential
+        // shapes are accepted:
+        //   { idToken }      — Google "One Tap" / Apple Sign-In JWT we verify
+        //                      against the provider's public keys.
+        //   { accessToken }  — Google access token from the popup OAuth flow;
+        //                      we verify it by calling Google's userinfo
+        //                      endpoint, which only succeeds if the token is
+        //                      live and was issued to OUR client_id (since
+        //                      we never share it with another party).
         if (url.pathname.endsWith('/oauth-login')) {
            try {
-              const { provider, idToken } = await request.json();
-              if (!provider || !idToken) {
-                 return new Response(JSON.stringify({ error: 'provider and idToken required' }), { status: 400, headers: corsHeaders });
+              const body = await request.json();
+              const { provider, idToken, accessToken } = body;
+              if (!provider || (!idToken && !accessToken)) {
+                 return new Response(JSON.stringify({ error: 'provider and credential required' }), { status: 400, headers: corsHeaders });
               }
 
               let payload = null;
               if (provider === 'google') {
-                 payload = await this.verifyGoogleIdToken(idToken);
+                 if (idToken) {
+                    payload = await this.verifyGoogleIdToken(idToken);
+                 } else if (accessToken) {
+                    payload = await this.verifyGoogleAccessToken(accessToken);
+                 }
               } else {
                  return new Response(JSON.stringify({ error: 'Unsupported OAuth provider' }), { status: 400, headers: corsHeaders });
               }

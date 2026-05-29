@@ -32,43 +32,35 @@ const ROOM_CODE_CHARS = 'ABCDEFGHJKMNPQRSTUVWXYZ';
 const PUBLIC_APP_ORIGIN = 'https://www.verserain.com';
 
 // ─── Google + Apple OAuth buttons ───────────────────────────────────────────
-// Renders the native Google Identity Services button and a styled Apple
-// button. Each provider returns an ID token (a JWT); we hand it back up so
-// the parent can decode it and complete sign-in.
+// We render our own styled buttons (instead of the GIS iframe button) because
+// Google's renderButton iframe is unreliable on iOS Safari (ITP blocks the
+// cross-origin frame and the button silently renders blank). Click flow:
+//   Google → google.accounts.oauth2.initTokenClient → popup → access_token
+//   Apple  → window.AppleID.auth.signIn → popup → id_token
+// We hand the credential up to the parent, which forwards it to the backend
+// /oauth-login endpoint for verification.
 function OAuthButtons({ onGoogleCredential, onAppleCredential, disabled, t }) {
-  const googleBtnRef = useRef(null);
+  const googleClientRef = useRef(null);
   const appleInitialized = useRef(false);
 
-  // Render the Google button once the gsi script + DOM node are ready.
+  // Initialize Google OAuth2 token client once the gsi script is loaded.
   useEffect(() => {
     if (!GOOGLE_CLIENT_ID) return;
     let cancelled = false;
     const init = () => {
-      if (cancelled) return;
-      const g = window.google?.accounts?.id;
-      const node = googleBtnRef.current;
-      if (!g || !node) return false;
+      if (cancelled) return false;
+      const oauth2 = window.google?.accounts?.oauth2;
+      if (!oauth2) return false;
       try {
-        g.initialize({
+        googleClientRef.current = oauth2.initTokenClient({
           client_id: GOOGLE_CLIENT_ID,
+          scope: 'openid email profile',
           callback: (response) => {
-            if (response?.credential) onGoogleCredential(response.credential);
+            if (response?.access_token) onGoogleCredential(response.access_token);
           },
-          ux_mode: 'popup',
-          auto_select: false,
         });
-        node.innerHTML = '';
-        g.renderButton(node, {
-          type: 'standard',
-          theme: 'outline',
-          size: 'large',
-          text: 'continue_with',
-          shape: 'rectangular',
-          logo_alignment: 'left',
-          width: node.clientWidth || 320,
-        });
-      } catch { /* gsi not ready yet */ return false; }
-      return true;
+        return true;
+      } catch { return false; }
     };
     if (init()) return () => { cancelled = true; };
     const interval = setInterval(() => { if (init()) clearInterval(interval); }, 200);
@@ -99,6 +91,11 @@ function OAuthButtons({ onGoogleCredential, onAppleCredential, disabled, t }) {
     return () => { cancelled = true; clearInterval(interval); clearTimeout(stop); };
   }, []);
 
+  const handleGoogleClick = () => {
+    if (disabled || !googleClientRef.current) return;
+    googleClientRef.current.requestAccessToken();
+  };
+
   const handleAppleClick = async () => {
     if (disabled || !window.AppleID?.auth) return;
     try {
@@ -119,25 +116,39 @@ function OAuthButtons({ onGoogleCredential, onAppleCredential, disabled, t }) {
     );
   }
 
+  const baseBtnStyle = {
+    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.6rem',
+    width: '100%', padding: '0.7rem 1rem', borderRadius: '6px',
+    fontSize: '0.95rem', fontWeight: '600',
+    cursor: disabled ? 'not-allowed' : 'pointer',
+    opacity: disabled ? 0.6 : 1,
+    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+  };
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
       {GOOGLE_CLIENT_ID && (
-        <div ref={googleBtnRef} style={{ display: 'flex', justifyContent: 'center', minHeight: '40px' }} />
+        <button
+          type="button"
+          onClick={handleGoogleClick}
+          disabled={disabled}
+          style={{ ...baseBtnStyle, background: '#fff', color: '#3c4043', border: '1px solid #dadce0' }}
+        >
+          <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true">
+            <path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844a4.14 4.14 0 0 1-1.796 2.716v2.259h2.908c1.702-1.567 2.684-3.875 2.684-6.615z" fill="#4285F4"/>
+            <path d="M9 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z" fill="#34A853"/>
+            <path d="M3.964 10.706A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.706V4.962H.957A8.997 8.997 0 0 0 0 9c0 1.452.348 2.827.957 4.038l3.007-2.332z" fill="#FBBC05"/>
+            <path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.962L3.964 7.294C4.672 5.167 6.656 3.58 9 3.58z" fill="#EA4335"/>
+          </svg>
+          {t('使用 Google 繼續', 'Continue with Google')}
+        </button>
       )}
       {APPLE_CLIENT_ID && (
         <button
           type="button"
           onClick={handleAppleClick}
           disabled={disabled}
-          style={{
-            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
-            padding: '0.7rem 1rem', borderRadius: '6px',
-            background: '#000', color: '#fff', border: '1px solid #000',
-            fontSize: '0.95rem', fontWeight: '600',
-            cursor: disabled ? 'not-allowed' : 'pointer',
-            opacity: disabled ? 0.6 : 1,
-            fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
-          }}
+          style={{ ...baseBtnStyle, background: '#000', color: '#fff', border: '1px solid #000' }}
         >
           <svg width="16" height="20" viewBox="0 0 16 20" fill="currentColor" aria-hidden="true">
             <path d="M11.624 10.628c-.02-2.027 1.66-3.001 1.736-3.05-.946-1.382-2.418-1.571-2.943-1.593-1.252-.127-2.44.738-3.075.738-.635 0-1.612-.72-2.65-.7-1.366.02-2.622.793-3.327 2.012-1.42 2.461-.363 6.105 1.02 8.103.674 1.0 1.476 2.119 2.527 2.079 1.012-.04 1.395-.654 2.62-.654s1.567.654 2.638.634c1.088-.02 1.778-1.018 2.444-2.018.77-1.158 1.087-2.279 1.107-2.339-.024-.012-2.126-.815-2.147-3.232zM9.667 4.624c.553-.668.928-1.6.824-2.524-.798.032-1.764.531-2.336 1.198-.513.591-.962 1.54-.84 2.448.892.07 1.798-.453 2.352-1.122z" />
@@ -3764,11 +3775,12 @@ export default function App() {
   const [verifyEmail, setVerifyEmail] = useState("");
 
   // ─── OAuth (Google / Apple) ───────────────────────────────────────────────
-  // Hand the provider's ID token to the PartyKit /oauth-login endpoint, which
-  // verifies the token's signature against the provider's public keys, then
-  // matches by email or auto-creates a verified user. No password is needed
-  // because the OAuth provider has already verified the email.
-  const handleOAuthSignIn = React.useCallback(async (provider, idToken) => {
+  // Hand the provider's credential to the PartyKit /oauth-login endpoint,
+  // which verifies it (ID token signature, or access token via Google's
+  // userinfo endpoint), then matches by email or auto-creates a verified
+  // user. No password is needed because the OAuth provider has already
+  // verified the email.
+  const handleOAuthSignIn = React.useCallback(async (provider, credential) => {
     setAuthError("");
     setAuthLoading(true);
     try {
@@ -3776,7 +3788,7 @@ export default function App() {
       const response = await fetch(host + '/oauth-login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ provider, idToken })
+        body: JSON.stringify({ provider, ...credential })
       });
       const data = await response.json().catch(() => ({}));
 
@@ -16180,8 +16192,8 @@ const deDict = {
                 ) : (
                   <>
                     <OAuthButtons
-                      onGoogleCredential={(idToken) => handleOAuthSignIn('google', idToken)}
-                      onAppleCredential={(idToken) => handleOAuthSignIn('apple', idToken)}
+                      onGoogleCredential={(accessToken) => handleOAuthSignIn('google', { accessToken })}
+                      onAppleCredential={(idToken) => handleOAuthSignIn('apple', { idToken })}
                       disabled={authLoading}
                       t={t}
                     />
