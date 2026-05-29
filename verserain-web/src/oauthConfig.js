@@ -31,7 +31,7 @@
 //
 // After editing, redeploy. No secrets are stored here — these IDs are public.
 
-export const GOOGLE_CLIENT_ID = ''; // e.g. '1234567890-abc.apps.googleusercontent.com'
+export const GOOGLE_CLIENT_ID = '761845973381-2eqaapf2m64voq5gvod1vo5p48o1niua.apps.googleusercontent.com';
 
 export const APPLE_CLIENT_ID = '';  // e.g. 'com.verserain.web.signin'
 export const APPLE_REDIRECT_URI = (typeof window !== 'undefined' ? window.location.origin : '') + '/';
