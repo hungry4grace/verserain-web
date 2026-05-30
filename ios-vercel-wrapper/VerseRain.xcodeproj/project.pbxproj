@@ -13,6 +13,8 @@
 		0A0A00042C00000000000001 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 0A0A00132C00000000000001 /* Assets.xcassets */; };
 		0A0A00052C00000000000001 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 0A0A00142C00000000000001 /* LaunchScreen.storyboard */; };
 		0A0A00062C00000000000001 /* WebKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0A0A00152C00000000000001 /* WebKit.framework */; };
+		25FEA7082FC9EB33009E2397 /* GoogleSignInBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 25FEA7072FC9EB33009E2397 /* GoogleSignInBridge.swift */; };
+		25FEA70A2FC9EB33009E2398 /* AppleSignInBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 25FEA7092FC9EB33009E2398 /* AppleSignInBridge.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -24,6 +26,9 @@
 		0A0A00152C00000000000001 /* WebKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WebKit.framework; path = System/Library/Frameworks/WebKit.framework; sourceTree = SDKROOT; };
 		0A0A00162C00000000000001 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		0A0A00172C00000000000001 /* VerseRain.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = VerseRain.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		25FEA7072FC9EB33009E2397 /* GoogleSignInBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoogleSignInBridge.swift; sourceTree = "<group>"; };
+		25FEA7092FC9EB33009E2398 /* AppleSignInBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppleSignInBridge.swift; sourceTree = "<group>"; };
+		25FEA70B2FC9EB33009E2399 /* VerseRain.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = VerseRain.entitlements; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -52,10 +57,13 @@
 			children = (
 				0A0A00102C00000000000001 /* VerseRainApp.swift */,
 				0A0A00112C00000000000001 /* WebView.swift */,
+				25FEA7072FC9EB33009E2397 /* GoogleSignInBridge.swift */,
+				25FEA7092FC9EB33009E2398 /* AppleSignInBridge.swift */,
 				0A0A00122C00000000000001 /* DeepLinkRouter.swift */,
 				0A0A00132C00000000000001 /* Assets.xcassets */,
 				0A0A00142C00000000000001 /* LaunchScreen.storyboard */,
 				0A0A00162C00000000000001 /* Info.plist */,
+				25FEA70B2FC9EB33009E2399 /* VerseRain.entitlements */,
 			);
 			path = VerseRain;
 			sourceTree = "<group>";
@@ -147,6 +155,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				0A0A00012C00000000000001 /* VerseRainApp.swift in Sources */,
+				25FEA7082FC9EB33009E2397 /* GoogleSignInBridge.swift in Sources */,
+				25FEA70A2FC9EB33009E2398 /* AppleSignInBridge.swift in Sources */,
 				0A0A00022C00000000000001 /* WebView.swift in Sources */,
 				0A0A00032C00000000000001 /* DeepLinkRouter.swift in Sources */,
 			);
@@ -274,10 +284,11 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = VerseRain/VerseRain.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 42;
+				CURRENT_PROJECT_VERSION = 45;
 				DEVELOPMENT_ASSET_PATHS = "";
-				DEVELOPMENT_TEAM = "TE7YANF4YC";
+				DEVELOPMENT_TEAM = TE7YANF4YC;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = VerseRain/Info.plist;
@@ -286,7 +297,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 3.6.1;
+				MARKETING_VERSION = 3.8.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.hopeofglory.verserain;
 				PRODUCT_NAME = VerseRain;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
@@ -302,10 +313,11 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = VerseRain/VerseRain.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 42;
+				CURRENT_PROJECT_VERSION = 45;
 				DEVELOPMENT_ASSET_PATHS = "";
-				DEVELOPMENT_TEAM = "TE7YANF4YC";
+				DEVELOPMENT_TEAM = TE7YANF4YC;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = VerseRain/Info.plist;
@@ -314,7 +326,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 3.6.1;
+				MARKETING_VERSION = 3.8.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.hopeofglory.verserain;
 				PRODUCT_NAME = VerseRain;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";

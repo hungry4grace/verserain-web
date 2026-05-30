@@ -56,6 +56,7 @@ function isInIosNativeApp() {
 function OAuthButtons({ onGoogleCredential, onAppleCredential, disabled, t }) {
   const inIosApp = isInIosNativeApp();
   const nativeBridge = inIosApp && typeof window !== 'undefined' && window.webkit?.messageHandlers?.googleSignIn;
+  const nativeAppleBridge = inIosApp && typeof window !== 'undefined' && window.webkit?.messageHandlers?.appleSignIn;
   const googleClientRef = useRef(null);
   const appleInitialized = useRef(false);
 
@@ -91,15 +92,18 @@ function OAuthButtons({ onGoogleCredential, onAppleCredential, disabled, t }) {
   //   window.__verseRainNativeOAuth('google', '<access_token>')
   useEffect(() => {
     if (!inIosApp) return;
-    window.__verseRainNativeOAuth = (provider, accessToken) => {
-      if (provider === 'google' && accessToken) onGoogleCredential(accessToken);
+    window.__verseRainNativeOAuth = (provider, credential, extra) => {
+      if (provider === 'google' && credential) onGoogleCredential(credential);
+      else if (provider === 'apple' && credential) onAppleCredential(credential, extra || {});
     };
     return () => { try { delete window.__verseRainNativeOAuth; } catch {} };
-  }, [inIosApp, onGoogleCredential]);
+  }, [inIosApp, onGoogleCredential, onAppleCredential]);
 
   // Initialize Apple SDK; the button itself is rendered with our own styles.
+  // Skipped in the iOS app — we use the native ASAuthorizationAppleIDProvider
+  // bridge instead of Apple's web JS SDK.
   useEffect(() => {
-    if (!APPLE_CLIENT_ID || appleInitialized.current) return;
+    if (inIosApp || !APPLE_CLIENT_ID || appleInitialized.current) return;
     let cancelled = false;
     const init = () => {
       if (cancelled || !window.AppleID?.auth) return false;
@@ -141,7 +145,20 @@ function OAuthButtons({ onGoogleCredential, onAppleCredential, disabled, t }) {
   };
 
   const handleAppleClick = async () => {
-    if (disabled || !window.AppleID?.auth) return;
+    if (disabled) return;
+    if (nativeAppleBridge) {
+      // Native iOS app — let Swift open ASAuthorizationAppleIDProvider.
+      try { window.webkit.messageHandlers.appleSignIn.postMessage({}); } catch {}
+      return;
+    }
+    if (inIosApp) {
+      alert(t(
+        '此版本 App 尚不支援 Apple 登入。請更新 App，或先用下方 email / 密碼登入。',
+        'This app version does not yet support Apple sign-in. Please update the app, or use email / password below.'
+      ));
+      return;
+    }
+    if (!window.AppleID?.auth) return;
     try {
       const result = await window.AppleID.auth.signIn();
       const idToken = result?.authorization?.id_token;
@@ -149,7 +166,11 @@ function OAuthButtons({ onGoogleCredential, onAppleCredential, disabled, t }) {
     } catch { /* user cancelled */ }
   };
 
-  if (!GOOGLE_CLIENT_ID && !APPLE_CLIENT_ID) {
+  // Show the Apple button when in the iOS app (native bridge handles it) or
+  // when the web Services ID is configured.
+  const showAppleButton = inIosApp || !!APPLE_CLIENT_ID;
+
+  if (!GOOGLE_CLIENT_ID && !showAppleButton) {
     return (
       <div style={{ fontSize: '0.78rem', color: '#94a3b8', textAlign: 'center', background: '#f8fafc', border: '1px dashed #cbd5e1', borderRadius: '6px', padding: '0.7rem' }}>
         {t(
@@ -188,7 +209,7 @@ function OAuthButtons({ onGoogleCredential, onAppleCredential, disabled, t }) {
           {t('使用 Google 繼續', 'Continue with Google')}
         </button>
       )}
-      {APPLE_CLIENT_ID && (
+      {showAppleButton && (
         <button
           type="button"
           onClick={handleAppleClick}
@@ -16238,7 +16259,7 @@ const deDict = {
                   <>
                     <OAuthButtons
                       onGoogleCredential={(accessToken) => handleOAuthSignIn('google', { accessToken })}
-                      onAppleCredential={(idToken) => handleOAuthSignIn('apple', { idToken })}
+                      onAppleCredential={(idToken, extra) => handleOAuthSignIn('apple', { idToken, ...(extra || {}) })}
                       disabled={authLoading}
                       t={t}
                     />

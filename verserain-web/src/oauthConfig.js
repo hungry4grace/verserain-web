@@ -33,6 +33,8 @@
 
 export const GOOGLE_CLIENT_ID = '761845973381-2eqaapf2m64voq5gvod1vo5p48o1niua.apps.googleusercontent.com';
 
+// Fill in after creating the Services ID in Apple Developer portal.
+// Must match one of APPLE_CLIENT_IDS in src/party/server.js.
 export const APPLE_CLIENT_ID = '';  // e.g. 'com.verserain.web.signin'
 export const APPLE_REDIRECT_URI = (typeof window !== 'undefined' ? window.location.origin : '') + '/';
 

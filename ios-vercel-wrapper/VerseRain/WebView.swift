@@ -55,6 +55,13 @@ struct WebView: UIViewRepresentable {
         configuration.userContentController.add(googleBridge, name: "googleSignIn")
         context.coordinator.googleBridge = googleBridge
 
+        // Native Sign in with Apple — required by App Store guideline 4.8
+        // alongside any third-party login. Uses ASAuthorizationAppleIDProvider
+        // (no Services ID needed; the iOS Bundle ID is the audience).
+        let appleBridge = AppleSignInBridge(webView: webView)
+        configuration.userContentController.add(appleBridge, name: "appleSignIn")
+        context.coordinator.appleBridge = appleBridge
+
         model.webView = webView
         webView.load(URLRequest(url: model.url))
         return webView
@@ -77,6 +84,7 @@ struct WebView: UIViewRepresentable {
 
         // Strong reference; required to keep the WKScriptMessageHandler alive.
         var googleBridge: GoogleSignInBridge?
+        var appleBridge: AppleSignInBridge?
 
         init(model: WebViewModel) {
             self.model = model

@@ -199,6 +199,80 @@ export default class Server {
     }
   }
 
+  // ─── Apple Sign In ──────────────────────────────────────────────────────────
+  // Apple's ID token is a JWT signed with one of the keys at
+  // https://appleid.apple.com/auth/keys. `iss` is "https://appleid.apple.com",
+  // `aud` is either the Services ID (web flow) or the iOS app's Bundle ID
+  // (native flow). `email` is only present the FIRST time the user signs in
+  // unless they re-enable name/email sharing in Settings → Apple ID → Sign In
+  // With Apple — we deal with that in the /oauth-login handler.
+  static _appleJwksCache = null;
+  static _appleJwksCacheAt = 0;
+
+  //   [0] Web client — Services ID created in Apple Developer portal
+  //   [1] iOS client — Bundle ID of the native iOS app
+  static APPLE_CLIENT_IDS = [
+    "com.verserain.web.signin",     // web Services ID — update if you used a different one
+    "com.hopeofglory.verserain"     // iOS Bundle ID
+  ].filter(Boolean);
+
+  async fetchAppleJwks() {
+    const now = Date.now();
+    if (Server._appleJwksCache && now - Server._appleJwksCacheAt < 60 * 60 * 1000) {
+      return Server._appleJwksCache;
+    }
+    const res = await fetch("https://appleid.apple.com/auth/keys");
+    if (!res.ok) return null;
+    const jwks = await res.json();
+    Server._appleJwksCache = jwks;
+    Server._appleJwksCacheAt = now;
+    return jwks;
+  }
+
+  async verifyAppleIdToken(idToken) {
+    try {
+      const parts = String(idToken || "").split(".");
+      if (parts.length !== 3) return null;
+      const [headerB64, payloadB64, signatureB64] = parts;
+
+      const header = this.base64UrlDecodeJson(headerB64);
+      const payload = this.base64UrlDecodeJson(payloadB64);
+      if (!header || !payload) return null;
+
+      const jwks = await this.fetchAppleJwks();
+      if (!jwks || !Array.isArray(jwks.keys)) return null;
+      const jwk = jwks.keys.find(k => k.kid === header.kid && k.kty === "RSA");
+      if (!jwk) return null;
+
+      const publicKey = await crypto.subtle.importKey(
+        "jwk",
+        { kty: jwk.kty, n: jwk.n, e: jwk.e, alg: jwk.alg || "RS256", ext: true },
+        { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" },
+        false,
+        ["verify"]
+      );
+
+      const data = new TextEncoder().encode(`${headerB64}.${payloadB64}`);
+      const signature = this.base64UrlToUint8Array(signatureB64);
+      const valid = await crypto.subtle.verify("RSASSA-PKCS1-v1_5", publicKey, signature, data);
+      if (!valid) return null;
+
+      const now = Math.floor(Date.now() / 1000);
+      if (payload.exp && payload.exp < now) return null;
+      if (payload.iss !== "https://appleid.apple.com") return null;
+      if (!Server.APPLE_CLIENT_IDS.includes(payload.aud)) return null;
+      // Apple omits `email` after the first sign-in. The `sub` claim is the
+      // stable user identifier, so we accept tokens without an email — the
+      // /oauth-login handler synthesizes a fallback email from sub in that case.
+      if (payload.email_verified === false || payload.email_verified === "false") return null;
+
+      return payload;
+    } catch (e) {
+      console.error("Apple ID token verify failed", e);
+      return null;
+    }
+  }
+
   async verifyGoogleIdToken(idToken) {
     try {
       const parts = String(idToken || "").split(".");
@@ -404,6 +478,10 @@ export default class Server {
                  } else if (accessToken) {
                     payload = await this.verifyGoogleAccessToken(accessToken);
                  }
+              } else if (provider === 'apple') {
+                 if (idToken) {
+                    payload = await this.verifyAppleIdToken(idToken);
+                 }
               } else {
                  return new Response(JSON.stringify({ error: 'Unsupported OAuth provider' }), { status: 400, headers: corsHeaders });
               }
@@ -412,12 +490,22 @@ export default class Server {
                  return new Response(JSON.stringify({ error: 'Invalid OAuth token' }), { status: 401, headers: corsHeaders });
               }
 
-              const email = String(payload.email || '').toLowerCase().trim();
               const sub = payload.sub;
-              const displayName = payload.name || payload.given_name || email.split('@')[0];
-              if (!email || !sub) {
-                 return new Response(JSON.stringify({ error: 'OAuth token missing email or sub' }), { status: 401, headers: corsHeaders });
+              if (!sub) {
+                 return new Response(JSON.stringify({ error: 'OAuth token missing sub' }), { status: 401, headers: corsHeaders });
               }
+              // Apple drops `email` after the first sign-in, so the client may
+              // pass it alongside the idToken on first registration. If we
+              // still have no email, fall back to a stable private-relay-style
+              // address keyed on sub so the account row has a unique key.
+              let email = String(payload.email || body.email || '').toLowerCase().trim();
+              if (!email && provider === 'apple') {
+                 email = `apple_${sub}@privaterelay.verserain.com`;
+              }
+              if (!email) {
+                 return new Response(JSON.stringify({ error: 'OAuth token missing email' }), { status: 401, headers: corsHeaders });
+              }
+              const displayName = payload.name || payload.given_name || body.name || email.split('@')[0];
 
               let user = await this.room.storage.get(`user:${email}`);
               if (!user) {
