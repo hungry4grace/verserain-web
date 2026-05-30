@@ -2753,6 +2753,14 @@ export default function App() {
   const [performanceMode, setPerformanceMode] = useState(() => localStorage.getItem('verseRainPerformanceMode') === 'true');
   const [selectedSetId, setSelectedSetId] = useState(null);
   const [authorSetsModal, setAuthorSetsModal] = useState(null);
+  // 'idle' | 'playing' | 'paused' — TTS state for the verse set description.
+  const [descTtsState, setDescTtsState] = useState('idle');
+  useEffect(() => {
+    setDescTtsState('idle');
+    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+    }
+  }, [selectedSetId]);
 
   const [isPremium, setIsPremium] = useState(() => {
     const storedPremium = localStorage.getItem('verserain_is_premium') === 'true';
@@ -13961,7 +13969,56 @@ const deDict = {
                           </div>
                         </div>
                         {currentSet?.description && (
-                          <div style={{ padding: '1rem 1.5rem', borderBottom: '1px solid #e2e8f0', backgroundColor: '#ffffff', color: '#334155', fontSize: '1rem', lineHeight: '1.6' }} dangerouslySetInnerHTML={{ __html: currentSet.description }} className="ql-editor-content" />
+                          <div style={{ padding: '1rem 1.5rem', borderBottom: '1px solid #e2e8f0', backgroundColor: '#ffffff' }}>
+                            <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '0.5rem' }}>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  if (!('speechSynthesis' in window)) return;
+                                  if (descTtsState === 'playing') {
+                                    window.speechSynthesis.pause();
+                                    setDescTtsState('paused');
+                                    return;
+                                  }
+                                  if (descTtsState === 'paused') {
+                                    window.speechSynthesis.resume();
+                                    setDescTtsState('playing');
+                                    return;
+                                  }
+                                  // idle → start fresh
+                                  const tmp = document.createElement('div');
+                                  tmp.innerHTML = currentSet.description || '';
+                                  const text = (tmp.textContent || '').replace(/\s+/g, ' ').trim();
+                                  if (!text) return;
+                                  initAudio();
+                                  stopSpeechIfActive();
+                                  const lang = getVoiceLangForVersion(version);
+                                  // Chunk by sentence to keep utterances short (some
+                                  // browsers cap utterance length and silently fail).
+                                  const chunks = text.match(/[^。！？!?.\n]+[。！？!?.\n]?/g) || [text];
+                                  let i = 0;
+                                  const speakNext = () => {
+                                    if (i >= chunks.length) { setDescTtsState('idle'); return; }
+                                    const u = new SpeechSynthesisUtterance(chunks[i++]);
+                                    u.lang = lang;
+                                    u.rate = 1.0;
+                                    try { const v = pickSpeechVoice(lang); if (v) u.voice = v; } catch {}
+                                    u.onend = speakNext;
+                                    u.onerror = () => setDescTtsState('idle');
+                                    window.speechSynthesis.speak(u);
+                                  };
+                                  setDescTtsState('playing');
+                                  speakNext();
+                                }}
+                                style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', padding: '0.4rem 0.9rem', borderRadius: '6px', border: '1px solid #cbd5e1', background: descTtsState === 'playing' ? '#fde68a' : '#ffffff', color: '#334155', fontSize: '0.85rem', fontWeight: 'bold', cursor: 'pointer' }}
+                                title={descTtsState === 'playing' ? t('暫停朗讀', 'Pause reading') : descTtsState === 'paused' ? t('繼續朗讀', 'Resume reading') : t('朗讀說明', 'Read description')}
+                              >
+                                {descTtsState === 'playing' ? <Pause size={14} /> : <Play size={14} />}
+                                {descTtsState === 'playing' ? t('暫停', 'Pause') : descTtsState === 'paused' ? t('繼續', 'Resume') : t('朗讀', 'Read')}
+                              </button>
+                            </div>
+                            <div style={{ color: '#334155', fontSize: '1rem', lineHeight: '1.6' }} dangerouslySetInnerHTML={{ __html: currentSet.description }} className="ql-editor-content" />
+                          </div>
                         )}
                         <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
                           <thead>
@@ -14968,11 +15025,12 @@ const deDict = {
                     if (!searchQuery.trim()) return <div style={{ color: '#64748b' }}>{t("請輸入關鍵字開始搜尋。", "Please enter a keyword to search.")}</div>;
                     const query = searchQuery.trim().toLowerCase();
 
-                    // Search in sets
+                    // Search in sets — title, description, or author name.
                     const matchingSets = activeVerseSets.filter(s =>
                       s && s.title && (
                         s.title.toLowerCase().includes(query) ||
-                        (s.description && s.description.replace(/<[^>]+>/g, '').toLowerCase().includes(query))
+                        (s.description && s.description.replace(/<[^>]+>/g, '').toLowerCase().includes(query)) ||
+                        (s.authorName && s.authorName.toLowerCase().includes(query))
                       )
                     );
                     // Search in individual verses
@@ -15000,6 +15058,9 @@ const deDict = {
                                     <div style={{ color: '#3b82f6' }}><Library size={34} /></div>
                                     <div>
                                       <div style={{ fontWeight: 'bold', color: '#1e293b', fontSize: '1.1rem' }}>{set.title}</div>
+                                      <div style={{ color: '#3b82f6', fontSize: '0.8rem', marginTop: '0.2rem' }}>
+                                        {t('作者', 'Author')}：{set.authorName && set.authorName !== "Anonymous" ? set.authorName : (String(set.id).startsWith("custom-") ? t('匿名玩家', 'Anonymous') : t('Verserain 官方', 'Official'))}
+                                      </div>
                                       <div className="ql-editor-content" style={{ color: '#64748b', fontSize: '0.9rem', marginTop: '0.3rem', maxHeight: '4.5em', overflow: 'hidden', textOverflow: 'ellipsis' }} dangerouslySetInnerHTML={{ __html: set.description }} />
                                     </div>
                                   </div>
