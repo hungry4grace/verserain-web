@@ -12821,7 +12821,34 @@ const deDict = {
                             <label htmlFor="publishSet" style={{ fontWeight: 'bold', color: '#475569', cursor: 'pointer' }}>{t("公開此題庫 (Publish to Global Verse Sets)", "Publish to Global Verse Sets")}</label>
                           </div>
 
-                          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem', marginTop: '2rem' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem', marginTop: '2rem' }}>
+                            {editingCustomSet.id ? (
+                              <button type="button" onClick={() => {
+                                if (!confirm(t(
+                                  `確定要刪除「${editingCustomSet.title || '此題庫'}」嗎？此動作無法復原。`,
+                                  `Delete "${editingCustomSet.title || 'this set'}"? This cannot be undone.`
+                                ))) return;
+
+                                // Remove from local custom sets + localStorage
+                                const updatedSets = customVerseSets.filter(s => s.id !== editingCustomSet.id);
+                                setCustomVerseSets(updatedSets);
+                                localStorage.setItem('verseRain_custom_sets', JSON.stringify(updatedSets));
+
+                                // If published, also remove from PartyKit
+                                if (publishedVerseSets.some(p => p.id === editingCustomSet.id)) {
+                                  fetch("https://verserain-party.hungry4grace.partykit.dev/parties/main/global-auth-db/custom-sets", {
+                                    method: "DELETE",
+                                    headers: { "Content-Type": "application/json" },
+                                    body: JSON.stringify({ id: editingCustomSet.id, adminEmail: userEmail, adminName: playerName })
+                                  }).catch(e => console.error("Delete-from-published failed", e));
+                                  setPublishedVerseSets(prev => prev.filter(p => p.id !== editingCustomSet.id));
+                                }
+
+                                setEditingCustomSet(null);
+                              }} style={{ background: '#ef4444', color: 'white', border: 'none', padding: '0.8rem 1.5rem', borderRadius: '6px', fontWeight: 'bold', fontSize: '1rem', cursor: 'pointer' }}>
+                                {t("刪除題庫", "Delete Set")}
+                              </button>
+                            ) : <span />}
                             <button type="button" onClick={() => {
                               if (!editingCustomSet.title) return alert(t("請填寫標題", "Please fill in title"));
                               if (editingCustomSet.verses.length === 0) return alert(t("請至少新增一節經文", "Please add at least one verse"));
