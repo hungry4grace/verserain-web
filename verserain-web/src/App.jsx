@@ -802,12 +802,48 @@ const HEBREW_FULL_BOOK_ID = {
   'יהודה':65,'חזון יוחנן':66,'התגלות':66,'חזון':66,
 };
 
+// Convert a Hebrew gematria string (e.g. "יב" → 12, "כא" → 21) to a number.
+// Returns null if the string contains non-Hebrew-letter characters.
+function hebrewLettersToNumber(s) {
+  const values = {
+    א:1, ב:2, ג:3, ד:4, ה:5, ו:6, ז:7, ח:8, ט:9,
+    י:10, כ:20, ל:30, מ:40, נ:50, ס:60, ע:70, פ:80, צ:90,
+    ק:100, ר:200, ש:300, ת:400,
+    ך:20, ם:40, ן:50, ף:80, ץ:90  // final letter forms
+  };
+  if (!s) return null;
+  let total = 0;
+  for (const ch of s) {
+    const v = values[ch];
+    if (!v) return null;
+    total += v;
+  }
+  return total > 0 ? total : null;
+}
+
 function normalizeVerseReferenceKey(reference = '') {
   const value = String(reference || '')
     .replace(/[–—]/g, '-')
     .replace(/\s+/g, ' ')
     .trim();
   if (!value) return '';
+
+  // Hebrew letter-numeral refs (e.g. "יוחנן א:יב") — convert chapter+verse
+  // gematria to Arabic digits so the rest of the pipeline can normalize them
+  // like any other reference. This unlocks ESV/KJV/NIV API fetches for
+  // Hebrew-primary bilingual mode.
+  const heLetterMatch = value.match(/^(.+?)\s+([א-ת]+)\s*[:׃]\s*([א-ת]+(?:-[א-ת]+)?)$/);
+  if (heLetterMatch) {
+    const bookRaw = heLetterMatch[1].trim();
+    const chap = hebrewLettersToNumber(heLetterMatch[2]);
+    const versePart = heLetterMatch[3].split('-')
+      .map(p => hebrewLettersToNumber(p))
+      .filter(n => n != null);
+    if (chap && versePart.length) {
+      const bookId = HEBREW_FULL_BOOK_ID[bookRaw] ?? BIBLE_BOOKS.find(b => b.he === bookRaw)?.id;
+      if (bookId) return `${bookId}|${chap}:${versePart.join('-')}`;
+    }
+  }
 
   const verseMatch = value.match(/(\d+)\s*:\s*([\d,\-\s]+)/);
   if (!verseMatch) {
