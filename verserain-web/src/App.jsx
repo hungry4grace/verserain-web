@@ -3903,10 +3903,13 @@ export default function App() {
     setAuthLoading(true);
     try {
       const host = "https://verserain-party.hungry4grace.partykit.dev/parties/main/global-auth-db";
+      // Forward the referral code from localStorage so the backend can bind
+      // the inviter to this account — see [App.jsx:5060] reward flow.
+      const inviter = localStorage.getItem('verserain_inviter') || undefined;
       const response = await fetch(host + '/oauth-login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ provider, ...credential })
+        body: JSON.stringify({ provider, inviter, ...credential })
       });
       const data = await response.json().catch(() => ({}));
 
@@ -3931,6 +3934,12 @@ export default function App() {
       localStorage.setItem('verserain_is_premium', isPrem ? 'true' : 'false');
       if (user.city) localStorage.setItem('verserain_custom_city', user.city);
       if (user.country) localStorage.setItem('verserain_custom_country', user.country);
+      // Cross-device referral: if the backend has an inviter recorded for
+      // this account and this browser doesn't, restore it so the existing
+      // reward-on-first-verse logic still fires.
+      if (user.invitedBy && !localStorage.getItem('verserain_inviter') && !localStorage.getItem('verserain_invite_claimed')) {
+        localStorage.setItem('verserain_inviter', user.invitedBy);
+      }
       setShowLoginModal(null);
     } catch (err) {
       setAuthError(t("OAuth 連線失敗", "OAuth connection failed"));
@@ -16498,7 +16507,8 @@ const deDict = {
 
                   try {
                     const endpoint = showLoginModal === 'signup' ? '/register' : '/login';
-                    const payload = { email, password, nickname: nameStr };
+                    const inviter = localStorage.getItem('verserain_inviter') || undefined;
+                    const payload = { email, password, nickname: nameStr, inviter };
 
                     // Hit PartyKit Backend
                     const host = "https://verserain-party.hungry4grace.partykit.dev/parties/main/global-auth-db" + endpoint;
@@ -16536,9 +16546,14 @@ const deDict = {
                         
                         if (data.user.city) localStorage.setItem('verserain_custom_city', data.user.city);
                         else localStorage.removeItem('verserain_custom_city');
-                        
+
                         if (data.user.country) localStorage.setItem('verserain_custom_country', data.user.country);
                         else localStorage.removeItem('verserain_custom_country');
+
+                        // Cross-device referral restore — same logic as OAuth path.
+                        if (data.user.invitedBy && !localStorage.getItem('verserain_inviter') && !localStorage.getItem('verserain_invite_claimed')) {
+                          localStorage.setItem('verserain_inviter', data.user.invitedBy);
+                        }
                         
                         // Force a submit to update map immediately with correct location
                         if (geoRef.current) {

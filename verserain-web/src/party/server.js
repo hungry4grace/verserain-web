@@ -368,24 +368,32 @@ export default class Server {
         // 2. User Registration Endpoint
         if (url.pathname.endsWith('/register')) {
            try {
-              const { email, password, nickname } = await request.json();
+              const { email, password, nickname, inviter } = await request.json();
               if (!email || !password) return new Response(JSON.stringify({ error: 'Email and password required' }), { status: 400, headers: corsHeaders });
-              
+
               let user = await this.room.storage.get(`user:${email.toLowerCase()}`);
-              
+
               // Handle conflict or claim ghost account
               if (user && user.password) {
                  return new Response(JSON.stringify({ error: 'Email already registered' }), { status: 409, headers: corsHeaders });
               }
-              
+
               // Generate a 6-digit verification code
               const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
-              
+
               // If a webhook already created a ghost record, we preserve `isPremium`
               const isPremium = user ? user.isPremium : false;
               const finalName = (user && user.skoolName) ? user.skoolName : (nickname || "Player");
 
               const newUserObj = { email: email.toLowerCase(), password: password, name: finalName, isPremium, verificationCode, verified: false };
+              // Bind inviter (referral code from ?ref=) to this account so it
+              // survives cross-device login — set once on creation only.
+              const cleanInviter = typeof inviter === 'string' ? inviter.trim() : '';
+              if (cleanInviter && !(user && user.invitedBy)) {
+                 newUserObj.invitedBy = cleanInviter;
+              } else if (user && user.invitedBy) {
+                 newUserObj.invitedBy = user.invitedBy;
+              }
               await this.room.storage.put(`user:${email.toLowerCase()}`, newUserObj);
               
               // Send the OTP via email
@@ -431,21 +439,29 @@ export default class Server {
         // 3. User Login Endpoint
         if (url.pathname.endsWith('/login')) {
            try {
-              const { email, password } = await request.json();
+              const { email, password, inviter } = await request.json();
               if (!email || !password) return new Response(JSON.stringify({ error: 'Email and password required' }), { status: 400, headers: corsHeaders });
-              
+
               let user = await this.room.storage.get(`user:${email.toLowerCase()}`);
-              
+
               if (!user || user.password !== password) {
                  return new Response(JSON.stringify({ error: 'Invalid email or password' }), { status: 401, headers: corsHeaders });
               }
-              
+
               // Enforce verification only if a verification code exists. (Allows old users without this flag to still login).
               if (user.verified === false) {
                  return new Response(JSON.stringify({ error: '請先驗證您的電子郵件 (Please verify your email first)', requiresVerification: true }), { status: 403, headers: corsHeaders });
               }
-              
-              return new Response(JSON.stringify({ success: true, user: { email: user.email, name: user.name, isPremium: user.isPremium } }), { status: 200, headers: corsHeaders });
+
+              // Late-bind inviter if a returning user logs in from a new
+              // device with a ?ref= link in the URL and we never recorded it.
+              const cleanInviter = typeof inviter === 'string' ? inviter.trim() : '';
+              if (cleanInviter && !user.invitedBy) {
+                 user.invitedBy = cleanInviter;
+                 await this.room.storage.put(`user:${email.toLowerCase()}`, user);
+              }
+
+              return new Response(JSON.stringify({ success: true, user: { email: user.email, name: user.name, isPremium: user.isPremium, invitedBy: user.invitedBy || null } }), { status: 200, headers: corsHeaders });
            } catch(e) {
               return new Response(JSON.stringify({ error: 'Login failed' }), { status: 500, headers: corsHeaders });
            }
@@ -466,7 +482,7 @@ export default class Server {
         if (url.pathname.endsWith('/oauth-login')) {
            try {
               const body = await request.json();
-              const { provider, idToken, accessToken } = body;
+              const { provider, idToken, accessToken, inviter } = body;
               if (!provider || (!idToken && !accessToken)) {
                  return new Response(JSON.stringify({ error: 'provider and credential required' }), { status: 400, headers: corsHeaders });
               }
@@ -507,6 +523,10 @@ export default class Server {
               }
               const displayName = payload.name || payload.given_name || body.name || email.split('@')[0];
 
+              // Bind inviter (referral code from ?ref=) to this account so it
+              // survives cross-device login — set once, never overwrite.
+              const cleanInviter = typeof inviter === 'string' ? inviter.trim() : '';
+
               let user = await this.room.storage.get(`user:${email}`);
               if (!user) {
                  // First-time OAuth user — auto-create as verified.
@@ -520,6 +540,7 @@ export default class Server {
                     oauthSub: sub,
                     createdAt: new Date().toISOString()
                  };
+                 if (cleanInviter) user.invitedBy = cleanInviter;
                  await this.room.storage.put(`user:${email}`, user);
               } else {
                  // Existing user — record OAuth identity so future logins can
@@ -530,6 +551,7 @@ export default class Server {
                  if (!user.verified) { user.verified = true; user.verificationCode = null; dirty = true; }
                  if (!user.oauthProvider) { user.oauthProvider = provider; dirty = true; }
                  if (!user.oauthSub) { user.oauthSub = sub; dirty = true; }
+                 if (cleanInviter && !user.invitedBy) { user.invitedBy = cleanInviter; dirty = true; }
                  if (dirty) await this.room.storage.put(`user:${email}`, user);
               }
 
@@ -540,7 +562,8 @@ export default class Server {
                     name: user.name || displayName,
                     isPremium: user.isPremium || false,
                     city: user.city,
-                    country: user.country
+                    country: user.country,
+                    invitedBy: user.invitedBy || null
                  }
               }), { status: 200, headers: corsHeaders });
            } catch (e) {
