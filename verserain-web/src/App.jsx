@@ -3244,9 +3244,17 @@ export default function App() {
       .toLowerCase();
     const primaryRefs = new Set((primarySet.verses || []).map(v => normalizeVerseReferenceKey(v.reference)).filter(Boolean));
 
+    // CUV sets are historically stored with no language suffix (e.g.
+    // "gospel-of-john"), while every other language uses "<base>-<lang>"
+    // (e.g. "gospel-of-john-he", "gospel-of-john-cuvs"). So when pairing
+    // *into* CUV we also try the bare base id, and when pairing *from* CUV
+    // we treat the entire id as the base.
+    const baseId = primaryId.replace(/-(cuv|cuvs|kjv|esv|niv|ja|ko|fa|he|es|tr|de|my|vi)$/i, '');
     const candidates = [
       secondarySets.find(set => set.id === `${primaryId}-${bilingualSecondaryVersion}`),
       secondarySets.find(set => set.id === primaryId.replace(/-(cuv|cuvs|kjv|esv|niv|ja|ko|fa|he|es|tr|de|my|vi)$/i, `-${bilingualSecondaryVersion}`)),
+      bilingualSecondaryVersion === 'cuv' ? secondarySets.find(set => set.id === baseId) : null,
+      bilingualSecondaryVersion !== 'cuv' ? secondarySets.find(set => set.id === `${baseId}-${bilingualSecondaryVersion}`) : null,
       secondarySets.find(set => primaryId === 'rain-verses' && set.id === `rain-verses-${bilingualSecondaryVersion}`),
       secondarySets.find(set => set.id === primaryId),
       secondarySets.find(set => String(set.title || '').replace(/\s*\((KJV|ESV|NIV)\)\s*/gi, '').replace(/\s+/g, ' ').trim().toLowerCase() === normalizedTitle)
