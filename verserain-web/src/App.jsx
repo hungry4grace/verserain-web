@@ -2934,6 +2934,87 @@ export default function App() {
       return [];
     }
   });
+
+  // Mirror customVerseSets to the backend tied to playerName so private
+  // (unpublished) sets are visible across the user's devices. Without this,
+  // a set created on a phone is invisible on web — they're separate
+  // localStorage buckets.
+  //
+  // Strategy:
+  //   - On login (playerName change): GET remote → merge with local, prefer
+  //     the more-recently-edited copy of each id, then PUT the merge back.
+  //   - On every customVerseSets state change AFTER initial sync: PUT to
+  //     remote (debounced via the state-change effect's natural batching).
+  //
+  // We only sync sets owned by the current user — i.e. without authorName,
+  // or whose authorName matches playerName — to avoid uploading copies of
+  // other authors' published sets that the user pulled in via /custom-sets.
+  const privateSetsInitialSyncDoneRef = useRef(false);
+  const lastPushedPrivateSetsRef = useRef('');
+
+  useEffect(() => {
+    if (!playerName) return;
+    privateSetsInitialSyncDoneRef.current = false;
+    let cancelled = false;
+    const host = "https://verserain-party.hungry4grace.partykit.dev/parties/main/global-auth-db";
+    (async () => {
+      try {
+        const res = await fetch(`${host}/private-sets?player=${encodeURIComponent(playerName)}`);
+        if (!res.ok) throw new Error(`status ${res.status}`);
+        const data = await res.json();
+        if (cancelled) return;
+        const remoteSets = Array.isArray(data?.sets) ? data.sets : [];
+        // Merge by id: keep the entry with the larger lastEditedAt timestamp.
+        const localSetsJson = localStorage.getItem('verseRain_custom_sets');
+        const localSets = localSetsJson ? JSON.parse(localSetsJson) : [];
+        const byId = new globalThis.Map();
+        const tsOf = (s) => {
+          const t = Date.parse(s?.lastEditedAt || s?.createdAt || '');
+          return Number.isFinite(t) ? t : 0;
+        };
+        for (const s of remoteSets) { if (s?.id) byId.set(s.id, s); }
+        for (const s of localSets) {
+          if (!s?.id) continue;
+          const existing = byId.get(s.id);
+          if (!existing || tsOf(s) >= tsOf(existing)) byId.set(s.id, s);
+        }
+        const merged = Array.from(byId.values());
+        if (!cancelled) {
+          setCustomVerseSets(merged);
+          localStorage.setItem('verseRain_custom_sets', JSON.stringify(merged));
+          // Push the merge back so the remote has the union too.
+          const ownedForPush = merged.filter(s => !s.authorName || s.authorName === playerName || s.authorName === 'Anonymous');
+          lastPushedPrivateSetsRef.current = JSON.stringify(ownedForPush);
+          fetch(`${host}/save-private-sets`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ playerName, sets: ownedForPush }),
+          }).catch(() => {});
+        }
+      } catch {
+        // No-op on network error; local data still works.
+      } finally {
+        if (!cancelled) privateSetsInitialSyncDoneRef.current = true;
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [playerName]);
+
+  // Push customVerseSets to the backend whenever it changes — but only after
+  // the initial sync has completed (avoids racing the merge above).
+  useEffect(() => {
+    if (!playerName) return;
+    if (!privateSetsInitialSyncDoneRef.current) return;
+    const ownedForPush = customVerseSets.filter(s => !s.authorName || s.authorName === playerName || s.authorName === 'Anonymous');
+    const payload = JSON.stringify(ownedForPush);
+    if (payload === lastPushedPrivateSetsRef.current) return;
+    lastPushedPrivateSetsRef.current = payload;
+    fetch(`https://verserain-party.hungry4grace.partykit.dev/parties/main/global-auth-db/save-private-sets`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ playerName, sets: ownedForPush }),
+    }).catch(() => {});
+  }, [customVerseSets, playerName]);
   const [hiddenOfficialSetIds, setHiddenOfficialSetIds] = useState(() => {
     try {
       return JSON.parse(localStorage.getItem('verseRain_hidden_official_sets') || '[]');
@@ -12609,7 +12690,7 @@ const deDict = {
                     verserain
                   </div>
                   <div className="app-brand-version" style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', marginTop: '4px', marginLeft: '2px' }}>
-                    v3.11.0
+                    v3.12.0
                   </div>
                 </div>
                 <div ref={langPickerRef} style={{ position: 'relative' }}>

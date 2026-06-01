@@ -735,6 +735,34 @@ export default class Server {
       }
 
 
+      // 4.5 Private Custom Verse Sets — per-user sync (replaces device-local
+      // only storage). Stored at `private-sets:<playerName>` as an array of
+      // the user's custom verse set objects. Distinct from `/custom-sets`
+      // (the global published-set list everyone can see).
+      if (url.pathname.endsWith('/save-private-sets') && request.method === 'POST') {
+         try {
+            const { playerName, sets } = await request.json();
+            if (!playerName || !Array.isArray(sets)) {
+               return new Response(JSON.stringify({ error: 'playerName and sets[] required' }), { status: 400, headers: corsHeaders });
+            }
+            await this.room.storage.put(`private-sets:${playerName}`, sets);
+            return new Response(JSON.stringify({ success: true, count: sets.length }), { status: 200, headers: corsHeaders });
+         } catch (e) {
+            return new Response(JSON.stringify({ error: 'Failed to save private sets' }), { status: 500, headers: corsHeaders });
+         }
+      }
+
+      if (url.pathname.endsWith('/private-sets') && request.method === 'GET') {
+         try {
+            const playerName = url.searchParams.get('player');
+            if (!playerName) return new Response(JSON.stringify({ error: 'player param required' }), { status: 400, headers: corsHeaders });
+            const data = await this.room.storage.get(`private-sets:${playerName}`);
+            return new Response(JSON.stringify({ success: true, sets: Array.isArray(data) ? data : [] }), { status: 200, headers: corsHeaders });
+         } catch (e) {
+            return new Response(JSON.stringify({ error: 'Failed to fetch private sets' }), { status: 500, headers: corsHeaders });
+         }
+      }
+
       // 5. Garden Sync — Save & Retrieve player garden data
       if (url.pathname.endsWith('/save-garden') && request.method === 'POST') {
          try {
