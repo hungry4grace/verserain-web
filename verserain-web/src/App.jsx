@@ -3900,6 +3900,19 @@ export default function App() {
       .finally(() => setIsFetchingGlobalLeaderboard(false));
   };
   const [showLoginModal, setShowLoginModal] = useState(null);
+
+  // Header language picker — grid/table layout so all 15+ languages are
+  // visible at once instead of buried in a scroll-cropped <select>.
+  const [showLangPicker, setShowLangPicker] = useState(false);
+  const langPickerRef = useRef(null);
+  useEffect(() => {
+    if (!showLangPicker) return undefined;
+    const close = (e) => {
+      if (!langPickerRef.current?.contains(e.target)) setShowLangPicker(false);
+    };
+    document.addEventListener('pointerdown', close);
+    return () => document.removeEventListener('pointerdown', close);
+  }, [showLangPicker]);
   const [verifyEmail, setVerifyEmail] = useState("");
 
   // ─── OAuth (Google / Apple) ───────────────────────────────────────────────
@@ -12049,31 +12062,68 @@ const deDict = {
                     verserain
                   </div>
                   <div className="app-brand-version" style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', marginTop: '4px', marginLeft: '2px' }}>
-                    v3.9.1
+                    v3.9.2
                   </div>
                 </div>
-                <select
-                  className="app-language-select"
-                  value={version}
-                  onChange={(e) => handleVersionChange(e.target.value)}
-                  title="語言 / Language / זבאن / שפה"
-                  style={{ padding: '0.3rem 0.5rem', borderRadius: '4px', border: '1px solid #cbd5e1', background: '#3b82f6', color: '#fff', fontWeight: 'bold', cursor: 'pointer', fontSize: '0.8rem', fontFamily: 'var(--control-font-family)' }}
-                >
-                  <option value="cuv">繁體中文</option>
-                  <option value="cuvs">简体中文</option>
-                  <option value="kjv">English - KJV</option>
-                  <option value="esv">English - ESV</option>
-                  <option value="niv">English - NIV</option>
-                  <option value="fa">فارسی</option>
-                  <option value="he">עברית</option>
-                  <option value="ja">日本語</option>
-                  <option value="ko">한국어</option>
-                  <option value="es">Español</option>
-                  <option value="tr">Türkçe</option>
-                  <option value="de">Deutsch</option>
-                  <option value="my">မြန်မာ</option>
-                  <option value="vi">Tiếng Việt</option>
-                </select>
+                <div ref={langPickerRef} style={{ position: 'relative' }}>
+                  <button
+                    type="button"
+                    className="app-language-select"
+                    onClick={() => setShowLangPicker(prev => !prev)}
+                    title="Language"
+                    style={{ padding: '0.3rem 0.7rem', borderRadius: '4px', border: '1px solid #cbd5e1', background: '#3b82f6', color: '#fff', fontWeight: 'bold', cursor: 'pointer', fontSize: '0.8rem', fontFamily: 'var(--control-font-family)', display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}
+                  >
+                    <span>{BIBLE_LANGUAGE_OPTIONS.find(o => o.value === version)?.label || version}</span>
+                    <span style={{ fontSize: '0.6rem', opacity: 0.85 }}>▾</span>
+                  </button>
+                  {showLangPicker && (
+                    <div
+                      role="dialog"
+                      style={{
+                        position: 'absolute',
+                        top: 'calc(100% + 6px)',
+                        left: 0,
+                        background: '#ffffff',
+                        border: '1px solid #cbd5e1',
+                        borderRadius: '10px',
+                        boxShadow: '0 18px 35px rgba(15, 23, 42, 0.18), 0 6px 12px rgba(15, 23, 42, 0.08)',
+                        padding: '0.55rem',
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(3, minmax(120px, 1fr))',
+                        gap: '0.4rem',
+                        zIndex: 200,
+                        fontFamily: 'var(--control-font-family)',
+                      }}
+                    >
+                      {BIBLE_LANGUAGE_OPTIONS.map(option => {
+                        const isActive = option.value === version;
+                        return (
+                          <button
+                            key={option.value}
+                            type="button"
+                            onClick={() => { handleVersionChange(option.value); setShowLangPicker(false); }}
+                            style={{
+                              padding: '0.55rem 0.6rem',
+                              border: isActive ? '2px solid #3b82f6' : '1px solid #e2e8f0',
+                              borderRadius: '7px',
+                              background: isActive ? '#3b82f6' : '#f8fafc',
+                              color: isActive ? '#ffffff' : '#0f172a',
+                              fontSize: '0.85rem',
+                              fontWeight: isActive ? 700 : 600,
+                              cursor: 'pointer',
+                              textAlign: 'center',
+                              whiteSpace: 'nowrap',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                            }}
+                          >
+                            {option.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
                 <select
                   className="app-language-select"
                   value={selectedVoiceName}
@@ -12295,20 +12345,9 @@ const deDict = {
                             onChange={(e) => handleVersionChange(e.target.value)}
                             style={{ width: '100%', padding: '0.65rem 0.9rem', borderRadius: '10px', border: '1px solid #334155', background: '#1e293b', color: '#fff', fontSize: '1rem', fontWeight: 'bold', cursor: 'pointer', fontFamily: 'var(--control-font-family)' }}
                           >
-                            <option value="cuv">繁體中文</option>
-                            <option value="cuvs">简体中文</option>
-                            <option value="kjv">English - KJV</option>
-                            <option value="esv">English - ESV</option>
-                            <option value="niv">English - NIV</option>
-                            <option value="fa">فارسی</option>
-                            <option value="he">עברית</option>
-                            <option value="ja">日本語</option>
-                            <option value="ko">한국어</option>
-                            <option value="es">Español</option>
-                            <option value="tr">Türkçe</option>
-                            <option value="de">Deutsch</option>
-                            <option value="my">မြန်မာ</option>
-                            <option value="vi">Tiếng Việt</option>
+                            {BIBLE_LANGUAGE_OPTIONS.map(option => (
+                              <option key={option.value} value={option.value}>{option.label}</option>
+                            ))}
                           </select>
                         </div>
 
