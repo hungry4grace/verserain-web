@@ -4650,6 +4650,36 @@ export default function App() {
           startVerse
         });
         window.history.replaceState({}, document.title, window.location.pathname);
+      } else if (!listenSetFetchAttemptedRef.current.has(listenSetRef)) {
+        // Set not in current activeVerseSets — could be because:
+        //  • publishedVerseSets hasn't finished its on-mount fetch yet, OR
+        //  • the set is a private custom set still syncing via /private-sets, OR
+        //  • this is a different account opening a freshly-published share URL.
+        // Trigger fresh fetches so the useEffect re-runs with up-to-date data
+        // once the responses come back. Guarded by a Set so we only fire each
+        // remote lookup once per set id.
+        listenSetFetchAttemptedRef.current.add(listenSetRef);
+        const host = "https://verserain-party.hungry4grace.partykit.dev/parties/main/global-auth-db";
+        fetch(`${host}/custom-sets`)
+          .then(r => r.ok ? r.json() : null)
+          .then(arr => { if (Array.isArray(arr)) setPublishedVerseSets(arr); })
+          .catch(() => {});
+        if (playerName) {
+          fetch(`${host}/private-sets?player=${encodeURIComponent(playerName)}`)
+            .then(r => r.ok ? r.json() : null)
+            .then(data => {
+              const remote = Array.isArray(data?.sets) ? data.sets : null;
+              if (!remote || !remote.length) return;
+              setCustomVerseSets(prev => {
+                const byId = new globalThis.Map(prev.map(s => [s.id, s]));
+                for (const s of remote) { if (s?.id && !byId.has(s.id)) byId.set(s.id, s); }
+                const merged = Array.from(byId.values());
+                try { localStorage.setItem('verseRain_custom_sets', JSON.stringify(merged)); } catch {}
+                return merged;
+              });
+            })
+            .catch(() => {});
+        }
       }
       return;
     }
@@ -4719,6 +4749,9 @@ export default function App() {
   const timerRef = useRef(null);
   const isGameTimerPausedRef = useRef(false);
   const speechRef = useRef(null);
+  // Tracks listenSet ids we've already fired a fallback remote fetch for, so
+  // the share-URL handler doesn't hammer PartyKit on every activeVerseSets re-render.
+  const listenSetFetchAttemptedRef = useRef(new globalThis.Set());
 
   useEffect(() => {
     // Dynamically scale animation speeds (10% increase compounding, or simply linear)
