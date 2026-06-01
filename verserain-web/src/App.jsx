@@ -571,7 +571,12 @@ function getCachedBibleVerse(version, normalizedKey) {
     const raw = localStorage.getItem('verserain_bible_cache');
     if (!raw) return null;
     const cache = JSON.parse(raw);
-    return cache[`${version}|${normalizedKey}`] || null;
+    const cached = cache[`${version}|${normalizedKey}`];
+    if (!cached) return null;
+    // Older cache entries may include bolls.life markup (<i>, <na>, etc.).
+    // Strip on read so already-cached verses render cleanly without forcing
+    // a re-fetch.
+    return cached.includes('<') ? cached.replace(/<br\s*\/?>/gi, ' ').replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim() : cached;
   } catch { return null; }
 }
 
@@ -622,6 +627,18 @@ function getBollsSlug(targetVersion, bookId) {
   return BOLLS_TRANSLATIONS[targetVersion] || null;
 }
 
+// bolls.life embeds translator markup inside the verse text (e.g. <i>聖</i>
+// for CUV words added by translators, <S>123</S> Strong's numbers,
+// <na>...</na> for divine names, <small>...</small> footnotes). Strip them
+// all so they don't leak into the rendered verse blocks.
+function stripBollsMarkup(text) {
+  return String(text || '')
+    .replace(/<br\s*\/?>/gi, ' ')
+    .replace(/<[^>]+>/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
 async function fetchVerseFromBolls(normalizedKey, targetVersion) {
   const [bookPart, chapterVerse] = (normalizedKey || '').split('|');
   if (!chapterVerse) return null;
@@ -643,13 +660,7 @@ async function fetchVerseFromBolls(normalizedKey, targetVersion) {
       if (!Array.isArray(verses) || !verses.length) return null;
       // Join with Arabic semicolon so splitVersePhrases() can split on verse boundaries
       return verses
-        .map(v => String(v.text || '')
-          .replace(/<S>\d+<\/S>/g, '')
-          .replace(/<br\s*\/?>/gi, ' ')
-          .replace(/<[^>]+>/g, '')
-          .replace(/\s+/g, ' ')
-          .trim()
-        )
+        .map(v => stripBollsMarkup(v.text))
         .filter(Boolean)
         .join('؛ ') || null;
     } catch { return null; }
@@ -677,13 +688,7 @@ async function fetchVerseFromBolls(normalizedKey, targetVersion) {
       verseNums.map(v =>
         fetch(`https://bolls.life/get-verse/${slug}/${bookId}/${chapter}/${v}/`)
           .then(r => r.ok ? r.json() : null)
-          .then(d => {
-            if (!d?.text) return null;
-            return String(d.text)
-              .replace(/<S>\d+<\/S>/g, '')   // strip Strong's numbers
-              .replace(/\s+/g, ' ')
-              .trim();
-          })
+          .then(d => d?.text ? stripBollsMarkup(d.text) || null : null)
           .catch(() => null)
       )
     );
