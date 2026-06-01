@@ -63,6 +63,10 @@ export const loadLanguageSets = async (lang) => {
       const sets = [...p.VERSE_SETS_PROVERBS_NIV, ...m.VERSE_SETS_NIV];
       return { sets, verses: sets.flatMap(s => s.verses) };
     }
+    case 'id': {
+      const m = await import('./verses_id');
+      return { sets: m.VERSE_SETS_ID, verses: m.VERSE_SETS_ID.flatMap(s => s.verses) };
+    }
     default:
       return { sets: [], verses: [] };
   }

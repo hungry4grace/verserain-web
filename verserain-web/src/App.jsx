@@ -533,6 +533,7 @@ function getVoiceLangForVersion(v) {
   if (v === 'de') return 'de-DE';
   if (v === 'my') return 'my-MM';
   if (v === 'vi') return 'vi-VN';
+  if (v === 'id') return 'id-ID';
   return 'zh-TW';
 }
 
@@ -550,7 +551,8 @@ const BIBLE_LANGUAGE_OPTIONS = [
   { value: 'tr', label: 'Türkçe' },
   { value: 'de', label: 'Deutsch' },
   { value: 'my', label: 'မြန်မာ' },
-  { value: 'vi', label: 'Tiếng Việt' }
+  { value: 'vi', label: 'Tiếng Việt' },
+  { value: 'id', label: 'Bahasa Indonesia' }
 ];
 
 // --- Bible verse cross-language lookup utilities ---
@@ -618,6 +620,7 @@ const BOLLS_TRANSLATIONS = {
   es:   'RV1960', // Spanish Reina-Valera 1960
   fa:   'POV',    // Persian Old Version
   vi:   'VI1934', // Vietnamese 1934
+  id:   'TB',     // Indonesian Terjemahan Baru (most widely-used)
   // he: OT → HAC, NT → DHNT  (handled below)
   // tr, my: not available on bolls.life
 };
@@ -863,7 +866,7 @@ function normalizeVerseReferenceKey(reference = '') {
         const names = [
           ...(b.names || []),
           ...(b.cn || []),
-          b.ja, b.ko, b.es, b.de, b.tr, b.fa, b.he, b.my, b.vi
+          b.ja, b.ko, b.es, b.de, b.tr, b.fa, b.he, b.my, b.vi, b.idn
         ].filter(Boolean);
         return names.some(name => {
           const n = String(name).toLowerCase().replace(/\./g, '').replace(/\s+/g, ' ');
@@ -890,7 +893,8 @@ function normalizeVerseReferenceKey(reference = '') {
       b.fa,
       b.he,
       b.my,
-      b.vi
+      b.vi,
+      b.idn
     ].filter(Boolean);
     return names.some(name => {
       const normalizedName = String(name).toLowerCase().replace(/\./g, '').replace(/\s+/g, ' ');
@@ -922,7 +926,7 @@ function findMatchingVerse(primaryVerse, primaryVerses = [], secondaryVerses = [
 function normalizeVerseSetIdentity(value = '') {
   return String(value || '')
     .replace(/\s*\((KJV|ESV|NIV)\)\s*/gi, '')
-    .replace(/-(cuv|cuvs|kjv|esv|niv|ja|ko|fa|he|es|tr|de|my|vi)$/i, '')
+    .replace(/-(cuv|cuvs|kjv|esv|niv|ja|ko|fa|he|es|tr|de|my|vi|id)$/i, '')
     .replace(/\s+/g, ' ')
     .trim()
     .toLowerCase();
@@ -3290,10 +3294,10 @@ export default function App() {
     // (e.g. "gospel-of-john-he", "gospel-of-john-cuvs"). So when pairing
     // *into* CUV we also try the bare base id, and when pairing *from* CUV
     // we treat the entire id as the base.
-    const baseId = primaryId.replace(/-(cuv|cuvs|kjv|esv|niv|ja|ko|fa|he|es|tr|de|my|vi)$/i, '');
+    const baseId = primaryId.replace(/-(cuv|cuvs|kjv|esv|niv|ja|ko|fa|he|es|tr|de|my|vi|id)$/i, '');
     const candidates = [
       secondarySets.find(set => set.id === `${primaryId}-${bilingualSecondaryVersion}`),
-      secondarySets.find(set => set.id === primaryId.replace(/-(cuv|cuvs|kjv|esv|niv|ja|ko|fa|he|es|tr|de|my|vi)$/i, `-${bilingualSecondaryVersion}`)),
+      secondarySets.find(set => set.id === primaryId.replace(/-(cuv|cuvs|kjv|esv|niv|ja|ko|fa|he|es|tr|de|my|vi|id)$/i, `-${bilingualSecondaryVersion}`)),
       bilingualSecondaryVersion === 'cuv' ? secondarySets.find(set => set.id === baseId) : null,
       bilingualSecondaryVersion !== 'cuv' ? secondarySets.find(set => set.id === `${baseId}-${bilingualSecondaryVersion}`) : null,
       secondarySets.find(set => primaryId === 'rain-verses' && set.id === `rain-verses-${bilingualSecondaryVersion}`),
@@ -3563,6 +3567,7 @@ export default function App() {
     else if (newVer === 'de') setUiLangPersisted('de');
     else if (newVer === 'my') setUiLangPersisted('my');
     else if (newVer === 'vi') setUiLangPersisted('vi');
+    else if (newVer === 'id') setUiLangPersisted('id');
     else if (newVer === 'cuvs') setUiLangPersisted('cuvs');
     else setUiLangPersisted('zh');
 
