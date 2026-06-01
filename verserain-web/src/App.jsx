@@ -12062,7 +12062,7 @@ const deDict = {
                     verserain
                   </div>
                   <div className="app-brand-version" style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', marginTop: '4px', marginLeft: '2px' }}>
-                    v3.9.2
+                    v3.9.3
                   </div>
                 </div>
                 <div ref={langPickerRef} style={{ position: 'relative' }}>
@@ -12079,10 +12079,15 @@ const deDict = {
                   {showLangPicker && (
                     <div
                       role="dialog"
+                      dir="ltr"
                       style={{
                         position: 'absolute',
                         top: 'calc(100% + 6px)',
-                        left: 0,
+                        // In Hebrew / Persian (RTL) layout the language button
+                        // sits on the visual right of the header, so anchor
+                        // the dropdown's right edge instead — otherwise it
+                        // overflows off-screen to the right.
+                        ...(uiLang === 'he' || uiLang === 'fa' ? { right: 0 } : { left: 0 }),
                         background: '#ffffff',
                         border: '1px solid #cbd5e1',
                         borderRadius: '10px',
