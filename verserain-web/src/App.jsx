@@ -15299,56 +15299,6 @@ const deDict = {
                         )}
                       </div>
 
-                      {/* Custom set plays */}
-                      <div>
-                        <h4 style={{ color: '#b45309', marginTop: 0, marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                          <Info size={18} /> {t('專屬題庫遊玩紀錄', 'Custom Set Plays')}
-                        </h4>
-                        {creatorHistory && creatorHistory.length > 0 ? (() => {
-                          // Group: same player + same verseSetName → sum amounts, keep latest timestamp
-                          const grouped = [];
-                          const keyMap = {};
-                          creatorHistory.forEach(h => {
-                            const key = `${h.player}::${h.verseSetName}`;
-                            if (keyMap[key] !== undefined) {
-                              grouped[keyMap[key]].amount += h.amount;
-                              if (h.timestamp > grouped[keyMap[key]].timestamp) grouped[keyMap[key]].timestamp = h.timestamp;
-                              grouped[keyMap[key]].count = (grouped[keyMap[key]].count || 1) + 1;
-                            } else {
-                              keyMap[key] = grouped.length;
-                              grouped.push({ ...h, count: 1 });
-                            }
-                          });
-                          const totalPages = Math.ceil(grouped.length / HISTORY_PAGE_SIZE);
-                          const page = Math.min(creatorHistoryPage, totalPages);
-                          const sliced = grouped.slice((page - 1) * HISTORY_PAGE_SIZE, page * HISTORY_PAGE_SIZE);
-                          return (
-                            <>
-                              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                                {sliced.map((h, i) => (
-                                  <div key={i} style={{ background: '#fff', padding: '10px 15px', borderRadius: '8px', borderLeft: '4px solid #f59e0b', boxShadow: '0 1px 2px rgba(0,0,0,0.05)', fontSize: '0.9rem', color: '#475569' }}>
-                                    <div style={{ fontSize: '0.75rem', color: '#94a3b8', marginBottom: '4px' }}>{new Date(h.timestamp).toLocaleString()} {h.count > 1 && <span style={{ background: '#fef3c7', color: '#92400e', borderRadius: '10px', padding: '1px 7px', fontSize: '0.7rem', fontWeight: 'bold', marginLeft: '4px' }}>×{h.count} 次</span>}</div>
-                                    <span>{t('玩家', 'Player')} <strong style={{ color: '#0f766e' }}>{h.player}</strong> {t('突破了你的題庫', 'cleared your set')} 「<strong style={{ color: '#b45309' }}>{h.verseSetName}</strong>」 <span style={{ color: '#f59e0b', fontWeight: 'bold' }}>(+{h.amount} {t('點', 'pts')})</span></span>
-                                  </div>
-                                ))}
-                              </div>
-                              {totalPages > 1 && (
-                                <div style={{ display: 'flex', justifyContent: 'center', gap: '6px', marginTop: '10px' }}>
-                                  <button onClick={() => setCreatorHistoryPage(p => Math.max(1, p - 1))} disabled={page <= 1} style={{ padding: '4px 10px', borderRadius: '6px', border: '1px solid #cbd5e1', background: page <= 1 ? '#f1f5f9' : '#fff', color: page <= 1 ? '#94a3b8' : '#334155', cursor: page <= 1 ? 'default' : 'pointer', fontWeight: 'bold' }}>‹</button>
-                                  {Array.from({ length: totalPages }, (_, idx) => (
-                                    <button key={idx} onClick={() => setCreatorHistoryPage(idx + 1)} style={{ padding: '4px 10px', borderRadius: '6px', border: 'none', background: page === idx + 1 ? '#b45309' : '#f1f5f9', color: page === idx + 1 ? '#fff' : '#334155', cursor: 'pointer', fontWeight: 'bold' }}>{idx + 1}</button>
-                                  ))}
-                                  <button onClick={() => setCreatorHistoryPage(p => Math.min(totalPages, p + 1))} disabled={page >= totalPages} style={{ padding: '4px 10px', borderRadius: '6px', border: '1px solid #cbd5e1', background: page >= totalPages ? '#f1f5f9' : '#fff', color: page >= totalPages ? '#94a3b8' : '#334155', cursor: page >= totalPages ? 'default' : 'pointer', fontWeight: 'bold' }}>›</button>
-                                </div>
-                              )}
-                            </>
-                          );
-                        })() : (
-                          <div style={{ padding: '1.5rem', background: '#fff', border: '1px dashed #cbd5e1', borderRadius: '8px', color: '#94a3b8', textAlign: 'center', fontSize: '0.9rem' }}>
-                            {t('尚未有玩家遊玩你的專屬題庫。建立更多題庫來吸引大家挑戰！', 'No custom set plays yet. Create more sets for others to play!')}
-                          </div>
-                        )}
-                      </div>
                     </div>
                   </div>
 
