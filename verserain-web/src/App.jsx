@@ -3010,6 +3010,43 @@ export default function App() {
 
   const localFruits = React.useMemo(() => Object.entries(gardenData || {}).filter(([k]) => k !== '_activity').reduce((sum, [, curr]) => sum + (curr.fruits || 0), 0), [gardenData]);
   const totalFruits = localFruits + creatorPoints;
+
+  // Phase 1 personal-progress widgets (Garden page header). Cheap memoized
+  // derivations from the existing _activity map and verse entries — no new
+  // data sources are added.
+  const todayDateStr = React.useMemo(() => new Date().toLocaleDateString('en-CA'), []);
+  const personalProgress = React.useMemo(() => {
+    const activity = (gardenData && gardenData._activity) || {};
+    const verseEntries = Object.entries(gardenData || {}).filter(([k]) => k !== '_activity');
+
+    // Trees + champ counts.
+    const treesPlanted = verseEntries.length;
+    const champVerses = verseEntries.filter(([, v]) => (v?.fruits || 0) > 0).length;
+
+    // Streaks: walk back from today, counting consecutive days with activity.
+    const today = new Date(`${todayDateStr}T00:00:00`);
+    let currentStreak = 0;
+    for (let d = new Date(today); ; d.setDate(d.getDate() - 1)) {
+      const k = d.toLocaleDateString('en-CA');
+      if ((activity[k] || 0) > 0) currentStreak++;
+      else break;
+    }
+    // Longest streak: scan all keys, find max run of consecutive YYYY-MM-DD.
+    const sortedKeys = Object.keys(activity).filter(k => (activity[k] || 0) > 0).sort();
+    let longestStreak = 0, run = 0, prevTs = null;
+    for (const k of sortedKeys) {
+      const ts = new Date(`${k}T00:00:00`).getTime();
+      if (prevTs !== null && ts - prevTs === 86400000) run++;
+      else run = 1;
+      if (run > longestStreak) longestStreak = run;
+      prevTs = ts;
+    }
+
+    const todayCount = activity[todayDateStr] || 0;
+    const totalActivities = Object.values(activity).reduce((s, n) => s + (n || 0), 0);
+
+    return { todayCount, currentStreak, longestStreak, treesPlanted, champVerses, totalActivities };
+  }, [gardenData, todayDateStr]);
   const skoolLevel = React.useMemo(() => getSkoolLevel(totalFruits), [totalFruits]);
   const hasPremiumAccess = isPremium || skoolLevel.level >= 3;
   const isAdmin = ['samhsiung@gmail.com', 'davidhwang1125@gmail.com', 'hsiungsam@gmail.com', 'hungry4grace@gmail.com', 'verserain.admin@gmail.com'].includes(userEmail.toLowerCase()) || skoolLevel.level >= 5;
@@ -12572,7 +12609,7 @@ const deDict = {
                     verserain
                   </div>
                   <div className="app-brand-version" style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', marginTop: '4px', marginLeft: '2px' }}>
-                    v3.10.0
+                    v3.11.0
                   </div>
                 </div>
                 <div ref={langPickerRef} style={{ position: 'relative' }}>
@@ -12686,9 +12723,6 @@ const deDict = {
               </div>
               <div className="block-tile" onClick={() => setMainTab('multiplayer')} style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', padding: '0.5rem 1.2rem', cursor: 'pointer', backgroundColor: mainTab === 'multiplayer' ? '#ec4899' : 'white', color: mainTab === 'multiplayer' ? 'white' : '#475569', borderRadius: '20px', fontWeight: 'bold', whiteSpace: 'nowrap', transition: 'all 0.2s' }}>
                 <Gamepad2 size={18} /> {t('團隊競賽', 'Team Competition')}
-              </div>
-              <div className="block-tile" onClick={() => { setMainTab('leaderboard'); fetchGlobalLeaderboard(); }} style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', padding: '0.5rem 1.2rem', cursor: 'pointer', backgroundColor: mainTab === 'leaderboard' ? '#f59e0b' : 'white', color: mainTab === 'leaderboard' ? 'white' : '#475569', borderRadius: '20px', fontWeight: 'bold', whiteSpace: 'nowrap', transition: 'all 0.2s' }}>
-                <Trophy size={18} /> {t('排行榜', 'Ranks')}
               </div>
               <div className="block-tile" onClick={() => setMainTab('search')} style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', padding: '0.5rem 1.2rem', cursor: 'pointer', backgroundColor: mainTab === 'search' ? '#8b5cf6' : 'white', color: mainTab === 'search' ? 'white' : '#475569', borderRadius: '20px', fontWeight: 'bold', whiteSpace: 'nowrap', transition: 'all 0.2s' }}>
                 <Search size={18} /> {t('搜尋', 'Search')}
@@ -14763,6 +14797,56 @@ const deDict = {
                   <p style={{ color: '#64748b', fontSize: '0.9rem', marginBottom: '1rem' }}>
                     {t("每挑戰一節新經文，就會在空地上長出嫩芽。持續練習讓它長大！通過經文變成大樹，創新高則結出果子。", "Each new verse you challenge sprouts a seedling. Keep practicing to grow it! Clearing a verse makes it a full tree; new high scores bear fruit.")}
                   </p>
+
+                  {/* Phase 1: Personal-progress hero cards (today + streak + accumulation) */}
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '1rem', marginBottom: '1.75rem' }}>
+                    {/* Today + Streak (combined) */}
+                    <div style={{ background: 'linear-gradient(135deg, #ecfdf5, #d1fae5)', border: '1px solid #6ee7b7', borderRadius: '14px', padding: '1.3rem 1.5rem', textAlign: 'center', boxShadow: '0 2px 6px rgba(16,185,129,0.08)' }}>
+                      <div style={{ color: '#065f46', fontSize: '0.8rem', fontWeight: 'bold', letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: '0.4rem' }}>{t('今日問候', "Today's Greeting")}</div>
+                      <div style={{ color: '#065f46', fontSize: '1.05rem', marginBottom: '1rem', fontWeight: 600 }}>
+                        {playerName
+                          ? t(`${playerName}，今日已背 ${personalProgress.todayCount} 次`, `${playerName}, ${personalProgress.todayCount} verse${personalProgress.todayCount === 1 ? '' : 's'} today`)
+                          : t(`今日已背 ${personalProgress.todayCount} 次`, `${personalProgress.todayCount} verse${personalProgress.todayCount === 1 ? '' : 's'} today`)}
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'center', gap: '0.5rem' }}>
+                        <span style={{ fontSize: '2.6rem', filter: personalProgress.currentStreak > 0 ? 'none' : 'grayscale(1) opacity(0.4)' }}>🔥</span>
+                        <span style={{ fontSize: '3rem', fontWeight: 800, color: '#047857', lineHeight: 1 }}>{personalProgress.currentStreak}</span>
+                      </div>
+                      <div style={{ color: '#047857', fontSize: '0.95rem', fontWeight: 600, marginTop: '0.3rem' }}>
+                        {personalProgress.currentStreak > 0
+                          ? t(`連續 ${personalProgress.currentStreak} 天`, `${personalProgress.currentStreak}-day streak`)
+                          : t('今天開始建立連續紀錄吧！', 'Start your streak today!')}
+                      </div>
+                      {personalProgress.longestStreak > personalProgress.currentStreak && (
+                        <div style={{ color: '#059669', fontSize: '0.78rem', marginTop: '0.35rem', opacity: 0.8 }}>
+                          {t(`最長連續：${personalProgress.longestStreak} 天`, `Best: ${personalProgress.longestStreak} days`)}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Personal cumulative stats */}
+                    <div style={{ background: 'linear-gradient(135deg, #eff6ff, #dbeafe)', border: '1px solid #93c5fd', borderRadius: '14px', padding: '1.3rem 1.5rem', boxShadow: '0 2px 6px rgba(59,130,246,0.08)' }}>
+                      <div style={{ color: '#1e3a8a', fontSize: '0.8rem', fontWeight: 'bold', letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: '0.7rem', textAlign: 'center' }}>{t('個人累積', 'Cumulative')}</div>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.7rem 1rem' }}>
+                        <div style={{ textAlign: 'center' }}>
+                          <div style={{ fontSize: '1.7rem', fontWeight: 800, color: '#1d4ed8', lineHeight: 1 }}>{personalProgress.totalActivities}</div>
+                          <div style={{ fontSize: '0.78rem', color: '#1e3a8a', marginTop: '0.25rem' }}>{t('已挑戰', 'Plays')}</div>
+                        </div>
+                        <div style={{ textAlign: 'center' }}>
+                          <div style={{ fontSize: '1.7rem', fontWeight: 800, color: '#1d4ed8', lineHeight: 1 }}>{personalProgress.treesPlanted}</div>
+                          <div style={{ fontSize: '0.78rem', color: '#1e3a8a', marginTop: '0.25rem' }}>{t('已栽種', 'Trees')}</div>
+                        </div>
+                        <div style={{ textAlign: 'center' }}>
+                          <div style={{ fontSize: '1.7rem', fontWeight: 800, color: '#1d4ed8', lineHeight: 1 }}>{personalProgress.champVerses}</div>
+                          <div style={{ fontSize: '0.78rem', color: '#1e3a8a', marginTop: '0.25rem' }}>{t('結果子', 'Fruited')}</div>
+                        </div>
+                        <div style={{ textAlign: 'center' }}>
+                          <div style={{ fontSize: '1.7rem', fontWeight: 800, color: '#1d4ed8', lineHeight: 1 }}>{totalFruits}</div>
+                          <div style={{ fontSize: '0.78rem', color: '#1e3a8a', marginTop: '0.25rem' }}>{t('總果子', 'Fruits')}</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
 
                   {/* My Harvest Basket Header */}
                   <div style={{ background: 'linear-gradient(135deg, #fffbeb, #fef3c7)', padding: '2rem', borderRadius: '16px', border: '1px solid #fde68a', marginBottom: '2rem', textAlign: 'center', boxShadow: '0 4px 10px rgba(0,0,0,0.05)' }}>
