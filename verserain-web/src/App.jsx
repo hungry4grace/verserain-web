@@ -14747,7 +14747,26 @@ const deDict = {
                                   // idle → start fresh
                                   const tmp = document.createElement('div');
                                   tmp.innerHTML = currentSet.description || '';
-                                  const text = (tmp.textContent || '').replace(/\s+/g, ' ').trim();
+                                  // Sanitize the description for TTS so URLs,
+                                  // markdown syntax characters, and bare
+                                  // protocol fragments aren't read out loud
+                                  // — that "https colon slash slash ..."
+                                  // recital is unpleasant.
+                                  const text = (tmp.textContent || '')
+                                    // Drop URLs (http(s)://, www., bare youtube embeds)
+                                    .replace(/https?:\/\/\S+/gi, ' ')
+                                    .replace(/\bwww\.\S+/gi, ' ')
+                                    // Drop markdown link [label](url) — keep label only
+                                    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+                                    // Strip markdown emphasis & headers/blockquote/list markers
+                                    .replace(/[*_~`]+/g, ' ')        // **bold** *italic* ~~strike~~ `code`
+                                    .replace(/^#{1,6}\s+/gm, '')      // # ## ### headings
+                                    .replace(/^\s*>\s+/gm, '')        // > blockquotes
+                                    .replace(/^\s*[-+]\s+/gm, '')     // - + list bullets
+                                    .replace(/^\s*\d+\.\s+/gm, '')    // 1. 2. ordered list
+                                    // Collapse whitespace
+                                    .replace(/\s+/g, ' ')
+                                    .trim();
                                   if (!text) return;
                                   initAudio();
                                   stopSpeechIfActive();
