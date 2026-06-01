@@ -534,6 +534,7 @@ function getVoiceLangForVersion(v) {
   if (v === 'my') return 'my-MM';
   if (v === 'vi') return 'vi-VN';
   if (v === 'id') return 'id-ID';
+  if (v === 'ms') return 'ms-MY';
   return 'zh-TW';
 }
 
@@ -552,7 +553,8 @@ const BIBLE_LANGUAGE_OPTIONS = [
   { value: 'de', label: 'Deutsch' },
   { value: 'my', label: 'မြန်မာ' },
   { value: 'vi', label: 'Tiếng Việt' },
-  { value: 'id', label: 'Bahasa Indonesia' }
+  { value: 'id', label: 'Bahasa Indonesia' },
+  { value: 'ms', label: 'Bahasa Melayu' }
 ];
 
 // --- Bible verse cross-language lookup utilities ---
@@ -621,6 +623,7 @@ const BOLLS_TRANSLATIONS = {
   fa:   'POV',    // Persian Old Version
   vi:   'VI1934', // Vietnamese 1934
   id:   'TB',     // Indonesian Terjemahan Baru (most widely-used)
+  ms:   'TB',     // Malay fallback to Indonesian TB (no public Malay Bible API; ~80% intelligible)
   // he: OT → HAC, NT → DHNT  (handled below)
   // tr, my: not available on bolls.life
 };
@@ -866,7 +869,7 @@ function normalizeVerseReferenceKey(reference = '') {
         const names = [
           ...(b.names || []),
           ...(b.cn || []),
-          b.ja, b.ko, b.es, b.de, b.tr, b.fa, b.he, b.my, b.vi, b.idn
+          b.ja, b.ko, b.es, b.de, b.tr, b.fa, b.he, b.my, b.vi, b.idn, b.msy
         ].filter(Boolean);
         return names.some(name => {
           const n = String(name).toLowerCase().replace(/\./g, '').replace(/\s+/g, ' ');
@@ -894,7 +897,8 @@ function normalizeVerseReferenceKey(reference = '') {
       b.he,
       b.my,
       b.vi,
-      b.idn
+      b.idn,
+      b.msy
     ].filter(Boolean);
     return names.some(name => {
       const normalizedName = String(name).toLowerCase().replace(/\./g, '').replace(/\s+/g, ' ');
@@ -926,7 +930,7 @@ function findMatchingVerse(primaryVerse, primaryVerses = [], secondaryVerses = [
 function normalizeVerseSetIdentity(value = '') {
   return String(value || '')
     .replace(/\s*\((KJV|ESV|NIV)\)\s*/gi, '')
-    .replace(/-(cuv|cuvs|kjv|esv|niv|ja|ko|fa|he|es|tr|de|my|vi|id)$/i, '')
+    .replace(/-(cuv|cuvs|kjv|esv|niv|ja|ko|fa|he|es|tr|de|my|vi|id|ms)$/i, '')
     .replace(/\s+/g, ' ')
     .trim()
     .toLowerCase();
@@ -3294,10 +3298,10 @@ export default function App() {
     // (e.g. "gospel-of-john-he", "gospel-of-john-cuvs"). So when pairing
     // *into* CUV we also try the bare base id, and when pairing *from* CUV
     // we treat the entire id as the base.
-    const baseId = primaryId.replace(/-(cuv|cuvs|kjv|esv|niv|ja|ko|fa|he|es|tr|de|my|vi|id)$/i, '');
+    const baseId = primaryId.replace(/-(cuv|cuvs|kjv|esv|niv|ja|ko|fa|he|es|tr|de|my|vi|id|ms)$/i, '');
     const candidates = [
       secondarySets.find(set => set.id === `${primaryId}-${bilingualSecondaryVersion}`),
-      secondarySets.find(set => set.id === primaryId.replace(/-(cuv|cuvs|kjv|esv|niv|ja|ko|fa|he|es|tr|de|my|vi|id)$/i, `-${bilingualSecondaryVersion}`)),
+      secondarySets.find(set => set.id === primaryId.replace(/-(cuv|cuvs|kjv|esv|niv|ja|ko|fa|he|es|tr|de|my|vi|id|ms)$/i, `-${bilingualSecondaryVersion}`)),
       bilingualSecondaryVersion === 'cuv' ? secondarySets.find(set => set.id === baseId) : null,
       bilingualSecondaryVersion !== 'cuv' ? secondarySets.find(set => set.id === `${baseId}-${bilingualSecondaryVersion}`) : null,
       secondarySets.find(set => primaryId === 'rain-verses' && set.id === `rain-verses-${bilingualSecondaryVersion}`),
@@ -3568,6 +3572,7 @@ export default function App() {
     else if (newVer === 'my') setUiLangPersisted('my');
     else if (newVer === 'vi') setUiLangPersisted('vi');
     else if (newVer === 'id') setUiLangPersisted('id');
+    else if (newVer === 'ms') setUiLangPersisted('ms');
     else if (newVer === 'cuvs') setUiLangPersisted('cuvs');
     else setUiLangPersisted('zh');
 
@@ -3996,7 +4001,7 @@ export default function App() {
       return localStorage.getItem('verseRain_voiceName') || '';
     }
   });
-  const langPrefixForVersion = (v) => (isEnglishBibleVersion(v) ? 'en' : v === 'ja' ? 'ja' : v === 'ko' ? 'ko' : v === 'fa' ? 'fa' : v === 'he' ? 'he' : v === 'es' ? 'es' : v === 'tr' ? 'tr' : v === 'de' ? 'de' : v === 'my' ? 'my' : v === 'vi' ? 'vi' : v === 'id' ? 'id' : 'zh');
+  const langPrefixForVersion = (v) => (isEnglishBibleVersion(v) ? 'en' : v === 'ja' ? 'ja' : v === 'ko' ? 'ko' : v === 'fa' ? 'fa' : v === 'he' ? 'he' : v === 'es' ? 'es' : v === 'tr' ? 'tr' : v === 'de' ? 'de' : v === 'my' ? 'my' : v === 'vi' ? 'vi' : v === 'id' ? 'id' : v === 'ms' ? 'ms' : 'zh');
   const filteredVoicesForVersion = availableVoices.filter(vc => (vc.lang || '').toLowerCase().startsWith(langPrefixForVersion(version)));
   const saveVoiceForVersion = (voiceName) => {
     try {
@@ -8361,6 +8366,91 @@ const idDict = {
     "Voice: Default": "Suara: Default",
 };
 
+const msDict = {
+    "每天一句神的話，心意更新而變化": "Satu ayat sehari, jauhkan iblis daripada anda",
+    "每日經文": "Renungan Harian",
+    "每日一句神的話，心意更新而變化。": "Satu ayat sehari untuk membaharui fikiran anda.",
+    "我的園子": "Taman Saya",
+    "主話如霖澆我田，歲歲結果到豐年。": "Lihat pokok firman hidup anda.",
+    "經文題庫": "Koleksi Ayat",
+    "經題萬卷勤溫故，句句生光照此程。": "Layari koleksi ayat global dan pilih ayat untuk dilatih.",
+    "團隊競賽": "Pertandingan Pasukan",
+    "同心競走天路程，並肩得勝主名榮。": "Cipta bilik dan bertanding dalam pasukan.",
+    "開始朗讀每日經文": "Mulakan Renungan Harian",
+    "大廳": "Beranda",
+    "🌳 我的園子": "🌳 Taman Saya",
+    "🎮 多人連線": "🎮 Berbilang Pemain",
+    "🏆 排行榜": "🏆 Papan Markah",
+    "🔍 搜尋": "🔍 Cari",
+    "🗺️ 地圖": "🗺️ Peta",
+    "搜尋": "Cari",
+    "地圖": "Peta",
+    "排行榜": "Papan Markah",
+    "多人連線": "Berbilang Pemain",
+    "設定": "Tetapan",
+    "進階功能": "Lanjutan",
+    "登入": "Log Masuk",
+    "登出": "Log Keluar",
+    "申請帳號": "Daftar",
+    "返回": "Kembali",
+    "確定": "OK",
+    "取消": "Batal",
+    "確認": "Sahkan",
+    "完成": "Selesai",
+    "儲存題庫": "Simpan",
+    "刪除": "Padam",
+    "刪除題庫": "Padam Set",
+    "編輯": "Sunting",
+    "編輯題庫": "Sunting Set",
+    "建立新題庫": "Cipta Baru",
+    "新增題庫": "Set Baru",
+    "新增一節經文": "Tambah Ayat",
+    "標題": "Tajuk",
+    "簡介": "Penerangan",
+    "經文列表": "Senarai Ayat",
+    "經文組": "Set Ayat",
+    "開始": "Mula",
+    "繼續": "Sambung",
+    "暫停": "Jeda",
+    "停止": "Henti",
+    "分享": "Kongsi",
+    "重試": "Cuba Lagi",
+    "下一個": "Seterusnya",
+    "上一個": "Sebelumnya",
+    "更多": "Lainnya",
+    "讀經": "Baca",
+    "換一個": "Tukar",
+    "挑戰": "Cabar",
+    "語音": "Suara",
+    "語言": "Bahasa",
+    "電子郵件": "E-mel",
+    "密碼": "Kata Laluan",
+    "顯示暱稱": "Nama Paparan",
+    "登入帳號": "Log Masuk Akaun",
+    "註冊新帳號": "Daftar Akaun",
+    "驗證": "Sahkan",
+    "輸入驗證碼": "Masukkan Kod",
+    "或": "atau",
+    "使用 Google 繼續": "Teruskan dengan Google",
+    "使用 Apple 繼續": "Teruskan dengan Apple",
+    "返回登入": "Kembali ke Log Masuk",
+    "已經有帳號？": "Sudah ada akaun? ",
+    "在此登入": "Log masuk di sini",
+    "還沒有帳號？": "Belum ada akaun? ",
+    "立即註冊": "Daftar sekarang",
+    "活動": "Aktiviti",
+    "你": "Anda",
+    "我": "Saya",
+    "新": "Baru",
+    "熱門": "Popular",
+    "前一天": "Hari sebelumnya",
+    "後一天": "Hari berikutnya",
+    "語音：系統預設": "Suara: Lalai",
+    "VerseRain 經文雨": "VerseRain",
+};
+
+
+
 const esDict = {
     "我的園子": "Mi Jardín",
     "🌳 我的園子": "🌳 Mi Jardín",
@@ -12176,6 +12266,7 @@ const deDict = {
       if (uiLang === 'my') return 'လှုပ်ရှားမှု';
       if (uiLang === 'vi') return 'Hoạt động';
       if (uiLang === 'id') return 'Aktivitas';
+      if (uiLang === 'ms') return 'Aktiviti';
       if (uiLang === 'cuvs') return '活动';
       return '活動';
     }
@@ -12190,6 +12281,7 @@ const deDict = {
     if (uiLang === 'my') return myDict[zh] || en || zh;
     if (uiLang === 'vi') return viDict[zh] || en || zh;
     if (uiLang === 'id') return idDict[zh] || en || zh;
+    if (uiLang === 'ms') return msDict[zh] || en || zh;
     if (uiLang === 'cuvs') return zhcnDict[zh] || zh;
     if (uiLang !== 'zh' && uiLang !== 'cuv' && uiLang !== 'cuvs') return en || zh;
     return zh; // default: 'zh'
@@ -12480,7 +12572,7 @@ const deDict = {
                     verserain
                   </div>
                   <div className="app-brand-version" style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', marginTop: '4px', marginLeft: '2px' }}>
-                    v3.9.5
+                    v3.10.0
                   </div>
                 </div>
                 <div ref={langPickerRef} style={{ position: 'relative' }}>
