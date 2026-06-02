@@ -735,6 +735,38 @@ export default class Server {
       }
 
 
+      // 4.6 Share-Set token — a link-based share path that doesn't require
+      // the global publish flow. Any logged-in user can publish a set "by
+      // link" without needing admin privileges or polluting the public
+      // /custom-sets list. The frontend POSTs the full set when the user
+      // clicks the share button; anyone with the URL can GET the set back
+      // by id, no auth required.
+      if (url.pathname.endsWith('/share-set') && request.method === 'POST') {
+         try {
+            const { set } = await request.json();
+            if (!set || !set.id) {
+               return new Response(JSON.stringify({ error: 'set { id } required' }), { status: 400, headers: corsHeaders });
+            }
+            const stored = { ...set, sharedAt: new Date().toISOString() };
+            await this.room.storage.put(`shared:${set.id}`, stored);
+            return new Response(JSON.stringify({ success: true }), { status: 200, headers: corsHeaders });
+         } catch (e) {
+            return new Response(JSON.stringify({ error: 'Failed to save shared set' }), { status: 500, headers: corsHeaders });
+         }
+      }
+
+      if (url.pathname.endsWith('/share-set') && request.method === 'GET') {
+         try {
+            const id = url.searchParams.get('id');
+            if (!id) return new Response(JSON.stringify({ error: 'id required' }), { status: 400, headers: corsHeaders });
+            const set = await this.room.storage.get(`shared:${id}`);
+            if (!set) return new Response(JSON.stringify({ error: 'Not found' }), { status: 404, headers: corsHeaders });
+            return new Response(JSON.stringify({ success: true, set }), { status: 200, headers: corsHeaders });
+         } catch (e) {
+            return new Response(JSON.stringify({ error: 'Failed to fetch shared set' }), { status: 500, headers: corsHeaders });
+         }
+      }
+
       // 4.5 Private Custom Verse Sets — per-user sync (replaces device-local
       // only storage). Stored at `private-sets:<playerName>` as an array of
       // the user's custom verse set objects. Distinct from `/custom-sets`

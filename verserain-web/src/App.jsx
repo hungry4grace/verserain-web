@@ -4680,6 +4680,17 @@ export default function App() {
             })
             .catch(() => {});
         }
+        // Share-set fallback: works for recipients who aren't logged in or
+        // aren't the set's owner. Lands the set into publishedVerseSets so
+        // activeVerseSets re-computes and the URL handler picks it up on
+        // the next render.
+        fetch(`${host}/share-set?id=${encodeURIComponent(listenSetRef)}`)
+          .then(r => r.ok ? r.json() : null)
+          .then(data => {
+            if (!data?.set?.id) return;
+            setPublishedVerseSets(prev => prev.some(s => s.id === data.set.id) ? prev : [...prev, data.set]);
+          })
+          .catch(() => {});
       }
       return;
     }
@@ -4874,6 +4885,22 @@ export default function App() {
     setActiveVerse(verse);
     setSelectedVerseRefs([verse.reference]);
     setTimeout(() => startGame(false, verse), 50);
+  };
+
+  // Push a verse set to the backend's share-set endpoint so anyone who opens
+  // the share URL can fetch it back — no admin permission needed, no global
+  // publish list pollution. Fire-and-forget; the link will resolve once
+  // PartyKit has written the row (sub-second typical).
+  const pushSetForSharing = (set) => {
+    if (!set || !set.id) return;
+    // Built-in sets are already in every device's verses_*.js bundle —
+    // pushing them is wasteful.
+    if (!set.id.startsWith('custom-')) return;
+    fetch("https://verserain-party.hungry4grace.partykit.dev/parties/main/global-auth-db/share-set", {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ set }),
+    }).catch(() => {});
   };
 
   const openListeningShare = async (url, reference) => {
@@ -12645,6 +12672,14 @@ const deDict = {
             onChallengeVerse={challengeVerseFromReader}
             onShareVerse={(verse) => {
               if (!verse || !continuousRainSet?.id) return;
+              // Find the canonical set object (continuousRainSet.verses may
+              // be a subset/transient slice). Prefer customVerseSets first
+              // — that's where the latest edits live.
+              const fullSet =
+                customVerseSets.find(s => s.id === continuousRainSet.id) ||
+                publishedVerseSets.find(s => s.id === continuousRainSet.id) ||
+                continuousRainSet;
+              pushSetForSharing(fullSet);
               const link = buildPublicShareUrl('/', {
                 listenSet: continuousRainSet.id,
                 listenVerse: verse.reference,
@@ -12723,7 +12758,7 @@ const deDict = {
                     verserain
                   </div>
                   <div className="app-brand-version" style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', marginTop: '4px', marginLeft: '2px' }}>
-                    v3.12.0
+                    v3.13.0
                   </div>
                 </div>
                 <div ref={langPickerRef} style={{ position: 'relative' }}>
@@ -13179,6 +13214,7 @@ const deDict = {
                     onChallengeVerse={challengeVerseFromReader}
                     onShareVerse={(verse) => {
                       if (!verse) return;
+                      pushSetForSharing(preferredRainSet);
                       const link = buildPublicShareUrl('/', { listenSet: preferredRainSet.id, version });
                       openListeningShare(link, `${preferredRainSet.title} · ${verse.reference}`);
                     }}
