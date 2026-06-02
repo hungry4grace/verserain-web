@@ -12649,7 +12649,33 @@ const deDict = {
           <div className="rain-layer front" />
         </div>
 
-        {continuousRainSet && (
+        {continuousRainSet && !speechReady && (
+          <div className="continuous-rain-overlay" style={{ background: 'rgba(15, 23, 42, 0.97)', zIndex: 999 }}>
+            <button type="button" className="continuous-rain-stop" onClick={() => { setContinuousRainSet(null); setMainTab('lobby'); }}>
+              <XCircle size={24} /> {t('停止播放', 'Stop')}
+            </button>
+            <div style={{ display: 'grid', placeItems: 'center', padding: '1.5rem', width: '100%', height: '100%' }}>
+              <div className="hud-glass" style={{ maxWidth: '420px', width: '100%', textAlign: 'center', padding: '2rem 1.8rem' }}>
+                <div style={{ fontSize: '2.4rem', marginBottom: '0.5rem' }}>🌧️</div>
+                <h2 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 'bold', color: '#fff', lineHeight: 1.3 }}>
+                  {continuousRainSet.title || t('經文組', 'Verse Set')}
+                </h2>
+                <p style={{ color: '#94a3b8', fontSize: '0.85rem', margin: '0.6rem 0 1.5rem 0' }}>
+                  {t('輕觸下方按鈕開始聆聽。', 'Tap to start listening.')}
+                </p>
+                <button
+                  type="button"
+                  className="rain-action-btn play-btn"
+                  style={{ width: '100%', fontSize: '1.05rem', padding: '0.9rem 1.5rem', borderRadius: '12px', justifyContent: 'center' }}
+                  onClick={() => { initAudio(); setSpeechReady(true); }}
+                >
+                  <Volume2 size={20} /> {t('開始聆聽', 'Start Listening')}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+        {continuousRainSet && speechReady && (
           <VerseSetContinuousRainPlayer
             verseSet={continuousRainSet}
             secondaryVerseSet={findSecondarySetForPrimarySet(continuousRainSet)}
@@ -12758,7 +12784,7 @@ const deDict = {
                     verserain
                   </div>
                   <div className="app-brand-version" style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', marginTop: '4px', marginLeft: '2px' }}>
-                    v3.13.0
+                    v3.13.1
                   </div>
                 </div>
                 <div ref={langPickerRef} style={{ position: 'relative' }}>
