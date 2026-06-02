@@ -735,6 +735,71 @@ export default class Server {
       }
 
 
+      // 4.7 Web Push subscriptions — per-user. The frontend hands us the
+      // PushSubscription JSON (endpoint + keys) plus the user's IANA
+      // timezone. The hourly GitHub Actions cron pulls the full list,
+      // figures out which users it's currently 7am for, and sends the
+      // notifications via the web-push library outside this room.
+      if (url.pathname.endsWith('/save-push-subscription') && request.method === 'POST') {
+         try {
+            const body = await request.json();
+            const { playerName, email, subscription, timezone, version, hour } = body;
+            if (!playerName || !subscription || !subscription.endpoint) {
+               return new Response(JSON.stringify({ error: 'playerName + subscription required' }), { status: 400, headers: corsHeaders });
+            }
+            // Use the subscription endpoint URL as the storage key so the same
+            // device updating its subscription doesn't create duplicates.
+            const id = subscription.endpoint;
+            await this.room.storage.put(`push:${id}`, {
+               playerName,
+               email: email || '',
+               subscription,
+               timezone: timezone || 'Asia/Taipei',
+               version: version || 'cuv',
+               hour: typeof hour === 'number' ? hour : 7,
+               updatedAt: new Date().toISOString(),
+            });
+            return new Response(JSON.stringify({ success: true }), { status: 200, headers: corsHeaders });
+         } catch (e) {
+            return new Response(JSON.stringify({ error: 'Failed to save subscription' }), { status: 500, headers: corsHeaders });
+         }
+      }
+
+      if (url.pathname.endsWith('/delete-push-subscription') && request.method === 'POST') {
+         try {
+            const { playerName, endpoint } = await request.json();
+            if (endpoint) {
+               // Targeted delete by endpoint (most precise).
+               await this.room.storage.delete(`push:${endpoint}`);
+            } else if (playerName) {
+               // Fallback: wipe every subscription registered under this player.
+               const list = await this.room.storage.list({ prefix: 'push:' });
+               for (const [key, val] of list.entries()) {
+                  if (val?.playerName === playerName) await this.room.storage.delete(key);
+               }
+            }
+            return new Response(JSON.stringify({ success: true }), { status: 200, headers: corsHeaders });
+         } catch (e) {
+            return new Response(JSON.stringify({ error: 'Failed to delete subscription' }), { status: 500, headers: corsHeaders });
+         }
+      }
+
+      // GET /push-subscriptions — returns ALL subscriptions for the cron
+      // sender. Requires the admin token (same token used to publish to
+      // the global custom-sets list) so random fetchers can't enumerate.
+      if (url.pathname.endsWith('/push-subscriptions') && request.method === 'GET') {
+         try {
+            if (!isCustomSetWriteAuthorized()) {
+               return new Response(JSON.stringify({ error: 'Forbidden' }), { status: 403, headers: corsHeaders });
+            }
+            const list = await this.room.storage.list({ prefix: 'push:' });
+            const subscriptions = Array.from(list.values());
+            return new Response(JSON.stringify({ success: true, subscriptions }), { status: 200, headers: corsHeaders });
+         } catch (e) {
+            return new Response(JSON.stringify({ error: 'Failed to list subscriptions' }), { status: 500, headers: corsHeaders });
+         }
+      }
+
       // 4.6 Share-Set token — a link-based share path that doesn't require
       // the global publish flow. Any logged-in user can publish a set "by
       // link" without needing admin privileges or polluting the public

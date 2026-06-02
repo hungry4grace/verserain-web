@@ -1,0 +1,116 @@
+name: Morning Daily Verse Push
+
+on:
+  schedule:
+    # Runs at the top of every hour (UTC). The job itself picks out the
+    # subset of subscribers it's currently 7am for.
+    - cron: '0 * * * *'
+  workflow_dispatch: {}
+
+jobs:
+  push:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send morning daily-verse pushes
+        env:
+          PARTYKIT_HOST: https://verserain-party.hungry4grace.partykit.dev
+          PARTYKIT_ADMIN_TOKEN: ${{ secrets.PARTYKIT_ADMIN_TOKEN }}
+          VAPID_PUBLIC_KEY: ${{ secrets.VAPID_PUBLIC_KEY }}
+          VAPID_PRIVATE_KEY: ${{ secrets.VAPID_PRIVATE_KEY }}
+          DAILY_VERSE_HOST: https://www.verserain.com
+        run: |
+          mkdir -p sender && cd sender
+          cat > package.json <<'JSON'
+          { "type": "module", "dependencies": { "web-push": "^3.6.7" } }
+          JSON
+          npm install --silent --no-audit --no-fund web-push@^3.6.7
+          cat > sender.mjs <<'JS'
+          import webpush from 'web-push';
+
+          const host = process.env.PARTYKIT_HOST;
+          const adminToken = process.env.PARTYKIT_ADMIN_TOKEN;
+          const verseHost = process.env.DAILY_VERSE_HOST;
+
+          webpush.setVapidDetails(
+            'mailto:hungry4grace@gmail.com',
+            process.env.VAPID_PUBLIC_KEY,
+            process.env.VAPID_PRIVATE_KEY
+          );
+
+          // 1. Pull all subscriptions.
+          const listRes = await fetch(`${host}/parties/main/global-auth-db/push-subscriptions`, {
+            headers: { 'x-admin-token': adminToken },
+          });
+          if (!listRes.ok) {
+            console.error('Failed to fetch subscriptions:', listRes.status, await listRes.text());
+            process.exit(1);
+          }
+          const { subscriptions = [] } = await listRes.json();
+          console.log(`Total subscriptions: ${subscriptions.length}`);
+
+          // 2. Filter to subscribers whose local hour is currently the
+          //    push hour (default 7am). Use Intl in the target timezone.
+          const matches = [];
+          for (const sub of subscriptions) {
+            const tz = sub.timezone || 'Asia/Taipei';
+            try {
+              const localHour = Number(new Intl.DateTimeFormat('en-US', {
+                timeZone: tz, hour: 'numeric', hour12: false,
+              }).format(new Date()));
+              const target = typeof sub.hour === 'number' ? sub.hour : 7;
+              if (localHour === target) matches.push(sub);
+            } catch (e) {
+              console.warn(`Bad timezone "${tz}", skipping:`, sub.playerName);
+            }
+          }
+          console.log(`Matching ${matches.length} subscribers for this hour.`);
+          if (!matches.length) process.exit(0);
+
+          // 3. For each matched subscriber, fetch the daily verse in their
+          //    preferred language, build the share URL, send the push.
+          const verseCache = new Map();
+          const today = new Date().toISOString().slice(0, 10);
+          for (const sub of matches) {
+            const version = sub.version || 'cuv';
+            let verse = verseCache.get(version);
+            if (!verse) {
+              try {
+                const r = await fetch(`${verseHost}/api/daily-verse?date=${today}&version=${version}`);
+                if (r.ok) {
+                  verse = await r.json();
+                  verseCache.set(version, verse);
+                }
+              } catch (e) {
+                console.warn(`Failed to fetch verse for ${version}:`, e.message);
+              }
+            }
+            if (!verse?.text) {
+              console.warn(`No verse for ${version}, skipping ${sub.playerName}`);
+              continue;
+            }
+            const url = `${verseHost}/?listenDaily=${encodeURIComponent(verse.date || today)}&version=${encodeURIComponent(version)}`;
+            const payload = JSON.stringify({
+              title: `🌧️ ${verse.reference}`,
+              body: verse.text.length > 200 ? verse.text.slice(0, 200) + '…' : verse.text,
+              url,
+              tag: `verserain-daily-${verse.date || today}`,
+            });
+            try {
+              await webpush.sendNotification(sub.subscription, payload, { TTL: 12 * 60 * 60 });
+              console.log(`  ✓ ${sub.playerName}`);
+            } catch (err) {
+              const code = err?.statusCode || 0;
+              console.warn(`  ✗ ${sub.playerName} → ${code} ${err.body || err.message}`);
+              if (code === 404 || code === 410) {
+                // Subscription is gone; clean it up so we stop hitting it.
+                await fetch(`${host}/parties/main/global-auth-db/delete-push-subscription`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ endpoint: sub.subscription.endpoint }),
+                }).catch(() => {});
+              }
+            }
+          }
+          console.log('Done.');
+          JS
+          node sender.mjs

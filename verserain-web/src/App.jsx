@@ -14,6 +14,7 @@ import WorldMap from './WorldMap';
 import BlindModeGame from './BlindModeGame';
 import { TransformWrapper, TransformComponent } from 'react-zoom-pan-pinch';
 import { GOOGLE_CLIENT_ID, APPLE_CLIENT_ID, APPLE_REDIRECT_URI } from './oauthConfig';
+import { VAPID_PUBLIC_KEY, urlBase64ToUint8Array, isWebPushSupported, isIOSStandalone, isIOSWithoutPWA } from './pushConfig';
 
 const quillModules = {
   toolbar: [
@@ -2816,6 +2817,100 @@ export default function App() {
     const storedEmail = localStorage.getItem('verserain_player_email') || "";
     return storedPremium || PREMIUM_EMAILS.includes(storedEmail.toLowerCase());
   });
+
+  // ─── Web Push state ─────────────────────────────────────────────────────
+  // 'idle' | 'subscribed' | 'denied' | 'unsupported' | 'needs-pwa'
+  const [pushStatus, setPushStatus] = useState('idle');
+  const [showPushModal, setShowPushModal] = useState(false);
+  const swRegRef = useRef(null);
+
+  // Register the service worker on mount + figure out the current push state.
+  useEffect(() => {
+    if (!isWebPushSupported()) {
+      // Older iOS Safari (pre-16.4) and the in-app WKWebView fall here.
+      if (typeof navigator !== 'undefined' && /iPhone|iPad/i.test(navigator.userAgent || '') && !isIOSStandalone()) {
+        setPushStatus('needs-pwa');
+      } else {
+        setPushStatus('unsupported');
+      }
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      try {
+        const reg = await navigator.serviceWorker.register('/sw.js');
+        if (cancelled) return;
+        swRegRef.current = reg;
+        if (Notification.permission === 'denied') { setPushStatus('denied'); return; }
+        const existing = await reg.pushManager.getSubscription();
+        setPushStatus(existing ? 'subscribed' : 'idle');
+      } catch (e) {
+        console.error('SW register failed', e);
+        setPushStatus('unsupported');
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  // Wire a subscription up with the backend. Stores it under the user's
+  // playerName so the cron sender can find it. Times are encoded in the
+  // user's IANA timezone so the morning push lands at local 7am.
+  const subscribeMorningPush = async () => {
+    try {
+      if (!swRegRef.current) {
+        const reg = await navigator.serviceWorker.register('/sw.js');
+        swRegRef.current = reg;
+      }
+      const permission = await Notification.requestPermission();
+      if (permission !== 'granted') {
+        setPushStatus(permission === 'denied' ? 'denied' : 'idle');
+        return false;
+      }
+      const subscription = await swRegRef.current.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
+      });
+      const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'Asia/Taipei';
+      const res = await fetch('https://verserain-party.hungry4grace.partykit.dev/parties/main/global-auth-db/save-push-subscription', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          playerName: playerName || 'Anonymous',
+          email: userEmail || '',
+          subscription: subscription.toJSON(),
+          timezone,
+          version,
+          hour: 7,
+        }),
+      });
+      if (!res.ok) throw new Error('save-push-subscription failed');
+      setPushStatus('subscribed');
+      localStorage.setItem('verserain_push_subscribed', 'true');
+      return true;
+    } catch (e) {
+      console.error('subscribeMorningPush failed', e);
+      return false;
+    }
+  };
+
+  const unsubscribeMorningPush = async () => {
+    try {
+      if (!swRegRef.current) return;
+      const sub = await swRegRef.current.pushManager.getSubscription();
+      if (sub) {
+        await sub.unsubscribe();
+      }
+      await fetch('https://verserain-party.hungry4grace.partykit.dev/parties/main/global-auth-db/delete-push-subscription', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ playerName: playerName || 'Anonymous' }),
+      }).catch(() => {});
+      setPushStatus('idle');
+      localStorage.setItem('verserain_push_subscribed', 'false');
+    } catch (e) {
+      console.error('unsubscribeMorningPush failed', e);
+    }
+  };
   const [userEmail, setUserEmail] = useState(() => localStorage.getItem('verserain_player_email') || "");
   const [playerName, setPlayerName] = useState(() => localStorage.getItem('verserain_player_name') || "");
   // Unique random personal invite code (never changes, not linked to nickname)
@@ -12784,7 +12879,7 @@ const deDict = {
                     verserain
                   </div>
                   <div className="app-brand-version" style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', marginTop: '4px', marginLeft: '2px' }}>
-                    v3.13.1
+                    v3.14.0
                   </div>
                 </div>
                 <div ref={langPickerRef} style={{ position: 'relative' }}>
@@ -13317,6 +13412,7 @@ const deDict = {
                   </h2>
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1rem', width: '100%' }}>
                     {[
+                      { id: 'morningPush', Icon: Mail, label: pushStatus === 'subscribed' ? t('已開啟每日經文推播', 'Daily Verse Push: On') : t('開啟每日經文推播', 'Daily Verse Push'), desc: t('每天上午 7 點手機推播今日經文', 'Get today\'s verse pushed at 7am'), color: '#10b981' },
                       { id: 'bilingual_rain', Icon: CloudRain, label: t('雙語經文雨 Beta', 'Bilingual VerseRain Beta'), desc: t('主要語言朗讀，第二語言在方塊下方輔助顯示', 'Read the main language while showing a second language under each block'), color: '#2563eb' },
                       { id: 'accessible', Icon: Headphones, label: t('視障友善版', 'Accessible Version'), desc: t('高對比、鍵盤操作、語音提示與麥克風背誦流程', 'High contrast, keyboard controls, voice prompts, and microphone recitation'), color: '#0ea5e9' },
                       { id: 'blindMode', Icon: Mic, label: isBlindMode ? t('關閉視障經文雨', 'Disable Blind Mode') : t('打開視障經文雨', 'Enable Blind Mode'), desc: t('為視覺障礙朋友設計的語音模式', 'Voice mode for visually impaired'), color: '#8b5cf6' },
@@ -13330,6 +13426,10 @@ const deDict = {
                       const Icon = item.Icon;
                       return (
                       <div key={item.id} className="block-tile" onClick={() => {
+                        if (item.id === 'morningPush') {
+                          setShowPushModal(true);
+                          return;
+                        }
                         if (item.id === 'blindMode') {
                           const n = !isBlindMode;
                           setIsBlindMode(n);
@@ -17439,6 +17539,71 @@ const deDict = {
                   </>
                 )}
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* Daily Push opt-in Modal */}
+        {showPushModal && (
+          <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.6)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1100, padding: '1rem' }} onClick={(e) => { if (e.target === e.currentTarget) setShowPushModal(false); }}>
+            <div style={{ background: '#fff', borderRadius: '14px', padding: '1.8rem 1.6rem', width: '100%', maxWidth: '440px', boxShadow: '0 20px 40px rgba(0,0,0,0.18)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
+                <h2 style={{ margin: 0, fontSize: '1.3rem', fontWeight: 'bold', color: '#1e293b' }}>
+                  🌧️ {t('每日經文推播', 'Daily Verse Push')}
+                </h2>
+                <button onClick={() => setShowPushModal(false)} style={{ background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer' }}><XCircle size={22} /></button>
+              </div>
+              {pushStatus === 'unsupported' && (
+                <div style={{ background: '#fef2f2', border: '1px solid #fecaca', color: '#991b1b', padding: '1rem', borderRadius: '8px', fontSize: '0.92rem', lineHeight: 1.5 }}>
+                  {t('此瀏覽器不支援推播。請用桌面 Chrome / Edge / Firefox 或 Android Chrome 來啟用。', 'This browser does not support push. Please use desktop Chrome / Edge / Firefox or Android Chrome.')}
+                </div>
+              )}
+              {pushStatus === 'needs-pwa' && (
+                <div style={{ background: '#fffbeb', border: '1px solid #fde68a', color: '#92400e', padding: '1rem', borderRadius: '8px', fontSize: '0.92rem', lineHeight: 1.5 }}>
+                  <p style={{ margin: '0 0 0.6rem 0', fontWeight: 'bold' }}>
+                    {t('iOS 需要先把 VerseRain 加到主畫面', 'On iOS, add VerseRain to your Home Screen first')}
+                  </p>
+                  <ol style={{ margin: '0 0 0.3rem 1rem', padding: 0 }}>
+                    <li>{t('用 Safari 打開 verserain.com（不要用 App）', 'Open verserain.com in Safari (not the App)')}</li>
+                    <li>{t('點下方分享圖示 → 加入主畫面', 'Tap Share → Add to Home Screen')}</li>
+                    <li>{t('從主畫面點 VerseRain icon 打開', 'Open VerseRain from the Home Screen icon')}</li>
+                    <li>{t('再回到這頁開啟推播', 'Come back here and turn on push')}</li>
+                  </ol>
+                </div>
+              )}
+              {pushStatus === 'denied' && (
+                <div style={{ background: '#fef2f2', border: '1px solid #fecaca', color: '#991b1b', padding: '1rem', borderRadius: '8px', fontSize: '0.92rem', lineHeight: 1.5 }}>
+                  {t('瀏覽器已封鎖通知。請到網站設定 → 通知 → 允許，再回來重試。', 'Notifications are blocked. Please allow notifications in your browser site settings, then retry.')}
+                </div>
+              )}
+              {(pushStatus === 'idle' || pushStatus === 'subscribed') && (
+                <>
+                  <p style={{ margin: '0 0 1.2rem 0', color: '#475569', fontSize: '0.95rem', lineHeight: 1.55 }}>
+                    {t('開啟後，每天上午 7 點（你的時區）會收到當日 dailyverses.net 經文推播，點通知一鍵進入「聆聽」。', 'Once enabled, each morning at 7am (your timezone) you\'ll get a push of the day\'s verse from dailyverses.net. Tap to start listening.')}
+                  </p>
+                  <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '0.7rem 0.9rem', fontSize: '0.85rem', color: '#475569', marginBottom: '1.2rem' }}>
+                    <strong>{t('時區', 'Timezone')}:</strong> {typeof Intl !== 'undefined' ? Intl.DateTimeFormat().resolvedOptions().timeZone : '—'}
+                    <br />
+                    <strong>{t('語言', 'Language')}:</strong> {BIBLE_LANGUAGE_OPTIONS.find(o => o.value === version)?.label || version}
+                  </div>
+                  {pushStatus === 'subscribed' ? (
+                    <button
+                      onClick={async () => { await unsubscribeMorningPush(); }}
+                      style={{ width: '100%', padding: '0.85rem 1rem', borderRadius: '10px', background: '#ef4444', color: '#fff', border: 'none', fontSize: '1rem', fontWeight: 'bold', cursor: 'pointer' }}
+                    >
+                      {t('關閉推播', 'Disable Push')}
+                    </button>
+                  ) : (
+                    <button
+                      onClick={async () => { const ok = await subscribeMorningPush(); if (ok) setShowPushModal(false); }}
+                      style={{ width: '100%', padding: '0.85rem 1rem', borderRadius: '10px', background: 'linear-gradient(135deg, #34d399, #10b981)', color: '#fff', border: 'none', fontSize: '1rem', fontWeight: 'bold', cursor: 'pointer' }}
+                    >
+                      <Volume2 size={18} style={{ marginRight: '0.4rem', verticalAlign: 'middle' }} />
+                      {t('開啟每日推播', 'Enable Daily Push')}
+                    </button>
+                  )}
+                </>
+              )}
             </div>
           </div>
         )}

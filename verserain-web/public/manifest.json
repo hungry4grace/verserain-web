@@ -1,0 +1,17 @@
+{
+  "name": "VerseRain 經文雨",
+  "short_name": "VerseRain",
+  "description": "Bible verse memorization game with daily verses and challenges.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#3b82f6",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}
