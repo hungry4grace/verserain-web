@@ -54,6 +54,65 @@ function isInIosNativeApp() {
 //   Apple      → window.AppleID.auth.signIn → popup → id_token
 // We hand the credential up to the parent, which forwards it to the backend
 // /oauth-login endpoint for verification.
+// "My Referrer" pill on the Garden page. Surfaces whether the player's
+// account is bound to an inviter, so missing bindings (the QR-scan-on-iOS
+// silent-loss class of bug) are immediately visible.
+function InviterCard({ inviterCode, inviterName, canEdit, onOpenBindModal, t }) {
+  const bound = !!inviterCode;
+  return (
+    <div
+      style={{
+        background: bound
+          ? 'linear-gradient(135deg, #fdf4ff, #fae8ff)'
+          : 'linear-gradient(135deg, #fff7ed, #fed7aa)',
+        border: bound ? '1px solid #e9d5ff' : '1px solid #fdba74',
+        borderRadius: '14px',
+        padding: '1rem 1.2rem',
+        marginBottom: '1.75rem',
+        boxShadow: '0 2px 6px rgba(0,0,0,0.04)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: '0.8rem',
+        flexWrap: 'wrap',
+      }}
+    >
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.7rem', minWidth: 0 }}>
+        <div style={{ fontSize: '1.8rem' }}>{bound ? '🌟' : '🤝'}</div>
+        <div style={{ minWidth: 0 }}>
+          <div style={{ fontSize: '0.78rem', color: bound ? '#6b21a8' : '#9a3412', fontWeight: 'bold', letterSpacing: '0.05em', textTransform: 'uppercase' }}>
+            {t('我的推薦人', 'My Referrer')}
+          </div>
+          <div style={{ fontSize: '1.05rem', color: bound ? '#581c87' : '#7c2d12', fontWeight: 700, marginTop: '0.15rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            {bound
+              ? (inviterName ? `${inviterName} (${inviterCode})` : inviterCode)
+              : t('尚未綁定推薦人', 'No referrer bound yet')}
+          </div>
+        </div>
+      </div>
+      {canEdit && (
+        <button
+          type="button"
+          onClick={onOpenBindModal}
+          style={{
+            background: '#ea580c',
+            color: '#fff',
+            border: 'none',
+            padding: '0.55rem 1rem',
+            borderRadius: '8px',
+            fontWeight: 700,
+            fontSize: '0.9rem',
+            cursor: 'pointer',
+            whiteSpace: 'nowrap',
+          }}
+        >
+          {t('補上推薦碼', 'Add Referrer')}
+        </button>
+      )}
+    </div>
+  );
+}
+
 function OAuthButtons({ onGoogleCredential, onAppleCredential, disabled, t }) {
   const inIosApp = isInIosNativeApp();
   const nativeBridge = inIosApp && typeof window !== 'undefined' && window.webkit?.messageHandlers?.googleSignIn;
@@ -2817,6 +2876,40 @@ export default function App() {
     const storedEmail = localStorage.getItem('verserain_player_email') || "";
     return storedPremium || PREMIUM_EMAILS.includes(storedEmail.toLowerCase());
   });
+
+  // ─── My Inviter (推薦人) state ──────────────────────────────────────────
+  // Single source of truth: localStorage.verseRain_inviter. On login the
+  // OAuth handler already restores user.invitedBy into localStorage so this
+  // value is consistent across devices for the same account.
+  const [myInviterCode, setMyInviterCode] = useState(() => {
+    if (typeof window === 'undefined') return null;
+    return localStorage.getItem('verserain_inviter') || null;
+  });
+  const [myInviterName, setMyInviterName] = useState(null);
+  const [showBindInviterModal, setShowBindInviterModal] = useState(false);
+
+  // Keep myInviterCode in sync with localStorage edits made elsewhere
+  // (e.g. when login restores user.invitedBy into localStorage).
+  useEffect(() => {
+    const sync = () => {
+      const v = localStorage.getItem('verserain_inviter') || null;
+      setMyInviterCode(prev => (prev === v ? prev : v));
+    };
+    sync();
+    const interval = setInterval(sync, 2000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Look up the inviter's display name when we have a code.
+  useEffect(() => {
+    if (!myInviterCode) { setMyInviterName(null); return; }
+    let cancelled = false;
+    fetch(`/api/get-name-by-code?code=${encodeURIComponent(myInviterCode)}`)
+      .then(r => r.ok ? r.json() : null)
+      .then(data => { if (!cancelled) setMyInviterName(data?.name || null); })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [myInviterCode]);
 
   // ─── Web Push state ─────────────────────────────────────────────────────
   // 'idle' | 'subscribed' | 'denied' | 'unsupported' | 'needs-pwa'
@@ -12879,7 +12972,7 @@ const deDict = {
                     verserain
                   </div>
                   <div className="app-brand-version" style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', marginTop: '4px', marginLeft: '2px' }}>
-                    v3.14.0
+                    v3.15.0
                   </div>
                 </div>
                 <div ref={langPickerRef} style={{ position: 'relative' }}>
@@ -15142,6 +15235,15 @@ const deDict = {
                       </div>
                     </div>
                   </div>
+
+                  {/* My Referrer card — shows who invited me, or a CTA to bind */}
+                  <InviterCard
+                    inviterCode={myInviterCode}
+                    inviterName={myInviterName}
+                    canEdit={!myInviterCode}
+                    onOpenBindModal={() => setShowBindInviterModal(true)}
+                    t={t}
+                  />
 
                   {/* My Harvest Basket Header */}
                   <div style={{ background: 'linear-gradient(135deg, #fffbeb, #fef3c7)', padding: '2rem', borderRadius: '16px', border: '1px solid #fde68a', marginBottom: '2rem', textAlign: 'center', boxShadow: '0 4px 10px rgba(0,0,0,0.05)' }}>
@@ -17544,6 +17646,69 @@ const deDict = {
         )}
 
         {/* Daily Push opt-in Modal */}
+        {/* Bind Inviter Modal — manually attach a referrer when the QR auto-bind failed */}
+        {showBindInviterModal && (
+          <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.6)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1100, padding: '1rem' }} onClick={(e) => { if (e.target === e.currentTarget) setShowBindInviterModal(false); }}>
+            <div style={{ background: '#fff', borderRadius: '14px', padding: '1.8rem 1.6rem', width: '100%', maxWidth: '440px', boxShadow: '0 20px 40px rgba(0,0,0,0.18)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.6rem' }}>
+                <h2 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 'bold', color: '#1e293b' }}>
+                  🤝 {t('補上推薦碼', 'Add My Referrer')}
+                </h2>
+                <button onClick={() => setShowBindInviterModal(false)} style={{ background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer' }}><XCircle size={22} /></button>
+              </div>
+              <p style={{ margin: '0 0 1rem 0', color: '#475569', fontSize: '0.9rem', lineHeight: 1.5 }}>
+                {t('貼上推薦人的邀請連結或 10 字元推薦碼。設好之後第一次過關時雙方都會獲得獎勵。', "Paste your referrer's invite link or their 10-character referrer code. After your next verse clear, both of you will receive the reward.")}
+              </p>
+              <input
+                id="bindInviterInput"
+                type="text"
+                placeholder={t('https://verserain.com/?ref=XXXXXXXXXX 或 XXXXXXXXXX', 'https://verserain.com/?ref=XXXXXXXXXX or XXXXXXXXXX')}
+                style={{ width: '100%', padding: '0.75rem 0.9rem', borderRadius: '10px', border: '1px solid #cbd5e1', background: '#f8fafc', color: '#1e293b', fontSize: '0.95rem', boxSizing: 'border-box' }}
+              />
+              <button
+                onClick={async () => {
+                  const raw = (document.getElementById('bindInviterInput')?.value || '').trim();
+                  if (!raw) return;
+                  // Extract code from either a full URL or a bare 10-char code.
+                  let code = raw;
+                  try {
+                    const parsed = new URL(raw);
+                    code = parsed.searchParams.get('ref') || raw;
+                  } catch { /* not a URL — assume it's the bare code */ }
+                  code = code.trim();
+                  // Validate: 10 chars from our personalCode charset.
+                  if (!/^[A-HJ-NP-Za-km-z2-9]{10}$/.test(code)) {
+                    alert(t('推薦碼格式不正確，應為 10 個字母/數字。', 'Invalid format. Expected 10 letters/numbers.'));
+                    return;
+                  }
+                  if (code === personalCode) {
+                    alert(t('不能填自己的推薦碼。', "You can't use your own code."));
+                    return;
+                  }
+                  // Persist locally + reset claimed so the next clear credits both sides.
+                  localStorage.setItem('verserain_inviter', code);
+                  localStorage.removeItem('verserain_invite_claimed');
+                  setMyInviterCode(code);
+                  // Also push to PartyKit so it sticks across devices for this account.
+                  if (userEmail) {
+                    fetch("https://verserain-party.hungry4grace.partykit.dev/parties/main/global-auth-db/bind-inviter", {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ email: userEmail, inviter: code }),
+                    }).catch(() => {});
+                  }
+                  setShowBindInviterModal(false);
+                  setToast(t('已綁定推薦人，下次過關會自動補上點數。', 'Referrer bound. Your next verse clear will credit both sides.'));
+                  setTimeout(() => setToast(null), 4000);
+                }}
+                style={{ width: '100%', padding: '0.85rem 1rem', borderRadius: '10px', background: 'linear-gradient(135deg, #f59e0b, #ea580c)', color: '#fff', border: 'none', fontSize: '1rem', fontWeight: 'bold', cursor: 'pointer', marginTop: '0.9rem' }}
+              >
+                {t('儲存', 'Save')}
+              </button>
+            </div>
+          </div>
+        )}
+
         {showPushModal && (
           <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.6)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1100, padding: '1rem' }} onClick={(e) => { if (e.target === e.currentTarget) setShowPushModal(false); }}>
             <div style={{ background: '#fff', borderRadius: '14px', padding: '1.8rem 1.6rem', width: '100%', maxWidth: '440px', boxShadow: '0 20px 40px rgba(0,0,0,0.18)' }}>

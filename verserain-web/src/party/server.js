@@ -595,6 +595,34 @@ export default class Server {
            }
         }
 
+        // 3.6 Bind inviter — user finds out after the fact that they never
+        // got bound (their ?ref= URL got stripped by an iOS deep-link or
+        // similar), and wants to attach themselves to a referrer. Set-once
+        // only — already-bound accounts can't change their referrer this
+        // way (prevents griefing / late-attribution farming).
+        if (url.pathname.endsWith('/bind-inviter') && request.method === 'POST') {
+           try {
+              const { email, inviter } = await request.json();
+              const cleanEmail = String(email || '').toLowerCase().trim();
+              const cleanInviter = String(inviter || '').trim();
+              if (!cleanEmail || !cleanInviter) {
+                 return new Response(JSON.stringify({ error: 'email and inviter required' }), { status: 400, headers: corsHeaders });
+              }
+              const user = await this.room.storage.get(`user:${cleanEmail}`);
+              if (!user) {
+                 return new Response(JSON.stringify({ error: 'User not found' }), { status: 404, headers: corsHeaders });
+              }
+              if (user.invitedBy) {
+                 return new Response(JSON.stringify({ success: true, invitedBy: user.invitedBy, alreadyBound: true }), { status: 200, headers: corsHeaders });
+              }
+              user.invitedBy = cleanInviter;
+              await this.room.storage.put(`user:${cleanEmail}`, user);
+              return new Response(JSON.stringify({ success: true, invitedBy: cleanInviter }), { status: 200, headers: corsHeaders });
+           } catch (e) {
+              return new Response(JSON.stringify({ error: 'Failed to bind inviter' }), { status: 500, headers: corsHeaders });
+           }
+        }
+
         // 3.8. Forgot Password
         if (url.pathname.endsWith('/forgot-password')) {
            try {
