@@ -3098,7 +3098,11 @@ export default function App() {
   // value is consistent across devices for the same account.
   const [myInviterCode, setMyInviterCode] = useState(() => {
     if (typeof window === 'undefined') return null;
-    return localStorage.getItem('verserain_inviter') || null;
+    const v = localStorage.getItem('verserain_inviter') || null;
+    // Treat self-invite as unbound — see [App.jsx:4138] for how this can
+    // happen and the matching display-time guard below.
+    const own = localStorage.getItem('verserain_personal_code');
+    return v && v !== own ? v : null;
   });
   // myInviterName tri-state:
   //   undefined = not yet looked up (or no code to look up yet)
@@ -3111,7 +3115,9 @@ export default function App() {
   // (e.g. when login restores user.invitedBy into localStorage).
   useEffect(() => {
     const sync = () => {
-      const v = localStorage.getItem('verserain_inviter') || null;
+      const raw = localStorage.getItem('verserain_inviter') || null;
+      const own = localStorage.getItem('verserain_personal_code');
+      const v = raw && raw !== own ? raw : null;
       setMyInviterCode(prev => (prev === v ? prev : v));
     };
     sync();
@@ -4135,8 +4141,15 @@ export default function App() {
       const refParam = params.get('ref');
 
       if (refParam) {
-        localStorage.setItem('verserain_inviter', refParam);
-        localStorage.removeItem('verserain_invite_claimed');
+        // Refuse self-referral — without this, a user opening their own ref
+        // link in a fresh WebView would silently bind themselves as their
+        // own inviter, and the "我的推薦人" card would surface their own
+        // name/email forever (cross-device restore can't overwrite it).
+        const ownCode = localStorage.getItem('verserain_personal_code');
+        if (refParam !== ownCode) {
+          localStorage.setItem('verserain_inviter', refParam);
+          localStorage.removeItem('verserain_invite_claimed');
+        }
       }
 
       let shouldAutoPlay = false;
@@ -4488,11 +4501,17 @@ export default function App() {
       localStorage.setItem('verserain_is_premium', isPrem ? 'true' : 'false');
       if (user.city) localStorage.setItem('verserain_custom_city', user.city);
       if (user.country) localStorage.setItem('verserain_custom_country', user.country);
-      // Cross-device referral: if the backend has an inviter recorded for
-      // this account and this browser doesn't, restore it so the existing
-      // reward-on-first-verse logic still fires.
-      if (user.invitedBy && !localStorage.getItem('verserain_inviter') && !localStorage.getItem('verserain_invite_claimed')) {
-        localStorage.setItem('verserain_inviter', user.invitedBy);
+      // Cross-device referral: the server is the source of truth for
+      // invitedBy. Until the reward is claimed on some device, prefer the
+      // server's value over whatever this WebView has cached — older
+      // versions could leave stale or self-referencing inviter codes in
+      // localStorage that would otherwise be sticky forever (the "我的推薦
+      // 人 顯示成自己" class of bug).
+      if (!localStorage.getItem('verserain_invite_claimed')) {
+        const ownCode = localStorage.getItem('verserain_personal_code');
+        if (user.invitedBy && user.invitedBy !== ownCode) {
+          localStorage.setItem('verserain_inviter', user.invitedBy);
+        }
       }
       setShowLoginModal(null);
     } catch (err) {
@@ -17766,8 +17785,12 @@ const deDict = {
                         else localStorage.removeItem('verserain_custom_country');
 
                         // Cross-device referral restore — same logic as OAuth path.
-                        if (data.user.invitedBy && !localStorage.getItem('verserain_inviter') && !localStorage.getItem('verserain_invite_claimed')) {
-                          localStorage.setItem('verserain_inviter', data.user.invitedBy);
+                        // Server's invitedBy wins over stale local cache until claimed.
+                        if (!localStorage.getItem('verserain_invite_claimed')) {
+                          const ownCode = localStorage.getItem('verserain_personal_code');
+                          if (data.user.invitedBy && data.user.invitedBy !== ownCode) {
+                            localStorage.setItem('verserain_inviter', data.user.invitedBy);
+                          }
                         }
                         
                         // Force a submit to update map immediately with correct location
