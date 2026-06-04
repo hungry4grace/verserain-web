@@ -45,6 +45,31 @@ function isInIosNativeApp() {
   return false;
 }
 
+// Returns the iOS native app's version string ("3.6.1-build42") or null when
+// we're not in the wrapper app. The app injects this via its homeURL's
+// `?iosApp=` query, so query persistence matters — see WebView.swift.
+function getIosAppVersion() {
+  if (typeof window === 'undefined') return null;
+  try {
+    return new URL(window.location.href).searchParams.get('iosApp') || null;
+  } catch { return null; }
+}
+
+// Camera (getUserMedia) calls inside WKWebView crash the app immediately if
+// the host bundle's Info.plist lacks NSCameraUsageDescription — there's no
+// JS-side catch path because iOS kills the process before the prompt is
+// shown. The description was added in app version 3.7.0, so for any older
+// build we hide the QR scan affordance entirely and fall back to manual
+// paste.
+function iosAppSupportsCamera() {
+  const raw = getIosAppVersion();
+  if (!raw) return true; // Not in the wrapper app — Safari handles its own permission prompt.
+  const match = String(raw).match(/^(\d+)\.(\d+)\.(\d+)/);
+  if (!match) return false;
+  const [, mj, mn] = match.map(Number);
+  return mj > 3 || (mj === 3 && mn >= 7);
+}
+
 // ─── Google + Apple OAuth buttons ───────────────────────────────────────────
 // We render our own styled buttons (instead of the GIS iframe button) because
 // Google's renderButton iframe is unreliable on iOS Safari (ITP blocks the
@@ -66,6 +91,10 @@ function BindInviterModal({ t, personalCode, userEmail, setMyInviterCode, setToa
   const [scanning, setScanning] = useState(false);
   const [scanError, setScanError] = useState('');
   const [inputValue, setInputValue] = useState('');
+  // Old App builds (< 3.7.0) crash on any getUserMedia call — see comment on
+  // iosAppSupportsCamera() — so we render a "please use Safari" notice in
+  // place of the scan button until the App Store rollout completes.
+  const cameraDisabledInApp = isInIosNativeApp() && !iosAppSupportsCamera();
 
   // Stop and free the camera when the modal closes / unmounts.
   useEffect(() => {
@@ -173,7 +202,11 @@ function BindInviterModal({ t, personalCode, userEmail, setMyInviterCode, setToa
           {t('掃描推薦人的 QR Code，或貼上邀請連結／10 字元推薦碼。下次過關時雙方都會獲得獎勵。', "Scan your referrer's QR code, or paste their invite link / 10-char code. After your next verse clear, both of you will receive the reward.")}
         </p>
 
-        {!scanning ? (
+        {cameraDisabledInApp ? (
+          <div style={{ background: '#fffbeb', border: '1px solid #fde68a', color: '#92400e', padding: '0.7rem 0.9rem', borderRadius: '10px', fontSize: '0.88rem', lineHeight: 1.45, marginBottom: '0.9rem' }}>
+            📱 {t('目前 App 版本不支援掃描，請在 Safari 開 verserain.com 掃描，或在下方手動貼上推薦碼。下次 App 更新後會自動可用。', 'This App version does not support scanning yet. Please open verserain.com in Safari to scan, or paste the code below. Scanning will work after the next App update.')}
+          </div>
+        ) : !scanning ? (
           <button
             type="button"
             onClick={startScan}
@@ -13159,7 +13192,7 @@ const deDict = {
                     verserain
                   </div>
                   <div className="app-brand-version" style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', marginTop: '4px', marginLeft: '2px' }}>
-                    v3.15.1
+                    v3.15.2
                   </div>
                 </div>
                 <div ref={langPickerRef} style={{ position: 'relative' }}>

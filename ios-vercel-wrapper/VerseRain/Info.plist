@@ -37,6 +37,8 @@
 	<false/>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>Verse Rain uses the camera only when you scan a friend's QR code to bind a referrer.</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>Verse Rain uses the microphone only when you choose voice recitation modes.</string>
 	<key>NSSpeechRecognitionUsageDescription</key>

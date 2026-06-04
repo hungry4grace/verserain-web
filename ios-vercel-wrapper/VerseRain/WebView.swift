@@ -4,7 +4,11 @@ import WebKit
 
 @MainActor
 final class WebViewModel: ObservableObject {
-    static let homeURL = URL(string: "https://www.verserain.com/?iosApp=3.6.1-build42")!
+    // The `?iosApp=` query lets verserain.com gate native-only behaviour.
+    // Bump alongside the app's MARKETING_VERSION so the web side can detect
+    // capability changes (e.g. NSCameraUsageDescription was added in 3.7.0
+    // — the QR scan UI is hidden in earlier builds).
+    static let homeURL = URL(string: "https://www.verserain.com/?iosApp=3.7.0")!
 
     @Published private(set) var url: URL = homeURL
     weak var webView: WKWebView?
