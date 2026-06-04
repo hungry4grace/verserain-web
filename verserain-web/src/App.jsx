@@ -235,6 +235,14 @@ function BindInviterModal({ t, personalCode, userEmail, setMyInviterCode, setToa
 // silent-loss class of bug) are immediately visible.
 function InviterCard({ inviterCode, inviterName, canEdit, onOpenBindModal, t }) {
   const bound = !!inviterCode;
+  // inviterName is tri-state: undefined = looking up, null = no mapping
+  // exists for this code, string = the nickname. We prefer the nickname so
+  // the card never surfaces the cryptic 10-char code; only legacy inviters
+  // with no name mapping fall through to "(暱稱未提供)".
+  const displayName =
+    inviterName === undefined ? '…'
+    : inviterName === null    ? t('（暱稱未提供）', '(nickname unavailable)')
+    : inviterName;
   return (
     <div
       style={{
@@ -260,9 +268,7 @@ function InviterCard({ inviterCode, inviterName, canEdit, onOpenBindModal, t }) 
             {t('我的推薦人', 'My Referrer')}
           </div>
           <div style={{ fontSize: '1.05rem', color: bound ? '#581c87' : '#7c2d12', fontWeight: 700, marginTop: '0.15rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-            {bound
-              ? (inviterName ? `${inviterName} (${inviterCode})` : inviterCode)
-              : t('尚未綁定推薦人', 'No referrer bound yet')}
+            {bound ? displayName : t('尚未綁定推薦人', 'No referrer bound yet')}
           </div>
         </div>
       </div>
@@ -3061,7 +3067,11 @@ export default function App() {
     if (typeof window === 'undefined') return null;
     return localStorage.getItem('verserain_inviter') || null;
   });
-  const [myInviterName, setMyInviterName] = useState(null);
+  // myInviterName tri-state:
+  //   undefined = not yet looked up (or no code to look up yet)
+  //   null      = lookup completed but there's no name mapping for that code
+  //   string    = inviter's nickname
+  const [myInviterName, setMyInviterName] = useState(undefined);
   const [showBindInviterModal, setShowBindInviterModal] = useState(false);
 
   // Keep myInviterCode in sync with localStorage edits made elsewhere
@@ -3078,12 +3088,13 @@ export default function App() {
 
   // Look up the inviter's display name when we have a code.
   useEffect(() => {
-    if (!myInviterCode) { setMyInviterName(null); return; }
+    if (!myInviterCode) { setMyInviterName(undefined); return; }
     let cancelled = false;
+    setMyInviterName(undefined); // mark "looking up"
     fetch(`/api/get-name-by-code?code=${encodeURIComponent(myInviterCode)}`)
       .then(r => r.ok ? r.json() : null)
       .then(data => { if (!cancelled) setMyInviterName(data?.name || null); })
-      .catch(() => {});
+      .catch(() => { if (!cancelled) setMyInviterName(null); });
     return () => { cancelled = true; };
   }, [myInviterCode]);
 
