@@ -11,9 +11,8 @@ export const loadLanguageSets = async (lang) => {
       return { sets, verses: sets.flatMap(s => s.verses) };
     }
     case 'esv': {
-      // ESV sets are published/custom data fetched at runtime. Do not fall back
-      // to KJV here, because the UI would label KJV text as ESV.
-      return { sets: [], verses: [] };
+      const m = await import('./verses_esv');
+      return { sets: m.VERSE_SETS_ESV, verses: m.VERSE_SETS_ESV.flatMap(s => s.verses) };
     }
     case 'ja': {
       const [m, p] = await Promise.all([import('./verses_ja'), import('./verses_proverbs')]);
