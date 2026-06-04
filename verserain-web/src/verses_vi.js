@@ -505,4 +505,54 @@ export const VERSE_SETS_VI = [
       { "id": "imm-vi-30", "reference": "Khải-huyền 7:9", "title": "Đánh thức danh tính", "text": "Sự ấy đoạn, tôi nhìn xem, thấy vô số người, không ai đếm được, bởi mọi nước, mọi chi phái, mọi dân tộc, mọi tiếng mà ra; chúng đứng trước ngôi và trước Chiên Con, mặc áo dài trắng, tay cầm nhánh chà là." }
     ]
   }
+  ,{
+    id: "power-of-words-vi",
+    title: "Chủ đề: Quyền Năng Của Lời Nói",
+    createdAt: "2026-06-04",
+    description: `<p><strong>Sứ điệp: Sự Sống và Sự Chết Trong Quyền Năng Của Lời Nói</strong></p>
+<p><strong>Câu Kinh Thánh chính:</strong> Châm ngôn 18:21; Châm ngôn 25:11; Gia-cơ 3:5-10</p>
+<h2>Mở đầu: Lời nói là sức mạnh sáng tạo thuộc linh</h2>
+<p>Trong thế giới thuộc linh, <strong>lời nói mang sức mạnh sáng tạo hoặc phá hủy thực sự</strong>. «Đức Chúa Trời phán rằng: Phải có sự sáng; thì có sự sáng» (Sáng thế ký 1:3). «Vì Ngài phán, thì điều ấy liền có» (Thi Thiên 33:9). Chúng ta được tạo dựng theo hình ảnh Đức Chúa Trời, nghĩa là <strong>Ngài đã ủy thác quyền năng của lời nói cho con người</strong>.</p>
+<h2>I. Lưỡi dao hai lưỡi: Sự chết và sự sống trong quyền của lưỡi</h2>
+<p>Châm ngôn 18:21: <strong>«Sự chết và sự sống đều ở nơi quyền của lưỡi.»</strong></p>
+<ul>
+<li><strong>Quyền năng «sự chết»:</strong> Gia-cơ 3:5-6 mô tả lưỡi là «cả một thế giới gian ác». «Kẻ hay gièm pha chia rẽ bạn bè thân tín» (Châm ngôn 16:28).</li>
+<li><strong>Quyền năng «sự sống»:</strong> «Lưỡi của người khôn ngoan thì chữa lành bệnh» (Châm ngôn 12:18).</li>
+</ul>
+<h2>II. Trái bằng vàng trong mâm bằng bạc</h2>
+<p>Châm ngôn 25:11: <strong>«Lời nói phải thì giống như trái bằng vàng, đựng trong mâm bằng bạc.»</strong> <strong>1. Đúng thời điểm:</strong> «Lời đáp êm dịu làm nguôi cơn giận» (Châm ngôn 15:1). <strong>2. Đúng thái độ:</strong> «Lời nói anh em phải có ân huệ theo luôn luôn, dùng muối mà thêm mặn» (Cô-lô-se 4:6). <strong>3. Đúng nội dung:</strong> Nói điều tốt để gây dựng (Ê-phê-sô 4:29). Miệng chúng ta trở thành «nguồn sự sống» (Châm ngôn 10:11).</p>
+<h2>III. Hiệp với Lời Cha: Giải phóng quyền năng cai trị</h2>
+<p>Chúa Jêsus phán: «Những lời ta nói với các ngươi đều là thần linh và sự sống» (Giăng 6:63). «Lời ra từ miệng ta... sẽ chẳng trở về luống nhưng» (Ê-sai 55:11). Từ chối đồng ý với lời nói dối của kẻ thù. Tuyên bố lời hứa của Cha bằng đức tin!</p>
+<h2>Kết luận</h2>
+<ul>
+<li>Miệng chúng ta hãy là <strong>nguồn sự sống</strong>.</li>
+<li>Miệng chúng ta dâng <strong>trái vàng trong mâm bạc</strong>.</li>
+<li>Miệng chúng ta <strong>hiệp với lời hứa của Cha</strong>!</li>
+</ul>
+<p>Cầu xin Đức Chúa Trời ban phước cho tất cả anh chị em. A-men!</p>`,
+    language: "vi",
+    verses: [
+      { id: "power-of-words-vi-1", reference: "Châm ngôn 18:21", title: "Quyền Năng Của Lời Nói", text: "Sự chết và sự sống đều ở nơi quyền của lưỡi; Ai ưa dùng nó sẽ ăn bông trái nó." },
+      { id: "power-of-words-vi-2", reference: "Châm ngôn 12:18", title: "Quyền Năng Của Lời Nói", text: "Có người nói bừa như đâm gươm; Song lưỡi của người khôn ngoan thì chữa lành bệnh." },
+      { id: "power-of-words-vi-3", reference: "Châm ngôn 15:4", title: "Quyền Năng Của Lời Nói", text: "Lưỡi hiền lành là cây sự sống; Song lưỡi gian tà làm tổn thương tâm thần." },
+      { id: "power-of-words-vi-4", reference: "Gia-cơ 3:5-6", title: "Quyền Năng Của Lời Nói", text: "Lưỡi cũng vậy, là một phần nhỏ trong thân thể, nhưng lại hay khoe khoang. Hãy xem ngọn lửa nhỏ đốt cháy cả rừng rậm lớn! Lưỡi cũng là lửa; ở trong các chi thể chúng ta, lưỡi là cả một thế giới gian ác; nó làm ô uế cả thân thể, đốt cháy cả cuộc đời, và chính nó bị lửa địa ngục đốt cháy." },
+      { id: "power-of-words-vi-5", reference: "Gia-cơ 3:9-10", title: "Quyền Năng Của Lời Nói", text: "Chúng ta nhờ lưỡi mà ngợi khen Chúa, là Cha chúng ta; chúng ta cũng nhờ lưỡi mà nguyền rủa loài người đã được tạo dựng theo hình ảnh Đức Chúa Trời. Miệng một người mà ra cả sự chúc phước lẫn sự nguyền rủa. Hỡi anh em, không nên như vậy." },
+      { id: "power-of-words-vi-6", reference: "Châm ngôn 16:28", title: "Quyền Năng Của Lời Nói", text: "Người gian tà gieo sự tranh cạnh; Kẻ hay gièm pha chia rẽ bạn bè thân tín." },
+      { id: "power-of-words-vi-7", reference: "Châm ngôn 18:8", title: "Quyền Năng Của Lời Nói", text: "Lời kẻ hay đâm thọc ngon như trái cây; Nó thấm vào đến tận ruột." },
+      { id: "power-of-words-vi-8", reference: "Châm ngôn 25:11", title: "Quyền Năng Của Lời Nói", text: "Lời nói phải thì giống như trái bằng vàng, đựng trong mâm bằng bạc." },
+      { id: "power-of-words-vi-9", reference: "Ê-phê-sô 4:29", title: "Quyền Năng Của Lời Nói", text: "Chớ có một lời dữ nào ra từ miệng anh em; nhưng khi đáng nói hãy nói một vài lời lành, để gây dựng và làm ơn cho kẻ nghe đến." },
+      { id: "power-of-words-vi-10", reference: "Châm ngôn 15:1", title: "Quyền Năng Của Lời Nói", text: "Lời đáp êm dịu làm nguôi cơn giận; còn lời xẵng xớm trêu thêm lửa giận." },
+      { id: "power-of-words-vi-11", reference: "Châm ngôn 15:23", title: "Quyền Năng Của Lời Nói", text: "Kẻ trả lời phải, được sự vui mừng; Và một lời nói có thì giờ nó, thật đẹp đẽ biết bao!" },
+      { id: "power-of-words-vi-12", reference: "Châm ngôn 16:24", title: "Quyền Năng Của Lời Nói", text: "Lời ngọt ngào dường như bánh tổ ong, Vừa ngon cho linh hồn, lại bổ khỏe cho xương." },
+      { id: "power-of-words-vi-13", reference: "Cô-lô-se 4:6", title: "Quyền Năng Của Lời Nói", text: "Lời nói anh em phải có ân huệ theo luôn luôn, dùng muối mà thêm mặn, để các anh em biết nên đáp lại cho mỗi người là thể nào." },
+      { id: "power-of-words-vi-14", reference: "Châm ngôn 10:11", title: "Quyền Năng Của Lời Nói", text: "Miệng người công bình là nguồn sự sống; Nhưng miệng kẻ gian ác chứa chất sự hung dữ." },
+      { id: "power-of-words-vi-15", reference: "Sáng thế ký 1:3", title: "Quyền Năng Của Lời Nói", text: "Đức Chúa Trời phán rằng: Phải có sự sáng; thì có sự sáng." },
+      { id: "power-of-words-vi-16", reference: "Thi Thiên 33:9", title: "Quyền Năng Của Lời Nói", text: "Vì Ngài phán, thì điều ấy liền có; Ngài biểu, thì vật ấy liền đứng vững bền." },
+      { id: "power-of-words-vi-17", reference: "Ê-sai 55:11", title: "Quyền Năng Của Lời Nói", text: "thì lời ra từ miệng ta cũng vậy; lời ấy sẽ chẳng trở về luống nhưng, mà chắc sẽ thành ra điều ta muốn, và làm trọn việc ta sai khiến làm." },
+      { id: "power-of-words-vi-18", reference: "Hê-bơ-rơ 4:12", title: "Quyền Năng Của Lời Nói", text: "Vì lời của Đức Chúa Trời là lời sống và linh nghiệm, sắc hơn gươm hai lưỡi, thấu vào đến đỗi chia hồn, linh, cốt, tủy, xem xét tư tưởng và ý định trong lòng." },
+      { id: "power-of-words-vi-19", reference: "Ma-thi-ơ 8:8", title: "Quyền Năng Của Lời Nói", text: "Viên đội trưởng thưa rằng: Lạy Chúa, tôi chẳng đáng rước Chúa vào nhà tôi; nhưng xin Chúa phán một lời, thì đầy tớ tôi sẽ được lành." },
+      { id: "power-of-words-vi-20", reference: "Giăng 6:63", title: "Quyền Năng Của Lời Nói", text: "Ấy là Thánh Linh ban sự sống; xác thịt chẳng ích chi. Những lời ta nói với các ngươi đều là thần linh và sự sống." }
+    ]
+  }
+
 ];

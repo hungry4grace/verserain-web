@@ -1042,4 +1042,54 @@ export const VERSE_SETS_ES = [
     ]
   }
 
+  ,{
+    id: "power-of-words-es",
+    title: "Tema: El Poder de las Palabras",
+    createdAt: "2026-06-04",
+    description: `<p><strong>Mensaje: Vida y Muerte en el Poder de la Lengua</strong></p>
+<p><strong>Versículos clave:</strong> Proverbios 18:21; Proverbios 25:11; Santiago 3:5-10</p>
+<h2>Introducción: Las palabras son fuerza creadora espiritual</h2>
+<p>¿Alguna vez has considerado cuánto poder tienen las palabras que hablas cada día? En el ámbito espiritual, <strong>las palabras tienen poder creador o destructor real</strong>. Dios no creó con Sus manos — Él habló. «Y dijo Dios: Sea la luz; y fue la luz» (Génesis 1:3). «Porque él dijo, y fue hecho» (Salmo 33:9). Somos hechos a imagen de Dios, lo que significa que <strong>Dios delegó el poder del habla a la humanidad</strong>.</p>
+<h2>I. El doble filo: muerte y vida en el poder de la lengua</h2>
+<p>Proverbios 18:21: <strong>«La muerte y la vida están en poder de la lengua, y el que la ama comerá de sus frutos.»</strong></p>
+<ul>
+<li><strong>El poder «muerte»:</strong> Santiago 3:5-6 describe la lengua como «un mundo de maldad». «El chismoso aparta a los mejores amigos» (Prov. 16:28).</li>
+<li><strong>El poder «vida»:</strong> «La lengua de los sabios es medicina» (Prov. 12:18). Palabras de aliento y verdad riegan vida en otros.</li>
+</ul>
+<h2>II. Manzanas de oro: el arte de la palabra oportuna</h2>
+<p>Proverbios 25:11: <strong>«Manzana de oro con figuras de plata es la palabra dicha como conviene.»</strong> Tres elementos: <strong>1. Momento correcto</strong> — «La blanda respuesta quita la ira» (Prov. 15:1). <strong>2. Actitud correcta</strong> — «Sea vuestra palabra siempre con gracia, sazonada con sal» (Col. 4:6). <strong>3. Contenido correcto</strong> — Edificar a quienes escuchan (Ef. 4:29). Nuestra boca es «manantial de vida» (Prov. 10:11).</p>
+<h2>III. Alineados con la Palabra del Padre</h2>
+<p>Jesús dijo: «Las palabras que yo os he hablado son espíritu y son vida» (Juan 6:63). «Mi palabra no volverá a mí vacía» (Isaías 55:11). Rechaza alinearte con las mentiras del enemigo. Declara las promesas del Padre en fe. Como sacerdocio real, proclama la gloria de Dios.</p>
+<h2>Cierre: Que nuestra boca sea manantial de vida</h2>
+<ul>
+<li>Que nuestra boca sea <strong>manantial de vida</strong>, desbordando palabras que edifican.</li>
+<li>Que nuestra boca ofrezca <strong>manzanas de oro en figuras de plata</strong>.</li>
+<li>Que nuestra boca esté <strong>alineada con las promesas del Padre</strong>.</li>
+</ul>
+<p>¡Que Dios los bendiga a todos. Amén!</p>`,
+    language: "es",
+    verses: [
+      { id: "power-of-words-es-1", reference: "Proverbios 18:21", title: "El Poder de las Palabras", text: "La muerte y la vida están en poder de la lengua, y el que la ama comerá de sus frutos." },
+      { id: "power-of-words-es-2", reference: "Proverbios 12:18", title: "El Poder de las Palabras", text: "Hay hombres cuyas palabras son como golpes de espada; mas la lengua de los sabios es medicina." },
+      { id: "power-of-words-es-3", reference: "Proverbios 15:4", title: "El Poder de las Palabras", text: "La lengua apacible es árbol de vida; mas la perversidad de ella es quebrantamiento de espíritu." },
+      { id: "power-of-words-es-4", reference: "Santiago 3:5-6", title: "El Poder de las Palabras", text: "Así también la lengua es un miembro pequeño, pero se jacta de grandes cosas. He aquí, ¡cuán grande bosque enciende un pequeño fuego! Y la lengua es un fuego, un mundo de maldad. La lengua está puesta entre nuestros miembros, y contamina todo el cuerpo, e inflama la rueda de la creación, y ella misma es inflamada por el infierno." },
+      { id: "power-of-words-es-5", reference: "Santiago 3:9-10", title: "El Poder de las Palabras", text: "Con ella bendecimos al Dios y Padre, y con ella maldecimos a los hombres, que están hechos a la semejanza de Dios. De una misma boca proceden bendición y maldición. Hermanos míos, esto no debe ser así." },
+      { id: "power-of-words-es-6", reference: "Proverbios 16:28", title: "El Poder de las Palabras", text: "El hombre perverso levanta contienda, y el chismoso aparta a los mejores amigos." },
+      { id: "power-of-words-es-7", reference: "Proverbios 18:8", title: "El Poder de las Palabras", text: "Las palabras del chismoso son como bocados suaves, y penetran hasta las entrañas." },
+      { id: "power-of-words-es-8", reference: "Proverbios 25:11", title: "El Poder de las Palabras", text: "Manzana de oro con figuras de plata es la palabra dicha como conviene." },
+      { id: "power-of-words-es-9", reference: "Efesios 4:29", title: "El Poder de las Palabras", text: "Ninguna palabra corrompida salga de vuestra boca, sino la que sea buena para la necesaria edificación, a fin de dar gracia a los oyentes." },
+      { id: "power-of-words-es-10", reference: "Proverbios 15:1", title: "El Poder de las Palabras", text: "La blanda respuesta quita la ira; mas la palabra áspera hace subir el furor." },
+      { id: "power-of-words-es-11", reference: "Proverbios 15:23", title: "El Poder de las Palabras", text: "El hombre se alegra con la respuesta de su boca; y la palabra a su tiempo, ¡cuán buena es!" },
+      { id: "power-of-words-es-12", reference: "Proverbios 16:24", title: "El Poder de las Palabras", text: "Panal de miel son los dichos suaves; suavidad al alma y medicina para los huesos." },
+      { id: "power-of-words-es-13", reference: "Colosenses 4:6", title: "El Poder de las Palabras", text: "Sea vuestra palabra siempre con gracia, sazonada con sal, para que sepáis cómo debéis responder a cada uno." },
+      { id: "power-of-words-es-14", reference: "Proverbios 10:11", title: "El Poder de las Palabras", text: "Manantial de vida es la boca del justo; pero la boca de los impíos encubre violencia." },
+      { id: "power-of-words-es-15", reference: "Génesis 1:3", title: "El Poder de las Palabras", text: "Y dijo Dios: Sea la luz; y fue la luz." },
+      { id: "power-of-words-es-16", reference: "Salmo 33:9", title: "El Poder de las Palabras", text: "Porque él dijo, y fue hecho; él mandó, y existió." },
+      { id: "power-of-words-es-17", reference: "Isaías 55:11", title: "El Poder de las Palabras", text: "así será mi palabra que sale de mi boca; no volverá a mí vacía, sino que hará lo que yo quiero, y será prosperada en aquello para que la envié." },
+      { id: "power-of-words-es-18", reference: "Hebreos 4:12", title: "El Poder de las Palabras", text: "Porque la palabra de Dios es viva y eficaz, y más cortante que toda espada de dos filos; y penetra hasta partir el alma y el espíritu, las coyunturas y los tuétanos, y discierne los pensamientos y las intenciones del corazón." },
+      { id: "power-of-words-es-19", reference: "Mateo 8:8", title: "El Poder de las Palabras", text: "Respondió el centurión y dijo: Señor, no soy digno de que entres bajo mi techo; solamente di la palabra, y mi criado sanará." },
+      { id: "power-of-words-es-20", reference: "Juan 6:63", title: "El Poder de las Palabras", text: "El espíritu es el que da vida; la carne para nada aprovecha; las palabras que yo os he hablado son espíritu y son vida." }
+    ]
+  }
+
 ];

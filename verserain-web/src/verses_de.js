@@ -1042,4 +1042,54 @@ export const VERSE_SETS_DE = [
     ]
   }
 
+  ,{
+    id: "power-of-words-de",
+    title: "Thema: Die Kraft der Worte",
+    createdAt: "2026-06-04",
+    description: `<p><strong>Predigt: Leben und Tod in der Macht der Zunge</strong></p>
+<p><strong>Schlüsselverse:</strong> Sprüche 18:21; Sprüche 25:11; Jakobus 3:5-10</p>
+<h2>Einleitung: Worte sind geistliche Schöpfungskraft</h2>
+<p>Haben Sie sich je gefragt, wie viel Kraft in den Worten liegt, die wir täglich sprechen? In der geistlichen Welt <strong>tragen Worte echte schöpferische oder zerstörerische Kraft</strong>. Gott erschuf nicht mit Händen — Er sprach. „Es werde Licht! Und es ward Licht" (1. Mose 1:3). „Er sprach, so geschah es; er gebot, so stand es da" (Psalm 33:9). Wir sind nach Gottes Ebenbild geschaffen. Das bedeutet: <strong>Gott hat die Sprachgewalt an den Menschen delegiert</strong>.</p>
+<h2>I. Die doppelte Klinge: Leben und Tod in der Macht der Zunge</h2>
+<p>Sprüche 18:21: <strong>„Tod und Leben stehen in der Macht der Zunge; wer sie zu pflegen weiß, wird ihre Früchte essen."</strong></p>
+<ul>
+<li><strong>Die „Tod"-Kraft der Worte:</strong> Jakobus 3:5-6 beschreibt die Zunge als „eine Welt voller Ungerechtigkeit". Worte wie „Du kannst nichts" brennen Scham tief ins Herz. „Ein Verleumder entzweit die besten Freunde" (Spr. 16:28).</li>
+<li><strong>Die „Leben"-Kraft der Worte:</strong> „Die Zunge der Weisen heilt" (Spr. 12:18). Ermutigende Worte der Wahrheit gießen Leben in andere.</li>
+</ul>
+<h2>II. Goldene Äpfel in silbernen Schalen: Die Kunst des rechten Wortes</h2>
+<p>Sprüche 25:11: <strong>„Ein Wort, geredet zu rechter Zeit, gleicht goldenen Äpfeln in silbernen Schalen."</strong> Drei Elemente: <strong>1. Richtiger Zeitpunkt</strong> — „Eine sanfte Antwort stillt den Zorn" (Spr. 15:1). <strong>2. Richtige Haltung</strong> — „Eure Rede sei allezeit freundlich und mit Salz gewürzt" (Kol. 4:6). <strong>3. Richtiger Inhalt</strong> — „Redet, was gut ist, was aufbaut" (Eph. 4:29). Unser Mund wird „ein Quell des Lebens" (Spr. 10:11).</p>
+<h2>III. Ausgerichtet am Wort des Vaters: Regierungsgewalt freisetzen</h2>
+<p>Als Ekklesia des Neuen Bundes tragen unsere Worte <strong>geistliche Regierungsgewalt und Reichsgottesausdehnung</strong>. Jesus: „Die Worte, die ich zu euch geredet habe, die sind Geist und sind Leben" (Joh. 6:63). Sein Wort „kehrt nicht leer zurück" (Jes. 55:11). Verweigern Sie die Ausrichtung auf Lügen des Feindes. Sprechen Sie Gottes Verheißungen aus. Als königliches Priestertum proklamieren Sie Seine Herrlichkeit!</p>
+<h2>Schluss: Lasst unseren Mund ein Quell des Lebens sein</h2>
+<ul>
+<li>Unser Mund soll ein <strong>Quell des Lebens</strong> sein.</li>
+<li>Unser Mund soll <strong>goldene Äpfel in silbernen Schalen</strong> reichen.</li>
+<li>Unser Mund soll am <strong>Wort des Vaters ausgerichtet</strong> sein und Sein Reich ausrufen!</li>
+</ul>
+<p>Gott segne euch alle. Amen!</p>`,
+    language: "de",
+    verses: [
+      { id: "power-of-words-de-1", reference: "Sprüche 18:21", title: "Die Kraft der Worte", text: "Tod und Leben stehen in der Macht der Zunge; wer sie zu pflegen weiß, wird ihre Früchte essen." },
+      { id: "power-of-words-de-2", reference: "Sprüche 12:18", title: "Die Kraft der Worte", text: "Manche reden drauflos wie Stiche eines Schwertes; aber die Zunge der Weisen heilt." },
+      { id: "power-of-words-de-3", reference: "Sprüche 15:4", title: "Die Kraft der Worte", text: "Eine heilsame Zunge ist ein Lebensbaum; eine falsche Zunge aber macht das Herz krank." },
+      { id: "power-of-words-de-4", reference: "Jakobus 3:5-6", title: "Die Kraft der Worte", text: "So ist auch die Zunge ein kleines Glied und richtet doch große Dinge an. Seht, ein kleines Feuer – welch großen Wald zündet es an! Auch die Zunge ist ein Feuer, eine Welt voller Ungerechtigkeit. Die Zunge ist unter unsern Gliedern das, was die ganze Welt der Sünde befleckt; sie zündet das Rad des Lebens an und wird von der Hölle entzündet." },
+      { id: "power-of-words-de-5", reference: "Jakobus 3:9-10", title: "Die Kraft der Worte", text: "Mit ihr loben wir den Herrn und Vater, und mit ihr verfluchen wir die Menschen, die nach Gottes Ebenbild gemacht sind. Aus ein und demselben Mund kommen Segen und Fluch. Meine Brüder und Schwestern, das sollte nicht so sein." },
+      { id: "power-of-words-de-6", reference: "Sprüche 16:28", title: "Die Kraft der Worte", text: "Ein falscher Mensch macht Streit, und ein Verleumder entzweit die besten Freunde." },
+      { id: "power-of-words-de-7", reference: "Sprüche 18:8", title: "Die Kraft der Worte", text: "Die Reden eines Verleumders sind wie Leckerbissen, sie dringen ein bis in die Kammern des Leibes." },
+      { id: "power-of-words-de-8", reference: "Sprüche 25:11", title: "Die Kraft der Worte", text: "Ein Wort, geredet zu rechter Zeit, gleicht goldenen Äpfeln in silbernen Schalen." },
+      { id: "power-of-words-de-9", reference: "Epheser 4:29", title: "Die Kraft der Worte", text: "Kein faules Wort gehe aus eurem Mund, sondern redet, was gut ist, was aufbaut und was nötig ist, damit es Gnade bringe denen, die es hören." },
+      { id: "power-of-words-de-10", reference: "Sprüche 15:1", title: "Die Kraft der Worte", text: "Eine sanfte Antwort stillt den Zorn; aber ein hartes Wort erregt Ärger." },
+      { id: "power-of-words-de-11", reference: "Sprüche 15:23", title: "Die Kraft der Worte", text: "Wer zu antworten weiß, hat große Freude; und ein Wort zur rechten Zeit, wie gut ist das!" },
+      { id: "power-of-words-de-12", reference: "Sprüche 16:24", title: "Die Kraft der Worte", text: "Freundliche Worte sind Honigseim: süß für die Seele und heilsam für die Gebeine." },
+      { id: "power-of-words-de-13", reference: "Kolosser 4:6", title: "Die Kraft der Worte", text: "Eure Rede sei allezeit freundlich und mit Salz gewürzt, damit ihr wisst, wie ihr einem jeden antworten sollt." },
+      { id: "power-of-words-de-14", reference: "Sprüche 10:11", title: "Die Kraft der Worte", text: "Der Mund des Gerechten ist ein Quell des Lebens; der Mund der Gottlosen birgt Gewalt." },
+      { id: "power-of-words-de-15", reference: "1. Mose 1:3", title: "Die Kraft der Worte", text: "Und Gott sprach: Es werde Licht! Und es ward Licht." },
+      { id: "power-of-words-de-16", reference: "Psalm 33:9", title: "Die Kraft der Worte", text: "Denn er sprach, so geschah es; er gebot, so stand es da." },
+      { id: "power-of-words-de-17", reference: "Jesaja 55:11", title: "Die Kraft der Worte", text: "So soll das Wort, das aus meinem Mund geht, auch sein: Es wird nicht leer zu mir zurückkehren, sondern wird tun, was mir gefällt, und seinen Auftrag erfüllen." },
+      { id: "power-of-words-de-18", reference: "Hebräer 4:12", title: "Die Kraft der Worte", text: "Denn das Wort Gottes ist lebendig und kräftig und schärfer als jedes zweischneidige Schwert; es durchdringt, bis es scheidet Seele und Geist, auch Mark und Bein, und ist ein Richter der Gedanken und Sinne des Herzens." },
+      { id: "power-of-words-de-19", reference: "Matthäus 8:8", title: "Die Kraft der Worte", text: "Der Hauptmann antwortete und sprach: Herr, ich bin nicht wert, dass du unter mein Dach gehst; sondern sprich nur ein Wort, so wird mein Knecht gesund." },
+      { id: "power-of-words-de-20", reference: "Johannes 6:63", title: "Die Kraft der Worte", text: "Der Geist ist es, der lebendig macht; das Fleisch nützt nichts. Die Worte, die ich zu euch geredet habe, die sind Geist und sind Leben." }
+    ]
+  }
+
 ];

@@ -1042,4 +1042,54 @@ export const VERSE_SETS_TR = [
     ]
   }
 
+  ,{
+    id: "power-of-words-tr",
+    title: "Konu: Sözün Gücü",
+    createdAt: "2026-06-04",
+    description: `<p><strong>Mesaj: Dilde Ölüm ve Yaşam — Göksel Söz Gücünü Serbest Bırakmak</strong></p>
+<p><strong>Anahtar Ayetler:</strong> Süleyman'ın Özdeyişleri 18:21; 25:11; Yakup 3:5-10</p>
+<h2>Giriş: Sözler Ruhsal Yaratıcı Güçtür</h2>
+<p>Ruhsal dünyada, <strong>sözler gerçek bir yaratıcı ya da yıkıcı güç taşır</strong>. «Tanrı, 'Işık olsun' dedi, ve ışık oldu» (Yaratılış 1:3). «O söyledi, var oldu» (Mezmurlar 33:9). Tanrı'nın benzeyişinde yaratıldık; bu, <strong>Tanrı'nın «konuşma gücünü» insana devrettiği</strong> anlamına gelir.</p>
+<h2>I. Çift Taraflı Kılıç: Ölüm ve Yaşam Dilin Elindedir</h2>
+<p>Süleyman'ın Özdeyişleri 18:21: <strong>«Ölüm de yaşam da dilde gizlidir.»</strong></p>
+<ul>
+<li><strong>Sözlerin «ölüm» gücü:</strong> Yakup 3:5-6 dili «kötülük dünyası» olarak tanımlar. «Dedikoducu yakın arkadaşları birbirinden ayırır» (Özdeyişler 16:28).</li>
+<li><strong>Sözlerin «yaşam» gücü:</strong> «Bilgenin dili iyileştirir» (Özdeyişler 12:18).</li>
+</ul>
+<h2>II. Gümüş Sepetteki Altın Elma</h2>
+<p>Süleyman'ın Özdeyişleri 25:11: <strong>«Doğru söylenen söz, gümüş sepete konmuş altın elmaya benzer.»</strong> <strong>1. Doğru zaman:</strong> «Yumuşak yanıt öfkeyi dindirer» (Özdeyişler 15:1). <strong>2. Doğru tutum:</strong> «Konuşmanız her zaman tuzla tatlandırılmış olsun» (Koloseliler 4:6). <strong>3. Doğru içerik:</strong> Yalnızca yararlı sözler söyleyin (Efesliler 4:29). Ağzımız «yaşam pınarı» olur (Özdeyişler 10:11).</p>
+<h2>III. Baba'nın Sözüyle Hizalanmak</h2>
+<p>İsa buyurdu: «Ben size söylediğim sözler ruh ve yaşamdır» (Yuhanna 6:63). «Sözüm... boş dönmez» (Yeşaya 55:11). «Tanrı'nın sözü canlı ve etkindir» (İbraniler 4:12). Düşmanın yalanlarıyla uyum sağlamayı reddedin. İmanla Baba'nın vaatlerini ilan edin. Kral-Ruhban sınıfı olarak Tanrı'nın yüceliğini duyurun!</p>
+<h2>Sonuç</h2>
+<ul>
+<li>Ağzımız bir <strong>yaşam pınarı</strong> olsun.</li>
+<li>Ağzımız <strong>gümüş sepetteki altın elma</strong>yı sunsun.</li>
+<li>Ağzımız <strong>Baba'nın vaatleriyle hizalansın</strong>!</li>
+</ul>
+<p>Tanrı hepinizi kutsasın. Amin!</p>`,
+    language: "tr",
+    verses: [
+      { id: "power-of-words-tr-1", reference: "Süleyman'ın Özdeyişleri 18:21", title: "Sözün Gücü", text: "Ölüm de yaşam da dilde gizlidir, Dili sevenler sonucuna katlanacak." },
+      { id: "power-of-words-tr-2", reference: "Süleyman'ın Özdeyişleri 12:18", title: "Sözün Gücü", text: "Düşüncesizce konuşan sözler kılıç gibi yaralar, Ama bilgenin dili iyileştirir." },
+      { id: "power-of-words-tr-3", reference: "Süleyman'ın Özdeyişleri 15:4", title: "Sözün Gücü", text: "Yatıştıran bir dil yaşam ağacıdır, Ama yıkıcı bir dil ruhu ezer." },
+      { id: "power-of-words-tr-4", reference: "Yakup 3:5-6", title: "Sözün Gücü", text: "Aynı şekilde dil de küçük bir organdır, ama büyük işler başarır. Küçük bir kıvılcımın koca bir ormanı nasıl da ateşe verdiğine bakın! Dil de bir ateştir; dil vücudumuzdaki kötülük dünyasıdır. Tüm bedeni kirletir, yaşamın çarkını ateşler ve kendisi de cehennem ateşiyle alevlenir." },
+      { id: "power-of-words-tr-5", reference: "Yakup 3:9-10", title: "Sözün Gücü", text: "Rabbimiz ve Babamızı dilinizle yüceltir, Tanrı'nın benzeyişinde yaratılmış insanları da aynı dille lanet ederiz. Aynı ağızdan hem şükür, hem lanet çıkıyor. Kardeşlerim, böyle olmamalı." },
+      { id: "power-of-words-tr-6", reference: "Süleyman'ın Özdeyişleri 16:28", title: "Sözün Gücü", text: "Çarpık kişi çekişme çıkarır, Dedikoducu yakın arkadaşları birbirinden ayırır." },
+      { id: "power-of-words-tr-7", reference: "Süleyman'ın Özdeyişleri 18:8", title: "Sözün Gücü", text: "Dedikoducunun sözleri lezzetli lokmalar gibidir, Kişinin içine kadar işler." },
+      { id: "power-of-words-tr-8", reference: "Süleyman'ın Özdeyişleri 25:11", title: "Sözün Gücü", text: "Doğru söylenen söz, gümüş sepete konmuş altın elmaya benzer." },
+      { id: "power-of-words-tr-9", reference: "Efesliler 4:29", title: "Sözün Gücü", text: "Ağzınızdan kötü söz çıkmasın; yalnızca gerektiğinde, dinleyenlere yararlı olmak için iyi sözler söyleyin." },
+      { id: "power-of-words-tr-10", reference: "Süleyman'ın Özdeyişleri 15:1", title: "Sözün Gücü", text: "Yumuşak yanıt öfkeyi dindirer, Sert söz ise gazabı körükler." },
+      { id: "power-of-words-tr-11", reference: "Süleyman'ın Özdeyişleri 15:23", title: "Sözün Gücü", text: "Doğru yanıt vermek insanı sevince boğar, Yerinde söylenen söz ne güzeldir!" },
+      { id: "power-of-words-tr-12", reference: "Süleyman'ın Özdeyişleri 16:24", title: "Sözün Gücü", text: "Tatlı sözler bal peteğine benzer, Cana tatlı, kemiğe şifa gelir." },
+      { id: "power-of-words-tr-13", reference: "Koloseliler 4:6", title: "Sözün Gücü", text: "Konuşmanız her zaman tuzla tatlandırılmış, tatlı dilli olsun; böylece herkese nasıl yanıt vereceğinizi bilirsiniz." },
+      { id: "power-of-words-tr-14", reference: "Süleyman'ın Özdeyişleri 10:11", title: "Sözün Gücü", text: "Doğru kişinin ağzı yaşam pınarıdır, Kötünün ağzı ise şiddeti gizler." },
+      { id: "power-of-words-tr-15", reference: "Yaratılış 1:3", title: "Sözün Gücü", text: "Tanrı, 'Işık olsun' dedi, ve ışık oldu." },
+      { id: "power-of-words-tr-16", reference: "Mezmurlar 33:9", title: "Sözün Gücü", text: "O söyledi, var oldu; Emretti, yerli yerinde durdu." },
+      { id: "power-of-words-tr-17", reference: "Yeşaya 55:11", title: "Sözün Gücü", text: "Sözüm de böyledir; Ağzımdan çıktıktan sonra boş dönmez, Hoşnut kılacağım şeyi gerçekleştirir, Gönderdiğim iş başarıya ulaşır." },
+      { id: "power-of-words-tr-18", reference: "İbraniler 4:12", title: "Sözün Gücü", text: "Çünkü Tanrı'nın sözü canlı ve etkindir. İki ağızlı kılıçtan daha keskindir. Can ile ruhu, eklem ile iliği birbirinden ayırt edecek biçimde saplanır; yüreğin düşüncelerini ve amaçlarını yargılar." },
+      { id: "power-of-words-tr-19", reference: "Matta 8:8", title: "Sözün Gücü", text: "Yüzbaşı şu yanıtı verdi: 'Rab, senin çatım altına girmen için ben layık değilim. Yalnızca bir söz söyle, hizmetçim iyileşir.'" },
+      { id: "power-of-words-tr-20", reference: "Yuhanna 6:63", title: "Sözün Gücü", text: "Yaşam veren Ruh'tur, bedenin hiçbir yararı yoktur. Ben size söylediğim sözler ruh ve yaşamdır." }
+    ]
+  }
+
 ];

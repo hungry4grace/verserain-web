@@ -2805,4 +2805,56 @@ export const VERSE_SETS_NIV = [
       }
     ]
   }
+  ,{
+    id: "power-of-words-niv",
+    title: "Topic: Power of Words",
+    createdAt: "2026-06-04",
+    description: `<p><strong>Message: Life and Death in the Power of the Tongue</strong></p>
+<p><strong>Key Verses:</strong> Proverbs 18:21; Proverbs 25:11; James 3:5-10</p>
+<h2>Introduction: Words Are Spiritual Creative Power</h2>
+<p>Have you ever considered how much power lies in the words you speak each day? In the spiritual realm, <strong>words carry real creative or destructive power</strong>. From the very first chapter of Scripture, God did not fashion creation with His hands — He spoke. "And God said, Let there be light: and there was light" (Genesis 1:3). "For he spake, and it was done; he commanded, and it stood fast" (Psalm 33:9). We are made in God's image, which means <strong>God has delegated the power of speech to humanity</strong>. The words we release shape our world, our families, our relationships, and our destiny.</p>
+<h2>I. The Double Edge: Death and Life in the Power of the Tongue</h2>
+<p>Proverbs 18:21 announces a sobering spiritual law: <strong>"Death and life are in the power of the tongue: and they that love it shall eat the fruit thereof."</strong> The tongue is no harmless thing — it is a double-edged sword.</p>
+<ul>
+<li><strong>The "Death" Power of Words:</strong> James 3:5-6 describes the tongue as "a world of iniquity." Words like "You're worthless" brand the soul with shame. "A whisperer separateth chief friends" (Proverbs 16:28).</li>
+<li><strong>The "Life" Power of Words:</strong> "The tongue of the wise is health" (Proverbs 12:18). Words of encouragement, acceptance, and truth water life into others.</li>
+</ul>
+<h2>II. Apples of Gold: The Art of Timely, Gracious Speech</h2>
+<p>Proverbs 25:11: <strong>"A word fitly spoken is like apples of gold in pictures of silver."</strong></p>
+<p><strong>1. Right Timing:</strong> "A soft answer turneth away wrath" (Proverbs 15:1). <strong>2. Right Tone:</strong> "Let your speech be always with grace, seasoned with salt" (Colossians 4:6). <strong>3. Right Content:</strong> Speak only "what is good to the use of edifying" (Ephesians 4:29). When we speak rightly, our mouth becomes "a well of life" (Proverbs 10:11).</p>
+<h2>III. Aligned with the Father's Word: Releasing Governing Power</h2>
+<p>As New Covenant Ekklesia, our words carry <strong>spiritual governance and Kingdom expansion</strong>. Jesus declared: "the words that I speak unto you, they are spirit, and they are life" (John 6:63). "My word...shall not return unto me void" (Isaiah 55:11). The Word of God is "quick, and powerful" (Hebrews 4:12). Refuse to align with the enemy's lies. Declare God's promises in faith. As a royal priesthood, proclaim His glory!</p>
+<h2>Closing: Let Your Mouth Be a Well of Life</h2>
+<p>Brothers and sisters, death and life truly are in the power of the tongue. Let us repent of all careless, shaming, and cursing words. Let us be resolved:</p>
+<ul>
+<li>Our mouths shall be <strong>wells of life</strong>, pouring out words that build, comfort, and heal.</li>
+<li>Our mouths shall offer <strong>apples of gold in silver settings</strong> — the right word, at the right time.</li>
+<li>Our mouths shall be <strong>aligned with the Father's promises</strong>, declaring His Kingdom come!</li>
+</ul>
+<p>May God bless you all. Amen!</p>`,
+    language: "niv",
+    verses: [
+      { id: "power-of-words-niv-1", reference: "Proverbs 18:21", title: "Power of Words", text: "The tongue has the power of life and death, and those who love it will eat its fruit." },
+      { id: "power-of-words-niv-2", reference: "Proverbs 12:18", title: "Power of Words", text: "The words of the reckless pierce like a sword, but the tongue of the wise brings healing." },
+      { id: "power-of-words-niv-3", reference: "Proverbs 15:4", title: "Power of Words", text: "The soothing tongue is a tree of life, but a perverse tongue crushes the spirit." },
+      { id: "power-of-words-niv-4", reference: "James 3:5-6", title: "Power of Words", text: "Likewise, the tongue is a small part of the body, but it makes great boasts. Consider what a great forest is set on fire by a small spark. The tongue also is a fire, a world of evil among the parts of the body. It corrupts the whole body, sets the whole course of one's life on fire, and is itself set on fire by hell." },
+      { id: "power-of-words-niv-5", reference: "James 3:9-10", title: "Power of Words", text: "With the tongue we praise our Lord and Father, and with it we curse human beings, who have been made in God's likeness. Out of the same mouth come praise and cursing. My brothers and sisters, this should not be." },
+      { id: "power-of-words-niv-6", reference: "Proverbs 16:28", title: "Power of Words", text: "A perverse person stirs up conflict, and a gossip separates close friends." },
+      { id: "power-of-words-niv-7", reference: "Proverbs 18:8", title: "Power of Words", text: "The words of a gossip are like choice morsels; they go down to the inmost parts." },
+      { id: "power-of-words-niv-8", reference: "Proverbs 25:11", title: "Power of Words", text: "Like apples of gold in settings of silver is a ruling rightly given." },
+      { id: "power-of-words-niv-9", reference: "Ephesians 4:29", title: "Power of Words", text: "Do not let any unwholesome talk come out of your mouths, but only what is helpful for building others up according to their needs, that it may benefit those who listen." },
+      { id: "power-of-words-niv-10", reference: "Proverbs 15:1", title: "Power of Words", text: "A gentle answer turns away wrath, but a harsh word stirs up anger." },
+      { id: "power-of-words-niv-11", reference: "Proverbs 15:23", title: "Power of Words", text: "A person finds joy in giving an apt reply — and how good is a timely word!" },
+      { id: "power-of-words-niv-12", reference: "Proverbs 16:24", title: "Power of Words", text: "Gracious words are a honeycomb, sweet to the soul and healing to the bones." },
+      { id: "power-of-words-niv-13", reference: "Colossians 4:6", title: "Power of Words", text: "Let your conversation be always full of grace, seasoned with salt, so that you may know how to answer everyone." },
+      { id: "power-of-words-niv-14", reference: "Proverbs 10:11", title: "Power of Words", text: "The mouth of the righteous is a fountain of life, but the mouth of the wicked conceals violence." },
+      { id: "power-of-words-niv-15", reference: "Genesis 1:3", title: "Power of Words", text: "And God said, 'Let there be light,' and there was light." },
+      { id: "power-of-words-niv-16", reference: "Psalm 33:9", title: "Power of Words", text: "For he spoke, and it came to be; he commanded, and it stood firm." },
+      { id: "power-of-words-niv-17", reference: "Isaiah 55:11", title: "Power of Words", text: "so is my word that goes out from my mouth: It will not return to me empty, but will accomplish what I desire and achieve the purpose for which I sent it." },
+      { id: "power-of-words-niv-18", reference: "Hebrews 4:12", title: "Power of Words", text: "For the word of God is alive and active. Sharper than any double-edged sword, it penetrates even to dividing soul and spirit, joints and marrow; it judges the thoughts and attitudes of the heart." },
+      { id: "power-of-words-niv-19", reference: "Matthew 8:8", title: "Power of Words", text: "The centurion replied, 'Lord, I do not deserve to have you come under my roof. But just say the word, and my servant will be healed.'" },
+      { id: "power-of-words-niv-20", reference: "John 6:63", title: "Power of Words", text: "The Spirit gives life; the flesh counts for nothing. The words I have spoken to you — they are full of the Spirit and life." }
+    ]
+  }
+
 ];
