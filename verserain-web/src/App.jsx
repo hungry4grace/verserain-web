@@ -3138,8 +3138,11 @@ export default function App() {
         // Cross-device self-invite guard: if the resolved nickname matches
         // our own playerName, the "inviter" is actually ourselves on
         // another device (e.g. opened our own ref link in this WebView).
-        // Clear it so the card flips back to the "未綁定" CTA.
-        if (name && playerName && name === playerName) {
+        // Clear it so the card flips back to the "未綁定" CTA. Read from
+        // localStorage rather than the playerName state because that state
+        // is declared later in the function and would TDZ here.
+        const ownName = (typeof window !== 'undefined' && localStorage.getItem('verserain_player_name')) || '';
+        if (name && ownName && name === ownName) {
           localStorage.removeItem('verserain_inviter');
           setMyInviterCode(null);
           setMyInviterName(undefined);
@@ -3149,7 +3152,7 @@ export default function App() {
       })
       .catch(() => { if (!cancelled) setMyInviterName(null); });
     return () => { cancelled = true; };
-  }, [myInviterCode, playerName]);
+  }, [myInviterCode]);
 
   // ─── Web Push state ─────────────────────────────────────────────────────
   // 'idle' | 'subscribed' | 'denied' | 'unsupported' | 'needs-pwa'
