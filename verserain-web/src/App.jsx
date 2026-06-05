@@ -3132,10 +3132,24 @@ export default function App() {
     setMyInviterName(undefined); // mark "looking up"
     fetch(`/api/get-name-by-code?code=${encodeURIComponent(myInviterCode)}`)
       .then(r => r.ok ? r.json() : null)
-      .then(data => { if (!cancelled) setMyInviterName(data?.name || null); })
+      .then(data => {
+        if (cancelled) return;
+        const name = data?.name || null;
+        // Cross-device self-invite guard: if the resolved nickname matches
+        // our own playerName, the "inviter" is actually ourselves on
+        // another device (e.g. opened our own ref link in this WebView).
+        // Clear it so the card flips back to the "未綁定" CTA.
+        if (name && playerName && name === playerName) {
+          localStorage.removeItem('verserain_inviter');
+          setMyInviterCode(null);
+          setMyInviterName(undefined);
+          return;
+        }
+        setMyInviterName(name);
+      })
       .catch(() => { if (!cancelled) setMyInviterName(null); });
     return () => { cancelled = true; };
-  }, [myInviterCode]);
+  }, [myInviterCode, playerName]);
 
   // ─── Web Push state ─────────────────────────────────────────────────────
   // 'idle' | 'subscribed' | 'denied' | 'unsupported' | 'needs-pwa'
