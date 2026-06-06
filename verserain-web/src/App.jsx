@@ -1965,6 +1965,42 @@ function VerseSetContinuousRainPlayer({
       const currentPhrases = phrasesRef.current;
       for (let i = 0; i < currentPhrases.length; i++) {
         if (cancelled || runRef.current !== runId) return;
+        // Predictive pre-trim: BEFORE block i mounts, measure already-landed
+        // blocks. If adding block i would push past the bottom, advance
+        // phrasePageStart to i first so block i falls into an empty area —
+        // never any "block lands at bottom → flash → reappear at top".
+        if (i > 0) {
+          const container = phraseContainerRef.current;
+          if (container) {
+            const actionControls = document.querySelector('.continuous-rain-action-controls');
+            const actionControlsTop = actionControls
+              ? actionControls.getBoundingClientRect().top
+              : window.innerHeight;
+            const containerRect = container.getBoundingClientRect();
+            const visualBottomLimit = Math.min(containerRect.bottom, actionControlsTop - 16);
+            let bottomMost = 0;
+            const heights = [];
+            for (let j = 0; j < i; j++) {
+              const node = phraseNodeRefs.current[j];
+              if (!node) continue;
+              const r = node.getBoundingClientRect();
+              // Only count blocks that have visually landed (not still
+              // transitioning from -52vh). Pre-landing rects sit far above
+              // the container top.
+              if (r.top >= containerRect.top - 20) {
+                bottomMost = Math.max(bottomMost, r.bottom);
+                if (r.height > 0) heights.push(r.height);
+              }
+            }
+            const avgH = heights.length
+              ? heights.reduce((a, b) => a + b, 0) / heights.length
+              : 56;
+            const gap = 12;
+            if (bottomMost && bottomMost + avgH + gap > visualBottomLimit) {
+              setPhrasePageStart(i);
+            }
+          }
+        }
         setActivePhrase(i);
         await speakTextTimed(currentPhrases[i], 0.86, lang);
         if (cancelled || runRef.current !== runId) return;
