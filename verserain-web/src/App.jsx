@@ -657,14 +657,17 @@ function pickSpeechVoice(lang) {
   const activeVersion = localStorage.getItem('verseRain_version') || 'cuv';
   const savedVoiceKey = byVersion?.[activeVersion] || localStorage.getItem('verseRain_voiceName');
   if (savedVoiceKey) {
-    const preferred =
-      voices.find(v => `${v.name}__${v.lang || ''}` === savedVoiceKey)
-      || voices.find(v => v.name === savedVoiceKey);
-    // Validate: the saved voice must actually match the requested lang prefix.
-    // Otherwise stale state from a different Bible version could leak across
-    // (e.g. a saved English voice being used to speak Persian).
-    if (preferred && preferred.lang?.toLowerCase().startsWith(langPrefix) && isAllowed(preferred)) {
-      return preferred;
+    // Exact "name__lang" match — this is what the dropdown saves (the picker
+    // already pre-filters by langPrefix, so an exact match means the user
+    // explicitly chose this voice for this Bible version → trust them
+    // regardless of our heuristics, even if iOS mistags the voice's lang).
+    const exactByVersion = voices.find(v => `${v.name}__${v.lang || ''}` === savedVoiceKey);
+    if (exactByVersion) return exactByVersion;
+    // Legacy name-only save (`verseRain_voiceName`) could be stale state
+    // from a different Bible version → validate before using.
+    const byName = voices.find(v => v.name === savedVoiceKey);
+    if (byName && byName.lang?.toLowerCase().startsWith(langPrefix) && isAllowed(byName)) {
+      return byName;
     }
   }
 
@@ -675,11 +678,13 @@ function pickSpeechVoice(lang) {
   if (prefix) return prefix;
 
   // Name-based fallback for languages where the OS often lacks a properly-
-  // tagged voice (e.g. Persian on desktop Chrome). Better to pick a voice
-  // whose name names the language than let the engine guess.
+  // tagged voice (e.g. Persian on desktop Chrome, or iOS variants that
+  // mistag Persian voices). If the voice's NAME identifies the language
+  // explicitly (e.g. "Soraya"), trust it — bypass the blocklist, because
+  // the name is more reliable than a possibly-stale lang tag.
   const patterns = VOICE_NAME_FALLBACKS[langPrefix];
   if (patterns) {
-    const byName = voices.find(v => patterns.some(p => p.test(v.name || '')) && isAllowed(v));
+    const byName = voices.find(v => patterns.some(p => p.test(v.name || '')));
     if (byName) return byName;
   }
 
