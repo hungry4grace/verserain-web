@@ -920,6 +920,64 @@ function stripBollsMarkup(text) {
     .trim();
 }
 
+// getbible.net fallback for languages bolls.life doesn't carry — currently
+// Turkish (Kutsal Kitap) and Myanmar/Burmese (Judson 1835). Same shape as
+// fetchVerseFromBolls: normalizedKey "<bookId>|<chap>" or "<bookId>|<chap>:<verses>"
+// → joined verse text string. CORS-open and rate-friendly (whole-chapter
+// fetch, then filter).
+const GETBIBLE_TRANSLATIONS = {
+  tr: 'turkish', // Kutsal Kitap
+  my: 'judson',  // Judson 1835 Burmese Bible
+};
+
+async function fetchVerseFromGetBible(normalizedKey, targetVersion) {
+  const slug = GETBIBLE_TRANSLATIONS[targetVersion];
+  if (!slug) return null;
+  const [bookPart, chapterVerse] = (normalizedKey || '').split('|');
+  if (!chapterVerse) return null;
+  const bookId = parseInt(bookPart, 10);
+  if (Number.isNaN(bookId)) return null;
+
+  const colonIdx = chapterVerse.indexOf(':');
+  const chapter = colonIdx < 0
+    ? parseInt(chapterVerse, 10)
+    : parseInt(chapterVerse.slice(0, colonIdx), 10);
+  if (Number.isNaN(chapter)) return null;
+
+  try {
+    const res = await fetch(`https://api.getbible.net/v2/${slug}/${bookId}/${chapter}.json`);
+    if (!res.ok) return null;
+    const data = await res.json();
+    const verses = data?.verses;
+    if (!Array.isArray(verses) || !verses.length) return null;
+
+    // Chapter-only — concat all verses with Arabic semicolon so splitVersePhrases
+    // can break on verse boundaries (matches fetchVerseFromBolls behaviour).
+    if (colonIdx < 0) {
+      return verses.map(v => stripBollsMarkup(v.text || ''))
+        .filter(Boolean).join('؛ ') || null;
+    }
+
+    // Verse-range — filter to requested numbers (cap at 9 in line with bolls path).
+    const range = chapterVerse.slice(colonIdx + 1);
+    let wanted = new Set();
+    if (range.includes('-')) {
+      const [s, e] = range.split('-').map(Number);
+      if (!Number.isNaN(s) && !Number.isNaN(e)) {
+        for (let v = s; v <= Math.min(e, s + 8); v++) wanted.add(v);
+      }
+    } else {
+      const v = parseInt(range, 10);
+      if (!Number.isNaN(v)) wanted.add(v);
+    }
+    if (!wanted.size) return null;
+    return verses
+      .filter(v => wanted.has(Number(v.verse)))
+      .map(v => stripBollsMarkup(v.text || ''))
+      .filter(Boolean).join(' ').trim() || null;
+  } catch { return null; }
+}
+
 async function fetchVerseFromBolls(normalizedKey, targetVersion) {
   const [bookPart, chapterVerse] = (normalizedKey || '').split('|');
   if (!chapterVerse) return null;
@@ -2026,6 +2084,11 @@ function VerseSetContinuousRainPlayer({
 
       if (secondaryVersion === 'esv' || secondaryVersion === 'kjv' || secondaryVersion === 'niv') {
         if (englishRef) text = await fetchBibleVerseFromAPI(englishRef, secondaryVersion);
+      } else if (secondaryVersion === 'tr' || secondaryVersion === 'my') {
+        // bolls.life doesn't carry Turkish or Myanmar/Burmese; use the
+        // getbible.net Kutsal Kitap / Judson editions instead. Same input
+        // shape (normalizedKey) and output shape (joined verse text).
+        text = await fetchVerseFromGetBible(normalizedKey, secondaryVersion);
       } else {
         text = await fetchVerseFromBolls(normalizedKey, secondaryVersion);
       }
