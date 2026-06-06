@@ -74,7 +74,7 @@ function lookupBookId(bookRaw) {
   const n = bookRaw.toLowerCase().replace(/\./g, '').replace(/\s+/g, ' ');
   const b = BIBLE_BOOKS.find(bk => [
     ...(bk.names || []), ...(bk.cn || []),
-    bk.ja, bk.ko, bk.es, bk.de, bk.tr, bk.fa, bk.he, bk.my, bk.vi, bk.idn, bk.msy,
+    bk.ja, bk.ko, bk.es, bk.de, bk.tr, bk.fa, bk.ar, bk.he, bk.my, bk.vi, bk.idn, bk.msy,
   ].filter(Boolean).some(name => {
     const nn = String(name).toLowerCase().replace(/\./g, '').replace(/\s+/g, ' ');
     return n === nn || n.endsWith(' ' + nn);

@@ -630,12 +630,15 @@ function initAudio() {
 // Arabic "Maged" voice for Persian text because both use Arabic script).
 const VOICE_NAME_FALLBACKS = {
   fa: [/soraya/i, /dariush/i, /persian/i, /farsi/i],
+  ar: [/maged/i, /majed/i, /tarik/i, /laila/i, /arabic/i],
 };
 // Languages we must NEVER cross-pollinate from in an emergency fallback.
-// (Persian uses Arabic script but Arabic and Persian phonetics are totally
-// different — using an Arabic voice for Persian sounds wrong to native ears.)
+// Persian and Arabic share script but their phonetics are completely
+// different — picking a voice from the wrong language sounds wrong to
+// native ears of either side.
 const VOICE_LANG_BLOCKLIST = {
   fa: ['ar'], // never pick Arabic for Persian
+  ar: ['fa'], // never pick Persian for Arabic (reverse case)
 };
 
 function pickSpeechVoice(lang) {
@@ -848,6 +851,7 @@ function getVoiceLangForVersion(v) {
   if (v === 'ja') return 'ja-JP';
   if (v === 'he') return 'he-IL';
   if (v === 'fa') return 'fa-IR';
+  if (v === 'ar') return 'ar-SA';
   if (v === 'es') return 'es-ES';
   if (v === 'tr') return 'tr-TR';
   if (v === 'de') return 'de-DE';
@@ -865,6 +869,7 @@ const BIBLE_LANGUAGE_OPTIONS = [
   { value: 'esv', label: 'English - ESV' },
   { value: 'niv', label: 'English - NIV' },
   { value: 'fa', label: 'فارسی' },
+  { value: 'ar', label: 'العربية' },
   { value: 'he', label: 'עברית' },
   { value: 'ja', label: '日本語' },
   { value: 'ko', label: '한국어' },
@@ -941,6 +946,7 @@ const BOLLS_TRANSLATIONS = {
   de:   'SCH',    // German Schlachter 1951
   es:   'RV1960', // Spanish Reina-Valera 1960
   fa:   'POV',    // Persian Old Version
+  ar:   'SVD',    // Arabic Smith and Van Dyke 1865 (most widely-used)
   vi:   'VI1934', // Vietnamese 1934
   id:   'TB',     // Indonesian Terjemahan Baru (most widely-used)
   ms:   'TB',     // Malay fallback to Indonesian TB (no public Malay Bible API; ~80% intelligible)
@@ -1453,6 +1459,39 @@ const MULTILANG_FULL_BOOK_ID = {
   '1 ကော':46,'1ကော':46,'2 ကော':47,'2ကော':47,
   '1 ကောရိန္သု':46,'2 ကောရိန္သု':47,
   '1 ပေတရု':60,'2 ပေတရု':61,
+
+  // Arabic (SVD) — keep distinct from Persian. Arabic refs use ASCII or
+  // Arabic-Indic digits (asciifyDigits handles the latter). Spellings here
+  // mirror what verses_ar.js emits via the Arabic book-name map.
+  'تكوين':1,'خروج':2,'لاويين':3,'عدد':4,'تثنية':5,
+  'يشوع':6,'قضاة':7,'راعوث':8,
+  '1صموئيل':9,'2صموئيل':10,
+  '1ملوك':11,'2ملوك':12,
+  '1أخبار':13,'2أخبار':14,
+  'عزرا':15,'نحميا':16,'أستير':17,'أيوب':18,
+  'مزامير':19,'المزامير':19,'أمثال':20,'الأمثال':20,
+  'جامعة':21,'الجامعة':21,'نشيد الأنشاد':22,
+  'إشعياء':23,'أشعياء':23,'إرميا':24,'ارميا':24,
+  'مراثي إرميا':25,'مراثي':25,
+  'حزقيال':26,'دانيال':27,
+  'هوشع':28,'يوئيل':29,'عاموس':30,'عوبديا':31,
+  'يونان':32,'يونس':32,'ميخا':33,'ناحوم':34,'حبقوق':35,
+  'صفنيا':36,'حجي':37,'زكريا':38,'ملاخي':39,'ملاكي':39,
+  'متى':40,'مرقس':41,'لوقا':42,'يوحنا':43,
+  'أعمال الرسل':44,'الأعمال':44,
+  'رومية':45,'الرومية':45,
+  '1كورنثوس':46,'2كورنثوس':47,
+  '1كورنثوس':46,'2كورنثوس':47,
+  'غلاطية':48,'أفسس':49,'الأفسس':49,
+  'فيلبي':50,'كولوسي':51,'كولوسى':51,
+  '1تسالونيكي':52,'2تسالونيكي':53,
+  '1تيموثاوس':54,'2تيموثاوس':55,
+  'تيطس':56,'فليمون':57,
+  'عبرانيين':58,'العبرانيين':58,
+  'يعقوب':59,
+  '1بطرس':60,'2بطرس':61,
+  '1يوحنا':62,'2يوحنا':63,'3يوحنا':64,
+  'يهوذا':65,'رؤيا يوحنا':66,'الرؤيا':66,'رؤيا':66,
 };
 
 // Persian/Arabic-Indic digit conversion: bolls / verse files write
@@ -1578,7 +1617,7 @@ function normalizeVerseReferenceKey(reference = '') {
         const names = [
           ...(b.names || []),
           ...(b.cn || []),
-          b.ja, b.ko, b.es, b.de, b.tr, b.fa, b.he, b.my, b.vi, b.idn, b.msy
+          b.ja, b.ko, b.es, b.de, b.tr, b.fa, b.ar, b.he, b.my, b.vi, b.idn, b.msy
         ].filter(Boolean);
         return names.some(name => {
           const n = String(name).toLowerCase().replace(/\./g, '').replace(/\s+/g, ' ');
@@ -1603,6 +1642,7 @@ function normalizeVerseReferenceKey(reference = '') {
       b.de,
       b.tr,
       b.fa,
+      b.ar,
       b.he,
       b.my,
       b.vi,
@@ -3095,7 +3135,7 @@ function formatVerseReferenceForDisplay(ref, version) {
   }
 
   // For localized non-English versions: translate English book abbreviation
-  const LOCALIZED_LANGS = ['vi','ko','ja','es','de','tr','fa','he','my'];
+  const LOCALIZED_LANGS = ['vi','ko','ja','es','de','tr','fa','ar','he','my'];
   if (LOCALIZED_LANGS.includes(version)) {
     // Parse: optional leading digit(s) (1/2/3) immediately attached or space-separated from book
     // Handles: "Eph 3:19", "1Thessalonians 4:16", "2 Cor 4:17", "Ps 23:1-6"
@@ -5053,7 +5093,7 @@ export default function App() {
       return localStorage.getItem('verseRain_voiceName') || '';
     }
   });
-  const langPrefixForVersion = (v) => (isEnglishBibleVersion(v) ? 'en' : v === 'ja' ? 'ja' : v === 'ko' ? 'ko' : v === 'fa' ? 'fa' : v === 'he' ? 'he' : v === 'es' ? 'es' : v === 'tr' ? 'tr' : v === 'de' ? 'de' : v === 'my' ? 'my' : v === 'vi' ? 'vi' : v === 'id' ? 'id' : v === 'ms' ? 'ms' : 'zh');
+  const langPrefixForVersion = (v) => (isEnglishBibleVersion(v) ? 'en' : v === 'ja' ? 'ja' : v === 'ko' ? 'ko' : v === 'fa' ? 'fa' : v === 'ar' ? 'ar' : v === 'he' ? 'he' : v === 'es' ? 'es' : v === 'tr' ? 'tr' : v === 'de' ? 'de' : v === 'my' ? 'my' : v === 'vi' ? 'vi' : v === 'id' ? 'id' : v === 'ms' ? 'ms' : 'zh');
   const filteredVoicesForVersion = availableVoices.filter(vc => (vc.lang || '').toLowerCase().startsWith(langPrefixForVersion(version)));
   const saveVoiceForVersion = (voiceName) => {
     try {
@@ -6034,19 +6074,7 @@ export default function App() {
     const runAutoPlayLoop = async () => {
       if (!isAutoPlay || gameState !== 'playing') return;
 
-      const getVoiceLang = (v) => {
-        if (v === 'kjv') return 'en-US';
-        if (v === 'ko') return 'ko-KR';
-        if (v === 'ja') return 'ja-JP';
-        if (v === 'he') return 'he-IL';
-        if (v === 'fa') return 'fa-IR';
-        if (v === 'es') return 'es-ES';
-        if (v === 'tr') return 'tr-TR';
-        if (v === 'de') return 'de-DE';
-        if (v === 'my') return 'my-MM';
-        return 'zh-TW';
-      };
-      const TTS_LANG = getVoiceLang(version);
+      const TTS_LANG = getVoiceLangForVersion(version);
 
       // Start from current position (supports mid-game activation)
       const startFrom = currentSeqRef.current;
@@ -6510,19 +6538,7 @@ export default function App() {
       setCombo(c => c + 1);
 
       const nextSeq = currentSeqIndex + 1;
-      const getVoiceLang = (v) => {
-        if (v === 'kjv') return 'en-US';
-        if (v === 'ko') return 'ko-KR';
-        if (v === 'ja') return 'ja-JP';
-        if (v === 'he') return 'he-IL';
-        if (v === 'fa') return 'fa-IR';
-        if (v === 'es') return 'es-ES';
-        if (v === 'tr') return 'tr-TR';
-        if (v === 'de') return 'de-DE';
-        if (v === 'my') return 'my-MM';
-        return 'zh-TW';
-      };
-      const TTS_LANG = getVoiceLang(version);
+      const TTS_LANG = getVoiceLangForVersion(version);
 
       speechRef.current = speakText(block.text, voiceRate, TTS_LANG);
       setCurrentSeqIndex(nextSeq);

@@ -112,3 +112,30 @@ Run this whenever you:
   Cross-language pairing in `findSecondarySetForPrimarySet` tries
   `<id>-<lang>` first; mismatched ids force the fallback to score-based
   ref matching, which only works if normalize works.
+- **Arabic-script ≠ Arabic-language.** Persian (`fa`) and Arabic (`ar`)
+  both use Arabic script but are completely different languages with
+  different phonetics. They must stay separated everywhere:
+  - Distinct voice locales (`fa-IR` vs `ar-SA`).
+  - Distinct `VOICE_LANG_BLOCKLIST` entries (`fa: ['ar']` and `ar: ['fa']`)
+    so neither falls back to the other when no native voice exists.
+  - Distinct `VOICE_NAME_FALLBACKS` patterns (Persian: Soraya/Dariush;
+    Arabic: Maged/Majed/Tarik/Laila).
+  - Distinct bolls slugs (`POV` for Persian, `SVD` for Arabic).
+  - Distinct verse files (`verses_fa.js` vs `verses_ar.js`).
+  - Distinct entries in `MULTILANG_FULL_BOOK_ID` — sharing the script
+    doesn't mean sharing book names (e.g. Persian پیدایش vs Arabic
+    تكوين for Genesis).
+
+## Generator helper: `scripts/build-verses-ar.mjs`
+
+For SVD-Arabic specifically (and as a template for future languages), this
+script parses `verses_kjv.js`, looks each reference up on bolls.life under
+the target slug, and emits a fully-formed `verses_<lang>.js`. Useful when
+adding a language that needs ALL existing topical sets translated. Edit the
+`BOLLS_SLUG`, `SET_META` (titles + descriptions), and `BOOK_AR` map for the
+new language and re-run:
+
+```sh
+node scripts/build-verses-ar.mjs > src/verses_ar.js
+npm run validate-refs
+```
