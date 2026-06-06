@@ -1088,6 +1088,34 @@ const HEBREW_FULL_BOOK_ID = {
   'יהודה':65,'חזון יוחנן':66,'התגלות':66,'חזון':66,
 };
 
+// Korean Bible book full names → book id. BIBLE_BOOKS only stores 1-2 char
+// abbreviations in the `ko` field (e.g. "사" for Isaiah), so references in
+// the form "이사야 40:31" fail the BIBLE_BOOKS lookup → normalizeVerseReferenceKey
+// returns the raw lowercased string as a key → bolls fallback can't parse a
+// numeric book id → secondary language never appears for Korean-primary sets.
+// This map fixes that for every Korean-primary reference.
+const KOREAN_FULL_BOOK_ID = {
+  '창세기':1,'출애굽기':2,'레위기':3,'민수기':4,'신명기':5,
+  '여호수아':6,'사사기':7,'룻기':8,
+  '사무엘상':9,'사무엘하':10,'열왕기상':11,'열왕기하':12,
+  '역대상':13,'역대하':14,'에스라':15,'느헤미야':16,'에스더':17,
+  '욥기':18,'시편':19,'잠언':20,'전도서':21,'아가':22,
+  '이사야':23,'예레미야':24,'예레미야애가':25,'애가':25,
+  '에스겔':26,'다니엘':27,'호세아':28,'요엘':29,'아모스':30,
+  '오바댜':31,'요나':32,'미가':33,'나훔':34,'하박국':35,
+  '스바냐':36,'학개':37,'스가랴':38,'말라기':39,
+  '마태복음':40,'마가복음':41,'누가복음':42,'요한복음':43,
+  '사도행전':44,'로마서':45,
+  '고린도전서':46,'고린도후서':47,
+  '갈라디아서':48,'에베소서':49,'빌립보서':50,'골로새서':51,
+  '데살로니가전서':52,'데살로니가후서':53,
+  '디모데전서':54,'디모데후서':55,'디도서':56,'빌레몬서':57,
+  '히브리서':58,'야고보서':59,
+  '베드로전서':60,'베드로후서':61,
+  '요한일서':62,'요한이서':63,'요한삼서':64,
+  '유다서':65,'요한계시록':66,'계시록':66,
+};
+
 // Convert a Hebrew gematria string (e.g. "יב" → 12, "כא" → 21) to a number.
 // Returns null if the string contains non-Hebrew-letter characters.
 function hebrewLettersToNumber(s) {
@@ -1151,7 +1179,9 @@ function normalizeVerseReferenceKey(reference = '') {
           return normalizedBookRaw === n || normalizedBookRaw.endsWith(` ${n}`);
         });
       });
-      const bookId = book?.id ?? HEBREW_FULL_BOOK_ID[bookRaw] ?? HEBREW_FULL_BOOK_ID[bookRaw.trim()];
+      const bookId = book?.id
+        ?? HEBREW_FULL_BOOK_ID[bookRaw] ?? HEBREW_FULL_BOOK_ID[bookRaw.trim()]
+        ?? KOREAN_FULL_BOOK_ID[bookRaw] ?? KOREAN_FULL_BOOK_ID[bookRaw.trim()];
       if (bookId) return `${bookId}|${chapMatch[3]}`;
     }
     return value.toLowerCase();
@@ -1182,7 +1212,9 @@ function normalizeVerseReferenceKey(reference = '') {
   });
   const chapterVerse = `${verseMatch[1]}:${verseMatch[2].replace(/\s+/g, '')}`;
   // If not found via BIBLE_BOOKS, try the full Hebrew name lookup table
-  const bookId = book?.id ?? HEBREW_FULL_BOOK_ID[bookPart] ?? HEBREW_FULL_BOOK_ID[bookPart.trim()];
+  const bookId = book?.id
+    ?? HEBREW_FULL_BOOK_ID[bookPart] ?? HEBREW_FULL_BOOK_ID[bookPart.trim()]
+    ?? KOREAN_FULL_BOOK_ID[bookPart] ?? KOREAN_FULL_BOOK_ID[bookPart.trim()];
   return `${bookId || normalizedBookPart}|${chapterVerse}`;
 }
 
