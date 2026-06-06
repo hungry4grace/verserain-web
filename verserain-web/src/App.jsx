@@ -1861,10 +1861,23 @@ function VerseSetContinuousRainPlayer({
       if (!visibleNodes.length) return;
 
       const bottomMost = visibleNodes.reduce((max, item) => Math.max(max, item.rect.bottom), 0);
-      if (bottomMost <= visualBottomLimit || activePhrase <= phrasePageStart) return;
+      // Predictive overflow: trim BEFORE the bottom block visibly touches the
+      // limit. We estimate the next block's height from what's already
+      // rendered (so block size stays consistent across themes / font sizes),
+      // and trim whenever the current bottom + one more block + a gap would
+      // cross the visual bottom limit. This avoids the "land at bottom →
+      // erase → re-appear at top" flicker the user sees with a strict
+      // "already-overflowed" rule.
+      const blockHeights = visibleNodes.map(n => n.rect.height).filter(h => h > 0);
+      const avgBlockHeight = blockHeights.length
+        ? blockHeights.reduce((a, b) => a + b, 0) / blockHeights.length
+        : 56;
+      const gap = 12;
+      const projectedBottom = bottomMost + avgBlockHeight + gap;
+      if (projectedBottom <= visualBottomLimit || activePhrase <= phrasePageStart) return;
 
-      // When blocks overflow the page, clear it entirely and restart from the
-      // top with the current phrase as the new page's first block.
+      // Clear the page entirely and restart from the top with the current
+      // phrase as the new page's first block.
       const nextStart = activePhrase;
       if (nextStart !== phrasePageStart) {
         setPhrasePageStart(nextStart);
@@ -1910,15 +1923,17 @@ function VerseSetContinuousRainPlayer({
         const node = phraseNodeRefs.current[i];
         if (node) visibleNodes.push({ index: i, rect: node.getBoundingClientRect() });
       }
-      let hasOverflow = false;
-      for (let i = visibleNodes.length - 1; i >= 0; i -= 1) {
-        if (visibleNodes[i].rect.bottom > actionControlsTop - 16) {
-          hasOverflow = true;
-          break;
-        }
-      }
-      if (hasOverflow && phrasePageStart < activePhrase) {
-        // Clear the page and restart from the current phrase.
+      // Mirror the predictive overflow rule from the main trim effect: if
+      // adding one more block would push past the limit, clear early so we
+      // don't briefly show a block pinned to the bottom on resize.
+      const bottomMost = visibleNodes.reduce((max, item) => Math.max(max, item.rect.bottom), 0);
+      const blockHeights = visibleNodes.map(n => n.rect.height).filter(h => h > 0);
+      const avgBlockHeight = blockHeights.length
+        ? blockHeights.reduce((a, b) => a + b, 0) / blockHeights.length
+        : 56;
+      const gap = 12;
+      const projectedBottom = bottomMost + avgBlockHeight + gap;
+      if (projectedBottom > actionControlsTop - 16 && phrasePageStart < activePhrase) {
         setPhrasePageStart(activePhrase);
       }
     };
