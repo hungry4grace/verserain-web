@@ -14352,15 +14352,25 @@ const deDict = {
                       </select>
                       <button
                         onClick={() => {
-                          const lang = isEnglishBibleVersion(version) ? 'en-US' : version === 'ja' ? 'ja-JP' : version === 'ko' ? 'ko-KR' : version === 'fa' ? 'fa-IR' : version === 'he' ? 'he-IL' : version === 'es' ? 'es-ES' : version === 'tr' ? 'tr-TR' : version === 'de' ? 'de-DE' : version === 'my' ? 'my-MM' : 'zh-TW';
-                          speakText(t('這是你選擇的語音試聽。', 'This is a preview of your selected voice.'), 0.9, lang);
+                          speakText(t('這是你選擇的語音試聽。', 'This is a preview of your selected voice.'), 0.9, getVoiceLangForVersion(version));
                         }}
                         style={{ background: 'linear-gradient(135deg, #60a5fa, #3b82f6)', color: 'white', border: 'none', padding: '0.5rem 1.2rem', borderRadius: '8px', fontSize: '0.9rem', cursor: 'pointer', fontWeight: '600', whiteSpace: 'nowrap' }}
                       >
                         <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}><Volume2 size={16} /> {t('試聽', 'Preview')}</span>
                       </button>
                     </div>
-                    {selectedVoiceName && (
+                    {filteredVoicesForVersion.length === 0 && (
+                      <p style={{ margin: '0.6rem 0 0 0', color: '#b45309', fontSize: '0.85rem', fontWeight: '500', display: 'flex', alignItems: 'flex-start', gap: '0.35rem', lineHeight: 1.5 }}>
+                        <Info size={16} style={{ marginTop: '2px', flexShrink: 0 }} />
+                        <span>
+                          {t(
+                            '這個裝置沒有安裝對應語言的語音。iOS：設定 → 輔助使用 → 語音內容 → 聲音，加入該語言的聲音後重啟。沒安裝時系統可能會用別的語言發音，聽起來會不對。',
+                            'No voice for this language is installed on this device. iOS: Settings → Accessibility → Spoken Content → Voices, then add a voice for this language and reload. Without it the system may fall back to a different language and pronounce incorrectly.'
+                          )}
+                        </span>
+                      </p>
+                    )}
+                    {selectedVoiceName && filteredVoicesForVersion.length > 0 && (
                       <p style={{ margin: '0.6rem 0 0 0', color: '#16a34a', fontSize: '0.85rem', fontWeight: '500', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
                         <Info size={16} /> {t('已記住你的語音偏好，下次回來會自動使用。', 'Your voice preference is saved and will be used automatically.')}
                       </p>
