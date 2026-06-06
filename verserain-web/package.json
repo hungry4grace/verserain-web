@@ -7,6 +7,7 @@
     "dev": "vite",
     "build": "vite build",
     "generate:dailyverse-backgrounds": "node scripts/generate-dailyverse-backgrounds.mjs",
+    "validate-refs": "node scripts/validate-refs.mjs",
     "lint": "eslint .",
     "preview": "vite preview"
   },

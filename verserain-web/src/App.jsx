@@ -1144,6 +1144,22 @@ const HEBREW_FULL_BOOK_ID = {
   'פטרוס א':60,'א פטרוס':60,'פטרוס ב':61,'ב פטרוס':61,
   'יוחנן א':62,'א יוחנן':62,'יוחנן ב':63,'ב יוחנן':63,'יוחנן ג':64,'ג יוחנן':64,
   'יהודה':65,'חזון יוחנן':66,'התגלות':66,'חזון':66,
+
+  // Spelling variants observed in verses_he.js
+  'תהלים':19,                    // alt spelling of תהילים (Psalms)
+  'קולוסים':51,                  // alt spelling of קולסים (Colossians)
+
+  // ASCII-digit prefix variants: verse files sometimes write "1 יוחנן 3:1"
+  // (Arabic numeral) instead of "יוחנן א:א" (Hebrew letter numeral). Both
+  // forms need to resolve.
+  '1 יוחנן':62,'2 יוחנן':63,'3 יוחנן':64,
+  '1 קורינתים':46,'2 קורינתים':47,
+  '1 פטרוס':60,'2 פטרוס':61,
+  '1 שמואל':9,'2 שמואל':10,
+  '1 מלכים':11,'2 מלכים':12,
+  '1 דברי הימים':13,'2 דברי הימים':14,
+  '1 תסלוניקים':52,'2 תסלוניקים':53,
+  '1 טימותיאוס':54,'2 טימותיאוס':55,
 };
 
 // Korean Bible book full names → book id. BIBLE_BOOKS only stores 1-2 char
