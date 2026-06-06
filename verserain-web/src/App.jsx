@@ -3183,6 +3183,16 @@ function formatVerseReferenceForSpeech(ref, version) {
     if (!verses) return `${book} فصل ${chapter}`;
     const versesStr = verses.replace(/-/g, ' تا ').replace(/–/g, ' تا ').trim();
     return `${book} فصل ${chapter} آیه ${versesStr}`;
+  } else if (version === 'ar') {
+    // Arabic Bible reference convention: "<book> الإصحاح <chap> الآية <verse>".
+    // Without this branch Arabic falls through to the Chinese formatter and
+    // gets back a mixed Arabic/Chinese string ("تكوين第一章..."), which iOS
+    // TTS announces by saying "Arabic" as the language-switch label every
+    // time it crosses script boundaries.
+    if (!verses) return `${book} الإصحاح ${chapter}`;
+    const versesStr = verses.replace(/-/g, ' إلى ').replace(/–/g, ' إلى ').trim();
+    const isPlural = versesStr.includes(' إلى ') || versesStr.includes(',');
+    return `${book} الإصحاح ${chapter} ${isPlural ? 'الآيات' : 'الآية'} ${versesStr}`;
   } else if (version === 'he') {
     if (!verses) return `${book} פרק ${chapter}`;
     const versesStr = verses.replace(/-/g, ' עד ').replace(/–/g, ' עד ').trim();
