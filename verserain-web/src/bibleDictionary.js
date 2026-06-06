@@ -18,7 +18,7 @@ export const BIBLE_BOOKS = [
   { id: 16, testament: 'OT', names: ["尼希米記", "尼", "Nehemiah", "Neh"], ja: "ネヘ", ko: "느", es: "Neh", de: "Neh", tr: "Neh", fa: "نحم", he: "נח", my: "နေ" , vi: "Nê" , idn: "Nehemia", msy: "Nehemia", cn: ["尼希米记", "尼"] },
   { id: 17, testament: 'OT', names: ["以斯帖記", "斯", "Esther", "Est"], ja: "エス", ko: "에", es: "Est", de: "Est", tr: "Est", fa: "استر", he: "אס", my: "ဧသတာ" , vi: "Ê-st" , idn: "Ester", msy: "Ester", cn: ["以斯帖记", "斯"] },
   { id: 18, testament: 'OT', names: ["約伯記", "伯", "Job", "Jb"], ja: "ヨブ", ko: "욥", es: "Job", de: "Hi", tr: "Eyü", fa: "ایوب", he: "אי", my: "ယောဘ" , vi: "Gióp" , idn: "Ayub", msy: "Ayub", cn: ["约伯记", "伯"] },
-  { id: 19, testament: 'OT', names: ["詩篇", "詩", "Psalms", "Ps"], ja: "詩", ko: "시", es: "Sal", de: "Ps", tr: "Mez", fa: "مز", he: "תה", my: "ဆာ" , vi: "Thi" , idn: "Mazmur", msy: "Mazmur", cn: ["诗篇", "诗"] },
+  { id: 19, testament: 'OT', names: ["詩篇", "詩", "Psalms", "Psalm", "Ps"], ja: "詩", ko: "시", es: "Sal", de: "Ps", tr: "Mez", fa: "مز", he: "תה", my: "ဆာ" , vi: "Thi" , idn: "Mazmur", msy: "Mazmur", cn: ["诗篇", "诗"] },
   { id: 20, testament: 'OT', names: ["箴言", "箴", "Proverbs", "Prv"], ja: "箴", ko: "잠", es: "Pr", de: "Spr", tr: "SüM", fa: "امث", he: "מש", my: "သု" , vi: "Châm" , idn: "Amsal", msy: "Amsal", cn: ["箴言", "箴"] },
   { id: 21, testament: 'OT', names: ["傳道書", "傳", "Ecclesiastes", "Eccl"], ja: "伝", ko: "전", es: "Ec", de: "Pred", tr: "Vai", fa: "جا", he: "קה", my: "ဒေသနာ" , vi: "Truyền" , idn: "Pengkhotbah", msy: "Pengkhotbah", cn: ["传道书", "传"] },
   { id: 22, testament: 'OT', names: ["雅歌", "歌", "Song of Solomon", "SS"], ja: "雅", ko: "아", es: "Cnt", de: "Hl", tr: "Ezi", fa: "غزل", he: "שי", my: "ရှော" , vi: "Nhã" , idn: "Kidung Agung", msy: "Kidung Agung", cn: ["雅歌", "歌"] },
