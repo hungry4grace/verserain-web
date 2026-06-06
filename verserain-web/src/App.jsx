@@ -623,23 +623,68 @@ function initAudio() {
   }
 }
 
+// Per-language fallback voice-name patterns. When the system has no voice
+// tagged with the right BCP-47 lang prefix, we'd rather pick a voice whose
+// NAME identifies the right language than let the OS auto-pick (which on
+// iOS/macOS often falls through to a phonetically-wrong voice — e.g. the
+// Arabic "Maged" voice for Persian text because both use Arabic script).
+const VOICE_NAME_FALLBACKS = {
+  fa: [/soraya/i, /dariush/i, /persian/i, /farsi/i],
+};
+// Languages we must NEVER cross-pollinate from in an emergency fallback.
+// (Persian uses Arabic script but Arabic and Persian phonetics are totally
+// different — using an Arabic voice for Persian sounds wrong to native ears.)
+const VOICE_LANG_BLOCKLIST = {
+  fa: ['ar'], // never pick Arabic for Persian
+};
+
 function pickSpeechVoice(lang) {
   if (!('speechSynthesis' in window)) return null;
   const voices = window.speechSynthesis.getVoices();
+  const langPrefix = String(lang || '').toLowerCase().split('-')[0];
+  const isAllowed = (v) => {
+    const vp = String(v.lang || '').toLowerCase().split('-')[0];
+    const block = VOICE_LANG_BLOCKLIST[langPrefix] || [];
+    return !block.includes(vp);
+  };
+
   const byVersionRaw = localStorage.getItem('verseRain_voiceByVersion');
   let byVersion = {};
   try { byVersion = byVersionRaw ? JSON.parse(byVersionRaw) : {}; } catch (e) { byVersion = {}; }
   const activeVersion = localStorage.getItem('verseRain_version') || 'cuv';
   const savedVoiceKey = byVersion?.[activeVersion] || localStorage.getItem('verseRain_voiceName');
   if (savedVoiceKey) {
-    const preferred = voices.find(v => `${v.name}__${v.lang || ''}` === savedVoiceKey)
-      || voices.find(v => v.name === savedVoiceKey && v.lang?.toLowerCase().startsWith(String(lang || '').toLowerCase().split('-')[0]));
-    if (preferred) return preferred;
+    const preferred =
+      voices.find(v => `${v.name}__${v.lang || ''}` === savedVoiceKey)
+      || voices.find(v => v.name === savedVoiceKey);
+    // Validate: the saved voice must actually match the requested lang prefix.
+    // Otherwise stale state from a different Bible version could leak across
+    // (e.g. a saved English voice being used to speak Persian).
+    if (preferred && preferred.lang?.toLowerCase().startsWith(langPrefix) && isAllowed(preferred)) {
+      return preferred;
+    }
   }
-  const langPrefix = String(lang || '').toLowerCase().split('-')[0];
-  return voices.find(v => v.lang?.toLowerCase() === String(lang).toLowerCase())
-    || voices.find(v => v.lang?.toLowerCase().startsWith(langPrefix))
-    || null;
+
+  // Standard lang-prefix match.
+  const exact = voices.find(v => v.lang?.toLowerCase() === String(lang).toLowerCase() && isAllowed(v));
+  if (exact) return exact;
+  const prefix = voices.find(v => v.lang?.toLowerCase().startsWith(langPrefix) && isAllowed(v));
+  if (prefix) return prefix;
+
+  // Name-based fallback for languages where the OS often lacks a properly-
+  // tagged voice (e.g. Persian on desktop Chrome). Better to pick a voice
+  // whose name names the language than let the engine guess.
+  const patterns = VOICE_NAME_FALLBACKS[langPrefix];
+  if (patterns) {
+    const byName = voices.find(v => patterns.some(p => p.test(v.name || '')) && isAllowed(v));
+    if (byName) return byName;
+  }
+
+  // Last resort: null — utterance.lang stays set, but we leave utterance.voice
+  // unset rather than risk auto-fallback to a blocklisted voice. Speech may
+  // be silent on systems that need an explicit voice, but at least it won't
+  // mispronounce.
+  return null;
 }
 
 function ensureSpeechVoices() {
