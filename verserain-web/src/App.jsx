@@ -17157,19 +17157,38 @@ const deDict = {
                                         </td>
                                         <td style={{ padding: '0.8rem 1rem', color: '#475569', fontSize: '0.9rem' }}>{v.text.substring(0, 35)}...</td>
                                         <td style={{ padding: '0.8rem 1rem', textAlign: 'right' }}>
-                                          <button
-                                            onClick={() => {
-                                              initAudio();
-                                              setCampaignQueue(null);
-                                              setCampaignResults([]);
-                                              setActiveVerse(v);
-                                              setTimeout(() => startGame(false, v), 50);
-                                            }}
-                                            title={t("遊玩這篇經文", "Play this verse")}
-                                            style={{ backgroundColor: '#10b981', color: 'white', border: 'none', borderRadius: '50%', width: '32px', height: '32px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}
-                                          >
-                                            <Play size={16} fill="white" />
-                                          </button>
+                                          <div style={{ display: 'inline-flex', gap: '0.4rem', alignItems: 'center' }}>
+                                            <button
+                                              onClick={() => {
+                                                // Resolve the parent set from setId and open it in the
+                                                // custom-verses editor. Works for both user-owned custom
+                                                // sets (in-place edit) and built-in topical sets (saves
+                                                // as a fork into customVerseSets, leaving the original
+                                                // untouched).
+                                                const parentSet = activeVerseSets.find(s => s && s.id === v.setId);
+                                                if (!parentSet) return;
+                                                setMainTab('custom_verses');
+                                                setEditingCustomSet({ ...parentSet, verses: parentSet.verses?.map(parseVerseRef) || [] });
+                                              }}
+                                              title={t("編輯這個經文組", "Edit this verse set")}
+                                              style={{ backgroundColor: '#f1f5f9', color: '#475569', border: '1px solid #cbd5e1', borderRadius: '50%', width: '32px', height: '32px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}
+                                            >
+                                              <Edit size={14} />
+                                            </button>
+                                            <button
+                                              onClick={() => {
+                                                initAudio();
+                                                setCampaignQueue(null);
+                                                setCampaignResults([]);
+                                                setActiveVerse(v);
+                                                setTimeout(() => startGame(false, v), 50);
+                                              }}
+                                              title={t("遊玩這篇經文", "Play this verse")}
+                                              style={{ backgroundColor: '#10b981', color: 'white', border: 'none', borderRadius: '50%', width: '32px', height: '32px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}
+                                            >
+                                              <Play size={16} fill="white" />
+                                            </button>
+                                          </div>
                                         </td>
                                       </tr>
                                     ));
