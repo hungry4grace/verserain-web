@@ -18,10 +18,13 @@ import WebKit
 final class AppleSignInBridge: NSObject, WKScriptMessageHandler,
                                ASAuthorizationControllerDelegate,
                                ASAuthorizationControllerPresentationContextProviding {
-    private weak var webView: WKWebView?
+    // Settable after init — see GoogleSignInBridge for the explanation.
+    // WKWebViewConfiguration's userContentController must be populated BEFORE
+    // the WKWebView is created, but the bridge then needs the webView for
+    // the callback JS eval, so we wire it up post-creation.
+    weak var webView: WKWebView?
 
-    init(webView: WKWebView) {
-        self.webView = webView
+    override init() {
         super.init()
     }
 

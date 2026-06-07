@@ -40,6 +40,27 @@ struct WebView: UIViewRepresentable {
         configuration.preferences.javaScriptCanOpenWindowsAutomatically = true
         configuration.websiteDataStore = .default()
 
+        // CRITICAL ORDERING:
+        // WKWebViewConfiguration is captured by WKWebView at init and any
+        // subsequent mutations to the original config object are ignored
+        // (Apple docs: "WKWebViewConfiguration is consulted only during web
+        // view initialization"). iOS 17+ enforces this strictly — earlier
+        // builds were lenient, which is why this used to "just work" and
+        // silently broke after the user's OS upgrade. The script message
+        // handlers MUST be registered on userContentController BEFORE
+        // creating the WKWebView, otherwise `window.webkit.messageHandlers
+        // .googleSignIn` / `appleSignIn` are never bound and the web's
+        // OAuth buttons postMessage into the void.
+        //
+        // Bridges are initialised without a webView; we set their webView
+        // property after `WKWebView(...)` returns (they only need it to
+        // evaluate the callback JS).
+        let googleBridge = GoogleSignInBridge()
+        configuration.userContentController.add(googleBridge, name: "googleSignIn")
+
+        let appleBridge = AppleSignInBridge()
+        configuration.userContentController.add(appleBridge, name: "appleSignIn")
+
         let webView = WKWebView(frame: .zero, configuration: configuration)
         webView.navigationDelegate = context.coordinator
         webView.uiDelegate = context.coordinator
@@ -50,20 +71,13 @@ struct WebView: UIViewRepresentable {
             webView.isInspectable = true
         }
 
-        // Wire the native Google sign-in bridge so the web app's
-        // "Continue with Google" button can hand the OAuth flow over to a
-        // system Safari window via ASWebAuthenticationSession. Google blocks
-        // OAuth in embedded WebViews, so this hand-off is required for the
-        // web button to actually log a user in from inside the app.
-        let googleBridge = GoogleSignInBridge(webView: webView)
-        configuration.userContentController.add(googleBridge, name: "googleSignIn")
+        // Wire each bridge to the now-created webView for callback JS, and
+        // retain the bridges on the coordinator so WKScriptMessageHandler
+        // doesn't get deallocated.
+        googleBridge.webView = webView
         context.coordinator.googleBridge = googleBridge
 
-        // Native Sign in with Apple — required by App Store guideline 4.8
-        // alongside any third-party login. Uses ASAuthorizationAppleIDProvider
-        // (no Services ID needed; the iOS Bundle ID is the audience).
-        let appleBridge = AppleSignInBridge(webView: webView)
-        configuration.userContentController.add(appleBridge, name: "appleSignIn")
+        appleBridge.webView = webView
         context.coordinator.appleBridge = appleBridge
 
         model.webView = webView

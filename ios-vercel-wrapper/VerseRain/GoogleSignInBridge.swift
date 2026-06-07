@@ -24,14 +24,19 @@ final class GoogleSignInBridge: NSObject, WKScriptMessageHandler, ASWebAuthentic
     static let redirectScheme = "com.googleusercontent.apps.761845973381-2gakrrvbmtqg66ds3uo5dscdleggevml"
     static let redirectURI = "\(redirectScheme):/oauth2redirect/google"
 
-    private weak var webView: WKWebView?
+    // Must be settable AFTER init: the bridge has to be registered on the
+    // WKWebViewConfiguration's userContentController BEFORE the WKWebView is
+    // created (Apple docs: "WKWebViewConfiguration is consulted only during
+    // web view initialization"), but the bridge then needs the webView ref
+    // to inject the OAuth callback JS. So we init with no webView and the
+    // caller wires it up after `WKWebView(configuration:)`.
+    weak var webView: WKWebView?
     private var activeSession: ASWebAuthenticationSession?
     // Held only for the duration of one sign-in attempt (verifier + state).
     private var pendingVerifier: String?
     private var pendingState: String?
 
-    init(webView: WKWebView) {
-        self.webView = webView
+    override init() {
         super.init()
     }
 
