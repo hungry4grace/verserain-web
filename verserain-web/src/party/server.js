@@ -871,10 +871,28 @@ export default class Server {
       // many full-chapter verses) can exceed that on its own. The legacy
       // single-key array at `private-sets:<playerName>` is still read on GET
       // as a final fallback during migration.
+      // Cloudflare Durable Object storage caps each VALUE at 131072 UTF-8
+      // bytes. JSON of a rich verse set (HTML description + many Chinese
+      // verses) easily exceeds that; CJK chars are 3 bytes each in UTF-8 so
+      // chunking by JS string length is unsafe. Encode to bytes, slice on
+      // codepoint boundaries via TextDecoder's streaming mode (no
+      // multi-byte char splits), then store each chunk as a string.
       const CHUNK_BYTES = 100000;
       const splitChunks = (str) => {
+         const bytes = new TextEncoder().encode(str);
+         if (bytes.length <= CHUNK_BYTES) return [str];
+         const decoder = new TextDecoder('utf-8'); // single instance, default fatal:false
          const out = [];
-         for (let i = 0; i < str.length; i += CHUNK_BYTES) out.push(str.slice(i, i + CHUNK_BYTES));
+         for (let i = 0; i < bytes.length; i += CHUNK_BYTES) {
+            // Walk back from the boundary to avoid splitting mid-multi-byte
+            // sequence. UTF-8 continuation bytes match 10xxxxxx (0x80-0xBF).
+            let end = Math.min(i + CHUNK_BYTES, bytes.length);
+            if (end < bytes.length) {
+               while (end > i && (bytes[end] & 0xC0) === 0x80) end--;
+            }
+            out.push(decoder.decode(bytes.subarray(i, end)));
+            i = end - CHUNK_BYTES; // next iteration adds CHUNK_BYTES → starts at `end`
+         }
          return out;
       };
       if (url.pathname.endsWith('/save-private-sets') && request.method === 'POST') {
