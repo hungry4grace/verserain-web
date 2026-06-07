@@ -7183,6 +7183,136 @@ export default function App() {
     "已記住你的語音偏好，下次回來會自動使用。": "ترجیح صوتی شما ذخیره شد و به طور خودکار استفاده خواهد شد.",
 };
 
+  // ─── Arabic (العربية) UI Dictionary ──────────────────────────────────────
+  // Distinct from faDict — Arabic and Persian share script but not language.
+  // Covers the high-value UI surface (navigation, auth, game controls,
+  // voice settings); unlisted keys fall back to English via t().
+  const arDict = {
+    // Navigation
+    '大廳': 'الرئيسية',
+    '我的園子': 'حديقتي',
+    '🌳 我的園子': '🌳 حديقتي',
+    '多人連線': 'متعدد اللاعبين',
+    '排行榜': 'المتصدرون',
+    '搜尋': 'بحث',
+    '地圖': 'الخريطة',
+    '進階功能': 'ميزات متقدمة',
+    '👑 我的題庫': '👑 مجموعاتي',
+    '回到大廳': 'العودة للرئيسية',
+    '返回': 'رجوع',
+    '返回目錄': 'العودة للقائمة',
+    '返回進階功能': 'العودة للميزات المتقدمة',
+    '團隊競賽': 'مسابقة الفِرَق',
+    '活動': 'نشاط',
+
+    // Auth
+    '登入帳號': 'تسجيل الدخول',
+    '登入': 'تسجيل الدخول',
+    '登出': 'تسجيل الخروج',
+    '註冊新帳號': 'إنشاء حساب جديد',
+    '申請帳號': 'إنشاء حساب',
+    '建立新帳號 (需與 Skool Email 相同以獲取權限)': 'إنشاء حساب جديد (استخدم بريد Skool للصلاحيات)',
+    '密碼': 'كلمة المرور',
+    '忘記密碼？': 'نسيت كلمة المرور؟',
+    '還沒有帳號？': 'ليس لديك حساب؟',
+    '立即註冊': 'سجّل الآن',
+    '✨ Premium 認證': '✨ حساب Premium',
+    '🔒 基本帳號': '🔒 حساب أساسي',
+
+    // Game
+    '開始遊戲': 'ابدأ اللعبة',
+    '模式': 'الوضع',
+    '難度': 'الصعوبة',
+    '無干擾': 'بدون تشتيت',
+    '單字干擾': 'تشتيت بالكلمات',
+    '標點干擾': 'تشتيت بعلامات الترقيم',
+    '挑戰': 'تحدّى',
+    '挑戰設定': 'إعدادات التحدي',
+    '挑戰自己一節': 'تحدّى نفسك بآية',
+    '隨機播放': 'تشغيل عشوائي',
+    '邀人PK': 'دعوة لمنافسة',
+    '通關紀錄': 'سجل الإنجازات',
+    '九宮格': 'شبكة 3×3',
+    '經文雨': 'مطر الآيات',
+    '盲打': 'كتابة عمياء',
+    '語音複誦': 'ترديد صوتي',
+    '點擊查看經文，雙擊開始挑戰！': 'انقر للعرض، انقر مرّتين لبدء التحدي!',
+    '新高分！': 'رقم قياسي جديد!',
+    '完美無瑕！': 'مثاليّ!',
+    '完美': 'مثاليّ',
+    '過關': 'نجحت',
+    '失敗': 'فشل',
+    '本日排行': 'اليوم',
+    '本月排行': 'هذا الشهر',
+    '總排行': 'الإجمالي',
+    '所有排行': 'كل المتصدرين',
+
+    // Daily verse / home
+    '今日經文': 'آية اليوم',
+    '每日經文': 'آية يومية',
+    '讀經': 'قراءة',
+    '朗讀': 'استماع',
+    '換一個': 'آية أخرى',
+    'VerseRain 經文雨': 'VerseRain — مطر الآيات',
+    '經文題庫': 'مجموعات الآيات',
+    '我的推薦人': 'مَن دعاني',
+    '尚未綁定推薦人': 'لم يُربط بعد',
+    '補上推薦碼': 'إضافة دعوة',
+
+    // Garden / harvest
+    '🌳 我的果園': '🌳 بستاني',
+    '個人累積': 'الإجمالي الشخصي',
+    '已挑戰': 'تحديات',
+    '已栽種': 'مزروعة',
+    '結果子': 'مثمرة',
+    '總果子': 'إجمالي الثمار',
+    '今日問候': 'تحية اليوم',
+    '連續 ${days} 天': '${days} يوم متتالي',
+
+    // Settings / voice
+    '朗讀語音設定': 'إعدادات صوت القراءة',
+    '選擇你喜歡的語音，首頁「讀經」及遊戲中的語音都會使用此設定。': 'اختر الصوت المفضّل — يُستخدم في زر «قراءة» وفي اللعبة.',
+    '系統預設語音': 'الصوت الافتراضي',
+    '語音：系統預設': 'الصوت: افتراضي',
+    '試聽': 'استماع',
+    '這是你選擇的語音試聽。': 'هذا معاينة الصوت الذي اخترته.',
+    '已記住你的語音偏好，下次回來會自動使用。': 'تم حفظ تفضيل الصوت وسيُستخدم تلقائيًا.',
+    '這個裝置沒有安裝對應語言的語音。iOS：設定 → 輔助使用 → 語音內容 → 聲音，加入該語言的聲音後重啟。沒安裝時系統可能會用別的語言發音，聽起來會不對。':
+      'لا يوجد صوت لهذه اللغة على هذا الجهاز. iOS: الإعدادات ← إمكانية الوصول ← المحتوى المنطوق ← الأصوات، ثم أضف صوتًا لهذه اللغة وأعد التحميل. بدونه قد يستخدم النظام لغة أخرى وتكون النطق غير صحيح.',
+
+    // Topic picker / actions
+    '主題': 'موضوع',
+    '我的': 'لي',
+    '主題經文組': 'مجموعات الآيات الموضوعية',
+    '經文出處 (點擊觀看)': 'مرجع الآية (انقر للعرض)',
+    '排行': 'الترتيب',
+    '操作': 'إجراء',
+    '目前選擇': 'المحدد حالياً',
+    '作者': 'المؤلف',
+
+    // Modals / common buttons
+    '確認': 'تأكيد',
+    '取消': 'إلغاء',
+    '關閉': 'إغلاق',
+    '儲存': 'حفظ',
+    '保存': 'حفظ',
+    '刪除': 'حذف',
+    '分享': 'مشاركة',
+    '複製': 'نسخ',
+    '上一個': 'السابق',
+    '下一個': 'التالي',
+    '上一節': 'الآية السابقة',
+    '下一節': 'الآية التالية',
+    '播放': 'تشغيل',
+    '暫停': 'إيقاف مؤقت',
+    '停止': 'إيقاف',
+    '繼續': 'متابعة',
+
+    // Toast / status
+    '已記住你的偏好': 'تم حفظ التفضيل',
+    '已綁定推薦人，下次過關會自動補上點數。': 'تم ربط المُحيل. ستُمنح النقاط تلقائيًا بعد الإنجاز التالي.',
+};
+
   // ─── Hebrew (עברית) UI Dictionary ────────────────────────────────────────
   const heDict = {
     // Navigation
@@ -13400,6 +13530,7 @@ const deDict = {
     if (zh === '活動') {
       if (uiLang === 'en') return 'Activity';
       if (uiLang === 'fa') return 'فعالیت';
+      if (uiLang === 'ar') return 'نشاط';
       if (uiLang === 'he') return 'פעילות';
       if (uiLang === 'ja') return '活動';
       if (uiLang === 'ko') return '활동';
@@ -13415,6 +13546,7 @@ const deDict = {
     }
     if (uiLang === 'en') return en || zh;
     if (uiLang === 'fa') return faDict[zh] || en || zh;
+    if (uiLang === 'ar') return arDict[zh] || en || zh;
     if (uiLang === 'he') return heDict[zh] || en || zh;
     if (uiLang === 'ja') return jaDict[zh] || zh;
     if (uiLang === 'ko') return koDict[zh] || zh;
@@ -13564,19 +13696,21 @@ const deDict = {
     isActiveLanguage('ja') ? 'ja' :
       isActiveLanguage('ko') ? 'ko' :
         isActiveLanguage('fa') ? 'fa' :
-          isActiveLanguage('he') ? 'he' :
-            isActiveLanguage('es') ? 'es' :
-              isActiveLanguage('tr') ? 'tr' :
-                isActiveLanguage('de') ? 'de' :
-                  isActiveLanguage('my') ? 'my' :
-                    isActiveLanguage('vi') ? 'vi' :
-                      isActiveLanguage('cuvs') ? 'zh-Hans' :
-                        (isActiveLanguage('zh') || isActiveLanguage('cuv')) ? 'zh-Hant' :
-                          'en';
+          isActiveLanguage('ar') ? 'ar' :
+            isActiveLanguage('he') ? 'he' :
+              isActiveLanguage('es') ? 'es' :
+                isActiveLanguage('tr') ? 'tr' :
+                  isActiveLanguage('de') ? 'de' :
+                    isActiveLanguage('my') ? 'my' :
+                      isActiveLanguage('vi') ? 'vi' :
+                        isActiveLanguage('cuvs') ? 'zh-Hans' :
+                          (isActiveLanguage('zh') || isActiveLanguage('cuv')) ? 'zh-Hant' :
+                            'en';
   const activeFontStack =
     isActiveLanguage('fa') ? `'Vazirmatn', Tahoma, Arial, ${mixedScriptFallbackFontStack}` :
-      isActiveLanguage('he') ? `'Noto Sans Hebrew', Tahoma, Arial, ${mixedScriptFallbackFontStack}` :
-        isActiveLanguage('ja') ? japaneseFontStack :
+      isActiveLanguage('ar') ? `'Noto Naskh Arabic', 'Amiri', 'Geeza Pro', Tahoma, Arial, ${mixedScriptFallbackFontStack}` :
+        isActiveLanguage('he') ? `'Noto Sans Hebrew', Tahoma, Arial, ${mixedScriptFallbackFontStack}` :
+          isActiveLanguage('ja') ? japaneseFontStack :
           isActiveLanguage('ko') ? koreanFontStack :
             isActiveLanguage('my') ? myanmarFontStack :
               isActiveLanguage('cuvs') ? simplifiedChineseFontStack :
@@ -13588,7 +13722,7 @@ const deDict = {
     <>
       <div
         lang={documentLang}
-        dir={isActiveLanguage('fa') || isActiveLanguage('he') ? 'rtl' : 'ltr'}
+        dir={isActiveLanguage('fa') || isActiveLanguage('ar') || isActiveLanguage('he') ? 'rtl' : 'ltr'}
         style={{
           fontFamily: activeFontStack,
           '--app-font-family': activeFontStack,
@@ -13774,7 +13908,7 @@ const deDict = {
                         // sits on the visual right of the header, so anchor
                         // the dropdown's right edge instead — otherwise it
                         // overflows off-screen to the right.
-                        ...(uiLang === 'he' || uiLang === 'fa' ? { right: 0 } : { left: 0 }),
+                        ...(uiLang === 'he' || uiLang === 'fa' || uiLang === 'ar' ? { right: 0 } : { left: 0 }),
                         background: '#ffffff',
                         border: '1px solid #cbd5e1',
                         borderRadius: '10px',
