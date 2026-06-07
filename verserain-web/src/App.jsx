@@ -15878,6 +15878,14 @@ const deDict = {
 
                             <button
                               onClick={() => {
+                                // Push the set to /share-set BEFORE handing the
+                                // URL out — otherwise recipients in fresh
+                                // contexts (Skool in-app webview, new device,
+                                // logged-out) hit the viewSet fallback chain
+                                // and the /share-set GET 404s, leaving them
+                                // staring at the home page. Pushing first means
+                                // the fallback can always resolve the id.
+                                pushSetForSharing(currentSet);
                                 const link = buildPublicShareUrl(window.location.pathname, { viewSet: currentSet.id });
                                 setQrShareModal({ url: link, reference: currentSet.title });
                               }}
