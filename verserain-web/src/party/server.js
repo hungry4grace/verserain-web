@@ -864,36 +864,45 @@ export default class Server {
       // only storage). Distinct from `/custom-sets` (the global published-set
       // list everyone can see).
       //
-      // Storage layout: one key per set at `private-sets:<playerName>:<setId>`
-      // so the user's total payload can exceed Cloudflare's 128KB-per-key
-      // limit (a single user can easily accumulate >12 sets with rich HTML
-      // descriptions and verse texts). The legacy single-key array at
-      // `private-sets:<playerName>` is still read on GET for backward
-      // compatibility — see migration logic below.
+      // Storage layout: each set is serialized to JSON then split into ~100KB
+      // chunks, written as `private-sets:<playerName>:<setId>::part:<n>` keys.
+      // This is necessary because Cloudflare Durable Object storage caps each
+      // key VALUE at 131072 bytes — a single rich set (HTML description +
+      // many full-chapter verses) can exceed that on its own. The legacy
+      // single-key array at `private-sets:<playerName>` is still read on GET
+      // as a final fallback during migration.
+      const CHUNK_BYTES = 100000;
+      const splitChunks = (str) => {
+         const out = [];
+         for (let i = 0; i < str.length; i += CHUNK_BYTES) out.push(str.slice(i, i + CHUNK_BYTES));
+         return out;
+      };
       if (url.pathname.endsWith('/save-private-sets') && request.method === 'POST') {
          try {
             const { playerName, sets } = await request.json();
             if (!playerName || !Array.isArray(sets)) {
                return new Response(JSON.stringify({ error: 'playerName and sets[] required' }), { status: 400, headers: corsHeaders });
             }
-            // Clear the legacy single-key blob (if any) so reads only pull from
-            // the new per-set keys after this save.
-            await this.room.storage.delete(`private-sets:${playerName}`);
-            // Remove existing per-set keys for this user that aren't in the
-            // new payload (deletions).
             const prefix = `private-sets:${playerName}:`;
+            // Clear the legacy single-key blob (if any).
+            await this.room.storage.delete(`private-sets:${playerName}`);
+            // Wipe all existing per-set chunk keys for this user — simpler
+            // and safer than incremental diff when set sizes change.
             const existingMap = await this.room.storage.list({ prefix });
-            const incomingIds = new Set(sets.map(s => s && s.id).filter(Boolean));
-            for (const key of existingMap.keys()) {
-               const id = key.slice(prefix.length);
-               if (!incomingIds.has(id)) await this.room.storage.delete(key);
-            }
-            // Write each set to its own key. Skip entries without an id.
+            for (const key of existingMap.keys()) await this.room.storage.delete(key);
+            // Re-write each set as one or more chunked keys.
+            let totalChunks = 0;
             for (const set of sets) {
                if (!set || !set.id) continue;
-               await this.room.storage.put(`${prefix}${set.id}`, set);
+               const json = JSON.stringify(set);
+               const chunks = splitChunks(json);
+               for (let i = 0; i < chunks.length; i++) {
+                  // key format: <prefix><setId>::part:<i>/<total>
+                  await this.room.storage.put(`${prefix}${set.id}::part:${i}/${chunks.length}`, chunks[i]);
+                  totalChunks++;
+               }
             }
-            return new Response(JSON.stringify({ success: true, count: sets.length }), { status: 200, headers: corsHeaders });
+            return new Response(JSON.stringify({ success: true, count: sets.length, chunks: totalChunks }), { status: 200, headers: corsHeaders });
          } catch (e) {
             return new Response(JSON.stringify({ error: 'Failed to save private sets', detail: String(e?.message || e) }), { status: 500, headers: corsHeaders });
          }
@@ -903,14 +912,37 @@ export default class Server {
          try {
             const playerName = url.searchParams.get('player');
             if (!playerName) return new Response(JSON.stringify({ error: 'player param required' }), { status: 400, headers: corsHeaders });
-            // Prefer per-set keys (new layout). Fall back to the legacy
-            // single-key blob if the per-set keys haven't been populated yet.
             const prefix = `private-sets:${playerName}:`;
             const map = await this.room.storage.list({ prefix });
-            let sets = Array.from(map.values());
+            // Group keys by setId, then reassemble each set's chunks in order.
+            const bySet = new globalThis.Map();
+            for (const [key, value] of map.entries()) {
+               const tail = key.slice(prefix.length);
+               // Match `<setId>::part:<idx>/<total>`. If a key doesn't match
+               // this shape, treat as a non-chunked legacy per-set value
+               // (whole set object) for backward compatibility with the prior
+               // server version that wrote one key per set unchunked.
+               const m = tail.match(/^(.+?)::part:(\d+)\/(\d+)$/);
+               if (m) {
+                  const setId = m[1];
+                  const idx = parseInt(m[2], 10);
+                  if (!bySet.has(setId)) bySet.set(setId, { chunks: [], legacy: null });
+                  bySet.get(setId).chunks[idx] = value;
+               } else if (value && typeof value === 'object' && value.id) {
+                  bySet.set(tail, { chunks: null, legacy: value });
+               }
+            }
+            const sets = [];
+            for (const entry of bySet.values()) {
+               if (entry.legacy) { sets.push(entry.legacy); continue; }
+               if (!entry.chunks || entry.chunks.some(c => c == null)) continue; // skip incomplete
+               try { sets.push(JSON.parse(entry.chunks.join(''))); }
+               catch { /* skip corrupt */ }
+            }
+            // Final fallback: pre-chunking single-blob layout.
             if (!sets.length) {
                const legacy = await this.room.storage.get(`private-sets:${playerName}`);
-               if (Array.isArray(legacy)) sets = legacy;
+               if (Array.isArray(legacy)) return new Response(JSON.stringify({ success: true, sets: legacy }), { status: 200, headers: corsHeaders });
             }
             return new Response(JSON.stringify({ success: true, sets }), { status: 200, headers: corsHeaders });
          } catch (e) {
