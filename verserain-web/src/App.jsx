@@ -4656,6 +4656,7 @@ export default function App() {
     setVersion(newVer);
     // Auto-sync UI language immediately so mobile users get instant feedback.
     if (newVer === 'fa') setUiLangPersisted('fa');
+    else if (newVer === 'ar') setUiLangPersisted('ar');
     else if (newVer === 'he') setUiLangPersisted('he');
     else if (newVer === 'kjv' || newVer === 'esv' || newVer === 'niv') setUiLangPersisted('en');
     else if (newVer === 'ja') setUiLangPersisted('ja');
@@ -7311,6 +7312,40 @@ export default function App() {
     // Toast / status
     '已記住你的偏好': 'تم حفظ التفضيل',
     '已綁定推薦人，下次過關會自動補上點數。': 'تم ربط المُحيل. ستُمنح النقاط تلقائيًا بعد الإنجاز التالي.',
+
+    // Home page tile subtitles & poetic descriptions
+    '每日一句神的話，心意更新而變化。': 'آية كل يوم لتجديد قلبك وفكرك.',
+    '主話如霖澆我田，歲歲結果到豐年。': 'انظر الآيات التي تعلمتها وغرستها كأشجار حياة.',
+    '經題萬卷勤溫故，句句生光照此程。': 'تصفح مجموعات الآيات العالمية واختر آيات للتدريب.',
+    '同心競走天路程，並肩得勝主名榮。': 'أنشئ غرفة وتنافس مع فِرَق.',
+
+    // Common top-menu / chrome buttons that were still showing Chinese
+    '主題經文集': 'مجموعات الآيات الموضوعية',
+    '我的': 'لي',
+    '我': 'أنا',
+
+    // Reading / verse view
+    '查看完整經文': 'عرض الآية الكاملة',
+    '經文出處': 'مرجع الآية',
+    '雙語': 'ثنائي اللغة',
+    '單語': 'لغة واحدة',
+    '解釋': 'الشرح',
+    '簡介': 'مقدمة',
+
+    // Garden / harvest extra
+    '我的收穫籃': 'سلة حصادي',
+    '🌱 種下嫩芽': '🌱 غرس برعم',
+    '🌳 結出果子': '🌳 إثمار',
+
+    // Misc UX
+    '開始聆聽': 'ابدأ الاستماع',
+    '繼續聆聽': 'متابعة الاستماع',
+    '正在播放': 'يُشغّل الآن',
+    '無經文可顯示': 'لا توجد آيات للعرض',
+    '尚未選擇經文組': 'لم يُختر مجموعة آيات',
+    'Loading...': 'جارٍ التحميل...',
+    '載入中': 'جارٍ التحميل',
+    '載入中...': 'جارٍ التحميل...',
 };
 
   // ─── Hebrew (עברית) UI Dictionary ────────────────────────────────────────
@@ -13908,7 +13943,11 @@ const deDict = {
                         // sits on the visual right of the header, so anchor
                         // the dropdown's right edge instead — otherwise it
                         // overflows off-screen to the right.
-                        ...(uiLang === 'he' || uiLang === 'fa' || uiLang === 'ar' ? { right: 0 } : { left: 0 }),
+                        // Use isActiveLanguage (covers both uiLang AND version)
+                        // because the dropdown is often opened mid-switch when
+                        // uiLang hasn't synced yet — the underlying layout dir
+                        // is already RTL via version, so the anchor must match.
+                        ...(isActiveLanguage('he') || isActiveLanguage('fa') || isActiveLanguage('ar') ? { right: 0 } : { left: 0 }),
                         background: '#ffffff',
                         border: '1px solid #cbd5e1',
                         borderRadius: '10px',
