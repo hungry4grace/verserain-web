@@ -861,19 +861,41 @@ export default class Server {
       }
 
       // 4.5 Private Custom Verse Sets — per-user sync (replaces device-local
-      // only storage). Stored at `private-sets:<playerName>` as an array of
-      // the user's custom verse set objects. Distinct from `/custom-sets`
-      // (the global published-set list everyone can see).
+      // only storage). Distinct from `/custom-sets` (the global published-set
+      // list everyone can see).
+      //
+      // Storage layout: one key per set at `private-sets:<playerName>:<setId>`
+      // so the user's total payload can exceed Cloudflare's 128KB-per-key
+      // limit (a single user can easily accumulate >12 sets with rich HTML
+      // descriptions and verse texts). The legacy single-key array at
+      // `private-sets:<playerName>` is still read on GET for backward
+      // compatibility — see migration logic below.
       if (url.pathname.endsWith('/save-private-sets') && request.method === 'POST') {
          try {
             const { playerName, sets } = await request.json();
             if (!playerName || !Array.isArray(sets)) {
                return new Response(JSON.stringify({ error: 'playerName and sets[] required' }), { status: 400, headers: corsHeaders });
             }
-            await this.room.storage.put(`private-sets:${playerName}`, sets);
+            // Clear the legacy single-key blob (if any) so reads only pull from
+            // the new per-set keys after this save.
+            await this.room.storage.delete(`private-sets:${playerName}`);
+            // Remove existing per-set keys for this user that aren't in the
+            // new payload (deletions).
+            const prefix = `private-sets:${playerName}:`;
+            const existingMap = await this.room.storage.list({ prefix });
+            const incomingIds = new Set(sets.map(s => s && s.id).filter(Boolean));
+            for (const key of existingMap.keys()) {
+               const id = key.slice(prefix.length);
+               if (!incomingIds.has(id)) await this.room.storage.delete(key);
+            }
+            // Write each set to its own key. Skip entries without an id.
+            for (const set of sets) {
+               if (!set || !set.id) continue;
+               await this.room.storage.put(`${prefix}${set.id}`, set);
+            }
             return new Response(JSON.stringify({ success: true, count: sets.length }), { status: 200, headers: corsHeaders });
          } catch (e) {
-            return new Response(JSON.stringify({ error: 'Failed to save private sets' }), { status: 500, headers: corsHeaders });
+            return new Response(JSON.stringify({ error: 'Failed to save private sets', detail: String(e?.message || e) }), { status: 500, headers: corsHeaders });
          }
       }
 
@@ -881,8 +903,16 @@ export default class Server {
          try {
             const playerName = url.searchParams.get('player');
             if (!playerName) return new Response(JSON.stringify({ error: 'player param required' }), { status: 400, headers: corsHeaders });
-            const data = await this.room.storage.get(`private-sets:${playerName}`);
-            return new Response(JSON.stringify({ success: true, sets: Array.isArray(data) ? data : [] }), { status: 200, headers: corsHeaders });
+            // Prefer per-set keys (new layout). Fall back to the legacy
+            // single-key blob if the per-set keys haven't been populated yet.
+            const prefix = `private-sets:${playerName}:`;
+            const map = await this.room.storage.list({ prefix });
+            let sets = Array.from(map.values());
+            if (!sets.length) {
+               const legacy = await this.room.storage.get(`private-sets:${playerName}`);
+               if (Array.isArray(legacy)) sets = legacy;
+            }
+            return new Response(JSON.stringify({ success: true, sets }), { status: 200, headers: corsHeaders });
          } catch (e) {
             return new Response(JSON.stringify({ error: 'Failed to fetch private sets' }), { status: 500, headers: corsHeaders });
          }
