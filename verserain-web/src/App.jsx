@@ -5692,6 +5692,44 @@ export default function App() {
         setSelectedSetId(foundSet.id);
         setMainTab('versesets');
         window.history.replaceState({}, document.title, window.location.pathname);
+      } else if (!viewSetFetchAttemptedRef.current.has(viewSetRef)) {
+        // Set not in local lists yet — typical for share links opened in a
+        // fresh context (Skool in-app webview, new device, logged-out, etc.).
+        // Hit the public /custom-sets list, the user's /private-sets, and the
+        // /share-set link-share endpoint. Any of them landing into state will
+        // re-run this useEffect via activeVerseSets dep, and the set will be
+        // found on the second pass. Keep the URL in place — do NOT
+        // history.replaceState here, otherwise the second pass loses the
+        // viewSet param and falls through to the home page.
+        viewSetFetchAttemptedRef.current.add(viewSetRef);
+        const host = "https://verserain-party.hungry4grace.partykit.dev/parties/main/global-auth-db";
+        fetch(`${host}/custom-sets`)
+          .then(r => r.ok ? r.json() : null)
+          .then(arr => { if (Array.isArray(arr)) setPublishedVerseSets(arr); })
+          .catch(() => {});
+        if (playerName) {
+          fetch(`${host}/private-sets?player=${encodeURIComponent(playerName)}`)
+            .then(r => r.ok ? r.json() : null)
+            .then(data => {
+              const remote = Array.isArray(data?.sets) ? data.sets : null;
+              if (!remote || !remote.length) return;
+              setCustomVerseSets(prev => {
+                const byId = new globalThis.Map(prev.map(s => [s.id, s]));
+                for (const s of remote) { if (s?.id && !byId.has(s.id)) byId.set(s.id, s); }
+                const merged = Array.from(byId.values());
+                try { localStorage.setItem('verseRain_custom_sets', JSON.stringify(merged)); } catch {}
+                return merged;
+              });
+            })
+            .catch(() => {});
+        }
+        fetch(`${host}/share-set?id=${encodeURIComponent(viewSetRef)}`)
+          .then(r => r.ok ? r.json() : null)
+          .then(data => {
+            if (!data?.set?.id) return;
+            setPublishedVerseSets(prev => prev.some(s => s.id === data.set.id) ? prev : [...prev, data.set]);
+          })
+          .catch(() => {});
       }
       return;
     }
@@ -5753,6 +5791,10 @@ export default function App() {
   // Tracks listenSet ids we've already fired a fallback remote fetch for, so
   // the share-URL handler doesn't hammer PartyKit on every activeVerseSets re-render.
   const listenSetFetchAttemptedRef = useRef(new globalThis.Set());
+  // Same idea for ?viewSet=... share URLs (links shared on Skool / WhatsApp /
+  // etc. land here in fresh contexts where the set may not yet be in any
+  // local list).
+  const viewSetFetchAttemptedRef = useRef(new globalThis.Set());
 
   useEffect(() => {
     // Dynamically scale animation speeds (10% increase compounding, or simply linear)
