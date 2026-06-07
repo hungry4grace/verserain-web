@@ -881,17 +881,16 @@ export default class Server {
       const splitChunks = (str) => {
          const bytes = new TextEncoder().encode(str);
          if (bytes.length <= CHUNK_BYTES) return [str];
-         const decoder = new TextDecoder('utf-8'); // single instance, default fatal:false
+         const decoder = new TextDecoder('utf-8');
          const out = [];
-         for (let i = 0; i < bytes.length; i += CHUNK_BYTES) {
-            // Walk back from the boundary to avoid splitting mid-multi-byte
-            // sequence. UTF-8 continuation bytes match 10xxxxxx (0x80-0xBF).
-            let end = Math.min(i + CHUNK_BYTES, bytes.length);
-            if (end < bytes.length) {
-               while (end > i && (bytes[end] & 0xC0) === 0x80) end--;
-            }
-            out.push(decoder.decode(bytes.subarray(i, end)));
-            i = end - CHUNK_BYTES; // next iteration adds CHUNK_BYTES → starts at `end`
+         let pos = 0;
+         while (pos < bytes.length) {
+            let end = Math.min(pos + CHUNK_BYTES, bytes.length);
+            // Walk back if the next byte is a UTF-8 continuation byte
+            // (10xxxxxx) — would otherwise split a multi-byte char.
+            while (end < bytes.length && (bytes[end] & 0xC0) === 0x80) end--;
+            out.push(decoder.decode(bytes.subarray(pos, end)));
+            pos = end;
          }
          return out;
       };
