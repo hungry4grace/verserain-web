@@ -877,7 +877,10 @@ export default class Server {
       // chunking by JS string length is unsafe. Encode to bytes, slice on
       // codepoint boundaries via TextDecoder's streaming mode (no
       // multi-byte char splits), then store each chunk as a string.
-      const CHUNK_BYTES = 100000;
+      // Cloudflare DO storage caps each VALUE at 131072 bytes. We use a
+      // conservative 50000-byte chunk so headroom covers any internal
+      // serialization overhead (UTF-16 expansion, structuredClone wrapper).
+      const CHUNK_BYTES = 50000;
       const splitChunks = (str) => {
          const bytes = new TextEncoder().encode(str);
          if (bytes.length <= CHUNK_BYTES) return [str];
@@ -909,15 +912,32 @@ export default class Server {
             for (const key of existingMap.keys()) await this.room.storage.delete(key);
             // Re-write each set as one or more chunked keys.
             let totalChunks = 0;
+            const failures = [];
             for (const set of sets) {
                if (!set || !set.id) continue;
                const json = JSON.stringify(set);
+               const jsonBytes = new TextEncoder().encode(json).length;
                const chunks = splitChunks(json);
                for (let i = 0; i < chunks.length; i++) {
-                  // key format: <prefix><setId>::part:<i>/<total>
-                  await this.room.storage.put(`${prefix}${set.id}::part:${i}/${chunks.length}`, chunks[i]);
-                  totalChunks++;
+                  const chunkBytes = new TextEncoder().encode(chunks[i]).length;
+                  try {
+                     await this.room.storage.put(`${prefix}${set.id}::part:${i}/${chunks.length}`, chunks[i]);
+                     totalChunks++;
+                  } catch (putErr) {
+                     failures.push({
+                        setId: set.id,
+                        title: set.title,
+                        chunkIndex: i,
+                        chunkBytes,
+                        totalChunks: chunks.length,
+                        setJsonBytes: jsonBytes,
+                        error: String(putErr?.message || putErr),
+                     });
+                  }
                }
+            }
+            if (failures.length) {
+               return new Response(JSON.stringify({ error: 'Failed to save some private sets', failures, savedChunks: totalChunks }), { status: 500, headers: corsHeaders });
             }
             return new Response(JSON.stringify({ success: true, count: sets.length, chunks: totalChunks }), { status: 200, headers: corsHeaders });
          } catch (e) {
