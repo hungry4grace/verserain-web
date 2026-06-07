@@ -3925,6 +3925,24 @@ export default function App() {
   // We only sync sets owned by the current user — i.e. without authorName,
   // or whose authorName matches playerName — to avoid uploading copies of
   // other authors' published sets that the user pulled in via /custom-sets.
+  // Wider authorship check: a user's playerName can change over time
+  // ("hungry" → "hungry@G" → "hungry@y"), so a set authored under an OLD
+  // playerName would otherwise be permanently stranded in localStorage and
+  // never sync to backend. We treat the email's local part as the stable
+  // identity and accept any authorName starting with it as "self".
+  const isOwnedByCurrentUser = (s, currentPlayerName, currentEmail) => {
+    if (!s) return false;
+    if (!s.authorName) return true;
+    if (s.authorName === currentPlayerName) return true;
+    if (s.authorName === 'Anonymous') return true;
+    const emailLocal = String(currentEmail || '').split('@')[0].toLowerCase();
+    if (!emailLocal) return false;
+    const author = String(s.authorName).toLowerCase();
+    // Match common variants like "hungry", "hungry@G", "hungry@y" all sharing
+    // the email-local prefix "hungry4grace" → use a sensible truncation.
+    const shortLocal = emailLocal.slice(0, 6);
+    return shortLocal.length >= 3 && author.startsWith(shortLocal);
+  };
   const privateSetsInitialSyncDoneRef = useRef(false);
   const lastPushedPrivateSetsRef = useRef('');
 
@@ -3959,7 +3977,7 @@ export default function App() {
           setCustomVerseSets(merged);
           localStorage.setItem('verseRain_custom_sets', JSON.stringify(merged));
           // Push the merge back so the remote has the union too.
-          const ownedForPush = merged.filter(s => !s.authorName || s.authorName === playerName || s.authorName === 'Anonymous');
+          const ownedForPush = merged.filter(s => isOwnedByCurrentUser(s, playerName, userEmail));
           lastPushedPrivateSetsRef.current = JSON.stringify(ownedForPush);
           fetch(`${host}/save-private-sets`, {
             method: 'POST',
@@ -3981,7 +3999,7 @@ export default function App() {
   useEffect(() => {
     if (!playerName) return;
     if (!privateSetsInitialSyncDoneRef.current) return;
-    const ownedForPush = customVerseSets.filter(s => !s.authorName || s.authorName === playerName || s.authorName === 'Anonymous');
+    const ownedForPush = customVerseSets.filter(s => isOwnedByCurrentUser(s, playerName, userEmail));
     const payload = JSON.stringify(ownedForPush);
     if (payload === lastPushedPrivateSetsRef.current) return;
     lastPushedPrivateSetsRef.current = payload;
