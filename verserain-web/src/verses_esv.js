@@ -2727,6 +2727,41 @@ export const VERSE_SETS_ESV = [
       { id: "psalms-book-v-esv-150-5", reference: "Psalm 150:5", title: "Psalms Book V", text: "Praise him with sounding cymbals; praise him with loud clashing cymbals!" },
       { id: "psalms-book-v-esv-150-6", reference: "Psalm 150:6", title: "Psalms Book V", text: "Let everything that has breath praise the LORD! Praise the LORD!" },
     ]
-  }
+  },
+
+  {
+    id: "inherit-land-esv",
+    title: `Inheriting the Land — Revelation of Psalm 37`,
+    createdAt: "2026-06-07",
+    description: `<h2>Inheriting the Land: An Ancient and Eternal Promise</h2>
+<p>Psalm 37 is a wisdom psalm written by David in his old age (v. 25), and its central theme revolves around a promise repeated five times: <strong>"the meek shall inherit the land"</strong> (vv. 9, 11, 22, 29, 34). Jesus confirmed this ancient promise in the Sermon on the Mount: <em>"Blessed are the meek, for they shall inherit the earth"</em> (Matt. 5:5).</p>
+
+<h2>The Character of Those Who Inherit the Land</h2>
+<p>David describes the life of those who receive this inheritance:</p>
+<ul>
+<li><strong>Trust in the LORD and do good</strong> (v. 3) — not relying on human schemes, but living out righteousness rooted in trust.</li>
+<li><strong>Delight yourself in the LORD</strong> (v. 4) — making God Himself the deepest longing of your heart.</li>
+<li><strong>Commit your way to the LORD</strong> (v. 5) — the Hebrew verb means to "roll" your burden entirely onto God.</li>
+<li><strong>Be still before the LORD and wait patiently</strong> (v. 7) — maintaining inner quietness amid a turbulent world.</li>
+<li><strong>Turn from evil and do good</strong> (v. 27) — an active, not passive, posture toward righteousness.</li>
+</ul>
+
+<h2>The Prophetic Confirmation (Isaiah 57:13)</h2>
+<p>Isaiah 57:13 adds a striking contrast: idols cannot save, but <strong>"he who takes refuge in me shall inherit the land."</strong> The key is not our merit but our <em>refuge</em> — choosing God as our shelter in every trial.</p>
+
+<h2>Wait for the LORD</h2>
+<p>Psalm 37:34 promises: <em>"Wait for the LORD and keep his way, and he will exalt you to inherit the land."</em> Waiting is not passive delay but faith-filled persistence — walking in God's timetable, holding His promises in the dark. May we become people who trust, delight, and wait — and together inherit what He has promised.</p>`,
+    language: "en",
+    verses: [
+      { id: "inherit-land-esv-1", reference: "Psalm 25:12-13", title: `Inheriting the Land — Revelation of Psalm 37`, text: `Who is the man who fears the LORD? Him will he instruct in the way that he should choose. His soul shall abide in well-being, and his offspring shall inherit the land.` },
+      { id: "inherit-land-esv-2", reference: "Psalm 37:9", title: `Inheriting the Land — Revelation of Psalm 37`, text: `For the evildoers shall be cut off, but those who wait for the LORD shall inherit the land.` },
+      { id: "inherit-land-esv-3", reference: "Psalm 37:11", title: `Inheriting the Land — Revelation of Psalm 37`, text: `But the meek shall inherit the land and delight themselves in abundant peace.` },
+      { id: "inherit-land-esv-4", reference: "Psalm 37:21-22", title: `Inheriting the Land — Revelation of Psalm 37`, text: `The wicked borrows but does not pay back, but the righteous is generous and gives; for those blessed by the LORD shall inherit the land, but those cursed by him shall be cut off.` },
+      { id: "inherit-land-esv-5", reference: "Psalm 37:27-29", title: `Inheriting the Land — Revelation of Psalm 37`, text: `Turn away from evil and do good; so shall you dwell forever. For the LORD loves justice; he will not forsake his saints. They are preserved forever, but the children of the wicked shall be cut off. The righteous shall inherit the land and dwell upon it forever.` },
+      { id: "inherit-land-esv-6", reference: "Psalm 37:34", title: `Inheriting the Land — Revelation of Psalm 37`, text: `Wait for the LORD and keep his way, and he will exalt you to inherit the land; you will look on when the wicked are cut off.` },
+      { id: "inherit-land-esv-7", reference: "Isaiah 57:13", title: `Inheriting the Land — Revelation of Psalm 37`, text: `When you cry out, let your collection of idols deliver you! The wind will carry them all off, a breath will take them away. But he who takes refuge in me shall possess the land and shall inherit my holy mountain.` },
+      { id: "inherit-land-esv-8", reference: "Matthew 5:5", title: `Inheriting the Land — Revelation of Psalm 37`, text: `“Blessed are the meek, for they shall inherit the earth.` },
+    ]
+  },
 
 ];

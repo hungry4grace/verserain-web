@@ -553,6 +553,27 @@ export const VERSE_SETS_VI = [
       { id: "power-of-words-vi-19", reference: "Ma-thi-ơ 8:8", title: "Quyền Năng Của Lời Nói", text: "Viên đội trưởng thưa rằng: Lạy Chúa, tôi chẳng đáng rước Chúa vào nhà tôi; nhưng xin Chúa phán một lời, thì đầy tớ tôi sẽ được lành." },
       { id: "power-of-words-vi-20", reference: "Giăng 6:63", title: "Quyền Năng Của Lời Nói", text: "Ấy là Thánh Linh ban sự sống; xác thịt chẳng ích chi. Những lời ta nói với các ngươi đều là thần linh và sự sống." }
     ]
-  }
+  },
+
+  {
+    id: "inherit-land-vi",
+    title: `Hưởng Đất — Sự Mặc Khải Của Thi Thiên 37`,
+    createdAt: "2026-06-07",
+    description: `<h2>Hưởng Đất: Lời Hứa Cổ Xưa và Vĩnh Cửu</h2>
+<p>Thi Thiên 37 là một bài thơ khôn ngoan mà Đa-vít viết lúc về già (c. 25), với chủ đề trung tâm xoay quanh lời hứa lặp đi lặp lại năm lần: <strong>"Người nhu mì sẽ được hưởng đất"</strong> (c. 9, 11, 22, 29, 34). Chúa Jêsus xác nhận lời hứa cổ xưa này trong Bài Giảng Trên Núi: "Phước cho những kẻ nhu mì, vì họ sẽ hưởng được đất" (Ma-thi-ơ 5:5).</p>
+<p>Đa-vít mô tả đặc điểm của những người nhận được cơ nghiệp này: <strong>tin cậy Chúa và làm điều lành</strong>, <strong>vui thích trong Chúa</strong>, <strong>phó thác đường lối mình cho Chúa</strong> và <strong>hãy yên lặng trước mặt Chúa, chờ đợi Ngài</strong> (c. 3-7). Những ai lánh xa điều ác, làm điều lành (c. 27) và chờ đợi Chúa sẽ được tôn cao và hưởng đất (c. 34).</p>
+<p>Ê-sai 57:13 hứa: "Người nào tin cậy ta sẽ được đất làm cơ nghiệp và được núi thánh ta." Chìa khóa không phải là công đức của chúng ta mà là sự lựa chọn nương náu nơi Đức Chúa Trời.</p>`,
+    language: "vi",
+    verses: [
+      { id: "inherit-land-vi-1", reference: "Thi Thiên 25:12-13", title: `Hưởng Đất — Sự Mặc Khải Của Thi Thiên 37`, text: `Ai là người kính sợ Đức Giê-hô-va? Ngài sẽ chỉ dạy cho người ấy con đường mình phải chọn. Linh hồn người sẽ được ở nơi bình an. Và con cháu người sẽ được đất làm sản nghiệp.` },
+      { id: "inherit-land-vi-2", reference: "Thi Thiên 37:9", title: `Hưởng Đất — Sự Mặc Khải Của Thi Thiên 37`, text: `Vì những kẻ làm ác sẽ bị diệt; Còn kẻ nào trông đợi Đức Giê-hô-va sẽ được đất làm cơ nghiệp.` },
+      { id: "inherit-land-vi-3", reference: "Thi Thiên 37:11", title: `Hưởng Đất — Sự Mặc Khải Của Thi Thiên 37`, text: `Song người hiền từ sẽ nhận được đất làm cơ nghiệp, Và được khoái lạc về bình yên dư dật.` },
+      { id: "inherit-land-vi-4", reference: "Thi Thiên 37:21-22", title: `Hưởng Đất — Sự Mặc Khải Của Thi Thiên 37`, text: `Kẻ ác mượn, mà không trả lại; Còn người công bình làm ơn, và ban cho. Vì người mà Đức Chúa Trời ban phước cho sẽ nhận được đất; Còn kẻ mà Ngài rủa sả sẽ bị diệt đi.` },
+      { id: "inherit-land-vi-5", reference: "Thi Thiên 37:27-29", title: `Hưởng Đất — Sự Mặc Khải Của Thi Thiên 37`, text: `Hãy tránh điều dữ, và làm điều lành, Thì sẽ được ở đời đời. Vì Đức Giê-hô-va chuộng sự công bình, Không từ bỏ người thánh của Ngài; họ được Ngài gìn giữ đời đời: Còn dòng dõi kẻ dữ sẽ bị diệt đi. Người công bình sẽ nhận được đất, Và ở tại đó đời đời.` },
+      { id: "inherit-land-vi-6", reference: "Thi Thiên 37:34", title: `Hưởng Đất — Sự Mặc Khải Của Thi Thiên 37`, text: `Hãy trông đợi Đức Giê-hô-va, và giữ theo đường Ngài, Thì Ngài sẽ nâng ngươi khiến để nhận được đất! Khi kẻ ác bị diệt đi, thì ngươi sẽ thấy điều ấy.` },
+      { id: "inherit-land-vi-7", reference: "Ê-sai 57:13", title: `Hưởng Đất — Sự Mặc Khải Của Thi Thiên 37`, text: `Khi ngươi sẽ kêu, hết thảy các thần mà ngươi đã nhóm họp hãy giải cứu ngươi! Gió sẽ đùa các thần ấy đi, một cái thở là làm mất hết thảy. Nhưng kẻ nào ẩn náu nơi ta, sẽ hưởng đất nầy, và được hòn núi thánh của ta làm cơ nghiệp.` },
+      { id: "inherit-land-vi-8", reference: "Ma-thi-ơ 5:5", title: `Hưởng Đất — Sự Mặc Khải Của Thi Thiên 37`, text: `Phước cho những kẻ nhu mì, vì sẽ hưởng được đất!` },
+    ]
+  },
 
 ];

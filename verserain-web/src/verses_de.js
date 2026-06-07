@@ -1090,6 +1090,27 @@ export const VERSE_SETS_DE = [
       { id: "power-of-words-de-19", reference: "Matthäus 8:8", title: "Die Kraft der Worte", text: "Der Hauptmann antwortete und sprach: Herr, ich bin nicht wert, dass du unter mein Dach gehst; sondern sprich nur ein Wort, so wird mein Knecht gesund." },
       { id: "power-of-words-de-20", reference: "Johannes 6:63", title: "Die Kraft der Worte", text: "Der Geist ist es, der lebendig macht; das Fleisch nützt nichts. Die Worte, die ich zu euch geredet habe, die sind Geist und sind Leben." }
     ]
-  }
+  },
+
+  {
+    id: "inherit-land-de",
+    title: `Das Land erben — Offenbarung aus Psalm 37`,
+    createdAt: "2026-06-07",
+    description: `<h2>Das Land erben: Eine alte und ewige Verheißung</h2>
+<p>Psalm 37 ist ein Weisheitspsalm, den David im Alter schrieb (V. 25). Sein Kernthema dreht sich um eine fünfmal wiederholte Verheißung: <strong>"Die Sanftmütigen werden das Land erben"</strong> (V. 9, 11, 22, 29, 34). Jesus bestätigte diese uralte Verheißung in der Bergpredigt: "Selig sind die Sanftmütigen, denn sie werden das Erdreich besitzen" (Mt 5,5).</p>
+<p>David beschreibt die Merkmale derer, die dieses Erbe empfangen: <strong>Vertrau auf den HERRN und tue Gutes</strong>, <strong>freue dich am HERRN</strong>, <strong>befiehl dem HERRN deinen Weg</strong> und <strong>sei stille vor dem HERRN und harre auf ihn</strong> (V. 3-7). Wer das Böse meidet und Gutes tut (V. 27) und auf den HERRN wartet, wird erhöht und erbt das Land (V. 34).</p>
+<p>Jesaja 57,13 verheißt: "Wer sich auf mich verlässt, soll das Land erben und meinen heiligen Berg besitzen." Der Schlüssel ist nicht unsere Würdigkeit, sondern die Wahl, bei Gott Zuflucht zu suchen.</p>`,
+    language: "de",
+    verses: [
+      { id: "inherit-land-de-1", reference: "Psalm 25:12-13", title: `Das Land erben — Offenbarung aus Psalm 37`, text: `Wer ist der Mann, der den HERRN fürchtet? Er lehrt ihn den Weg, den er erwählen soll. Seine Seele wird im Guten wohnen, und sein Same wird das Land besitzen.` },
+      { id: "inherit-land-de-2", reference: "Psalm 37:9", title: `Das Land erben — Offenbarung aus Psalm 37`, text: `Denn die Übeltäter werden ausgerottet; die aber auf den HERRN warten, werden das Land ererben.` },
+      { id: "inherit-land-de-3", reference: "Psalm 37:11", title: `Das Land erben — Offenbarung aus Psalm 37`, text: `Aber die Sanftmütigen werden das Land ererben und sich großen Friedens erfreuen.` },
+      { id: "inherit-land-de-4", reference: "Psalm 37:21-22", title: `Das Land erben — Offenbarung aus Psalm 37`, text: `Der Gottlose borgt und zahlt nicht zurück; der Gerechte aber ist barmherzig und gibt. Denn die vom HERRN Gesegneten werden das Land ererben, aber seine Verfluchten sollen ausgerottet werden.` },
+      { id: "inherit-land-de-5", reference: "Psalm 37:27-29", title: `Das Land erben — Offenbarung aus Psalm 37`, text: `Weiche vom Bösen und tue Gutes, so wirst du ewiglich bleiben! Denn der HERR hat das Recht lieb und verläßt seine Frommen nicht; sie werden ewiglich bewahrt, aber der Same der Gottlosen wird ausgerottet. Die Gerechten werden das Land ererben und für immer darin wohnen.` },
+      { id: "inherit-land-de-6", reference: "Psalm 37:34", title: `Das Land erben — Offenbarung aus Psalm 37`, text: `Harre des HERRN und bewahre seinen Weg, so wird er dich erhöhen, daß du das Land ererbest und die Ausrottung der Gottlosen sehest!` },
+      { id: "inherit-land-de-7", reference: "Jesaja 57:13", title: `Das Land erben — Offenbarung aus Psalm 37`, text: `Wenn du dann schreist, so mögen dich die erretten, die du gesammelt hast; aber ein einziger Windstoß wird sie alle davontragen, ein Hauch wird sie wegnehmen. Wer aber auf mich vertraut, der wird das Land ererben und meinen heiligen Berg besitzen.` },
+      { id: "inherit-land-de-8", reference: "Matthäus 5:5", title: `Das Land erben — Offenbarung aus Psalm 37`, text: `Selig sind die Sanftmütigen; denn sie werden das Land ererben!` },
+    ]
+  },
 
 ];

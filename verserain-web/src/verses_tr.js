@@ -1090,6 +1090,27 @@ export const VERSE_SETS_TR = [
       { id: "power-of-words-tr-19", reference: "Matta 8:8", title: "Sözün Gücü", text: "Yüzbaşı şu yanıtı verdi: 'Rab, senin çatım altına girmen için ben layık değilim. Yalnızca bir söz söyle, hizmetçim iyileşir.'" },
       { id: "power-of-words-tr-20", reference: "Yuhanna 6:63", title: "Sözün Gücü", text: "Yaşam veren Ruh'tur, bedenin hiçbir yararı yoktur. Ben size söylediğim sözler ruh ve yaşamdır." }
     ]
-  }
+  },
+
+  {
+    id: "inherit-land-tr",
+    title: `Yeri Miras Almak — Mezmur 37'nin Vahyi`,
+    createdAt: "2026-06-07",
+    description: `<h2>Yeri Miras Almak: Eski ve Ebedi Bir Vaat</h2>
+<p>Mezmur 37, Davut'un yaşlılığında yazdığı bir bilgelik mezmuru olup (ayet 25) temel mesajı beş kez tekrarlanan bir vaade dayanır: <strong>"Alçakgönüllüler yeri miras alacak"</strong> (ayetler 9, 11, 22, 29, 34). İsa bu eski vaadi Dağdaki Vaazda doğruladı: "Ne mutlu halim olanlara! Yurt onların olacak" (Matta 5:5).</p>
+<p>Davut bu mirası alanların özelliklerini anlatır: <strong>RAB'be güven ve iyilik yap</strong>, <strong>RAB'den zevk al</strong>, <strong>yolunu RAB'be bırak</strong> ve <strong>RAB önünde sus, sabırla bekle</strong> (ayetler 3-7). Kötülükten vazgeçip iyilik yapanlar (ayet 27) ve RAB'bi bekleyenler yükseltilecek ve yeri miras alacaktır (ayet 34).</p>
+<p>Yeşaya 57:13 şunu vaat eder: "Bana sığınan kişi yeri miras alacak, kutsal dağımı ele geçirecek." Yeri miras almanın anahtarı, hak etmek değil, Tanrı'ya sığınmayı seçmektir.</p>`,
+    language: "tr",
+    verses: [
+      { id: "inherit-land-tr-1", reference: "Mezmurlar 25:12-13", title: `Yeri Miras Almak — Mezmur 37'nin Vahyi`, text: `` },
+      { id: "inherit-land-tr-2", reference: "Mezmurlar 37:9", title: `Yeri Miras Almak — Mezmur 37'nin Vahyi`, text: `` },
+      { id: "inherit-land-tr-3", reference: "Mezmurlar 37:11", title: `Yeri Miras Almak — Mezmur 37'nin Vahyi`, text: `` },
+      { id: "inherit-land-tr-4", reference: "Mezmurlar 37:21-22", title: `Yeri Miras Almak — Mezmur 37'nin Vahyi`, text: `` },
+      { id: "inherit-land-tr-5", reference: "Mezmurlar 37:27-29", title: `Yeri Miras Almak — Mezmur 37'nin Vahyi`, text: `` },
+      { id: "inherit-land-tr-6", reference: "Mezmurlar 37:34", title: `Yeri Miras Almak — Mezmur 37'nin Vahyi`, text: `` },
+      { id: "inherit-land-tr-7", reference: "Yeşaya 57:13", title: `Yeri Miras Almak — Mezmur 37'nin Vahyi`, text: `` },
+      { id: "inherit-land-tr-8", reference: "Matta 5:5", title: `Yeri Miras Almak — Mezmur 37'nin Vahyi`, text: `` },
+    ]
+  },
 
 ];

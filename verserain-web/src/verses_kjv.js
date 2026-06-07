@@ -1702,7 +1702,42 @@ export const VERSE_SETS_KJV = [
       { id: "power-of-words-en-19", reference: "Matthew 8:8", title: "Power of Words", text: "The centurion answered and said, Lord, I am not worthy that thou shouldest come under my roof: but speak the word only, and my servant shall be healed." },
       { id: "power-of-words-en-20", reference: "John 6:63", title: "Power of Words", text: "It is the spirit that quickeneth; the flesh profiteth nothing: the words that I speak unto you, they are spirit, and they are life." }
     ]
-  }
+  },
+
+  {
+    id: "inherit-land-kjv",
+    title: `Inheriting the Land — Revelation of Psalm 37`,
+    createdAt: "2026-06-07",
+    description: `<h2>Inheriting the Land: An Ancient and Eternal Promise</h2>
+<p>Psalm 37 is a wisdom psalm written by David in his old age (v. 25), and its central theme revolves around a promise repeated five times: <strong>"the meek shall inherit the land"</strong> (vv. 9, 11, 22, 29, 34). Jesus confirmed this ancient promise in the Sermon on the Mount: <em>"Blessed are the meek, for they shall inherit the earth"</em> (Matt. 5:5).</p>
+
+<h2>The Character of Those Who Inherit the Land</h2>
+<p>David describes the life of those who receive this inheritance:</p>
+<ul>
+<li><strong>Trust in the LORD and do good</strong> (v. 3) — not relying on human schemes, but living out righteousness rooted in trust.</li>
+<li><strong>Delight yourself in the LORD</strong> (v. 4) — making God Himself the deepest longing of your heart.</li>
+<li><strong>Commit your way to the LORD</strong> (v. 5) — the Hebrew verb means to "roll" your burden entirely onto God.</li>
+<li><strong>Be still before the LORD and wait patiently</strong> (v. 7) — maintaining inner quietness amid a turbulent world.</li>
+<li><strong>Turn from evil and do good</strong> (v. 27) — an active, not passive, posture toward righteousness.</li>
+</ul>
+
+<h2>The Prophetic Confirmation (Isaiah 57:13)</h2>
+<p>Isaiah 57:13 adds a striking contrast: idols cannot save, but <strong>"he who takes refuge in me shall inherit the land."</strong> The key is not our merit but our <em>refuge</em> — choosing God as our shelter in every trial.</p>
+
+<h2>Wait for the LORD</h2>
+<p>Psalm 37:34 promises: <em>"Wait for the LORD and keep his way, and he will exalt you to inherit the land."</em> Waiting is not passive delay but faith-filled persistence — walking in God's timetable, holding His promises in the dark. May we become people who trust, delight, and wait — and together inherit what He has promised.</p>`,
+    language: "en",
+    verses: [
+      { id: "inherit-land-kjv-1", reference: "Psalm 25:12-13", title: `Inheriting the Land — Revelation of Psalm 37`, text: `What man376 is he that feareth3373 the LORD3068? him shall he teach3384 in the way1870 that he shall choose977. His soul5315 shall dwell3885 at ease2896; and his seed2233 shall inherit3423 the earth776. dwell: Heb. lodge in goodness` },
+      { id: "inherit-land-kjv-2", reference: "Psalm 37:9", title: `Inheriting the Land — Revelation of Psalm 37`, text: `For evildoers7489 shall be cut off3772: but those that wait6960 upon the LORD3068, they shall inherit3423 the earth776.` },
+      { id: "inherit-land-kjv-3", reference: "Psalm 37:11", title: `Inheriting the Land — Revelation of Psalm 37`, text: `But the meek6035 shall inherit3423 the earth776; and shall delight6026 themselves in the abundance7230 of peace7965.` },
+      { id: "inherit-land-kjv-4", reference: "Psalm 37:21-22", title: `Inheriting the Land — Revelation of Psalm 37`, text: `The wicked7563 borroweth3867, and payeth not again7999: but the righteous6662 sheweth mercy2603, and giveth5414. For such as be blessed1288 of him shall inherit3423 the earth776; and they that be cursed7043 of him shall be cut off3772.` },
+      { id: "inherit-land-kjv-5", reference: "Psalm 37:27-29", title: `Inheriting the Land — Revelation of Psalm 37`, text: `Depart5493 from evil7451, and do6213 good2896; and dwell7931 for evermore5769. For the LORD3068 loveth157 judgment4941, and forsaketh5800 not his saints2623; they are preserved8104 for ever5769: but the seed2233 of the wicked7563 shall be cut off3772. The righteous6662 shall inherit3423 the land776, and dwell7931 therein for ever5703.` },
+      { id: "inherit-land-kjv-6", reference: "Psalm 37:34", title: `Inheriting the Land — Revelation of Psalm 37`, text: `Wait6960 on the LORD3068, and keep8104 his way1870, and he shall exalt7311 thee to inherit3423 the land776: when the wicked7563 are cut off3772, thou shalt see7200 it.` },
+      { id: "inherit-land-kjv-7", reference: "Isaiah 57:13", title: `Inheriting the Land — Revelation of Psalm 37`, text: `When thou criest2199, let thy companies6899 deliver5337 thee; but the wind7307 shall carry them all away5375; vanity1892 shall take3947 them: but he that putteth his trust2620 in me shall possess5157 the land776, and shall inherit3423 my holy6944 mountain2022;` },
+      { id: "inherit-land-kjv-8", reference: "Matthew 5:5", title: `Inheriting the Land — Revelation of Psalm 37`, text: `Blessed3107 are the meek4239: for3754 they846 shall inherit2816 the earth1093.` },
+    ]
+  },
 
 ];
 

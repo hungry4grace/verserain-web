@@ -1090,6 +1090,27 @@ export const VERSE_SETS_ES = [
       { id: "power-of-words-es-19", reference: "Mateo 8:8", title: "El Poder de las Palabras", text: "Respondió el centurión y dijo: Señor, no soy digno de que entres bajo mi techo; solamente di la palabra, y mi criado sanará." },
       { id: "power-of-words-es-20", reference: "Juan 6:63", title: "El Poder de las Palabras", text: "El espíritu es el que da vida; la carne para nada aprovecha; las palabras que yo os he hablado son espíritu y son vida." }
     ]
-  }
+  },
+
+  {
+    id: "inherit-land-es",
+    title: `Heredar la tierra — Revelación del Salmo 37`,
+    createdAt: "2026-06-07",
+    description: `<h2>Heredar la tierra: Una promesa antigua y eterna</h2>
+<p>El Salmo 37 es un salmo de sabiduría que David escribió en su vejez (v. 25), y su tema central gira en torno a una promesa que se repite cinco veces: <strong>"los mansos heredarán la tierra"</strong> (vv. 9, 11, 22, 29, 34). Jesús confirmó esta antigua promesa en el Sermón del Monte: "Bienaventurados los mansos, porque ellos recibirán la tierra por heredad" (Mt 5:5).</p>
+<p>David describe las características de quienes reciben esta herencia: <strong>confía en el SEÑOR y haz el bien</strong>, <strong>deléitate en el SEÑOR</strong>, <strong>encomienda al SEÑOR tu camino</strong> y <strong>guarda silencio ante el SEÑOR y espera en él</strong> (vv. 3-7). Quienes se apartan del mal y hacen el bien (v. 27) y esperan en el SEÑOR serán exaltados y heredarán la tierra (v. 34).</p>
+<p>Isaías 57:13 promete: "el que se acoge a mí heredará la tierra y poseerá mi santo monte." La clave no es nuestro mérito sino nuestra elección de refugiarnos en Dios.</p>`,
+    language: "es",
+    verses: [
+      { id: "inherit-land-es-1", reference: "Salmos 25:12-13", title: `Heredar la tierra — Revelación del Salmo 37`, text: `¿Quién es el hombre que teme a Jehová? El le enseñará el camino que ha de escoger. Gozará él de bienestar, Y su descendencia heredará la tierra.` },
+      { id: "inherit-land-es-2", reference: "Salmos 37:9", title: `Heredar la tierra — Revelación del Salmo 37`, text: `Porque los malignos serán destruidos, Pero los que esperan en Jehová, ellos heredarán la tierra.` },
+      { id: "inherit-land-es-3", reference: "Salmos 37:11", title: `Heredar la tierra — Revelación del Salmo 37`, text: `Pero los mansos heredarán la tierra, Y se recrearán con abundancia de paz.` },
+      { id: "inherit-land-es-4", reference: "Salmos 37:21-22", title: `Heredar la tierra — Revelación del Salmo 37`, text: `El impío toma prestado, y no paga; Mas el justo tiene misericordia, y da. Porque los benditos de él heredarán la tierra; Y los malditos de él serán destruidos.` },
+      { id: "inherit-land-es-5", reference: "Salmos 37:27-29", title: `Heredar la tierra — Revelación del Salmo 37`, text: `Apártate del mal, y haz el bien, Y vivirás para siempre. Porque Jehová ama la rectitud, Y no desampara a sus santos. Para siempre serán guardados; Mas la descendencia de los impíos será destruida. Los justos heredarán la tierra, Y vivirán para siempre sobre ella.` },
+      { id: "inherit-land-es-6", reference: "Salmos 37:34", title: `Heredar la tierra — Revelación del Salmo 37`, text: `Espera en Jehová, y guarda su camino, Y él te exaltará para heredar la tierra; Cuando sean destruidos los pecadores, lo verás.` },
+      { id: "inherit-land-es-7", reference: "Isaías 57:13", title: `Heredar la tierra — Revelación del Salmo 37`, text: `Cuando clames, que te libren tus ídolos; pero a todos ellos llevará el viento, un soplo los arrebatará; mas el que en mí confía tendrá la tierra por heredad, y poseerá mi santo monte.` },
+      { id: "inherit-land-es-8", reference: "Mateo 5:5", title: `Heredar la tierra — Revelación del Salmo 37`, text: `Bienaventurados los mansos, porque ellos recibirán la tierra por heredad.` },
+    ]
+  },
 
 ];
