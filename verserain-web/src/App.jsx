@@ -14357,7 +14357,7 @@ const deDict = {
                     <div className="primary-button" onClick={() => setShowTeamsModal(true)} style={{ background: 'linear-gradient(135deg, #fb923c, #ea580c)', borderRadius: '16px', padding: '2.5rem 2rem', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', color: 'white', textAlign: 'center', boxShadow: '0 10px 28px rgba(234, 88, 12, 0.35)' }}>
                       <Users size={72} style={{ marginBottom: '1rem' }} />
                       <h2 style={{ fontSize: '2rem', margin: 0, marginBottom: '0.5rem', textShadow: '0 2px 4px rgba(0,0,0,0.2)' }}>{t("我的團隊", "My Teams")}</h2>
-                      <p style={{ fontSize: '1rem', margin: 0, opacity: 0.9 }}>{t("小組同心讀經文，彼此打氣不孤行。", "Read with your group — no one walks alone.")}</p>
+                      <p style={{ fontSize: '1rem', margin: 0, opacity: 0.9 }}>{t("呼朋喚友來相伴，相互激勵心同歡。", "Gather friends to walk together — encourage one another, rejoice as one.")}</p>
                     </div>
 
                     {/* Scripture Library */}
