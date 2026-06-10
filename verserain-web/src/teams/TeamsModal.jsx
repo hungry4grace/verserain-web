@@ -65,6 +65,8 @@ export default function TeamsModal({
   topicSets = [],            // bundled verse sets, for SetPicker
   onLaunchSet,               // (setId, mode, returnTeamId) => closes modal + starts game
   initialTeamId = null,      // when set, modal opens directly on that team's detail
+  playMode, setPlayMode,                 // pass-throughs so user can pick mode in the team
+  distractionLevel, setDistractionLevel, // same for difficulty (0-3)
 }) {
   // initialTeamId is honored only on the first render — once user navigates
   // away from detail (back, close, etc.) the prop has done its job. We
@@ -128,6 +130,10 @@ export default function TeamsModal({
               onOpenAdmin={() => setView('admin')}
               onLeft={() => setView('list')}
               onLaunchSet={onLaunchSet}
+              playMode={playMode}
+              setPlayMode={setPlayMode}
+              distractionLevel={distractionLevel}
+              setDistractionLevel={setDistractionLevel}
             />
           )}
           {view === 'admin' && activeTeamId && (
@@ -455,7 +461,7 @@ function JoinTeamForm({ t, onCancel, onJoined, userEmail, initialCode = '' }) {
 
 // -------------------- Detail view --------------------
 
-function TeamDetailView({ userEmail, playerName, teamId, t, onOpenAdmin, onLeft, onLaunchSet }) {
+function TeamDetailView({ userEmail, playerName, teamId, t, onOpenAdmin, onLeft, onLaunchSet, playMode, setPlayMode, distractionLevel, setDistractionLevel }) {
   const [team, setTeam] = useState(null);
   const [displayNames, setDisplayNames] = useState({});
   const [schedule, setSchedule] = useState({ items: [] });
@@ -605,6 +611,10 @@ function TeamDetailView({ userEmail, playerName, teamId, t, onOpenAdmin, onLeft,
               setStatus={verifiedProgress.setStatus?.[item.setId] || {}}
               memberEmails={team.members || []}
               onLaunchSet={onLaunchSet}
+              playMode={playMode}
+              setPlayMode={setPlayMode}
+              distractionLevel={distractionLevel}
+              setDistractionLevel={setDistractionLevel}
               reflections={reflections.filter(r => r.itemId === item.id)}
               displayNames={displayNames}
               meLc={meLc}
@@ -817,9 +827,10 @@ function StatusBadge({ status, doneCount, totalCount, t }) {
 
 function ScheduleItemCard({
   item, userEmail, teamId, t,
-  setStatus = {},          // per-email status for this item's setId
-  memberEmails = [],       // all team members, for team-wide tally
-  onLaunchSet,             // (setId, mode, returnTeamId, verseIndex) => launches in App.jsx
+  setStatus = {},
+  memberEmails = [],
+  onLaunchSet,
+  playMode, setPlayMode, distractionLevel, setDistractionLevel,
   reflections = [], displayNames = {}, meLc = '', isAdmin = false, onReflectionsChanged,
 }) {
   const [descExpanded, setDescExpanded] = useState(false);
@@ -965,8 +976,42 @@ function ScheduleItemCard({
                 padding: '0.35rem 0.8rem', fontSize: '0.85rem',
               }}
             >
-              ▶ {todayDone ? t('再次挑戰', 'Play again') : t('挑戰今天', 'Today\'s challenge')}
+              ▶ {t('挑戰', 'Challenge')}
             </button>
+            {/* Mode + difficulty selectors — bound to App.jsx state so
+                changes here propagate to the actual challenge. Compact
+                dark-mode styling to match the teams modal. */}
+            {setPlayMode && (
+              <select
+                value={playMode}
+                onChange={e => setPlayMode(e.target.value)}
+                style={{
+                  background: colors.card, color: colors.text,
+                  border: `1px solid ${colors.border}`, borderRadius: 6,
+                  padding: '0.3rem 0.4rem', fontSize: '0.78rem', cursor: 'pointer',
+                }}
+              >
+                <option value="square_solo">{t('九宮格', 'Square')}</option>
+                <option value="rain_solo">{t('經文雨', 'Verse Rain')}</option>
+                <option value="voice_solo">{t('語音模式', 'Voice')}</option>
+              </select>
+            )}
+            {setDistractionLevel && (
+              <select
+                value={distractionLevel}
+                onChange={e => setDistractionLevel(Number(e.target.value))}
+                style={{
+                  background: colors.card, color: colors.text,
+                  border: `1px solid ${colors.border}`, borderRadius: 6,
+                  padding: '0.3rem 0.4rem', fontSize: '0.78rem', cursor: 'pointer',
+                }}
+              >
+                <option value={0}>{t('難度 0', 'Lv 0')}</option>
+                <option value={1}>{t('難度 1', 'Lv 1')}</option>
+                <option value={2}>{t('難度 2', 'Lv 2')}</option>
+                <option value={3}>{t('難度 3', 'Lv 3')}</option>
+              </select>
+            )}
             <div style={{ color: colors.muted, fontSize: '0.78rem', marginLeft: 'auto' }}>
               {t(`今天:${teamDoneToday}/${memberEmails.length} 完成`, `Today: ${teamDoneToday}/${memberEmails.length} done`)}
             </div>

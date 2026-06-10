@@ -19824,6 +19824,10 @@ const deDict = {
           }}
           topicSets={topicVerseSets}
           initialTeamId={pendingTeamReturn}
+          playMode={playMode}
+          setPlayMode={setPlayMode}
+          distractionLevel={distractionLevel}
+          setDistractionLevel={setDistractionLevel}
           onLaunchSet={async (setId, mode = 'campaign', returnTeamId = null, verseIndex = null) => {
             setShowTeamsModal(false);
             if (returnTeamId) setPendingTeamReturn(returnTeamId);
