@@ -385,17 +385,31 @@ function CreateTeamForm({ t, onCancel, onCreated, userEmail }) {
   );
 }
 
+// Normalize a user-typed invite code into the canonical XXX-YYYY shape.
+// Users often type the 7 chars without the dash, or copy with stray
+// whitespace, or paste in lowercase. Strip everything that isn't a letter
+// or digit, uppercase, then re-insert the dash after position 3.
+function normalizeInviteCode(raw) {
+  const cleaned = String(raw || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+  if (cleaned.length <= 3) return cleaned;
+  if (cleaned.length <= 7) return `${cleaned.slice(0, 3)}-${cleaned.slice(3)}`;
+  // Allow longer pastes (defensive); only the first 7 alnum chars matter,
+  // server still validates the lookup so a garbage tail just 404s cleanly.
+  return `${cleaned.slice(0, 3)}-${cleaned.slice(3, 7)}`;
+}
+
 function JoinTeamForm({ t, onCancel, onJoined, userEmail, initialCode = '' }) {
-  const [code, setCode] = useState(initialCode);
+  const [code, setCode] = useState(normalizeInviteCode(initialCode));
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
 
   const submit = async () => {
-    if (!code.trim()) return;
+    const normalized = normalizeInviteCode(code);
+    if (!normalized) return;
     setBusy(true);
     setError('');
     try {
-      const r = await teamsApi.join(userEmail, code.trim().toUpperCase());
+      const r = await teamsApi.join(userEmail, normalized);
       onJoined(r.team.id);
     } catch (e) {
       setError(String(e.message || e));
@@ -409,7 +423,7 @@ function JoinTeamForm({ t, onCancel, onJoined, userEmail, initialCode = '' }) {
         <h3 style={{ color: colors.text, marginTop: 0 }}>{t('用邀請碼加入', 'Join with invite code')}</h3>
         <input
           value={code}
-          onChange={e => setCode(e.target.value.toUpperCase())}
+          onChange={e => setCode(normalizeInviteCode(e.target.value))}
           style={{ ...input, letterSpacing: 2, textAlign: 'center', fontSize: '1.1rem', fontFamily: 'monospace' }}
           placeholder="XXX-XXXX"
           maxLength={20}

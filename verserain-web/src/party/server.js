@@ -1238,11 +1238,19 @@ export default class Server {
          }
 
          // POST /teams/join — body: { email, inviteCode }
+         // Accept invite codes with or without the dash, any case, and with
+         // stray whitespace — match what the user reads off a screen, not
+         // what we stored. Lookup key is always the canonical XXX-YYYY.
+         const normalizeCode = (raw) => {
+            const cleaned = String(raw || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+            if (cleaned.length === 7) return `${cleaned.slice(0, 3)}-${cleaned.slice(3)}`;
+            return cleaned; // shorter or longer → let lookup fail naturally
+         };
          if (url.pathname.endsWith('/teams/join') && request.method === 'POST') {
             try {
                const { email, inviteCode } = await request.json();
                if (!email || !inviteCode) return err('email and inviteCode required');
-               const teamId = await this.room.storage.get(`team-invite:${String(inviteCode).toUpperCase()}`);
+               const teamId = await this.room.storage.get(`team-invite:${normalizeCode(inviteCode)}`);
                if (!teamId) return err('Invalid invite code', 404);
                const team = await readTeam(teamId);
                if (!team) return err('Team not found', 404);
