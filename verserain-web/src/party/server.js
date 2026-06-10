@@ -1033,6 +1033,688 @@ export default class Server {
          }
       }
 
+      // 6. Teams — companionship reading groups (not competition).
+      // Identity key is always email (lowercased). playerName is mutable
+      // (see project_playername_evolution memory) and must NEVER be used
+      // as a primary key here. Display names are resolved on read from
+      // `user:<email>.name`.
+      //
+      // Storage layout:
+      //   team:<teamId>                       compact team object (admins + members both inline; cap 200 members)
+      //   team-invite:<inviteCode>            inviteCode -> teamId reverse index
+      //   user-teams:<emailLower>             array of teamId the user belongs to
+      //   team-schedule:<teamId>::part:<i>/<n> chunked schedule (reuses splitChunks)
+      //   team-progress:<teamId>:<emailLower> per-member progress (separate keys, no chunk needed)
+      //   team-cheer:<teamId>:<emailLower>    inbox of cheers received (capped to 50)
+      //
+      // Soft limits (server-enforced): 20 teams/user, 5 created/user, 8 admins/team, 200 members/team.
+      const TEAMS_PREFIX = '/teams/';
+      const isTeamRoute = url.pathname.includes(TEAMS_PREFIX) || url.pathname.endsWith('/my-teams');
+      if (isTeamRoute) {
+         const lc = (s) => String(s || '').trim().toLowerCase();
+         const randId = (n) => {
+            const a = 'abcdefghijkmnpqrstuvwxyz23456789';
+            let s = '';
+            const buf = new Uint8Array(n);
+            crypto.getRandomValues(buf);
+            for (let i = 0; i < n; i++) s += a[buf[i] % a.length];
+            return s;
+         };
+         const newTeamId = () => 't_' + randId(8);
+         const newInviteCode = () => (randId(3) + '-' + randId(4)).toUpperCase();
+         const readTeam = async (teamId) => teamId ? await this.room.storage.get(`team:${teamId}`) : null;
+         const isAdmin = (team, email) => !!team && Array.isArray(team.admins) && team.admins.includes(lc(email));
+         const isMember = (team, email) => !!team && Array.isArray(team.members) && team.members.includes(lc(email));
+         const json = (obj, status = 200) => new Response(JSON.stringify(obj), { status, headers: corsHeaders });
+         const err = (msg, status = 400) => json({ error: msg }, status);
+         const addUserTeam = async (email, teamId) => {
+            const key = `user-teams:${lc(email)}`;
+            const list = (await this.room.storage.get(key)) || [];
+            if (!list.includes(teamId)) {
+               list.push(teamId);
+               await this.room.storage.put(key, list);
+            }
+         };
+         const removeUserTeam = async (email, teamId) => {
+            const key = `user-teams:${lc(email)}`;
+            const list = (await this.room.storage.get(key)) || [];
+            const next = list.filter(t => t !== teamId);
+            if (next.length) await this.room.storage.put(key, next);
+            else await this.room.storage.delete(key);
+         };
+
+         // -------- Points (gamification — integrates with garden fruits) --------
+         // Storage keys:
+         //   points-journal:<email>:<eventKey>           idempotency receipt
+         //   points-daily:<email>:<YYYY-MM-DD>           per-day action counts (for cap enforcement)
+         //   team-fruits:<email>                          user's total fruits earned via teams (global, across teams)
+         //   team-week-fruits:<teamId>:<weekKey>         team's weekly sum
+         //   member-week-fruits:<teamId>:<weekKey>:<email>  member's weekly contribution
+         //   team-week-active-set:<teamId>:<weekKey>     emails that earned >=1 point this week
+         //
+         // weekKey is the UTC Monday's YYYY-MM-DD — easier than ISO weeks and timezone-neutral.
+         const todayUTC = () => new Date().toISOString().slice(0, 10);
+         const weekKeyUTC = () => {
+            const d = new Date();
+            d.setUTCHours(0, 0, 0, 0);
+            const day = d.getUTCDay() || 7;
+            d.setUTCDate(d.getUTCDate() - day + 1);
+            return d.toISOString().slice(0, 10);
+         };
+
+         // awardPoints({ email, eventKey, points, source, teamId, daily })
+         //   eventKey is the idempotency key under points-journal:<email>:<eventKey>.
+         //   For daily-capped actions: daily = { bucket, cap } — if the bucket
+         //   has reached cap today, return 0 (no points) but action still proceeds.
+         //   Returns: points actually awarded (0 if dedup or cap hit).
+         const awardPoints = async ({ email, eventKey, points, source, teamId, daily }) => {
+            const e = lc(email);
+            if (!e || !points || points <= 0) return 0;
+
+            if (daily) {
+               const dailyKey = `points-daily:${e}:${todayUTC()}`;
+               const counts = (await this.room.storage.get(dailyKey)) || {};
+               const cur = counts[daily.bucket] || 0;
+               if (cur >= daily.cap) return 0;
+               counts[daily.bucket] = cur + 1;
+               await this.room.storage.put(dailyKey, counts);
+               // Make eventKey unique per increment for journal audit.
+               eventKey = `${eventKey}:${todayUTC()}:${counts[daily.bucket]}`;
+            }
+
+            const journalKey = `points-journal:${e}:${eventKey}`;
+            if (await this.room.storage.get(journalKey)) return 0;
+            const at = new Date().toISOString();
+            await this.room.storage.put(journalKey, { points, source, teamId: teamId || '', at });
+
+            // Bump global total
+            const total = (await this.room.storage.get(`team-fruits:${e}`)) || 0;
+            await this.room.storage.put(`team-fruits:${e}`, total + points);
+
+            // Bump team-scoped weekly rollups
+            if (teamId) {
+               const wk = weekKeyUTC();
+               const twKey = `team-week-fruits:${teamId}:${wk}`;
+               const twTotal = (await this.room.storage.get(twKey)) || 0;
+               await this.room.storage.put(twKey, twTotal + points);
+
+               const mwKey = `member-week-fruits:${teamId}:${wk}:${e}`;
+               const mwTotal = (await this.room.storage.get(mwKey)) || 0;
+               await this.room.storage.put(mwKey, mwTotal + points);
+
+               const aKey = `team-week-active-set:${teamId}:${wk}`;
+               const aSet = (await this.room.storage.get(aKey)) || [];
+               if (!aSet.includes(e)) {
+                  aSet.push(e);
+                  await this.room.storage.put(aKey, aSet);
+               }
+            }
+            return points;
+         };
+
+         // POST /teams/create — body: { email, name, description?, settings? }
+         if (url.pathname.endsWith('/teams/create') && request.method === 'POST') {
+            try {
+               const { email, name, description } = await request.json();
+               if (!email || !name) return err('email and name required');
+               const myTeams = (await this.room.storage.get(`user-teams:${lc(email)}`)) || [];
+               if (myTeams.length >= 20) return err('You have reached the 20-team limit', 403);
+               // Count teams this user has created (admins[0] == creator at time of create)
+               let createdCount = 0;
+               for (const tid of myTeams) {
+                  const t = await readTeam(tid);
+                  if (t && t.createdBy === lc(email)) createdCount++;
+               }
+               if (createdCount >= 5) return err('You have already created 5 teams', 403);
+
+               const teamId = newTeamId();
+               const inviteCode = newInviteCode();
+               const team = {
+                  id: teamId,
+                  name: String(name).slice(0, 80),
+                  description: String(description || '').slice(0, 500),
+                  createdBy: lc(email),
+                  createdAt: new Date().toISOString(),
+                  admins: [lc(email)],
+                  members: [lc(email)],
+                  inviteCode,
+                  settings: { allowMemberInvite: false }
+               };
+               await this.room.storage.put(`team:${teamId}`, team);
+               await this.room.storage.put(`team-invite:${inviteCode}`, teamId);
+               await addUserTeam(email, teamId);
+               await awardPoints({ email, eventKey: `team-create:${teamId}`, points: 20, source: 'team-create', teamId });
+               return json({ success: true, team });
+            } catch (e) { return err('Failed to create team', 500); }
+         }
+
+         // GET /teams/get?id=<teamId>&email=<email>
+         if (url.pathname.endsWith('/teams/get') && request.method === 'GET') {
+            try {
+               const teamId = url.searchParams.get('id');
+               const email = url.searchParams.get('email');
+               const team = await readTeam(teamId);
+               if (!team) return err('Team not found', 404);
+               if (!isMember(team, email)) return err('Not a member', 403);
+               // Resolve display names for admins+members
+               const allEmails = Array.from(new Set([...(team.members || []), ...(team.admins || [])]));
+               const displayNames = {};
+               for (const e of allEmails) {
+                  const u = await this.room.storage.get(`user:${e}`);
+                  displayNames[e] = (u && (u.name || u.skoolName)) || e.split('@')[0];
+               }
+               return json({ success: true, team, displayNames });
+            } catch (e) { return err('Failed to fetch team', 500); }
+         }
+
+         // POST /teams/update — body: { email, teamId, name?, description?, settings? }
+         if (url.pathname.endsWith('/teams/update') && request.method === 'POST') {
+            try {
+               const { email, teamId, name, description, settings } = await request.json();
+               const team = await readTeam(teamId);
+               if (!team) return err('Team not found', 404);
+               if (!isAdmin(team, email)) return err('Admin only', 403);
+               if (typeof name === 'string' && name.trim()) team.name = name.slice(0, 80);
+               if (typeof description === 'string') team.description = description.slice(0, 500);
+               if (settings && typeof settings === 'object') team.settings = { ...team.settings, ...settings };
+               await this.room.storage.put(`team:${teamId}`, team);
+               return json({ success: true, team });
+            } catch (e) { return err('Failed to update team', 500); }
+         }
+
+         // POST /teams/regen-invite — body: { email, teamId }
+         if (url.pathname.endsWith('/teams/regen-invite') && request.method === 'POST') {
+            try {
+               const { email, teamId } = await request.json();
+               const team = await readTeam(teamId);
+               if (!team) return err('Team not found', 404);
+               if (!isAdmin(team, email)) return err('Admin only', 403);
+               if (team.inviteCode) await this.room.storage.delete(`team-invite:${team.inviteCode}`);
+               team.inviteCode = newInviteCode();
+               await this.room.storage.put(`team:${teamId}`, team);
+               await this.room.storage.put(`team-invite:${team.inviteCode}`, teamId);
+               return json({ success: true, inviteCode: team.inviteCode });
+            } catch (e) { return err('Failed to regen invite', 500); }
+         }
+
+         // POST /teams/join — body: { email, inviteCode }
+         if (url.pathname.endsWith('/teams/join') && request.method === 'POST') {
+            try {
+               const { email, inviteCode } = await request.json();
+               if (!email || !inviteCode) return err('email and inviteCode required');
+               const teamId = await this.room.storage.get(`team-invite:${String(inviteCode).toUpperCase()}`);
+               if (!teamId) return err('Invalid invite code', 404);
+               const team = await readTeam(teamId);
+               if (!team) return err('Team not found', 404);
+               const e = lc(email);
+               if (team.members.includes(e)) return json({ success: true, alreadyMember: true, team });
+               if (team.members.length >= 200) return err('Team is at capacity', 403);
+               const myTeams = (await this.room.storage.get(`user-teams:${e}`)) || [];
+               if (myTeams.length >= 20) return err('You have reached the 20-team limit', 403);
+               team.members.push(e);
+               await this.room.storage.put(`team:${teamId}`, team);
+               await addUserTeam(email, teamId);
+               return json({ success: true, team });
+            } catch (e) { return err('Failed to join team', 500); }
+         }
+
+         // POST /teams/leave — body: { email, teamId }
+         if (url.pathname.endsWith('/teams/leave') && request.method === 'POST') {
+            try {
+               const { email, teamId } = await request.json();
+               const team = await readTeam(teamId);
+               if (!team) return err('Team not found', 404);
+               const e = lc(email);
+               if (!team.members.includes(e)) return err('Not a member', 403);
+               // Sole admin cannot leave — must promote someone first or disband.
+               if (team.admins.includes(e) && team.admins.length === 1) {
+                  return err('You are the only admin. Promote another member first or disband the team.', 403);
+               }
+               team.members = team.members.filter(m => m !== e);
+               team.admins = team.admins.filter(m => m !== e);
+               await this.room.storage.put(`team:${teamId}`, team);
+               await removeUserTeam(email, teamId);
+               // Keep team-progress key intact (historical record).
+               return json({ success: true });
+            } catch (e) { return err('Failed to leave team', 500); }
+         }
+
+         // POST /teams/promote — body: { email, teamId, targetEmail }
+         if (url.pathname.endsWith('/teams/promote') && request.method === 'POST') {
+            try {
+               const { email, teamId, targetEmail } = await request.json();
+               const team = await readTeam(teamId);
+               if (!team) return err('Team not found', 404);
+               if (!isAdmin(team, email)) return err('Admin only', 403);
+               const t = lc(targetEmail);
+               if (!team.members.includes(t)) return err('Target is not a member', 400);
+               if (team.admins.includes(t)) return json({ success: true, alreadyAdmin: true });
+               if (team.admins.length >= 8) return err('Max 8 admins per team', 403);
+               team.admins.push(t);
+               await this.room.storage.put(`team:${teamId}`, team);
+               return json({ success: true, team });
+            } catch (e) { return err('Failed to promote', 500); }
+         }
+
+         // POST /teams/demote — body: { email, teamId, targetEmail }
+         if (url.pathname.endsWith('/teams/demote') && request.method === 'POST') {
+            try {
+               const { email, teamId, targetEmail } = await request.json();
+               const team = await readTeam(teamId);
+               if (!team) return err('Team not found', 404);
+               if (!isAdmin(team, email)) return err('Admin only', 403);
+               const t = lc(targetEmail);
+               if (!team.admins.includes(t)) return json({ success: true, notAdmin: true });
+               if (team.admins.length === 1) return err('Cannot demote the only admin', 403);
+               team.admins = team.admins.filter(m => m !== t);
+               await this.room.storage.put(`team:${teamId}`, team);
+               return json({ success: true, team });
+            } catch (e) { return err('Failed to demote', 500); }
+         }
+
+         // POST /teams/disband — body: { email, teamId } — only creator OR sole admin
+         if (url.pathname.endsWith('/teams/disband') && request.method === 'POST') {
+            try {
+               const { email, teamId } = await request.json();
+               const team = await readTeam(teamId);
+               if (!team) return err('Team not found', 404);
+               if (!isAdmin(team, email)) return err('Admin only', 403);
+               if (team.createdBy !== lc(email) && team.admins.length > 1) {
+                  return err('Only the creator (or sole admin) can disband', 403);
+               }
+               // Sweep all related keys
+               for (const m of team.members) await removeUserTeam(m, teamId);
+               if (team.inviteCode) await this.room.storage.delete(`team-invite:${team.inviteCode}`);
+               const sweepPrefixes = [
+                  `team-schedule:${teamId}`,
+                  `team-progress:${teamId}:`,
+                  `team-cheer:${teamId}:`,
+                  `team-reflection:${teamId}:`,
+                  `team-week-fruits:${teamId}:`,
+                  `member-week-fruits:${teamId}:`,
+                  `team-week-active-set:${teamId}:`,
+               ];
+               for (const pfx of sweepPrefixes) {
+                  const m = await this.room.storage.list({ prefix: pfx });
+                  for (const k of m.keys()) await this.room.storage.delete(k);
+               }
+               await this.room.storage.delete(`team:${teamId}`);
+               return json({ success: true });
+            } catch (e) { return err('Failed to disband', 500); }
+         }
+
+         // GET /my-teams?email=<email>
+         if (url.pathname.endsWith('/my-teams') && request.method === 'GET') {
+            try {
+               const email = url.searchParams.get('email');
+               if (!email) return err('email required');
+               const ids = (await this.room.storage.get(`user-teams:${lc(email)}`)) || [];
+               const teams = [];
+               for (const tid of ids) {
+                  const t = await readTeam(tid);
+                  if (!t) continue;
+                  teams.push({
+                     id: t.id,
+                     name: t.name,
+                     description: t.description,
+                     memberCount: (t.members || []).length,
+                     isAdmin: (t.admins || []).includes(lc(email)),
+                     createdBy: t.createdBy,
+                     createdAt: t.createdAt
+                  });
+               }
+               return json({ success: true, teams });
+            } catch (e) { return err('Failed to fetch teams', 500); }
+         }
+
+         // GET /teams/schedule?id=<teamId>&email=<email>
+         if (url.pathname.endsWith('/teams/schedule') && request.method === 'GET') {
+            try {
+               const teamId = url.searchParams.get('id');
+               const email = url.searchParams.get('email');
+               const team = await readTeam(teamId);
+               if (!team) return err('Team not found', 404);
+               if (!isMember(team, email)) return err('Not a member', 403);
+               const prefix = `team-schedule:${teamId}::part:`;
+               const map = await this.room.storage.list({ prefix });
+               const chunks = [];
+               for (const [key, val] of map.entries()) {
+                  const m = key.slice(prefix.length).match(/^(\d+)\/(\d+)$/);
+                  if (m) chunks[parseInt(m[1], 10)] = val;
+               }
+               if (chunks.length === 0 || chunks.some(c => c == null)) {
+                  return json({ success: true, schedule: { teamId, items: [] } });
+               }
+               try {
+                  const schedule = JSON.parse(chunks.join(''));
+                  return json({ success: true, schedule });
+               } catch {
+                  return json({ success: true, schedule: { teamId, items: [] } });
+               }
+            } catch (e) { return err('Failed to fetch schedule', 500); }
+         }
+
+         // POST /teams/schedule — body: { email, teamId, schedule: { items: [...] } }
+         if (url.pathname.endsWith('/teams/schedule') && request.method === 'POST') {
+            try {
+               const { email, teamId, schedule } = await request.json();
+               const team = await readTeam(teamId);
+               if (!team) return err('Team not found', 404);
+               if (!isAdmin(team, email)) return err('Admin only', 403);
+               const normalized = {
+                  teamId,
+                  updatedAt: new Date().toISOString(),
+                  items: Array.isArray(schedule?.items) ? schedule.items : []
+               };
+               // Wipe old chunks first.
+               const prefix = `team-schedule:${teamId}::part:`;
+               const existing = await this.room.storage.list({ prefix });
+               for (const k of existing.keys()) await this.room.storage.delete(k);
+               const chunks = splitChunks(JSON.stringify(normalized));
+               for (let i = 0; i < chunks.length; i++) {
+                  await this.room.storage.put(`${prefix}${i}/${chunks.length}`, chunks[i]);
+               }
+               // Per-item one-time awards for the admin: verses listed and a
+               // meaningful description. Idempotent on item id so resaves don't
+               // re-award. Quality gate on description (> 20 chars) avoids
+               // farming a single-character placeholder.
+               for (const it of normalized.items) {
+                  if (Array.isArray(it.verses) && it.verses.length > 0) {
+                     await awardPoints({
+                        email, teamId,
+                        eventKey: `schedule-item-verses:${teamId}:${it.id}`,
+                        points: 10, source: 'schedule-item-verses',
+                     });
+                  }
+                  if (typeof it.description === 'string' && it.description.trim().length > 20) {
+                     await awardPoints({
+                        email, teamId,
+                        eventKey: `schedule-item-desc:${teamId}:${it.id}`,
+                        points: 5, source: 'schedule-item-desc',
+                     });
+                  }
+               }
+               return json({ success: true, schedule: normalized });
+            } catch (e) { return err('Failed to save schedule', 500); }
+         }
+
+         // POST /teams/progress/mark — body: { email, teamId, setId, verseRef, completed }
+         if (url.pathname.endsWith('/teams/progress/mark') && request.method === 'POST') {
+            try {
+               const { email, teamId, setId, verseRef, completed } = await request.json();
+               if (!email || !teamId || !setId || !verseRef) return err('email, teamId, setId, verseRef required');
+               const team = await readTeam(teamId);
+               if (!team) return err('Team not found', 404);
+               if (!isMember(team, email)) return err('Not a member', 403);
+               const key = `team-progress:${teamId}:${lc(email)}`;
+               const prog = (await this.room.storage.get(key)) || { email: lc(email), teamId, perSet: {} };
+               const slot = prog.perSet[setId] || { versesCompleted: [], firstCompletedAt: null, lastActivityAt: null };
+               const ref = String(verseRef);
+               const has = slot.versesCompleted.includes(ref);
+               if (completed && !has) slot.versesCompleted.push(ref);
+               if (!completed && has) slot.versesCompleted = slot.versesCompleted.filter(v => v !== ref);
+               const now = new Date().toISOString();
+               if (!slot.firstCompletedAt && slot.versesCompleted.length > 0) slot.firstCompletedAt = now;
+               slot.lastActivityAt = now;
+               prog.perSet[setId] = slot;
+               prog.lastActivityAt = now;
+               await this.room.storage.put(key, prog);
+               // Award only on transition false→true (first time per user per
+               // verseRef across teams — re-reading same verse in another
+               // team yields no extra fruit; reading itself is one act).
+               let awarded = 0;
+               if (completed && !has) {
+                  awarded = await awardPoints({
+                     email, teamId,
+                     eventKey: `verse:${ref}`,
+                     points: 3, source: 'verse-complete',
+                  });
+               }
+               return json({ success: true, progress: prog, pointsAwarded: awarded });
+            } catch (e) { return err('Failed to mark progress', 500); }
+         }
+
+         // GET /teams/progress?id=<teamId>&email=<email> — returns all members' progress
+         if (url.pathname.endsWith('/teams/progress') && request.method === 'GET') {
+            try {
+               const teamId = url.searchParams.get('id');
+               const email = url.searchParams.get('email');
+               const team = await readTeam(teamId);
+               if (!team) return err('Team not found', 404);
+               if (!isMember(team, email)) return err('Not a member', 403);
+               const prefix = `team-progress:${teamId}:`;
+               const map = await this.room.storage.list({ prefix });
+               const progress = {};
+               for (const [key, val] of map.entries()) {
+                  const memberEmail = key.slice(prefix.length);
+                  progress[memberEmail] = val;
+               }
+               return json({ success: true, progress });
+            } catch (e) { return err('Failed to fetch progress', 500); }
+         }
+
+         // POST /teams/cheer — body: { email, teamId, targetEmail, emoji, text? }
+         // text is optional, max 140 chars. No profanity filter at MVP —
+         // trust within a small invite-only team. Revisit if abuse appears.
+         if (url.pathname.endsWith('/teams/cheer') && request.method === 'POST') {
+            try {
+               const { email, teamId, targetEmail, emoji, text } = await request.json();
+               const ALLOWED = ['❤️', '🙏', '✨', '🌧️'];
+               if (!ALLOWED.includes(emoji)) return err('Invalid emoji');
+               const team = await readTeam(teamId);
+               if (!team) return err('Team not found', 404);
+               if (!isMember(team, email)) return err('Not a member', 403);
+               if (!isMember(team, targetEmail)) return err('Target not a member', 400);
+               const trimmedText = typeof text === 'string' ? text.trim().slice(0, 140) : '';
+               const key = `team-cheer:${teamId}:${lc(targetEmail)}`;
+               const inbox = (await this.room.storage.get(key)) || [];
+               const entry = { from: lc(email), emoji, at: new Date().toISOString() };
+               if (trimmedText) entry.text = trimmedText;
+               inbox.unshift(entry);
+               // Cap at 50 most recent — quiet pruning, no notification.
+               if (inbox.length > 50) inbox.length = 50;
+               await this.room.storage.put(key, inbox);
+               // Award giver: text cheer scores higher (effort + meaning) but
+               // smaller daily allowance than emoji quick-tap. Caps prevent
+               // farming via spam to many recipients.
+               let awarded = 0;
+               if (trimmedText) {
+                  awarded = await awardPoints({
+                     email, teamId,
+                     eventKey: 'cheer-text',
+                     points: 5, source: 'cheer-text',
+                     daily: { bucket: 'cheerText', cap: 5 },
+                  });
+               } else {
+                  awarded = await awardPoints({
+                     email, teamId,
+                     eventKey: 'cheer-quick',
+                     points: 1, source: 'cheer-quick',
+                     daily: { bucket: 'cheerQuick', cap: 10 },
+                  });
+               }
+               return json({ success: true, pointsAwarded: awarded });
+            } catch (e) { return err('Failed to send cheer', 500); }
+         }
+
+         // GET /teams/cheers?id=<teamId>&email=<email> — inbox for current user
+         if (url.pathname.endsWith('/teams/cheers') && request.method === 'GET') {
+            try {
+               const teamId = url.searchParams.get('id');
+               const email = url.searchParams.get('email');
+               const team = await readTeam(teamId);
+               if (!team) return err('Team not found', 404);
+               if (!isMember(team, email)) return err('Not a member', 403);
+               const inbox = (await this.room.storage.get(`team-cheer:${teamId}:${lc(email)}`)) || [];
+               return json({ success: true, cheers: inbox });
+            } catch (e) { return err('Failed to fetch cheers', 500); }
+         }
+
+         // Reflections & prayer requests on a schedule item. Storage key:
+         //   team-reflection:<teamId>:<itemId>:<rid>
+         // Reactions live inline on each reflection doc (read-modify-write);
+         // DO storage serializes ops per room so there's no race with cheers.
+         const REFLECT_TYPES = ['reflection', 'prayer'];
+         const newReflectionId = () => 'r_' + randId(8);
+
+         // POST /teams/reflections/create — body: { email, teamId, itemId, type, text, verseRef? }
+         if (url.pathname.endsWith('/teams/reflections/create') && request.method === 'POST') {
+            try {
+               const { email, teamId, itemId, type, text, verseRef } = await request.json();
+               if (!email || !teamId || !itemId) return err('email, teamId, itemId required');
+               if (!REFLECT_TYPES.includes(type)) return err('type must be reflection or prayer');
+               const body = String(text || '').trim();
+               if (!body) return err('text required');
+               if (body.length > 1000) return err('text too long (max 1000)');
+               const team = await readTeam(teamId);
+               if (!team) return err('Team not found', 404);
+               if (!isMember(team, email)) return err('Not a member', 403);
+               const id = newReflectionId();
+               const doc = {
+                  id,
+                  teamId,
+                  itemId: String(itemId),
+                  author: lc(email),
+                  type,
+                  text: body.slice(0, 1000),
+                  verseRef: typeof verseRef === 'string' ? verseRef.trim().slice(0, 30) : '',
+                  at: new Date().toISOString(),
+                  reactions: [],
+               };
+               await this.room.storage.put(`team-reflection:${teamId}:${doc.itemId}:${id}`, doc);
+               // Award the author. Per (team, item, day) — same item written
+               // multiple times in one day yields one points event;
+               // discourages spamming short posts to farm 15-point hits.
+               const awarded = await awardPoints({
+                  email, teamId,
+                  eventKey: `${type === 'prayer' ? 'prayer' : 'reflection'}:${teamId}:${doc.itemId}:${todayUTC()}`,
+                  points: 15, source: type === 'prayer' ? 'prayer-create' : 'reflection-create',
+               });
+               return json({ success: true, reflection: doc, pointsAwarded: awarded });
+            } catch (e) { return err('Failed to create reflection', 500); }
+         }
+
+         // GET /teams/reflections?id=<teamId>&email=<email>[&itemId=<itemId>]
+         // Returns reflections newest-first; itemId scopes to one schedule item.
+         if (url.pathname.endsWith('/teams/reflections') && request.method === 'GET') {
+            try {
+               const teamId = url.searchParams.get('id');
+               const email = url.searchParams.get('email');
+               const itemId = url.searchParams.get('itemId') || '';
+               const team = await readTeam(teamId);
+               if (!team) return err('Team not found', 404);
+               if (!isMember(team, email)) return err('Not a member', 403);
+               const prefix = itemId
+                  ? `team-reflection:${teamId}:${itemId}:`
+                  : `team-reflection:${teamId}:`;
+               const map = await this.room.storage.list({ prefix });
+               const reflections = Array.from(map.values())
+                  .sort((a, b) => (b.at || '').localeCompare(a.at || ''));
+               // Resolve author display names for convenience.
+               const authors = Array.from(new Set(reflections.map(r => r.author)));
+               const displayNames = {};
+               for (const a of authors) {
+                  const u = await this.room.storage.get(`user:${a}`);
+                  displayNames[a] = (u && (u.name || u.skoolName)) || a.split('@')[0];
+               }
+               return json({ success: true, reflections, displayNames });
+            } catch (e) { return err('Failed to fetch reflections', 500); }
+         }
+
+         // POST /teams/reflections/delete — body: { email, teamId, itemId, reflectionId }
+         // Author can always delete own; admin can delete any (moderation).
+         if (url.pathname.endsWith('/teams/reflections/delete') && request.method === 'POST') {
+            try {
+               const { email, teamId, itemId, reflectionId } = await request.json();
+               if (!email || !teamId || !itemId || !reflectionId) return err('email, teamId, itemId, reflectionId required');
+               const team = await readTeam(teamId);
+               if (!team) return err('Team not found', 404);
+               const key = `team-reflection:${teamId}:${itemId}:${reflectionId}`;
+               const doc = await this.room.storage.get(key);
+               if (!doc) return err('Not found', 404);
+               const me = lc(email);
+               const isAuthor = doc.author === me;
+               if (!isAuthor && !isAdmin(team, email)) return err('Author or admin only', 403);
+               await this.room.storage.delete(key);
+               return json({ success: true });
+            } catch (e) { return err('Failed to delete reflection', 500); }
+         }
+
+         // POST /teams/reflections/react — body: { email, teamId, itemId, reflectionId, emoji }
+         // Toggles: existing (from, emoji) is removed; otherwise added. A user
+         // can have multiple reactions with different emojis, but at most one
+         // of each emoji per user — matches LINE/Slack style and prevents spam.
+         if (url.pathname.endsWith('/teams/reflections/react') && request.method === 'POST') {
+            try {
+               const { email, teamId, itemId, reflectionId, emoji } = await request.json();
+               const ALLOWED = ['❤️', '🙏', '✨', '🌧️'];
+               if (!ALLOWED.includes(emoji)) return err('Invalid emoji');
+               const team = await readTeam(teamId);
+               if (!team) return err('Team not found', 404);
+               if (!isMember(team, email)) return err('Not a member', 403);
+               const key = `team-reflection:${teamId}:${itemId}:${reflectionId}`;
+               const doc = await this.room.storage.get(key);
+               if (!doc) return err('Not found', 404);
+               const me = lc(email);
+               const existing = (doc.reactions || []).find(r => r.from === me && r.emoji === emoji);
+               let awarded = 0;
+               let authorAwarded = 0;
+               if (existing) {
+                  // Toggling off — no refund (prevents button-cycling for points).
+                  doc.reactions = doc.reactions.filter(r => !(r.from === me && r.emoji === emoji));
+               } else {
+                  doc.reactions = [...(doc.reactions || []), { from: me, emoji, at: new Date().toISOString() }];
+                  // Reactor gets daily-capped points.
+                  awarded = await awardPoints({
+                     email, teamId,
+                     eventKey: 'reaction',
+                     points: 2, source: 'reaction-give',
+                     daily: { bucket: 'reaction', cap: 20 },
+                  });
+                  // Author gets a one-time impact point per unique reactor on
+                  // this reflection — rewards depth (writers whose posts move
+                  // others) without rewarding the reactor's emoji choice.
+                  if (doc.author && doc.author !== me) {
+                     authorAwarded = await awardPoints({
+                        email: doc.author, teamId,
+                        eventKey: `reflection-impact:${reflectionId}:${me}`,
+                        points: 2, source: 'reflection-impact',
+                     });
+                  }
+               }
+               await this.room.storage.put(key, doc);
+               return json({ success: true, reactions: doc.reactions, pointsAwarded: awarded, authorPointsAwarded: authorAwarded });
+            } catch (e) { return err('Failed to react', 500); }
+         }
+
+         // GET /teams/stats?id=<teamId>&email=<email>
+         // Returns derived stats used by the team-detail "果園" panel.
+         // No leaderboard, no per-member breakdown beyond what the viewer
+         // themselves contributed.
+         if (url.pathname.endsWith('/teams/stats') && request.method === 'GET') {
+            try {
+               const teamId = url.searchParams.get('id');
+               const email = url.searchParams.get('email');
+               const team = await readTeam(teamId);
+               if (!team) return err('Team not found', 404);
+               if (!isMember(team, email)) return err('Not a member', 403);
+               const wk = weekKeyUTC();
+               const me = lc(email);
+               const weekTotal = (await this.room.storage.get(`team-week-fruits:${teamId}:${wk}`)) || 0;
+               const myWeek = (await this.room.storage.get(`member-week-fruits:${teamId}:${wk}:${me}`)) || 0;
+               const myTotal = (await this.room.storage.get(`team-fruits:${me}`)) || 0;
+               const activeSet = (await this.room.storage.get(`team-week-active-set:${teamId}:${wk}`)) || [];
+               return json({
+                  success: true,
+                  weekKey: wk,
+                  weekTotal, myWeek, myTotal,
+                  activeMembers: activeSet.length,
+                  memberCount: (team.members || []).length,
+               });
+            } catch (e) { return err('Failed to fetch stats', 500); }
+         }
+      }
+
       return new Response("Not Found API Route", { status: 404, headers: corsHeaders });
 
     }

@@ -16,6 +16,7 @@ import { TransformWrapper, TransformComponent } from 'react-zoom-pan-pinch';
 import { GOOGLE_CLIENT_ID, APPLE_CLIENT_ID, APPLE_REDIRECT_URI } from './oauthConfig';
 import { VAPID_PUBLIC_KEY, urlBase64ToUint8Array, isWebPushSupported, isIOSStandalone, isIOSWithoutPWA } from './pushConfig';
 import QrScanner from 'qr-scanner';
+import TeamsModal from './teams/TeamsModal';
 
 const quillModules = {
   toolbar: [
@@ -4733,6 +4734,20 @@ export default function App() {
         }
       }
 
+      // Team deep-link: ?join=<INVITE-CODE>. Persist so it survives an
+      // auth detour, auto-open the Teams modal, and strip the param from
+      // the URL so a refresh after joining doesn't re-trigger.
+      const joinParam = params.get('join');
+      if (joinParam) {
+        const code = joinParam.trim().toUpperCase();
+        localStorage.setItem('verserain_pending_join', code);
+        setPendingJoinCode(code);
+        setShowTeamsModal(true);
+        const url = new URL(window.location.href);
+        url.searchParams.delete('join');
+        window.history.replaceState({}, '', url.toString());
+      }
+
       let shouldAutoPlay = false;
       let loadedVerses = [];
       let overrideVersion = null;
@@ -5025,6 +5040,12 @@ export default function App() {
       .finally(() => setIsFetchingGlobalLeaderboard(false));
   };
   const [showLoginModal, setShowLoginModal] = useState(null);
+  const [showTeamsModal, setShowTeamsModal] = useState(false);
+  // Deep-link join code captured from ?join= or localStorage. The Teams
+  // modal auto-opens with the Join form prefilled when this is non-empty.
+  // We keep it in localStorage too so a freshly-arrived user who needs to
+  // log in first still lands on the right team after auth.
+  const [pendingJoinCode, setPendingJoinCode] = useState(() => localStorage.getItem('verserain_pending_join') || '');
 
   // Header language picker — grid/table layout so all 15+ languages are
   // visible at once instead of buried in a scroll-cropped <select>.
@@ -14097,6 +14118,9 @@ const deDict = {
               <div className="block-tile" onClick={() => setMainTab('multiplayer')} style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', padding: '0.5rem 1.2rem', cursor: 'pointer', backgroundColor: mainTab === 'multiplayer' ? '#ec4899' : 'white', color: mainTab === 'multiplayer' ? 'white' : '#475569', borderRadius: '20px', fontWeight: 'bold', whiteSpace: 'nowrap', transition: 'all 0.2s' }}>
                 <Gamepad2 size={18} /> {t('團隊競賽', 'Team Competition')}
               </div>
+              <div className="block-tile" onClick={() => setShowTeamsModal(true)} style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', padding: '0.5rem 1.2rem', cursor: 'pointer', backgroundColor: 'white', color: '#475569', borderRadius: '20px', fontWeight: 'bold', whiteSpace: 'nowrap', transition: 'all 0.2s' }}>
+                <Users size={18} /> {t('陪伴團隊', 'Companion Teams')}
+              </div>
               <div className="block-tile" onClick={() => setMainTab('search')} style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', padding: '0.5rem 1.2rem', cursor: 'pointer', backgroundColor: mainTab === 'search' ? '#8b5cf6' : 'white', color: mainTab === 'search' ? 'white' : '#475569', borderRadius: '20px', fontWeight: 'bold', whiteSpace: 'nowrap', transition: 'all 0.2s' }}>
                 <Search size={18} /> {t('搜尋', 'Search')}
               </div>
@@ -19651,6 +19675,21 @@ const deDict = {
             )}
           </div>
         </div>
+      )}
+
+      {showTeamsModal && (
+        <TeamsModal
+          userEmail={userEmail}
+          playerName={playerName}
+          t={t}
+          uiLang={uiLang}
+          onClose={() => setShowTeamsModal(false)}
+          pendingJoinCode={pendingJoinCode}
+          onJoinHandled={() => {
+            localStorage.removeItem('verserain_pending_join');
+            setPendingJoinCode('');
+          }}
+        />
       )}
 
       </div>{/* end RTL/font wrapper */}
