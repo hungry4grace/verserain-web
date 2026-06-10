@@ -5120,6 +5120,35 @@ export default function App() {
   };
   const [showLoginModal, setShowLoginModal] = useState(null);
   const [showTeamsModal, setShowTeamsModal] = useState(false);
+  // When a team triggers play/challenge, we remember its teamId here so
+  // we can pop the user back into that same team's detail view once the
+  // session ends (autoplay finishes → gameState='menu'; challenge → user
+  // closes the results screen → gameState='menu'). Cleared as soon as
+  // the modal reopens to avoid bouncing back unexpectedly.
+  const [pendingTeamReturn, setPendingTeamReturn] = useState(null);
+
+  // After a play/challenge session triggered from the Teams modal ends,
+  // bounce the user back into that team. The transition we care about is
+  // 'playing' → 'menu' (autoplay finishes → endGame() ~line 6337; or
+  // challenge → user closes campaign-results). The naive check of
+  // "gameState === 'menu' AND pendingTeamReturn" fires the moment
+  // pendingTeamReturn is set (gameState is 'menu' initially and stays
+  // that way for the 200ms before startGame runs), reopening the modal
+  // before the session even begins. We use a ref to gate the trigger on
+  // having actually entered 'playing' at least once.
+  const teamReturnArmedRef = useRef(false);
+  useEffect(() => {
+    if (gameState === 'playing' && pendingTeamReturn) {
+      teamReturnArmedRef.current = true;
+      return;
+    }
+    if (gameState === 'menu' && pendingTeamReturn && teamReturnArmedRef.current) {
+      teamReturnArmedRef.current = false;
+      setShowTeamsModal(true);
+      // pendingTeamReturn stays set so TeamsModal reads it via
+      // initialTeamId on mount; onClose clears it.
+    }
+  }, [gameState, pendingTeamReturn]);
   // Deep-link join code captured from ?join= or localStorage. The Teams
   // modal auto-opens with the Join form prefilled when this is non-empty.
   // We keep it in localStorage too so a freshly-arrived user who needs to
@@ -19762,17 +19791,25 @@ const deDict = {
           playerName={playerName}
           t={t}
           uiLang={uiLang}
-          onClose={() => setShowTeamsModal(false)}
+          onClose={() => {
+            setShowTeamsModal(false);
+            // Closing dismisses the return path too — user explicitly
+            // walked away.
+            if (pendingTeamReturn) setPendingTeamReturn(null);
+          }}
           pendingJoinCode={pendingJoinCode}
           onJoinHandled={() => {
             localStorage.removeItem('verserain_pending_join');
             setPendingJoinCode('');
           }}
           topicSets={topicVerseSets}
-          onLaunchSet={async (setId, mode = 'campaign') => {
+          initialTeamId={pendingTeamReturn}
+          onLaunchSet={async (setId, mode = 'campaign', returnTeamId = null) => {
             setShowTeamsModal(false);
+            if (returnTeamId) setPendingTeamReturn(returnTeamId);
             const ok = await launchSetById(setId, mode);
             if (!ok) {
+              if (returnTeamId) setPendingTeamReturn(null);
               alert(t('找不到這個經文組,請聯絡管理員', "Couldn't find that verse set, please contact the admin"));
             }
           }}

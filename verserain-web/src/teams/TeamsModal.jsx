@@ -63,10 +63,15 @@ export default function TeamsModal({
   userEmail, playerName, t, uiLang = 'en', onClose,
   pendingJoinCode, onJoinHandled,
   topicSets = [],            // bundled verse sets, for SetPicker
-  onLaunchSet,               // (setId) => void — closes modal + starts campaign in App.jsx
+  onLaunchSet,               // (setId, mode, returnTeamId) => closes modal + starts game
+  initialTeamId = null,      // when set, modal opens directly on that team's detail
 }) {
-  const [view, setView] = useState('list'); // 'list' | 'detail' | 'admin'
-  const [activeTeamId, setActiveTeamId] = useState(null);
+  // initialTeamId is honored only on the first render — once user navigates
+  // away from detail (back, close, etc.) the prop has done its job. We
+  // intentionally don't watch it for changes so re-renders from the parent
+  // don't yank the user out of whatever they're doing.
+  const [view, setView] = useState(initialTeamId ? 'detail' : 'list');
+  const [activeTeamId, setActiveTeamId] = useState(initialTeamId || null);
   const [showHelp, setShowHelp] = useState(false);
 
   const openTeam = (id) => {
@@ -908,7 +913,7 @@ function ScheduleItemCard({
           background: colors.bg,
         }}>
           <button
-            onClick={() => onLaunchSet?.(item.setId, 'play')}
+            onClick={() => onLaunchSet?.(item.setId, 'play', teamId)}
             disabled={!onLaunchSet}
             style={{
               ...btn('ghost'),
@@ -919,7 +924,7 @@ function ScheduleItemCard({
             🔊 {t('播放', 'Play')}
           </button>
           <button
-            onClick={() => onLaunchSet?.(item.setId, 'campaign')}
+            onClick={() => onLaunchSet?.(item.setId, 'campaign', teamId)}
             disabled={!onLaunchSet}
             style={{
               ...btn(my.status === 'passed' ? 'ghost' : 'primary'),
