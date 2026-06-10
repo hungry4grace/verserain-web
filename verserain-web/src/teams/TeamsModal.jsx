@@ -985,7 +985,11 @@ function ScheduleItemCard({
             teamId={teamId}
             itemId={item.id}
             type={composeType}
-            verses={verses}
+            // Legacy schedule items still have an inline verses[] we can
+            // surface in the verse-tag chips. New items rely on the linked
+            // verse set instead; fetching those verses for tagging is a
+            // future polish — empty array hides the chip row gracefully.
+            verses={Array.isArray(item.verses) ? item.verses : []}
             onCancel={() => setComposeType(null)}
             onCreated={() => { setComposeType(null); onReflectionsChanged?.(); }}
           />
