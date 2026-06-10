@@ -908,7 +908,18 @@ function ScheduleItemCard({
           background: colors.bg,
         }}>
           <button
-            onClick={() => onLaunchSet?.(item.setId)}
+            onClick={() => onLaunchSet?.(item.setId, 'play')}
+            disabled={!onLaunchSet}
+            style={{
+              ...btn('ghost'),
+              padding: '0.35rem 0.7rem', fontSize: '0.85rem',
+            }}
+            title={t('自動朗讀 — 不計分,只熟悉經文', 'Auto-read mode — no scoring, just familiarize')}
+          >
+            🔊 {t('播放', 'Play')}
+          </button>
+          <button
+            onClick={() => onLaunchSet?.(item.setId, 'campaign')}
             disabled={!onLaunchSet}
             style={{
               ...btn(my.status === 'passed' ? 'ghost' : 'primary'),

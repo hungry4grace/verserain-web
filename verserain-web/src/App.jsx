@@ -4748,15 +4748,18 @@ export default function App() {
         window.history.replaceState({}, '', url.toString());
       }
 
-      // ?startSet=<setId>. Stash for the dedicated launch effect below
-      // (we don't have activeVerseSets loaded yet at this stage). Strip
-      // the param immediately so a refresh after the campaign doesn't
+      // ?startSet=<setId>[&mode=play|campaign]. Stash for the dedicated
+      // launch effect below (we don't have activeVerseSets loaded yet at
+      // this stage). Strip both params immediately so a refresh doesn't
       // re-launch unexpectedly.
       const startSetParam = params.get('startSet');
       if (startSetParam) {
+        const mode = params.get('mode') === 'play' ? 'play' : 'campaign';
         sessionStorage.setItem('verserain_pending_start_set', startSetParam);
+        sessionStorage.setItem('verserain_pending_start_set_mode', mode);
         const url = new URL(window.location.href);
         url.searchParams.delete('startSet');
+        url.searchParams.delete('mode');
         window.history.replaceState({}, '', url.toString());
       }
 
@@ -4992,11 +4995,13 @@ export default function App() {
     if (!activeVerseSets || activeVerseSets.length === 0) return;
     const pending = sessionStorage.getItem('verserain_pending_start_set');
     if (!pending) return;
+    const mode = sessionStorage.getItem('verserain_pending_start_set_mode') === 'play' ? 'play' : 'campaign';
     sessionStorage.removeItem('verserain_pending_start_set');
+    sessionStorage.removeItem('verserain_pending_start_set_mode');
     // launchSetById defined below; safe to call here because the effect
     // closes over the latest definition via dependency on activeVerseSets.
     // eslint-disable-next-line no-use-before-define
-    launchSetById(pending).catch(() => {});
+    launchSetById(pending, mode).catch(() => {});
     // We intentionally omit launchSetById from deps — it's reconstructed
     // every render via useCallback, and depending on it would re-fire the
     // effect repeatedly.
@@ -5007,7 +5012,13 @@ export default function App() {
   // 「開始挑戰」 button and by ?startSet=<id> deep links. Looks the set up
   // in active+custom, falls back to fetching shared sets. Returns true if
   // launched, false if the set is unknown so the caller can show an error.
-  const launchSetById = React.useCallback(async (setId) => {
+  //
+  // mode='campaign' → scored, writes to leaderboard, counts toward team
+  //                   set-pass / set-attempt points.
+  // mode='play'    → autoplay rehearsal (TTS reads verses, no blocks/score),
+  //                   purely for familiarization; does NOT affect any
+  //                   leaderboard so team progress stays untouched.
+  const launchSetById = React.useCallback(async (setId, mode = 'campaign') => {
     if (!setId) return false;
     let set = activeVerseSets.find(s => s.id === setId) || customVerseSets.find(s => s.id === setId);
     if (!set) {
@@ -5026,11 +5037,18 @@ export default function App() {
     setCampaignQueue(queue.slice(1));
     campaignQueueRef.current = queue.slice(1);
     setCampaignResults([]);
-    setActiveCampaignSetId(set.id);
-    setActiveCampaignSetTotal(queue.length);
+    // Only register the campaign id when actually competing — keeps the
+    // play/rehearsal path from ever triggering submit-set-score.
+    if (mode === 'campaign') {
+      setActiveCampaignSetId(set.id);
+      setActiveCampaignSetTotal(queue.length);
+    } else {
+      setActiveCampaignSetId(null);
+      setActiveCampaignSetTotal(0);
+    }
     setActiveVerse(queue[0]);
     setSelectedVerseRefs([queue[0].reference]);
-    setTimeout(() => startGame(false, queue[0]), 200);
+    setTimeout(() => startGame(mode === 'play', queue[0]), 200);
     return true;
   }, [activeVerseSets, customVerseSets]);
   const [isBlindMode, setIsBlindMode] = useState(() => localStorage.getItem('verseRain_blindMode') === 'true');
@@ -19751,9 +19769,9 @@ const deDict = {
             setPendingJoinCode('');
           }}
           topicSets={topicVerseSets}
-          onLaunchSet={async (setId) => {
+          onLaunchSet={async (setId, mode = 'campaign') => {
             setShowTeamsModal(false);
-            const ok = await launchSetById(setId);
+            const ok = await launchSetById(setId, mode);
             if (!ok) {
               alert(t('找不到這個經文組,請聯絡管理員', "Couldn't find that verse set, please contact the admin"));
             }
