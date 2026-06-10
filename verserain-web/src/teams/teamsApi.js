@@ -49,8 +49,10 @@ export const teamsApi = {
     jpost('/teams/schedule', { email, teamId, schedule }),
   getProgress: (email, teamId) =>
     jget(`/teams/progress?id=${encodeURIComponent(teamId)}&email=${encodeURIComponent(email)}`),
-  markProgress: (email, teamId, setId, verseRef, completed) =>
-    jpost('/teams/progress/mark', { email, teamId, setId, verseRef, completed }),
+  // New: verified completion derived from VerseRain campaign scores.
+  // Returns { setStatus: { setId: { email: { status, passedCount, totalCount } } } }.
+  getTeamSetProgress: (email, teamId) =>
+    jget(`/teams/team-set-progress?id=${encodeURIComponent(teamId)}&email=${encodeURIComponent(email)}`),
   cheer: (email, teamId, targetEmail, emoji, text) =>
     jpost('/teams/cheer', { email, teamId, targetEmail, emoji, text: text || '' }),
   getCheers: (email, teamId) =>

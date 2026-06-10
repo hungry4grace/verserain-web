@@ -4748,6 +4748,18 @@ export default function App() {
         window.history.replaceState({}, '', url.toString());
       }
 
+      // ?startSet=<setId>. Stash for the dedicated launch effect below
+      // (we don't have activeVerseSets loaded yet at this stage). Strip
+      // the param immediately so a refresh after the campaign doesn't
+      // re-launch unexpectedly.
+      const startSetParam = params.get('startSet');
+      if (startSetParam) {
+        sessionStorage.setItem('verserain_pending_start_set', startSetParam);
+        const url = new URL(window.location.href);
+        url.searchParams.delete('startSet');
+        window.history.replaceState({}, '', url.toString());
+      }
+
       let shouldAutoPlay = false;
       let loadedVerses = [];
       let overrideVersion = null;
@@ -4972,6 +4984,55 @@ export default function App() {
   const multiplayerSoloActiveRef = useRef(false); // true once any *_solo game is initialized; prevents re-init on every broadcast
   const [localNextVerse, setLocalNextVerse] = useState(null); // verse shown during intermission countdown
   const [campaignResults, setCampaignResults] = useState([]);
+
+  // When activeVerseSets becomes non-empty AND we have a pending startSet
+  // from a deep link, fire it once. Sets load asynchronously per language;
+  // launching too early would silently fail to find the set.
+  useEffect(() => {
+    if (!activeVerseSets || activeVerseSets.length === 0) return;
+    const pending = sessionStorage.getItem('verserain_pending_start_set');
+    if (!pending) return;
+    sessionStorage.removeItem('verserain_pending_start_set');
+    // launchSetById defined below; safe to call here because the effect
+    // closes over the latest definition via dependency on activeVerseSets.
+    // eslint-disable-next-line no-use-before-define
+    launchSetById(pending).catch(() => {});
+    // We intentionally omit launchSetById from deps — it's reconstructed
+    // every render via useCallback, and depending on it would re-fire the
+    // effect repeatedly.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeVerseSets]);
+
+  // Launch a verse-set campaign by id — used by the Companion Teams modal
+  // 「開始挑戰」 button and by ?startSet=<id> deep links. Looks the set up
+  // in active+custom, falls back to fetching shared sets. Returns true if
+  // launched, false if the set is unknown so the caller can show an error.
+  const launchSetById = React.useCallback(async (setId) => {
+    if (!setId) return false;
+    let set = activeVerseSets.find(s => s.id === setId) || customVerseSets.find(s => s.id === setId);
+    if (!set) {
+      try {
+        const r = await fetch(`https://verserain-party.hungry4grace.partykit.dev/parties/main/global-auth-db/share-set?id=${encodeURIComponent(setId)}`);
+        if (r.ok) {
+          const data = await r.json();
+          if (data?.set?.verses?.length) set = data.set;
+        }
+      } catch { /* fall through to false */ }
+    }
+    if (!set?.verses?.length) return false;
+    initAudio();
+    const queue = [...set.verses];
+    setSelectedSetId(set.id);
+    setCampaignQueue(queue.slice(1));
+    campaignQueueRef.current = queue.slice(1);
+    setCampaignResults([]);
+    setActiveCampaignSetId(set.id);
+    setActiveCampaignSetTotal(queue.length);
+    setActiveVerse(queue[0]);
+    setSelectedVerseRefs([queue[0].reference]);
+    setTimeout(() => startGame(false, queue[0]), 200);
+    return true;
+  }, [activeVerseSets, customVerseSets]);
   const [isBlindMode, setIsBlindMode] = useState(() => localStorage.getItem('verseRain_blindMode') === 'true');
   const [isDebugMode, setIsDebugMode] = useState(() => localStorage.getItem('verseRain_debugMode') === 'true');
 
@@ -19688,6 +19749,14 @@ const deDict = {
           onJoinHandled={() => {
             localStorage.removeItem('verserain_pending_join');
             setPendingJoinCode('');
+          }}
+          topicSets={topicVerseSets}
+          onLaunchSet={async (setId) => {
+            setShowTeamsModal(false);
+            const ok = await launchSetById(setId);
+            if (!ok) {
+              alert(t('找不到這個經文組,請聯絡管理員', "Couldn't find that verse set, please contact the admin"));
+            }
           }}
         />
       )}

@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { X, Users, Crown, Copy, RefreshCw, LogOut, ChevronLeft, Plus, Heart, QrCode, HelpCircle } from 'lucide-react';
+import { X, Users, Crown, Copy, RefreshCw, LogOut, ChevronLeft, Plus, Heart, QrCode, HelpCircle, BookOpen } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { teamsApi, CHEER_EMOJIS } from './teamsApi';
 import { HELP_CONTENT, resolveHelpLang } from './helpContent';
+import SetPicker from './SetPicker';
 
 // Public origin used to build join deep-links (?join=<CODE>). Hard-coded
 // here rather than window.location.origin because a code shared from a
@@ -58,7 +59,12 @@ const input = {
   boxSizing: 'border-box',
 };
 
-export default function TeamsModal({ userEmail, playerName, t, uiLang = 'en', onClose, pendingJoinCode, onJoinHandled }) {
+export default function TeamsModal({
+  userEmail, playerName, t, uiLang = 'en', onClose,
+  pendingJoinCode, onJoinHandled,
+  topicSets = [],            // bundled verse sets, for SetPicker
+  onLaunchSet,               // (setId) => void — closes modal + starts campaign in App.jsx
+}) {
   const [view, setView] = useState('list'); // 'list' | 'detail' | 'admin'
   const [activeTeamId, setActiveTeamId] = useState(null);
   const [showHelp, setShowHelp] = useState(false);
@@ -116,6 +122,7 @@ export default function TeamsModal({ userEmail, playerName, t, uiLang = 'en', on
               t={t}
               onOpenAdmin={() => setView('admin')}
               onLeft={() => setView('list')}
+              onLaunchSet={onLaunchSet}
             />
           )}
           {view === 'admin' && activeTeamId && (
@@ -124,6 +131,7 @@ export default function TeamsModal({ userEmail, playerName, t, uiLang = 'en', on
               userEmail={userEmail}
               teamId={activeTeamId}
               t={t}
+              topicSets={topicSets}
               onBack={() => setView('detail')}
               onDisbanded={() => setView('list')}
             />
@@ -442,7 +450,7 @@ function JoinTeamForm({ t, onCancel, onJoined, userEmail, initialCode = '' }) {
 
 // -------------------- Detail view --------------------
 
-function TeamDetailView({ userEmail, playerName, teamId, t, onOpenAdmin, onLeft }) {
+function TeamDetailView({ userEmail, playerName, teamId, t, onOpenAdmin, onLeft, onLaunchSet }) {
   const [team, setTeam] = useState(null);
   const [displayNames, setDisplayNames] = useState({});
   const [schedule, setSchedule] = useState({ items: [] });
@@ -452,6 +460,8 @@ function TeamDetailView({ userEmail, playerName, teamId, t, onOpenAdmin, onLeft 
   // each ScheduleItemCard renders without its own round-trip.
   const [reflections, setReflections] = useState([]);
   const [stats, setStats] = useState(null);
+  // Verified set-level progress: { setStatus: {setId: {email: {status, passedCount, totalCount}}} }
+  const [verifiedProgress, setVerifiedProgress] = useState({ setStatus: {} });
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
 
@@ -461,13 +471,14 @@ function TeamDetailView({ userEmail, playerName, teamId, t, onOpenAdmin, onLeft 
   const refresh = useCallback(async () => {
     setError('');
     try {
-      const [tRes, sRes, pRes, cRes, rRes, stRes] = await Promise.all([
+      const [tRes, sRes, pRes, cRes, rRes, stRes, vRes] = await Promise.all([
         teamsApi.get(userEmail, teamId),
         teamsApi.getSchedule(userEmail, teamId),
         teamsApi.getProgress(userEmail, teamId),
         teamsApi.getCheers(userEmail, teamId),
         teamsApi.listReflections(userEmail, teamId).catch(() => ({ reflections: [], displayNames: {} })),
         teamsApi.getStats(userEmail, teamId).catch(() => null),
+        teamsApi.getTeamSetProgress(userEmail, teamId).catch(() => ({ setStatus: {} })),
       ]);
       setTeam(tRes.team);
       setDisplayNames({ ...(tRes.displayNames || {}), ...(rRes.displayNames || {}) });
@@ -476,6 +487,7 @@ function TeamDetailView({ userEmail, playerName, teamId, t, onOpenAdmin, onLeft 
       setCheers(cRes.cheers || []);
       setReflections(rRes.reflections || []);
       setStats(stRes || null);
+      setVerifiedProgress(vRes || { setStatus: {} });
     } catch (e) {
       setError(String(e.message || e));
     }
@@ -529,7 +541,7 @@ function TeamDetailView({ userEmail, playerName, teamId, t, onOpenAdmin, onLeft 
       {isAdmin && (
         <CarePrompt
           team={team}
-          progress={progress}
+          setStatusByItem={verifiedProgress.setStatus || {}}
           schedule={schedule}
           displayNames={displayNames}
           meLc={meLc}
@@ -584,9 +596,10 @@ function TeamDetailView({ userEmail, playerName, teamId, t, onOpenAdmin, onLeft 
               item={item}
               userEmail={userEmail}
               teamId={teamId}
-              myProgress={progress[meLc]?.perSet?.[item.setId]}
               t={t}
-              onMarked={refresh}
+              setStatus={verifiedProgress.setStatus?.[item.setId] || {}}
+              memberEmails={team.members || []}
+              onLaunchSet={onLaunchSet}
               reflections={reflections.filter(r => r.itemId === item.id)}
               displayNames={displayNames}
               meLc={meLc}
@@ -608,8 +621,8 @@ function TeamDetailView({ userEmail, playerName, teamId, t, onOpenAdmin, onLeft 
             isMe={memberEmail === meLc}
             isAdmin={team.admins.includes(memberEmail)}
             displayName={displayNames[memberEmail] || memberEmail.split('@')[0]}
-            memberProgress={progress[memberEmail]}
             schedule={schedule}
+            setStatusByItem={verifiedProgress.setStatus || {}}
             onCheer={(emoji, text) => sendCheer(memberEmail, emoji, text)}
             t={t}
           />
@@ -667,7 +680,7 @@ function TeamFruitsPanel({ stats, t }) {
 // counts members who haven't opened any scheduled set, plus members whose
 // last activity is more than 7 days ago. Expands to show names so the
 // admin can send a personal cheer right there.
-function CarePrompt({ team, progress, schedule, displayNames, meLc, onCheer, t }) {
+function CarePrompt({ team, setStatusByItem, schedule, displayNames, meLc, onCheer, t }) {
   const [expanded, setExpanded] = useState(false);
 
   const others = (team.members || []).filter(m => m !== meLc);
@@ -675,20 +688,24 @@ function CarePrompt({ team, progress, schedule, displayNames, meLc, onCheer, t }
   const STALE_DAYS = 7;
   const now = Date.now();
 
+  // Source of truth is now the verified setStatus from VerseRain campaigns.
+  // "Not started" = every scheduled set status is 'not-started' (or absent).
+  // "Stale" = at least one set was attempted but its last play date is > 7d ago.
   const notStarted = [];
   const stale = [];
   for (const m of others) {
-    const p = progress[m];
-    const hasAnyForScheduled = p && scheduledSetIds.some(sid => {
-      const slot = p.perSet?.[sid];
-      return slot && (slot.versesCompleted || []).length > 0;
-    });
-    if (!hasAnyForScheduled) {
-      notStarted.push(m);
-      continue;
+    let touched = false;
+    let mostRecent = 0;
+    for (const sid of scheduledSetIds) {
+      const s = setStatusByItem[sid]?.[m];
+      if (!s || s.status === 'not-started') continue;
+      touched = true;
+      const d = Date.parse(s.date || '');
+      if (Number.isFinite(d) && d > mostRecent) mostRecent = d;
     }
-    const last = Date.parse(p.lastActivityAt || '');
-    if (Number.isFinite(last) && now - last > STALE_DAYS * 86400_000) {
+    if (!touched) {
+      notStarted.push(m);
+    } else if (mostRecent && now - mostRecent > STALE_DAYS * 86400_000) {
       stale.push(m);
     }
   }
@@ -766,47 +783,97 @@ function CarePrompt({ team, progress, schedule, displayNames, meLc, onCheer, t }
   );
 }
 
+// Three-tier visual: 未開始 / 嘗試中 / 完成. Only `passed` earns set-pass
+// points; the other two states are signals for the wall and care prompt.
+function StatusBadge({ status, passedCount, totalCount, t }) {
+  if (status === 'passed') {
+    return (
+      <span style={{
+        background: '#16a34a', color: 'white', fontSize: '0.78rem',
+        padding: '0.2rem 0.55rem', borderRadius: 12, fontWeight: 600, whiteSpace: 'nowrap',
+      }}>✓ {t('完成', 'Done')}</span>
+    );
+  }
+  if (status === 'attempting') {
+    return (
+      <span style={{
+        background: '#f59e0b', color: 'white', fontSize: '0.78rem',
+        padding: '0.2rem 0.55rem', borderRadius: 12, fontWeight: 600, whiteSpace: 'nowrap',
+      }}>{passedCount}/{totalCount || '?'} · {t('嘗試中', 'Attempting')}</span>
+    );
+  }
+  return (
+    <span style={{
+      background: 'transparent', color: colors.muted, fontSize: '0.78rem',
+      padding: '0.2rem 0.55rem', borderRadius: 12, border: `1px solid ${colors.border}`,
+      whiteSpace: 'nowrap',
+    }}>{t('未開始', 'Not started')}</span>
+  );
+}
+
 function ScheduleItemCard({
-  item, userEmail, teamId, myProgress, t, onMarked,
+  item, userEmail, teamId, t,
+  setStatus = {},          // per-email status for this item's setId
+  memberEmails = [],       // all team members, for team-wide tally
+  onLaunchSet,             // (setId) => launches campaign in App.jsx
   reflections = [], displayNames = {}, meLc = '', isAdmin = false, onReflectionsChanged,
 }) {
-  const [busy, setBusy] = useState(false);
   // The description can be lengthy; collapse to ~3 lines unless expanded.
   const [descExpanded, setDescExpanded] = useState(false);
   const [reflectExpanded, setReflectExpanded] = useState(false);
   const [composeType, setComposeType] = useState(null); // 'reflection' | 'prayer' | null
-  const verses = Array.isArray(item.verses) ? item.verses : [];
-  const completed = myProgress?.versesCompleted || [];
   const description = item.description || '';
   const descNeedsClamp = description.length > 140;
 
   const reflectionCount = reflections.filter(r => r.type === 'reflection').length;
   const prayerCount = reflections.filter(r => r.type === 'prayer').length;
 
-  const toggle = async (ref) => {
-    setBusy(true);
-    try {
-      await teamsApi.markProgress(userEmail, teamId, item.setId, ref, !completed.includes(ref));
-      await onMarked();
-    } catch (e) { /* keep ui responsive */ }
-    setBusy(false);
-  };
+  // My verified status from VerseRain campaign scores.
+  const my = setStatus[meLc] || { status: 'not-started', passedCount: 0, totalCount: 0 };
+  // Snapshot total from when admin picked the set; fall back to whatever we
+  // saw in scoreboard. Display "?" if neither known yet.
+  const totalCount = item.totalCount || my.totalCount || 0;
+
+  // Team-wide tally for the "本組" mini summary line.
+  let teamPassed = 0;
+  let teamAttempting = 0;
+  for (const e of memberEmails) {
+    const s = setStatus[e]?.status;
+    if (s === 'passed') teamPassed++;
+    else if (s === 'attempting') teamAttempting++;
+  }
+
+  const isMissingSet = !item.setId;
 
   return (
     <div style={{ ...card, marginBottom: 10 }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-        <div>
-          <strong style={{ color: colors.text }}>{item.title || item.setId}</strong>
-          {item.targetDate && (
-            <div style={{ color: colors.muted, fontSize: '0.8rem', marginTop: 2 }}>
-              {t('目標', 'Target')}: {item.targetDate}
-            </div>
-          )}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12 }}>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <strong style={{ color: colors.text }}>{item.title || item.setId || t('未指定經文組', 'No set picked')}</strong>
+          <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 8, marginTop: 4 }}>
+            {totalCount > 0 && (
+              <span style={{ color: colors.muted, fontSize: '0.78rem' }}>
+                {totalCount} {t('節', 'verses')}
+              </span>
+            )}
+            {item.targetDate && (
+              <span style={{ color: colors.muted, fontSize: '0.78rem' }}>
+                · {t('目標', 'Target')}: {item.targetDate}
+              </span>
+            )}
+          </div>
         </div>
-        <div style={{ color: colors.muted, fontSize: '0.85rem' }}>
-          {completed.length} / {verses.length || '?'}
-        </div>
+        <StatusBadge status={my.status} passedCount={my.passedCount} totalCount={totalCount} t={t} />
       </div>
+
+      {isMissingSet && (
+        <div style={{
+          marginTop: 8, padding: '0.5rem 0.7rem', borderRadius: 6,
+          background: 'rgba(245, 158, 11, 0.1)', color: '#fbbf24', fontSize: '0.82rem',
+        }}>
+          {t('此項目尚未連結到經文組,請管理員到「管理」頁選擇。', 'No verse set linked yet — admin should pick one in Manage.')}
+        </div>
+      )}
 
       {description && (
         <div style={{ marginTop: 8 }}>
@@ -833,30 +900,30 @@ function ScheduleItemCard({
         </div>
       )}
 
-      {verses.length > 0 && (
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 10 }}>
-          {verses.map(ref => {
-            const done = completed.includes(ref);
-            return (
-              <button
-                key={ref}
-                disabled={busy}
-                onClick={() => toggle(ref)}
-                style={{
-                  background: done ? '#16a34a' : colors.bg,
-                  color: done ? 'white' : colors.text,
-                  border: `1px solid ${done ? '#16a34a' : colors.border}`,
-                  borderRadius: 6,
-                  padding: '0.25rem 0.5rem',
-                  fontSize: '0.8rem',
-                  cursor: 'pointer',
-                }}
-                title={done ? t('已完成 — 點擊取消', 'Done — click to undo') : t('標記為完成', 'Mark complete')}
-              >
-                {done ? '✓ ' : ''}{ref}
-              </button>
-            );
-          })}
+      {/* Launch + team tally row */}
+      {!isMissingSet && (
+        <div style={{
+          display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 8,
+          marginTop: 10, padding: '0.5rem 0.7rem', borderRadius: 6,
+          background: colors.bg,
+        }}>
+          <button
+            onClick={() => onLaunchSet?.(item.setId)}
+            disabled={!onLaunchSet}
+            style={{
+              ...btn(my.status === 'passed' ? 'ghost' : 'primary'),
+              padding: '0.35rem 0.8rem', fontSize: '0.85rem',
+            }}
+          >
+            ▶ {my.status === 'passed'
+                ? t('再次挑戰', 'Play again')
+                : my.status === 'attempting'
+                  ? t('繼續挑戰', 'Continue')
+                  : t('開始挑戰', 'Start challenge')}
+          </button>
+          <div style={{ color: colors.muted, fontSize: '0.78rem', marginLeft: 'auto' }}>
+            {t(`團隊:${teamPassed} 通過 · ${teamAttempting} 嘗試中`, `Team: ${teamPassed} passed · ${teamAttempting} attempting`)}
+          </div>
         </div>
       )}
 
@@ -1112,16 +1179,19 @@ function ComposeReflection({ t, userEmail, teamId, itemId, type, verses, onCance
   );
 }
 
-function MemberCard({ memberEmail, isMe, isAdmin, displayName, memberProgress, schedule, onCheer, t }) {
-  // Count completed verses across all scheduled sets only — keeps the
-  // signal scoped to this team's reading plan rather than global activity.
-  let completedTotal = 0;
-  let totalScheduled = 0;
+function MemberCard({ memberEmail, isMe, isAdmin, displayName, schedule, setStatusByItem = {}, onCheer, t }) {
+  // Set-level progress: how many of the scheduled sets has this member
+  // PASSED (system-verified, not self-reported). Plus how many they've
+  // started — both shown in the muted line below their name. No ranking.
+  let passedSets = 0;
+  let attemptingSets = 0;
+  let totalSets = 0;
   for (const item of (schedule.items || [])) {
-    const v = Array.isArray(item.verses) ? item.verses : [];
-    totalScheduled += v.length;
-    const done = memberProgress?.perSet?.[item.setId]?.versesCompleted || [];
-    for (const ref of v) if (done.includes(ref)) completedTotal++;
+    if (!item.setId) continue;
+    totalSets++;
+    const s = setStatusByItem[item.setId]?.[memberEmail]?.status;
+    if (s === 'passed') passedSets++;
+    else if (s === 'attempting') attemptingSets++;
   }
 
   const [noteOpen, setNoteOpen] = useState(false);
@@ -1149,9 +1219,13 @@ function MemberCard({ memberEmail, isMe, isAdmin, displayName, memberProgress, s
         {isAdmin && <Crown size={12} style={{ color: colors.warm }} />}
       </div>
       <div style={{ color: colors.muted, fontSize: '0.85rem', marginBottom: 8 }}>
-        {totalScheduled > 0
-          ? t(`已完成 ${completedTotal} 節`, `${completedTotal} verses done`)
-          : t('還沒有進度', 'No progress yet')}
+        {totalSets === 0
+          ? t('進度表還沒設好', 'No schedule yet')
+          : passedSets === 0 && attemptingSets === 0
+            ? t('還沒開始', 'Not started')
+            : attemptingSets === 0
+              ? t(`通過 ${passedSets}/${totalSets} 組`, `Passed ${passedSets}/${totalSets}`)
+              : t(`通過 ${passedSets}/${totalSets} · 嘗試中 ${attemptingSets}`, `Passed ${passedSets}/${totalSets} · ${attemptingSets} attempting`)}
       </div>
       {!isMe && (
         <>
@@ -1232,7 +1306,7 @@ function MemberCard({ memberEmail, isMe, isAdmin, displayName, memberProgress, s
 
 // -------------------- Admin view --------------------
 
-function TeamAdminView({ userEmail, teamId, t, onBack, onDisbanded }) {
+function TeamAdminView({ userEmail, teamId, t, topicSets = [], onBack, onDisbanded }) {
   const [team, setTeam] = useState(null);
   const [displayNames, setDisplayNames] = useState({});
   const [schedule, setSchedule] = useState({ items: [] });
@@ -1240,6 +1314,8 @@ function TeamAdminView({ userEmail, teamId, t, onBack, onDisbanded }) {
   const [savingSchedule, setSavingSchedule] = useState(false);
   const [copied, setCopied] = useState('');
   const [showQR, setShowQR] = useState(false);
+  // Open SetPicker for a specific schedule-item index. -1 means not open.
+  const [pickingIdx, setPickingIdx] = useState(-1);
 
   const refresh = useCallback(async () => {
     setError('');
@@ -1370,34 +1446,40 @@ function TeamAdminView({ userEmail, teamId, t, onBack, onDisbanded }) {
         )}
         {schedule.items.map((item, idx) => (
           <div key={item.id} style={{ background: colors.bg, padding: '0.6rem', borderRadius: 8, marginBottom: 8 }}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
-              <input
-                placeholder={t('標題', 'Title')}
-                value={item.title}
-                onChange={e => updateItem(idx, { title: e.target.value })}
-                style={input}
-              />
-              <input
-                placeholder="setId"
-                value={item.setId}
-                onChange={e => updateItem(idx, { setId: e.target.value })}
-                style={{ ...input, fontFamily: 'monospace' }}
-              />
+            {/* Set picker row replaces free-text setId + verses inputs */}
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: 8,
+              padding: '0.4rem 0.6rem', background: colors.card, borderRadius: 6,
+              border: item.setId ? `1px solid ${colors.border}` : `1px dashed #f59e0b`,
+            }}>
+              <BookOpen size={14} style={{ color: item.setId ? colors.muted : '#f59e0b', flexShrink: 0 }} />
+              {item.setId ? (
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ color: colors.text, fontSize: '0.9rem', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {item.title || item.setId}
+                  </div>
+                  <div style={{ color: colors.muted, fontSize: '0.72rem' }}>
+                    {item.setId} · {item.totalCount || (item.verses?.length) || '?'} {t('節', 'verses')}
+                  </div>
+                </div>
+              ) : (
+                <div style={{ flex: 1, color: '#fbbf24', fontSize: '0.85rem' }}>
+                  {t('還沒選經文組', 'No verse set picked')}
+                </div>
+              )}
+              <button onClick={() => setPickingIdx(idx)} style={btn('ghost')}>
+                {item.setId ? t('更換', 'Change') : t('選擇', 'Pick')}
+              </button>
+              <button onClick={() => removeItem(idx)} style={btn('ghost')}>{t('刪除', 'Remove')}</button>
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 140px auto', gap: 6, marginTop: 6 }}>
-              <input
-                placeholder={t('經文清單(逗號分隔,如 John 3:16, Ps 37:1)', 'Verses (comma-separated, e.g. John 3:16, Ps 37:1)')}
-                value={(item.verses || []).join(', ')}
-                onChange={e => updateItem(idx, { verses: e.target.value.split(',').map(s => s.trim()).filter(Boolean) })}
-                style={input}
-              />
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 6 }}>
+              <label style={{ color: colors.muted, fontSize: '0.78rem' }}>{t('目標日期', 'Target')}:</label>
               <input
                 type="date"
                 value={item.targetDate || ''}
                 onChange={e => updateItem(idx, { targetDate: e.target.value })}
-                style={input}
+                style={{ ...input, width: 160, padding: '0.3rem 0.5rem', fontSize: '0.85rem' }}
               />
-              <button onClick={() => removeItem(idx)} style={btn('ghost')}>{t('刪除', 'Remove')}</button>
             </div>
             <textarea
               placeholder={t('給團員的話(選填) — 為什麼選這段、怎麼默想…', 'Note to members (optional) — why this passage, how to reflect…')}
@@ -1408,6 +1490,26 @@ function TeamAdminView({ userEmail, teamId, t, onBack, onDisbanded }) {
             />
           </div>
         ))}
+
+        {pickingIdx >= 0 && (
+          <SetPicker
+            topicSets={topicSets}
+            t={t}
+            onCancel={() => setPickingIdx(-1)}
+            onPick={(picked) => {
+              updateItem(pickingIdx, {
+                setId: picked.setId,
+                title: picked.title,
+                totalCount: picked.totalCount,
+                source: picked.source,
+                // Drop legacy verses array; the canonical "what's in this
+                // set" lives in the bundled/shared set definition.
+                verses: undefined,
+              });
+              setPickingIdx(-1);
+            }}
+          />
+        )}
         <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
           <button onClick={addScheduleItem} style={btn('ghost')}><Plus size={14} /> {t('新增項目', 'Add item')}</button>
           <button onClick={saveSchedule} style={btn('primary')} disabled={savingSchedule}>

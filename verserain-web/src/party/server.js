@@ -1446,40 +1446,115 @@ export default class Server {
             } catch (e) { return err('Failed to save schedule', 500); }
          }
 
-         // POST /teams/progress/mark — body: { email, teamId, setId, verseRef, completed }
+         // POST /teams/progress/mark — DEPRECATED.
+         // Self-marking has been replaced by verified completion from
+         // the VerseRain campaign engine (see /teams/team-set-progress).
+         // We return 410 Gone instead of silently no-op'ing so any stale
+         // client surfaces an error and gets debugged/upgraded.
          if (url.pathname.endsWith('/teams/progress/mark') && request.method === 'POST') {
+            return err('Self-marking is no longer supported — completion is now derived from VerseRain campaign results.', 410);
+         }
+
+         // GET /teams/team-set-progress?id=<teamId>&email=<email>
+         // Returns { setStatus: { setId: { email: { passedCount, totalCount, status } } } }
+         // where status is one of: 'not-started' | 'attempting' | 'passed'.
+         // Three-tier display is by design (option C from the rollout
+         // discussion): 「未開始 / 嘗試中 / 完成」 — only `passed` earns the
+         // set-pass points, but `attempting` earns a one-time start bonus.
+         if (url.pathname.endsWith('/teams/team-set-progress') && request.method === 'GET') {
             try {
-               const { email, teamId, setId, verseRef, completed } = await request.json();
-               if (!email || !teamId || !setId || !verseRef) return err('email, teamId, setId, verseRef required');
+               const teamId = url.searchParams.get('id');
+               const email = url.searchParams.get('email');
                const team = await readTeam(teamId);
                if (!team) return err('Team not found', 404);
                if (!isMember(team, email)) return err('Not a member', 403);
-               const key = `team-progress:${teamId}:${lc(email)}`;
-               const prog = (await this.room.storage.get(key)) || { email: lc(email), teamId, perSet: {} };
-               const slot = prog.perSet[setId] || { versesCompleted: [], firstCompletedAt: null, lastActivityAt: null };
-               const ref = String(verseRef);
-               const has = slot.versesCompleted.includes(ref);
-               if (completed && !has) slot.versesCompleted.push(ref);
-               if (!completed && has) slot.versesCompleted = slot.versesCompleted.filter(v => v !== ref);
-               const now = new Date().toISOString();
-               if (!slot.firstCompletedAt && slot.versesCompleted.length > 0) slot.firstCompletedAt = now;
-               slot.lastActivityAt = now;
-               prog.perSet[setId] = slot;
-               prog.lastActivityAt = now;
-               await this.room.storage.put(key, prog);
-               // Award only on transition false→true (first time per user per
-               // verseRef across teams — re-reading same verse in another
-               // team yields no extra fruit; reading itself is one act).
-               let awarded = 0;
-               if (completed && !has) {
-                  awarded = await awardPoints({
-                     email, teamId,
-                     eventKey: `verse:${ref}`,
-                     points: 3, source: 'verse-complete',
-                  });
+
+               // Read schedule chunks to collect setIds (reassemble).
+               const schedPrefix = `team-schedule:${teamId}::part:`;
+               const schedMap = await this.room.storage.list({ prefix: schedPrefix });
+               const chunks = [];
+               for (const [k, v] of schedMap.entries()) {
+                  const m = k.slice(schedPrefix.length).match(/^(\d+)\/(\d+)$/);
+                  if (m) chunks[parseInt(m[1], 10)] = v;
                }
-               return json({ success: true, progress: prog, pointsAwarded: awarded });
-            } catch (e) { return err('Failed to mark progress', 500); }
+               let schedule = { items: [] };
+               try { schedule = JSON.parse(chunks.join('')); } catch { /* keep default */ }
+               const setIds = Array.from(new Set((schedule.items || []).map(it => it.setId).filter(Boolean)));
+
+               // Resolve each member's current playerName (leaderboard is
+               // keyed by playerName not email). Stale name = missed score
+               // attribution — acceptable trade-off per memory notes.
+               const memberEmails = team.members || [];
+               const emailToName = {};
+               const names = [];
+               for (const e of memberEmails) {
+                  const u = await this.room.storage.get(`user:${e}`);
+                  const name = (u && (u.name || u.skoolName)) || '';
+                  if (name) {
+                     emailToName[e] = name;
+                     if (!names.includes(name)) names.push(name);
+                  }
+               }
+
+               // Fetch scores from Vercel API. Single round-trip from the DO
+               // to a public endpoint — no Redis credentials needed here.
+               let scoreMap = {};
+               if (setIds.length > 0 && names.length > 0) {
+                  try {
+                     const r = await fetch('https://www.verserain.com/api/get-team-set-status', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ setIds, names }),
+                     });
+                     if (r.ok) {
+                        const data = await r.json();
+                        scoreMap = data.status || {};
+                     }
+                  } catch (e) { /* leave scoreMap empty; UI shows not-started */ }
+               }
+
+               // Build per-set per-member status + lazy point awards.
+               const setStatus = {};
+               for (const setId of setIds) {
+                  const perEmail = {};
+                  const perName = scoreMap[setId] || {};
+                  for (const e of memberEmails) {
+                     const name = emailToName[e];
+                     const sc = name ? perName[name] : null;
+                     if (!sc) {
+                        perEmail[e] = { status: 'not-started', passedCount: 0, totalCount: 0 };
+                        continue;
+                     }
+                     const { passedCount, totalCount } = sc;
+                     const isPass = totalCount > 0 && passedCount >= totalCount;
+                     const isAttempt = !isPass && passedCount > 0;
+                     perEmail[e] = {
+                        status: isPass ? 'passed' : isAttempt ? 'attempting' : 'not-started',
+                        passedCount, totalCount,
+                        date: sc.date || '',
+                     };
+                     // Lazy idempotent awards — only when we observe this user
+                     // moved into the qualifying state. The journal eventKey
+                     // ensures we never double-pay.
+                     if (isPass) {
+                        await awardPoints({
+                           email: e, teamId,
+                           eventKey: `set-pass:${teamId}:${setId}`,
+                           points: 15, source: 'set-pass',
+                        });
+                     } else if (isAttempt) {
+                        await awardPoints({
+                           email: e, teamId,
+                           eventKey: `set-attempt:${teamId}:${setId}`,
+                           points: 3, source: 'set-attempt',
+                        });
+                     }
+                  }
+                  setStatus[setId] = perEmail;
+               }
+
+               return json({ success: true, setStatus, emailToName });
+            } catch (e) { return err('Failed to fetch set progress', 500); }
          }
 
          // GET /teams/progress?id=<teamId>&email=<email> — returns all members' progress
