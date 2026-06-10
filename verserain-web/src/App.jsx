@@ -14237,10 +14237,10 @@ const deDict = {
                 <TreePine size={18} /> {t('我的園子', 'My Garden')}
               </div>
               <div className="block-tile" onClick={() => setMainTab('multiplayer')} style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', padding: '0.5rem 1.2rem', cursor: 'pointer', backgroundColor: mainTab === 'multiplayer' ? '#ec4899' : 'white', color: mainTab === 'multiplayer' ? 'white' : '#475569', borderRadius: '20px', fontWeight: 'bold', whiteSpace: 'nowrap', transition: 'all 0.2s' }}>
-                <Gamepad2 size={18} /> {t('團隊競賽', 'Team Competition')}
+                <Gamepad2 size={18} /> {t('多人遊戲', 'Multiplayer')}
               </div>
-              <div className="block-tile" onClick={() => setShowTeamsModal(true)} style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', padding: '0.5rem 1.2rem', cursor: 'pointer', backgroundColor: 'white', color: '#475569', borderRadius: '20px', fontWeight: 'bold', whiteSpace: 'nowrap', transition: 'all 0.2s' }}>
-                <Users size={18} /> {t('陪伴團隊', 'Companion Teams')}
+              <div className="block-tile" onClick={() => setShowTeamsModal(true)} style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', padding: '0.5rem 1.2rem', cursor: 'pointer', backgroundColor: '#f97316', color: 'white', borderRadius: '20px', fontWeight: 'bold', whiteSpace: 'nowrap', transition: 'all 0.2s' }}>
+                <Users size={18} /> {t('我的團隊', 'My Teams')}
               </div>
               <div className="block-tile" onClick={() => setMainTab('search')} style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', padding: '0.5rem 1.2rem', cursor: 'pointer', backgroundColor: mainTab === 'search' ? '#8b5cf6' : 'white', color: mainTab === 'search' ? 'white' : '#475569', borderRadius: '20px', fontWeight: 'bold', whiteSpace: 'nowrap', transition: 'all 0.2s' }}>
                 <Search size={18} /> {t('搜尋', 'Search')}
@@ -14353,6 +14353,13 @@ const deDict = {
                       <p style={{ fontSize: '1rem', margin: 0, opacity: 0.9 }}>{t("主話如霖澆我田，歲歲結果到豐年。", "View your living scripture trees.")}</p>
                     </div>
 
+                    {/* My Teams */}
+                    <div className="primary-button" onClick={() => setShowTeamsModal(true)} style={{ background: 'linear-gradient(135deg, #fb923c, #ea580c)', borderRadius: '16px', padding: '2.5rem 2rem', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', color: 'white', textAlign: 'center', boxShadow: '0 10px 28px rgba(234, 88, 12, 0.35)' }}>
+                      <Users size={72} style={{ marginBottom: '1rem' }} />
+                      <h2 style={{ fontSize: '2rem', margin: 0, marginBottom: '0.5rem', textShadow: '0 2px 4px rgba(0,0,0,0.2)' }}>{t("我的團隊", "My Teams")}</h2>
+                      <p style={{ fontSize: '1rem', margin: 0, opacity: 0.9 }}>{t("小組同心讀經文，彼此打氣不孤行。", "Read with your group — no one walks alone.")}</p>
+                    </div>
+
                     {/* Scripture Library */}
                     <div className="primary-button" onClick={() => setMainTab('versesets')} style={{ background: 'linear-gradient(135deg, #60a5fa, #3b82f6)', borderRadius: '16px', padding: '2.5rem 2rem', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', color: 'white', textAlign: 'center' }}>
                       <Library size={72} style={{ marginBottom: '1rem' }} />
@@ -14360,11 +14367,11 @@ const deDict = {
                       <p style={{ fontSize: '1rem', margin: 0, opacity: 0.9 }}>{t("經題萬卷勤溫故，句句生光照此程。", "Browse global verse sets and choose scriptures to practice.")}</p>
                     </div>
 
-                    {/* Team Competition */}
+                    {/* Multiplayer Game */}
                     <div className="primary-button" onClick={() => setMainTab('multiplayer')} style={{ background: 'linear-gradient(135deg, #f472b6, #ec4899)', borderRadius: '16px', padding: '2.5rem 2rem', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', color: 'white', textAlign: 'center' }}>
-                      <Users size={72} style={{ marginBottom: '1rem' }} />
-                      <h2 style={{ fontSize: '2rem', margin: 0, marginBottom: '0.5rem', textShadow: '0 2px 4px rgba(0,0,0,0.2)' }}>{t("團隊競賽", "Team Competition")}</h2>
-                      <p style={{ fontSize: '1rem', margin: 0, opacity: 0.9 }}>{t("同心競走天路程，並肩得勝主名榮。", "Create a room and compete in teams.")}</p>
+                      <Gamepad2 size={72} style={{ marginBottom: '1rem' }} />
+                      <h2 style={{ fontSize: '2rem', margin: 0, marginBottom: '0.5rem', textShadow: '0 2px 4px rgba(0,0,0,0.2)' }}>{t("多人遊戲", "Multiplayer")}</h2>
+                      <p style={{ fontSize: '1rem', margin: 0, opacity: 0.9 }}>{t("同心走過天路程，並肩玩出主榮耀。", "Play together with friends in real time.")}</p>
                     </div>
                   </div>
                 </div>
