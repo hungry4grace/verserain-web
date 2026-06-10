@@ -15160,7 +15160,7 @@ const deDict = {
 
               {mainTab === 'multiplayer' && (
                 <div style={{ backgroundColor: '#ffffff', borderRadius: '8px', border: '1px solid #cbd5e1', padding: '2rem', boxShadow: '0 1px 3px rgba(0,0,0,0.05)', textAlign: 'center' }}>
-                  <h2 style={{ marginTop: 0, marginBottom: '1.5rem', fontFamily: 'var(--app-font-family)', color: '#8b5cf6' }}>{(multiplayerState?.matchType === 'individual' || multiplayerRoomMode === 'individual') ? t("邀人PK", "Invite PK") : t("團隊競賽", "Team Competition")}</h2>
+                  <h2 style={{ marginTop: 0, marginBottom: '1.5rem', fontFamily: 'var(--app-font-family)', color: '#8b5cf6' }}>{(multiplayerState?.matchType === 'individual' || multiplayerRoomMode === 'individual') ? t("邀人PK", "Invite PK") : t("多人遊戲", "Multiplayer")}</h2>
 
                   {!playerName ? (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', alignItems: 'center', background: '#f8fafc', padding: '2rem', borderRadius: '16px', border: '2px dashed #cbd5e1' }}>
@@ -15309,7 +15309,7 @@ const deDict = {
                   ) : multiplayerState?.status === 'ready_check' ? (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', alignItems: 'center' }}>
                       <div style={{ padding: '1.5rem', backgroundColor: '#fdf4ff', borderRadius: '8px', border: '2px dashed #d946ef', width: '100%', maxWidth: '460px' }}>
-                        <h3 style={{ margin: '0 0 0.5rem 0', color: '#86198f' }}>{multiplayerState.matchType === 'team' ? t("團隊競賽準備！", "Team Competition Ready!") : t("準備比賽！", "Get Ready!")}</h3>
+                        <h3 style={{ margin: '0 0 0.5rem 0', color: '#86198f' }}>{multiplayerState.matchType === 'team' ? t("多人遊戲準備！", "Multiplayer Ready!") : t("準備比賽！", "Get Ready!")}</h3>
                         <div style={{ fontSize: '1.8rem', fontWeight: 'bold', color: getRoomColor(multiplayerRoomId) || '#3b82f6', letterSpacing: '6px', marginBottom: '0.5rem', background: (getRoomColor(multiplayerRoomId) || '#3b82f6') + '18', borderRadius: '6px', padding: '0.3rem 1rem', display: 'inline-block', border: `2px solid ${getRoomColor(multiplayerRoomId) || '#3b82f6'}` }}>{multiplayerRoomId}</div>
                         <p style={{ fontSize: '0.8rem', color: '#94a3b8', margin: '0 0 0.8rem 0' }}>{t("分享此代碼讓更多人加入", "Share this code to let others join")}</p>
 
@@ -17929,7 +17929,7 @@ const deDict = {
         {gameState === 'waiting_for_others' && multiplayerState && (
           <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.85)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000, padding: '1rem', flexDirection: 'column' }}>
             <div className="hud-glass" style={{ background: 'rgba(15, 23, 42, 0.95)', borderRadius: '12px', padding: '3rem 2rem', width: '100%', maxWidth: '600px', border: '1px solid rgba(16, 185, 129, 0.4)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1.5rem', textAlign: 'center' }}>
-              <h2 style={{ fontSize: '2rem', color: '#10b981', fontWeight: 'bold', margin: 0 }}>{multiplayerState.matchType === 'team' && multiplayerState.host === myClientId ? t("團隊競賽進行中", "Team Competition in Progress") : t("你完成了所有經文！", "You finished all verses!")}</h2>
+              <h2 style={{ fontSize: '2rem', color: '#10b981', fontWeight: 'bold', margin: 0 }}>{multiplayerState.matchType === 'team' && multiplayerState.host === myClientId ? t("多人遊戲進行中", "Multiplayer in Progress") : t("你完成了所有經文！", "You finished all verses!")}</h2>
               <p style={{ color: '#94a3b8', fontSize: '1rem', margin: 0, animation: 'bounce 2s infinite' }}>{multiplayerState.matchType === 'team' && multiplayerState.host === myClientId ? t("可隨時結束比賽，結果會用隊伍平均分排名。", "You can end the match anytime. Teams are ranked by average score.") : multiplayerState.matchType === 'team' ? t("等待比賽結束，結果會用隊伍平均分排名。", "Waiting for the match to end. Teams are ranked by average score.") : t("等待其他玩家完成...", "Waiting for others to finish...")}</p>
               <div style={{ display: 'flex', gap: '1rem', width: '100%', justifyContent: 'center', flexWrap: 'wrap' }}>
                 {multiplayerState?.host === myClientId && (
@@ -18030,7 +18030,7 @@ const deDict = {
         {gameState === 'multiplayer_results' && multiplayerState && (
           <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.85)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000, padding: '1rem', flexDirection: 'column' }}>
             <div className="hud-glass" style={{ background: 'rgba(15, 23, 42, 0.95)', borderRadius: '12px', padding: '3rem 2rem', width: '100%', maxWidth: '800px', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1.5rem', textAlign: 'center', border: '1px solid rgba(59, 130, 246, 0.3)' }}>
-              <h2 style={{ fontSize: '2.5rem', fontWeight: 'bold', margin: 0, color: '#e2e8f0', display: 'flex', alignItems: 'center', gap: '12px' }}><Trophy size={40} color="#fbbf24" fill="#fbbf24" /> {multiplayerState.matchType === 'team' ? t("團隊競賽結束！", "Team Competition Complete!") : multiplayerState.campaignResults?.length > 1 ? t("連戰結束！", "Marathon Completed!") : t("對局結束！", "Game Over!")}</h2>
+              <h2 style={{ fontSize: '2.5rem', fontWeight: 'bold', margin: 0, color: '#e2e8f0', display: 'flex', alignItems: 'center', gap: '12px' }}><Trophy size={40} color="#fbbf24" fill="#fbbf24" /> {multiplayerState.matchType === 'team' ? t("多人遊戲結束！", "Multiplayer Complete!") : multiplayerState.campaignResults?.length > 1 ? t("連戰結束！", "Marathon Completed!") : t("對局結束！", "Game Over!")}</h2>
               <div style={{ display: 'flex', gap: '1rem', width: '100%', flexWrap: 'wrap' }}>
                 <button
                   onClick={() => {
