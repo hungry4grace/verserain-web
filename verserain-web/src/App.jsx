@@ -5018,7 +5018,7 @@ export default function App() {
   // mode='play'    → autoplay rehearsal (TTS reads verses, no blocks/score),
   //                   purely for familiarization; does NOT affect any
   //                   leaderboard so team progress stays untouched.
-  const launchSetById = React.useCallback(async (setId, mode = 'campaign') => {
+  const launchSetById = React.useCallback(async (setId, mode = 'campaign', verseIndex = null) => {
     if (!setId) return false;
     let set = activeVerseSets.find(s => s.id === setId) || customVerseSets.find(s => s.id === setId);
     if (!set) {
@@ -5032,20 +5032,22 @@ export default function App() {
     }
     if (!set?.verses?.length) return false;
     initAudio();
-    const queue = [...set.verses];
+    // When verseIndex is given (per-day reading model), queue just that one
+    // verse. Otherwise fall back to the whole set (back-compat for any
+    // legacy callers — there should be none in normal flow).
+    const queue = (typeof verseIndex === 'number' && verseIndex >= 0 && verseIndex < set.verses.length)
+      ? [set.verses[verseIndex]]
+      : [...set.verses];
     setSelectedSetId(set.id);
     setCampaignQueue(queue.slice(1));
     campaignQueueRef.current = queue.slice(1);
     setCampaignResults([]);
-    // Only register the campaign id when actually competing — keeps the
-    // play/rehearsal path from ever triggering submit-set-score.
-    if (mode === 'campaign') {
-      setActiveCampaignSetId(set.id);
-      setActiveCampaignSetTotal(queue.length);
-    } else {
-      setActiveCampaignSetId(null);
-      setActiveCampaignSetTotal(0);
-    }
+    // We don't use the legacy /api/submit-set-score path for team plays
+    // anymore (every verse is its own day-completion event reported via
+    // PartyKit). Keep activeCampaignSetId null so submit-set-score's
+    // gate-effect doesn't fire.
+    setActiveCampaignSetId(null);
+    setActiveCampaignSetTotal(0);
     setActiveVerse(queue[0]);
     setSelectedVerseRefs([queue[0].reference]);
     setTimeout(() => startGame(mode === 'play', queue[0]), 200);
@@ -5128,15 +5130,16 @@ export default function App() {
   const [pendingTeamReturn, setPendingTeamReturn] = useState(null);
 
   // After a play/challenge session triggered from the Teams modal ends,
-  // bounce the user back into that team. The transition we care about is
-  // 'playing' → 'menu' (autoplay finishes → endGame() ~line 6337; or
-  // challenge → user closes campaign-results). The naive check of
-  // "gameState === 'menu' AND pendingTeamReturn" fires the moment
-  // pendingTeamReturn is set (gameState is 'menu' initially and stays
-  // that way for the 200ms before startGame runs), reopening the modal
-  // before the session even begins. We use a ref to gate the trigger on
-  // having actually entered 'playing' at least once.
+  // (1) bounce the user back into that team and (2) report the verse
+  // completion to PartyKit so the per-day plan ticks forward.
+  //
+  // Why a ref to arm: gameState is 'menu' initially and stays that way
+  // for the 200ms before startGame runs; without arming, the effect
+  // would fire immediately when pendingTeamReturn was set, reopening
+  // the modal before the session even began.
   const teamReturnArmedRef = useRef(false);
+  // Context for the active session — set by onLaunchSet, consumed once.
+  const pendingVerseCompletionRef = useRef(null);
   useEffect(() => {
     if (gameState === 'playing' && pendingTeamReturn) {
       teamReturnArmedRef.current = true;
@@ -5144,9 +5147,19 @@ export default function App() {
     }
     if (gameState === 'menu' && pendingTeamReturn && teamReturnArmedRef.current) {
       teamReturnArmedRef.current = false;
+      // Record the verse as done for this team, before reopening the
+      // modal so its refresh shows the new state. Fire-and-forget;
+      // failures are logged but don't block the UX bounce-back.
+      const ctx = pendingVerseCompletionRef.current;
+      pendingVerseCompletionRef.current = null;
+      if (ctx && typeof ctx.verseIndex === 'number') {
+        fetch('https://verserain-party.hungry4grace.partykit.dev/parties/main/global-auth-db/teams/verse-complete', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(ctx),
+        }).catch((err) => console.warn('verse-complete post failed', err));
+      }
       setShowTeamsModal(true);
-      // pendingTeamReturn stays set so TeamsModal reads it via
-      // initialTeamId on mount; onClose clears it.
     }
   }, [gameState, pendingTeamReturn]);
   // Deep-link join code captured from ?join= or localStorage. The Teams
@@ -19804,12 +19817,25 @@ const deDict = {
           }}
           topicSets={topicVerseSets}
           initialTeamId={pendingTeamReturn}
-          onLaunchSet={async (setId, mode = 'campaign', returnTeamId = null) => {
+          onLaunchSet={async (setId, mode = 'campaign', returnTeamId = null, verseIndex = null) => {
             setShowTeamsModal(false);
             if (returnTeamId) setPendingTeamReturn(returnTeamId);
-            const ok = await launchSetById(setId, mode);
+            // Stash so the post-game effect knows what to report.
+            // userEmail must be present for the backend record to mean
+            // anything — otherwise just bounce back without recording.
+            if (returnTeamId && typeof verseIndex === 'number' && userEmail) {
+              pendingVerseCompletionRef.current = {
+                email: userEmail,
+                teamId: returnTeamId,
+                setId,
+                verseIndex,
+                mode,
+              };
+            }
+            const ok = await launchSetById(setId, mode, verseIndex);
             if (!ok) {
               if (returnTeamId) setPendingTeamReturn(null);
+              pendingVerseCompletionRef.current = null;
               alert(t('找不到這個經文組,請聯絡管理員', "Couldn't find that verse set, please contact the admin"));
             }
           }}

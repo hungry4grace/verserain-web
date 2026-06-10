@@ -33,25 +33,28 @@ export default function SetPicker({ topicSets = [], t, onPick, onCancel }) {
   const allSets = useMemo(() => {
     const out = [];
     for (const s of topicSets || []) {
+      const verses = Array.isArray(s.verses) ? s.verses : [];
       out.push({
         id: s.id,
         title: s.title || s.id,
         author: 'VerseRain',
         source: 'bundled',
-        totalCount: Array.isArray(s.verses) ? s.verses.length : 0,
-        firstRef: Array.isArray(s.verses) && s.verses[0] ? (s.verses[0].reference || s.verses[0].ref || '') : '',
+        totalCount: verses.length,
+        firstRef: verses[0] ? (verses[0].reference || verses[0].ref || '') : '',
+        verses,
       });
     }
     for (const s of sharedSets || []) {
-      // Skip duplicates if a topic set is also published as shared
       if (out.some(x => x.id === s.id)) continue;
+      const verses = Array.isArray(s.verses) ? s.verses : [];
       out.push({
         id: s.id,
         title: s.title || s.id,
         author: s.authorName || t('社群', 'Community'),
         source: 'shared',
-        totalCount: Array.isArray(s.verses) ? s.verses.length : 0,
-        firstRef: Array.isArray(s.verses) && s.verses[0] ? (s.verses[0].reference || s.verses[0].ref || '') : '',
+        totalCount: verses.length,
+        firstRef: verses[0] ? (verses[0].reference || verses[0].ref || '') : '',
+        verses,
       });
     }
     return out.filter(s => s.totalCount > 0);
@@ -129,7 +132,19 @@ export default function SetPicker({ topicSets = [], t, onPick, onCancel }) {
           {filtered.map(s => (
             <div
               key={s.id}
-              onClick={() => onPick({ setId: s.id, title: s.title, totalCount: s.totalCount, source: s.source })}
+              onClick={() => onPick({
+                setId: s.id,
+                title: s.title,
+                totalCount: s.totalCount,
+                source: s.source,
+                // Snapshot trimmed to {reference, text} to keep schedule
+                // items lean — the picker view doesn't need the rich
+                // metadata (lang, authorName, etc.).
+                verses: s.verses.map(v => ({
+                  reference: v.reference || v.ref || '',
+                  text: v.text || '',
+                })),
+              })}
               style={{
                 padding: '0.7rem 1rem', borderBottom: `1px solid ${colors.border}`,
                 cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12,

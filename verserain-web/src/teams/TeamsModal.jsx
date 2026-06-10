@@ -705,7 +705,7 @@ function CarePrompt({ team, setStatusByItem, schedule, displayNames, meLc, onChe
       const s = setStatusByItem[sid]?.[m];
       if (!s || s.status === 'not-started') continue;
       touched = true;
-      const d = Date.parse(s.date || '');
+      const d = Date.parse(s.lastAt || '');
       if (Number.isFinite(d) && d > mostRecent) mostRecent = d;
     }
     if (!touched) {
@@ -788,15 +788,14 @@ function CarePrompt({ team, setStatusByItem, schedule, displayNames, meLc, onChe
   );
 }
 
-// Three-tier visual: 未開始 / 嘗試中 / 完成. Only `passed` earns set-pass
-// points; the other two states are signals for the wall and care prompt.
-function StatusBadge({ status, passedCount, totalCount, t }) {
+// Three-tier visual: 未開始 / 進行中 / 全部完成. Counts are days, not verses.
+function StatusBadge({ status, doneCount, totalCount, t }) {
   if (status === 'passed') {
     return (
       <span style={{
         background: '#16a34a', color: 'white', fontSize: '0.78rem',
         padding: '0.2rem 0.55rem', borderRadius: 12, fontWeight: 600, whiteSpace: 'nowrap',
-      }}>✓ {t('完成', 'Done')}</span>
+      }}>✓ {t(`完成 ${totalCount}/${totalCount}`, `Done ${totalCount}/${totalCount}`)}</span>
     );
   }
   if (status === 'attempting') {
@@ -804,7 +803,7 @@ function StatusBadge({ status, passedCount, totalCount, t }) {
       <span style={{
         background: '#f59e0b', color: 'white', fontSize: '0.78rem',
         padding: '0.2rem 0.55rem', borderRadius: 12, fontWeight: 600, whiteSpace: 'nowrap',
-      }}>{passedCount}/{totalCount || '?'} · {t('嘗試中', 'Attempting')}</span>
+      }}>{doneCount}/{totalCount || '?'} {t('天', 'days')}</span>
     );
   }
   return (
@@ -820,32 +819,47 @@ function ScheduleItemCard({
   item, userEmail, teamId, t,
   setStatus = {},          // per-email status for this item's setId
   memberEmails = [],       // all team members, for team-wide tally
-  onLaunchSet,             // (setId) => launches campaign in App.jsx
+  onLaunchSet,             // (setId, mode, returnTeamId, verseIndex) => launches in App.jsx
   reflections = [], displayNames = {}, meLc = '', isAdmin = false, onReflectionsChanged,
 }) {
-  // The description can be lengthy; collapse to ~3 lines unless expanded.
   const [descExpanded, setDescExpanded] = useState(false);
   const [reflectExpanded, setReflectExpanded] = useState(false);
-  const [composeType, setComposeType] = useState(null); // 'reflection' | 'prayer' | null
+  const [composeType, setComposeType] = useState(null);
+  const [showAllDays, setShowAllDays] = useState(false);
   const description = item.description || '';
   const descNeedsClamp = description.length > 140;
 
   const reflectionCount = reflections.filter(r => r.type === 'reflection').length;
   const prayerCount = reflections.filter(r => r.type === 'prayer').length;
 
-  // My verified status from VerseRain campaign scores.
-  const my = setStatus[meLc] || { status: 'not-started', passedCount: 0, totalCount: 0 };
-  // Snapshot total from when admin picked the set; fall back to whatever we
-  // saw in scoreboard. Display "?" if neither known yet.
-  const totalCount = item.totalCount || my.totalCount || 0;
+  const my = setStatus[meLc] || { status: 'not-started', doneCount: 0, totalCount: 0, doneIndices: [] };
+  const totalCount = item.totalCount || my.totalCount || (Array.isArray(item.verses) ? item.verses.length : 0);
+  const verses = Array.isArray(item.verses) ? item.verses : [];
+  const myDone = my.doneIndices || [];
 
-  // Team-wide tally for the "本組" mini summary line.
-  let teamPassed = 0;
-  let teamAttempting = 0;
+  // Compute today's verse index from startDate.
+  // Day 1 = startDate; if today < startDate, dayIndex < 0 → clamp to 0.
+  // If today > startDate + N - 1, plan is over → clamp to last verse.
+  const todayStr = new Date().toISOString().slice(0, 10);
+  const startStr = item.startDate || todayStr;
+  const msPerDay = 86400000;
+  const rawDayIndex = Math.floor(
+    (Date.parse(todayStr + 'T00:00:00Z') - Date.parse(startStr + 'T00:00:00Z')) / msPerDay
+  );
+  const todayIndex = Math.max(0, Math.min(Math.max(0, totalCount - 1), rawDayIndex));
+  const todayVerse = verses[todayIndex] || null;
+  const todayDone = myDone.includes(todayIndex);
+  const planNotStarted = rawDayIndex < 0;
+
+  // Team-wide today tally.
+  let teamDoneToday = 0;
+  let teamDoneTotal = 0;
+  let teamSomeProgress = 0;
   for (const e of memberEmails) {
-    const s = setStatus[e]?.status;
-    if (s === 'passed') teamPassed++;
-    else if (s === 'attempting') teamAttempting++;
+    const idx = setStatus[e]?.doneIndices || [];
+    if (idx.includes(todayIndex)) teamDoneToday++;
+    teamDoneTotal += idx.length;
+    if (idx.length > 0) teamSomeProgress++;
   }
 
   const isMissingSet = !item.setId;
@@ -858,17 +872,17 @@ function ScheduleItemCard({
           <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 8, marginTop: 4 }}>
             {totalCount > 0 && (
               <span style={{ color: colors.muted, fontSize: '0.78rem' }}>
-                {totalCount} {t('節', 'verses')}
+                {t(`${totalCount} 天計畫 · 每天一節`, `${totalCount}-day plan · one verse/day`)}
               </span>
             )}
-            {item.targetDate && (
+            {(item.startDate || item.targetDate) && (
               <span style={{ color: colors.muted, fontSize: '0.78rem' }}>
-                · {t('目標', 'Target')}: {item.targetDate}
+                · {item.startDate || '?'} → {item.targetDate || '?'}
               </span>
             )}
           </div>
         </div>
-        <StatusBadge status={my.status} passedCount={my.passedCount} totalCount={totalCount} t={t} />
+        <StatusBadge status={my.status} doneCount={my.doneCount} totalCount={totalCount} t={t} />
       </div>
 
       {isMissingSet && (
@@ -905,41 +919,98 @@ function ScheduleItemCard({
         </div>
       )}
 
-      {/* Launch + team tally row */}
-      {!isMissingSet && (
+      {/* Today's verse + launch buttons */}
+      {!isMissingSet && totalCount > 0 && (
         <div style={{
-          display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 8,
-          marginTop: 10, padding: '0.5rem 0.7rem', borderRadius: 6,
-          background: colors.bg,
+          marginTop: 10, padding: '0.7rem', borderRadius: 8,
+          background: colors.bg, border: `1px solid ${colors.border}`,
         }}>
-          <button
-            onClick={() => onLaunchSet?.(item.setId, 'play', teamId)}
-            disabled={!onLaunchSet}
-            style={{
-              ...btn('ghost'),
-              padding: '0.35rem 0.7rem', fontSize: '0.85rem',
-            }}
-            title={t('自動朗讀 — 不計分,只熟悉經文', 'Auto-read mode — no scoring, just familiarize')}
-          >
-            🔊 {t('播放', 'Play')}
-          </button>
-          <button
-            onClick={() => onLaunchSet?.(item.setId, 'campaign', teamId)}
-            disabled={!onLaunchSet}
-            style={{
-              ...btn(my.status === 'passed' ? 'ghost' : 'primary'),
-              padding: '0.35rem 0.8rem', fontSize: '0.85rem',
-            }}
-          >
-            ▶ {my.status === 'passed'
-                ? t('再次挑戰', 'Play again')
-                : my.status === 'attempting'
-                  ? t('繼續挑戰', 'Continue')
-                  : t('開始挑戰', 'Start challenge')}
-          </button>
-          <div style={{ color: colors.muted, fontSize: '0.78rem', marginLeft: 'auto' }}>
-            {t(`團隊:${teamPassed} 通過 · ${teamAttempting} 嘗試中`, `Team: ${teamPassed} passed · ${teamAttempting} attempting`)}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 6, flexWrap: 'wrap' }}>
+            <div style={{ color: colors.muted, fontSize: '0.78rem' }}>
+              {planNotStarted
+                ? t(`計畫從 ${startStr} 開始`, `Plan starts ${startStr}`)
+                : t(`Day ${todayIndex + 1} / ${totalCount}`, `Day ${todayIndex + 1} / ${totalCount}`)}
+              {todayVerse?.reference && ` · ${todayVerse.reference}`}
+            </div>
+            {todayDone && (
+              <span style={{
+                background: '#16a34a', color: 'white', fontSize: '0.72rem',
+                padding: '0.1rem 0.5rem', borderRadius: 12, fontWeight: 600,
+              }}>✓ {t('今天已完成', 'Done today')}</span>
+            )}
           </div>
+          {todayVerse?.text && (
+            <div style={{
+              color: colors.text, fontSize: '0.92rem', lineHeight: 1.6,
+              padding: '0.4rem 0.6rem', background: colors.card, borderRadius: 6,
+              marginBottom: 8, fontStyle: 'italic',
+            }}>
+              「{todayVerse.text}」
+            </div>
+          )}
+          <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
+            <button
+              onClick={() => onLaunchSet?.(item.setId, 'play', teamId, todayIndex)}
+              disabled={!onLaunchSet || planNotStarted}
+              style={{ ...btn('ghost'), padding: '0.35rem 0.7rem', fontSize: '0.85rem' }}
+              title={t('朗讀今天這節 — 算今天完成', "Read today's verse aloud — counts as today's completion")}
+            >
+              🔊 {t('播放', 'Play')}
+            </button>
+            <button
+              onClick={() => onLaunchSet?.(item.setId, 'campaign', teamId, todayIndex)}
+              disabled={!onLaunchSet || planNotStarted}
+              style={{
+                ...btn(todayDone ? 'ghost' : 'primary'),
+                padding: '0.35rem 0.8rem', fontSize: '0.85rem',
+              }}
+            >
+              ▶ {todayDone ? t('再次挑戰', 'Play again') : t('挑戰今天', 'Today\'s challenge')}
+            </button>
+            <div style={{ color: colors.muted, fontSize: '0.78rem', marginLeft: 'auto' }}>
+              {t(`今天:${teamDoneToday}/${memberEmails.length} 完成`, `Today: ${teamDoneToday}/${memberEmails.length} done`)}
+            </div>
+          </div>
+
+          {/* Per-member overall progress bars + day list expander */}
+          <button
+            onClick={() => setShowAllDays(v => !v)}
+            style={{
+              background: 'transparent', border: 'none', color: colors.accent,
+              cursor: 'pointer', fontSize: '0.78rem', padding: '6px 0 2px 0',
+            }}
+          >
+            {showAllDays
+              ? t('收起 N 天清單', 'Hide all days')
+              : t(`查看全部 ${totalCount} 天 (你已完成 ${myDone.length})`, `Show all ${totalCount} days (you: ${myDone.length})`)}
+          </button>
+          {showAllDays && (
+            <div style={{ marginTop: 6, display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(110px, 1fr))', gap: 4 }}>
+              {verses.map((v, i) => {
+                const done = myDone.includes(i);
+                const isToday = i === todayIndex && !planNotStarted;
+                return (
+                  <div
+                    key={i}
+                    title={v.text || ''}
+                    style={{
+                      padding: '0.25rem 0.4rem',
+                      borderRadius: 4,
+                      fontSize: '0.72rem',
+                      background: done ? 'rgba(22,163,74,0.2)' : colors.card,
+                      border: `1px solid ${isToday ? colors.accent : 'transparent'}`,
+                      color: done ? '#86efac' : colors.muted,
+                      whiteSpace: 'nowrap',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                    }}
+                  >
+                    {done ? '✓ ' : ''}D{i + 1} · {v.reference || ''}
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       )}
 
@@ -1200,18 +1271,15 @@ function ComposeReflection({ t, userEmail, teamId, itemId, type, verses, onCance
 }
 
 function MemberCard({ memberEmail, isMe, isAdmin, displayName, schedule, setStatusByItem = {}, onCheer, t }) {
-  // Set-level progress: how many of the scheduled sets has this member
-  // PASSED (system-verified, not self-reported). Plus how many they've
-  // started — both shown in the muted line below their name. No ranking.
-  let passedSets = 0;
-  let attemptingSets = 0;
-  let totalSets = 0;
+  // Per-day reading model: count total days completed across all
+  // scheduled items. Each "day" is one verse done (play or campaign).
+  let doneDays = 0;
+  let totalDays = 0;
   for (const item of (schedule.items || [])) {
     if (!item.setId) continue;
-    totalSets++;
-    const s = setStatusByItem[item.setId]?.[memberEmail]?.status;
-    if (s === 'passed') passedSets++;
-    else if (s === 'attempting') attemptingSets++;
+    const s = setStatusByItem[item.setId]?.[memberEmail];
+    totalDays += (item.totalCount || 0);
+    if (s?.doneIndices) doneDays += s.doneIndices.length;
   }
 
   const [noteOpen, setNoteOpen] = useState(false);
@@ -1239,13 +1307,11 @@ function MemberCard({ memberEmail, isMe, isAdmin, displayName, schedule, setStat
         {isAdmin && <Crown size={12} style={{ color: colors.warm }} />}
       </div>
       <div style={{ color: colors.muted, fontSize: '0.85rem', marginBottom: 8 }}>
-        {totalSets === 0
+        {totalDays === 0
           ? t('進度表還沒設好', 'No schedule yet')
-          : passedSets === 0 && attemptingSets === 0
+          : doneDays === 0
             ? t('還沒開始', 'Not started')
-            : attemptingSets === 0
-              ? t(`通過 ${passedSets}/${totalSets} 組`, `Passed ${passedSets}/${totalSets}`)
-              : t(`通過 ${passedSets}/${totalSets} · 嘗試中 ${attemptingSets}`, `Passed ${passedSets}/${totalSets} · ${attemptingSets} attempting`)}
+            : t(`已完成 ${doneDays} / ${totalDays} 天`, `${doneDays}/${totalDays} days done`)}
       </div>
       {!isMe && (
         <>
@@ -1492,14 +1558,42 @@ function TeamAdminView({ userEmail, teamId, t, topicSets = [], onBack, onDisband
               </button>
               <button onClick={() => removeItem(idx)} style={btn('ghost')}>{t('刪除', 'Remove')}</button>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 6 }}>
-              <label style={{ color: colors.muted, fontSize: '0.78rem' }}>{t('目標日期', 'Target')}:</label>
-              <input
-                type="date"
-                value={item.targetDate || ''}
-                onChange={e => updateItem(idx, { targetDate: e.target.value })}
-                style={{ ...input, width: 160, padding: '0.3rem 0.5rem', fontSize: '0.85rem' }}
-              />
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 6, flexWrap: 'wrap' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <label style={{ color: colors.muted, fontSize: '0.78rem' }}>{t('開始', 'Start')}:</label>
+                <input
+                  type="date"
+                  value={item.startDate || ''}
+                  onChange={e => {
+                    // When the admin shifts the start date, auto-shift the
+                    // target by the same delta so the plan length stays at
+                    // N days unless they touch target after this.
+                    const newStart = e.target.value;
+                    const patch = { startDate: newStart };
+                    if (newStart && item.totalCount) {
+                      const d = new Date(newStart + 'T00:00:00Z');
+                      d.setUTCDate(d.getUTCDate() + Math.max(0, item.totalCount - 1));
+                      patch.targetDate = d.toISOString().slice(0, 10);
+                    }
+                    updateItem(idx, patch);
+                  }}
+                  style={{ ...input, width: 150, padding: '0.3rem 0.5rem', fontSize: '0.85rem' }}
+                />
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <label style={{ color: colors.muted, fontSize: '0.78rem' }}>{t('目標', 'Target')}:</label>
+                <input
+                  type="date"
+                  value={item.targetDate || ''}
+                  onChange={e => updateItem(idx, { targetDate: e.target.value })}
+                  style={{ ...input, width: 150, padding: '0.3rem 0.5rem', fontSize: '0.85rem' }}
+                />
+              </div>
+              {item.totalCount > 0 && (
+                <span style={{ color: colors.muted, fontSize: '0.75rem' }}>
+                  {t(`共 ${item.totalCount} 天 · 每天一節`, `${item.totalCount} days · one verse per day`)}
+                </span>
+              )}
             </div>
             <textarea
               placeholder={t('給團員的話(選填) — 為什麼選這段、怎麼默想…', 'Note to members (optional) — why this passage, how to reflect…')}
@@ -1517,14 +1611,27 @@ function TeamAdminView({ userEmail, teamId, t, topicSets = [], onBack, onDisband
             t={t}
             onCancel={() => setPickingIdx(-1)}
             onPick={(picked) => {
+              // Daily reading plan defaults: start today, end after N days.
+              // Both editable by the admin afterwards. Admin's existing
+              // startDate/targetDate are preserved if they're not the
+              // initial placeholders — feels safer than always resetting.
+              const today = new Date().toISOString().slice(0, 10);
+              const cur = schedule.items[pickingIdx] || {};
+              const startDate = cur.startDate || today;
+              const targetDate = (() => {
+                if (cur.targetDate && cur.setId) return cur.targetDate;
+                const d = new Date(startDate + 'T00:00:00Z');
+                d.setUTCDate(d.getUTCDate() + Math.max(0, picked.totalCount - 1));
+                return d.toISOString().slice(0, 10);
+              })();
               updateItem(pickingIdx, {
                 setId: picked.setId,
                 title: picked.title,
                 totalCount: picked.totalCount,
                 source: picked.source,
-                // Drop legacy verses array; the canonical "what's in this
-                // set" lives in the bundled/shared set definition.
-                verses: undefined,
+                verses: picked.verses,
+                startDate,
+                targetDate,
               });
               setPickingIdx(-1);
             }}

@@ -1341,6 +1341,7 @@ export default class Server {
                   `team-week-fruits:${teamId}:`,
                   `member-week-fruits:${teamId}:`,
                   `team-week-active-set:${teamId}:`,
+                  `team-verse-done:${teamId}:`,
                ];
                for (const pfx of sweepPrefixes) {
                   const m = await this.room.storage.list({ prefix: pfx });
@@ -1447,20 +1448,56 @@ export default class Server {
          }
 
          // POST /teams/progress/mark — DEPRECATED.
-         // Self-marking has been replaced by verified completion from
-         // the VerseRain campaign engine (see /teams/team-set-progress).
-         // We return 410 Gone instead of silently no-op'ing so any stale
-         // client surfaces an error and gets debugged/upgraded.
          if (url.pathname.endsWith('/teams/progress/mark') && request.method === 'POST') {
-            return err('Self-marking is no longer supported — completion is now derived from VerseRain campaign results.', 410);
+            return err('Self-marking is no longer supported.', 410);
+         }
+
+         // POST /teams/verse-complete — body: { email, teamId, itemId, setId, verseIndex, mode }
+         // Records that this user completed one specific verse of a daily
+         // reading plan. The "per-day" model treats each verse as its own
+         // completion; play (TTS) and campaign both count per the user's
+         // explicit preference. Idempotent per (team, email, setId, index)
+         // so re-completing the same verse doesn't double-award.
+         if (url.pathname.endsWith('/teams/verse-complete') && request.method === 'POST') {
+            try {
+               const { email, teamId, itemId, setId, verseIndex, mode } = await request.json();
+               if (!email || !teamId || !setId || typeof verseIndex !== 'number') {
+                  return err('email, teamId, setId, verseIndex required');
+               }
+               const team = await readTeam(teamId);
+               if (!team) return err('Team not found', 404);
+               if (!isMember(team, email)) return err('Not a member', 403);
+               const e = lc(email);
+               const key = `team-verse-done:${teamId}:${e}:${setId}:${verseIndex}`;
+               const existing = await this.room.storage.get(key);
+               if (!existing) {
+                  await this.room.storage.put(key, {
+                     at: new Date().toISOString(),
+                     mode: mode === 'play' ? 'play' : 'campaign',
+                     itemId: itemId || '',
+                  });
+               }
+               // Award once per verse — points-journal idempotency mirrors
+               // the storage write above, but uses an explicit eventKey so
+               // future refactors don't accidentally double-pay.
+               const awarded = await awardPoints({
+                  email, teamId,
+                  eventKey: `verse-done:${teamId}:${setId}:${verseIndex}`,
+                  points: 3, source: 'verse-done',
+               });
+               return json({ success: true, alreadyDone: !!existing, pointsAwarded: awarded });
+            } catch (e) { return err('Failed to record verse completion', 500); }
          }
 
          // GET /teams/team-set-progress?id=<teamId>&email=<email>
-         // Returns { setStatus: { setId: { email: { passedCount, totalCount, status } } } }
-         // where status is one of: 'not-started' | 'attempting' | 'passed'.
-         // Three-tier display is by design (option C from the rollout
-         // discussion): 「未開始 / 嘗試中 / 完成」 — only `passed` earns the
-         // set-pass points, but `attempting` earns a one-time start bonus.
+         // Returns { setStatus: { setId: { email: { doneCount, totalCount,
+         //   doneIndices, status } } } }
+         //
+         // The per-day reading model: each schedule item is a verse-by-verse
+         // plan. doneIndices[] are the verse positions this user has
+         // completed (via play OR campaign). status is derived for the
+         // viewer's convenience: 'passed' = all days done, 'attempting' =
+         // some done, 'not-started' = none.
          if (url.pathname.endsWith('/teams/team-set-progress') && request.method === 'GET') {
             try {
                const teamId = url.searchParams.get('id');
@@ -1469,7 +1506,7 @@ export default class Server {
                if (!team) return err('Team not found', 404);
                if (!isMember(team, email)) return err('Not a member', 403);
 
-               // Read schedule chunks to collect setIds (reassemble).
+               // Read schedule chunks to collect (itemId, setId, totalCount) tuples.
                const schedPrefix = `team-schedule:${teamId}::part:`;
                const schedMap = await this.room.storage.list({ prefix: schedPrefix });
                const chunks = [];
@@ -1479,81 +1516,50 @@ export default class Server {
                }
                let schedule = { items: [] };
                try { schedule = JSON.parse(chunks.join('')); } catch { /* keep default */ }
-               const setIds = Array.from(new Set((schedule.items || []).map(it => it.setId).filter(Boolean)));
+               const items = (schedule.items || []).filter(it => it.setId);
 
-               // Resolve each member's current playerName (leaderboard is
-               // keyed by playerName not email). Stale name = missed score
-               // attribution — acceptable trade-off per memory notes.
                const memberEmails = team.members || [];
-               const emailToName = {};
-               const names = [];
-               for (const e of memberEmails) {
-                  const u = await this.room.storage.get(`user:${e}`);
-                  const name = (u && (u.name || u.skoolName)) || '';
-                  if (name) {
-                     emailToName[e] = name;
-                     if (!names.includes(name)) names.push(name);
-                  }
-               }
-
-               // Fetch scores from Vercel API. Single round-trip from the DO
-               // to a public endpoint — no Redis credentials needed here.
-               let scoreMap = {};
-               if (setIds.length > 0 && names.length > 0) {
-                  try {
-                     const r = await fetch('https://www.verserain.com/api/get-team-set-status', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ setIds, names }),
-                     });
-                     if (r.ok) {
-                        const data = await r.json();
-                        scoreMap = data.status || {};
-                     }
-                  } catch (e) { /* leave scoreMap empty; UI shows not-started */ }
-               }
-
-               // Build per-set per-member status + lazy point awards.
                const setStatus = {};
-               for (const setId of setIds) {
+
+               // For each schedule item, scan storage for per-verse completions.
+               // Single prefix list per item keeps this cheap even with many
+               // members. Could batch further if N items × M members grows.
+               for (const it of items) {
+                  const totalCount = it.totalCount || (Array.isArray(it.verses) ? it.verses.length : 0);
                   const perEmail = {};
-                  const perName = scoreMap[setId] || {};
                   for (const e of memberEmails) {
-                     const name = emailToName[e];
-                     const sc = name ? perName[name] : null;
-                     if (!sc) {
-                        perEmail[e] = { status: 'not-started', passedCount: 0, totalCount: 0 };
-                        continue;
-                     }
-                     const { passedCount, totalCount } = sc;
-                     const isPass = totalCount > 0 && passedCount >= totalCount;
-                     const isAttempt = !isPass && passedCount > 0;
-                     perEmail[e] = {
-                        status: isPass ? 'passed' : isAttempt ? 'attempting' : 'not-started',
-                        passedCount, totalCount,
-                        date: sc.date || '',
-                     };
-                     // Lazy idempotent awards — only when we observe this user
-                     // moved into the qualifying state. The journal eventKey
-                     // ensures we never double-pay.
-                     if (isPass) {
-                        await awardPoints({
-                           email: e, teamId,
-                           eventKey: `set-pass:${teamId}:${setId}`,
-                           points: 15, source: 'set-pass',
-                        });
-                     } else if (isAttempt) {
-                        await awardPoints({
-                           email: e, teamId,
-                           eventKey: `set-attempt:${teamId}:${setId}`,
-                           points: 3, source: 'set-attempt',
-                        });
-                     }
+                     perEmail[e] = { status: 'not-started', doneCount: 0, totalCount, doneIndices: [], lastAt: '' };
                   }
-                  setStatus[setId] = perEmail;
+                  const prefix = `team-verse-done:${teamId}:`;
+                  const map = await this.room.storage.list({ prefix });
+                  for (const [k, v] of map.entries()) {
+                     // key = team-verse-done:<teamId>:<email>:<setId>:<verseIndex>
+                     const tail = k.slice(prefix.length);
+                     const parts = tail.split(':');
+                     if (parts.length < 3) continue;
+                     const memberEmail = parts[0];
+                     const recSetId = parts.slice(1, parts.length - 1).join(':'); // setId may contain hyphens
+                     const idx = parseInt(parts[parts.length - 1], 10);
+                     if (recSetId !== it.setId) continue;
+                     if (!perEmail[memberEmail]) continue;
+                     if (!perEmail[memberEmail].doneIndices.includes(idx)) {
+                        perEmail[memberEmail].doneIndices.push(idx);
+                     }
+                     if (v && v.at && v.at > perEmail[memberEmail].lastAt) perEmail[memberEmail].lastAt = v.at;
+                  }
+                  for (const e of memberEmails) {
+                     const slot = perEmail[e];
+                     slot.doneCount = slot.doneIndices.length;
+                     slot.status = totalCount > 0 && slot.doneCount >= totalCount
+                        ? 'passed'
+                        : slot.doneCount > 0
+                           ? 'attempting'
+                           : 'not-started';
+                  }
+                  setStatus[it.setId] = perEmail;
                }
 
-               return json({ success: true, setStatus, emailToName });
+               return json({ success: true, setStatus });
             } catch (e) { return err('Failed to fetch set progress', 500); }
          }
 
