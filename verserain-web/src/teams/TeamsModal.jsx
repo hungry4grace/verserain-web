@@ -10,6 +10,21 @@ import SetPicker from './SetPicker';
 // localhost dev session must still point at the production site.
 const PUBLIC_ORIGIN = 'https://www.verserain.com';
 const buildJoinUrl = (code) => `${PUBLIC_ORIGIN}/?join=${encodeURIComponent(code)}`;
+// Inject the new-cheer glow keyframes exactly once. Doing it module-side
+// (not per render) keeps the modal from rewriting the rule on every open.
+if (typeof document !== 'undefined' && !document.getElementById('teams-cheer-glow-style')) {
+  const s = document.createElement('style');
+  s.id = 'teams-cheer-glow-style';
+  s.textContent = `
+@keyframes teamsCheerNewPulse {
+  0% { box-shadow: 0 0 0 0 rgba(251, 191, 36, 0.75), 0 0 0 0 rgba(251, 191, 36, 0); }
+  50% { box-shadow: 0 0 18px 6px rgba(251, 191, 36, 0.45), 0 0 0 2px rgba(251, 191, 36, 0.7); }
+  100% { box-shadow: 0 0 0 0 rgba(251, 191, 36, 0), 0 0 0 0 rgba(251, 191, 36, 0); }
+}
+.teams-cheer-new { animation: teamsCheerNewPulse 1.6s ease-out 2; border-radius: 8px; }
+`;
+  document.head.appendChild(s);
+}
 // Build a team-aware deep link for today's verse. Recipient clicks the
 // link → app parses startSet + teamId + verseIndex → launches the verse
 // → on completion fires /teams/verse-complete attributing it to the
@@ -299,6 +314,15 @@ function TeamsListView({ userEmail, t, onOpen, pendingJoinCode, onJoinHandled })
     }
   }, [userEmail]);
 
+  // Small red pill, used on team list cards. 99+ for big numbers.
+  const UnreadBadge = ({ n }) => n > 0 ? (
+    <span style={{
+      background: '#ef4444', color: 'white', fontSize: '0.7rem', fontWeight: 700,
+      borderRadius: 10, padding: '0.05rem 0.45rem', minWidth: 18, textAlign: 'center',
+      display: 'inline-block',
+    }}>{n >= 99 ? '99+' : n}</span>
+  ) : null;
+
   useEffect(() => { refresh(); }, [refresh]);
 
   return (
@@ -342,6 +366,7 @@ function TeamsListView({ userEmail, t, onOpen, pendingJoinCode, onJoinHandled })
                   <Crown size={10} /> {t('管理員', 'Admin')}
                 </span>
               )}
+              <UnreadBadge n={team.unreadCount || 0} />
             </div>
             {team.description && (
               <div style={{ color: colors.muted, fontSize: '0.85rem', marginTop: 4 }}>{team.description}</div>
@@ -478,6 +503,10 @@ function TeamDetailView({ userEmail, playerName, teamId, t, onOpenAdmin, onLeft,
   const [schedule, setSchedule] = useState({ items: [] });
   const [progress, setProgress] = useState({});
   const [cheers, setCheers] = useState([]);
+  // Snapshot of the user's lastReadAt at the moment the team was opened.
+  // Used to decide which cheers should glow. Captured once on mount so
+  // we don't lose the highlight after the 1.5s mark-read fires.
+  const [readSnapshot, setReadSnapshot] = useState('');
   // All reflections in this team, fetched once and grouped by itemId so
   // each ScheduleItemCard renders without its own round-trip.
   const [reflections, setReflections] = useState([]);
@@ -507,6 +536,9 @@ function TeamDetailView({ userEmail, playerName, teamId, t, onOpenAdmin, onLeft,
       setSchedule(sRes.schedule || { items: [] });
       setProgress(pRes.progress || {});
       setCheers(cRes.cheers || []);
+      // Only seed the snapshot on first load — subsequent refreshes
+      // shouldn't move the highlight goalposts.
+      setReadSnapshot(prev => prev || (cRes.lastReadAt || ''));
       setReflections(rRes.reflections || []);
       setStats(stRes || null);
       setVerifiedProgress(vRes || { setStatus: {} });
@@ -516,6 +548,17 @@ function TeamDetailView({ userEmail, playerName, teamId, t, onOpenAdmin, onLeft,
   }, [userEmail, teamId]);
 
   useEffect(() => { refresh(); }, [refresh]);
+
+  // 1.5s after the user opens the team's detail view, stamp it as read.
+  // Delay gives the eye time to actually land on the new cheers before
+  // the badge resets — anything shorter feels like a missed beat.
+  useEffect(() => {
+    if (!userEmail || !teamId) return;
+    const t = setTimeout(() => {
+      teamsApi.markRead(userEmail, teamId).catch(() => {});
+    }, 1500);
+    return () => clearTimeout(t);
+  }, [userEmail, teamId]);
 
   const sendCheer = async (targetEmail, emoji, text = '') => {
     try {
@@ -579,27 +622,38 @@ function TeamDetailView({ userEmail, playerName, teamId, t, onOpenAdmin, onLeft,
           </div>
           {/* Emoji-only cheers as inline reaction row */}
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: cheers.some(c => c.text) ? 10 : 0 }}>
-            {cheers.filter(c => !c.text).slice(0, 12).map((c, i) => (
-              <span key={i} style={{ fontSize: '1.1rem' }} title={`${displayNames[c.from] || c.from} · ${c.at}`}>
-                {c.emoji}
-              </span>
-            ))}
+            {cheers.filter(c => !c.text).slice(0, 12).map((c, i) => {
+              const isNew = readSnapshot && c.at > readSnapshot;
+              return (
+                <span
+                  key={i}
+                  className={isNew ? 'teams-cheer-new' : undefined}
+                  style={{ fontSize: '1.1rem', padding: isNew ? '2px 4px' : 0 }}
+                  title={`${displayNames[c.from] || c.from} · ${c.at}`}
+                >
+                  {c.emoji}
+                </span>
+              );
+            })}
           </div>
           {/* Cheers with text — render as small quote cards */}
-          {cheers.filter(c => c.text).slice(0, 5).map((c, i) => (
-            <div key={`t${i}`} style={{
-              background: colors.bg, borderRadius: 8, padding: '0.5rem 0.7rem',
-              marginTop: 6, display: 'flex', gap: 8, alignItems: 'flex-start',
-            }}>
-              <span style={{ fontSize: '1.1rem', flexShrink: 0 }}>{c.emoji}</span>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ color: colors.text, fontSize: '0.9rem', wordBreak: 'break-word' }}>{c.text}</div>
-                <div style={{ color: colors.muted, fontSize: '0.75rem', marginTop: 2 }}>
-                  — {displayNames[c.from] || c.from.split('@')[0]}
+          {cheers.filter(c => c.text).slice(0, 5).map((c, i) => {
+            const isNew = readSnapshot && c.at > readSnapshot;
+            return (
+              <div key={`t${i}`} className={isNew ? 'teams-cheer-new' : undefined} style={{
+                background: colors.bg, borderRadius: 8, padding: '0.5rem 0.7rem',
+                marginTop: 6, display: 'flex', gap: 8, alignItems: 'flex-start',
+              }}>
+                <span style={{ fontSize: '1.1rem', flexShrink: 0 }}>{c.emoji}</span>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ color: colors.text, fontSize: '0.9rem', wordBreak: 'break-word' }}>{c.text}</div>
+                  <div style={{ color: colors.muted, fontSize: '0.75rem', marginTop: 2 }}>
+                    — {displayNames[c.from] || c.from.split('@')[0]}
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 

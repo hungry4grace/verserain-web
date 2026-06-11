@@ -26,7 +26,8 @@
     "react-globe.gl": "^2.27.2",
     "react-quill-new": "^3.8.3",
     "react-zoom-pan-pinch": "^4.0.3",
-    "three": "latest"
+    "three": "latest",
+    "web-push": "^3.6.7"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.4",

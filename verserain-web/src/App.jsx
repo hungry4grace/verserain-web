@@ -5205,12 +5205,28 @@ export default function App() {
   };
   const [showLoginModal, setShowLoginModal] = useState(null);
   const [showTeamsModal, setShowTeamsModal] = useState(false);
-  // When a team triggers play/challenge, we remember its teamId here so
-  // we can pop the user back into that same team's detail view once the
-  // session ends (autoplay finishes → gameState='menu'; challenge → user
-  // closes the results screen → gameState='menu'). Cleared as soon as
-  // the modal reopens to avoid bouncing back unexpectedly.
   const [pendingTeamReturn, setPendingTeamReturn] = useState(null);
+  // Sum of unread cheers across all the user's teams. Polled every 60s,
+  // refreshed immediately when the teams modal closes (user likely just
+  // read something). Drives the small red badge on the orange tile +
+  // nav pill so people know to open the modal.
+  const [teamsUnread, setTeamsUnread] = useState(0);
+  const refreshTeamsUnread = React.useCallback(async () => {
+    if (!userEmail) { setTeamsUnread(0); return; }
+    try {
+      const r = await fetch(`https://verserain-party.hungry4grace.partykit.dev/parties/main/global-auth-db/my-teams?email=${encodeURIComponent(userEmail)}`);
+      if (!r.ok) return;
+      const d = await r.json();
+      const total = (d.teams || []).reduce((s, t) => s + (t.unreadCount || 0), 0);
+      setTeamsUnread(total);
+    } catch { /* keep prior */ }
+  }, [userEmail]);
+  useEffect(() => {
+    refreshTeamsUnread();
+    if (!userEmail) return;
+    const id = setInterval(refreshTeamsUnread, 60_000);
+    return () => clearInterval(id);
+  }, [userEmail, refreshTeamsUnread]);
 
   // After a play/challenge session triggered from the Teams modal ends,
   // (1) bounce the user back into that team and (2) report the verse
@@ -14322,8 +14338,11 @@ const deDict = {
               <div className="block-tile" onClick={() => setMainTab('multiplayer')} style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', padding: '0.5rem 1.2rem', cursor: 'pointer', backgroundColor: mainTab === 'multiplayer' ? '#ec4899' : 'white', color: mainTab === 'multiplayer' ? 'white' : '#475569', borderRadius: '20px', fontWeight: 'bold', whiteSpace: 'nowrap', transition: 'all 0.2s' }}>
                 <Gamepad2 size={18} /> {t('多人遊戲', 'Multiplayer')}
               </div>
-              <div className="block-tile" onClick={() => setShowTeamsModal(true)} style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', padding: '0.5rem 1.2rem', cursor: 'pointer', backgroundColor: showTeamsModal ? '#f97316' : 'white', color: showTeamsModal ? 'white' : '#475569', borderRadius: '20px', fontWeight: 'bold', whiteSpace: 'nowrap', transition: 'all 0.2s' }}>
+              <div className="block-tile" onClick={() => setShowTeamsModal(true)} style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: '0.45rem', padding: '0.5rem 1.2rem', cursor: 'pointer', backgroundColor: showTeamsModal ? '#f97316' : 'white', color: showTeamsModal ? 'white' : '#475569', borderRadius: '20px', fontWeight: 'bold', whiteSpace: 'nowrap', transition: 'all 0.2s' }}>
                 <Users size={18} /> {t('雲端家人', 'Cloud Family')}
+                {teamsUnread > 0 && (
+                  <span style={{ position: 'absolute', top: -4, right: -4, background: '#ef4444', color: 'white', fontSize: '0.65rem', fontWeight: 700, borderRadius: 10, padding: '1px 6px', minWidth: 18, textAlign: 'center', boxShadow: '0 1px 2px rgba(0,0,0,0.2)' }}>{teamsUnread >= 99 ? '99+' : teamsUnread}</span>
+                )}
               </div>
               <div className="block-tile" onClick={() => setMainTab('search')} style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', padding: '0.5rem 1.2rem', cursor: 'pointer', backgroundColor: mainTab === 'search' ? '#8b5cf6' : 'white', color: mainTab === 'search' ? 'white' : '#475569', borderRadius: '20px', fontWeight: 'bold', whiteSpace: 'nowrap', transition: 'all 0.2s' }}>
                 <Search size={18} /> {t('搜尋', 'Search')}
@@ -14444,7 +14463,10 @@ const deDict = {
                     </div>
 
                     {/* Cloud Family */}
-                    <div className="primary-button" onClick={() => setShowTeamsModal(true)} style={{ background: 'linear-gradient(135deg, #fb923c, #ea580c)', borderRadius: '16px', padding: '2.5rem 2rem', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', color: 'white', textAlign: 'center', boxShadow: '0 10px 28px rgba(234, 88, 12, 0.35)' }}>
+                    <div className="primary-button" onClick={() => setShowTeamsModal(true)} style={{ position: 'relative', background: 'linear-gradient(135deg, #fb923c, #ea580c)', borderRadius: '16px', padding: '2.5rem 2rem', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', color: 'white', textAlign: 'center', boxShadow: '0 10px 28px rgba(234, 88, 12, 0.35)' }}>
+                      {teamsUnread > 0 && (
+                        <span style={{ position: 'absolute', top: 14, right: 14, background: '#fff', color: '#dc2626', fontSize: '0.85rem', fontWeight: 800, borderRadius: 14, padding: '3px 12px', minWidth: 28, textAlign: 'center', boxShadow: '0 2px 8px rgba(0,0,0,0.25)' }}>{teamsUnread >= 99 ? '99+' : teamsUnread}</span>
+                      )}
                       <Users size={72} style={{ marginBottom: '1rem' }} />
                       <h2 style={{ fontSize: '2rem', margin: 0, marginBottom: '0.5rem', textShadow: '0 2px 4px rgba(0,0,0,0.2)' }}>{t("雲端家人", "Cloud Family")}</h2>
                       <p style={tileCaptionStyle()}>{splitCaption(t("呼朋喚友來相伴，相互激勵心同歡。", "Gather friends to walk together — encourage one another, rejoice as one."))}</p>
@@ -19903,9 +19925,10 @@ const deDict = {
           uiLang={uiLang}
           onClose={() => {
             setShowTeamsModal(false);
-            // Closing dismisses the return path too — user explicitly
-            // walked away.
             if (pendingTeamReturn) setPendingTeamReturn(null);
+            // User likely just consumed some cheers; bring badge into
+            // sync with server right away.
+            refreshTeamsUnread();
           }}
           pendingJoinCode={pendingJoinCode}
           onJoinHandled={() => {

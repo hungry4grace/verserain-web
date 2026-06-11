@@ -25,6 +25,8 @@ async function jget(path) {
 export const teamsApi = {
   myTeams: (email) =>
     jget(`/my-teams?email=${encodeURIComponent(email)}`),
+  markRead: (email, teamId) =>
+    jpost('/teams/mark-read', { email, teamId }),
   create: (email, name, description) =>
     jpost('/teams/create', { email, name, description }),
   get: (email, teamId) =>

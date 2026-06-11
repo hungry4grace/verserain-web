@@ -1342,6 +1342,7 @@ export default class Server {
                   `member-week-fruits:${teamId}:`,
                   `team-week-active-set:${teamId}:`,
                   `team-verse-done:${teamId}:`,
+                  `team-read:${teamId}:`,
                ];
                for (const pfx of sweepPrefixes) {
                   const m = await this.room.storage.list({ prefix: pfx });
@@ -1357,23 +1358,51 @@ export default class Server {
             try {
                const email = url.searchParams.get('email');
                if (!email) return err('email required');
-               const ids = (await this.room.storage.get(`user-teams:${lc(email)}`)) || [];
+               const e = lc(email);
+               const ids = (await this.room.storage.get(`user-teams:${e}`)) || [];
                const teams = [];
                for (const tid of ids) {
                   const t = await readTeam(tid);
                   if (!t) continue;
+                  // Per-team unread count: cheers in this user's inbox
+                  // with timestamp > their last team-read marker. Capped
+                  // at 99 for badge display; UI rounds down to "99+".
+                  const lastReadAt = (await this.room.storage.get(`team-read:${tid}:${e}`)) || '';
+                  const inbox = (await this.room.storage.get(`team-cheer:${tid}:${e}`)) || [];
+                  let unreadCount = 0;
+                  for (const c of inbox) {
+                     if (!c.at || c.at > lastReadAt) unreadCount++;
+                     if (unreadCount >= 99) break;
+                  }
                   teams.push({
                      id: t.id,
                      name: t.name,
                      description: t.description,
                      memberCount: (t.members || []).length,
-                     isAdmin: (t.admins || []).includes(lc(email)),
+                     isAdmin: (t.admins || []).includes(e),
                      createdBy: t.createdBy,
-                     createdAt: t.createdAt
+                     createdAt: t.createdAt,
+                     unreadCount,
+                     lastReadAt,
                   });
                }
                return json({ success: true, teams });
             } catch (e) { return err('Failed to fetch teams', 500); }
+         }
+
+         // POST /teams/mark-read — body: { email, teamId }
+         // Stamps the user's last-read marker. Subsequent /my-teams
+         // calls will return unreadCount=0 until new cheers arrive.
+         if (url.pathname.endsWith('/teams/mark-read') && request.method === 'POST') {
+            try {
+               const { email, teamId } = await request.json();
+               if (!email || !teamId) return err('email and teamId required');
+               const team = await readTeam(teamId);
+               if (!team) return err('Team not found', 404);
+               if (!isMember(team, email)) return err('Not a member', 403);
+               await this.room.storage.put(`team-read:${teamId}:${lc(email)}`, new Date().toISOString());
+               return json({ success: true });
+            } catch (e) { return err('Failed to mark read', 500); }
          }
 
          // GET /teams/schedule?id=<teamId>&email=<email>
@@ -1603,6 +1632,40 @@ export default class Server {
                // Cap at 50 most recent — quiet pruning, no notification.
                if (inbox.length > 50) inbox.length = 50;
                await this.room.storage.put(key, inbox);
+               // Fire-and-forget web push: find this recipient's push
+               // subscriptions and hand them to /api/push-team-cheer. The
+               // push endpoint pulls VAPID keys from env and uses web-push
+               // npm — DO storage can't host that lib, so we proxy via
+               // Vercel. Failure here MUST NOT block the cheer write.
+               (async () => {
+                  try {
+                     const targetLc = lc(targetEmail);
+                     const subsMap = await this.room.storage.list({ prefix: 'push:' });
+                     const subs = [];
+                     for (const v of subsMap.values()) {
+                        if (v && v.email && lc(v.email) === targetLc) subs.push(v.subscription);
+                     }
+                     if (subs.length === 0) return;
+                     // Sender's name for the notification — fall back to
+                     // email local-part so it's never blank.
+                     const senderRec = await this.room.storage.get(`user:${lc(email)}`);
+                     const senderName = (senderRec && (senderRec.name || senderRec.skoolName)) || lc(email).split('@')[0];
+                     const title = `🌧️ ${senderName} ${trimmedText ? '留言給你' : '送你一個鼓勵'}`;
+                     const body = trimmedText
+                        ? `${emoji} ${trimmedText}`
+                        : `${emoji} 在「${team.name}」團裡為你打氣`;
+                     await fetch('https://www.verserain.com/api/push-team-cheer', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                           subscriptions: subs.slice(0, 10),
+                           title, body,
+                           url: 'https://www.verserain.com/',
+                           tag: `team-cheer-${teamId}`,
+                        }),
+                     });
+                  } catch { /* silent */ }
+               })();
                // Award giver: text cheer scores higher (effort + meaning) but
                // smaller daily allowance than emoji quick-tap. Caps prevent
                // farming via spam to many recipients.
@@ -1635,7 +1698,10 @@ export default class Server {
                if (!team) return err('Team not found', 404);
                if (!isMember(team, email)) return err('Not a member', 403);
                const inbox = (await this.room.storage.get(`team-cheer:${teamId}:${lc(email)}`)) || [];
-               return json({ success: true, cheers: inbox });
+               // lastReadAt lets the UI glow only cheers newer than the
+               // viewer's previous visit. Empty string = first time.
+               const lastReadAt = (await this.room.storage.get(`team-read:${teamId}:${lc(email)}`)) || '';
+               return json({ success: true, cheers: inbox, lastReadAt });
             } catch (e) { return err('Failed to fetch cheers', 500); }
          }
 
