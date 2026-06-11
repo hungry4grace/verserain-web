@@ -34,6 +34,28 @@ const ROOM_COLORS = ['#ef4444', '#f97316', '#eab308', '#22c55e', '#14b8a6', '#0e
 const ROOM_CODE_CHARS = 'ABCDEFGHJKMNPQRSTUVWXYZ';
 const PUBLIC_APP_ORIGIN = 'https://www.verserain.com';
 
+// Split a lobby tile caption into two balanced lines on the first natural
+// break. Without this, the auto-wrap leaves the final 「化。/年。/歡。」
+// character orphaned on its own line. We look for full-width 「，、」
+// (Chinese / Japanese / Korean) or " — " (English em-dash); if none
+// exists the text stays one line and word-wrap takes over.
+function splitCaption(text) {
+  if (typeof text !== 'string' || text.length < 8) return text;
+  const candidates = ['，', '、', '—', ' - '];
+  for (const sep of candidates) {
+    const idx = text.indexOf(sep);
+    if (idx > 0 && idx < text.length - 1) {
+      // Keep the separator on the first line where natural (commas, dashes),
+      // moving only the part AFTER it to a new line.
+      return text.slice(0, idx + sep.length) + '\n' + text.slice(idx + sep.length).trim();
+    }
+  }
+  return text;
+}
+const tileCaptionStyle = (opacity = 0.9) => ({
+  fontSize: '1rem', margin: 0, opacity, whiteSpace: 'pre-line', lineHeight: 1.5,
+});
+
 // Detect whether the page is running inside the VerseRain iOS WKWebView.
 // We use three signals: a URL query marker the native app sets, the presence
 // of a native bridge handler the Swift app injects, and a fallback UA sniff.
@@ -14343,40 +14365,47 @@ const deDict = {
                     )}
                   </div>
 
+                  {/* Lobby tile captions split into two balanced lines so
+                      the closing 「化。/年。/歡。…」 character doesn't get
+                      orphaned on its own line. Looks for natural break
+                      points (Chinese/Japanese/Korean comma, em-dash) and
+                      injects a newline; combined with whiteSpace:pre-line
+                      on the <p> the text renders as two clean rows. */}
+                  {(() => null)()}
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.5rem', width: '100%' }}>
                     {/* Daily VerseRain */}
                     <div className="primary-button" onClick={() => setMainTab('daily_verse')} style={{ background: 'linear-gradient(135deg, #818cf8, #6366f1 55%, #4338ca)', borderRadius: '16px', padding: '2.5rem 2rem', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', color: 'white', textAlign: 'center', boxShadow: '0 10px 28px rgba(79, 70, 229, 0.35)' }}>
                       <CloudRain size={72} style={{ marginBottom: '1rem' }} />
                       <h2 style={{ fontSize: '2rem', margin: 0, marginBottom: '0.5rem', textShadow: '0 2px 4px rgba(0,0,0,0.2)' }}>{t("每日經文", "Daily Verse")}</h2>
-                      <p style={{ fontSize: '1rem', margin: 0, opacity: 0.95 }}>{t("每日一句神的話，心意更新而變化。", "A verse a day to renew your mind.")}</p>
+                      <p style={tileCaptionStyle(0.95)}>{splitCaption(t("每日一句神的話，心意更新而變化。", "A verse a day to renew your mind."))}</p>
                     </div>
 
                     {/* My Garden */}
                     <div className="primary-button" onClick={() => setMainTab('garden')} style={{ background: 'linear-gradient(135deg, #34d399, #10b981)', borderRadius: '16px', padding: '2.5rem 2rem', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', color: 'white', textAlign: 'center' }}>
                       <TreePine size={72} style={{ marginBottom: '1rem' }} />
                       <h2 style={{ fontSize: '2rem', margin: 0, marginBottom: '0.5rem', textShadow: '0 2px 4px rgba(0,0,0,0.2)' }}>{t("我的園子", "My Garden")}</h2>
-                      <p style={{ fontSize: '1rem', margin: 0, opacity: 0.9 }}>{t("主話如霖澆我田，歲歲結果到豐年。", "View your living scripture trees.")}</p>
+                      <p style={tileCaptionStyle()}>{splitCaption(t("主話如霖澆我田，歲歲結果到豐年。", "View your living scripture trees."))}</p>
                     </div>
 
                     {/* Cloud Family */}
                     <div className="primary-button" onClick={() => setShowTeamsModal(true)} style={{ background: 'linear-gradient(135deg, #fb923c, #ea580c)', borderRadius: '16px', padding: '2.5rem 2rem', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', color: 'white', textAlign: 'center', boxShadow: '0 10px 28px rgba(234, 88, 12, 0.35)' }}>
                       <Users size={72} style={{ marginBottom: '1rem' }} />
                       <h2 style={{ fontSize: '2rem', margin: 0, marginBottom: '0.5rem', textShadow: '0 2px 4px rgba(0,0,0,0.2)' }}>{t("雲端家人", "Cloud Family")}</h2>
-                      <p style={{ fontSize: '1rem', margin: 0, opacity: 0.9 }}>{t("呼朋喚友來相伴，相互激勵心同歡。", "Gather friends to walk together — encourage one another, rejoice as one.")}</p>
+                      <p style={tileCaptionStyle()}>{splitCaption(t("呼朋喚友來相伴，相互激勵心同歡。", "Gather friends to walk together — encourage one another, rejoice as one."))}</p>
                     </div>
 
                     {/* Scripture Library */}
                     <div className="primary-button" onClick={() => setMainTab('versesets')} style={{ background: 'linear-gradient(135deg, #60a5fa, #3b82f6)', borderRadius: '16px', padding: '2.5rem 2rem', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', color: 'white', textAlign: 'center' }}>
                       <Library size={72} style={{ marginBottom: '1rem' }} />
                       <h2 style={{ fontSize: '2rem', margin: 0, marginBottom: '0.5rem', textShadow: '0 2px 4px rgba(0,0,0,0.2)' }}>{t("經文題庫", "Scripture Sets")}</h2>
-                      <p style={{ fontSize: '1rem', margin: 0, opacity: 0.9 }}>{t("經題萬卷勤溫故，句句生光照此程。", "Browse global verse sets and choose scriptures to practice.")}</p>
+                      <p style={tileCaptionStyle()}>{splitCaption(t("經題萬卷勤溫故，句句生光照此程。", "Browse global verse sets and choose scriptures to practice."))}</p>
                     </div>
 
                     {/* Multiplayer Game */}
                     <div className="primary-button" onClick={() => setMainTab('multiplayer')} style={{ background: 'linear-gradient(135deg, #f472b6, #ec4899)', borderRadius: '16px', padding: '2.5rem 2rem', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', color: 'white', textAlign: 'center' }}>
                       <Gamepad2 size={72} style={{ marginBottom: '1rem' }} />
                       <h2 style={{ fontSize: '2rem', margin: 0, marginBottom: '0.5rem', textShadow: '0 2px 4px rgba(0,0,0,0.2)' }}>{t("多人遊戲", "Multiplayer")}</h2>
-                      <p style={{ fontSize: '1rem', margin: 0, opacity: 0.9 }}>{t("同心走過天路程，並肩玩出主榮耀。", "Play together with friends in real time.")}</p>
+                      <p style={tileCaptionStyle()}>{splitCaption(t("同心走過天路程，並肩玩出主榮耀。", "Play together with friends in real time."))}</p>
                     </div>
                   </div>
                 </div>
