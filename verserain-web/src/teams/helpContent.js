@@ -8,12 +8,12 @@
 
 export const HELP_CONTENT = {
   zh: {
-    title: '我的團隊 · 使用說明',
-    intro: '一起讀經,彼此陪伴 — 不是比賽。',
+    title: '雲端家人 · 使用說明',
+    intro: '每天有神的話,有家人的溫柔問候 — 不是比賽。',
     sections: [
       {
         title: '🌳 設計原則',
-        body: '我的團隊有四條紅線,**永遠不會改變**:\n\n· 不排名 — 列表按加入順序,不按完成數或點數\n· 不顯示落後 — 不秀「比某人少幾節」\n· 里程碑式回饋 — 完成顯示 ✓,不秀分數差距\n· 管理員是牧者,不是裁判 — 不能罰沉默的人\n\n點數**不是用來比較**,而是讓你看見:你這週的成長,以及全團一起的果子。',
+        body: '雲端家人有四條紅線,**永遠不會改變**:\n\n· 不排名 — 列表按加入順序,不按完成數或點數\n· 不顯示落後 — 不秀「比某人少幾節」\n· 里程碑式回饋 — 完成顯示 ✓,不秀分數差距\n· 管理員是牧者,不是裁判 — 不能罰沉默的人\n\n點數**不是用來比較**,而是讓你看見:你這週的成長,以及全家一起的果子。',
       },
       {
         title: '🚀 怎麼加入 / 建立',
@@ -37,12 +37,12 @@ export const HELP_CONTENT = {
   },
 
   cuvs: {
-    title: '我的团队 · 使用说明',
-    intro: '一起读经,彼此陪伴 — 不是比赛。',
+    title: '云端家人 · 使用说明',
+    intro: '每天有神的话,有家人的温柔问候 — 不是比赛。',
     sections: [
       {
         title: '🌳 设计原则',
-        body: '我的团队有四条红线,**永远不会改变**:\n\n· 不排名 — 列表按加入顺序,不按完成数或点数\n· 不显示落后 — 不秀「比某人少几节」\n· 里程碑式回馈 — 完成显示 ✓,不秀分数差距\n· 管理员是牧者,不是裁判 — 不能罚沉默的人\n\n点数**不是用来比较**,而是让你看见:你这周的成长,以及全团一起的果子。',
+        body: '云端家人有四条红线,**永远不会改变**:\n\n· 不排名 — 列表按加入顺序,不按完成数或点数\n· 不显示落后 — 不秀「比某人少几节」\n· 里程碑式回馈 — 完成显示 ✓,不秀分数差距\n· 管理员是牧者,不是裁判 — 不能罚沉默的人\n\n点数**不是用来比较**,而是让你看见:你这周的成长,以及全家一起的果子。',
       },
       {
         title: '🚀 怎么加入 / 建立',
@@ -66,8 +66,8 @@ export const HELP_CONTENT = {
   },
 
   en: {
-    title: 'My Teams · Guide',
-    intro: 'Read the Bible together, walk alongside each other — not a competition.',
+    title: 'Cloud Family · Guide',
+    intro: 'God\'s word every day, and warm greetings from family — not a competition.',
     sections: [
       {
         title: '🌳 Design principles',

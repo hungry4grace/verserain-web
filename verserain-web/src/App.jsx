@@ -14245,7 +14245,7 @@ const deDict = {
                 <Gamepad2 size={18} /> {t('多人遊戲', 'Multiplayer')}
               </div>
               <div className="block-tile" onClick={() => setShowTeamsModal(true)} style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', padding: '0.5rem 1.2rem', cursor: 'pointer', backgroundColor: '#f97316', color: 'white', borderRadius: '20px', fontWeight: 'bold', whiteSpace: 'nowrap', transition: 'all 0.2s' }}>
-                <Users size={18} /> {t('我的團隊', 'My Teams')}
+                <Users size={18} /> {t('雲端家人', 'Cloud Family')}
               </div>
               <div className="block-tile" onClick={() => setMainTab('search')} style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', padding: '0.5rem 1.2rem', cursor: 'pointer', backgroundColor: mainTab === 'search' ? '#8b5cf6' : 'white', color: mainTab === 'search' ? 'white' : '#475569', borderRadius: '20px', fontWeight: 'bold', whiteSpace: 'nowrap', transition: 'all 0.2s' }}>
                 <Search size={18} /> {t('搜尋', 'Search')}
@@ -14358,10 +14358,10 @@ const deDict = {
                       <p style={{ fontSize: '1rem', margin: 0, opacity: 0.9 }}>{t("主話如霖澆我田，歲歲結果到豐年。", "View your living scripture trees.")}</p>
                     </div>
 
-                    {/* My Teams */}
+                    {/* Cloud Family */}
                     <div className="primary-button" onClick={() => setShowTeamsModal(true)} style={{ background: 'linear-gradient(135deg, #fb923c, #ea580c)', borderRadius: '16px', padding: '2.5rem 2rem', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', color: 'white', textAlign: 'center', boxShadow: '0 10px 28px rgba(234, 88, 12, 0.35)' }}>
                       <Users size={72} style={{ marginBottom: '1rem' }} />
-                      <h2 style={{ fontSize: '2rem', margin: 0, marginBottom: '0.5rem', textShadow: '0 2px 4px rgba(0,0,0,0.2)' }}>{t("我的團隊", "My Teams")}</h2>
+                      <h2 style={{ fontSize: '2rem', margin: 0, marginBottom: '0.5rem', textShadow: '0 2px 4px rgba(0,0,0,0.2)' }}>{t("雲端家人", "Cloud Family")}</h2>
                       <p style={{ fontSize: '1rem', margin: 0, opacity: 0.9 }}>{t("呼朋喚友來相伴，相互激勵心同歡。", "Gather friends to walk together — encourage one another, rejoice as one.")}</p>
                     </div>
 

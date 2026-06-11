@@ -1,4 +1,4 @@
-# Companion Teams — User Guide
+# Cloud Family (formerly Companion Teams / My Teams) — User Guide
 
 > "Two are better than one, because they have a good return for their labor." — Ecclesiastes 4:9
 

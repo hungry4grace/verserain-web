@@ -100,7 +100,7 @@ export default function TeamsModal({
       <div style={{ ...card, width: 'min(720px, 100%)', maxHeight: '90vh', overflow: 'auto', padding: 0 }}>
         <Header
           title={
-            view === 'list' ? t('我的團隊', 'My Teams') :
+            view === 'list' ? t('雲端家人', 'Cloud Family') :
             view === 'admin' ? t('團隊管理', 'Team Admin') :
             t('團隊', 'Team')
           }
