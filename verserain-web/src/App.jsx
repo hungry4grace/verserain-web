@@ -5052,7 +5052,12 @@ export default function App() {
     setSelectedVerseRefs([queue[0].reference]);
     setTimeout(() => startGame(mode === 'play', queue[0]), 200);
     return true;
-  }, [activeVerseSets, customVerseSets]);
+    // playMode + distractionLevel are dependencies because startGame
+    // closes over both — without them the team-launched closure stays
+    // pinned to whatever playMode/distractionLevel was when the first
+    // render created it, which made 經文雨 silently launch square mode
+    // (block stuck at top-left under the rain background).
+  }, [activeVerseSets, customVerseSets, playMode, distractionLevel]);
   const [isBlindMode, setIsBlindMode] = useState(() => localStorage.getItem('verseRain_blindMode') === 'true');
   const [isDebugMode, setIsDebugMode] = useState(() => localStorage.getItem('verseRain_debugMode') === 'true');
 
