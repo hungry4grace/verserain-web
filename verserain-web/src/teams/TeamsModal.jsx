@@ -1805,7 +1805,10 @@ function TeamAdminView({ userEmail, teamId, t, topicSets = [], onBack, onDisband
               <div style={{ color: colors.text }}>
                 {displayNames[m] || m.split('@')[0]}
                 {adminFlag && <Crown size={12} style={{ color: colors.warm, marginLeft: 6, verticalAlign: 'middle' }} />}
-                <span style={{ color: colors.muted, fontSize: '0.8rem', marginLeft: 6 }}>{m}</span>
+                {/* Email intentionally hidden — visible identifier is the
+                    displayName (or its local-part fallback). Admin actions
+                    operate on the email under the hood; nothing else in
+                    the UI surfaces it. */}
               </div>
               <div>
                 {adminFlag ? (
