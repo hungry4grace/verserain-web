@@ -19918,6 +19918,13 @@ const deDict = {
           setPlayMode={setPlayMode}
           distractionLevel={distractionLevel}
           setDistractionLevel={setDistractionLevel}
+          onViewMemberGarden={(name) => {
+            // Close the teams modal first so the garden overlay (which
+            // mounts at the app root) isn't visually stacked behind it.
+            setShowTeamsModal(false);
+            if (pendingTeamReturn) setPendingTeamReturn(null);
+            handleViewPlayerGarden(name);
+          }}
           onLaunchSet={async (setId, mode = 'campaign', returnTeamId = null, verseIndex = null) => {
             setShowTeamsModal(false);
             if (returnTeamId) setPendingTeamReturn(returnTeamId);

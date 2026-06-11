@@ -76,6 +76,7 @@ export default function TeamsModal({
   initialTeamId = null,      // when set, modal opens directly on that team's detail
   playMode, setPlayMode,                 // pass-throughs so user can pick mode in the team
   distractionLevel, setDistractionLevel, // same for difficulty (0-3)
+  onViewMemberGarden,                    // (playerName) => opens the garden overlay
 }) {
   // initialTeamId is honored only on the first render — once user navigates
   // away from detail (back, close, etc.) the prop has done its job. We
@@ -143,6 +144,7 @@ export default function TeamsModal({
               setPlayMode={setPlayMode}
               distractionLevel={distractionLevel}
               setDistractionLevel={setDistractionLevel}
+              onViewMemberGarden={onViewMemberGarden}
             />
           )}
           {view === 'admin' && activeTeamId && (
@@ -470,7 +472,7 @@ function JoinTeamForm({ t, onCancel, onJoined, userEmail, initialCode = '' }) {
 
 // -------------------- Detail view --------------------
 
-function TeamDetailView({ userEmail, playerName, teamId, t, onOpenAdmin, onLeft, onLaunchSet, playMode, setPlayMode, distractionLevel, setDistractionLevel }) {
+function TeamDetailView({ userEmail, playerName, teamId, t, onOpenAdmin, onLeft, onLaunchSet, playMode, setPlayMode, distractionLevel, setDistractionLevel, onViewMemberGarden }) {
   const [team, setTeam] = useState(null);
   const [displayNames, setDisplayNames] = useState({});
   const [schedule, setSchedule] = useState({ items: [] });
@@ -648,6 +650,7 @@ function TeamDetailView({ userEmail, playerName, teamId, t, onOpenAdmin, onLeft,
             schedule={schedule}
             setStatusByItem={verifiedProgress.setStatus || {}}
             onCheer={(emoji, text) => sendCheer(memberEmail, emoji, text)}
+            onViewGarden={onViewMemberGarden}
             t={t}
           />
         ))}
@@ -1349,7 +1352,7 @@ function ComposeReflection({ t, userEmail, teamId, itemId, type, verses, onCance
   );
 }
 
-function MemberCard({ memberEmail, isMe, isAdmin, displayName, schedule, setStatusByItem = {}, onCheer, t }) {
+function MemberCard({ memberEmail, isMe, isAdmin, displayName, schedule, setStatusByItem = {}, onCheer, onViewGarden, t }) {
   // Per-day reading model: count total days completed across all
   // scheduled items. Each "day" is one verse done (play or campaign).
   let doneDays = 0;
@@ -1379,11 +1382,22 @@ function MemberCard({ memberEmail, isMe, isAdmin, displayName, schedule, setStat
   return (
     <div style={{ ...card, padding: '0.75rem' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
-        <strong style={{ color: colors.text, fontSize: '0.95rem' }}>
+        <strong style={{ color: colors.text, fontSize: '0.95rem', flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
           {displayName}
           {isMe && <span style={{ color: colors.muted, fontWeight: 'normal' }}> ({t('你', 'you')})</span>}
         </strong>
-        {isAdmin && <Crown size={12} style={{ color: colors.warm }} />}
+        {isAdmin && <Crown size={12} style={{ color: colors.warm, flexShrink: 0 }} />}
+        {onViewGarden && (
+          <button
+            onClick={() => onViewGarden(displayName)}
+            title={t('看 TA 的園子', "View their garden")}
+            style={{
+              background: 'transparent', border: `1px solid ${colors.border}`,
+              borderRadius: 6, cursor: 'pointer', padding: '0.15rem 0.4rem',
+              fontSize: '0.9rem', flexShrink: 0,
+            }}
+          >🌳</button>
+        )}
       </div>
       <div style={{ color: colors.muted, fontSize: '0.85rem', marginBottom: 8 }}>
         {totalDays === 0
