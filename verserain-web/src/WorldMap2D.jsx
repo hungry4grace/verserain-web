@@ -42,7 +42,9 @@ function loadLeafletAndCluster() {
   });
 }
 
-export default function WorldMap2D({ t, playerName, onJoinRoom, onViewGarden, onToggleMode, currentMode, focusLocation }) {
+const TEAMS_HOST = 'https://verserain-party.hungry4grace.partykit.dev/parties/main/global-auth-db';
+
+export default function WorldMap2D({ t, playerName, userEmail, onJoinRoom, onViewGarden, onToggleMode, currentMode, focusLocation }) {
   const mapRef = useRef(null);
   const leafletMapRef = useRef(null);
   const [players, setPlayers] = useState([]);
@@ -50,11 +52,52 @@ export default function WorldMap2D({ t, playerName, onJoinRoom, onViewGarden, on
   const [selectedPlayer, setSelectedPlayer] = useState(null);
   const [error, setError] = useState(null);
   const [selectedRoom, setSelectedRoom] = useState(null);
+  // 雲端家人:此使用者的所有團 + 每團成員 playerName 集合。
+  // 結構:{ id, name, memberNames: Set<string> }[]
+  const [myTeams, setMyTeams] = useState([]);
+  const [selectedTeam, setSelectedTeam] = useState(null); // teamId or null
   const selectedRoomRef = useRef(selectedRoom);
-  
+
   useEffect(() => {
     selectedRoomRef.current = selectedRoom;
   }, [selectedRoom]);
+
+  // Fetch my teams + their members. Translate emails → playerName via
+  // each /teams/get response's displayNames. We only need names (not
+  // location) because we'll match against the existing players array.
+  useEffect(() => {
+    if (!userEmail) { setMyTeams([]); return; }
+    let cancelled = false;
+    (async () => {
+      try {
+        const r = await fetch(`${TEAMS_HOST}/my-teams?email=${encodeURIComponent(userEmail)}`);
+        if (!r.ok) return;
+        const data = await r.json();
+        const teams = data.teams || [];
+        const detailed = await Promise.all(teams.map(async (tm) => {
+          try {
+            const d = await fetch(`${TEAMS_HOST}/teams/get?id=${encodeURIComponent(tm.id)}&email=${encodeURIComponent(userEmail)}`);
+            if (!d.ok) return null;
+            const dd = await d.json();
+            const dn = dd.displayNames || {};
+            const members = (dd.team?.members || []);
+            // Filter out members whose displayName is just the email
+            // local-part — those haven't completed onboarding and won't
+            // have a corresponding map marker either.
+            const memberNames = new Set();
+            for (const e of members) {
+              const name = dn[e];
+              if (name && name !== e.split('@')[0]) memberNames.add(name);
+              else if (name) memberNames.add(name);
+            }
+            return { id: tm.id, name: tm.name, memberNames };
+          } catch { return null; }
+        }));
+        if (!cancelled) setMyTeams(detailed.filter(Boolean));
+      } catch { /* fail quietly */ }
+    })();
+    return () => { cancelled = true; };
+  }, [userEmail]);
 
   // Fetch player map data + auto-refresh every 30s
   useEffect(() => {
@@ -184,6 +227,24 @@ export default function WorldMap2D({ t, playerName, onJoinRoom, onViewGarden, on
             }
           }
 
+          // 雲端家人 highlight:選定團時,團員白亮、非團員暗化。覆蓋
+          // 在 selectedRoom 之後,讓 team filter 取代 room filter 的視覺。
+          const activeTeam = myTeams.find(tm => tm.id === selectedTeam);
+          if (activeTeam) {
+            const isTeammate = activeTeam.memberNames.has(p.name);
+            if (isTeammate) {
+              bgColor = '#ffffff';
+              glowStyle = 'border: 2px solid #fb923c; box-shadow: 0 0 0 4px rgba(249,115,22,0.85), 0 0 24px #ffffff;';
+              opacity = 1;
+              filter = 'none';
+            } else {
+              bgColor = '#0f2d3b';
+              opacity = 0.18;
+              filter = 'grayscale(100%)';
+              glowStyle = 'none';
+            }
+          }
+
           let size = 10;
           
           if (isCurrentUser) {
@@ -192,6 +253,13 @@ export default function WorldMap2D({ t, playerName, onJoinRoom, onViewGarden, on
             opacity = 1;
             filter = 'none';
             size = 14; // slightly larger for visibility
+          }
+
+          // Bump team members up a notch so the highlight reads even
+          // on a crowded global view.
+          {
+            const at = myTeams.find(tm => tm.id === selectedTeam);
+            if (at && at.memberNames.has(p.name) && !isCurrentUser) size = 13;
           }
 
           const icon = L.divIcon({
@@ -303,14 +371,67 @@ export default function WorldMap2D({ t, playerName, onJoinRoom, onViewGarden, on
     return () => {
       // Don't remove the map instance on unmount/re-render to preserve view
     };
-  }, [loading, players, playerName, selectedRoom]);
+  }, [loading, players, playerName, selectedRoom, selectedTeam, myTeams]);
 
   return (
     <div>
       {/* Stats bar */}
       <div style={{ padding: '0.8rem 2rem', backgroundColor: '#f8fafc', borderBottom: '1px solid #e2e8f0', display: 'flex', gap: '2rem', flexWrap: 'wrap', alignItems: 'center' }}>
-        <div style={{ color: '#475569', fontSize: '0.9rem' }}>
-          🌍 <strong style={{ color: '#0ea5e9' }}>{players.length}</strong> {t('位玩家遍佈全球', 'players worldwide')}
+        <div style={{ color: '#475569', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+          <span>🌍 <strong style={{ color: '#0ea5e9' }}>{players.length}</strong> {t('位玩家遍佈全球', 'players worldwide')}</span>
+          {myTeams.length > 0 && (
+            <>
+              <span style={{ color: '#94a3b8' }}>·</span>
+              {myTeams.map(tm => {
+                const isSelected = selectedTeam === tm.id;
+                const visibleMembers = players.filter(p => tm.memberNames.has(p.name));
+                return (
+                  <button
+                    key={tm.id}
+                    title={t(
+                      `${tm.name} · 已上線 ${visibleMembers.length}/${tm.memberNames.size} 位`,
+                      `${tm.name} · ${visibleMembers.length}/${tm.memberNames.size} on the map`
+                    )}
+                    onClick={() => {
+                      if (isSelected) {
+                        setSelectedTeam(null);
+                        return;
+                      }
+                      setSelectedTeam(tm.id);
+                      setSelectedRoom(null);
+                      const inView = players.filter(p => tm.memberNames.has(p.name));
+                      if (inView.length > 0 && leafletMapRef.current) {
+                        const lats = inView.map(p => p.lat);
+                        const lngs = inView.map(p => p.lng);
+                        // When all members are in roughly the same spot
+                        // (e.g. one city) flyToBounds becomes a no-op zoom;
+                        // pad generously and cap zoom so we still feel a
+                        // meaningful focus move.
+                        leafletMapRef.current.flyToBounds([
+                          [Math.min(...lats), Math.min(...lngs)],
+                          [Math.max(...lats), Math.max(...lngs)]
+                        ], { padding: [80, 80], maxZoom: 11, animate: true, duration: 1 });
+                      }
+                    }}
+                    style={{
+                      display: 'inline-flex', alignItems: 'center', gap: 4,
+                      background: isSelected ? '#f97316' : '#fff7ed',
+                      color: isSelected ? '#fff' : '#9a3412',
+                      border: `1px solid ${isSelected ? '#ea580c' : '#fed7aa'}`,
+                      borderRadius: '99px', padding: '2px 10px',
+                      fontSize: '0.78rem', fontWeight: 'bold', cursor: 'pointer',
+                      transition: 'transform 0.15s, background 0.15s',
+                    }}
+                    onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
+                    onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                  >
+                    <span style={{ width: 7, height: 7, borderRadius: '50%', background: isSelected ? '#fff' : '#f97316', display: 'inline-block' }} />
+                    {tm.name} ({visibleMembers.length}/{tm.memberNames.size})
+                  </button>
+                );
+              })}
+            </>
+          )}
         </div>
         {(() => {
           const activeRooms = [...new Set(players.filter(p => p.roomId).map(p => p.roomId))];
@@ -361,6 +482,7 @@ export default function WorldMap2D({ t, playerName, onJoinRoom, onViewGarden, on
               if (leafletMapRef.current) {
                 leafletMapRef.current.setView([20, 0], 2, { animate: true });
                 setSelectedRoom(null);
+                setSelectedTeam(null);
               }
             }}
             style={{ background: '#fbbf24', color: '#78350f', border: 'none', padding: '0.3rem 0.8rem', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.8rem' }}

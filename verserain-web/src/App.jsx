@@ -17556,7 +17556,7 @@ const deDict = {
                         <p style={{ margin: '2px 0 0', color: '#64748b', fontSize: '0.85rem' }}>{t('點擊標記查看玩家成績，雙擊遊戲房間加入戰局！', 'Click a marker to see scores, double click a room to join!')}</p>
                       </div>
                     </div>
-                    <WorldMap t={t} playerName={playerName} onViewGarden={(name) => {
+                    <WorldMap t={t} playerName={playerName} userEmail={userEmail} onViewGarden={(name) => {
                       handleViewPlayerGarden(name);
                     }} onJoinRoom={(roomId) => {
                       setMainTab('multiplayer');
