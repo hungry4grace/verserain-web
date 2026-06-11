@@ -4770,18 +4770,30 @@ export default function App() {
         window.history.replaceState({}, '', url.toString());
       }
 
-      // ?startSet=<setId>[&mode=play|campaign]. Stash for the dedicated
-      // launch effect below (we don't have activeVerseSets loaded yet at
-      // this stage). Strip both params immediately so a refresh doesn't
-      // re-launch unexpectedly.
+      // ?startSet=<setId>[&mode=play|campaign][&teamId=<id>&verseIndex=<n>]
+      // Stash for the dedicated launch effect below (we don't have
+      // activeVerseSets loaded yet at this stage). teamId + verseIndex
+      // come from team share links — when present, the launch effect
+      // also primes pendingTeamReturn + pendingVerseCompletionRef so
+      // the post-game flow records the verse completion and bounces
+      // the recipient into the team. Strip all params immediately so
+      // a refresh doesn't re-launch unexpectedly.
       const startSetParam = params.get('startSet');
       if (startSetParam) {
         const mode = params.get('mode') === 'play' ? 'play' : 'campaign';
         sessionStorage.setItem('verserain_pending_start_set', startSetParam);
         sessionStorage.setItem('verserain_pending_start_set_mode', mode);
+        const teamIdParam = params.get('teamId');
+        const verseIndexParam = params.get('verseIndex');
+        if (teamIdParam) sessionStorage.setItem('verserain_pending_start_set_team', teamIdParam);
+        if (verseIndexParam && /^\d+$/.test(verseIndexParam)) {
+          sessionStorage.setItem('verserain_pending_start_set_verse', verseIndexParam);
+        }
         const url = new URL(window.location.href);
         url.searchParams.delete('startSet');
         url.searchParams.delete('mode');
+        url.searchParams.delete('teamId');
+        url.searchParams.delete('verseIndex');
         window.history.replaceState({}, '', url.toString());
       }
 
@@ -5018,12 +5030,51 @@ export default function App() {
     const pending = sessionStorage.getItem('verserain_pending_start_set');
     if (!pending) return;
     const mode = sessionStorage.getItem('verserain_pending_start_set_mode') === 'play' ? 'play' : 'campaign';
+    const teamId = sessionStorage.getItem('verserain_pending_start_set_team') || null;
+    const verseIndexStr = sessionStorage.getItem('verserain_pending_start_set_verse');
+    const verseIndex = verseIndexStr ? parseInt(verseIndexStr, 10) : null;
     sessionStorage.removeItem('verserain_pending_start_set');
     sessionStorage.removeItem('verserain_pending_start_set_mode');
-    // launchSetById defined below; safe to call here because the effect
-    // closes over the latest definition via dependency on activeVerseSets.
-    // eslint-disable-next-line no-use-before-define
-    launchSetById(pending, mode).catch(() => {});
+    sessionStorage.removeItem('verserain_pending_start_set_team');
+    sessionStorage.removeItem('verserain_pending_start_set_verse');
+
+    // Team-aware deep link: prime the return-to-team + verse-complete
+    // pipeline before launching so the recipient gets credit and lands
+    // back in the team after finishing.
+    if (teamId && Number.isFinite(verseIndex) && userEmail) {
+      pendingVerseCompletionRef.current = {
+        email: userEmail,
+        teamId,
+        setId: pending,
+        verseIndex,
+        mode,
+      };
+      setPendingTeamReturn(teamId);
+    }
+
+    // Team share links may reference a bundled set the recipient's bible
+    // version doesn't load. Fetch the team's schedule first to grab the
+    // verses snapshot — admin-picked sets always store verses[] inline,
+    // so we can hand them to launchSetById as a versesOverride and the
+    // recipient can play regardless of their language pack.
+    const launch = async () => {
+      let versesOverride = null;
+      if (teamId && Number.isFinite(verseIndex) && userEmail) {
+        try {
+          const r = await fetch(`https://verserain-party.hungry4grace.partykit.dev/parties/main/global-auth-db/teams/schedule?id=${encodeURIComponent(teamId)}&email=${encodeURIComponent(userEmail)}`);
+          if (r.ok) {
+            const data = await r.json();
+            const item = (data?.schedule?.items || []).find(it => it.setId === pending);
+            if (Array.isArray(item?.verses) && item.verses.length > 0) versesOverride = item.verses;
+          }
+        } catch { /* let launchSetById fall back through its own lookups */ }
+      }
+      // launchSetById defined below; safe to call here because the effect
+      // closes over the latest definition via dependency on activeVerseSets.
+      // eslint-disable-next-line no-use-before-define
+      launchSetById(pending, mode, Number.isFinite(verseIndex) ? verseIndex : null, versesOverride).catch(() => {});
+    };
+    launch();
     // We intentionally omit launchSetById from deps — it's reconstructed
     // every render via useCallback, and depending on it would re-fire the
     // effect repeatedly.
@@ -5040,7 +5091,7 @@ export default function App() {
   // mode='play'    → autoplay rehearsal (TTS reads verses, no blocks/score),
   //                   purely for familiarization; does NOT affect any
   //                   leaderboard so team progress stays untouched.
-  const launchSetById = React.useCallback(async (setId, mode = 'campaign', verseIndex = null) => {
+  const launchSetById = React.useCallback(async (setId, mode = 'campaign', verseIndex = null, versesOverride = null) => {
     if (!setId) return false;
     let set = activeVerseSets.find(s => s.id === setId) || customVerseSets.find(s => s.id === setId);
     if (!set) {
@@ -5051,6 +5102,11 @@ export default function App() {
           if (data?.set?.verses?.length) set = data.set;
         }
       } catch { /* fall through to false */ }
+    }
+    // Last resort: caller already has a verses snapshot (e.g. recipient
+    // of a team share link — their bible version may not load that set).
+    if (!set?.verses?.length && Array.isArray(versesOverride) && versesOverride.length > 0) {
+      set = { id: setId, title: setId, verses: versesOverride };
     }
     if (!set?.verses?.length) return false;
     initAudio();

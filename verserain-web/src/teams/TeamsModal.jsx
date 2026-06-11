@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { X, Users, Crown, Copy, RefreshCw, LogOut, ChevronLeft, Plus, Heart, QrCode, HelpCircle, BookOpen } from 'lucide-react';
+import { X, Users, Crown, Copy, RefreshCw, LogOut, ChevronLeft, Plus, Heart, QrCode, HelpCircle, BookOpen, Share2 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { teamsApi, CHEER_EMOJIS } from './teamsApi';
 import { HELP_CONTENT, resolveHelpLang } from './helpContent';
@@ -10,6 +10,15 @@ import SetPicker from './SetPicker';
 // localhost dev session must still point at the production site.
 const PUBLIC_ORIGIN = 'https://www.verserain.com';
 const buildJoinUrl = (code) => `${PUBLIC_ORIGIN}/?join=${encodeURIComponent(code)}`;
+// Build a team-aware deep link for today's verse. Recipient clicks the
+// link → app parses startSet + teamId + verseIndex → launches the verse
+// → on completion fires /teams/verse-complete attributing it to the
+// recipient, then bounces them into the team detail view.
+const buildVerseShareUrl = (setId, teamId, verseIndex, mode = 'campaign') =>
+  `${PUBLIC_ORIGIN}/?startSet=${encodeURIComponent(setId)}`
+  + `&teamId=${encodeURIComponent(teamId)}`
+  + `&verseIndex=${verseIndex}`
+  + `&mode=${mode}`;
 
 // Single self-contained modal for the Teams feature. Mounted from App.jsx
 // with { userEmail, playerName, t, onClose }. Maintains its own internal
@@ -837,6 +846,7 @@ function ScheduleItemCard({
   const [reflectExpanded, setReflectExpanded] = useState(false);
   const [composeType, setComposeType] = useState(null);
   const [showAllDays, setShowAllDays] = useState(false);
+  const [shared, setShared] = useState(false);
   const description = item.description || '';
   const descNeedsClamp = description.length > 140;
 
@@ -1012,6 +1022,30 @@ function ScheduleItemCard({
                 <option value={3}>{t('難度 3', 'Lv 3')}</option>
               </select>
             )}
+            <button
+              onClick={async () => {
+                const url = buildVerseShareUrl(item.setId, teamId, todayIndex, 'campaign');
+                const title = item.title || t('經文挑戰', 'Verse Challenge');
+                const dayLabel = t(`Day ${todayIndex + 1} / ${totalCount}`, `Day ${todayIndex + 1} / ${totalCount}`);
+                const refLine = todayVerse?.reference ? `${todayVerse.reference}` : '';
+                const verseLine = todayVerse?.text ? `「${todayVerse.text}」` : '';
+                const shareText = [`📖 ${title} · ${dayLabel}`, refLine, verseLine, '', url].filter(Boolean).join('\n');
+                try {
+                  if (navigator.share) {
+                    await navigator.share({ title, text: shareText });
+                  } else {
+                    await navigator.clipboard.writeText(shareText);
+                  }
+                  setShared(true);
+                  setTimeout(() => setShared(false), 2000);
+                } catch { /* user cancelled — no-op */ }
+              }}
+              disabled={planNotStarted}
+              style={{ ...btn('ghost'), padding: '0.35rem 0.7rem', fontSize: '0.85rem' }}
+              title={t('分享給家人 — 他們點連結就能讀經/挑戰並算今天完成', 'Share with family — they can read/challenge from the link and get today\'s credit')}
+            >
+              <Share2 size={14} /> {shared ? t('已複製', 'Copied') : t('分享', 'Share')}
+            </button>
             <div style={{ color: colors.muted, fontSize: '0.78rem', marginLeft: 'auto' }}>
               {t(`今天:${teamDoneToday}/${memberEmails.length} 完成`, `Today: ${teamDoneToday}/${memberEmails.length} done`)}
             </div>
