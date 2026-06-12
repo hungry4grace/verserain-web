@@ -4,8 +4,8 @@
     {
       "name": "verserain-dev",
       "runtimeExecutable": "npx",
-      "runtimeArgs": ["vite", "--port", "5174"],
-      "port": 5174,
+      "runtimeArgs": ["vite", "--port", "5179"],
+      "port": 5179,
       "cwd": "verserain-web"
     }
   ]

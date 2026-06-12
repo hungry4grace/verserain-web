@@ -1,0 +1,12 @@
+android.keystore
+.keystore-password.txt
+app/
+build/
+.gradle/
+gradle/
+gradlew
+gradlew.bat
+*.aab
+*.apk
+*.idsig
+store_icon.png
