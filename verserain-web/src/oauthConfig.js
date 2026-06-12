@@ -29,9 +29,51 @@
 //        - Return URLs: https://verserain.com/  (must be HTTPS; trailing slash matters)
 //   4. The Services ID becomes your APPLE_CLIENT_ID.
 //
+// ─── LINE ───────────────────────────────────────────────────────────────────
+//   1. Go to https://developers.line.biz/console/
+//   2. Create a Provider (e.g. "VerseRain") → Create a "LINE Login" channel:
+//        Region: Taiwan; App types: Web app
+//   3. Channel → "LINE Login" tab → Callback URL — add one per line:
+//        https://www.verserain.com/
+//        https://verserain.com/
+//        http://localhost:5173/
+//   4. Channel → "Basic settings" tab:
+//        - Copy "Channel ID" into LINE_CHANNEL_ID below AND into
+//          LINE_CHANNEL_ID in src/party/server.js (they must match).
+//        - Copy "Channel secret" and store it server-side (NEVER here):
+//            npx partykit env add LINE_CHANNEL_SECRET
+//          then redeploy:  npx partykit deploy
+//   5. Optional: Basic settings → OpenID Connect → apply for the "Email address
+//      permission". Once approved, set LINE_REQUEST_EMAIL = true so LINE
+//      accounts log in with their real email. Without it, accounts are keyed
+//      on a synthetic line_<sub>@privaterelay.verserain.com address.
+//
 // After editing, redeploy. No secrets are stored here — these IDs are public.
 
 export const GOOGLE_CLIENT_ID = '761845973381-2eqaapf2m64voq5gvod1vo5p48o1niua.apps.googleusercontent.com';
+
+export const LINE_CHANNEL_ID = '2010381708';
+export const LINE_REQUEST_EMAIL = false;  // only after LINE grants the email permission
+
+// Kick off the LINE Login redirect flow. LINE has no popup JS SDK for plain
+// web apps, so we navigate to the authorize page and LINE sends the user back
+// to <origin>/?code=...&state=line_... — handled in App.jsx, which forwards
+// the code to the PartyKit /oauth-login endpoint for the server-side token
+// exchange (the channel secret never reaches the browser).
+export function startLineLogin() {
+  const state = 'line_' + Math.random().toString(36).slice(2) + Date.now().toString(36);
+  const redirectUri = window.location.origin + '/';
+  sessionStorage.setItem('verserain_line_state', state);
+  sessionStorage.setItem('verserain_line_redirect', redirectUri);
+  const params = new URLSearchParams({
+    response_type: 'code',
+    client_id: LINE_CHANNEL_ID,
+    redirect_uri: redirectUri,
+    state,
+    scope: 'profile openid' + (LINE_REQUEST_EMAIL ? ' email' : ''),
+  });
+  window.location.href = 'https://access.line.me/oauth2/v2.1/authorize?' + params.toString();
+}
 
 // Fill in after creating the Services ID in Apple Developer portal.
 // Must match one of APPLE_CLIENT_IDS in src/party/server.js.

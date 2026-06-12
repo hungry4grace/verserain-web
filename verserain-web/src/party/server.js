@@ -273,6 +273,60 @@ export default class Server {
     }
   }
 
+  // ─── LINE Login ─────────────────────────────────────────────────────────────
+  // LINE uses the plain OAuth2 authorization-code flow: the web client
+  // redirects to access.line.me and comes back with ?code=..., which it hands
+  // to /oauth-login. We exchange the code for tokens here because that step
+  // needs the channel secret (set with: npx partykit env add LINE_CHANNEL_SECRET),
+  // then validate the returned id_token through LINE's verify endpoint, which
+  // checks signature/expiry and echoes back the decoded claims.
+  // Must match LINE_CHANNEL_ID in src/oauthConfig.js.
+  static LINE_CHANNEL_ID = "2010381708";
+
+  async verifyLineCode(code, redirectUri) {
+    try {
+      const secret = this.room.env.LINE_CHANNEL_SECRET;
+      if (!secret || !Server.LINE_CHANNEL_ID) {
+        console.error("LINE login not configured (LINE_CHANNEL_SECRET / LINE_CHANNEL_ID)");
+        return null;
+      }
+      const tokenRes = await fetch("https://api.line.me/oauth2/v2.1/token", {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: new URLSearchParams({
+          grant_type: "authorization_code",
+          code: String(code || ""),
+          redirect_uri: String(redirectUri || ""),
+          client_id: Server.LINE_CHANNEL_ID,
+          client_secret: String(secret),
+        }),
+      });
+      if (!tokenRes.ok) {
+        console.error("LINE token exchange failed", tokenRes.status, await tokenRes.text().catch(() => ""));
+        return null;
+      }
+      const tokens = await tokenRes.json();
+      if (!tokens.id_token) return null;
+
+      const verifyRes = await fetch("https://api.line.me/oauth2/v2.1/verify", {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: new URLSearchParams({
+          id_token: tokens.id_token,
+          client_id: Server.LINE_CHANNEL_ID,
+        }),
+      });
+      if (!verifyRes.ok) return null;
+      const payload = await verifyRes.json(); // { iss, sub, aud, name, picture, email? }
+      if (payload.iss !== "https://access.line.me") return null;
+      if (payload.aud !== Server.LINE_CHANNEL_ID) return null;
+      return payload;
+    } catch (e) {
+      console.error("LINE code verify failed", e);
+      return null;
+    }
+  }
+
   async verifyGoogleIdToken(idToken) {
     try {
       const parts = String(idToken || "").split(".");
@@ -467,10 +521,10 @@ export default class Server {
            }
         }
 
-        // 3.2. OAuth Login (Google, future: Apple).
+        // 3.2. OAuth Login (Google / Apple / LINE).
         // Verifies the provider credential on the server, then matches or
         // auto-creates a user by email. No password is required because the
-        // OAuth provider has already verified the email. Two credential
+        // OAuth provider has already verified the email. Three credential
         // shapes are accepted:
         //   { idToken }      — Google "One Tap" / Apple Sign-In JWT we verify
         //                      against the provider's public keys.
@@ -479,11 +533,14 @@ export default class Server {
         //                      endpoint, which only succeeds if the token is
         //                      live and was issued to OUR client_id (since
         //                      we never share it with another party).
+        //   { code, redirectUri } — LINE authorization code from the redirect
+        //                      flow; we exchange it using the channel secret
+        //                      and verify the resulting id_token.
         if (url.pathname.endsWith('/oauth-login')) {
            try {
               const body = await request.json();
-              const { provider, idToken, accessToken, inviter } = body;
-              if (!provider || (!idToken && !accessToken)) {
+              const { provider, idToken, accessToken, code, redirectUri, inviter } = body;
+              if (!provider || (!idToken && !accessToken && !code)) {
                  return new Response(JSON.stringify({ error: 'provider and credential required' }), { status: 400, headers: corsHeaders });
               }
 
@@ -497,6 +554,12 @@ export default class Server {
               } else if (provider === 'apple') {
                  if (idToken) {
                     payload = await this.verifyAppleIdToken(idToken);
+                 }
+              } else if (provider === 'line') {
+                 // { code, redirectUri } — authorization code from the LINE
+                 // redirect flow; exchanged + verified server-side.
+                 if (code) {
+                    payload = await this.verifyLineCode(code, redirectUri);
                  }
               } else {
                  return new Response(JSON.stringify({ error: 'Unsupported OAuth provider' }), { status: 400, headers: corsHeaders });
@@ -517,6 +580,11 @@ export default class Server {
               let email = String(payload.email || body.email || '').toLowerCase().trim();
               if (!email && provider === 'apple') {
                  email = `apple_${sub}@privaterelay.verserain.com`;
+              }
+              // LINE only returns an email once the channel is granted the
+              // email permission — until then, key the account on sub.
+              if (!email && provider === 'line') {
+                 email = `line_${sub}@privaterelay.verserain.com`;
               }
               if (!email) {
                  return new Response(JSON.stringify({ error: 'OAuth token missing email' }), { status: 401, headers: corsHeaders });

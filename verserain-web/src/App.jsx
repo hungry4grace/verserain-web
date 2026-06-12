@@ -13,7 +13,7 @@ import { PREMIUM_EMAILS } from './premiumEmails';
 import WorldMap from './WorldMap';
 import BlindModeGame from './BlindModeGame';
 import { TransformWrapper, TransformComponent } from 'react-zoom-pan-pinch';
-import { GOOGLE_CLIENT_ID, APPLE_CLIENT_ID, APPLE_REDIRECT_URI } from './oauthConfig';
+import { GOOGLE_CLIENT_ID, APPLE_CLIENT_ID, APPLE_REDIRECT_URI, LINE_CHANNEL_ID, startLineLogin } from './oauthConfig';
 import { VAPID_PUBLIC_KEY, urlBase64ToUint8Array, isWebPushSupported, isIOSStandalone, isIOSWithoutPWA } from './pushConfig';
 import QrScanner from 'qr-scanner';
 import TeamsModal from './teams/TeamsModal';
@@ -468,7 +468,14 @@ function OAuthButtons({ onGoogleCredential, onAppleCredential, disabled, t }) {
   // when the web Services ID is configured.
   const showAppleButton = inIosApp || !!APPLE_CLIENT_ID;
 
-  if (!GOOGLE_CLIENT_ID && !showAppleButton) {
+  // LINE uses a full-page redirect (no popup SDK), which works the same in
+  // the plain web, the Android TWA, and the iOS WKWebView — no bridge needed.
+  const handleLineClick = () => {
+    if (disabled) return;
+    startLineLogin();
+  };
+
+  if (!GOOGLE_CLIENT_ID && !showAppleButton && !LINE_CHANNEL_ID) {
     return (
       <div style={{ fontSize: '0.78rem', color: '#94a3b8', textAlign: 'center', background: '#f8fafc', border: '1px dashed #cbd5e1', borderRadius: '6px', padding: '0.7rem' }}>
         {t(
@@ -518,6 +525,19 @@ function OAuthButtons({ onGoogleCredential, onAppleCredential, disabled, t }) {
             <path d="M11.624 10.628c-.02-2.027 1.66-3.001 1.736-3.05-.946-1.382-2.418-1.571-2.943-1.593-1.252-.127-2.44.738-3.075.738-.635 0-1.612-.72-2.65-.7-1.366.02-2.622.793-3.327 2.012-1.42 2.461-.363 6.105 1.02 8.103.674 1.0 1.476 2.119 2.527 2.079 1.012-.04 1.395-.654 2.62-.654s1.567.654 2.638.634c1.088-.02 1.778-1.018 2.444-2.018.77-1.158 1.087-2.279 1.107-2.339-.024-.012-2.126-.815-2.147-3.232zM9.667 4.624c.553-.668.928-1.6.824-2.524-.798.032-1.764.531-2.336 1.198-.513.591-.962 1.54-.84 2.448.892.07 1.798-.453 2.352-1.122z" />
           </svg>
           {t('使用 Apple 繼續', 'Continue with Apple')}
+        </button>
+      )}
+      {LINE_CHANNEL_ID && (
+        <button
+          type="button"
+          onClick={handleLineClick}
+          disabled={disabled}
+          style={{ ...baseBtnStyle, background: '#06C755', color: '#fff', border: '1px solid #06C755' }}
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <path d="M19.365 9.863c.349 0 .63.285.63.631 0 .345-.281.63-.63.63H17.61v1.125h1.755c.349 0 .63.283.63.63 0 .344-.281.629-.63.629h-2.386c-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63h2.386c.346 0 .627.285.627.63 0 .349-.281.63-.63.63H17.61v1.125h1.755zm-3.855 3.016c0 .27-.174.51-.432.596-.064.021-.133.031-.199.031-.211 0-.391-.09-.51-.25l-2.443-3.317v2.94c0 .344-.279.629-.631.629-.346 0-.626-.285-.626-.629V8.108c0-.27.173-.51.43-.595.06-.023.136-.033.194-.033.195 0 .375.104.495.254l2.462 3.33V8.108c0-.345.282-.63.63-.63.345 0 .63.285.63.63v4.771zm-5.741 0c0 .344-.282.629-.631.629-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63.346 0 .628.285.628.63v4.771zm-2.466.629H4.917c-.345 0-.63-.285-.63-.629V8.108c0-.345.285-.63.63-.63.348 0 .63.285.63.63v4.141h1.756c.348 0 .629.283.629.63 0 .344-.282.629-.629.629M24 10.314C24 4.943 18.615.572 12 .572S0 4.943 0 10.314c0 4.811 4.27 8.842 10.035 9.608.391.082.923.258 1.058.59.12.301.079.766.038 1.08l-.164 1.02c-.045.301-.24 1.186 1.049.645 1.291-.539 6.916-4.078 9.436-6.975C23.176 14.393 24 12.458 24 10.314" />
+          </svg>
+          {t('使用 LINE 繼續', 'Continue with LINE')}
         </button>
       )}
     </div>
@@ -5281,7 +5301,7 @@ export default function App() {
   }, [showLangPicker]);
   const [verifyEmail, setVerifyEmail] = useState("");
 
-  // ─── OAuth (Google / Apple) ───────────────────────────────────────────────
+  // ─── OAuth (Google / Apple / LINE) ────────────────────────────────────────
   // Hand the provider's credential to the PartyKit /oauth-login endpoint,
   // which verifies it (ID token signature, or access token via Google's
   // userinfo endpoint), then matches by email or auto-creates a verified
@@ -5342,6 +5362,30 @@ export default function App() {
       setAuthLoading(false);
     }
   }, []);
+
+  // LINE OAuth redirect return — startLineLogin() sent the user to LINE, and
+  // LINE redirected back to <origin>/?code=...&state=line_.... Exchange the
+  // code via the PartyKit backend, then scrub the OAuth params from the URL so
+  // a refresh doesn't replay a now-consumed code.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const code = params.get('code');
+    const state = params.get('state') || '';
+    if (!code || !state.startsWith('line_')) return;
+    const savedState = sessionStorage.getItem('verserain_line_state');
+    const redirectUri = sessionStorage.getItem('verserain_line_redirect') || (window.location.origin + '/');
+    sessionStorage.removeItem('verserain_line_state');
+    sessionStorage.removeItem('verserain_line_redirect');
+    ['code', 'state', 'error', 'error_description'].forEach(k => params.delete(k));
+    const rest = params.toString();
+    window.history.replaceState({}, '', window.location.pathname + (rest ? '?' + rest : ''));
+    if (savedState !== state) return; // CSRF state mismatch — ignore the response
+    // Re-open the login modal so the spinner shows while we exchange the code
+    // and any error has somewhere to surface; success closes it again.
+    setShowLoginModal('login');
+    handleOAuthSignIn('line', { code, redirectUri });
+  }, [handleOAuthSignIn]);
+
   const [verseViewModal, setVerseViewModal] = useState(null);
   const [toast, setToast] = useState(null);
   const [showNameEditModal, setShowNameEditModal] = useState(false);
