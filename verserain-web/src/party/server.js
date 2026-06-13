@@ -2021,6 +2021,7 @@ export default class Server {
     const requestedMode = url.searchParams.get("mode");
     const playerKey = url.searchParams.get("playerKey") || conn.id;
     const requestedTeamCount = parseInt(url.searchParams.get("teamCount") || "", 10);
+    const hostWantsToPlay = url.searchParams.get("hostPlays") === '1';
     if (!this.state.matchType) {
       this.state.matchType = requestedMode === 'individual' ? 'individual' : 'team';
     }
@@ -2028,6 +2029,10 @@ export default class Server {
       this.setTeamCount(requestedTeamCount);
     } else if (!this.state.teams) {
       this.setTeamCount(this.state.teamCount || 9);
+    }
+    // Remember whether the team-room host opted to also compete (vs. pure teacher/controller).
+    if (this.state.matchType === 'team' && requestedRole === 'host') {
+      this.state.hostPlays = hostWantsToPlay;
     }
     
     // Team rooms use a teacher/controller host that is not counted as a player.
@@ -2043,9 +2048,15 @@ export default class Server {
     if (isTeamHostController) {
       this.state.hostName = name;
       this.state.hostConnected = true;
-      console.log(`[PARTY] Room [${this.room.id}] - Teacher host connected: ${name} (${conn.id})`);
-      this.broadcastState();
-      return;
+      if (!this.state.hostPlays) {
+        // Pure teacher/controller host — not counted as a player.
+        console.log(`[PARTY] Room [${this.room.id}] - Teacher host connected: ${name} (${conn.id})`);
+        this.broadcastState();
+        return;
+      }
+      // Host opted to compete too — fall through to be registered as a player below
+      // (they remain this.state.host, so they keep host controls like starting the game).
+      console.log(`[PARTY] Room [${this.room.id}] - Playing host connected: ${name} (${conn.id})`);
     }
 
     const existingEntry = Object.entries(this.state.players || {}).find(([, player]) => player.playerKey === playerKey);
@@ -2097,7 +2108,9 @@ export default class Server {
     console.log(`[PARTY] Player left: ${conn.id}`);
     if (this.state.players[conn.id]) {
       this.state.players[conn.id].connected = false;
-    } else if (this.state.host === conn.id && this.state.matchType === 'team') {
+    }
+    // A playing host is in both players and host — mark host disconnected regardless.
+    if (this.state.host === conn.id && this.state.matchType === 'team') {
       this.state.hostConnected = false;
     }
     

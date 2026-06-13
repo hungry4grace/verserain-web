@@ -5394,6 +5394,7 @@ export default function App() {
   const [multiplayerRoomMode, setMultiplayerRoomMode] = useState(null);
   const [multiplayerRoomRole, setMultiplayerRoomRole] = useState('player');
   const [multiplayerTeamCount, setMultiplayerTeamCount] = useState(4);
+  const [multiplayerHostPlays, setMultiplayerHostPlays] = useState(false); // team host also competes
   const geoRef = useRef(null); // cached IP geolocation
   const [showMultiplayerVersePicker, setShowMultiplayerVersePicker] = useState(false);
   const [pickerSelectedSet, setPickerSelectedSet] = useState(null);
@@ -5643,7 +5644,10 @@ export default function App() {
       socketQuery.playerKey = personalCode;
       if (multiplayerRoomMode) socketQuery.mode = multiplayerRoomMode;
       if (multiplayerRoomRole) socketQuery.role = multiplayerRoomRole;
-      if (multiplayerRoomMode === 'team' && multiplayerRoomRole === 'host') socketQuery.teamCount = multiplayerTeamCount;
+      if (multiplayerRoomMode === 'team' && multiplayerRoomRole === 'host') {
+        socketQuery.teamCount = multiplayerTeamCount;
+        if (multiplayerHostPlays) socketQuery.hostPlays = '1';
+      }
     }
 
     const socket = new PartySocket({
@@ -5887,7 +5891,7 @@ export default function App() {
       socketRef.current = null;
       multiplayerSoloActiveRef.current = false;
     };
-  }, [multiplayerRoomId, multiplayerRoomMode, multiplayerRoomRole, multiplayerTeamCount, playerName, personalCode, triggerLightning]);
+  }, [multiplayerRoomId, multiplayerRoomMode, multiplayerRoomRole, multiplayerTeamCount, multiplayerHostPlays, playerName, personalCode, triggerLightning]);
 
 
   // Process Challenge URL parameter
@@ -15387,6 +15391,21 @@ const deDict = {
                         </div>
                       </div>
 
+                      <label style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', width: '100%', maxWidth: '300px', padding: '0.7rem 0.9rem', background: multiplayerHostPlays ? '#eff6ff' : '#f8fafc', border: `1px solid ${multiplayerHostPlays ? '#93c5fd' : '#e2e8f0'}`, borderRadius: '8px', cursor: 'pointer', color: '#334155', fontWeight: 'bold', fontSize: '0.92rem' }}>
+                        <input
+                          type="checkbox"
+                          checked={multiplayerHostPlays}
+                          onChange={(e) => setMultiplayerHostPlays(e.target.checked)}
+                          style={{ width: '18px', height: '18px', accentColor: '#3b82f6', cursor: 'pointer', flex: '0 0 auto' }}
+                        />
+                        <span style={{ textAlign: 'left', lineHeight: 1.3 }}>
+                          {t("我也要一起比賽", "I'll play too")}
+                          <span style={{ display: 'block', fontWeight: 'normal', color: '#94a3b8', fontSize: '0.78rem' }}>
+                            {t("關閉則只當主持人（不計分）", "Off = host only, you won't compete")}
+                          </span>
+                        </span>
+                      </label>
+
                       <button
                         onClick={() => {
                           const newRoom = createRoomCode();
@@ -15480,7 +15499,7 @@ const deDict = {
                         <p style={{ color: '#a21caf', fontSize: '0.9rem', margin: 0 }}>{multiplayerState.matchType === 'team' ? t("選好隊伍並準備後，老師就可以開始。", "Choose a team, get ready, then the teacher can start.") : t("雙方準備就緒後即將開始", "Match starts when both are ready")}</p>
                       </div>
 
-                      {multiplayerState.matchType === 'team' && multiplayerState.host !== myClientId && (
+                      {multiplayerState.matchType === 'team' && multiplayerState.players[myClientId] && (
                         <div style={{ width: '100%', maxWidth: '520px', background: '#f8fafc', border: '1px solid #dbeafe', borderRadius: '12px', padding: '1rem' }}>
                           <h4 style={{ margin: '0 0 0.75rem 0', color: '#334155', textAlign: 'left' }}>{t("選擇你的隊伍", "Choose Your Team")}</h4>
                           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: '0.75rem' }}>
@@ -15512,7 +15531,7 @@ const deDict = {
                         </div>
                       )}
 
-                      {multiplayerState.matchType === 'team' && multiplayerState.host === myClientId && (
+                      {multiplayerState.matchType === 'team' && multiplayerState.host === myClientId && !multiplayerState.players[myClientId] && (
                         <div style={{ width: '100%', maxWidth: '520px', display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: '0.75rem' }}>
                           {(multiplayerState.teams || TEAM_OPTIONS).map(team => {
                             const members = Object.values(multiplayerState.players || {}).filter(p => p.connected && p.teamId === team.id);
@@ -15537,6 +15556,12 @@ const deDict = {
                         </div>
                       )}
 
+                      {multiplayerState.matchType === 'team' && multiplayerState.host === myClientId && multiplayerState.players[myClientId] && (
+                        <div style={{ textAlign: 'center', marginTop: '1rem', color: '#15803d', fontWeight: 'bold', fontSize: '1.05rem', backgroundColor: '#f0fdf4', padding: '0.6rem 1rem', borderRadius: '8px', border: '1px solid #bbf7d0', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem' }}>
+                          <Info size={18} /> {!multiplayerState.players[myClientId]?.teamId ? t("你是主持人並一起參賽 — 請先選一個隊伍，再按「比賽開始」", "You're hosting and competing — choose a team first, then press Start") : t("你是主持人並一起參賽，準備好就按「比賽開始」", "You're hosting and competing — press Start when ready")}
+                        </div>
+                      )}
+
                       <div style={{ display: 'flex', gap: '1rem', margin: '0.5rem 0 1.5rem 0', justifyContent: 'center' }}>
                         <button
                           onClick={() => {
@@ -15556,8 +15581,8 @@ const deDict = {
                             onClick={() => {
                               if (socketRef.current) socketRef.current.send(JSON.stringify({ type: 'HOST_START_GAME' }));
                             }}
-                            disabled={multiplayerState.matchType === 'team' && !canStartTeamMatch(multiplayerState)}
-                            style={{ background: '#ec4899', color: 'white', border: 'none', padding: '0.8rem 2rem', borderRadius: '6px', fontSize: '1.1rem', fontWeight: 'bold', cursor: multiplayerState.matchType === 'team' && !canStartTeamMatch(multiplayerState) ? 'not-allowed' : 'pointer', opacity: multiplayerState.matchType === 'team' && !canStartTeamMatch(multiplayerState) ? 0.55 : 1, transition: 'all 0.2s', boxShadow: '0 4px 6px -1px rgba(236, 72, 153, 0.5)' }}
+                            disabled={multiplayerState.matchType === 'team' && (!canStartTeamMatch(multiplayerState) || (multiplayerState.players[myClientId] && !multiplayerState.players[myClientId].teamId))}
+                            style={{ background: '#ec4899', color: 'white', border: 'none', padding: '0.8rem 2rem', borderRadius: '6px', fontSize: '1.1rem', fontWeight: 'bold', cursor: (multiplayerState.matchType === 'team' && (!canStartTeamMatch(multiplayerState) || (multiplayerState.players[myClientId] && !multiplayerState.players[myClientId].teamId))) ? 'not-allowed' : 'pointer', opacity: (multiplayerState.matchType === 'team' && (!canStartTeamMatch(multiplayerState) || (multiplayerState.players[myClientId] && !multiplayerState.players[myClientId].teamId))) ? 0.55 : 1, transition: 'all 0.2s', boxShadow: '0 4px 6px -1px rgba(236, 72, 153, 0.5)' }}
                           >
                             {t("比賽開始", "Start Game")}
                           </button>
