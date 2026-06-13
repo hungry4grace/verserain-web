@@ -372,6 +372,65 @@ export default class Server {
     }
   }
 
+  // Move all data keyed by a (mutable) display name from oldName -> newName.
+  //
+  // playerName is NOT a stable identity (see the Teams note: identity is
+  // email), yet garden + private-sets are still keyed by it for legacy
+  // reasons. Renaming therefore used to orphan a user's progress under the
+  // old name AND leave a stale duplicate on the leaderboard. This makes the
+  // rename authoritative server-side so progress follows the account instead
+  // of relying on the client's localStorage carrying it over (which breaks
+  // across devices / in-app browsers). Merge semantics mirror the client:
+  // per-verse max(stage, fruits); _activity merged per-day by max.
+  async migratePlayerName(oldName, newName) {
+    if (!oldName || !newName || oldName === newName) return;
+    try {
+      // --- garden:<name> ---
+      const oldGarden = await this.room.storage.get(`garden:${oldName}`);
+      if (oldGarden && typeof oldGarden === 'object') {
+        const target = (await this.room.storage.get(`garden:${newName}`)) || {};
+        const merged = { ...target };
+        for (const [ref, entry] of Object.entries(oldGarden)) {
+          if (ref === '_activity') continue;
+          if (!merged[ref]) {
+            merged[ref] = entry;
+          } else {
+            merged[ref] = {
+              ...merged[ref],
+              stage: Math.max(merged[ref].stage || 0, entry.stage || 0),
+              fruits: Math.max(merged[ref].fruits || 0, entry.fruits || 0),
+            };
+          }
+        }
+        const act = { ...(target._activity || {}) };
+        for (const [day, v] of Object.entries(oldGarden._activity || {})) {
+          act[day] = Math.max(act[day] || 0, v || 0);
+        }
+        merged._activity = act;
+        await this.room.storage.put(`garden:${newName}`, merged);
+        await this.room.storage.delete(`garden:${oldName}`);
+      }
+
+      // --- private-sets:<name>[:...] (legacy blob + chunked per-set keys) ---
+      const legacy = await this.room.storage.get(`private-sets:${oldName}`);
+      if (legacy !== undefined) {
+        if ((await this.room.storage.get(`private-sets:${newName}`)) === undefined) {
+          await this.room.storage.put(`private-sets:${newName}`, legacy);
+        }
+        await this.room.storage.delete(`private-sets:${oldName}`);
+      }
+      const oldPrefix = `private-sets:${oldName}:`;
+      const chunks = await this.room.storage.list({ prefix: oldPrefix });
+      for (const [key, value] of chunks.entries()) {
+        const tail = key.slice(oldPrefix.length);
+        await this.room.storage.put(`private-sets:${newName}:${tail}`, value);
+        await this.room.storage.delete(key);
+      }
+    } catch (e) {
+      console.error("migratePlayerName failed", oldName, "->", newName, e);
+    }
+  }
+
   // --- HTTP Authentication API & Webhook Endpoints ---
   async onRequest(request) {
     // We only process auth requests on a dedicated "auth" room to keep the DB cohesive
@@ -651,12 +710,20 @@ export default class Server {
                  return new Response(JSON.stringify({ error: '密碼錯誤 (Invalid password)' }), { status: 401, headers: corsHeaders });
               }
               
+              const oldName = user.name;
               if (newPassword) user.password = newPassword;
               if (newName) user.name = newName;
               if (newCity !== undefined) user.city = newCity;
               if (newCountry !== undefined) user.country = newCountry;
-              
+
               await this.room.storage.put(`user:${email.toLowerCase()}`, user);
+
+              // Carry garden + private-sets to the new name so a rename never
+              // orphans progress or duplicates the player on the leaderboard.
+              if (newName && oldName && newName !== oldName) {
+                 await this.migratePlayerName(oldName, newName);
+              }
+
               return new Response(JSON.stringify({ success: true, user }), { status: 200, headers: corsHeaders });
            } catch(e) {
               return new Response(JSON.stringify({ error: 'Update failed' }), { status: 500, headers: corsHeaders });
@@ -721,30 +788,6 @@ export default class Server {
               return new Response(JSON.stringify({ error: 'System error processing request' }), { status: 500, headers: corsHeaders });
            }
         }
-
-                // 3.9 Export Users Endpoint (Non-sensitive)
-        if (url.pathname.endsWith('/export-users')) {
-           const secret = url.searchParams.get("secret");
-           if (secret !== "vrain_export_2026") return new Response("Unauthorized", { status: 401 });
-           
-           try {
-              const list = await this.room.storage.list({ prefix: "user:" });
-              const users = [];
-              for (const [key, value] of list) {
-                  if (value.email) {
-                      users.push({
-                          email: value.email,
-                          name: value.name || value.skoolName || "Unknown",
-                          isPremium: value.isPremium || false
-                      });
-                  }
-              }
-              return new Response(JSON.stringify(users), { status: 200, headers: corsHeaders });
-           } catch(e) {
-              return new Response(JSON.stringify({ error: 'System error' }), { status: 500, headers: corsHeaders });
-           }
-        }
-
 
       }
 
@@ -1098,6 +1141,30 @@ export default class Server {
             return new Response(JSON.stringify({ success: true, fruitsMap }), { status: 200, headers: corsHeaders });
          } catch(e) {
             return new Response(JSON.stringify({ error: 'Failed to fetch all gardens' }), { status: 500, headers: corsHeaders });
+         }
+      }
+
+      // Export Users (Non-sensitive). Lives here, NOT in the POST-only block
+      // above — this is an admin GET call, so gating it on POST made it
+      // unreachable (it 404'd via GET). Accept both methods to be safe.
+      if (url.pathname.endsWith('/export-users') && (request.method === 'GET' || request.method === 'POST')) {
+         const secret = url.searchParams.get("secret");
+         if (secret !== "vrain_export_2026") return new Response("Unauthorized", { status: 401 });
+         try {
+            const list = await this.room.storage.list({ prefix: "user:" });
+            const users = [];
+            for (const [key, value] of list) {
+               if (value.email) {
+                  users.push({
+                     email: value.email,
+                     name: value.name || value.skoolName || "Unknown",
+                     isPremium: value.isPremium || false
+                  });
+               }
+            }
+            return new Response(JSON.stringify(users), { status: 200, headers: corsHeaders });
+         } catch(e) {
+            return new Response(JSON.stringify({ error: 'System error' }), { status: 500, headers: corsHeaders });
          }
       }
 
