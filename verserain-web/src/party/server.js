@@ -2323,11 +2323,13 @@ export default class Server {
       }
 
       if (data.type === 'PLAYER_PROGRESS' && this.state.status === 'playing' && this.state.playMode?.endsWith('_solo')) {
-          if (this.state.players[sender.id]) {
+          // Skip if the player already finished all verses: a stray late progress update must not
+          // un-finish them. isFinished is reset only when a new round / game starts
+          // (INIT_GAME, NEXT_CAMPAIGN_ROUND, RESTART_GAME).
+          if (this.state.players[sender.id] && !this.state.players[sender.id].isFinished) {
              this.state.players[sender.id].score = data.score;
              this.state.players[sender.id].health = data.health;
              this.state.players[sender.id].seqIndex = data.seqIndex;
-             this.state.players[sender.id].isFinished = false;
              this.broadcastState();
           }
       }

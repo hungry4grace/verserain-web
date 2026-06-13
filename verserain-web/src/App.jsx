@@ -18166,7 +18166,7 @@ const deDict = {
                         </div>
                         <div style={{ display: 'flex', justifyContent: 'space-between', color: '#94a3b8', fontSize: '0.9rem' }}>
                           <span>{team.playerCount} {t("人", "players")}</span>
-                          <span>{t("計分", "Scoring")} {team.scoringCount || 0} · {team.completedCount || 0} / {team.playerCount} {t("完成", "done")}</span>
+                          <span>{t("完成", "Done")} {team.completedCount || 0} / {team.playerCount}</span>
                         </div>
                         <div style={{ width: '100%', height: '5px', background: 'rgba(255,255,255,0.1)', borderRadius: '3px', overflow: 'hidden' }}>
                           <div style={{ width: `${completedPct}%`, height: '100%', background: team.color, transition: 'width 0.5s' }} />
