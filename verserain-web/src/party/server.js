@@ -481,7 +481,7 @@ export default class Server {
         // 2. User Registration Endpoint
         if (url.pathname.endsWith('/register')) {
            try {
-              const { email, password, nickname, inviter } = await request.json();
+              const { email, password, nickname, inviter, personalCode } = await request.json();
               if (!email || !password) return new Response(JSON.stringify({ error: 'Email and password required' }), { status: 400, headers: corsHeaders });
 
               let user = await this.room.storage.get(`user:${email.toLowerCase()}`);
@@ -507,6 +507,16 @@ export default class Server {
               } else if (user && user.invitedBy) {
                  newUserObj.invitedBy = user.invitedBy;
               }
+              // Bind a canonical personalCode to the account so every device that
+              // logs in reuses the SAME code (referral key + fruit-points key).
+              // Without this, each browser/device generates its own random code
+              // and reads a different referral-points bucket -> mismatched totals.
+              const cleanPersonalCode = typeof personalCode === 'string' ? personalCode.trim() : '';
+              if (user && user.personalCode) {
+                 newUserObj.personalCode = user.personalCode; // preserve a ghost/existing binding
+              } else if (cleanPersonalCode) {
+                 newUserObj.personalCode = cleanPersonalCode;
+              }
               await this.room.storage.put(`user:${email.toLowerCase()}`, newUserObj);
               
               // Send the OTP via email
@@ -529,21 +539,27 @@ export default class Server {
         // 2.5 Email Verification Endpoint
         if (url.pathname.endsWith('/verify-email')) {
            try {
-              const { email, code } = await request.json();
+              const { email, code, personalCode } = await request.json();
               if (!email || !code) return new Response(JSON.stringify({ error: 'Email and code required' }), { status: 400, headers: corsHeaders });
-              
+
               let user = await this.room.storage.get(`user:${email.toLowerCase()}`);
               if (!user) return new Response(JSON.stringify({ error: 'User not found' }), { status: 404, headers: corsHeaders });
-              
+
               if (user.verificationCode !== code && code !== "888888") { // Backdoor code for emergency override if needed
                  return new Response(JSON.stringify({ error: 'Invalid verification code' }), { status: 401, headers: corsHeaders });
               }
-              
+
               user.verified = true;
               user.verificationCode = null; // Clear code after use
+              // Bind the canonical personalCode here too, in case registration
+              // didn't capture it (defensive — keeps every device on one code).
+              const cleanVerifyCode = typeof personalCode === 'string' ? personalCode.trim() : '';
+              if (!user.personalCode && cleanVerifyCode) {
+                 user.personalCode = cleanVerifyCode;
+              }
               await this.room.storage.put(`user:${email.toLowerCase()}`, user);
-              
-              return new Response(JSON.stringify({ success: true, user: { email: user.email, name: user.name, isPremium: user.isPremium } }), { status: 200, headers: corsHeaders });
+
+              return new Response(JSON.stringify({ success: true, user: { email: user.email, name: user.name, isPremium: user.isPremium, personalCode: user.personalCode || null } }), { status: 200, headers: corsHeaders });
            } catch(e) {
               return new Response(JSON.stringify({ error: 'Verification failed' }), { status: 500, headers: corsHeaders });
            }
@@ -552,7 +568,7 @@ export default class Server {
         // 3. User Login Endpoint
         if (url.pathname.endsWith('/login')) {
            try {
-              const { email, password, inviter } = await request.json();
+              const { email, password, inviter, personalCode } = await request.json();
               if (!email || !password) return new Response(JSON.stringify({ error: 'Email and password required' }), { status: 400, headers: corsHeaders });
 
               let user = await this.room.storage.get(`user:${email.toLowerCase()}`);
@@ -566,15 +582,31 @@ export default class Server {
                  return new Response(JSON.stringify({ error: '請先驗證您的電子郵件 (Please verify your email first)', requiresVerification: true }), { status: 403, headers: corsHeaders });
               }
 
+              let dirty = false;
+
               // Late-bind inviter if a returning user logs in from a new
               // device with a ?ref= link in the URL and we never recorded it.
               const cleanInviter = typeof inviter === 'string' ? inviter.trim() : '';
               if (cleanInviter && !user.invitedBy) {
                  user.invitedBy = cleanInviter;
+                 dirty = true;
+              }
+
+              // Late-bind personalCode for legacy accounts created before codes
+              // were stored server-side. The FIRST device to log in donates its
+              // local code as the canonical one; thereafter every device reuses
+              // it (returned below), so referral/fruit keys line up everywhere.
+              const cleanPersonalCode = typeof personalCode === 'string' ? personalCode.trim() : '';
+              if (!user.personalCode && cleanPersonalCode) {
+                 user.personalCode = cleanPersonalCode;
+                 dirty = true;
+              }
+
+              if (dirty) {
                  await this.room.storage.put(`user:${email.toLowerCase()}`, user);
               }
 
-              return new Response(JSON.stringify({ success: true, user: { email: user.email, name: user.name, isPremium: user.isPremium, invitedBy: user.invitedBy || null } }), { status: 200, headers: corsHeaders });
+              return new Response(JSON.stringify({ success: true, user: { email: user.email, name: user.name, isPremium: user.isPremium, invitedBy: user.invitedBy || null, personalCode: user.personalCode || null } }), { status: 200, headers: corsHeaders });
            } catch(e) {
               return new Response(JSON.stringify({ error: 'Login failed' }), { status: 500, headers: corsHeaders });
            }
@@ -1099,11 +1131,47 @@ export default class Server {
       }
 
       // 5. Garden Sync — Save & Retrieve player garden data
+      //
+      // Server-side defensive merge: even if a client pushes an incomplete or
+      // stale snapshot, we never let it lower a verse's stage/fruits or drop a
+      // recorded activity day. The stored garden monotonically grows. This is
+      // the last line of defense against the "stale snapshot clobbers progress"
+      // class of bug — it makes data loss from a single bad write impossible.
       if (url.pathname.endsWith('/save-garden') && request.method === 'POST') {
          try {
             const { playerName, gardenData } = await request.json();
             if (!playerName || !gardenData) return new Response(JSON.stringify({ error: 'playerName and gardenData required' }), { status: 400, headers: corsHeaders });
-            await this.room.storage.put(`garden:${playerName}`, gardenData);
+
+            const existing = (await this.room.storage.get(`garden:${playerName}`)) || {};
+
+            // Field-level merge: keep the higher stage/fruits per verse.
+            const merged = { ...existing };
+            for (const [ref, incoming] of Object.entries(gardenData)) {
+               if (ref === '_activity') continue; // handled below
+               if (!incoming || typeof incoming !== 'object') continue;
+               const prev = merged[ref];
+               if (!prev || typeof prev !== 'object') {
+                  merged[ref] = incoming;
+               } else {
+                  merged[ref] = {
+                     ...prev,
+                     ...incoming,
+                     stage: Math.max(prev.stage || 0, incoming.stage || 0),
+                     fruits: Math.max(prev.fruits || 0, incoming.fruits || 0),
+                  };
+               }
+            }
+
+            // Union the activity maps — never drop a day, keep the higher count.
+            const prevAct = (existing && existing._activity) || {};
+            const incomingAct = (gardenData && gardenData._activity) || {};
+            const mergedAct = { ...prevAct };
+            for (const [day, val] of Object.entries(incomingAct)) {
+               mergedAct[day] = Math.max(mergedAct[day] || 0, val || 0);
+            }
+            merged._activity = mergedAct;
+
+            await this.room.storage.put(`garden:${playerName}`, merged);
             return new Response(JSON.stringify({ success: true }), { status: 200, headers: corsHeaders });
          } catch(e) {
             return new Response(JSON.stringify({ error: 'Failed to save garden' }), { status: 500, headers: corsHeaders });

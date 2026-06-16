@@ -5,6 +5,7 @@ import usePartySocket from 'partysocket/react';
 import PartySocket from 'partysocket';
 import QRCode from 'qrcode';
 import { QRCodeSVG } from 'qrcode.react';
+import { classifyGardenResponse, decideGardenSync, buildFruitAuthorKeys, aggregateFruitResults } from './lib/gardenSync.js';
 import './index.css';
 import { BIBLE_BOOKS, getBookAbbr } from './bibleDictionary';
 import ReactQuill from 'react-quill-new';
@@ -3837,8 +3838,10 @@ export default function App() {
   };
   const [userEmail, setUserEmail] = useState(() => localStorage.getItem('verserain_player_email') || "");
   const [playerName, setPlayerName] = useState(() => localStorage.getItem('verserain_player_name') || "");
-  // Unique random personal invite code (never changes, not linked to nickname)
-  const [personalCode] = useState(() => {
+  // Personal invite code. Generated per-device on first run, but once the user
+  // logs in we adopt the ACCOUNT's canonical code (returned by the server) so
+  // every device shares one code — keeping referral/fruit-point keys aligned.
+  const [personalCode, setPersonalCode] = useState(() => {
     let code = localStorage.getItem('verserain_personal_code');
     if (!code) {
       const chars = 'ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
@@ -3847,6 +3850,25 @@ export default function App() {
     }
     return code;
   });
+
+  // Adopt the account's canonical personalCode returned by login/verify. If it
+  // differs from this device's local code, remember the old one so historic
+  // fruit/referral points stored under it are still counted (see fruit fetch).
+  const adoptAccountPersonalCode = React.useCallback((accountCode) => {
+    const code = typeof accountCode === 'string' ? accountCode.trim() : '';
+    if (!code) return;
+    const current = localStorage.getItem('verserain_personal_code');
+    if (current && current !== code) {
+      // Preserve the set of prior codes this device used, so no fruits go missing.
+      let prev = [];
+      try { prev = JSON.parse(localStorage.getItem('verserain_prev_personal_codes') || '[]'); } catch { prev = []; }
+      if (!prev.includes(current)) prev.push(current);
+      localStorage.setItem('verserain_prev_personal_codes', JSON.stringify(prev));
+    }
+    localStorage.setItem('verserain_personal_code', code);
+    setPersonalCode(code);
+  }, []);
+
   const playerNameRef = useRef(playerName);
 
   // UI Language — independent of Bible version for scalable i18n
@@ -3877,68 +3899,40 @@ export default function App() {
     }
   }, [playerName, personalCode]);
 
-  // On login: fetch garden from backend and merge with localStorage
-  // This ensures data is not lost when using different browsers (e.g. LINE in-app browser)
+  // On login: fetch garden from backend and merge with localStorage.
+  // This ensures data is not lost when using different browsers (e.g. LINE in-app browser).
+  //
+  // SAFETY INVARIANT: we must NEVER overwrite the cloud copy with a local-only
+  // snapshot. If we cannot positively confirm what the cloud currently holds,
+  // pushing local data up can clobber newer progress made on another device.
+  // A failed/non-200 fetch is therefore treated as "cloud state unknown" and we
+  // do a local-only fallback WITHOUT writing back to the server.
   useEffect(() => {
     if (!playerName) return;
     const localGd = JSON.parse(localStorage.getItem('verseRain_gardenData') || '{}');
-    fetch(`https://verserain-party.hungry4grace.partykit.dev/parties/main/global-auth-db/garden?player=${encodeURIComponent(playerName)}`)
-      .then(r => r.ok ? r.json() : null)
-      .then(data => {
-        const remoteGd = (data && data.gardenData && typeof data.gardenData === 'object') ? data.gardenData : {};
-        // Merge: take all keys from both, keep the entry with the higher stage/fruits
-        const merged = { ...remoteGd };
-        Object.entries(localGd).forEach(([ref, localEntry]) => {
-          if (!merged[ref]) {
-            merged[ref] = localEntry;
-          } else {
-            // Keep higher stage and higher fruits
-            merged[ref] = {
-              ...merged[ref],
-              stage: Math.max(merged[ref].stage || 0, localEntry.stage || 0),
-              fruits: Math.max(merged[ref].fruits || 0, localEntry.fruits || 0),
-            };
-          }
-        });
 
-        // Handle daily login activity inside the merge to prevent race conditions
-        const todayStr = new Date().toLocaleDateString('en-CA');
-        if (!merged._activity) merged._activity = {};
-        let currentAct = merged._activity[todayStr] || 0;
-        if (currentAct < 100) currentAct = 100;
-        merged._activity[todayStr] = currentAct;
-
-        // Always save to localStorage and state
-        localStorage.setItem('verseRain_gardenData', JSON.stringify(merged));
-        setGardenData(merged);
-
-        // Always push to backend after merge to ensure login activity is recorded and data is fully synced
+    const applyDecision = (decision) => {
+      localStorage.setItem('verseRain_gardenData', JSON.stringify(decision.garden));
+      setGardenData(decision.garden);
+      if (decision.shouldPushToCloud) {
+        // Safe to push: we either merged confirmed remote data, or confirmed the
+        // player has no remote garden yet (404).
         fetch('https://verserain-party.hungry4grace.partykit.dev/parties/main/global-auth-db/save-garden', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ playerName, gardenData: merged })
+          body: JSON.stringify({ playerName, gardenData: decision.garden })
         }).catch(() => { });
-      })
-      .catch(() => {
-        // Network error — fall back to local only, and try to push it up
-        if (Object.keys(localGd).length > 0) {
-          
-          // Apply daily login activity to local data
-          const todayStr = new Date().toLocaleDateString('en-CA');
-          if (!localGd._activity) localGd._activity = {};
-          let currentAct = localGd._activity[todayStr] || 0;
-          if (currentAct < 100) currentAct = 100;
-          localGd._activity[todayStr] = currentAct;
-          
-          localStorage.setItem('verseRain_gardenData', JSON.stringify(localGd));
-          setGardenData(localGd);
+      } else {
+        console.warn('[garden-sync] cloud state unknown; using local copy without pushing to server to avoid clobbering remote data');
+      }
+    };
 
-          fetch('https://verserain-party.hungry4grace.partykit.dev/parties/main/global-auth-db/save-garden', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ playerName, gardenData: localGd })
-          }).catch(() => { });
-        }
+    fetch(`https://verserain-party.hungry4grace.partykit.dev/parties/main/global-auth-db/garden?player=${encodeURIComponent(playerName)}`)
+      .then(classifyGardenResponse)
+      .then((classification) => applyDecision(decideGardenSync(classification, localGd)))
+      .catch(() => {
+        // Network error — cloud state unknown. Display local only, never push up.
+        applyDecision(decideGardenSync({ kind: 'unknown' }, localGd));
       });
   }, [playerName]);
 
@@ -4102,26 +4096,28 @@ export default function App() {
 
   useEffect(() => {
     if (playerName) {
-      // Fetch verse authoring points (by playerName) + referral points (by personalCode)
-      Promise.all([
-        fetch(`/api/get-creator-points?author=${encodeURIComponent(playerName)}&history=true`).then(r => r.json()),
-        (personalCode && personalCode !== playerName)
-          ? fetch(`/api/get-creator-points?author=${encodeURIComponent(personalCode)}&history=true`).then(r => r.json())
-          : Promise.resolve(null)
-      ]).then(([d, dCode]) => {
-        const totalCreatorPts = (d?.points || 0) + (dCode?.points || 0);
-        const totalRefPts = (d?.referralPoints || 0) + (dCode?.referralPoints || 0);
-        setCreatorOnlyPoints(totalCreatorPts);
-        setReferralOnlyPoints(totalRefPts);
-        setCreatorPoints(totalCreatorPts + totalRefPts);
-        
-        const mergedCreatorHist = [...(d?.creatorHistory || []), ...(dCode?.creatorHistory || [])];
-        mergedCreatorHist.sort((a, b) => b.timestamp - a.timestamp);
-        setCreatorHistory(mergedCreatorHist);
-        
-        const mergedRefHist = [...(d?.referralHistory || []), ...(dCode?.referralHistory || [])];
-        mergedRefHist.sort((a, b) => b.timestamp - a.timestamp);
-        setReferralHistory(mergedRefHist);
+      // Fetch fruit points keyed by: playerName (authoring) + the current
+      // personalCode (referrals) + any PREVIOUS personalCodes this device used
+      // before adopting the account's canonical code. Including the old codes
+      // ensures historic referral fruits aren't lost when the code unifies
+      // across devices. We dedupe keys so nothing is double-counted.
+      let prevCodes = [];
+      try { prevCodes = JSON.parse(localStorage.getItem('verserain_prev_personal_codes') || '[]'); } catch { prevCodes = []; }
+      const authorKeys = buildFruitAuthorKeys(playerName, personalCode, prevCodes);
+
+      Promise.all(
+        authorKeys.map(key =>
+          fetch(`/api/get-creator-points?author=${encodeURIComponent(key)}&history=true`)
+            .then(r => r.json())
+            .catch(() => null)
+        )
+      ).then((results) => {
+        const agg = aggregateFruitResults(results);
+        setCreatorOnlyPoints(agg.creator);
+        setReferralOnlyPoints(agg.referral);
+        setCreatorPoints(agg.total);
+        setCreatorHistory(agg.creatorHist);
+        setReferralHistory(agg.refHist);
       }).catch(e => console.error(e));
     }
   }, [playerName, personalCode]);
@@ -5341,6 +5337,7 @@ export default function App() {
       localStorage.setItem('verserain_player_name', user.name || displayName);
       localStorage.setItem('verserain_player_email', user.email);
       localStorage.setItem('verserain_is_premium', isPrem ? 'true' : 'false');
+      if (user.personalCode) adoptAccountPersonalCode(user.personalCode);
       if (user.city) localStorage.setItem('verserain_custom_city', user.city);
       if (user.country) localStorage.setItem('verserain_custom_country', user.country);
       // Cross-device referral: the server is the source of truth for
@@ -18847,7 +18844,7 @@ const deDict = {
                       const res = await fetch("https://verserain-party.hungry4grace.partykit.dev/parties/main/global-auth-db/verify-email", {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ email: verifyEmail, code })
+                        body: JSON.stringify({ email: verifyEmail, code, personalCode: localStorage.getItem('verserain_personal_code') || undefined })
                       });
                       const data = await res.json();
                       if (res.ok && data.success) {
@@ -18883,7 +18880,10 @@ const deDict = {
                   try {
                     const endpoint = showLoginModal === 'signup' ? '/register' : '/login';
                     const inviter = localStorage.getItem('verserain_inviter') || undefined;
-                    const payload = { email, password, nickname: nameStr, inviter };
+                    // Send this device's local code so the server can bind it as
+                    // the account's canonical code on first login/registration.
+                    const localCode = localStorage.getItem('verserain_personal_code') || undefined;
+                    const payload = { email, password, nickname: nameStr, inviter, personalCode: localCode };
 
                     // Hit PartyKit Backend
                     const host = "https://verserain-party.hungry4grace.partykit.dev/parties/main/global-auth-db" + endpoint;
@@ -18918,7 +18918,8 @@ const deDict = {
                         localStorage.setItem('verserain_player_name', data.user.name || email.split('@')[0]);
                         localStorage.setItem('verserain_player_email', data.user.email);
                         localStorage.setItem('verserain_is_premium', isPrem ? 'true' : 'false');
-                        
+                        if (data.user.personalCode) adoptAccountPersonalCode(data.user.personalCode);
+
                         if (data.user.city) localStorage.setItem('verserain_custom_city', data.user.city);
                         else localStorage.removeItem('verserain_custom_city');
 
