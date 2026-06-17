@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useRef, useMemo } from 'react';
 import { Heart, Zap, XCircle } from 'lucide-react';
 import { pinyin } from 'pinyin-pro';
+import { planReadback } from './lib/voiceReadback.js';
 
 const REFERENCE_TO_RECITE_PAUSE_MS = 4000;
 const FINAL_BLOCK_REVIEW_MS = 3000;
@@ -149,22 +150,41 @@ export default function BlindModeGame({
                     missedIndicesRef.current.push(currentSeqIndexRef.current);
                     setMissedIndices([...missedIndicesRef.current]);
                     const isFinalBlock = currentSeqIndexRef.current >= activePhrases.length - 1;
-                    isSpeakingRef.current = false;
                     latestTranscriptRef.current = { transcript: '' };
                     lastMatchedLengthRef.current = 0;
-                    if (isFinalBlock) {
-                        isSpeakingRef.current = true;
-                        const blockText = typeof currentBlockRef.current === 'string' ? currentBlockRef.current : (currentBlockRef.current?.text || '');
-                        speakText(blockText, 1.0, TTS_LANG).then(() => {
+
+                    // Read the block aloud on a MISS too — the user should hear the
+                    // correct phrase whether they got it right or ran out of time.
+                    // Same readback flow as the match path: mute recognition via
+                    // isSpeakingRef (no abort/restart, which races), then advance.
+                    const missedBlock = currentBlockRef.current;
+                    const advanceMiss = () => {
+                        if (!isMountedRef.current) return;
+                        isSpeakingRef.current = false;
+                        onWordMissRef.current();
+                    };
+                    const plan = planReadback(missedBlock, {
+                        isFinalBlock,
+                        hasSpeakText: Boolean(speakText),
+                        reviewMs: FINAL_BLOCK_REVIEW_MS,
+                        normalMs: 250,
+                    });
+
+                    if (plan.shouldSpeak) {
+                        if (plan.muteRecognition) isSpeakingRef.current = true;
+                        if (pauseTimeoutRef.current) {
+                            clearTimeout(pauseTimeoutRef.current);
+                            pauseTimeoutRef.current = null;
+                        }
+                        speakText(plan.text, 1.0, TTS_LANG).then(() => {
                             if (!isMountedRef.current) return;
-                            setTimeout(() => {
-                                if (!isMountedRef.current) return;
-                                isSpeakingRef.current = false;
-                                onWordMissRef.current();
-                            }, FINAL_BLOCK_REVIEW_MS);
+                            latestTranscriptRef.current = { transcript: '' };
+                            lastMatchedLengthRef.current = 0;
+                            setTimeout(advanceMiss, plan.advanceDelayMs);
                         });
                     } else {
-                        onWordMissRef.current();
+                        isSpeakingRef.current = false;
+                        setTimeout(advanceMiss, plan.advanceDelayMs);
                     }
                 }
             }
@@ -360,16 +380,63 @@ export default function BlindModeGame({
                     setCurrentAccuracy(100);
                     isSuccessFlashRef.current = true;
                     setIsSuccessFlash(true);
-                    
+
                     playDing();
 
-                    setTimeout(() => {
+                    // After a correct recitation, the system reads the block back
+                    // aloud — reinforcing the correct pronunciation. We mute speech
+                    // recognition while TTS plays (isSpeakingRef + abort) so the
+                    // system's own voice isn't picked up as user input, then
+                    // advance to the next block once the readback finishes.
+                    const isFinalBlock = currentSeqIndexRef.current >= activePhrases.length - 1;
+                    const advance = () => {
                         if (!isMountedRef.current) return;
                         isSuccessFlashRef.current = false;
                         setIsSuccessFlash(false);
                         const wasMissed = missedIndicesRef.current.includes(currentSeqIndexRef.current);
                         onWordMatchRef.current(block, wasMissed);
-                    }, currentSeqIndexRef.current >= activePhrases.length - 1 ? FINAL_BLOCK_REVIEW_MS : 250);
+                    };
+
+                    const plan = planReadback(block, {
+                        isFinalBlock,
+                        hasSpeakText: Boolean(speakText),
+                        reviewMs: FINAL_BLOCK_REVIEW_MS,
+                        normalMs: 250,
+                    });
+
+                    if (plan.shouldSpeak) {
+                        // Mute recognition for the readback by flipping isSpeakingRef
+                        // — onresult bails out early while this is true (see the
+                        // `if (isSpeakingRef.current) return;` guard), so the
+                        // system's own TTS is never captured as user input. We do
+                        // NOT abort()/start() the recognition object here: doing so
+                        // from inside an onresult callback races with the
+                        // onend→restart heartbeat and was swallowing the readback on
+                        // non-final blocks. Leaving continuous recognition running
+                        // and just ignoring its results is the same approach the
+                        // original final-block / miss paths use.
+                        if (plan.muteRecognition) {
+                            isSpeakingRef.current = true;
+                        }
+                        // speakText() calls cancel() on entry, so cancel any pending
+                        // utterance first is unnecessary — but we guard against the
+                        // 1500ms pause re-evaluation firing mid-readback.
+                        if (pauseTimeoutRef.current) {
+                            clearTimeout(pauseTimeoutRef.current);
+                            pauseTimeoutRef.current = null;
+                        }
+                        speakText(plan.text, 1.0, TTS_LANG).then(() => {
+                            if (!isMountedRef.current) return;
+                            // Reset transcript bookkeeping so the readback we just
+                            // spoke can never be mis-counted toward the next block.
+                            latestTranscriptRef.current = { transcript: '' };
+                            lastMatchedLengthRef.current = 0;
+                            isSpeakingRef.current = false;
+                            setTimeout(advance, plan.advanceDelayMs);
+                        });
+                    } else {
+                        setTimeout(advance, plan.advanceDelayMs);
+                    }
                 }
             }
         };
