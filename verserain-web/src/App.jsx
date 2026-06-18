@@ -6,6 +6,7 @@ import PartySocket from 'partysocket';
 import QRCode from 'qrcode';
 import { QRCodeSVG } from 'qrcode.react';
 import { classifyGardenResponse, decideGardenSync, buildFruitAuthorKeys, aggregateFruitResults } from './lib/gardenSync.js';
+import { voiceId, voiceMatchesSavedKey, dedupeVoices, buildVoiceOptions } from './lib/voicePicker.js';
 import './index.css';
 import { BIBLE_BOOKS, getBookAbbr } from './bibleDictionary';
 import ReactQuill from 'react-quill-new';
@@ -701,11 +702,12 @@ function pickSpeechVoice(lang) {
   const activeVersion = localStorage.getItem('verseRain_version') || 'cuv';
   const savedVoiceKey = byVersion?.[activeVersion] || localStorage.getItem('verseRain_voiceName');
   if (savedVoiceKey) {
-    // Exact "name__lang" match — this is what the dropdown saves (the picker
-    // already pre-filters by langPrefix, so an exact match means the user
-    // explicitly chose this voice for this Bible version → trust them
-    // regardless of our heuristics, even if iOS mistags the voice's lang).
-    const exactByVersion = voices.find(v => `${v.name}__${v.lang || ''}` === savedVoiceKey);
+    // Match by stable voice identity (voiceURI). The picker now saves a
+    // voiceId(); voiceMatchesSavedKey also accepts the legacy "name__lang"
+    // form so previously-saved selections keep working. Using the unique
+    // voiceURI is what fixes "picked a different same-named voice but the
+    // sound never changed" on Android — name lookup always hit the first one.
+    const exactByVersion = voices.find(v => voiceMatchesSavedKey(v, savedVoiceKey));
     if (exactByVersion) return exactByVersion;
     // Legacy name-only save (`verseRain_voiceName`) could be stale state
     // from a different Bible version → validate before using.
@@ -5411,7 +5413,17 @@ export default function App() {
     }
   });
   const langPrefixForVersion = (v) => (isEnglishBibleVersion(v) ? 'en' : v === 'ja' ? 'ja' : v === 'ko' ? 'ko' : v === 'fa' ? 'fa' : v === 'ar' ? 'ar' : v === 'he' ? 'he' : v === 'es' ? 'es' : v === 'tr' ? 'tr' : v === 'de' ? 'de' : v === 'my' ? 'my' : v === 'vi' ? 'vi' : v === 'id' ? 'id' : v === 'ms' ? 'ms' : 'zh');
-  const filteredVoicesForVersion = availableVoices.filter(vc => (vc.lang || '').toLowerCase().startsWith(langPrefixForVersion(version)));
+  const filteredVoicesForVersion = dedupeVoices(availableVoices.filter(vc => (vc.lang || '').toLowerCase().startsWith(langPrefixForVersion(version))));
+  // Deduped + disambiguated display options for the voice <select> (fixes the
+  // duplicate "Chinese Hong Kong" entries on Android).
+  const voiceOptionsForVersion = buildVoiceOptions(filteredVoicesForVersion, { cloudLabel: '☁️' });
+  // The <select> value must equal one of the option ids. selectedVoiceName may
+  // be a legacy "name__lang" key, so resolve it to the matching option's id.
+  const selectedVoiceOptionId = (() => {
+    if (!selectedVoiceName) return '';
+    const match = voiceOptionsForVersion.find(o => voiceMatchesSavedKey(o.voice, selectedVoiceName));
+    return match ? match.id : '';
+  })();
   const saveVoiceForVersion = (voiceName) => {
     try {
       const byVersion = JSON.parse(localStorage.getItem('verseRain_voiceByVersion') || '{}');
@@ -14264,7 +14276,7 @@ const deDict = {
                     verserain
                   </div>
                   <div className="app-brand-version" style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', marginTop: '4px', marginLeft: '2px' }}>
-                    v3.15.2
+                    v3.15.3
                   </div>
                 </div>
                 <div ref={langPickerRef} style={{ position: 'relative' }}>
@@ -14337,14 +14349,14 @@ const deDict = {
                 </div>
                 <select
                   className="app-language-select"
-                  value={selectedVoiceName}
+                  value={selectedVoiceOptionId}
                   onChange={(e) => saveVoiceForVersion(e.target.value)}
                   title={t('朗讀語音設定', 'Text-to-Speech Voice')}
                   style={{ padding: '0.3rem 0.5rem', borderRadius: '4px', border: '1px solid #cbd5e1', background: '#0f172a', color: '#fff', fontWeight: 'bold', cursor: 'pointer', fontSize: '0.8rem', fontFamily: 'var(--control-font-family)', maxWidth: '180px' }}
                 >
                   <option value="">{t('語音：系統預設', 'Voice: Default')}</option>
-                  {filteredVoicesForVersion.map(v => (
-                    <option key={`${v.name}__${v.lang || ''}`} value={`${v.name}__${v.lang || ''}`}>{v.name}</option>
+                  {voiceOptionsForVersion.map(o => (
+                    <option key={o.id} value={o.id}>{o.label}</option>
                   ))}
                 </select>
               </div>
@@ -14589,13 +14601,13 @@ const deDict = {
                           </label>
                           <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
                             <select
-                              value={selectedVoiceName}
+                              value={selectedVoiceOptionId}
                               onChange={(e) => saveVoiceForVersion(e.target.value)}
                               style={{ flex: 1, padding: '0.65rem 0.9rem', borderRadius: '10px', border: '1px solid #334155', background: '#1e293b', color: '#fff', fontSize: '0.95rem', fontWeight: 'bold', cursor: 'pointer', fontFamily: 'var(--control-font-family)' }}
                             >
                               <option value="">{t('系統預設語音', 'System Default')}</option>
-                              {filteredVoicesForVersion.map(v => (
-                                <option key={`${v.name}__${v.lang || ''}`} value={`${v.name}__${v.lang || ''}`}>{v.name} {v.localService ? '' : '☁️'}</option>
+                              {voiceOptionsForVersion.map(o => (
+                                <option key={o.id} value={o.id}>{o.label}</option>
                               ))}
                             </select>
                             {/* Preview button */}
@@ -14883,13 +14895,13 @@ const deDict = {
                     </p>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
                       <select
-                        value={selectedVoiceName}
+                        value={selectedVoiceOptionId}
                         onChange={(e) => saveVoiceForVersion(e.target.value)}
                         style={{ padding: '0.5rem 1rem', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '0.95rem', minWidth: '250px', maxWidth: '100%', color: '#1e293b', background: '#f8fafc' }}
                       >
                         <option value="">{t('系統預設語音', 'System Default Voice')}</option>
-                        {filteredVoicesForVersion.map(v => (
-                            <option key={`${v.name}__${v.lang || ''}`} value={`${v.name}__${v.lang || ''}`}>{v.name} {v.localService ? '' : '(Cloud)'}</option>
+                        {voiceOptionsForVersion.map(o => (
+                            <option key={o.id} value={o.id}>{o.label}</option>
                           ))}
                       </select>
                       <button
