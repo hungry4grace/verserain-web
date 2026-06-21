@@ -5412,12 +5412,15 @@ export default function App() {
       .then((r) => r.json())
       .then((d) => {
         if (d && d.success) {
-          setToast(t('🙏 已記錄今天的 Amen，家人看見你來過了', '🙏 Amen recorded — your family sees you showed up today'));
+          // NOTE: the translation fn `t` is defined far lower in this
+          // component, so referencing it here would be a temporal-dead-zone
+          // crash. Use a static bilingual string instead.
+          setToast('🙏 已記錄今天的 Amen · Amen recorded');
           setTimeout(() => setToast(null), 3500);
         }
       })
       .catch(() => {});
-  }, [userEmail, t]);
+  }, [userEmail]);
   const [showNameEditModal, setShowNameEditModal] = useState(false);
   const [qrShareModal, setQrShareModal] = useState(null); // { url, reference }
   const [multiplayerRoomId, setMultiplayerRoomId] = useState(null);
