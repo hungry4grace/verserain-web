@@ -72,6 +72,13 @@ export const teamsApi = {
     jpost('/teams/reflections/react', { email, teamId, itemId, reflectionId, emoji }),
   getStats: (email, teamId) =>
     jget(`/teams/stats?id=${encodeURIComponent(teamId)}&email=${encodeURIComponent(email)}`),
+  // One-tap "Amen / 已讀" on the day's verse — a gentle, unranked presence
+  // signal. Idempotent per member per day.
+  amen: (email, teamId, itemId = '') =>
+    jpost('/teams/amen', { email, teamId, itemId }),
+  // Today's Amen tally for a team: { date, count, names, mine }.
+  getAmens: (email, teamId) =>
+    jget(`/teams/amens?id=${encodeURIComponent(teamId)}&email=${encodeURIComponent(email)}`),
 };
 
 export const CHEER_EMOJIS = ['❤️', '🙏', '✨', '🌧️'];

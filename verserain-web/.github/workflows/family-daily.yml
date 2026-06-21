@@ -1,0 +1,48 @@
+name: Cloud Family daily nudge
+
+# Runs every hour on the hour. The sender only acts on teams where it is
+# currently 07:00 in the host's local timezone, so an hourly cadence covers
+# every timezone with a single schedule.
+on:
+  schedule:
+    - cron: '0 * * * *'
+  workflow_dispatch:
+    inputs:
+      force:
+        description: 'Ignore the 7am gate and send now (test)'
+        type: boolean
+        default: false
+      dry_run:
+        description: 'Log what would send without sending'
+        type: boolean
+        default: false
+
+concurrency:
+  group: family-daily
+  cancel-in-progress: false
+
+jobs:
+  send:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install web-push
+        run: npm install --no-save web-push@^3.6.7
+
+      - name: Send daily nudges
+        env:
+          PARTY_BASE: ${{ secrets.PARTY_BASE }}
+          ADMIN_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+          VAPID_PUBLIC_KEY: ${{ secrets.VAPID_PUBLIC_KEY }}
+          VAPID_PRIVATE_KEY: ${{ secrets.VAPID_PRIVATE_KEY }}
+          VAPID_SUBJECT: ${{ secrets.VAPID_SUBJECT }}
+          LINE_CHANNEL_ACCESS_TOKEN: ${{ secrets.LINE_CHANNEL_ACCESS_TOKEN }}
+          PUBLIC_ORIGIN: ${{ secrets.PUBLIC_ORIGIN }}
+          FORCE: ${{ (github.event_name == 'workflow_dispatch' && inputs.force) && '1' || '' }}
+          DRY_RUN: ${{ (github.event_name == 'workflow_dispatch' && inputs.dry_run) && '1' || '' }}
+        run: node scripts/send-family-daily.mjs

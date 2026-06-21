@@ -92,6 +92,7 @@ export default function TeamsModal({
   playMode, setPlayMode,                 // pass-throughs so user can pick mode in the team
   distractionLevel, setDistractionLevel, // same for difficulty (0-3)
   onViewMemberGarden,                    // (playerName) => opens the garden overlay
+  onEnableDailyPush,                     // () => subscribe to the 7am daily nudge (default-on for family)
 }) {
   // initialTeamId is honored only on the first render — once user navigates
   // away from detail (back, close, etc.) the prop has done its job. We
@@ -143,6 +144,7 @@ export default function TeamsModal({
               onOpen={openTeam}
               pendingJoinCode={pendingJoinCode}
               onJoinHandled={onJoinHandled}
+              onEnableDailyPush={onEnableDailyPush}
             />
           )}
           {view === 'detail' && activeTeamId && (
@@ -297,7 +299,7 @@ function HelpModal({ uiLang, onClose }) {
 
 // -------------------- List view --------------------
 
-function TeamsListView({ userEmail, t, onOpen, pendingJoinCode, onJoinHandled }) {
+function TeamsListView({ userEmail, t, onOpen, pendingJoinCode, onJoinHandled, onEnableDailyPush }) {
   const [teams, setTeams] = useState(null);
   const [error, setError] = useState('');
   const [showCreate, setShowCreate] = useState(false);
@@ -383,7 +385,12 @@ function TeamsListView({ userEmail, t, onOpen, pendingJoinCode, onJoinHandled })
         <CreateTeamForm
           t={t}
           onCancel={() => setShowCreate(false)}
-          onCreated={(teamId) => { setShowCreate(false); refresh().then(() => onOpen(teamId)); }}
+          onCreated={(teamId) => {
+            setShowCreate(false);
+            // The host most of all should get the 7am nudge — subscribe on create.
+            try { onEnableDailyPush?.(); } catch { /* non-blocking */ }
+            refresh().then(() => onOpen(teamId));
+          }}
           userEmail={userEmail}
         />
       )}
@@ -391,7 +398,14 @@ function TeamsListView({ userEmail, t, onOpen, pendingJoinCode, onJoinHandled })
         <JoinTeamForm
           t={t}
           onCancel={() => { setShowJoin(false); if (pendingJoinCode) onJoinHandled?.(); }}
-          onJoined={(teamId) => { setShowJoin(false); onJoinHandled?.(); refresh().then(() => onOpen(teamId)); }}
+          onJoined={(teamId) => {
+            setShowJoin(false);
+            onJoinHandled?.();
+            // Daily nudge is on by default for family — best-effort subscribe
+            // right after joining (this click is the required user gesture).
+            try { onEnableDailyPush?.(); } catch { /* non-blocking */ }
+            refresh().then(() => onOpen(teamId));
+          }}
           userEmail={userEmail}
           initialCode={pendingJoinCode || ''}
         />

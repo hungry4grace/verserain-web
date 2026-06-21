@@ -4807,11 +4807,18 @@ export default function App() {
         if (verseIndexParam && /^\d+$/.test(verseIndexParam)) {
           sessionStorage.setItem('verserain_pending_start_set_verse', verseIndexParam);
         }
+        // Cloud Family daily link carries &amen=1 — stash the team so we can
+        // record the member's one-tap "Amen" once their identity is known
+        // (see the pending-amen effect below).
+        if (params.get('amen') === '1' && teamIdParam) {
+          sessionStorage.setItem('verserain_pending_amen_team', teamIdParam);
+        }
         const url = new URL(window.location.href);
         url.searchParams.delete('startSet');
         url.searchParams.delete('mode');
         url.searchParams.delete('teamId');
         url.searchParams.delete('verseIndex');
+        url.searchParams.delete('amen');
         window.history.replaceState({}, '', url.toString());
       }
 
@@ -5387,6 +5394,30 @@ export default function App() {
 
   const [verseViewModal, setVerseViewModal] = useState(null);
   const [toast, setToast] = useState(null);
+
+  // Cloud Family one-tap Amen: a daily-link recipient lands with
+  // ?amen=1 stashed at parse time. Once we know who they are, record the
+  // Amen and warmly confirm it. Idempotent server-side (once per day).
+  useEffect(() => {
+    const teamForAmen = sessionStorage.getItem('verserain_pending_amen_team');
+    if (!teamForAmen) return;
+    const email = userEmail || localStorage.getItem('verserain_player_email');
+    if (!email) return; // wait until the user is identified / signs in
+    sessionStorage.removeItem('verserain_pending_amen_team');
+    fetch('https://verserain-party.hungry4grace.partykit.dev/parties/main/global-auth-db/teams/amen', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, teamId: teamForAmen }),
+    })
+      .then((r) => r.json())
+      .then((d) => {
+        if (d && d.success) {
+          setToast(t('🙏 已記錄今天的 Amen，家人看見你來過了', '🙏 Amen recorded — your family sees you showed up today'));
+          setTimeout(() => setToast(null), 3500);
+        }
+      })
+      .catch(() => {});
+  }, [userEmail, t]);
   const [showNameEditModal, setShowNameEditModal] = useState(false);
   const [qrShareModal, setQrShareModal] = useState(null); // { url, reference }
   const [multiplayerRoomId, setMultiplayerRoomId] = useState(null);
@@ -20003,6 +20034,7 @@ const deDict = {
         <TeamsModal
           userEmail={userEmail}
           playerName={playerName}
+          onEnableDailyPush={subscribeMorningPush}
           t={t}
           uiLang={uiLang}
           onClose={() => {

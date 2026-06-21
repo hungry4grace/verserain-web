@@ -2071,6 +2071,192 @@ export default class Server {
                });
             } catch (e) { return err('Failed to fetch stats', 500); }
          }
+
+         // ============================================================
+         // Cloud Family Daily — automated 7am-local nudge + one-tap Amen.
+         // Three endpoints power the daily-reach loop:
+         //   POST /teams/amen           a member taps "Amen / 已讀" on the day's verse
+         //   GET  /teams/amens          today's gentle, unranked Amen tally
+         //   GET  /teams/daily-feed     (admin) the cron's per-team send manifest
+         //   POST /teams/mark-daily-sent(admin) idempotency: one send per team per day
+         // ============================================================
+
+         // POST /teams/amen — body: { email, teamId, itemId? }
+         // A warm, lightweight acknowledgement ("I read today / Amen"). One per
+         // member per team per UTC day — never ranked, never points-bearing, so
+         // it can't be farmed and never becomes a leaderboard.
+         if (url.pathname.endsWith('/teams/amen') && request.method === 'POST') {
+            try {
+               const { email, teamId, itemId } = await request.json();
+               const team = await readTeam(teamId);
+               if (!team) return err('Team not found', 404);
+               if (!isMember(team, email)) return err('Not a member', 403);
+               const e = lc(email);
+               const date = todayUTC();
+               const key = `team-amen:${teamId}:${date}:${e}`;
+               const already = await this.room.storage.get(key);
+               if (!already) {
+                  await this.room.storage.put(key, { at: new Date().toISOString(), itemId: itemId || '' });
+               }
+               const listMap = await this.room.storage.list({ prefix: `team-amen:${teamId}:${date}:` });
+               return json({ success: true, alreadyAmen: !!already, todayCount: listMap.size });
+            } catch (e) { return err('Failed to record amen', 500); }
+         }
+
+         // GET /teams/amens?id=<teamId>&email=<email> — today's tally + names.
+         // Surfaces *who* showed up today as a warm presence signal, never a
+         // "who's missing" list (consistent with the no-shame design lines).
+         if (url.pathname.endsWith('/teams/amens') && request.method === 'GET') {
+            try {
+               const teamId = url.searchParams.get('id');
+               const email = url.searchParams.get('email');
+               const team = await readTeam(teamId);
+               if (!team) return err('Team not found', 404);
+               if (!isMember(team, email)) return err('Not a member', 403);
+               const date = todayUTC();
+               const prefix = `team-amen:${teamId}:${date}:`;
+               const listMap = await this.room.storage.list({ prefix });
+               const emails = Array.from(listMap.keys()).map(k => k.slice(prefix.length));
+               const names = [];
+               for (const e of emails) {
+                  const u = await this.room.storage.get(`user:${e}`);
+                  names.push((u && (u.name || u.skoolName)) || e.split('@')[0]);
+               }
+               return json({ success: true, date, count: emails.length, names, mine: emails.includes(lc(email)) });
+            } catch (e) { return err('Failed to fetch amens', 500); }
+         }
+
+         // GET /teams/daily-feed — ADMIN ONLY (same token as /push-subscriptions).
+         // The hourly cron pulls this once, then for each team where it is now
+         // 7am in the host's timezone, sends today's verse via Web Push and (if
+         // configured) into the team's LINE group. We do the heavy joins here so
+         // the stateless cron stays simple.
+         if (url.pathname.endsWith('/teams/daily-feed') && request.method === 'GET') {
+            try {
+               if (!isCustomSetWriteAuthorized()) return err('Forbidden', 403);
+               const todayStr = new Date().toISOString().slice(0, 10);
+               const msPerDay = 86400000;
+
+               // Build email -> { subscriptions[], timezone } once.
+               const pushMap = await this.room.storage.list({ prefix: 'push:' });
+               const subsByEmail = {};
+               const tzByEmail = {};
+               for (const v of pushMap.values()) {
+                  if (!v || !v.email || !v.subscription) continue;
+                  const e = lc(v.email);
+                  (subsByEmail[e] = subsByEmail[e] || []).push(v.subscription);
+                  if (!tzByEmail[e] && v.timezone) tzByEmail[e] = v.timezone;
+               }
+
+               const readSchedule = async (teamId) => {
+                  const prefix = `team-schedule:${teamId}::part:`;
+                  const map = await this.room.storage.list({ prefix });
+                  const chunks = [];
+                  for (const [k, val] of map.entries()) {
+                     const m = k.slice(prefix.length).match(/^(\d+)\/(\d+)$/);
+                     if (m) chunks[parseInt(m[1], 10)] = val;
+                  }
+                  if (chunks.length === 0 || chunks.some(c => c == null)) return { items: [] };
+                  try { return JSON.parse(chunks.join('')); } catch { return { items: [] }; }
+               };
+
+               const teamsMap = await this.room.storage.list({ prefix: 'team:' });
+               const out = [];
+               for (const team of teamsMap.values()) {
+                  if (!team || !team.id || !Array.isArray(team.members) || team.members.length === 0) continue;
+                  const sched = await readSchedule(team.id);
+                  const items = Array.isArray(sched.items) ? sched.items : [];
+
+                  // Today's item = the first item whose [startDate, startDate+N-1]
+                  // window currently contains today (mirrors TeamsModal's logic).
+                  let chosen = null, dayIndex = 0;
+                  for (const it of items) {
+                     const verses = Array.isArray(it.verses) ? it.verses : [];
+                     const total = it.totalCount || verses.length;
+                     if (!it.setId || total === 0) continue;
+                     const startStr = it.startDate || todayStr;
+                     const raw = Math.floor(
+                        (Date.parse(todayStr + 'T00:00:00Z') - Date.parse(startStr + 'T00:00:00Z')) / msPerDay
+                     );
+                     if (raw < 0 || raw > total - 1) continue;
+                     chosen = it; dayIndex = raw; break;
+                  }
+                  if (!chosen) continue;
+                  const verses = Array.isArray(chosen.verses) ? chosen.verses : [];
+                  const todayVerse = verses[dayIndex] || null;
+
+                  const host = lc(team.createdBy || (team.admins || [])[0] || '');
+                  const hostTimezone = (team.settings && team.settings.timezone) || tzByEmail[host] || 'Asia/Taipei';
+
+                  const subs = [];
+                  for (const me of team.members) {
+                     for (const s of (subsByEmail[lc(me)] || [])) subs.push(s);
+                  }
+                  // The host's own devices, called out separately so the cron can
+                  // send them the "share to your family" forward prompt.
+                  const hostSubscriptions = (subsByEmail[host] || []).slice(0, 20);
+                  const lastDailySent = (await this.room.storage.get(`team-daily-sent:${team.id}`)) || '';
+
+                  out.push({
+                     teamId: team.id,
+                     name: team.name || '',
+                     hostTimezone,
+                     hostEmail: host,
+                     lastDailySent,
+                     line: (team.settings && team.settings.line) || null, // { groupId }
+                     item: {
+                        itemId: chosen.id || '',
+                        setId: chosen.setId,
+                        title: chosen.title || '',
+                        dayIndex,
+                        totalCount: chosen.totalCount || verses.length,
+                        reference: todayVerse?.reference || '',
+                        text: todayVerse?.text || '',
+                     },
+                     subscriptions: subs.slice(0, 200),
+                     hostSubscriptions,
+                  });
+               }
+               return json({ success: true, date: todayStr, teams: out });
+            } catch (e) { return err('Failed to build daily feed', 500); }
+         }
+
+         // POST /teams/mark-daily-sent — ADMIN ONLY. Records that today's nudge
+         // for a team has gone out, so an hourly cron that fires twice in the
+         // 7am window doesn't double-send.
+         if (url.pathname.endsWith('/teams/mark-daily-sent') && request.method === 'POST') {
+            try {
+               if (!isCustomSetWriteAuthorized()) return err('Forbidden', 403);
+               const { teamId, date } = await request.json();
+               if (!teamId) return err('teamId required');
+               await this.room.storage.put(`team-daily-sent:${teamId}`, date || new Date().toISOString().slice(0, 10));
+               return json({ success: true });
+            } catch (e) { return err('Failed to mark daily sent', 500); }
+         }
+
+         // POST /teams/set-line — ADMIN ONLY (server-to-server; called by the
+         // LINE webhook auto-binder). Binds a LINE groupId to a team, resolved
+         // by invite code or teamId. This is how "type your invite code in the
+         // group" links the chat to the family without anyone hunting a groupId.
+         if (url.pathname.endsWith('/teams/set-line') && request.method === 'POST') {
+            try {
+               if (!isCustomSetWriteAuthorized()) return err('Forbidden', 403);
+               const { inviteCode, teamId, groupId } = await request.json();
+               if (!groupId) return err('groupId required');
+               let id = teamId;
+               if (!id && inviteCode) {
+                  const cleaned = String(inviteCode).toUpperCase().replace(/[^A-Z0-9]/g, '');
+                  const canon = cleaned.length === 7 ? `${cleaned.slice(0, 3)}-${cleaned.slice(3)}` : cleaned;
+                  id = await this.room.storage.get(`team-invite:${canon}`);
+               }
+               if (!id) return err('Team not found (bad invite code)', 404);
+               const team = await readTeam(id);
+               if (!team) return err('Team not found', 404);
+               team.settings = { ...(team.settings || {}), line: { ...((team.settings && team.settings.line) || {}), groupId } };
+               await this.room.storage.put(`team:${id}`, team);
+               return json({ success: true, teamId: id, name: team.name });
+            } catch (e) { return err('Failed to set line group', 500); }
+         }
       }
 
       return new Response("Not Found API Route", { status: 404, headers: corsHeaders });
