@@ -20038,6 +20038,7 @@ const deDict = {
           userEmail={userEmail}
           playerName={playerName}
           onEnableDailyPush={subscribeMorningPush}
+          pushStatus={pushStatus}
           t={t}
           uiLang={uiLang}
           onClose={() => {

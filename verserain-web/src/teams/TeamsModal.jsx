@@ -93,6 +93,7 @@ export default function TeamsModal({
   distractionLevel, setDistractionLevel, // same for difficulty (0-3)
   onViewMemberGarden,                    // (playerName) => opens the garden overlay
   onEnableDailyPush,                     // () => subscribe to the 7am daily nudge (default-on for family)
+  pushStatus = 'idle',                   // 'idle' = supported but not yet subscribed
 }) {
   // initialTeamId is honored only on the first render — once user navigates
   // away from detail (back, close, etc.) the prop has done its job. We
@@ -145,6 +146,7 @@ export default function TeamsModal({
               pendingJoinCode={pendingJoinCode}
               onJoinHandled={onJoinHandled}
               onEnableDailyPush={onEnableDailyPush}
+              pushStatus={pushStatus}
             />
           )}
           {view === 'detail' && activeTeamId && (
@@ -299,11 +301,17 @@ function HelpModal({ uiLang, onClose }) {
 
 // -------------------- List view --------------------
 
-function TeamsListView({ userEmail, t, onOpen, pendingJoinCode, onJoinHandled, onEnableDailyPush }) {
+function TeamsListView({ userEmail, t, onOpen, pendingJoinCode, onJoinHandled, onEnableDailyPush, pushStatus = 'idle' }) {
   const [teams, setTeams] = useState(null);
   const [error, setError] = useState('');
   const [showCreate, setShowCreate] = useState(false);
   const [showJoin, setShowJoin] = useState(!!pendingJoinCode);
+  // Gentle, dismissable nudge to turn on the 7am daily notification — this is
+  // how hosts get the verse to forward to family, so reach depends on it.
+  const [pushDismissed, setPushDismissed] = useState(
+    () => localStorage.getItem('verserain_family_push_dismissed') === '1'
+  );
+  const showPushNudge = teams && teams.length > 0 && pushStatus === 'idle' && !pushDismissed;
 
   const refresh = useCallback(async () => {
     setError('');
@@ -329,6 +337,37 @@ function TeamsListView({ userEmail, t, onOpen, pendingJoinCode, onJoinHandled, o
 
   return (
     <div>
+      {showPushNudge && (
+        <div style={{
+          ...card, marginBottom: 12, borderLeft: `3px solid ${colors.warm}`,
+          display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap',
+        }}>
+          <div style={{ flex: '1 1 220px', minWidth: 0 }}>
+            <div style={{ color: colors.text, fontWeight: 700, fontSize: '0.95rem' }}>
+              🔔 {t('開啟每日通知', 'Turn on daily notifications')}
+            </div>
+            <div style={{ color: colors.muted, fontSize: '0.85rem', marginTop: 3 }}>
+              {t('每天早上 7 點收到今日經文,一鍵分享給家人。',
+                 'Get the verse each morning at 7am — one tap to share with your family.')}
+            </div>
+          </div>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button
+              onClick={async () => { try { await onEnableDailyPush?.(); } catch { /* parent updates pushStatus */ } }}
+              style={btn('primary')}
+            >
+              {t('開啟', 'Turn on')}
+            </button>
+            <button
+              onClick={() => { setPushDismissed(true); localStorage.setItem('verserain_family_push_dismissed', '1'); }}
+              style={btn('ghost')}
+            >
+              {t('稍後', 'Later')}
+            </button>
+          </div>
+        </div>
+      )}
+
       <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
         <button onClick={() => setShowCreate(true)} style={btn('primary')}>
           <Plus size={16} /> {t('建立團隊', 'Create team')}
