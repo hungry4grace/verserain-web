@@ -1,5 +1,10 @@
 name: Cloud Family daily nudge
 
+# IMPORTANT: this file must live at the REPOSITORY ROOT (.github/workflows/),
+# not inside the verserain-web/ subfolder — GitHub only detects workflows at
+# the repo root. The app itself lives in verserain-web/, so the job checks the
+# repo out and runs the sender from that subfolder (working-directory).
+#
 # Runs every hour on the hour. The sender only acts on teams where it is
 # currently 07:00 in the host's local timezone, so an hourly cadence covers
 # every timezone with a single schedule.
@@ -32,12 +37,15 @@ jobs:
           node-version: '20'
 
       - name: Install web-push
+        working-directory: verserain-web
         run: npm install --no-save web-push@^3.6.7
 
       - name: Send daily nudges
+        working-directory: verserain-web
         env:
           PARTY_BASE: ${{ secrets.PARTY_BASE }}
-          ADMIN_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+          # Reuse the existing morning-push admin secret if a dedicated one isn't set.
+          ADMIN_TOKEN: ${{ secrets.ADMIN_TOKEN || secrets.PARTYKIT_ADMIN_TOKEN }}
           VAPID_PUBLIC_KEY: ${{ secrets.VAPID_PUBLIC_KEY }}
           VAPID_PRIVATE_KEY: ${{ secrets.VAPID_PRIVATE_KEY }}
           VAPID_SUBJECT: ${{ secrets.VAPID_SUBJECT }}
