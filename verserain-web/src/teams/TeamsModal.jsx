@@ -35,6 +35,22 @@ const buildVerseShareUrl = (setId, teamId, verseIndex, mode = 'campaign') =>
   + `&verseIndex=${verseIndex}`
   + `&mode=${mode}`;
 
+// Share via the /fc Open Graph card so LINE/WhatsApp render a verse preview
+// (title · reference, verse text, branded image), then redirect the tapper
+// into the in-app reading + one-tap Amen. Mirrors the cron's daily forward.
+const buildVerseCardUrl = (setId, teamId, verseIndex, { reference = '', text = '', title = '' } = {}) => {
+  const p = new URLSearchParams({
+    team: teamId,
+    set: setId,
+    i: String(verseIndex),
+    vref: reference || '',
+    vtext: (text || '').slice(0, 180),
+    title: title || '',
+    amen: '1',
+  });
+  return `${PUBLIC_ORIGIN}/fc?${p.toString()}`;
+};
+
 // Single self-contained modal for the Teams feature. Mounted from App.jsx
 // with { userEmail, playerName, t, onClose }. Maintains its own internal
 // "view" state (list | detail | admin) and never touches App.jsx render tree.
@@ -1156,8 +1172,13 @@ function ScheduleItemCard({
             )}
             <button
               onClick={async () => {
-                const url = buildVerseShareUrl(item.setId, teamId, todayIndex, 'campaign');
                 const title = item.title || t('經文挑戰', 'Verse Challenge');
+                // /fc card link → LINE shows a verse preview, then redirects in.
+                const url = buildVerseCardUrl(item.setId, teamId, todayIndex, {
+                  reference: todayVerse?.reference || '',
+                  text: todayVerse?.text || '',
+                  title,
+                });
                 const dayLabel = t(`Day ${todayIndex + 1} / ${totalCount}`, `Day ${todayIndex + 1} / ${totalCount}`);
                 const refLine = todayVerse?.reference ? `${todayVerse.reference}` : '';
                 const verseLine = todayVerse?.text ? `「${todayVerse.text}」` : '';

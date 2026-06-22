@@ -31,8 +31,11 @@ export default function handler(req, res) {
   const team = String(q.team || '');
   const set = String(q.set || '');
   const i = /^\d+$/.test(String(q.i || '')) ? String(q.i) : '0';
-  const ref = String(q.ref || '');
-  const text = String(q.t || '');
+  // NOTE: use vref/vtext (not ref/t) — short names like `ref` and `t` are
+  // commonly stripped as tracking params by crawlers/CDNs, which would blank
+  // the verse preview. Accept the legacy names as a fallback.
+  const ref = String(q.vref || q.ref || '');
+  const text = String(q.vtext || q.t || '');
   const title = String(q.title || 'VerseRain');
   const wantAmen = String(q.amen || '') === '1';
 

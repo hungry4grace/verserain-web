@@ -209,14 +209,22 @@ ok('cron skips already-sent team (0 nudged)', /0 team\(s\) nudged/.test(cronAgai
 
 console.log('\n[11] OG link-preview endpoint (api/family-card.js)');
 const { default: ogHandler } = await import('./api/family-card.js');
-const ogReq = { headers: { host: 'www.verserain.com' }, url: '/fc?team=' + teamId + '&set=ps37&i=0&ref=Ps%2037:1&t=hello&title=Psalm%2037&amen=1',
-  query: { team: teamId, set: 'ps37', i: '0', ref: 'Ps 37:1', t: 'hello', title: 'Psalm 37', amen: '1' } };
+const ogReq = { headers: { host: 'www.verserain.com' },
+  url: '/fc?team=' + teamId + '&set=ps37&i=0&vref=Ps%2037:1&vtext=Delight%20in%20the%20Lord&title=Psalm%2037&amen=1',
+  query: { team: teamId, set: 'ps37', i: '0', vref: 'Ps 37:1', vtext: 'Delight in the Lord', title: 'Psalm 37', amen: '1' } };
 let ogBody = '', ogCode = 0;
 const ogRes = { setHeader() {}, status(c) { ogCode = c; return this; }, send(b) { ogBody = b; } };
 ogHandler(ogReq, ogRes);
 ok('OG returns 200', ogCode === 200);
-ok('OG has og:title + image', ogBody.includes('og:title') && ogBody.includes('og-family.png'));
+ok('OG has og:image', ogBody.includes('og-family.png'));
+ok('OG title includes the reference (vref)', /og:title" content="[^"]*Ps 37:1/.test(ogBody), (ogBody.match(/og:title" content="([^"]*)"/) || [])[1]);
+ok('OG description includes the verse text (vtext)', /Delight in the Lord/.test(ogBody));
 ok('OG redirects to SPA deep link with amen', /startSet=ps37/.test(ogBody) && /amen=1/.test(ogBody) && new RegExp('teamId=' + teamId).test(ogBody));
+// Legacy ref/t fallback still works (back-compat).
+let legacyBody = '';
+ogHandler({ headers: { host: 'www.verserain.com' }, url: '/fc', query: { set: 'ps37', vref: '', vtext: '', ref: 'Gen 1:1', t: 'In the beginning', title: 'X' } },
+  { setHeader() {}, status() { return this; }, send(b) { legacyBody = b; } });
+ok('legacy ref/t still honored', /In the beginning/.test(legacyBody));
 
 console.log('\n[14] /teams/set-line — bind LINE group by invite code (admin)');
 const slNoAuth = await call('POST', '/teams/set-line', { body: { inviteCode, groupId: 'Cdirect' } });

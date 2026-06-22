@@ -74,8 +74,8 @@ function buildShareUrl(team, item) {
     team: team.teamId,
     set: item.setId,
     i: String(item.dayIndex),
-    ref: item.reference || '',
-    t: truncate(item.text || '', 180),
+    vref: item.reference || '',
+    vtext: truncate(item.text || '', 180),
     title: item.title || team.name || '',
     amen: '1',
   });
