@@ -564,6 +564,8 @@ function TeamDetailView({ userEmail, playerName, teamId, t, onOpenAdmin, onLeft,
   // each ScheduleItemCard renders without its own round-trip.
   const [reflections, setReflections] = useState([]);
   const [stats, setStats] = useState(null);
+  // Today's gentle Amen tally — a warm "who showed up" signal, never a rank.
+  const [amens, setAmens] = useState(null);
   // Verified set-level progress: { setStatus: {setId: {email: {status, passedCount, totalCount}}} }
   const [verifiedProgress, setVerifiedProgress] = useState({ setStatus: {} });
   const [error, setError] = useState('');
@@ -575,7 +577,7 @@ function TeamDetailView({ userEmail, playerName, teamId, t, onOpenAdmin, onLeft,
   const refresh = useCallback(async () => {
     setError('');
     try {
-      const [tRes, sRes, pRes, cRes, rRes, stRes, vRes] = await Promise.all([
+      const [tRes, sRes, pRes, cRes, rRes, stRes, vRes, aRes] = await Promise.all([
         teamsApi.get(userEmail, teamId),
         teamsApi.getSchedule(userEmail, teamId),
         teamsApi.getProgress(userEmail, teamId),
@@ -583,6 +585,7 @@ function TeamDetailView({ userEmail, playerName, teamId, t, onOpenAdmin, onLeft,
         teamsApi.listReflections(userEmail, teamId).catch(() => ({ reflections: [], displayNames: {} })),
         teamsApi.getStats(userEmail, teamId).catch(() => null),
         teamsApi.getTeamSetProgress(userEmail, teamId).catch(() => ({ setStatus: {} })),
+        teamsApi.getAmens(userEmail, teamId).catch(() => null),
       ]);
       setTeam(tRes.team);
       setDisplayNames({ ...(tRes.displayNames || {}), ...(rRes.displayNames || {}) });
@@ -595,6 +598,7 @@ function TeamDetailView({ userEmail, playerName, teamId, t, onOpenAdmin, onLeft,
       setReflections(rRes.reflections || []);
       setStats(stRes || null);
       setVerifiedProgress(vRes || { setStatus: {} });
+      setAmens(aRes && aRes.success ? aRes : null);
     } catch (e) {
       setError(String(e.message || e));
     }
@@ -655,6 +659,24 @@ function TeamDetailView({ userEmail, playerName, teamId, t, onOpenAdmin, onLeft,
       </div>
 
       {stats && <TeamFruitsPanel stats={stats} t={t} />}
+
+      {amens && amens.count > 0 && (
+        <div style={{
+          ...card, marginBottom: 12, padding: '0.6rem 0.9rem',
+          display: 'flex', alignItems: 'center', gap: 8,
+          background: 'rgba(245, 158, 11, 0.08)', border: `1px solid ${colors.warm}33`,
+        }}>
+          <span style={{ fontSize: '1.1rem' }}>🙏</span>
+          <span style={{ color: colors.text, fontSize: '0.9rem' }}>
+            {t(`今天 ${amens.count} 位家人來過`, `${amens.count} ${amens.count === 1 ? 'person' : 'people'} showed up today`)}
+            {Array.isArray(amens.names) && amens.names.length > 0 && (
+              <span style={{ color: colors.muted }}>
+                {' · '}{amens.names.slice(0, 6).join('、')}{amens.names.length > 6 ? '…' : ''}
+              </span>
+            )}
+          </span>
+        </div>
+      )}
 
       {isAdmin && (
         <CarePrompt
