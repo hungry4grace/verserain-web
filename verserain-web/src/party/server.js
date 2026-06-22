@@ -2185,6 +2185,20 @@ export default class Server {
                   const verses = Array.isArray(chosen.verses) ? chosen.verses : [];
                   const todayVerse = verses[dayIndex] || null;
 
+                  // Resolve the day's reference/text. Many schedules store only a
+                  // setId + day count (no inline verse text), so fall back to the
+                  // published verse set in storage when the inline copy is missing.
+                  let dayReference = todayVerse?.reference || '';
+                  let dayText = todayVerse?.text || '';
+                  if (!dayText) {
+                     const vs = await this.room.storage.get(`verseset:${chosen.setId}`);
+                     const v = vs && Array.isArray(vs.verses) ? vs.verses[dayIndex] : null;
+                     if (v) {
+                        dayReference = dayReference || v.reference || '';
+                        dayText = dayText || v.text || '';
+                     }
+                  }
+
                   const host = lc(team.createdBy || (team.admins || [])[0] || '');
                   const hostTimezone = (team.settings && team.settings.timezone) || tzByEmail[host] || 'Asia/Taipei';
 
@@ -2210,8 +2224,8 @@ export default class Server {
                         title: chosen.title || '',
                         dayIndex,
                         totalCount: chosen.totalCount || verses.length,
-                        reference: todayVerse?.reference || '',
-                        text: todayVerse?.text || '',
+                        reference: dayReference,
+                        text: dayText,
                      },
                      subscriptions: subs.slice(0, 200),
                      hostSubscriptions,

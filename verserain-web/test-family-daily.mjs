@@ -255,6 +255,37 @@ ok('webhook auto-bound group to the family', feedW.json.teams?.[0]?.line?.groupI
 const wDm = await fireWebhook({ events: [{ type: 'message', source: { userId: 'Uxyz' }, message: { type: 'text', text: inviteCode }, replyToken: 'r3' }] });
 ok('1:1 message ignored (no groupId)', wDm === 200);
 
+console.log('\n[16] daily-feed resolves verse text from the set when not stored inline');
+// A published verse set lives in storage; the schedule references it by setId only.
+await room.storage.put('verseset:ps23-set', {
+  id: 'ps23-set', title: 'Psalm 23',
+  verses: [
+    { id: 'v1', reference: 'Ps 23:1', text: 'The Lord is my shepherd; I shall not want.' },
+    { id: 'v2', reference: 'Ps 23:2', text: 'He makes me lie down in green pastures.' },
+  ],
+});
+const t2 = await call('POST', '/teams/create', { body: { email: users[1], name: '詩篇家庭' } });
+const team2 = t2.json.team.id;
+await call('POST', '/teams/schedule', { body: { email: users[1], teamId: team2,
+  schedule: { items: [{ id: 'i1', setId: 'ps23-set', title: 'Psalm 23', startDate: today, totalCount: 2, verses: [] }] } } });
+const feedR = await call('GET', '/teams/daily-feed', { admin: true });
+const f2 = (feedR.json.teams || []).find((x) => x.teamId === team2);
+ok('team2 appears in feed', !!f2);
+ok('feed resolved reference from set (Ps 23:1)', f2?.item?.reference === 'Ps 23:1', f2?.item?.reference);
+ok('feed resolved text from set', /shepherd/.test(f2?.item?.text || ''), f2?.item?.text);
+
+console.log('\n[17] link-only fallback — setId with no inline text and no stored set still sends');
+const t3 = await call('POST', '/teams/create', { body: { email: users[2], name: '連結測試家庭' } });
+const team3 = t3.json.team.id;
+await call('POST', '/teams/schedule', { body: { email: users[2], teamId: team3,
+  schedule: { items: [{ id: 'i1', setId: 'no-such-set-xyz', title: '無內文', startDate: today, totalCount: 3, verses: [] }] } } });
+const feedR2 = await call('GET', '/teams/daily-feed', { admin: true });
+const f3 = (feedR2.json.teams || []).find((x) => x.teamId === team3);
+ok('team3 in feed with empty text but a setId', f3 && f3.item.setId === 'no-such-set-xyz' && f3.item.text === '', JSON.stringify(f3?.item));
+const cronAll = await runCron({ FORCE: '1', DRY_RUN: '1' });
+ok('link-only family is NOT skipped (appears in cron output)', /連結測試家庭/.test(cronAll.out), cronAll.out.replace(/\n/g, ' '));
+ok('set-resolved family also processed', /詩篇家庭/.test(cronAll.out));
+
 // ====================================================================
 httpServer.close();
 console.log(`\n==== RESULT: ${PASS} passed, ${FAIL} failed ====`);

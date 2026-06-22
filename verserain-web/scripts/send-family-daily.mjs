@@ -86,8 +86,12 @@ function buildShareUrl(team, item) {
 // host just picks the family group and hits send. No bot, no setup. The /fc
 // link inside renders as a rich verse card in the chat.
 function buildLineForwardUrl({ title, verseRef, verseText, ogUrl }) {
-  const msg = `${title}\n${verseRef}\n「${verseText}」\n\n${ogUrl}`;
-  return `https://line.me/R/share?text=${encodeURIComponent(msg)}`;
+  // Only include the lines we actually have; the link is the essential part.
+  const lines = [title];
+  if (verseRef) lines.push(verseRef);
+  if (verseText) lines.push(`「${verseText}」`);
+  lines.push('', ogUrl);
+  return `https://line.me/R/share?text=${encodeURIComponent(lines.join('\n'))}`;
 }
 
 async function fetchFeed() {
@@ -182,12 +186,14 @@ async function main() {
     if (!FORCE && hour !== SEND_HOUR) continue;            // not 7am where the host lives
     if (team.lastDailySent === date) continue;             // already nudged today
     const item = team.item;
-    if (!item || !item.setId || !item.text) continue;      // nothing meaningful to send
+    if (!item || !item.setId) continue;                    // need at least a set to link to
 
     const ogUrl = buildShareUrl(team, item);
     const dayLabel = `Day ${item.dayIndex + 1}/${item.totalCount}`;
     const title = `📖 ${truncate(team.name, 28)} · ${truncate(item.title || '', 28)} (${dayLabel})`;
-    const body = `${item.reference}｜${truncate(item.text, 120)}`;
+    // Verse text/reference are optional — the link always opens today's reading.
+    const body = [item.reference, item.text ? truncate(item.text, 120) : '']
+      .filter(Boolean).join('｜') || '今天的經文已準備好，點開一起讀 🙏';
 
     // Is this team's LINE group bound to the bot? If so we auto-post and the
     // host needn't forward; otherwise the host gets a one-tap forward prompt.
