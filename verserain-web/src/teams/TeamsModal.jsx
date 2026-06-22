@@ -1044,9 +1044,16 @@ function ScheduleItemCard({
                 {t(`${totalCount} 天計畫 · 每天一節`, `${totalCount}-day plan · one verse/day`)}
               </span>
             )}
-            {(item.startDate || item.targetDate) && (
+            {(item.startDate || totalCount > 0) && (
               <span style={{ color: colors.muted, fontSize: '0.78rem' }}>
-                · {item.startDate || '?'} → {item.targetDate || '?'}
+                {/* End date is always start + (N-1) days for a one-verse-per-day
+                    plan — compute it so it can't disagree with the plan length. */}
+                · {item.startDate || todayStr} → {(() => {
+                  const s = item.startDate || todayStr;
+                  const d = new Date(s + 'T00:00:00Z');
+                  d.setUTCDate(d.getUTCDate() + Math.max(0, totalCount - 1));
+                  return d.toISOString().slice(0, 10);
+                })()}
               </span>
             )}
           </div>
@@ -1854,15 +1861,14 @@ function TeamAdminView({ userEmail, teamId, t, topicSets = [], onBack, onDisband
             t={t}
             onCancel={() => setPickingIdx(-1)}
             onPick={(picked) => {
-              // Daily reading plan defaults: start today, end after N days.
-              // Both editable by the admin afterwards. Admin's existing
-              // startDate/targetDate are preserved if they're not the
-              // initial placeholders — feels safer than always resetting.
+              // Daily reading plan: start today (or keep the admin's start),
+              // end after N days. The end date is ALWAYS recomputed from the
+              // plan length (start + N-1) — never preserve a stale targetDate,
+              // which previously made a 20-day plan show 06-22 → 06-22.
               const today = new Date().toISOString().slice(0, 10);
               const cur = schedule.items[pickingIdx] || {};
               const startDate = cur.startDate || today;
               const targetDate = (() => {
-                if (cur.targetDate && cur.setId) return cur.targetDate;
                 const d = new Date(startDate + 'T00:00:00Z');
                 d.setUTCDate(d.getUTCDate() + Math.max(0, picked.totalCount - 1));
                 return d.toISOString().slice(0, 10);
