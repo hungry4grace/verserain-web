@@ -38,14 +38,12 @@ const buildVerseShareUrl = (setId, teamId, verseIndex, mode = 'campaign') =>
 // Share via the /fc Open Graph card so LINE/WhatsApp render a verse preview
 // (title · reference, verse text, branded image), then redirect the tapper
 // into the in-app reading + one-tap Amen. Mirrors the cron's daily forward.
-const buildVerseCardUrl = (setId, teamId, verseIndex, { reference = '', text = '', title = '' } = {}) => {
+const buildVerseCardUrl = (setId, teamId, verseIndex) => {
+  // Short link — the /fc card resolves the verse from (team, set, i) server-side.
   const p = new URLSearchParams({
     team: teamId,
     set: setId,
     i: String(verseIndex),
-    vref: reference || '',
-    vtext: (text || '').slice(0, 180),
-    title: title || '',
     amen: '1',
   });
   return `${PUBLIC_ORIGIN}/fc?${p.toString()}`;
@@ -1180,12 +1178,9 @@ function ScheduleItemCard({
             <button
               onClick={async () => {
                 const title = item.title || t('經文挑戰', 'Verse Challenge');
-                // /fc card link → LINE shows a verse preview, then redirects in.
-                const url = buildVerseCardUrl(item.setId, teamId, todayIndex, {
-                  reference: todayVerse?.reference || '',
-                  text: todayVerse?.text || '',
-                  title,
-                });
+                // Short /fc card link → LINE shows a verse preview (resolved
+                // server-side), then redirects into the in-app reading.
+                const url = buildVerseCardUrl(item.setId, teamId, todayIndex);
                 const dayLabel = t(`Day ${todayIndex + 1} / ${totalCount}`, `Day ${todayIndex + 1} / ${totalCount}`);
                 const refLine = todayVerse?.reference ? `${todayVerse.reference}` : '';
                 const verseLine = todayVerse?.text ? `「${todayVerse.text}」` : '';

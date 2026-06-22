@@ -2271,6 +2271,41 @@ export default class Server {
                return json({ success: true, teamId: id, name: team.name });
             } catch (e) { return err('Failed to set line group', 500); }
          }
+
+         // GET /teams/day-verse?teamId=&setId=&i=  — PUBLIC (returns only the
+         // plan title + a single Bible verse, nothing sensitive). Lets the /fc
+         // share card resolve the verse server-side so share links stay short
+         // (no need to pack the encoded verse text into the URL).
+         if (url.pathname.endsWith('/teams/day-verse') && request.method === 'GET') {
+            try {
+               const teamId = url.searchParams.get('teamId');
+               const setId = url.searchParams.get('setId');
+               const i = Math.max(0, parseInt(url.searchParams.get('i') || '0', 10) || 0);
+               if (!teamId || !setId) return err('teamId and setId required');
+               const prefix = `team-schedule:${teamId}::part:`;
+               const map = await this.room.storage.list({ prefix });
+               const chunks = [];
+               for (const [k, v] of map.entries()) {
+                  const m = k.slice(prefix.length).match(/^(\d+)\/(\d+)$/);
+                  if (m) chunks[parseInt(m[1], 10)] = v;
+               }
+               let schedule = { items: [] };
+               try { schedule = JSON.parse(chunks.join('')); } catch { /* keep default */ }
+               const item = (schedule.items || []).find(it => it.setId === setId);
+               const title = (item && item.title) || '';
+               let v = (item && Array.isArray(item.verses)) ? item.verses[i] : null;
+               if (!v || !v.text) {
+                  const vs = await this.room.storage.get(`verseset:${setId}`);
+                  if (vs && Array.isArray(vs.verses) && vs.verses[i]) v = vs.verses[i];
+               }
+               return json({
+                  success: true,
+                  title,
+                  reference: (v && (v.reference || v.ref)) || '',
+                  text: (v && v.text) || '',
+               });
+            } catch (e) { return err('Failed to fetch day verse', 500); }
+         }
       }
 
       return new Response("Not Found API Route", { status: 404, headers: corsHeaders });

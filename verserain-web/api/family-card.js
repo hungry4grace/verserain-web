@@ -23,7 +23,9 @@ function esc(s = '') {
     .replace(/'/g, '&#39;');
 }
 
-export default function handler(req, res) {
+const PARTY_BASE = (process.env.PARTY_BASE || 'https://verserain-party.hungry4grace.partykit.dev/parties/main/global-auth-db').replace(/\/+$/, '');
+
+export default async function handler(req, res) {
   const host = req.headers['x-forwarded-host'] || req.headers.host || 'www.verserain.com';
   const origin = `https://${host}`;
   const q = req.query || {};
@@ -31,12 +33,28 @@ export default function handler(req, res) {
   const team = String(q.team || '');
   const set = String(q.set || '');
   const i = /^\d+$/.test(String(q.i || '')) ? String(q.i) : '0';
-  // NOTE: use vref/vtext (not ref/t) — short names like `ref` and `t` are
-  // commonly stripped as tracking params by crawlers/CDNs, which would blank
-  // the verse preview. Accept the legacy names as a fallback.
-  const ref = String(q.vref || q.ref || '');
-  const text = String(q.vtext || q.t || '');
-  const title = String(q.title || 'VerseRain');
+  // Verse text/reference/title may be passed inline (vref/vtext/title) for a
+  // self-contained card, but we prefer SHORT links: when they're absent, we
+  // resolve them server-side from (team, set, i) so the shared URL stays tidy.
+  // (vref/vtext are used instead of ref/t — short names like `ref` get stripped
+  // by some crawlers.)
+  let ref = String(q.vref || q.ref || '');
+  let text = String(q.vtext || q.t || '');
+  let title = String(q.title || '');
+  if ((!text || !title) && team && set) {
+    try {
+      const r = await fetch(`${PARTY_BASE}/teams/day-verse?teamId=${encodeURIComponent(team)}&setId=${encodeURIComponent(set)}&i=${encodeURIComponent(i)}`);
+      if (r.ok) {
+        const d = await r.json();
+        if (d && d.success) {
+          ref = ref || d.reference || '';
+          text = text || d.text || '';
+          title = title || d.title || '';
+        }
+      }
+    } catch { /* fall back to whatever we have / generic */ }
+  }
+  if (!title) title = 'VerseRain';
   const wantAmen = String(q.amen || '') === '1';
 
   // The real destination inside the app.

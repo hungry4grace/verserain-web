@@ -70,13 +70,12 @@ function truncate(s, n) {
 // rich preview; that endpoint redirects humans into the SPA deep link, which
 // credits today's reading and offers the one-tap Amen.
 function buildShareUrl(team, item) {
+  // Keep the link short — the /fc card resolves the verse from (team, set, i)
+  // server-side, so we don't pack the encoded verse text into the URL.
   const p = new URLSearchParams({
     team: team.teamId,
     set: item.setId,
     i: String(item.dayIndex),
-    vref: item.reference || '',
-    vtext: truncate(item.text || '', 180),
-    title: item.title || team.name || '',
     amen: '1',
   });
   return `${PUBLIC_ORIGIN}/fc?${p.toString()}`;
