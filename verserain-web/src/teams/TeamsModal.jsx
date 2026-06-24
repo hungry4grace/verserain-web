@@ -1489,18 +1489,25 @@ function ComposeReflection({ t, userEmail, teamId, itemId, type, verses, onCance
                   fontSize: '0.78rem', cursor: 'pointer',
                 }}
               >{t('整段', 'Whole passage')}</button>
-              {verses.map(v => (
-                <button
-                  key={v}
-                  onClick={() => setVerseRef(v)}
-                  style={{
-                    background: verseRef === v ? colors.cardSoft : 'transparent',
-                    border: `1px solid ${verseRef === v ? colors.accent : colors.border}`,
-                    color: colors.text, borderRadius: 6, padding: '0.15rem 0.5rem',
-                    fontSize: '0.78rem', cursor: 'pointer',
-                  }}
-                >{v}</button>
-              ))}
+              {verses.map((v, i) => {
+                // Inline verses[] are objects ({ reference, text }); older
+                // data may have plain strings. Normalize to a label so we
+                // never render an object as a React child (which crashes).
+                const ref = typeof v === 'string' ? v : (v?.reference || '');
+                const key = ref || `verse-${i}`;
+                return (
+                  <button
+                    key={key}
+                    onClick={() => setVerseRef(ref)}
+                    style={{
+                      background: verseRef === ref ? colors.cardSoft : 'transparent',
+                      border: `1px solid ${verseRef === ref ? colors.accent : colors.border}`,
+                      color: colors.text, borderRadius: 6, padding: '0.15rem 0.5rem',
+                      fontSize: '0.78rem', cursor: 'pointer',
+                    }}
+                  >{ref}</button>
+                );
+              })}
             </div>
           </div>
         )}

@@ -20,3 +20,6 @@ xcuserdata/
 
 # Node modules
 node_modules/
+
+# Local tooling / agent config (per-machine, never commit)
+.claude/

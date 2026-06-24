@@ -24,3 +24,6 @@ dist-ssr
 *.sw?
 .vercel
 .env*.local
+
+# Local tooling / agent config (per-machine, never commit)
+.claude/
