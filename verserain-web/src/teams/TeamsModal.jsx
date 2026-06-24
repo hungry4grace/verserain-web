@@ -1223,11 +1223,22 @@ function ScheduleItemCard({
               {verses.map((v, i) => {
                 const done = myDone.includes(i);
                 const isToday = i === todayIndex && !planNotStarted;
+                const canChallenge = !!onLaunchSet && !planNotStarted;
                 return (
-                  <div
+                  <button
                     key={i}
-                    title={v.text || ''}
+                    type="button"
+                    onClick={() => canChallenge && onLaunchSet(item.setId, 'campaign', teamId, i)}
+                    disabled={!canChallenge}
+                    title={
+                      planNotStarted
+                        ? (v.text || '')
+                        : t(`挑戰 D${i + 1}：${v.reference || ''} — 算這天完成`, `Challenge D${i + 1}: ${v.reference || ''} — counts as this day's completion`)
+                    }
                     style={{
+                      textAlign: 'left',
+                      width: '100%',
+                      font: 'inherit',
                       padding: '0.25rem 0.4rem',
                       borderRadius: 4,
                       fontSize: '0.72rem',
@@ -1237,10 +1248,25 @@ function ScheduleItemCard({
                       whiteSpace: 'nowrap',
                       overflow: 'hidden',
                       textOverflow: 'ellipsis',
+                      cursor: canChallenge ? 'pointer' : 'default',
+                      opacity: canChallenge ? 1 : 0.7,
+                      transition: 'background 0.12s, border-color 0.12s',
+                    }}
+                    onMouseEnter={e => {
+                      if (canChallenge && !done) {
+                        e.currentTarget.style.background = 'rgba(55,189,248,0.15)';
+                        e.currentTarget.style.borderColor = colors.accent;
+                      }
+                    }}
+                    onMouseLeave={e => {
+                      if (canChallenge && !done) {
+                        e.currentTarget.style.background = colors.card;
+                        e.currentTarget.style.borderColor = isToday ? colors.accent : 'transparent';
+                      }
                     }}
                   >
-                    {done ? '✓ ' : ''}D{i + 1} · {v.reference || ''}
-                  </div>
+                    {done ? '✓ ' : '▶ '}D{i + 1} · {v.reference || ''}
+                  </button>
                 );
               })}
             </div>
