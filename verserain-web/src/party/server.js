@@ -1049,11 +1049,11 @@ export default class Server {
             const prefix = `private-sets:${playerName}:`;
             // Clear the legacy single-key blob (if any).
             await this.room.storage.delete(`private-sets:${playerName}`);
-            // Wipe all existing per-set chunk keys for this user — simpler
-            // and safer than incremental diff when set sizes change.
+            // Per-set upsert: only delete a set's old chunks AFTER
+            // successfully writing its new chunks, so partial failure
+            // never wipes data that hasn't been replaced yet.
             const existingMap = await this.room.storage.list({ prefix });
-            for (const key of existingMap.keys()) await this.room.storage.delete(key);
-            // Re-write each set as one or more chunked keys.
+            const incomingIds = new Set(sets.filter(s => s?.id).map(s => s.id));
             let totalChunks = 0;
             const failures = [];
             for (const set of sets) {
@@ -1061,12 +1061,16 @@ export default class Server {
                const json = JSON.stringify(set);
                const jsonBytes = new TextEncoder().encode(json).length;
                const chunks = splitChunks(json);
+               const setPrefix = `${prefix}${set.id}::part:`;
+               // Write new chunks first
+               let allWritten = true;
                for (let i = 0; i < chunks.length; i++) {
                   const chunkBytes = new TextEncoder().encode(chunks[i]).length;
                   try {
                      await this.room.storage.put(`${prefix}${set.id}::part:${i}/${chunks.length}`, chunks[i]);
                      totalChunks++;
                   } catch (putErr) {
+                     allWritten = false;
                      failures.push({
                         setId: set.id,
                         title: set.title,
@@ -1078,11 +1082,44 @@ export default class Server {
                      });
                   }
                }
+               // Clean up stale chunks from previous save (different chunk count)
+               if (allWritten) {
+                  for (const [key] of existingMap.entries()) {
+                     if (key.startsWith(setPrefix)) {
+                        const m = key.match(/::part:(\d+)\/(\d+)$/);
+                        if (m && (parseInt(m[2]) !== chunks.length || parseInt(m[1]) >= chunks.length)) {
+                           await this.room.storage.delete(key);
+                        }
+                     }
+                  }
+               }
+            }
+            // Remove chunks for sets no longer in the incoming list
+            for (const [key] of existingMap.entries()) {
+               const tail = key.slice(prefix.length);
+               const setId = tail.split('::part:')[0];
+               if (setId && !incomingIds.has(setId)) {
+                  await this.room.storage.delete(key);
+               }
             }
             if (failures.length) {
                return new Response(JSON.stringify({ error: 'Failed to save some private sets', failures, savedChunks: totalChunks }), { status: 500, headers: corsHeaders });
             }
-            return new Response(JSON.stringify({ success: true, count: sets.length, chunks: totalChunks }), { status: 200, headers: corsHeaders });
+            // Auto-sync: if a private set is published, update the public
+            // verseset: key so other users see the latest version.
+            let publishedSynced = 0;
+            for (const set of sets) {
+               if (!set?.id || !set.isPublished) continue;
+               const existing = await this.room.storage.get(`verseset:${set.id}`);
+               if (!existing) continue;
+               const tsNew = Date.parse(set.lastEditedAt || '') || 0;
+               const tsOld = Date.parse(existing.lastEditedAt || '') || 0;
+               if (tsNew > tsOld || (tsNew === tsOld && (set.verses || []).length > (existing.verses || []).length)) {
+                  await this.room.storage.put(`verseset:${set.id}`, { ...set, authorName: existing.authorName || set.authorName });
+                  publishedSynced++;
+               }
+            }
+            return new Response(JSON.stringify({ success: true, count: sets.length, chunks: totalChunks, publishedSynced }), { status: 200, headers: corsHeaders });
          } catch (e) {
             return new Response(JSON.stringify({ error: 'Failed to save private sets', detail: String(e?.message || e) }), { status: 500, headers: corsHeaders });
          }

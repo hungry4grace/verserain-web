@@ -4024,7 +4024,14 @@ export default function App() {
         for (const s of localSets) {
           if (!s?.id) continue;
           const existing = byId.get(s.id);
-          if (!existing || tsOf(s) >= tsOf(existing)) byId.set(s.id, s);
+          if (!existing) { byId.set(s.id, s); continue; }
+          const tLocal = tsOf(s), tRemote = tsOf(existing);
+          if (tLocal > tRemote) { byId.set(s.id, s); }
+          else if (tLocal === tRemote) {
+            const vLocal = (s.verses || []).length;
+            const vRemote = (existing.verses || []).length;
+            if (vLocal > vRemote) byId.set(s.id, s);
+          }
         }
         const merged = Array.from(byId.values());
         if (!cancelled) {
@@ -15306,7 +15313,9 @@ const deDict = {
                                 id: editingCustomSet.id || `custom-${Date.now()}`,
                                 authorName: (editingCustomSet.authorName && editingCustomSet.authorName !== "Anonymous")
                                   ? editingCustomSet.authorName
-                                  : (playerName || "Anonymous")
+                                  : (playerName || "Anonymous"),
+                                lastEditedAt: new Date().toISOString(),
+                                lastEditorName: playerName || "Anonymous"
                               };
 
                               let updatedSets;
