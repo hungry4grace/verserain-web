@@ -4394,7 +4394,8 @@ export default function App() {
             if (!pub) return cs;
             const tPub = Date.parse(pub.lastEditedAt || '') || 0;
             const tLocal = Date.parse(cs.lastEditedAt || '') || 0;
-            if (tPub > tLocal) { changed = true; return { ...pub }; }
+            const contentDiffers = pub.title !== cs.title || (pub.verses || []).length !== (cs.verses || []).length;
+            if (tPub > tLocal || (tPub === tLocal && contentDiffers)) { changed = true; return { ...pub }; }
             return cs;
           });
           if (changed) localStorage.setItem('verseRain_custom_sets', JSON.stringify(updated));
