@@ -6177,18 +6177,47 @@ export default function App() {
         const targetVerse = allVerses.find(v => v.reference === challengeRef);
         if (targetVerse) {
           const isEnglish = /^[a-zA-Z]/.test(targetVerse.reference);
-          // If the verse belongs to the opposite language, setting version triggers activeVerseSets change
           if ((isEnglish && !isEnglishBibleVersion(version)) || (!isEnglish && version !== 'cuv')) {
             setVersion(isEnglish ? 'kjv' : 'cuv');
-            return; // Wait for activeVerseSets to update on next render
+            return;
           }
           setActiveVerse(targetVerse);
           setSelectedVerseRefs([targetVerse.reference]);
           window.history.replaceState({}, document.title, window.location.pathname);
-          // Small delay ensures state is painted before starting the game
           setTimeout(() => {
             setInitAutoStart({ trigger: true, isAuto: false });
           }, 300);
+        } else {
+          const normalizedKey = normalizeVerseReferenceKey(challengeRef);
+          if (normalizedKey && !challengeFetchAttemptedRef.current.has(challengeRef)) {
+            challengeFetchAttemptedRef.current.add(challengeRef);
+            const isEnglish = /^[a-zA-Z]/.test(challengeRef);
+            const targetVersion = isEnglish ? (version === 'cuv' ? 'kjv' : version) : 'cuv';
+            (async () => {
+              let text = null;
+              if (targetVersion === 'esv' || targetVersion === 'kjv' || targetVersion === 'niv') {
+                const engRef = getEnglishReferenceFromKey(normalizedKey);
+                if (engRef) text = await fetchBibleVerseFromAPI(engRef, targetVersion);
+              } else if (targetVersion === 'tr' || targetVersion === 'my') {
+                text = await fetchVerseFromGetBible(normalizedKey, targetVersion);
+              } else {
+                text = await fetchVerseFromBolls(normalizedKey, targetVersion);
+              }
+              if (!text) {
+                setToast(t('找不到此經文，請確認經文出處', 'Verse not found, please check the reference'));
+                setTimeout(() => setToast(null), 3000);
+                window.history.replaceState({}, document.title, window.location.pathname);
+                return;
+              }
+              const dynamicVerse = { reference: challengeRef, text, book: parseInt(normalizedKey.split('|')[0], 10) || 0 };
+              setActiveVerse(dynamicVerse);
+              setSelectedVerseRefs([challengeRef]);
+              window.history.replaceState({}, document.title, window.location.pathname);
+              setTimeout(() => {
+                setInitAutoStart({ trigger: true, isAuto: false });
+              }, 300);
+            })();
+          }
         }
       }
     }
@@ -6204,6 +6233,7 @@ export default function App() {
   // etc. land here in fresh contexts where the set may not yet be in any
   // local list).
   const viewSetFetchAttemptedRef = useRef(new globalThis.Set());
+  const challengeFetchAttemptedRef = useRef(new globalThis.Set());
 
   useEffect(() => {
     // Dynamically scale animation speeds (10% increase compounding, or simply linear)
