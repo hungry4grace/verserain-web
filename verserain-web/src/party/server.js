@@ -2425,6 +2425,11 @@ export default class Server {
     try {
       const data = JSON.parse(message);
 
+      if (data.type === 'PING') {
+        sender.send(JSON.stringify({ type: 'PONG', ts: data.ts }));
+        return;
+      }
+
       if (data.type === 'INIT_GAME') {
         // Host selects the board phase
         if (sender.id === this.state.host) {

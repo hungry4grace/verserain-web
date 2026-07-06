@@ -3585,6 +3585,21 @@ const ActivityHeatmap = ({ t, activityMap = {} }) => {
   );
 };
 
+const PARTY_HOST = "https://verserain-party.hungry4grace.partykit.dev/parties/main/global-auth-db";
+
+async function fetchRetry(url, opts = {}, { retries = 2, delay = 1500 } = {}) {
+  for (let i = 0; i <= retries; i++) {
+    try {
+      const res = await fetch(url, opts);
+      if (res.ok || res.status < 500) return res;
+      if (i < retries) await new Promise(r => setTimeout(r, delay * (i + 1)));
+    } catch (err) {
+      if (i === retries) throw err;
+      await new Promise(r => setTimeout(r, delay * (i + 1)));
+    }
+  }
+}
+
 export default function App() {
   const [loadedLangs, setLoadedLangs] = useState({});
   const [isLangsLoading, setIsLangsLoading] = useState(true);
@@ -3919,7 +3934,7 @@ export default function App() {
       if (decision.shouldPushToCloud) {
         // Safe to push: we either merged confirmed remote data, or confirmed the
         // player has no remote garden yet (404).
-        fetch('https://verserain-party.hungry4grace.partykit.dev/parties/main/global-auth-db/save-garden', {
+        fetchRetry(`${PARTY_HOST}/save-garden`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ playerName, gardenData: decision.garden })
@@ -4018,7 +4033,7 @@ export default function App() {
           // Push the merge back so the remote has the union too.
           const ownedForPush = merged.filter(s => isOwnedByCurrentUser(s, playerName, userEmail));
           lastPushedPrivateSetsRef.current = JSON.stringify(ownedForPush);
-          fetch(`${host}/save-private-sets`, {
+          fetchRetry(`${host}/save-private-sets`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ playerName, sets: ownedForPush }),
@@ -4042,11 +4057,14 @@ export default function App() {
     const payload = JSON.stringify(ownedForPush);
     if (payload === lastPushedPrivateSetsRef.current) return;
     lastPushedPrivateSetsRef.current = payload;
-    fetch(`https://verserain-party.hungry4grace.partykit.dev/parties/main/global-auth-db/save-private-sets`, {
+    fetchRetry(`${PARTY_HOST}/save-private-sets`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ playerName, sets: ownedForPush }),
-    }).catch(() => {});
+    }).catch(() => {
+      setToast(t('雲端同步失敗，稍後再試', 'Cloud sync failed, will retry later'));
+      setTimeout(() => setToast(null), 3000);
+    });
   }, [customVerseSets, playerName]);
   const [hiddenOfficialSetIds, setHiddenOfficialSetIds] = useState(() => {
     try {
@@ -4285,7 +4303,7 @@ export default function App() {
       // Sync to backend if logged in
       const pn = playerNameRef.current;
       if (pn) {
-        fetch('https://verserain-party.hungry4grace.partykit.dev/parties/main/global-auth-db/save-garden', {
+        fetchRetry(`${PARTY_HOST}/save-garden`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ playerName: pn, gardenData: updated })
@@ -5277,7 +5295,7 @@ export default function App() {
       const ctx = pendingVerseCompletionRef.current;
       pendingVerseCompletionRef.current = null;
       if (ctx && typeof ctx.verseIndex === 'number') {
-        fetch('https://verserain-party.hungry4grace.partykit.dev/parties/main/global-auth-db/teams/verse-complete', {
+        fetchRetry(`${PARTY_HOST}/teams/verse-complete`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(ctx),
@@ -5394,6 +5412,14 @@ export default function App() {
 
   const [verseViewModal, setVerseViewModal] = useState(null);
   const [toast, setToast] = useState(null);
+  const [isOnline, setIsOnline] = useState(() => typeof navigator !== 'undefined' ? navigator.onLine : true);
+  useEffect(() => {
+    const goOnline = () => setIsOnline(true);
+    const goOffline = () => setIsOnline(false);
+    window.addEventListener('online', goOnline);
+    window.addEventListener('offline', goOffline);
+    return () => { window.removeEventListener('online', goOnline); window.removeEventListener('offline', goOffline); };
+  }, []);
 
   // Cloud Family one-tap Amen: a daily-link recipient lands with
   // ?amen=1 stashed at parse time. Once we know who they are, record the
@@ -5404,7 +5430,7 @@ export default function App() {
     const email = userEmail || localStorage.getItem('verserain_player_email');
     if (!email) return; // wait until the user is identified / signs in
     sessionStorage.removeItem('verserain_pending_amen_team');
-    fetch('https://verserain-party.hungry4grace.partykit.dev/parties/main/global-auth-db/teams/amen', {
+    fetchRetry(`${PARTY_HOST}/teams/amen`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, teamId: teamForAmen }),
@@ -5428,6 +5454,7 @@ export default function App() {
   const [multiplayerRoomRole, setMultiplayerRoomRole] = useState('player');
   const [multiplayerTeamCount, setMultiplayerTeamCount] = useState(4);
   const [multiplayerHostPlays, setMultiplayerHostPlays] = useState(false); // team host also competes
+  const [wsConnected, setWsConnected] = useState(false);
   const geoRef = useRef(null); // cached IP geolocation
   const [showMultiplayerVersePicker, setShowMultiplayerVersePicker] = useState(false);
   const [pickerSelectedSet, setPickerSelectedSet] = useState(null);
@@ -5701,29 +5728,48 @@ export default function App() {
 
     socketRef.current = socket;
 
+    let heartbeatInterval = null;
+
     const handleOpen = () => {
       setMyClientId(socket.id);
+      setWsConnected(true);
+      heartbeatInterval = setInterval(() => {
+        if (socket.readyState === WebSocket.OPEN) {
+          socket.send(JSON.stringify({ type: 'PING', ts: Date.now() }));
+        }
+      }, 30000);
       if (pendingInvitePKRef.current) {
         const { queue, pm, dl } = pendingInvitePKRef.current;
         setActiveVerse(queue[0]);
         setPlayMode(pm);
         setDistractionLevel(dl);
-        setInitAutoStart({ 
-          trigger: true, 
-          isAuto: false, 
-          isMultiplayerReadyCheck: true, 
-          campaignQueue: queue, 
-          verse: queue[0], 
-          playMode: pm 
+        setInitAutoStart({
+          trigger: true,
+          isAuto: false,
+          isMultiplayerReadyCheck: true,
+          campaignQueue: queue,
+          verse: queue[0],
+          playMode: pm
         });
         pendingInvitePKRef.current = null;
       }
     };
 
+    const handleClose = () => {
+      setWsConnected(false);
+      if (heartbeatInterval) clearInterval(heartbeatInterval);
+    };
+
+    const handleError = () => {
+      setWsConnected(false);
+    };
+
     const handleMessage = (e) => {
       if (socket.id) setMyClientId(socket.id);
+      setWsConnected(true);
       try {
         const msg = JSON.parse(e.data);
+        if (msg.type === 'PONG') return;
         if (msg.type === 'STATE_UPDATE') {
           setMultiplayerState(msg.state);
           // Room validation for guest join:
@@ -5926,12 +5972,18 @@ export default function App() {
 
     socket.addEventListener('open', handleOpen);
     socket.addEventListener('message', handleMessage);
+    socket.addEventListener('close', handleClose);
+    socket.addEventListener('error', handleError);
 
     return () => {
+      if (heartbeatInterval) clearInterval(heartbeatInterval);
       socket.removeEventListener('open', handleOpen);
       socket.removeEventListener('message', handleMessage);
+      socket.removeEventListener('close', handleClose);
+      socket.removeEventListener('error', handleError);
       socket.close();
       socketRef.current = null;
+      setWsConnected(false);
       multiplayerSoloActiveRef.current = false;
     };
   }, [multiplayerRoomId, multiplayerRoomMode, multiplayerRoomRole, multiplayerTeamCount, multiplayerHostPlays, playerName, personalCode, triggerLightning]);
@@ -19485,6 +19537,18 @@ const deDict = {
                 {t("確認儲存", "Save Changes")}
               </button>
             </div>
+          </div>
+        )}
+
+        {/* Offline / Reconnecting Banner */}
+        {!isOnline && (
+          <div style={{ position: 'fixed', top: 0, left: 0, right: 0, backgroundColor: '#dc2626', color: 'white', padding: '6px 16px', textAlign: 'center', zIndex: 10000, fontSize: '0.85rem', fontWeight: 600 }}>
+            {t('網路已斷開，部分功能暫時無法使用', 'Offline — some features are unavailable')}
+          </div>
+        )}
+        {isOnline && multiplayerRoomId && !wsConnected && (
+          <div style={{ position: 'fixed', top: 0, left: 0, right: 0, backgroundColor: '#f59e0b', color: '#1e293b', padding: '6px 16px', textAlign: 'center', zIndex: 10000, fontSize: '0.85rem', fontWeight: 600 }}>
+            {t('重新連線中…', 'Reconnecting…')}
           </div>
         )}
 
