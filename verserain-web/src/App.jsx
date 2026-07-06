@@ -4385,7 +4385,21 @@ export default function App() {
     fetch("https://verserain-party.hungry4grace.partykit.dev/parties/main/global-auth-db/custom-sets")
       .then(res => res.json())
       .then(data => {
-        if (Array.isArray(data)) setPublishedVerseSets(data);
+        if (!Array.isArray(data)) return;
+        setPublishedVerseSets(data);
+        setCustomVerseSets(prev => {
+          let changed = false;
+          const updated = prev.map(cs => {
+            const pub = data.find(p => p.id === cs.id);
+            if (!pub) return cs;
+            const tPub = Date.parse(pub.lastEditedAt || '') || 0;
+            const tLocal = Date.parse(cs.lastEditedAt || '') || 0;
+            if (tPub > tLocal) { changed = true; return { ...pub }; }
+            return cs;
+          });
+          if (changed) localStorage.setItem('verseRain_custom_sets', JSON.stringify(updated));
+          return changed ? updated : prev;
+        });
       })
       .catch(err => console.error("Failed to fetch published sets", err));
 
@@ -4408,12 +4422,22 @@ export default function App() {
       const csLang = cs.language || 'cuv';
       if (csLang === version) {
         const pub = publishedVerseSets.find(p => p.id === cs.id);
-        merged.push({
-          ...cs,
-          authorName: (pub && pub.authorName !== "Anonymous") ? pub.authorName : (cs.authorName || playerName || "匿名玩家"),
-          lastEditorName: pub?.lastEditorName || cs.lastEditorName,
-          lastEditedAt: pub?.lastEditedAt || cs.lastEditedAt
-        });
+        if (pub) {
+          const tPub = Date.parse(pub.lastEditedAt || '') || 0;
+          const tLocal = Date.parse(cs.lastEditedAt || '') || 0;
+          const base = tPub >= tLocal ? pub : cs;
+          merged.push({
+            ...base,
+            authorName: (pub.authorName !== "Anonymous") ? pub.authorName : (cs.authorName || playerName || "匿名玩家"),
+            lastEditorName: pub.lastEditorName || cs.lastEditorName,
+            lastEditedAt: pub.lastEditedAt || cs.lastEditedAt
+          });
+        } else {
+          merged.push({
+            ...cs,
+            authorName: cs.authorName || playerName || "匿名玩家",
+          });
+        }
       }
     });
     publishedVerseSets.forEach(ps => {
