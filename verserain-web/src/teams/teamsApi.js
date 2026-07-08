@@ -66,6 +66,15 @@ export const teamsApi = {
   },
   createReflection: (email, teamId, itemId, type, text, verseRef = '') =>
     jpost('/teams/reflections/create', { email, teamId, itemId, type, text, verseRef }),
+  // Voice messages: audio is uploaded as base64 slices first (each key on the
+  // backend is capped at 128KB), then the reflection doc referencing the
+  // voiceId is created. getVoice reassembles the slices for playback.
+  uploadVoiceChunk: (email, teamId, itemId, voiceId, index, total, data) =>
+    jpost('/teams/voice/chunk', { email, teamId, itemId, voiceId, index, total, data }),
+  createVoiceReflection: (email, teamId, itemId, { voiceId, voiceMime, voiceDur, text = '', verseRef = '' }) =>
+    jpost('/teams/reflections/create', { email, teamId, itemId, type: 'voice', text, verseRef, voiceId, voiceMime, voiceDur }),
+  getVoice: (email, teamId, itemId, voiceId) =>
+    jget(`/teams/voice?id=${encodeURIComponent(teamId)}&email=${encodeURIComponent(email)}&itemId=${encodeURIComponent(itemId)}&voiceId=${encodeURIComponent(voiceId)}`),
   deleteReflection: (email, teamId, itemId, reflectionId) =>
     jpost('/teams/reflections/delete', { email, teamId, itemId, reflectionId }),
   reactReflection: (email, teamId, itemId, reflectionId, emoji) =>

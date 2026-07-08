@@ -1949,17 +1949,77 @@ export default class Server {
          //   team-reflection:<teamId>:<itemId>:<rid>
          // Reactions live inline on each reflection doc (read-modify-write);
          // DO storage serializes ops per room so there's no race with cheers.
-         const REFLECT_TYPES = ['reflection', 'prayer'];
+         const REFLECT_TYPES = ['reflection', 'prayer', 'voice'];
          const newReflectionId = () => 'r_' + randId(8);
 
+         // Voice messages ride on the reflection doc (type: 'voice') but the
+         // audio itself is chunked into separate keys — DO storage caps a
+         // single value at 128KB and a 60s opus clip in base64 easily
+         // exceeds that. Chunk keys:
+         //   team-voice:<teamId>:<itemId>:<voiceId>:<index>
+         const VOICE_CHUNK_MAX_CHARS = 110000; // base64 chars per chunk, < 128KB value cap
+         const VOICE_MAX_CHUNKS = 6;           // ≈ 480KB base64 ≈ 90s of 24kbps opus
+
+         // POST /teams/voice/chunk — body: { email, teamId, itemId, voiceId, index, total, data }
+         // Client uploads base64 slices before creating the voice reflection.
+         if (url.pathname.endsWith('/teams/voice/chunk') && request.method === 'POST') {
+            try {
+               const { email, teamId, itemId, voiceId, index, total, data } = await request.json();
+               if (!email || !teamId || !itemId || !voiceId) return err('email, teamId, itemId, voiceId required');
+               const idx = Number(index), tot = Number(total);
+               if (!Number.isInteger(idx) || !Number.isInteger(tot) || idx < 0 || tot < 1 || idx >= tot) return err('bad chunk index');
+               if (tot > VOICE_MAX_CHUNKS) return err(`too many chunks (max ${VOICE_MAX_CHUNKS})`);
+               if (typeof data !== 'string' || !data || data.length > VOICE_CHUNK_MAX_CHARS) return err('bad chunk data');
+               // voiceId is client-generated; constrain to a safe charset so it
+               // can't inject into the storage key namespace.
+               if (!/^v_[A-Za-z0-9]{6,20}$/.test(voiceId)) return err('bad voiceId');
+               const team = await readTeam(teamId);
+               if (!team) return err('Team not found', 404);
+               if (!isMember(team, email)) return err('Not a member', 403);
+               await this.room.storage.put(`team-voice:${teamId}:${itemId}:${voiceId}:${idx}`, data);
+               return json({ success: true });
+            } catch (e) { return err('Failed to save voice chunk', 500); }
+         }
+
+         // GET /teams/voice?id=<teamId>&email=<email>&itemId=<itemId>&voiceId=<voiceId>
+         // Reassembles the chunks into one base64 string for playback.
+         if (url.pathname.endsWith('/teams/voice') && request.method === 'GET') {
+            try {
+               const teamId = url.searchParams.get('id');
+               const email = url.searchParams.get('email');
+               const itemId = url.searchParams.get('itemId');
+               const voiceId = url.searchParams.get('voiceId');
+               if (!teamId || !email || !itemId || !voiceId) return err('id, email, itemId, voiceId required');
+               const team = await readTeam(teamId);
+               if (!team) return err('Team not found', 404);
+               if (!isMember(team, email)) return err('Not a member', 403);
+               const map = await this.room.storage.list({ prefix: `team-voice:${teamId}:${itemId}:${voiceId}:` });
+               if (map.size === 0) return err('Not found', 404);
+               // Keys sort lexicographically; indices are single digits (max 6
+               // chunks) so lexicographic == numeric order here.
+               const data = Array.from(map.entries())
+                  .sort((a, b) => a[0].localeCompare(b[0]))
+                  .map(([, v]) => v)
+                  .join('');
+               return json({ success: true, data });
+            } catch (e) { return err('Failed to fetch voice', 500); }
+         }
+
          // POST /teams/reflections/create — body: { email, teamId, itemId, type, text, verseRef? }
+         // Voice messages additionally carry { voiceId, voiceMime, voiceDur } and
+         // may have empty text (the audio IS the message).
          if (url.pathname.endsWith('/teams/reflections/create') && request.method === 'POST') {
             try {
-               const { email, teamId, itemId, type, text, verseRef } = await request.json();
+               const { email, teamId, itemId, type, text, verseRef, voiceId, voiceMime, voiceDur } = await request.json();
                if (!email || !teamId || !itemId) return err('email, teamId, itemId required');
-               if (!REFLECT_TYPES.includes(type)) return err('type must be reflection or prayer');
+               if (!REFLECT_TYPES.includes(type)) return err('type must be reflection, prayer or voice');
                const body = String(text || '').trim();
-               if (!body) return err('text required');
+               const isVoice = type === 'voice';
+               if (isVoice) {
+                  if (!/^v_[A-Za-z0-9]{6,20}$/.test(String(voiceId || ''))) return err('voiceId required for voice');
+               } else if (!body) {
+                  return err('text required');
+               }
                if (body.length > 1000) return err('text too long (max 1000)');
                const team = await readTeam(teamId);
                if (!team) return err('Team not found', 404);
@@ -1975,6 +2035,11 @@ export default class Server {
                   verseRef: typeof verseRef === 'string' ? verseRef.trim().slice(0, 30) : '',
                   at: new Date().toISOString(),
                   reactions: [],
+                  ...(isVoice ? {
+                     voiceId: String(voiceId),
+                     voiceMime: String(voiceMime || 'audio/webm').slice(0, 40),
+                     voiceDur: Math.min(Math.max(0, Number(voiceDur) || 0), 600),
+                  } : {}),
                };
                await this.room.storage.put(`team-reflection:${teamId}:${doc.itemId}:${id}`, doc);
                // Award the author. Per (team, item, day) — same item written
@@ -1982,8 +2047,8 @@ export default class Server {
                // discourages spamming short posts to farm 15-point hits.
                const awarded = await awardPoints({
                   email, teamId,
-                  eventKey: `${type === 'prayer' ? 'prayer' : 'reflection'}:${teamId}:${doc.itemId}:${todayUTC()}`,
-                  points: 15, source: type === 'prayer' ? 'prayer-create' : 'reflection-create',
+                  eventKey: `${isVoice ? 'voice' : type === 'prayer' ? 'prayer' : 'reflection'}:${teamId}:${doc.itemId}:${todayUTC()}`,
+                  points: 15, source: isVoice ? 'voice-create' : type === 'prayer' ? 'prayer-create' : 'reflection-create',
                });
                return json({ success: true, reflection: doc, pointsAwarded: awarded });
             } catch (e) { return err('Failed to create reflection', 500); }
@@ -2031,6 +2096,12 @@ export default class Server {
                const isAuthor = doc.author === me;
                if (!isAuthor && !isAdmin(team, email)) return err('Author or admin only', 403);
                await this.room.storage.delete(key);
+               // Voice messages: cascade-delete the audio chunks so orphaned
+               // ~100KB blobs don't accumulate in room storage.
+               if (doc.voiceId) {
+                  const chunkMap = await this.room.storage.list({ prefix: `team-voice:${teamId}:${itemId}:${doc.voiceId}:` });
+                  for (const k of chunkMap.keys()) await this.room.storage.delete(k);
+               }
                return json({ success: true });
             } catch (e) { return err('Failed to delete reflection', 500); }
          }

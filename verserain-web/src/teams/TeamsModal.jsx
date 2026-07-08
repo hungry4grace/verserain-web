@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { X, Users, Crown, Copy, RefreshCw, LogOut, ChevronLeft, Plus, Heart, QrCode, HelpCircle, BookOpen, Share2 } from 'lucide-react';
+import { X, Users, Crown, Copy, RefreshCw, LogOut, ChevronLeft, Plus, Heart, QrCode, HelpCircle, BookOpen, Share2, Mic, Square, Play, Pause } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { teamsApi, CHEER_EMOJIS } from './teamsApi';
 import { HELP_CONTENT, resolveHelpLang } from './helpContent';
@@ -998,6 +998,7 @@ function ScheduleItemCard({
 
   const reflectionCount = reflections.filter(r => r.type === 'reflection').length;
   const prayerCount = reflections.filter(r => r.type === 'prayer').length;
+  const voiceCount = reflections.filter(r => r.type === 'voice').length;
 
   const my = setStatus[meLc] || { status: 'not-started', doneCount: 0, totalCount: 0, doneIndices: [] };
   const totalCount = item.totalCount || my.totalCount || (Array.isArray(item.verses) ? item.verses.length : 0);
@@ -1282,11 +1283,21 @@ function ScheduleItemCard({
         >
           <div style={{ color: colors.text, fontSize: '0.9rem' }}>
             <span style={{ color: colors.muted }}>{reflectExpanded ? '▾' : '▸'} </span>
-            {reflectionCount > 0 || prayerCount > 0
-              ? t(`心得 ${reflectionCount} · 代禱 ${prayerCount}`, `${reflectionCount} reflections · ${prayerCount} prayers`)
-              : t('心得 · 代禱', 'Reflections · Prayers')}
+            {reflectionCount > 0 || prayerCount > 0 || voiceCount > 0
+              ? t(
+                  `留言 ${voiceCount} · 心得 ${reflectionCount} · 代禱 ${prayerCount}`,
+                  `${voiceCount} voice · ${reflectionCount} reflections · ${prayerCount} prayers`
+                )
+              : t('留言 · 心得 · 代禱', 'Voice · Reflections · Prayers')}
           </div>
           <div style={{ display: 'flex', gap: 6 }} onClick={e => e.stopPropagation()}>
+            <button
+              onClick={() => { setReflectExpanded(true); setComposeType('voice'); }}
+              style={{ ...btn('ghost'), padding: '0.25rem 0.55rem', fontSize: '0.8rem', display: 'inline-flex', alignItems: 'center', gap: 3 }}
+              title={t('錄一段語音給團員聽', 'Record a voice message for the team')}
+            >
+              + <Mic size={12} /> {t('留言', 'Voice')}
+            </button>
             <button
               onClick={() => { setReflectExpanded(true); setComposeType('reflection'); }}
               style={{ ...btn('ghost'), padding: '0.25rem 0.55rem', fontSize: '0.8rem' }}
@@ -1325,7 +1336,17 @@ function ScheduleItemCard({
           </div>
         )}
 
-        {composeType && (
+        {composeType === 'voice' && (
+          <ComposeVoice
+            t={t}
+            userEmail={userEmail}
+            teamId={teamId}
+            itemId={item.id}
+            onCancel={() => setComposeType(null)}
+            onCreated={() => { setComposeType(null); onReflectionsChanged?.(); }}
+          />
+        )}
+        {composeType && composeType !== 'voice' && (
           <ComposeReflection
             t={t}
             userEmail={userEmail}
@@ -1380,8 +1401,9 @@ function ReflectionRow({ reflection: r, userEmail, meLc, isAdmin, teamId, displa
   };
 
   const isPrayer = r.type === 'prayer';
-  const accent = isPrayer ? '#8b5cf6' : '#0ea5e9';
-  const label = isPrayer ? t('代禱', 'Prayer') : t('心得', 'Reflection');
+  const isVoice = r.type === 'voice';
+  const accent = isVoice ? '#16a34a' : isPrayer ? '#8b5cf6' : '#0ea5e9';
+  const label = isVoice ? t('留言', 'Voice') : isPrayer ? t('代禱', 'Prayer') : t('心得', 'Reflection');
   // Format ISO date as YYYY-MM-DD for stable, locale-independent display.
   const dateStr = (r.at || '').slice(0, 10);
 
@@ -1401,10 +1423,23 @@ function ReflectionRow({ reflection: r, userEmail, meLc, isAdmin, teamId, displa
         )}
         <span style={{ color: colors.muted, fontSize: '0.78rem', marginLeft: 'auto' }}>{dateStr}</span>
       </div>
-      <div style={{
-        color: colors.text, fontSize: '0.9rem', lineHeight: 1.55,
-        whiteSpace: 'pre-wrap', wordBreak: 'break-word',
-      }}>{r.text}</div>
+      {isVoice && (
+        <VoicePlayer
+          t={t}
+          userEmail={userEmail}
+          teamId={teamId}
+          itemId={r.itemId}
+          voiceId={r.voiceId}
+          mime={r.voiceMime}
+          dur={r.voiceDur}
+        />
+      )}
+      {r.text && (
+        <div style={{
+          color: colors.text, fontSize: '0.9rem', lineHeight: 1.55,
+          whiteSpace: 'pre-wrap', wordBreak: 'break-word',
+        }}>{r.text}</div>
+      )}
       <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 8, flexWrap: 'wrap' }}>
         {CHEER_EMOJIS.map(e => {
           const g = grouped[e];
@@ -1440,6 +1475,292 @@ function ReflectionRow({ reflection: r, userEmail, meLc, isAdmin, teamId, displa
         )}
       </div>
     </div>
+  );
+}
+
+// Lazy audio player for a voice reflection. The base64 audio (up to ~600KB)
+// is only fetched on the first play tap — rendering a long reflection list
+// must not pull every clip down eagerly.
+function VoicePlayer({ t, userEmail, teamId, itemId, voiceId, mime, dur }) {
+  const [state, setState] = useState('idle'); // idle | loading | playing | paused | error
+  const audioRef = useRef(null);
+
+  useEffect(() => {
+    return () => {
+      // Stop playback when the row unmounts (e.g. list refresh).
+      try { audioRef.current?.pause(); } catch { /* noop */ }
+      audioRef.current = null;
+    };
+  }, []);
+
+  const togglePlay = async () => {
+    if (state === 'playing') {
+      audioRef.current?.pause();
+      setState('paused');
+      return;
+    }
+    if (audioRef.current) {
+      try { await audioRef.current.play(); setState('playing'); } catch { setState('error'); }
+      return;
+    }
+    setState('loading');
+    try {
+      const res = await teamsApi.getVoice(userEmail, teamId, itemId, voiceId);
+      const audio = new Audio(`data:${mime || 'audio/webm'};base64,${res.data}`);
+      audio.onended = () => setState('paused');
+      audio.onerror = () => setState('error');
+      audioRef.current = audio;
+      await audio.play();
+      setState('playing');
+    } catch {
+      setState('error');
+    }
+  };
+
+  const durLabel = dur > 0
+    ? `${Math.floor(dur / 60)}:${String(Math.round(dur % 60)).padStart(2, '0')}`
+    : '';
+
+  return (
+    <button
+      onClick={togglePlay}
+      disabled={state === 'loading'}
+      style={{
+        display: 'inline-flex', alignItems: 'center', gap: 8,
+        background: 'rgba(22,163,74,0.12)', border: '1px solid rgba(22,163,74,0.45)',
+        color: '#86efac', borderRadius: 18, cursor: 'pointer',
+        padding: '0.35rem 0.9rem', fontSize: '0.85rem', marginBottom: 4,
+      }}
+    >
+      {state === 'playing' ? <Pause size={15} /> : <Play size={15} />}
+      {state === 'loading' ? t('載入中…', 'Loading…')
+        : state === 'error' ? t('無法播放', 'Playback failed')
+        : state === 'playing' ? t('播放中', 'Playing')
+        : t('播放留言', 'Play voice message')}
+      {durLabel && <span style={{ opacity: 0.75 }}>{durLabel}</span>}
+    </button>
+  );
+}
+
+// Voice-message recorder. Flow: tap record → mic permission → live timer
+// (auto-stop at MAX_SECONDS) → preview playback → send. Send converts the
+// blob to base64, slices it under the backend's per-key cap, uploads the
+// chunks, then creates the 'voice' reflection doc referencing them.
+function ComposeVoice({ t, userEmail, teamId, itemId, onCancel, onCreated }) {
+  const MAX_SECONDS = 90;
+  const [phase, setPhase] = useState('idle'); // idle | recording | preview | uploading
+  const [seconds, setSeconds] = useState(0);
+  const [error, setError] = useState('');
+  const [previewPlaying, setPreviewPlaying] = useState(false);
+  const recorderRef = useRef(null);
+  const streamRef = useRef(null);
+  const timerRef = useRef(null);
+  const blobRef = useRef(null);
+  const mimeRef = useRef('');
+  const previewAudioRef = useRef(null);
+  const secondsRef = useRef(0);
+
+  const cleanupMedia = () => {
+    clearInterval(timerRef.current);
+    try { recorderRef.current?.state !== 'inactive' && recorderRef.current?.stop(); } catch { /* noop */ }
+    streamRef.current?.getTracks().forEach(tr => tr.stop());
+    streamRef.current = null;
+    recorderRef.current = null;
+    try { previewAudioRef.current?.pause(); } catch { /* noop */ }
+    previewAudioRef.current = null;
+  };
+  useEffect(() => cleanupMedia, []);
+
+  const pickMime = () => {
+    if (typeof MediaRecorder === 'undefined') return '';
+    for (const m of ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4']) {
+      if (MediaRecorder.isTypeSupported?.(m)) return m;
+    }
+    return '';
+  };
+
+  const startRecording = async () => {
+    setError('');
+    if (typeof MediaRecorder === 'undefined' || !navigator.mediaDevices?.getUserMedia) {
+      setError(t('此瀏覽器不支援錄音。', 'This browser does not support recording.'));
+      return;
+    }
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      streamRef.current = stream;
+      const mime = pickMime();
+      mimeRef.current = mime || 'audio/webm';
+      // 24kbps opus is plenty for voice and keeps 90s ≈ 270KB raw.
+      const rec = new MediaRecorder(stream, mime ? { mimeType: mime, audioBitsPerSecond: 24000 } : { audioBitsPerSecond: 24000 });
+      const parts = [];
+      rec.ondataavailable = (e) => { if (e.data?.size) parts.push(e.data); };
+      rec.onstop = () => {
+        blobRef.current = new Blob(parts, { type: mimeRef.current });
+        streamRef.current?.getTracks().forEach(tr => tr.stop());
+        streamRef.current = null;
+        setPhase('preview');
+      };
+      recorderRef.current = rec;
+      rec.start();
+      setSeconds(0);
+      secondsRef.current = 0;
+      setPhase('recording');
+      timerRef.current = setInterval(() => {
+        secondsRef.current += 1;
+        setSeconds(secondsRef.current);
+        if (secondsRef.current >= MAX_SECONDS) stopRecording();
+      }, 1000);
+    } catch (e) {
+      setError(
+        e?.name === 'NotAllowedError'
+          ? t('麥克風權限被拒絕。請在瀏覽器設定允許後重試。', 'Microphone permission denied. Please allow it and retry.')
+          : t('無法啟動麥克風。', 'Could not start the microphone.')
+      );
+    }
+  };
+
+  const stopRecording = () => {
+    clearInterval(timerRef.current);
+    try { recorderRef.current?.stop(); } catch { /* noop */ }
+  };
+
+  const togglePreview = async () => {
+    if (previewPlaying) {
+      previewAudioRef.current?.pause();
+      setPreviewPlaying(false);
+      return;
+    }
+    if (!previewAudioRef.current && blobRef.current) {
+      const audio = new Audio(URL.createObjectURL(blobRef.current));
+      audio.onended = () => setPreviewPlaying(false);
+      previewAudioRef.current = audio;
+    }
+    try { await previewAudioRef.current?.play(); setPreviewPlaying(true); } catch { /* noop */ }
+  };
+
+  const discardAndRerecord = () => {
+    try { previewAudioRef.current?.pause(); } catch { /* noop */ }
+    previewAudioRef.current = null;
+    blobRef.current = null;
+    setPreviewPlaying(false);
+    setSeconds(0);
+    secondsRef.current = 0;
+    setPhase('idle');
+  };
+
+  const send = async () => {
+    const blob = blobRef.current;
+    if (!blob) return;
+    setPhase('uploading');
+    setError('');
+    try {
+      // Blob → bare base64 (strip the data: URL prefix).
+      const base64 = await new Promise((resolve, reject) => {
+        const fr = new FileReader();
+        fr.onload = () => resolve(String(fr.result).split(',')[1] || '');
+        fr.onerror = reject;
+        fr.readAsDataURL(blob);
+      });
+      const CHUNK = 100000; // chars — under the backend's 110000 cap
+      const total = Math.ceil(base64.length / CHUNK);
+      if (total > 6) throw new Error(t('錄音太長，請縮短到 90 秒內。', 'Recording too long — keep it under 90 seconds.'));
+      const voiceId = 'v_' + Math.random().toString(36).slice(2, 12);
+      for (let i = 0; i < total; i++) {
+        await teamsApi.uploadVoiceChunk(
+          userEmail, teamId, itemId, voiceId, i, total,
+          base64.slice(i * CHUNK, (i + 1) * CHUNK)
+        );
+      }
+      await teamsApi.createVoiceReflection(userEmail, teamId, itemId, {
+        voiceId, voiceMime: mimeRef.current, voiceDur: secondsRef.current,
+      });
+      onCreated();
+    } catch (e) {
+      setError(String(e.message || e));
+      setPhase('preview');
+    }
+  };
+
+  const timeLabel = `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`;
+
+  return (
+    <Backdrop onClose={phase === 'uploading' ? () => {} : () => { cleanupMedia(); onCancel(); }}>
+      <div style={{ ...card, width: 'min(440px, 100%)', borderLeft: '4px solid #16a34a', textAlign: 'center' }}>
+        <h3 style={{ color: colors.text, marginTop: 0 }}>{t('錄一段語音留言', 'Record a voice message')}</h3>
+        <p style={{ color: colors.muted, fontSize: '0.82rem', marginTop: -6 }}>
+          {t(`最長 ${MAX_SECONDS} 秒。所有團員都能聽到。`, `Up to ${MAX_SECONDS} seconds. All team members can listen.`)}
+        </p>
+
+        {phase === 'idle' && (
+          <button
+            onClick={startRecording}
+            style={{
+              width: 84, height: 84, borderRadius: '50%', border: 'none', cursor: 'pointer',
+              background: '#dc2626', color: 'white', display: 'inline-flex',
+              alignItems: 'center', justifyContent: 'center', margin: '0.6rem 0',
+            }}
+            title={t('開始錄音', 'Start recording')}
+          >
+            <Mic size={34} />
+          </button>
+        )}
+
+        {phase === 'recording' && (
+          <div style={{ margin: '0.6rem 0' }}>
+            <div style={{ color: '#f87171', fontSize: '1.6rem', fontWeight: 700, marginBottom: 10 }}>
+              ● {timeLabel} <span style={{ color: colors.muted, fontSize: '0.85rem', fontWeight: 400 }}>/ {Math.floor(MAX_SECONDS / 60)}:{String(MAX_SECONDS % 60).padStart(2, '0')}</span>
+            </div>
+            <button
+              onClick={stopRecording}
+              style={{
+                width: 84, height: 84, borderRadius: '50%', border: '3px solid #dc2626', cursor: 'pointer',
+                background: 'transparent', color: '#dc2626', display: 'inline-flex',
+                alignItems: 'center', justifyContent: 'center',
+              }}
+              title={t('停止', 'Stop')}
+            >
+              <Square size={30} fill="currentColor" />
+            </button>
+          </div>
+        )}
+
+        {(phase === 'preview' || phase === 'uploading') && (
+          <div style={{ margin: '0.6rem 0', display: 'flex', flexDirection: 'column', gap: 10, alignItems: 'center' }}>
+            <button
+              onClick={togglePreview}
+              disabled={phase === 'uploading'}
+              style={{
+                display: 'inline-flex', alignItems: 'center', gap: 8,
+                background: 'rgba(22,163,74,0.12)', border: '1px solid rgba(22,163,74,0.45)',
+                color: '#86efac', borderRadius: 18, cursor: 'pointer',
+                padding: '0.5rem 1.2rem', fontSize: '0.95rem',
+              }}
+            >
+              {previewPlaying ? <Pause size={16} /> : <Play size={16} />}
+              {t('試聽', 'Preview')} · {timeLabel}
+            </button>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button onClick={discardAndRerecord} disabled={phase === 'uploading'} style={btn('ghost')}>
+                {t('重錄', 'Re-record')}
+              </button>
+              <button onClick={send} disabled={phase === 'uploading'} style={btn('primary')}>
+                {phase === 'uploading' ? t('傳送中…', 'Sending…') : t('傳給團員', 'Send to team')}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {error && <div style={{ color: '#fca5a5', fontSize: '0.82rem', marginTop: 6 }}>{error}</div>}
+
+        {phase !== 'uploading' && (
+          <div style={{ marginTop: 10 }}>
+            <button onClick={() => { cleanupMedia(); onCancel(); }} style={{ ...btn('ghost'), fontSize: '0.85rem' }}>
+              {t('取消', 'Cancel')}
+            </button>
+          </div>
+        )}
+      </div>
+    </Backdrop>
   );
 }
 
