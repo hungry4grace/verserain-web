@@ -1,0 +1,19 @@
+{
+  "name": "經文雨・聆聽版",
+  "short_name": "經文聆聽",
+  "description": "為視障朋友預備的聖經聆聽與背誦工具",
+  "lang": "zh-Hant",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#000000",
+  "theme_color": "#000000",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

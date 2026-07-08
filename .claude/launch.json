@@ -7,6 +7,13 @@
       "runtimeArgs": ["vite", "--port", "5179"],
       "port": 5179,
       "cwd": "verserain-web"
+    },
+    {
+      "name": "blind",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["vite", "--port", "5180"],
+      "port": 5180,
+      "cwd": "verserain-for-blind"
     }
   ]
 }

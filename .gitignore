@@ -23,3 +23,7 @@ node_modules/
 
 # Local tooling / agent config (per-machine, never commit)
 .claude/
+
+# Node (per-app)
+verserain-for-blind/node_modules/
+verserain-for-blind/dist/

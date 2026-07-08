@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { CloudRain, Mail, Mic, ShieldCheck, Trophy, Users } from 'lucide-react';
 
-const updatedAt = 'May 20, 2026';
+const updatedAt = 'June 20, 2026';
 const contactEmail = 'hungry4grace@gmail.com';
 
 export default function PrivacyPage() {
@@ -105,6 +105,12 @@ export default function PrivacyPage() {
             <li>Realtime multiplayer and shared game state services.</li>
             <li>Database and storage services for scores, accounts, gardens, custom sets, and app data.</li>
             <li>Speech recognition, text-to-speech, maps, geocoding, Bible text, and font services when those features are used or loaded.</li>
+            <li>
+              <strong>LINE Login</strong> (LINE Corporation) — used as an optional sign-in method. When you
+              choose to log in with LINE, we receive your LINE display name and, if you grant permission, your
+              email address from LINE. LINE's privacy policy applies to their handling of your
+              data: <a href="https://line.me/en/terms/policy/" target="_blank" rel="noreferrer">https://line.me/en/terms/policy/</a>
+            </li>
           </ul>
           <p>We may also disclose information if required by law, to protect users, or to protect the integrity of VerseRain.</p>
         </PolicySection>

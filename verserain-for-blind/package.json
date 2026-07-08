@@ -1,0 +1,21 @@
+{
+  "name": "verserain-for-blind",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "經文雨・聆聽版 — a blind-first audio Bible listening & memorizing companion.",
+  "scripts": {
+    "sync:verses": "node scripts/sync-verses.mjs",
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^6.0.1",
+    "vite": "^8.0.4"
+  }
+}

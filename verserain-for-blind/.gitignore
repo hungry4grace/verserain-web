@@ -1,0 +1,6 @@
+node_modules
+dist
+.DS_Store
+scripts/.verses-bundle.mjs
+scripts/.verses-entry.mjs
+.vercel
