@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { X, Users, Crown, Copy, RefreshCw, LogOut, ChevronLeft, Plus, Heart, QrCode, HelpCircle, BookOpen, Share2, Mic, Square, Play, Pause } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { teamsApi, CHEER_EMOJIS } from './teamsApi';
