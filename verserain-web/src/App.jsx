@@ -3769,6 +3769,10 @@ export default function App() {
   // app before asking for anything), never after an explicit refusal, and
   // "remind me later" snoozes it for 7 days.
   const [showPushPrompt, setShowPushPrompt] = useState(false);
+  // Deep-link auto-start gate: holds { run } when a ?startSet deep link is
+  // ready to launch but the page hasn't seen a user gesture yet (Chrome
+  // blocks speechSynthesis until then). One tap unlocks audio + launches.
+  const [deepLinkStartGate, setDeepLinkStartGate] = useState(null);
   const swRegRef = useRef(null);
 
   // Count app opens (one per page load) for the prompt's 2nd-open gate.
@@ -5228,7 +5232,16 @@ export default function App() {
       // eslint-disable-next-line no-use-before-define
       launchSetById(pending, mode, Number.isFinite(verseIndex) ? verseIndex : null, versesOverride).catch(() => {});
     };
-    launch();
+    // Chrome mutes speechSynthesis until the page has received at least one
+    // real user gesture ("not-allowed"). Deep links land here with zero
+    // interaction, so auto-launching would start the game with silent TTS.
+    // Show a one-tap "start" gate first — the tap unlocks audio AND launches.
+    // If the user has already interacted (in-app navigation), skip the gate.
+    if (typeof navigator !== 'undefined' && navigator.userActivation?.hasBeenActive) {
+      launch();
+    } else {
+      setDeepLinkStartGate({ run: launch });
+    }
     // We intentionally omit launchSetById from deps — it's reconstructed
     // every render via useCallback, and depending on it would re-fire the
     // effect repeatedly.
@@ -19218,7 +19231,25 @@ const deDict = {
             onClose={() => setShowBindInviterModal(false)}
           />
         )}
-        {showPushPrompt && (
+        {deepLinkStartGate && (
+          <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'linear-gradient(160deg, #0f172a 0%, #1e293b 100%)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1300, padding: '1rem' }}>
+            <button
+              onClick={() => { const gate = deepLinkStartGate; setDeepLinkStartGate(null); gate.run(); }}
+              style={{ background: 'transparent', border: 'none', cursor: 'pointer', textAlign: 'center', color: '#e2e8f0', padding: '2rem' }}
+            >
+              <div style={{ width: '96px', height: '96px', margin: '0 auto 1.2rem', borderRadius: '50%', background: 'linear-gradient(135deg, #34d399, #10b981)', display: 'grid', placeItems: 'center', boxShadow: '0 12px 40px rgba(16,185,129,0.45)' }}>
+                <svg width="40" height="40" viewBox="0 0 24 24" fill="#fff" aria-hidden="true"><path d="M8 5v14l11-7z" /></svg>
+              </div>
+              <div style={{ fontSize: '1.35rem', fontWeight: 'bold', marginBottom: '0.5rem' }}>
+                {t('點一下開始', 'Tap to Start')}
+              </div>
+              <div style={{ fontSize: '0.95rem', color: '#94a3b8' }}>
+                {t('經文會朗讀出聲 🔊', 'The verse will be read aloud 🔊')}
+              </div>
+            </button>
+          </div>
+        )}
+        {showPushPrompt && !deepLinkStartGate && (
           <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.6)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1100, padding: '1rem' }} onClick={(e) => { if (e.target === e.currentTarget) snoozePushPrompt(); }}>
             <div style={{ background: '#fff', borderRadius: '14px', padding: '1.8rem 1.6rem', width: '100%', maxWidth: '420px', boxShadow: '0 20px 40px rgba(0,0,0,0.18)', textAlign: 'center' }}>
               <div style={{ fontSize: '2.4rem', marginBottom: '0.6rem' }}>🌧️</div>
