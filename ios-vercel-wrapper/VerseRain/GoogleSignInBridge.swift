@@ -131,7 +131,7 @@ final class GoogleSignInBridge: NSObject, WKScriptMessageHandler, ASWebAuthentic
                   let accessToken = json["access_token"] as? String else {
                 return
             }
-            await deliverTokenToWebView(accessToken)
+            deliverTokenToWebView(accessToken)
         } catch {
             print("Google token exchange error: \(error)")
         }

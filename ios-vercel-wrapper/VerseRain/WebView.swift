@@ -8,7 +8,7 @@ final class WebViewModel: ObservableObject {
     // Bump alongside the app's MARKETING_VERSION so the web side can detect
     // capability changes (e.g. NSCameraUsageDescription was added in 3.7.0
     // — the QR scan UI is hidden in earlier builds).
-    static let homeURL = URL(string: "https://www.verserain.com/?iosApp=3.15.2")!
+    static let homeURL = URL(string: "https://www.verserain.com/?iosApp=3.17.0")!
 
     @Published private(set) var url: URL = homeURL
     weak var webView: WKWebView?
@@ -61,6 +61,9 @@ struct WebView: UIViewRepresentable {
         let appleBridge = AppleSignInBridge()
         configuration.userContentController.add(appleBridge, name: "appleSignIn")
 
+        let dailyPushBridge = DailyVersePushBridge()
+        configuration.userContentController.add(dailyPushBridge, name: "dailyVersePush")
+
         let webView = WKWebView(frame: .zero, configuration: configuration)
         webView.navigationDelegate = context.coordinator
         webView.uiDelegate = context.coordinator
@@ -79,6 +82,9 @@ struct WebView: UIViewRepresentable {
 
         appleBridge.webView = webView
         context.coordinator.appleBridge = appleBridge
+
+        dailyPushBridge.webView = webView
+        context.coordinator.dailyPushBridge = dailyPushBridge
 
         model.webView = webView
         webView.load(URLRequest(url: model.url))
@@ -103,6 +109,7 @@ struct WebView: UIViewRepresentable {
         // Strong reference; required to keep the WKScriptMessageHandler alive.
         var googleBridge: GoogleSignInBridge?
         var appleBridge: AppleSignInBridge?
+        var dailyPushBridge: DailyVersePushBridge?
 
         init(model: WebViewModel) {
             self.model = model

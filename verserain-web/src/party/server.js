@@ -971,6 +971,69 @@ export default class Server {
          }
       }
 
+      // 4.8 APNs device tokens — the native iOS app's counterpart to the
+      // Web Push subscriptions above. The App Store wrapper can't do Web
+      // Push (WKWebView has no PushManager), so it registers with Apple
+      // for remote notifications and uploads its device token here. The
+      // same hourly cron that sends Web Push also reads /apns-tokens and
+      // delivers the daily verse through Apple's push service.
+      if (url.pathname.endsWith('/save-apns-token') && request.method === 'POST') {
+         try {
+            const body = await request.json();
+            const { playerName, email, token, timezone, version, hour } = body;
+            if (!playerName || !token || typeof token !== 'string') {
+               return new Response(JSON.stringify({ error: 'playerName + token required' }), { status: 400, headers: corsHeaders });
+            }
+            // Device token as the key — iOS can rotate tokens, and the app
+            // re-uploads on every launch, so the newest row always wins and
+            // a rotated token simply becomes a new row (the stale one gets
+            // cleaned up when APNs returns 410 for it).
+            await this.room.storage.put(`apns:${token}`, {
+               playerName,
+               email: email || '',
+               token,
+               timezone: timezone || 'Asia/Taipei',
+               version: version || 'cuv',
+               hour: typeof hour === 'number' ? hour : 7,
+               updatedAt: new Date().toISOString(),
+            });
+            return new Response(JSON.stringify({ success: true }), { status: 200, headers: corsHeaders });
+         } catch {
+            return new Response(JSON.stringify({ error: 'Failed to save APNs token' }), { status: 500, headers: corsHeaders });
+         }
+      }
+
+      if (url.pathname.endsWith('/delete-apns-token') && request.method === 'POST') {
+         try {
+            const { token, playerName } = await request.json();
+            if (token) {
+               await this.room.storage.delete(`apns:${token}`);
+            } else if (playerName) {
+               const list = await this.room.storage.list({ prefix: 'apns:' });
+               for (const [key, val] of list.entries()) {
+                  if (val?.playerName === playerName) await this.room.storage.delete(key);
+               }
+            }
+            return new Response(JSON.stringify({ success: true }), { status: 200, headers: corsHeaders });
+         } catch {
+            return new Response(JSON.stringify({ error: 'Failed to delete APNs token' }), { status: 500, headers: corsHeaders });
+         }
+      }
+
+      // GET /apns-tokens — cron-only, same admin gate as /push-subscriptions.
+      if (url.pathname.endsWith('/apns-tokens') && request.method === 'GET') {
+         try {
+            if (!isCustomSetWriteAuthorized()) {
+               return new Response(JSON.stringify({ error: 'Forbidden' }), { status: 403, headers: corsHeaders });
+            }
+            const list = await this.room.storage.list({ prefix: 'apns:' });
+            const tokens = Array.from(list.values());
+            return new Response(JSON.stringify({ success: true, tokens }), { status: 200, headers: corsHeaders });
+         } catch {
+            return new Response(JSON.stringify({ error: 'Failed to list APNs tokens' }), { status: 500, headers: corsHeaders });
+         }
+      }
+
       // 4.6 Share-Set token — a link-based share path that doesn't require
       // the global publish flow. Any logged-in user can publish a set "by
       // link" without needing admin privileges or polluting the public

@@ -16,7 +16,7 @@ import WorldMap from './WorldMap';
 import BlindModeGame from './BlindModeGame';
 import { TransformWrapper, TransformComponent } from 'react-zoom-pan-pinch';
 import { GOOGLE_CLIENT_ID, APPLE_CLIENT_ID, APPLE_REDIRECT_URI, LINE_CHANNEL_ID, startLineLogin } from './oauthConfig';
-import { VAPID_PUBLIC_KEY, urlBase64ToUint8Array, isWebPushSupported, isIOSStandalone, isIOSWithoutPWA } from './pushConfig';
+import { VAPID_PUBLIC_KEY, urlBase64ToUint8Array, isWebPushSupported, isIOSStandalone, isIOSWithoutPWA, hasNativeDailyPush, callNativeDailyPush } from './pushConfig';
 import QrScanner from 'qr-scanner';
 import TeamsModal from './teams/TeamsModal';
 
@@ -3764,10 +3764,73 @@ export default function App() {
   // 'idle' | 'subscribed' | 'denied' | 'unsupported' | 'needs-pwa'
   const [pushStatus, setPushStatus] = useState('idle');
   const [showPushModal, setShowPushModal] = useState(false);
+  // Soft pre-permission prompt ("要不要開每日經文推播?"). Shown from the
+  // 2nd app open onward — never on first launch (let people experience the
+  // app before asking for anything), never after an explicit refusal, and
+  // "remind me later" snoozes it for 7 days.
+  const [showPushPrompt, setShowPushPrompt] = useState(false);
   const swRegRef = useRef(null);
+
+  // Count app opens (one per page load) for the prompt's 2nd-open gate.
+  useEffect(() => {
+    try {
+      const n = Number(localStorage.getItem('verserain_open_count') || '0') + 1;
+      localStorage.setItem('verserain_open_count', String(n));
+    } catch { /* private mode etc. */ }
+  }, []);
+
+  useEffect(() => {
+    // Only nudge people who *could* subscribe right now and never have:
+    // 'idle' excludes subscribed / denied / unsupported / needs-pwa.
+    if (pushStatus !== 'idle') return;
+    try {
+      // Explicitly unsubscribed before → they made a choice; don't nag.
+      // Already subscribed (per local flag) → the async status check may
+      // still be in flight while pushStatus reads 'idle'; don't flash the
+      // prompt at people who already said yes.
+      const subscribedFlag = localStorage.getItem('verserain_push_subscribed');
+      if (subscribedFlag === 'false' || subscribedFlag === 'true') return;
+      const prompt = JSON.parse(localStorage.getItem('verserain_push_prompt') || '{}');
+      if (prompt.never) return;
+      if (prompt.remindAt && Date.now() < prompt.remindAt) return;
+      const opens = Number(localStorage.getItem('verserain_open_count') || '0');
+      if (opens < 2) return;
+    } catch { return; }
+    // Small delay so the prompt doesn't collide with app startup.
+    const timer = setTimeout(() => setShowPushPrompt(true), 2000);
+    return () => clearTimeout(timer);
+  }, [pushStatus]);
+
+  const snoozePushPrompt = () => {
+    try {
+      const prompt = JSON.parse(localStorage.getItem('verserain_push_prompt') || '{}');
+      prompt.remindAt = Date.now() + 7 * 24 * 60 * 60 * 1000;
+      localStorage.setItem('verserain_push_prompt', JSON.stringify(prompt));
+    } catch { /* ignore */ }
+    setShowPushPrompt(false);
+  };
+
+  const dismissPushPromptForever = () => {
+    try {
+      localStorage.setItem('verserain_push_prompt', JSON.stringify({ never: true }));
+    } catch { /* ignore */ }
+    setShowPushPrompt(false);
+  };
 
   // Register the service worker on mount + figure out the current push state.
   useEffect(() => {
+    // Inside the iOS App Store wrapper: no Web Push, but the native shell
+    // schedules local notifications for us. Ask it where things stand.
+    if (hasNativeDailyPush()) {
+      let cancelled = false;
+      callNativeDailyPush('status').then((res) => {
+        if (cancelled) return;
+        if (res?.status === 'subscribed') setPushStatus('subscribed');
+        else if (res?.status === 'denied') setPushStatus('denied');
+        else setPushStatus('idle');
+      });
+      return () => { cancelled = true; };
+    }
     if (!isWebPushSupported()) {
       // Older iOS Safari (pre-16.4) and the in-app WKWebView fall here.
       if (typeof navigator !== 'undefined' && /iPhone|iPad/i.test(navigator.userAgent || '') && !isIOSStandalone()) {
@@ -3798,6 +3861,23 @@ export default function App() {
   // playerName so the cron sender can find it. Times are encoded in the
   // user's IANA timezone so the morning push lands at local 7am.
   const subscribeMorningPush = async () => {
+    // Native iOS app: hand off to the native push layer (APNs remote push,
+    // with a local-notification fallback when registration fails).
+    if (hasNativeDailyPush()) {
+      const res = await callNativeDailyPush('subscribe', {
+        playerName: playerName || 'Anonymous',
+        email: userEmail || '',
+        version,
+        hour: 7,
+      });
+      if (res?.status === 'subscribed') {
+        setPushStatus('subscribed');
+        localStorage.setItem('verserain_push_subscribed', 'true');
+        return true;
+      }
+      setPushStatus(res?.status === 'denied' ? 'denied' : 'idle');
+      return false;
+    }
     try {
       if (!swRegRef.current) {
         const reg = await navigator.serviceWorker.register('/sw.js');
@@ -3836,6 +3916,12 @@ export default function App() {
   };
 
   const unsubscribeMorningPush = async () => {
+    if (hasNativeDailyPush()) {
+      await callNativeDailyPush('unsubscribe');
+      setPushStatus('idle');
+      localStorage.setItem('verserain_push_subscribed', 'false');
+      return;
+    }
     try {
       if (!swRegRef.current) return;
       const sub = await swRegRef.current.pushManager.getSubscription();
@@ -14424,7 +14510,7 @@ const deDict = {
                     verserain
                   </div>
                   <div className="app-brand-version" style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', marginTop: '4px', marginLeft: '2px' }}>
-                    v3.16.1
+                    v3.17.0
                   </div>
                 </div>
                 <div ref={langPickerRef} style={{ position: 'relative' }}>
@@ -19204,6 +19290,47 @@ const deDict = {
             onClose={() => setShowBindInviterModal(false)}
           />
         )}
+        {showPushPrompt && (
+          <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.6)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1100, padding: '1rem' }} onClick={(e) => { if (e.target === e.currentTarget) snoozePushPrompt(); }}>
+            <div style={{ background: '#fff', borderRadius: '14px', padding: '1.8rem 1.6rem', width: '100%', maxWidth: '420px', boxShadow: '0 20px 40px rgba(0,0,0,0.18)', textAlign: 'center' }}>
+              <div style={{ fontSize: '2.4rem', marginBottom: '0.6rem' }}>🌧️</div>
+              <h2 style={{ margin: '0 0 0.6rem 0', fontSize: '1.25rem', fontWeight: 'bold', color: '#1e293b' }}>
+                {t('每天早上 7 點，一節經文開啟你的一天', 'Start each day with a verse at 7am')}
+              </h2>
+              <p style={{ margin: '0 0 1.4rem 0', color: '#475569', fontSize: '0.95rem', lineHeight: 1.55 }}>
+                {t('開啟推播後，每天早上會收到當日經文，點一下就能聆聽。', 'Turn on push and each morning the day\'s verse arrives — tap to listen.')}
+              </p>
+              <button
+                onClick={async () => {
+                  const ok = await subscribeMorningPush();
+                  setShowPushPrompt(false);
+                  if (ok) {
+                    setToast(t('已開啟每日經文推播 🌧️', 'Daily Verse Push is on 🌧️'));
+                    setTimeout(() => setToast(null), 4000);
+                  } else {
+                    // Denied or needs guidance — the full modal explains what to do.
+                    setShowPushModal(true);
+                  }
+                }}
+                style={{ width: '100%', padding: '0.85rem 1rem', borderRadius: '10px', background: 'linear-gradient(135deg, #34d399, #10b981)', color: '#fff', border: 'none', fontSize: '1rem', fontWeight: 'bold', cursor: 'pointer', marginBottom: '0.6rem' }}
+              >
+                {t('開啟每日經文推播', 'Turn On Daily Verse Push')}
+              </button>
+              <button
+                onClick={snoozePushPrompt}
+                style={{ width: '100%', padding: '0.75rem 1rem', borderRadius: '10px', background: '#f1f5f9', color: '#475569', border: 'none', fontSize: '0.95rem', cursor: 'pointer', marginBottom: '0.4rem' }}
+              >
+                {t('之後再提醒我', 'Remind Me Later')}
+              </button>
+              <button
+                onClick={dismissPushPromptForever}
+                style={{ width: '100%', padding: '0.5rem', background: 'transparent', color: '#94a3b8', border: 'none', fontSize: '0.85rem', cursor: 'pointer' }}
+              >
+                {t('不用了，別再詢問', 'No Thanks, Don\'t Ask Again')}
+              </button>
+            </div>
+          </div>
+        )}
         {showPushModal && (
           <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.6)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1100, padding: '1rem' }} onClick={(e) => { if (e.target === e.currentTarget) setShowPushModal(false); }}>
             <div style={{ background: '#fff', borderRadius: '14px', padding: '1.8rem 1.6rem', width: '100%', maxWidth: '440px', boxShadow: '0 20px 40px rgba(0,0,0,0.18)' }}>
@@ -19233,7 +19360,9 @@ const deDict = {
               )}
               {pushStatus === 'denied' && (
                 <div style={{ background: '#fef2f2', border: '1px solid #fecaca', color: '#991b1b', padding: '1rem', borderRadius: '8px', fontSize: '0.92rem', lineHeight: 1.5 }}>
-                  {t('瀏覽器已封鎖通知。請到網站設定 → 通知 → 允許，再回來重試。', 'Notifications are blocked. Please allow notifications in your browser site settings, then retry.')}
+                  {hasNativeDailyPush()
+                    ? t('通知權限已關閉。請到 iPhone 設定 → VerseRain → 通知 → 允許通知，再回來重試。', 'Notifications are off. Please enable them in iPhone Settings → VerseRain → Notifications, then retry.')
+                    : t('瀏覽器已封鎖通知。請到網站設定 → 通知 → 允許，再回來重試。', 'Notifications are blocked. Please allow notifications in your browser site settings, then retry.')}
                 </div>
               )}
               {(pushStatus === 'idle' || pushStatus === 'subscribed') && (

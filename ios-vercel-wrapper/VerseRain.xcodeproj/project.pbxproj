@@ -15,6 +15,7 @@
 		0A0A00062C00000000000001 /* WebKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0A0A00152C00000000000001 /* WebKit.framework */; };
 		25FEA7082FC9EB33009E2397 /* GoogleSignInBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 25FEA7072FC9EB33009E2397 /* GoogleSignInBridge.swift */; };
 		25FEA70A2FC9EB33009E2398 /* AppleSignInBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 25FEA7092FC9EB33009E2398 /* AppleSignInBridge.swift */; };
+		25FEA70C2FC9EB33009E239A /* DailyVersePushBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 25FEA70D2FC9EB33009E239B /* DailyVersePushBridge.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -29,6 +30,7 @@
 		25FEA7072FC9EB33009E2397 /* GoogleSignInBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoogleSignInBridge.swift; sourceTree = "<group>"; };
 		25FEA7092FC9EB33009E2398 /* AppleSignInBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppleSignInBridge.swift; sourceTree = "<group>"; };
 		25FEA70B2FC9EB33009E2399 /* VerseRain.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = VerseRain.entitlements; sourceTree = "<group>"; };
+		25FEA70D2FC9EB33009E239B /* DailyVersePushBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DailyVersePushBridge.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -59,6 +61,7 @@
 				0A0A00112C00000000000001 /* WebView.swift */,
 				25FEA7072FC9EB33009E2397 /* GoogleSignInBridge.swift */,
 				25FEA7092FC9EB33009E2398 /* AppleSignInBridge.swift */,
+				25FEA70D2FC9EB33009E239B /* DailyVersePushBridge.swift */,
 				0A0A00122C00000000000001 /* DeepLinkRouter.swift */,
 				0A0A00132C00000000000001 /* Assets.xcassets */,
 				0A0A00142C00000000000001 /* LaunchScreen.storyboard */,
@@ -157,6 +160,7 @@
 				0A0A00012C00000000000001 /* VerseRainApp.swift in Sources */,
 				25FEA7082FC9EB33009E2397 /* GoogleSignInBridge.swift in Sources */,
 				25FEA70A2FC9EB33009E2398 /* AppleSignInBridge.swift in Sources */,
+				25FEA70C2FC9EB33009E239A /* DailyVersePushBridge.swift in Sources */,
 				0A0A00022C00000000000001 /* WebView.swift in Sources */,
 				0A0A00032C00000000000001 /* DeepLinkRouter.swift in Sources */,
 			);
@@ -286,7 +290,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = VerseRain/VerseRain.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 46;
+				CURRENT_PROJECT_VERSION = 47;
 				DEVELOPMENT_ASSET_PATHS = "";
 				DEVELOPMENT_TEAM = TE7YANF4YC;
 				ENABLE_PREVIEWS = YES;
@@ -297,7 +301,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 3.15.2;
+				MARKETING_VERSION = 3.17.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.hopeofglory.verserain;
 				PRODUCT_NAME = VerseRain;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
@@ -315,7 +319,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = VerseRain/VerseRain.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 46;
+				CURRENT_PROJECT_VERSION = 47;
 				DEVELOPMENT_ASSET_PATHS = "";
 				DEVELOPMENT_TEAM = TE7YANF4YC;
 				ENABLE_PREVIEWS = YES;
@@ -326,7 +330,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 3.15.2;
+				MARKETING_VERSION = 3.17.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.hopeofglory.verserain;
 				PRODUCT_NAME = VerseRain;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
