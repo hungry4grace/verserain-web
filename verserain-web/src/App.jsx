@@ -16727,8 +16727,8 @@ const deDict = {
                       <div style={{ color: '#065f46', fontSize: '0.8rem', fontWeight: 'bold', letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: '0.4rem' }}>{t('今日問候', "Today's Greeting")}</div>
                       <div style={{ color: '#065f46', fontSize: '1.05rem', marginBottom: '1rem', fontWeight: 600 }}>
                         {playerName
-                          ? t(`${playerName}，今日已背 ${personalProgress.todayCount} 次`, `${playerName}, ${personalProgress.todayCount} verse${personalProgress.todayCount === 1 ? '' : 's'} today`)
-                          : t(`今日已背 ${personalProgress.todayCount} 次`, `${personalProgress.todayCount} verse${personalProgress.todayCount === 1 ? '' : 's'} today`)}
+                          ? t(`${playerName}，今日的經文雨活動已累積 ${personalProgress.todayCount} 分`, `${playerName}, ${personalProgress.todayCount} point${personalProgress.todayCount === 1 ? '' : 's'} from today's VerseRain activity`)
+                          : t(`今日的經文雨活動已累積 ${personalProgress.todayCount} 分`, `${personalProgress.todayCount} point${personalProgress.todayCount === 1 ? '' : 's'} from today's VerseRain activity`)}
                       </div>
                       <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'center', gap: '0.5rem' }}>
                         <span style={{ fontSize: '2.6rem', filter: personalProgress.currentStreak > 0 ? 'none' : 'grayscale(1) opacity(0.4)' }}>🔥</span>
