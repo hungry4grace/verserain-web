@@ -658,13 +658,22 @@ function initAudio() {
   if (audioCtx.state === 'suspended') {
     audioCtx.resume();
   }
-  // iOS Safari requires SpeechSynthesis to be touched directly in user event
+  // iOS Safari requires SpeechSynthesis to be touched directly in user event.
+  // ONLY do this on iOS: on desktop Chrome the user click already grants
+  // activation, and this dummy utterance gets cancel()ed by the next real
+  // speak before it ever starts — cancelling a not-yet-started utterance
+  // DEADLOCKS Chrome's macOS TTS engine (speak() reports speaking=true
+  // forever, no audio, until a full browser restart).
   if ('speechSynthesis' in window && !window.__speechUnlocked) {
-    const dummy = new SpeechSynthesisUtterance(' ');
-    dummy.volume = 0;
-    dummy.rate = 2; // finish fast
-    window.speechSynthesis.speak(dummy);
     window.__speechUnlocked = true;
+    const iosLike = /iPhone|iPad|iPod/i.test(navigator.userAgent || '')
+      || (/Macintosh/i.test(navigator.userAgent || '') && 'ontouchend' in document);
+    if (iosLike) {
+      const dummy = new SpeechSynthesisUtterance(' ');
+      dummy.volume = 0;
+      dummy.rate = 2; // finish fast
+      window.speechSynthesis.speak(dummy);
+    }
   }
 }
 
