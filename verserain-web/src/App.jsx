@@ -688,7 +688,9 @@ const VOICE_LANG_BLOCKLIST = {
 
 function pickSpeechVoice(lang) {
   if (!('speechSynthesis' in window)) return null;
-  const voices = window.speechSynthesis.getVoices();
+  // Skip any voice flagged as broken this session (see markSuspectVoice) —
+  // a corrupted OS voice can wedge Chrome's whole TTS engine.
+  const voices = window.speechSynthesis.getVoices().filter(v => !isSuspectVoice(v));
   const langPrefix = String(lang || '').toLowerCase().split('-')[0];
   const isAllowed = (v) => {
     const vp = String(v.lang || '').toLowerCase().split('-')[0];
@@ -739,6 +741,43 @@ function pickSpeechVoice(lang) {
   // be silent on systems that need an explicit voice, but at least it won't
   // mispronounce.
   return null;
+}
+
+// ─── Broken-voice watchdog ────────────────────────────────────────────────
+// Chrome on macOS can wedge on a corrupted system voice: speak() reports
+// speaking=true but 'start' never fires, and every later utterance hangs
+// too (only a full browser restart recovers). If a *custom* voice hasn't
+// fired 'start' within this window, we cancel it, blacklist that voice for
+// the session, and retry the same text with the browser's default voice.
+const VOICE_START_TIMEOUT_MS = 1200;
+
+function markSuspectVoice(voice) {
+  try {
+    if (voice?.voiceURI) sessionStorage.setItem('verseRain_suspect_voice', voice.voiceURI);
+  } catch { /* storage unavailable */ }
+}
+
+function isSuspectVoice(voice) {
+  try {
+    return !!voice?.voiceURI && sessionStorage.getItem('verseRain_suspect_voice') === voice.voiceURI;
+  } catch { return false; }
+}
+
+// Cancel a stuck utterance and re-speak with the default voice. Returns the
+// retry utterance so callers can re-wire their own event handlers.
+function retryWithDefaultVoice(stuckUtterance, text, rate, lang) {
+  markSuspectVoice(stuckUtterance.voice);
+  stuckUtterance.onend = null;
+  stuckUtterance.onerror = null;
+  window.speechSynthesis.cancel();
+  const retry = new SpeechSynthesisUtterance(text);
+  retry.lang = lang;
+  retry.rate = rate;
+  retry.volume = 1;
+  window.__speech_utterances = window.__speech_utterances || [];
+  window.__speech_utterances.push(retry);
+  setTimeout(() => window.speechSynthesis.speak(retry), 100);
+  return retry;
 }
 
 function ensureSpeechVoices() {
@@ -811,6 +850,17 @@ function speakTextTimed(text, rate = 1.0, lang = 'zh-TW') {
       const fallbackMs = Math.min(estimateSpeechDuration(text, lang), 2800);
       setTimeout(safeResolve, fallbackMs);
     };
+    // Broken-voice watchdog: custom voice queued but 'start' never fired →
+    // blacklist it for the session and re-speak with the default voice.
+    if (voice) {
+      setTimeout(() => {
+        if (started || ended || resolved) return;
+        const retry = retryWithDefaultVoice(utterance, text, rate, lang);
+        retry.onstart = () => { started = true; };
+        retry.onend = () => { ended = true; safeResolve(); };
+        retry.onerror = () => setTimeout(safeResolve, 1500);
+      }, VOICE_START_TIMEOUT_MS + 50);
+    }
     setTimeout(safeResolve, estimateSpeechDuration(text, lang));
     // If speech never starts, still wait a bit so blocks don't "speed-run".
     setTimeout(() => {
@@ -866,6 +916,8 @@ function speakText(text, rate = 1.0, lang = 'zh-TW') {
         }
       };
 
+      let started = false;
+      utterance.onstart = () => { started = true; };
       utterance.onend = safeResolve;
       utterance.onerror = safeResolve;
 
@@ -877,6 +929,18 @@ function speakText(text, rate = 1.0, lang = 'zh-TW') {
       setTimeout(() => {
         window.speechSynthesis.speak(utterance);
       }, 50);
+
+      // Broken-voice watchdog: custom voice queued but 'start' never fired →
+      // blacklist it for the session and re-speak with the default voice.
+      if (utterance.voice) {
+        setTimeout(() => {
+          if (started || resolved) return;
+          const retry = retryWithDefaultVoice(utterance, text, rate, lang);
+          retry.onstart = () => { started = true; };
+          retry.onend = safeResolve;
+          retry.onerror = safeResolve;
+        }, VOICE_START_TIMEOUT_MS + 50);
+      }
     } else {
       resolve();
     }
