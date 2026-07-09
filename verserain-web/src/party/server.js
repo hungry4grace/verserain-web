@@ -2068,6 +2068,58 @@ export default class Server {
             } catch (e) { return err('Failed to fetch voice', 500); }
          }
 
+         // 4.9 Family verse voice — 親人聲音唸經文. One recording per
+         // (team, set, verseIndex); re-recording replaces (latest wins).
+         // The audio itself rides the existing /teams/voice/chunk pipeline
+         // with itemId = `vv-<setId>-<verseIndex>`; these endpoints only
+         // manage the pointer/meta so the daily deep link can find it.
+         //
+         // POST /teams/verse-voice/set — body:
+         //   { email, teamId, setId, verseIndex, voiceId, voiceMime, voiceDur, recordedBy }
+         if (url.pathname.endsWith('/teams/verse-voice/set') && request.method === 'POST') {
+            try {
+               const { email, teamId, setId, verseIndex, voiceId, voiceMime, voiceDur, recordedBy } = await request.json();
+               if (!email || !teamId || !setId) return err('email, teamId, setId required');
+               const vi = Number(verseIndex);
+               if (!Number.isInteger(vi) || vi < 0 || vi > 999) return err('bad verseIndex');
+               if (!/^v_[A-Za-z0-9]{6,20}$/.test(String(voiceId || ''))) return err('bad voiceId');
+               const team = await readTeam(teamId);
+               if (!team) return err('Team not found', 404);
+               if (!isMember(team, email)) return err('Not a member', 403);
+               const meta = {
+                  voiceId: String(voiceId),
+                  voiceMime: String(voiceMime || 'audio/webm').slice(0, 40),
+                  voiceDur: Math.min(Math.max(0, Number(voiceDur) || 0), 600),
+                  recordedBy: String(recordedBy || '').trim().slice(0, 30),
+                  byEmail: lc(email),
+                  at: new Date().toISOString(),
+               };
+               await this.room.storage.put(`team-verse-voice:${teamId}:${String(setId)}:${vi}`, meta);
+               return json({ success: true, verseVoice: meta });
+            } catch {
+               return err('Failed to save verse voice', 500);
+            }
+         }
+
+         // GET /teams/verse-voice?id=<teamId>&email=<email>&setId=<setId>&i=<verseIndex>
+         if (url.pathname.endsWith('/teams/verse-voice') && request.method === 'GET') {
+            try {
+               const teamId = url.searchParams.get('id');
+               const email = url.searchParams.get('email');
+               const setId = url.searchParams.get('setId');
+               const vi = Number(url.searchParams.get('i'));
+               if (!teamId || !email || !setId || !Number.isInteger(vi)) return err('id, email, setId, i required');
+               const team = await readTeam(teamId);
+               if (!team) return err('Team not found', 404);
+               if (!isMember(team, email)) return err('Not a member', 403);
+               const meta = await this.room.storage.get(`team-verse-voice:${teamId}:${setId}:${vi}`);
+               if (!meta) return json({ success: true, verseVoice: null });
+               return json({ success: true, verseVoice: meta });
+            } catch {
+               return err('Failed to fetch verse voice', 500);
+            }
+         }
+
          // POST /teams/reflections/create — body: { email, teamId, itemId, type, text, verseRef? }
          // Voice messages additionally carry { voiceId, voiceMime, voiceDur } and
          // may have empty text (the audio IS the message).

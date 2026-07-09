@@ -1019,6 +1019,18 @@ function ScheduleItemCard({
   const todayDone = myDone.includes(todayIndex);
   const planNotStarted = rawDayIndex < 0;
 
+  // 親人聲音唸經文 — today's family recording (null = none yet).
+  const [verseVoiceMeta, setVerseVoiceMeta] = useState(null);
+  const [showVerseVoiceRec, setShowVerseVoiceRec] = useState(false);
+  useEffect(() => {
+    let cancelled = false;
+    if (!item.setId || planNotStarted || totalCount === 0) return undefined;
+    teamsApi.getVerseVoice(userEmail, teamId, item.setId, todayIndex)
+      .then(res => { if (!cancelled) setVerseVoiceMeta(res?.verseVoice || null); })
+      .catch(() => { /* leave as none */ });
+    return () => { cancelled = true; };
+  }, [item.setId, todayIndex, teamId, userEmail, planNotStarted, totalCount]);
+
   // Team-wide today tally.
   let teamDoneToday = 0;
   let teamDoneTotal = 0;
@@ -1202,6 +1214,33 @@ function ScheduleItemCard({
             >
               <Share2 size={14} /> {shared ? t('已複製', 'Copied') : t('分享', 'Share')}
             </button>
+            {/* 親人聲音唸經文 — play today's family recording / record one */}
+            {verseVoiceMeta ? (
+              <>
+                <VoicePlayer
+                  t={t} userEmail={userEmail} teamId={teamId}
+                  itemId={teamsApi.verseVoiceItemId(item.setId, todayIndex)}
+                  voiceId={verseVoiceMeta.voiceId} mime={verseVoiceMeta.voiceMime} dur={verseVoiceMeta.voiceDur}
+                  label={t(`聽${verseVoiceMeta.recordedBy || '家人'}唸`, `${verseVoiceMeta.recordedBy || 'Family'} reads it`)}
+                />
+                <button
+                  onClick={() => setShowVerseVoiceRec(true)}
+                  style={{ ...btn('ghost'), padding: '0.35rem 0.7rem', fontSize: '0.85rem' }}
+                  title={t('重錄這節（會取代現有錄音）', 'Re-record this verse (replaces the current recording)')}
+                >
+                  🎙️ {t('重錄', 'Re-record')}
+                </button>
+              </>
+            ) : (
+              <button
+                onClick={() => setShowVerseVoiceRec(true)}
+                disabled={planNotStarted || !todayVerse}
+                style={{ ...btn('ghost'), padding: '0.35rem 0.7rem', fontSize: '0.85rem' }}
+                title={t('用你的聲音錄今天這節 — 家人打開連結會先聽到你唸', "Record today's verse in your voice — family hears it first when they open the daily link")}
+              >
+                🎙️ {t('錄這節', 'Record')}
+              </button>
+            )}
             <div style={{ color: colors.muted, fontSize: '0.78rem', marginLeft: 'auto' }}>
               {t(`今天:${teamDoneToday}/${memberEmails.length} 完成`, `Today: ${teamDoneToday}/${memberEmails.length} done`)}
             </div>
@@ -1346,6 +1385,28 @@ function ScheduleItemCard({
             onCreated={() => { setComposeType(null); onReflectionsChanged?.(); }}
           />
         )}
+        {showVerseVoiceRec && todayVerse && (
+          <ComposeVoice
+            t={t}
+            userEmail={userEmail}
+            teamId={teamId}
+            itemId={item.id}
+            verseVoice={{
+              setId: item.setId,
+              verseIndex: todayIndex,
+              recordedBy: displayNames[meLc] || (userEmail || '').split('@')[0],
+              reference: todayVerse.reference || '',
+              verseText: todayVerse.text || '',
+            }}
+            onCancel={() => setShowVerseVoiceRec(false)}
+            onCreated={() => {
+              setShowVerseVoiceRec(false);
+              teamsApi.getVerseVoice(userEmail, teamId, item.setId, todayIndex)
+                .then(res => setVerseVoiceMeta(res?.verseVoice || null))
+                .catch(() => {});
+            }}
+          />
+        )}
         {composeType && composeType !== 'voice' && (
           <ComposeReflection
             t={t}
@@ -1481,7 +1542,7 @@ function ReflectionRow({ reflection: r, userEmail, meLc, isAdmin, teamId, displa
 // Lazy audio player for a voice reflection. The base64 audio (up to ~600KB)
 // is only fetched on the first play tap — rendering a long reflection list
 // must not pull every clip down eagerly.
-function VoicePlayer({ t, userEmail, teamId, itemId, voiceId, mime, dur }) {
+function VoicePlayer({ t, userEmail, teamId, itemId, voiceId, mime, dur, label }) {
   const [state, setState] = useState('idle'); // idle | loading | playing | paused | error
   const audioRef = useRef(null);
 
@@ -1536,7 +1597,7 @@ function VoicePlayer({ t, userEmail, teamId, itemId, voiceId, mime, dur }) {
       {state === 'loading' ? t('載入中…', 'Loading…')
         : state === 'error' ? t('無法播放', 'Playback failed')
         : state === 'playing' ? t('播放中', 'Playing')
-        : t('播放留言', 'Play voice message')}
+        : (label || t('播放留言', 'Play voice message'))}
       {durLabel && <span style={{ opacity: 0.75 }}>{durLabel}</span>}
     </button>
   );
@@ -1546,7 +1607,13 @@ function VoicePlayer({ t, userEmail, teamId, itemId, voiceId, mime, dur }) {
 // (auto-stop at MAX_SECONDS) → preview playback → send. Send converts the
 // blob to base64, slices it under the backend's per-key cap, uploads the
 // chunks, then creates the 'voice' reflection doc referencing them.
-function ComposeVoice({ t, userEmail, teamId, itemId, onCancel, onCreated }) {
+//
+// 親人聲音唸經文: pass `verseVoice={{ setId, verseIndex, recordedBy,
+// reference, verseText }}` to record a family verse reading instead of a
+// reflection — same recorder, but the audio is stored under the
+// verse-voice namespace and registered via /teams/verse-voice/set
+// (one recording per verse, latest wins).
+function ComposeVoice({ t, userEmail, teamId, itemId, onCancel, onCreated, verseVoice = null }) {
   const MAX_SECONDS = 90;
   const [phase, setPhase] = useState('idle'); // idle | recording | preview | uploading
   const [seconds, setSeconds] = useState(0);
@@ -1665,15 +1732,27 @@ function ComposeVoice({ t, userEmail, teamId, itemId, onCancel, onCreated }) {
       const total = Math.ceil(base64.length / CHUNK);
       if (total > 6) throw new Error(t('錄音太長，請縮短到 90 秒內。', 'Recording too long — keep it under 90 seconds.'));
       const voiceId = 'v_' + Math.random().toString(36).slice(2, 12);
+      // Verse voices live in their own itemId namespace so they never mix
+      // with reflection audio for the schedule item.
+      const targetItemId = verseVoice
+        ? teamsApi.verseVoiceItemId(verseVoice.setId, verseVoice.verseIndex)
+        : itemId;
       for (let i = 0; i < total; i++) {
         await teamsApi.uploadVoiceChunk(
-          userEmail, teamId, itemId, voiceId, i, total,
+          userEmail, teamId, targetItemId, voiceId, i, total,
           base64.slice(i * CHUNK, (i + 1) * CHUNK)
         );
       }
-      await teamsApi.createVoiceReflection(userEmail, teamId, itemId, {
-        voiceId, voiceMime: mimeRef.current, voiceDur: secondsRef.current,
-      });
+      if (verseVoice) {
+        await teamsApi.setVerseVoice(userEmail, teamId, verseVoice.setId, verseVoice.verseIndex, {
+          voiceId, voiceMime: mimeRef.current, voiceDur: secondsRef.current,
+          recordedBy: verseVoice.recordedBy || '',
+        });
+      } else {
+        await teamsApi.createVoiceReflection(userEmail, teamId, itemId, {
+          voiceId, voiceMime: mimeRef.current, voiceDur: secondsRef.current,
+        });
+      }
       onCreated();
     } catch (e) {
       setError(String(e.message || e));
@@ -1686,7 +1765,24 @@ function ComposeVoice({ t, userEmail, teamId, itemId, onCancel, onCreated }) {
   return (
     <Backdrop onClose={phase === 'uploading' ? () => {} : () => { cleanupMedia(); onCancel(); }}>
       <div style={{ ...card, width: 'min(440px, 100%)', borderLeft: '4px solid #16a34a', textAlign: 'center' }}>
-        <h3 style={{ color: colors.text, marginTop: 0 }}>{t('錄一段語音留言', 'Record a voice message')}</h3>
+        <h3 style={{ color: colors.text, marginTop: 0 }}>
+          {verseVoice
+            ? t('錄這節經文給家人聽', 'Record this verse for your family')
+            : t('錄一段語音留言', 'Record a voice message')}
+        </h3>
+        {verseVoice && (
+          <div style={{
+            textAlign: 'left', background: colors.bg, border: `1px solid ${colors.border}`,
+            borderRadius: 8, padding: '0.6rem 0.8rem', margin: '0 0 0.8rem',
+            fontSize: '0.92rem', lineHeight: 1.7, color: colors.text,
+          }}>
+            {verseVoice.reference && <div style={{ fontWeight: 600, marginBottom: 4, color: colors.accent }}>{verseVoice.reference}</div>}
+            {verseVoice.verseText ? `「${verseVoice.verseText}」` : ''}
+            <div style={{ color: colors.muted, fontSize: '0.78rem', marginTop: 6 }}>
+              {t('照著唸就好。錄好後，家人打開今天的連結會先聽到你的聲音 🎙️', 'Just read it aloud. Family will hear your voice first when they open today\'s link 🎙️')}
+            </div>
+          </div>
+        )}
         <p style={{ color: colors.muted, fontSize: '0.82rem', marginTop: -6 }}>
           {t(`最長 ${MAX_SECONDS} 秒。所有團員都能聽到。`, `Up to ${MAX_SECONDS} seconds. All team members can listen.`)}
         </p>

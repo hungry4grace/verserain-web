@@ -75,6 +75,14 @@ export const teamsApi = {
     jpost('/teams/reflections/create', { email, teamId, itemId, type: 'voice', text, verseRef, voiceId, voiceMime, voiceDur }),
   getVoice: (email, teamId, itemId, voiceId) =>
     jget(`/teams/voice?id=${encodeURIComponent(teamId)}&email=${encodeURIComponent(email)}&itemId=${encodeURIComponent(itemId)}&voiceId=${encodeURIComponent(voiceId)}`),
+  // 親人聲音唸經文 — one family recording per (set, verseIndex), latest wins.
+  // Audio chunks ride uploadVoiceChunk/getVoice with itemId = verseVoiceItemId();
+  // these two only manage the pointer so the daily deep link can find it.
+  verseVoiceItemId: (setId, verseIndex) => `vv-${setId}-${verseIndex}`,
+  setVerseVoice: (email, teamId, setId, verseIndex, { voiceId, voiceMime, voiceDur, recordedBy }) =>
+    jpost('/teams/verse-voice/set', { email, teamId, setId, verseIndex, voiceId, voiceMime, voiceDur, recordedBy }),
+  getVerseVoice: (email, teamId, setId, verseIndex) =>
+    jget(`/teams/verse-voice?id=${encodeURIComponent(teamId)}&email=${encodeURIComponent(email)}&setId=${encodeURIComponent(setId)}&i=${encodeURIComponent(verseIndex)}`),
   deleteReflection: (email, teamId, itemId, reflectionId) =>
     jpost('/teams/reflections/delete', { email, teamId, itemId, reflectionId }),
   reactReflection: (email, teamId, itemId, reflectionId, emoji) =>

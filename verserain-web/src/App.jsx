@@ -3845,7 +3845,44 @@ export default function App() {
   // Deep-link auto-start gate: holds { run } when a ?startSet deep link is
   // ready to launch but the page hasn't seen a user gesture yet (Chrome
   // blocks speechSynthesis until then). One tap unlocks audio + launches.
+  // May also carry { verseVoice } — a family member's recording of today's
+  // verse, played right after the tap (親人聲音唸經文).
   const [deepLinkStartGate, setDeepLinkStartGate] = useState(null);
+  // Non-null while the family recording is playing: { name, skip }.
+  const [familyVoicePlaying, setFamilyVoicePlaying] = useState(null);
+
+  // Tap on the gate: play the family verse recording first (if any), then
+  // launch. Any failure falls through to a normal launch — the recording is
+  // a warm extra, never a blocker.
+  const beginDeepLinkStart = async () => {
+    const gate = deepLinkStartGate;
+    if (!gate) return;
+    setDeepLinkStartGate(null);
+    const vv = gate.verseVoice;
+    if (vv) {
+      try {
+        const host = 'https://verserain-party.hungry4grace.partykit.dev/parties/main/global-auth-db';
+        const itemId = `vv-${vv.setId}-${vv.verseIndex}`;
+        const r = await fetch(`${host}/teams/voice?id=${encodeURIComponent(vv.teamId)}&email=${encodeURIComponent(userEmail || '')}&itemId=${encodeURIComponent(itemId)}&voiceId=${encodeURIComponent(vv.voiceId)}`);
+        const data = r.ok ? await r.json() : null;
+        if (data?.data) {
+          await new Promise((resolve) => {
+            const audio = new Audio(`data:${vv.voiceMime || 'audio/webm'};base64,${data.data}`);
+            let done = false;
+            const finish = () => { if (!done) { done = true; setFamilyVoicePlaying(null); resolve(); } };
+            audio.onended = finish;
+            audio.onerror = finish;
+            setFamilyVoicePlaying({
+              name: vv.recordedBy || t('家人', 'family'),
+              skip: () => { try { audio.pause(); } catch { /* noop */ } finish(); },
+            });
+            audio.play().catch(finish);
+          });
+        }
+      } catch { /* fall through to launch */ }
+    }
+    gate.run();
+  };
   const swRegRef = useRef(null);
 
   // Count app opens (one per page load) for the prompt's 2nd-open gate.
@@ -5314,6 +5351,20 @@ export default function App() {
       launch();
     } else {
       setDeepLinkStartGate({ run: launch });
+      // 親人聲音唸經文: if a family member recorded today's verse, surface it
+      // on the gate ("聽阿嬤唸今天的經文") and play it right after the tap.
+      if (teamId && Number.isFinite(verseIndex) && userEmail) {
+        const host = 'https://verserain-party.hungry4grace.partykit.dev/parties/main/global-auth-db';
+        fetch(`${host}/teams/verse-voice?id=${encodeURIComponent(teamId)}&email=${encodeURIComponent(userEmail)}&setId=${encodeURIComponent(pending)}&i=${verseIndex}`)
+          .then(r => r.ok ? r.json() : null)
+          .then(data => {
+            if (!data?.verseVoice?.voiceId) return;
+            setDeepLinkStartGate(g => (g && g.run === launch)
+              ? { ...g, verseVoice: { ...data.verseVoice, teamId, setId: pending, verseIndex } }
+              : g);
+          })
+          .catch(() => {});
+      }
     }
     // We intentionally omit launchSetById from deps — it's reconstructed
     // every render via useCallback, and depending on it would re-fire the
@@ -19307,7 +19358,7 @@ const deDict = {
         {deepLinkStartGate && (
           <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'linear-gradient(160deg, #0f172a 0%, #1e293b 100%)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1300, padding: '1rem' }}>
             <button
-              onClick={() => { const gate = deepLinkStartGate; setDeepLinkStartGate(null); gate.run(); }}
+              onClick={beginDeepLinkStart}
               style={{ background: 'transparent', border: 'none', cursor: 'pointer', textAlign: 'center', color: '#e2e8f0', padding: '2rem' }}
             >
               <div style={{ width: '96px', height: '96px', margin: '0 auto 1.2rem', borderRadius: '50%', background: 'linear-gradient(135deg, #34d399, #10b981)', display: 'grid', placeItems: 'center', boxShadow: '0 12px 40px rgba(16,185,129,0.45)' }}>
@@ -19317,9 +19368,27 @@ const deDict = {
                 {t('點一下開始', 'Tap to Start')}
               </div>
               <div style={{ fontSize: '0.95rem', color: '#94a3b8' }}>
-                {t('經文會朗讀出聲 🔊', 'The verse will be read aloud 🔊')}
+                {deepLinkStartGate.verseVoice
+                  ? t(`聽 ${deepLinkStartGate.verseVoice.recordedBy || '家人'} 唸今天的經文 🎙️`, `Hear ${deepLinkStartGate.verseVoice.recordedBy || 'family'} read today's verse 🎙️`)
+                  : t('經文會朗讀出聲 🔊', 'The verse will be read aloud 🔊')}
               </div>
             </button>
+          </div>
+        )}
+        {familyVoicePlaying && (
+          <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'linear-gradient(160deg, #0f172a 0%, #1e293b 100%)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1300, padding: '1rem' }}>
+            <div style={{ textAlign: 'center', color: '#e2e8f0' }}>
+              <div style={{ fontSize: '3rem', marginBottom: '1rem', animation: 'pulse 1.6s ease-in-out infinite' }}>🎙️</div>
+              <div style={{ fontSize: '1.15rem', fontWeight: 'bold', marginBottom: '0.4rem' }}>
+                {t(`${familyVoicePlaying.name} 為你唸今天的經文`, `${familyVoicePlaying.name} is reading today's verse for you`)}
+              </div>
+              <button
+                onClick={familyVoicePlaying.skip}
+                style={{ marginTop: '1.2rem', background: 'rgba(148,163,184,0.15)', color: '#94a3b8', border: '1px solid rgba(148,163,184,0.35)', borderRadius: '999px', padding: '0.45rem 1.3rem', fontSize: '0.9rem', cursor: 'pointer' }}
+              >
+                {t('跳過 ▸', 'Skip ▸')}
+              </button>
+            </div>
           </div>
         )}
         {showPushPrompt && !deepLinkStartGate && (
