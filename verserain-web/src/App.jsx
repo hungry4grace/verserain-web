@@ -5095,13 +5095,6 @@ export default function App() {
     );
   };
 
-  const togglePerformanceMode = () => {
-    setPerformanceMode(prev => {
-      const newVal = !prev;
-      localStorage.setItem('verseRainPerformanceMode', newVal);
-      return newVal;
-    });
-  };
 
 
   const activePhrases = React.useMemo(() => {
@@ -5298,7 +5291,9 @@ export default function App() {
     // (block stuck at top-left under the rain background).
   }, [activeVerseSets, customVerseSets, playMode, distractionLevel]);
   const [isBlindMode, setIsBlindMode] = useState(() => localStorage.getItem('verseRain_blindMode') === 'true');
-  const [isDebugMode, setIsDebugMode] = useState(() => localStorage.getItem('verseRain_debugMode') === 'true');
+  // Debug mode is now toggled only via localStorage (the settings tile was
+  // removed); the stored flag still feeds debug rendering below.
+  const [isDebugMode] = useState(() => localStorage.getItem('verseRain_debugMode') === 'true');
 
   const [lightningActive, setLightningActive] = useState(null);
   const [lightningKey, setLightningKey] = useState(0);
@@ -15071,14 +15066,8 @@ const deDict = {
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1rem', width: '100%' }}>
                     {[
                       { id: 'morningPush', Icon: Mail, label: pushStatus === 'subscribed' ? t('已開啟每日經文推播', 'Daily Verse Push: On') : t('開啟每日經文推播', 'Daily Verse Push'), desc: t('每天上午 7 點手機推播今日經文', 'Get today\'s verse pushed at 7am'), color: '#10b981' },
-                      { id: 'bilingual_rain', Icon: CloudRain, label: t('雙語經文雨 Beta', 'Bilingual VerseRain Beta'), desc: t('主要語言朗讀，第二語言在方塊下方輔助顯示', 'Read the main language while showing a second language under each block'), color: '#2563eb' },
-                      { id: 'accessible', Icon: Headphones, label: t('視障友善版', 'Accessible Version'), desc: t('高對比、鍵盤操作、語音提示與麥克風背誦流程', 'High contrast, keyboard controls, voice prompts, and microphone recitation'), color: '#0ea5e9' },
-                      { id: 'blindMode', Icon: Mic, label: isBlindMode ? t('關閉視障經文雨', 'Disable Blind Mode') : t('打開視障經文雨', 'Enable Blind Mode'), desc: t('為視覺障礙朋友設計的語音模式', 'Voice mode for visually impaired'), color: '#8b5cf6' },
-                      { id: 'performanceMode', Icon: Zap, label: performanceMode ? t('關閉效能模式', 'Disable Performance Mode') : t('打開效能模式', 'Enable Performance Mode'), desc: t('關閉華麗特效以提升流暢度', 'Disable effects for better performance'), color: '#22c55e' },
-                      { id: 'debugMode', Icon: Settings, label: isDebugMode ? t('關閉 Debug', 'Disable Debug') : t('打開 Debug', 'Enable Debug'), desc: t('顯示除錯資訊', 'Show debug info'), color: '#64748b' },
                       { id: 'manual', Icon: Library, label: t('使用說明', 'Manual'), desc: t('操作詳解', 'Detailed instructions'), color: '#3b82f6' },
                       { id: 'about', Icon: Info, label: t('關於我們', 'About'), desc: t('VerseRain 開發資訊', 'Info & Credits'), color: '#14b8a6' },
-                      { id: 'donate', link: 'https://www.skool.com/mutualizedeconomy/classroom', Icon: Lock, label: t('解鎖進階功能', 'Unlock Premium'), desc: t('加入進階群組', 'Join Premium Community'), color: '#f97316' },
                       { id: 'feedback', link: 'mailto:verserain.admin@gmail.com', Icon: Mail, label: t('意見回饋', 'Feedback'), desc: t('聯絡與建議', 'Bugs & Suggestions'), color: '#ec4899' }
                     ].map(item => {
                       const Icon = item.Icon;
@@ -15086,22 +15075,6 @@ const deDict = {
                       <div key={item.id} className="block-tile" onClick={() => {
                         if (item.id === 'morningPush') {
                           setShowPushModal(true);
-                          return;
-                        }
-                        if (item.id === 'blindMode') {
-                          const n = !isBlindMode;
-                          setIsBlindMode(n);
-                          localStorage.setItem('verseRain_blindMode', String(n));
-                          return;
-                        }
-                        if (item.id === 'performanceMode') {
-                          togglePerformanceMode();
-                          return;
-                        }
-                        if (item.id === 'debugMode') {
-                          const n = !isDebugMode;
-                          setIsDebugMode(n);
-                          localStorage.setItem('verseRain_debugMode', String(n));
                           return;
                         }
                         if (item.link) { window.open(item.link, '_blank'); return; }
@@ -15119,51 +15092,6 @@ const deDict = {
                     )})}
                   </div>
 
-                  {/* Voice Picker */}
-                  <div style={{ marginTop: '1.5rem', background: 'white', borderRadius: '12px', padding: '1.5rem', border: '1px solid #e2e8f0' }}>
-                    <h3 style={{ margin: '0 0 0.8rem 0', color: '#1e293b', fontSize: '1.1rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <Volume2 size={20} /> {t('朗讀語音設定', 'Text-to-Speech Voice')}
-                    </h3>
-                    <p style={{ margin: '0 0 0.8rem 0', color: '#64748b', fontSize: '0.9rem' }}>
-                      {t('選擇你喜歡的語音，首頁「讀經」及遊戲中的語音都會使用此設定。', 'Choose your preferred voice for the Read button and in-game speech.')}
-                    </p>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
-                      <select
-                        value={selectedVoiceOptionId}
-                        onChange={(e) => saveVoiceForVersion(e.target.value)}
-                        style={{ padding: '0.5rem 1rem', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '0.95rem', minWidth: '250px', maxWidth: '100%', color: '#1e293b', background: '#f8fafc' }}
-                      >
-                        <option value="">{t('系統預設語音', 'System Default Voice')}</option>
-                        {voiceOptionsForVersion.map(o => (
-                            <option key={o.id} value={o.id}>{o.label}</option>
-                          ))}
-                      </select>
-                      <button
-                        onClick={() => {
-                          speakText(t('這是你選擇的語音試聽。', 'This is a preview of your selected voice.'), 0.9, getVoiceLangForVersion(version));
-                        }}
-                        style={{ background: 'linear-gradient(135deg, #60a5fa, #3b82f6)', color: 'white', border: 'none', padding: '0.5rem 1.2rem', borderRadius: '8px', fontSize: '0.9rem', cursor: 'pointer', fontWeight: '600', whiteSpace: 'nowrap' }}
-                      >
-                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}><Volume2 size={16} /> {t('試聽', 'Preview')}</span>
-                      </button>
-                    </div>
-                    {filteredVoicesForVersion.length === 0 && (
-                      <p style={{ margin: '0.6rem 0 0 0', color: '#b45309', fontSize: '0.85rem', fontWeight: '500', display: 'flex', alignItems: 'flex-start', gap: '0.35rem', lineHeight: 1.5 }}>
-                        <Info size={16} style={{ marginTop: '2px', flexShrink: 0 }} />
-                        <span>
-                          {t(
-                            '這個裝置沒有安裝對應語言的語音。iOS：設定 → 輔助使用 → 語音內容 → 聲音，加入該語言的聲音後重啟。沒安裝時系統可能會用別的語言發音，聽起來會不對。',
-                            'No voice for this language is installed on this device. iOS: Settings → Accessibility → Spoken Content → Voices, then add a voice for this language and reload. Without it the system may fall back to a different language and pronounce incorrectly.'
-                          )}
-                        </span>
-                      </p>
-                    )}
-                    {selectedVoiceName && filteredVoicesForVersion.length > 0 && (
-                      <p style={{ margin: '0.6rem 0 0 0', color: '#16a34a', fontSize: '0.85rem', fontWeight: '500', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-                        <Info size={16} /> {t('已記住你的語音偏好，下次回來會自動使用。', 'Your voice preference is saved and will be used automatically.')}
-                      </p>
-                    )}
-                  </div>
                 </div>
               )}
 
