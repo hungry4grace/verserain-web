@@ -15798,7 +15798,15 @@ const deDict = {
                                     }} style={{ background: '#fee2e2', border: '1px solid #fca5a5', padding: '0.4rem 0.8rem', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', color: '#ef4444' }}>{t("刪除", "Delete")}</button>
                                   </div>
                                   <h3 style={{ margin: '0 0 0.5rem 0', color: '#1e293b', paddingRight: '120px' }}>{set.title}</h3>
-                                  <div className="ql-editor-content" style={{ color: '#64748b', fontSize: '0.9rem', marginBottom: '1rem' }} dangerouslySetInnerHTML={{ __html: set.description }} />
+                                  {/* Clamp long rich-text intros to ~3 lines so the list stays scannable.
+                                      line-clamp handles plain text; maxHeight backstops embedded headings/
+                                      images whose line boxes line-clamp can't count. Full intro still shows
+                                      on the set's play page. */}
+                                  <div
+                                    className="ql-editor-content"
+                                    style={{ color: '#64748b', fontSize: '0.9rem', marginBottom: '1rem', display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden', maxHeight: '4.4em' }}
+                                    dangerouslySetInnerHTML={{ __html: set.description }}
+                                  />
                                   <div style={{ color: '#3b82f6', fontSize: '0.85rem', fontWeight: 'bold' }}>{set.verses?.length || 0} {t("節經文", "verses")}</div>
                                 </div>
                               ))}
@@ -17035,7 +17043,16 @@ const deDict = {
 
               {mainTab === 'garden' && (
                 <div style={{ backgroundColor: '#ffffff', borderRadius: '8px', border: '1px solid #cbd5e1', padding: '1.5rem', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
-                  <h2 style={{ color: '#1e293b', marginTop: 0, marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '10px' }}><TreePine size={28} color="#10b981" /> {t("我的園子", "My Garden")}</h2>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', flexWrap: 'wrap', marginBottom: '0.5rem' }}>
+                    <h2 style={{ color: '#1e293b', margin: 0, display: 'flex', alignItems: 'center', gap: '10px' }}><TreePine size={28} color="#10b981" /> {t("我的園子", "My Garden")}</h2>
+                    <button
+                      type="button"
+                      onClick={() => setMainTab('custom_verses')}
+                      style={{ background: '#fffbeb', border: '1px solid #fcd34d', color: '#b45309', padding: '0.45rem 1rem', borderRadius: '20px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.9rem', display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}
+                    >
+                      <Crown size={16} /> {t('我的專屬題庫', 'My Custom Sets')} →
+                    </button>
+                  </div>
                   <p style={{ color: '#64748b', fontSize: '0.9rem', marginBottom: '1rem' }}>
                     {t("每挑戰一節新經文，就會在空地上長出嫩芽。持續練習讓它長大！通過經文變成大樹，創新高則結出果子。", "Each new verse you challenge sprouts a seedling. Keep practicing to grow it! Clearing a verse makes it a full tree; new high scores bear fruit.")}
                   </p>
