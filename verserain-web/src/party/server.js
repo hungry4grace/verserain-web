@@ -1034,6 +1034,100 @@ export default class Server {
          }
       }
 
+      // 4.10 Verse-set creator voices — 題庫創作者親聲朗讀. The set's creator
+      // records individual verses; listeners hear the creator's voice instead
+      // of TTS. Keyed by (setId, reference) — the SAME verse (e.g. John 1:1)
+      // in DIFFERENT sets carries independent recordings. One recording per
+      // (set, verse); re-recording replaces, but only the original recorder's
+      // email may replace (so strangers can't overwrite a creator's voice).
+      // Audio chunks are stored under `set-voice:<setId>:<voiceId>:<idx>`,
+      // mirroring the team-voice chunk pipeline. refKey = encodeURIComponent
+      // of the verse reference so ':' in references can't break key parsing.
+
+      // POST /sets/verse-voice/chunk — { email, setId, voiceId, index, total, data }
+      if (url.pathname.endsWith('/sets/verse-voice/chunk') && request.method === 'POST') {
+         try {
+            const { email, setId, voiceId, index, total, data } = await request.json();
+            if (!email || !setId || !voiceId) return new Response(JSON.stringify({ error: 'email, setId, voiceId required' }), { status: 400, headers: corsHeaders });
+            const idx = Number(index), tot = Number(total);
+            if (!Number.isInteger(idx) || !Number.isInteger(tot) || idx < 0 || tot < 1 || idx >= tot) return new Response(JSON.stringify({ error: 'bad chunk index' }), { status: 400, headers: corsHeaders });
+            if (tot > 6) return new Response(JSON.stringify({ error: 'too many chunks (max 6)' }), { status: 400, headers: corsHeaders });
+            if (typeof data !== 'string' || !data || data.length > 110000) return new Response(JSON.stringify({ error: 'bad chunk data' }), { status: 400, headers: corsHeaders });
+            if (!/^v_[A-Za-z0-9]{6,20}$/.test(voiceId)) return new Response(JSON.stringify({ error: 'bad voiceId' }), { status: 400, headers: corsHeaders });
+            await this.room.storage.put(`set-voice:${String(setId)}:${voiceId}:${idx}`, data);
+            return new Response(JSON.stringify({ success: true }), { status: 200, headers: corsHeaders });
+         } catch {
+            return new Response(JSON.stringify({ error: 'Failed to save voice chunk' }), { status: 500, headers: corsHeaders });
+         }
+      }
+
+      // POST /sets/verse-voice/set — { email, setId, reference, voiceId, voiceMime, voiceDur, recordedBy }
+      if (url.pathname.endsWith('/sets/verse-voice/set') && request.method === 'POST') {
+         try {
+            const { email, setId, reference, voiceId, voiceMime, voiceDur, recordedBy } = await request.json();
+            if (!email || !setId || !reference) return new Response(JSON.stringify({ error: 'email, setId, reference required' }), { status: 400, headers: corsHeaders });
+            if (!/^v_[A-Za-z0-9]{6,20}$/.test(String(voiceId || ''))) return new Response(JSON.stringify({ error: 'bad voiceId' }), { status: 400, headers: corsHeaders });
+            const emailLc = String(email).toLowerCase().trim();
+            const refKey = encodeURIComponent(String(reference).trim().slice(0, 60));
+            const key = `set-verse-voice:${String(setId)}:${refKey}`;
+            const existing = await this.room.storage.get(key);
+            if (existing?.byEmail && existing.byEmail !== emailLc) {
+               return new Response(JSON.stringify({ error: 'Only the original recorder can replace this recording' }), { status: 403, headers: corsHeaders });
+            }
+            const meta = {
+               reference: String(reference).trim().slice(0, 60),
+               voiceId: String(voiceId),
+               voiceMime: String(voiceMime || 'audio/webm').slice(0, 40),
+               voiceDur: Math.min(Math.max(0, Number(voiceDur) || 0), 600),
+               recordedBy: String(recordedBy || '').trim().slice(0, 30),
+               byEmail: emailLc,
+               at: new Date().toISOString(),
+            };
+            await this.room.storage.put(key, meta);
+            return new Response(JSON.stringify({ success: true, verseVoice: meta }), { status: 200, headers: corsHeaders });
+         } catch {
+            return new Response(JSON.stringify({ error: 'Failed to save verse voice' }), { status: 500, headers: corsHeaders });
+         }
+      }
+
+      // GET /sets/verse-voices?setId=<setId> — all recordings for a set,
+      // as { voices: { [reference]: meta } }. Public: anyone playing the
+      // set may hear the creator's voice.
+      if (url.pathname.endsWith('/sets/verse-voices') && request.method === 'GET') {
+         try {
+            const setId = url.searchParams.get('setId');
+            if (!setId) return new Response(JSON.stringify({ error: 'setId required' }), { status: 400, headers: corsHeaders });
+            const prefix = `set-verse-voice:${setId}:`;
+            const map = await this.room.storage.list({ prefix });
+            const voices = {};
+            for (const [, meta] of map.entries()) {
+               if (meta?.reference) voices[meta.reference] = meta;
+            }
+            return new Response(JSON.stringify({ success: true, voices }), { status: 200, headers: corsHeaders });
+         } catch {
+            return new Response(JSON.stringify({ error: 'Failed to list verse voices' }), { status: 500, headers: corsHeaders });
+         }
+      }
+
+      // GET /sets/voice?setId=<setId>&voiceId=<voiceId> — reassembled base64 audio.
+      if (url.pathname.endsWith('/sets/voice') && request.method === 'GET') {
+         try {
+            const setId = url.searchParams.get('setId');
+            const voiceId = url.searchParams.get('voiceId');
+            if (!setId || !voiceId) return new Response(JSON.stringify({ error: 'setId, voiceId required' }), { status: 400, headers: corsHeaders });
+            if (!/^v_[A-Za-z0-9]{6,20}$/.test(voiceId)) return new Response(JSON.stringify({ error: 'bad voiceId' }), { status: 400, headers: corsHeaders });
+            const map = await this.room.storage.list({ prefix: `set-voice:${setId}:${voiceId}:` });
+            if (map.size === 0) return new Response(JSON.stringify({ error: 'Not found' }), { status: 404, headers: corsHeaders });
+            const data = Array.from(map.entries())
+               .sort((a, b) => a[0].localeCompare(b[0]))
+               .map(([, v]) => v)
+               .join('');
+            return new Response(JSON.stringify({ success: true, data }), { status: 200, headers: corsHeaders });
+         } catch {
+            return new Response(JSON.stringify({ error: 'Failed to fetch voice' }), { status: 500, headers: corsHeaders });
+         }
+      }
+
       // 4.6 Share-Set token — a link-based share path that doesn't require
       // the global publish flow. Any logged-in user can publish a set "by
       // link" without needing admin privileges or polluting the public

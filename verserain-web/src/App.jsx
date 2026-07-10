@@ -17,6 +17,8 @@ import BlindModeGame from './BlindModeGame';
 import { TransformWrapper, TransformComponent } from 'react-zoom-pan-pinch';
 import { GOOGLE_CLIENT_ID, APPLE_CLIENT_ID, APPLE_REDIRECT_URI, LINE_CHANNEL_ID, startLineLogin } from './oauthConfig';
 import { VAPID_PUBLIC_KEY, urlBase64ToUint8Array, isWebPushSupported, isIOSStandalone, isIOSWithoutPWA, hasNativeDailyPush, callNativeDailyPush } from './pushConfig';
+import { setVoiceApi, uploadVerseVoice } from './setVoiceApi';
+import VerseVoiceRecorder from './VerseVoiceRecorder';
 import QrScanner from 'qr-scanner';
 import TeamsModal from './teams/TeamsModal';
 
@@ -2239,6 +2241,63 @@ function VerseSetContinuousRainPlayer({
 }) {
   const verses = useMemo(() => verseSet?.verses?.filter(Boolean) || [], [verseSet]);
   const [currentVerse, setCurrentVerse] = useState(() => startVerse || pickRandomVerse(verses));
+
+  // 創作者親聲朗讀 — recordings for this set, keyed by verse reference.
+  // When present for the current verse, the creator's audio replaces TTS
+  // and the phrase blocks advance proportionally to the recording length.
+  const verseVoicesRef = useRef({});
+  const creatorAudioRef = useRef(null);
+  const voiceAudioCacheRef = useRef(new globalThis.Map()); // voiceId → data URL
+  const [creatorVoiceName, setCreatorVoiceName] = useState('');
+  useEffect(() => {
+    let cancelled = false;
+    verseVoicesRef.current = {};
+    if (!verseSet?.id) return undefined;
+    setVoiceApi.getAll(verseSet.id)
+      .then(res => { if (!cancelled) verseVoicesRef.current = res?.voices || {}; })
+      .catch(() => { /* no recordings — TTS as usual */ });
+    return () => { cancelled = true; };
+  }, [verseSet?.id]);
+
+  const playCreatorRecording = async (rec, phrasesArr, onPhrase) => {
+    try {
+      let dataUrl = voiceAudioCacheRef.current.get(rec.voiceId);
+      if (!dataUrl) {
+        const res = await setVoiceApi.getAudio(verseSet.id, rec.voiceId);
+        if (!res?.data) return false;
+        dataUrl = `data:${rec.voiceMime || 'audio/webm'};base64,${res.data}`;
+        voiceAudioCacheRef.current.set(rec.voiceId, dataUrl);
+      }
+      const audio = new Audio(dataUrl);
+      creatorAudioRef.current = audio;
+      setCreatorVoiceName(rec.recordedBy || '');
+      const durMs = rec.voiceDur > 0 ? rec.voiceDur * 1000 : 8000;
+      // Advance phrase highlights proportionally to each phrase's length.
+      const totalLen = phrasesArr.reduce((a, p) => a + p.length, 0) || 1;
+      let acc = 0;
+      const timers = phrasesArr.map((p, i) => {
+        const startAt = Math.round(durMs * acc / totalLen) + 200;
+        acc += p.length;
+        return window.setTimeout(() => onPhrase(i), startAt);
+      });
+      const finished = await new Promise((resolve) => {
+        let done = false;
+        const fin = (ok) => { if (!done) { done = true; resolve(ok); } };
+        audio.onended = () => fin(true);
+        audio.onerror = () => fin(false);
+        audio.play().catch(() => fin(false));
+        window.setTimeout(() => fin(true), durMs + 15000); // hard cap
+      });
+      timers.forEach(id => window.clearTimeout(id));
+      setCreatorVoiceName('');
+      creatorAudioRef.current = null;
+      return finished;
+    } catch {
+      setCreatorVoiceName('');
+      creatorAudioRef.current = null;
+      return false;
+    }
+  };
   const phrases = useMemo(() => splitVersePhrases(currentVerse?.text || '', version), [currentVerse, version]);
   const secondaryVerse = useMemo(() => {
     const secondaryVerses = secondaryVerseSet?.verses?.filter(Boolean) || [];
@@ -2561,11 +2620,24 @@ function VerseSetContinuousRainPlayer({
       bgmRef.current?.play().catch(() => {});
 
       const lang = getVoiceLangForVersion(version);
+      const currentPhrases = phrasesRef.current;
+
+      // 創作者親聲朗讀 — play the creator's recording instead of TTS when
+      // one exists for this verse; falls back to TTS on any failure.
+      let creatorPlayed = false;
+      const creatorRec = verseSet?.id ? (verseVoicesRef.current?.[currentVerse.reference] || null) : null;
+      if (creatorRec?.voiceId) {
+        creatorPlayed = await playCreatorRecording(creatorRec, currentPhrases, (i) => {
+          if (!cancelled && runRef.current === runId) setActivePhrase(i);
+        });
+        if (cancelled || runRef.current !== runId) return;
+      }
+
+      if (!creatorPlayed) {
       await speakTextTimed(formatVerseReferenceForSpeech(currentVerse.reference, version), 0.9, lang);
       if (cancelled || runRef.current !== runId) return;
       await wait(500);
 
-      const currentPhrases = phrasesRef.current;
       for (let i = 0; i < currentPhrases.length; i++) {
         if (cancelled || runRef.current !== runId) return;
         // Predictive pre-trim: BEFORE block i mounts, measure already-landed
@@ -2609,6 +2681,7 @@ function VerseSetContinuousRainPlayer({
         if (cancelled || runRef.current !== runId) return;
         await wait(180);
       }
+      } // end !creatorPlayed (TTS path)
 
       if (cancelled || runRef.current !== runId) return;
       setActivePhrase(currentPhrases.length);
@@ -2636,6 +2709,9 @@ function VerseSetContinuousRainPlayer({
       cancelled = true;
       runRef.current += 1;
       stopSpeechIfActive();
+      // Also stop a creator recording mid-play (verse change / unmount).
+      try { creatorAudioRef.current?.pause(); } catch { /* noop */ }
+      creatorAudioRef.current = null;
     };
   // playKey is included so single-verse sets can loop via setPlayKey.
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -2806,6 +2882,11 @@ function VerseSetContinuousRainPlayer({
                 </small>
               )}
             </h2>
+            {creatorVoiceName && (
+              <div style={{ textAlign: 'center', margin: '-0.3rem 0 0.4rem', color: '#86efac', fontSize: '0.85rem', fontWeight: 600 }}>
+                🎙️ {t(`${creatorVoiceName} 親聲朗讀`, `Read aloud by ${creatorVoiceName}`)}
+              </div>
+            )}
             <div
               ref={phraseContainerRef}
               className={`daily-verse-rain-phrases continuous-rain-phrases ${hasSecondaryPhrases ? 'has-secondary' : ''} ${isSettled ? 'is-settled' : ''}`}
@@ -4281,6 +4362,19 @@ export default function App() {
     }
   });
   const [editingCustomSet, setEditingCustomSet] = useState(null);
+  // 題庫創作者親聲朗讀 — recordings for the set being edited, keyed by
+  // verse reference. null target = recorder closed.
+  const [editorVerseVoices, setEditorVerseVoices] = useState({});
+  const [editorVoiceTarget, setEditorVoiceTarget] = useState(null); // { reference, text }
+  useEffect(() => {
+    let cancelled = false;
+    const setId = editingCustomSet?.id;
+    if (!setId) { setEditorVerseVoices({}); return undefined; }
+    setVoiceApi.getAll(setId)
+      .then(res => { if (!cancelled) setEditorVerseVoices(res?.voices || {}); })
+      .catch(() => { if (!cancelled) setEditorVerseVoices({}); });
+    return () => { cancelled = true; };
+  }, [editingCustomSet?.id]);
   const [bookPickerIdx, setBookPickerIdx] = useState(null); // which verse row has the book picker open
 
   const [publishedVerseSets, setPublishedVerseSets] = useState([]);
@@ -15458,6 +15552,24 @@ const deDict = {
                                     }}
                                   />
 
+                                  {/* 創作者親聲朗讀 — record / re-record this verse */}
+                                  <button
+                                    type="button"
+                                    disabled={!editingCustomSet.id || !v.reference || !v.text}
+                                    onClick={() => setEditorVoiceTarget({ reference: v.reference, text: v.text })}
+                                    title={!editingCustomSet.id
+                                      ? t('請先儲存題庫,再錄音', 'Save the set first, then record')
+                                      : editorVerseVoices[v.reference]
+                                        ? t(`已有錄音(${editorVerseVoices[v.reference].recordedBy || ''})— 點擊重錄`, `Recorded (${editorVerseVoices[v.reference].recordedBy || ''}) — click to re-record`)
+                                        : t('用你的聲音錄這節,聽的人會聽到你唸', 'Record this verse — listeners will hear your voice')}
+                                    style={{
+                                      background: editorVerseVoices[v.reference] ? '#16a34a' : '#f1f5f9',
+                                      color: editorVerseVoices[v.reference] ? '#fff' : '#475569',
+                                      border: '1px solid #cbd5e1', padding: '0.5rem', borderRadius: '4px',
+                                      cursor: (!editingCustomSet.id || !v.reference || !v.text) ? 'not-allowed' : 'pointer',
+                                      opacity: (!editingCustomSet.id || !v.reference || !v.text) ? 0.5 : 1,
+                                    }}
+                                  >🎙️</button>
                                   <button type="button" onClick={() => {
                                     const newVerses = editingCustomSet.verses.filter((_, i) => i !== idx);
                                     setEditingCustomSet({ ...editingCustomSet, verses: newVerses });
@@ -15465,6 +15577,30 @@ const deDict = {
                                 </div>
                               );
                             })}
+
+                            {editorVoiceTarget && editingCustomSet.id && (
+                              <VerseVoiceRecorder
+                                t={t}
+                                reference={editorVoiceTarget.reference}
+                                verseText={editorVoiceTarget.text}
+                                onUpload={async ({ blob, mime, dur }) => {
+                                  const meta = await uploadVerseVoice({
+                                    email: userEmail || '',
+                                    setId: editingCustomSet.id,
+                                    reference: editorVoiceTarget.reference,
+                                    blob, mime, dur,
+                                    recordedBy: playerName || (userEmail || '').split('@')[0] || 'Anonymous',
+                                  });
+                                  setEditorVerseVoices(prev => ({ ...prev, [editorVoiceTarget.reference]: meta }));
+                                }}
+                                onCancel={() => setEditorVoiceTarget(null)}
+                                onDone={() => {
+                                  setEditorVoiceTarget(null);
+                                  setToast(t('錄音已儲存 🎙️ 聽這個題庫的人會聽到你的聲音', 'Recording saved 🎙️ Listeners will hear your voice'));
+                                  setTimeout(() => setToast(null), 4000);
+                                }}
+                              />
+                            )}
 
                             <button type="button" onClick={() => {
                               setEditingCustomSet({
