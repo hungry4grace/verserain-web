@@ -5,6 +5,7 @@
   "installCommand": "npm install --include=dev",
   "rewrites": [
     { "source": "/fc", "destination": "/api/family-card" },
+    { "source": "/lc", "destination": "/api/listen-card" },
     { "source": "/line-webhook", "destination": "/api/line-webhook" },
     { "source": "/privacy", "destination": "/index.html" },
     { "source": "/privacy/:path*", "destination": "/index.html" },

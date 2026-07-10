@@ -14722,10 +14722,14 @@ const deDict = {
                 publishedVerseSets.find(s => s.id === continuousRainSet.id) ||
                 continuousRainSet;
               pushSetForSharing(fullSet);
-              const link = buildPublicShareUrl('/', {
-                listenSet: continuousRainSet.id,
-                listenVerse: verse.reference,
-                version
+              // /lc = OG card endpoint — gives LINE/WhatsApp previews the
+              // set's own title + verse text instead of the generic site title.
+              const link = buildPublicShareUrl('/lc', {
+                set: continuousRainSet.id,
+                verse: verse.reference,
+                version,
+                title: (fullSet.title || continuousRainSet.title || '').slice(0, 60),
+                vtext: String(verse.text || '').slice(0, 120),
               });
               openListeningShare(link, `${continuousRainSet.title || t('經文組', 'Verse Set')} · ${verse.reference}`);
             }}
@@ -15284,7 +15288,13 @@ const deDict = {
                     onShareVerse={(verse) => {
                       if (!verse) return;
                       pushSetForSharing(preferredRainSet);
-                      const link = buildPublicShareUrl('/', { listenSet: preferredRainSet.id, version });
+                      const link = buildPublicShareUrl('/lc', {
+                        set: preferredRainSet.id,
+                        verse: verse.reference,
+                        version,
+                        title: String(preferredRainSet.title || '').slice(0, 60),
+                        vtext: String(verse.text || '').slice(0, 120),
+                      });
                       openListeningShare(link, `${preferredRainSet.title} · ${verse.reference}`);
                     }}
                   />
