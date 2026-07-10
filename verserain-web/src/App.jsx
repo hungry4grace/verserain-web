@@ -2245,6 +2245,9 @@ function VerseSetContinuousRainPlayer({
   // 創作者親聲朗讀 — recordings for this set, keyed by verse reference.
   // When present for the current verse, the creator's audio replaces TTS
   // and the phrase blocks advance proportionally to the recording length.
+  // voiceSetId lets synthetic single-verse wrappers point back at the real
+  // originating set where the recordings actually live.
+  const voiceSetId = verseSet?.voiceSetId || verseSet?.id || null;
   const verseVoicesRef = useRef({});
   const creatorAudioRef = useRef(null);
   const voiceAudioCacheRef = useRef(new globalThis.Map()); // voiceId → data URL
@@ -2252,18 +2255,18 @@ function VerseSetContinuousRainPlayer({
   useEffect(() => {
     let cancelled = false;
     verseVoicesRef.current = {};
-    if (!verseSet?.id) return undefined;
-    setVoiceApi.getAll(verseSet.id)
+    if (!voiceSetId) return undefined;
+    setVoiceApi.getAll(voiceSetId)
       .then(res => { if (!cancelled) verseVoicesRef.current = res?.voices || {}; })
       .catch(() => { /* no recordings — TTS as usual */ });
     return () => { cancelled = true; };
-  }, [verseSet?.id]);
+  }, [voiceSetId]);
 
   const playCreatorRecording = async (rec, phrasesArr, onPhrase) => {
     try {
       let dataUrl = voiceAudioCacheRef.current.get(rec.voiceId);
       if (!dataUrl) {
-        const res = await setVoiceApi.getAudio(verseSet.id, rec.voiceId);
+        const res = await setVoiceApi.getAudio(voiceSetId, rec.voiceId);
         if (!res?.data) return false;
         dataUrl = `data:${rec.voiceMime || 'audio/webm'};base64,${res.data}`;
         voiceAudioCacheRef.current.set(rec.voiceId, dataUrl);
@@ -2625,7 +2628,7 @@ function VerseSetContinuousRainPlayer({
       // 創作者親聲朗讀 — play the creator's recording instead of TTS when
       // one exists for this verse; falls back to TTS on any failure.
       let creatorPlayed = false;
-      const creatorRec = verseSet?.id ? (verseVoicesRef.current?.[currentVerse.reference] || null) : null;
+      const creatorRec = voiceSetId ? (verseVoicesRef.current?.[currentVerse.reference] || null) : null;
       if (creatorRec?.voiceId) {
         creatorPlayed = await playCreatorRecording(creatorRec, currentPhrases, (i) => {
           if (!cancelled && runRef.current === runId) setActivePhrase(i);
@@ -6712,13 +6715,16 @@ export default function App() {
     startGame();
   };
 
-  const playSingleVerseCard = (verse) => {
+  const playSingleVerseCard = (verse, sourceSetId = null) => {
     initAudio();
     setContinuousRainSet({
       id: `single-${verse.reference}`,
       title: verse.reference,
       verses: [verse],
-      startVerse: verse
+      startVerse: verse,
+      // 創作者親聲朗讀 lookups need the REAL originating set id — the
+      // synthetic `single-…` id has no recordings under it.
+      voiceSetId: sourceSetId,
     });
   };
 
@@ -16975,7 +16981,7 @@ const deDict = {
                                       <button
                                         onClick={(e) => {
                                           e.stopPropagation();
-                                          playSingleVerseCard(v);
+                                          playSingleVerseCard(v, currentSet?.id);
                                         }}
                                         title={t("播放這節經文", "Play this verse")}
                                         style={{ backgroundColor: '#8b5cf6', color: 'white', border: 'none', borderRadius: '6px', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'transform 0.1s' }}
