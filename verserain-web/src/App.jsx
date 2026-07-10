@@ -5755,6 +5755,47 @@ export default function App() {
   }, [handleOAuthSignIn]);
 
   const [verseViewModal, setVerseViewModal] = useState(null);
+  // 創作者親聲朗讀 in the verse view modal — when the verse came from a set
+  // with a creator recording, the 朗讀 button plays it instead of TTS.
+  const verseModalAudioRef = useRef(null);
+  const setVoicesLookupRef = useRef(new globalThis.Map());      // setId → { reference: meta }
+  const setVoiceAudioLookupRef = useRef(new globalThis.Map());  // voiceId → data URL
+
+  const stopVerseModalAudio = () => {
+    try { verseModalAudioRef.current?.pause(); } catch { /* noop */ }
+    verseModalAudioRef.current = null;
+  };
+
+  // Play the creator's recording for (setId, reference) if one exists;
+  // returns false so the caller can fall back to TTS.
+  const playSetVerseVoice = async (setId, reference) => {
+    if (!setId || !reference) return false;
+    try {
+      let voices = setVoicesLookupRef.current.get(setId);
+      if (!voices) {
+        const res = await setVoiceApi.getAll(setId);
+        voices = res?.voices || {};
+        setVoicesLookupRef.current.set(setId, voices);
+      }
+      const rec = voices[reference];
+      if (!rec?.voiceId) return false;
+      let dataUrl = setVoiceAudioLookupRef.current.get(rec.voiceId);
+      if (!dataUrl) {
+        const res = await setVoiceApi.getAudio(setId, rec.voiceId);
+        if (!res?.data) return false;
+        dataUrl = `data:${rec.voiceMime || 'audio/webm'};base64,${res.data}`;
+        setVoiceAudioLookupRef.current.set(rec.voiceId, dataUrl);
+      }
+      stopSpeechIfActive();
+      stopVerseModalAudio();
+      const audio = new Audio(dataUrl);
+      verseModalAudioRef.current = audio;
+      await audio.play();
+      return true;
+    } catch {
+      return false;
+    }
+  };
   const [toast, setToast] = useState(null);
   const [isOnline, setIsOnline] = useState(() => typeof navigator !== 'undefined' ? navigator.onLine : true);
   useEffect(() => {
@@ -16908,7 +16949,7 @@ const deDict = {
 
                               return (
                                 <tr key={i} style={{ borderBottom: '1px solid #e2e8f0', backgroundColor: isSelected ? '#eff6ff' : (i % 2 === 0 ? '#ffffff' : '#f8fafc'), transition: 'background 0.2s', cursor: 'pointer' }} onClick={() => toggleSelection(v.reference)}>
-                                  <td style={{ padding: '0.8rem 1rem', fontWeight: 'bold', color: '#1e293b', fontSize: '0.95rem' }} onClick={(e) => { e.stopPropagation(); setVerseViewModal(v); }}>
+                                  <td style={{ padding: '0.8rem 1rem', fontWeight: 'bold', color: '#1e293b', fontSize: '0.95rem' }} onClick={(e) => { e.stopPropagation(); setVerseViewModal({ ...v, setId: currentSet?.id }); }}>
                                     <button style={{ background: 'none', border: 'none', padding: 0, margin: 0, color: '#3b82f6', textDecoration: 'underline', cursor: 'pointer', fontWeight: 'bold', fontSize: 'inherit', fontFamily: 'inherit' }}>
                                       {formatVerseReferenceForDisplay(v.reference, version)}
                                     </button>
@@ -19698,16 +19739,19 @@ const deDict = {
 
         {/* Verse View Modal */}
         {verseViewModal && (
-          <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.6)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000, padding: '1rem' }} onClick={(e) => { if (e.target === e.currentTarget) { setVerseViewModal(null); if ('speechSynthesis' in window) window.speechSynthesis.cancel(); } }}>
+          <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.6)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000, padding: '1rem' }} onClick={(e) => { if (e.target === e.currentTarget) { setVerseViewModal(null); stopVerseModalAudio(); if ('speechSynthesis' in window) window.speechSynthesis.cancel(); } }}>
             <div style={{ background: '#ffffff', borderRadius: '12px', padding: '2rem', width: '100%', maxWidth: '600px', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)', display: 'flex', flexDirection: 'column', gap: '1.5rem', border: '1px solid #e2e8f0', maxHeight: '85vh' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #e2e8f0', paddingBottom: '1rem' }}>
                 <h2 style={{ margin: 0, color: '#1e293b', fontSize: '1.6rem', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '12px' }}>
                   <span style={{ color: '#3b82f6' }}>{verseViewModal.reference}</span>
                   <button
-                    onClick={() => {
+                    onClick={async () => {
+                      updateGarden('activity_only', 'listen');
+                      // 創作者親聲朗讀優先;沒有錄音或播放失敗才用 TTS。
+                      const played = await playSetVerseVoice(verseViewModal.setId, verseViewModal.reference);
+                      if (played) return;
                       const vLang = isEnglishBibleVersion(version) ? 'en-US' : (version === 'ko' ? 'ko-KR' : (version === 'ja' ? 'ja-JP' : (version === 'he' ? 'he-IL' : (version === 'fa' ? 'fa-IR' : 'zh-TW'))));
                       speakText(verseViewModal.text, 1.0, vLang);
-                      updateGarden('activity_only', 'listen');
                     }}
                     title={t("朗讀經文", "Read aloud")}
                     style={{ background: '#ecfdf5', color: '#10b981', border: '1px solid #a7f3d0', borderRadius: '50%', width: '38px', height: '38px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'all 0.2s', padding: 0 }}
@@ -19720,6 +19764,7 @@ const deDict = {
                 <button
                   onClick={() => {
                     if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+                    stopVerseModalAudio();
                     setVerseViewModal(null);
                   }}
                   style={{ background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0 }}
@@ -19736,6 +19781,7 @@ const deDict = {
                 <button
                   onClick={() => {
                     setVerseViewModal(null);
+                    stopVerseModalAudio();
                     if ('speechSynthesis' in window) window.speechSynthesis.cancel();
                   }}
                   style={{ background: '#f1f5f9', color: '#64748b', border: '1px solid #cbd5e1', padding: '0.6rem 1.5rem', borderRadius: '6px', fontSize: '1rem', fontWeight: 'bold', cursor: 'pointer', transition: 'background 0.2s' }}
