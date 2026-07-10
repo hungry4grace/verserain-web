@@ -4382,6 +4382,33 @@ export default function App() {
     }
   });
   const [editingCustomSet, setEditingCustomSet] = useState(null);
+  // 我的專屬題庫 list controls — sort + 10-per-page pagination.
+  const [customSetsSort, setCustomSetsSort] = useState('newest'); // newest | title | verses
+  const [customSetsPage, setCustomSetsPage] = useState(1);
+  const sortedCustomSets = React.useMemo(() => {
+    const arr = [...customVerseSets];
+    const createdMs = (s) => {
+      if (s?.createdAt) { const ts = Date.parse(s.createdAt); if (Number.isFinite(ts)) return ts; }
+      if (String(s?.id || '').startsWith('custom-')) {
+        const ts = parseInt(String(s.id).replace('custom-', ''), 10);
+        if (Number.isFinite(ts)) return ts;
+      }
+      return 0;
+    };
+    if (customSetsSort === 'title') {
+      try {
+        const collator = new Intl.Collator('zh-Hant', { collation: 'stroke' });
+        arr.sort((a, b) => collator.compare(a.title || '', b.title || ''));
+      } catch {
+        arr.sort((a, b) => String(a.title || '').localeCompare(String(b.title || ''), 'zh-Hant'));
+      }
+    } else if (customSetsSort === 'verses') {
+      arr.sort((a, b) => (b.verses?.length || 0) - (a.verses?.length || 0));
+    } else {
+      arr.sort((a, b) => createdMs(b) - createdMs(a));
+    }
+    return arr;
+  }, [customVerseSets, customSetsSort]);
   // 題庫創作者親聲朗讀 — recordings for the set being edited, keyed by
   // verse reference. null target = recorder closed.
   const [editorVerseVoices, setEditorVerseVoices] = useState({});
@@ -15799,9 +15826,27 @@ const deDict = {
                             <div style={{ textAlign: 'center', padding: '3rem 1rem', color: '#94a3b8', border: '2px dashed #e2e8f0', borderRadius: '8px' }}>
                               {t("你還沒有建立任何專屬題庫。點擊上方按鈕開始！", "You haven't created any custom sets yet. Click the button above to start!")}
                             </div>
-                          ) : (
+                          ) : (() => {
+                            const PER_PAGE = 10;
+                            const totalPages = Math.max(1, Math.ceil(sortedCustomSets.length / PER_PAGE));
+                            const page = Math.min(customSetsPage, totalPages);
+                            const pageSets = sortedCustomSets.slice((page - 1) * PER_PAGE, page * PER_PAGE);
+                            return (
+                            <div>
+                              <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: '0.5rem', marginBottom: '0.8rem' }}>
+                                <span style={{ color: '#64748b', fontSize: '0.85rem' }}>{t('排序', 'Sort')}</span>
+                                <select
+                                  value={customSetsSort}
+                                  onChange={e => { setCustomSetsSort(e.target.value); setCustomSetsPage(1); }}
+                                  style={{ padding: '0.4rem 0.7rem', borderRadius: 6, border: '1px solid #cbd5e1', background: '#f8fafc', color: '#334155', fontSize: '0.9rem', cursor: 'pointer' }}
+                                >
+                                  <option value="newest">{t('最新', 'Newest')}</option>
+                                  <option value="title">{t('標題', 'Title')}</option>
+                                  <option value="verses">{t('節數', 'Verse count')}</option>
+                                </select>
+                              </div>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                              {customVerseSets.map(set => (
+                              {pageSets.map(set => (
                                 <div key={set.id} style={{ border: '1px solid #cbd5e1', borderRadius: '8px', padding: '1.5rem', position: 'relative' }}>
                                   <div style={{ position: 'absolute', top: '1rem', right: '1rem', display: 'flex', gap: '0.5rem' }}>
                                     <button type="button" onClick={() => {
@@ -15838,7 +15883,26 @@ const deDict = {
                                 </div>
                               ))}
                             </div>
-                          )}
+                              {totalPages > 1 && (
+                                <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.6rem', marginTop: '1.2rem' }}>
+                                  <button
+                                    type="button"
+                                    disabled={page <= 1}
+                                    onClick={() => setCustomSetsPage(page - 1)}
+                                    style={{ padding: '0.4rem 0.9rem', borderRadius: 6, border: '1px solid #cbd5e1', background: page <= 1 ? '#f1f5f9' : 'white', color: '#475569', cursor: page <= 1 ? 'not-allowed' : 'pointer', fontWeight: 'bold' }}
+                                  >← {t('上一頁', 'Prev')}</button>
+                                  <span style={{ color: '#64748b', fontSize: '0.9rem' }}>{t(`第 ${page} / ${totalPages} 頁`, `Page ${page} / ${totalPages}`)}</span>
+                                  <button
+                                    type="button"
+                                    disabled={page >= totalPages}
+                                    onClick={() => setCustomSetsPage(page + 1)}
+                                    style={{ padding: '0.4rem 0.9rem', borderRadius: 6, border: '1px solid #cbd5e1', background: page >= totalPages ? '#f1f5f9' : 'white', color: '#475569', cursor: page >= totalPages ? 'not-allowed' : 'pointer', fontWeight: 'bold' }}
+                                  >{t('下一頁', 'Next')} →</button>
+                                </div>
+                              )}
+                            </div>
+                            );
+                          })()}
                         </div>
                       )}
                     </div>
