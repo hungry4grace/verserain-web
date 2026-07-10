@@ -6471,7 +6471,10 @@ export default function App() {
           id: foundSet.id,
           title: foundSet.title,
           verses: foundSet.verses || [],
-          startVerse
+          startVerse,
+          // Synthetic single-verse shares carry the real set id here so
+          // creator recordings still resolve for recipients.
+          voiceSetId: foundSet.voiceSetId || null,
         });
         window.history.replaceState({}, document.title, window.location.pathname);
       } else if (!listenSetFetchAttemptedRef.current.has(listenSetRef)) {
@@ -14743,23 +14746,29 @@ const deDict = {
             onChallengeVerse={challengeVerseFromReader}
             onShareVerse={(verse) => {
               if (!verse || !continuousRainSet?.id) return;
+              // Share the REAL originating set, not a synthetic single-verse
+              // wrapper (id `single-…`): voiceSetId points back at the source
+              // set when the player was opened via the per-verse play button.
+              // Recipients then get the full set (starting at this verse) AND
+              // the creator recordings resolve correctly.
+              const shareSetId = continuousRainSet.voiceSetId || continuousRainSet.id;
               // Find the canonical set object (continuousRainSet.verses may
               // be a subset/transient slice). Prefer customVerseSets first
               // — that's where the latest edits live.
               const fullSet =
-                customVerseSets.find(s => s.id === continuousRainSet.id) ||
-                publishedVerseSets.find(s => s.id === continuousRainSet.id) ||
+                customVerseSets.find(s => s.id === shareSetId) ||
+                publishedVerseSets.find(s => s.id === shareSetId) ||
                 continuousRainSet;
               pushSetForSharing(fullSet, true);
               // /lc = OG card endpoint — short link; the card resolves the
               // set title + verse text server-side from /share-set.
               const verseIdx = (fullSet.verses || []).findIndex(v => v?.reference === verse.reference);
               const link = buildPublicShareUrl('/lc', {
-                set: continuousRainSet.id,
+                set: shareSetId,
                 ...(verseIdx >= 0 ? { i: verseIdx } : { verse: verse.reference }),
                 version,
               });
-              openListeningShare(link, `${continuousRainSet.title || t('經文組', 'Verse Set')} · ${verse.reference}`);
+              openListeningShare(link, `${fullSet.title || continuousRainSet.title || t('經文組', 'Verse Set')} · ${verse.reference}`);
             }}
           />
         )}
