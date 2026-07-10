@@ -2275,8 +2275,16 @@ function VerseSetContinuousRainPlayer({
         dataUrl = `data:${rec.voiceMime || 'audio/webm'};base64,${res.data}`;
         voiceAudioCacheRef.current.set(rec.voiceId, dataUrl);
       }
-      const audio = new Audio(dataUrl);
-      creatorAudioRef.current = audio;
+      // iOS Safari blocks .play() on Audio elements CREATED outside a user
+      // gesture — verse 1 (right after the start tap) would play but verse
+      // 2+ (created seconds later) would be rejected and fall back to TTS.
+      // Reusing one persistent element keeps the gesture "blessing": once
+      // it has played, later src swaps on the SAME element are allowed.
+      if (!creatorAudioRef.current) creatorAudioRef.current = new Audio();
+      const audio = creatorAudioRef.current;
+      try { audio.pause(); } catch { /* noop */ }
+      audio.src = dataUrl;
+      try { audio.currentTime = 0; } catch { /* not loaded yet */ }
       setCreatorVoiceName(rec.recordedBy || '');
       const durMs = rec.voiceDur > 0 ? rec.voiceDur * 1000 : 8000;
       // Advance phrase highlights proportionally to each phrase's length.
@@ -2297,11 +2305,12 @@ function VerseSetContinuousRainPlayer({
       });
       timers.forEach(id => window.clearTimeout(id));
       setCreatorVoiceName('');
-      creatorAudioRef.current = null;
+      // Keep the element alive (see gesture note above) — just detach handlers.
+      audio.onended = null;
+      audio.onerror = null;
       return finished;
     } catch {
       setCreatorVoiceName('');
-      creatorAudioRef.current = null;
       return false;
     }
   };
@@ -2720,9 +2729,9 @@ function VerseSetContinuousRainPlayer({
       cancelled = true;
       runRef.current += 1;
       stopSpeechIfActive();
-      // Also stop a creator recording mid-play (verse change / unmount).
+      // Pause (but never destroy) the shared creator-audio element — it
+      // must stay alive to keep iOS's user-gesture blessing for later verses.
       try { creatorAudioRef.current?.pause(); } catch { /* noop */ }
-      creatorAudioRef.current = null;
     };
   // playKey is included so single-verse sets can loop via setPlayKey.
   // eslint-disable-next-line react-hooks/exhaustive-deps
