@@ -6763,11 +6763,13 @@ export default function App() {
   // the share URL can fetch it back — no admin permission needed, no global
   // publish list pollution. Fire-and-forget; the link will resolve once
   // PartyKit has written the row (sub-second typical).
-  const pushSetForSharing = (set) => {
+  const pushSetForSharing = (set, force = false) => {
     if (!set || !set.id) return;
     // Built-in sets are already in every device's verses_*.js bundle —
-    // pushing them is wasteful.
-    if (!set.id.startsWith('custom-')) return;
+    // pushing them is wasteful. EXCEPT for /lc share links: the OG-card
+    // endpoint resolves the set title + verse text server-side from
+    // /share-set, so those pushes pass force=true for built-ins too.
+    if (!force && !set.id.startsWith('custom-')) return;
     fetch("https://verserain-party.hungry4grace.partykit.dev/parties/main/global-auth-db/share-set", {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -14721,15 +14723,14 @@ const deDict = {
                 customVerseSets.find(s => s.id === continuousRainSet.id) ||
                 publishedVerseSets.find(s => s.id === continuousRainSet.id) ||
                 continuousRainSet;
-              pushSetForSharing(fullSet);
-              // /lc = OG card endpoint — gives LINE/WhatsApp previews the
-              // set's own title + verse text instead of the generic site title.
+              pushSetForSharing(fullSet, true);
+              // /lc = OG card endpoint — short link; the card resolves the
+              // set title + verse text server-side from /share-set.
+              const verseIdx = (fullSet.verses || []).findIndex(v => v?.reference === verse.reference);
               const link = buildPublicShareUrl('/lc', {
                 set: continuousRainSet.id,
-                verse: verse.reference,
+                ...(verseIdx >= 0 ? { i: verseIdx } : { verse: verse.reference }),
                 version,
-                title: (fullSet.title || continuousRainSet.title || '').slice(0, 60),
-                vtext: String(verse.text || '').slice(0, 120),
               });
               openListeningShare(link, `${continuousRainSet.title || t('經文組', 'Verse Set')} · ${verse.reference}`);
             }}
@@ -15287,13 +15288,12 @@ const deDict = {
                     onChallengeVerse={challengeVerseFromReader}
                     onShareVerse={(verse) => {
                       if (!verse) return;
-                      pushSetForSharing(preferredRainSet);
+                      pushSetForSharing(preferredRainSet, true);
+                      const verseIdx = (preferredRainSet.verses || []).findIndex(v => v?.reference === verse.reference);
                       const link = buildPublicShareUrl('/lc', {
                         set: preferredRainSet.id,
-                        verse: verse.reference,
+                        ...(verseIdx >= 0 ? { i: verseIdx } : { verse: verse.reference }),
                         version,
-                        title: String(preferredRainSet.title || '').slice(0, 60),
-                        vtext: String(verse.text || '').slice(0, 120),
                       });
                       openListeningShare(link, `${preferredRainSet.title} · ${verse.reference}`);
                     }}

@@ -7,12 +7,18 @@
 // per-set OG tags below, humans get bounced straight into the SPA's
 // listen deep link.
 //
-// Query params (self-contained — no DB call):
+// Query params — short links preferred:
 //   set     setId (required for a useful redirect)
-//   verse   verse reference to start from (optional)
+//   i       verse index within the set (server resolves ref + text)
+//   verse   verse reference (fallback when i is absent)
 //   version bible version (optional, e.g. cuv)
-//   title   set title shown in the preview
-//   vtext   verse text snippet for the preview description
+//   title   optional inline override for the set title
+//   vtext   optional inline override for the description snippet
+//
+// The share buttons push the full set to PartyKit's /share-set right
+// before emitting an /lc link, so this endpoint can resolve the set's
+// title and the verse's reference/text server-side — keeping the shared
+// URL short (no URL-encoded Chinese in the query).
 
 function esc(s = '') {
   return String(s)
@@ -23,16 +29,41 @@ function esc(s = '') {
     .replace(/'/g, '&#39;');
 }
 
+const PARTY_BASE = (process.env.PARTY_BASE || 'https://verserain-party.hungry4grace.partykit.dev/parties/main/global-auth-db').replace(/\/+$/, '');
+
 export default async function handler(req, res) {
   const host = req.headers['x-forwarded-host'] || req.headers.host || 'www.verserain.com';
   const origin = `https://${host}`;
   const q = req.query || {};
 
   const set = String(q.set || '');
-  const verse = String(q.verse || '');
+  let verse = String(q.verse || '');
   const version = String(q.version || '');
-  const title = String(q.title || '').slice(0, 60);
-  const vtext = String(q.vtext || '').slice(0, 160);
+  let title = String(q.title || '').slice(0, 60);
+  let vtext = String(q.vtext || '').slice(0, 160);
+  const idx = /^\d+$/.test(String(q.i || '')) ? Number(q.i) : null;
+
+  // Resolve title / verse text from the shared set when not passed inline.
+  if (set && (!title || (!vtext && (idx !== null || verse)))) {
+    try {
+      const r = await fetch(`${PARTY_BASE}/share-set?id=${encodeURIComponent(set)}`, { signal: AbortSignal.timeout(3500) });
+      if (r.ok) {
+        const data = await r.json();
+        const s = data?.set;
+        if (s) {
+          if (!title && s.title) title = String(s.title).slice(0, 60);
+          const verses = Array.isArray(s.verses) ? s.verses : [];
+          const target = idx !== null
+            ? verses[idx]
+            : (verse ? verses.find(v => v?.reference === verse) : null);
+          if (target) {
+            if (!verse && target.reference) verse = String(target.reference);
+            if (!vtext && target.text) vtext = String(target.text).slice(0, 160);
+          }
+        }
+      }
+    } catch { /* preview degrades gracefully; redirect still works */ }
+  }
 
   // Real destination inside the app.
   const dest = new URL(`${origin}/`);
