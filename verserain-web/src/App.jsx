@@ -2249,14 +2249,18 @@ function VerseSetContinuousRainPlayer({
   // originating set where the recordings actually live.
   const voiceSetId = verseSet?.voiceSetId || verseSet?.id || null;
   const verseVoicesRef = useRef({});
+  // Resolves once the voices list has loaded — playVerse awaits this (with
+  // a cap) so the FIRST verse doesn't race the fetch on slow mobile
+  // networks and wrongly fall back to TTS.
+  const verseVoicesReadyRef = useRef(Promise.resolve());
   const creatorAudioRef = useRef(null);
   const voiceAudioCacheRef = useRef(new globalThis.Map()); // voiceId → data URL
   const [creatorVoiceName, setCreatorVoiceName] = useState('');
   useEffect(() => {
     let cancelled = false;
     verseVoicesRef.current = {};
-    if (!voiceSetId) return undefined;
-    setVoiceApi.getAll(voiceSetId)
+    if (!voiceSetId) { verseVoicesReadyRef.current = Promise.resolve(); return undefined; }
+    verseVoicesReadyRef.current = setVoiceApi.getAll(voiceSetId)
       .then(res => { if (!cancelled) verseVoicesRef.current = res?.voices || {}; })
       .catch(() => { /* no recordings — TTS as usual */ });
     return () => { cancelled = true; };
@@ -2627,6 +2631,10 @@ function VerseSetContinuousRainPlayer({
 
       // 創作者親聲朗讀 — play the creator's recording instead of TTS when
       // one exists for this verse; falls back to TTS on any failure.
+      // Wait briefly for the voices list so the first verse doesn't race
+      // the fetch on slow networks (iPhone: TTS 先響、之後才換錄音).
+      await Promise.race([verseVoicesReadyRef.current, wait(3000)]);
+      if (cancelled || runRef.current !== runId) return;
       let creatorPlayed = false;
       const creatorRec = voiceSetId ? (verseVoicesRef.current?.[currentVerse.reference] || null) : null;
       if (creatorRec?.voiceId) {
