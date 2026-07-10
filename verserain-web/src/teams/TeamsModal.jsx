@@ -1614,7 +1614,9 @@ function VoicePlayer({ t, userEmail, teamId, itemId, voiceId, mime, dur, label }
 // verse-voice namespace and registered via /teams/verse-voice/set
 // (one recording per verse, latest wins).
 function ComposeVoice({ t, userEmail, teamId, itemId, onCancel, onCreated, verseVoice = null }) {
-  const MAX_SECONDS = 90;
+  // 120s ≈ 360KB at 24kbps opus → ~4.8 of the 6 allowed upload chunks,
+  // leaving headroom for VBR overshoot. Covers long verse ranges too.
+  const MAX_SECONDS = 120;
   const [phase, setPhase] = useState('idle'); // idle | recording | preview | uploading
   const [seconds, setSeconds] = useState(0);
   const [error, setError] = useState('');
@@ -1730,7 +1732,7 @@ function ComposeVoice({ t, userEmail, teamId, itemId, onCancel, onCreated, verse
       });
       const CHUNK = 100000; // chars — under the backend's 110000 cap
       const total = Math.ceil(base64.length / CHUNK);
-      if (total > 6) throw new Error(t('錄音太長，請縮短到 90 秒內。', 'Recording too long — keep it under 90 seconds.'));
+      if (total > 6) throw new Error(t('錄音太長，請縮短到 2 分鐘內。', 'Recording too long — keep it under 2 minutes.'));
       const voiceId = 'v_' + Math.random().toString(36).slice(2, 12);
       // Verse voices live in their own itemId namespace so they never mix
       // with reflection audio for the schedule item.

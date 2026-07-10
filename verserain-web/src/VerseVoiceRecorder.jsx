@@ -13,7 +13,9 @@ import { useEffect, useRef, useState } from 'react';
 //   onCancel   — close without saving
 //   onDone     — called after a successful upload
 export default function VerseVoiceRecorder({ t, reference, verseText, onUpload, onCancel, onDone }) {
-  const MAX_SECONDS = 90;
+  // 120s ≈ 360KB at 24kbps opus → ~4.8 of the 6 allowed upload chunks,
+  // leaving headroom for VBR overshoot. Plenty for multi-verse ranges.
+  const MAX_SECONDS = 120;
   const [phase, setPhase] = useState('idle'); // idle | recording | preview | uploading
   const [seconds, setSeconds] = useState(0);
   const [error, setError] = useState('');
