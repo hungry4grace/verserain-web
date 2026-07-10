@@ -209,7 +209,9 @@ async function main() {
       const lineUrl = buildLineForwardUrl({ title, verseRef: item.reference, verseText: item.text, ogUrl });
       if (DRY_RUN) console.log(`[family-daily]   host-forward url: ${lineUrl.slice(0, 48)}`);
       hostResult = await sendWebPush(hostSubs, {
-        title: `🙏 今日經文 — 分享給家人 / Share with your family`,
+        // Make the tap's outcome explicit — tapping opens LINE's share
+        // sheet (NOT the app), which surprised hosts with the old title.
+        title: `🙏 點我轉發今日經文給家人（會開啟 LINE） / Tap to forward to family (opens LINE)`,
         body,
         url: lineUrl,
         icon: '/favicon.svg',
