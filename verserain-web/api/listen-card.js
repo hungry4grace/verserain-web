@@ -20,6 +20,8 @@
 // title and the verse's reference/text server-side — keeping the shared
 // URL short (no URL-encoded Chinese in the query).
 
+import { BIBLE_BOOKS } from '../src/bibleDictionary.js';
+
 function esc(s = '') {
   return String(s)
     .replace(/&/g, '&amp;')
@@ -27,6 +29,23 @@ function esc(s = '') {
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;');
+}
+
+// 「賽 60:1-3」→「以賽亞書 60:1-3」— expand Chinese book abbreviations to
+// the full book name for the link preview. Non-Chinese refs pass through.
+function expandReferenceForDisplay(ref) {
+  const m = String(ref || '').match(/^(\S+?)\s*(\d.*)$/);
+  if (!m) return ref;
+  const [, book, rest] = m;
+  for (const b of BIBLE_BOOKS) {
+    const zhFull = b.names?.[0];
+    const zhAbbr = b.names?.[1];
+    if (book === zhAbbr || book === zhFull) return `${zhFull} ${rest}`;
+    const cnFull = b.cn?.[0];
+    const cnAbbr = b.cn?.[1];
+    if (cnFull && (book === cnAbbr || book === cnFull)) return `${cnFull} ${rest}`;
+  }
+  return ref;
 }
 
 const PARTY_BASE = (process.env.PARTY_BASE || 'https://verserain-party.hungry4grace.partykit.dev/parties/main/global-auth-db').replace(/\/+$/, '');
@@ -72,9 +91,17 @@ export default async function handler(req, res) {
   if (version) dest.searchParams.set('version', version);
   const destUrl = dest.toString();
 
-  const ogTitle = title
-    ? (verse ? `📖 ${title} · ${verse}` : `📖 ${title}`)
-    : 'VerseRain — 澆灌心田，結出生命果子';
+  const normalize = (s) => String(s || '').replace(/\s+/g, '');
+  const refDisplay = verse ? expandReferenceForDisplay(verse) : '';
+  // Single-verse shares use the reference AS the set title — showing both
+  // reads as「賽 60:1-3 · 賽 60:1-3」. Collapse to one full-name reference.
+  const titleIsRef = title && verse
+    && (normalize(title) === normalize(verse) || normalize(title) === normalize(refDisplay));
+  const ogTitle = (refDisplay && (!title || titleIsRef))
+    ? `📖 ${refDisplay}（點擊可以聆聽）`
+    : title
+      ? (refDisplay ? `📖 ${title} · ${refDisplay}` : `📖 ${title}`)
+      : 'VerseRain — 澆灌心田，結出生命果子';
   const ogDesc = vtext
     ? `「${vtext}」`
     : '點開聆聽這個經文組 · Tap to listen to this verse set';
