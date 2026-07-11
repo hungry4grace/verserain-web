@@ -680,6 +680,58 @@ function initAudio() {
   }
 }
 
+// iPadOS 13+ reports a desktop "Macintosh" UA but has a touch screen.
+function isIOSDevice() {
+  if (typeof navigator === 'undefined') return false;
+  const ua = navigator.userAgent || '';
+  return /iPad|iPhone|iPod/.test(ua) || (/Macintosh/.test(ua) && (navigator.maxTouchPoints || 0) > 1);
+}
+
+// Start looping background music at a given 0–1 volume.
+// iOS Safari IGNORES HTMLMediaElement.volume (it's pinned to 1.0), so a custom
+// per-set music level plays at full blast on iPhone/iPad. On iOS we therefore
+// route the element through a Web Audio GainNode, which DOES honour the level.
+// On desktop plain `.volume` works and avoids any suspended-AudioContext
+// silence risk, so we keep it there. Returns the <audio> element; a
+// `_bgmDisconnect()` is attached for graph teardown on cleanup.
+function startLoopingBgm(src, volume) {
+  const audio = new Audio(src);
+  audio.loop = true;
+  const clamp = (v) => Math.min(1, Math.max(0.05, v ?? 0.18));
+  const vol = clamp(volume);
+  let gain = null;
+  if (isIOSDevice()) {
+    try {
+      initAudio(); // ensures the shared AudioContext exists + is resumed
+      if (audioCtx) {
+        const source = audioCtx.createMediaElementSource(audio);
+        gain = audioCtx.createGain();
+        gain.gain.value = vol;
+        source.connect(gain).connect(audioCtx.destination);
+        audio._bgmDisconnect = () => {
+          try { source.disconnect(); } catch { /* already gone */ }
+          try { gain.disconnect(); } catch { /* already gone */ }
+        };
+      } else {
+        audio.volume = vol;
+      }
+    } catch {
+      gain = null;
+      audio.volume = vol; // MediaElementSource unavailable — best effort
+    }
+  } else {
+    audio.volume = vol;
+  }
+  // Live volume updates (e.g. the editor slider): go through the gain node on
+  // iOS, else the element's own volume.
+  audio._bgmSetVolume = (v) => {
+    const nv = clamp(v);
+    if (gain) gain.gain.value = nv; else audio.volume = nv;
+  };
+  audio.play().catch(() => { /* caller retries / autoplay gate */ });
+  return audio;
+}
+
 // Per-language fallback voice-name patterns. When the system has no voice
 // tagged with the right BCP-47 lang prefix, we'd rather pick a voice whose
 // NAME identifies the right language than let the OS auto-pick (which on
@@ -2556,14 +2608,12 @@ function VerseSetContinuousRainPlayer({
       }
       if (cancelled) return;
       bgmRef.current?.pause();
+      bgmRef.current?._bgmDisconnect?.();
       if (!src) { bgmRef.current = null; return; }
-      const audio = new Audio(src);
-      audio.loop = true;
-      audio.volume = Math.min(1, Math.max(0.05, verseSet?.bgMusicVolume ?? 0.18));
-      bgmRef.current = audio;
       // The player only mounts after the start tap, so autoplay is allowed;
       // custom music may finish downloading mid-verse and joins right away.
-      audio.play().catch(() => { /* playVerse retries on next verse */ });
+      // startLoopingBgm honours the per-set volume on iOS too (Web Audio gain).
+      bgmRef.current = startLoopingBgm(src, verseSet?.bgMusicVolume ?? 0.18);
     };
     setup();
 
@@ -2571,6 +2621,7 @@ function VerseSetContinuousRainPlayer({
       cancelled = true;
       runRef.current += 1;
       bgmRef.current?.pause();
+      bgmRef.current?._bgmDisconnect?.();
       stopSpeechIfActive();
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -4523,6 +4574,7 @@ export default function App() {
 
   const stopEditorMusicPreview = () => {
     try { editorMusicAudioRef.current?.pause(); } catch { /* noop */ }
+    try { editorMusicAudioRef.current?._bgmDisconnect?.(); } catch { /* noop */ }
     editorMusicAudioRef.current = null;
     setEditorMusicPlaying(false);
   };
@@ -4530,11 +4582,8 @@ export default function App() {
   const toggleEditorMusicPreview = () => {
     if (editorMusicPlaying) { stopEditorMusicPreview(); return; }
     if (!editorMusicUrl) return;
-    const audio = new Audio(editorMusicUrl);
-    audio.loop = true;
-    audio.volume = Math.min(1, Math.max(0.05, editingCustomSet?.bgMusicVolume ?? 0.18));
-    audio.play().catch(() => {});
-    editorMusicAudioRef.current = audio;
+    // iOS honours volume only via Web Audio gain — startLoopingBgm handles it.
+    editorMusicAudioRef.current = startLoopingBgm(editorMusicUrl, editingCustomSet?.bgMusicVolume ?? 0.18);
     setEditorMusicPlaying(true);
   };
 
@@ -16453,7 +16502,7 @@ const deDict = {
                                   onChange={e => {
                                     const vol = Number(e.target.value) / 100;
                                     setEditingCustomSet(prev => ({ ...prev, bgMusicVolume: vol }));
-                                    if (editorMusicAudioRef.current) editorMusicAudioRef.current.volume = vol;
+                                    editorMusicAudioRef.current?._bgmSetVolume?.(vol);
                                   }}
                                   style={{ width: 180, cursor: 'pointer' }}
                                 />
