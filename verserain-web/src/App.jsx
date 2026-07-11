@@ -19,6 +19,7 @@ import { GOOGLE_CLIENT_ID, APPLE_CLIENT_ID, APPLE_REDIRECT_URI, LINE_CHANNEL_ID,
 import { VAPID_PUBLIC_KEY, urlBase64ToUint8Array, isWebPushSupported, isIOSStandalone, isIOSWithoutPWA, hasNativeDailyPush, callNativeDailyPush } from './pushConfig';
 import { setVoiceApi, uploadVerseVoice } from './setVoiceApi';
 import VerseVoiceRecorder from './VerseVoiceRecorder';
+import { SET_BACKGROUND_THEMES, getSetBackgroundUrl } from './setBackgrounds';
 import QrScanner from 'qr-scanner';
 import TeamsModal from './teams/TeamsModal';
 
@@ -2427,7 +2428,14 @@ function VerseSetContinuousRainPlayer({
     const day = (getStableNumber(`${verseSet?.id || verseSet?.title}-${currentVerse?.reference || ''}`) % 31) + 1;
     return `2026-05-${String(day).padStart(2, '0')}`;
   }, [verseSet?.id, verseSet?.title, currentVerse?.reference]);
-  const backgroundImageUrls = useMemo(() => getDailyVerseImageUrls(currentVerse, imageDateLabel, version), [currentVerse, imageDateLabel, version]);
+  const backgroundImageUrls = useMemo(() => {
+    // Creator-chosen theme background wins; fall back to the default
+    // rotating AI backgrounds when the set doesn't specify one.
+    const preset = getSetBackgroundUrl(verseSet?.background);
+    if (preset) return [preset, ...getDailyVerseImageUrls(currentVerse, imageDateLabel, version)];
+    return getDailyVerseImageUrls(currentVerse, imageDateLabel, version);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentVerse, imageDateLabel, version, verseSet?.background]);
   const [imageIndex, setImageIndex] = useState(0);
   const [imageOk, setImageOk] = useState(true);
   const [imageLoaded, setImageLoaded] = useState(false);
@@ -6146,6 +6154,7 @@ export default function App() {
       playOrder: order, // 'random' | 'sequential' — both loop forever
       startVerse: order === 'sequential' ? set.verses[0] : undefined,
       voiceSetId: set.voiceSetId || null,
+      background: set.background || '',
     });
   };
   const [multiplayerSearchText, setMultiplayerSearchText] = useState('');
@@ -6652,6 +6661,7 @@ export default function App() {
           // Synthetic single-verse shares carry the real set id here so
           // creator recordings still resolve for recipients.
           voiceSetId: foundSet.voiceSetId || null,
+          background: foundSet.background || '',
         });
         window.history.replaceState({}, document.title, window.location.pathname);
       } else if (!listenSetFetchAttemptedRef.current.has(listenSetRef)) {
@@ -6939,7 +6949,7 @@ export default function App() {
     startGame();
   };
 
-  const playSingleVerseCard = (verse, sourceSetId = null) => {
+  const playSingleVerseCard = (verse, sourceSetId = null, sourceBackground = '') => {
     initAudio();
     setContinuousRainSet({
       id: `single-${verse.reference}`,
@@ -6949,6 +6959,7 @@ export default function App() {
       // 創作者親聲朗讀 lookups need the REAL originating set id — the
       // synthetic `single-…` id has no recordings under it.
       voiceSetId: sourceSetId,
+      background: sourceBackground || '',
     });
   };
 
@@ -15667,6 +15678,31 @@ const deDict = {
                             </div>
                           </div>
 
+                          {/* 背景圖片 — creator picks a themed background for this set;
+                              unset = the default rotating AI backgrounds. */}
+                          <div style={{ marginBottom: '1rem' }}>
+                            <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '0.5rem', color: '#475569' }}>{t("背景圖片", "Background")}</label>
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))', gap: '0.6rem' }}>
+                              <div
+                                onClick={() => setEditingCustomSet({ ...editingCustomSet, background: '' })}
+                                style={{ cursor: 'pointer', borderRadius: 8, border: `3px solid ${!editingCustomSet.background ? '#3b82f6' : '#e2e8f0'}`, overflow: 'hidden', textAlign: 'center', background: '#f8fafc' }}
+                              >
+                                <div style={{ height: 64, display: 'grid', placeItems: 'center', color: '#94a3b8', fontSize: '1.4rem' }}>🎲</div>
+                                <div style={{ fontSize: '0.75rem', color: '#475569', padding: '0.25rem 0.2rem', fontWeight: 600 }}>{t('預設(每日輪換)', 'Default (rotates)')}</div>
+                              </div>
+                              {SET_BACKGROUND_THEMES.map(bg => (
+                                <div
+                                  key={bg.id}
+                                  onClick={() => setEditingCustomSet({ ...editingCustomSet, background: `preset:${bg.id}` })}
+                                  style={{ cursor: 'pointer', borderRadius: 8, border: `3px solid ${editingCustomSet.background === `preset:${bg.id}` ? '#3b82f6' : '#e2e8f0'}`, overflow: 'hidden', textAlign: 'center', background: '#f8fafc' }}
+                                >
+                                  <img src={bg.url} alt={bg.zh} style={{ width: '100%', height: 64, objectFit: 'cover', display: 'block' }} loading="lazy" />
+                                  <div style={{ fontSize: '0.75rem', color: '#475569', padding: '0.25rem 0.2rem', fontWeight: 600 }}>{t(bg.zh, bg.en)}</div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+
                           <div style={{ marginBottom: '1rem' }}>
                             <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '0.5rem', color: '#475569' }}>{t("經文列表", "Verses")}</label>
 
@@ -17323,7 +17359,7 @@ const deDict = {
                                       <button
                                         onClick={(e) => {
                                           e.stopPropagation();
-                                          playSingleVerseCard(v, currentSet?.id);
+                                          playSingleVerseCard(v, currentSet?.id, currentSet?.background || '');
                                         }}
                                         title={currentSetVoices[v.reference]
                                           ? t(`播放這節經文(${currentSetVoices[v.reference].recordedBy || '創作者'}親聲朗讀)`, `Play this verse (read by ${currentSetVoices[v.reference].recordedBy || 'the creator'})`)
