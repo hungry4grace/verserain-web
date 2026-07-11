@@ -1216,6 +1216,42 @@ async function fetchVerseFromBolls(normalizedKey, targetVersion) {
   }
 }
 
+// Language-aware verse-text fetch for the custom-set editor (single-row
+// auto-fetch + bulk import). English translations (ESV / NIV / KJV) each hit
+// their own API; every other language goes to bolls.life with the CORRECT
+// per-language slug via getBollsSlug (Spanish → RV1960, Korean → KRV, …),
+// then getbible.net for the two languages bolls lacks (Turkish, Burmese).
+// Returns '' on miss. Previously both call sites hard-coded the Chinese CUV
+// slug, so a Spanish/Korean/etc. set silently imported Chinese verse text.
+async function fetchEditorVerseText({ bookInfo, sanitized, version }) {
+  const chapMatch = String(sanitized).match(/^(\d+)/);
+  if (!chapMatch) return '';
+  const chapter = parseInt(chapMatch[1], 10);
+  const verseMatch = String(sanitized).match(/:(\d+)(?:-(\d+))?/);
+
+  if (isEnglishBibleVersion(version)) {
+    const bookAbbr = getBookAbbr(bookInfo, version);
+    const englishRef = `${bookInfo.names?.[2] || bookInfo.names?.[0] || bookAbbr} ${sanitized}`;
+    const fetched = await fetchBibleVerseFromAPI(englishRef, version);
+    return fetched ? String(fetched).replace(/\s+/g, ' ').trim() : '';
+  }
+
+  // Build the "<bookId>|<chapter>[:<verses>]" key fetchVerseFromBolls expects.
+  let versePart = String(chapter);
+  if (verseMatch) {
+    versePart = verseMatch[2]
+      ? `${chapter}:${verseMatch[1]}-${verseMatch[2]}`
+      : `${chapter}:${verseMatch[1]}`;
+  }
+  const key = `${bookInfo.id}|${versePart}`;
+  let combined = await fetchVerseFromBolls(key, version)
+    || await fetchVerseFromGetBible(key, version);
+  if (!combined) return '';
+  // CJK verses read without inter-character spaces.
+  if (version === 'cuv' || version === 'cuvs') combined = combined.replace(/\s+/g, '');
+  return combined.replace(/\s+/g, ' ').trim();
+}
+
 function cleanPhraseBlock(phrase = '') {
   return String(phrase || '')
     .trim()
@@ -1443,7 +1479,7 @@ const MULTILANG_FULL_BOOK_ID = {
   'Esdras':15,'Nehemías':16,'Ester':17,
   'Salmo':19,'Salmos':19,'Proverbios':20,
   'Eclesiastés':21,'Cantares':22,'Cantar de los Cantares':22,
-  'Isaías':23,'Jeremías':24,'Lamentaciones':25,'Ezequiel':26,
+  'Isaías':23,'Jeremías':24,'Lamentaciones':25,'Ezequiel':26,'Daniel':27,
   'Oseas':28,'Joel':29,'Amós':30,'Abdías':31,'Jonás':32,
   'Miqueas':33,'Nahúm':34,'Habacuc':35,'Sofonías':36,'Hageo':37,
   'Zacarías':38,'Malaquías':39,
@@ -4583,41 +4619,42 @@ export default function App() {
   // match the book against the dictionary, auto-fetch each verse's text.
   const [bulkImportState, setBulkImportState] = useState(null); // null | { text, busy, progress, failed }
 
-  // Match a pasted line's leading book token against BIBLE_BOOKS (full
-  // names, zh abbrs, simplified, English). Longest name wins so 「約翰一書」
-  // beats 「約」. Returns { bookInfo, rest } or null.
+  // Match a pasted line's leading book token against every known book name:
+  // Chinese full/abbr + simplified, English full/abbr, the current language's
+  // abbreviation (e.g. Spanish "Sal"), and the full-name maps that carry
+  // Spanish/Korean/Japanese/German/… full names ("Salmos", "시편", "詩篇").
+  // Longest name wins so 「約翰一書」 beats 「約」 and "1 Juan" beats "Juan".
+  // Returns { bookInfo, name, rest } or null.
+  const bookById = (id) => BIBLE_BOOKS.find(b => b.id === id);
   const matchBookInLine = (line) => {
     const norm = String(line).replace(/[　]+/g, ' ').trim();
     let best = null;
+    const consider = (name, bookInfo) => {
+      if (!name || !bookInfo || !norm.startsWith(name)) return;
+      const rest = norm.slice(name.length).trim();
+      if (/^\d/.test(rest) && (!best || name.length > best.name.length)) {
+        best = { bookInfo, name, rest };
+      }
+    };
     for (const b of BIBLE_BOOKS) {
-      const candidates = [...(b.names || []), ...(b.cn || [])].filter(Boolean);
-      for (const name of candidates) {
-        if (norm.startsWith(name)) {
-          const rest = norm.slice(name.length).trim();
-          if (/^\d/.test(rest) && (!best || name.length > best.name.length)) {
-            best = { bookInfo: b, name, rest };
-          }
-        }
+      for (const name of [...(b.names || []), ...(b.cn || []), getBookAbbr(b, version)]) {
+        consider(name, b);
       }
     }
-    return best ? { bookInfo: best.bookInfo, rest: best.rest } : null;
+    // Full-name maps — one entry per spelling → book id.
+    for (const map of [MULTILANG_FULL_BOOK_ID, KOREAN_FULL_BOOK_ID]) {
+      for (const name in map) consider(name, bookById(map[name]));
+    }
+    return best ? { bookInfo: best.bookInfo, name: best.name, rest: best.rest } : null;
   };
 
   // Fetch a verse's text for (book, "ch:vs[-vs]") — local DB first, then
   // the same remote fallbacks the single-row editor uses. Returns ''.
   const fetchVerseTextByBook = async (bookInfo, sanitized) => {
-    const chapMatch = sanitized.match(/^(\d+)/);
-    if (!chapMatch) return '';
-    const chapter = parseInt(chapMatch[1]);
-    let startVerse = 1, endVerse = 999;
-    const verseMatch = sanitized.match(/:(\d+)(?:-(\d+))?/);
-    if (verseMatch) {
-      startVerse = parseInt(verseMatch[1]);
-      endVerse = verseMatch[2] ? parseInt(verseMatch[2]) : startVerse;
-    }
+    if (!/^\d/.test(sanitized)) return '';
     const bookAbbr = getBookAbbr(bookInfo, version);
     const refStr = `${bookAbbr} ${sanitized}`;
-    // 1) Local language DB.
+    // 1) Local language DB (fast path when the verse already ships with the app).
     const db = loadedLangs[version]?.verses || [];
     const sanitizeRef = (str) => str.toString().replace(/\s+/g, '').replace(/[–—~]/g, '-').replace(/[：]/g, ':').toLowerCase();
     const searchRef = sanitizeRef(refStr);
@@ -4625,36 +4662,8 @@ export default function App() {
       if (!dbVerse.reference) continue;
       if (sanitizeRef(dbVerse.reference) === searchRef) return dbVerse.text || '';
     }
-    // 2) Remote fallbacks. English versions each hit their own translation's
-    // API (ESV / NIV / KJV) — never a KJV stand-in for ESV/NIV.
-    try {
-      if (isEnglishBibleVersion(version)) {
-        const englishRef = `${bookInfo.names?.[2] || bookInfo.names?.[0] || bookAbbr} ${sanitized}`;
-        const fetched = await fetchBibleVerseFromAPI(englishRef, version);
-        return fetched ? String(fetched).replace(/\s+/g, ' ').trim() : '';
-      }
-      const bollsVersion = 'CUV';
-      const res = await fetch(`https://bolls.life/get-text/${bollsVersion}/${bookInfo.id}/${chapter}/`);
-      if (!res.ok) return '';
-      const json = await res.json();
-      const filtered = json.filter(vv => vv.verse >= startVerse && vv.verse <= endVerse);
-      if (filtered.length === 0) return '';
-      let combined = (version === 'cuv' || version === 'cuvs')
-        ? filtered.map(vv => vv.text.replace(/<[^>]+>/g, '').replace(/\s+/g, '')).join('')
-        : filtered.map(vv => vv.text.replace(/<[^>]+>/g, '').trim()).join(' ');
-      combined = combined
-        .replace(/([A-Za-z])(\d{2,5})(?=\s|[.,;:!?]|$)/g, '$1')
-        .replace(/\s+/g, ' ')
-        .trim();
-      if (version === 'cuvs') {
-        const OpenCC = await import('opencc-js');
-        const converter = OpenCC.Converter({ from: 'tw', to: 'cn' });
-        combined = converter(combined);
-      }
-      return combined;
-    } catch {
-      return '';
-    }
+    // 2) Remote — language-aware (English APIs / bolls-per-language / getbible).
+    return await fetchEditorVerseText({ bookInfo, sanitized, version });
   };
 
   const runBulkImport = async () => {
@@ -4671,7 +4680,9 @@ export default function App() {
         failed.push(line);
       } else {
         const sanitized = m.rest.replace(/[～~]/g, '-').replace(/[：]/g, ':').trim();
-        const refStr = `${getBookAbbr(m.bookInfo, version)} ${sanitized}`;
+        // Keep the book name the user actually typed (e.g. "Salmos") so the
+        // stored reference matches the set's language instead of a zh/abbr form.
+        const refStr = `${m.name} ${sanitized}`;
         const text = await fetchVerseTextByBook(m.bookInfo, sanitized);
         if (text) {
           imported.push({ book: m.bookInfo.id, verseInput: sanitized, reference: refStr, text });
@@ -15949,17 +15960,7 @@ const deDict = {
                               const autoFetchVerse = async (bookInfo, verseInput, verseIdx) => {
                                 if (!bookInfo || !verseInput) return;
                                 const sanitized = verseInput.replace(/[～~]/g, '-').replace(/[：]/g, ':').trim();
-                                const chapMatch = sanitized.match(/^(\d+)/);
-                                if (!chapMatch) return;
-                                const chapter = parseInt(chapMatch[1]);
-                                let startVerse = 1, endVerse = 999;
-                                const verseMatch = sanitized.match(/:(\d+)(?:-(\d+))?/);
-                                if (verseMatch) {
-                                  startVerse = parseInt(verseMatch[1]);
-                                  endVerse = verseMatch[2] ? parseInt(verseMatch[2]) : startVerse;
-                                } else if (!sanitized.includes(':')) {
-                                  startVerse = 1; endVerse = 999;
-                                }
+                                if (!/^\d/.test(sanitized)) return;
                                 const bookAbbr = getBookAbbr(bookInfo, version);
                                 const refStr = `${bookAbbr} ${sanitized}`;
                                 setEditingCustomSet(prev => {
@@ -15993,40 +15994,11 @@ const deDict = {
                                   return;
                                 }
                                 try {
-                                  // English versions each hit their own translation's API
-                                  // (ESV / NIV / KJV) — never a KJV stand-in for ESV/NIV.
-                                  if (isEnglishBibleVersion(version)) {
-                                    const englishRef = `${bookInfo.names?.[2] || bookInfo.names?.[0] || bookAbbr} ${sanitized}`;
-                                    const fetched = await fetchBibleVerseFromAPI(englishRef, version);
-                                    const combined = fetched ? String(fetched).replace(/\s+/g, ' ').trim() : '';
-                                    if (!combined) throw new Error("No verses");
-                                    setEditingCustomSet(prev => {
-                                      const nv = [...prev.verses]; nv[verseIdx] = { ...nv[verseIdx], text: combined }; return { ...prev, verses: nv };
-                                    });
-                                    return;
-                                  }
-
-                                  const bollsVersion = 'CUV';
-                                  const res = await fetch(`https://bolls.life/get-text/${bollsVersion}/${bookInfo.id}/${chapter}/`);
-                                  if (!res.ok) throw new Error("API error");
-                                  const json = await res.json();
-                                  const filtered = json.filter(vv => vv.verse >= startVerse && vv.verse <= endVerse);
-                                  if (filtered.length === 0) throw new Error("No verses");
-                                  let combined = (version === 'cuv' || version === 'cuvs')
-                                    ? filtered.map(vv => vv.text.replace(/<[^>]+>/g, '').replace(/\s+/g, '')).join('')
-                                    : filtered.map(vv => vv.text.replace(/<[^>]+>/g, '').trim()).join(' ');
-
-                                  combined = combined
-                                    .replace(/([A-Za-z])(\d{2,5})(?=\s|[.,;:!?]|$)/g, '$1')
-                                    .replace(/\s+/g, ' ')
-                                    .trim();
-
-                                  if (version === 'cuvs') {
-                                    const OpenCC = await import('opencc-js');
-                                    const converter = OpenCC.Converter({ from: 'tw', to: 'cn' });
-                                    combined = converter(combined);
-                                  }
-                                  
+                                  // Language-aware fetch — English APIs, or bolls/getbible
+                                  // with the correct per-language slug (never a Chinese
+                                  // stand-in for a Spanish/Korean/etc. set).
+                                  const combined = await fetchEditorVerseText({ bookInfo, sanitized, version });
+                                  if (!combined) throw new Error("No verses");
                                   setEditingCustomSet(prev => {
                                     const nv = [...prev.verses]; nv[verseIdx] = { ...nv[verseIdx], text: combined }; return { ...prev, verses: nv };
                                   });
