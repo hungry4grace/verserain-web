@@ -879,23 +879,51 @@ export default class Server {
                const sets = Array.from(list.values());
                return new Response(JSON.stringify(sets), { status: 200, headers: corsHeaders });
             } else if (request.method === "POST") {
+               // Publishing is open to any logged-in user (owner-protected):
+               // a set id can only be overwritten by its original publisher's
+               // email, or by an admin. This lets creators like Bene publish
+               // without being on the admin whitelist while preventing
+               // strangers from overwriting someone else's published set.
                const payload = await request.json();
-               if (!isCustomSetWriteAuthorized() && !isTrustedAdminEmail(payload?.adminEmail) && !isTrustedAdminName(payload?.adminName)) {
-                  return new Response(JSON.stringify({ error: "Forbidden" }), { status: 403, headers: corsHeaders });
+               const isAdmin = isCustomSetWriteAuthorized() || isTrustedAdminEmail(payload?.adminEmail) || isTrustedAdminName(payload?.adminName);
+               const requesterEmail = String(payload?.adminEmail || '').trim().toLowerCase();
+               if (!payload?.id) {
+                  return new Response(JSON.stringify({ error: 'id required' }), { status: 400, headers: corsHeaders });
                }
                const existing = await this.room.storage.get(`verseset:${payload.id}`);
+               if (!isAdmin) {
+                  if (!requesterEmail) {
+                     return new Response(JSON.stringify({ error: 'Login required to publish' }), { status: 403, headers: corsHeaders });
+                  }
+                  // Non-admins may create NEW sets or update sets they own.
+                  // Legacy sets without ownerEmail are treated as admin-owned.
+                  if (existing && existing.ownerEmail !== requesterEmail) {
+                     return new Response(JSON.stringify({ error: 'Only the original publisher can update this set' }), { status: 403, headers: corsHeaders });
+                  }
+               }
                if (existing && existing.authorName && existing.authorName !== "Anonymous") {
                   payload.authorName = existing.authorName;
                }
                if (payload.lastEditorName) {
                   payload.lastEditedAt = payload.lastEditedAt || new Date().toISOString();
                }
+               // Bind ownership on first publish; preserve it on updates.
+               payload.ownerEmail = existing?.ownerEmail || requesterEmail || '';
                await this.room.storage.put(`verseset:${payload.id}`, payload);
                return new Response(JSON.stringify({ success: true }), { status: 200, headers: corsHeaders });
             } else if (request.method === "DELETE") {
                const { id, adminEmail, adminName } = await request.json();
-               if (!isCustomSetWriteAuthorized() && !isTrustedAdminEmail(adminEmail) && !isTrustedAdminName(adminName)) {
-                  return new Response(JSON.stringify({ error: "Forbidden" }), { status: 403, headers: corsHeaders });
+               const isAdmin = isCustomSetWriteAuthorized() || isTrustedAdminEmail(adminEmail) || isTrustedAdminName(adminName);
+               if (!isAdmin) {
+                  const requesterEmail = String(adminEmail || '').trim().toLowerCase();
+                  const existing = await this.room.storage.get(`verseset:${id}`);
+                  // Unpublish is allowed for the set's own publisher.
+                  if (!existing) {
+                     return new Response(JSON.stringify({ success: true }), { status: 200, headers: corsHeaders });
+                  }
+                  if (!requesterEmail || existing.ownerEmail !== requesterEmail) {
+                     return new Response(JSON.stringify({ error: "Forbidden" }), { status: 403, headers: corsHeaders });
+                  }
                }
                await this.room.storage.delete(`verseset:${id}`);
                return new Response(JSON.stringify({ success: true }), { status: 200, headers: corsHeaders });

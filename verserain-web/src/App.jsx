@@ -15997,6 +15997,15 @@ const deDict = {
                                   method: "POST",
                                   headers: { "Content-Type": "application/json" },
                                   body: JSON.stringify({ ...publishedObj, adminEmail: userEmail, adminName: playerName })
+                                }).then(async (res) => {
+                                  if (res.ok) return;
+                                  // Surface the failure — silent 403s made
+                                  // creators think their set was published
+                                  // when nobody else could see it.
+                                  const d = await res.json().catch(() => ({}));
+                                  setToast(t(`發布失敗:${d.error || res.status}。其他人將看不到這個題庫。`, `Publish failed: ${d.error || res.status}. Others won't see this set.`));
+                                  setTimeout(() => setToast(null), 6000);
+                                  setPublishedVerseSets(prev => prev.filter(p => p.id !== setObj.id));
                                 }).catch(e => console.error("Publish failed", e));
 
                                 setPublishedVerseSets(prev => {
