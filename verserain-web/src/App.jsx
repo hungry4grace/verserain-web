@@ -8046,6 +8046,7 @@ export default function App() {
 
   // ─── Farsi (Persian) UI Dictionary ───────────────────────────────────────
   const faDict = {
+    '麥克風聽見：': "شنیده شد:",
     '背景圖片': "پس‌زمینه",
     '預設(每日輪換)': "پیش‌فرض (چرخش روزانه)",
     '上傳圖片': "بارگذاری تصویر",
@@ -8553,6 +8554,7 @@ export default function App() {
   // Covers the high-value UI surface (navigation, auth, game controls,
   // voice settings); unlisted keys fall back to English via t().
   const arDict = {
+    '麥克風聽見：': "المسموع:",
     '背景圖片': "الخلفية",
     '預設(每日輪換)': "افتراضي (يتغيّر يوميًا)",
     '上傳圖片': "رفع صورة",
@@ -8748,6 +8750,7 @@ export default function App() {
 
   // ─── Hebrew (עברית) UI Dictionary ────────────────────────────────────────
   const heDict = {
+    '麥克風聽見：': "נשמע:",
     '背景圖片': "רקע",
     '預設(每日輪換)': "ברירת מחדל (מתחלף מדי יום)",
     '上傳圖片': "העלאת תמונה",
@@ -9465,6 +9468,7 @@ export default function App() {
 
 
   const jaDict = {
+    '麥克風聽見：': "聞き取り:",
     '背景圖片': "背景",
     '預設(每日輪換)': "デフォルト(毎日切替)",
     '上傳圖片': "アップロード",
@@ -9868,6 +9872,7 @@ export default function App() {
 };
 
   const koDict = {
+    '麥克風聽見：': "들린 내용:",
     '背景圖片': "배경",
     '預設(每日輪換)': "기본(매일 전환)",
     '上傳圖片': "업로드",
@@ -10392,6 +10397,7 @@ export default function App() {
 
 
 const zhcnDict = {
+    '麥克風聽見：': "麦克风听见:",
     '背景圖片': "背景图片",
     '預設(每日輪換)': "预设(每日轮换)",
     '上傳圖片': "上传图片",
@@ -10547,6 +10553,7 @@ const zhcnDict = {
 
 // ─── Vietnamese (Tiếng Việt) UI Dictionary ────────────────────────────────────────
 const viDict = {
+    '麥克風聽見：': "Nghe được:",
     '背景圖片': "Hình nền",
     '預設(每日輪換)': "Mặc định (đổi mỗi ngày)",
     '上傳圖片': "Tải lên",
@@ -10710,6 +10717,7 @@ const viDict = {
 };
 
 const myDict = {
+    '麥克風聽見：': "ကြားရသည်:",
     '背景圖片': "နောက်ခံပုံ",
     '預設(每日輪換)': "မူရင်း(နေ့စဉ်လှည့်)",
     '上傳圖片': "ပုံတင်ရန်",
@@ -10861,6 +10869,7 @@ const myDict = {
 };
 
 const idDict = {
+    '麥克風聽見：': "Terdengar:",
     '背景圖片': "Latar",
     '預設(每日輪換)': "Bawaan (berganti tiap hari)",
     '上傳圖片': "Unggah",
@@ -11311,6 +11320,7 @@ const idDict = {
 };
 
 const msDict = {
+    '麥克風聽見：': "Didengar:",
     '背景圖片': "Latar",
     '預設(每日輪換)': "Lalai (bertukar harian)",
     '上傳圖片': "Muat naik",
@@ -11431,6 +11441,7 @@ const msDict = {
 
 
 const esDict = {
+    '麥克風聽見：': "Escuchado:",
     '背景圖片': "Fondo",
     '預設(每日輪換)': "Predeterminado (rota)",
     '上傳圖片': "Subir",
@@ -11620,6 +11631,7 @@ const esDict = {
 };
 
 const trDict = {
+    '麥克風聽見：': "Duyulan:",
     '背景圖片': "Arka plan",
     '預設(每日輪換)': "Varsayılan (günlük değişir)",
     '上傳圖片': "Yükle",
@@ -11809,6 +11821,7 @@ const trDict = {
 };
 
 const deDict = {
+    '麥克風聽見：': "Gehört:",
     '背景圖片': "Hintergrund",
     '預設(每日輪換)': "Standard (täglich)",
     '上傳圖片': "Hochladen",
@@ -15655,7 +15668,7 @@ const deDict = {
           <div style={{ position: 'fixed', bottom: '6.5rem', right: '1.5rem', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.8rem', zIndex: 100 }}>
             {liveTranscript && isMicOn && gameState === 'playing' && (
               <div className="hud-glass" style={{ padding: '8px 16px', fontSize: '1rem', color: '#93c5fd', maxWidth: '80vw', textAlign: 'right', wordBreak: 'break-word', border: '1px solid rgba(147, 197, 253, 0.4)', borderRadius: '12px', whiteSpace: 'pre-wrap' }}>
-                <span style={{ fontSize: '0.8rem', color: '#64748b', display: 'block', marginBottom: '2px' }}>麥克風聽見：</span>
+                <span style={{ fontSize: '0.8rem', color: '#64748b', display: 'block', marginBottom: '2px' }}>{t('麥克風聽見：', 'Heard:')}</span>
                 <span style={{ color: '#fff' }}>"{liveTranscript}"</span>
               </div>
             )}
@@ -17623,7 +17636,7 @@ const deDict = {
                                           e.stopPropagation();
                                           setEditingCustomSet({ ...set, isPublished: true, verses: set.verses?.map(parseVerseRef) || [] });
                                           setMainTab('custom_verses');
-                                        }} style={{ background: '#f1f5f9', border: '1px solid #cbd5e1', padding: '0.2rem 0.5rem', borderRadius: '4px', cursor: 'pointer', fontSize: '0.8rem', color: '#475569' }}>Admin 編輯</button>
+                                        }} style={{ background: '#f1f5f9', border: '1px solid #cbd5e1', padding: '0.2rem 0.5rem', borderRadius: '4px', cursor: 'pointer', fontSize: '0.8rem', color: '#475569' }}>Admin {t('編輯', 'Edit')}</button>
                                         {isSuperAdmin && (
                                           <button onClick={(e) => {
                                             e.stopPropagation();
@@ -17652,7 +17665,7 @@ const deDict = {
                                                   alert(t("刪除失敗，請重新登入後再試。", "Delete failed. Please log in again and try once more."));
                                                 });
                                             }
-                                          }} style={{ background: '#fee2e2', border: '1px solid #fca5a5', color: '#ef4444', padding: '0.2rem 0.5rem', borderRadius: '4px', cursor: 'pointer', fontSize: '0.8rem' }}>Admin 刪除</button>
+                                          }} style={{ background: '#fee2e2', border: '1px solid #fca5a5', color: '#ef4444', padding: '0.2rem 0.5rem', borderRadius: '4px', cursor: 'pointer', fontSize: '0.8rem' }}>Admin {t('刪除', 'Delete')}</button>
                                         )}
                                       </span>
                                     )}
