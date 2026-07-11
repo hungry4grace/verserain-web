@@ -2039,7 +2039,7 @@ function DailyVerseRainExperience({ verse, version, t, onRead, onChallenge, onSh
     if (!bgmRef.current) {
       bgmRef.current = new Audio('/bgm.mp3');
       bgmRef.current.loop = true;
-      bgmRef.current.volume = 0.12;
+      bgmRef.current.volume = 0.2;
     }
     return () => {
       bgmRef.current?.pause();
@@ -2482,7 +2482,7 @@ function VerseSetContinuousRainPlayer({
     if (!bgmRef.current) {
       bgmRef.current = new Audio('/bgm.mp3');
       bgmRef.current.loop = true;
-      bgmRef.current.volume = 0.11;
+      bgmRef.current.volume = 0.18;
     }
 
     return () => {
@@ -5228,7 +5228,7 @@ export default function App() {
     if (!bgmAudioRef.current) {
       bgmAudioRef.current = new Audio('/bgm.mp3');
       bgmAudioRef.current.loop = true;
-      bgmAudioRef.current.volume = 0.1;
+      bgmAudioRef.current.volume = 0.16;
     }
     if (isMusicPlaying) {
       const playPromise = bgmAudioRef.current.play();
