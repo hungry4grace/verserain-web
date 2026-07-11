@@ -1977,6 +1977,8 @@ function MemberCard({ memberEmail, isMe, isAdmin, displayName, schedule, setStat
   const [noteEmoji, setNoteEmoji] = useState(CHEER_EMOJIS[1]); // default 🙏
   const [noteText, setNoteText] = useState('');
   const [sent, setSent] = useState(false);
+  const [sentEmoji, setSentEmoji] = useState('');   // last emoji tapped — for the ✓ + brief highlight
+  const [emojiBusy, setEmojiBusy] = useState(false);
 
   const sendNote = async () => {
     const text = noteText.trim();
@@ -1984,6 +1986,18 @@ function MemberCard({ memberEmail, isMe, isAdmin, displayName, schedule, setStat
     await onCheer(noteEmoji, text);
     setNoteText('');
     setNoteOpen(false);
+    setSentEmoji(noteEmoji);
+    setSent(true);
+    setTimeout(() => setSent(false), 1500);
+  };
+
+  // Tapping a cheer emoji had no visible response — send it and show the same
+  // "已送出 ✓" confirmation (with the emoji) that the note path already uses.
+  const sendEmoji = async (e) => {
+    if (emojiBusy) return;
+    setEmojiBusy(true);
+    try { await onCheer(e); } finally { setEmojiBusy(false); }
+    setSentEmoji(e);
     setSent(true);
     setTimeout(() => setSent(false), 1500);
   };
@@ -2021,10 +2035,13 @@ function MemberCard({ memberEmail, isMe, isAdmin, displayName, schedule, setStat
             {CHEER_EMOJIS.map(e => (
               <button
                 key={e}
-                onClick={() => onCheer(e)}
+                onClick={() => sendEmoji(e)}
+                disabled={emojiBusy}
                 style={{
-                  background: 'transparent', border: `1px solid ${colors.border}`,
-                  borderRadius: 6, cursor: 'pointer', padding: '0.2rem 0.4rem', fontSize: '1rem',
+                  background: sent && sentEmoji === e ? colors.cardSoft : 'transparent',
+                  border: `1px solid ${sent && sentEmoji === e ? colors.accent : colors.border}`,
+                  borderRadius: 6, cursor: emojiBusy ? 'wait' : 'pointer', padding: '0.2rem 0.4rem', fontSize: '1rem',
+                  transform: sent && sentEmoji === e ? 'scale(1.15)' : 'none', transition: 'transform 0.12s',
                 }}
                 title={t('送鼓勵', 'Send encouragement')}
               >
@@ -2044,8 +2061,8 @@ function MemberCard({ memberEmail, isMe, isAdmin, displayName, schedule, setStat
             </button>
           </div>
           {sent && (
-            <div style={{ color: colors.muted, fontSize: '0.75rem', marginTop: 4 }}>
-              {t('已送出 ✓', 'Sent ✓')}
+            <div style={{ color: colors.accent, fontSize: '0.75rem', marginTop: 4, fontWeight: 600 }}>
+              {sentEmoji} {t('已送出 ✓', 'Sent ✓')}
             </div>
           )}
           {noteOpen && (
