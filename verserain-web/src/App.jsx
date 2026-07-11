@@ -2714,8 +2714,15 @@ function VerseSetContinuousRainPlayer({
         onCompleteRef.current?.();
         return;
       }
-      const nextVerse = pickRandomVerse(versesRef.current, currentVerse.reference);
-      if (nextVerse?.reference === currentVerse.reference) {
+      // 按序模式 loops through the set in order; 隨機 (default) shuffles.
+      const list = versesRef.current || [];
+      const nextVerse = verseSet?.playOrder === 'sequential'
+        ? (() => {
+            const at = list.findIndex(v => v?.reference === currentVerse.reference);
+            return list[(at + 1) % Math.max(1, list.length)] || null;
+          })()
+        : pickRandomVerse(list, currentVerse.reference);
+      if (!nextVerse || nextVerse.reference === currentVerse.reference) {
         // Single-verse set — bump playKey to force replay
         setPlayKey(k => k + 1);
       } else {
@@ -5981,6 +5988,20 @@ export default function App() {
   const [multiplayerSelectedVerses, setMultiplayerSelectedVerses] = useState([]);
   const [randomPickCount, setRandomPickCount] = useState(1);
   const [continuousRainSet, setContinuousRainSet] = useState(null);
+  // 播放順序選擇 — holds the set while the user picks 隨機 or 按序.
+  const [playOrderChooser, setPlayOrderChooser] = useState(null);
+  const startContinuousPlay = (set, order) => {
+    if (!set?.verses?.length) return;
+    setPlayOrderChooser(null);
+    setContinuousRainSet({
+      id: set.id,
+      title: set.title,
+      verses: set.verses,
+      playOrder: order, // 'random' | 'sequential' — both loop forever
+      startVerse: order === 'sequential' ? set.verses[0] : undefined,
+      voiceSetId: set.voiceSetId || null,
+    });
+  };
   const [multiplayerSearchText, setMultiplayerSearchText] = useState('');
   const [showPickerBrowser, setShowPickerBrowser] = useState(false);
 
@@ -16905,18 +16926,14 @@ const deDict = {
                               onClick={() => {
                                 initAudio();
                                 if (!currentSet?.verses?.length) return;
-                                setContinuousRainSet({
-                                  id: currentSet.id,
-                                  title: currentSet.title,
-                                  verses: currentSet.verses
-                                });
+                                setPlayOrderChooser(currentSet);
                               }}
-                              title={t("連續隨機播放這個經文組", "Continuously shuffle-play this verse set")}
+                              title={t("連續播放這個經文組（隨機或按序）", "Continuously play this verse set (shuffled or in order)")}
                               style={{ backgroundColor: '#8b5cf6', color: 'white', border: 'none', borderRadius: '6px', padding: '0 0.8rem', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'transform 0.1s', fontWeight: 'bold', gap: '5px' }}
                               onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
                               onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
                             >
-                              <Headphones size={16} fill="white" /> {t("隨機播放", "Shuffle Play")}
+                              <Headphones size={16} fill="white" /> {t("播放", "Play")}
                             </button>
 
                             <button
@@ -19693,6 +19710,33 @@ const deDict = {
                 style={{ marginTop: '1.2rem', background: 'rgba(148,163,184,0.15)', color: '#94a3b8', border: '1px solid rgba(148,163,184,0.35)', borderRadius: '999px', padding: '0.45rem 1.3rem', fontSize: '0.9rem', cursor: 'pointer' }}
               >
                 {t('跳過 ▸', 'Skip ▸')}
+              </button>
+            </div>
+          </div>
+        )}
+        {playOrderChooser && (
+          <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.6)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1200, padding: '1rem' }} onClick={(e) => { if (e.target === e.currentTarget) setPlayOrderChooser(null); }}>
+            <div style={{ background: '#fff', borderRadius: '14px', padding: '1.6rem 1.5rem', width: '100%', maxWidth: '380px', boxShadow: '0 20px 40px rgba(0,0,0,0.25)', textAlign: 'center' }}>
+              <h3 style={{ margin: '0 0 0.3rem', color: '#1e293b' }}>{t('播放方式', 'Play Mode')}</h3>
+              <p style={{ margin: '0 0 1.2rem', color: '#64748b', fontSize: '0.9rem' }}>
+                {playOrderChooser.title} · {t('無限循環播放', 'Loops forever')}
+              </p>
+              <div style={{ display: 'flex', gap: '0.8rem' }}>
+                <button
+                  onClick={() => startContinuousPlay(playOrderChooser, 'random')}
+                  style={{ flex: 1, padding: '0.9rem 0.5rem', borderRadius: '10px', border: 'none', background: 'linear-gradient(135deg, #a78bfa, #8b5cf6)', color: '#fff', fontWeight: 'bold', fontSize: '1rem', cursor: 'pointer' }}
+                >
+                  🔀 {t('隨機', 'Shuffle')}
+                </button>
+                <button
+                  onClick={() => startContinuousPlay(playOrderChooser, 'sequential')}
+                  style={{ flex: 1, padding: '0.9rem 0.5rem', borderRadius: '10px', border: 'none', background: 'linear-gradient(135deg, #60a5fa, #3b82f6)', color: '#fff', fontWeight: 'bold', fontSize: '1rem', cursor: 'pointer' }}
+                >
+                  🔁 {t('按序', 'In Order')}
+                </button>
+              </div>
+              <button onClick={() => setPlayOrderChooser(null)} style={{ marginTop: '0.9rem', background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer', fontSize: '0.9rem' }}>
+                {t('取消', 'Cancel')}
               </button>
             </div>
           </div>
