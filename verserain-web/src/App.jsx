@@ -5389,14 +5389,20 @@ export default function App() {
       sortedSets.sort((a, b) => topicStrokeCollator.compare(titleSortKey(a.title), titleSortKey(b.title)));
       return sortedSets;
     }
-    // Unified "newest" ordering — anything with a real timestamp competes head-to-head:
-    //   1. set.createdAt (explicit ISO date on the set)               → Date.parse → ms
-    //   2. custom- IDs                                                → numeric suffix → ms
-    //   3. published-over-official: look up createdAt from base       → official's ISO date
-    //   4. anything else without timestamp                            → baseIndex (small number)
-    // Buckets 1-3 use real epoch ms so they always rank above bucket 4.
-    // Bucket 3 matters because admin-edited published officials lack createdAt themselves.
-    const getEffectiveCreatedAt = (set) => {
+    // Unified "newest" = most-recently-updated. Anything with a real timestamp
+    // competes head-to-head, preferring the last-edit time over creation:
+    //   1. set.lastEditedAt (written on every save/admin edit)        → Date.parse → ms
+    //   2. set.createdAt (explicit ISO date on the set)               → Date.parse → ms
+    //   3. custom- IDs                                                → numeric suffix → ms
+    //   4. published-over-official: look up the base's timestamps     → official's ISO date
+    //   5. anything else without timestamp                            → baseIndex (small number)
+    // Buckets 1-4 use real epoch ms so they always rank above bucket 5.
+    // Bucket 4 matters because admin-edited published officials lack their own timestamp.
+    const getEffectiveUpdatedAt = (set) => {
+      if (set?.lastEditedAt) {
+        const t = Date.parse(set.lastEditedAt);
+        if (Number.isFinite(t)) return t;
+      }
       if (set?.createdAt) {
         const t = Date.parse(set.createdAt);
         if (Number.isFinite(t)) return t;
@@ -5406,6 +5412,10 @@ export default function App() {
         if (Number.isFinite(ts)) return ts;
       }
       const baseMatch = baseVerseSets.find(b => b.id === set?.id);
+      if (baseMatch?.lastEditedAt) {
+        const t = Date.parse(baseMatch.lastEditedAt);
+        if (Number.isFinite(t)) return t;
+      }
       if (baseMatch?.createdAt) {
         const t = Date.parse(baseMatch.createdAt);
         if (Number.isFinite(t)) return t;
@@ -5413,7 +5423,7 @@ export default function App() {
       const indexInBase = baseVerseSets.findIndex(b => b.id === set?.id);
       return indexInBase !== -1 ? indexInBase : -1;
     };
-    sortedSets.sort((a, b) => getEffectiveCreatedAt(b) - getEffectiveCreatedAt(a));
+    sortedSets.sort((a, b) => getEffectiveUpdatedAt(b) - getEffectiveUpdatedAt(a));
     return sortedSets;
   }, [activeVerseSets, baseVerseSets, versesetsSort, viewCounts]);
   const authorVerseSets = React.useMemo(() => {
