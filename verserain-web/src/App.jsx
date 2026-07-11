@@ -15848,7 +15848,7 @@ const deDict = {
                             {editorVoiceTarget && editingCustomSet.id && (
                               <VerseVoiceRecorder
                                 t={t}
-                                reference={editorVoiceTarget.reference}
+                                reference={formatVerseReferenceForDisplay(editorVoiceTarget.reference, version)}
                                 verseText={editorVoiceTarget.text}
                                 onUpload={async ({ blob, mime, dur }) => {
                                   const meta = await uploadVerseVoice({
