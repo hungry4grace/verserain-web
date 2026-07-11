@@ -5125,6 +5125,19 @@ export default function App() {
   );
 
   const currentSet = (selectedSetId ? (safeActiveSets.find(s => s.id === selectedSetId) || customVerseSets.find(s => s.id === selectedSetId)) : null) || safeActiveSets[0];
+  // 創作者親聲朗讀 — recordings map for the set detail page, so verse rows
+  // can show a ⭐ on recorded verses.
+  const [currentSetVoices, setCurrentSetVoices] = useState({});
+  useEffect(() => {
+    let cancelled = false;
+    setCurrentSetVoices({});
+    const id = currentSet?.id;
+    if (!id) return undefined;
+    setVoiceApi.getAll(id)
+      .then(res => { if (!cancelled) setCurrentSetVoices(res?.voices || {}); })
+      .catch(() => { /* no recordings */ });
+    return () => { cancelled = true; };
+  }, [currentSet?.id]);
   const getVerseSetAuthorName = React.useCallback((set) => {
     if (!set) return "";
     if (set.authorName && set.authorName !== "Anonymous") return set.authorName;
@@ -17300,12 +17313,17 @@ const deDict = {
                                           e.stopPropagation();
                                           playSingleVerseCard(v, currentSet?.id);
                                         }}
-                                        title={t("播放這節經文", "Play this verse")}
-                                        style={{ backgroundColor: '#8b5cf6', color: 'white', border: 'none', borderRadius: '6px', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'transform 0.1s' }}
+                                        title={currentSetVoices[v.reference]
+                                          ? t(`播放這節經文(${currentSetVoices[v.reference].recordedBy || '創作者'}親聲朗讀)`, `Play this verse (read by ${currentSetVoices[v.reference].recordedBy || 'the creator'})`)
+                                          : t("播放這節經文", "Play this verse")}
+                                        style={{ position: 'relative', backgroundColor: '#8b5cf6', color: 'white', border: 'none', borderRadius: '6px', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'transform 0.1s' }}
                                         onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.1)'}
                                         onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
                                       >
                                         <Headphones size={14} fill="white" />
+                                        {currentSetVoices[v.reference] && (
+                                          <span style={{ position: 'absolute', top: '-7px', right: '-7px', fontSize: '0.8rem', filter: 'drop-shadow(0 1px 1px rgba(0,0,0,0.35))' }} aria-label={t('有創作者錄音', 'Creator recording available')}>⭐</span>
+                                        )}
                                       </button>
                                       <button
                                         onClick={(e) => {
@@ -17325,10 +17343,20 @@ const deDict = {
                                       <button
                                         onClick={(e) => {
                                           e.stopPropagation();
-                                          const link = buildPublicShareUrl(window.location.pathname, { challenge: v.reference, m: playMode, dx: distractionLevel });
+                                          // Share the LISTEN experience (/lc card link with the
+                                          // set context) — recipients hear the verse (creator
+                                          // recording when available) instead of jumping straight
+                                          // into a challenge.
+                                          pushSetForSharing(currentSet, true);
+                                          const verseIdx = (currentSet?.verses || []).findIndex(x => x?.reference === v.reference);
+                                          const link = buildPublicShareUrl('/lc', {
+                                            set: currentSet?.id,
+                                            ...(verseIdx >= 0 ? { i: verseIdx } : { verse: v.reference }),
+                                            version,
+                                          });
                                           setQrShareModal({ url: link, reference: v.reference });
                                         }}
-                                        title={t("分享挑戰連結", "Share challenge link")}
+                                        title={t("分享聆聽連結", "Share listening link")}
                                         style={{ backgroundColor: '#ffffff', color: '#64748b', border: '1px solid #cbd5e1', borderRadius: '6px', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'all 0.1s' }}
                                         onMouseOver={(e) => { e.currentTarget.style.backgroundColor = '#f1f5f9'; e.currentTarget.style.color = '#3b82f6'; e.currentTarget.style.borderColor = '#3b82f6'; }}
                                         onMouseOut={(e) => { e.currentTarget.style.backgroundColor = '#ffffff'; e.currentTarget.style.color = '#64748b'; e.currentTarget.style.borderColor = '#cbd5e1'; }}
