@@ -54,12 +54,17 @@ export default function VerseVoiceRecorder({ t, reference, verseText, onUpload, 
       return;
     }
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      // Explicit DSP constraints: browser-side noise suppression, echo
+      // cancellation and auto gain make room recordings noticeably cleaner.
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true, channelCount: 1 },
+      });
       streamRef.current = stream;
       const mime = pickMime();
       mimeRef.current = mime || 'audio/webm';
-      // 24kbps opus is plenty for voice and keeps 90s ≈ 270KB raw.
-      const rec = new MediaRecorder(stream, mime ? { mimeType: mime, audioBitsPerSecond: 24000 } : { audioBitsPerSecond: 24000 });
+      // 48kbps opus ≈ transparent for speech; 120s ≈ 720KB raw (within the
+      // backend's 12-chunk upload cap).
+      const rec = new MediaRecorder(stream, mime ? { mimeType: mime, audioBitsPerSecond: 48000 } : { audioBitsPerSecond: 48000 });
       const parts = [];
       rec.ondataavailable = (e) => { if (e.data?.size) parts.push(e.data); };
       rec.onstop = () => {

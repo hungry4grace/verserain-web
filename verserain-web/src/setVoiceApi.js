@@ -50,7 +50,7 @@ export async function uploadVerseVoice({ email, setId, reference, blob, mime, du
   });
   const CHUNK = 100000; // chars — under the backend's 110000 cap
   const total = Math.ceil(base64.length / CHUNK);
-  if (total > 6) throw new Error('Recording too long — keep it under 2 minutes.');
+  if (total > 12) throw new Error('Recording too long — keep it under 2 minutes.');
   const voiceId = 'v_' + Math.random().toString(36).slice(2, 12);
   for (let i = 0; i < total; i++) {
     await setVoiceApi.uploadChunk(email, setId, voiceId, i, total, base64.slice(i * CHUNK, (i + 1) * CHUNK));

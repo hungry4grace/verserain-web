@@ -1079,7 +1079,7 @@ export default class Server {
             if (!email || !setId || !voiceId) return new Response(JSON.stringify({ error: 'email, setId, voiceId required' }), { status: 400, headers: corsHeaders });
             const idx = Number(index), tot = Number(total);
             if (!Number.isInteger(idx) || !Number.isInteger(tot) || idx < 0 || tot < 1 || idx >= tot) return new Response(JSON.stringify({ error: 'bad chunk index' }), { status: 400, headers: corsHeaders });
-            if (tot > 6) return new Response(JSON.stringify({ error: 'too many chunks (max 6)' }), { status: 400, headers: corsHeaders });
+            if (tot > 12) return new Response(JSON.stringify({ error: 'too many chunks (max 12)' }), { status: 400, headers: corsHeaders });
             if (typeof data !== 'string' || !data || data.length > 110000) return new Response(JSON.stringify({ error: 'bad chunk data' }), { status: 400, headers: corsHeaders });
             if (!/^v_[A-Za-z0-9]{6,20}$/.test(voiceId)) return new Response(JSON.stringify({ error: 'bad voiceId' }), { status: 400, headers: corsHeaders });
             await this.room.storage.put(`set-voice:${String(setId)}:${voiceId}:${idx}`, data);
@@ -2143,7 +2143,7 @@ export default class Server {
          // exceeds that. Chunk keys:
          //   team-voice:<teamId>:<itemId>:<voiceId>:<index>
          const VOICE_CHUNK_MAX_CHARS = 110000; // base64 chars per chunk, < 128KB value cap
-         const VOICE_MAX_CHUNKS = 6;           // ≈ 480KB base64 ≈ 90s of 24kbps opus
+         const VOICE_MAX_CHUNKS = 12;          // ≈ 1.2MB base64 ≈ 120s of 48kbps opus
 
          // POST /teams/voice/chunk — body: { email, teamId, itemId, voiceId, index, total, data }
          // Client uploads base64 slices before creating the voice reflection.
