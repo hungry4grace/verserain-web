@@ -119,14 +119,26 @@ export default function VerseVoiceRecorder({ t, reference, verseText, onUpload, 
     return buf;
   };
 
-  // Wire src → destination with dry + (convolver reverb) wet paths.
-  const connectChain = (ctx, src, destination, withReverb) => {
-    if (!withReverb) { src.connect(destination); return; }
+  // Wire src → destination. With the enhancer on, the signal first passes a
+  // voice-band EQ, then splits into dry + (convolver reverb) wet paths:
+  //   highpass 90Hz  — cuts rumble/handling noise below the voice range
+  //   lowpass  9kHz  — cuts hiss above the voice range
+  //   peaking +2dB @2.5kHz — gentle presence lift for clarity
+  const connectChain = (ctx, src, destination, withEnhance) => {
+    if (!withEnhance) { src.connect(destination); return; }
+    const hp = ctx.createBiquadFilter();
+    hp.type = 'highpass'; hp.frequency.value = 90; hp.Q.value = 0.7;
+    const lp = ctx.createBiquadFilter();
+    lp.type = 'lowpass'; lp.frequency.value = 9000; lp.Q.value = 0.7;
+    const presence = ctx.createBiquadFilter();
+    presence.type = 'peaking'; presence.frequency.value = 2500; presence.Q.value = 1; presence.gain.value = 2;
+    src.connect(hp); hp.connect(lp); lp.connect(presence);
+
     const dry = ctx.createGain(); dry.gain.value = 0.85;
     const wet = ctx.createGain(); wet.gain.value = 0.3;
     const conv = ctx.createConvolver(); conv.buffer = makeImpulse(ctx);
-    src.connect(dry); dry.connect(destination);
-    src.connect(conv); conv.connect(wet); wet.connect(destination);
+    presence.connect(dry); dry.connect(destination);
+    presence.connect(conv); conv.connect(wet); wet.connect(destination);
   };
 
   const stopPreview = () => {
@@ -255,7 +267,7 @@ export default function VerseVoiceRecorder({ t, reference, verseText, onUpload, 
                 onChange={(e) => { setBeautify(e.target.checked); stopPreview(); }}
                 style={{ width: '1rem', height: '1rem', cursor: 'pointer' }}
               />
-              ✨ {t('美化人聲(溫暖殘響)', 'Enhance voice (warm reverb)')}
+              ✨ {t('美化人聲(人聲EQ+溫暖殘響)', 'Enhance voice (voice EQ + warm reverb)')}
             </label>
             <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap' }}>
               <button onClick={togglePreview} disabled={phase !== 'preview'} style={{ padding: '0.55rem 1.1rem', borderRadius: 10, border: '1px solid #cbd5e1', background: '#f8fafc', color: '#334155', cursor: 'pointer' }}>
