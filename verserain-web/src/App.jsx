@@ -4370,7 +4370,24 @@ export default function App() {
   const [customVerseSets, setCustomVerseSets] = useState(() => {
     try {
       const saved = localStorage.getItem('verseRain_custom_sets');
-      return saved ? JSON.parse(saved) : [];
+      const arr = saved ? JSON.parse(saved) : [];
+      if (!Array.isArray(arr)) return [];
+      // Backfill lastEditedAt for sets created before the field existed, so
+      // the "most-recently-updated" sort has a value. Derive it from createdAt,
+      // else the `custom-<ms>` id's creation time.
+      let changed = false;
+      const withTs = arr.map(s => {
+        if (!s || s.lastEditedAt) return s;
+        let ms = s.createdAt ? Date.parse(s.createdAt) : NaN;
+        if (!Number.isFinite(ms) && String(s.id || '').startsWith('custom-')) {
+          ms = parseInt(String(s.id).replace('custom-', ''), 10);
+        }
+        if (!Number.isFinite(ms)) return s;
+        changed = true;
+        return { ...s, lastEditedAt: new Date(ms).toISOString() };
+      });
+      if (changed) localStorage.setItem('verseRain_custom_sets', JSON.stringify(withTs));
+      return withTs;
     } catch {
       return [];
     }
@@ -4742,7 +4759,11 @@ export default function App() {
   const [customSetsPage, setCustomSetsPage] = useState(1);
   const sortedCustomSets = React.useMemo(() => {
     const arr = [...customVerseSets];
-    const createdMs = (s) => {
+    // "最新" now means most-recently-updated: lastEditedAt (written on every
+    // save), falling back to createdAt, then the `custom-<ms>` id's creation
+    // time for sets that predate the timestamp fields.
+    const updatedMs = (s) => {
+      if (s?.lastEditedAt) { const ts = Date.parse(s.lastEditedAt); if (Number.isFinite(ts)) return ts; }
       if (s?.createdAt) { const ts = Date.parse(s.createdAt); if (Number.isFinite(ts)) return ts; }
       if (String(s?.id || '').startsWith('custom-')) {
         const ts = parseInt(String(s.id).replace('custom-', ''), 10);
@@ -4755,7 +4776,7 @@ export default function App() {
     } else if (customSetsSort === 'popular') {
       arr.sort((a, b) => (viewCounts[b.id] || 0) - (viewCounts[a.id] || 0));
     } else {
-      arr.sort((a, b) => createdMs(b) - createdMs(a));
+      arr.sort((a, b) => updatedMs(b) - updatedMs(a));
     }
     return arr;
   }, [customVerseSets, customSetsSort, viewCounts]);
