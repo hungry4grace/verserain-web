@@ -4389,6 +4389,125 @@ export default function App() {
     }
   });
   const [editingCustomSet, setEditingCustomSet] = useState(null);
+  // 批次匯入出處 — paste references (one per line, e.g.「太 19:14」),
+  // match the book against the dictionary, auto-fetch each verse's text.
+  const [bulkImportState, setBulkImportState] = useState(null); // null | { text, busy, progress, failed }
+
+  // Match a pasted line's leading book token against BIBLE_BOOKS (full
+  // names, zh abbrs, simplified, English). Longest name wins so 「約翰一書」
+  // beats 「約」. Returns { bookInfo, rest } or null.
+  const matchBookInLine = (line) => {
+    const norm = String(line).replace(/[　]+/g, ' ').trim();
+    let best = null;
+    for (const b of BIBLE_BOOKS) {
+      const candidates = [...(b.names || []), ...(b.cn || [])].filter(Boolean);
+      for (const name of candidates) {
+        if (norm.startsWith(name)) {
+          const rest = norm.slice(name.length).trim();
+          if (/^\d/.test(rest) && (!best || name.length > best.name.length)) {
+            best = { bookInfo: b, name, rest };
+          }
+        }
+      }
+    }
+    return best ? { bookInfo: best.bookInfo, rest: best.rest } : null;
+  };
+
+  // Fetch a verse's text for (book, "ch:vs[-vs]") — local DB first, then
+  // the same remote fallbacks the single-row editor uses. Returns ''.
+  const fetchVerseTextByBook = async (bookInfo, sanitized) => {
+    const chapMatch = sanitized.match(/^(\d+)/);
+    if (!chapMatch) return '';
+    const chapter = parseInt(chapMatch[1]);
+    let startVerse = 1, endVerse = 999;
+    const verseMatch = sanitized.match(/:(\d+)(?:-(\d+))?/);
+    if (verseMatch) {
+      startVerse = parseInt(verseMatch[1]);
+      endVerse = verseMatch[2] ? parseInt(verseMatch[2]) : startVerse;
+    }
+    const bookAbbr = getBookAbbr(bookInfo, version);
+    const refStr = `${bookAbbr} ${sanitized}`;
+    // 1) Local language DB.
+    const db = loadedLangs[version]?.verses || [];
+    const sanitizeRef = (str) => str.toString().replace(/\s+/g, '').replace(/[–—~]/g, '-').replace(/[：]/g, ':').toLowerCase();
+    const searchRef = sanitizeRef(refStr);
+    for (const dbVerse of db) {
+      if (!dbVerse.reference) continue;
+      if (sanitizeRef(dbVerse.reference) === searchRef) return dbVerse.text || '';
+    }
+    // 2) Remote fallbacks.
+    try {
+      if (version === 'esv') {
+        const esvRef = `${bookInfo.names?.[2] || bookInfo.names?.[0] || bookAbbr} ${sanitized}`;
+        const res = await fetch(`/api/esv-passage?q=${encodeURIComponent(esvRef)}`);
+        if (!res.ok) return '';
+        const json = await res.json();
+        return String(json.text || '').replace(/\s+/g, ' ').trim();
+      }
+      const bollsVersion = isEnglishBibleVersion(version) ? 'KJV' : 'CUV';
+      const res = await fetch(`https://bolls.life/get-text/${bollsVersion}/${bookInfo.id}/${chapter}/`);
+      if (!res.ok) return '';
+      const json = await res.json();
+      const filtered = json.filter(vv => vv.verse >= startVerse && vv.verse <= endVerse);
+      if (filtered.length === 0) return '';
+      let combined = (version === 'cuv' || version === 'cuvs')
+        ? filtered.map(vv => vv.text.replace(/<[^>]+>/g, '').replace(/\s+/g, '')).join('')
+        : filtered.map(vv => vv.text.replace(/<[^>]+>/g, '').trim()).join(' ');
+      combined = combined
+        .replace(/([A-Za-z])(\d{2,5})(?=\s|[.,;:!?]|$)/g, '$1')
+        .replace(/\s+/g, ' ')
+        .trim();
+      if (version === 'cuvs') {
+        const OpenCC = await import('opencc-js');
+        const converter = OpenCC.Converter({ from: 'tw', to: 'cn' });
+        combined = converter(combined);
+      }
+      return combined;
+    } catch {
+      return '';
+    }
+  };
+
+  const runBulkImport = async () => {
+    const raw = bulkImportState?.text || '';
+    const lines = raw.split('\n').map(l => l.trim()).filter(Boolean);
+    if (!lines.length) return;
+    setBulkImportState(s => ({ ...s, busy: true, progress: `0 / ${lines.length}`, failed: [] }));
+    const imported = [];
+    const failed = [];
+    for (let li = 0; li < lines.length; li++) {
+      const line = lines[li];
+      const m = matchBookInLine(line);
+      if (!m) {
+        failed.push(line);
+      } else {
+        const sanitized = m.rest.replace(/[～~]/g, '-').replace(/[：]/g, ':').trim();
+        const refStr = `${getBookAbbr(m.bookInfo, version)} ${sanitized}`;
+        const text = await fetchVerseTextByBook(m.bookInfo, sanitized);
+        if (text) {
+          imported.push({ book: m.bookInfo.id, verseInput: sanitized, reference: refStr, text });
+        } else {
+          failed.push(line);
+        }
+      }
+      setBulkImportState(s => (s ? { ...s, progress: `${li + 1} / ${lines.length}` } : s));
+    }
+    if (imported.length) {
+      setEditingCustomSet(prev => ({
+        ...prev,
+        // Drop untouched blank rows, then append the imported verses.
+        verses: [...prev.verses.filter(v => v.reference || v.text), ...imported],
+      }));
+    }
+    if (failed.length) {
+      setBulkImportState(s => (s ? { ...s, busy: false, failed } : s));
+    } else {
+      setBulkImportState(null);
+      setToast(t(`已匯入 ${imported.length} 節經文 ✓`, `Imported ${imported.length} verse${imported.length === 1 ? '' : 's'} ✓`));
+      setTimeout(() => setToast(null), 3500);
+    }
+  };
+
   // 題庫創作者親聲朗讀 — recordings for the set being edited, keyed by
   // verse reference. null target = recorder closed.
   const [editorVerseVoices, setEditorVerseVoices] = useState({});
@@ -15739,14 +15858,54 @@ const deDict = {
                               />
                             )}
 
-                            <button type="button" onClick={() => {
-                              setEditingCustomSet({
-                                ...editingCustomSet,
-                                verses: [...editingCustomSet.verses, { book: null, verseInput: '', reference: '', text: '' }]
-                              });
-                            }} style={{ background: '#e2e8f0', color: '#475569', border: '1px dashed #94a3b8', padding: '0.5rem 1rem', borderRadius: '4px', cursor: 'pointer', width: '100%', marginTop: '0.5rem', fontWeight: 'bold' }}>
-                              + {t("新增一節經文", "Add Verse")}
-                            </button>
+                            <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem' }}>
+                              <button type="button" onClick={() => {
+                                setEditingCustomSet({
+                                  ...editingCustomSet,
+                                  verses: [...editingCustomSet.verses, { book: null, verseInput: '', reference: '', text: '' }]
+                                });
+                              }} style={{ background: '#e2e8f0', color: '#475569', border: '1px dashed #94a3b8', padding: '0.5rem 1rem', borderRadius: '4px', cursor: 'pointer', flex: 1, fontWeight: 'bold' }}>
+                                + {t("新增一節經文", "Add Verse")}
+                              </button>
+                              <button type="button" onClick={() => setBulkImportState({ text: '', busy: false, progress: '', failed: [] })}
+                                title={t('貼上經文出處清單(每行一個),自動抓取經文', 'Paste a list of references (one per line) to auto-fetch the verses')}
+                                style={{ background: '#eff6ff', color: '#1d4ed8', border: '1px dashed #93c5fd', padding: '0.5rem 1rem', borderRadius: '4px', cursor: 'pointer', flex: 1, fontWeight: 'bold' }}>
+                                📋 {t("輸入出處批次匯入", "Bulk Import by Reference")}
+                              </button>
+                            </div>
+
+                            {bulkImportState && (
+                              <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.6)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1300, padding: '1rem' }} onClick={(e) => { if (e.target === e.currentTarget && !bulkImportState.busy) setBulkImportState(null); }}>
+                                <div style={{ background: '#fff', borderRadius: 14, padding: '1.5rem', width: 'min(520px, 100%)', boxShadow: '0 20px 40px rgba(0,0,0,0.25)' }}>
+                                  <h3 style={{ margin: '0 0 0.4rem', color: '#1e293b' }}>📋 {t('輸入出處來建立經文組', 'Build the set from references')}</h3>
+                                  <p style={{ margin: '0 0 0.8rem', color: '#64748b', fontSize: '0.88rem', lineHeight: 1.5 }}>
+                                    {t('每行貼一個經文出處(例:太 19:14、詩 139:13-14),系統會自動抓取經文內容。', 'Paste one reference per line (e.g. 太 19:14, 詩 139:13-14) — the verse text is fetched automatically.')}
+                                  </p>
+                                  <textarea
+                                    value={bulkImportState.text}
+                                    disabled={bulkImportState.busy}
+                                    onChange={e => setBulkImportState(s => ({ ...s, text: e.target.value }))}
+                                    placeholder={'太 19:14\n可 10:16\n詩 127:3\n賽 49:15'}
+                                    style={{ width: '100%', minHeight: '180px', padding: '0.7rem', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: '0.95rem', fontFamily: 'inherit', resize: 'vertical', boxSizing: 'border-box' }}
+                                  />
+                                  {bulkImportState.failed?.length > 0 && !bulkImportState.busy && (
+                                    <div style={{ margin: '0.6rem 0 0', padding: '0.6rem 0.8rem', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 8, color: '#991b1b', fontSize: '0.85rem' }}>
+                                      {t('這些行無法辨識或抓不到經文,請修改後重試或手動輸入:', 'These lines could not be matched/fetched — fix and retry, or add them manually:')}
+                                      <div style={{ marginTop: 4, fontWeight: 600 }}>{bulkImportState.failed.join('、')}</div>
+                                    </div>
+                                  )}
+                                  <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.6rem', marginTop: '1rem', alignItems: 'center' }}>
+                                    {bulkImportState.busy && <span style={{ color: '#64748b', fontSize: '0.85rem' }}>{t(`抓取中… ${bulkImportState.progress}`, `Fetching… ${bulkImportState.progress}`)}</span>}
+                                    <button type="button" disabled={bulkImportState.busy} onClick={() => setBulkImportState(null)} style={{ background: '#f1f5f9', color: '#64748b', border: '1px solid #cbd5e1', padding: '0.55rem 1.1rem', borderRadius: 8, cursor: 'pointer', fontWeight: 'bold' }}>
+                                      {t('取消', 'Cancel')}
+                                    </button>
+                                    <button type="button" disabled={bulkImportState.busy || !bulkImportState.text.trim()} onClick={runBulkImport} style={{ background: '#3b82f6', color: '#fff', border: 'none', padding: '0.55rem 1.4rem', borderRadius: 8, cursor: 'pointer', fontWeight: 'bold' }}>
+                                      {bulkImportState.busy ? t('匯入中…', 'Importing…') : t('匯入', 'Import')}
+                                    </button>
+                                  </div>
+                                </div>
+                              </div>
+                            )}
                           </div>
 
                           <div style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
