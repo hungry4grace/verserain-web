@@ -110,35 +110,20 @@ export default function VerseVoiceRecorder({ t, reference, verseText, onUpload, 
   const previewSrcRef = useRef(null);
   const decodedBufRef = useRef(null);
 
-  const makeImpulse = (ctx, seconds = 1.3, decay = 2.6) => {
-    const rate = ctx.sampleRate;
-    const len = Math.floor(rate * seconds);
-    const buf = ctx.createBuffer(1, len, rate);
-    const ch = buf.getChannelData(0);
-    for (let i = 0; i < len; i++) ch[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, decay);
-    return buf;
-  };
-
-  // Wire src → destination. With the enhancer on, the signal first passes a
-  // voice-band EQ, then splits into dry + (convolver reverb) wet paths:
-  //   highpass 90Hz  — cuts rumble/handling noise below the voice range
+  // Wire src → destination. Enhancer = voice-band EQ only (no reverb):
+  //   highpass 120Hz — cuts rumble/handling noise below the voice range
   //   lowpass  9kHz  — cuts hiss above the voice range
   //   peaking +2dB @2.5kHz — gentle presence lift for clarity
   const connectChain = (ctx, src, destination, withEnhance) => {
     if (!withEnhance) { src.connect(destination); return; }
     const hp = ctx.createBiquadFilter();
-    hp.type = 'highpass'; hp.frequency.value = 90; hp.Q.value = 0.7;
+    hp.type = 'highpass'; hp.frequency.value = 120; hp.Q.value = 0.7;
     const lp = ctx.createBiquadFilter();
     lp.type = 'lowpass'; lp.frequency.value = 9000; lp.Q.value = 0.7;
     const presence = ctx.createBiquadFilter();
     presence.type = 'peaking'; presence.frequency.value = 2500; presence.Q.value = 1; presence.gain.value = 2;
     src.connect(hp); hp.connect(lp); lp.connect(presence);
-
-    const dry = ctx.createGain(); dry.gain.value = 0.85;
-    const wet = ctx.createGain(); wet.gain.value = 0.3;
-    const conv = ctx.createConvolver(); conv.buffer = makeImpulse(ctx);
-    presence.connect(dry); dry.connect(destination);
-    presence.connect(conv); conv.connect(wet); wet.connect(destination);
+    presence.connect(destination);
   };
 
   const stopPreview = () => {
@@ -184,8 +169,7 @@ export default function VerseVoiceRecorder({ t, reference, verseText, onUpload, 
       const done = new Promise((resolve) => { rec.onstop = resolve; });
       rec.start();
       src.start();
-      // Stop shortly after the source ends so the reverb tail is kept.
-      src.onended = () => window.setTimeout(() => { try { rec.stop(); } catch { /* noop */ } }, 900);
+      src.onended = () => window.setTimeout(() => { try { rec.stop(); } catch { /* noop */ } }, 200);
       await done;
       return new Blob(parts, { type: mime });
     } finally {
@@ -215,7 +199,7 @@ export default function VerseVoiceRecorder({ t, reference, verseText, onUpload, 
         finalBlob = await bakeBeautified();
       }
       setPhase('uploading');
-      await onUpload({ blob: finalBlob, mime: mimeRef.current, dur: secondsRef.current + (beautify ? 1 : 0) });
+      await onUpload({ blob: finalBlob, mime: mimeRef.current, dur: secondsRef.current });
       onDone?.();
     } catch (e) {
       setError(String(e.message || e));
@@ -267,7 +251,7 @@ export default function VerseVoiceRecorder({ t, reference, verseText, onUpload, 
                 onChange={(e) => { setBeautify(e.target.checked); stopPreview(); }}
                 style={{ width: '1rem', height: '1rem', cursor: 'pointer' }}
               />
-              ✨ {t('美化人聲(人聲EQ+溫暖殘響)', 'Enhance voice (voice EQ + warm reverb)')}
+              ✨ {t('美化人聲(人聲EQ)', 'Enhance voice (voice EQ)')}
             </label>
             <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap' }}>
               <button onClick={togglePreview} disabled={phase !== 'preview'} style={{ padding: '0.55rem 1.1rem', borderRadius: 10, border: '1px solid #cbd5e1', background: '#f8fafc', color: '#334155', cursor: 'pointer' }}>
