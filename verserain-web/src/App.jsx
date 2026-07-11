@@ -4671,7 +4671,9 @@ export default function App() {
 
   const runBulkImport = async () => {
     const raw = bulkImportState?.text || '';
-    const lines = raw.split('\n').map(l => l.trim()).filter(Boolean);
+    // Split on newlines AND commas (ASCII "," + full-width "，" + enumeration
+    // "、") so references can be pasted one-per-line or comma-separated.
+    const lines = raw.split(/[\n,，、]+/).map(l => l.trim()).filter(Boolean);
     if (!lines.length) return;
     setBulkImportState(s => ({ ...s, busy: true, progress: `0 / ${lines.length}`, failed: [] }));
     const imported = [];
@@ -16166,7 +16168,7 @@ const deDict = {
                                 <div style={{ background: '#fff', borderRadius: 14, padding: '1.5rem', width: 'min(520px, 100%)', boxShadow: '0 20px 40px rgba(0,0,0,0.25)' }}>
                                   <h3 style={{ margin: '0 0 0.4rem', color: '#1e293b' }}>📋 {t('輸入出處來建立經文組', 'Build the set from references')}</h3>
                                   <p style={{ margin: '0 0 0.8rem', color: '#64748b', fontSize: '0.88rem', lineHeight: 1.5 }}>
-                                    {t('每行貼一個經文出處(例:太 19:14、詩 139:13-14),系統會自動抓取經文內容。', 'Paste one reference per line (e.g. 太 19:14, 詩 139:13-14) — the verse text is fetched automatically.')}
+                                    {t('每行或以逗號分隔貼上經文出處(例:太 19:14、詩 139:13-14),系統會自動抓取經文內容。', 'Paste references one per line or separated by commas (e.g. 太 19:14, 詩 139:13-14) — the verse text is fetched automatically.')}
                                   </p>
                                   <textarea
                                     value={bulkImportState.text}
