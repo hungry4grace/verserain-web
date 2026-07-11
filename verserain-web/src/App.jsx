@@ -8046,6 +8046,7 @@ export default function App() {
 
   // ─── Farsi (Persian) UI Dictionary ───────────────────────────────────────
   const faDict = {
+    '輸入出處批次匯入': "درون‌ریزی بر اساس مراجع",
     '麥克風聽見：': "شنیده شد:",
     '背景圖片': "پس‌زمینه",
     '預設(每日輪換)': "پیش‌فرض (چرخش روزانه)",
@@ -8554,6 +8555,7 @@ export default function App() {
   // Covers the high-value UI surface (navigation, auth, game controls,
   // voice settings); unlisted keys fall back to English via t().
   const arDict = {
+    '輸入出處批次匯入': "استيراد حسب المراجع",
     '麥克風聽見：': "المسموع:",
     '背景圖片': "الخلفية",
     '預設(每日輪換)': "افتراضي (يتغيّر يوميًا)",
@@ -8750,6 +8752,7 @@ export default function App() {
 
   // ─── Hebrew (עברית) UI Dictionary ────────────────────────────────────────
   const heDict = {
+    '輸入出處批次匯入': "ייבוא לפי הפניות",
     '麥克風聽見：': "נשמע:",
     '背景圖片': "רקע",
     '預設(每日輪換)': "ברירת מחדל (מתחלף מדי יום)",
@@ -9468,6 +9471,7 @@ export default function App() {
 
 
   const jaDict = {
+    '輸入出處批次匯入': "出典から一括取り込み",
     '麥克風聽見：': "聞き取り:",
     '背景圖片': "背景",
     '預設(每日輪換)': "デフォルト(毎日切替)",
@@ -9872,6 +9876,7 @@ export default function App() {
 };
 
   const koDict = {
+    '輸入出處批次匯入': "출처로 일괄 가져오기",
     '麥克風聽見：': "들린 내용:",
     '背景圖片': "배경",
     '預設(每日輪換)': "기본(매일 전환)",
@@ -10397,6 +10402,7 @@ export default function App() {
 
 
 const zhcnDict = {
+    '輸入出處批次匯入': "输入出处批次导入",
     '麥克風聽見：': "麦克风听见:",
     '背景圖片': "背景图片",
     '預設(每日輪換)': "预设(每日轮换)",
@@ -10553,6 +10559,7 @@ const zhcnDict = {
 
 // ─── Vietnamese (Tiếng Việt) UI Dictionary ────────────────────────────────────────
 const viDict = {
+    '輸入出處批次匯入': "Nhập theo tham chiếu",
     '麥克風聽見：': "Nghe được:",
     '背景圖片': "Hình nền",
     '預設(每日輪換)': "Mặc định (đổi mỗi ngày)",
@@ -10717,6 +10724,7 @@ const viDict = {
 };
 
 const myDict = {
+    '輸入出處批次匯入': "ကိုးကားချက်ဖြင့် အစုလိုက်တင်သွင်းရန်",
     '麥克風聽見：': "ကြားရသည်:",
     '背景圖片': "နောက်ခံပုံ",
     '預設(每日輪換)': "မူရင်း(နေ့စဉ်လှည့်)",
@@ -10869,6 +10877,7 @@ const myDict = {
 };
 
 const idDict = {
+    '輸入出處批次匯入': "Impor via referensi",
     '麥克風聽見：': "Terdengar:",
     '背景圖片': "Latar",
     '預設(每日輪換)': "Bawaan (berganti tiap hari)",
@@ -11320,6 +11329,7 @@ const idDict = {
 };
 
 const msDict = {
+    '輸入出處批次匯入': "Import ikut rujukan",
     '麥克風聽見：': "Didengar:",
     '背景圖片': "Latar",
     '預設(每日輪換)': "Lalai (bertukar harian)",
@@ -11441,6 +11451,7 @@ const msDict = {
 
 
 const esDict = {
+    '輸入出處批次匯入': "Importar por referencias",
     '麥克風聽見：': "Escuchado:",
     '背景圖片': "Fondo",
     '預設(每日輪換)': "Predeterminado (rota)",
@@ -11631,6 +11642,7 @@ const esDict = {
 };
 
 const trDict = {
+    '輸入出處批次匯入': "Referansla toplu içe aktar",
     '麥克風聽見：': "Duyulan:",
     '背景圖片': "Arka plan",
     '預設(每日輪換)': "Varsayılan (günlük değişir)",
@@ -11821,6 +11833,7 @@ const trDict = {
 };
 
 const deDict = {
+    '輸入出處批次匯入': "Nach Stellen importieren",
     '麥克風聽見：': "Gehört:",
     '背景圖片': "Hintergrund",
     '預設(每日輪換)': "Standard (täglich)",
@@ -16687,7 +16700,7 @@ const deDict = {
                                     value={bulkImportState.text}
                                     disabled={bulkImportState.busy}
                                     onChange={e => setBulkImportState(s => ({ ...s, text: e.target.value }))}
-                                    placeholder={'太 19:14\n可 10:16\n詩 127:3\n賽 49:15'}
+                                    placeholder={[[40, '19:14'], [41, '10:16'], [19, '127:3'], [23, '49:15']].map(([id, cv]) => `${getBookAbbr(BIBLE_BOOKS.find(b => b.id === id), version)} ${cv}`).join('\n')}
                                     style={{ width: '100%', minHeight: '180px', padding: '0.7rem', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: '0.95rem', fontFamily: 'inherit', resize: 'vertical', boxSizing: 'border-box' }}
                                   />
                                   {bulkImportState.failed?.length > 0 && !bulkImportState.busy && (
