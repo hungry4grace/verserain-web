@@ -3166,6 +3166,13 @@ const findVerseByRef = (allVerses, ref) => {
   return target;
 };
 
+// Title-sort key: strip leading punctuation/quotes/brackets so
+// 「敬拜」/《青少年》/(力量) sort by their first real character instead of
+// clumping under the punctuation marks.
+function titleSortKey(s) {
+  return String(s || '').replace(/^[^\p{L}\p{N}]+/u, '');
+}
+
 const topicStrokeCollator = (() => {
   try {
     return new Intl.Collator(['zh-Hant-u-co-stroke', 'zh-u-co-stroke'], {
@@ -4551,12 +4558,7 @@ export default function App() {
       return 0;
     };
     if (customSetsSort === 'title') {
-      try {
-        const collator = new Intl.Collator('zh-Hant', { collation: 'stroke' });
-        arr.sort((a, b) => collator.compare(a.title || '', b.title || ''));
-      } catch {
-        arr.sort((a, b) => String(a.title || '').localeCompare(String(b.title || ''), 'zh-Hant'));
-      }
+      arr.sort((a, b) => topicStrokeCollator.compare(titleSortKey(a.title), titleSortKey(b.title)));
     } else if (customSetsSort === 'popular') {
       arr.sort((a, b) => (viewCounts[b.id] || 0) - (viewCounts[a.id] || 0));
     } else {
@@ -5155,8 +5157,9 @@ export default function App() {
       return sortedSets;
     }
     if (versesetsSort === 'title') {
-      // 標題 = 依標題首字筆畫排序 (stroke-count collation for zh-Hant).
-      sortedSets.sort((a, b) => topicStrokeCollator.compare(String(a.title || ''), String(b.title || '')));
+      // 標題 = 依標題首字筆畫排序 (stroke-count collation for zh-Hant),
+      // ignoring leading punctuation/brackets.
+      sortedSets.sort((a, b) => topicStrokeCollator.compare(titleSortKey(a.title), titleSortKey(b.title)));
       return sortedSets;
     }
     // Unified "newest" ordering — anything with a real timestamp competes head-to-head:
