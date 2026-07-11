@@ -9,6 +9,8 @@
     { "source": "/line-webhook", "destination": "/api/line-webhook" },
     { "source": "/privacy", "destination": "/index.html" },
     { "source": "/privacy/:path*", "destination": "/index.html" },
+    { "source": "/delete-account", "destination": "/index.html" },
+    { "source": "/delete-account/:path*", "destination": "/index.html" },
     { "source": "/blind", "destination": "/index.html" },
     { "source": "/blind/:path*", "destination": "/index.html" }
   ]
