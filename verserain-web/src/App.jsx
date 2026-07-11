@@ -6635,9 +6635,12 @@ export default function App() {
     if (listenSetRef) {
       const foundSet = activeVerseSets.find(s => s.id === listenSetRef);
       if (foundSet) {
+        // listenOrder=seq → play ALL verses in canonical order (looping),
+        // starting from the first verse unless listenVerse pins a start.
+        const sequential = ['seq', 'sequential'].includes(params.get('listenOrder') || '');
         const startVerse = listenVerseRef
           ? (foundSet.verses || []).find(v => v.reference === listenVerseRef)
-          : null;
+          : (sequential ? (foundSet.verses || [])[0] : null);
         setSelectedSetId(foundSet.id);
         setMainTab('versesets');
         setContinuousRainSet({
@@ -6645,6 +6648,7 @@ export default function App() {
           title: foundSet.title,
           verses: foundSet.verses || [],
           startVerse,
+          playOrder: sequential ? 'sequential' : undefined,
           // Synthetic single-verse shares carry the real set id here so
           // creator recordings still resolve for recipients.
           voiceSetId: foundSet.voiceSetId || null,
@@ -17060,10 +17064,18 @@ const deDict = {
                                 // staring at the home page. Pushing first means
                                 // the fallback can always resolve the id.
                                 pushSetForSharing(currentSet);
-                                const link = buildPublicShareUrl(window.location.pathname, { viewSet: currentSet.id });
+                                // Share the sequential-listen experience: the
+                                // recipient hears the WHOLE set in order
+                                // (creator recordings included) via the /lc card.
+                                pushSetForSharing(currentSet, true);
+                                const link = buildPublicShareUrl('/lc', {
+                                  set: currentSet.id,
+                                  order: 'seq',
+                                  version,
+                                });
                                 setQrShareModal({ url: link, reference: currentSet.title });
                               }}
-                              title={t("分享此經文組", "Share this verse set")}
+                              title={t("分享聆聽連結(按序播放全部經文)", "Share listening link (all verses in order)")}
                               style={{ backgroundColor: '#ffffff', color: '#64748b', border: '1px solid #cbd5e1', borderRadius: '6px', width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'all 0.1s' }}
                               onMouseOver={(e) => { e.currentTarget.style.backgroundColor = '#f1f5f9'; e.currentTarget.style.color = '#3b82f6'; e.currentTarget.style.borderColor = '#3b82f6'; }}
                               onMouseOut={(e) => { e.currentTarget.style.backgroundColor = '#ffffff'; e.currentTarget.style.color = '#64748b'; e.currentTarget.style.borderColor = '#cbd5e1'; }}

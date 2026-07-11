@@ -89,6 +89,8 @@ export default async function handler(req, res) {
   if (set) dest.searchParams.set('listenSet', set);
   if (verse) dest.searchParams.set('listenVerse', verse);
   if (version) dest.searchParams.set('version', version);
+  // order=seq → the app plays the whole set in canonical order.
+  if (['seq', 'sequential'].includes(String(q.order || ''))) dest.searchParams.set('listenOrder', 'seq');
   const destUrl = dest.toString();
 
   const normalize = (s) => String(s || '').replace(/\s+/g, '');
