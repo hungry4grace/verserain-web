@@ -4627,7 +4627,10 @@ export default function App() {
   // Returns { bookInfo, name, rest } or null.
   const bookById = (id) => BIBLE_BOOKS.find(b => b.id === id);
   const matchBookInLine = (line) => {
-    const norm = String(line).replace(/[　]+/g, ' ').trim();
+    // NFC-normalize so decomposed accents (NFD, common in macOS paste — "Éxodo"
+    // as E+◌́) match the composed forms in the book-name maps. Also fold
+    // full-width and non-breaking spaces to a plain space.
+    const norm = String(line).normalize('NFC').replace(/[　 ]+/g, ' ').trim();
     let best = null;
     const consider = (name, bookInfo) => {
       if (!name || !bookInfo || !norm.startsWith(name)) return;
@@ -4683,7 +4686,13 @@ export default function App() {
         // Keep the book name the user actually typed (e.g. "Salmos") so the
         // stored reference matches the set's language instead of a zh/abbr form.
         const refStr = `${m.name} ${sanitized}`;
-        const text = await fetchVerseTextByBook(m.bookInfo, sanitized);
+        // Retry once on a miss — the per-verse fetch occasionally drops a
+        // request (transient network / API hiccup) that a second try clears.
+        let text = await fetchVerseTextByBook(m.bookInfo, sanitized);
+        if (!text) {
+          await new Promise(r => setTimeout(r, 500));
+          text = await fetchVerseTextByBook(m.bookInfo, sanitized);
+        }
         if (text) {
           imported.push({ book: m.bookInfo.id, verseInput: sanitized, reference: refStr, text });
         } else {
