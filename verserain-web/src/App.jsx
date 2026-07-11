@@ -3391,6 +3391,34 @@ function formatVerseReferenceForDisplay(ref, version) {
   return ref;
 }
 
+// 1 → 一, 23 → 二十三, 119 → 一百一十九 … (for spoken references).
+function toChineseNumber(value) {
+  const num = Number(value);
+  if (!Number.isFinite(num)) return value;
+  const digits = ['', '一', '二', '三', '四', '五', '六', '七', '八', '九'];
+  if (num === 0) return '零';
+  if (num < 10) return digits[num];
+  if (num < 20) return `十${digits[num % 10]}`;
+  if (num < 100) {
+    const ones = num % 10;
+    return `${digits[Math.floor(num / 10)]}十${ones ? digits[ones] : ''}`;
+  }
+  const hundreds = Math.floor(num / 100);
+  const rest = num % 100;
+  return `${digits[hundreds]}百${rest ? (rest < 10 ? '零' : '') + toChineseNumber(rest) : ''}`;
+}
+
+// 「3:16」→「第三章16節」,「4:1-3」→「第四章1到3節」 — makes chapter:verse
+// patterns inside free text (set descriptions) read naturally in Chinese TTS.
+function humanizeChineseReferencesForSpeech(text) {
+  return String(text || '').replace(
+    /(\d+)\s*[:：]\s*(\d+)(?:\s*[-–—~]\s*(\d+))?/g,
+    (m, ch, v1, v2) => (v2
+      ? `第${toChineseNumber(ch)}章${v1}到${v2}節`
+      : `第${toChineseNumber(ch)}章${v1}節`)
+  );
+}
+
 function formatVerseReferenceForSpeech(ref, version) {
   const match = ref.match(/(.+?)\s*(\d+)(?:\s*:\s*([\d,\s\-–]+))?/);
   if (!match) return ref;
@@ -3441,22 +3469,6 @@ function formatVerseReferenceForSpeech(ref, version) {
     }
     if (!fullBookName) fullBookName = book;
     const chapterSuffix = fullBookName === '詩篇' || fullBookName === '诗篇' ? '篇' : '章';
-
-    const toChineseNumber = (value) => {
-      const num = Number(value);
-      if (!Number.isFinite(num)) return value;
-      const digits = ['', '一', '二', '三', '四', '五', '六', '七', '八', '九'];
-      if (num === 0) return '零';
-      if (num < 10) return digits[num];
-      if (num < 20) return `十${digits[num % 10]}`;
-      if (num < 100) {
-        const ones = num % 10;
-        return `${digits[Math.floor(num / 10)]}十${ones ? digits[ones] : ''}`;
-      }
-      const hundreds = Math.floor(num / 100);
-      const rest = num % 100;
-      return `${digits[hundreds]}百${rest ? (rest < 10 ? '零' : '') + toChineseNumber(rest) : ''}`;
-    };
 
     if (!verses) {
       return `${fullBookName}第${toChineseNumber(chapter)}${chapterSuffix}`;
@@ -17203,9 +17215,13 @@ const deDict = {
                                   initAudio();
                                   stopSpeechIfActive();
                                   const lang = getVoiceLangForVersion(version);
+                                  // 中文朗讀時把出處唸成口語:「3:16」→「第三章16節」、
+                                  // 「4:1-3」→「第四章1到3節」。
+                                  const zhLike = !isEnglishBibleVersion(version) && !['ko', 'ja', 'fa', 'ar', 'he'].includes(version);
+                                  const speechText = zhLike ? humanizeChineseReferencesForSpeech(text) : text;
                                   // Chunk by sentence to keep utterances short (some
                                   // browsers cap utterance length and silently fail).
-                                  const chunks = text.match(/[^。！？!?.\n]+[。！？!?.\n]?/g) || [text];
+                                  const chunks = speechText.match(/[^。！？!?.\n]+[。！？!?.\n]?/g) || [speechText];
                                   let i = 0;
                                   const speakNext = () => {
                                     if (i >= chunks.length) { setDescTtsState('idle'); return; }
