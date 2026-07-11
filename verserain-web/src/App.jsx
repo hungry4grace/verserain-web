@@ -4382,8 +4382,26 @@ export default function App() {
     }
   });
   const [editingCustomSet, setEditingCustomSet] = useState(null);
+  // 題庫創作者親聲朗讀 — recordings for the set being edited, keyed by
+  // verse reference. null target = recorder closed.
+  const [editorVerseVoices, setEditorVerseVoices] = useState({});
+  const [editorVoiceTarget, setEditorVoiceTarget] = useState(null); // { reference, text }
+  useEffect(() => {
+    let cancelled = false;
+    const setId = editingCustomSet?.id;
+    if (!setId) { setEditorVerseVoices({}); return undefined; }
+    setVoiceApi.getAll(setId)
+      .then(res => { if (!cancelled) setEditorVerseVoices(res?.voices || {}); })
+      .catch(() => { if (!cancelled) setEditorVerseVoices({}); });
+    return () => { cancelled = true; };
+  }, [editingCustomSet?.id]);
+  const [bookPickerIdx, setBookPickerIdx] = useState(null); // which verse row has the book picker open
+
+  const [publishedVerseSets, setPublishedVerseSets] = useState([]);
+  const [viewCounts, setViewCounts] = useState({});
   // 我的專屬題庫 list controls — sort + 10-per-page pagination.
-  const [customSetsSort, setCustomSetsSort] = useState('newest'); // newest | title | verses
+  // (Lives after viewCounts — the popular sort reads it.)
+  const [customSetsSort, setCustomSetsSort] = useState('newest'); // newest | title | popular
   const [customSetsPage, setCustomSetsPage] = useState(1);
   const sortedCustomSets = React.useMemo(() => {
     const arr = [...customVerseSets];
@@ -4402,33 +4420,16 @@ export default function App() {
       } catch {
         arr.sort((a, b) => String(a.title || '').localeCompare(String(b.title || ''), 'zh-Hant'));
       }
-    } else if (customSetsSort === 'verses') {
-      arr.sort((a, b) => (b.verses?.length || 0) - (a.verses?.length || 0));
+    } else if (customSetsSort === 'popular') {
+      arr.sort((a, b) => (viewCounts[b.id] || 0) - (viewCounts[a.id] || 0));
     } else {
       arr.sort((a, b) => createdMs(b) - createdMs(a));
     }
     return arr;
-  }, [customVerseSets, customSetsSort]);
-  // 題庫創作者親聲朗讀 — recordings for the set being edited, keyed by
-  // verse reference. null target = recorder closed.
-  const [editorVerseVoices, setEditorVerseVoices] = useState({});
-  const [editorVoiceTarget, setEditorVoiceTarget] = useState(null); // { reference, text }
-  useEffect(() => {
-    let cancelled = false;
-    const setId = editingCustomSet?.id;
-    if (!setId) { setEditorVerseVoices({}); return undefined; }
-    setVoiceApi.getAll(setId)
-      .then(res => { if (!cancelled) setEditorVerseVoices(res?.voices || {}); })
-      .catch(() => { if (!cancelled) setEditorVerseVoices({}); });
-    return () => { cancelled = true; };
-  }, [editingCustomSet?.id]);
-  const [bookPickerIdx, setBookPickerIdx] = useState(null); // which verse row has the book picker open
-
-  const [publishedVerseSets, setPublishedVerseSets] = useState([]);
-  const [viewCounts, setViewCounts] = useState({});
+  }, [customVerseSets, customSetsSort, viewCounts]);
 
   const [versesetsPage, setVersesetsPage] = useState(1);
-  const [versesetsSort, setVersesetsSort] = useState('popular'); // 'popular' | 'newest'
+  const [versesetsSort, setVersesetsSort] = useState('newest'); // 'newest' | 'title' | 'popular'
   const [searchSetsPage, setSearchSetsPage] = useState(1);
   const [searchVersesPage, setSearchVersesPage] = useState(1);
 
@@ -5014,6 +5015,11 @@ export default function App() {
     }
     if (versesetsSort === 'popular') {
       sortedSets.sort((a, b) => (viewCounts[b.id] || 0) - (viewCounts[a.id] || 0));
+      return sortedSets;
+    }
+    if (versesetsSort === 'title') {
+      // 標題 = 依標題首字筆畫排序 (stroke-count collation for zh-Hant).
+      sortedSets.sort((a, b) => topicStrokeCollator.compare(String(a.title || ''), String(b.title || '')));
       return sortedSets;
     }
     // Unified "newest" ordering — anything with a real timestamp competes head-to-head:
@@ -15851,7 +15857,7 @@ const deDict = {
                                 >
                                   <option value="newest">{t('最新', 'Newest')}</option>
                                   <option value="title">{t('標題', 'Title')}</option>
-                                  <option value="verses">{t('節數', 'Verse count')}</option>
+                                  <option value="popular">{t('最受歡迎', 'Most Popular')}</option>
                                 </select>
                               </div>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
@@ -16604,9 +16610,9 @@ const deDict = {
                             onChange={(e) => { setVersesetsSort(e.target.value); setVersesetsPage(1); }}
                             style={{ padding: '0.5rem 1rem', borderRadius: '8px', border: '1px solid #cbd5e1', outline: 'none', background: '#f8fafc', color: '#334155', fontWeight: 'bold', cursor: 'pointer' }}
                           >
-                            <option value="popular">{t("最受歡迎", "Most Popular")}</option>
                             <option value="newest">{t("最新", "Newest")}</option>
-                            <option value="topic">{t("主題", "Topic")}</option>
+                            <option value="title">{t("標題", "Title")}</option>
+                            <option value="popular">{t("最受歡迎", "Most Popular")}</option>
                           </select>
                         </div>
                         <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
