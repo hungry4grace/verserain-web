@@ -1137,6 +1137,50 @@ export default class Server {
          }
       }
 
+      // 4.11 Set assets — 自訂背景圖 / 背景音樂. Chunked base64 blobs keyed
+      // to a set, same pipeline as voices. The set object itself carries the
+      // pointer (set.background='custom:<assetId>' / set.bgMusic=…) plus the
+      // mime, so these endpoints only store/serve raw chunks.
+      //   image: ≤6 chunks (~450KB)   music: ≤72 chunks (~5.4MB)
+      // POST /sets/asset/chunk — { email, setId, assetId, kind, index, total, data }
+      if (url.pathname.endsWith('/sets/asset/chunk') && request.method === 'POST') {
+         try {
+            const { email, setId, assetId, kind, index, total, data } = await request.json();
+            if (!email || !setId || !assetId) return new Response(JSON.stringify({ error: 'email, setId, assetId required' }), { status: 400, headers: corsHeaders });
+            if (!/^a_[A-Za-z0-9]{6,20}$/.test(assetId)) return new Response(JSON.stringify({ error: 'bad assetId' }), { status: 400, headers: corsHeaders });
+            const maxChunks = kind === 'music' ? 72 : 6;
+            const idx = Number(index), tot = Number(total);
+            if (!Number.isInteger(idx) || !Number.isInteger(tot) || idx < 0 || tot < 1 || idx >= tot) return new Response(JSON.stringify({ error: 'bad chunk index' }), { status: 400, headers: corsHeaders });
+            if (tot > maxChunks) return new Response(JSON.stringify({ error: `too many chunks (max ${maxChunks})` }), { status: 400, headers: corsHeaders });
+            if (typeof data !== 'string' || !data || data.length > 110000) return new Response(JSON.stringify({ error: 'bad chunk data' }), { status: 400, headers: corsHeaders });
+            // Chunk index zero-padded so lexicographic key order == numeric.
+            const paddedIdx = String(idx).padStart(3, '0');
+            await this.room.storage.put(`set-asset:${String(setId)}:${assetId}:${paddedIdx}`, data);
+            return new Response(JSON.stringify({ success: true }), { status: 200, headers: corsHeaders });
+         } catch {
+            return new Response(JSON.stringify({ error: 'Failed to save asset chunk' }), { status: 500, headers: corsHeaders });
+         }
+      }
+
+      // GET /sets/asset?setId=<setId>&assetId=<assetId> — reassembled base64.
+      if (url.pathname.endsWith('/sets/asset') && request.method === 'GET') {
+         try {
+            const setId = url.searchParams.get('setId');
+            const assetId = url.searchParams.get('assetId');
+            if (!setId || !assetId) return new Response(JSON.stringify({ error: 'setId, assetId required' }), { status: 400, headers: corsHeaders });
+            if (!/^a_[A-Za-z0-9]{6,20}$/.test(assetId)) return new Response(JSON.stringify({ error: 'bad assetId' }), { status: 400, headers: corsHeaders });
+            const map = await this.room.storage.list({ prefix: `set-asset:${setId}:${assetId}:` });
+            if (map.size === 0) return new Response(JSON.stringify({ error: 'Not found' }), { status: 404, headers: corsHeaders });
+            const data = Array.from(map.entries())
+               .sort((a, b) => a[0].localeCompare(b[0]))
+               .map(([, v]) => v)
+               .join('');
+            return new Response(JSON.stringify({ success: true, data }), { status: 200, headers: corsHeaders });
+         } catch {
+            return new Response(JSON.stringify({ error: 'Failed to fetch asset' }), { status: 500, headers: corsHeaders });
+         }
+      }
+
       // GET /sets/voice?setId=<setId>&voiceId=<voiceId> — reassembled base64 audio.
       if (url.pathname.endsWith('/sets/voice') && request.method === 'GET') {
          try {

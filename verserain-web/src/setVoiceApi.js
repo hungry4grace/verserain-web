@@ -38,6 +38,73 @@ export const setVoiceApi = {
     jget(`/sets/voice?setId=${encodeURIComponent(setId)}&voiceId=${encodeURIComponent(voiceId)}`),
 };
 
+// ─── Set assets (自訂背景圖 / 背景音樂) ─────────────────────────────────
+// Chunked base64 blobs keyed to a set; the set object carries the pointer
+// ('custom:<assetId>') and mime. kind: 'image' (≤6 chunks) | 'music' (≤72).
+
+export const setAssetApi = {
+  getAsset: (setId, assetId) =>
+    jget(`/sets/asset?setId=${encodeURIComponent(setId)}&assetId=${encodeURIComponent(assetId)}`),
+};
+
+// Fetch a custom asset as a data URL, cached per session so switching
+// verses doesn't refetch multi-MB music/images.
+const assetDataUrlCache = new Map();
+export async function getSetAssetDataUrl(setId, assetId, mime) {
+  const key = `${setId}|${assetId}`;
+  if (assetDataUrlCache.has(key)) return assetDataUrlCache.get(key);
+  const res = await setAssetApi.getAsset(setId, assetId);
+  if (!res?.data) throw new Error('asset not found');
+  const dataUrl = `data:${mime || 'application/octet-stream'};base64,${res.data}`;
+  assetDataUrlCache.set(key, dataUrl);
+  return dataUrl;
+}
+
+export async function uploadSetAsset({ email, setId, blob, kind }) {
+  const base64 = await new Promise((resolve, reject) => {
+    const fr = new FileReader();
+    fr.onload = () => resolve(String(fr.result).split(',')[1] || '');
+    fr.onerror = reject;
+    fr.readAsDataURL(blob);
+  });
+  const CHUNK = 100000;
+  const total = Math.ceil(base64.length / CHUNK);
+  const maxChunks = kind === 'music' ? 72 : 6;
+  if (total > maxChunks) {
+    throw new Error(kind === 'music'
+      ? 'Music file too large — keep it under 5MB.'
+      : 'Image too large after compression.');
+  }
+  const assetId = 'a_' + Math.random().toString(36).slice(2, 12);
+  for (let i = 0; i < total; i++) {
+    await jpost('/sets/asset/chunk', {
+      email, setId, assetId, kind, index: i, total,
+      data: base64.slice(i * CHUNK, (i + 1) * CHUNK),
+    });
+  }
+  return assetId;
+}
+
+// Resize + re-encode an image file to a web-friendly background
+// (max 1600px wide, WebP/JPEG ≤ ~420KB so it fits the 6-chunk cap).
+export async function compressBackgroundImage(file) {
+  const bitmap = await createImageBitmap(file);
+  const scale = Math.min(1, 1600 / bitmap.width);
+  const w = Math.round(bitmap.width * scale);
+  const h = Math.round(bitmap.height * scale);
+  const canvas = document.createElement('canvas');
+  canvas.width = w; canvas.height = h;
+  canvas.getContext('2d').drawImage(bitmap, 0, 0, w, h);
+  const tryEncode = (type, quality) => new Promise(resolve => canvas.toBlob(resolve, type, quality));
+  for (const [type, quality] of [['image/webp', 0.82], ['image/webp', 0.6], ['image/jpeg', 0.75], ['image/jpeg', 0.55]]) {
+    const blob = await tryEncode(type, quality);
+    if (blob && blob.size <= 420000) return blob;
+  }
+  const last = await tryEncode('image/jpeg', 0.4);
+  if (last && last.size <= 420000) return last;
+  throw new Error('Image too large — please choose a smaller photo.');
+}
+
 // Convenience: record-blob → chunk upload → register, in one call.
 // Returns the registered meta. Throws with a readable message on failure
 // (including the 403 "someone else recorded this" case).

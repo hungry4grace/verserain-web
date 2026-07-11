@@ -17,7 +17,7 @@ import BlindModeGame from './BlindModeGame';
 import { TransformWrapper, TransformComponent } from 'react-zoom-pan-pinch';
 import { GOOGLE_CLIENT_ID, APPLE_CLIENT_ID, APPLE_REDIRECT_URI, LINE_CHANNEL_ID, startLineLogin } from './oauthConfig';
 import { VAPID_PUBLIC_KEY, urlBase64ToUint8Array, isWebPushSupported, isIOSStandalone, isIOSWithoutPWA, hasNativeDailyPush, callNativeDailyPush } from './pushConfig';
-import { setVoiceApi, uploadVerseVoice } from './setVoiceApi';
+import { setVoiceApi, uploadVerseVoice, uploadSetAsset, compressBackgroundImage, getSetAssetDataUrl } from './setVoiceApi';
 import VerseVoiceRecorder from './VerseVoiceRecorder';
 import { SET_BACKGROUND_THEMES, getSetBackgroundUrl } from './setBackgrounds';
 import QrScanner from 'qr-scanner';
@@ -2428,14 +2428,29 @@ function VerseSetContinuousRainPlayer({
     const day = (getStableNumber(`${verseSet?.id || verseSet?.title}-${currentVerse?.reference || ''}`) % 31) + 1;
     return `2026-05-${String(day).padStart(2, '0')}`;
   }, [verseSet?.id, verseSet?.title, currentVerse?.reference]);
+  // Creator-uploaded custom background (fetched lazily, session-cached).
+  const [customBgUrl, setCustomBgUrl] = useState(null);
+  useEffect(() => {
+    let cancelled = false;
+    setCustomBgUrl(null);
+    const bg = String(verseSet?.background || '');
+    if (!bg.startsWith('custom:')) return undefined;
+    getSetAssetDataUrl(verseSet?.voiceSetId || verseSet?.id, bg.slice('custom:'.length), verseSet?.backgroundMime || 'image/webp')
+      .then(url => { if (!cancelled) setCustomBgUrl(url); })
+      .catch(() => { /* missing asset — default backgrounds show */ });
+    return () => { cancelled = true; };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [verseSet?.background]);
+
   const backgroundImageUrls = useMemo(() => {
-    // Creator-chosen theme background wins; fall back to the default
-    // rotating AI backgrounds when the set doesn't specify one.
+    // Creator-chosen background wins (custom upload, then preset theme);
+    // fall back to the default rotating AI backgrounds otherwise.
+    if (customBgUrl) return [customBgUrl];
     const preset = getSetBackgroundUrl(verseSet?.background);
     if (preset) return [preset, ...getDailyVerseImageUrls(currentVerse, imageDateLabel, version)];
     return getDailyVerseImageUrls(currentVerse, imageDateLabel, version);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentVerse, imageDateLabel, version, verseSet?.background]);
+  }, [currentVerse, imageDateLabel, version, verseSet?.background, customBgUrl]);
   const [imageIndex, setImageIndex] = useState(0);
   const [imageOk, setImageOk] = useState(true);
   const [imageLoaded, setImageLoaded] = useState(false);
@@ -2487,18 +2502,43 @@ function VerseSetContinuousRainPlayer({
   }, [verseSet?.id, verses, startVerse]);
 
   useEffect(() => {
-    if (!bgmRef.current) {
-      bgmRef.current = new Audio('/bgm.mp3');
-      bgmRef.current.loop = true;
-      bgmRef.current.volume = 0.18;
-    }
+    // Background music source: creator's custom upload > default bgm.mp3;
+    // bgMusic==='none' disables music for this set entirely.
+    let cancelled = false;
+    const setup = async () => {
+      const choice = String(verseSet?.bgMusic || '');
+      let src = '/bgm.mp3';
+      if (choice === 'none') src = null;
+      else if (choice.startsWith('custom:')) {
+        try {
+          src = await getSetAssetDataUrl(
+            verseSet?.voiceSetId || verseSet?.id,
+            choice.slice('custom:'.length),
+            verseSet?.bgMusicMime || 'audio/mpeg'
+          );
+        } catch { src = '/bgm.mp3'; /* asset missing — fall back */ }
+      }
+      if (cancelled) return;
+      bgmRef.current?.pause();
+      if (!src) { bgmRef.current = null; return; }
+      const audio = new Audio(src);
+      audio.loop = true;
+      audio.volume = 0.18;
+      bgmRef.current = audio;
+      // The player only mounts after the start tap, so autoplay is allowed;
+      // custom music may finish downloading mid-verse and joins right away.
+      audio.play().catch(() => { /* playVerse retries on next verse */ });
+    };
+    setup();
 
     return () => {
+      cancelled = true;
       runRef.current += 1;
       bgmRef.current?.pause();
       stopSpeechIfActive();
     };
-  }, []);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [verseSet?.bgMusic]);
 
   useEffect(() => {
     setPlayKey(k => k + 1);
@@ -4416,6 +4456,58 @@ export default function App() {
     }
   });
   const [editingCustomSet, setEditingCustomSet] = useState(null);
+  // 自訂背景圖 / 背景音樂上傳 (題庫編輯器).
+  const [bgUploadBusy, setBgUploadBusy] = useState(false);
+  const [musicUploadBusy, setMusicUploadBusy] = useState(false);
+  const bgFileInputRef = useRef(null);
+  const musicFileInputRef = useRef(null);
+
+  // New sets get their id assigned at first upload so the asset has a home;
+  // the save handler reuses editingCustomSet.id when present.
+  const ensureEditingSetId = () => {
+    const id = editingCustomSet?.id || `custom-${Date.now()}`;
+    if (!editingCustomSet?.id) setEditingCustomSet(prev => ({ ...prev, id }));
+    return id;
+  };
+
+  const handleBgImageUpload = async (file) => {
+    if (!file || !editingCustomSet) return;
+    setBgUploadBusy(true);
+    try {
+      const blob = await compressBackgroundImage(file);
+      const setId = ensureEditingSetId();
+      const assetId = await uploadSetAsset({ email: userEmail || '', setId, blob, kind: 'image' });
+      setEditingCustomSet(prev => ({ ...prev, id: setId, background: `custom:${assetId}`, backgroundMime: blob.type }));
+      setToast(t('背景圖片已上傳 ✓', 'Background image uploaded ✓'));
+      setTimeout(() => setToast(null), 3000);
+    } catch (e) {
+      setToast(t(`上傳失敗:${e.message || e}`, `Upload failed: ${e.message || e}`));
+      setTimeout(() => setToast(null), 5000);
+    }
+    setBgUploadBusy(false);
+  };
+
+  const handleMusicUpload = async (file) => {
+    if (!file || !editingCustomSet) return;
+    if (file.size > 5 * 1024 * 1024) {
+      setToast(t('音樂檔請小於 5MB(約 4 分鐘的 MP3)', 'Music file must be under 5MB (~4 min MP3)'));
+      setTimeout(() => setToast(null), 5000);
+      return;
+    }
+    setMusicUploadBusy(true);
+    try {
+      const setId = ensureEditingSetId();
+      const assetId = await uploadSetAsset({ email: userEmail || '', setId, blob: file, kind: 'music' });
+      setEditingCustomSet(prev => ({ ...prev, id: setId, bgMusic: `custom:${assetId}`, bgMusicMime: file.type || 'audio/mpeg' }));
+      setToast(t('背景音樂已上傳 ✓', 'Background music uploaded ✓'));
+      setTimeout(() => setToast(null), 3000);
+    } catch (e) {
+      setToast(t(`上傳失敗:${e.message || e}`, `Upload failed: ${e.message || e}`));
+      setTimeout(() => setToast(null), 5000);
+    }
+    setMusicUploadBusy(false);
+  };
+
   // 批次匯入出處 — paste references (one per line, e.g.「太 19:14」),
   // match the book against the dictionary, auto-fetch each verse's text.
   const [bulkImportState, setBulkImportState] = useState(null); // null | { text, busy, progress, failed }
@@ -6155,6 +6247,9 @@ export default function App() {
       startVerse: order === 'sequential' ? set.verses[0] : undefined,
       voiceSetId: set.voiceSetId || null,
       background: set.background || '',
+      backgroundMime: set.backgroundMime || '',
+      bgMusic: set.bgMusic || '',
+      bgMusicMime: set.bgMusicMime || '',
     });
   };
   const [multiplayerSearchText, setMultiplayerSearchText] = useState('');
@@ -6662,6 +6757,9 @@ export default function App() {
           // creator recordings still resolve for recipients.
           voiceSetId: foundSet.voiceSetId || null,
           background: foundSet.background || '',
+          backgroundMime: foundSet.backgroundMime || '',
+          bgMusic: foundSet.bgMusic || '',
+          bgMusicMime: foundSet.bgMusicMime || '',
         });
         window.history.replaceState({}, document.title, window.location.pathname);
       } else if (!listenSetFetchAttemptedRef.current.has(listenSetRef)) {
@@ -6949,17 +7047,20 @@ export default function App() {
     startGame();
   };
 
-  const playSingleVerseCard = (verse, sourceSetId = null, sourceBackground = '') => {
+  const playSingleVerseCard = (verse, sourceSet = null) => {
     initAudio();
     setContinuousRainSet({
       id: `single-${verse.reference}`,
       title: verse.reference,
       verses: [verse],
       startVerse: verse,
-      // 創作者親聲朗讀 lookups need the REAL originating set id — the
-      // synthetic `single-…` id has no recordings under it.
-      voiceSetId: sourceSetId,
-      background: sourceBackground || '',
+      // 創作者親聲朗讀 / custom assets need the REAL originating set id —
+      // the synthetic `single-…` id has nothing stored under it.
+      voiceSetId: sourceSet?.id || null,
+      background: sourceSet?.background || '',
+      backgroundMime: sourceSet?.backgroundMime || '',
+      bgMusic: sourceSet?.bgMusic || '',
+      bgMusicMime: sourceSet?.bgMusicMime || '',
     });
   };
 
@@ -15700,6 +15801,38 @@ const deDict = {
                                   <div style={{ fontSize: '0.75rem', color: '#475569', padding: '0.25rem 0.2rem', fontWeight: 600 }}>{t(bg.zh, bg.en)}</div>
                                 </div>
                               ))}
+                              <div
+                                onClick={() => { if (!bgUploadBusy) bgFileInputRef.current?.click(); }}
+                                style={{ cursor: 'pointer', borderRadius: 8, border: `3px solid ${String(editingCustomSet.background || '').startsWith('custom:') ? '#3b82f6' : '#e2e8f0'}`, overflow: 'hidden', textAlign: 'center', background: '#fefce8' }}
+                              >
+                                <div style={{ height: 64, display: 'grid', placeItems: 'center', fontSize: '1.4rem' }}>
+                                  {bgUploadBusy ? '⏳' : (String(editingCustomSet.background || '').startsWith('custom:') ? '🖼️' : '⬆️')}
+                                </div>
+                                <div style={{ fontSize: '0.75rem', color: '#475569', padding: '0.25rem 0.2rem', fontWeight: 600 }}>
+                                  {bgUploadBusy ? t('上傳中…', 'Uploading…') : (String(editingCustomSet.background || '').startsWith('custom:') ? t('自訂圖片 ✓', 'Custom ✓') : t('上傳圖片', 'Upload'))}
+                                </div>
+                              </div>
+                              <input ref={bgFileInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={e => { handleBgImageUpload(e.target.files?.[0]); e.target.value = ''; }} />
+                            </div>
+                          </div>
+
+                          {/* 背景音樂 — default / none / custom MP3 upload (≤5MB). */}
+                          <div style={{ marginBottom: '1rem' }}>
+                            <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '0.5rem', color: '#475569' }}>{t("背景音樂", "Background Music")}</label>
+                            <div style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap' }}>
+                              <button type="button" onClick={() => setEditingCustomSet({ ...editingCustomSet, bgMusic: '' })}
+                                style={{ padding: '0.5rem 1rem', borderRadius: 20, border: `2px solid ${!editingCustomSet.bgMusic ? '#3b82f6' : '#cbd5e1'}`, background: !editingCustomSet.bgMusic ? '#eff6ff' : '#f8fafc', color: '#334155', cursor: 'pointer', fontWeight: 600 }}>
+                                🎵 {t('預設音樂', 'Default music')}
+                              </button>
+                              <button type="button" onClick={() => setEditingCustomSet({ ...editingCustomSet, bgMusic: 'none' })}
+                                style={{ padding: '0.5rem 1rem', borderRadius: 20, border: `2px solid ${editingCustomSet.bgMusic === 'none' ? '#3b82f6' : '#cbd5e1'}`, background: editingCustomSet.bgMusic === 'none' ? '#eff6ff' : '#f8fafc', color: '#334155', cursor: 'pointer', fontWeight: 600 }}>
+                                🔇 {t('無背景音樂', 'No music')}
+                              </button>
+                              <button type="button" disabled={musicUploadBusy} onClick={() => musicFileInputRef.current?.click()}
+                                style={{ padding: '0.5rem 1rem', borderRadius: 20, border: `2px solid ${String(editingCustomSet.bgMusic || '').startsWith('custom:') ? '#3b82f6' : '#cbd5e1'}`, background: String(editingCustomSet.bgMusic || '').startsWith('custom:') ? '#eff6ff' : '#fefce8', color: '#334155', cursor: 'pointer', fontWeight: 600 }}>
+                                {musicUploadBusy ? `⏳ ${t('上傳中…', 'Uploading…')}` : (String(editingCustomSet.bgMusic || '').startsWith('custom:') ? `🎶 ${t('自訂音樂 ✓(點擊更換)', 'Custom ✓ (replace)')}` : `⬆️ ${t('上傳 MP3(≤5MB)', 'Upload MP3 (≤5MB)')}`)}
+                              </button>
+                              <input ref={musicFileInputRef} type="file" accept="audio/*" style={{ display: 'none' }} onChange={e => { handleMusicUpload(e.target.files?.[0]); e.target.value = ''; }} />
                             </div>
                           </div>
 
@@ -17359,7 +17492,7 @@ const deDict = {
                                       <button
                                         onClick={(e) => {
                                           e.stopPropagation();
-                                          playSingleVerseCard(v, currentSet?.id, currentSet?.background || '');
+                                          playSingleVerseCard(v, currentSet);
                                         }}
                                         title={currentSetVoices[v.reference]
                                           ? t(`播放這節經文(${currentSetVoices[v.reference].recordedBy || '創作者'}親聲朗讀)`, `Play this verse (read by ${currentSetVoices[v.reference].recordedBy || 'the creator'})`)
