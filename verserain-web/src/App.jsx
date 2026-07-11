@@ -2523,7 +2523,7 @@ function VerseSetContinuousRainPlayer({
       if (!src) { bgmRef.current = null; return; }
       const audio = new Audio(src);
       audio.loop = true;
-      audio.volume = 0.18;
+      audio.volume = Math.min(1, Math.max(0.05, verseSet?.bgMusicVolume ?? 0.18));
       bgmRef.current = audio;
       // The player only mounts after the start tap, so autoplay is allowed;
       // custom music may finish downloading mid-verse and joins right away.
@@ -2538,7 +2538,7 @@ function VerseSetContinuousRainPlayer({
       stopSpeechIfActive();
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [verseSet?.bgMusic]);
+  }, [verseSet?.bgMusic, verseSet?.bgMusicVolume]);
 
   useEffect(() => {
     setPlayKey(k => k + 1);
@@ -4461,6 +4461,61 @@ export default function App() {
   const [musicUploadBusy, setMusicUploadBusy] = useState(false);
   const bgFileInputRef = useRef(null);
   const musicFileInputRef = useRef(null);
+  // Editor previews for custom assets (+ live music audition).
+  const [editorBgPreview, setEditorBgPreview] = useState(null);
+  const [editorMusicUrl, setEditorMusicUrl] = useState(null);
+  const [editorMusicPlaying, setEditorMusicPlaying] = useState(false);
+  const editorMusicAudioRef = useRef(null);
+  const editorSetIdRef = useRef(null);
+
+  const stopEditorMusicPreview = () => {
+    try { editorMusicAudioRef.current?.pause(); } catch { /* noop */ }
+    editorMusicAudioRef.current = null;
+    setEditorMusicPlaying(false);
+  };
+
+  const toggleEditorMusicPreview = () => {
+    if (editorMusicPlaying) { stopEditorMusicPreview(); return; }
+    if (!editorMusicUrl) return;
+    const audio = new Audio(editorMusicUrl);
+    audio.loop = true;
+    audio.volume = Math.min(1, Math.max(0.05, editingCustomSet?.bgMusicVolume ?? 0.18));
+    audio.play().catch(() => {});
+    editorMusicAudioRef.current = audio;
+    setEditorMusicPlaying(true);
+  };
+
+  // Load previews when the editor opens on a set that already has custom
+  // assets (and after fresh uploads — the fetch hits the session cache).
+  useEffect(() => {
+    const id = editingCustomSet?.id || null;
+    if (editorSetIdRef.current !== id) {
+      editorSetIdRef.current = id;
+      setEditorBgPreview(null);
+      setEditorMusicUrl(null);
+      stopEditorMusicPreview();
+    }
+    let cancelled = false;
+    const bg = String(editingCustomSet?.background || '');
+    if (id && bg.startsWith('custom:')) {
+      getSetAssetDataUrl(id, bg.slice('custom:'.length), editingCustomSet?.backgroundMime || 'image/webp')
+        .then(u => { if (!cancelled) setEditorBgPreview(u); })
+        .catch(() => {});
+    } else {
+      setEditorBgPreview(null);
+    }
+    const bm = String(editingCustomSet?.bgMusic || '');
+    if (id && bm.startsWith('custom:')) {
+      getSetAssetDataUrl(id, bm.slice('custom:'.length), editingCustomSet?.bgMusicMime || 'audio/mpeg')
+        .then(u => { if (!cancelled) setEditorMusicUrl(u); })
+        .catch(() => {});
+    } else {
+      setEditorMusicUrl(null);
+      stopEditorMusicPreview();
+    }
+    return () => { cancelled = true; };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editingCustomSet?.id, editingCustomSet?.background, editingCustomSet?.bgMusic]);
 
   // New sets get their id assigned at first upload so the asset has a home;
   // the save handler reuses editingCustomSet.id when present.
@@ -6266,6 +6321,7 @@ export default function App() {
       backgroundMime: set.backgroundMime || '',
       bgMusic: set.bgMusic || '',
       bgMusicMime: set.bgMusicMime || '',
+      bgMusicVolume: set.bgMusicVolume,
     });
   };
   const [multiplayerSearchText, setMultiplayerSearchText] = useState('');
@@ -6776,6 +6832,7 @@ export default function App() {
           backgroundMime: foundSet.backgroundMime || '',
           bgMusic: foundSet.bgMusic || '',
           bgMusicMime: foundSet.bgMusicMime || '',
+          bgMusicVolume: foundSet.bgMusicVolume,
         });
         window.history.replaceState({}, document.title, window.location.pathname);
       } else if (!listenSetFetchAttemptedRef.current.has(listenSetRef)) {
@@ -7077,6 +7134,7 @@ export default function App() {
       backgroundMime: sourceSet?.backgroundMime || '',
       bgMusic: sourceSet?.bgMusic || '',
       bgMusicMime: sourceSet?.bgMusicMime || '',
+      bgMusicVolume: sourceSet?.bgMusicVolume,
     });
   };
 
@@ -15821,9 +15879,13 @@ const deDict = {
                                 onClick={() => { if (!bgUploadBusy) bgFileInputRef.current?.click(); }}
                                 style={{ cursor: 'pointer', borderRadius: 8, border: `3px solid ${String(editingCustomSet.background || '').startsWith('custom:') ? '#3b82f6' : '#e2e8f0'}`, overflow: 'hidden', textAlign: 'center', background: '#fefce8' }}
                               >
-                                <div style={{ height: 64, display: 'grid', placeItems: 'center', fontSize: '1.4rem' }}>
-                                  {bgUploadBusy ? '⏳' : (String(editingCustomSet.background || '').startsWith('custom:') ? '🖼️' : '⬆️')}
-                                </div>
+                                {editorBgPreview && String(editingCustomSet.background || '').startsWith('custom:') ? (
+                                  <img src={editorBgPreview} alt={t('自訂背景', 'Custom background')} style={{ width: '100%', height: 64, objectFit: 'cover', display: 'block' }} />
+                                ) : (
+                                  <div style={{ height: 64, display: 'grid', placeItems: 'center', fontSize: '1.4rem' }}>
+                                    {bgUploadBusy ? '⏳' : (String(editingCustomSet.background || '').startsWith('custom:') ? '🖼️' : '⬆️')}
+                                  </div>
+                                )}
                                 <div style={{ fontSize: '0.75rem', color: '#475569', padding: '0.25rem 0.2rem', fontWeight: 600 }}>
                                   {bgUploadBusy ? t('上傳中…', 'Uploading…') : (String(editingCustomSet.background || '').startsWith('custom:') ? t('自訂圖片 ✓', 'Custom ✓') : t('上傳圖片', 'Upload'))}
                                 </div>
@@ -15850,6 +15912,34 @@ const deDict = {
                               </button>
                               <input ref={musicFileInputRef} type="file" accept="audio/*" style={{ display: 'none' }} onChange={e => { handleMusicUpload(e.target.files?.[0]); e.target.value = ''; }} />
                             </div>
+                            {editingCustomSet.bgMusic !== 'none' && (
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', flexWrap: 'wrap', marginTop: '0.7rem' }}>
+                                {String(editingCustomSet.bgMusic || '').startsWith('custom:') && (
+                                  <button
+                                    type="button"
+                                    disabled={!editorMusicUrl}
+                                    onClick={toggleEditorMusicPreview}
+                                    style={{ padding: '0.4rem 0.9rem', borderRadius: 8, border: '1px solid #cbd5e1', background: editorMusicPlaying ? '#fde68a' : '#f8fafc', color: '#334155', cursor: editorMusicUrl ? 'pointer' : 'wait', fontWeight: 600 }}
+                                  >
+                                    {editorMusicPlaying ? `⏸ ${t('停止試聽', 'Stop')}` : (editorMusicUrl ? `▶ ${t('試聽', 'Preview')}` : `⏳ ${t('載入中…', 'Loading…')}`)}
+                                  </button>
+                                )}
+                                <span style={{ color: '#64748b', fontSize: '0.88rem' }}>🔉 {t('音量', 'Volume')}</span>
+                                <input
+                                  type="range" min={5} max={100}
+                                  value={Math.round((editingCustomSet.bgMusicVolume ?? 0.18) * 100)}
+                                  onChange={e => {
+                                    const vol = Number(e.target.value) / 100;
+                                    setEditingCustomSet(prev => ({ ...prev, bgMusicVolume: vol }));
+                                    if (editorMusicAudioRef.current) editorMusicAudioRef.current.volume = vol;
+                                  }}
+                                  style={{ width: 180, cursor: 'pointer' }}
+                                />
+                                <span style={{ color: '#334155', fontSize: '0.88rem', fontWeight: 600, minWidth: 38 }}>
+                                  {Math.round((editingCustomSet.bgMusicVolume ?? 0.18) * 100)}%
+                                </span>
+                              </div>
+                            )}
                           </div>
 
                           <div style={{ marginBottom: '1rem' }}>
