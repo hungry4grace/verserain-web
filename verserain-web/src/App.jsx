@@ -16097,6 +16097,32 @@ const deDict = {
                                     }}
                                   />
 
+                                  {/* 朗讀預覽 — play the creator's recording if any, else TTS (like the View modal) */}
+                                  <button
+                                    type="button"
+                                    disabled={!v.text}
+                                    onClick={async () => {
+                                      if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+                                      stopVerseModalAudio();
+                                      // Drop the cache so a just-recorded voice is picked up.
+                                      if (editingCustomSet.id) setVoicesLookupRef.current.delete(editingCustomSet.id);
+                                      const played = editingCustomSet.id
+                                        ? await playSetVerseVoice(editingCustomSet.id, v.reference)
+                                        : false;
+                                      if (played) return;
+                                      speakText(v.text, 1.0, getVoiceLangForVersion(version));
+                                    }}
+                                    title={t('朗讀這節', 'Read this verse aloud')}
+                                    style={{
+                                      background: v.text ? '#8b5cf6' : '#f1f5f9',
+                                      color: v.text ? '#fff' : '#94a3b8',
+                                      border: '1px solid #cbd5e1', padding: '0.5rem', borderRadius: '4px',
+                                      cursor: !v.text ? 'not-allowed' : 'pointer',
+                                      opacity: !v.text ? 0.5 : 1,
+                                      display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                                    }}
+                                  ><Play size={16} fill="currentColor" /></button>
+
                                   {/* 創作者親聲朗讀 — record / re-record this verse */}
                                   <button
                                     type="button"
