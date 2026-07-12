@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { connectVoiceChain } from './voiceBeautify';
 
 // Generic verse-voice recorder modal — used by the custom-set editor so a
 // creator can read a verse in their own voice. Flow mirrors the Cloud
@@ -9,9 +10,11 @@ import { useEffect, useRef, useState } from 'react';
 //   t          — i18n helper (zh, en) => string
 //   reference  — verse reference shown above the text
 //   verseText  — the text the creator reads aloud
-//   onUpload   — async ({ blob, mime, dur }) => void; throw to show an error
+//   onUpload   — ({ blob, mime, dur, beautify, reference }) => void. Fire-and-
+//                forget: the parent bakes the enhance effect + uploads in the
+//                BACKGROUND so the creator can immediately record the next verse.
 //   onCancel   — close without saving
-//   onDone     — called after a successful upload
+//   onDone     — called right after handing the clip off (closes the modal)
 export default function VerseVoiceRecorder({ t, reference, verseText, onUpload, onCancel, onDone }) {
   // 120s ≈ 360KB at 24kbps opus → ~4.8 of the 6 allowed upload chunks,
   // leaving headroom for VBR overshoot. Plenty for multi-verse ranges.
@@ -110,21 +113,8 @@ export default function VerseVoiceRecorder({ t, reference, verseText, onUpload, 
   const previewSrcRef = useRef(null);
   const decodedBufRef = useRef(null);
 
-  // Wire src → destination. Enhancer = voice-band EQ only (no reverb):
-  //   highpass 120Hz — cuts rumble/handling noise below the voice range
-  //   lowpass  9kHz  — cuts hiss above the voice range
-  //   peaking +2dB @2.5kHz — gentle presence lift for clarity
-  const connectChain = (ctx, src, destination, withEnhance) => {
-    if (!withEnhance) { src.connect(destination); return; }
-    const hp = ctx.createBiquadFilter();
-    hp.type = 'highpass'; hp.frequency.value = 120; hp.Q.value = 0.7;
-    const lp = ctx.createBiquadFilter();
-    lp.type = 'lowpass'; lp.frequency.value = 9000; lp.Q.value = 0.7;
-    const presence = ctx.createBiquadFilter();
-    presence.type = 'peaking'; presence.frequency.value = 2500; presence.Q.value = 1; presence.gain.value = 2;
-    src.connect(hp); hp.connect(lp); lp.connect(presence);
-    presence.connect(destination);
-  };
+  // Live-preview chain (shared with the background bake — see voiceBeautify.js).
+  const connectChain = connectVoiceChain;
 
   const stopPreview = () => {
     try { previewSrcRef.current?.stop(); } catch { /* noop */ }
@@ -152,31 +142,6 @@ export default function VerseVoiceRecorder({ t, reference, verseText, onUpload, 
     } catch { /* decode/play failed — noop */ }
   };
 
-  // Bake the reverb into a fresh 48kbps opus blob (realtime re-encode:
-  // takes about as long as the clip itself — the UI shows a processing state).
-  const bakeBeautified = async () => {
-    const ctx = new (window.AudioContext || window.webkitAudioContext)();
-    try {
-      const srcBuf = decodedBufRef.current || await ctx.decodeAudioData(await blobRef.current.arrayBuffer());
-      const dest = ctx.createMediaStreamDestination();
-      const src = ctx.createBufferSource();
-      src.buffer = srcBuf;
-      connectChain(ctx, src, dest, true);
-      const mime = mimeRef.current || 'audio/webm';
-      const rec = new MediaRecorder(dest.stream, { mimeType: mime, audioBitsPerSecond: 48000 });
-      const parts = [];
-      rec.ondataavailable = (e) => { if (e.data?.size) parts.push(e.data); };
-      const done = new Promise((resolve) => { rec.onstop = resolve; });
-      rec.start();
-      src.start();
-      src.onended = () => window.setTimeout(() => { try { rec.stop(); } catch { /* noop */ } }, 200);
-      await done;
-      return new Blob(parts, { type: mime });
-    } finally {
-      try { await ctx.close(); } catch { /* noop */ }
-    }
-  };
-
   const discardAndRerecord = () => {
     stopPreview();
     previewAudioRef.current = null;
@@ -187,24 +152,15 @@ export default function VerseVoiceRecorder({ t, reference, verseText, onUpload, 
     setPhase('idle');
   };
 
-  const send = async () => {
+  // Hand the RAW clip to the parent and close immediately. The parent bakes the
+  // enhance effect + uploads in the background (that step is realtime and slow),
+  // so the creator can move straight on to recording the next verse.
+  const send = () => {
     const blob = blobRef.current;
     if (!blob) return;
     stopPreview();
-    setError('');
-    try {
-      let finalBlob = blob;
-      if (beautify) {
-        setPhase('processing');
-        finalBlob = await bakeBeautified();
-      }
-      setPhase('uploading');
-      await onUpload({ blob: finalBlob, mime: mimeRef.current, dur: secondsRef.current });
-      onDone?.();
-    } catch (e) {
-      setError(String(e.message || e));
-      setPhase('preview');
-    }
+    onUpload({ blob, mime: mimeRef.current || 'audio/webm', dur: secondsRef.current, beautify, reference });
+    onDone?.();
   };
 
   const timeLabel = `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`;
@@ -261,12 +217,12 @@ export default function VerseVoiceRecorder({ t, reference, verseText, onUpload, 
                 🎙️ {t('重錄', 'Re-record')}
               </button>
               <button onClick={send} disabled={phase !== 'preview'} style={{ padding: '0.55rem 1.4rem', borderRadius: 10, border: 'none', background: 'linear-gradient(135deg, #34d399, #10b981)', color: '#fff', cursor: 'pointer', fontWeight: 'bold' }}>
-                {phase === 'processing' ? `✨ ${t('美化處理中…', 'Enhancing…')}` : phase === 'uploading' ? t('上傳中…', 'Uploading…') : t('儲存錄音', 'Save recording')}
+                {t('儲存錄音', 'Save recording')}
               </button>
             </div>
-            {phase === 'processing' && (
-              <div style={{ color: '#a855f7', fontSize: '0.82rem', marginTop: '0.6rem' }}>
-                {t('處理時間約與錄音長度相同,請稍候…', 'Processing takes about as long as the clip — hang tight…')}
+            {beautify && (
+              <div style={{ color: '#a855f7', fontSize: '0.8rem', marginTop: '0.6rem' }}>
+                {t('儲存後會在背景美化並上傳,你可以直接錄下一節 ✨', 'After saving, enhancing + uploading runs in the background — go ahead and record the next verse ✨')}
               </div>
             )}
           </div>

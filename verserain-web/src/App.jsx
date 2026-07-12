@@ -19,6 +19,7 @@ import { GOOGLE_CLIENT_ID, APPLE_CLIENT_ID, APPLE_REDIRECT_URI, LINE_CHANNEL_ID,
 import { VAPID_PUBLIC_KEY, urlBase64ToUint8Array, isWebPushSupported, isIOSStandalone, isIOSWithoutPWA, hasNativeDailyPush, callNativeDailyPush } from './pushConfig';
 import { setVoiceApi, uploadVerseVoice, uploadSetAsset, compressBackgroundImage, getSetAssetDataUrl } from './setVoiceApi';
 import VerseVoiceRecorder from './VerseVoiceRecorder';
+import { bakeBeautifiedBlob } from './voiceBeautify';
 import { SET_BACKGROUND_THEMES, getSetBackgroundUrl } from './setBackgrounds';
 import QrScanner from 'qr-scanner';
 import TeamsModal from './teams/TeamsModal';
@@ -4789,6 +4790,9 @@ export default function App() {
   // verse reference. null target = recorder closed.
   const [editorVerseVoices, setEditorVerseVoices] = useState({});
   const [editorVoiceTarget, setEditorVoiceTarget] = useState(null); // { reference, text }
+  // reference → 'processing' | 'error' while a recording bakes + uploads in the
+  // background (so the creator isn't blocked and can record the next verse).
+  const [editorVoiceStatus, setEditorVoiceStatus] = useState({});
   useEffect(() => {
     let cancelled = false;
     const setId = editingCustomSet?.id;
@@ -16686,24 +16690,36 @@ const deDict = {
                                     }}
                                   ><Play size={16} fill="currentColor" /></button>
 
-                                  {/* 創作者親聲朗讀 — record / re-record this verse */}
+                                  {/* 創作者親聲朗讀 — record / re-record this verse.
+                                      Background bake+upload shows ⏳ (processing) / ⚠️ (error). */}
+                                  {(() => {
+                                    const vStatus = editorVoiceStatus[v.reference];
+                                    const hasVoice = !!editorVerseVoices[v.reference];
+                                    const bg = vStatus === 'processing' ? '#a855f7' : vStatus === 'error' ? '#f59e0b' : hasVoice ? '#16a34a' : '#f1f5f9';
+                                    return (
                                   <button
                                     type="button"
-                                    disabled={!editingCustomSet.id || !v.reference || !v.text}
+                                    disabled={!editingCustomSet.id || !v.reference || !v.text || vStatus === 'processing'}
                                     onClick={() => setEditorVoiceTarget({ reference: v.reference, text: v.text })}
                                     title={!editingCustomSet.id
                                       ? t('請先儲存題庫,再錄音', 'Save the set first, then record')
-                                      : editorVerseVoices[v.reference]
-                                        ? t(`已有錄音(${editorVerseVoices[v.reference].recordedBy || ''})— 點擊重錄`, `Recorded (${editorVerseVoices[v.reference].recordedBy || ''}) — click to re-record`)
-                                        : t('用你的聲音錄這節,聽的人會聽到你唸', 'Record this verse — listeners will hear your voice')}
+                                      : vStatus === 'processing'
+                                        ? t('背景美化上傳中…', 'Enhancing + uploading in the background…')
+                                        : vStatus === 'error'
+                                          ? t('處理失敗 — 點擊重錄這節', 'Failed — tap to re-record')
+                                          : hasVoice
+                                            ? t(`已有錄音(${editorVerseVoices[v.reference].recordedBy || ''})— 點擊重錄`, `Recorded (${editorVerseVoices[v.reference].recordedBy || ''}) — click to re-record`)
+                                            : t('用你的聲音錄這節,聽的人會聽到你唸', 'Record this verse — listeners will hear your voice')}
                                     style={{
-                                      background: editorVerseVoices[v.reference] ? '#16a34a' : '#f1f5f9',
-                                      color: editorVerseVoices[v.reference] ? '#fff' : '#475569',
+                                      background: bg,
+                                      color: (bg === '#f1f5f9') ? '#475569' : '#fff',
                                       border: '1px solid #cbd5e1', padding: '0.5rem', borderRadius: '4px',
-                                      cursor: (!editingCustomSet.id || !v.reference || !v.text) ? 'not-allowed' : 'pointer',
+                                      cursor: (!editingCustomSet.id || !v.reference || !v.text || vStatus === 'processing') ? 'not-allowed' : 'pointer',
                                       opacity: (!editingCustomSet.id || !v.reference || !v.text) ? 0.5 : 1,
                                     }}
-                                  >🎙️</button>
+                                  >{vStatus === 'processing' ? '⏳' : vStatus === 'error' ? '⚠️' : '🎙️'}</button>
+                                    );
+                                  })()}
                                   <button type="button" onClick={() => {
                                     const newVerses = editingCustomSet.verses.filter((_, i) => i !== idx);
                                     setEditingCustomSet({ ...editingCustomSet, verses: newVerses });
@@ -16718,22 +16734,32 @@ const deDict = {
                                 t={t}
                                 reference={formatVerseReferenceForDisplay(editorVoiceTarget.reference, version)}
                                 verseText={editorVoiceTarget.text}
-                                onUpload={async ({ blob, mime, dur }) => {
-                                  const meta = await uploadVerseVoice({
-                                    email: userEmail || '',
-                                    setId: editingCustomSet.id,
-                                    reference: editorVoiceTarget.reference,
-                                    blob, mime, dur,
-                                    recordedBy: playerName || (userEmail || '').split('@')[0] || 'Anonymous',
-                                  });
-                                  setEditorVerseVoices(prev => ({ ...prev, [editorVoiceTarget.reference]: meta }));
+                                onUpload={({ blob, mime, dur, beautify }) => {
+                                  // Bake (if enhancing) + upload in the BACKGROUND — the
+                                  // realtime bake takes ~as long as the clip, so we never
+                                  // block the creator. Capture the raw reference + setId now.
+                                  const ref = editorVoiceTarget.reference;
+                                  const setId = editingCustomSet.id;
+                                  const recordedBy = playerName || (userEmail || '').split('@')[0] || 'Anonymous';
+                                  const email = userEmail || '';
+                                  setEditorVoiceStatus(prev => ({ ...prev, [ref]: 'processing' }));
+                                  (async () => {
+                                    try {
+                                      const finalBlob = beautify ? await bakeBeautifiedBlob(blob, mime) : blob;
+                                      const meta = await uploadVerseVoice({ email, setId, reference: ref, blob: finalBlob, mime, dur, recordedBy });
+                                      setEditorVerseVoices(prev => ({ ...prev, [ref]: meta }));
+                                      setEditorVoiceStatus(prev => { const n = { ...prev }; delete n[ref]; return n; });
+                                      setToast(t('錄音已儲存 🎙️ 聽這個題庫的人會聽到你的聲音', 'Recording saved 🎙️ Listeners will hear your voice'));
+                                      setTimeout(() => setToast(null), 3500);
+                                    } catch (e) {
+                                      setEditorVoiceStatus(prev => ({ ...prev, [ref]: 'error' }));
+                                      setToast(t('錄音處理失敗,請重錄這節', 'Recording failed — please re-record this verse'));
+                                      setTimeout(() => setToast(null), 4000);
+                                    }
+                                  })();
                                 }}
                                 onCancel={() => setEditorVoiceTarget(null)}
-                                onDone={() => {
-                                  setEditorVoiceTarget(null);
-                                  setToast(t('錄音已儲存 🎙️ 聽這個題庫的人會聽到你的聲音', 'Recording saved 🎙️ Listeners will hear your voice'));
-                                  setTimeout(() => setToast(null), 4000);
-                                }}
+                                onDone={() => setEditorVoiceTarget(null)}
                               />
                             )}
 
