@@ -16721,6 +16721,11 @@ const deDict = {
                                     );
                                   })()}
                                   <button type="button" onClick={() => {
+                                    // Confirm before removing a row that has content — the ✖ sits
+                                    // right next to the other buttons and is easy to hit by mistake.
+                                    if ((v.reference || v.text) && !window.confirm(
+                                      t(`確定刪除這節經文?\n${v.reference || ''}`, `Delete this verse?\n${v.reference || ''}`)
+                                    )) return;
                                     const newVerses = editingCustomSet.verses.filter((_, i) => i !== idx);
                                     setEditingCustomSet({ ...editingCustomSet, verses: newVerses });
                                   }} style={{ background: '#ef4444', color: 'white', border: 'none', padding: '0.5rem', borderRadius: '4px', cursor: 'pointer' }}>✖</button>
