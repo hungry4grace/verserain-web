@@ -5063,7 +5063,11 @@ export default function App() {
       } else if (type === 'listen') {
         currentAct += 100;
       } else if (isNewVerseChallenge) {
-        currentAct += 1000;
+        currentAct += 1000;              // brand-new verse — biggest reward, on first play
+      } else if (type === 'completed') {
+        currentAct += 500;               // completing any challenge (incl. verses already in the garden)
+      } else if (type === 'champ') {
+        currentAct += 1000;              // completion (500) + new personal best / fruit (500)
       }
       updated._activity[todayStr] = currentAct;
       localStorage.setItem('verseRain_gardenData', JSON.stringify(updated));
