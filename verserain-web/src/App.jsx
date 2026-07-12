@@ -4799,6 +4799,14 @@ export default function App() {
     return () => { cancelled = true; };
   }, [editingCustomSet?.id]);
   const [bookPickerIdx, setBookPickerIdx] = useState(null); // which verse row has the book picker open
+  // Narrow (phone) layout for the verse-set editor rows: stack book + ch:vs
+  // vertically and give the verse text two lines so it's readable.
+  const [isNarrowEditor, setIsNarrowEditor] = useState(() => typeof window !== 'undefined' && window.innerWidth < 640);
+  useEffect(() => {
+    const onResize = () => setIsNarrowEditor(window.innerWidth < 640);
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
 
   const [publishedVerseSets, setPublishedVerseSets] = useState([]);
   const [viewCounts, setViewCounts] = useState({});
@@ -16567,6 +16575,8 @@ const deDict = {
 
                               return (
                                 <div key={idx} style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.8rem', alignItems: 'flex-start', position: 'relative' }}>
+                                  {/* Reference column: book name on top, chapter:verse below (stacked on phones). */}
+                                  <div style={{ display: 'flex', flexDirection: isNarrowEditor ? 'column' : 'row', gap: isNarrowEditor ? '4px' : '0.5rem', alignItems: isNarrowEditor ? 'stretch' : 'flex-start', flexShrink: 0 }}>
                                   <button type="button" onClick={() => setBookPickerIdx(bookPickerIdx === idx ? null : idx)}
                                     style={{ padding: '0.5rem 0.7rem', borderRadius: '4px', border: '1px solid #cbd5e1', background: v.book ? '#3b82f6' : '#f1f5f9', color: v.book ? '#fff' : '#475569', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.85rem', whiteSpace: 'nowrap', minWidth: '50px', textAlign: 'center', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '0.25rem' }}>
                                     {v.book ? getBookAbbr(BIBLE_BOOKS.find(b => b.id === v.book), version) : <Library size={16} />}
@@ -16621,7 +16631,8 @@ const deDict = {
                                       await autoFetchVerse(bookInfo, v.verseInput || '', idx);
                                     }
                                   }} placeholder={t("章:節 (如 3:16)", "Ch:Vs (e.g. 3:16)")}
-                                    style={{ width: '110px', padding: '0.5rem', borderRadius: '4px', border: '1px solid #cbd5e1', fontSize: '0.9rem' }} />
+                                    style={{ width: isNarrowEditor ? '84px' : '110px', boxSizing: 'border-box', padding: '0.5rem', borderRadius: '4px', border: '1px solid #cbd5e1', fontSize: '0.9rem' }} />
+                                  </div>
 
                                   <textarea
                                     value={v.text}
@@ -16634,10 +16645,11 @@ const deDict = {
                                     placeholder={t("請先在前方選定書卷並輸入章節，按下 Enter 或 Tab 後即可解鎖此欄位", "Select book & chapter:verse, press Enter/Tab to unlock")}
                                     style={{
                                       flex: 1,
+                                      minWidth: 0,
                                       padding: '0.5rem',
                                       borderRadius: '4px',
                                       border: '1px solid #cbd5e1',
-                                      minHeight: '40px',
+                                      minHeight: isNarrowEditor ? '4.2em' : '40px',
                                       resize: 'vertical',
                                       fontSize: '0.9rem',
                                       background: !v.reference ? '#e2e8f0' : '#ffffff',
@@ -16646,6 +16658,8 @@ const deDict = {
                                     }}
                                   />
 
+                                  {/* Action column: read-aloud / record / delete (stacked on phones). */}
+                                  <div style={{ display: 'flex', flexDirection: isNarrowEditor ? 'column' : 'row', gap: '0.4rem', flexShrink: 0 }}>
                                   {/* 朗讀預覽 — play the creator's recording if any, else TTS (like the View modal) */}
                                   <button
                                     type="button"
@@ -16694,6 +16708,7 @@ const deDict = {
                                     const newVerses = editingCustomSet.verses.filter((_, i) => i !== idx);
                                     setEditingCustomSet({ ...editingCustomSet, verses: newVerses });
                                   }} style={{ background: '#ef4444', color: 'white', border: 'none', padding: '0.5rem', borderRadius: '4px', cursor: 'pointer' }}>✖</button>
+                                  </div>
                                 </div>
                               );
                             })}
