@@ -16753,9 +16753,9 @@ const deDict = {
                                       const finalBlob = beautify ? await bakeBeautifiedBlob(blob, mime) : blob;
                                       const meta = await uploadVerseVoice({ email, setId, reference: ref, blob: finalBlob, mime, dur, recordedBy });
                                       setEditorVerseVoices(prev => ({ ...prev, [ref]: meta }));
+                                      // No success toast — the mic button turning green is enough,
+                                      // and extra notifications distract mid-recording.
                                       setEditorVoiceStatus(prev => { const n = { ...prev }; delete n[ref]; return n; });
-                                      setToast(t('錄音已儲存 🎙️ 聽這個題庫的人會聽到你的聲音', 'Recording saved 🎙️ Listeners will hear your voice'));
-                                      setTimeout(() => setToast(null), 3500);
                                     } catch (e) {
                                       setEditorVoiceStatus(prev => ({ ...prev, [ref]: 'error' }));
                                       setToast(t('錄音處理失敗,請重錄這節', 'Recording failed — please re-record this verse'));
