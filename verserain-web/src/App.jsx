@@ -4803,6 +4803,10 @@ export default function App() {
     return () => { cancelled = true; };
   }, [editingCustomSet?.id]);
   const [bookPickerIdx, setBookPickerIdx] = useState(null); // which verse row has the book picker open
+  // Two-tap delete confirm for verse rows: first tap arms (shows 確定?), second
+  // tap removes. In-app (no window.confirm — that's a silent no-op in iOS WKWebView).
+  const [confirmDeleteIdx, setConfirmDeleteIdx] = useState(null);
+  const confirmDeleteTimerRef = useRef(null);
   // Narrow (phone) layout for the verse-set editor rows: stack book + ch:vs
   // vertically and give the verse text two lines so it's readable.
   const [isNarrowEditor, setIsNarrowEditor] = useState(() => typeof window !== 'undefined' && window.innerWidth < 640);
@@ -16720,15 +16724,27 @@ const deDict = {
                                   >{vStatus === 'processing' ? '⏳' : vStatus === 'error' ? '⚠️' : '🎙️'}</button>
                                     );
                                   })()}
-                                  <button type="button" onClick={() => {
-                                    // Confirm before removing a row that has content — the ✖ sits
-                                    // right next to the other buttons and is easy to hit by mistake.
-                                    if ((v.reference || v.text) && !window.confirm(
-                                      t(`確定刪除這節經文?\n${v.reference || ''}`, `Delete this verse?\n${v.reference || ''}`)
-                                    )) return;
-                                    const newVerses = editingCustomSet.verses.filter((_, i) => i !== idx);
-                                    setEditingCustomSet({ ...editingCustomSet, verses: newVerses });
-                                  }} style={{ background: '#ef4444', color: 'white', border: 'none', padding: '0.5rem', borderRadius: '4px', cursor: 'pointer' }}>✖</button>
+                                  <button type="button"
+                                    onClick={() => {
+                                      const hasContent = v.reference || v.text;
+                                      // First tap on a non-empty row just arms; second tap deletes.
+                                      // (window.confirm is a silent no-op in iOS WKWebView, so we
+                                      // confirm in-app instead.)
+                                      if (hasContent && confirmDeleteIdx !== idx) {
+                                        setConfirmDeleteIdx(idx);
+                                        clearTimeout(confirmDeleteTimerRef.current);
+                                        confirmDeleteTimerRef.current = setTimeout(() => setConfirmDeleteIdx(null), 3500);
+                                        return;
+                                      }
+                                      clearTimeout(confirmDeleteTimerRef.current);
+                                      setConfirmDeleteIdx(null);
+                                      const newVerses = editingCustomSet.verses.filter((_, i) => i !== idx);
+                                      setEditingCustomSet({ ...editingCustomSet, verses: newVerses });
+                                    }}
+                                    title={confirmDeleteIdx === idx ? t('再按一次刪除', 'Tap again to delete') : t('刪除這節', 'Delete this verse')}
+                                    style={{ background: confirmDeleteIdx === idx ? '#b91c1c' : '#ef4444', color: 'white', border: confirmDeleteIdx === idx ? '2px solid #fca5a5' : 'none', padding: confirmDeleteIdx === idx ? '0.4rem 0.5rem' : '0.5rem', borderRadius: '4px', cursor: 'pointer', fontWeight: confirmDeleteIdx === idx ? 700 : 400, fontSize: confirmDeleteIdx === idx ? '0.8rem' : '1rem', whiteSpace: 'nowrap' }}>
+                                    {confirmDeleteIdx === idx ? t('確定?', 'Sure?') : '✖'}
+                                  </button>
                                   </div>
                                 </div>
                               );
