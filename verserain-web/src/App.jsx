@@ -16649,7 +16649,7 @@ const deDict = {
                                       padding: '0.5rem',
                                       borderRadius: '4px',
                                       border: '1px solid #cbd5e1',
-                                      minHeight: isNarrowEditor ? '4.2em' : '40px',
+                                      minHeight: isNarrowEditor ? '116px' : '40px',
                                       resize: 'vertical',
                                       fontSize: '0.9rem',
                                       background: !v.reference ? '#e2e8f0' : '#ffffff',
