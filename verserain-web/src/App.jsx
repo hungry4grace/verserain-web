@@ -3053,9 +3053,10 @@ function VerseSetContinuousRainPlayer({
                   type="button"
                   onClick={() => setShowTopicPicker(prev => !prev)}
                   className="daily-verse-rain-date continuous-rain-set-title"
-                  style={{ border: '1px solid rgba(255,255,255,0.2)', background: 'rgba(15, 23, 42, 0.35)', color: 'inherit', borderRadius: '12px', padding: '0.5rem 1rem', cursor: 'pointer', fontWeight: 800, fontSize: '1.08rem', maxWidth: '70vw', minWidth: '150px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', lineHeight: 1.2 }}
+                  style={{ border: '1px solid rgba(255,255,255,0.2)', background: 'rgba(15, 23, 42, 0.35)', color: 'inherit', borderRadius: '12px', padding: '0.5rem 1rem', cursor: 'pointer', fontWeight: 800, fontSize: '1.08rem', maxWidth: '70vw', minWidth: '150px', lineHeight: 1.2, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px' }}
                 >
-                  {normalizedTopicButtonLabel}
+                  <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '100%' }}>{normalizedTopicButtonLabel}</span>
+                  <span style={{ fontSize: '0.8rem', fontWeight: 700, opacity: 0.9, whiteSpace: 'nowrap', letterSpacing: '0.02em' }}>{t('【更多的主題經文】', 'More topic verses')}</span>
                 </button>
                 {showTopicPicker && (
                   <div style={{ position: 'absolute', top: 'calc(100% + 8px)', left: '50%', transform: 'translateX(-50%)', width: 'min(92vw, 540px)', maxHeight: '60vh', overflowY: 'auto', background: 'rgba(15, 23, 42, 0.94)', border: '1px solid rgba(148, 163, 184, 0.45)', borderRadius: '14px', boxShadow: '0 16px 36px rgba(2,6,23,.45)', zIndex: 30, padding: '0.5rem', display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: '0.35rem' }}>
@@ -5473,8 +5474,12 @@ export default function App() {
 
   const currentSet = (selectedSetId ? (safeActiveSets.find(s => s.id === selectedSetId) || customVerseSets.find(s => s.id === selectedSetId)) : null) || safeActiveSets[0];
   // 創作者親聲朗讀 — recordings map for the set detail page, so verse rows
-  // can show a ⭐ on recorded verses.
+  // can show a ⭐ on recorded verses. voiceRefreshTick bumps when the editor
+  // closes so newly-recorded verses show up here even though currentSet.id
+  // is unchanged (otherwise the detail page keeps the pre-editing snapshot
+  // and most fresh recordings look "missing" until a full reload).
   const [currentSetVoices, setCurrentSetVoices] = useState({});
+  const [voiceRefreshTick, setVoiceRefreshTick] = useState(0);
   useEffect(() => {
     let cancelled = false;
     setCurrentSetVoices({});
@@ -5484,7 +5489,7 @@ export default function App() {
       .then(res => { if (!cancelled) setCurrentSetVoices(res?.voices || {}); })
       .catch(() => { /* no recordings */ });
     return () => { cancelled = true; };
-  }, [currentSet?.id]);
+  }, [currentSet?.id, voiceRefreshTick]);
   const getVerseSetAuthorName = React.useCallback((set) => {
     if (!set) return "";
     if (set.authorName && set.authorName !== "Anonymous") return set.authorName;
@@ -6320,6 +6325,22 @@ export default function App() {
   const verseModalAudioRef = useRef(null);
   const setVoicesLookupRef = useRef(new globalThis.Map());      // setId → { reference: meta }
   const setVoiceAudioLookupRef = useRef(new globalThis.Map());  // voiceId → data URL
+
+  // When the creator leaves the set editor, drop the cached recordings for
+  // that set (both the playback lookup and the detail-page ⭐ map) so verses
+  // recorded during the session are visible immediately — not stale until a
+  // full app reload. Recordings persist server-side keyed by (setId, ref);
+  // only these client caches were going stale.
+  const prevEditingSetIdRef = useRef(null);
+  useEffect(() => {
+    const cur = editingCustomSet?.id || null;
+    const prev = prevEditingSetIdRef.current;
+    prevEditingSetIdRef.current = cur;
+    if (prev && !cur) {
+      setVoicesLookupRef.current.delete(prev);
+      setVoiceRefreshTick(x => x + 1);
+    }
+  }, [editingCustomSet?.id]);
 
   const stopVerseModalAudio = () => {
     try { verseModalAudioRef.current?.pause(); } catch { /* noop */ }
@@ -8174,6 +8195,7 @@ export default function App() {
 
   // ─── Farsi (Persian) UI Dictionary ───────────────────────────────────────
   const faDict = {
+    '【更多的主題經文】': "آیات موضوعی بیشتر",
     '輸入出處批次匯入': "درون‌ریزی بر اساس مراجع",
     '麥克風聽見：': "شنیده شد:",
     '背景圖片': "پس‌زمینه",
@@ -8683,6 +8705,7 @@ export default function App() {
   // Covers the high-value UI surface (navigation, auth, game controls,
   // voice settings); unlisted keys fall back to English via t().
   const arDict = {
+    '【更多的主題經文】': "المزيد من الآيات الموضوعية",
     '輸入出處批次匯入': "استيراد حسب المراجع",
     '麥克風聽見：': "المسموع:",
     '背景圖片': "الخلفية",
@@ -8880,6 +8903,7 @@ export default function App() {
 
   // ─── Hebrew (עברית) UI Dictionary ────────────────────────────────────────
   const heDict = {
+    '【更多的主題經文】': "פסוקים לפי נושא",
     '輸入出處批次匯入': "ייבוא לפי הפניות",
     '麥克風聽見：': "נשמע:",
     '背景圖片': "רקע",
@@ -9598,6 +9622,7 @@ export default function App() {
   });
 
   const jaDict = {
+    '【更多的主題經文】': "他のテーマの聖句",
     '輸入出處批次匯入': "出典から一括取り込み",
     '麥克風聽見：': "聞き取り:",
     '背景圖片': "背景",
@@ -10003,6 +10028,7 @@ export default function App() {
 };
 
   const koDict = {
+    '【更多的主題經文】': "다른 주제 성구",
     '輸入出處批次匯入': "출처로 일괄 가져오기",
     '麥克風聽見：': "들린 내용:",
     '背景圖片': "배경",
@@ -10526,6 +10552,7 @@ export default function App() {
 };
 
 const zhcnDict = {
+    '【更多的主題經文】': "【更多的主题经文】",
     '輸入出處批次匯入': "输入出处批次导入",
     '麥克風聽見：': "麦克风听见:",
     '背景圖片': "背景图片",
@@ -10683,6 +10710,7 @@ const zhcnDict = {
 
 // ─── Vietnamese (Tiếng Việt) UI Dictionary ────────────────────────────────────────
 const viDict = {
+    '【更多的主題經文】': "Thêm câu theo chủ đề",
     '輸入出處批次匯入': "Nhập theo tham chiếu",
     '麥克風聽見：': "Nghe được:",
     '背景圖片': "Hình nền",
@@ -10848,6 +10876,7 @@ const viDict = {
 };
 
 const myDict = {
+    '【更多的主題經文】': "နောက်ထပ် ခေါင်းစဉ်ကျမ်းချက်များ",
     '輸入出處批次匯入': "ကိုးကားချက်ဖြင့် အစုလိုက်တင်သွင်းရန်",
     '麥克風聽見：': "ကြားရသည်:",
     '背景圖片': "နောက်ခံပုံ",
@@ -11001,6 +11030,7 @@ const myDict = {
 };
 
 const idDict = {
+    '【更多的主題經文】': "Ayat tema lainnya",
     '輸入出處批次匯入': "Impor via referensi",
     '麥克風聽見：': "Terdengar:",
     '背景圖片': "Latar",
@@ -11453,6 +11483,7 @@ const idDict = {
 };
 
 const msDict = {
+    '【更多的主題經文】': "Lebih banyak ayat bertema",
     '輸入出處批次匯入': "Import ikut rujukan",
     '麥克風聽見：': "Didengar:",
     '背景圖片': "Latar",
@@ -11573,6 +11604,7 @@ const msDict = {
 };
 
 const esDict = {
+    '【更多的主題經文】': "Más versículos temáticos",
     '輸入出處批次匯入': "Importar por referencias",
     '麥克風聽見：': "Escuchado:",
     '背景圖片': "Fondo",
@@ -11764,6 +11796,7 @@ const esDict = {
 };
 
 const trDict = {
+    '【更多的主題經文】': "Daha fazla konu ayeti",
     '輸入出處批次匯入': "Referansla toplu içe aktar",
     '麥克風聽見：': "Duyulan:",
     '背景圖片': "Arka plan",
@@ -11955,6 +11988,7 @@ const trDict = {
 };
 
 const deDict = {
+    '【更多的主題經文】': "Mehr Themenverse",
     '輸入出處批次匯入': "Nach Stellen importieren",
     '麥克風聽見：': "Gehört:",
     '背景圖片': "Hintergrund",
