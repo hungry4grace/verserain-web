@@ -1,13 +1,14 @@
 {
   "name": "verserain-web",
   "private": true,
-  "version": "3.17.0",
+  "version": "3.18.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
     "generate:dailyverse-backgrounds": "node scripts/generate-dailyverse-backgrounds.mjs",
     "validate-refs": "node scripts/validate-refs.mjs",
+    "check:i18n": "node scripts/check-i18n.mjs",
     "lint": "eslint .",
     "preview": "vite preview"
   },
@@ -31,6 +32,8 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.39.4",
+    "acorn": "^8.14.0",
+    "acorn-jsx": "^5.3.2",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.1",

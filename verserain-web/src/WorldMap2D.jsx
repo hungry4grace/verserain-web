@@ -279,7 +279,7 @@ export default function WorldMap2D({ t, playerName, userEmail, onJoinRoom, onVie
           const marker = L.marker([finalLat, finalLng], { icon, myRoomId: p.roomId });
 
           const roomBadge = p.roomId
-            ? `<div style="margin-top:6px; font-size:0.8rem; font-weight:bold; background:${roomColor}22; color:${roomColor}; border-radius:12px; padding:2px 8px; display:inline-block;">⚔️ 房間 ${p.roomId}</div>`
+            ? `<div style="margin-top:6px; font-size:0.8rem; font-weight:bold; background:${roomColor}22; color:${roomColor}; border-radius:12px; padding:2px 8px; display:inline-block;">⚔️ ${t('房間 {id}', 'Room {id}').replace('{id}', String(p.roomId))}</div>`
             : '';
 
           const lastOnline = p.updatedAt ? new Date(p.updatedAt).toLocaleString() : 'Unknown';
@@ -287,7 +287,7 @@ export default function WorldMap2D({ t, playerName, userEmail, onJoinRoom, onVie
           const popup = L.popup({ maxWidth: 220, className: 'verse-map-popup' }).setContent(`
             <div style="font-family: system-ui, sans-serif; text-align:center; min-width: 120px;">
               <div style="font-weight:bold; font-size:1.1rem; color:#1e293b; margin-bottom:4px; display:flex; flex-direction:column; align-items:center; gap:5px;">
-                <button class="map-garden-btn" data-name="${p.name}" style="font-size: 0.95rem; background-color: #f1f5f9; color: #2563eb; padding: 0.3rem 0.8rem; border-radius: 16px; border: 1px solid #bfdbfe; cursor: pointer; font-weight: bold; margin-top:2px; display:flex; align-items:center; gap:4px;">🌳 ${p.name} 的園子</button>
+                <button class="map-garden-btn" data-name="${p.name}" style="font-size: 0.95rem; background-color: #f1f5f9; color: #2563eb; padding: 0.3rem 0.8rem; border-radius: 16px; border: 1px solid #bfdbfe; cursor: pointer; font-weight: bold; margin-top:2px; display:flex; align-items:center; gap:4px;">🌳 ${t('{name} 的園子', "{name}'s garden").replace('{name}', p.name)}</button>
               </div>
               <div style="font-size:0.85rem; color:#64748b;">📍 ${p.city ? p.city + ', ' : ''}${p.country || 'Unknown'}</div>
               ${roomBadge}
@@ -388,10 +388,10 @@ export default function WorldMap2D({ t, playerName, userEmail, onJoinRoom, onVie
                 return (
                   <button
                     key={tm.id}
-                    title={t(
-                      `${tm.name} · 已上線 ${visibleMembers.length}/${tm.memberNames.size} 位`,
-                      `${tm.name} · ${visibleMembers.length}/${tm.memberNames.size} on the map`
-                    )}
+                    title={t('{name} · 已上線 {n}/{total} 位', '{name} · {n}/{total} on the map')
+                      .replace('{name}', tm.name)
+                      .replace('{n}', String(visibleMembers.length))
+                      .replace('{total}', String(tm.memberNames.size))}
                     onClick={() => {
                       if (isSelected) {
                         setSelectedTeam(null);
@@ -469,7 +469,7 @@ export default function WorldMap2D({ t, playerName, userEmail, onJoinRoom, onVie
                     transition: 'transform 0.2s', outline: 'none'
                   }}>
                   <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: getRoomColor(rid), display: 'inline-block' }}></span>
-                  {rid} ({players.filter(p => p.roomId === rid).length}人)
+                  {rid} {t('({n} 人)', '({n} people)').replace('{n}', String(players.filter(p => p.roomId === rid).length))}
                 </button>
               ))}
             </div>

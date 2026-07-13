@@ -48,6 +48,27 @@ function expandReferenceForDisplay(ref) {
   return ref;
 }
 
+// Wording for the link preview + interstitial, keyed by the sender's UI
+// language (?lang=…, stamped on every share URL the app emits). A share sent
+// from an English/Vietnamese/… session must not greet the recipient in Chinese.
+const CARD_STRINGS = {
+  zh: { htmlLang: 'zh-Hant', dir: 'ltr', site: 'VerseRain — 澆灌心田，結出生命果子', tap: '（點擊可以聆聽）', desc: '點開聆聽這個經文組', open: '開啟 VerseRain 聆聽 →' },
+  cuvs: { htmlLang: 'zh-Hans', dir: 'ltr', site: 'VerseRain — 浇灌心田，结出生命果子', tap: '（点击可以聆听）', desc: '点开聆听这个经文组', open: '打开 VerseRain 聆听 →' },
+  en: { htmlLang: 'en', dir: 'ltr', site: 'VerseRain — Water your heart, bear the fruit of life', tap: ' (tap to listen)', desc: 'Tap to listen to this verse set', open: 'Open VerseRain and listen →' },
+  ja: { htmlLang: 'ja', dir: 'ltr', site: 'VerseRain — 心に潤いを、いのちの実を', tap: '（タップして聴く）', desc: 'この聖句セットをタップして聴く', open: 'VerseRain を開いて聴く →' },
+  ko: { htmlLang: 'ko', dir: 'ltr', site: 'VerseRain — 마음에 물을 주어 생명의 열매를', tap: ' (눌러서 듣기)', desc: '이 말씀 세트를 눌러 들어보세요', open: 'VerseRain 열고 듣기 →' },
+  es: { htmlLang: 'es', dir: 'ltr', site: 'VerseRain — Riega tu corazón y da fruto de vida', tap: ' (toca para escuchar)', desc: 'Toca para escuchar este conjunto de versículos', open: 'Abrir VerseRain y escuchar →' },
+  de: { htmlLang: 'de', dir: 'ltr', site: 'VerseRain — Bewässere dein Herz, bringe Frucht des Lebens', tap: ' (zum Anhören tippen)', desc: 'Tippe, um diese Verssammlung anzuhören', open: 'VerseRain öffnen und anhören →' },
+  tr: { htmlLang: 'tr', dir: 'ltr', site: 'VerseRain — Kalbini sula, yaşam meyvesi ver', tap: ' (dinlemek için dokun)', desc: 'Bu ayet setini dinlemek için dokun', open: "VerseRain'i aç ve dinle →" },
+  vi: { htmlLang: 'vi', dir: 'ltr', site: 'VerseRain — Tưới mát tâm hồn, kết trái sự sống', tap: ' (chạm để nghe)', desc: 'Chạm để nghe bộ câu Kinh Thánh này', open: 'Mở VerseRain và nghe →' },
+  id: { htmlLang: 'id', dir: 'ltr', site: 'VerseRain — Siram hatimu, hasilkan buah kehidupan', tap: ' (ketuk untuk mendengarkan)', desc: 'Ketuk untuk mendengarkan kumpulan ayat ini', open: 'Buka VerseRain dan dengarkan →' },
+  ms: { htmlLang: 'ms', dir: 'ltr', site: 'VerseRain — Siram hatimu, hasilkan buah kehidupan', tap: ' (ketik untuk mendengar)', desc: 'Ketik untuk mendengar set ayat ini', open: 'Buka VerseRain dan dengar →' },
+  my: { htmlLang: 'my', dir: 'ltr', site: 'VerseRain — နှလုံးသားကို ရေလောင်း၊ အသက်၏အသီးကို သီးပါစေ', tap: '（နှိပ်၍ နားထောင်ပါ）', desc: 'ဤကျမ်းချက်စုကို နားထောင်ရန် နှိပ်ပါ', open: 'VerseRain ကို ဖွင့်၍ နားထောင်ပါ →' },
+  ar: { htmlLang: 'ar', dir: 'rtl', site: 'VerseRain — اسقِ قلبك ليُثمر ثمر الحياة', tap: ' (اضغط للاستماع)', desc: 'اضغط للاستماع إلى مجموعة الآيات هذه', open: '← افتح VerseRain واستمع' },
+  he: { htmlLang: 'he', dir: 'rtl', site: 'VerseRain — השקו את הלב, הניבו פרי חיים', tap: ' (הקישו להאזנה)', desc: 'הקישו כדי להאזין לאוסף הפסוקים הזה', open: '← פתחו את VerseRain והאזינו' },
+  fa: { htmlLang: 'fa', dir: 'rtl', site: 'VerseRain — دل خود را سیراب کن تا میوهٔ زندگی دهد', tap: ' (برای شنیدن ضربه بزنید)', desc: 'برای شنیدن این مجموعه آیات ضربه بزنید', open: '← VerseRain را باز کنید و گوش دهید' },
+};
+
 const PARTY_BASE = (process.env.PARTY_BASE || 'https://verserain-party.hungry4grace.partykit.dev/parties/main/global-auth-db').replace(/\/+$/, '');
 
 export default async function handler(req, res) {
@@ -61,6 +82,11 @@ export default async function handler(req, res) {
   let title = String(q.title || '').slice(0, 60);
   let vtext = String(q.vtext || '').slice(0, 160);
   const idx = /^\d+$/.test(String(q.i || '')) ? Number(q.i) : null;
+  // Sender's UI language — falls back to zh for links minted before ?lang= existed.
+  const lang = Object.prototype.hasOwnProperty.call(CARD_STRINGS, String(q.lang || ''))
+    ? String(q.lang)
+    : 'zh';
+  const L = CARD_STRINGS[lang];
 
   // Resolve title / verse text from the shared set when not passed inline.
   if (set && (!title || (!vtext && (idx !== null || verse)))) {
@@ -89,6 +115,9 @@ export default async function handler(req, res) {
   if (set) dest.searchParams.set('listenSet', set);
   if (verse) dest.searchParams.set('listenVerse', verse);
   if (version) dest.searchParams.set('version', version);
+  // Carry the language through to the SPA so the app's own directions
+  // (Start Listening / Stop / …) render in the language the link was sent in.
+  if (q.lang) dest.searchParams.set('lang', lang);
   // order=seq → the app plays the whole set in canonical order.
   if (['seq', 'sequential'].includes(String(q.order || ''))) dest.searchParams.set('listenOrder', 'seq');
   const destUrl = dest.toString();
@@ -100,18 +129,19 @@ export default async function handler(req, res) {
   const titleIsRef = title && verse
     && (normalize(title) === normalize(verse) || normalize(title) === normalize(refDisplay));
   const ogTitle = (refDisplay && (!title || titleIsRef))
-    ? `📖 ${refDisplay}（點擊可以聆聽）`
+    ? `📖 ${refDisplay}${L.tap}`
     : title
       ? (refDisplay ? `📖 ${title} · ${refDisplay}` : `📖 ${title}`)
-      : 'VerseRain — 澆灌心田，結出生命果子';
-  const ogDesc = vtext
+      : L.site;
+  const quote = (lang === 'zh' || lang === 'cuvs' || lang === 'ja')
     ? `「${vtext}」`
-    : '點開聆聽這個經文組 · Tap to listen to this verse set';
+    : `“${vtext}”`;
+  const ogDesc = vtext ? quote : L.desc;
   const ogImage = `${origin}/og-family.png`;
   const pageUrl = `${origin}${req.url || '/lc'}`;
 
   const html = `<!doctype html>
-<html lang="zh-Hant">
+<html lang="${esc(L.htmlLang)}" dir="${L.dir}">
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -139,7 +169,7 @@ export default async function handler(req, res) {
   <div>
     <h1 style="font-size:1.4rem;margin:0 0 .5rem">${esc(ogTitle)}</h1>
     <p style="color:#cbd5e1;max-width:32rem">${esc(ogDesc)}</p>
-    <p style="margin-top:1.25rem"><a href="${esc(destUrl)}">開啟 VerseRain · Open and listen →</a></p>
+    <p style="margin-top:1.25rem"><a href="${esc(destUrl)}">${esc(L.open)}</a></p>
   </div>
 </body>
 </html>`;

@@ -175,13 +175,13 @@ export default function VerseVoiceRecorder({ t, reference, verseText, onUpload, 
         <h3 style={{ color: '#1e293b', marginTop: 0 }}>{t('用你的聲音錄這節', 'Record this verse in your voice')}</h3>
         <div style={{ textAlign: 'left', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 8, padding: '0.6rem 0.8rem', margin: '0 0 0.8rem', fontSize: '0.92rem', lineHeight: 1.7, color: '#334155' }}>
           {reference && <div style={{ fontWeight: 600, marginBottom: 4, color: '#3b82f6' }}>{reference}</div>}
-          {verseText ? `「${verseText}」` : ''}
+          {verseText ? t('「{verse}」', '“{verse}”').replace('{verse}', verseText) : ''}
           <div style={{ color: '#64748b', fontSize: '0.78rem', marginTop: 6 }}>
             {t('照著唸就好。聽這個題庫的人會聽到你的聲音,而不是電腦語音 🎙️', 'Just read it aloud. Listeners will hear your voice instead of the computer voice 🎙️')}
           </div>
         </div>
         <div style={{ color: '#64748b', fontSize: '0.85rem', marginBottom: '0.8rem' }}>
-          {t(`最長 ${MAX_SECONDS} 秒。重錄會取代舊錄音。`, `Up to ${MAX_SECONDS}s. Re-recording replaces the old one.`)}
+          {t('最長 {sec} 秒。重錄會取代舊錄音。', 'Up to {sec}s. Re-recording replaces the old one.').replace('{sec}', String(MAX_SECONDS))}
         </div>
 
         {phase === 'idle' && (

@@ -427,7 +427,7 @@ function TeamsListView({ userEmail, t, onOpen, pendingJoinCode, onJoinHandled, o
               <div style={{ color: colors.muted, fontSize: '0.85rem', marginTop: 4 }}>{team.description}</div>
             )}
             <div style={{ color: colors.muted, fontSize: '0.8rem', marginTop: 4 }}>
-              {team.memberCount} {t('位團員', 'members')}
+              {t('{n} 位團員', '{n} members').replace('{n}', String(team.memberCount))}
             </div>
           </div>
           <ChevronLeft size={18} style={{ color: colors.muted, transform: 'rotate(180deg)' }} />
@@ -682,10 +682,11 @@ function TeamDetailView({ userEmail, playerName, teamId, t, onOpenAdmin, onLeft,
         }}>
           <span style={{ fontSize: '1.1rem' }}>🙏</span>
           <span style={{ color: colors.text, fontSize: '0.9rem' }}>
-            {t(`今天 ${amens.count} 位家人來過`, `${amens.count} ${amens.count === 1 ? 'person' : 'people'} showed up today`)}
+            {t('今天 {n} 位家人來過', amens.count === 1 ? '{n} person showed up today' : '{n} people showed up today')
+              .replace('{n}', String(amens.count))}
             {Array.isArray(amens.names) && amens.names.length > 0 && (
               <span style={{ color: colors.muted }}>
-                {' · '}{amens.names.slice(0, 6).join('、')}{amens.names.length > 6 ? '…' : ''}
+                {' · '}{amens.names.slice(0, 6).join(t('、', ', '))}{amens.names.length > 6 ? '…' : ''}
               </span>
             )}
           </span>
@@ -839,7 +840,9 @@ function TeamFruitsPanel({ stats, t }) {
         <Cell
           label={t('本團這週', 'Team · this week')}
           value={weekTotal}
-          hint={t(`${activeMembers}/${memberCount} 位團員有活動`, `${activeMembers}/${memberCount} active`)}
+          hint={t('{active}/{total} 位團員有活動', '{active}/{total} active')
+            .replace('{active}', String(activeMembers))
+            .replace('{total}', String(memberCount))}
         />
       </div>
     </div>
@@ -924,12 +927,15 @@ function CarePrompt({ team, setStatusByItem, schedule, displayNames, meLc, onChe
       <div style={{ color: colors.text, fontSize: '0.9rem', marginTop: 6 }}>
         {notStarted.length > 0 && (
           <div>
-            · {notStarted.length} {t('位團員還沒打開過進度表', 'members haven’t opened the schedule yet')}
+            · {t('{n} 位團員還沒打開過進度表', '{n} members haven’t opened the schedule yet')
+              .replace('{n}', String(notStarted.length))}
           </div>
         )}
         {stale.length > 0 && (
           <div>
-            · {stale.length} {t(`位團員 ${STALE_DAYS} 天沒有新進度`, `members have been quiet for ${STALE_DAYS}+ days`)}
+            · {t('{n} 位團員 {days} 天沒有新進度', '{n} members have been quiet for {days}+ days')
+              .replace('{n}', String(stale.length))
+              .replace('{days}', String(STALE_DAYS))}
           </div>
         )}
       </div>
@@ -960,7 +966,7 @@ function StatusBadge({ status, doneCount, totalCount, t }) {
       <span style={{
         background: '#16a34a', color: 'white', fontSize: '0.78rem',
         padding: '0.2rem 0.55rem', borderRadius: 12, fontWeight: 600, whiteSpace: 'nowrap',
-      }}>✓ {t(`完成 ${totalCount}/${totalCount}`, `Done ${totalCount}/${totalCount}`)}</span>
+      }}>✓ {t('完成 {n}/{n}', 'Done {n}/{n}').replace(/\{n\}/g, String(totalCount))}</span>
     );
   }
   if (status === 'attempting') {
@@ -968,7 +974,9 @@ function StatusBadge({ status, doneCount, totalCount, t }) {
       <span style={{
         background: '#f59e0b', color: 'white', fontSize: '0.78rem',
         padding: '0.2rem 0.55rem', borderRadius: 12, fontWeight: 600, whiteSpace: 'nowrap',
-      }}>{doneCount}/{totalCount || '?'} {t('天', 'days')}</span>
+      }}>{t('{done}/{total} 天', '{done}/{total} days')
+        .replace('{done}', String(doneCount))
+        .replace('{total}', String(totalCount || '?'))}</span>
     );
   }
   return (
@@ -1052,7 +1060,7 @@ function ScheduleItemCard({
           <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 8, marginTop: 4 }}>
             {totalCount > 0 && (
               <span style={{ color: colors.muted, fontSize: '0.78rem' }}>
-                {t(`${totalCount} 天計畫 · 每天一節`, `${totalCount}-day plan · one verse/day`)}
+                {t('{n} 天計畫 · 每天一節', '{n}-day plan · one verse/day').replace('{n}', String(totalCount))}
               </span>
             )}
             {(item.startDate || totalCount > 0) && (
@@ -1115,8 +1123,8 @@ function ScheduleItemCard({
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 6, flexWrap: 'wrap' }}>
             <div style={{ color: colors.muted, fontSize: '0.78rem' }}>
               {planNotStarted
-                ? t(`計畫從 ${startStr} 開始`, `Plan starts ${startStr}`)
-                : t(`Day ${todayIndex + 1} / ${totalCount}`, `Day ${todayIndex + 1} / ${totalCount}`)}
+                ? t('計畫從 {date} 開始', 'Plan starts {date}').replace('{date}', startStr)
+                : t('第 {n} 天 / 共 {total} 天', 'Day {n} / {total}').replace('{n}', String(todayIndex + 1)).replace('{total}', String(totalCount))}
               {todayVerse?.reference && ` · ${todayVerse.reference}`}
             </div>
             {todayDone && (
@@ -1132,7 +1140,7 @@ function ScheduleItemCard({
               padding: '0.4rem 0.6rem', background: colors.card, borderRadius: 6,
               marginBottom: 8, fontStyle: 'italic',
             }}>
-              「{todayVerse.text}」
+              {t('「{verse}」', '“{verse}”').replace('{verse}', todayVerse.text)}
             </div>
           )}
           <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
@@ -1194,9 +1202,11 @@ function ScheduleItemCard({
                 // Short /fc card link → LINE shows a verse preview (resolved
                 // server-side), then redirects into the in-app reading.
                 const url = buildVerseCardUrl(item.setId, teamId, todayIndex);
-                const dayLabel = t(`Day ${todayIndex + 1} / ${totalCount}`, `Day ${todayIndex + 1} / ${totalCount}`);
+                const dayLabel = t('第 {n} 天 / 共 {total} 天', 'Day {n} / {total}').replace('{n}', String(todayIndex + 1)).replace('{total}', String(totalCount));
                 const refLine = todayVerse?.reference ? `${todayVerse.reference}` : '';
-                const verseLine = todayVerse?.text ? `「${todayVerse.text}」` : '';
+                const verseLine = todayVerse?.text
+                  ? t('「{verse}」', '“{verse}”').replace('{verse}', todayVerse.text)
+                  : '';
                 const shareText = [`📖 ${title} · ${dayLabel}`, refLine, verseLine, '', url].filter(Boolean).join('\n');
                 try {
                   if (navigator.share) {
@@ -1221,7 +1231,8 @@ function ScheduleItemCard({
                   t={t} userEmail={userEmail} teamId={teamId}
                   itemId={teamsApi.verseVoiceItemId(item.setId, todayIndex)}
                   voiceId={verseVoiceMeta.voiceId} mime={verseVoiceMeta.voiceMime} dur={verseVoiceMeta.voiceDur}
-                  label={t(`聽${verseVoiceMeta.recordedBy || '家人'}唸`, `${verseVoiceMeta.recordedBy || 'Family'} reads it`)}
+                  label={t('聽{name}唸', '{name} reads it')
+                    .replace('{name}', verseVoiceMeta.recordedBy || t('家人', 'Family'))}
                 />
                 <button
                   onClick={() => setShowVerseVoiceRec(true)}
@@ -1242,7 +1253,9 @@ function ScheduleItemCard({
               </button>
             )}
             <div style={{ color: colors.muted, fontSize: '0.78rem', marginLeft: 'auto' }}>
-              {t(`今天:${teamDoneToday}/${memberEmails.length} 完成`, `Today: ${teamDoneToday}/${memberEmails.length} done`)}
+              {t('今天:{done}/{total} 完成', 'Today: {done}/{total} done')
+                .replace('{done}', String(teamDoneToday))
+                .replace('{total}', String(memberEmails.length))}
             </div>
           </div>
 
@@ -1256,7 +1269,9 @@ function ScheduleItemCard({
           >
             {showAllDays
               ? t('收起 N 天清單', 'Hide all days')
-              : t(`查看全部 ${totalCount} 天 (你已完成 ${myDone.length})`, `Show all ${totalCount} days (you: ${myDone.length})`)}
+              : t('查看全部 {n} 天 (你已完成 {done})', 'Show all {n} days (you: {done})')
+                  .replace('{n}', String(totalCount))
+                  .replace('{done}', String(myDone.length))}
           </button>
           {showAllDays && (
             <div style={{ marginTop: 6, display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(110px, 1fr))', gap: 4 }}>
@@ -1273,7 +1288,9 @@ function ScheduleItemCard({
                     title={
                       planNotStarted
                         ? (v.text || '')
-                        : t(`挑戰 D${i + 1}：${v.reference || ''} — 算這天完成`, `Challenge D${i + 1}: ${v.reference || ''} — counts as this day's completion`)
+                        : t('挑戰 D{d}：{ref} — 算這天完成', "Challenge D{d}: {ref} — counts as this day's completion")
+                            .replace('{d}', String(i + 1))
+                            .replace('{ref}', v.reference || '')
                     }
                     style={{
                       textAlign: 'left',
@@ -1324,9 +1341,12 @@ function ScheduleItemCard({
             <span style={{ color: colors.muted }}>{reflectExpanded ? '▾' : '▸'} </span>
             {reflectionCount > 0 || prayerCount > 0 || voiceCount > 0
               ? t(
-                  `留言 ${voiceCount} · 心得 ${reflectionCount} · 代禱 ${prayerCount}`,
-                  `${voiceCount} voice · ${reflectionCount} reflections · ${prayerCount} prayers`
+                  '留言 {voice} · 心得 {reflection} · 代禱 {prayer}',
+                  '{voice} voice · {reflection} reflections · {prayer} prayers'
                 )
+                  .replace('{voice}', String(voiceCount))
+                  .replace('{reflection}', String(reflectionCount))
+                  .replace('{prayer}', String(prayerCount))
               : t('留言 · 心得 · 代禱', 'Voice · Reflections · Prayers')}
           </div>
           <div style={{ display: 'flex', gap: 6 }} onClick={e => e.stopPropagation()}>
@@ -1784,14 +1804,15 @@ function ComposeVoice({ t, userEmail, teamId, itemId, onCancel, onCreated, verse
             fontSize: '0.92rem', lineHeight: 1.7, color: colors.text,
           }}>
             {verseVoice.reference && <div style={{ fontWeight: 600, marginBottom: 4, color: colors.accent }}>{verseVoice.reference}</div>}
-            {verseVoice.verseText ? `「${verseVoice.verseText}」` : ''}
+            {verseVoice.verseText ? t('「{verse}」', '“{verse}”').replace('{verse}', verseVoice.verseText) : ''}
             <div style={{ color: colors.muted, fontSize: '0.78rem', marginTop: 6 }}>
               {t('照著唸就好。錄好後，家人打開今天的連結會先聽到你的聲音 🎙️', 'Just read it aloud. Family will hear your voice first when they open today\'s link 🎙️')}
             </div>
           </div>
         )}
         <p style={{ color: colors.muted, fontSize: '0.82rem', marginTop: -6 }}>
-          {t(`最長 ${MAX_SECONDS} 秒。所有團員都能聽到。`, `Up to ${MAX_SECONDS} seconds. All team members can listen.`)}
+          {t('最長 {sec} 秒。所有團員都能聽到。', 'Up to {sec} seconds. All team members can listen.')
+            .replace('{sec}', String(MAX_SECONDS))}
         </p>
 
         {phase === 'idle' && (
@@ -2027,7 +2048,9 @@ function MemberCard({ memberEmail, isMe, isAdmin, displayName, schedule, setStat
           ? t('進度表還沒設好', 'No schedule yet')
           : doneDays === 0
             ? t('還沒開始', 'Not started')
-            : t(`已完成 ${doneDays} / ${totalDays} 天`, `${doneDays}/${totalDays} days done`)}
+            : t('已完成 {done} / {total} 天', '{done}/{total} days done')
+                .replace('{done}', String(doneDays))
+                .replace('{total}', String(totalDays))}
       </div>
       {!isMe && (
         <>
@@ -2264,7 +2287,8 @@ function TeamAdminView({ userEmail, teamId, t, topicSets = [], onBack, onDisband
                     {item.title || item.setId}
                   </div>
                   <div style={{ color: colors.muted, fontSize: '0.72rem' }}>
-                    {item.setId} · {item.totalCount || (item.verses?.length) || '?'} {t('節', 'verses')}
+                    {item.setId} · {t('{n} 節', '{n} verses')
+                      .replace('{n}', String(item.totalCount || (item.verses?.length) || '?'))}
                   </div>
                 </div>
               ) : (
@@ -2310,7 +2334,7 @@ function TeamAdminView({ userEmail, teamId, t, topicSets = [], onBack, onDisband
               </div>
               {item.totalCount > 0 && (
                 <span style={{ color: colors.muted, fontSize: '0.75rem' }}>
-                  {t(`共 ${item.totalCount} 天 · 每天一節`, `${item.totalCount} days · one verse per day`)}
+                  {t('共 {n} 天 · 每天一節', '{n} days · one verse per day').replace('{n}', String(item.totalCount))}
                 </span>
               )}
             </div>

@@ -117,7 +117,9 @@ export default function SetPicker({ topicSets = [], t, onPick, onCancel }) {
           <div style={{ color: colors.muted, fontSize: '0.75rem', marginTop: 6 }}>
             {loading
               ? t('載入社群經文組中…', 'Loading community sets…')
-              : t(`共 ${allSets.length} 組可選 · 顯示 ${filtered.length}`, `${allSets.length} sets available · showing ${filtered.length}`)}
+              : t('共 {total} 組可選 · 顯示 {shown}', '{total} sets available · showing {shown}')
+                  .replace('{total}', String(allSets.length))
+                  .replace('{shown}', String(filtered.length))}
           </div>
         </div>
 
@@ -155,7 +157,7 @@ export default function SetPicker({ topicSets = [], t, onPick, onCancel }) {
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ color: colors.text, fontSize: '0.95rem', fontWeight: 600 }}>{s.title}</div>
                 <div style={{ color: colors.muted, fontSize: '0.78rem', marginTop: 2 }}>
-                  {s.totalCount} {t('節', 'verses')}
+                  {t('{n} 節', '{n} verses').replace('{n}', String(s.totalCount))}
                   {s.firstRef ? ` · ${s.firstRef}…` : ''}
                   {' · '}{s.author}
                 </div>

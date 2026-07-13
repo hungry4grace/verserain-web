@@ -9,6 +9,7 @@ import { classifyGardenResponse, decideGardenSync, buildFruitAuthorKeys, aggrega
 import { voiceId, voiceMatchesSavedKey, dedupeVoices, buildVoiceOptions } from './lib/voicePicker.js';
 import './index.css';
 import { BIBLE_BOOKS, getBookAbbr } from './bibleDictionary';
+import I18N_FILLINS from './i18nFillins';
 import ReactQuill from 'react-quill-new';
 import 'react-quill-new/dist/quill.snow.css';
 import { PREMIUM_EMAILS } from './premiumEmails';
@@ -550,15 +551,61 @@ function OAuthButtons({ onGoogleCredential, onAppleCredential, disabled, t }) {
   );
 }
 
+// UI languages the app can render directions in. Used to validate ?lang= on
+// incoming share links so a junk value can't strand someone in a half-locale.
+const SUPPORTED_UI_LANGS = ['zh', 'cuvs', 'en', 'fa', 'ar', 'he', 'ja', 'ko', 'es', 'tr', 'de', 'my', 'vi', 'id', 'ms'];
+
+// Document title per UI language — index.html ships the zh title, so without
+// this the browser tab stays Chinese for everyone (including recipients of a
+// share link opened in an in-app browser, where the tab title is prominent).
+const APP_TITLE_BY_LANG = {
+  zh: 'VerseRain — 澆灌心田，結出生命果子',
+  cuvs: 'VerseRain — 浇灌心田，结出生命果子',
+  en: 'VerseRain — Water your heart, bear the fruit of life',
+  ja: 'VerseRain — 心に潤いを、いのちの実を',
+  ko: 'VerseRain — 마음에 물을 주어 생명의 열매를',
+  es: 'VerseRain — Riega tu corazón y da fruto de vida',
+  de: 'VerseRain — Bewässere dein Herz, bringe Frucht des Lebens',
+  tr: 'VerseRain — Kalbini sula, yaşam meyvesi ver',
+  vi: 'VerseRain — Tưới mát tâm hồn, kết trái sự sống',
+  id: 'VerseRain — Siram hatimu, hasilkan buah kehidupan',
+  ms: 'VerseRain — Siram hatimu, hasilkan buah kehidupan',
+  my: 'VerseRain — နှလုံးသားကို ရေလောင်း၊ အသက်၏အသီးကို သီးပါစေ',
+  ar: 'VerseRain — اسقِ قلبك ليُثمر ثمر الحياة',
+  he: 'VerseRain — השקו את הלב, הניבו פרי חיים',
+  fa: 'VerseRain — دل خود را سیراب کن تا میوهٔ زندگی دهد',
+};
+
+// The sender's current UI language, mirrored out of React state so the
+// module-level share-link builder can stamp it onto every outgoing link.
+// Without this, a recipient who has never picked a language falls back to the
+// app default (zh) and reads Chinese directions under an English verse set.
+let SHARE_UI_LANG = '';
+
 function buildPublicShareUrl(path = '/', params = {}) {
   const normalizedPath = path && path.startsWith('/') ? path : '/';
   const url = new URL(normalizedPath, PUBLIC_APP_ORIGIN);
-  Object.entries(params).forEach(([key, value]) => {
+  // `lang` first so an explicit params.lang from the caller still wins.
+  const withLang = { ...(SHARE_UI_LANG ? { lang: SHARE_UI_LANG } : {}), ...params };
+  Object.entries(withLang).forEach(([key, value]) => {
     if (value !== undefined && value !== null && value !== '') {
       url.searchParams.set(key, String(value));
     }
   });
   return url.toString();
+}
+
+// Deep-link params are scrubbed from the address bar once consumed, but ?lang=
+// has to survive: it is what holds the recipient's UI in the sender's language
+// across a reload (we never write it to their localStorage).
+function pathWithSharedLang() {
+  try {
+    const lang = new URLSearchParams(window.location.search).get('lang');
+    if (lang && SUPPORTED_UI_LANGS.includes(lang)) {
+      return `${window.location.pathname}?lang=${encodeURIComponent(lang)}`;
+    }
+  } catch { /* noop */ }
+  return window.location.pathname;
 }
 
 function createRoomCode(length = 4) {
@@ -3047,7 +3094,7 @@ function VerseSetContinuousRainPlayer({
             </h2>
             {creatorVoiceName && (
               <div style={{ textAlign: 'center', margin: '-0.3rem 0 0.4rem', color: '#86efac', fontSize: '0.85rem', fontWeight: 600 }}>
-                🎙️ {t(`${creatorVoiceName} 親聲朗讀`, `Read aloud by ${creatorVoiceName}`)}
+                🎙️ {t('{name} 親聲朗讀', 'Read aloud by {name}').replace('{name}', String(creatorVoiceName))}
               </div>
             )}
             <div
@@ -3725,7 +3772,7 @@ function AccessibleBlindHome({
           <button
             onClick={() => onStart(selectedSet, startCount)}
             style={{ flex: '1 1 280px', background: '#facc15', color: '#050505', border: 'none', borderRadius: '10px', padding: '1.4rem 1.6rem', fontSize: '1.35rem', fontWeight: 900, cursor: 'pointer' }}
-            aria-label={t(`開始視障版，${selectedSet?.title || ''}，${startCount}節經文`, `Start accessible mode, ${selectedSet?.title || ''}, ${startCount} verses`)}
+            aria-label={t('開始視障版，{title}，{n}節經文', 'Start accessible mode, {title}, {n} verses').replace('{title}', String(selectedSet?.title || '')).replace('{n}', String(startCount))}
           >
             {t('開始視障版', 'Start Accessible Mode')}
           </button>
@@ -4012,7 +4059,6 @@ export default function App() {
   const VERSES_TR = loadedLangs['tr']?.verses || [];
   const VERSES_DE = loadedLangs['de']?.verses || [];
   const VERSES_MY = loadedLangs['my']?.verses || [];
-
 
   const [playMode, setPlayMode] = useState('square_solo');
   const [distractionLevel, setDistractionLevel] = useState(0);
@@ -4353,6 +4399,15 @@ export default function App() {
 
   // UI Language — independent of Bible version for scalable i18n
   const [uiLang, setUiLang] = useState(() => {
+    // A share link carries the SENDER's UI language (?lang=…). Honour it so the
+    // recipient reads the directions in the language the set was shared in
+    // instead of their own default — an NIV set shared by an English user must
+    // not land in a Chinese UI. Session-only: we deliberately do NOT persist it,
+    // so the recipient's own saved preference survives.
+    try {
+      const linkLang = new URLSearchParams(window.location.search).get('lang');
+      if (linkLang && SUPPORTED_UI_LANGS.includes(linkLang)) return linkLang;
+    } catch { /* no window.location in non-browser contexts */ }
     const stored = localStorage.getItem('verseRain_uiLang');
     if (stored) return stored;
     // Backwards-compatible: derive from Bible version on first load
@@ -4366,6 +4421,17 @@ export default function App() {
     localStorage.setItem('verseRain_uiLang', lang);
     setUiLang(lang);
   };
+  // Mirror the active UI language to module scope so buildPublicShareUrl stamps
+  // it on every link this device sends out.
+  useEffect(() => {
+    SHARE_UI_LANG = uiLang;
+    if (typeof document !== 'undefined') {
+      // Note: only lang/title — no document dir flip, the app's layout is LTR
+      // by design and per-component RTL handling already covers ar/he/fa.
+      document.documentElement.lang = uiLang;
+      document.title = APP_TITLE_BY_LANG[uiLang] || APP_TITLE_BY_LANG.zh;
+    }
+  }, [uiLang]);
   useEffect(() => { playerNameRef.current = playerName; }, [playerName]);
 
   // Sync personalCode to playerName mapping
@@ -4639,7 +4705,7 @@ export default function App() {
       setToast(t('背景圖片已上傳 ✓', 'Background image uploaded ✓'));
       setTimeout(() => setToast(null), 3000);
     } catch (e) {
-      setToast(t(`上傳失敗:${e.message || e}`, `Upload failed: ${e.message || e}`));
+      setToast(t('上傳失敗:{error}', 'Upload failed: {error}').replace('{error}', String(e.message || e)));
       setTimeout(() => setToast(null), 5000);
     }
     setBgUploadBusy(false);
@@ -4676,7 +4742,7 @@ export default function App() {
       setToast(t('背景音樂已上傳 ✓', 'Background music uploaded ✓'));
       setTimeout(() => setToast(null), 3000);
     } catch (e) {
-      setToast(t(`上傳失敗:${e.message || e}`, `Upload failed: ${e.message || e}`));
+      setToast(t('上傳失敗:{error}', 'Upload failed: {error}').replace('{error}', String(e.message || e)));
       setTimeout(() => setToast(null), 5000);
     }
     setMusicUploadBusy(false);
@@ -4781,7 +4847,7 @@ export default function App() {
       setBulkImportState(s => (s ? { ...s, busy: false, failed } : s));
     } else {
       setBulkImportState(null);
-      setToast(t(`已匯入 ${imported.length} 節經文 ✓`, `Imported ${imported.length} verse${imported.length === 1 ? '' : 's'} ✓`));
+      setToast(t('已匯入 {n} 節經文 ✓', `Imported {n} verse${imported.length === 1 ? '' : 's'} ✓`).replace('{n}', String(imported.length)));
       setTimeout(() => setToast(null), 3500);
     }
   };
@@ -4850,8 +4916,6 @@ export default function App() {
   const [versesetsSort, setVersesetsSort] = useState('newest'); // 'newest' | 'title' | 'popular'
   const [searchSetsPage, setSearchSetsPage] = useState(1);
   const [searchVersesPage, setSearchVersesPage] = useState(1);
-
-
 
   // Local Leaderboard tracking (to be migrated to PartyKit on next deployment)
   const [globalUserStats, setGlobalUserStats] = useState(() => {
@@ -5595,7 +5659,6 @@ export default function App() {
     }
   };
 
-
   useEffect(() => {
     const parseUrlArgs = async () => {
       const params = new URLSearchParams(window.location.search);
@@ -5801,8 +5864,6 @@ export default function App() {
         : [...prev, ref]
     );
   };
-
-
 
   const activePhrases = React.useMemo(() => {
     // Chinese (cuv) and Korean (ko): split on spaces to break down long sentences without punctuation.
@@ -6783,7 +6844,6 @@ export default function App() {
             if (timerRef.current) clearInterval(timerRef.current);
             timerRef.current = setInterval(() => setTimeLeft(t => Math.max(0, t - 1)), 10);
 
-
             if (msg.state.playMode === 'rain_solo') {
               setBlocks([]);
               const spawnWhenReady = () => {
@@ -6891,7 +6951,6 @@ export default function App() {
     };
   }, [multiplayerRoomId, multiplayerRoomMode, multiplayerRoomRole, multiplayerTeamCount, multiplayerHostPlays, playerName, personalCode, triggerLightning]);
 
-
   // Process Challenge URL parameter
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -6918,7 +6977,7 @@ export default function App() {
         setMultiplayerRoomId(roomCode);
       }
       // Small timeout to allow state applied before url replace
-      setTimeout(() => window.history.replaceState({}, document.title, window.location.pathname), 100);
+      setTimeout(() => window.history.replaceState({}, document.title, pathWithSharedLang()), 100);
       return;
     }
 
@@ -6926,7 +6985,7 @@ export default function App() {
       changeDailyVerseDate(listenDaily);
       setContinuousRainSet(null);
       setMainTab('daily_verse');
-      window.history.replaceState({}, document.title, window.location.pathname);
+      window.history.replaceState({}, document.title, pathWithSharedLang());
       return;
     }
 
@@ -6956,7 +7015,7 @@ export default function App() {
           bgMusicMime: foundSet.bgMusicMime || '',
           bgMusicVolume: foundSet.bgMusicVolume,
         });
-        window.history.replaceState({}, document.title, window.location.pathname);
+        window.history.replaceState({}, document.title, pathWithSharedLang());
       } else if (!listenSetFetchAttemptedRef.current.has(listenSetRef)) {
         // Set not in current activeVerseSets — could be because:
         //  • publishedVerseSets hasn't finished its on-mount fetch yet, OR
@@ -7008,7 +7067,7 @@ export default function App() {
       if (foundSet) {
         setSelectedSetId(foundSet.id);
         setMainTab('versesets');
-        window.history.replaceState({}, document.title, window.location.pathname);
+        window.history.replaceState({}, document.title, pathWithSharedLang());
       } else if (!viewSetFetchAttemptedRef.current.has(viewSetRef)) {
         // Set not in local lists yet — typical for share links opened in a
         // fresh context (Skool in-app webview, new device, logged-out, etc.).
@@ -7058,7 +7117,7 @@ export default function App() {
         const foundSet = activeVerseSets.find(s => s.id === setRef);
         if (foundSet) {
           setSelectedSetId(foundSet.id);
-          window.history.replaceState({}, document.title, window.location.pathname);
+          window.history.replaceState({}, document.title, pathWithSharedLang());
           setTimeout(() => {
             let queue = [...foundSet.verses];
             if (rcParam) {
@@ -7091,7 +7150,7 @@ export default function App() {
           }
           setActiveVerse(targetVerse);
           setSelectedVerseRefs([targetVerse.reference]);
-          window.history.replaceState({}, document.title, window.location.pathname);
+          window.history.replaceState({}, document.title, pathWithSharedLang());
           setTimeout(() => {
             setInitAutoStart({ trigger: true, isAuto: false });
           }, 300);
@@ -7114,13 +7173,13 @@ export default function App() {
               if (!text) {
                 setToast(t('找不到此經文，請確認經文出處', 'Verse not found, please check the reference'));
                 setTimeout(() => setToast(null), 3000);
-                window.history.replaceState({}, document.title, window.location.pathname);
+                window.history.replaceState({}, document.title, pathWithSharedLang());
                 return;
               }
               const dynamicVerse = { reference: challengeRef, text, book: parseInt(normalizedKey.split('|')[0], 10) || 0 };
               setActiveVerse(dynamicVerse);
               setSelectedVerseRefs([challengeRef]);
-              window.history.replaceState({}, document.title, window.location.pathname);
+              window.history.replaceState({}, document.title, pathWithSharedLang());
               setTimeout(() => {
                 setInitAutoStart({ trigger: true, isAuto: false });
               }, 300);
@@ -9538,7 +9597,6 @@ export default function App() {
     '點擊上方導航列的 <strong>「我的題庫」</strong>。': 'לחץ על <strong>"בנק השאלות שלי"</strong> בסרגל הניווט העליון.',
   });
 
-
   const jaDict = {
     '輸入出處批次匯入': "出典から一括取り込み",
     '麥克風聽見：': "聞き取り:",
@@ -10466,9 +10524,6 @@ export default function App() {
     "這是你選擇的語音試聽。": "선택한 음성의 미리듣기입니다.",
     "已記住你的語音偏好，下次回來會自動使用。": "음성 기본 설정이 저장되었으며 다음에 자동으로 사용됩니다.",
 };
-
-
-
 
 const zhcnDict = {
     '輸入出處批次匯入': "输入出处批次导入",
@@ -11516,8 +11571,6 @@ const msDict = {
     "語音：系統預設": "Suara: Lalai",
     "VerseRain 經文雨": "VerseRain",
 };
-
-
 
 const esDict = {
     '輸入出處批次匯入': "Importar por referencias",
@@ -15429,6 +15482,31 @@ const deDict = {
     '點閱次數': 'Anzahl der Klicks',
   });
 
+  // Every dictionary had holes: t(zh, en) silently falls back to the English
+  // gloss (or, for ja/ko/cuvs, to Traditional Chinese) whenever a key is
+  // missing, so a Hebrew user read "Cloud Family" and "Multiplayer" on an
+  // otherwise-Hebrew lobby. i18nFillins.js closes every gap across the 13
+  // languages — it is the single source of truth, shared with the standalone
+  // /blind route via i18n.js. `npm run check:i18n` fails the build if a new
+  // t() key isn't covered there.
+  //
+  // fillMissing never overwrites an existing translation — the hand-written
+  // dictionaries above stay authoritative.
+  const fillMissing = (dict, entries) => {
+    if (!dict) return;
+    for (const [k, v] of Object.entries(entries)) {
+      if (!dict[k]) dict[k] = v;
+    }
+  };
+  const DICT_BY_LANG = {
+    he: heDict, fa: faDict, ar: arDict, ja: jaDict, ko: koDict,
+    es: esDict, tr: trDict, de: deDict, my: myDict, vi: viDict,
+    id: idDict, ms: msDict, zhcn: zhcnDict,
+  };
+  for (const [lang, entries] of Object.entries(I18N_FILLINS)) {
+    fillMissing(DICT_BY_LANG[lang], entries);
+  }
+                          
   const t = (zh, en) => {
     if (zh === '活動') {
       if (uiLang === 'en') return 'Activity';
@@ -15488,9 +15566,9 @@ const deDict = {
 
   const readAccessibleGuide = (set, count = 1) => {
     const message = t(
-      `這是視障友善版。現在選擇的是 ${set?.title || currentSet?.title}，本次 ${count} 節經文。按開始後，系統會先讀經文出處，停頓兩秒，再等你開口背誦。若一段時間沒有答對，系統會朗讀提示。遊戲中按 Escape 可以離開。`,
-      `This is the accessible mode. The selected set is ${set?.title || currentSet?.title}, ${count} verses. After starting, the app reads the reference, pauses for two seconds, then waits for your recitation. If you need help, the app will read a prompt. Press Escape during the game to leave.`
-    );
+      '這是視障友善版。現在選擇的是 {title}，本次 {n} 節經文。按開始後，系統會先讀經文出處，停頓兩秒，再等你開口背誦。若一段時間沒有答對，系統會朗讀提示。遊戲中按 Escape 可以離開。',
+      'This is the accessible mode. The selected set is {title}, {n} verses. After starting, the app reads the reference, pauses for two seconds, then waits for your recitation. If you need help, the app will read a prompt. Press Escape during the game to leave.'
+    ).replace('{title}', String(set?.title || currentSet?.title)).replace('{n}', String(count));
     speakText(message, 0.95, isEnglishBibleVersion(version) ? 'en-US' : 'zh-TW');
   };
 
@@ -15795,7 +15873,7 @@ const deDict = {
                     verserain
                   </div>
                   <div className="app-brand-version" style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', marginTop: '4px', marginLeft: '2px' }}>
-                    v3.17.0
+                    v3.18.0
                   </div>
                 </div>
                 <div ref={langPickerRef} style={{ position: 'relative' }}>
@@ -15902,7 +15980,6 @@ const deDict = {
               </div>
             </div>
 
-
             {/* Navigation Bar */}
             <div className="landscape-compact-nav" style={{ display: 'flex', backgroundColor: '#e2e8f0', color: '#334155', overflowX: 'auto', borderBottom: '2px solid #cbd5e1', gap: '0.8rem', alignItems: 'center' }}>
               <div className="block-tile" onClick={() => setMainTab('lobby')} style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', padding: '0.5rem 1.2rem', cursor: 'pointer', backgroundColor: mainTab === 'lobby' ? '#3b82f6' : 'white', color: mainTab === 'lobby' ? 'white' : '#475569', borderRadius: '20px', fontWeight: 'bold', whiteSpace: 'nowrap', transition: 'all 0.2s' }}>
@@ -16006,7 +16083,6 @@ const deDict = {
                             <Swords size={17} /> {t('挑戰', 'Play')}
                           </button>
                         </div>
-
 
                       </div>
                     ) : (
@@ -16395,7 +16471,7 @@ const deDict = {
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
                     <h2 style={{ color: '#1e293b', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Crown size={28} /> {t("我的專屬題庫", "My Custom Sets")}</h2>
                     <div style={{ background: '#f8fafc', border: '1px solid #cbd5e1', padding: '0.3rem 0.6rem', borderRadius: '4px', fontSize: '0.85rem', color: hasPremiumAccess ? '#fbbf24' : '#64748b', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-                      {isPremium ? <><Star size={16} /> {t("Premium 認證", "Premium Active")}</> : (skoolLevel.level >= 3 ? <><Star size={16} /> {t(`Lv.${skoolLevel.level} 權限解鎖`, `Lv.${skoolLevel.level} Unlocked`)}</> : <><Lock size={16} /> {t("基本帳號", "Basic Account")}</>)}
+                      {isPremium ? <><Star size={16} /> {t("Premium 認證", "Premium Active")}</> : (skoolLevel.level >= 3 ? <><Star size={16} /> {t('Lv.{n} 權限解鎖', 'Lv.{n} Unlocked').replace('{n}', String(skoolLevel.level))}</> : <><Lock size={16} /> {t("基本帳號", "Basic Account")}</>)}
                     </div>
                   </div>
 
@@ -16422,8 +16498,6 @@ const deDict = {
                             <h3 style={{ margin: 0, color: '#3b82f6' }}>{editingCustomSet.id ? t("編輯題庫", "Edit Set") : t("新增題庫", "New Set")}</h3>
                             <button type="button" onClick={() => setEditingCustomSet(null)} style={{ background: 'transparent', border: 'none', color: '#64748b', cursor: 'pointer', fontWeight: 'bold', display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }}><X size={16} /> {t("取消", "Cancel")}</button>
                           </div>
-
-
 
                           <div style={{ marginBottom: '1rem' }}>
                             <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '0.5rem', color: '#475569' }}>{t("標題", "Title")}</label>
@@ -16716,7 +16790,7 @@ const deDict = {
                                         : vStatus === 'error'
                                           ? t('處理失敗 — 點擊重錄這節', 'Failed — tap to re-record')
                                           : hasVoice
-                                            ? t(`已有錄音(${editorVerseVoices[v.reference].recordedBy || ''})— 點擊重錄`, `Recorded (${editorVerseVoices[v.reference].recordedBy || ''}) — click to re-record`)
+                                            ? t('已有錄音({name})— 點擊重錄', 'Recorded ({name}) — click to re-record').replace('{name}', String(editorVerseVoices[v.reference].recordedBy || ''))
                                             : t('用你的聲音錄這節,聽的人會聽到你唸', 'Record this verse — listeners will hear your voice')}
                                     style={{
                                       background: bg,
@@ -16825,7 +16899,7 @@ const deDict = {
                                     </div>
                                   )}
                                   <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.6rem', marginTop: '1rem', alignItems: 'center' }}>
-                                    {bulkImportState.busy && <span style={{ color: '#64748b', fontSize: '0.85rem' }}>{t(`抓取中… ${bulkImportState.progress}`, `Fetching… ${bulkImportState.progress}`)}</span>}
+                                    {bulkImportState.busy && <span style={{ color: '#64748b', fontSize: '0.85rem' }}>{t('抓取中… {progress}', 'Fetching… {progress}').replace('{progress}', String(bulkImportState.progress))}</span>}
                                     <button type="button" disabled={bulkImportState.busy} onClick={() => setBulkImportState(null)} style={{ background: '#f1f5f9', color: '#64748b', border: '1px solid #cbd5e1', padding: '0.55rem 1.1rem', borderRadius: 8, cursor: 'pointer', fontWeight: 'bold' }}>
                                       {t('取消', 'Cancel')}
                                     </button>
@@ -16847,9 +16921,9 @@ const deDict = {
                             {editingCustomSet.id ? (
                               <button type="button" onClick={() => {
                                 if (!confirm(t(
-                                  `確定要刪除「${editingCustomSet.title || '此題庫'}」嗎？此動作無法復原。`,
-                                  `Delete "${editingCustomSet.title || 'this set'}"? This cannot be undone.`
-                                ))) return;
+                                  '確定要刪除「{title}」嗎？此動作無法復原。',
+                                  'Delete "{title}"? This cannot be undone.'
+                                ).replace('{title}', String(editingCustomSet.title || t('此題庫', 'this set'))))) return;
 
                                 // Remove from local custom sets + localStorage
                                 const updatedSets = customVerseSets.filter(s => s.id !== editingCustomSet.id);
@@ -16922,7 +16996,7 @@ const deDict = {
                                   // creators think their set was published
                                   // when nobody else could see it.
                                   const d = await res.json().catch(() => ({}));
-                                  setToast(t(`發布失敗:${d.error || res.status}。其他人將看不到這個題庫。`, `Publish failed: ${d.error || res.status}. Others won't see this set.`));
+                                  setToast(t('發布失敗:{error}。其他人將看不到這個題庫。', "Publish failed: {error}. Others won't see this set.").replace('{error}', String(d.error || res.status)));
                                   setTimeout(() => setToast(null), 6000);
                                   setPublishedVerseSets(prev => prev.filter(p => p.id !== setObj.id));
                                 }).catch(e => console.error("Publish failed", e));
@@ -17025,7 +17099,7 @@ const deDict = {
                                     onClick={() => setCustomSetsPage(page - 1)}
                                     style={{ padding: '0.4rem 0.9rem', borderRadius: 6, border: '1px solid #cbd5e1', background: page <= 1 ? '#f1f5f9' : 'white', color: '#475569', cursor: page <= 1 ? 'not-allowed' : 'pointer', fontWeight: 'bold' }}
                                   >← {t('上一頁', 'Prev')}</button>
-                                  <span style={{ color: '#64748b', fontSize: '0.9rem' }}>{t(`第 ${page} / ${totalPages} 頁`, `Page ${page} / ${totalPages}`)}</span>
+                                  <span style={{ color: '#64748b', fontSize: '0.9rem' }}>{t('第 {page} / {total} 頁', 'Page {page} / {total}').replace('{page}', String(page)).replace('{total}', String(totalPages))}</span>
                                   <button
                                     type="button"
                                     disabled={page >= totalPages}
@@ -17197,7 +17271,7 @@ const deDict = {
                           <span style={{ fontSize: '1.2rem' }}>⚠️</span>
                           <div>
                             <div style={{ fontWeight: 'bold', color: '#dc2626', fontSize: '0.95rem' }}>
-                              {t(`找不到房間「${joinRoomError}」`, `Room "${joinRoomError}" not found`)}
+                              {t('找不到房間「{room}」', 'Room "{room}" not found').replace('{room}', String(joinRoomError))}
                             </div>
                             <div style={{ color: '#ef4444', fontSize: '0.8rem', marginTop: '2px' }}>
                               {t('請確認房間代碼是否正確', 'Please check the room code and try again')}
@@ -18225,7 +18299,7 @@ const deDict = {
                                           playSingleVerseCard(v, currentSet);
                                         }}
                                         title={currentSetVoices[v.reference]
-                                          ? t(`播放這節經文(${currentSetVoices[v.reference].recordedBy || '創作者'}親聲朗讀)`, `Play this verse (read by ${currentSetVoices[v.reference].recordedBy || 'the creator'})`)
+                                          ? t('播放這節經文({name}親聲朗讀)', 'Play this verse (read by {name})').replace('{name}', String(currentSetVoices[v.reference].recordedBy || t('創作者', 'the creator')))
                                           : t("播放這節經文", "Play this verse")}
                                         style={{ position: 'relative', backgroundColor: '#8b5cf6', color: 'white', border: 'none', borderRadius: '6px', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'transform 0.1s' }}
                                         onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.1)'}
@@ -18285,7 +18359,6 @@ const deDict = {
                     )}
                   </div>
 
-
                 </>
               )}
 
@@ -18312,8 +18385,8 @@ const deDict = {
                       <div style={{ color: '#065f46', fontSize: '0.8rem', fontWeight: 'bold', letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: '0.4rem' }}>{t('今日問候', "Today's Greeting")}</div>
                       <div style={{ color: '#065f46', fontSize: '1.05rem', marginBottom: '1rem', fontWeight: 600 }}>
                         {playerName
-                          ? t(`${playerName}，今日的經文雨活動已累積 ${personalProgress.todayCount} 分`, `${playerName}, ${personalProgress.todayCount} point${personalProgress.todayCount === 1 ? '' : 's'} from today's VerseRain activity`)
-                          : t(`今日的經文雨活動已累積 ${personalProgress.todayCount} 分`, `${personalProgress.todayCount} point${personalProgress.todayCount === 1 ? '' : 's'} from today's VerseRain activity`)}
+                          ? t('{name}，今日的經文雨活動已累積 {n} 分', `{name}, {n} point${personalProgress.todayCount === 1 ? '' : 's'} from today's VerseRain activity`).replace('{name}', String(playerName)).replace('{n}', String(personalProgress.todayCount))
+                          : t('今日的經文雨活動已累積 {n} 分', `{n} point${personalProgress.todayCount === 1 ? '' : 's'} from today's VerseRain activity`).replace('{n}', String(personalProgress.todayCount))}
                       </div>
                       <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'center', gap: '0.5rem' }}>
                         <span style={{ fontSize: '2.6rem', filter: personalProgress.currentStreak > 0 ? 'none' : 'grayscale(1) opacity(0.4)' }}>🔥</span>
@@ -18321,12 +18394,12 @@ const deDict = {
                       </div>
                       <div style={{ color: '#047857', fontSize: '0.95rem', fontWeight: 600, marginTop: '0.3rem' }}>
                         {personalProgress.currentStreak > 0
-                          ? t(`連續 ${personalProgress.currentStreak} 天`, `${personalProgress.currentStreak}-day streak`)
+                          ? t('連續 {n} 天', '{n}-day streak').replace('{n}', String(personalProgress.currentStreak))
                           : t('今天開始建立連續紀錄吧！', 'Start your streak today!')}
                       </div>
                       {personalProgress.longestStreak > personalProgress.currentStreak && (
                         <div style={{ color: '#059669', fontSize: '0.78rem', marginTop: '0.35rem', opacity: 0.8 }}>
-                          {t(`最長連續：${personalProgress.longestStreak} 天`, `Best: ${personalProgress.longestStreak} days`)}
+                          {t('最長連續：{n} 天', 'Best: {n} days').replace('{n}', String(personalProgress.longestStreak))}
                         </div>
                       )}
                     </div>
@@ -19201,7 +19274,6 @@ const deDict = {
                     })()}
                   </div>
 
-
                 </div>
               )}
               {mainTab === 'search' && (
@@ -19818,8 +19890,6 @@ const deDict = {
 
             )}
 
-
-
             {/* Flying Blocks Animation Layer */}
             {gameState === 'playing' && multiplayerRoomId && flyingBlocks.map(fb => (
               <div
@@ -20233,7 +20303,7 @@ const deDict = {
                       )}
                       {distractionLevel > 0 && !isFailed && (
                         <div style={{ fontSize: 'clamp(0.85rem, 1.8vh, 1rem)', color: '#f59e0b', fontWeight: 'bold' }}>
-                          {t("難度加成", "Difficulty Multiplier")}: × {(1 + distractionLevel * 0.1).toFixed(1)} {t(`(難度 ${distractionLevel})`, `(Lv ${distractionLevel})`)}
+                          {t("難度加成", "Difficulty Multiplier")}: × {(1 + distractionLevel * 0.1).toFixed(1)} {t('(難度 {n})', '(Lv {n})').replace('{n}', String(distractionLevel))}
                         </div>
                       )}
                     </div>
@@ -20510,8 +20580,6 @@ const deDict = {
                   <XCircle size={24} />
                 </button>
               </div>
-
-
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                 {showLoginModal === 'verify' ? (
@@ -20817,7 +20885,7 @@ const deDict = {
               </div>
               <div style={{ fontSize: '0.95rem', color: '#94a3b8' }}>
                 {deepLinkStartGate.verseVoice
-                  ? t(`聽 ${deepLinkStartGate.verseVoice.recordedBy || '家人'} 唸今天的經文 🎙️`, `Hear ${deepLinkStartGate.verseVoice.recordedBy || 'family'} read today's verse 🎙️`)
+                  ? t('聽 {name} 唸今天的經文 🎙️', "Hear {name} read today's verse 🎙️").replace('{name}', String(deepLinkStartGate.verseVoice.recordedBy || t('家人', 'family')))
                   : t('經文會朗讀出聲 🔊', 'The verse will be read aloud 🔊')}
               </div>
             </button>
@@ -20828,7 +20896,7 @@ const deDict = {
             <div style={{ textAlign: 'center', color: '#e2e8f0' }}>
               <div style={{ fontSize: '3rem', marginBottom: '1rem', animation: 'pulse 1.6s ease-in-out infinite' }}>🎙️</div>
               <div style={{ fontSize: '1.15rem', fontWeight: 'bold', marginBottom: '0.4rem' }}>
-                {t(`${familyVoicePlaying.name} 為你唸今天的經文`, `${familyVoicePlaying.name} is reading today's verse for you`)}
+                {t('{name} 為你唸今天的經文', "{name} is reading today's verse for you").replace('{name}', String(familyVoicePlaying.name))}
               </div>
               <button
                 onClick={familyVoicePlaying.skip}
@@ -21107,7 +21175,6 @@ const deDict = {
           </div>
         )}
 
-
         {/* Name Edit Modal */}
         {showNameEditModal && (
           <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.6)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1100, padding: '1rem' }}>
@@ -21333,7 +21400,6 @@ const deDict = {
             {toast}
           </div>
         )}
-
 
         {/* Fruit Info Modal */}
         {showFruitInfo && (

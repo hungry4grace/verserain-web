@@ -27,7 +27,7 @@ export default function BlindModeGame({
     combo,
     onResumeTimer
 }) {
-    const [micStatus, setMicStatus] = useState("初始化中...");
+    const [micStatus, setMicStatus] = useState(t("初始化中...", "Initializing..."));
     const [heardText, setHeardText] = useState("");
     const [isMicReady, setIsMicReady] = useState(false);
     const [currentAccuracy, setCurrentAccuracy] = useState(0);
@@ -773,7 +773,7 @@ export default function BlindModeGame({
                                 borderRadius: '12px',
                                 verticalAlign: 'middle'
                             }}>
-                                準確率 {currentAccuracy}%
+                                {t("準確率", "Accuracy")} {currentAccuracy}%
                             </span>
                         )}
                     </p>

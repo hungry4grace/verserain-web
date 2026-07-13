@@ -292,7 +292,7 @@ export default function WorldMap3D({ t, playerName, onJoinRoom, onToggleMode, cu
                     transition: 'transform 0.2s', outline: 'none'
                   }}>
                   <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: getRoomColor(rid), display: 'inline-block' }}></span>
-                  {rid} ({players.filter(p => p.roomId === rid).length}人)
+                  {rid} {t('({n} 人)', '({n} people)').replace('{n}', String(players.filter(p => p.roomId === rid).length))}
                 </button>
               ))}
             </div>
