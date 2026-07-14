@@ -2423,6 +2423,9 @@ function VerseSetContinuousRainPlayer({
   const myOwnerIdRef = useRef(null);
   const [voiceRecTarget, setVoiceRecTarget] = useState(null); // { reference, text }
   const [personalBusy, setPersonalBusy] = useState(false);
+  const [voiceStatus, setVoiceStatus] = useState({}); // reference → 'processing' | 'error'
+  const uploadPromisesRef = useRef({});               // reference → in-flight upload Promise
+  const [shareBusy, setShareBusy] = useState(false);
   const [, setPersonalVoiceVersion] = useState(0);
   const bumpPersonalVoices = () => setPersonalVoiceVersion(v => v + 1);
   useEffect(() => {
@@ -2457,11 +2460,15 @@ function VerseSetContinuousRainPlayer({
 
   // Record / re-record my voice for the current verse, then refresh caches.
   const recordedByName = playerName || (userEmail || '').split('@')[0] || 'Anonymous';
-  const saveMyVoice = async ({ blob, mime, dur, beautify }) => {
+  const saveMyVoice = ({ blob, mime, dur, beautify }) => {
     if (!userEmail || !voiceSetId) return;
     const ref = voiceRecTarget?.reference || currentVerse.reference;
-    setPersonalBusy(true);
-    try {
+    // Bake (realtime ✨enhance ≈ clip length) + upload run in the BACKGROUND so
+    // the user can immediately record the NEXT verse — the recorder closes now.
+    // The promise is tracked so a share of this verse can await it (otherwise
+    // the link would go out before the recording lands on the server).
+    setVoiceStatus(prev => ({ ...prev, [ref]: 'processing' }));
+    const job = (async () => {
       const finalBlob = beautify ? await bakeBeautifiedBlob(blob, mime) : blob;
       const meta = await uploadUserVerseVoice({ email: userEmail, setId: voiceSetId, reference: ref, blob: finalBlob, mime, dur, recordedBy: recordedByName });
       personalVoicesRef.current = { ...personalVoicesRef.current, [ref]: meta };
@@ -2471,13 +2478,18 @@ function VerseSetContinuousRainPlayer({
         overrideVoicesRef.current = { ...overrideVoicesRef.current, [ref]: meta };
       }
       voiceAudioCacheRef.current.delete(meta.voiceId);
+      return meta;
+    })();
+    uploadPromisesRef.current[ref] = job;
+    job.then(() => {
+      setVoiceStatus(prev => { const n = { ...prev }; delete n[ref]; return n; });
       bumpPersonalVoices();
-    } catch (e) {
-      // Surfaced via the recorder's own error handling / console.
+    }).catch((e) => {
       console.error('personal voice upload failed', e);
-    }
-    setPersonalBusy(false);
-    setVoiceRecTarget(null);
+      setVoiceStatus(prev => ({ ...prev, [ref]: 'error' }));
+    }).finally(() => {
+      if (uploadPromisesRef.current[ref] === job) delete uploadPromisesRef.current[ref];
+    });
   };
   const deleteMyVoice = async (ref) => {
     if (!userEmail || !voiceSetId || !ref) return;
@@ -3233,7 +3245,15 @@ function VerseSetContinuousRainPlayer({
                 🎙️ {t('{name} 親聲朗讀', 'Read aloud by {name}').replace('{name}', String(creatorVoiceName))}
               </div>
             )}
-            {myVoiceForCurrent && (
+            {voiceStatus[currentVerse.reference] === 'processing' ? (
+              <div style={{ textAlign: 'center', margin: '-0.1rem 0 0.4rem', fontSize: '0.82rem' }}>
+                <span style={{ color: '#93c5fd', fontWeight: 600 }}>⏳ {t('親聲處理中…（可繼續錄下一節）', 'Processing your voice… (you can record the next verse)')}</span>
+              </div>
+            ) : voiceStatus[currentVerse.reference] === 'error' ? (
+              <div style={{ textAlign: 'center', margin: '-0.1rem 0 0.4rem', fontSize: '0.82rem' }}>
+                <span style={{ color: '#fca5a5', fontWeight: 600 }}>⚠️ {t('親聲上傳失敗,請重錄', 'Voice upload failed — please re-record')}</span>
+              </div>
+            ) : myVoiceForCurrent ? (
               <div style={{ textAlign: 'center', margin: '-0.1rem 0 0.4rem', fontSize: '0.82rem' }}>
                 <span style={{ color: '#93c5fd', fontWeight: 600 }}>🎙️ {t('這節有你的親聲', 'Your voice on this verse')}</span>
                 <button
@@ -3245,7 +3265,7 @@ function VerseSetContinuousRainPlayer({
                   {t('刪除', 'Delete')} ✕
                 </button>
               </div>
-            )}
+            ) : null}
             <div
               ref={phraseContainerRef}
               className={`daily-verse-rain-phrases continuous-rain-phrases ${hasSecondaryPhrases ? 'has-secondary' : ''} ${isSettled ? 'is-settled' : ''}`}
@@ -3314,8 +3334,23 @@ function VerseSetContinuousRainPlayer({
           <button
             type="button"
             className="is-icon"
-            title={myVoiceForCurrent ? t('分享（附上你的親聲）', 'Share (with your voice)') : t('分享', 'Share')}
-            onClick={() => onShareVerse(currentVerse, { voiceOwner: myVoiceForCurrent ? myOwnerIdRef.current : null })}
+            disabled={shareBusy}
+            title={shareBusy
+              ? t('親聲上傳中,請稍候…', 'Uploading your voice…')
+              : (myVoiceForCurrent ? t('分享（附上你的親聲）', 'Share (with your voice)') : t('分享', 'Share'))}
+            onClick={async () => {
+              const ref = currentVerse.reference;
+              // If this verse's recording is still baking/uploading, wait for it
+              // so the shared link actually carries the voice (not owner/TTS).
+              const pending = uploadPromisesRef.current[ref];
+              if (pending) {
+                setShareBusy(true);
+                try { await pending; } catch { /* share without the voice */ }
+                setShareBusy(false);
+              }
+              const hasMine = !!personalVoicesRef.current[ref];
+              onShareVerse(currentVerse, { voiceOwner: hasMine ? myOwnerIdRef.current : null });
+            }}
           >
             <Share2 size={22} />
           </button>
@@ -3325,7 +3360,6 @@ function VerseSetContinuousRainPlayer({
             type="button"
             className={`is-icon ${myVoiceForCurrent ? 'is-primary' : ''}`}
             title={myVoiceForCurrent ? t('重錄我的親聲', 'Re-record my voice') : t('錄我的親聲', 'Record my voice')}
-            disabled={personalBusy}
             onClick={() => { haltPlayback(); setVoiceRecTarget({ reference: currentVerse.reference, text: currentVerse.text }); }}
           >
             <Mic size={22} />
