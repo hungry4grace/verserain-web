@@ -6712,6 +6712,9 @@ export default function App() {
   const [multiplayerSelectedVerses, setMultiplayerSelectedVerses] = useState([]);
   const [randomPickCount, setRandomPickCount] = useState(1);
   const [continuousRainSet, setContinuousRainSet] = useState(null);
+  // When a team schedule row launches the play card ('read' mode), this
+  // holds the team id so closing the card reopens the teams modal.
+  const [teamReadReturn, setTeamReadReturn] = useState(null);
   // 播放順序選擇 — holds the set while the user picks 隨機 or 按序.
   const [playOrderChooser, setPlayOrderChooser] = useState(null);
   const startContinuousPlay = (set, order) => {
@@ -7549,6 +7552,9 @@ export default function App() {
   const challengeVerseFromReader = (verse) => {
     if (!verse) return;
     initAudio();
+    // Challenging leaves the card for the game; don't bounce back to the
+    // teams modal on the (already-cleared) card's stop handler.
+    setTeamReadReturn(null);
     setContinuousRainSet(null);
     setCampaignQueue(null);
     campaignQueueRef.current = null;
@@ -16008,7 +16014,15 @@ const deDict = {
             t={t}
             userEmail={userEmail}
             playerName={playerName}
-            onStop={() => setContinuousRainSet(null)}
+            onStop={() => {
+              setContinuousRainSet(null);
+              // Launched from a team schedule row → return to the teams modal
+              // so the member sees their freshly-updated progress.
+              if (teamReadReturn) {
+                setTeamReadReturn(null);
+                setShowTeamsModal(true);
+              }
+            }}
             onSelectTopicSet={(set) => {
               setSelectedSetId(set.id);
               setContinuousRainSet({
@@ -22234,6 +22248,40 @@ const deDict = {
           }}
           onLaunchSet={async (setId, mode = 'campaign', returnTeamId = null, verseIndex = null) => {
             setShowTeamsModal(false);
+
+            // 'read' → open the purple play card (continuous-rain reader) for
+            // today's verse. Reading, challenging, recording and sharing all
+            // live inside that card, so the schedule row just opens it.
+            // Opening counts as today's completion (播放 = 算今天完成).
+            if (mode === 'read') {
+              let set = activeVerseSets.find(s => s.id === setId) || customVerseSets.find(s => s.id === setId);
+              if (!set?.verses?.length) {
+                try {
+                  const r = await fetch(`${PARTY_HOST}/share-set?id=${encodeURIComponent(setId)}`);
+                  if (r.ok) {
+                    const data = await r.json();
+                    if (data?.set?.verses?.length) set = data.set;
+                  }
+                } catch { /* fall through to the not-found alert */ }
+              }
+              const verse = set?.verses?.[verseIndex];
+              if (!verse) {
+                alert(t('找不到這個經文組,請聯絡管理員', "Couldn't find that verse set, please contact the admin"));
+                return;
+              }
+              // Record today's completion for the team (fire-and-forget).
+              if (returnTeamId && typeof verseIndex === 'number' && userEmail) {
+                fetchRetry(`${PARTY_HOST}/teams/verse-complete`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ email: userEmail, teamId: returnTeamId, setId, verseIndex, mode: 'read' }),
+                }).catch((err) => console.warn('verse-complete post failed', err));
+              }
+              setTeamReadReturn(returnTeamId || null);
+              playSingleVerseCard(verse, set);
+              return;
+            }
+
             if (returnTeamId) setPendingTeamReturn(returnTeamId);
             // Stash so the post-game effect knows what to report.
             // userEmail must be present for the backend record to mean

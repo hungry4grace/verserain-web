@@ -1144,113 +1144,32 @@ function ScheduleItemCard({
             </div>
           )}
           <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
+            {/* Single entry point: opens the full play card (the purple play
+                experience) for today's verse. Reading, challenging (九宮格/
+                難度), sharing and recording all live inside that card now, so
+                the schedule row stays uncluttered. Opening it counts as
+                today's completion. */}
             <button
-              onClick={() => onLaunchSet?.(item.setId, 'play', teamId, todayIndex)}
-              disabled={!onLaunchSet || planNotStarted}
-              style={{ ...btn('ghost'), padding: '0.35rem 0.7rem', fontSize: '0.85rem' }}
-              title={t('朗讀今天這節 — 算今天完成', "Read today's verse aloud — counts as today's completion")}
-            >
-              🔊 {t('播放', 'Play')}
-            </button>
-            <button
-              onClick={() => onLaunchSet?.(item.setId, 'campaign', teamId, todayIndex)}
+              onClick={() => onLaunchSet?.(item.setId, 'read', teamId, todayIndex)}
               disabled={!onLaunchSet || planNotStarted}
               style={{
                 ...btn(todayDone ? 'ghost' : 'primary'),
-                padding: '0.35rem 0.8rem', fontSize: '0.85rem',
+                padding: '0.35rem 0.9rem', fontSize: '0.85rem',
               }}
+              title={t('打開今天這節 — 朗讀、挑戰、錄音、分享都在裡面,開啟即算今天完成', "Open today's verse — read, challenge, record and share are all inside; opening counts as today's completion")}
             >
-              ▶ {t('挑戰', 'Challenge')}
+              ▶ {t('播放', 'Play')}
             </button>
-            {/* Mode + difficulty selectors — bound to App.jsx state so
-                changes here propagate to the actual challenge. Compact
-                dark-mode styling to match the teams modal. */}
-            {setPlayMode && (
-              <select
-                value={playMode}
-                onChange={e => setPlayMode(e.target.value)}
-                style={{
-                  background: colors.card, color: colors.text,
-                  border: `1px solid ${colors.border}`, borderRadius: 6,
-                  padding: '0.3rem 0.4rem', fontSize: '0.78rem', cursor: 'pointer',
-                }}
-              >
-                <option value="square_solo">{t('九宮格', 'Square')}</option>
-                <option value="rain_solo">{t('經文雨', 'Verse Rain')}</option>
-                <option value="voice_solo">{t('語音模式', 'Voice')}</option>
-              </select>
-            )}
-            {setDistractionLevel && (
-              <select
-                value={distractionLevel}
-                onChange={e => setDistractionLevel(Number(e.target.value))}
-                style={{
-                  background: colors.card, color: colors.text,
-                  border: `1px solid ${colors.border}`, borderRadius: 6,
-                  padding: '0.3rem 0.4rem', fontSize: '0.78rem', cursor: 'pointer',
-                }}
-              >
-                <option value={0}>{t('難度 0', 'Lv 0')}</option>
-                <option value={1}>{t('難度 1', 'Lv 1')}</option>
-                <option value={2}>{t('難度 2', 'Lv 2')}</option>
-                <option value={3}>{t('難度 3', 'Lv 3')}</option>
-              </select>
-            )}
-            <button
-              onClick={async () => {
-                const title = item.title || t('經文挑戰', 'Verse Challenge');
-                // Short /fc card link → LINE shows a verse preview (resolved
-                // server-side), then redirects into the in-app reading.
-                const url = buildVerseCardUrl(item.setId, teamId, todayIndex);
-                const dayLabel = t('第 {n} 天 / 共 {total} 天', 'Day {n} / {total}').replace('{n}', String(todayIndex + 1)).replace('{total}', String(totalCount));
-                const refLine = todayVerse?.reference ? `${todayVerse.reference}` : '';
-                const verseLine = todayVerse?.text
-                  ? t('「{verse}」', '“{verse}”').replace('{verse}', todayVerse.text)
-                  : '';
-                const shareText = [`📖 ${title} · ${dayLabel}`, refLine, verseLine, '', url].filter(Boolean).join('\n');
-                try {
-                  if (navigator.share) {
-                    await navigator.share({ title, text: shareText });
-                  } else {
-                    await navigator.clipboard.writeText(shareText);
-                  }
-                  setShared(true);
-                  setTimeout(() => setShared(false), 2000);
-                } catch { /* user cancelled — no-op */ }
-              }}
-              disabled={planNotStarted}
-              style={{ ...btn('ghost'), padding: '0.35rem 0.7rem', fontSize: '0.85rem' }}
-              title={t('分享給家人 — 他們點連結就能讀經/挑戰並算今天完成', 'Share with family — they can read/challenge from the link and get today\'s credit')}
-            >
-              <Share2 size={14} /> {shared ? t('已複製', 'Copied') : t('分享', 'Share')}
-            </button>
-            {/* 親人聲音唸經文 — play today's family recording / record one */}
-            {verseVoiceMeta ? (
-              <>
-                <VoicePlayer
-                  t={t} userEmail={userEmail} teamId={teamId}
-                  itemId={teamsApi.verseVoiceItemId(item.setId, todayIndex)}
-                  voiceId={verseVoiceMeta.voiceId} mime={verseVoiceMeta.voiceMime} dur={verseVoiceMeta.voiceDur}
-                  label={t('聽{name}唸', '{name} reads it')
-                    .replace('{name}', verseVoiceMeta.recordedBy || t('家人', 'Family'))}
-                />
-                <button
-                  onClick={() => setShowVerseVoiceRec(true)}
-                  style={{ ...btn('ghost'), padding: '0.35rem 0.7rem', fontSize: '0.85rem' }}
-                  title={t('重錄這節（會取代現有錄音）', 'Re-record this verse (replaces the current recording)')}
-                >
-                  🎙️ {t('重錄', 'Re-record')}
-                </button>
-              </>
-            ) : (
-              <button
-                onClick={() => setShowVerseVoiceRec(true)}
-                disabled={planNotStarted || !todayVerse}
-                style={{ ...btn('ghost'), padding: '0.35rem 0.7rem', fontSize: '0.85rem' }}
-                title={t('用你的聲音錄今天這節 — 家人打開連結會先聽到你唸', "Record today's verse in your voice — family hears it first when they open the daily link")}
-              >
-                🎙️ {t('錄這節', 'Record')}
-              </button>
+            {/* 親人聲音唸經文 — play today's family recording if one exists.
+                Recording itself now lives inside the play card. */}
+            {verseVoiceMeta && (
+              <VoicePlayer
+                t={t} userEmail={userEmail} teamId={teamId}
+                itemId={teamsApi.verseVoiceItemId(item.setId, todayIndex)}
+                voiceId={verseVoiceMeta.voiceId} mime={verseVoiceMeta.voiceMime} dur={verseVoiceMeta.voiceDur}
+                label={t('聽{name}唸', '{name} reads it')
+                  .replace('{name}', verseVoiceMeta.recordedBy || t('家人', 'Family'))}
+              />
             )}
             <div style={{ color: colors.muted, fontSize: '0.78rem', marginLeft: 'auto' }}>
               {t('今天:{done}/{total} 完成', 'Today: {done}/{total} done')
@@ -1357,17 +1276,13 @@ function ScheduleItemCard({
             >
               + <Mic size={12} /> {t('留言', 'Voice')}
             </button>
+            {/* 心得 and 代禱 are near-identical to compose, so they share one
+                button; the composer opens with a 心得/代禱 toggle. */}
             <button
               onClick={() => { setReflectExpanded(true); setComposeType('reflection'); }}
               style={{ ...btn('ghost'), padding: '0.25rem 0.55rem', fontSize: '0.8rem' }}
             >
-              + {t('心得', 'Reflection')}
-            </button>
-            <button
-              onClick={() => { setReflectExpanded(true); setComposeType('prayer'); }}
-              style={{ ...btn('ghost'), padding: '0.25rem 0.55rem', fontSize: '0.8rem' }}
-            >
-              + {t('代禱', 'Prayer')}
+              + {t('心得/代禱', 'Reflection/Prayer')}
             </button>
           </div>
         </div>
@@ -1888,7 +1803,9 @@ function ComposeVoice({ t, userEmail, teamId, itemId, onCancel, onCreated, verse
   );
 }
 
-function ComposeReflection({ t, userEmail, teamId, itemId, type, verses, onCancel, onCreated }) {
+function ComposeReflection({ t, userEmail, teamId, itemId, type: initialType, verses, onCancel, onCreated }) {
+  // 心得 / 代禱 share one composer; the type is a live toggle here.
+  const [type, setType] = useState(initialType === 'prayer' ? 'prayer' : 'reflection');
   const [text, setText] = useState('');
   const [verseRef, setVerseRef] = useState('');
   const [busy, setBusy] = useState(false);
@@ -1919,6 +1836,26 @@ function ComposeReflection({ t, userEmail, teamId, itemId, type, verses, onCance
     <Backdrop onClose={busy ? () => {} : onCancel}>
       <div style={{ ...card, width: 'min(520px, 100%)', borderLeft: `4px solid ${accent}` }}>
         <h3 style={{ color: colors.text, marginTop: 0 }}>{heading}</h3>
+        <div style={{ display: 'flex', gap: 6, marginBottom: 12 }}>
+          {[
+            ['reflection', t('心得', 'Reflection'), '#0ea5e9'],
+            ['prayer', t('代禱', 'Prayer'), '#8b5cf6'],
+          ].map(([val, label, c]) => (
+            <button
+              key={val}
+              onClick={() => setType(val)}
+              style={{
+                flex: 1, padding: '0.4rem', borderRadius: 8, cursor: 'pointer',
+                background: type === val ? c : 'transparent',
+                border: `1px solid ${type === val ? c : colors.border}`,
+                color: type === val ? '#fff' : colors.text,
+                fontWeight: type === val ? 700 : 400, fontSize: '0.85rem',
+              }}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
         {verses.length > 0 && (
           <div style={{ marginBottom: 10 }}>
             <div style={{ color: colors.muted, fontSize: '0.8rem', marginBottom: 4 }}>
