@@ -18,7 +18,7 @@ import BlindModeGame from './BlindModeGame';
 import { TransformWrapper, TransformComponent } from 'react-zoom-pan-pinch';
 import { GOOGLE_CLIENT_ID, APPLE_CLIENT_ID, APPLE_REDIRECT_URI, LINE_CHANNEL_ID, startLineLogin } from './oauthConfig';
 import { VAPID_PUBLIC_KEY, urlBase64ToUint8Array, isWebPushSupported, isIOSStandalone, isIOSWithoutPWA, hasNativeDailyPush, callNativeDailyPush } from './pushConfig';
-import { setVoiceApi, uploadVerseVoice, uploadSetAsset, compressBackgroundImage, getSetAssetDataUrl } from './setVoiceApi';
+import { setVoiceApi, uploadVerseVoice, uploadSetAsset, compressBackgroundImage, getSetAssetDataUrl, userVoiceApi, uploadUserVerseVoice, voiceOwnerId } from './setVoiceApi';
 import VerseVoiceRecorder from './VerseVoiceRecorder';
 import { bakeBeautifiedBlob } from './voiceBeautify';
 import { SET_BACKGROUND_THEMES, getSetBackgroundUrl } from './setBackgrounds';
@@ -2374,9 +2374,15 @@ function VerseSetContinuousRainPlayer({
   onChallengeVerse = null,
   onShareVerse = null,
   onSelectTopicSet = null,
-  allSecondaryVerses = []
+  allSecondaryVerses = [],
+  userEmail = '',
+  playerName = ''
 }) {
   const verses = useMemo(() => verseSet?.verses?.filter(Boolean) || [], [verseSet]);
+  // Opened from a share link carrying vo= → play the sender's personal voice.
+  // Scoped to this playback (rides on the set object), so a later non-shared
+  // play naturally clears it. See the /lc → listenSet deep-link handler.
+  const sharedVoiceOwner = verseSet?.sharedVoiceOwner || null;
   const [currentVerse, setCurrentVerse] = useState(() => startVerse || pickRandomVerse(verses));
 
   // 創作者親聲朗讀 — recordings for this set, keyed by verse reference.
@@ -2402,6 +2408,92 @@ function VerseSetContinuousRainPlayer({
       .catch(() => { /* no recordings — TTS as usual */ });
     return () => { cancelled = true; };
   }, [voiceSetId]);
+
+  // 個人親聲朗讀 (personal voice) — a per-listener layer that overrides the
+  // set owner's recording. personalVoicesRef = MY recordings (badge/delete);
+  // overrideVoicesRef = whichever voice wins playback: a share's sender voice
+  // (sharedVoiceOwner) if opened from a link, else my own. Priority in
+  // playVerse: override › owner (verseVoicesRef) › TTS.
+  const personalVoicesRef = useRef({});
+  const overrideVoicesRef = useRef({});
+  const personalVoicesReadyRef = useRef(Promise.resolve());
+  const myOwnerIdRef = useRef(null);
+  const [voiceRecTarget, setVoiceRecTarget] = useState(null); // { reference, text }
+  const [personalBusy, setPersonalBusy] = useState(false);
+  const [, setPersonalVoiceVersion] = useState(0);
+  const bumpPersonalVoices = () => setPersonalVoiceVersion(v => v + 1);
+  useEffect(() => {
+    let cancelled = false;
+    personalVoicesRef.current = {};
+    overrideVoicesRef.current = {};
+    myOwnerIdRef.current = null;
+    if (!voiceSetId) { personalVoicesReadyRef.current = Promise.resolve(); return undefined; }
+    personalVoicesReadyRef.current = (async () => {
+      try {
+        const mine = userEmail ? await voiceOwnerId(userEmail) : null;
+        if (cancelled) return;
+        myOwnerIdRef.current = mine;
+        if (mine) {
+          const res = await userVoiceApi.getAll(voiceSetId, mine).catch(() => null);
+          if (!cancelled && res?.voices) personalVoicesRef.current = res.voices;
+        }
+        // A shared link's sender voice wins over the viewer's own recording.
+        const activeOwner = sharedVoiceOwner || mine;
+        if (activeOwner && activeOwner === mine) {
+          overrideVoicesRef.current = personalVoicesRef.current;
+        } else if (activeOwner) {
+          const res = await userVoiceApi.getAll(voiceSetId, activeOwner).catch(() => null);
+          if (!cancelled && res?.voices) overrideVoicesRef.current = res.voices;
+        }
+      } catch { /* personal voice is optional */ }
+      if (!cancelled) bumpPersonalVoices();
+    })();
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [voiceSetId, userEmail, sharedVoiceOwner]);
+
+  // Record / re-record my voice for the current verse, then refresh caches.
+  const recordedByName = playerName || (userEmail || '').split('@')[0] || 'Anonymous';
+  const saveMyVoice = async ({ blob, mime, dur, beautify }) => {
+    if (!userEmail || !voiceSetId) return;
+    const ref = voiceRecTarget?.reference || currentVerse.reference;
+    setPersonalBusy(true);
+    try {
+      const finalBlob = beautify ? await bakeBeautifiedBlob(blob, mime) : blob;
+      const meta = await uploadUserVerseVoice({ email: userEmail, setId: voiceSetId, reference: ref, blob: finalBlob, mime, dur, recordedBy: recordedByName });
+      personalVoicesRef.current = { ...personalVoicesRef.current, [ref]: meta };
+      // When I'm listening to my own voice (no foreign share), my new take
+      // becomes the active override immediately.
+      if (!sharedVoiceOwner || sharedVoiceOwner === myOwnerIdRef.current) {
+        overrideVoicesRef.current = { ...overrideVoicesRef.current, [ref]: meta };
+      }
+      voiceAudioCacheRef.current.delete(meta.voiceId);
+      bumpPersonalVoices();
+    } catch (e) {
+      // Surfaced via the recorder's own error handling / console.
+      console.error('personal voice upload failed', e);
+    }
+    setPersonalBusy(false);
+    setVoiceRecTarget(null);
+  };
+  const deleteMyVoice = async (ref) => {
+    if (!userEmail || !voiceSetId || !ref) return;
+    setPersonalBusy(true);
+    try {
+      await userVoiceApi.remove(userEmail, voiceSetId, ref);
+      const nextPersonal = { ...personalVoicesRef.current }; delete nextPersonal[ref];
+      personalVoicesRef.current = nextPersonal;
+      if (!sharedVoiceOwner || sharedVoiceOwner === myOwnerIdRef.current) {
+        const nextOverride = { ...overrideVoicesRef.current }; delete nextOverride[ref];
+        overrideVoicesRef.current = nextOverride;
+      }
+      bumpPersonalVoices();
+    } catch (e) {
+      console.error('personal voice delete failed', e);
+    }
+    setPersonalBusy(false);
+  };
+  const myVoiceForCurrent = personalVoicesRef.current?.[currentVerse.reference] || null;
 
   const playCreatorRecording = async (rec, phrasesArr, onPhrase) => {
     try {
@@ -2825,10 +2917,13 @@ function VerseSetContinuousRainPlayer({
       // one exists for this verse; falls back to TTS on any failure.
       // Wait briefly for the voices list so the first verse doesn't race
       // the fetch on slow networks (iPhone: TTS 先響、之後才換錄音).
-      await Promise.race([verseVoicesReadyRef.current, wait(3000)]);
+      await Promise.race([Promise.all([verseVoicesReadyRef.current, personalVoicesReadyRef.current]), wait(3000)]);
       if (cancelled || runRef.current !== runId) return;
       let creatorPlayed = false;
-      const creatorRec = voiceSetId ? (verseVoicesRef.current?.[currentVerse.reference] || null) : null;
+      // Priority: my (or the share sender's) personal voice › set owner's › TTS.
+      const creatorRec = voiceSetId
+        ? (overrideVoicesRef.current?.[currentVerse.reference] || verseVoicesRef.current?.[currentVerse.reference] || null)
+        : null;
       if (creatorRec?.voiceId) {
         creatorPlayed = await playCreatorRecording(creatorRec, currentPhrases, (i) => {
           if (!cancelled && runRef.current === runId) setActivePhrase(i);
@@ -3098,6 +3193,19 @@ function VerseSetContinuousRainPlayer({
                 🎙️ {t('{name} 親聲朗讀', 'Read aloud by {name}').replace('{name}', String(creatorVoiceName))}
               </div>
             )}
+            {myVoiceForCurrent && (
+              <div style={{ textAlign: 'center', margin: '-0.1rem 0 0.4rem', fontSize: '0.82rem' }}>
+                <span style={{ color: '#93c5fd', fontWeight: 600 }}>🎙️ {t('這節有你的親聲', 'Your voice on this verse')}</span>
+                <button
+                  type="button"
+                  onClick={() => deleteMyVoice(currentVerse.reference)}
+                  disabled={personalBusy}
+                  style={{ marginLeft: 8, background: 'transparent', border: '1px solid rgba(248,113,113,0.6)', color: '#fca5a5', borderRadius: 6, padding: '1px 8px', cursor: personalBusy ? 'default' : 'pointer', fontSize: '0.75rem', opacity: personalBusy ? 0.5 : 1 }}
+                >
+                  {t('刪除', 'Delete')} ✕
+                </button>
+              </div>
+            )}
             <div
               ref={phraseContainerRef}
               className={`daily-verse-rain-phrases continuous-rain-phrases ${hasSecondaryPhrases ? 'has-secondary' : ''} ${isSettled ? 'is-settled' : ''}`}
@@ -3166,10 +3274,21 @@ function VerseSetContinuousRainPlayer({
           <button
             type="button"
             className="is-icon"
-            title={t('分享', 'Share')}
-            onClick={() => onShareVerse(currentVerse)}
+            title={myVoiceForCurrent ? t('分享（附上你的親聲）', 'Share (with your voice)') : t('分享', 'Share')}
+            onClick={() => onShareVerse(currentVerse, { voiceOwner: myVoiceForCurrent ? myOwnerIdRef.current : null })}
           >
             <Share2 size={22} />
+          </button>
+        )}
+        {userEmail && voiceSetId && (
+          <button
+            type="button"
+            className={`is-icon ${myVoiceForCurrent ? 'is-primary' : ''}`}
+            title={myVoiceForCurrent ? t('重錄我的親聲', 'Re-record my voice') : t('錄我的親聲', 'Record my voice')}
+            disabled={personalBusy}
+            onClick={() => { haltPlayback(); setVoiceRecTarget({ reference: currentVerse.reference, text: currentVerse.text }); }}
+          >
+            <Mic size={22} />
           </button>
         )}
         {onSecondaryVersionChange && (
@@ -3184,6 +3303,16 @@ function VerseSetContinuousRainPlayer({
           </select>
         )}
       </div>
+      {voiceRecTarget && (
+        <VerseVoiceRecorder
+          t={t}
+          reference={formatVerseReferenceForDisplay(voiceRecTarget.reference, version)}
+          verseText={voiceRecTarget.text}
+          onUpload={saveMyVoice}
+          onCancel={() => setVoiceRecTarget(null)}
+          onDone={() => setVoiceRecTarget(null)}
+        />
+      )}
     </div>
   );
 }
@@ -7021,6 +7150,7 @@ export default function App() {
           : (sequential ? (foundSet.verses || [])[0] : null);
         setSelectedSetId(foundSet.id);
         setMainTab('versesets');
+        const voParam = params.get('vo');
         setContinuousRainSet({
           id: foundSet.id,
           title: foundSet.title,
@@ -7030,6 +7160,8 @@ export default function App() {
           // Synthetic single-verse shares carry the real set id here so
           // creator recordings still resolve for recipients.
           voiceSetId: foundSet.voiceSetId || null,
+          // vo= → play the sender's personal voice over the owner's / TTS.
+          sharedVoiceOwner: /^[a-f0-9]{16}$/.test(String(voParam || '')) ? voParam : null,
           background: foundSet.background || '',
           backgroundMime: foundSet.backgroundMime || '',
           bgMusic: foundSet.bgMusic || '',
@@ -15800,6 +15932,8 @@ const deDict = {
             startVerse={continuousRainSet.startVerse || null}
             version={version}
             t={t}
+            userEmail={userEmail}
+            playerName={playerName}
             onStop={() => setContinuousRainSet(null)}
             onSelectTopicSet={(set) => {
               setSelectedSetId(set.id);
@@ -15810,7 +15944,7 @@ const deDict = {
             }}
             onListenLogged={() => updateGarden('activity_only', 'listen')}
             onChallengeVerse={challengeVerseFromReader}
-            onShareVerse={(verse) => {
+            onShareVerse={(verse, shareOpts) => {
               if (!verse || !continuousRainSet?.id) return;
               // Share the REAL originating set, not a synthetic single-verse
               // wrapper (id `single-…`): voiceSetId points back at the source
@@ -15832,6 +15966,9 @@ const deDict = {
               const link = buildPublicShareUrl('/lc', {
                 set: shareSetId,
                 ...(verseIdx >= 0 ? { i: verseIdx } : { verse: verse.reference }),
+                // vo = opaque voice-owner id → recipient hears MY personal
+                // recording for this verse (my voice › set owner › TTS).
+                ...(shareOpts?.voiceOwner ? { vo: shareOpts.voiceOwner } : {}),
                 version,
               });
               openListeningShare(link, `${fullSet.title || continuousRainSet.title || t('經文組', 'Verse Set')} · ${verse.reference}`);
@@ -16301,7 +16438,7 @@ const deDict = {
                     }}
                     onListenLogged={() => updateGarden('activity_only', 'listen')}
                     onChallengeVerse={challengeVerseFromReader}
-                    onShareVerse={(verse) => {
+                    onShareVerse={(verse, shareOpts) => {
                       if (!verse) return;
                       const dateLabel = remoteDailyVerse?.date || dailyVerseDate;
                       const link = buildPublicShareUrl('/', { listenDaily: dateLabel, version });
@@ -16368,6 +16505,8 @@ const deDict = {
                     onSecondaryVersionChange={setBilingualSecondaryVersion}
                     allSecondaryVerses={allSecondaryVerses}
                     t={t}
+                    userEmail={userEmail}
+                    playerName={playerName}
                     label={t('雙語經文雨 Beta', 'Bilingual VerseRain Beta')}
                     topicSets={topicVerseSets}
                     showNav
@@ -16386,13 +16525,14 @@ const deDict = {
                     }}
                     onListenLogged={() => updateGarden('activity_only', 'listen')}
                     onChallengeVerse={challengeVerseFromReader}
-                    onShareVerse={(verse) => {
+                    onShareVerse={(verse, shareOpts) => {
                       if (!verse) return;
                       pushSetForSharing(preferredRainSet, true);
                       const verseIdx = (preferredRainSet.verses || []).findIndex(v => v?.reference === verse.reference);
                       const link = buildPublicShareUrl('/lc', {
                         set: preferredRainSet.id,
                         ...(verseIdx >= 0 ? { i: verseIdx } : { verse: verse.reference }),
+                        ...(shareOpts?.voiceOwner ? { vo: shareOpts.voiceOwner } : {}),
                         version,
                       });
                       openListeningShare(link, `${preferredRainSet.title} · ${verse.reference}`);

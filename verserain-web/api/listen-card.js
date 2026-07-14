@@ -115,6 +115,9 @@ export default async function handler(req, res) {
   if (set) dest.searchParams.set('listenSet', set);
   if (verse) dest.searchParams.set('listenVerse', verse);
   if (version) dest.searchParams.set('version', version);
+  // vo = opaque voice-owner id → recipient hears the sender's personal
+  // recording for this verse (their voice › set owner › TTS).
+  if (/^[a-f0-9]{16}$/.test(String(q.vo || ''))) dest.searchParams.set('vo', String(q.vo));
   // Carry the language through to the SPA so the app's own directions
   // (Start Listening / Stop / …) render in the language the link was sent in.
   if (q.lang) dest.searchParams.set('lang', lang);

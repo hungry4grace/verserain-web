@@ -127,3 +127,50 @@ export async function uploadVerseVoice({ email, setId, reference, blob, mime, du
   });
   return res.verseVoice;
 }
+
+// ─── 個人親聲朗讀 (personal voice) ──────────────────────────────────────
+// A second voice layer parallel to the set owner's recording. Any logged-in
+// listener records their own reading; it never overwrites the owner's slot.
+// Keyed by an opaque ownerId (sha256(email) prefix) so share links can carry
+// "whose voice" without exposing the email. Audio reuses the shared
+// set-voice:* store, so recording reuses the same chunk-upload path.
+// Playback priority (client): personal › owner › TTS.
+
+// Must match the server's voiceOwnerId() exactly.
+export async function voiceOwnerId(email) {
+  const data = new TextEncoder().encode(String(email || '').toLowerCase().trim());
+  const buf = await crypto.subtle.digest('SHA-256', data);
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('').slice(0, 16);
+}
+
+export const userVoiceApi = {
+  register: (email, setId, reference, { voiceId, voiceMime, voiceDur, recordedBy }) =>
+    jpost('/sets/user-verse-voice/set', { email, setId, reference, voiceId, voiceMime, voiceDur, recordedBy }),
+  // { voices: { [reference]: meta } } — for one owner (self, or a share's vo=).
+  getAll: (setId, owner) =>
+    jget(`/sets/user-verse-voices?setId=${encodeURIComponent(setId)}&owner=${encodeURIComponent(owner)}`),
+  remove: (email, setId, reference) =>
+    jpost('/sets/user-verse-voice/delete', { email, setId, reference }),
+};
+
+// Record-blob → chunk upload (shared store) → register under the caller's
+// personal namespace. Returns { ...meta, ownerId }.
+export async function uploadUserVerseVoice({ email, setId, reference, blob, mime, dur, recordedBy }) {
+  const base64 = await new Promise((resolve, reject) => {
+    const fr = new FileReader();
+    fr.onload = () => resolve(String(fr.result).split(',')[1] || '');
+    fr.onerror = reject;
+    fr.readAsDataURL(blob);
+  });
+  const CHUNK = 100000; // chars — under the backend's 110000 cap
+  const total = Math.ceil(base64.length / CHUNK);
+  if (total > 12) throw new Error('Recording too long — keep it under 2 minutes.');
+  const voiceId = 'v_' + Math.random().toString(36).slice(2, 12);
+  for (let i = 0; i < total; i++) {
+    await setVoiceApi.uploadChunk(email, setId, voiceId, i, total, base64.slice(i * CHUNK, (i + 1) * CHUNK));
+  }
+  const res = await userVoiceApi.register(email, setId, reference, {
+    voiceId, voiceMime: mime, voiceDur: dur, recordedBy,
+  });
+  return { ...(res.verseVoice || {}), ownerId: res.ownerId };
+}

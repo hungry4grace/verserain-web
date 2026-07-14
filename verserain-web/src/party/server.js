@@ -1,3 +1,12 @@
+// Opaque, stable per-account id for the personal-voice layer: sha256(email)
+// prefix. Lets share links carry "whose voice" without exposing the email,
+// and survives playerName changes. The client computes the same value.
+async function voiceOwnerId(email) {
+  const data = new TextEncoder().encode(String(email || '').toLowerCase().trim());
+  const buf = await crypto.subtle.digest('SHA-256', data);
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('').slice(0, 16);
+}
+
 export default class Server {
   constructor(room) {
     this.room = room;
@@ -1134,6 +1143,83 @@ export default class Server {
             return new Response(JSON.stringify({ success: true, voices }), { status: 200, headers: corsHeaders });
          } catch {
             return new Response(JSON.stringify({ error: 'Failed to list verse voices' }), { status: 500, headers: corsHeaders });
+         }
+      }
+
+      // ── 個人親聲朗讀 (personal voice) ──────────────────────────────────
+      // A SECOND voice layer, parallel to the owner's set-verse-voice slot.
+      // Any logged-in listener may record their own reading of a verse; it
+      // never overwrites the set owner's recording. Keyed by an opaque
+      // ownerId (= sha256(email) prefix) so share links can carry it without
+      // exposing the email. Audio chunks reuse the shared set-voice:* store
+      // (content-addressed by the unique voiceId), so recording reuses the
+      // existing /sets/verse-voice/chunk upload path.
+      //   pointer: user-verse-voice:{ownerId}:{setId}:{refKey} → meta
+      // Playback priority (client): personal › owner › TTS.
+
+      // POST /sets/user-verse-voice/set — { email, setId, reference, voiceId, voiceMime, voiceDur, recordedBy }
+      if (url.pathname.endsWith('/sets/user-verse-voice/set') && request.method === 'POST') {
+         try {
+            const { email, setId, reference, voiceId, voiceMime, voiceDur, recordedBy } = await request.json();
+            if (!email || !setId || !reference) return new Response(JSON.stringify({ error: 'email, setId, reference required' }), { status: 400, headers: corsHeaders });
+            if (!/^v_[A-Za-z0-9]{6,20}$/.test(String(voiceId || ''))) return new Response(JSON.stringify({ error: 'bad voiceId' }), { status: 400, headers: corsHeaders });
+            const ownerId = await voiceOwnerId(email);
+            const refKey = encodeURIComponent(String(reference).trim().slice(0, 60));
+            const meta = {
+               reference: String(reference).trim().slice(0, 60),
+               voiceId: String(voiceId),
+               voiceMime: String(voiceMime || 'audio/webm').slice(0, 40),
+               voiceDur: Math.min(Math.max(0, Number(voiceDur) || 0), 600),
+               recordedBy: String(recordedBy || '').trim().slice(0, 30),
+               at: new Date().toISOString(),
+            };
+            await this.room.storage.put(`user-verse-voice:${ownerId}:${String(setId)}:${refKey}`, meta);
+            return new Response(JSON.stringify({ success: true, ownerId, verseVoice: meta }), { status: 200, headers: corsHeaders });
+         } catch {
+            return new Response(JSON.stringify({ error: 'Failed to save personal verse voice' }), { status: 500, headers: corsHeaders });
+         }
+      }
+
+      // GET /sets/user-verse-voices?setId=<setId>&owner=<ownerId> — a single
+      // user's recordings for a set, as { voices: { [reference]: meta } }.
+      // owner is the opaque id (from a share link, or the listener's own).
+      if (url.pathname.endsWith('/sets/user-verse-voices') && request.method === 'GET') {
+         try {
+            const setId = url.searchParams.get('setId');
+            const owner = url.searchParams.get('owner');
+            if (!setId || !owner) return new Response(JSON.stringify({ error: 'setId, owner required' }), { status: 400, headers: corsHeaders });
+            const prefix = `user-verse-voice:${owner}:${setId}:`;
+            const map = await this.room.storage.list({ prefix });
+            const voices = {};
+            for (const [, meta] of map.entries()) {
+               if (meta?.reference) voices[meta.reference] = meta;
+            }
+            return new Response(JSON.stringify({ success: true, voices }), { status: 200, headers: corsHeaders });
+         } catch {
+            return new Response(JSON.stringify({ error: 'Failed to list personal verse voices' }), { status: 500, headers: corsHeaders });
+         }
+      }
+
+      // POST /sets/user-verse-voice/delete — { email, setId, reference }
+      // Removes the caller's pointer AND its audio chunks (voiceId is unique
+      // per recording, so its chunks are safe to drop). Auth = the email must
+      // hash to the ownerId, so a user can only delete their own.
+      if (url.pathname.endsWith('/sets/user-verse-voice/delete') && request.method === 'POST') {
+         try {
+            const { email, setId, reference } = await request.json();
+            if (!email || !setId || !reference) return new Response(JSON.stringify({ error: 'email, setId, reference required' }), { status: 400, headers: corsHeaders });
+            const ownerId = await voiceOwnerId(email);
+            const refKey = encodeURIComponent(String(reference).trim().slice(0, 60));
+            const key = `user-verse-voice:${ownerId}:${String(setId)}:${refKey}`;
+            const meta = await this.room.storage.get(key);
+            if (meta?.voiceId) {
+               const chunks = await this.room.storage.list({ prefix: `set-voice:${String(setId)}:${meta.voiceId}:` });
+               for (const k of chunks.keys()) await this.room.storage.delete(k);
+            }
+            await this.room.storage.delete(key);
+            return new Response(JSON.stringify({ success: true }), { status: 200, headers: corsHeaders });
+         } catch {
+            return new Response(JSON.stringify({ error: 'Failed to delete personal verse voice' }), { status: 500, headers: corsHeaders });
          }
       }
 
