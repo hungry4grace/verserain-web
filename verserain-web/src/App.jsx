@@ -3026,6 +3026,11 @@ function VerseSetContinuousRainPlayer({
     runRef.current += 1;
     bgmRef.current?.pause();
     stopSpeechIfActive();
+    // Also silence the creator/personal recording — it plays through a
+    // persistent <audio> element that stopSpeechIfActive() doesn't touch, so
+    // without this Pause / the 🎙️ record button wouldn't actually stop the
+    // voice (you can't record over it).
+    try { creatorAudioRef.current?.pause(); } catch { /* noop */ }
   };
 
   const togglePause = () => {
