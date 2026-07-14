@@ -19813,6 +19813,20 @@ const deDict = {
                       <li><span dangerouslySetInnerHTML={{ __html: t("房主可以從全域題庫中挑選 <strong>「比賽經文」</strong>。", "The host can select <strong>\"Competition Verses\"</strong> from the global verse bank.") }} /></li>
                       <li>{t("所有人同時開始挑戰，並能在遊戲結束後看到即時的成績排行榜，非常適合主日學活動與小組破冰！", "Everyone starts the challenge simultaneously and can see real-time leaderboards after the game ends. Perfect for Sunday school activities and group icebreakers!")}</li>
                     </ul>
+
+                    <h2 style={{ borderBottom: '2px solid #e2e8f0', paddingBottom: '0.5rem', marginTop: '2rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Mic size={22} /> {t("六、親聲朗讀 — 用你自己的聲音讀經", "6. Read Aloud in Your Own Voice")}</h2>
+                    <p><span dangerouslySetInnerHTML={{ __html: t("在<strong>聆聽經文組</strong>時，你可以錄下自己的聲音來讀某一節。之後再聽這一節，聽到的就是你自己的聲音，而不是電腦語音；還能把它分享給朋友，讓他們也聽見你的親聲。", "While <strong>listening to a verse set</strong>, you can record your own voice reading a verse. Next time you play that verse you'll hear yourself instead of the computer voice — and you can share it so friends hear your voice too.") }} /></p>
+                    <ul style={{ paddingLeft: '1.5rem', marginBottom: '2rem' }}>
+                      <li><span dangerouslySetInnerHTML={{ __html: t("<strong>錄下你的親聲：</strong>（需先登入）聆聽畫面下方那排按鈕中有一顆 🎙️ 麥克風鍵，點它、照著經文唸一遍、儲存即可。", "<strong>Record your voice:</strong> (login required) In the row of buttons at the bottom of the listen screen, tap the 🎙️ mic, read the verse aloud, and save.") }} /></li>
+                      <li><span dangerouslySetInnerHTML={{ __html: t("<strong>播放優先順序：</strong>你的親聲 ＞ 題庫作者的親聲 ＞ 電腦語音（TTS）。只要你錄了，聽到的一定是你自己的聲音。", "<strong>Playback priority:</strong> your voice ＞ the set author's voice ＞ computer voice (TTS). Once you've recorded, you'll always hear yourself.") }} /></li>
+                      <li><span dangerouslySetInnerHTML={{ __html: t("<strong>✨ 美化人聲：</strong>錄完可勾選「美化人聲」讓聲音更清晰。處理與上傳會在<strong>背景進行</strong>（畫面顯示「⏳ 親聲處理中…」），你可以馬上去錄下一節，不必等它跑完。", "<strong>✨ Enhance voice:</strong> After recording you can enable \"Enhance voice\" for clarity. Processing and upload run <strong>in the background</strong> (shown as \"⏳ Processing…\"), so you can record the next verse right away.") }} /></li>
+                      <li><span dangerouslySetInnerHTML={{ __html: t("<strong>分享給朋友聽你的聲音：</strong>點 🔗 分享鍵，朋友打開連結就會聽到你的親聲。若錄音還在上傳，分享鍵會先等上傳完成再產生連結，確保對方一定聽得到。", "<strong>Share your voice:</strong> Tap the 🔗 share button and your friend hears your voice when they open the link. If the recording is still uploading, the button waits for it to finish first so they always hear it.") }} /></li>
+                      <li><span dangerouslySetInnerHTML={{ __html: t("<strong>暫停 / 繼續：</strong>播放親聲錄音時按暫停會停在原處，再按繼續會<strong>從原處接著播</strong>，不會從頭重讀。", "<strong>Pause / Resume:</strong> When a voice recording is playing, Pause holds the position and Resume <strong>continues from where it stopped</strong> instead of restarting.") }} /></li>
+                      <li><span dangerouslySetInnerHTML={{ __html: t("<strong>刪除：</strong>經文出處下方若顯示「🎙️ 這節有你的親聲」，點旁邊的「刪除 ✕」即可移除你的錄音，之後會回到作者的親聲或電腦語音。", "<strong>Delete:</strong> If \"🎙️ Your voice on this verse\" shows under the reference, tap \"Delete ✕\" next to it to remove your recording; playback then falls back to the author's or computer voice.") }} /></li>
+                    </ul>
+                    <div style={{ backgroundColor: '#eff6ff', borderLeft: '4px solid #3b82f6', padding: '1rem', borderRadius: '4px', marginBottom: '3rem' }}>
+                      <span dangerouslySetInnerHTML={{ __html: t("<strong>小提示：</strong>聆聽畫面上方中間、顯示日期或主題名稱的按鈕，下面寫著 <strong>【更多的主題經文】</strong> —— 點一下就能展開更多主題經文組，快速切換聆聽不同主題。", "<strong>Tip:</strong> The button at the top-center of the listen screen (showing the date or topic name) has <strong>[More topic verses]</strong> underneath — tap it to open more topic verse sets and switch quickly.") }} />
+                    </div>
                   </>
                 </div>
               )}
