@@ -2397,6 +2397,9 @@ function VerseSetContinuousRainPlayer({
   // networks and wrongly fall back to TTS.
   const verseVoicesReadyRef = useRef(Promise.resolve());
   const creatorAudioRef = useRef(null);
+  // True while a voice recording is paused mid-playback (Pause button), so
+  // Resume continues from the same position instead of replaying the verse.
+  const pausedRecordingRef = useRef(false);
   const voiceAudioCacheRef = useRef(new globalThis.Map()); // voiceId → data URL
   const [creatorVoiceName, setCreatorVoiceName] = useState('');
   useEffect(() => {
@@ -2530,7 +2533,10 @@ function VerseSetContinuousRainPlayer({
         audio.onended = () => fin(true);
         audio.onerror = () => fin(false);
         audio.play().catch(() => fin(false));
-        window.setTimeout(() => fin(true), durMs + 15000); // hard cap
+        // Hard cap so a stuck clip can't hang the run — but never fire it
+        // while the user has paused mid-clip (Resume will play to the end,
+        // and onended then advances).
+        window.setTimeout(() => { if (!pausedRecordingRef.current) fin(true); }, durMs + 15000);
       });
       timers.forEach(id => window.clearTimeout(id));
       setCreatorVoiceName('');
@@ -3024,6 +3030,7 @@ function VerseSetContinuousRainPlayer({
 
   const haltPlayback = () => {
     runRef.current += 1;
+    pausedRecordingRef.current = false;
     bgmRef.current?.pause();
     stopSpeechIfActive();
     // Also silence the creator/personal recording — it plays through a
@@ -3034,12 +3041,30 @@ function VerseSetContinuousRainPlayer({
   };
 
   const togglePause = () => {
+    const audio = creatorAudioRef.current;
     if (isPaused) {
       setIsPaused(false);
-      setPlayKey(k => k + 1);
+      if (pausedRecordingRef.current && audio) {
+        // Resume the recording from exactly where it was paused.
+        pausedRecordingRef.current = false;
+        try { bgmRef.current?.play?.(); } catch { /* noop */ }
+        audio.play().catch(() => setPlayKey(k => k + 1));
+      } else {
+        // TTS / paused between phrases → replay the verse.
+        setPlayKey(k => k + 1);
+      }
     } else {
-      haltPlayback();
       setIsPaused(true);
+      if (audio && audio.src && !audio.paused && !audio.ended) {
+        // A voice recording is mid-playback → truly pause it (hold position),
+        // WITHOUT killing the run, so Resume continues from here.
+        pausedRecordingRef.current = true;
+        try { audio.pause(); } catch { /* noop */ }
+        try { bgmRef.current?.pause(); } catch { /* noop */ }
+      } else {
+        // TTS / nothing playing → stop; Resume replays the verse.
+        haltPlayback();
+      }
     }
   };
 
