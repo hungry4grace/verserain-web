@@ -2498,7 +2498,7 @@ function VerseSetContinuousRainPlayer({
   };
   const myVoiceForCurrent = personalVoicesRef.current?.[currentVerse.reference] || null;
 
-  const playCreatorRecording = async (rec, phrasesArr, onPhrase) => {
+  const playCreatorRecording = async (rec, phrasesArr, onPhrase, displayName) => {
     try {
       let dataUrl = voiceAudioCacheRef.current.get(rec.voiceId);
       if (!dataUrl) {
@@ -2517,7 +2517,9 @@ function VerseSetContinuousRainPlayer({
       try { audio.pause(); } catch { /* noop */ }
       audio.src = dataUrl;
       try { audio.currentTime = 0; } catch { /* not loaded yet */ }
-      setCreatorVoiceName(rec.recordedBy || '');
+      // displayName === '' → hide the badge (listener's own voice). undefined
+      // (legacy callers) → fall back to the recording's stored name.
+      setCreatorVoiceName(displayName !== undefined ? displayName : (rec.recordedBy || ''));
       const durMs = rec.voiceDur > 0 ? rec.voiceDur * 1000 : 8000;
       // Advance phrase highlights proportionally to each phrase's length.
       const totalLen = phrasesArr.reduce((a, p) => a + p.length, 0) || 1;
@@ -2927,13 +2929,21 @@ function VerseSetContinuousRainPlayer({
       if (cancelled || runRef.current !== runId) return;
       let creatorPlayed = false;
       // Priority: my (or the share sender's) personal voice › set owner's › TTS.
-      const creatorRec = voiceSetId
-        ? (overrideVoicesRef.current?.[currentVerse.reference] || verseVoicesRef.current?.[currentVerse.reference] || null)
-        : null;
+      const personalRec = voiceSetId ? (overrideVoicesRef.current?.[currentVerse.reference] || null) : null;
+      const ownerRec = voiceSetId ? (verseVoicesRef.current?.[currentVerse.reference] || null) : null;
+      const creatorRec = personalRec || ownerRec;
       if (creatorRec?.voiceId) {
+        // Attribution for the green「{name} 親聲朗讀」badge. When it's the
+        // listener's OWN voice, show nothing — the blue「這節有你的親聲」badge
+        // already covers it, and its stored recordedBy can be a stale
+        // playerName (e.g. an earlier "hungry@G"). Set-owner / shared-sender
+        // recordings keep their name.
+        const isOwnVoice = creatorRec === personalRec
+          && (!sharedVoiceOwner || sharedVoiceOwner === myOwnerIdRef.current);
+        const voiceLabel = isOwnVoice ? '' : (creatorRec.recordedBy || '');
         creatorPlayed = await playCreatorRecording(creatorRec, currentPhrases, (i) => {
           if (!cancelled && runRef.current === runId) setActivePhrase(i);
-        });
+        }, voiceLabel);
         if (cancelled || runRef.current !== runId) return;
       }
 
