@@ -35,20 +35,6 @@ const buildVerseShareUrl = (setId, teamId, verseIndex, mode = 'campaign') =>
   + `&verseIndex=${verseIndex}`
   + `&mode=${mode}`;
 
-// Share via the /fc Open Graph card so LINE/WhatsApp render a verse preview
-// (title · reference, verse text, branded image), then redirect the tapper
-// into the in-app reading + one-tap Amen. Mirrors the cron's daily forward.
-const buildVerseCardUrl = (setId, teamId, verseIndex) => {
-  // Short link — the /fc card resolves the verse from (team, set, i) server-side.
-  const p = new URLSearchParams({
-    team: teamId,
-    set: setId,
-    i: String(verseIndex),
-    amen: '1',
-  });
-  return `${PUBLIC_ORIGIN}/fc?${p.toString()}`;
-};
-
 // Single self-contained modal for the Teams feature. Mounted from App.jsx
 // with { userEmail, playerName, t, onClose }. Maintains its own internal
 // "view" state (list | detail | admin) and never touches App.jsx render tree.
@@ -1000,7 +986,6 @@ function ScheduleItemCard({
   const [reflectExpanded, setReflectExpanded] = useState(false);
   const [composeType, setComposeType] = useState(null);
   const [showAllDays, setShowAllDays] = useState(false);
-  const [shared, setShared] = useState(false);
   const description = item.description || '';
   const descNeedsClamp = description.length > 140;
 
@@ -1026,18 +1011,6 @@ function ScheduleItemCard({
   const todayVerse = verses[todayIndex] || null;
   const todayDone = myDone.includes(todayIndex);
   const planNotStarted = rawDayIndex < 0;
-
-  // 親人聲音唸經文 — today's family recording (null = none yet).
-  const [verseVoiceMeta, setVerseVoiceMeta] = useState(null);
-  const [showVerseVoiceRec, setShowVerseVoiceRec] = useState(false);
-  useEffect(() => {
-    let cancelled = false;
-    if (!item.setId || planNotStarted || totalCount === 0) return undefined;
-    teamsApi.getVerseVoice(userEmail, teamId, item.setId, todayIndex)
-      .then(res => { if (!cancelled) setVerseVoiceMeta(res?.verseVoice || null); })
-      .catch(() => { /* leave as none */ });
-    return () => { cancelled = true; };
-  }, [item.setId, todayIndex, teamId, userEmail, planNotStarted, totalCount]);
 
   // Team-wide today tally.
   let teamDoneToday = 0;
@@ -1160,17 +1133,6 @@ function ScheduleItemCard({
             >
               ▶ {t('播放', 'Play')}
             </button>
-            {/* 親人聲音唸經文 — play today's family recording if one exists.
-                Recording itself now lives inside the play card. */}
-            {verseVoiceMeta && (
-              <VoicePlayer
-                t={t} userEmail={userEmail} teamId={teamId}
-                itemId={teamsApi.verseVoiceItemId(item.setId, todayIndex)}
-                voiceId={verseVoiceMeta.voiceId} mime={verseVoiceMeta.voiceMime} dur={verseVoiceMeta.voiceDur}
-                label={t('聽{name}唸', '{name} reads it')
-                  .replace('{name}', verseVoiceMeta.recordedBy || t('家人', 'Family'))}
-              />
-            )}
             <div style={{ color: colors.muted, fontSize: '0.78rem', marginLeft: 'auto' }}>
               {t('今天:{done}/{total} 完成', 'Today: {done}/{total} done')
                 .replace('{done}', String(teamDoneToday))
@@ -1318,28 +1280,6 @@ function ScheduleItemCard({
             itemId={item.id}
             onCancel={() => setComposeType(null)}
             onCreated={() => { setComposeType(null); onReflectionsChanged?.(); }}
-          />
-        )}
-        {showVerseVoiceRec && todayVerse && (
-          <ComposeVoice
-            t={t}
-            userEmail={userEmail}
-            teamId={teamId}
-            itemId={item.id}
-            verseVoice={{
-              setId: item.setId,
-              verseIndex: todayIndex,
-              recordedBy: displayNames[meLc] || (userEmail || '').split('@')[0],
-              reference: todayVerse.reference || '',
-              verseText: todayVerse.text || '',
-            }}
-            onCancel={() => setShowVerseVoiceRec(false)}
-            onCreated={() => {
-              setShowVerseVoiceRec(false);
-              teamsApi.getVerseVoice(userEmail, teamId, item.setId, todayIndex)
-                .then(res => setVerseVoiceMeta(res?.verseVoice || null))
-                .catch(() => {});
-            }}
           />
         )}
         {composeType && composeType !== 'voice' && (
