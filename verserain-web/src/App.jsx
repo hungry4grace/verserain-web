@@ -5284,7 +5284,10 @@ export default function App() {
     return { todayCount, currentStreak, longestStreak, treesPlanted, champVerses, totalActivities };
   }, [gardenData, todayDateStr]);
   const skoolLevel = React.useMemo(() => getSkoolLevel(totalFruits), [totalFruits]);
-  const hasPremiumAccess = isPremium || skoolLevel.level >= 3;
+  // Creating custom verse sets is open to ANY signed-in user — the publish
+  // endpoint is owner-protected on the server, so no premium check is needed.
+  // Premium / Lv.3 now only earns a celebratory badge; it's not a gate.
+  const canCreateCustomSets = !!userEmail;
   const isAdmin = ['samhsiung@gmail.com', 'davidhwang1125@gmail.com', 'hsiungsam@gmail.com', 'hungry4grace@gmail.com', 'verserain.admin@gmail.com'].includes(userEmail.toLowerCase()) || skoolLevel.level >= 5;
   const isSuperAdmin = ['samhsiung@gmail.com', 'davidhwang1125@gmail.com', 'hsiungsam@gmail.com', 'hungry4grace@gmail.com'].includes(userEmail.toLowerCase());
   const [selectedGardenCell, setSelectedGardenCell] = useState(null);
@@ -16803,24 +16806,22 @@ const deDict = {
                 <div style={{ backgroundColor: '#ffffff', borderRadius: '8px', border: '1px solid #cbd5e1', padding: '2rem', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
                     <h2 style={{ color: '#1e293b', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Crown size={28} /> {t("我的專屬題庫", "My Custom Sets")}</h2>
-                    <div style={{ background: '#f8fafc', border: '1px solid #cbd5e1', padding: '0.3rem 0.6rem', borderRadius: '4px', fontSize: '0.85rem', color: hasPremiumAccess ? '#fbbf24' : '#64748b', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-                      {isPremium ? <><Star size={16} /> {t("Premium 認證", "Premium Active")}</> : (skoolLevel.level >= 3 ? <><Star size={16} /> {t('Lv.{n} 權限解鎖', 'Lv.{n} Unlocked').replace('{n}', String(skoolLevel.level))}</> : <><Lock size={16} /> {t("基本帳號", "Basic Account")}</>)}
-                    </div>
+                    {(isPremium || skoolLevel.level >= 3) && (
+                      <div style={{ background: '#f8fafc', border: '1px solid #cbd5e1', padding: '0.3rem 0.6rem', borderRadius: '4px', fontSize: '0.85rem', color: '#fbbf24', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                        {isPremium ? <><Star size={16} /> {t("Premium 認證", "Premium Active")}</> : <><Star size={16} /> {t('Lv.{n} 權限解鎖', 'Lv.{n} Unlocked').replace('{n}', String(skoolLevel.level))}</>}
+                      </div>
+                    )}
                   </div>
 
-                  {!hasPremiumAccess ? (
+                  {!canCreateCustomSets ? (
                     <div style={{ textAlign: 'center', padding: '3rem 1rem', background: 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
                       <div style={{ marginBottom: '1rem', color: '#64748b' }}><Lock size={64} /></div>
-                      <h3 style={{ color: '#334155', marginBottom: '1rem' }}>{t("解鎖自訂經文組功能！", "Unlock Custom Verse Sets!")}</h3>
-                      <p style={{ color: '#64748b', marginBottom: '1rem', maxWidth: '400px', margin: '0 auto 1rem', lineHeight: '1.6' }}>
-                        {t("你目前還沒有權限建立專屬題庫。有兩種方式可以解鎖：", "You do not have access to create custom verse sets. There are two ways to unlock this:")}
+                      <h3 style={{ color: '#334155', marginBottom: '1rem' }}>{t("登入即可建立專屬題庫", "Sign in to create custom verse sets")}</h3>
+                      <p style={{ color: '#64748b', marginBottom: '2rem', maxWidth: '400px', margin: '0 auto 2rem', lineHeight: '1.6' }}>
+                        {t("登入你的帳號後，就能自由建立、編輯並分享自己的經文組。", "Once you sign in, you can freely create, edit, and share your own verse sets.")}
                       </p>
-                      <ul style={{ color: '#475569', textAlign: 'left', maxWidth: '400px', margin: '0 auto 2rem', paddingLeft: '1.5rem', lineHeight: '1.8' }}>
-                        <li><strong>{t("方式一：", "Method 1: ")}</strong>{t("加入 Skool 成為 Premium 會員", "Subscribe to Skool Premium")}</li>
-                        <li><strong>{t("方式二：", "Method 2: ")}</strong>{t("在 VerseRain 遊戲的「我的園子」中持續挑戰經文，獲得 20 顆果子，達到 ", "Earn 20 fruits in the game's 'My Garden' to reach ")} <strong style={{ color: '#8b5cf6' }}>Level 3 ({t("共識實踐者", "Consensus Practitioner")})</strong>！</li>
-                      </ul>
-                      <button type="button" onClick={() => window.open('https://www.skool.com/mutualizedeconomy', '_blank')} style={{ background: '#8b5cf6', color: 'white', border: 'none', padding: '0.8rem 2rem', borderRadius: '8px', fontWeight: 'bold', fontSize: '1.1rem', cursor: 'pointer', boxShadow: '0 4px 6px rgba(139, 92, 246, 0.25)' }}>
-                        {t("了解並加入 Premium", "Learn About Premium")}
+                      <button type="button" onClick={() => setShowLoginModal('login')} style={{ background: '#3b82f6', color: 'white', border: 'none', padding: '0.8rem 2rem', borderRadius: '8px', fontWeight: 'bold', fontSize: '1.1rem', cursor: 'pointer', boxShadow: '0 4px 6px rgba(59, 130, 246, 0.25)' }}>
+                        {t("登入", "Log In")}
                       </button>
                     </div>
                   ) : (
@@ -18125,10 +18126,10 @@ const deDict = {
                               setEditingCustomSet(null);
                               setMainTab('custom_verses');
                             }}
-                            style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.65rem 1rem', borderRadius: '8px', border: '1px solid #c4b5fd', background: hasPremiumAccess ? 'linear-gradient(135deg, #8b5cf6, #7c3aed)' : '#f8fafc', color: hasPremiumAccess ? '#ffffff' : '#475569', fontWeight: 'bold', cursor: 'pointer', boxShadow: hasPremiumAccess ? '0 4px 10px rgba(124, 58, 237, 0.22)' : 'none' }}
-                            title={hasPremiumAccess ? t('建立自訂經文組', 'Create custom sets') : t('達到 Level 3 或加入 Premium 即可建立自訂經文組', 'Reach Level 3 or join Premium to create custom sets')}
+                            style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.65rem 1rem', borderRadius: '8px', border: '1px solid #c4b5fd', background: canCreateCustomSets ? 'linear-gradient(135deg, #8b5cf6, #7c3aed)' : '#f8fafc', color: canCreateCustomSets ? '#ffffff' : '#475569', fontWeight: 'bold', cursor: 'pointer', boxShadow: canCreateCustomSets ? '0 4px 10px rgba(124, 58, 237, 0.22)' : 'none' }}
+                            title={canCreateCustomSets ? t('建立自訂經文組', 'Create custom sets') : t('登入後即可建立自訂經文組', 'Sign in to create custom verse sets')}
                           >
-                            {hasPremiumAccess ? <Crown size={18} /> : <Lock size={18} />}
+                            {canCreateCustomSets ? <Crown size={18} /> : <Lock size={18} />}
                             {t('我的專屬題庫', 'My Custom Sets')}
                           </button>
                           <select
