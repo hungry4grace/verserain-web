@@ -458,7 +458,31 @@ export default class Server {
       const corsHeaders = { "Access-Control-Allow-Origin": "*" };
       const url = new URL(request.url);
 
+      // DAU day boundary. The audience is UTC+8 (Taiwan/HK), so we roll the
+      // "day" at local midnight, not UTC midnight (which would be 8am local).
+      // Accepts an epoch-ms arg so we can bucket a stored ISO createdAt too.
+      const dauDay = (ms = Date.now()) => new Date(ms + 8 * 3600 * 1000).toISOString().slice(0, 10);
+
       if (request.method === "POST") {
+
+        // 0. Presence / DAU ping. Fired once by the frontend on app load —
+        // this is the ONLY reliable "opened the app today" signal, because
+        // returning users restore a local session and never re-hit /login.
+        // Identity: logged-in users are keyed by email ("u:"), guests by a
+        // stable per-device id ("d:"). One key per (day, identity), idempotent.
+        if (url.pathname.endsWith('/seen')) {
+           try {
+              const { deviceId, email } = await request.json().catch(() => ({}));
+              const cleanEmail = typeof email === 'string' ? email.trim().toLowerCase() : '';
+              const id = cleanEmail
+                 ? 'u:' + cleanEmail
+                 : (typeof deviceId === 'string' && deviceId.trim() ? 'd:' + deviceId.trim().slice(0, 64) : '');
+              if (id) await this.room.storage.put(`dau:${dauDay()}:${id}`, Date.now());
+              return new Response(JSON.stringify({ success: true }), { status: 200, headers: corsHeaders });
+           } catch(e) {
+              return new Response(JSON.stringify({ error: 'seen failed' }), { status: 500, headers: corsHeaders });
+           }
+        }
         
         // 1. Skool Webhook Endpoint (From Zapier / Skool Platform)
         // Expected payload from Skool: { email: "user@example.com", name: "David" }
@@ -507,7 +531,7 @@ export default class Server {
               const isPremium = user ? user.isPremium : false;
               const finalName = (user && user.skoolName) ? user.skoolName : (nickname || "Player");
 
-              const newUserObj = { email: email.toLowerCase(), password: password, name: finalName, isPremium, verificationCode, verified: false };
+              const newUserObj = { email: email.toLowerCase(), password: password, name: finalName, isPremium, verificationCode, verified: false, createdAt: new Date().toISOString() };
               // Bind inviter (referral code from ?ref=) to this account so it
               // survives cross-device login — set once on creation only.
               const cleanInviter = typeof inviter === 'string' ? inviter.trim() : '';
@@ -1561,6 +1585,37 @@ export default class Server {
             return new Response(JSON.stringify({ success: true, fruitsMap }), { status: 200, headers: corsHeaders });
          } catch(e) {
             return new Response(JSON.stringify({ error: 'Failed to fetch all gardens' }), { status: 500, headers: corsHeaders });
+         }
+      }
+
+      // DAU / new-user stats. Secret-gated admin GET (same secret as export).
+      // ?date=YYYY-MM-DD optional (UTC+8 day); defaults to today.
+      //   dau              — distinct identities that opened the app that day
+      //   loggedIn/guests  — split of the above by identity type
+      //   newRegistrations — accounts whose createdAt falls on that day
+      // Note: dau/new counting is only accurate from the deploy date onward.
+      if (url.pathname.endsWith('/dau-stats') && (request.method === 'GET' || request.method === 'POST')) {
+         const secret = url.searchParams.get("secret");
+         if (secret !== "vrain_export_2026") return new Response("Unauthorized", { status: 401 });
+         try {
+            const day = url.searchParams.get('date') || dauDay();
+            const prefix = `dau:${day}:`;
+            const map = await this.room.storage.list({ prefix });
+            let loggedIn = 0, guests = 0;
+            for (const key of map.keys()) {
+               if (key.slice(prefix.length).startsWith('u:')) loggedIn++; else guests++;
+            }
+            const users = await this.room.storage.list({ prefix: 'user:' });
+            let newRegistrations = 0;
+            for (const v of users.values()) {
+               if (v && typeof v.createdAt === 'string') {
+                  const t = Date.parse(v.createdAt);
+                  if (!isNaN(t) && dauDay(t) === day) newRegistrations++;
+               }
+            }
+            return new Response(JSON.stringify({ date: day, dau: map.size, loggedIn, guests, newRegistrations }), { status: 200, headers: corsHeaders });
+         } catch(e) {
+            return new Response(JSON.stringify({ error: 'Failed to compute stats' }), { status: 500, headers: corsHeaders });
          }
       }
 

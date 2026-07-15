@@ -4649,6 +4649,24 @@ export default function App() {
     }
   }, [playerName, personalCode]);
 
+  // DAU presence ping. Fired once on app load (and again if the user logs in,
+  // so a guest converts from a device-keyed to an email-keyed identity). This
+  // is the only reliable "opened the app today" signal — returning users
+  // restore a local session and never re-hit /login. Fire-and-forget.
+  useEffect(() => {
+    let deviceId = localStorage.getItem('verserain_device_id');
+    if (!deviceId) {
+      deviceId = (crypto?.randomUUID?.() || (Date.now().toString(36) + Math.random().toString(36).slice(2)));
+      localStorage.setItem('verserain_device_id', deviceId);
+    }
+    const email = userEmail || localStorage.getItem('verserain_player_email') || '';
+    fetch(`${PARTY_HOST}/seen`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ deviceId, email }),
+    }).catch(() => {});
+  }, [userEmail]);
+
   // On login: fetch garden from backend and merge with localStorage.
   // This ensures data is not lost when using different browsers (e.g. LINE in-app browser).
   //
