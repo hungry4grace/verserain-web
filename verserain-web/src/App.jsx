@@ -2383,7 +2383,8 @@ function VerseSetContinuousRainPlayer({
   onSelectTopicSet = null,
   allSecondaryVerses = [],
   userEmail = '',
-  playerName = ''
+  playerName = '',
+  onRequestLogin = null
 }) {
   const verses = useMemo(() => verseSet?.verses?.filter(Boolean) || [], [verseSet]);
   // Opened from a share link carrying vo= → play the sender's personal voice.
@@ -2398,10 +2399,14 @@ function VerseSetContinuousRainPlayer({
   // voiceSetId lets synthetic single-verse wrappers point back at the real
   // originating set where the recordings actually live.
   const voiceSetId = verseSet?.voiceSetId || verseSet?.id || null;
-  // Where MY personal recordings live. Real sets use their own bucket; loose
-  // verses (no set id) fall back to the shared personal bucket. Always truthy,
-  // so the record button never disappears just because a verse has no set.
-  const personalVoiceSetId = voiceSetId || PERSONAL_LOOSE_SET_ID;
+  // Where MY personal recordings live. Real curated sets (topic slugs like
+  // "gospel-of-john", random-base36 custom ids) use their own bucket. Ephemeral
+  // wrappers — no id, or a synthetic `single-<ref>` / `daily-<date>` — aren't
+  // real collections, so their recordings go to one shared personal "loose"
+  // bucket, keyed by reference. That keeps the record button always present and
+  // lets a loose recording surface wherever the verse reappears. Always truthy.
+  const isEphemeralSetId = (id) => !id || /^(single|daily)-/.test(String(id));
+  const personalVoiceSetId = isEphemeralSetId(voiceSetId) ? PERSONAL_LOOSE_SET_ID : voiceSetId;
   const verseVoicesRef = useRef({});
   // Resolves once the voices list has loaded — playVerse awaits this (with
   // a cap) so the FIRST verse doesn't race the fetch on slow mobile
@@ -2444,22 +2449,41 @@ function VerseSetContinuousRainPlayer({
     personalVoicesRef.current = {};
     overrideVoicesRef.current = {};
     myOwnerIdRef.current = null;
+    // Cross-context merge: inside a real set, also surface any recording the
+    // user made on this verse as a LOOSE verse (random/search/single). The set's
+    // own bucket wins per-reference. Each recording is tagged with the bucket
+    // its audio actually lives in, so playback fetches from the right place.
+    const buckets = personalVoiceSetId !== PERSONAL_LOOSE_SET_ID
+      ? [PERSONAL_LOOSE_SET_ID, personalVoiceSetId]   // loose first, real set overwrites
+      : [PERSONAL_LOOSE_SET_ID];
+    const loadMerged = async (owner) => {
+      const out = {};
+      for (const bucket of buckets) {
+        const res = await userVoiceApi.getAll(bucket, owner).catch(() => null);
+        if (res?.voices) {
+          for (const [ref, meta] of Object.entries(res.voices)) {
+            out[ref] = { ...meta, voiceBucket: bucket };
+          }
+        }
+      }
+      return out;
+    };
     personalVoicesReadyRef.current = (async () => {
       try {
         const mine = userEmail ? await voiceOwnerId(userEmail) : null;
         if (cancelled) return;
         myOwnerIdRef.current = mine;
         if (mine) {
-          const res = await userVoiceApi.getAll(personalVoiceSetId, mine).catch(() => null);
-          if (!cancelled && res?.voices) personalVoicesRef.current = res.voices;
+          const merged = await loadMerged(mine);
+          if (!cancelled) personalVoicesRef.current = merged;
         }
         // A shared link's sender voice wins over the viewer's own recording.
         const activeOwner = sharedVoiceOwner || mine;
         if (activeOwner && activeOwner === mine) {
           overrideVoicesRef.current = personalVoicesRef.current;
         } else if (activeOwner) {
-          const res = await userVoiceApi.getAll(personalVoiceSetId, activeOwner).catch(() => null);
-          if (!cancelled && res?.voices) overrideVoicesRef.current = res.voices;
+          const merged = await loadMerged(activeOwner);
+          if (!cancelled) overrideVoicesRef.current = merged;
         }
       } catch { /* personal voice is optional */ }
       if (!cancelled) bumpPersonalVoices();
@@ -2480,7 +2504,10 @@ function VerseSetContinuousRainPlayer({
     setVoiceStatus(prev => ({ ...prev, [ref]: 'processing' }));
     const job = (async () => {
       const finalBlob = beautify ? await bakeBeautifiedBlob(blob, mime) : blob;
-      const meta = await uploadUserVerseVoice({ email: userEmail, setId: personalVoiceSetId, reference: ref, blob: finalBlob, mime, dur, recordedBy: recordedByName });
+      const uploaded = await uploadUserVerseVoice({ email: userEmail, setId: personalVoiceSetId, reference: ref, blob: finalBlob, mime, dur, recordedBy: recordedByName });
+      // Tag with the bucket it was stored under so playback/delete resolve it
+      // even when this recording later surfaces in a different context.
+      const meta = { ...uploaded, voiceBucket: personalVoiceSetId };
       personalVoicesRef.current = { ...personalVoicesRef.current, [ref]: meta };
       // When I'm listening to my own voice (no foreign share), my new take
       // becomes the active override immediately.
@@ -2505,7 +2532,10 @@ function VerseSetContinuousRainPlayer({
     if (!userEmail || !ref) return;
     setPersonalBusy(true);
     try {
-      await userVoiceApi.remove(userEmail, personalVoiceSetId, ref);
+      // Delete from the bucket the recording actually lives in — a loose
+      // recording surfaced inside a real set still belongs to the loose bucket.
+      const bucket = personalVoicesRef.current?.[ref]?.voiceBucket || personalVoiceSetId;
+      await userVoiceApi.remove(userEmail, bucket, ref);
       const nextPersonal = { ...personalVoicesRef.current }; delete nextPersonal[ref];
       personalVoicesRef.current = nextPersonal;
       if (!sharedVoiceOwner || sharedVoiceOwner === myOwnerIdRef.current) {
@@ -2524,7 +2554,7 @@ function VerseSetContinuousRainPlayer({
     try {
       let dataUrl = voiceAudioCacheRef.current.get(rec.voiceId);
       if (!dataUrl) {
-        const res = await setVoiceApi.getAudio(personalVoiceSetId, rec.voiceId);
+        const res = await setVoiceApi.getAudio(rec.voiceBucket || personalVoiceSetId, rec.voiceId);
         if (!res?.data) return false;
         dataUrl = `data:${rec.voiceMime || 'audio/webm'};base64,${res.data}`;
         voiceAudioCacheRef.current.set(rec.voiceId, dataUrl);
@@ -3365,12 +3395,21 @@ function VerseSetContinuousRainPlayer({
             <Share2 size={22} />
           </button>
         )}
-        {userEmail && personalVoiceSetId && (
+        {personalVoiceSetId && (
           <button
             type="button"
             className={`is-icon ${myVoiceForCurrent ? 'is-primary' : ''}`}
-            title={myVoiceForCurrent ? t('重錄我的親聲', 'Re-record my voice') : t('錄我的親聲', 'Record my voice')}
-            onClick={() => { haltPlayback(); setVoiceRecTarget({ reference: currentVerse.reference, text: currentVerse.text }); }}
+            title={!userEmail
+              ? t('登入後即可錄製親聲', 'Sign in to record your voice')
+              : (myVoiceForCurrent ? t('重錄我的親聲', 'Re-record my voice') : t('錄我的親聲', 'Record my voice'))}
+            onClick={() => {
+              // Not signed in → recordings are tied to your account (so they
+              // sync across devices and can be attributed when shared), so
+              // send the user to sign in instead of opening the recorder.
+              if (!userEmail) { haltPlayback(); onRequestLogin?.(); return; }
+              haltPlayback();
+              setVoiceRecTarget({ reference: currentVerse.reference, text: currentVerse.text });
+            }}
           >
             <Mic size={22} />
           </button>
@@ -16042,6 +16081,7 @@ const deDict = {
             t={t}
             userEmail={userEmail}
             playerName={playerName}
+            onRequestLogin={() => setShowLoginModal('login')}
             onStop={() => {
               setContinuousRainSet(null);
               // Launched from a team schedule row → return to the teams modal
@@ -16537,6 +16577,9 @@ const deDict = {
                     startVerse={displayedDailyVerse}
                     version={version}
                     t={t}
+                    userEmail={userEmail}
+                    playerName={playerName}
+                    onRequestLogin={() => setShowLoginModal('login')}
                     label={remoteDailyVerse?.date || dailyVerseDate}
                     topicSets={topicVerseSets}
                     showNav
