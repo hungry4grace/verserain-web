@@ -20,6 +20,13 @@ import { GOOGLE_CLIENT_ID, APPLE_CLIENT_ID, APPLE_REDIRECT_URI, LINE_CHANNEL_ID,
 import { VAPID_PUBLIC_KEY, urlBase64ToUint8Array, isWebPushSupported, isIOSStandalone, isIOSWithoutPWA, hasNativeDailyPush, callNativeDailyPush } from './pushConfig';
 import { setVoiceApi, uploadVerseVoice, uploadSetAsset, compressBackgroundImage, getSetAssetDataUrl, userVoiceApi, uploadUserVerseVoice, voiceOwnerId } from './setVoiceApi';
 import VerseVoiceRecorder from './VerseVoiceRecorder';
+
+// Loose verses (random / daily / search / shared single verse) have no
+// originating set to file a personal recording under. They all share this one
+// reserved per-user bucket — a private "single-verse collection" keyed by
+// verse reference — so the 🎙️ record button is always available (once signed
+// in) and a loose recording persists & replays wherever that verse reappears.
+const PERSONAL_LOOSE_SET_ID = '__personal_verses__';
 import { bakeBeautifiedBlob } from './voiceBeautify';
 import { SET_BACKGROUND_THEMES, getSetBackgroundUrl } from './setBackgrounds';
 import QrScanner from 'qr-scanner';
@@ -2391,6 +2398,10 @@ function VerseSetContinuousRainPlayer({
   // voiceSetId lets synthetic single-verse wrappers point back at the real
   // originating set where the recordings actually live.
   const voiceSetId = verseSet?.voiceSetId || verseSet?.id || null;
+  // Where MY personal recordings live. Real sets use their own bucket; loose
+  // verses (no set id) fall back to the shared personal bucket. Always truthy,
+  // so the record button never disappears just because a verse has no set.
+  const personalVoiceSetId = voiceSetId || PERSONAL_LOOSE_SET_ID;
   const verseVoicesRef = useRef({});
   // Resolves once the voices list has loaded — playVerse awaits this (with
   // a cap) so the FIRST verse doesn't race the fetch on slow mobile
@@ -2433,14 +2444,13 @@ function VerseSetContinuousRainPlayer({
     personalVoicesRef.current = {};
     overrideVoicesRef.current = {};
     myOwnerIdRef.current = null;
-    if (!voiceSetId) { personalVoicesReadyRef.current = Promise.resolve(); return undefined; }
     personalVoicesReadyRef.current = (async () => {
       try {
         const mine = userEmail ? await voiceOwnerId(userEmail) : null;
         if (cancelled) return;
         myOwnerIdRef.current = mine;
         if (mine) {
-          const res = await userVoiceApi.getAll(voiceSetId, mine).catch(() => null);
+          const res = await userVoiceApi.getAll(personalVoiceSetId, mine).catch(() => null);
           if (!cancelled && res?.voices) personalVoicesRef.current = res.voices;
         }
         // A shared link's sender voice wins over the viewer's own recording.
@@ -2448,7 +2458,7 @@ function VerseSetContinuousRainPlayer({
         if (activeOwner && activeOwner === mine) {
           overrideVoicesRef.current = personalVoicesRef.current;
         } else if (activeOwner) {
-          const res = await userVoiceApi.getAll(voiceSetId, activeOwner).catch(() => null);
+          const res = await userVoiceApi.getAll(personalVoiceSetId, activeOwner).catch(() => null);
           if (!cancelled && res?.voices) overrideVoicesRef.current = res.voices;
         }
       } catch { /* personal voice is optional */ }
@@ -2456,12 +2466,12 @@ function VerseSetContinuousRainPlayer({
     })();
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [voiceSetId, userEmail, sharedVoiceOwner]);
+  }, [personalVoiceSetId, userEmail, sharedVoiceOwner]);
 
   // Record / re-record my voice for the current verse, then refresh caches.
   const recordedByName = playerName || (userEmail || '').split('@')[0] || 'Anonymous';
   const saveMyVoice = ({ blob, mime, dur, beautify }) => {
-    if (!userEmail || !voiceSetId) return;
+    if (!userEmail) return;
     const ref = voiceRecTarget?.reference || currentVerse.reference;
     // Bake (realtime ✨enhance ≈ clip length) + upload run in the BACKGROUND so
     // the user can immediately record the NEXT verse — the recorder closes now.
@@ -2470,7 +2480,7 @@ function VerseSetContinuousRainPlayer({
     setVoiceStatus(prev => ({ ...prev, [ref]: 'processing' }));
     const job = (async () => {
       const finalBlob = beautify ? await bakeBeautifiedBlob(blob, mime) : blob;
-      const meta = await uploadUserVerseVoice({ email: userEmail, setId: voiceSetId, reference: ref, blob: finalBlob, mime, dur, recordedBy: recordedByName });
+      const meta = await uploadUserVerseVoice({ email: userEmail, setId: personalVoiceSetId, reference: ref, blob: finalBlob, mime, dur, recordedBy: recordedByName });
       personalVoicesRef.current = { ...personalVoicesRef.current, [ref]: meta };
       // When I'm listening to my own voice (no foreign share), my new take
       // becomes the active override immediately.
@@ -2492,10 +2502,10 @@ function VerseSetContinuousRainPlayer({
     });
   };
   const deleteMyVoice = async (ref) => {
-    if (!userEmail || !voiceSetId || !ref) return;
+    if (!userEmail || !ref) return;
     setPersonalBusy(true);
     try {
-      await userVoiceApi.remove(userEmail, voiceSetId, ref);
+      await userVoiceApi.remove(userEmail, personalVoiceSetId, ref);
       const nextPersonal = { ...personalVoicesRef.current }; delete nextPersonal[ref];
       personalVoicesRef.current = nextPersonal;
       if (!sharedVoiceOwner || sharedVoiceOwner === myOwnerIdRef.current) {
@@ -2514,7 +2524,7 @@ function VerseSetContinuousRainPlayer({
     try {
       let dataUrl = voiceAudioCacheRef.current.get(rec.voiceId);
       if (!dataUrl) {
-        const res = await setVoiceApi.getAudio(voiceSetId, rec.voiceId);
+        const res = await setVoiceApi.getAudio(personalVoiceSetId, rec.voiceId);
         if (!res?.data) return false;
         dataUrl = `data:${rec.voiceMime || 'audio/webm'};base64,${res.data}`;
         voiceAudioCacheRef.current.set(rec.voiceId, dataUrl);
@@ -2941,7 +2951,7 @@ function VerseSetContinuousRainPlayer({
       if (cancelled || runRef.current !== runId) return;
       let creatorPlayed = false;
       // Priority: my (or the share sender's) personal voice › set owner's › TTS.
-      const personalRec = voiceSetId ? (overrideVoicesRef.current?.[currentVerse.reference] || null) : null;
+      const personalRec = overrideVoicesRef.current?.[currentVerse.reference] || null;
       const ownerRec = voiceSetId ? (verseVoicesRef.current?.[currentVerse.reference] || null) : null;
       const creatorRec = personalRec || ownerRec;
       if (creatorRec?.voiceId) {
@@ -3355,7 +3365,7 @@ function VerseSetContinuousRainPlayer({
             <Share2 size={22} />
           </button>
         )}
-        {userEmail && voiceSetId && (
+        {userEmail && personalVoiceSetId && (
           <button
             type="button"
             className={`is-icon ${myVoiceForCurrent ? 'is-primary' : ''}`}
