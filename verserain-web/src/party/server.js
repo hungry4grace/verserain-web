@@ -1381,7 +1381,7 @@ export default class Server {
       };
       if (url.pathname.endsWith('/save-private-sets') && request.method === 'POST') {
          try {
-            const { playerName, sets } = await request.json();
+            const { playerName, userEmail, sets } = await request.json();
             if (!playerName || !Array.isArray(sets)) {
                return new Response(JSON.stringify({ error: 'playerName and sets[] required' }), { status: 400, headers: corsHeaders });
             }
@@ -1446,15 +1446,36 @@ export default class Server {
             }
             // Auto-sync: if a private set is published, update the public
             // verseset: key so other users see the latest version.
+            //
+            // Same ownership rule as POST /custom-sets: only the original
+            // publisher may overwrite a public set. This endpoint used to
+            // trust the caller entirely, so anyone who got a foreign set
+            // into their private list (localStorage is shared per-device,
+            // not per-account) could silently republish over it.
+            // Legacy sets predate ownerEmail — fall back to authorName, and
+            // bind ownerEmail on the way through so they harden over time.
+            const requesterEmail = String(userEmail || '').trim().toLowerCase();
+            const isAdmin = isCustomSetWriteAuthorized() || isTrustedAdminEmail(requesterEmail) || isTrustedAdminName(playerName);
+            const mayRepublish = (existing) => {
+               if (isAdmin) return true;
+               const owner = String(existing.ownerEmail || '').trim().toLowerCase();
+               if (owner) return !!requesterEmail && owner === requesterEmail;
+               return !!existing.authorName && existing.authorName === playerName;
+            };
             let publishedSynced = 0;
             for (const set of sets) {
                if (!set?.id || !set.isPublished) continue;
                const existing = await this.room.storage.get(`verseset:${set.id}`);
                if (!existing) continue;
+               if (!mayRepublish(existing)) continue;
                const tsNew = Date.parse(set.lastEditedAt || '') || 0;
                const tsOld = Date.parse(existing.lastEditedAt || '') || 0;
                if (tsNew > tsOld || (tsNew === tsOld && (set.verses || []).length > (existing.verses || []).length)) {
-                  await this.room.storage.put(`verseset:${set.id}`, { ...set, authorName: existing.authorName || set.authorName });
+                  await this.room.storage.put(`verseset:${set.id}`, {
+                     ...set,
+                     authorName: existing.authorName || set.authorName,
+                     ownerEmail: existing.ownerEmail || requesterEmail || '',
+                  });
                   publishedSynced++;
                }
             }

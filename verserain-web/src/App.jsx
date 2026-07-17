@@ -4831,7 +4831,20 @@ export default function App() {
         const remoteSets = Array.isArray(data?.sets) ? data.sets : [];
         // Merge by id: keep the entry with the larger lastEditedAt timestamp.
         const localSetsJson = localStorage.getItem('verseRain_custom_sets');
-        const localSets = localSetsJson ? JSON.parse(localSetsJson) : [];
+        const allLocalSets = localSetsJson ? JSON.parse(localSetsJson) : [];
+        // `verseRain_custom_sets` is keyed by device, not by account: two
+        // people sharing an iPad land in the same bucket. Trust it only when
+        // the stamped owner is this account; otherwise keep just the sets
+        // this user actually authored and let the remote supply the rest.
+        // Skipped while userEmail is still unresolved — identity is the
+        // email, and filtering on an empty one would drop the user's own
+        // sets authored under an older playerName.
+        const setsOwner = String(userEmail || '').toLowerCase();
+        const storedOwner = localStorage.getItem('verseRain_custom_sets_owner');
+        const localSets = (!setsOwner || storedOwner === setsOwner)
+          ? allLocalSets
+          : allLocalSets.filter(s => isOwnedByCurrentUser(s, playerName, userEmail));
+        if (setsOwner) localStorage.setItem('verseRain_custom_sets_owner', setsOwner);
         const byId = new globalThis.Map();
         const tsOf = (s) => {
           const t = Date.parse(s?.lastEditedAt || s?.createdAt || '');
@@ -4860,7 +4873,7 @@ export default function App() {
           fetchRetry(`${host}/save-private-sets`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ playerName, sets: ownedForPush }),
+            body: JSON.stringify({ playerName, userEmail, sets: ownedForPush }),
           }).catch(() => {});
         }
       } catch {
@@ -4870,7 +4883,7 @@ export default function App() {
       }
     })();
     return () => { cancelled = true; };
-  }, [playerName]);
+  }, [playerName, userEmail]);
 
   // Push customVerseSets to the backend whenever it changes — but only after
   // the initial sync has completed (avoids racing the merge above).
@@ -4884,12 +4897,12 @@ export default function App() {
     fetchRetry(`${PARTY_HOST}/save-private-sets`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ playerName, sets: ownedForPush }),
+      body: JSON.stringify({ playerName, userEmail, sets: ownedForPush }),
     }).catch(() => {
       setToast(t('雲端同步失敗，稍後再試', 'Cloud sync failed, will retry later'));
       setTimeout(() => setToast(null), 3000);
     });
-  }, [customVerseSets, playerName]);
+  }, [customVerseSets, playerName, userEmail]);
   const [hiddenOfficialSetIds, setHiddenOfficialSetIds] = useState(() => {
     try {
       return JSON.parse(localStorage.getItem('verseRain_hidden_official_sets') || '[]');
@@ -16299,7 +16312,7 @@ const deDict = {
                         <Crown size={14} style={{ color: '#fbbf24' }} />
                       </button>
                     </div>
-                    <button onClick={() => { setPlayerName(''); setIsPremium(false); setUserEmail(''); localStorage.removeItem('verserain_player_name'); localStorage.removeItem('verserain_is_premium'); localStorage.removeItem('verserain_player_email'); localStorage.removeItem('verseRain_gardenData'); setGardenData({}); }} style={{ background: 'transparent', border: '1px solid #cbd5e1', color: '#64748b', cursor: 'pointer', borderRadius: '4px', padding: '0.3rem 0.6rem', fontSize: '0.85rem' }}>{t("登出", "Logout")}</button>
+                    <button onClick={() => { setPlayerName(''); setIsPremium(false); setUserEmail(''); localStorage.removeItem('verserain_player_name'); localStorage.removeItem('verserain_is_premium'); localStorage.removeItem('verserain_player_email'); localStorage.removeItem('verseRain_gardenData'); setGardenData({}); localStorage.removeItem('verseRain_custom_sets'); localStorage.removeItem('verseRain_custom_sets_owner'); lastPushedPrivateSetsRef.current = ''; setCustomVerseSets([]); }} style={{ background: 'transparent', border: '1px solid #cbd5e1', color: '#64748b', cursor: 'pointer', borderRadius: '4px', padding: '0.3rem 0.6rem', fontSize: '0.85rem' }}>{t("登出", "Logout")}</button>
                   </div>
                 ) : (
                   <>
