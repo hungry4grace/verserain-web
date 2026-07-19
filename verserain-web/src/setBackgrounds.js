@@ -19,6 +19,15 @@ export const SET_BACKGROUND_THEMES = [
   { id: 'shepherd', zh: '牧人・詩篇23', en: 'Shepherd' },
 ].map(themeEntry => ({ ...themeEntry, url: `/set-backgrounds/${themeEntry.id}.svg` }));
 
+// Video backgrounds — a looping muted clip plays behind the verse blocks,
+// with `url` (a still frame) doubling as the picker thumbnail AND the
+// poster shown until the clip is ready / when video is unavailable
+// (performance mode, reduced motion, load error). Files live in
+// public/backgrounds/; keep clips ≤ ~2MB (720p/540p H.264, no audio).
+SET_BACKGROUND_THEMES.push(
+  { id: 'waves', zh: '海浪（影片）', en: 'Waves (video)', url: '/backgrounds/waves-poster.jpg', video: '/backgrounds/waves.mp4' },
+);
+
 // 'preset:<id>' → URL, or null when unset/unknown (caller falls back to
 // the default rotating AI backgrounds).
 export function getSetBackgroundUrl(background) {
@@ -27,4 +36,14 @@ export function getSetBackgroundUrl(background) {
   const id = raw.slice('preset:'.length);
   const found = SET_BACKGROUND_THEMES.find(themeEntry => themeEntry.id === id);
   return found ? found.url : null;
+}
+
+// 'preset:<id>' → video URL when the chosen preset is a video background,
+// otherwise null (still image or unset).
+export function getSetBackgroundVideoUrl(background) {
+  const raw = String(background || '');
+  if (!raw.startsWith('preset:')) return null;
+  const id = raw.slice('preset:'.length);
+  const found = SET_BACKGROUND_THEMES.find(themeEntry => themeEntry.id === id);
+  return found?.video || null;
 }

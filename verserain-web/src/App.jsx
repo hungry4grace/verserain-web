@@ -28,7 +28,7 @@ import VerseVoiceRecorder from './VerseVoiceRecorder';
 // in) and a loose recording persists & replays wherever that verse reappears.
 const PERSONAL_LOOSE_SET_ID = '__personal_verses__';
 import { bakeBeautifiedBlob } from './voiceBeautify';
-import { SET_BACKGROUND_THEMES, getSetBackgroundUrl } from './setBackgrounds';
+import { SET_BACKGROUND_THEMES, getSetBackgroundUrl, getSetBackgroundVideoUrl } from './setBackgrounds';
 import QrScanner from 'qr-scanner';
 import TeamsModal from './teams/TeamsModal';
 
@@ -2739,6 +2739,16 @@ function VerseSetContinuousRainPlayer({
     return getDailyVerseImageUrls(currentVerse, imageDateLabel, version);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentVerse, imageDateLabel, version, verseSet?.background, customBgUrl]);
+  // Video-preset backgrounds: a short muted loop layered over the poster
+  // image. Skipped entirely in performance mode and for users who prefer
+  // reduced motion — the poster (backgroundImageUrls[0]) shows instead.
+  const backgroundVideoUrl = useMemo(() => {
+    if (localStorage.getItem('verseRainPerformanceMode') === 'true') return null;
+    if (typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return null;
+    return getSetBackgroundVideoUrl(verseSet?.background);
+  }, [verseSet?.background]);
+  const [videoOk, setVideoOk] = useState(true);
+  useEffect(() => { setVideoOk(true); }, [backgroundVideoUrl]);
   const [imageIndex, setImageIndex] = useState(0);
   const [imageOk, setImageOk] = useState(true);
   const [imageLoaded, setImageLoaded] = useState(false);
@@ -3209,6 +3219,23 @@ function VerseSetContinuousRainPlayer({
                   return current;
                 });
               }}
+            />
+          )}
+          {backgroundVideoUrl && videoOk && (
+            <video
+              className="daily-verse-rain-image"
+              src={backgroundVideoUrl}
+              muted
+              loop
+              autoPlay
+              playsInline
+              disablePictureInPicture
+              aria-hidden="true"
+              style={{ objectFit: 'cover' }}
+              // A broken/unsupported clip silently drops this layer — the
+              // poster <img> above keeps the scene intact.
+              onError={() => setVideoOk(false)}
+              onCanPlay={() => setImageLoaded(true)}
             />
           )}
           <div className={`daily-verse-rain-sky ${imageLoaded ? 'has-ai-image' : ''}`} />
@@ -16216,7 +16243,7 @@ const deDict = {
                     verserain
                   </div>
                   <div className="app-brand-version" style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', marginTop: '4px', marginLeft: '2px' }}>
-                    v3.18.0
+                    v3.19.0
                   </div>
                 </div>
                 <div ref={langPickerRef} style={{ position: 'relative' }}>
