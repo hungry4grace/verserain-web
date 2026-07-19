@@ -27,6 +27,8 @@ export const SET_BACKGROUND_THEMES = [
 SET_BACKGROUND_THEMES.push(
   { id: 'waves', zh: '海浪（影片）', en: 'Waves (video)', url: '/backgrounds/waves-poster.jpg', video: '/backgrounds/waves.mp4' },
   { id: 'fall', zh: '瀑布（影片）', en: 'Waterfall (video)', url: '/backgrounds/fall-poster.jpg', video: '/backgrounds/fall.mp4' },
+  // id must differ from the static 'worship' theme above.
+  { id: 'worship-video', zh: '敬拜（影片）', en: 'Worship (video)', url: '/backgrounds/worship-poster.jpg', video: '/backgrounds/worship.mp4' },
 );
 
 // 'preset:<id>' → URL, or null when unset/unknown (caller falls back to
