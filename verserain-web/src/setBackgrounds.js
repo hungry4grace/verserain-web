@@ -29,6 +29,7 @@ SET_BACKGROUND_THEMES.push(
   { id: 'fall', zh: '瀑布（影片）', en: 'Waterfall (video)', url: '/backgrounds/fall-poster.jpg', video: '/backgrounds/fall.mp4' },
   // id must differ from the static 'worship' theme above.
   { id: 'worship-video', zh: '敬拜（影片）', en: 'Worship (video)', url: '/backgrounds/worship-poster.jpg', video: '/backgrounds/worship.mp4' },
+  { id: 'jiuzhaigou', zh: '九寨溝（影片）', en: 'Jiuzhaigou (video)', url: '/backgrounds/jiuzhaigou-poster.jpg', video: '/backgrounds/jiuzhaigou.mp4' },
 );
 
 // 'preset:<id>' → URL, or null when unset/unknown (caller falls back to
