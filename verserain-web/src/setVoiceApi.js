@@ -117,7 +117,9 @@ export async function uploadVerseVoice({ email, setId, reference, blob, mime, du
   });
   const CHUNK = 100000; // chars — under the backend's 110000 cap
   const total = Math.ceil(base64.length / CHUNK);
-  if (total > 12) throw new Error('Recording too long — keep it under 2 minutes.');
+  // 120-chunk backend cap ≈ 27 min at 48kbps — recordings of any practical
+  // length chunk automatically; only truly runaway sessions are rejected.
+  if (total > 120) throw new Error('Recording too long — keep it under 25 minutes.');
   const voiceId = 'v_' + Math.random().toString(36).slice(2, 12);
   for (let i = 0; i < total; i++) {
     await setVoiceApi.uploadChunk(email, setId, voiceId, i, total, base64.slice(i * CHUNK, (i + 1) * CHUNK));
@@ -164,7 +166,9 @@ export async function uploadUserVerseVoice({ email, setId, reference, blob, mime
   });
   const CHUNK = 100000; // chars — under the backend's 110000 cap
   const total = Math.ceil(base64.length / CHUNK);
-  if (total > 12) throw new Error('Recording too long — keep it under 2 minutes.');
+  // 120-chunk backend cap ≈ 27 min at 48kbps — recordings of any practical
+  // length chunk automatically; only truly runaway sessions are rejected.
+  if (total > 120) throw new Error('Recording too long — keep it under 25 minutes.');
   const voiceId = 'v_' + Math.random().toString(36).slice(2, 12);
   for (let i = 0; i < total; i++) {
     await setVoiceApi.uploadChunk(email, setId, voiceId, i, total, base64.slice(i * CHUNK, (i + 1) * CHUNK));

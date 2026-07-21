@@ -1489,9 +1489,10 @@ function VoicePlayer({ t, userEmail, teamId, itemId, voiceId, mime, dur, label }
 // verse-voice namespace and registered via /teams/verse-voice/set
 // (one recording per verse, latest wins).
 function ComposeVoice({ t, userEmail, teamId, itemId, onCancel, onCreated, verseVoice = null }) {
-  // 120s ≈ 360KB at 24kbps opus → ~4.8 of the 6 allowed upload chunks,
-  // leaving headroom for VBR overshoot. Covers long verse ranges too.
-  const MAX_SECONDS = 120;
+  // No user-facing duration limit — long recordings are chunked
+  // automatically at upload (backend allows ≈27 min). This ceiling is a
+  // safety stop for a mic left running by accident, not a UX cap.
+  const MAX_SECONDS = 20 * 60;
   const [phase, setPhase] = useState('idle'); // idle | recording | preview | uploading
   const [seconds, setSeconds] = useState(0);
   const [error, setError] = useState('');
@@ -1612,7 +1613,9 @@ function ComposeVoice({ t, userEmail, teamId, itemId, onCancel, onCreated, verse
       });
       const CHUNK = 100000; // chars — under the backend's 110000 cap
       const total = Math.ceil(base64.length / CHUNK);
-      if (total > 12) throw new Error(t('錄音太長，請縮短到 2 分鐘內。', 'Recording too long — keep it under 2 minutes.'));
+      // Backend accepts up to 120 chunks (≈27 min) — auto-chunking means
+      // length is effectively unlimited for real recordings.
+      if (total > 120) throw new Error(t('錄音太長，請縮短到 25 分鐘內。', 'Recording too long — keep it under 25 minutes.'));
       const voiceId = 'v_' + Math.random().toString(36).slice(2, 12);
       // Verse voices live in their own itemId namespace so they never mix
       // with reflection audio for the schedule item.
@@ -1666,8 +1669,7 @@ function ComposeVoice({ t, userEmail, teamId, itemId, onCancel, onCreated, verse
           </div>
         )}
         <p style={{ color: colors.muted, fontSize: '0.82rem', marginTop: -6 }}>
-          {t('最長 {sec} 秒。所有團員都能聽到。', 'Up to {sec} seconds. All team members can listen.')
-            .replace('{sec}', String(MAX_SECONDS))}
+          {t('不限長度，長經文放心慢慢唸。所有團員都能聽到。', 'No length limit — take your time with long passages. All team members can listen.')}
         </p>
 
         {phase === 'idle' && (
@@ -1687,7 +1689,7 @@ function ComposeVoice({ t, userEmail, teamId, itemId, onCancel, onCreated, verse
         {phase === 'recording' && (
           <div style={{ margin: '0.6rem 0' }}>
             <div style={{ color: '#f87171', fontSize: '1.6rem', fontWeight: 700, marginBottom: 10 }}>
-              ● {timeLabel} <span style={{ color: colors.muted, fontSize: '0.85rem', fontWeight: 400 }}>/ {Math.floor(MAX_SECONDS / 60)}:{String(MAX_SECONDS % 60).padStart(2, '0')}</span>
+              ● {timeLabel}
             </div>
             <button
               onClick={stopRecording}

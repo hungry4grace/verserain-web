@@ -1112,7 +1112,9 @@ export default class Server {
             if (!email || !setId || !voiceId) return new Response(JSON.stringify({ error: 'email, setId, voiceId required' }), { status: 400, headers: corsHeaders });
             const idx = Number(index), tot = Number(total);
             if (!Number.isInteger(idx) || !Number.isInteger(tot) || idx < 0 || tot < 1 || idx >= tot) return new Response(JSON.stringify({ error: 'bad chunk index' }), { status: 400, headers: corsHeaders });
-            if (tot > 12) return new Response(JSON.stringify({ error: 'too many chunks (max 12)' }), { status: 400, headers: corsHeaders });
+            // 120 chunks ≈ 27 min at 48kbps opus — long-scripture readings
+            // chunk automatically; this cap is an abuse guard, not a UX limit.
+            if (tot > 120) return new Response(JSON.stringify({ error: 'too many chunks (max 120)' }), { status: 400, headers: corsHeaders });
             if (typeof data !== 'string' || !data || data.length > 110000) return new Response(JSON.stringify({ error: 'bad chunk data' }), { status: 400, headers: corsHeaders });
             if (!/^v_[A-Za-z0-9]{6,20}$/.test(voiceId)) return new Response(JSON.stringify({ error: 'bad voiceId' }), { status: 400, headers: corsHeaders });
             await this.room.storage.put(`set-voice:${String(setId)}:${voiceId}:${idx}`, data);
@@ -1282,7 +1284,10 @@ export default class Server {
             const map = await this.room.storage.list({ prefix: `set-asset:${setId}:${assetId}:` });
             if (map.size === 0) return new Response(JSON.stringify({ error: 'Not found' }), { status: 404, headers: corsHeaders });
             const data = Array.from(map.entries())
-               .sort((a, b) => a[0].localeCompare(b[0]))
+               // Numeric sort on the trailing :<index> — lexicographic key
+               // order breaks past 9 chunks ("10" < "2"), which long
+               // recordings now exceed routinely.
+               .sort((a, b) => (parseInt(a[0].slice(a[0].lastIndexOf(':') + 1), 10) || 0) - (parseInt(b[0].slice(b[0].lastIndexOf(':') + 1), 10) || 0))
                .map(([, v]) => v)
                .join('');
             return new Response(JSON.stringify({ success: true, data }), { status: 200, headers: corsHeaders });
@@ -1301,7 +1306,10 @@ export default class Server {
             const map = await this.room.storage.list({ prefix: `set-voice:${setId}:${voiceId}:` });
             if (map.size === 0) return new Response(JSON.stringify({ error: 'Not found' }), { status: 404, headers: corsHeaders });
             const data = Array.from(map.entries())
-               .sort((a, b) => a[0].localeCompare(b[0]))
+               // Numeric sort on the trailing :<index> — lexicographic key
+               // order breaks past 9 chunks ("10" < "2"), which long
+               // recordings now exceed routinely.
+               .sort((a, b) => (parseInt(a[0].slice(a[0].lastIndexOf(':') + 1), 10) || 0) - (parseInt(b[0].slice(b[0].lastIndexOf(':') + 1), 10) || 0))
                .map(([, v]) => v)
                .join('');
             return new Response(JSON.stringify({ success: true, data }), { status: 200, headers: corsHeaders });
@@ -2349,7 +2357,9 @@ export default class Server {
          // exceeds that. Chunk keys:
          //   team-voice:<teamId>:<itemId>:<voiceId>:<index>
          const VOICE_CHUNK_MAX_CHARS = 110000; // base64 chars per chunk, < 128KB value cap
-         const VOICE_MAX_CHUNKS = 12;          // ≈ 1.2MB base64 ≈ 120s of 48kbps opus
+         // ≈ 27 min at 48kbps opus. Long recordings chunk automatically —
+         // this is an abuse guard, not a user-facing duration limit.
+         const VOICE_MAX_CHUNKS = 120;
 
          // POST /teams/voice/chunk — body: { email, teamId, itemId, voiceId, index, total, data }
          // Client uploads base64 slices before creating the voice reflection.
@@ -2386,10 +2396,11 @@ export default class Server {
                if (!isMember(team, email)) return err('Not a member', 403);
                const map = await this.room.storage.list({ prefix: `team-voice:${teamId}:${itemId}:${voiceId}:` });
                if (map.size === 0) return err('Not found', 404);
-               // Keys sort lexicographically; indices are single digits (max 6
-               // chunks) so lexicographic == numeric order here.
                const data = Array.from(map.entries())
-                  .sort((a, b) => a[0].localeCompare(b[0]))
+                  // Numeric sort on the trailing :<index> — lexicographic key
+                  // order breaks past 9 chunks ("10" < "2"), which long
+                  // recordings now exceed routinely.
+                  .sort((a, b) => (parseInt(a[0].slice(a[0].lastIndexOf(':') + 1), 10) || 0) - (parseInt(b[0].slice(b[0].lastIndexOf(':') + 1), 10) || 0))
                   .map(([, v]) => v)
                   .join('');
                return json({ success: true, data });

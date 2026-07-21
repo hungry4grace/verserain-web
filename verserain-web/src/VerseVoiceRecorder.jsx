@@ -16,9 +16,10 @@ import { connectVoiceChain } from './voiceBeautify';
 //   onCancel   — close without saving
 //   onDone     — called right after handing the clip off (closes the modal)
 export default function VerseVoiceRecorder({ t, reference, verseText, onUpload, onCancel, onDone }) {
-  // 120s ≈ 360KB at 24kbps opus → ~4.8 of the 6 allowed upload chunks,
-  // leaving headroom for VBR overshoot. Plenty for multi-verse ranges.
-  const MAX_SECONDS = 120;
+  // No user-facing duration limit — long recordings are chunked
+  // automatically at upload (backend allows ≈27 min). This ceiling is a
+  // safety stop for a mic left running by accident, not a UX cap.
+  const MAX_SECONDS = 20 * 60;
   const [phase, setPhase] = useState('idle'); // idle | recording | preview | uploading
   const [seconds, setSeconds] = useState(0);
   const [error, setError] = useState('');
@@ -69,8 +70,8 @@ export default function VerseVoiceRecorder({ t, reference, verseText, onUpload, 
       streamRef.current = stream;
       const mime = pickMime();
       mimeRef.current = mime || 'audio/webm';
-      // 48kbps opus ≈ transparent for speech; 120s ≈ 720KB raw (within the
-      // backend's 12-chunk upload cap).
+      // 48kbps opus ≈ transparent for speech. Length is unbounded — the
+      // upload layer slices the blob into as many chunks as needed.
       const rec = new MediaRecorder(stream, mime ? { mimeType: mime, audioBitsPerSecond: 48000 } : { audioBitsPerSecond: 48000 });
       const parts = [];
       rec.ondataavailable = (e) => { if (e.data?.size) parts.push(e.data); };
@@ -181,7 +182,7 @@ export default function VerseVoiceRecorder({ t, reference, verseText, onUpload, 
           </div>
         </div>
         <div style={{ color: '#64748b', fontSize: '0.85rem', marginBottom: '0.8rem' }}>
-          {t('最長 {sec} 秒。重錄會取代舊錄音。', 'Up to {sec}s. Re-recording replaces the old one.').replace('{sec}', String(MAX_SECONDS))}
+          {t('不限長度，長經文放心慢慢唸。重錄會取代舊錄音。', 'No length limit — take your time with long passages. Re-recording replaces the old one.')}
         </div>
 
         {phase === 'idle' && (
