@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { Play, Pause, RotateCcw, Heart, Zap, Trophy, Crown, Star, Home, XCircle, Headphones, Music, VolumeX, Search, Share2, Dices, Mic, MicOff, Users, CloudRain, Info, Edit, TreePine, Gamepad2, Map, Settings, Library, Volume2, Shuffle, Swords, ShoppingBasket, Apple, Mail, Lock, PartyPopper, Sprout, Leaf, RotateCw, Smartphone, Hourglass, Frown, X, Camera } from 'lucide-react';
+import { Play, Pause, RotateCcw, Heart, Zap, Trophy, Crown, Star, Home, XCircle, Headphones, Music, VolumeX, Search, Share2, Dices, Mic, MicOff, Users, CloudRain, Info, Edit, TreePine, Gamepad2, Map, Settings, Library, Volume2, Shuffle, Swords, ShoppingBasket, Apple, Mail, Lock, PartyPopper, Sprout, Leaf, RotateCw, Smartphone, Hourglass, Frown, X, Camera, Square } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import usePartySocket from 'partysocket/react';
 import PartySocket from 'partysocket';
@@ -5167,6 +5167,9 @@ export default function App() {
   // verse reference. null target = recorder closed.
   const [editorVerseVoices, setEditorVerseVoices] = useState({});
   const [editorVoiceTarget, setEditorVoiceTarget] = useState(null); // { reference, text }
+  // Which editor verse row is currently reading aloud (row index), so the
+  // ▶ button can flip to a ⏹ stop button while playback runs.
+  const [editorPlayingVerse, setEditorPlayingVerse] = useState(null);
   // reference → 'processing' | 'error' while a recording bakes + uploads in the
   // background (so the creator isn't blocked and can record the next verse).
   const [editorVoiceStatus, setEditorVoiceStatus] = useState({});
@@ -16243,7 +16246,7 @@ const deDict = {
                     verserain
                   </div>
                   <div className="app-brand-version" style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', marginTop: '4px', marginLeft: '2px' }}>
-                    v3.20.0
+                    v3.20.1
                   </div>
                 </div>
                 <div ref={langPickerRef} style={{ position: 'relative' }}>
@@ -17120,31 +17123,56 @@ const deDict = {
 
                                   {/* Action column: read-aloud / record / delete (stacked on phones). */}
                                   <div style={{ display: 'flex', flexDirection: isNarrowEditor ? 'column' : 'row', gap: '0.4rem', flexShrink: 0 }}>
-                                  {/* 朗讀預覽 — play the creator's recording if any, else TTS (like the View modal) */}
+                                  {/* 朗讀預覽 — play the creator's recording if any, else TTS (like the
+                                      View modal). Toggles: while this row is reading aloud the button
+                                      becomes a red ⏹ stop (long passages must be stoppable). */}
                                   <button
                                     type="button"
                                     disabled={!v.text}
                                     onClick={async () => {
-                                      if ('speechSynthesis' in window) window.speechSynthesis.cancel();
-                                      stopVerseModalAudio();
+                                      const stopAll = () => {
+                                        if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+                                        stopVerseModalAudio();
+                                      };
+                                      if (editorPlayingVerse === idx) {
+                                        stopAll();
+                                        setEditorPlayingVerse(null);
+                                        return;
+                                      }
+                                      stopAll();
+                                      setEditorPlayingVerse(idx);
                                       // Drop the cache so a just-recorded voice is picked up.
                                       if (editingCustomSet.id) setVoicesLookupRef.current.delete(editingCustomSet.id);
                                       const played = editingCustomSet.id
                                         ? await playSetVerseVoice(editingCustomSet.id, v.reference)
                                         : false;
-                                      if (played) return;
-                                      speakText(v.text, 1.0, getVoiceLangForVersion(version));
+                                      if (played) {
+                                        // Flip back to ▶ when the recording finishes on its own.
+                                        const audio = verseModalAudioRef.current;
+                                        if (audio) {
+                                          const clear = () => setEditorPlayingVerse(cur => (cur === idx ? null : cur));
+                                          audio.onended = clear;
+                                          audio.onerror = clear;
+                                        }
+                                        return;
+                                      }
+                                      // speakText resolves when TTS ends (or is cancelled) — only
+                                      // clear if this row is still the active one.
+                                      await speakText(v.text, 1.0, getVoiceLangForVersion(version));
+                                      setEditorPlayingVerse(cur => (cur === idx ? null : cur));
                                     }}
-                                    title={t('朗讀這節', 'Read this verse aloud')}
+                                    title={editorPlayingVerse === idx ? t('停止朗讀', 'Stop reading') : t('朗讀這節', 'Read this verse aloud')}
                                     style={{
-                                      background: v.text ? '#8b5cf6' : '#f1f5f9',
+                                      background: !v.text ? '#f1f5f9' : editorPlayingVerse === idx ? '#ef4444' : '#8b5cf6',
                                       color: v.text ? '#fff' : '#94a3b8',
                                       border: '1px solid #cbd5e1', padding: '0.5rem', borderRadius: '4px',
                                       cursor: !v.text ? 'not-allowed' : 'pointer',
                                       opacity: !v.text ? 0.5 : 1,
                                       display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
                                     }}
-                                  ><Play size={16} fill="currentColor" /></button>
+                                  >{editorPlayingVerse === idx
+                                    ? <Square size={16} fill="currentColor" />
+                                    : <Play size={16} fill="currentColor" />}</button>
 
                                   {/* 創作者親聲朗讀 — record / re-record this verse.
                                       Background bake+upload shows ⏳ (processing) / ⚠️ (error). */}
