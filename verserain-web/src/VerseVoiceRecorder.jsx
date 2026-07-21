@@ -172,9 +172,12 @@ export default function VerseVoiceRecorder({ t, reference, verseText, onUpload, 
       onClick={(e) => { if (e.target === e.currentTarget) close(); }}
       style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.65)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1400, padding: '1rem' }}
     >
-      <div style={{ background: '#fff', borderRadius: 14, padding: '1.6rem 1.5rem', width: 'min(460px, 100%)', boxShadow: '0 20px 40px rgba(0,0,0,0.25)', borderLeft: '4px solid #16a34a', textAlign: 'center' }}>
+      <div style={{ background: '#fff', borderRadius: 14, padding: '1.6rem 1.5rem', width: 'min(460px, 100%)', maxHeight: '90dvh', overflowY: 'auto', boxShadow: '0 20px 40px rgba(0,0,0,0.25)', borderLeft: '4px solid #16a34a', textAlign: 'center' }}>
         <h3 style={{ color: '#1e293b', marginTop: 0 }}>{t('用你的聲音錄這節', 'Record this verse in your voice')}</h3>
-        <div style={{ textAlign: 'left', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 8, padding: '0.6rem 0.8rem', margin: '0 0 0.8rem', fontSize: '0.92rem', lineHeight: 1.7, color: '#334155' }}>
+        {/* Whole-chapter verses (e.g. Psalm 18) run thousands of chars —
+            the text box scrolls on its own so the record/save controls
+            below never get pushed off screen. */}
+        <div style={{ textAlign: 'left', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 8, padding: '0.6rem 0.8rem', margin: '0 0 0.8rem', fontSize: '0.92rem', lineHeight: 1.7, color: '#334155', maxHeight: '38dvh', overflowY: 'auto', WebkitOverflowScrolling: 'touch' }}>
           {reference && <div style={{ fontWeight: 600, marginBottom: 4, color: '#3b82f6' }}>{reference}</div>}
           {verseText ? t('「{verse}」', '“{verse}”').replace('{verse}', verseText) : ''}
           <div style={{ color: '#64748b', fontSize: '0.78rem', marginTop: 6 }}>
