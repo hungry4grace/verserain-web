@@ -3322,12 +3322,12 @@ function VerseSetContinuousRainPlayer({
               </div>
             ) : myVoiceForCurrent ? (
               <div style={{ textAlign: 'center', margin: '-0.1rem 0 0.4rem', fontSize: '0.82rem' }}>
-                <span style={{ color: '#93c5fd', fontWeight: 600 }}>🎙️ {t('這節有你的親聲', 'Your voice on this verse')}</span>
+                <span style={{ color: '#000000', fontWeight: 600, textShadow: '0.06em 0.08em 2px rgba(255, 255, 255, 0.95), 0.12em 0.16em 8px rgba(255, 255, 255, 0.65)' }}>🎙️ {t('我的錄音', 'My recording')}</span>
                 <button
                   type="button"
                   onClick={() => deleteMyVoice(currentVerse.reference)}
                   disabled={personalBusy}
-                  style={{ marginLeft: 8, background: 'transparent', border: '1px solid rgba(248,113,113,0.6)', color: '#fca5a5', borderRadius: 6, padding: '1px 8px', cursor: personalBusy ? 'default' : 'pointer', fontSize: '0.75rem', opacity: personalBusy ? 0.5 : 1 }}
+                  style={{ marginLeft: 8, background: 'transparent', border: '1px solid rgba(220,38,38,0.7)', color: '#dc2626', borderRadius: 6, padding: '1px 8px', cursor: personalBusy ? 'default' : 'pointer', fontSize: '0.75rem', fontWeight: 600, opacity: personalBusy ? 0.5 : 1, textShadow: '0.06em 0.08em 2px rgba(255, 255, 255, 0.85)' }}
                 >
                   {t('刪除', 'Delete')} ✕
                 </button>
@@ -16254,7 +16254,7 @@ const deDict = {
                     verserain
                   </div>
                   <div className="app-brand-version" style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', marginTop: '4px', marginLeft: '2px' }}>
-                    v3.20.9
+                    v3.20.10
                   </div>
                 </div>
                 <div ref={langPickerRef} style={{ position: 'relative' }}>
