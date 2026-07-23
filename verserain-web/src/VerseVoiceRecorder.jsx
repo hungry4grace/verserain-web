@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from 'react';
-import { connectVoiceChain } from './voiceBeautify';
 
 // Generic verse-voice recorder modal — used by the custom-set editor so a
 // creator can read a verse in their own voice. Flow mirrors the Cloud
@@ -105,17 +104,9 @@ export default function VerseVoiceRecorder({ t, reference, verseText, onUpload, 
     try { recorderRef.current?.stop(); } catch { /* noop */ }
   };
 
-  // ── ✨ 美化人聲 (gentle warm reverb) ─────────────────────────────────
-  // Preview plays through a live Web Audio chain (instant toggle); on save
-  // the effect is BAKED into the uploaded blob so every player hears it
-  // without any playback-side changes.
-  const [beautify, setBeautify] = useState(true);
   const previewCtxRef = useRef(null);
   const previewSrcRef = useRef(null);
   const decodedBufRef = useRef(null);
-
-  // Live-preview chain (shared with the background bake — see voiceBeautify.js).
-  const connectChain = connectVoiceChain;
 
   const stopPreview = () => {
     try { previewSrcRef.current?.stop(); } catch { /* noop */ }
@@ -135,7 +126,7 @@ export default function VerseVoiceRecorder({ t, reference, verseText, onUpload, 
       }
       const src = ctx.createBufferSource();
       src.buffer = decodedBufRef.current;
-      connectChain(ctx, src, ctx.destination, beautify);
+      src.connect(ctx.destination);
       src.onended = () => { if (previewSrcRef.current === src) { previewSrcRef.current = null; setPreviewPlaying(false); } };
       previewSrcRef.current = src;
       src.start();
@@ -153,14 +144,14 @@ export default function VerseVoiceRecorder({ t, reference, verseText, onUpload, 
     setPhase('idle');
   };
 
-  // Hand the RAW clip to the parent and close immediately. The parent bakes the
-  // enhance effect + uploads in the background (that step is realtime and slow),
-  // so the creator can move straight on to recording the next verse.
+  // Hand the RAW clip to the parent and close immediately — upload runs in
+  // the background so the creator can move straight on to the next verse.
+  // beautify: false — the EQ pass was dropped (subtle gain, realtime-slow bake).
   const send = () => {
     const blob = blobRef.current;
     if (!blob) return;
     stopPreview();
-    onUpload({ blob, mime: mimeRef.current || 'audio/webm', dur: secondsRef.current, beautify, reference });
+    onUpload({ blob, mime: mimeRef.current || 'audio/webm', dur: secondsRef.current, beautify: false, reference });
     onDone?.();
   };
 
@@ -204,16 +195,6 @@ export default function VerseVoiceRecorder({ t, reference, verseText, onUpload, 
         )}
         {(phase === 'preview' || phase === 'uploading' || phase === 'processing') && (
           <div>
-            <label style={{ display: 'inline-flex', alignItems: 'center', gap: 8, marginBottom: '0.9rem', cursor: 'pointer', color: '#334155', fontSize: '0.9rem', background: beautify ? '#fdf4ff' : '#f8fafc', border: `1px solid ${beautify ? '#e9d5ff' : '#e2e8f0'}`, borderRadius: 999, padding: '0.4rem 0.9rem' }}>
-              <input
-                type="checkbox"
-                checked={beautify}
-                disabled={phase !== 'preview'}
-                onChange={(e) => { setBeautify(e.target.checked); stopPreview(); }}
-                style={{ width: '1rem', height: '1rem', cursor: 'pointer' }}
-              />
-              ✨ {t('美化人聲(人聲EQ)', 'Enhance voice (voice EQ)')}
-            </label>
             <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap' }}>
               <button onClick={togglePreview} disabled={phase !== 'preview'} style={{ padding: '0.55rem 1.1rem', borderRadius: 10, border: '1px solid #cbd5e1', background: '#f8fafc', color: '#334155', cursor: 'pointer' }}>
                 {previewPlaying ? `⏸ ${t('停止', 'Stop')}` : `▶ ${t('試聽', 'Preview')} (${timeLabel})`}
@@ -225,11 +206,9 @@ export default function VerseVoiceRecorder({ t, reference, verseText, onUpload, 
                 {t('儲存錄音', 'Save recording')}
               </button>
             </div>
-            {beautify && (
-              <div style={{ color: '#a855f7', fontSize: '0.8rem', marginTop: '0.6rem' }}>
-                {t('儲存後會在背景美化並上傳,你可以直接錄下一節 ✨', 'After saving, enhancing + uploading runs in the background — go ahead and record the next verse ✨')}
-              </div>
-            )}
+            <div style={{ color: '#64748b', fontSize: '0.8rem', marginTop: '0.6rem' }}>
+              {t('儲存後會在背景上傳,你可以直接錄下一節', 'Uploading runs in the background — go ahead and record the next verse')}
+            </div>
           </div>
         )}
 

@@ -16254,7 +16254,7 @@ const deDict = {
                     verserain
                   </div>
                   <div className="app-brand-version" style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', marginTop: '4px', marginLeft: '2px' }}>
-                    v3.20.4
+                    v3.20.5
                   </div>
                 </div>
                 <div ref={langPickerRef} style={{ position: 'relative' }}>
