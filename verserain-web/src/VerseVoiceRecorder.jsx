@@ -39,10 +39,7 @@ export default function VerseVoiceRecorder({ t, reference, verseText, onUpload, 
     recorderRef.current = null;
     try { previewAudioRef.current?.pause(); } catch { /* noop */ }
     previewAudioRef.current = null;
-    try { previewSrcRef.current?.stop(); } catch { /* noop */ }
-    previewSrcRef.current = null;
-    try { previewCtxRef.current?.close(); } catch { /* noop */ }
-    previewCtxRef.current = null;
+    if (previewUrlRef.current) { URL.revokeObjectURL(previewUrlRef.current); previewUrlRef.current = null; }
   };
   useEffect(() => cleanupMedia, []);
 
@@ -104,13 +101,15 @@ export default function VerseVoiceRecorder({ t, reference, verseText, onUpload, 
     try { recorderRef.current?.stop(); } catch { /* noop */ }
   };
 
-  const previewCtxRef = useRef(null);
-  const previewSrcRef = useRef(null);
-  const decodedBufRef = useRef(null);
+  // Preview plays through a plain <audio> element, NOT Web Audio: on iOS an
+  // AudioContext is muted by the ringer/silent switch and decodeAudioData can
+  // reject MediaRecorder's mp4 output — both made 試聽 silently do nothing.
+  const previewUrlRef = useRef(null);
 
   const stopPreview = () => {
-    try { previewSrcRef.current?.stop(); } catch { /* noop */ }
-    previewSrcRef.current = null;
+    try { previewAudioRef.current?.pause(); } catch { /* noop */ }
+    previewAudioRef.current = null;
+    if (previewUrlRef.current) { URL.revokeObjectURL(previewUrlRef.current); previewUrlRef.current = null; }
     setPreviewPlaying(false);
   };
 
@@ -118,26 +117,20 @@ export default function VerseVoiceRecorder({ t, reference, verseText, onUpload, 
     if (previewPlaying) { stopPreview(); return; }
     if (!blobRef.current) return;
     try {
-      if (!previewCtxRef.current) previewCtxRef.current = new (window.AudioContext || window.webkitAudioContext)();
-      const ctx = previewCtxRef.current;
-      if (ctx.state === 'suspended') await ctx.resume();
-      if (!decodedBufRef.current) {
-        decodedBufRef.current = await ctx.decodeAudioData(await blobRef.current.arrayBuffer());
-      }
-      const src = ctx.createBufferSource();
-      src.buffer = decodedBufRef.current;
-      src.connect(ctx.destination);
-      src.onended = () => { if (previewSrcRef.current === src) { previewSrcRef.current = null; setPreviewPlaying(false); } };
-      previewSrcRef.current = src;
-      src.start();
+      const url = URL.createObjectURL(blobRef.current);
+      previewUrlRef.current = url;
+      const audio = new Audio(url);
+      const clear = () => { if (previewAudioRef.current === audio) stopPreview(); };
+      audio.onended = clear;
+      audio.onerror = clear;
+      previewAudioRef.current = audio;
+      await audio.play();
       setPreviewPlaying(true);
-    } catch { /* decode/play failed — noop */ }
+    } catch { stopPreview(); }
   };
 
   const discardAndRerecord = () => {
     stopPreview();
-    previewAudioRef.current = null;
-    decodedBufRef.current = null;
     blobRef.current = null;
     setSeconds(0);
     secondsRef.current = 0;
