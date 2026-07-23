@@ -5690,6 +5690,10 @@ export default function App() {
   }, [preferredRainSet, rainVerseIndex]);
 
   const [dailyVerseDate, setDailyVerseDate] = useState(() => formatLocalDate(new Date()));
+  // vo= from a listenDaily share link — the sender's personal-voice owner id,
+  // passed through to the daily player so recipients hear the sender's
+  // recording instead of TTS. Cleared when leaving the daily player.
+  const [dailySharedVoiceOwner, setDailySharedVoiceOwner] = useState(null);
   const [remoteDailyVerse, setRemoteDailyVerse] = useState(null);
   const [isDailyVerseLoading, setIsDailyVerseLoading] = useState(true);
   const dailyVerseRemoteVersion = getDailyVerseRemoteVersion(version);
@@ -7323,6 +7327,10 @@ export default function App() {
 
     if (listenDaily) {
       changeDailyVerseDate(listenDaily);
+      // vo= → recipients hear the sender's personal recording (same contract
+      // as the listenSet share below).
+      const dailyVoParam = params.get('vo');
+      setDailySharedVoiceOwner(/^[a-f0-9]{16}$/.test(String(dailyVoParam || '')) ? dailyVoParam : null);
       setContinuousRainSet(null);
       setMainTab('daily_verse');
       window.history.replaceState({}, document.title, pathWithSharedLang());
@@ -16246,7 +16254,7 @@ const deDict = {
                     verserain
                   </div>
                   <div className="app-brand-version" style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', marginTop: '4px', marginLeft: '2px' }}>
-                    v3.20.2
+                    v3.20.3
                   </div>
                 </div>
                 <div ref={langPickerRef} style={{ position: 'relative' }}>
@@ -16614,7 +16622,8 @@ const deDict = {
                     verseSet={{
                       id: `daily-${remoteDailyVerse?.date || dailyVerseDate}`,
                       title: remoteDailyVerse?.date || dailyVerseDate,
-                      verses: [displayedDailyVerse]
+                      verses: [displayedDailyVerse],
+                      sharedVoiceOwner: dailySharedVoiceOwner
                     }}
                     secondaryVerseSet={dailySecondaryVerseSet}
                     secondaryVersion={bilingualSecondaryVersion}
@@ -16632,7 +16641,7 @@ const deDict = {
                     onPrevious={() => changeDailyVerseDate(prev => formatLocalDate(addDays(`${prev}T00:00:00`, -1)))}
                     onNext={() => changeDailyVerseDate(prev => formatLocalDate(addDays(`${prev}T00:00:00`, 1)))}
                     nextDisabled={dailyVerseDate >= formatLocalDate(new Date())}
-                    onStop={() => setMainTab('lobby')}
+                    onStop={() => { setDailySharedVoiceOwner(null); setMainTab('lobby'); }}
                     onSelectTopicSet={(set) => {
                       setSelectedSetId(set.id);
                       setMainTab('lobby');
@@ -16646,7 +16655,11 @@ const deDict = {
                     onShareVerse={(verse, shareOpts) => {
                       if (!verse) return;
                       const dateLabel = remoteDailyVerse?.date || dailyVerseDate;
-                      const link = buildPublicShareUrl('/', { listenDaily: dateLabel, version });
+                      const link = buildPublicShareUrl('/', {
+                        listenDaily: dateLabel,
+                        version,
+                        ...(shareOpts?.voiceOwner ? { vo: shareOpts.voiceOwner } : {}),
+                      });
                       openListeningShare(link, `${dateLabel} · ${verse.reference}`);
                     }}
                   />
