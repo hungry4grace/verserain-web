@@ -177,8 +177,9 @@ export default function VerseVoiceRecorder({ t, reference, verseText, onUpload, 
         {/* Whole-chapter verses (e.g. Psalm 18) run thousands of chars —
             the text box scrolls on its own so the record/save controls
             below never get pushed off screen. */}
-        <div style={{ textAlign: 'left', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 8, padding: '0.6rem 0.8rem', margin: '0 0 0.8rem', fontSize: '0.92rem', lineHeight: 1.7, color: '#334155', maxHeight: '38dvh', overflowY: 'auto', WebkitOverflowScrolling: 'touch' }}>
-          {reference && <div style={{ fontWeight: 600, marginBottom: 4, color: '#3b82f6' }}>{reference}</div>}
+        {/* 1.38rem = reading-aloud size (+50% over the old 0.92rem body). */}
+        <div style={{ textAlign: 'left', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 8, padding: '0.6rem 0.8rem', margin: '0 0 0.8rem', fontSize: '1.38rem', lineHeight: 1.7, color: '#334155', maxHeight: '38dvh', overflowY: 'auto', WebkitOverflowScrolling: 'touch' }}>
+          {reference && <div style={{ fontWeight: 600, marginBottom: 4, color: '#3b82f6', fontSize: '1.05rem' }}>{reference}</div>}
           {verseText ? t('「{verse}」', '“{verse}”').replace('{verse}', verseText) : ''}
           <div style={{ color: '#64748b', fontSize: '0.78rem', marginTop: 6 }}>
             {t('照著唸就好。聽這個題庫的人會聽到你的聲音,而不是電腦語音 🎙️', 'Just read it aloud. Listeners will hear your voice instead of the computer voice 🎙️')}
