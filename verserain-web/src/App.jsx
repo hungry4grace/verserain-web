@@ -3308,8 +3308,8 @@ function VerseSetContinuousRainPlayer({
               )}
             </h2>
             {creatorVoiceName && (
-              <div style={{ textAlign: 'center', margin: '-0.3rem 0 0.4rem', color: '#86efac', fontSize: '0.85rem', fontWeight: 600 }}>
-                🎙️ {t('{name} 親聲朗讀', 'Read aloud by {name}').replace('{name}', String(creatorVoiceName))}
+              <div style={{ textAlign: 'center', margin: '-0.3rem 0 0.4rem', color: '#000000', fontSize: '0.85rem', fontWeight: 600 }}>
+                🎙️ {t('朗讀者：{name}', 'Reader: {name}').replace('{name}', String(creatorVoiceName))}
               </div>
             )}
             {voiceStatus[currentVerse.reference] === 'processing' ? (
@@ -16254,7 +16254,7 @@ const deDict = {
                     verserain
                   </div>
                   <div className="app-brand-version" style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', marginTop: '4px', marginLeft: '2px' }}>
-                    v3.20.7
+                    v3.20.8
                   </div>
                 </div>
                 <div ref={langPickerRef} style={{ position: 'relative' }}>
