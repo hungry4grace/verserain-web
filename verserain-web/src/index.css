@@ -1318,6 +1318,14 @@ textarea {
   max-width: min(92vw, 980px);
 }
 
+/* 窄螢幕：頂列往右縮，讓出左上角給獨立的 ✕ 關閉鈕。 */
+@media (max-width: 560px) {
+  .continuous-rain-topbar {
+    max-width: calc(100vw - 128px);
+    margin-left: 64px;
+  }
+}
+
 .continuous-rain-set-title {
   max-width: min(72vw, 720px);
   overflow: hidden;
@@ -1505,8 +1513,9 @@ textarea {
   box-shadow: 0 14px 36px rgba(0, 0, 0, 0.36);
 }
 
-/* 關閉鈕獨立停在左上角，較好找。 */
-.continuous-rain-close-topleft {
+/* 關閉鈕獨立停在左上角，較好找。雙 class 提高優先權——
+   否則手機版 media query 的 bottom 會把容器上下撐開、鈕跑到半腰。 */
+.continuous-rain-action-controls.continuous-rain-close-topleft {
   top: max(0.9rem, env(safe-area-inset-top));
   left: max(0.9rem, env(safe-area-inset-left));
   bottom: auto;
