@@ -1505,6 +1505,51 @@ textarea {
   box-shadow: 0 14px 36px rgba(0, 0, 0, 0.36);
 }
 
+/* 關閉鈕獨立停在左上角，較好找。 */
+.continuous-rain-close-topleft {
+  top: max(0.9rem, env(safe-area-inset-top));
+  left: max(0.9rem, env(safe-area-inset-left));
+  bottom: auto;
+  max-width: none;
+}
+
+/* 按鈕解說浮標 — hover / 鍵盤 focus 時顯示 data-tip 內容。 */
+.continuous-rain-action-controls [data-tip] {
+  position: relative;
+}
+
+.continuous-rain-action-controls [data-tip]::after {
+  content: attr(data-tip);
+  position: absolute;
+  bottom: calc(100% + 10px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(15, 23, 42, 0.92);
+  color: #f8fafc;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s ease;
+  z-index: 12;
+}
+
+.continuous-rain-action-controls [data-tip]:hover::after,
+.continuous-rain-action-controls [data-tip]:focus-visible::after {
+  opacity: 1;
+}
+
+/* 左上角關閉鈕的浮標往下開，避免超出畫面頂端。 */
+.continuous-rain-close-topleft [data-tip]::after {
+  bottom: auto;
+  top: calc(100% + 10px);
+  left: 0;
+  transform: none;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .daily-verse-rain-drops span {
     animation: none;

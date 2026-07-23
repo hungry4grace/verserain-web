@@ -3364,19 +3364,13 @@ function VerseSetContinuousRainPlayer({
           </div>
         </div>
       </div>
-      <div className="continuous-rain-action-controls" aria-label={t('播放操作', 'Playback actions')}>
-        <button
-          type="button"
-          className="is-icon is-play-pause"
-          title={isPaused ? t('繼續', 'Resume') : t('暫停', 'Pause')}
-          onClick={togglePause}
-        >
-          {isPaused ? <Play size={22} fill="currentColor" /> : <Pause size={22} />}
-        </button>
+      {/* 關閉鈕獨立放在左上角（好找）；沿用 action-controls 的按鈕樣式。 */}
+      <div className="continuous-rain-action-controls continuous-rain-close-topleft">
         <button
           type="button"
           className="is-icon is-stop"
-          title={t('停止播放', 'Stop')}
+          title={t('關閉', 'Close')}
+          data-tip={t('關閉', 'Close')}
           onClick={() => {
             haltPlayback();
             onStop?.();
@@ -3384,11 +3378,23 @@ function VerseSetContinuousRainPlayer({
         >
           <XCircle size={22} />
         </button>
+      </div>
+      <div className="continuous-rain-action-controls" aria-label={t('播放操作', 'Playback actions')}>
+        <button
+          type="button"
+          className="is-icon is-play-pause"
+          title={isPaused ? t('播放', 'Play') : t('暫停', 'Pause')}
+          data-tip={isPaused ? t('播放', 'Play') : t('暫停', 'Pause')}
+          onClick={togglePause}
+        >
+          {isPaused ? <Play size={22} fill="currentColor" /> : <Pause size={22} />}
+        </button>
         {onChallengeVerse && (
           <button
             type="button"
             className="is-icon is-primary"
             title={t('挑戰', 'Challenge')}
+            data-tip={t('挑戰', 'Challenge')}
             onClick={() => {
               haltPlayback();
               onChallengeVerse(currentVerse);
@@ -3404,6 +3410,9 @@ function VerseSetContinuousRainPlayer({
             disabled={shareBusy}
             title={shareBusy
               ? t('親聲上傳中,請稍候…', 'Uploading your voice…')
+              : (myVoiceForCurrent ? t('分享（附上你的親聲）', 'Share (with your voice)') : t('分享', 'Share'))}
+            data-tip={shareBusy
+              ? t('親聲上傳中…', 'Uploading…')
               : (myVoiceForCurrent ? t('分享（附上你的親聲）', 'Share (with your voice)') : t('分享', 'Share'))}
             onClick={async () => {
               const ref = currentVerse.reference;
@@ -3429,6 +3438,9 @@ function VerseSetContinuousRainPlayer({
             title={!userEmail
               ? t('登入後即可錄製親聲', 'Sign in to record your voice')
               : (myVoiceForCurrent ? t('重錄我的親聲', 'Re-record my voice') : t('錄我的親聲', 'Record my voice'))}
+            data-tip={!userEmail
+              ? t('登入後可錄音', 'Sign in to record')
+              : (myVoiceForCurrent ? t('重錄', 'Re-record') : t('錄音', 'Record'))}
             onClick={() => {
               // Not signed in → recordings are tied to your account (so they
               // sync across devices and can be attributed when shared), so
@@ -3442,15 +3454,19 @@ function VerseSetContinuousRainPlayer({
           </button>
         )}
         {onSecondaryVersionChange && (
-          <select
-            value={secondaryVersion || ''}
-            onChange={(event) => onSecondaryVersionChange(event.target.value)}
-            style={{ padding: '0.4rem 0.6rem', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.25)', background: 'rgba(15,23,42,0.6)', color: '#e2e8f0', fontSize: '0.85rem', cursor: 'pointer' }}
-          >
-            {BIBLE_LANGUAGE_OPTIONS.filter(option => option.value !== version).map(option => (
-              <option key={option.value} value={option.value}>{option.label}</option>
-            ))}
-          </select>
+          // Tooltip lives on a wrapper span — ::after doesn't render on <select>.
+          <span data-tip={t('選擇第二語言', 'Second language')} style={{ display: 'inline-flex' }}>
+            <select
+              value={secondaryVersion || ''}
+              onChange={(event) => onSecondaryVersionChange(event.target.value)}
+              title={t('選擇第二語言', 'Second language')}
+              style={{ padding: '0.4rem 0.6rem', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.25)', background: 'rgba(15,23,42,0.6)', color: '#e2e8f0', fontSize: '0.85rem', cursor: 'pointer' }}
+            >
+              {BIBLE_LANGUAGE_OPTIONS.filter(option => option.value !== version).map(option => (
+                <option key={option.value} value={option.value}>{option.label}</option>
+              ))}
+            </select>
+          </span>
         )}
       </div>
       {voiceRecTarget && (
@@ -16254,7 +16270,7 @@ const deDict = {
                     verserain
                   </div>
                   <div className="app-brand-version" style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', marginTop: '4px', marginLeft: '2px' }}>
-                    v3.20.10
+                    v3.20.11
                   </div>
                 </div>
                 <div ref={langPickerRef} style={{ position: 'relative' }}>
