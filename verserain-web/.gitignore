@@ -27,3 +27,5 @@ dist-ssr
 
 # Local tooling / agent config (per-machine, never commit)
 .claude/
+scripts/.cache-taibible/
+scripts/.tmp-verses-*/

@@ -137,6 +137,11 @@ for (const file of verseFiles) {
 // getBollsSlug (HAC / DHNT by testament).
 const ENGLISH_API_VERSIONS = new Set(['kjv', 'esv', 'niv']);
 const SPECIAL_HANDLING = new Set(['he']);
+// Local-bundle-only languages: no online Bible API carries them, so there is
+// deliberately no bolls/getbible slug. Bilingual display works only through
+// paired topic sets (<id>-<lang>) bundled in verses_<lang>.js.
+// 'tw' = 台語漢字本 (Taiwanese Hokkien, Barclay Han-character edition).
+const LOCAL_BUNDLE_ONLY = new Set(['tw']);
 // `set.language` in verse files isn't always the same identifier as
 // `bilingualSecondaryVersion` in App.jsx state. These aliases map verse-file
 // `language` strings to the underlying fetch-version code. Update this when
@@ -149,7 +154,7 @@ const LANG_ALIASES = {
 const missingFetchPath = [];
 for (const raw of secondaryVersionsSeen) {
   const v = LANG_ALIASES[raw] || raw;
-  if (ENGLISH_API_VERSIONS.has(v) || SPECIAL_HANDLING.has(v)) continue;
+  if (ENGLISH_API_VERSIONS.has(v) || SPECIAL_HANDLING.has(v) || LOCAL_BUNDLE_ONLY.has(v)) continue;
   if (!BOLLS_TRANSLATIONS[v] && !GETBIBLE_TRANSLATIONS[v]) {
     missingFetchPath.push(raw);
   }

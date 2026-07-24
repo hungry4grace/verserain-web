@@ -5,6 +5,10 @@ export const loadLanguageSets = async (lang) => {
       const sets = [...p.VERSE_SETS_PROVERBS_ZH, ...m.VERSE_SETS];
       return { sets, verses: sets.flatMap(s => s.verses) };
     }
+    case 'tw': {
+      const m = await import('./verses_tw.js');
+      return { sets: m.VERSE_SETS_TW, verses: m.VERSE_SETS_TW.flatMap(s => s.verses) };
+    }
     case 'kjv': {
       const [m, p] = await Promise.all([import('./verses_kjv'), import('./verses_proverbs')]);
       const sets = [...p.VERSE_SETS_PROVERBS_KJV, ...m.VERSE_SETS_KJV];

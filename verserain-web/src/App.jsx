@@ -1099,6 +1099,7 @@ function getVoiceLangForVersion(v) {
 const BIBLE_LANGUAGE_OPTIONS = [
   { value: 'cuv', label: '繁體中文' },
   { value: 'cuvs', label: '简体中文' },
+  { value: 'tw', label: '台語（漢字本）' },
   { value: 'kjv', label: 'English - KJV' },
   { value: 'esv', label: 'English - ESV' },
   { value: 'niv', label: 'English - NIV' },
@@ -1949,7 +1950,7 @@ function findMatchingVerse(primaryVerse, primaryVerses = [], secondaryVerses = [
 function normalizeVerseSetIdentity(value = '') {
   return String(value || '')
     .replace(/\s*\((KJV|ESV|NIV)\)\s*/gi, '')
-    .replace(/-(cuv|cuvs|kjv|esv|niv|ja|ko|fa|he|es|tr|de|my|vi|id|ms)$/i, '')
+    .replace(/-(cuv|cuvs|kjv|esv|niv|ja|ko|fa|he|es|tr|de|my|vi|id|ms|tw)$/i, '')
     .replace(/\s+/g, ' ')
     .trim()
     .toLowerCase();
@@ -5681,10 +5682,10 @@ export default function App() {
     // (e.g. "gospel-of-john-he", "gospel-of-john-cuvs"). So when pairing
     // *into* CUV we also try the bare base id, and when pairing *from* CUV
     // we treat the entire id as the base.
-    const baseId = primaryId.replace(/-(cuv|cuvs|kjv|esv|niv|ja|ko|fa|he|es|tr|de|my|vi|id|ms)$/i, '');
+    const baseId = primaryId.replace(/-(cuv|cuvs|kjv|esv|niv|ja|ko|fa|he|es|tr|de|my|vi|id|ms|tw)$/i, '');
     const candidates = [
       secondarySets.find(set => set.id === `${primaryId}-${bilingualSecondaryVersion}`),
-      secondarySets.find(set => set.id === primaryId.replace(/-(cuv|cuvs|kjv|esv|niv|ja|ko|fa|he|es|tr|de|my|vi|id|ms)$/i, `-${bilingualSecondaryVersion}`)),
+      secondarySets.find(set => set.id === primaryId.replace(/-(cuv|cuvs|kjv|esv|niv|ja|ko|fa|he|es|tr|de|my|vi|id|ms|tw)$/i, `-${bilingualSecondaryVersion}`)),
       bilingualSecondaryVersion === 'cuv' ? secondarySets.find(set => set.id === baseId) : null,
       bilingualSecondaryVersion !== 'cuv' ? secondarySets.find(set => set.id === `${baseId}-${bilingualSecondaryVersion}`) : null,
       secondarySets.find(set => primaryId === 'rain-verses' && set.id === `rain-verses-${bilingualSecondaryVersion}`),
@@ -16289,7 +16290,7 @@ const deDict = {
                     verserain
                   </div>
                   <div className="app-brand-version" style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', marginTop: '4px', marginLeft: '2px' }}>
-                    v3.20.14
+                    v3.21.0
                   </div>
                 </div>
                 <div ref={langPickerRef} style={{ position: 'relative' }}>
