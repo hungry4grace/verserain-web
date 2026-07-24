@@ -29,3 +29,4 @@ dist-ssr
 .claude/
 scripts/.cache-taibible/
 scripts/.tmp-verses-*/
+scripts/.topic-sets-tw.json
