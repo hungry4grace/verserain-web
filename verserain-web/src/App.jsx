@@ -2573,30 +2573,49 @@ function VerseSetContinuousRainPlayer({
       // (legacy callers) → fall back to the recording's stored name.
       setCreatorVoiceName(displayName !== undefined ? displayName : (rec.recordedBy || ''));
       const durMs = rec.voiceDur > 0 ? rec.voiceDur * 1000 : 8000;
-      // Advance phrase highlights proportionally to each phrase's length.
+      // Advance phrase highlights proportionally to each phrase's length,
+      // driven by the audio's ACTUAL position (timeupdate) — wall-clock
+      // timers kept marching while the user paused the clip, so the verse
+      // display ran ahead of the silent audio.
       const totalLen = phrasesArr.reduce((a, p) => a + p.length, 0) || 1;
       let acc = 0;
-      const timers = phrasesArr.map((p, i) => {
+      const thresholds = phrasesArr.map((p) => {
         const startAt = Math.round(durMs * acc / totalLen) + 200;
         acc += p.length;
-        return window.setTimeout(() => onPhrase(i), startAt);
+        return startAt;
       });
+      let nextPhraseIdx = 0;
+      const timeHandler = () => {
+        const ms = audio.currentTime * 1000;
+        while (nextPhraseIdx < thresholds.length && ms >= thresholds[nextPhraseIdx]) {
+          onPhrase(nextPhraseIdx);
+          nextPhraseIdx += 1;
+        }
+      };
+      audio.ontimeupdate = timeHandler;
+      let endHandler = null;
+      let errHandler = null;
       const finished = await new Promise((resolve) => {
         let done = false;
         const fin = (ok) => { if (!done) { done = true; resolve(ok); } };
-        audio.onended = () => fin(true);
-        audio.onerror = () => fin(false);
+        endHandler = () => fin(true);
+        errHandler = () => fin(false);
+        audio.onended = endHandler;
+        audio.onerror = errHandler;
         audio.play().catch(() => fin(false));
         // Hard cap so a stuck clip can't hang the run — but never fire it
         // while the user has paused mid-clip (Resume will play to the end,
         // and onended then advances).
         window.setTimeout(() => { if (!pausedRecordingRef.current) fin(true); }, durMs + 15000);
       });
-      timers.forEach(id => window.clearTimeout(id));
       setCreatorVoiceName('');
-      // Keep the element alive (see gesture note above) — just detach handlers.
-      audio.onended = null;
-      audio.onerror = null;
+      // Keep the element alive (see gesture note above) — detach OUR handlers
+      // only. Runs overlap (a cancelled run resolves after its successor
+      // already attached new handlers); unconditional nulling here used to
+      // strip the live run's ontimeupdate and freeze the verse display.
+      if (audio.ontimeupdate === timeHandler) audio.ontimeupdate = null;
+      if (audio.onended === endHandler) audio.onended = null;
+      if (audio.onerror === errHandler) audio.onerror = null;
       return finished;
     } catch {
       setCreatorVoiceName('');
@@ -2870,7 +2889,7 @@ function VerseSetContinuousRainPlayer({
       if (!container) return;
 
       const containerRect = container.getBoundingClientRect();
-      const actionControls = document.querySelector('.continuous-rain-action-controls');
+      const actionControls = document.querySelector('.continuous-rain-action-controls:not(.continuous-rain-close-topleft)');
       const actionControlsTop = actionControls
         ? actionControls.getBoundingClientRect().top
         : window.innerHeight;
@@ -2937,7 +2956,7 @@ function VerseSetContinuousRainPlayer({
     const trimOnResize = () => {
       const container = phraseContainerRef.current;
       if (!container || activePhrase < 0) return;
-      const actionControls = document.querySelector('.continuous-rain-action-controls');
+      const actionControls = document.querySelector('.continuous-rain-action-controls:not(.continuous-rain-close-topleft)');
       const actionControlsTop = actionControls
         ? actionControls.getBoundingClientRect().top
         : window.innerHeight;
@@ -3023,7 +3042,7 @@ function VerseSetContinuousRainPlayer({
         if (i > 0) {
           const container = phraseContainerRef.current;
           if (container) {
-            const actionControls = document.querySelector('.continuous-rain-action-controls');
+            const actionControls = document.querySelector('.continuous-rain-action-controls:not(.continuous-rain-close-topleft)');
             const actionControlsTop = actionControls
               ? actionControls.getBoundingClientRect().top
               : window.innerHeight;
@@ -16270,7 +16289,7 @@ const deDict = {
                     verserain
                   </div>
                   <div className="app-brand-version" style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', marginTop: '4px', marginLeft: '2px' }}>
-                    v3.20.12
+                    v3.20.13
                   </div>
                 </div>
                 <div ref={langPickerRef} style={{ position: 'relative' }}>
