@@ -3163,16 +3163,24 @@ function VerseSetContinuousRainPlayer({
   const navigateVerse = (direction) => {
     if (!showNav) return;
     haltPlayback();
-    const idx = verses.findIndex(v =>
+    const len = verses.length;
+    if (!len) return;
+    if (len === 1) { setPlayKey(k => k + 1); return; }
+    let idx = verses.findIndex(v =>
       v.reference === currentVerse?.reference && v.text === currentVerse?.text
     );
-    const nextIdx = idx + direction;
-    if (nextIdx >= 0 && nextIdx < verses.length) {
-      setCurrentVerse(verses[nextIdx]);
-    } else {
-      // At boundary — replay current verse
-      setPlayKey(k => k + 1);
-    }
+    // The exact object may differ (deep-linked copies, edited text) — fall
+    // back to reference-only so ‹ › never restart from a wrong position.
+    if (idx < 0) idx = verses.findIndex(v => v.reference === currentVerse?.reference);
+    if (idx < 0) idx = direction > 0 ? -1 : 0;
+    // Wrap around at both ends — the old boundary behavior replayed the
+    // last verse forever, which read as「按 › 卡住」.
+    const nextIdx = ((idx + direction) % len + len) % len;
+    const next = verses[nextIdx];
+    setCurrentVerse(next);
+    // Same reference as the current verse (duplicate refs in a set) would
+    // not retrigger the playback effect — force it via playKey.
+    if (next?.reference === currentVerse?.reference) setPlayKey(k => k + 1);
   };
 
   const handlePrevious = () => {
@@ -16290,7 +16298,7 @@ const deDict = {
                     verserain
                   </div>
                   <div className="app-brand-version" style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', marginTop: '4px', marginLeft: '2px' }}>
-                    v3.21.1
+                    v3.21.2
                   </div>
                 </div>
                 <div ref={langPickerRef} style={{ position: 'relative' }}>
