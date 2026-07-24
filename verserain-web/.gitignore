@@ -30,3 +30,4 @@ dist-ssr
 scripts/.cache-taibible/
 scripts/.tmp-verses-*/
 scripts/.topic-sets-tw.json
+scripts/.topic-prayer.json
