@@ -5049,6 +5049,40 @@ export default function App() {
     return id;
   };
 
+  // 複製經文組 — clone any set (someone else's or my own) into 我的專屬題庫
+  // as a NEW set owned by the current user, then open it in the editor so
+  // edits never touch the original. Custom-uploaded background/music assets
+  // are stored server-side under the ORIGINAL set id and can't ride along —
+  // preset backgrounds/music copy fine.
+  const copyVerseSetToMine = (set) => {
+    if (!set) return;
+    if (!playerName) { setShowLoginModal('login'); return; }
+    const now = new Date().toISOString();
+    const copy = {
+      ...set,
+      id: `custom-${Date.now()}`,
+      title: `${set.title || set.name || t('未命名題庫', 'Untitled set')}${t('（複本）', ' (Copy)')}`,
+      authorName: playerName,
+      lastEditorName: playerName,
+      lastEditedAt: now,
+      createdAt: now,
+      isPublished: false,
+      ownerEmail: undefined,
+      adminEmail: undefined,
+      adminName: undefined,
+      verses: (set.verses || []).map(v => ({ ...v })),
+    };
+    if (String(copy.background || '').startsWith('custom:')) { copy.background = ''; copy.backgroundMime = undefined; }
+    if (String(copy.bgMusic || '').startsWith('custom:')) { copy.bgMusic = ''; copy.bgMusicMime = undefined; }
+    const updated = [copy, ...customVerseSets];
+    setCustomVerseSets(updated);
+    try { localStorage.setItem('verseRain_custom_sets', JSON.stringify(updated)); } catch { /* storage full — cloud sync still has it */ }
+    setToast(t('已複製，這份題庫現在是你的了 ✓', 'Copied — this set is yours now ✓'));
+    setTimeout(() => setToast(null), 3000);
+    setEditingCustomSet({ ...copy, verses: copy.verses.map(parseVerseRef) });
+    setMainTab('custom_verses');
+  };
+
   const handleBgImageUpload = async (file) => {
     if (!file || !editingCustomSet) return;
     setBgUploadBusy(true);
@@ -16298,7 +16332,7 @@ const deDict = {
                     verserain
                   </div>
                   <div className="app-brand-version" style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', marginTop: '4px', marginLeft: '2px' }}>
-                    v3.21.2
+                    v3.22.0
                   </div>
                 </div>
                 <div ref={langPickerRef} style={{ position: 'relative' }}>
@@ -17521,6 +17555,7 @@ const deDict = {
                                       setMainTab('versesets');
                                     }} style={{ background: '#10b981', border: '1px solid #059669', padding: '0.4rem 0.8rem', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', color: 'white' }}>{t("瀏覽", "View")}</button>
                                     <button type="button" onClick={() => setEditingCustomSet({ ...set, verses: set.verses?.map(parseVerseRef) || [] })} style={{ background: '#f1f5f9', border: '1px solid #cbd5e1', padding: '0.4rem 0.8rem', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', color: '#475569' }}>{t("編輯", "Edit")}</button>
+                                    <button type="button" onClick={() => copyVerseSetToMine(set)} title={t('複製一份新題庫', 'Duplicate as a new set')} style={{ background: '#eef2ff', border: '1px solid #c7d2fe', padding: '0.4rem 0.8rem', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', color: '#4338ca' }}>{t('複製', 'Copy')}</button>
                                     <button type="button" onClick={() => {
                                       if (window.confirm(t("確定要刪除嗎？", "Are you sure you want to delete?"))) {
                                         const updated = customVerseSets.filter(s => s.id !== set.id);
@@ -18330,6 +18365,11 @@ const deDict = {
                                         )}
                                       </span>
                                     )}
+                                    <button onClick={(e) => { e.stopPropagation(); copyVerseSetToMine(set); }}
+                                      title={t('複製成我的題庫，可自行編輯，不影響原本的', 'Copy into my sets — edit freely without touching the original')}
+                                      style={{ marginLeft: isAdmin ? '0.5rem' : '1rem', background: '#eef2ff', border: '1px solid #c7d2fe', padding: '0.2rem 0.5rem', borderRadius: '4px', cursor: 'pointer', fontSize: '0.8rem', color: '#4338ca' }}>
+                                      {t('複製', 'Copy')}
+                                    </button>
                                   </td>
                                   <td style={{ padding: '1rem', color: '#337ab7', fontSize: '0.9rem', fontWeight: 'bold' }}>{set.authorName && set.authorName !== "Anonymous" ? set.authorName : (String(set.id).startsWith("custom-") ? t('匿名玩家', 'Anonymous') : t('Verserain 官方', 'Official'))}</td>
                                   <td style={{ padding: '1rem', textAlign: 'right', color: '#64748b', fontWeight: 'bold' }}>{viewCounts[set.id] || 0}</td>
