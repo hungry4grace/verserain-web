@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { Play, Pause, RotateCcw, Heart, Zap, Trophy, Crown, Star, Home, XCircle, Headphones, Music, VolumeX, Search, Share2, Dices, Mic, MicOff, Users, CloudRain, Info, Edit, TreePine, Gamepad2, Map, Settings, Library, Volume2, Shuffle, Swords, ShoppingBasket, Apple, Mail, Lock, PartyPopper, Sprout, Leaf, RotateCw, Smartphone, Hourglass, Frown, X, Camera, Square } from 'lucide-react';
+import { Play, Pause, RotateCcw, Heart, Zap, Trophy, Crown, Star, Home, XCircle, Headphones, Music, VolumeX, Search, Share2, Dices, Mic, MicOff, Users, CloudRain, Info, Edit, TreePine, Gamepad2, Map, Settings, Library, Volume2, Shuffle, Swords, ShoppingBasket, Apple, Mail, Lock, PartyPopper, Sprout, Leaf, RotateCw, Smartphone, Hourglass, Frown, X, Camera, Square, Copy } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import usePartySocket from 'partysocket/react';
 import PartySocket from 'partysocket';
@@ -18661,6 +18661,16 @@ const deDict = {
                               onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
                             >
                               <Trophy size={16} fill="white" /> {t("通關紀錄", "Records")}
+                            </button>
+
+                            <button
+                              onClick={() => copyVerseSetToMine(currentSet)}
+                              title={t("複製成我的題庫，可自行編輯，不影響原本的", "Copy into my sets — edit freely without touching the original")}
+                              style={{ backgroundColor: '#4f46e5', color: 'white', border: 'none', borderRadius: '6px', padding: '0 0.8rem', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'transform 0.1s', fontWeight: 'bold', gap: '5px' }}
+                              onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
+                              onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                            >
+                              <Copy size={16} /> {t("複製", "Copy")}
                             </button>
 
                             {(playerName === currentSet?.authorName || playerName === 'hungry@G') && (
