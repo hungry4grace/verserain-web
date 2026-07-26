@@ -2989,6 +2989,11 @@ function VerseSetContinuousRainPlayer({
     let cancelled = false;
     const runId = runRef.current + 1;
     runRef.current = runId;
+    // Clear the 朗讀者 badge from the PREVIOUS verse right away. If that
+    // verse's recording was interrupted (‹ › navigation), its clear only
+    // fires when the hung playback promise hits the hard cap — leaving a
+    // stale name on verses that then play plain TTS.
+    setCreatorVoiceName('');
 
     const wait = (ms) => new Promise(resolve => window.setTimeout(resolve, ms));
 
@@ -16343,7 +16348,7 @@ const deDict = {
                     verserain
                   </div>
                   <div className="app-brand-version" style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', marginTop: '4px', marginLeft: '2px' }}>
-                    v3.22.1
+                    v3.22.2
                   </div>
                 </div>
                 <div ref={langPickerRef} style={{ position: 'relative' }}>
