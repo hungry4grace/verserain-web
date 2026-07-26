@@ -162,5 +162,55 @@ struct WebView: UIViewRepresentable {
 
             return nil
         }
+
+        // MARK: - JavaScript dialog panels
+        // WKWebView does NOT render window.alert / confirm / prompt unless the
+        // UIDelegate implements these. Without them confirm() silently returns
+        // false, which made destructive buttons (刪除題庫) look dead in the App.
+
+        private func presentAlert(_ alert: UIAlertController, over webView: WKWebView) {
+            guard var top = webView.window?.rootViewController else { return }
+            while let presented = top.presentedViewController { top = presented }
+            top.present(alert, animated: true)
+        }
+
+        func webView(
+            _ webView: WKWebView,
+            runJavaScriptAlertPanelWithMessage message: String,
+            initiatedByFrame frame: WKFrameInfo,
+            completionHandler: @escaping () -> Void
+        ) {
+            let alert = UIAlertController(title: nil, message: message, preferredStyle: .alert)
+            alert.addAction(UIAlertAction(title: "OK", style: .default) { _ in completionHandler() })
+            presentAlert(alert, over: webView)
+        }
+
+        func webView(
+            _ webView: WKWebView,
+            runJavaScriptConfirmPanelWithMessage message: String,
+            initiatedByFrame frame: WKFrameInfo,
+            completionHandler: @escaping (Bool) -> Void
+        ) {
+            let alert = UIAlertController(title: nil, message: message, preferredStyle: .alert)
+            alert.addAction(UIAlertAction(title: "取消", style: .cancel) { _ in completionHandler(false) })
+            alert.addAction(UIAlertAction(title: "OK", style: .default) { _ in completionHandler(true) })
+            presentAlert(alert, over: webView)
+        }
+
+        func webView(
+            _ webView: WKWebView,
+            runJavaScriptTextInputPanelWithPrompt prompt: String,
+            defaultText: String?,
+            initiatedByFrame frame: WKFrameInfo,
+            completionHandler: @escaping (String?) -> Void
+        ) {
+            let alert = UIAlertController(title: nil, message: prompt, preferredStyle: .alert)
+            alert.addTextField { $0.text = defaultText }
+            alert.addAction(UIAlertAction(title: "取消", style: .cancel) { _ in completionHandler(nil) })
+            alert.addAction(UIAlertAction(title: "OK", style: .default) { [weak alert] _ in
+                completionHandler(alert?.textFields?.first?.text ?? "")
+            })
+            presentAlert(alert, over: webView)
+        }
     }
 }

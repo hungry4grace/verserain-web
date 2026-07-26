@@ -4982,6 +4982,17 @@ export default function App() {
     }
   });
   const [editingCustomSet, setEditingCustomSet] = useState(null);
+  // Two-step delete confirmation (editor + 我的專屬題庫 rows). window.confirm
+  // silently returns false inside the iOS App's WKWebView (no WKUIDelegate
+  // JS-panel implementation in shipped builds), so「刪除題庫」looked dead.
+  // First tap arms the button, second tap within 5s deletes.
+  const [deleteArmedId, setDeleteArmedId] = useState(null);
+  const deleteArmTimerRef = useRef(null);
+  const armDelete = (id) => {
+    setDeleteArmedId(id);
+    clearTimeout(deleteArmTimerRef.current);
+    deleteArmTimerRef.current = setTimeout(() => setDeleteArmedId(null), 5000);
+  };
   // 自訂背景圖 / 背景音樂上傳 (題庫編輯器).
   const [bgUploadBusy, setBgUploadBusy] = useState(false);
   const [musicUploadBusy, setMusicUploadBusy] = useState(false);
@@ -16332,7 +16343,7 @@ const deDict = {
                     verserain
                   </div>
                   <div className="app-brand-version" style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', marginTop: '4px', marginLeft: '2px' }}>
-                    v3.22.0
+                    v3.22.1
                   </div>
                 </div>
                 <div ref={langPickerRef} style={{ position: 'relative' }}>
@@ -17413,10 +17424,9 @@ const deDict = {
                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem', marginTop: '2rem' }}>
                             {editingCustomSet.id ? (
                               <button type="button" onClick={() => {
-                                if (!confirm(t(
-                                  '確定要刪除「{title}」嗎？此動作無法復原。',
-                                  'Delete "{title}"? This cannot be undone.'
-                                ).replace('{title}', String(editingCustomSet.title || t('此題庫', 'this set'))))) return;
+                                // Two-tap confirm — window.confirm is dead inside the iOS App.
+                                if (deleteArmedId !== editingCustomSet.id) { armDelete(editingCustomSet.id); return; }
+                                setDeleteArmedId(null);
 
                                 // Remove from local custom sets + localStorage
                                 const updatedSets = customVerseSets.filter(s => s.id !== editingCustomSet.id);
@@ -17433,9 +17443,11 @@ const deDict = {
                                   setPublishedVerseSets(prev => prev.filter(p => p.id !== editingCustomSet.id));
                                 }
 
+                                setToast(t('題庫已刪除', 'Set deleted'));
+                                setTimeout(() => setToast(null), 3000);
                                 setEditingCustomSet(null);
-                              }} style={{ background: '#ef4444', color: 'white', border: 'none', padding: '0.8rem 1.5rem', borderRadius: '6px', fontWeight: 'bold', fontSize: '1rem', cursor: 'pointer' }}>
-                                {t("刪除題庫", "Delete Set")}
+                              }} style={{ background: deleteArmedId === editingCustomSet.id ? '#b91c1c' : '#ef4444', color: 'white', border: deleteArmedId === editingCustomSet.id ? '2px solid #fecaca' : 'none', padding: '0.8rem 1.5rem', borderRadius: '6px', fontWeight: 'bold', fontSize: '1rem', cursor: 'pointer' }}>
+                                {deleteArmedId === editingCustomSet.id ? t('再按一次確認刪除', 'Tap again to confirm') : t("刪除題庫", "Delete Set")}
                               </button>
                             ) : <span />}
                             <button type="button" onClick={() => {
@@ -17557,19 +17569,22 @@ const deDict = {
                                     <button type="button" onClick={() => setEditingCustomSet({ ...set, verses: set.verses?.map(parseVerseRef) || [] })} style={{ background: '#f1f5f9', border: '1px solid #cbd5e1', padding: '0.4rem 0.8rem', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', color: '#475569' }}>{t("編輯", "Edit")}</button>
                                     <button type="button" onClick={() => copyVerseSetToMine(set)} title={t('複製一份新題庫', 'Duplicate as a new set')} style={{ background: '#eef2ff', border: '1px solid #c7d2fe', padding: '0.4rem 0.8rem', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', color: '#4338ca' }}>{t('複製', 'Copy')}</button>
                                     <button type="button" onClick={() => {
-                                      if (window.confirm(t("確定要刪除嗎？", "Are you sure you want to delete?"))) {
-                                        const updated = customVerseSets.filter(s => s.id !== set.id);
-                                        setCustomVerseSets(updated);
-                                        localStorage.setItem('verseRain_custom_sets', JSON.stringify(updated));
+                                      // Two-tap confirm — window.confirm is dead inside the iOS App.
+                                      if (deleteArmedId !== set.id) { armDelete(set.id); return; }
+                                      setDeleteArmedId(null);
+                                      const updated = customVerseSets.filter(s => s.id !== set.id);
+                                      setCustomVerseSets(updated);
+                                      localStorage.setItem('verseRain_custom_sets', JSON.stringify(updated));
 
-                                        fetch("https://verserain-party.hungry4grace.partykit.dev/parties/main/global-auth-db/custom-sets", {
-                                          method: "DELETE",
-                                          headers: { "Content-Type": "application/json" },
-                                          body: JSON.stringify({ id: set.id, adminEmail: userEmail, adminName: playerName })
-                                        }).catch(e => console.error(e));
-                                        setPublishedVerseSets(prev => prev.filter(p => p.id !== set.id));
-                                      }
-                                    }} style={{ background: '#fee2e2', border: '1px solid #fca5a5', padding: '0.4rem 0.8rem', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', color: '#ef4444' }}>{t("刪除", "Delete")}</button>
+                                      fetch("https://verserain-party.hungry4grace.partykit.dev/parties/main/global-auth-db/custom-sets", {
+                                        method: "DELETE",
+                                        headers: { "Content-Type": "application/json" },
+                                        body: JSON.stringify({ id: set.id, adminEmail: userEmail, adminName: playerName })
+                                      }).catch(e => console.error(e));
+                                      setPublishedVerseSets(prev => prev.filter(p => p.id !== set.id));
+                                      setToast(t('題庫已刪除', 'Set deleted'));
+                                      setTimeout(() => setToast(null), 3000);
+                                    }} style={{ background: deleteArmedId === set.id ? '#b91c1c' : '#fee2e2', border: '1px solid #fca5a5', padding: '0.4rem 0.8rem', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', color: deleteArmedId === set.id ? 'white' : '#ef4444' }}>{deleteArmedId === set.id ? t('確認刪除？', 'Confirm?') : t("刪除", "Delete")}</button>
                                   </div>
                                   <h3 style={{ margin: '0 0 0.5rem 0', color: '#1e293b', paddingRight: '120px' }}>{set.title}</h3>
                                   {/* Clamp long rich-text intros to ~3 lines so the list stays scannable.
@@ -18336,32 +18351,36 @@ const deDict = {
                                         {isSuperAdmin && (
                                           <button onClick={(e) => {
                                             e.stopPropagation();
-                                            if (window.confirm("Admin: 確定要從全域資料庫強制刪除這份經文組？")) {
-                                              const publishedExists = publishedVerseSets.some(p => p.id === set.id);
-                                              if (!publishedExists) {
-                                                const nextHidden = Array.from(new Set([...(hiddenOfficialSetIds || []), set.id]));
-                                                setHiddenOfficialSetIds(nextHidden);
-                                                localStorage.setItem('verseRain_hidden_official_sets', JSON.stringify(nextHidden));
-                                                return;
-                                              }
-                                              fetch("https://verserain-party.hungry4grace.partykit.dev/parties/main/global-auth-db/custom-sets", {
-                                                method: "DELETE",
-                                                headers: { "Content-Type": "application/json" },
-                                                body: JSON.stringify({ id: set.id, adminEmail: userEmail, adminName: playerName })
-                                              })
-                                                .then(async (res) => {
-                                                  if (!res.ok) {
-                                                    const msg = await res.text().catch(() => '');
-                                                    throw new Error(msg || `HTTP ${res.status}`);
-                                                  }
-                                                  setPublishedVerseSets(prev => prev.filter(p => p.id !== set.id));
-                                                })
-                                                .catch((e) => {
-                                                  console.error(e);
-                                                  alert(t("刪除失敗，請重新登入後再試。", "Delete failed. Please log in again and try once more."));
-                                                });
+                                            // Two-tap confirm — window.confirm is dead inside the iOS App.
+                                            if (deleteArmedId !== `admin-${set.id}`) { armDelete(`admin-${set.id}`); return; }
+                                            setDeleteArmedId(null);
+                                            const publishedExists = publishedVerseSets.some(p => p.id === set.id);
+                                            if (!publishedExists) {
+                                              const nextHidden = Array.from(new Set([...(hiddenOfficialSetIds || []), set.id]));
+                                              setHiddenOfficialSetIds(nextHidden);
+                                              localStorage.setItem('verseRain_hidden_official_sets', JSON.stringify(nextHidden));
+                                              return;
                                             }
-                                          }} style={{ background: '#fee2e2', border: '1px solid #fca5a5', color: '#ef4444', padding: '0.2rem 0.5rem', borderRadius: '4px', cursor: 'pointer', fontSize: '0.8rem' }}>Admin {t('刪除', 'Delete')}</button>
+                                            fetch("https://verserain-party.hungry4grace.partykit.dev/parties/main/global-auth-db/custom-sets", {
+                                              method: "DELETE",
+                                              headers: { "Content-Type": "application/json" },
+                                              body: JSON.stringify({ id: set.id, adminEmail: userEmail, adminName: playerName })
+                                            })
+                                              .then(async (res) => {
+                                                if (!res.ok) {
+                                                  const msg = await res.text().catch(() => '');
+                                                  throw new Error(msg || `HTTP ${res.status}`);
+                                                }
+                                                setPublishedVerseSets(prev => prev.filter(p => p.id !== set.id));
+                                                setToast(t('題庫已刪除', 'Set deleted'));
+                                                setTimeout(() => setToast(null), 3000);
+                                              })
+                                              .catch((err) => {
+                                                console.error(err);
+                                                setToast(t("刪除失敗，請重新登入後再試。", "Delete failed. Please log in again and try once more."));
+                                                setTimeout(() => setToast(null), 4000);
+                                              });
+                                          }} style={{ background: deleteArmedId === `admin-${set.id}` ? '#b91c1c' : '#fee2e2', border: '1px solid #fca5a5', color: deleteArmedId === `admin-${set.id}` ? 'white' : '#ef4444', padding: '0.2rem 0.5rem', borderRadius: '4px', cursor: 'pointer', fontSize: '0.8rem' }}>{deleteArmedId === `admin-${set.id}` ? t('確認刪除？', 'Confirm?') : `Admin ${t('刪除', 'Delete')}`}</button>
                                         )}
                                       </span>
                                     )}
