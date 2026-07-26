@@ -1331,6 +1331,40 @@ async function fetchVerseFromBolls(normalizedKey, targetVersion) {
 // then getbible.net for the two languages bolls lacks (Turkish, Burmese).
 // Returns '' on miss. Previously both call sites hard-coded the Chinese CUV
 // slug, so a Spanish/Korean/etc. set silently imported Chinese verse text.
+// 台語漢字本 — no public Bible API exists, so the PartyKit backend proxies
+// (and caches) chapters from lingshyang.com. Same key shape as
+// fetchVerseFromBolls: "<bookId>|<chap>" or "<bookId>|<chap>:<verses>".
+async function fetchVerseFromTaibible(normalizedKey) {
+  const [bookPart, chapterVerse] = (normalizedKey || '').split('|');
+  if (!chapterVerse) return null;
+  const bookId = parseInt(bookPart, 10);
+  if (Number.isNaN(bookId)) return null;
+  const colonIdx = chapterVerse.indexOf(':');
+  const chapter = parseInt(colonIdx >= 0 ? chapterVerse.slice(0, colonIdx) : chapterVerse, 10);
+  if (Number.isNaN(chapter)) return null;
+  try {
+    const res = await fetch(`https://verserain-party.hungry4grace.partykit.dev/parties/main/global-auth-db/taibible?book=${bookId}&chapter=${chapter}`);
+    if (!res.ok) return null;
+    const data = await res.json();
+    const chap = data?.verses || {};
+    let nums;
+    if (colonIdx >= 0) {
+      nums = [];
+      for (const part of chapterVerse.slice(colonIdx + 1).split(',')) {
+        const r = part.trim().match(/^(\d+)\s*-\s*(\d+)$/);
+        if (r) { for (let i = +r[1]; i <= +r[2]; i++) nums.push(i); }
+        else if (part.trim()) nums.push(parseInt(part, 10));
+      }
+    } else {
+      nums = Object.keys(chap).map(Number).sort((a, b) => a - b);
+    }
+    const parts = nums.map(n => chap[n]).filter(Boolean);
+    return parts.length ? parts.join('') : null;
+  } catch {
+    return null;
+  }
+}
+
 async function fetchEditorVerseText({ bookInfo, sanitized, version }) {
   const chapMatch = String(sanitized).match(/^(\d+)/);
   if (!chapMatch) return '';
@@ -1352,11 +1386,12 @@ async function fetchEditorVerseText({ bookInfo, sanitized, version }) {
       : `${chapter}:${verseMatch[1]}`;
   }
   const key = `${bookInfo.id}|${versePart}`;
-  let combined = await fetchVerseFromBolls(key, version)
-    || await fetchVerseFromGetBible(key, version);
+  let combined = version === 'tw'
+    ? await fetchVerseFromTaibible(key)
+    : (await fetchVerseFromBolls(key, version) || await fetchVerseFromGetBible(key, version));
   if (!combined) return '';
   // CJK verses read without inter-character spaces.
-  if (version === 'cuv' || version === 'cuvs') combined = combined.replace(/\s+/g, '');
+  if (version === 'cuv' || version === 'cuvs' || version === 'tw') combined = combined.replace(/\s+/g, '');
   return combined.replace(/\s+/g, ' ').trim();
 }
 
@@ -2698,6 +2733,9 @@ function VerseSetContinuousRainPlayer({
         // getbible.net Kutsal Kitap / Judson editions instead. Same input
         // shape (normalizedKey) and output shape (joined verse text).
         text = await fetchVerseFromGetBible(normalizedKey, secondaryVersion);
+      } else if (secondaryVersion === 'tw') {
+        // 台語漢字本 — served by our own PartyKit proxy.
+        text = await fetchVerseFromTaibible(normalizedKey);
       } else {
         text = await fetchVerseFromBolls(normalizedKey, secondaryVersion);
       }
@@ -7612,6 +7650,8 @@ export default function App() {
                 if (engRef) text = await fetchBibleVerseFromAPI(engRef, targetVersion);
               } else if (targetVersion === 'tr' || targetVersion === 'my') {
                 text = await fetchVerseFromGetBible(normalizedKey, targetVersion);
+              } else if (targetVersion === 'tw') {
+                text = await fetchVerseFromTaibible(normalizedKey);
               } else {
                 text = await fetchVerseFromBolls(normalizedKey, targetVersion);
               }
@@ -16348,7 +16388,7 @@ const deDict = {
                     verserain
                   </div>
                   <div className="app-brand-version" style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', marginTop: '4px', marginLeft: '2px' }}>
-                    v3.22.2
+                    v3.22.3
                   </div>
                 </div>
                 <div ref={langPickerRef} style={{ position: 'relative' }}>

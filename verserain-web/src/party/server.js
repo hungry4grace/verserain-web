@@ -884,6 +884,58 @@ export default class Server {
         return ["hungry@g", "hungry@me", "verserain", "admin"].includes(normalized);
       };
 
+      // 3.95 台語漢字本 chapter proxy — the source site (lingshyang.com) has
+      // no CORS headers and no API, so the browser can't fetch it directly.
+      // We fetch + parse server-side and cache the parsed chapter in storage
+      // (a chapter is a few KB — far under the 128KB key limit).
+      // GET /taibible?book=<1-66>&chapter=<n> → { success, verses: {n: text} }
+      if (url.pathname.endsWith('/taibible') && request.method === 'GET') {
+        const TAI_BOOK_CODES = ['gen','exo','lev','num','deu','jos','jug','rut','1sa','2sa','1ki','2ki','1ch','2ch','ezr','neh','est','job','psm','pro','ecc','son','isa','jer','lam','eze','dan','hos','joe','amo','oba','jon','mic','nah','hab','zep','hag','zec','mal','mat','mak','luk','jhn','act','rom','1co','2co','gal','eph','phl','col','1ts','2ts','1ti','2ti','tit','mon','heb','jas','1pe','2pe','1jn','2jn','3jn','jud','rev'];
+        // Rare Taiwanese characters the site renders as <img> glyphs.
+        const TAI_GLYPHS = { boe:'袂', in:'𪜶', tiam:'踮', tiau:'牢', gau:'賢', hiat:'㧒', ki:'基', lo:'路', ko:'哥', lut:'甪', moa:'幔', nit:'躡', nith:'躡', nih:'躡', oh:'僫', poa:'盤', sui:'遂', teh:'啲', teng:'碇', thang:'迵', thoa:'豸', thun:'踐', ti:'蹬', to:'杜', tok:'度', phoe:'頰', chhih:'匆', tioh:'著', chong:'傱' };
+        try {
+          const bookId = parseInt(url.searchParams.get('book') || '', 10);
+          const chapter = parseInt(url.searchParams.get('chapter') || '', 10);
+          if (!(bookId >= 1 && bookId <= 66) || !(chapter >= 1 && chapter <= 176)) {
+            return new Response(JSON.stringify({ error: 'book (1-66) + chapter required' }), { status: 400, headers: corsHeaders });
+          }
+          const cacheKey = `taibible:${bookId}:${chapter}`;
+          const cached = await this.room.storage.get(cacheKey);
+          if (cached) {
+            return new Response(JSON.stringify({ success: true, verses: cached }), { status: 200, headers: corsHeaders });
+          }
+          const code = TAI_BOOK_CODES[bookId - 1];
+          const res = await fetch(`https://lingshyang.com/taiwan_Bible/${code}/${code}${chapter}.htm`);
+          if (!res.ok) {
+            return new Response(JSON.stringify({ error: `source HTTP ${res.status}` }), { status: 502, headers: corsHeaders });
+          }
+          let html = await res.text();
+          html = html.replace(/<img\s[^>]*src="\.\.\/([a-z0-9]+)\.jpg"[^>]*\/?>/gi, (_, name) => TAI_GLYPHS[name] || '');
+          const verses = {};
+          const re = new RegExp(`${chapter}:(\\d+)\\s*</font>\\s*<td[^>]*>([\\s\\S]*?)(?=<tr>|</table>|</TABLE>|$)`, 'g');
+          let m;
+          while ((m = re.exec(html)) !== null) {
+            const text = m[2]
+              .replace(/<[^>]+>/g, '')
+              .replace(/&nbsp;/g, ' ')
+              .replace(/\s+/g, '')
+              // Drop inline POJ pronunciation glosses + stray latin debris.
+              .replace(/[（(][^（()）]*[A-Za-zÀ-ɏ][^（()）]*[）)]/g, '')
+              .replace(/[（(][A-Za-zÀ-ɏ·ⁿ\-\s]+/g, '')
+              .replace(/[A-Za-zÀ-ɏõ]+/g, '')
+              .trim();
+            if (text) verses[parseInt(m[1], 10)] = text;
+          }
+          if (Object.keys(verses).length === 0) {
+            return new Response(JSON.stringify({ error: 'no verses parsed' }), { status: 502, headers: corsHeaders });
+          }
+          await this.room.storage.put(cacheKey, verses);
+          return new Response(JSON.stringify({ success: true, verses }), { status: 200, headers: corsHeaders });
+        } catch (e) {
+          return new Response(JSON.stringify({ error: 'taibible fetch failed' }), { status: 500, headers: corsHeaders });
+        }
+      }
+
       // 3.9 View Counts Endpoint
       if (url.pathname.endsWith('/custom-sets/view')) {
          try {
