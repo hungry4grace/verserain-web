@@ -21,7 +21,11 @@ async function voiceOwnerId(email) {
 // Legacy cleartext rows still verify — see verifyPassword — and each one is
 // rewritten as a hash the next time its owner successfully logs in, so no
 // forced reset is needed.
-const PBKDF2_ITERATIONS = 210000; // OWASP guidance for PBKDF2-SHA256
+// Cloudflare Workers (which PartyKit runs on) caps PBKDF2 at 100,000
+// iterations and throws above it — 210,000 made every register/login return
+// 500 in production. The iteration count is stored per-hash, so this can be
+// raised later without invalidating existing hashes if the cap ever lifts.
+const PBKDF2_ITERATIONS = 100000;
 
 const bytesToB64 = (bytes) => btoa(String.fromCharCode(...new Uint8Array(bytes)));
 const b64ToBytes = (s) => Uint8Array.from(atob(s), (c) => c.charCodeAt(0));
@@ -696,9 +700,19 @@ export default class Server {
               // password and the owner just proved they know it, so replace it
               // with a hash right here. Every active account migrates itself on
               // next login — no forced reset, no migration script.
+              //
+              // Deliberately non-fatal: the credential has ALREADY been
+              // verified at this point, so a hashing failure must never turn a
+              // valid login into a 500. (It did exactly that in production when
+              // the iteration count exceeded the Workers cap — the account
+              // simply stays cleartext and migrates on a later login.)
               if (!isHashedPassword(user.password)) {
-                 user.password = await hashPassword(password);
-                 dirty = true;
+                 try {
+                    user.password = await hashPassword(password);
+                    dirty = true;
+                 } catch (hashErr) {
+                    console.error('password upgrade failed; leaving row as-is', hashErr);
+                 }
               }
 
               // Late-bind inviter if a returning user logs in from a new
