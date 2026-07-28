@@ -23,8 +23,6 @@
 
 export const he = {
   "輸入裝置": "התקן קלט",
-  "偵測不到聲音，請檢查麥克風": "לא זוהה קול — בדוק את המיקרופון",
-  "這段錄音幾乎沒有聲音，建議重錄": "ההקלטה כמעט שקטה לחלוטין — מומלץ להקליט מחדש",
   "推薦碼格式不正確，應為 10 個字母/數字。": "פורמט קוד ההפניה שגוי. נדרשים 10 אותיות/ספרות.",
   "不能填自己的推薦碼。": "אי אפשר להזין את קוד ההפניה של עצמך.",
   "已綁定推薦人，下次過關會自動補上點數。": "הממליץ שויך. בסיום הפסוק הבא שניכם תזכו בנקודות.",
@@ -388,8 +386,6 @@ export const he = {
 
 export const fa = {
   "輸入裝置": "دستگاه ورودی",
-  "偵測不到聲音，請檢查麥克風": "صدایی شناسایی نشد — میکروفون را بررسی کنید",
-  "這段錄音幾乎沒有聲音，建議重錄": "این ضبط تقریباً بی‌صداست — بهتر است دوباره ضبط کنید",
   "推薦碼格式不正確，應為 10 個字母/數字。": "قالب کد معرف نادرست است؛ باید 10 حرف/عدد باشد.",
   "不能填自己的推薦碼。": "نمی‌توانید کد معرف خودتان را وارد کنید.",
   "已綁定推薦人，下次過關會自動補上點數。": "معرف ثبت شد. پس از تکمیل آیهٔ بعدی، هر دو امتیاز می‌گیرید.",
@@ -753,8 +749,6 @@ export const fa = {
 
 export const ar = {
   "輸入裝置": "جهاز الإدخال",
-  "偵測不到聲音，請檢查麥克風": "لم يتم اكتشاف أي صوت — تحقق من الميكروفون",
-  "這段錄音幾乎沒有聲音，建議重錄": "هذا التسجيل صامت تقريبًا — يُنصح بإعادة التسجيل",
   "推薦碼格式不正確，應為 10 個字母/數字。": "صيغة رمز الإحالة غير صحيحة، يجب أن يتكون من 10 أحرف/أرقام.",
   "不能填自己的推薦碼。": "لا يمكنك استخدام رمز الإحالة الخاص بك.",
   "找不到相機，請確認權限。": "لم يتم العثور على كاميرا، يرجى التحقق من الأذونات.",
@@ -1535,8 +1529,6 @@ export const ar = {
 
 export const ja = {
   "輸入裝置": "入力デバイス",
-  "偵測不到聲音，請檢查麥克風": "音声が検出されません。マイクを確認してください",
-  "這段錄音幾乎沒有聲音，建議重錄": "この録音はほとんど音がありません。録り直しをおすすめします",
   "推薦碼格式不正確，應為 10 個字母/數字。": "紹介コードの形式が正しくありません。英数字10文字で入力してください。",
   "不能填自己的推薦碼。": "自分の紹介コードは使えません。",
   "已綁定推薦人，下次過關會自動補上點數。": "紹介者を登録しました。次に聖句をクリアすると、双方にポイントが加算されます。",
@@ -1901,8 +1893,6 @@ export const ja = {
 
 export const ko = {
   "輸入裝置": "입력 장치",
-  "偵測不到聲音，請檢查麥克風": "소리가 감지되지 않습니다 — 마이크를 확인하세요",
-  "這段錄音幾乎沒有聲音，建議重錄": "이 녹음은 거의 소리가 없습니다 — 다시 녹음하시길 권합니다",
   "推薦碼格式不正確，應為 10 個字母/數字。": "추천 코드 형식이 올바르지 않습니다. 영문/숫자 10자여야 합니다.",
   "不能填自己的推薦碼。": "본인의 추천 코드는 사용할 수 없습니다.",
   "已綁定推薦人，下次過關會自動補上點數。": "추천인이 등록되었습니다. 다음 구절을 클리어하면 양쪽 모두 포인트가 지급됩니다.",
@@ -2266,8 +2256,6 @@ export const ko = {
 
 export const es = {
   "輸入裝置": "Dispositivo de entrada",
-  "偵測不到聲音，請檢查麥克風": "No se detecta sonido: revisa tu micrófono",
-  "這段錄音幾乎沒有聲音，建議重錄": "Esta grabación está casi en silencio: te recomendamos volver a grabarla",
   "推薦碼格式不正確，應為 10 個字母/數字。": "Formato de código no válido. Debe tener 10 letras/números.",
   "不能填自己的推薦碼。": "No puedes usar tu propio código.",
   "已綁定推薦人，下次過關會自動補上點數。": "Referente vinculado. Al superar el próximo versículo, ambos recibirán los puntos.",
@@ -2632,8 +2620,6 @@ export const es = {
 
 export const tr = {
   "輸入裝置": "Giriş aygıtı",
-  "偵測不到聲音，請檢查麥克風": "Ses algılanmadı — mikrofonunuzu kontrol edin",
-  "這段錄音幾乎沒有聲音，建議重錄": "Bu kayıt neredeyse sessiz — yeniden kaydetmeniz önerilir",
   "推薦碼格式不正確，應為 10 個字母/數字。": "Kod biçimi geçersiz. 10 harf/rakam olmalı.",
   "不能填自己的推薦碼。": "Kendi kodunu kullanamazsın.",
   "已綁定推薦人，下次過關會自動補上點數。": "Referans kişi bağlandı. Bir sonraki ayeti tamamladığında iki tarafa da puan eklenecek.",
@@ -2998,8 +2984,6 @@ export const tr = {
 
 export const de = {
   "輸入裝置": "Eingabegerät",
-  "偵測不到聲音，請檢查麥克風": "Kein Ton erkannt – bitte Mikrofon prüfen",
-  "這段錄音幾乎沒有聲音，建議重錄": "Diese Aufnahme ist fast lautlos – bitte neu aufnehmen",
   "推薦碼格式不正確，應為 10 個字母/數字。": "Ungültiges Format. Erwartet werden 10 Buchstaben/Ziffern.",
   "不能填自己的推薦碼。": "Du kannst nicht deinen eigenen Code verwenden.",
   "已綁定推薦人，下次過關會自動補上點數。": "Empfehlender verknüpft. Beim nächsten geschafften Vers werden beiden Seiten Punkte gutgeschrieben.",
@@ -3364,8 +3348,6 @@ export const de = {
 
 export const my = {
   "輸入裝置": "အသံဖမ်းကိရိယာ",
-  "偵測不到聲音，請檢查麥克風": "အသံ မတွေ့ပါ — မိုက်ခရိုဖုန်းကို စစ်ဆေးပါ",
-  "這段錄音幾乎沒有聲音，建議重錄": "ဤအသံသွင်းချက်တွင် အသံ မရှိသလောက် ဖြစ်နေသည် — ပြန်လည်သွင်းရန် အကြံပြုပါသည်",
   "推薦碼格式不正確，應為 10 個字母/數字。": "ရည်ညွှန်းကုဒ် ပုံစံ မမှန်ပါ။ စာလုံး/ဂဏန်း 10 လုံး ဖြစ်ရပါမည်။",
   "不能填自己的推薦碼。": "ကိုယ့်ရည်ညွှန်းကုဒ်ကို ကိုယ်တိုင် မသုံးနိုင်ပါ။",
   "已綁定推薦人，下次過關會自動補上點數。": "ရည်ညွှန်းသူ ချိတ်ဆက်ပြီးပါပြီ။ နောက်တစ်ကြိမ် ကျမ်းချက်အောင်မြင်သည့်အခါ နှစ်ဦးစလုံး အမှတ်ရရှိပါမည်။",
@@ -3730,8 +3712,6 @@ export const my = {
 
 export const vi = {
   "輸入裝置": "Thiết bị đầu vào",
-  "偵測不到聲音，請檢查麥克風": "Không phát hiện âm thanh — hãy kiểm tra micrô",
-  "這段錄音幾乎沒有聲音，建議重錄": "Bản ghi này gần như không có tiếng — nên ghi lại",
   "推薦碼格式不正確，應為 10 個字母/數字。": "Định dạng không hợp lệ. Mã phải gồm 10 chữ cái/số.",
   "不能填自己的推薦碼。": "Bạn không thể dùng mã giới thiệu của chính mình.",
   "已綁定推薦人，下次過關會自動補上點數。": "Đã liên kết người giới thiệu. Lần vượt câu Kinh Thánh kế tiếp, cả hai bên sẽ được cộng điểm.",
@@ -4096,8 +4076,6 @@ export const vi = {
 
 export const id = {
   "輸入裝置": "Perangkat masukan",
-  "偵測不到聲音，請檢查麥克風": "Tidak ada suara terdeteksi — periksa mikrofon Anda",
-  "這段錄音幾乎沒有聲音，建議重錄": "Rekaman ini nyaris tanpa suara — sebaiknya rekam ulang",
   "推薦碼格式不正確，應為 10 個字母/數字。": "Format tidak valid. Harus 10 huruf/angka.",
   "不能填自己的推薦碼。": "Kamu tidak bisa memakai kodemu sendiri.",
   "已綁定推薦人，下次過關會自動補上點數。": "Perekomendasi tersimpan. Setelah kamu menuntaskan ayat berikutnya, kedua pihak mendapat poin.",
@@ -4696,8 +4674,6 @@ export const id = {
 
 export const ms = {
   "輸入裝置": "Peranti input",
-  "偵測不到聲音，請檢查麥克風": "Tiada bunyi dikesan — sila periksa mikrofon anda",
-  "這段錄音幾乎沒有聲音，建議重錄": "Rakaman ini hampir tiada bunyi — sebaiknya rakam semula",
   "推薦碼格式不正確，應為 10 個字母/數字。": "Format kod rujukan tidak sah. Sepatutnya 10 huruf/nombor.",
   "不能填自己的推薦碼。": "Anda tidak boleh guna kod anda sendiri.",
   "已綁定推薦人，下次過關會自動補上點數。": "Perujuk telah dipautkan. Mata akan dikreditkan kepada kedua-dua pihak selepas ayat seterusnya anda selesai.",
@@ -5497,8 +5473,6 @@ export const ms = {
 
 export const zhcn = {
   "輸入裝置": "输入设备",
-  "偵測不到聲音，請檢查麥克風": "侦测不到声音，请检查麦克风",
-  "這段錄音幾乎沒有聲音，建議重錄": "这段录音几乎没有声音，建议重录",
   "推薦碼格式不正確，應為 10 個字母/數字。": "推荐码格式不正确，应为 10 个字母/数字。",
   "不能填自己的推薦碼。": "不能填自己的推荐码。",
   "已綁定推薦人，下次過關會自動補上點數。": "已绑定推荐人，下次过关会自动补上点数。",
