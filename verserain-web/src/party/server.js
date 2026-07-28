@@ -7,6 +7,81 @@ async function voiceOwnerId(email) {
   return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('').slice(0, 16);
 }
 
+// ─── Password storage ────────────────────────────────────────────────────
+// Accounts used to store the password in cleartext and /forgot-password
+// emailed it back. That meant anyone with storage access — or any future
+// leak — held every user's actual password, and since people reuse
+// passwords the blast radius reached well beyond VerseRain.
+//
+// Now: PBKDF2-SHA256, 16 random bytes of salt per account, serialised as
+//   pbkdf2$<iterations>$<saltBase64>$<hashBase64>
+// Cloudflare Workers ship crypto.subtle, so this needs no dependency.
+// (argon2id/bcrypt would be stronger but neither runs natively there.)
+//
+// Legacy cleartext rows still verify — see verifyPassword — and each one is
+// rewritten as a hash the next time its owner successfully logs in, so no
+// forced reset is needed.
+const PBKDF2_ITERATIONS = 210000; // OWASP guidance for PBKDF2-SHA256
+
+const bytesToB64 = (bytes) => btoa(String.fromCharCode(...new Uint8Array(bytes)));
+const b64ToBytes = (s) => Uint8Array.from(atob(s), (c) => c.charCodeAt(0));
+
+// Length-independent comparison, so a wrong password can't be narrowed down
+// by timing how long the check took.
+function timingSafeEqual(a, b) {
+  const x = String(a);
+  const y = String(b);
+  let diff = x.length ^ y.length;
+  for (let i = 0; i < Math.max(x.length, y.length); i++) {
+    diff |= (x.charCodeAt(i) || 0) ^ (y.charCodeAt(i) || 0);
+  }
+  return diff === 0;
+}
+
+export function isHashedPassword(stored) {
+  return typeof stored === 'string' && stored.startsWith('pbkdf2$');
+}
+
+export async function hashPassword(password, saltBytes, iterations = PBKDF2_ITERATIONS) {
+  const salt = saltBytes || crypto.getRandomValues(new Uint8Array(16));
+  const key = await crypto.subtle.importKey(
+    'raw', new TextEncoder().encode(String(password)), 'PBKDF2', false, ['deriveBits']
+  );
+  const bits = await crypto.subtle.deriveBits(
+    { name: 'PBKDF2', salt, iterations, hash: 'SHA-256' }, key, 256
+  );
+  return `pbkdf2$${iterations}$${bytesToB64(salt)}$${bytesToB64(bits)}`;
+}
+
+export async function verifyPassword(password, stored) {
+  if (!stored || password == null || password === '') return false;
+  // Legacy cleartext row — still accepted so existing users can log in; the
+  // caller upgrades the record to a hash right after.
+  if (!isHashedPassword(stored)) return timingSafeEqual(password, stored);
+  const parts = String(stored).split('$');
+  if (parts.length !== 4) return false;
+  const iterations = parseInt(parts[1], 10);
+  if (!Number.isFinite(iterations) || iterations <= 0) return false;
+  let salt;
+  try { salt = b64ToBytes(parts[2]); } catch { return false; }
+  const candidate = await hashPassword(password, salt, iterations);
+  return timingSafeEqual(candidate, stored);
+}
+
+// Reset tokens are stored HASHED too (`reset:<sha256(token)>`), so a storage
+// leak yields nothing usable — the raw token only ever exists in the email.
+export async function sha256Hex(input) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(String(input)));
+  return Array.from(new Uint8Array(buf)).map((b) => b.toString(16).padStart(2, '0')).join('');
+}
+
+export function generateResetToken() {
+  return Array.from(crypto.getRandomValues(new Uint8Array(32)))
+    .map((b) => b.toString(16).padStart(2, '0')).join('');
+}
+
+export const RESET_TOKEN_TTL_MS = 30 * 60 * 1000;
+
 export default class Server {
   constructor(room) {
     this.room = room;
@@ -531,7 +606,7 @@ export default class Server {
               const isPremium = user ? user.isPremium : false;
               const finalName = (user && user.skoolName) ? user.skoolName : (nickname || "Player");
 
-              const newUserObj = { email: email.toLowerCase(), password: password, name: finalName, isPremium, verificationCode, verified: false, createdAt: new Date().toISOString() };
+              const newUserObj = { email: email.toLowerCase(), password: await hashPassword(password), name: finalName, isPremium, verificationCode, verified: false, createdAt: new Date().toISOString() };
               // Bind inviter (referral code from ?ref=) to this account so it
               // survives cross-device login — set once on creation only.
               const cleanInviter = typeof inviter === 'string' ? inviter.trim() : '';
@@ -606,7 +681,7 @@ export default class Server {
 
               let user = await this.room.storage.get(`user:${email.toLowerCase()}`);
 
-              if (!user || user.password !== password) {
+              if (!user || !(await verifyPassword(password, user.password))) {
                  return new Response(JSON.stringify({ error: 'Invalid email or password' }), { status: 401, headers: corsHeaders });
               }
 
@@ -616,6 +691,15 @@ export default class Server {
               }
 
               let dirty = false;
+
+              // Transparent upgrade: this account still held a cleartext
+              // password and the owner just proved they know it, so replace it
+              // with a hash right here. Every active account migrates itself on
+              // next login — no forced reset, no migration script.
+              if (!isHashedPassword(user.password)) {
+                 user.password = await hashPassword(password);
+                 dirty = true;
+              }
 
               // Late-bind inviter if a returning user logs in from a new
               // device with a ?ref= link in the URL and we never recorded it.
@@ -771,12 +855,15 @@ export default class Server {
               if (!email || !password) return new Response(JSON.stringify({ error: 'Email and current password required' }), { status: 400, headers: corsHeaders });
               
               let user = await this.room.storage.get(`user:${email.toLowerCase()}`);
-              if (!user || user.password !== password) {
+              if (!user || !(await verifyPassword(password, user.password))) {
                  return new Response(JSON.stringify({ error: '密碼錯誤 (Invalid password)' }), { status: 401, headers: corsHeaders });
               }
-              
+
               const oldName = user.name;
-              if (newPassword) user.password = newPassword;
+              // Covers both cases: a new password chosen here, and a legacy
+              // cleartext row whose owner just authenticated.
+              if (newPassword) user.password = await hashPassword(newPassword);
+              else if (!isHashedPassword(user.password)) user.password = await hashPassword(password);
               if (newName) user.name = newName;
               if (newCity !== undefined) user.city = newCity;
               if (newCountry !== undefined) user.country = newCountry;
@@ -789,7 +876,10 @@ export default class Server {
                  await this.migratePlayerName(oldName, newName);
               }
 
-              return new Response(JSON.stringify({ success: true, user }), { status: 200, headers: corsHeaders });
+              // Never echo the credential field back to the client — this used
+              // to return the cleartext password in the response body.
+              const { password: _pw, verificationCode: _vc, ...safeUser } = user;
+              return new Response(JSON.stringify({ success: true, user: safeUser }), { status: 200, headers: corsHeaders });
            } catch(e) {
               return new Response(JSON.stringify({ error: 'Update failed' }), { status: 500, headers: corsHeaders });
            }
@@ -832,24 +922,77 @@ export default class Server {
               let user = await this.room.storage.get(`user:${email.toLowerCase()}`);
               if (!user) return new Response(JSON.stringify({ error: '找不到此信箱，請確認是否輸入正確 (Email not found)' }), { status: 404, headers: corsHeaders });
               
-              // Securely send the password via email
+              // Send a single-use reset LINK, never the password. Only the
+              // sha256 of the token is stored, so a storage leak can't be
+              // replayed into an account takeover.
+              const token = generateResetToken();
+              const tokenHash = await sha256Hex(token);
+              const expiresAt = Date.now() + RESET_TOKEN_TTL_MS;
+              await this.room.storage.put(`reset:${tokenHash}`, { email: email.toLowerCase(), expiresAt });
+
+              const resetUrl = `https://www.verserain.com/?resetToken=${token}`;
               const emailHtml = `
                 <div style="font-family: sans-serif; color: #333;">
-                  <h2>VerseRain 密碼找回通知</h2>
+                  <h2>VerseRain 重設密碼</h2>
                   <p>您好，${user.name || '玩家'}！</p>
-                  <p>您的帳號密碼為：</p>
-                  <h3 style="color: #ef4444;">${user.password}</h3>
-                  <p>為了您的帳號安全，請在登入後考慮前往設定中更改密碼。</p>
+                  <p>請點下面的按鈕設定新密碼。這個連結 <strong>30 分鐘內有效</strong>，且只能使用一次。</p>
+                  <p style="margin: 24px 0;">
+                    <a href="${resetUrl}" style="background: #3b82f6; color: #fff; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: bold;">設定新密碼</a>
+                  </p>
+                  <p style="font-size: 12px; color: #666;">按鈕無法點擊時，請複製這個網址到瀏覽器：<br>${resetUrl}</p>
+                  <p style="font-size: 12px; color: #666;">如果不是您本人要求重設密碼，請忽略這封信，您的密碼不會有任何變動。</p>
                 </div>
               `;
-              const emailResult = await this.sendEmail(email.toLowerCase(), "VerseRain 密碼找回 (Password Recovery)", emailHtml);
-              
+              const emailResult = await this.sendEmail(email.toLowerCase(), "VerseRain 重設密碼 (Reset your password)", emailHtml);
+
               if (!emailResult.success) {
                  return new Response(JSON.stringify({ error: '發送電子郵件失敗 (Failed to send email)' }), { status: 500, headers: corsHeaders });
               }
 
-              return new Response(JSON.stringify({ success: true, message: 'Password sent to email' }), { status: 200, headers: corsHeaders });
+              return new Response(JSON.stringify({ success: true, message: 'Reset link sent to email' }), { status: 200, headers: corsHeaders });
            } catch(e) {
+              return new Response(JSON.stringify({ error: 'System error processing request' }), { status: 500, headers: corsHeaders });
+           }
+        }
+
+        // 5.1 Consume a reset link and set a new password. Single use: the
+        // token record is deleted whether or not the write succeeds, so a
+        // leaked link can never be replayed.
+        if (url.pathname.endsWith('/reset-password')) {
+           try {
+              const { token, newPassword } = await request.json();
+              if (!token || !newPassword) {
+                 return new Response(JSON.stringify({ error: '缺少參數 (Token and new password required)' }), { status: 400, headers: corsHeaders });
+              }
+              if (String(newPassword).length < 6) {
+                 return new Response(JSON.stringify({ error: '密碼至少需要 6 個字元 (Password must be at least 6 characters)' }), { status: 400, headers: corsHeaders });
+              }
+
+              const tokenHash = await sha256Hex(token);
+              const record = await this.room.storage.get(`reset:${tokenHash}`);
+              if (!record) {
+                 return new Response(JSON.stringify({ error: '連結無效或已使用過 (Invalid or already-used link)' }), { status: 400, headers: corsHeaders });
+              }
+              await this.room.storage.delete(`reset:${tokenHash}`);
+              if (!record.expiresAt || Date.now() > record.expiresAt) {
+                 return new Response(JSON.stringify({ error: '連結已過期，請重新申請 (Link expired — please request a new one)' }), { status: 400, headers: corsHeaders });
+              }
+
+              const user = await this.room.storage.get(`user:${record.email}`);
+              if (!user) {
+                 return new Response(JSON.stringify({ error: '找不到帳號 (Account not found)' }), { status: 404, headers: corsHeaders });
+              }
+              user.password = await hashPassword(newPassword);
+              // Proving control of the mailbox also settles verification.
+              user.verified = true;
+              user.verificationCode = null;
+              await this.room.storage.put(`user:${record.email}`, user);
+
+              return new Response(JSON.stringify({
+                 success: true,
+                 user: { email: user.email, name: user.name, isPremium: user.isPremium, personalCode: user.personalCode || null }
+              }), { status: 200, headers: corsHeaders });
+           } catch {
               return new Response(JSON.stringify({ error: 'System error processing request' }), { status: 500, headers: corsHeaders });
            }
         }

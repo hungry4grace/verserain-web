@@ -4869,7 +4869,11 @@ export default function App() {
 
   const [authLoading, setAuthLoading] = useState(false);
   const [authError, setAuthError] = useState("");
-  const [recoveredPassword, setRecoveredPassword] = useState(null); // { name, password }
+  // Set from the ?resetToken=… link the 忘記密碼 email sends. Holds the raw
+  // one-time token while the user picks a new password.
+  const [resetToken, setResetToken] = useState(null);
+  const [resetBusy, setResetBusy] = useState(false);
+  const [resetError, setResetError] = useState("");
   const [customVerseSets, setCustomVerseSets] = useState(() => {
     try {
       const saved = localStorage.getItem('verseRain_custom_sets');
@@ -6124,6 +6128,17 @@ export default function App() {
       const vParam = params.get('v');
       const textParam = params.get('text');
       const refParam = params.get('ref');
+
+      // ?resetToken=… — the single-use link from the 忘記密碼 email. Strip it
+      // from the address bar immediately so the token doesn't linger in
+      // history, bookmarks or a screen-shared URL bar.
+      const resetTokenParam = params.get('resetToken');
+      if (resetTokenParam) {
+        setResetToken(resetTokenParam);
+        const url = new URL(window.location.href);
+        url.searchParams.delete('resetToken');
+        window.history.replaceState({}, '', url.toString());
+      }
 
       if (refParam) {
         // Refuse self-referral — without this, a user opening their own ref
@@ -21152,6 +21167,60 @@ const deDict = {
             </div>
           </div>
         )}
+        {/* Reset-password modal — opened by the ?resetToken= link from the
+            忘記密碼 email. The token is single-use and expires in 30 minutes;
+            the server never had the old password to send back. */}
+        {resetToken && (
+          <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 3000, padding: '1rem' }}>
+            <div style={{ background: '#fff', borderRadius: 14, padding: '1.6rem 1.5rem', width: 'min(420px, 100%)', boxShadow: '0 20px 40px rgba(0,0,0,0.25)' }}>
+              <h3 style={{ marginTop: 0, color: '#1e293b', textAlign: 'center' }}>{t("設定新密碼", "Set a new password")}</h3>
+              <div style={{ fontSize: '0.85rem', color: '#64748b', marginBottom: '1rem', textAlign: 'center' }}>
+                {t("這個連結只能使用一次，30 分鐘內有效。", "This link works once and is valid for 30 minutes.")}
+              </div>
+              <input id="resetPw1" type="password" autoComplete="new-password" placeholder={t("新密碼（至少 6 個字元）", "New password (at least 6 characters)")}
+                style={{ width: '100%', boxSizing: 'border-box', padding: '0.6rem 0.7rem', borderRadius: 8, border: '1px solid #cbd5e1', marginBottom: '0.6rem', fontSize: '0.95rem' }} />
+              <input id="resetPw2" type="password" autoComplete="new-password" placeholder={t("再輸入一次新密碼", "Confirm new password")}
+                style={{ width: '100%', boxSizing: 'border-box', padding: '0.6rem 0.7rem', borderRadius: 8, border: '1px solid #cbd5e1', marginBottom: '0.8rem', fontSize: '0.95rem' }} />
+              {resetError && <div style={{ color: '#ef4444', fontSize: '0.85rem', marginBottom: '0.7rem', fontWeight: 'bold' }}>{resetError}</div>}
+              <button
+                disabled={resetBusy}
+                onClick={async () => {
+                  const pw1 = document.getElementById('resetPw1')?.value || '';
+                  const pw2 = document.getElementById('resetPw2')?.value || '';
+                  if (pw1.length < 6) return setResetError(t("密碼至少需要 6 個字元", "Password must be at least 6 characters"));
+                  if (pw1 !== pw2) return setResetError(t("兩次輸入的密碼不一致", "The two passwords do not match"));
+                  setResetBusy(true);
+                  setResetError("");
+                  try {
+                    const res = await fetch("https://verserain-party.hungry4grace.partykit.dev/parties/main/global-auth-db/reset-password", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ token: resetToken, newPassword: pw1 })
+                    });
+                    const data = await res.json();
+                    if (data.success) {
+                      setResetToken(null);
+                      alert(t("密碼已更新，請用新密碼登入。", "Your password has been updated. Please log in with it."));
+                      setShowLoginModal('login');
+                    } else {
+                      setResetError(data.error || t("重設失敗", "Reset failed"));
+                    }
+                  } catch {
+                    setResetError(t("無法連線到伺服器", "Server unreachable"));
+                  } finally {
+                    setResetBusy(false);
+                  }
+                }}
+                style={{ width: '100%', padding: '0.7rem', borderRadius: 8, border: 'none', background: resetBusy ? '#94a3b8' : '#3b82f6', color: '#fff', fontWeight: 'bold', cursor: resetBusy ? 'default' : 'pointer', fontSize: '0.95rem' }}
+              >
+                {resetBusy ? t("處理中…", "Working…") : t("更新密碼", "Update password")}
+              </button>
+              <div style={{ textAlign: 'center', marginTop: '0.9rem' }}>
+                <span onClick={() => { setResetToken(null); setResetError(""); }} style={{ color: '#94a3b8', cursor: 'pointer', fontSize: '0.85rem' }}>{t("取消", "Cancel")}</span>
+              </div>
+            </div>
+          </div>
+        )}
         {/* Login Account Modal */}
         {showLoginModal && (
           <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.6)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000, padding: '1rem' }}>
@@ -21234,17 +21303,6 @@ const deDict = {
               </div>
 
               {authError && <div style={{ color: '#ef4444', fontSize: '0.85rem', textAlign: 'center', marginTop: '-0.5rem', fontWeight: 'bold' }}>{authError}</div>}
-
-              {recoveredPassword && (
-                <div style={{ background: '#ecfdf5', border: '2px solid #10b981', borderRadius: '10px', padding: '1rem', textAlign: 'center' }}>
-                  <div style={{ fontSize: '0.85rem', color: '#065f46', marginBottom: '0.4rem', fontWeight: 'bold' }}>{t("哈囉", "Hello")} {recoveredPassword.name}！{t("您的密碼如下：", "Your password is below:")}</div>
-                  <div style={{ fontFamily: 'monospace', fontSize: '1.4rem', fontWeight: 'bold', color: '#047857', letterSpacing: '2px', background: '#d1fae5', padding: '0.5rem 1rem', borderRadius: '6px', marginBottom: '0.6rem', userSelect: 'all' }}>
-                    {recoveredPassword.password}
-                  </div>
-                  <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>{t("請複製密碼後貼到上方密碼欄位登入", "Please copy and paste the password above to login.")}</div>
-                  <button onClick={() => { navigator.clipboard.writeText(recoveredPassword.password); }} style={{ marginTop: '0.5rem', background: '#10b981', color: 'white', border: 'none', padding: '0.4rem 1rem', borderRadius: '6px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 'bold', display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}><Share2 size={15} /> {t("複製密碼", "Copy Password")}</button>
-                </div>
-              )}
 
               <button
                 disabled={authLoading}
@@ -21420,20 +21478,19 @@ const deDict = {
                           });
                           const data = await res.json();
                           if (data.success) {
-                            // Server sent the password to the user's email
+                            // The server sends a single-use reset LINK now — it
+                            // cannot send the password back, because it only
+                            // stores a hash of it.
                             setAuthError("");
-                            setRecoveredPassword(null);
                             alert(t(
-                              "密碼已發送至您的信箱，請查看。",
-                              "Your password has been sent to your email. Please check your inbox."
+                              "重設密碼的連結已寄到您的信箱，30 分鐘內有效。",
+                              "A password reset link has been sent to your email. It is valid for 30 minutes."
                             ));
                           } else {
                             setAuthError(data.error || t("查詢失敗", "Failed to retrieve password"));
-                            setRecoveredPassword(null);
                           }
                         } catch (err) {
                           setAuthError(t("無法連線到伺服器", "Server unreachable"));
-                          setRecoveredPassword(null);
                         } finally {
                           setAuthLoading(false);
                         }
