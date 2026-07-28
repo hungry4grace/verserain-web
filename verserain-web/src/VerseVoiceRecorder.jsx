@@ -52,6 +52,44 @@ export default function VerseVoiceRecorder({ t, reference, verseText, onUpload, 
   const SILENCE_PEAK = 0.005;
   const SILENCE_MS = 2500;
 
+  // ─── Input device picker ───────────────────────────────────────────────
+  // Chrome keeps its OWN microphone choice, independent of the macOS "Sound →
+  // Input" default. A Mac with audio-production gear installed can list a dozen
+  // inputs, and Chrome quietly sticking on a virtual one (BlackHole, Zoom,
+  // Pro Tools aggregate) records pure silence with nothing in the browser UI to
+  // show it. This picker puts the choice where the problem is visible.
+  const AUDIO_INPUT_KEY = 'verseRain_audioInputId';
+  const [inputDevices, setInputDevices] = useState([]);
+  const [deviceId, setDeviceId] = useState(() => {
+    try { return localStorage.getItem(AUDIO_INPUT_KEY) || ''; } catch { return ''; }
+  });
+
+  // Device LABELS stay blank until mic permission has been granted at least
+  // once, so this is called again right after getUserMedia succeeds (and on
+  // devicechange, for headsets plugged in mid-session).
+  const refreshDevices = async () => {
+    try {
+      if (!navigator.mediaDevices?.enumerateDevices) return;
+      const all = await navigator.mediaDevices.enumerateDevices();
+      setInputDevices(all.filter(d => d.kind === 'audioinput' && d.label));
+    } catch { /* enumeration is best-effort */ }
+  };
+
+  useEffect(() => {
+    refreshDevices();
+    const md = navigator.mediaDevices;
+    md?.addEventListener?.('devicechange', refreshDevices);
+    return () => md?.removeEventListener?.('devicechange', refreshDevices);
+  }, []);
+
+  const chooseDevice = (id) => {
+    setDeviceId(id);
+    try {
+      if (id) localStorage.setItem(AUDIO_INPUT_KEY, id);
+      else localStorage.removeItem(AUDIO_INPUT_KEY);
+    } catch { /* private mode — the choice still holds for this session */ }
+  };
+
   const stopMeter = () => {
     if (rafRef.current) { cancelAnimationFrame(rafRef.current); rafRef.current = null; }
     try { audioCtxRef.current?.close(); } catch { /* already closed */ }
@@ -133,14 +171,33 @@ export default function VerseVoiceRecorder({ t, reference, verseText, onUpload, 
     try {
       // Explicit DSP constraints: browser-side noise suppression, echo
       // cancellation and auto gain make room recordings noticeably cleaner.
-      const stream = await navigator.mediaDevices.getUserMedia({
-        audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true, channelCount: 1 },
-      });
+      const audio = { echoCancellation: true, noiseSuppression: true, autoGainControl: true, channelCount: 1 };
+      if (deviceId) audio.deviceId = { exact: deviceId };
+      let stream;
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({ audio });
+      } catch (e) {
+        // A remembered device can vanish (headset unplugged) or have its id
+        // rotated by a permission reset. Fall back to the system default and
+        // forget the stale pick rather than dead-ending on an error screen.
+        if (deviceId && (e?.name === 'OverconstrainedError' || e?.name === 'NotFoundError')) {
+          delete audio.deviceId;
+          chooseDevice('');
+          stream = await navigator.mediaDevices.getUserMedia({ audio });
+        } else {
+          throw e;
+        }
+      }
       streamRef.current = stream;
+      const track = stream.getAudioTracks?.()[0];
       // Track labels are only populated once permission is granted — which it
-      // just was, so this is the real OS device name ("MacBook Pro 麥克風",
-      // "ZoomAudioDevice", …).
-      setDeviceLabel(stream.getAudioTracks?.()[0]?.label || '');
+      // just was, so this is the real OS device name ("MacBook Air Microphone",
+      // "BlackHole 16ch", …). Re-enumerate now that labels are readable, and
+      // point the dropdown at whatever we actually ended up with.
+      setDeviceLabel(track?.label || '');
+      refreshDevices();
+      const actualId = track?.getSettings?.().deviceId;
+      if (!deviceId && actualId) setDeviceId(actualId); // reflect, don't persist
       sawSoundRef.current = false;
       setNoSound(false);
       setWasSilent(false);
@@ -245,6 +302,27 @@ export default function VerseVoiceRecorder({ t, reference, verseText, onUpload, 
     : 0;
   const meterColor = meterPct < 10 ? '#ef4444' : meterPct > 92 ? '#f59e0b' : '#16a34a';
 
+  // Only offered once labels are readable (i.e. mic permission has been granted
+  // at least once) — an unlabelled list of opaque device ids helps nobody.
+  // Disabled mid-take: MediaRecorder is bound to the stream it was constructed
+  // with, so switching would mean silently restarting the recording.
+  const deviceSelect = (inputDevices.length > 1) && (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 8, margin: '0 0 0.9rem', textAlign: 'left' }}>
+      <span style={{ fontSize: '1.05rem' }} aria-hidden="true">🎤</span>
+      <select
+        aria-label={t('輸入裝置', 'Input device')}
+        value={deviceId}
+        disabled={phase !== 'idle' && phase !== 'preview'}
+        onChange={(e) => chooseDevice(e.target.value)}
+        style={{ flex: 1, minWidth: 0, padding: '0.4rem 0.5rem', borderRadius: 8, border: '1px solid #cbd5e1', background: '#fff', color: '#334155', fontSize: '0.85rem' }}
+      >
+        {inputDevices.map(d => (
+          <option key={d.deviceId} value={d.deviceId}>{d.label}</option>
+        ))}
+      </select>
+    </div>
+  );
+
   // Shown while recording (live bar) and in preview (device name only), so a
   // wrong input device is visible before AND after the take.
   const inputMonitor = (live) => (
@@ -293,9 +371,12 @@ export default function VerseVoiceRecorder({ t, reference, verseText, onUpload, 
         </div>
 
         {phase === 'idle' && (
-          <button onClick={startRecording} style={{ width: 84, height: 84, borderRadius: '50%', border: 'none', background: '#dc2626', color: '#fff', cursor: 'pointer', fontSize: '1.6rem', boxShadow: '0 8px 24px rgba(220,38,38,0.4)' }} title={t('開始錄音', 'Start recording')}>
-            🎙️
-          </button>
+          <div>
+            {deviceSelect}
+            <button onClick={startRecording} style={{ width: 84, height: 84, borderRadius: '50%', border: 'none', background: '#dc2626', color: '#fff', cursor: 'pointer', fontSize: '1.6rem', boxShadow: '0 8px 24px rgba(220,38,38,0.4)' }} title={t('開始錄音', 'Start recording')}>
+              🎙️
+            </button>
+          </div>
         )}
         {phase === 'recording' && (
           <div>
@@ -313,7 +394,9 @@ export default function VerseVoiceRecorder({ t, reference, verseText, onUpload, 
                 ⚠️ {t('這段錄音幾乎沒有聲音，建議重錄', 'This recording is almost silent — consider re-recording')}
               </div>
             )}
-            {inputMonitor(false)}
+            {/* The picker replaces the static label here: after a silent take
+                the next thing you want is to switch device and hit 重錄. */}
+            {deviceSelect || inputMonitor(false)}
             <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap' }}>
               <button onClick={togglePreview} disabled={phase !== 'preview'} style={{ padding: '0.55rem 1.1rem', borderRadius: 10, border: '1px solid #cbd5e1', background: '#f8fafc', color: '#334155', cursor: 'pointer' }}>
                 {previewPlaying ? `⏸ ${t('停止', 'Stop')}` : `▶ ${t('試聽', 'Preview')} (${timeLabel})`}
