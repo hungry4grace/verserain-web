@@ -31,8 +31,76 @@ export default function VerseVoiceRecorder({ t, reference, verseText, onUpload, 
   const previewAudioRef = useRef(null);
   const secondsRef = useRef(0);
 
+  // ─── Live input monitor ────────────────────────────────────────────────
+  // Why this exists: a Mac whose Chrome input is pointed at a virtual device
+  // (Zoom/Teams/BlackHole/Krisp) or whose OS input volume is at 0 hands us a
+  // track of pure digital zeros. Recording, upload and playback all succeed —
+  // the clip is simply silent, and nobody finds out until playback. The meter
+  // makes a dead mic obvious while you're still recording, and the device name
+  // tells you WHICH input is being used so a wrong one is a one-glance fix.
+  const [level, setLevel] = useState(0);          // smoothed peak, 0..1
+  const [deviceLabel, setDeviceLabel] = useState('');
+  const [noSound, setNoSound] = useState(false);  // live: quiet for a while now
+  const [wasSilent, setWasSilent] = useState(false); // whole take had no signal
+  const audioCtxRef = useRef(null);
+  const rafRef = useRef(null);
+  const sawSoundRef = useRef(false);
+  const silentSinceRef = useRef(0);
+  // ≈ -46 dBFS. A live mic's room tone clears this easily (autoGainControl is
+  // on); a dead/virtual device sits at exactly 0.0, so this separates "quiet
+  // room" from "no signal at all" without false alarms between phrases.
+  const SILENCE_PEAK = 0.005;
+  const SILENCE_MS = 2500;
+
+  const stopMeter = () => {
+    if (rafRef.current) { cancelAnimationFrame(rafRef.current); rafRef.current = null; }
+    try { audioCtxRef.current?.close(); } catch { /* already closed */ }
+    audioCtxRef.current = null;
+    setLevel(0);
+  };
+
+  const startMeter = (stream) => {
+    try {
+      const Ctx = window.AudioContext || window.webkitAudioContext;
+      if (!Ctx) return; // meter is best-effort; recording works without it
+      const ctx = new Ctx();
+      audioCtxRef.current = ctx;
+      ctx.resume?.().catch(() => {});
+      const analyser = ctx.createAnalyser();
+      analyser.fftSize = 1024;
+      // Source → analyser ONLY. Never connect to ctx.destination: that would
+      // pipe the mic straight back out of the speakers and howl.
+      ctx.createMediaStreamSource(stream).connect(analyser);
+      const buf = new Float32Array(analyser.fftSize);
+      let smoothed = 0;
+      silentSinceRef.current = Date.now();
+      const tick = () => {
+        analyser.getFloatTimeDomainData(buf);
+        let peak = 0;
+        for (let i = 0; i < buf.length; i++) {
+          const a = Math.abs(buf[i]);
+          if (a > peak) peak = a;
+        }
+        // Fast attack, slow release — tracks speech without strobing.
+        smoothed = peak > smoothed ? peak : smoothed * 0.88;
+        setLevel(smoothed);
+        const now = Date.now();
+        if (peak >= SILENCE_PEAK) {
+          sawSoundRef.current = true;
+          silentSinceRef.current = now;
+          setNoSound(false);
+        } else if (now - silentSinceRef.current > SILENCE_MS) {
+          setNoSound(true);
+        }
+        rafRef.current = requestAnimationFrame(tick);
+      };
+      tick();
+    } catch { /* meter is best-effort — never block recording on it */ }
+  };
+
   const cleanupMedia = () => {
     clearInterval(timerRef.current);
+    stopMeter();
     try { if (recorderRef.current?.state !== 'inactive') recorderRef.current?.stop(); } catch { /* noop */ }
     streamRef.current?.getTracks().forEach(tr => tr.stop());
     streamRef.current = null;
@@ -41,6 +109,11 @@ export default function VerseVoiceRecorder({ t, reference, verseText, onUpload, 
     previewAudioRef.current = null;
     if (previewUrlRef.current) { URL.revokeObjectURL(previewUrlRef.current); previewUrlRef.current = null; }
   };
+  // Unmount cleanup only. cleanupMedia touches nothing but refs and stable
+  // setters, so the mount-time closure stays correct for the component's whole
+  // life — re-running this effect on every render would tear down a live
+  // recording.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => cleanupMedia, []);
 
   const pickMime = () => {
@@ -64,6 +137,14 @@ export default function VerseVoiceRecorder({ t, reference, verseText, onUpload, 
         audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true, channelCount: 1 },
       });
       streamRef.current = stream;
+      // Track labels are only populated once permission is granted — which it
+      // just was, so this is the real OS device name ("MacBook Pro 麥克風",
+      // "ZoomAudioDevice", …).
+      setDeviceLabel(stream.getAudioTracks?.()[0]?.label || '');
+      sawSoundRef.current = false;
+      setNoSound(false);
+      setWasSilent(false);
+      startMeter(stream);
       const mime = pickMime();
       mimeRef.current = mime || 'audio/webm';
       // 48kbps opus ≈ transparent for speech. Length is unbounded — the
@@ -73,6 +154,8 @@ export default function VerseVoiceRecorder({ t, reference, verseText, onUpload, 
       rec.ondataavailable = (e) => { if (e.data?.size) parts.push(e.data); };
       rec.onstop = () => {
         blobRef.current = new Blob(parts, { type: mimeRef.current });
+        stopMeter();
+        setWasSilent(!sawSoundRef.current);
         streamRef.current?.getTracks().forEach(tr => tr.stop());
         streamRef.current = null;
         setPhase('preview');
@@ -134,6 +217,9 @@ export default function VerseVoiceRecorder({ t, reference, verseText, onUpload, 
     blobRef.current = null;
     setSeconds(0);
     secondsRef.current = 0;
+    setNoSound(false);
+    setWasSilent(false);
+    sawSoundRef.current = false;
     setPhase('idle');
   };
 
@@ -150,6 +236,39 @@ export default function VerseVoiceRecorder({ t, reference, verseText, onUpload, 
 
   const timeLabel = `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`;
   const close = (phase === 'uploading' || phase === 'processing') ? () => {} : () => { cleanupMedia(); onCancel(); };
+
+  // Linear amplitude → dBFS, then map -60..0 dB onto the bar. A dB scale is
+  // what makes the meter feel right: on a linear one, normal speech barely
+  // leaves the left edge.
+  const meterPct = level > 0
+    ? Math.max(0, Math.min(100, ((20 * Math.log10(level)) + 60) / 60 * 100))
+    : 0;
+  const meterColor = meterPct < 10 ? '#ef4444' : meterPct > 92 ? '#f59e0b' : '#16a34a';
+
+  // Shown while recording (live bar) and in preview (device name only), so a
+  // wrong input device is visible before AND after the take.
+  const inputMonitor = (live) => (
+    <div style={{ margin: '0 0 0.9rem' }}>
+      {live && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span style={{ fontSize: '1.05rem' }} aria-hidden="true">🎤</span>
+          <div style={{ flex: 1, height: 14, background: '#e2e8f0', borderRadius: 7, overflow: 'hidden' }}>
+            <div style={{ width: `${meterPct}%`, height: '100%', background: meterColor, borderRadius: 7, transition: 'width 80ms linear' }} />
+          </div>
+        </div>
+      )}
+      {deviceLabel && (
+        <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: 5, textAlign: 'left', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+          {live ? '' : '🎤 '}{deviceLabel}
+        </div>
+      )}
+      {live && noSound && (
+        <div style={{ color: '#dc2626', fontSize: '0.82rem', fontWeight: 600, marginTop: 6, textAlign: 'left' }}>
+          ⚠️ {t('偵測不到聲音，請檢查麥克風', 'No sound detected — check your microphone')}
+        </div>
+      )}
+    </div>
+  );
 
   return (
     <div
@@ -181,6 +300,7 @@ export default function VerseVoiceRecorder({ t, reference, verseText, onUpload, 
         {phase === 'recording' && (
           <div>
             <div style={{ fontSize: '1.6rem', fontWeight: 'bold', color: '#dc2626', marginBottom: '0.6rem' }}>● {timeLabel}</div>
+            {inputMonitor(true)}
             <button onClick={stopRecording} style={{ padding: '0.6rem 1.6rem', borderRadius: 10, border: 'none', background: '#1e293b', color: '#fff', cursor: 'pointer', fontWeight: 'bold' }}>
               ⏹ {t('停止', 'Stop')}
             </button>
@@ -188,6 +308,12 @@ export default function VerseVoiceRecorder({ t, reference, verseText, onUpload, 
         )}
         {(phase === 'preview' || phase === 'uploading' || phase === 'processing') && (
           <div>
+            {wasSilent && (
+              <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 8, padding: '0.55rem 0.7rem', margin: '0 0 0.8rem', color: '#b91c1c', fontSize: '0.85rem', fontWeight: 600, textAlign: 'left' }}>
+                ⚠️ {t('這段錄音幾乎沒有聲音，建議重錄', 'This recording is almost silent — consider re-recording')}
+              </div>
+            )}
+            {inputMonitor(false)}
             <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap' }}>
               <button onClick={togglePreview} disabled={phase !== 'preview'} style={{ padding: '0.55rem 1.1rem', borderRadius: 10, border: '1px solid #cbd5e1', background: '#f8fafc', color: '#334155', cursor: 'pointer' }}>
                 {previewPlaying ? `⏸ ${t('停止', 'Stop')}` : `▶ ${t('試聽', 'Preview')} (${timeLabel})`}
