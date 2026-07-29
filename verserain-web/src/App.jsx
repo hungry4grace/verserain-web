@@ -1870,6 +1870,19 @@ function hebrewLettersToNumber(s) {
   return total > 0 ? total : null;
 }
 
+// One chapter/verse component of a Hebrew reference. Accepts plain digits, or a
+// letter numeral with or without the gershayim/geresh that marks it as a number
+// (נ״ח, נ"ח, נח all → 58). Returns null for anything else, so a caller can tell
+// "not a number" apart from a real 0.
+function hebrewOrArabicNumber(token) {
+  const raw = String(token || '').trim();
+  if (!raw) return null;
+  if (/^\d+$/.test(raw)) return Number(raw);
+  const bare = raw.replace(/['"׳״‘’“”]/g, '');
+  if (!bare || !/^[א-ת]+$/.test(bare)) return null;
+  return hebrewLettersToNumber(bare);
+}
+
 function normalizeVerseReferenceKey(reference = '') {
   // asciifyDigits unlocks Persian/Arabic-Indic/Myanmar references whose
   // chapter:verse uses non-ASCII digits — without it the verseMatch regex
@@ -1880,20 +1893,26 @@ function normalizeVerseReferenceKey(reference = '') {
     .trim();
   if (!value) return '';
 
-  // Hebrew letter-numeral refs (e.g. "יוחנן א:יב") — convert chapter+verse
-  // gematria to Arabic digits so the rest of the pipeline can normalize them
-  // like any other reference. This unlocks ESV/KJV/NIV API fetches for
-  // Hebrew-primary bilingual mode.
-  const heLetterMatch = value.match(/^(.+?)\s+([א-ת]+)\s*[:׃]\s*([א-ת]+(?:-[א-ת]+)?)$/);
-  if (heLetterMatch) {
-    const bookRaw = heLetterMatch[1].trim();
-    const chap = hebrewLettersToNumber(heLetterMatch[2]);
-    const versePart = heLetterMatch[3].split('-')
-      .map(p => hebrewLettersToNumber(p))
-      .filter(n => n != null);
-    if (chap && versePart.length) {
-      const bookId = HEBREW_FULL_BOOK_ID[bookRaw] ?? BIBLE_BOOKS.find(b => b.he === bookRaw)?.id;
-      if (bookId) return `${bookId}|${chap}:${versePart.join('-')}`;
+  // Hebrew letter-numeral refs — convert gematria to Arabic digits so the rest
+  // of the pipeline can normalize them like any other reference. This is what
+  // unlocks ESV/KJV/NIV API fetches for Hebrew-primary bilingual mode.
+  //
+  // The chapter and the verse are independent: either may be letters or digits,
+  // and letter numerals usually carry the gershayim that conventionally marks
+  // them as a number. The daily verse arrives as "ישעיהו נ״ח:11" — letters WITH
+  // gershayim on one side, digits on the other. The earlier version demanded
+  // letters on BOTH sides and no gershayim, so that shape returned '' and the
+  // bilingual secondary silently rendered nothing at all.
+  const heRefMatch = value.match(/^(.+?)\s+(\S+)\s*[:׃]\s*(\S+)$/u);
+  if (heRefMatch) {
+    const bookRaw = heRefMatch[1].trim();
+    const bookId = HEBREW_FULL_BOOK_ID[bookRaw] ?? BIBLE_BOOKS.find(b => b.he === bookRaw)?.id;
+    if (bookId) {
+      const chap = hebrewOrArabicNumber(heRefMatch[2]);
+      const versePart = heRefMatch[3].split('-').map(p => hebrewOrArabicNumber(p));
+      if (chap && versePart.length && versePart.every(n => n != null)) {
+        return `${bookId}|${chap}:${versePart.join('-')}`;
+      }
     }
   }
 
