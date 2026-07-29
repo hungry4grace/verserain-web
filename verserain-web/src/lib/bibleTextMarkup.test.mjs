@@ -47,6 +47,19 @@ test('<br> becomes a space; whitespace before punctuation is tidied', () => {
   assert.strictEqual(stripBollsMarkup('a word <i></i> , and more'), 'a word, and more');
 });
 
+test('Hebrew caesura (a run of non-breaking spaces) survives as a double space', () => {
+  // Real bolls HAC payload for Psalm 37:27 —   runs mark the Masoretic break.
+  const raw = 'כז  סור מרע ועשה-טוב    ושכן לעולם';
+  const out = stripBollsMarkup(raw);
+  assert.strictEqual(out, 'כז  סור מרע ועשה-טוב  ושכן לעולם');
+  assert.strictEqual(out.split(/\s{2,}/).length, 3, 'two structural gaps should remain detectable');
+});
+
+test('ordinary single spaces are never widened into a false boundary', () => {
+  assert.strictEqual(stripBollsMarkup('יהוה רעי לא אחסר'), 'יהוה רעי לא אחסר');
+  assert.strictEqual(stripBollsMarkup('Trust in the LORD'), 'Trust in the LORD');
+});
+
 test('empty / null input is safe', () => {
   for (const v of ['', null, undefined]) assert.strictEqual(stripBollsMarkup(v), '');
 });

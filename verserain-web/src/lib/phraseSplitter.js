@@ -40,6 +40,52 @@ const PUNCT_CJK_QUOTES = '「」『』《》〈〉';
 
 const isCjkNoSpaceScript = (s) => /[぀-ヿ㐀-鿿]/u.test(s);
 export const isKoreanText = (s) => /[가-힯]/u.test(String(s || ''));
+export const isHebrewText = (s) => /[֐-׿]/u.test(String(s || ''));
+
+// ─── Hebrew ───────────────────────────────────────────────────────────────
+// Hebrew ships its own clause division and we only have to stop discarding it.
+// The Masoretic caesura arrives from bolls as a run of non-breaking spaces,
+// which bibleTextMarkup.js now preserves as a double space:
+//   "שמע ישראל  יהוה אלהינו יהוה אחד"   ← the Shema, divided where tradition reads it
+// Everything below that is a fallback for verses carrying no gap at all
+// (roughly 2 in 9 — typically short ones that need no division).
+//
+// The one hard rule is negative: never break at maqqef ־ (U+05BE). It is not a
+// hyphen but a joiner that binds words into a single accentual unit
+// (ועשה־טוב, יירשו־ארץ), so a break there splits a word group in half.
+const HEBREW_BOUNDARY = /\s{2,}|--+|[׃׀]|[—–]|[.,;:!?]/u;
+const MAQQEF = '־';
+
+export function splitHebrewClauses(text, { target = 24, max = 42 } = {}) {
+  const out = [];
+  for (const part of String(text || '').split(HEBREW_BOUNDARY)) {
+    const words = String(part).trim().split(/\s+/).filter(Boolean);
+    if (!words.length) continue;
+    // Short enough to stand alone — keep the authored division intact.
+    if (words.join(' ').length <= max) { pushPhrase(out, words.join(' ')); continue; }
+    // Long, gap-free stretch: fall back to width, breaking only where it does
+    // not strand a maqqef-joined pair.
+    let buffer = [];
+    for (const word of words) {
+      buffer.push(word);
+      const line = buffer.join(' ');
+      if (line.length >= target && !word.endsWith(MAQQEF) && !word.endsWith('-')) {
+        pushPhrase(out, line);
+        buffer = [];
+      } else if (line.length >= max) {
+        pushPhrase(out, line);
+        buffer = [];
+      }
+    }
+    if (buffer.length) pushPhrase(out, buffer.join(' '));
+  }
+  return out;
+}
+
+function pushPhrase(list, raw) {
+  const phrase = cleanPhraseBlock(raw);
+  if (phrase && hasReadablePhraseContent(phrase)) list.push(phrase);
+}
 
 // ─── Korean ───────────────────────────────────────────────────────────────
 // Suffix patterns, not an enumerated vocabulary: the ending is a productive
@@ -98,6 +144,7 @@ export function splitVersePhrases(text) {
   if (!source.trim()) return [];
 
   if (isKoreanText(source)) return splitKoreanClauses(source);
+  if (isHebrewText(source)) return splitHebrewClauses(source);
 
   const cjk = isCjkNoSpaceScript(source);
   const charClass = `[${PUNCT_CORE}${cjk ? PUNCT_CJK_QUOTES : ''}]`;

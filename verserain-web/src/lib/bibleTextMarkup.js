@@ -22,6 +22,15 @@ export function stripBollsMarkup(text) {
     // ("for our iniquities: the chastisement of our peace") survive.
     .replace(/\s+\S+:\s+(?:Heb\.|Gr\.|Chal\.|or,)[\s\S]*$/u, '')
     .replace(/\s+([,.;:?!])/g, '$1')
-    .replace(/\s+/g, ' ')
+    // Runs of 2+ whitespace are STRUCTURE, not sloppy formatting. bolls' Hebrew
+    // text (HAC) encodes the Masoretic caesura as a run of non-breaking spaces:
+    //   "כז··סור מרע ועשה־טוב····ושכן לעולם"
+    //   "ד שמע ישראל··יהוה אלהינו יהוה אחד"   ← the Shema, split where tradition does
+    // Collapsing that to a single space — which this function used to do — threw
+    // away the only clause division Hebrew ships with. Preserved here as a
+    // double space: invisible in HTML (which collapses whitespace when
+    // rendering) but detectable by the phrase splitter.
+    .replace(/[\s ]{2,}/g, '  ')
+    .replace(/[\s ]/g, ' ')
     .trim();
 }

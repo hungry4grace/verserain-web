@@ -7,7 +7,7 @@
 
 import assert from 'node:assert';
 import { test } from 'node:test';
-import { splitVersePhrases, splitKoreanClauses, cleanPhraseBlock, isKoreanText } from './phraseSplitter.js';
+import { splitVersePhrases, splitKoreanClauses, cleanPhraseBlock, isKoreanText, isHebrewText } from './phraseSplitter.js';
 
 // ── Japanese ──────────────────────────────────────────────────────────────
 
@@ -102,6 +102,50 @@ test('Korean: short fragments are absorbed rather than emitted alone', () => {
   const phrases = splitKoreanClauses('지혜롭게, 의롭게, 공평하게, 정직하게 행할 일에 대하여 훈계를 받게 하며');
   for (const p of phrases) assert.ok(p.length >= 6, `fragment leaked: "${p}" (${p.length})`);
   assert.ok(!phrases.some((p) => /[,，]$/.test(p)), 'trailing comma should be trimmed');
+});
+
+// ── Hebrew ────────────────────────────────────────────────────────────────
+
+test('Hebrew splits at the Masoretic caesura carried as a double space', () => {
+  // Deuteronomy 6:4, the Shema. Tradition divides exactly here.
+  assert.deepStrictEqual(
+    splitVersePhrases('שמע ישראל  יהוה אלהינו יהוה אחד'),
+    ['שמע ישראל', 'יהוה אלהינו יהוה אחד']
+  );
+  // Psalm 23:1
+  assert.deepStrictEqual(
+    splitVersePhrases('מזמור לדוד  יהוה רעי לא אחסר'),
+    ['מזמור לדוד', 'יהוה רעי לא אחסר']
+  );
+});
+
+test('Hebrew: a gap-free verse is no longer one giant block', () => {
+  const runOn = 'סור מרע ועשה טוב ושכן לעולם כי יהוה אהב משפט ולא יעזב את חסידיו לעולם נשמרו וזרע רשעים נכרת';
+  const phrases = splitVersePhrases(runOn);
+  assert.ok(phrases.length > 1, 'must break up a long gap-free verse');
+  for (const p of phrases) assert.ok(p.length <= 42, `phrase too long: ${p.length}`);
+});
+
+test('Hebrew never breaks a maqqef-joined unit apart', () => {
+  // ועשה־טוב and יירשו־ארץ are single accentual units.
+  const phrases = splitVersePhrases('סור מרע ועשה־טוב ושכן לעולם צדיקים יירשו־ארץ וישכנו לעד עליה תמיד');
+  for (const p of phrases) {
+    assert.ok(!p.endsWith('־'), `phrase ends on a dangling maqqef: ${p}`);
+    assert.ok(!p.startsWith('־'), `phrase starts on a dangling maqqef: ${p}`);
+  }
+  assert.ok(phrases.some((p) => p.includes('ועשה־טוב')), 'maqqef unit must stay whole');
+});
+
+test('Hebrew also honours -- and sof pasuq as boundaries', () => {
+  assert.deepStrictEqual(splitVersePhrases('אשרי האיש--  אשר לא הלך בעצת רשעים'), ['אשרי האיש', 'אשר לא הלך בעצת רשעים']);
+  assert.deepStrictEqual(splitVersePhrases('בראשית ברא אלהים׃ את השמים'), ['בראשית ברא אלהים', 'את השמים']);
+});
+
+test('Hebrew is detected by script and does not disturb other languages', () => {
+  assert.ok(isHebrewText('יהוה רעי'));
+  assert.ok(!isHebrewText('Trust in the LORD'));
+  assert.ok(!isHebrewText('여호와를 경외하는'));
+  assert.ok(!isHebrewText('耶和華是我的牧者'));
 });
 
 // ── Shared helpers / edges ────────────────────────────────────────────────
