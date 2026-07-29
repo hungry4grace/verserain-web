@@ -7,6 +7,7 @@ import QRCode from 'qrcode';
 import { QRCodeSVG } from 'qrcode.react';
 import { classifyGardenResponse, decideGardenSync, buildFruitAuthorKeys, aggregateFruitResults } from './lib/gardenSync.js';
 import { voiceId, voiceMatchesSavedKey, dedupeVoices, buildVoiceOptions } from './lib/voicePicker.js';
+import { splitVersePhrases } from './lib/phraseSplitter.js';
 import './index.css';
 import { BIBLE_BOOKS, getBookAbbr } from './bibleDictionary';
 import I18N_FILLINS from './i18nFillins';
@@ -1395,18 +1396,6 @@ async function fetchEditorVerseText({ bookInfo, sanitized, version }) {
   return combined.replace(/\s+/g, ' ').trim();
 }
 
-function cleanPhraseBlock(phrase = '') {
-  return String(phrase || '')
-    .trim()
-    .replace(/^[「」『』《》〈〉“”"‘’'（）()【】\[\]\s]+/u, '')
-    .replace(/[「」『』《》〈〉“”"‘’'（）()【】\[\]\s]+$/u, '')
-    .trim();
-}
-
-function hasReadablePhraseContent(phrase = '') {
-  return /[\p{L}\p{N}\u3400-\u9fff]/u.test(String(phrase || ''));
-}
-
 // Check that a piece of text is likely written in the expected script for the given version.
 // Used to reject local verse-set matches that accidentally contain the wrong language (e.g. KJV
 // text stored inside a Hebrew-labelled set).
@@ -1438,26 +1427,6 @@ function isTextLikelyForVersion(text, version) {
       // Latin-script languages (en, de, es, tr, vi, kjv, esv) — accept anything
       return true;
   }
-}
-
-// eslint-disable-next-line no-unused-vars -- `version` kept for call-site symmetry
-function splitVersePhrases(text, version) {
-  const source = String(text || '');
-  // 、(U+3001) was missing here. Japanese uses it as its primary comma and a
-  // verse often carries no 。at all, so 箴言 1 matched nothing and rendered as
-  // one unbroken block. CUV leans on it too (智慧、仁義、公平). The challenge-mode
-  // splitter already had it — this copy had drifted.
-  const PUNCT = '\\.{2,}|[,，、。；؛၊။،;:：﹕︰\\.\\?!！？؟]';
-  // Chinese and Japanese put no spaces inside words, so a space there marks a
-  // clause boundary worth breaking on (CUV uses it exactly that way). Deliberately
-  // NOT Hangul: Korean separates every word with a space, and including it split
-  // 여호와를 경외하는 것이… into ten one-word blocks. Same reason English is excluded.
-  const spaceIsAPhraseBreak = /[\u3040-\u30ff\u3400-\u9fff]/u.test(source);
-  const regex = new RegExp(spaceIsAPhraseBreak ? `${PUNCT}|\\s+` : PUNCT);
-  return source
-    .split(regex)
-    .map(cleanPhraseBlock)
-    .filter(phrase => phrase && hasReadablePhraseContent(phrase));
 }
 
 function getSecondaryPhrasesForIndex(primaryIndex, primaryLength, secondaryPhrases) {
@@ -2191,7 +2160,7 @@ function RainFontControls({ value, onChange, t, className = '' }) {
 }
 
 function DailyVerseRainExperience({ verse, version, t, onRead, onChallenge, onShare, onListenLogged, dateLabel, onPrevious, onNext, nextDisabled }) {
-  const phrases = useMemo(() => splitVersePhrases(verse?.text || '', version), [verse, version]);
+  const phrases = useMemo(() => splitVersePhrases(verse?.text || ''), [verse]);
   const backgroundImageUrls = useMemo(() => getDailyVerseImageUrls(verse, dateLabel, version), [verse?.reference, dateLabel, version]);
   const [imageIndex, setImageIndex] = useState(0);
   const [imageOk, setImageOk] = useState(true);
@@ -2670,7 +2639,7 @@ function VerseSetContinuousRainPlayer({
       return false;
     }
   };
-  const phrases = useMemo(() => splitVersePhrases(currentVerse?.text || '', version), [currentVerse, version]);
+  const phrases = useMemo(() => splitVersePhrases(currentVerse?.text || ''), [currentVerse]);
   const secondaryVerse = useMemo(() => {
     const secondaryVerses = secondaryVerseSet?.verses?.filter(Boolean) || [];
     return findMatchingVerse(currentVerse, verses, secondaryVerses, {
@@ -2678,8 +2647,8 @@ function VerseSetContinuousRainPlayer({
     });
   }, [currentVerse, secondaryVerseSet, verseSet, verses]);
   const secondaryPhrases = useMemo(
-    () => splitVersePhrases(secondaryVerse?.text || '', secondaryVersion),
-    [secondaryVerse, secondaryVersion]
+    () => splitVersePhrases(secondaryVerse?.text || ''),
+    [secondaryVerse]
   );
 
   // --- Cross-language verse lookup ---
@@ -2767,7 +2736,7 @@ function VerseSetContinuousRainPlayer({
     if (secondaryVerse && secondaryPhrases.length && isTextLikelyForVersion(secondaryVerse.text, secondaryVersion)) {
       phrases = secondaryPhrases;
     } else if (lookedUpText) {
-      phrases = splitVersePhrases(lookedUpText, secondaryVersion);
+      phrases = splitVersePhrases(lookedUpText);
     }
     // Per-phrase validation: replace any phrase in the wrong script with '' so it
     // doesn't render. This handles stored verse texts that mix Hebrew with embedded
@@ -6349,18 +6318,13 @@ export default function App() {
     );
   };
 
-  const activePhrases = React.useMemo(() => {
-    // Chinese (cuv) and Korean (ko): split on spaces to break down long sentences without punctuation.
-    // Other languages (English, Hebrew, Farsi, Japanese) use spaces between words — keep them intact.
-    const shouldSplitOnSpace = version === 'cuv' || version === 'cuvs' || version === 'ko';
-    const regex = shouldSplitOnSpace
-      ? /\.{2,}|[,，。；؛၊။،：「」、;:：﹕︰\.\?!！？؟『』《》'\"‘’”"“ ]/
-      : /\.{2,}|[,，。；؛၊။،：「」、;:：﹕︰\.\?!！？؟『』《》'\"‘’”"“]/;
-    return activeVerse.text
-      .split(regex)
-      .map(cleanPhraseBlock)
-      .filter(phrase => phrase && hasReadablePhraseContent(phrase));
-  }, [activeVerse, version]);
+  // Same splitter as the rain player — these two had drifted apart, which is how
+  // Japanese lost 、in one copy while Korean was space-split into one block per
+  // word in the other. Script detection lives in lib/phraseSplitter.js.
+  const activePhrases = React.useMemo(
+    () => splitVersePhrases(activeVerse.text),
+    [activeVerse]
+  );
 
   const activePhrasesRef = useRef([]);
   useEffect(() => { activePhrasesRef.current = activePhrases; }, [activePhrases]);
@@ -7102,9 +7066,7 @@ export default function App() {
         setScore(0);
         setCombo(0);
         setHealth(3);
-        const shouldSplitOnSpace = /[\u4e00-\u9fa5\uac00-\ud7af]/.test(localNextVerse.text);
-        const regex = shouldSplitOnSpace ? /\.{2,}|[,，。；؛၊။،：「」、;:：﹕︰\.\?!！？؟『』《》'\"‘’”"“ ]/ : /\.{2,}|[,，。；؛၊။،：「」、;:：﹕︰\.\?!！？؟『』《》'\"‘’”"“]/;
-        const phraseCount = localNextVerse.text.split(regex).filter(p => p.trim()).length;
+        const phraseCount = splitVersePhrases(localNextVerse.text).length;
         setTimeLeft(500 + phraseCount * 500);
         setLocalNextVerse(null);
         setGameState('playing');
@@ -7127,9 +7089,7 @@ export default function App() {
         }
       } else if (multiplayerState?.host === myClientId && multiplayerState.campaignQueue && multiplayerState.campaignQueue.length > 0) {
         const nextVerse = multiplayerState.campaignQueue[0];
-        const shouldSplitOnSpace = /[\u4e00-\u9fa5\uac00-\ud7af]/.test(nextVerse.text);
-        const regex = shouldSplitOnSpace ? /\.{2,}|[,，。；؛၊။،：「」、;:：﹕︰\.\?!！？؟『』《》'\"‘’”"“ ]/ : /\.{2,}|[,，。；؛၊။،：「」、;:：﹕︰\.\?!！？؟『』《》'\"‘’”"“]/;
-        const phrases = nextVerse.text.split(regex).map(p => p.trim()).filter(Boolean);
+        const phrases = splitVersePhrases(nextVerse.text);
 
         const maxGridSize = multiplayerState.distractionLevel <= 1 ? 4 : 9;
         const fakesCount = multiplayerState.distractionLevel > 0 ? multiplayerState.distractionLevel : 0;
@@ -7287,9 +7247,7 @@ export default function App() {
             setHealth(3);
             setCombo(0);
             setScore(0);
-            const shouldSplitOnSpace = /[\u4e00-\u9fa5\uac00-\ud7af]/.test(msg.state.verseText);
-            const regex = shouldSplitOnSpace ? /\.{2,}|[,，。；؛၊။،：「」、;:：﹕︰\.\?!！？؟『』《》'\"‘’”"“ ]/ : /\.{2,}|[,，。；؛၊။،：「」、;:：﹕︰\.\?!！？؟『』《》'\"‘’”"“]/;
-            const phraseCount = msg.state.verseText.split(regex).filter(p => p.trim()).length;
+            const phraseCount = splitVersePhrases(msg.state.verseText).length;
             setTimeLeft(500 + phraseCount * 500);
             setCurrentSeqIndex(0);
             currentSeqRef.current = 0;
@@ -7890,9 +7848,7 @@ export default function App() {
         } else if (initAutoStart.playMode === 'rain_solo' || initAutoStart.playMode === 'voice_solo') {
           if (socketRef.current) {
             const verse = initAutoStart.verse || activeVerse;
-            const shouldSplitOnSpace = /[\u4e00-\u9fa5\uac00-\ud7af]/.test(verse.text);
-            const regex = shouldSplitOnSpace ? /\.{2,}|[,，。；؛၊။،：「」、;:：﹕︰\.\?!！？؟『』《》'\"‘’”"“ ]/ : /\.{2,}|[,，。；؛၊။،：「」、;:：﹕︰\.\?!！？؟『』《》'\"‘’”"“]/;
-            const phrases = verse.text.split(regex).map(p => p.trim()).filter(Boolean);
+            const phrases = splitVersePhrases(verse.text);
 
             socketRef.current.send(JSON.stringify({
               type: 'INIT_GAME',
@@ -7920,9 +7876,7 @@ export default function App() {
     const actualPlayMode = passedPlayMode || playMode;
     let phrases;
     if (overrideVerse) {
-      const shouldSplitOnSpace = /[\u4e00-\u9fa5\uac00-\ud7af]/.test(verse.text);
-      const regex = shouldSplitOnSpace ? /\.{2,}|[,，。；؛၊။،：「」、;:：﹕︰\.\?!！？؟『』《》'\"‘’”"“ ]/ : /\.{2,}|[,，。；؛၊။،：「」、;:：﹕︰\.\?!！？؟『』《》'\"‘’”"“]/;
-      phrases = verse.text.split(regex).map(p => p.trim()).filter(Boolean);
+      phrases = splitVersePhrases(verse.text);
     } else {
       phrases = activePhrasesRef.current;
     }
@@ -8004,9 +7958,7 @@ export default function App() {
     setHealth(3);
     const initialVerse = overrideVerse || activeVerse;
     if (initialVerse) {
-      const shouldSplitOnSpace = /[\u4e00-\u9fa5\uac00-\ud7af]/.test(initialVerse.text);
-      const regex = shouldSplitOnSpace ? /\.{2,}|[,，。；؛၊။،：「」、;:：﹕︰\.\?!！？؟『』《》'\"‘’”"“ ]/ : /\.{2,}|[,，。；؛၊။،：「」、;:：﹕︰\.\?!！？؟『』《》'\"‘’”"“]/;
-      const phraseCount = initialVerse.text.split(regex).filter(p => p.trim()).length;
+      const phraseCount = splitVersePhrases(initialVerse.text).length;
       setTimeLeft(500 + phraseCount * 500);
     } else {
       setTimeLeft(6000);
@@ -8021,9 +7973,7 @@ export default function App() {
 
     const actualVerse = overrideVerse || activeVerse;
     if (actualVerse) {
-      const shouldSplitOnSpace = /[\u4e00-\u9fa5\uac00-\ud7af]/.test(actualVerse.text);
-      const regex = shouldSplitOnSpace ? /\.{2,}|[,，。；؛၊။،：「」、;:：﹕︰\.\?!！？؟『』《》'\"‘’”"“ ]/ : /\.{2,}|[,，。；؛၊။،：「」、;:：﹕︰\.\?!！？؟『』《》'\"‘’”"“]/;
-      activePhrasesRef.current = actualVerse.text.split(regex).map(p => p.trim()).filter(Boolean);
+      activePhrasesRef.current = splitVersePhrases(actualVerse.text);
     }
 
     isGameTimerPausedRef.current = playMode?.startsWith('voice') || isBlindMode;
@@ -16111,9 +16061,7 @@ const deDict = {
     const verseObj = { reference: firstVerse.reference, text: firstVerse.text, title: firstVerse.title || 'Multiplayer' };
     const nextPlayMode = multiplayerState.playMode || 'square_solo';
     const nextDifficulty = multiplayerState.distractionLevel || 0;
-    const shouldSplitOnSpace = /[\u4e00-\u9fa5\uac00-\ud7af]/.test(verseObj.text);
-    const regex = shouldSplitOnSpace ? /\.{2,}|[,，。；؛၊။،：「」、;:：﹕︰\.\?!！？؟『』《》'\"‘’”"“ ]/ : /\.{2,}|[,，。；؛၊။،：「」、;:：﹕︰\.\?!！？؟『』《》'\"‘’”"“]/;
-    const phraseCount = verseObj.text.split(regex).filter(p => p.trim()).length;
+    const phraseCount = splitVersePhrases(verseObj.text).length;
 
     multiplayerSoloActiveRef.current = true;
     localCampaignListRef.current = queue;
