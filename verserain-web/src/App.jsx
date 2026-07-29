@@ -1132,9 +1132,17 @@ function getEnglishReferenceFromKey(normalizedKey) {
   return `${book.names[2]} ${chapterVerse}`;
 }
 
+// Bumped to v2 when the fetch pipeline started stripping Hebrew verse numerals
+// and Strong's numbers. Entries written by the old pipeline are already-broken
+// text ("א  משלי שלמה", "feareth3373") and would be served forever, so a fix to
+// the fetcher alone never reaches anyone who had used the feature before. The
+// version lives in the key, so old data is orphaned rather than migrated.
+const BIBLE_CACHE_KEY = 'verserain_bible_cache_v2';
+const LEGACY_BIBLE_CACHE_KEYS = ['verserain_bible_cache'];
+
 function getCachedBibleVerse(version, normalizedKey) {
   try {
-    const raw = localStorage.getItem('verserain_bible_cache');
+    const raw = localStorage.getItem(BIBLE_CACHE_KEY);
     if (!raw) return null;
     const cache = JSON.parse(raw);
     const cached = cache[`${version}|${normalizedKey}`];
@@ -1148,11 +1156,20 @@ function getCachedBibleVerse(version, normalizedKey) {
 
 function setCachedBibleVerse(version, normalizedKey, text) {
   try {
-    const raw = localStorage.getItem('verserain_bible_cache');
+    const raw = localStorage.getItem(BIBLE_CACHE_KEY);
     const cache = raw ? JSON.parse(raw) : {};
     cache[`${version}|${normalizedKey}`] = text;
-    localStorage.setItem('verserain_bible_cache', JSON.stringify(cache));
+    localStorage.setItem(BIBLE_CACHE_KEY, JSON.stringify(cache));
   } catch { /* quota exceeded or parse error — ignore */ }
+}
+
+// Reclaim the space the orphaned cache is holding — it can run to megabytes,
+// and localStorage is already tight enough that custom-set writes catch quota
+// errors elsewhere in this file.
+function dropLegacyBibleCaches() {
+  for (const key of LEGACY_BIBLE_CACHE_KEYS) {
+    try { localStorage.removeItem(key); } catch { /* nothing we can do */ }
+  }
 }
 
 async function fetchBibleVerseFromAPI(englishRef, targetVersion) {
@@ -6089,6 +6106,9 @@ export default function App() {
       setIsLangsLoading(false);
     }
   };
+
+  // One-time cleanup of the pre-v2 verse cache (see BIBLE_CACHE_KEY).
+  useEffect(() => { dropLegacyBibleCaches(); }, []);
 
   useEffect(() => {
     const parseUrlArgs = async () => {
