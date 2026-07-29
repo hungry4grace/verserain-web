@@ -1440,9 +1440,21 @@ function isTextLikelyForVersion(text, version) {
   }
 }
 
+// eslint-disable-next-line no-unused-vars -- `version` kept for call-site symmetry
 function splitVersePhrases(text, version) {
-  const regex = /\.{2,}|[,，。；؛၊။،;:：﹕︰\.\?!！？؟]/;
-  return String(text || '')
+  const source = String(text || '');
+  // 、(U+3001) was missing here. Japanese uses it as its primary comma and a
+  // verse often carries no 。at all, so 箴言 1 matched nothing and rendered as
+  // one unbroken block. CUV leans on it too (智慧、仁義、公平). The challenge-mode
+  // splitter already had it — this copy had drifted.
+  const PUNCT = '\\.{2,}|[,，、。；؛၊။،;:：﹕︰\\.\\?!！？؟]';
+  // Chinese and Japanese put no spaces inside words, so a space there marks a
+  // clause boundary worth breaking on (CUV uses it exactly that way). Deliberately
+  // NOT Hangul: Korean separates every word with a space, and including it split
+  // 여호와를 경외하는 것이… into ten one-word blocks. Same reason English is excluded.
+  const spaceIsAPhraseBreak = /[\u3040-\u30ff\u3400-\u9fff]/u.test(source);
+  const regex = new RegExp(spaceIsAPhraseBreak ? `${PUNCT}|\\s+` : PUNCT);
+  return source
     .split(regex)
     .map(cleanPhraseBlock)
     .filter(phrase => phrase && hasReadablePhraseContent(phrase));
