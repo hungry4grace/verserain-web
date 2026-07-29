@@ -8,6 +8,7 @@ import { QRCodeSVG } from 'qrcode.react';
 import { classifyGardenResponse, decideGardenSync, buildFruitAuthorKeys, aggregateFruitResults } from './lib/gardenSync.js';
 import { voiceId, voiceMatchesSavedKey, dedupeVoices, buildVoiceOptions } from './lib/voicePicker.js';
 import { splitVersePhrases } from './lib/phraseSplitter.js';
+import { stripBollsMarkup } from './lib/bibleTextMarkup.js';
 import './index.css';
 import { BIBLE_BOOKS, getBookAbbr } from './bibleDictionary';
 import I18N_FILLINS from './i18nFillins';
@@ -1193,18 +1194,6 @@ const BOLLS_TRANSLATIONS = {
 function getBollsSlug(targetVersion, bookId) {
   if (targetVersion === 'he') return bookId <= 39 ? 'HAC' : 'DHNT';
   return BOLLS_TRANSLATIONS[targetVersion] || null;
-}
-
-// bolls.life embeds translator markup inside the verse text (e.g. <i>聖</i>
-// for CUV words added by translators, <S>123</S> Strong's numbers,
-// <na>...</na> for divine names, <small>...</small> footnotes). Strip them
-// all so they don't leak into the rendered verse blocks.
-function stripBollsMarkup(text) {
-  return String(text || '')
-    .replace(/<br\s*\/?>/gi, ' ')
-    .replace(/<[^>]+>/g, '')
-    .replace(/\s+/g, ' ')
-    .trim();
 }
 
 // getbible.net fallback for languages bolls.life doesn't carry — currently

@@ -20,7 +20,7 @@
 
 // Quote/bracket characters are stripped from phrase edges rather than split on,
 // so an opening 「 doesn't produce an empty leading block.
-const EDGE_TRIM = /^[「」『』《》〈〉“”"‘’'（）()【】\[\]\s]+|[「」『』《》〈〉“”"‘’'（）()【】\[\]\s]+$/gu;
+const EDGE_TRIM = /^[「」『』《》〈〉“”"‘’'（）()【】[\]\s]+|[「」『』《》〈〉“”"‘’'（）()【】[\]\s]+$/gu;
 
 export function cleanPhraseBlock(phrase = '') {
   return String(phrase || '').trim().replace(EDGE_TRIM, '').trim();
@@ -56,7 +56,7 @@ const KOREAN_CLAUSE_ENDINGS = [
   /(이라|하여|되어|하고|되고|이고|고)$/,             // misc connective
   /(면|자|사|나)$/,                                  // conditional / propositive
 ];
-const TRAILING_PUNCT = /[,，、。；;:：\.\?!！？]+$/u;
+const TRAILING_PUNCT = /[,，、。；;:：.?!！？]+$/u;
 
 const endsKoreanClause = (word) => KOREAN_CLAUSE_ENDINGS.some((re) => re.test(word));
 

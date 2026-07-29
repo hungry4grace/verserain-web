@@ -5,6 +5,7 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
+import { stripBollsMarkup } from '../src/lib/bibleTextMarkup.js';
 
 const SRC = path.join(path.dirname(new URL(import.meta.url).pathname), '..', 'src');
 const DATE = '2026-06-07';
@@ -293,14 +294,6 @@ async function fetchChapterGetbible(slug, bookId, chapter) {
   }));
   chapterCache.set(k, arr);
   return arr;
-}
-
-function stripBollsMarkup(text) {
-  return String(text || '')
-    .replace(/<br\s*\/?>/gi, ' ')
-    .replace(/<[^>]+>/g, '')
-    .replace(/\s+/g, ' ')
-    .trim();
 }
 
 async function fetchVerseText(lang, bookId, chapter, verses) {

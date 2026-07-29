@@ -1320,7 +1320,7 @@ export const VERSE_SETS_KJV = [
             "id": "fathers-love-en-love2",
             "reference": "耶 31:3",
             "title": "Words of Father's Love",
-            "text": "The LORD hath appeared of old unto me, saying, Yea, I have loved thee with an everlasting love: therefore with lovingkindness have I drawn thee. of: Heb. from afar with lovingkindness: have I extended lovingkindness unto thee"
+            "text": "The LORD hath appeared of old unto me, saying, Yea, I have loved thee with an everlasting love: therefore with lovingkindness have I drawn thee."
       },
       {
             "id": "fathers-love-en-love3",
@@ -1344,7 +1344,7 @@ export const VERSE_SETS_KJV = [
             "id": "fathers-love-en-love6",
             "reference": "約一 4:10",
             "title": "Words of Father's Love",
-            "text": "Herein  is love, not that we loved God, but that he loved us, and sent his Son to be the propitiation for our sins."
+            "text": "Herein is love, not that we loved God, but that he loved us, and sent his Son to be the propitiation for our sins."
       },
       {
             "id": "fathers-love-en-love7",
@@ -1356,7 +1356,7 @@ export const VERSE_SETS_KJV = [
             "id": "fathers-love-en-love8",
             "reference": "弗 2:5",
             "title": "Words of Father's Love",
-            "text": "Even when we were dead in sins, hath quickened us together with Christ, (by grace ye are saved;) by: or, by whose grace"
+            "text": "Even when we were dead in sins, hath quickened us together with Christ, (by grace ye are saved;)"
       },
       {
             "id": "fathers-love-en-enc1",
@@ -1422,7 +1422,7 @@ export const VERSE_SETS_KJV = [
             "id": "fathers-love-en-comf3",
             "reference": "賽 49:15",
             "title": "Words of Father's Love",
-            "text": "Can a woman forget her sucking child, that she should not have compassion on the son of her womb? yea, they may forget, yet will I not forget thee. that: Heb. from having compassion"
+            "text": "Can a woman forget her sucking child, that she should not have compassion on the son of her womb? yea, they may forget, yet will I not forget thee."
       },
       {
             "id": "fathers-love-en-comf4",
@@ -1452,13 +1452,13 @@ export const VERSE_SETS_KJV = [
             "id": "fathers-love-en-comf8",
             "reference": "詩 34:18",
             "title": "Words of Father's Love",
-            "text": "The LORD is nigh unto them that are of a broken heart; and saveth such as be of a contrite spirit. unto: Heb. to the broken of heart of a contrite: Heb. contrite of spirit"
+            "text": "The LORD is nigh unto them that are of a broken heart; and saveth such as be of a contrite spirit."
       },
       {
             "id": "fathers-love-en-build1",
             "reference": "耶 29:11",
             "title": "Words of Father's Love",
-            "text": "For I know the thoughts that I think toward you, saith the LORD, thoughts of peace, and not of evil, to give you an expected end. expected: Heb. end and expectation"
+            "text": "For I know the thoughts that I think toward you, saith the LORD, thoughts of peace, and not of evil, to give you an expected end."
       },
       {
             "id": "fathers-love-en-build2",
@@ -1470,7 +1470,7 @@ export const VERSE_SETS_KJV = [
             "id": "fathers-love-en-build3",
             "reference": "詩 139:14",
             "title": "Words of Father's Love",
-            "text": "I will praise thee; for I am fearfully and wonderfully made: marvellous are thy works; and that my soul knoweth right well. right: Heb. greatly"
+            "text": "I will praise thee; for I am fearfully and wonderfully made: marvellous are thy works; and that my soul knoweth right well."
       },
       {
             "id": "fathers-love-en-build4",
@@ -1488,13 +1488,13 @@ export const VERSE_SETS_KJV = [
             "id": "fathers-love-en-build6",
             "reference": "弗 2:10",
             "title": "Words of Father's Love",
-            "text": "For we are his workmanship, created in Christ Jesus unto good works, which God hath before ordained that we should walk in them. ordained: or, prepared"
+            "text": "For we are his workmanship, created in Christ Jesus unto good works, which God hath before ordained that we should walk in them."
       },
       {
             "id": "fathers-love-en-build7",
             "reference": "腓 1:6",
             "title": "Words of Father's Love",
-            "text": "Being confident of this very thing, that he which hath begun a good work in you will perform it until the day of Jesus Christ: perform: or, finish"
+            "text": "Being confident of this very thing, that he which hath begun a good work in you will perform it until the day of Jesus Christ:"
       },
       {
             "id": "fathers-love-en-heal1",
@@ -1506,7 +1506,7 @@ export const VERSE_SETS_KJV = [
             "id": "fathers-love-en-heal2",
             "reference": "賽 53:5",
             "title": "Words of Father's Love",
-            "text": "But he was wounded for our transgressions, he was bruised for our iniquities: the chastisement of our peace was upon him; and with his stripes we are healed. wounded: or, tormented stripes: Heb. bruise"
+            "text": "But he was wounded for our transgressions, he was bruised for our iniquities: the chastisement of our peace was upon him; and with his stripes we are healed."
       },
       {
             "id": "fathers-love-en-heal3",
@@ -1530,19 +1530,19 @@ export const VERSE_SETS_KJV = [
             "id": "fathers-love-en-heal6",
             "reference": "詩 147:3",
             "title": "Words of Father's Love",
-            "text": "He healeth the broken in heart, and bindeth up their wounds. wounds: Heb. griefs"
+            "text": "He healeth the broken in heart, and bindeth up their wounds."
       },
       {
             "id": "fathers-love-en-joy1",
             "reference": "番 3:17",
             "title": "Words of Father's Love",
-            "text": "The LORD thy God in the midst of thee is mighty; he will save, he will rejoice over thee with joy; he will rest in his love, he will joy over thee with singing. rest: Heb. be silent"
+            "text": "The LORD thy God in the midst of thee is mighty; he will save, he will rejoice over thee with joy; he will rest in his love, he will joy over thee with singing."
       },
       {
             "id": "fathers-love-en-joy2",
             "reference": "賽 43:4",
             "title": "Words of Father's Love",
-            "text": "Since thou wast precious in my sight, thou hast been honourable, and I have loved thee: therefore will I give men for thee, and people for thy life. life: or, person"
+            "text": "Since thou wast precious in my sight, thou hast been honourable, and I have loved thee: therefore will I give men for thee, and people for thy life."
       },
       {
             "id": "fathers-love-en-joy3",
@@ -1560,7 +1560,7 @@ export const VERSE_SETS_KJV = [
             "id": "fathers-love-en-joy5",
             "reference": "羅 15:7",
             "title": "Words of Father's Love",
-            "text": "Wherefore receive ye one another, as  Christ also received us to the glory of God."
+            "text": "Wherefore receive ye one another, as Christ also received us to the glory of God."
       },
       {
             "id": "fathers-love-en-joy6",
@@ -1578,7 +1578,7 @@ export const VERSE_SETS_KJV = [
             "id": "fathers-love-en-prot1",
             "reference": "詩 91:1",
             "title": "Words of Father's Love",
-            "text": "He that dwelleth in the secret place of the most High shall abide under the shadow of the Almighty. abide: Heb. lodge"
+            "text": "He that dwelleth in the secret place of the most High shall abide under the shadow of the Almighty."
       },
       {
             "id": "fathers-love-en-prot2",
@@ -1608,7 +1608,7 @@ export const VERSE_SETS_KJV = [
             "id": "fathers-love-en-prot6",
             "reference": "腓 4:6-7",
             "title": "Words of Father's Love",
-            "text": "Be careful for nothing; but in every thing by prayer and supplication with thanksgiving let your requests be made known unto God. And the peace of God, which passeth all understanding, shall keep your hearts and minds  through Christ Jesus."
+            "text": "Be careful for nothing; but in every thing by prayer and supplication with thanksgiving let your requests be made known unto God. And the peace of God, which passeth all understanding, shall keep your hearts and minds through Christ Jesus."
       }
 ]
   }
@@ -1728,14 +1728,14 @@ export const VERSE_SETS_KJV = [
 <p>Psalm 37:34 promises: <em>"Wait for the LORD and keep his way, and he will exalt you to inherit the land."</em> Waiting is not passive delay but faith-filled persistence — walking in God's timetable, holding His promises in the dark. May we become people who trust, delight, and wait — and together inherit what He has promised.</p>`,
     language: "en",
     verses: [
-      { id: "inherit-land-kjv-1", reference: "Psalm 25:12-13", title: `Inheriting the Land — Revelation of Psalm 37`, text: `What man376 is he that feareth3373 the LORD3068? him shall he teach3384 in the way1870 that he shall choose977. His soul5315 shall dwell3885 at ease2896; and his seed2233 shall inherit3423 the earth776. dwell: Heb. lodge in goodness` },
-      { id: "inherit-land-kjv-2", reference: "Psalm 37:9", title: `Inheriting the Land — Revelation of Psalm 37`, text: `For evildoers7489 shall be cut off3772: but those that wait6960 upon the LORD3068, they shall inherit3423 the earth776.` },
-      { id: "inherit-land-kjv-3", reference: "Psalm 37:11", title: `Inheriting the Land — Revelation of Psalm 37`, text: `But the meek6035 shall inherit3423 the earth776; and shall delight6026 themselves in the abundance7230 of peace7965.` },
-      { id: "inherit-land-kjv-4", reference: "Psalm 37:21-22", title: `Inheriting the Land — Revelation of Psalm 37`, text: `The wicked7563 borroweth3867, and payeth not again7999: but the righteous6662 sheweth mercy2603, and giveth5414. For such as be blessed1288 of him shall inherit3423 the earth776; and they that be cursed7043 of him shall be cut off3772.` },
-      { id: "inherit-land-kjv-5", reference: "Psalm 37:27-29", title: `Inheriting the Land — Revelation of Psalm 37`, text: `Depart5493 from evil7451, and do6213 good2896; and dwell7931 for evermore5769. For the LORD3068 loveth157 judgment4941, and forsaketh5800 not his saints2623; they are preserved8104 for ever5769: but the seed2233 of the wicked7563 shall be cut off3772. The righteous6662 shall inherit3423 the land776, and dwell7931 therein for ever5703.` },
-      { id: "inherit-land-kjv-6", reference: "Psalm 37:34", title: `Inheriting the Land — Revelation of Psalm 37`, text: `Wait6960 on the LORD3068, and keep8104 his way1870, and he shall exalt7311 thee to inherit3423 the land776: when the wicked7563 are cut off3772, thou shalt see7200 it.` },
-      { id: "inherit-land-kjv-7", reference: "Isaiah 57:13", title: `Inheriting the Land — Revelation of Psalm 37`, text: `When thou criest2199, let thy companies6899 deliver5337 thee; but the wind7307 shall carry them all away5375; vanity1892 shall take3947 them: but he that putteth his trust2620 in me shall possess5157 the land776, and shall inherit3423 my holy6944 mountain2022;` },
-      { id: "inherit-land-kjv-8", reference: "Matthew 5:5", title: `Inheriting the Land — Revelation of Psalm 37`, text: `Blessed3107 are the meek4239: for3754 they846 shall inherit2816 the earth1093.` },
+      { id: "inherit-land-kjv-1", reference: "Psalm 25:12-13", title: `Inheriting the Land — Revelation of Psalm 37`, text: `What man is he that feareth the LORD? him shall he teach in the way that he shall choose. His soul shall dwell at ease; and his seed shall inherit the earth.` },
+      { id: "inherit-land-kjv-2", reference: "Psalm 37:9", title: `Inheriting the Land — Revelation of Psalm 37`, text: `For evildoers shall be cut off: but those that wait upon the LORD, they shall inherit the earth.` },
+      { id: "inherit-land-kjv-3", reference: "Psalm 37:11", title: `Inheriting the Land — Revelation of Psalm 37`, text: `But the meek shall inherit the earth; and shall delight themselves in the abundance of peace.` },
+      { id: "inherit-land-kjv-4", reference: "Psalm 37:21-22", title: `Inheriting the Land — Revelation of Psalm 37`, text: `The wicked borroweth, and payeth not again: but the righteous sheweth mercy, and giveth. For such as be blessed of him shall inherit the earth; and they that be cursed of him shall be cut off.` },
+      { id: "inherit-land-kjv-5", reference: "Psalm 37:27-29", title: `Inheriting the Land — Revelation of Psalm 37`, text: `Depart from evil, and do good; and dwell for evermore. For the LORD loveth judgment, and forsaketh not his saints; they are preserved for ever: but the seed of the wicked shall be cut off. The righteous shall inherit the land, and dwell therein for ever.` },
+      { id: "inherit-land-kjv-6", reference: "Psalm 37:34", title: `Inheriting the Land — Revelation of Psalm 37`, text: `Wait on the LORD, and keep his way, and he shall exalt thee to inherit the land: when the wicked are cut off, thou shalt see it.` },
+      { id: "inherit-land-kjv-7", reference: "Isaiah 57:13", title: `Inheriting the Land — Revelation of Psalm 37`, text: `When thou criest, let thy companies deliver thee; but the wind shall carry them all away; vanity shall take them: but he that putteth his trust in me shall possess the land, and shall inherit my holy mountain;` },
+      { id: "inherit-land-kjv-8", reference: "Matthew 5:5", title: `Inheriting the Land — Revelation of Psalm 37`, text: `Blessed are the meek: for they shall inherit the earth.` },
     ]
   },
 
