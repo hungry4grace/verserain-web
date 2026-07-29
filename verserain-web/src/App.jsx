@@ -2818,6 +2818,11 @@ function VerseSetContinuousRainPlayer({
   const [imageLoaded, setImageLoaded] = useState(false);
   const [playKey, setPlayKey] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
+  // Where Play should pick the verse back up. A creator recording can be truly
+  // paused mid-audio, but TTS can't be held, so pausing tears the run down and
+  // Play restarts the effect — this ref is what stops that restart from going
+  // back to the first phrase. 0 means "from the top".
+  const resumeFromPhraseRef = useRef(0);
   const [activePhrase, setActivePhrase] = useState(-1);
   const [phrasePageStart, setPhrasePageStart] = useState(0);
   const [isSettled, setIsSettled] = useState(false);
@@ -2902,6 +2907,9 @@ function VerseSetContinuousRainPlayer({
   }, [verseSet?.bgMusic, verseSet?.bgMusicVolume]);
 
   useEffect(() => {
+    // A different verse always starts from the top, never from a stale
+    // resume point left behind by a pause on the previous verse.
+    resumeFromPhraseRef.current = 0;
     setPlayKey(k => k + 1);
     setActivePhrase(-1);
     setPhrasePageStart(0);
@@ -2914,6 +2922,9 @@ function VerseSetContinuousRainPlayer({
 
   // Reset animation state for single-verse repeat (playKey changes but reference stays the same)
   useEffect(() => {
+    // …but NOT when Play is resuming a paused verse: wiping activePhrase here
+    // is what made the blocks vanish and the reading start over.
+    if (resumeFromPhraseRef.current > 0) return;
     setActivePhrase(-1);
     setPhrasePageStart(0);
     setIsSettled(false);
@@ -3079,11 +3090,21 @@ function VerseSetContinuousRainPlayer({
       }
 
       if (!creatorPlayed) {
-      await speakTextTimed(formatVerseReferenceForSpeech(currentVerse.reference, version), 0.9, lang);
-      if (cancelled || runRef.current !== runId) return;
-      await wait(500);
+      // Resuming mid-verse: skip re-announcing the reference and pick the
+      // reading up at the phrase we were on. A resume point at or past the end
+      // (the verse had already finished) falls back to a normal replay.
+      const resumeAt = resumeFromPhraseRef.current > 0 && resumeFromPhraseRef.current < currentPhrases.length
+        ? resumeFromPhraseRef.current
+        : 0;
+      resumeFromPhraseRef.current = 0;
 
-      for (let i = 0; i < currentPhrases.length; i++) {
+      if (resumeAt === 0) {
+        await speakTextTimed(formatVerseReferenceForSpeech(currentVerse.reference, version), 0.9, lang);
+        if (cancelled || runRef.current !== runId) return;
+        await wait(500);
+      }
+
+      for (let i = resumeAt; i < currentPhrases.length; i++) {
         if (cancelled || runRef.current !== runId) return;
         // Predictive pre-trim: BEFORE block i mounts, measure already-landed
         // blocks. If adding block i would push past the bottom, advance
@@ -3172,6 +3193,9 @@ function VerseSetContinuousRainPlayer({
   const haltPlayback = () => {
     runRef.current += 1;
     pausedRecordingRef.current = false;
+    // Any halt that isn't a pause (navigation, close, recording) starts the
+    // next play from the top. togglePause re-sets this straight after.
+    resumeFromPhraseRef.current = 0;
     bgmRef.current?.pause();
     stopSpeechIfActive();
     // Also silence the creator/personal recording — it plays through a
@@ -3191,7 +3215,8 @@ function VerseSetContinuousRainPlayer({
         try { bgmRef.current?.play?.(); } catch { /* noop */ }
         audio.play().catch(() => setPlayKey(k => k + 1));
       } else {
-        // TTS / paused between phrases → replay the verse.
+        // TTS → restart the run, but resumeFromPhraseRef (set when we paused)
+        // makes it continue from that phrase rather than the top.
         setPlayKey(k => k + 1);
       }
     } else {
@@ -3203,8 +3228,12 @@ function VerseSetContinuousRainPlayer({
         try { audio.pause(); } catch { /* noop */ }
         try { bgmRef.current?.pause(); } catch { /* noop */ }
       } else {
-        // TTS / nothing playing → stop; Resume replays the verse.
+        // TTS can't be held mid-utterance, so stop the run — but remember the
+        // phrase we were on so Play continues from there instead of starting
+        // the verse over. Set AFTER haltPlayback, which clears it.
+        const resumePoint = activePhrase;
         haltPlayback();
+        resumeFromPhraseRef.current = Math.max(0, resumePoint);
       }
     }
   };
