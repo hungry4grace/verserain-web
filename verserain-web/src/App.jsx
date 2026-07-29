@@ -8,7 +8,7 @@ import { QRCodeSVG } from 'qrcode.react';
 import { classifyGardenResponse, decideGardenSync, buildFruitAuthorKeys, aggregateFruitResults } from './lib/gardenSync.js';
 import { voiceId, voiceMatchesSavedKey, dedupeVoices, buildVoiceOptions } from './lib/voicePicker.js';
 import { splitVersePhrases } from './lib/phraseSplitter.js';
-import { stripBollsMarkup } from './lib/bibleTextMarkup.js';
+import { stripBollsMarkup, stripLeadingVerseNumeral } from './lib/bibleTextMarkup.js';
 import './index.css';
 import { BIBLE_BOOKS, getBookAbbr } from './bibleDictionary';
 import I18N_FILLINS from './i18nFillins';
@@ -1275,7 +1275,7 @@ async function fetchVerseFromBolls(normalizedKey, targetVersion) {
       if (!Array.isArray(verses) || !verses.length) return null;
       // Join with Arabic semicolon so splitVersePhrases() can split on verse boundaries
       return verses
-        .map(v => stripBollsMarkup(v.text))
+        .map(v => stripLeadingVerseNumeral(stripBollsMarkup(v.text), v.verse))
         .filter(Boolean)
         .join('؛ ') || null;
     } catch { return null; }
@@ -1303,7 +1303,7 @@ async function fetchVerseFromBolls(normalizedKey, targetVersion) {
       verseNums.map(v =>
         fetch(`https://bolls.life/get-verse/${slug}/${bookId}/${chapter}/${v}/`)
           .then(r => r.ok ? r.json() : null)
-          .then(d => d?.text ? stripBollsMarkup(d.text) || null : null)
+          .then(d => d?.text ? stripLeadingVerseNumeral(stripBollsMarkup(d.text), v) || null : null)
           .catch(() => null)
       )
     );

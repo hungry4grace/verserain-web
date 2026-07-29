@@ -34,3 +34,37 @@ export function stripBollsMarkup(text) {
     .replace(/[\s ]/g, ' ')
     .trim();
 }
+
+// ─── Hebrew verse numerals ────────────────────────────────────────────────
+// bolls prefixes every Hebrew verse with its number written in Hebrew letters,
+// separated by the same gap it uses for the caesura:
+//   "א··בני אם־תקח אמרי····ומצותי תצפן אתך"
+// Left alone, those letters render as if they were scripture — a lone א sitting
+// in the middle of Proverbs 2.
+//
+// They CANNOT be identified by shape: כה (25) is also "thus", לא (31) is "not",
+// לו (36) is "to him" — all ordinary words, and all three really do open a verse
+// somewhere in Psalm 119. Removal is only safe because the caller knows which
+// verse it just fetched: we match ONE exact expected numeral, and only when the
+// structural gap follows it.
+const ONES = ['', 'א', 'ב', 'ג', 'ד', 'ה', 'ו', 'ז', 'ח', 'ט'];
+const TENS = ['', 'י', 'כ', 'ל', 'מ', 'נ', 'ס', 'ע', 'פ', 'צ'];
+const HUNDREDS = ['', 'ק', 'ר', 'ש', 'ת'];
+
+export function hebrewVerseNumeral(n) {
+  const num = Number(n);
+  if (!Number.isInteger(num) || num < 1 || num > 499) return '';
+  const out = HUNDREDS[Math.floor(num / 100)] || '';
+  const rest = num % 100;
+  // 15 and 16 are written טו / טז, never יה / יו — those spell the divine name.
+  if (rest === 15) return out + 'טו';
+  if (rest === 16) return out + 'טז';
+  return out + (TENS[Math.floor(rest / 10)] || '') + (ONES[rest % 10] || '');
+}
+
+export function stripLeadingVerseNumeral(text, verseNumber) {
+  const numeral = hebrewVerseNumeral(verseNumber);
+  if (!numeral) return String(text || '');
+  // The trailing gap is what proves it is a marker and not the first word.
+  return String(text || '').replace(new RegExp(`^${numeral}\\s{2,}`, 'u'), '');
+}

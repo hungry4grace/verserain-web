@@ -53,7 +53,10 @@ export const isHebrewText = (s) => /[֐-׿]/u.test(String(s || ''));
 // The one hard rule is negative: never break at maqqef ־ (U+05BE). It is not a
 // hyphen but a joiner that binds words into a single accentual unit
 // (ועשה־טוב, יירשו־ארץ), so a break there splits a word group in half.
-const HEBREW_BOUNDARY = /\s{2,}|--+|[׃׀]|[—–]|[.,;:!?]/u;
+// ؛ (Arabic semicolon) is what fetchVerseFromBolls joins a whole chapter's
+// verses with, so it has to count here too — otherwise a chapter reference
+// renders phrases with a stray "؛" sitting mid-block.
+const HEBREW_BOUNDARY = /\s{2,}|--+|[׃׀]|[—–]|[.,;:!?؛،]/u;
 const MAQQEF = '־';
 
 export function splitHebrewClauses(text, { target = 24, max = 42 } = {}) {

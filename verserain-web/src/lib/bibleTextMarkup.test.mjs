@@ -1,7 +1,7 @@
 // Run: node --test src/lib/bibleTextMarkup.test.mjs
 import assert from 'node:assert';
 import { test } from 'node:test';
-import { stripBollsMarkup } from './bibleTextMarkup.js';
+import { stripBollsMarkup, hebrewVerseNumeral, stripLeadingVerseNumeral } from './bibleTextMarkup.js';
 
 test("Strong's numbers are removed with their contents", () => {
   // Real bolls payload for Psalm 25:12 (KJV).
@@ -62,4 +62,39 @@ test('ordinary single spaces are never widened into a false boundary', () => {
 
 test('empty / null input is safe', () => {
   for (const v of ['', null, undefined]) assert.strictEqual(stripBollsMarkup(v), '');
+});
+
+// ── Hebrew verse numerals ─────────────────────────────────────────────────
+
+test('Hebrew numerals are formed correctly, including the טו/טז exceptions', () => {
+  assert.strictEqual(hebrewVerseNumeral(1), 'א');
+  assert.strictEqual(hebrewVerseNumeral(2), 'ב');
+  assert.strictEqual(hebrewVerseNumeral(12), 'יב');
+  // 15/16 are never written יה / יו — those spell the divine name.
+  assert.strictEqual(hebrewVerseNumeral(15), 'טו');
+  assert.strictEqual(hebrewVerseNumeral(16), 'טז');
+  assert.strictEqual(hebrewVerseNumeral(29), 'כט');
+  assert.strictEqual(hebrewVerseNumeral(119), 'קיט');
+  for (const bad of [0, -1, 1.5, null, undefined, 'x']) assert.strictEqual(hebrewVerseNumeral(bad), '');
+});
+
+test('the leading verse marker is removed (Proverbs 2:1, the reported bug)', () => {
+  const raw = 'א  בני אם-תקח אמרי    ומצותי תצפן אתך';
+  const out = stripLeadingVerseNumeral(stripBollsMarkup(raw), 1);
+  assert.strictEqual(out, 'בני אם-תקח אמרי  ומצותי תצפן אתך');
+  assert.ok(!out.startsWith('א '), 'the marker must be gone');
+});
+
+test('a word-like numeral is kept when it is the actual first word', () => {
+  // Psalm 119:31 really begins "לא דבקתי" — but as verse 31 the marker לא is
+  // followed by the gap, while a genuine opening word is followed by one space.
+  assert.strictEqual(stripLeadingVerseNumeral('לא  דבקתי בעדותיך', 31), 'דבקתי בעדותיך');
+  assert.strictEqual(stripLeadingVerseNumeral('לא דבקתי בעדותיך', 31), 'לא דבקתי בעדותיך');
+  // And never strip a numeral that is not this verse's own number.
+  assert.strictEqual(stripLeadingVerseNumeral('כה  דבקה לעפר נפשי', 31), 'כה  דבקה לעפר נפשי');
+});
+
+test('non-Hebrew text is untouched', () => {
+  assert.strictEqual(stripLeadingVerseNumeral('What man is he that feareth the LORD?', 12), 'What man is he that feareth the LORD?');
+  assert.strictEqual(stripLeadingVerseNumeral('太初有道，道與神同在', 1), '太初有道，道與神同在');
 });

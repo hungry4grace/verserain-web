@@ -141,6 +141,14 @@ test('Hebrew also honours -- and sof pasuq as boundaries', () => {
   assert.deepStrictEqual(splitVersePhrases('בראשית ברא אלהים׃ את השמים'), ['בראשית ברא אלהים', 'את השמים']);
 });
 
+test('Hebrew: the ؛ chapter-join separator is a boundary, not text', () => {
+  // fetchVerseFromBolls joins a whole chapter's verses with '؛ '.
+  const joined = 'בני אם-תקח אמרי  ומצותי תצפן אתך؛ להקשיב לחכמה אזנך';
+  const phrases = splitVersePhrases(joined);
+  assert.deepStrictEqual(phrases, ['בני אם-תקח אמרי', 'ומצותי תצפן אתך', 'להקשיב לחכמה אזנך']);
+  assert.ok(!phrases.some((p) => p.includes('؛')), 'separator must never appear inside a phrase');
+});
+
 test('Hebrew is detected by script and does not disturb other languages', () => {
   assert.ok(isHebrewText('יהוה רעי'));
   assert.ok(!isHebrewText('Trust in the LORD'));
