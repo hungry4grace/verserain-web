@@ -1372,6 +1372,19 @@ async function fetchVerseFromTaibible(normalizedKey) {
   }
 }
 
+// Normalise the separators people (and our own data) actually use in a
+// chapter:verse input, so one spelling reaches the range parser:
+//   6:9–13 en-dash · 6:9—13 em-dash · 6:9～13 fullwidth tilde · 6：9-13
+//
+// The en-dash is the one that bit: the range regex below only accepts an ASCII
+// '-', so "太 6:9–13" matched just ":9" and quietly fetched a SINGLE verse
+// instead of the range. The app's own verse files ship references in exactly
+// that form ("Isaiah 58:6–12"), and the sibling local-DB lookup in the editor
+// already normalised these — only the path feeding the API call didn't.
+function normalizeVerseInput(value) {
+  return String(value || '').replace(/[～~–—]/g, '-').replace(/[：]/g, ':').trim();
+}
+
 async function fetchEditorVerseText({ bookInfo, sanitized, version }) {
   const chapMatch = String(sanitized).match(/^(\d+)/);
   if (!chapMatch) return '';
@@ -5299,7 +5312,7 @@ export default function App() {
       if (!m) {
         failed.push(line);
       } else {
-        const sanitized = m.rest.replace(/[～~]/g, '-').replace(/[：]/g, ':').trim();
+        const sanitized = normalizeVerseInput(m.rest);
         // Keep the book name the user actually typed (e.g. "Salmos") so the
         // stored reference matches the set's language instead of a zh/abbr form.
         const refStr = `${m.name} ${sanitized}`;
@@ -17169,7 +17182,7 @@ const deDict = {
                             {editingCustomSet.verses.map((v, idx) => {
                               const autoFetchVerse = async (bookInfo, verseInput, verseIdx) => {
                                 if (!bookInfo || !verseInput) return;
-                                const sanitized = verseInput.replace(/[～~]/g, '-').replace(/[：]/g, ':').trim();
+                                const sanitized = normalizeVerseInput(verseInput);
                                 if (!/^\d/.test(sanitized)) return;
                                 const bookAbbr = getBookAbbr(bookInfo, version);
                                 const refStr = `${bookAbbr} ${sanitized}`;
