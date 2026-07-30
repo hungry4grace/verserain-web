@@ -21,6 +21,11 @@ export function stripBollsMarkup(text) {
     // Match on the marker rather than the colon, so real mid-verse colons
     // ("for our iniquities: the chastisement of our peace") survive.
     .replace(/\s+\S+:\s+(?:Heb\.|Gr\.|Chal\.|or,)[\s\S]*$/u, '')
+    // CUV marks an alternative rendering inline with lenticular brackets:
+    //   "救我們脫離凶惡〔或作「脫離惡者」〕。"
+    // Only 或作/或譯 notes are removed. A bare 〔…〕 can hold words the
+    // translators supplied that ARE part of the reading, so it is left alone.
+    .replace(/〔\s*或[作译譯][\s\S]*?〕/gu, '')
     .replace(/\s+([,.;:?!])/g, '$1')
     // Runs of 2+ whitespace are STRUCTURE, not sloppy formatting. bolls' Hebrew
     // text (HAC) encodes the Masoretic caesura as a run of non-breaking spaces:

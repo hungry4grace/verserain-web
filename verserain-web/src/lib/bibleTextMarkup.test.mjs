@@ -94,6 +94,20 @@ test('a word-like numeral is kept when it is the actual first word', () => {
   assert.strictEqual(stripLeadingVerseNumeral('כה  דבקה לעפר נפשי', 31), 'כה  דבקה לעפר נפשי');
 });
 
+test('CUV 或作 alternative-rendering notes are dropped', () => {
+  // Real CUNP payload for Matthew 6:13.
+  assert.strictEqual(
+    stripBollsMarkup('不叫我們遇見試探；救我們脫離凶惡〔或作「脫離惡者」〕。'),
+    '不叫我們遇見試探；救我們脫離凶惡。'
+  );
+  assert.strictEqual(stripBollsMarkup('愿你的国降临〔或译：来到〕。'), '愿你的国降临。');
+});
+
+test('a bare 〔…〕 is kept — it can hold words the translators supplied', () => {
+  const text = '耶穌〔基督〕的門徒';
+  assert.strictEqual(stripBollsMarkup(text), text);
+});
+
 test('non-Hebrew text is untouched', () => {
   assert.strictEqual(stripLeadingVerseNumeral('What man is he that feareth the LORD?', 12), 'What man is he that feareth the LORD?');
   assert.strictEqual(stripLeadingVerseNumeral('太初有道，道與神同在', 1), '太初有道，道與神同在');
