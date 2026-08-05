@@ -3448,22 +3448,25 @@ function VerseSetContinuousRainPlayer({
               </div>
               {showNav && <button type="button" onClick={handleNext} disabled={nextDisabled} aria-label={onNext ? t('後一天', 'Next day') : t('下一節隨機經文', 'Next random verse')}>›</button>}
             </div>
-            <h2>
-              {formatVerseReferenceForDisplay(currentVerse.reference, version)}
+            {/* Reference, its secondary-language twin and the reader credit all
+                share one baseline-aligned row. They used to stack three deep
+                above the verse, which is space the falling phrases need more. */}
+            <div className="continuous-rain-heading">
+              <h2>{formatVerseReferenceForDisplay(currentVerse.reference, version)}</h2>
               {effectiveSecondaryRef && (
-                <small className="continuous-rain-secondary-reference">
+                <span className="continuous-rain-secondary-reference">
                   {formatVerseReferenceForDisplay(effectiveSecondaryRef, secondaryVersion)}
-                </small>
+                </span>
               )}
-            </h2>
+              {creatorVoiceName && (
+                <span className="continuous-rain-reader">
+                  🎙️ {t('朗讀者：{name}', 'Reader: {name}').replace('{name}', String(creatorVoiceName))}
+                </span>
+              )}
+            </div>
             {voiceLoading && (
               <div style={{ textAlign: 'center', margin: '-0.1rem 0 0.4rem', fontSize: '0.82rem' }}>
                 <span style={{ color: '#93c5fd', fontWeight: 600 }}>⏳ {t('正在載入朗讀…', 'Loading the reading…')}</span>
-              </div>
-            )}
-            {creatorVoiceName && (
-              <div style={{ textAlign: 'center', margin: '-0.3rem 0 0.4rem', color: '#000000', fontSize: '0.85rem', fontWeight: 600, textShadow: '0.06em 0.08em 2px rgba(255, 255, 255, 0.95), 0.12em 0.16em 8px rgba(255, 255, 255, 0.65)' }}>
-                🎙️ {t('朗讀者：{name}', 'Reader: {name}').replace('{name}', String(creatorVoiceName))}
               </div>
             )}
             {voiceStatus[currentVerse.reference] === 'processing' ? (
