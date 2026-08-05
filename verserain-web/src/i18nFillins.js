@@ -22,6 +22,7 @@
 // source plus its English gloss.
 
 export const he = {
+  "正在載入朗讀…": "טוען את ההקראה…",
   "重設密碼的連結已寄到您的信箱，30 分鐘內有效。": "קישור לאיפוס הסיסמה נשלח לדוא\"ל שלך. הוא תקף ל-30 דקות.",
   "重設失敗": "האיפוס נכשל",
   "密碼已更新，請用新密碼登入。": "הסיסמה עודכנה. אנא התחבר עם הסיסמה החדשה.",
@@ -395,6 +396,7 @@ export const he = {
 };
 
 export const fa = {
+  "正在載入朗讀…": "در حال بارگذاری قرائت…",
   "重設密碼的連結已寄到您的信箱，30 分鐘內有效。": "پیوند بازنشانی رمز عبور به ایمیل شما ارسال شد و تا ۳۰ دقیقه معتبر است.",
   "重設失敗": "بازنشانی ناموفق بود",
   "密碼已更新，請用新密碼登入。": "رمز عبور به‌روزرسانی شد. لطفاً با رمز جدید وارد شوید.",
@@ -768,6 +770,7 @@ export const fa = {
 };
 
 export const ar = {
+  "正在載入朗讀…": "جارٍ تحميل التلاوة…",
   "重設密碼的連結已寄到您的信箱，30 分鐘內有效。": "تم إرسال رابط إعادة تعيين كلمة المرور إلى بريدك الإلكتروني، وهو صالح لمدة 30 دقيقة.",
   "重設失敗": "فشلت إعادة التعيين",
   "密碼已更新，請用新密碼登入。": "تم تحديث كلمة المرور. يرجى تسجيل الدخول بكلمة المرور الجديدة.",
@@ -1555,6 +1558,7 @@ export const ar = {
 };
 
 export const ja = {
+  "正在載入朗讀…": "朗読を読み込み中…",
   "重設密碼的連結已寄到您的信箱，30 分鐘內有效。": "パスワード再設定用のリンクをメールで送信しました。30分間有効です。",
   "重設失敗": "リセットに失敗しました",
   "密碼已更新，請用新密碼登入。": "パスワードを更新しました。新しいパスワードでログインしてください。",
@@ -1929,6 +1933,7 @@ export const ja = {
 };
 
 export const ko = {
+  "正在載入朗讀…": "낭독을 불러오는 중…",
   "重設密碼的連結已寄到您的信箱，30 分鐘內有效。": "비밀번호 재설정 링크를 이메일로 보냈습니다. 30분 동안 유효합니다.",
   "重設失敗": "재설정에 실패했습니다",
   "密碼已更新，請用新密碼登入。": "비밀번호가 변경되었습니다. 새 비밀번호로 로그인해 주세요.",
@@ -2302,6 +2307,7 @@ export const ko = {
 };
 
 export const es = {
+  "正在載入朗讀…": "Cargando la lectura…",
   "重設密碼的連結已寄到您的信箱，30 分鐘內有效。": "Te hemos enviado un enlace para restablecer la contraseña. Es válido durante 30 minutos.",
   "重設失敗": "No se pudo restablecer",
   "密碼已更新，請用新密碼登入。": "Tu contraseña se ha actualizado. Inicia sesión con ella.",
@@ -2676,6 +2682,7 @@ export const es = {
 };
 
 export const tr = {
+  "正在載入朗讀…": "Okuma yükleniyor…",
   "重設密碼的連結已寄到您的信箱，30 分鐘內有效。": "Şifre sıfırlama bağlantısı e-postana gönderildi. 30 dakika geçerlidir.",
   "重設失敗": "Sıfırlama başarısız",
   "密碼已更新，請用新密碼登入。": "Şifren güncellendi. Lütfen yeni şifrenle giriş yap.",
@@ -3050,6 +3057,7 @@ export const tr = {
 };
 
 export const de = {
+  "正在載入朗讀…": "Lesung wird geladen…",
   "重設密碼的連結已寄到您的信箱，30 分鐘內有效。": "Wir haben dir einen Link zum Zurücksetzen des Passworts geschickt. Er ist 30 Minuten gültig.",
   "重設失敗": "Zurücksetzen fehlgeschlagen",
   "密碼已更新，請用新密碼登入。": "Dein Passwort wurde aktualisiert. Bitte melde dich damit an.",
@@ -3424,6 +3432,7 @@ export const de = {
 };
 
 export const my = {
+  "正在載入朗讀…": "ဖတ်ကြားချက်ကို ဖွင့်နေသည်…",
   "重設密碼的連結已寄到您的信箱，30 分鐘內有效。": "စကားဝှက် ပြန်သတ်မှတ်ရန် လင့်ခ်ကို သင့် email သို့ ပို့ပြီးပါပြီ။ ၃၀ မိနစ် သက်တမ်းရှိသည်။",
   "重設失敗": "ပြန်လည်သတ်မှတ်မှု မအောင်မြင်ပါ",
   "密碼已更新，請用新密碼登入。": "စကားဝှက် ပြောင်းလဲပြီးပါပြီ။ စကားဝှက်အသစ်ဖြင့် ဝင်ရောက်ပါ။",
@@ -3798,6 +3807,7 @@ export const my = {
 };
 
 export const vi = {
+  "正在載入朗讀…": "Đang tải phần đọc…",
   "重設密碼的連結已寄到您的信箱，30 分鐘內有效。": "Liên kết đặt lại mật khẩu đã được gửi tới email của bạn, có hiệu lực trong 30 phút.",
   "重設失敗": "Đặt lại thất bại",
   "密碼已更新，請用新密碼登入。": "Mật khẩu đã được cập nhật. Vui lòng đăng nhập bằng mật khẩu mới.",
@@ -4172,6 +4182,7 @@ export const vi = {
 };
 
 export const id = {
+  "正在載入朗讀…": "Memuat bacaan…",
   "重設密碼的連結已寄到您的信箱，30 分鐘內有效。": "Tautan atur ulang kata sandi telah dikirim ke email Anda, berlaku 30 menit.",
   "重設失敗": "Gagal mengatur ulang",
   "密碼已更新，請用新密碼登入。": "Kata sandi telah diperbarui. Silakan masuk dengan kata sandi baru.",
@@ -4777,6 +4788,7 @@ export const id = {
 };
 
 export const ms = {
+  "正在載入朗讀…": "Memuatkan bacaan…",
   "重設密碼的連結已寄到您的信箱，30 分鐘內有效。": "Pautan tetapan semula kata laluan telah dihantar ke e-mel anda, sah selama 30 minit.",
   "重設失敗": "Tetapan semula gagal",
   "密碼已更新，請用新密碼登入。": "Kata laluan telah dikemas kini. Sila log masuk dengan kata laluan baharu.",
@@ -5583,6 +5595,7 @@ export const ms = {
 };
 
 export const zhcn = {
+  "正在載入朗讀…": "正在载入朗读…",
   "重設密碼的連結已寄到您的信箱，30 分鐘內有效。": "重设密码的链接已寄到您的信箱，30 分钟内有效。",
   "重設失敗": "重设失败",
   "密碼已更新，請用新密碼登入。": "密码已更新，请用新密码登录。",

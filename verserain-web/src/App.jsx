@@ -29,6 +29,22 @@ import VerseVoiceRecorder from './VerseVoiceRecorder';
 // verse reference — so the 🎙️ record button is always available (once signed
 // in) and a loose recording persists & replays wherever that verse reappears.
 const PERSONAL_LOOSE_SET_ID = '__personal_verses__';
+
+// How long playback waits for the "which verses have a recording" lists before
+// giving up and reading with TTS.
+//
+// This is NOT the audio download — that has no cap, and never needed one. It is
+// only the small JSON that says whether a recording exists at all. The decision
+// is therefore: find out first, then wait for the audio as long as it takes.
+//
+// It used to be 3s, which is fine on wifi and wrong on a phone: the list hadn't
+// landed yet, the verse looked like it had no recording, and the listener got
+// TTS even though the creator's voice existed. Someone opening a shared listen
+// link came specifically for that voice, so a few seconds of quiet is much
+// cheaper than silently substituting the robot. The lists resolve on failure
+// too, so a dead request still falls through immediately rather than burning
+// the whole budget.
+const VOICE_LIST_WAIT_MS = 12000;
 import { bakeBeautifiedBlob } from './voiceBeautify';
 import { SET_BACKGROUND_THEMES, getSetBackgroundUrl, getSetBackgroundVideoUrl } from './setBackgrounds';
 import QrScanner from 'qr-scanner';
@@ -2473,6 +2489,10 @@ function VerseSetContinuousRainPlayer({
   const pausedRecordingRef = useRef(false);
   const voiceAudioCacheRef = useRef(new globalThis.Map()); // voiceId → data URL
   const [creatorVoiceName, setCreatorVoiceName] = useState('');
+  // Shown while we're finding out whether this verse has a recording, and then
+  // while its audio downloads. Without it a slow connection is just silence and
+  // the listener has no idea anything is coming.
+  const [voiceLoading, setVoiceLoading] = useState(false);
   useEffect(() => {
     let cancelled = false;
     verseVoicesRef.current = {};
@@ -2605,7 +2625,7 @@ function VerseSetContinuousRainPlayer({
   };
   const myVoiceForCurrent = personalVoicesRef.current?.[currentVerse.reference] || null;
 
-  const playCreatorRecording = async (rec, phrasesArr, onPhrase, displayName) => {
+  const playCreatorRecording = async (rec, phrasesArr, onPhrase, displayName, onAudioStart) => {
     try {
       let dataUrl = voiceAudioCacheRef.current.get(rec.voiceId);
       if (!dataUrl) {
@@ -2627,6 +2647,8 @@ function VerseSetContinuousRainPlayer({
       // displayName === '' → hide the badge (listener's own voice). undefined
       // (legacy callers) → fall back to the recording's stored name.
       setCreatorVoiceName(displayName !== undefined ? displayName : (rec.recordedBy || ''));
+      // Audio is in hand — drop the "loading the reading" hint.
+      onAudioStart?.();
       const durMs = rec.voiceDur > 0 ? rec.voiceDur * 1000 : 8000;
       // Advance phrase highlights proportionally to each phrase's length,
       // driven by the audio's ACTUAL position (timeupdate) — wall-clock
@@ -3076,12 +3098,16 @@ function VerseSetContinuousRainPlayer({
       const lang = getVoiceLangForVersion(version);
       const currentPhrases = phrasesRef.current;
 
-      // 創作者親聲朗讀 — play the creator's recording instead of TTS when
-      // one exists for this verse; falls back to TTS on any failure.
-      // Wait briefly for the voices list so the first verse doesn't race
-      // the fetch on slow networks (iPhone: TTS 先響、之後才換錄音).
-      await Promise.race([Promise.all([verseVoicesReadyRef.current, personalVoicesReadyRef.current]), wait(3000)]);
-      if (cancelled || runRef.current !== runId) return;
+      // 創作者親聲朗讀 — play the creator's recording instead of TTS when one
+      // exists for this verse; falls back to TTS on any failure. Find out FIRST
+      // (see VOICE_LIST_WAIT_MS) rather than racing a short timer, so a slow
+      // connection doesn't turn a real recording into robot speech.
+      const loadingTimer = window.setTimeout(() => {
+        if (!cancelled && runRef.current === runId) setVoiceLoading(true);
+      }, 900);
+      const stopLoadingHint = () => { window.clearTimeout(loadingTimer); setVoiceLoading(false); };
+      await Promise.race([Promise.all([verseVoicesReadyRef.current, personalVoicesReadyRef.current]), wait(VOICE_LIST_WAIT_MS)]);
+      if (cancelled || runRef.current !== runId) { stopLoadingHint(); return; }
       let creatorPlayed = false;
       // Priority: my (or the share sender's) personal voice › set owner's › TTS.
       const personalRec = overrideVoicesRef.current?.[currentVerse.reference] || null;
@@ -3096,11 +3122,15 @@ function VerseSetContinuousRainPlayer({
         const isOwnVoice = creatorRec === personalRec
           && (!sharedVoiceOwner || sharedVoiceOwner === myOwnerIdRef.current);
         const voiceLabel = isOwnVoice ? '' : (creatorRec.recordedBy || '');
+        // The hint stays up through the audio download — that is the slow part
+        // on a phone — and playCreatorRecording drops it the moment sound
+        // actually starts.
         creatorPlayed = await playCreatorRecording(creatorRec, currentPhrases, (i) => {
           if (!cancelled && runRef.current === runId) setActivePhrase(i);
-        }, voiceLabel);
-        if (cancelled || runRef.current !== runId) return;
+        }, voiceLabel, stopLoadingHint);
+        if (cancelled || runRef.current !== runId) { stopLoadingHint(); return; }
       }
+      stopLoadingHint();
 
       if (!creatorPlayed) {
       // Resuming mid-verse: skip re-announcing the reference and pick the
@@ -3426,6 +3456,11 @@ function VerseSetContinuousRainPlayer({
                 </small>
               )}
             </h2>
+            {voiceLoading && (
+              <div style={{ textAlign: 'center', margin: '-0.1rem 0 0.4rem', fontSize: '0.82rem' }}>
+                <span style={{ color: '#93c5fd', fontWeight: 600 }}>⏳ {t('正在載入朗讀…', 'Loading the reading…')}</span>
+              </div>
+            )}
             {creatorVoiceName && (
               <div style={{ textAlign: 'center', margin: '-0.3rem 0 0.4rem', color: '#000000', fontSize: '0.85rem', fontWeight: 600, textShadow: '0.06em 0.08em 2px rgba(255, 255, 255, 0.95), 0.12em 0.16em 8px rgba(255, 255, 255, 0.65)' }}>
                 🎙️ {t('朗讀者：{name}', 'Reader: {name}').replace('{name}', String(creatorVoiceName))}
