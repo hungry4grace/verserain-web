@@ -7532,7 +7532,13 @@ export default function App() {
     const listenVerseRef = params.get('listenVerse');
     const requestedVersion = params.get('version');
 
-    if ((listenDaily || listenSetRef) && requestedVersion && requestedVersion !== version) {
+    // version= carries whatever the SENDER's app was set to. Apply it once as a
+    // first guess so the right language chunk starts loading — but only once,
+    // because the set's OWN language is the authority (see the listenSet branch
+    // below) and re-applying this would fight it forever.
+    if ((listenDaily || listenSetRef) && requestedVersion && requestedVersion !== version
+        && !appliedLinkVersionRef.current) {
+      appliedLinkVersionRef.current = true;
       setVersion(requestedVersion);
       return;
     }
@@ -7563,6 +7569,21 @@ export default function App() {
     }
 
     if (listenSetRef) {
+      // activeVerseSets only holds sets whose language === the current version,
+      // so a share for a set in ANOTHER language can never be found there: every
+      // remote fetch below lands the set into state and it still stays
+      // invisible, leaving the recipient staring at an empty player. Resolve
+      // against the unfiltered lists first and adopt the set's OWN language —
+      // the link's version= is the sender's setting, not the set's.
+      const setInAnyLanguage = publishedVerseSets.find(s => s.id === listenSetRef)
+        || customVerseSets.find(s => s.id === listenSetRef)
+        || null;
+      const setLanguage = setInAnyLanguage ? (setInAnyLanguage.language || 'cuv') : null;
+      if (setLanguage && setLanguage !== version) {
+        setVersion(setLanguage);
+        return; // re-runs once the language loads; the set is then in activeVerseSets
+      }
+
       const foundSet = activeVerseSets.find(s => s.id === listenSetRef);
       if (foundSet) {
         // listenOrder=seq → play ALL verses in canonical order (looping),
@@ -7774,6 +7795,9 @@ export default function App() {
   // Tracks listenSet ids we've already fired a fallback remote fetch for, so
   // the share-URL handler doesn't hammer PartyKit on every activeVerseSets re-render.
   const listenSetFetchAttemptedRef = useRef(new globalThis.Set());
+  // The link's version= is applied at most once. After that the set's own
+  // language wins, so the two can't ping-pong against each other.
+  const appliedLinkVersionRef = useRef(false);
   // Same idea for ?viewSet=... share URLs (links shared on Skool / WhatsApp /
   // etc. land here in fresh contexts where the set may not yet be in any
   // local list).
