@@ -1324,6 +1324,7 @@ textarea {
     max-width: calc(100vw - 128px);
     margin-left: 64px;
   }
+
 }
 
 .continuous-rain-set-title {
@@ -1633,8 +1634,20 @@ textarea {
     min-height: 100dvh;
   }
 
+  /* The overlay's own padding is zeroed just above, so THIS top padding is what
+     keeps the topic-set row clear of the iPhone notch / Dynamic Island — which
+     covers roughly the top 59px. 1.2rem (19px) put the row underneath it.
+     A floor is required rather than env() alone: in-app browsers (WhatsApp,
+     LINE) frequently report safe-area-inset-top as 0, which is exactly the
+     case that was broken. Where env() does report, it still wins. */
   .continuous-rain-content {
-    padding: 1.2rem 0.85rem 10.5rem;
+    padding: max(env(safe-area-inset-top), 4.25rem) 0.85rem 10.5rem;
+  }
+
+  /* Same floor for the ✕ button — it is positioned against the overlay, whose
+     padding is 0 here, so it would otherwise sit at 0.9rem, under the island. */
+  .continuous-rain-action-controls.continuous-rain-close-topleft {
+    top: max(env(safe-area-inset-top), 4.25rem);
   }
 
   .continuous-rain-action-controls {
