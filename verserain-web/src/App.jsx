@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { Play, Pause, RotateCcw, Heart, Zap, Trophy, Crown, Star, Home, XCircle, Headphones, Music, VolumeX, Search, Share2, Dices, Mic, MicOff, Users, CloudRain, Info, Edit, TreePine, Gamepad2, Map, Settings, Library, Volume2, Shuffle, Swords, ShoppingBasket, Apple, Mail, Lock, PartyPopper, Sprout, Leaf, RotateCw, Smartphone, Hourglass, Frown, X, Camera, Square, Copy } from 'lucide-react';
+import { Play, Pause, RotateCcw, Heart, Zap, Trophy, Crown, Star, Home, XCircle, Headphones, Music, VolumeX, Search, Share2, Dices, Mic, MicOff, Users, CloudRain, Info, Edit, TreePine, Gamepad2, Map, Settings, Library, Volume2, Shuffle, Swords, ShoppingBasket, Apple, Mail, Lock, Sprout, Leaf, RotateCw, Smartphone, Hourglass, Frown, X, Camera, Square, Copy } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import usePartySocket from 'partysocket/react';
 import PartySocket from 'partysocket';
@@ -10450,6 +10450,7 @@ export default function App() {
     '加入': '参加',
     '儲存題庫': 'セットを保存',
     '建立新題庫': '新しいセット',
+    '（建立專屬題庫不需要階級 —— 登入就可以。）': '（オリジナル問題集の作成にレベルは不要です —— ログインするだけ。）',
     '公開此題庫 (Publish to Global Verse Sets)': '世界に公開 (Publish)',
     '新增一節經文': '1節追加',
     '操作': '操作',
@@ -10762,6 +10763,7 @@ export default function App() {
     '加入': '참가',
     '儲存題庫': '세트 저장',
     '建立新題庫': '새 문제집',
+    '（建立專屬題庫不需要階級 —— 登入就可以。）': '（나만의 문제집을 만드는 데 레벨은 필요 없습니다 —— 로그인만 하면 됩니다.）',
     '公開此題庫 (Publish to Global Verse Sets)': '전 세계에 공개 (Publish)',
     '新增一節經文': '한 구절 추가',
     '操作': '조작',
@@ -11252,6 +11254,7 @@ const zhcnDict = {
   "公開此題庫 (Publish to Global Verse Sets)": "公开此题库 (Publish to Global Verse Sets)",
   "編輯題庫": "编辑题库",
   "建立新題庫": "建立新题库",
+  "（建立專屬題庫不需要階級 —— 登入就可以。）": "（建立专属题库不需要阶级 —— 登录就可以。）",
   "測試遊玩": "测试游玩",
   "編輯": "编辑",
   "刪除": "删除",
@@ -17103,9 +17106,13 @@ const deDict = {
                 <div style={{ backgroundColor: '#ffffff', borderRadius: '8px', border: '1px solid #cbd5e1', padding: '2rem', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
                     <h2 style={{ color: '#1e293b', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Crown size={28} /> {t("我的專屬題庫", "My Custom Sets")}</h2>
-                    {(isPremium || skoolLevel.level >= 3) && (
+                    {/* Premium is a real distinction; level is NOT — creating sets
+                        only needs a login (see canCreateCustomSets). The old
+                        "Lv.{n} 權限解鎖" badge implied a gate that does not exist,
+                        so a new member read its absence as "I'm not allowed yet". */}
+                    {isPremium && (
                       <div style={{ background: '#f8fafc', border: '1px solid #cbd5e1', padding: '0.3rem 0.6rem', borderRadius: '4px', fontSize: '0.85rem', color: '#fbbf24', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-                        {isPremium ? <><Star size={16} /> {t("Premium 認證", "Premium Active")}</> : <><Star size={16} /> {t('Lv.{n} 權限解鎖', 'Lv.{n} Unlocked').replace('{n}', String(skoolLevel.level))}</>}
+                        <Star size={16} /> {t("Premium 認證", "Premium Active")}
                       </div>
                     )}
                   </div>
@@ -19163,27 +19170,6 @@ const deDict = {
                         </div>
                       </div>
                     )}
-
-                    {skoolLevel.level >= 3 && !isPremium && (() => {
-                      const dismissed = localStorage.getItem('verseRain_customSetUnlockSeen');
-                      return (
-                        <div style={{ marginTop: '2rem', padding: '1.5rem', background: 'linear-gradient(135deg, #ede9fe, #ddd6fe)', borderRadius: '12px', border: '1px solid #c4b5fd', animation: dismissed ? 'none' : 'flashSuccess 1s ease-in-out 3', position: 'relative' }}>
-                          {!dismissed && (
-                            <div style={{ position: 'absolute', top: '8px', right: '12px', cursor: 'pointer', color: '#7c3aed', opacity: 0.6 }}
-                              onClick={(e) => { e.stopPropagation(); localStorage.setItem('verseRain_customSetUnlockSeen', 'true'); setToast(t('已知悉', 'Got it!')); }}
-                              title={t('不再提醒', 'Dismiss')}
-                            ><X size={20} /></div>
-                          )}
-                          <PartyPopper size={44} color="#7c3aed" style={{ marginBottom: '0.5rem' }} />
-                          <h4 style={{ margin: 0, color: '#5b21b6', fontSize: '1.3rem', marginBottom: '0.5rem', fontWeight: 'bold' }}>
-                            {t("恭喜！你已解鎖專屬題庫功能！", "Congratulations! Custom Sets Unlocked!")}
-                          </h4>
-                          <p style={{ margin: 0, color: '#4c1d95', fontSize: '1rem', lineHeight: '1.5' }}>
-                            {t("身為 Lv.3 以上的實踐者，你現在可以前往「經文題庫」上方的「我的專屬題庫」自由創建與分享你專屬的經文組了！", "As a Level 3+ player, you can now use the My Custom Sets button above the Scripture Sets list to create and share your own verse sets!")}
-                          </p>
-                        </div>
-                      );
-                    })()}
 
                     {/* Gamification Invite Block (Unlocked for Lv.2+, Teaser for Lv.1) */}
                     <div style={{ marginTop: '2rem', padding: '1.5rem', background: '#f8fafc', borderRadius: '12px', border: '1px solid #e2e8f0', textAlign: 'left', position: 'relative', overflow: 'hidden' }}>
@@ -22204,9 +22190,8 @@ const deDict = {
 
               <div style={{ padding: '1.5rem', overflowY: 'auto' }}>
                 <p style={{ color: '#475569', marginBottom: '1.5rem', lineHeight: '1.6' }}>
-                  {t("在園子裡持續照顧樹苗並結出果子，就能提升你的互惠階級！當達到 ", "Bear fruits in your garden to level up! Reaching ")}
-                  <strong style={{ color: '#8b5cf6' }}>Lv.3 {t("共識實踐者", "Level 3")}</strong>
-                  {t(" 時，將自動解鎖「專屬題庫」的建立權限喔！", " automatically unlocks Custom Verse Sets!")}
+                  {t("在園子裡持續照顧樹苗並結出果子，就能提升你的互惠階級！", "Bear fruits in your garden to level up!")}
+                  {t("（建立專屬題庫不需要階級 —— 登入就可以。）", " Creating custom verse sets needs no level — just sign in.")}
                 </p>
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
@@ -22239,11 +22224,6 @@ const deDict = {
 
                               {isCurrent && <span style={{ fontSize: '0.9rem', color: '#059669', marginLeft: '8px', display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}><Info size={14} /> {t("目前階級", "You are here")}</span>}
                             </div>
-                            {levelObj.level === 3 && (
-                              <div style={{ fontSize: '0.85rem', color: '#8b5cf6', fontWeight: 'bold', marginTop: '4px', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-                                <Lock size={15} /> {t("解鎖建立專屬題庫", "Unlocks Custom Sets")}
-                              </div>
-                            )}
                           </div>
                         </div>
                         <div style={{ fontWeight: 'bold', color: isUnlocked ? '#d97706' : '#cbd5e1', display: 'flex', alignItems: 'center', gap: '6px' }}>
