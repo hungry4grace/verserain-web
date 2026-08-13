@@ -16,6 +16,63 @@ Android 版採用 **Trusted Web Activity (TWA)**：用 Bubblewrap 把 https://ww
 
 兩個金鑰檔都已加入 `.gitignore`，不會進 git。
 
+> 📍 **2026-08-11：keystore 不在 `android-twa/` 了，已移出到個人筆記庫。**
+>
+> **確切位置與密碼刻意不寫在這裡 —— 本 repo 是公開的。**
+> 兩者都在密碼管理器的 VerseRain keystore 條目裡。
+>
+> `twa-manifest.json` 的 `signingKey.path` 仍寫 `./android.keystore`，
+> 所以 build 前要先把那個 .jks 複製過來（複製的那份會被 `.gitignore`
+> 擋住，不會進 git）：
+>
+> ```bash
+> cp <keystore 路徑> android-twa/android.keystore
+> ```
+>
+> **alias 是 `key0`，不是 `android`。** 用錯會失敗在
+> `entry "android" does not contain a key`。`twa-manifest.json` 已改成 `key0`。
+> 憑證：`O=Hope of Glory LLC, CN=David Hwang`，
+> SHA-256 `AC:EB:9D:5A:BD:BD:8F:78:52:95:A1:6D:4A:F5:DA:78:3A:C8:F5:F2:89:7B:9E:6B:1D:76:9B:E2:0C:7E:68:DF`
+>
+> ⚠️ **但這把不是 Play 認得的上傳金鑰。** 已在 Play Console 核對過：
+> 註冊的上傳金鑰是 `87:81:FC:43:...`（= `assetlinks.json` 第一組），
+> Play 自己的簽署金鑰是 `94:A9:CE:F1:...`（第二組）。
+> 筆記庫裡那把 keystore 建立於 2026-05-22，比 Bubblewrap 專案（06-13）還早，
+> 是更早的另一把金鑰；Bubblewrap 當時自己產的 `android.keystore` 才是真正的上傳金鑰，
+> **那一把已經遺失**。
+>
+> **解法：重設上傳金鑰**，把手上這把 `key0` 註冊成新的上傳金鑰（不必再產新的）：
+>
+> ```bash
+> # 匯出憑證（會問密碼）
+> /opt/homebrew/opt/openjdk@17/bin/keytool -export -rfc \
+>   -keystore ./android.keystore -alias key0 -file upload_certificate.pem
+> ```
+>
+> Play Console → 設定 → 應用程式完整性 → 應用程式簽署 →
+> **Request upload key reset** → 上傳這個 .pem。
+>
+> ✅ **整件事已於 2026-08-13 完成。** 流程記錄：
+> 08-11 送出重設（Google 回信的指紋與本機 .pem 完全相符，
+> SHA1 `6F:E1:29:58:2F:89:3D:CC:13:30:4B:BA:DD:43:2F:E6:14:7A:D7:B4`）→
+> 08-13 09:16 UTC 生效 → 同日上傳 `app-release-bundle.aab` 成功，
+> 不用重 build、不用改版號。
+>
+> **Play 後台確認：`44 (3.6.2)` / API levels 21+ / Target SDK 36**，
+> 已在 Internal testing 軌上線。API 36 的規定就此滿足（本來的期限 08-31、
+> 已申請的延期 11-01 都不再有意義）。
+>
+> `assetlinks.json` 也已同步：舊的上傳金鑰指紋 `87:81:FC:43:...` 換成
+> `AC:EB:9D:5A:...`，Play 簽署金鑰 `94:A9:CE:F1:...` 不動（commit 048bdfcf）。
+>
+> 下一步跟 API level 無關：Internal testing 不算封閉測試的門檻，
+> 要拿正式版權限得把同一個 bundle 放到 **Closed testing**
+> （建立版本時用「Add from library」挑 44，不必重傳），跑滿 12 位測試者 × 14 天。
+>
+> **教訓**：`.gitignore` 保護了金鑰不外流，但也讓它在換機／搬檔時無聲消失，
+> 全機 `find` 要跑好幾分鐘、Spotlight 甚至索引不到 Obsidian vault。
+> 金鑰搬家時，請同步更新本檔案的路徑。
+
 ## 一次性前置：部署網站更新（已備好，待部署）
 
 1. `verserain-web/public/manifest.json` — 加了 PNG icons（192/512/maskable）
@@ -58,19 +115,84 @@ Android 版採用 **Trusted Web Activity (TWA)**：用 Bubblewrap 把 https://ww
 - 邀請教會團契的弟兄姊妹當測試者（給 email list + opt-in 連結）
 - 14 天後申請正式發布權限
 
+## 建置環境（2026-08-11 重建並驗證過）
+
+這台機器換過之後，JDK、Android SDK、keystore 全部不見了（都在 `.gitignore` 裡）。
+重建步驟：
+
+```bash
+brew install openjdk@17
+npm i -g @bubblewrap/cli@latest
+```
+
+然後寫 `~/.bubblewrap/config.json`：
+
+```json
+{
+  "jdkPath": "/opt/homebrew/opt/openjdk@17/libexec/openjdk.jdk",
+  "androidSdkPath": "/Users/<你的帳號>/.bubblewrap/android_sdk"
+}
+```
+
+**`jdkPath` 一定要指到 `.jdk` bundle 根目錄，不是 `Contents/Home`。**
+Bubblewrap 在 macOS 上會自己接 `/Contents/Home/`（見 `@bubblewrap/core` 的
+`JdkHelper.getJavaHome()`），指到 `Contents/Home` 會變成
+`Contents/Home/Contents/Home`，然後報 `The jdkPath isn't correct`。
+（本檔案舊版寫的 `JAVA_HOME=/opt/homebrew/opt/openjdk@17` 也是錯的，那是 keg-only
+前綴，不是 JDK home。）
+
+Android SDK 用 `bubblewrap doctor` 下載，但它**只會抓 `tools`，不會抓 platform**，
+build 會炸在 `SdkHandler.initTarget`。要自己補：
+
+```bash
+export JAVA_HOME=/opt/homebrew/opt/openjdk@17/libexec/openjdk.jdk/Contents/Home
+~/.bubblewrap/android_sdk/tools/bin/sdkmanager \
+  --sdk_root=$HOME/.bubblewrap/android_sdk \
+  "platforms;android-36" "build-tools;36.0.0" "platform-tools"
+```
+
+驗證：`bubblewrap doctor` 要回 `Your jdkpath and androidSdkPath are valid.`
+
+## Target API level（Google Play 強制要求）
+
+Google Play 每年拉高門檻，**2026-08-31 起必須 target API 36（Android 16）**。
+可申請延期到 2026-11-01（本專案已申請並獲准）。
+
+`targetSdkVersion` **不在任何進 git 的檔案裡** — 它在 Bubblewrap 產生的
+`app/build.gradle`（被 gitignore）。所以升 API level 不用改任何程式碼，
+只要升 Bubblewrap 再重新產生專案：
+
+```bash
+npm i -g @bubblewrap/cli@latest   # 1.25.0 的樣板 = targetSdkVersion 36
+cd android-twa
+bubblewrap update --appVersionName=<新版號>   # 會自動把 appVersionCode +1
+```
+
+驗證產出的 APK 真的是 36（不要只看 build.gradle）：
+
+```bash
+~/.bubblewrap/android_sdk/build-tools/36.0.0/aapt2 dump badging \
+  app-release-unsigned-aligned.apk | grep -E "^package|targetSdkVersion"
+```
+
 ## 日後更新版本
 
 ```bash
 cd android-twa
-# 改 twa-manifest.json: appVersionCode +1、appVersionName
-JAVA_HOME=/opt/homebrew/opt/openjdk@17 \
+bubblewrap update --appVersionName=<新版號>   # appVersionCode 自動 +1
 BUBBLEWRAP_KEYSTORE_PASSWORD=$(cat .keystore-password.txt) \
 BUBBLEWRAP_KEY_PASSWORD=$(cat .keystore-password.txt) \
-npx @bubblewrap/cli build --skipPwaValidation
+bubblewrap build --skipPwaValidation
 ```
+
+不簽章的試建（驗證編譯有沒有過，不需要 keystore）：加 `--skipSigning`。
 
 注意：**網站內容更新不用發新版** — TWA 載入的是線上網站，`vercel --prod` 即生效。
 只有改 app 殼（icon、名稱、顏色、版本號）才需要重新 build + 上傳。
+
+`twa-manifest.json` 的 `iconUrl` / `maskableIconUrl` 必須指向**線上網址**
+（`https://www.verserain.com/icons/icon-512.png`）。原本指著建立當天的本機
+dev server `http://127.0.0.1:8123`，任何時候重新產生專案都會炸 `ECONNREFUSED`。
 
 ## 實機測試（上架前建議）
 

@@ -13,15 +13,15 @@
   "backgroundColor": "#0F172A",
   "enableNotifications": true,
   "startUrl": "/",
-  "iconUrl": "http://127.0.0.1:8123/icons/icon-512.png",
-  "maskableIconUrl": "http://127.0.0.1:8123/icons/icon-512.png",
+  "iconUrl": "https://www.verserain.com/icons/icon-512.png",
+  "maskableIconUrl": "https://www.verserain.com/icons/icon-512.png",
   "splashScreenFadeOutDuration": 300,
   "signingKey": {
     "path": "./android.keystore",
-    "alias": "android"
+    "alias": "key0"
   },
-  "appVersionName": "3.6.1",
-  "appVersionCode": 43,
+  "appVersionName": "3.6.2",
+  "appVersionCode": 44,
   "shortcuts": [],
   "generatorApp": "bubblewrap-cli",
   "webManifestUrl": "https://www.verserain.com/manifest.json",
@@ -40,5 +40,5 @@
   "additionalTrustedOrigins": [],
   "retainedBundles": [],
   "displayOverride": [],
-  "appVersion": "3.6.1"
+  "appVersion": "3.6.2"
 }
