@@ -31,6 +31,82 @@ export default function VerseVoiceRecorder({ t, reference, verseText, onUpload, 
   const previewAudioRef = useRef(null);
   const secondsRef = useRef(0);
 
+  // ─── Upload an existing MP3 ────────────────────────────────────────────
+  // Not everyone records in the browser: choirs and pastors often already have
+  // a clean take from a phone recorder or a studio. Accepting a file reuses the
+  // whole preview/save path below — the only thing that changes is where the
+  // Blob came from (a File IS a Blob).
+  //
+  // MP3 ONLY, deliberately. uploadVerseVoice() base64-encodes the blob and
+  // rejects more than 120 chunks of 100,000 chars — exactly 9,000,000 binary
+  // bytes. Uncompressed WAV runs ~10 MB per minute, so a one-minute reading
+  // would never fit. Converting in the browser was tried and dropped: it needs
+  // a JS MP3 encoder (~163 KB) because no browser can encode MP3 natively.
+  // Asking for an MP3 up front costs the creator one export step and keeps the
+  // client simple.
+  const MAX_UPLOAD_BYTES = 9000000;
+  const fileInputRef = useRef(null);
+  const [fromFile, setFromFile] = useState(false);
+  const [fileName, setFileName] = useState('');
+
+  // Duration comes from the container metadata — no need to decode the audio.
+  const readDuration = (file) => new Promise((resolve) => {
+    let url = '';
+    const done = (v) => { try { if (url) URL.revokeObjectURL(url); } catch { /* noop */ } resolve(v); };
+    try {
+      url = URL.createObjectURL(file);
+      const probe = new Audio();
+      probe.preload = 'metadata';
+      probe.onloadedmetadata = () => {
+        const d = probe.duration;
+        done(Number.isFinite(d) && d > 0 ? Math.round(d) : 0);
+      };
+      probe.onerror = () => done(0);
+      probe.src = url;
+    } catch { done(0); }
+  });
+
+  const pickFile = async (e) => {
+    const file = e.target.files?.[0];
+    // Clear immediately so picking the SAME file again after an error still fires.
+    e.target.value = '';
+    if (!file) return;
+    setError('');
+
+    // Check the extension as well as the type: a .mp3 dragged in from some
+    // file managers arrives with an empty File.type.
+    const isMp3 = /^audio\/(mpeg|mp3)$/i.test(file.type) || /\.mp3$/i.test(file.name);
+    if (!isMp3) {
+      setError(t('只接受 MP3 檔案。WAV 等未壓縮格式太大,請先轉成 MP3 再上傳。',
+                 'MP3 only. Uncompressed formats like WAV are far too large — please export as MP3 first.'));
+      return;
+    }
+    if (file.size > MAX_UPLOAD_BYTES) {
+      setError(
+        t('檔案太大({size} MB),上限約 8.5 MB。請把錄音剪短一些。',
+          'File too large ({size} MB) — the limit is about 8.5 MB. Please trim the recording.')
+          .replace('{size}', (file.size / 1e6).toFixed(1))
+      );
+      return;
+    }
+
+    const dur = await readDuration(file);
+    // A zero here means the browser could not read the metadata — usually a
+    // file that is not really an MP3, so preview and playback would fail too.
+    if (!dur) {
+      setError(t('這個檔案無法播放,請確認它是有效的 MP3。', 'This file cannot be played — please check it is a valid MP3.'));
+      return;
+    }
+
+    blobRef.current = file;
+    mimeRef.current = 'audio/mpeg';
+    secondsRef.current = dur;
+    setSeconds(dur);
+    setFromFile(true);
+    setFileName(file.name);
+    setPhase('preview');
+  };
+
   // Which OS input this take is actually coming from. A Mac pointed at a
   // virtual device (BlackHole/Zoom/Teams/Krisp) records pure digital silence
   // while recording, upload and playback all report success — showing the
@@ -209,6 +285,8 @@ export default function VerseVoiceRecorder({ t, reference, verseText, onUpload, 
   const discardAndRerecord = () => {
     stopPreview();
     blobRef.current = null;
+    setFromFile(false);
+    setFileName('');
     setSeconds(0);
     secondsRef.current = 0;
     setPhase('idle');
@@ -282,9 +360,24 @@ export default function VerseVoiceRecorder({ t, reference, verseText, onUpload, 
         {phase === 'idle' && (
           <div>
             {deviceSelect}
-            <button onClick={startRecording} style={{ width: 84, height: 84, borderRadius: '50%', border: 'none', background: '#dc2626', color: '#fff', cursor: 'pointer', fontSize: '1.6rem', boxShadow: '0 8px 24px rgba(220,38,38,0.4)' }} title={t('開始錄音', 'Start recording')}>
-              🎙️
-            </button>
+            <div style={{ display: 'flex', gap: 18, justifyContent: 'center', alignItems: 'center' }}>
+              <button onClick={startRecording} style={{ width: 84, height: 84, borderRadius: '50%', border: 'none', background: '#dc2626', color: '#fff', cursor: 'pointer', fontSize: '1.6rem', boxShadow: '0 8px 24px rgba(220,38,38,0.4)' }} title={t('開始錄音', 'Start recording')}>
+                🎙️
+              </button>
+              <button onClick={() => fileInputRef.current?.click()} style={{ width: 84, height: 84, borderRadius: '50%', border: '2px solid #cbd5e1', background: '#f8fafc', color: '#334155', cursor: 'pointer', fontSize: '1.6rem' }} title={t('上傳錄音檔', 'Upload an audio file')}>
+                📂
+              </button>
+            </div>
+            <div style={{ color: '#64748b', fontSize: '0.8rem', marginTop: '0.7rem' }}>
+              {t('已經有錄好的 MP3?按📂上傳', 'Already have an MP3? Tap 📂 to upload')}
+            </div>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="audio/mpeg,.mp3"
+              onChange={pickFile}
+              style={{ display: 'none' }}
+            />
           </div>
         )}
         {phase === 'recording' && (
@@ -300,13 +393,19 @@ export default function VerseVoiceRecorder({ t, reference, verseText, onUpload, 
           <div>
             {/* Picker stays available here: if 試聽 turns out silent, the next
                 thing you want is to switch device and hit 重錄. */}
-            {deviceSelect || inputMonitor()}
+            {/* A mic device label under an UPLOADED clip would be a lie — show
+                where the audio actually came from instead. */}
+            {fromFile ? (
+              <div style={{ fontSize: '0.8rem', color: '#64748b', margin: '0 0 0.9rem', textAlign: 'left', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                📂 {fileName}
+              </div>
+            ) : (deviceSelect || inputMonitor())}
             <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap' }}>
               <button onClick={togglePreview} disabled={phase !== 'preview'} style={{ padding: '0.55rem 1.1rem', borderRadius: 10, border: '1px solid #cbd5e1', background: '#f8fafc', color: '#334155', cursor: 'pointer' }}>
                 {previewPlaying ? `⏸ ${t('停止', 'Stop')}` : `▶ ${t('試聽', 'Preview')} (${timeLabel})`}
               </button>
               <button onClick={discardAndRerecord} disabled={phase !== 'preview'} style={{ padding: '0.55rem 1.1rem', borderRadius: 10, border: '1px solid #cbd5e1', background: '#f8fafc', color: '#334155', cursor: 'pointer' }}>
-                🎙️ {t('重錄', 'Re-record')}
+                {fromFile ? `📂 ${t('重新選擇', 'Choose another')}` : `🎙️ ${t('重錄', 'Re-record')}`}
               </button>
               <button onClick={send} disabled={phase !== 'preview'} style={{ padding: '0.55rem 1.4rem', borderRadius: 10, border: 'none', background: 'linear-gradient(135deg, #34d399, #10b981)', color: '#fff', cursor: 'pointer', fontWeight: 'bold' }}>
                 {t('儲存錄音', 'Save recording')}
