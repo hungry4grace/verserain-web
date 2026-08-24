@@ -16657,84 +16657,6 @@ const deDict = {
 
               {mainTab === 'lobby' && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem', alignItems: 'center', marginTop: '1rem', paddingBottom: '3rem' }}>
-                  <div style={{ textAlign: 'center', marginBottom: '1.5rem', background: 'linear-gradient(135deg, #ffffff, #f8fafc)', padding: '2rem', borderRadius: '20px', width: '100%', boxShadow: '0 4px 15px rgba(0,0,0,0.05)', position: 'relative' }}>
-
-                    <h1 style={{ fontSize: 'clamp(1.8rem, 6vw, 2.5rem)', color: '#1e293b', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '1rem', whiteSpace: 'nowrap' }}>
-                      <CloudRain size={40} color="#3b82f6" style={{ flexShrink: 0 }} /> {t("VerseRain 經文雨", "VerseRain")}
-                    </h1>
-                    {randomRainVerse ? (
-                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1.2rem' }}>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', maxWidth: '650px', width: '100%' }}>
-                          <p style={{ fontSize: '1.05rem', color: '#475569', lineHeight: '1.8', margin: 0, fontStyle: 'italic', textAlign: 'center' }}>
-                            {scriptureQuoteMarks[0]}{randomRainVerse.text}{scriptureQuoteMarks[1]}
-                          </p>
-                          <div style={{ textAlign: 'right', paddingRight: '1rem' }}>
-                            <span style={{ fontSize: '0.9rem', color: '#64748b', fontWeight: '600' }}>
-                              — {formatVerseReferenceForDisplay(randomRainVerse.reference, version)}
-                            </span>
-                          </div>
-                        </div>
-                        
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', flexWrap: 'wrap', justifyContent: 'center' }}>
-                          <button
-                            onClick={() => {
-                              if (isLobbyReading) {
-                                lobbyReadRunRef.current += 1;
-                                stopSpeechIfActive();
-                                setIsLobbyReading(false);
-                              } else {
-                                const runId = ++lobbyReadRunRef.current;
-                                setIsLobbyReading(true);
-                                updateGarden('activity_only', 'listen');
-                                const lang = getVoiceLangForVersion(version);
-                                initAudio();
-                                speakTextTimed(randomRainVerse.text, 0.85, lang).then(() => {
-                                  if (lobbyReadRunRef.current === runId) setIsLobbyReading(false);
-                                });
-                              }
-                            }}
-                            style={{ background: isLobbyReading ? 'linear-gradient(135deg, #93c5fd, #60a5fa)' : 'linear-gradient(135deg, #60a5fa, #3b82f6)', color: 'white', border: 'none', padding: '0.45rem 1.2rem', borderRadius: '20px', fontSize: '0.9rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', fontWeight: '600', boxShadow: '0 2px 6px rgba(59,130,246,0.3)', transition: 'transform 0.15s, box-shadow 0.15s' }}
-                            onMouseOver={(e) => { e.currentTarget.style.transform = 'scale(1.05)'; e.currentTarget.style.boxShadow = '0 4px 12px rgba(59,130,246,0.4)'; }}
-                            onMouseOut={(e) => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = '0 2px 6px rgba(59,130,246,0.3)'; }}
-                            title={isLobbyReading ? t('暫停', 'Pause') : t('朗讀經文', 'Read aloud')}
-                          >
-                            {isLobbyReading ? <Pause size={17} /> : <Play size={17} fill="currentColor" />} {isLobbyReading ? t('暫停', 'Pause') : t('讀經', 'Read')}
-                          </button>
-                          <button
-                            onClick={() => { lobbyReadRunRef.current += 1; stopSpeechIfActive(); setIsLobbyReading(false); setRainVerseIndex(i => i + 1 + Math.floor(Math.random() * 5)); }}
-                            style={{ background: 'white', color: '#475569', border: '1.5px solid #cbd5e1', padding: '0.45rem 1.2rem', borderRadius: '20px', fontSize: '0.9rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', fontWeight: '600', boxShadow: '0 1px 3px rgba(0,0,0,0.08)', transition: 'transform 0.15s, box-shadow 0.15s, background 0.15s' }}
-                            onMouseOver={(e) => { e.currentTarget.style.transform = 'scale(1.05)'; e.currentTarget.style.background = '#f1f5f9'; }}
-                            onMouseOut={(e) => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.background = 'white'; }}
-                            title={t('換一句經文', 'Next verse')}
-                          >
-                            <Shuffle size={17} /> {t('換一個', 'Next')}
-                          </button>
-                          <button
-                            onClick={() => {
-                              if (!randomRainVerse) return;
-                              setActiveVerse(randomRainVerse);
-                              setSelectedVerseRefs([randomRainVerse.reference]);
-                              setTimeout(() => {
-                                setInitAutoStart({ trigger: true, isAuto: false, overrideVerse: randomRainVerse });
-                              }, 100);
-                            }}
-                            style={{ background: 'linear-gradient(135deg, #f97316, #ef4444)', color: 'white', border: 'none', padding: '0.45rem 1.2rem', borderRadius: '20px', fontSize: '0.9rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', fontWeight: '600', boxShadow: '0 2px 6px rgba(239,68,68,0.3)', transition: 'transform 0.15s, box-shadow 0.15s' }}
-                            onMouseOver={(e) => { e.currentTarget.style.transform = 'scale(1.05)'; e.currentTarget.style.boxShadow = '0 4px 12px rgba(239,68,68,0.4)'; }}
-                            onMouseOut={(e) => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = '0 2px 6px rgba(239,68,68,0.3)'; }}
-                            title={t('立刻挑戰這節經文', 'Challenge this verse now')}
-                          >
-                            <Swords size={17} /> {t('挑戰', 'Play')}
-                          </button>
-                        </div>
-
-                      </div>
-                    ) : (
-                      <p style={{ fontSize: '0.95rem', color: '#94a3b8', lineHeight: '1.8', margin: 0 }}>
-                        {t("每天一句神的話，心意更新而變化", "One verse a day, keep the devil away")}
-                      </p>
-                    )}
-                  </div>
-
                   {/* Lobby tile captions split into two balanced lines so
                       the closing 「化。/年。/歡。…」 character doesn't get
                       orphaned on its own line. Looks for natural break
@@ -16742,43 +16664,43 @@ const deDict = {
                       injects a newline; combined with whiteSpace:pre-line
                       on the <p> the text renders as two clean rows. */}
                   {(() => null)()}
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.5rem', width: '100%' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: isNarrowEditor ? 'repeat(2, 1fr)' : 'repeat(auto-fit, minmax(280px, 1fr))', gap: isNarrowEditor ? '0.6rem' : '1.5rem', width: '100%' }}>
                     {/* Daily VerseRain */}
-                    <div className="primary-button" onClick={() => setMainTab('daily_verse')} style={{ background: 'linear-gradient(135deg, #818cf8, #6366f1 55%, #4338ca)', borderRadius: '16px', padding: '2.5rem 2rem', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', color: 'white', textAlign: 'center', boxShadow: '0 10px 28px rgba(79, 70, 229, 0.35)' }}>
-                      <CloudRain size={72} style={{ marginBottom: '1rem' }} />
-                      <h2 style={{ fontSize: '2rem', margin: 0, marginBottom: '0.5rem', textShadow: '0 2px 4px rgba(0,0,0,0.2)' }}>{t("每日經文", "Daily Verse")}</h2>
-                      <p style={tileCaptionStyle(0.95)}>{splitCaption(t("每日一句神的話，心意更新而變化。", "A verse a day to renew your mind."))}</p>
+                    <div className="primary-button" onClick={() => setMainTab('daily_verse')} style={{ background: 'linear-gradient(135deg, #818cf8, #6366f1 55%, #4338ca)', borderRadius: '16px', padding: isNarrowEditor ? '1.1rem 0.7rem' : '2.5rem 2rem', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', color: 'white', textAlign: 'center', boxShadow: '0 10px 28px rgba(79, 70, 229, 0.35)' }}>
+                      <CloudRain size={isNarrowEditor ? 38 : 72} style={{ marginBottom: isNarrowEditor ? '0.4rem' : '1rem' }} />
+                      <h2 style={{ fontSize: isNarrowEditor ? '1.15rem' : '2rem', margin: 0, marginBottom: isNarrowEditor ? '0.15rem' : '0.5rem', textShadow: '0 2px 4px rgba(0,0,0,0.2)' }}>{t("每日經文", "Daily Verse")}</h2>
+                      <p style={{ ...tileCaptionStyle(0.95), ...(isNarrowEditor ? { display: 'none' } : {}) }}>{splitCaption(t("每日一句神的話，心意更新而變化。", "A verse a day to renew your mind."))}</p>
                     </div>
 
                     {/* My Garden */}
-                    <div className="primary-button" onClick={() => setMainTab('garden')} style={{ background: 'linear-gradient(135deg, #34d399, #10b981)', borderRadius: '16px', padding: '2.5rem 2rem', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', color: 'white', textAlign: 'center' }}>
-                      <TreePine size={72} style={{ marginBottom: '1rem' }} />
-                      <h2 style={{ fontSize: '2rem', margin: 0, marginBottom: '0.5rem', textShadow: '0 2px 4px rgba(0,0,0,0.2)' }}>{t("我的園子", "My Garden")}</h2>
-                      <p style={tileCaptionStyle()}>{splitCaption(t("主話如霖澆我田，歲歲結果到豐年。", "View your living scripture trees."))}</p>
+                    <div className="primary-button" onClick={() => setMainTab('garden')} style={{ background: 'linear-gradient(135deg, #34d399, #10b981)', borderRadius: '16px', padding: isNarrowEditor ? '1.1rem 0.7rem' : '2.5rem 2rem', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', color: 'white', textAlign: 'center' }}>
+                      <TreePine size={isNarrowEditor ? 38 : 72} style={{ marginBottom: isNarrowEditor ? '0.4rem' : '1rem' }} />
+                      <h2 style={{ fontSize: isNarrowEditor ? '1.15rem' : '2rem', margin: 0, marginBottom: isNarrowEditor ? '0.15rem' : '0.5rem', textShadow: '0 2px 4px rgba(0,0,0,0.2)' }}>{t("我的園子", "My Garden")}</h2>
+                      <p style={{ ...tileCaptionStyle(), ...(isNarrowEditor ? { display: 'none' } : {}) }}>{splitCaption(t("主話如霖澆我田，歲歲結果到豐年。", "View your living scripture trees."))}</p>
                     </div>
 
                     {/* Cloud Family */}
-                    <div className="primary-button" onClick={() => setShowTeamsModal(true)} style={{ position: 'relative', background: 'linear-gradient(135deg, #fb923c, #ea580c)', borderRadius: '16px', padding: '2.5rem 2rem', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', color: 'white', textAlign: 'center', boxShadow: '0 10px 28px rgba(234, 88, 12, 0.35)' }}>
+                    <div className="primary-button" onClick={() => setShowTeamsModal(true)} style={{ position: 'relative', background: 'linear-gradient(135deg, #fb923c, #ea580c)', borderRadius: '16px', padding: isNarrowEditor ? '1.1rem 0.7rem' : '2.5rem 2rem', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', color: 'white', textAlign: 'center', boxShadow: '0 10px 28px rgba(234, 88, 12, 0.35)' }}>
                       {teamsUnread > 0 && (
                         <span style={{ position: 'absolute', top: 14, right: 14, background: '#fff', color: '#dc2626', fontSize: '0.85rem', fontWeight: 800, borderRadius: 14, padding: '3px 12px', minWidth: 28, textAlign: 'center', boxShadow: '0 2px 8px rgba(0,0,0,0.25)' }}>{teamsUnread >= 99 ? '99+' : teamsUnread}</span>
                       )}
-                      <Users size={72} style={{ marginBottom: '1rem' }} />
-                      <h2 style={{ fontSize: '2rem', margin: 0, marginBottom: '0.5rem', textShadow: '0 2px 4px rgba(0,0,0,0.2)' }}>{t("雲端家人", "Cloud Family")}</h2>
-                      <p style={tileCaptionStyle()}>{splitCaption(t("呼朋喚友來相伴，相互激勵心同歡。", "Gather friends to walk together — encourage one another, rejoice as one."))}</p>
+                      <Users size={isNarrowEditor ? 38 : 72} style={{ marginBottom: isNarrowEditor ? '0.4rem' : '1rem' }} />
+                      <h2 style={{ fontSize: isNarrowEditor ? '1.15rem' : '2rem', margin: 0, marginBottom: isNarrowEditor ? '0.15rem' : '0.5rem', textShadow: '0 2px 4px rgba(0,0,0,0.2)' }}>{t("雲端家人", "Cloud Family")}</h2>
+                      <p style={{ ...tileCaptionStyle(), ...(isNarrowEditor ? { display: 'none' } : {}) }}>{splitCaption(t("呼朋喚友來相伴，相互激勵心同歡。", "Gather friends to walk together — encourage one another, rejoice as one."))}</p>
                     </div>
 
                     {/* Scripture Library */}
-                    <div className="primary-button" onClick={() => setMainTab('versesets')} style={{ background: 'linear-gradient(135deg, #60a5fa, #3b82f6)', borderRadius: '16px', padding: '2.5rem 2rem', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', color: 'white', textAlign: 'center' }}>
-                      <Library size={72} style={{ marginBottom: '1rem' }} />
-                      <h2 style={{ fontSize: '2rem', margin: 0, marginBottom: '0.5rem', textShadow: '0 2px 4px rgba(0,0,0,0.2)' }}>{t("經文題庫", "Scripture Sets")}</h2>
-                      <p style={tileCaptionStyle()}>{splitCaption(t("經題萬卷勤溫故，句句生光照此程。", "Browse global verse sets and choose scriptures to practice."))}</p>
+                    <div className="primary-button" onClick={() => setMainTab('versesets')} style={{ background: 'linear-gradient(135deg, #60a5fa, #3b82f6)', borderRadius: '16px', padding: isNarrowEditor ? '1.1rem 0.7rem' : '2.5rem 2rem', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', color: 'white', textAlign: 'center' }}>
+                      <Library size={isNarrowEditor ? 38 : 72} style={{ marginBottom: isNarrowEditor ? '0.4rem' : '1rem' }} />
+                      <h2 style={{ fontSize: isNarrowEditor ? '1.15rem' : '2rem', margin: 0, marginBottom: isNarrowEditor ? '0.15rem' : '0.5rem', textShadow: '0 2px 4px rgba(0,0,0,0.2)' }}>{t("經文題庫", "Scripture Sets")}</h2>
+                      <p style={{ ...tileCaptionStyle(), ...(isNarrowEditor ? { display: 'none' } : {}) }}>{splitCaption(t("經題萬卷勤溫故，句句生光照此程。", "Browse global verse sets and choose scriptures to practice."))}</p>
                     </div>
 
                     {/* Multiplayer Game */}
-                    <div className="primary-button" onClick={() => setMainTab('multiplayer')} style={{ background: 'linear-gradient(135deg, #f472b6, #ec4899)', borderRadius: '16px', padding: '2.5rem 2rem', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', color: 'white', textAlign: 'center' }}>
-                      <Gamepad2 size={72} style={{ marginBottom: '1rem' }} />
-                      <h2 style={{ fontSize: '2rem', margin: 0, marginBottom: '0.5rem', textShadow: '0 2px 4px rgba(0,0,0,0.2)' }}>{t("多人遊戲", "Multiplayer")}</h2>
-                      <p style={tileCaptionStyle()}>{splitCaption(t("同心走過天路程，並肩玩出主榮耀。", "Play together with friends in real time."))}</p>
+                    <div className="primary-button" onClick={() => setMainTab('multiplayer')} style={{ background: 'linear-gradient(135deg, #f472b6, #ec4899)', borderRadius: '16px', padding: isNarrowEditor ? '1.1rem 0.7rem' : '2.5rem 2rem', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', color: 'white', textAlign: 'center' }}>
+                      <Gamepad2 size={isNarrowEditor ? 38 : 72} style={{ marginBottom: isNarrowEditor ? '0.4rem' : '1rem' }} />
+                      <h2 style={{ fontSize: isNarrowEditor ? '1.15rem' : '2rem', margin: 0, marginBottom: isNarrowEditor ? '0.15rem' : '0.5rem', textShadow: '0 2px 4px rgba(0,0,0,0.2)' }}>{t("多人遊戲", "Multiplayer")}</h2>
+                      <p style={{ ...tileCaptionStyle(), ...(isNarrowEditor ? { display: 'none' } : {}) }}>{splitCaption(t("同心走過天路程，並肩玩出主榮耀。", "Play together with friends in real time."))}</p>
                     </div>
                   </div>
                 </div>
