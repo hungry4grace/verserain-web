@@ -498,8 +498,25 @@ textarea {
   }
 
   .app-brand-lockup {
-    flex: 0 0 auto;
+    flex: 1 1 100%;
     min-width: 6.7rem;
+  }
+
+  /* Language picker + voice select share one row below the brand. */
+  .app-lang-control {
+    order: 2;
+    flex: 1 1 0;
+    min-width: 0;
+  }
+  .app-lang-control .app-language-select {
+    width: 100% !important;
+    max-width: none !important;
+  }
+  select.app-language-select {
+    flex: 1 1 0;
+    width: auto !important;
+    min-width: 0;
+    max-width: none !important;
   }
 
   .app-brand-wordmark {
