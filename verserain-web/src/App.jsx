@@ -6888,6 +6888,11 @@ export default function App() {
   }, [handleOAuthSignIn]);
 
   const [verseViewModal, setVerseViewModal] = useState(null);
+  // Single-verse voice chooser — when a verse has MORE THAN ONE recording
+  // (the set author's + public contributors'), tapping 🎧 opens this so the
+  // listener can pick whose voice to hear. { setId, reference, text, vLang,
+  // options:[{kind:'owner'|'personal', ownerId?, recordedBy, voiceId, voiceMime, mine?}], loading }.
+  const [verseVoicePicker, setVerseVoicePicker] = useState(null);
   // 創作者親聲朗讀 in the verse view modal — when the verse came from a set
   // with a creator recording, the 朗讀 button plays it instead of TTS.
   const verseModalAudioRef = useRef(null);
@@ -6934,6 +6939,60 @@ export default function App() {
         if (!res?.data) return false;
         dataUrl = `data:${rec.voiceMime || 'audio/webm'};base64,${res.data}`;
         setVoiceAudioLookupRef.current.set(rec.voiceId, dataUrl);
+      }
+      stopSpeechIfActive();
+      stopVerseModalAudio();
+      const audio = new Audio(dataUrl);
+      verseModalAudioRef.current = audio;
+      await audio.play();
+      return true;
+    } catch {
+      return false;
+    }
+  };
+
+  // Collect every recording available for (setId, reference): the set author's
+  // (creator layer) plus each public contributor's (personal layer). Used by the
+  // single-verse 🎧 to decide between "just play" and "let the listener choose".
+  const gatherVerseVoiceOptions = async (setId, reference) => {
+    const options = [];
+    if (!setId || !reference) return options;
+    try {
+      let ownerVoices = setVoicesLookupRef.current.get(setId);
+      if (!ownerVoices) {
+        const res = await setVoiceApi.getAll(setId);
+        ownerVoices = res?.voices || {};
+        setVoicesLookupRef.current.set(setId, ownerVoices);
+      }
+      const ownerRec = ownerVoices[reference];
+      if (ownerRec?.voiceId) {
+        options.push({ kind: 'owner', recordedBy: ownerRec.recordedBy || '', voiceId: ownerRec.voiceId, voiceMime: ownerRec.voiceMime });
+      }
+      const cres = await userVoiceApi.getContributors(setId).catch(() => null);
+      const contributors = cres?.contributors || [];
+      const mineId = userEmail ? await voiceOwnerId(userEmail).catch(() => null) : null;
+      for (const c of contributors) {
+        const vres = await userVoiceApi.getAll(setId, c.ownerId).catch(() => null);
+        const rec = vres?.voices?.[reference];
+        if (rec?.voiceId) {
+          options.push({ kind: 'personal', ownerId: c.ownerId, recordedBy: c.recordedBy || rec.recordedBy || '', voiceId: rec.voiceId, voiceMime: rec.voiceMime, mine: !!(mineId && c.ownerId === mineId) });
+        }
+      }
+    } catch { /* best-effort — fall back to whatever we gathered */ }
+    return options;
+  };
+
+  // Play one gathered option's audio (owner or personal share alike live in the
+  // shared set-voice store keyed by setId). Returns false so callers can TTS.
+  const playVerseVoiceOption = async (setId, opt) => {
+    if (!opt?.voiceId) return false;
+    try {
+      let dataUrl = setVoiceAudioLookupRef.current.get(opt.voiceId);
+      if (!dataUrl) {
+        const res = await setVoiceApi.getAudio(setId, opt.voiceId);
+        if (!res?.data) return false;
+        dataUrl = `data:${opt.voiceMime || 'audio/webm'};base64,${res.data}`;
+        setVoiceAudioLookupRef.current.set(opt.voiceId, dataUrl);
       }
       stopSpeechIfActive();
       stopVerseModalAudio();
@@ -21891,10 +21950,18 @@ const deDict = {
                   <button
                     onClick={async () => {
                       updateGarden('activity_only', 'listen');
-                      // 創作者親聲朗讀優先;沒有錄音或播放失敗才用 TTS。
-                      const played = await playSetVerseVoice(verseViewModal.setId, verseViewModal.reference);
-                      if (played) return;
                       const vLang = isEnglishBibleVersion(version) ? 'en-US' : (version === 'ko' ? 'ko-KR' : (version === 'ja' ? 'ja-JP' : (version === 'he' ? 'he-IL' : (version === 'fa' ? 'fa-IR' : 'zh-TW'))));
+                      const opts = await gatherVerseVoiceOptions(verseViewModal.setId, verseViewModal.reference);
+                      // >1 recording → let the listener choose whose voice to hear.
+                      if (opts.length > 1) {
+                        setVerseVoicePicker({ setId: verseViewModal.setId, reference: verseViewModal.reference, text: verseViewModal.text, vLang, options: opts });
+                        return;
+                      }
+                      // Exactly one recording → play it; none → TTS.
+                      if (opts.length === 1) {
+                        const ok = await playVerseVoiceOption(verseViewModal.setId, opts[0]);
+                        if (ok) return;
+                      }
                       speakText(verseViewModal.text, 1.0, vLang);
                     }}
                     title={t("朗讀經文", "Read aloud")}
@@ -21952,6 +22019,59 @@ const deDict = {
                   <Play size={16} fill="white" /> {t("立刻挑戰", "Play Now")}
                 </button>
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* 單節錄音選擇 — 同一節有多個錄音時,選擇要聽誰的聲音 */}
+        {verseVoicePicker && (
+          <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.6)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1300, padding: '1rem' }} onClick={(e) => { if (e.target === e.currentTarget) setVerseVoicePicker(null); }}>
+            <div style={{ background: '#fff', borderRadius: '14px', padding: '1.5rem 1.4rem', width: '100%', maxWidth: '360px', boxShadow: '0 20px 40px rgba(0,0,0,0.25)' }}>
+              <h3 style={{ margin: '0 0 0.3rem', color: '#1e293b', display: 'flex', alignItems: 'center', gap: 8 }}>
+                <Headphones size={20} color="#10b981" /> {t('選擇聲音', 'Choose a voice')}
+              </h3>
+              <p style={{ margin: '0 0 1rem', color: '#64748b', fontSize: '0.85rem' }}>{verseVoicePicker.reference}</p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.55rem' }}>
+                {verseVoicePicker.options.map((opt, i) => (
+                  <button
+                    key={opt.voiceId || i}
+                    onClick={async () => {
+                      const pk = verseVoicePicker;
+                      setVerseVoicePicker(null);
+                      const ok = await playVerseVoiceOption(pk.setId, opt);
+                      if (!ok) speakText(pk.text, 1.0, pk.vLang);
+                    }}
+                    style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '0.7rem 0.9rem', borderRadius: '10px', border: '1px solid #e2e8f0', background: '#f8fafc', color: '#334155', fontSize: '0.95rem', fontWeight: 600, cursor: 'pointer', textAlign: 'left' }}
+                    onMouseOver={(e) => { e.currentTarget.style.background = '#eef2ff'; e.currentTarget.style.borderColor = '#c7d2fe'; }}
+                    onMouseOut={(e) => { e.currentTarget.style.background = '#f8fafc'; e.currentTarget.style.borderColor = '#e2e8f0'; }}
+                  >
+                    <span aria-hidden="true">🎙️</span>
+                    <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {opt.kind === 'owner'
+                        ? (opt.recordedBy ? t('作者:{n}', 'Author: {n}').replace('{n}', opt.recordedBy) : t('作者錄音', 'Author'))
+                        : `${opt.recordedBy || t('某人', 'Someone')}${opt.mine ? ` ${t('(你)', '(you)')}` : ''}`}
+                    </span>
+                    <Play size={15} color="#8b5cf6" fill="#8b5cf6" />
+                  </button>
+                ))}
+                {/* 電腦語音 fallback — always offered as the last option. */}
+                <button
+                  onClick={() => {
+                    const pk = verseVoicePicker;
+                    setVerseVoicePicker(null);
+                    stopVerseModalAudio();
+                    speakText(pk.text, 1.0, pk.vLang);
+                  }}
+                  style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '0.7rem 0.9rem', borderRadius: '10px', border: '1px dashed #cbd5e1', background: '#fff', color: '#64748b', fontSize: '0.95rem', fontWeight: 600, cursor: 'pointer', textAlign: 'left' }}
+                >
+                  <span aria-hidden="true">💻</span>
+                  <span style={{ flex: 1 }}>{t('電腦語音', 'Computer voice')}</span>
+                  <Play size={15} color="#94a3b8" fill="#94a3b8" />
+                </button>
+              </div>
+              <button onClick={() => setVerseVoicePicker(null)} style={{ marginTop: '1rem', width: '100%', background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer', fontSize: '0.9rem' }}>
+                {t('取消', 'Cancel')}
+              </button>
             </div>
           </div>
         )}
