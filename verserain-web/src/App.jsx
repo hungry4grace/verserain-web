@@ -16668,42 +16668,42 @@ const deDict = {
                       injects a newline; combined with whiteSpace:pre-line
                       on the <p> the text renders as two clean rows. */}
                   {(() => null)()}
-                  <div style={{ display: 'grid', gridTemplateColumns: isNarrowEditor ? '1fr' : 'repeat(auto-fit, minmax(280px, 1fr))', gridAutoRows: isNarrowEditor ? '1fr' : 'auto', gap: isNarrowEditor ? '0.7rem' : '1.5rem', minHeight: isNarrowEditor ? 'calc(100dvh - 300px)' : undefined, width: '100%' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: isNarrowEditor ? '1fr' : 'repeat(auto-fit, minmax(280px, 1fr))', gridAutoRows: isNarrowEditor ? '1fr' : 'auto', gap: isNarrowEditor ? '0.5rem' : '1.5rem', minHeight: isNarrowEditor ? 'calc(100dvh - 335px)' : undefined, width: '100%' }}>
                     {/* Daily VerseRain */}
-                    <div className="primary-button" onClick={() => setMainTab('daily_verse')} style={{ background: 'linear-gradient(135deg, #818cf8, #6366f1 55%, #4338ca)', borderRadius: '16px', padding: isNarrowEditor ? '0.5rem 0.6rem' : '2.5rem 2rem', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', color: 'white', textAlign: 'center', boxShadow: '0 10px 28px rgba(79, 70, 229, 0.35)' }}>
-                      <CloudRain size={isNarrowEditor ? 34 : 72} style={{ marginBottom: isNarrowEditor ? '0.4rem' : '1rem' }} />
-                      <h2 style={{ fontSize: isNarrowEditor ? '1.25rem' : '2rem', margin: 0, marginBottom: isNarrowEditor ? '0.15rem' : '0.5rem', textShadow: '0 2px 4px rgba(0,0,0,0.2)' }}>{t("每日經文", "Daily Verse")}</h2>
+                    <div className="primary-button" onClick={() => setMainTab('daily_verse')} style={{ background: 'linear-gradient(135deg, #818cf8, #6366f1 55%, #4338ca)', borderRadius: '16px', padding: isNarrowEditor ? '0.3rem 0.6rem' : '2.5rem 2rem', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', color: 'white', textAlign: 'center', boxShadow: '0 10px 28px rgba(79, 70, 229, 0.35)' }}>
+                      <CloudRain size={isNarrowEditor ? 46 : 72} style={{ marginBottom: isNarrowEditor ? '0.15rem' : '1rem' }} />
+                      <h2 style={{ fontSize: isNarrowEditor ? '1.9rem' : '2rem', margin: 0, marginBottom: isNarrowEditor ? '0.15rem' : '0.5rem', textShadow: '0 2px 4px rgba(0,0,0,0.2)' }}>{t("每日經文", "Daily Verse")}</h2>
                       <p style={{ ...tileCaptionStyle(0.95), ...(isNarrowEditor ? { display: 'none' } : {}) }}>{splitCaption(t("每日一句神的話，心意更新而變化。", "A verse a day to renew your mind."))}</p>
                     </div>
 
                     {/* My Garden */}
-                    <div className="primary-button" onClick={() => setMainTab('garden')} style={{ background: 'linear-gradient(135deg, #34d399, #10b981)', borderRadius: '16px', padding: isNarrowEditor ? '0.5rem 0.6rem' : '2.5rem 2rem', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', color: 'white', textAlign: 'center' }}>
-                      <TreePine size={isNarrowEditor ? 34 : 72} style={{ marginBottom: isNarrowEditor ? '0.4rem' : '1rem' }} />
-                      <h2 style={{ fontSize: isNarrowEditor ? '1.25rem' : '2rem', margin: 0, marginBottom: isNarrowEditor ? '0.15rem' : '0.5rem', textShadow: '0 2px 4px rgba(0,0,0,0.2)' }}>{t("我的園子", "My Garden")}</h2>
+                    <div className="primary-button" onClick={() => setMainTab('garden')} style={{ background: 'linear-gradient(135deg, #34d399, #10b981)', borderRadius: '16px', padding: isNarrowEditor ? '0.3rem 0.6rem' : '2.5rem 2rem', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', color: 'white', textAlign: 'center' }}>
+                      <TreePine size={isNarrowEditor ? 46 : 72} style={{ marginBottom: isNarrowEditor ? '0.15rem' : '1rem' }} />
+                      <h2 style={{ fontSize: isNarrowEditor ? '1.9rem' : '2rem', margin: 0, marginBottom: isNarrowEditor ? '0.15rem' : '0.5rem', textShadow: '0 2px 4px rgba(0,0,0,0.2)' }}>{t("我的園子", "My Garden")}</h2>
                       <p style={{ ...tileCaptionStyle(), ...(isNarrowEditor ? { display: 'none' } : {}) }}>{splitCaption(t("主話如霖澆我田，歲歲結果到豐年。", "View your living scripture trees."))}</p>
                     </div>
 
                     {/* Cloud Family */}
-                    <div className="primary-button" onClick={() => setShowTeamsModal(true)} style={{ position: 'relative', background: 'linear-gradient(135deg, #fb923c, #ea580c)', borderRadius: '16px', padding: isNarrowEditor ? '0.5rem 0.6rem' : '2.5rem 2rem', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', color: 'white', textAlign: 'center', boxShadow: '0 10px 28px rgba(234, 88, 12, 0.35)' }}>
+                    <div className="primary-button" onClick={() => setShowTeamsModal(true)} style={{ position: 'relative', background: 'linear-gradient(135deg, #fb923c, #ea580c)', borderRadius: '16px', padding: isNarrowEditor ? '0.3rem 0.6rem' : '2.5rem 2rem', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', color: 'white', textAlign: 'center', boxShadow: '0 10px 28px rgba(234, 88, 12, 0.35)' }}>
                       {teamsUnread > 0 && (
                         <span style={{ position: 'absolute', top: 14, right: 14, background: '#fff', color: '#dc2626', fontSize: '0.85rem', fontWeight: 800, borderRadius: 14, padding: '3px 12px', minWidth: 28, textAlign: 'center', boxShadow: '0 2px 8px rgba(0,0,0,0.25)' }}>{teamsUnread >= 99 ? '99+' : teamsUnread}</span>
                       )}
-                      <Users size={isNarrowEditor ? 34 : 72} style={{ marginBottom: isNarrowEditor ? '0.4rem' : '1rem' }} />
-                      <h2 style={{ fontSize: isNarrowEditor ? '1.25rem' : '2rem', margin: 0, marginBottom: isNarrowEditor ? '0.15rem' : '0.5rem', textShadow: '0 2px 4px rgba(0,0,0,0.2)' }}>{t("雲端家人", "Cloud Family")}</h2>
+                      <Users size={isNarrowEditor ? 46 : 72} style={{ marginBottom: isNarrowEditor ? '0.15rem' : '1rem' }} />
+                      <h2 style={{ fontSize: isNarrowEditor ? '1.9rem' : '2rem', margin: 0, marginBottom: isNarrowEditor ? '0.15rem' : '0.5rem', textShadow: '0 2px 4px rgba(0,0,0,0.2)' }}>{t("雲端家人", "Cloud Family")}</h2>
                       <p style={{ ...tileCaptionStyle(), ...(isNarrowEditor ? { display: 'none' } : {}) }}>{splitCaption(t("呼朋喚友來相伴，相互激勵心同歡。", "Gather friends to walk together — encourage one another, rejoice as one."))}</p>
                     </div>
 
                     {/* Scripture Library */}
-                    <div className="primary-button" onClick={() => setMainTab('versesets')} style={{ background: 'linear-gradient(135deg, #60a5fa, #3b82f6)', borderRadius: '16px', padding: isNarrowEditor ? '0.5rem 0.6rem' : '2.5rem 2rem', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', color: 'white', textAlign: 'center' }}>
-                      <Library size={isNarrowEditor ? 34 : 72} style={{ marginBottom: isNarrowEditor ? '0.4rem' : '1rem' }} />
-                      <h2 style={{ fontSize: isNarrowEditor ? '1.25rem' : '2rem', margin: 0, marginBottom: isNarrowEditor ? '0.15rem' : '0.5rem', textShadow: '0 2px 4px rgba(0,0,0,0.2)' }}>{t("經文題庫", "Scripture Sets")}</h2>
+                    <div className="primary-button" onClick={() => setMainTab('versesets')} style={{ background: 'linear-gradient(135deg, #60a5fa, #3b82f6)', borderRadius: '16px', padding: isNarrowEditor ? '0.3rem 0.6rem' : '2.5rem 2rem', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', color: 'white', textAlign: 'center' }}>
+                      <Library size={isNarrowEditor ? 46 : 72} style={{ marginBottom: isNarrowEditor ? '0.15rem' : '1rem' }} />
+                      <h2 style={{ fontSize: isNarrowEditor ? '1.9rem' : '2rem', margin: 0, marginBottom: isNarrowEditor ? '0.15rem' : '0.5rem', textShadow: '0 2px 4px rgba(0,0,0,0.2)' }}>{t("經文題庫", "Scripture Sets")}</h2>
                       <p style={{ ...tileCaptionStyle(), ...(isNarrowEditor ? { display: 'none' } : {}) }}>{splitCaption(t("經題萬卷勤溫故，句句生光照此程。", "Browse global verse sets and choose scriptures to practice."))}</p>
                     </div>
 
                     {/* Multiplayer Game */}
-                    <div className="primary-button" onClick={() => setMainTab('multiplayer')} style={{ background: 'linear-gradient(135deg, #f472b6, #ec4899)', borderRadius: '16px', padding: isNarrowEditor ? '0.5rem 0.6rem' : '2.5rem 2rem', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', color: 'white', textAlign: 'center' }}>
-                      <Gamepad2 size={isNarrowEditor ? 34 : 72} style={{ marginBottom: isNarrowEditor ? '0.4rem' : '1rem' }} />
-                      <h2 style={{ fontSize: isNarrowEditor ? '1.25rem' : '2rem', margin: 0, marginBottom: isNarrowEditor ? '0.15rem' : '0.5rem', textShadow: '0 2px 4px rgba(0,0,0,0.2)' }}>{t("多人遊戲", "Multiplayer")}</h2>
+                    <div className="primary-button" onClick={() => setMainTab('multiplayer')} style={{ background: 'linear-gradient(135deg, #f472b6, #ec4899)', borderRadius: '16px', padding: isNarrowEditor ? '0.3rem 0.6rem' : '2.5rem 2rem', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', color: 'white', textAlign: 'center' }}>
+                      <Gamepad2 size={isNarrowEditor ? 46 : 72} style={{ marginBottom: isNarrowEditor ? '0.15rem' : '1rem' }} />
+                      <h2 style={{ fontSize: isNarrowEditor ? '1.9rem' : '2rem', margin: 0, marginBottom: isNarrowEditor ? '0.15rem' : '0.5rem', textShadow: '0 2px 4px rgba(0,0,0,0.2)' }}>{t("多人遊戲", "Multiplayer")}</h2>
                       <p style={{ ...tileCaptionStyle(), ...(isNarrowEditor ? { display: 'none' } : {}) }}>{splitCaption(t("同心走過天路程，並肩玩出主榮耀。", "Play together with friends in real time."))}</p>
                     </div>
                   </div>
