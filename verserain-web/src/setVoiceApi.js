@@ -157,6 +157,10 @@ export const userVoiceApi = {
   // { contributors: [{ ownerId, recordedBy, count }] }.
   getContributors: (setId) =>
     jget(`/sets/voice-contributors?setId=${encodeURIComponent(setId)}`),
+  // Every reference with ANY recording (author + public contributors), for the
+  // set-detail ⭐. { refs: [reference, …] }.
+  getVoiceRefs: (setId) =>
+    jget(`/sets/voice-refs?setId=${encodeURIComponent(setId)}`),
   // Moderation: hide (or un-hide) one contributor. Auth = admin, or the set's
   // publisher (requesterEmail must match the set's ownerEmail).
   hideContributor: (setId, ownerId, { requesterEmail, requesterName, hidden = true } = {}) =>

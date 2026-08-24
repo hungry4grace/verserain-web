@@ -6038,15 +6038,23 @@ export default function App() {
   // is unchanged (otherwise the detail page keeps the pre-editing snapshot
   // and most fresh recordings look "missing" until a full reload).
   const [currentSetVoices, setCurrentSetVoices] = useState({});
+  // Every reference with ANY recording (author OR any public contributor), so a
+  // ⭐ shows even when the recording is someone else's — not just the viewer's
+  // own or the author's. A Set of reference strings.
+  const [currentSetVoiceRefs, setCurrentSetVoiceRefs] = useState(() => new Set());
   const [voiceRefreshTick, setVoiceRefreshTick] = useState(0);
   useEffect(() => {
     let cancelled = false;
     setCurrentSetVoices({});
+    setCurrentSetVoiceRefs(new Set());
     const id = currentSet?.id;
     if (!id) return undefined;
     setVoiceApi.getAll(id)
       .then(res => { if (!cancelled) setCurrentSetVoices(res?.voices || {}); })
       .catch(() => { /* no recordings */ });
+    userVoiceApi.getVoiceRefs(id)
+      .then(res => { if (!cancelled && Array.isArray(res?.refs)) setCurrentSetVoiceRefs(new Set(res.refs)); })
+      .catch(() => { /* union is best-effort — the author-only ⭐ still shows */ });
     return () => { cancelled = true; };
   }, [currentSet?.id, voiceRefreshTick]);
   const getVerseSetAuthorName = React.useCallback((set) => {
@@ -8015,8 +8023,27 @@ export default function App() {
     startGame();
   };
 
-  const playSingleVerseCard = (verse, sourceSet = null) => {
+  const playSingleVerseCard = async (verse, sourceSet = null) => {
     initAudio();
+    const setId = sourceSet?.id || null;
+    // Resolve the voice BEFORE mounting the card so the first play already
+    // knows whose recording to use. The set author's recording plays via the
+    // creator layer, and the viewer's own via the default override — but a
+    // *contributor's* recording (someone who is neither the author nor the
+    // viewer) is otherwise never consulted, so the play button would fall back
+    // to TTS. Route that contributor through the existing sharedVoiceOwner path.
+    let sharedVoiceOwner = null;
+    if (setId && verse?.reference) {
+      try {
+        const opts = await gatherVerseVoiceOptions(setId, verse.reference);
+        if (!opts.some(o => o.kind === 'owner')) {
+          const mineId = userEmail ? await voiceOwnerId(userEmail).catch(() => null) : null;
+          const pick = opts.find(o => o.kind === 'personal' && o.ownerId === mineId)
+            || opts.find(o => o.kind === 'personal');
+          if (pick) sharedVoiceOwner = pick.ownerId;
+        }
+      } catch { /* best-effort — fall back to the default auto behavior */ }
+    }
     setContinuousRainSet({
       id: `single-${verse.reference}`,
       title: verse.reference,
@@ -8024,7 +8051,8 @@ export default function App() {
       startVerse: verse,
       // 創作者親聲朗讀 / custom assets need the REAL originating set id —
       // the synthetic `single-…` id has nothing stored under it.
-      voiceSetId: sourceSet?.id || null,
+      voiceSetId: setId,
+      sharedVoiceOwner,
       background: sourceSet?.background || '',
       backgroundMime: sourceSet?.backgroundMime || '',
       bgMusic: sourceSet?.bgMusic || '',
@@ -19041,16 +19069,18 @@ const deDict = {
                                           e.stopPropagation();
                                           playSingleVerseCard(v, currentSet);
                                         }}
-                                        title={currentSetVoices[v.reference]
-                                          ? t('播放這節經文({name}親聲朗讀)', 'Play this verse (read by {name})').replace('{name}', String(currentSetVoices[v.reference].recordedBy || t('創作者', 'the creator')))
+                                        title={(currentSetVoices[v.reference] || currentSetVoiceRefs.has(v.reference))
+                                          ? (currentSetVoices[v.reference]
+                                              ? t('播放這節經文({name}親聲朗讀)', 'Play this verse (read by {name})').replace('{name}', String(currentSetVoices[v.reference].recordedBy || t('創作者', 'the creator')))
+                                              : t('這節有人聲錄音', 'This verse has a voice recording'))
                                           : t("播放這節經文", "Play this verse")}
                                         style={{ position: 'relative', backgroundColor: '#8b5cf6', color: 'white', border: 'none', borderRadius: '6px', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'transform 0.1s' }}
                                         onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.1)'}
                                         onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
                                       >
                                         <Headphones size={14} fill="white" />
-                                        {currentSetVoices[v.reference] && (
-                                          <span style={{ position: 'absolute', top: '-7px', right: '-7px', fontSize: '0.8rem', filter: 'drop-shadow(0 1px 1px rgba(0,0,0,0.35))' }} aria-label={t('有創作者錄音', 'Creator recording available')}>⭐</span>
+                                        {(currentSetVoices[v.reference] || currentSetVoiceRefs.has(v.reference)) && (
+                                          <span style={{ position: 'absolute', top: '-7px', right: '-7px', fontSize: '0.8rem', filter: 'drop-shadow(0 1px 1px rgba(0,0,0,0.35))' }} aria-label={t('有人聲錄音', 'Voice recording available')}>⭐</span>
                                         )}
                                       </button>
                                       <button

@@ -1520,6 +1520,31 @@ export default class Server {
          }
       }
 
+      // GET /sets/voice-refs?setId=<setId> — the set of verse references that
+      // have ANY recording (the set author's + every public, non-hidden
+      // contributor's). The set-detail page uses it to ⭐ a verse whenever
+      // someone — not just the viewer — has recorded it. One round-trip: the
+      // personal-layer keys bury ownerId before setId, so the server walks each
+      // contributor from the index rather than the client doing N fetches.
+      if (url.pathname.endsWith('/sets/voice-refs') && request.method === 'GET') {
+         try {
+            const setId = url.searchParams.get('setId');
+            if (!setId) return new Response(JSON.stringify({ error: 'setId required' }), { status: 400, headers: corsHeaders });
+            const refs = new Set();
+            const ownerMap = await this.room.storage.list({ prefix: `set-verse-voice:${String(setId)}:` });
+            for (const [, meta] of ownerMap.entries()) { if (meta?.reference) refs.add(meta.reference); }
+            const idx = (await this.room.storage.get(`set-voice-index:${String(setId)}`)) || {};
+            for (const [ownerId, v] of Object.entries(idx)) {
+               if (!v || v.hidden === true || (v.count || 0) <= 0) continue;
+               const pmap = await this.room.storage.list({ prefix: `user-verse-voice:${ownerId}:${String(setId)}:` });
+               for (const [, meta] of pmap.entries()) { if (meta?.public !== false && meta?.reference) refs.add(meta.reference); }
+            }
+            return new Response(JSON.stringify({ success: true, refs: Array.from(refs) }), { status: 200, headers: corsHeaders });
+         } catch {
+            return new Response(JSON.stringify({ error: 'Failed to list voice refs' }), { status: 500, headers: corsHeaders });
+         }
+      }
+
       // POST /sets/voice-contributor/hide — { setId, ownerId, requesterEmail?, requesterName?, hidden? }
       // Moderation: mark a contributor hidden (reversible; keeps their audio).
       // Auth = admin token / trusted admin email|name, OR the requester is the
