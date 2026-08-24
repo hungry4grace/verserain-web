@@ -9,12 +9,16 @@ import { useEffect, useRef, useState } from 'react';
 //   t          — i18n helper (zh, en) => string
 //   reference  — verse reference shown above the text
 //   verseText  — the text the creator reads aloud
-//   onUpload   — ({ blob, mime, dur, beautify, reference }) => void. Fire-and-
-//                forget: the parent bakes the enhance effect + uploads in the
-//                BACKGROUND so the creator can immediately record the next verse.
+//   onUpload   — ({ blob, mime, dur, beautify, reference, public }) => void.
+//                Fire-and-forget: the parent bakes the enhance effect + uploads
+//                in the BACKGROUND so the creator can immediately record next.
 //   onCancel   — close without saving
 //   onDone     — called right after handing the clip off (closes the modal)
-export default function VerseVoiceRecorder({ t, reference, verseText, onUpload, onCancel, onDone }) {
+//   showShareToggle — when true, offers a "分享給大家" checkbox (default on) and
+//                passes its value as `public` to onUpload. Used on the personal
+//                path (recording on someone else's set) so a reading can opt into
+//                the set's shared-voice picker.
+export default function VerseVoiceRecorder({ t, reference, verseText, onUpload, onCancel, onDone, showShareToggle = false }) {
   // No user-facing duration limit — long recordings are chunked
   // automatically at upload (backend allows ≈27 min). This ceiling is a
   // safety stop for a mic left running by accident, not a UX cap.
@@ -23,6 +27,7 @@ export default function VerseVoiceRecorder({ t, reference, verseText, onUpload, 
   const [seconds, setSeconds] = useState(0);
   const [error, setError] = useState('');
   const [previewPlaying, setPreviewPlaying] = useState(false);
+  const [sharePublic, setSharePublic] = useState(true);
   const recorderRef = useRef(null);
   const streamRef = useRef(null);
   const timerRef = useRef(null);
@@ -299,7 +304,7 @@ export default function VerseVoiceRecorder({ t, reference, verseText, onUpload, 
     const blob = blobRef.current;
     if (!blob) return;
     stopPreview();
-    onUpload({ blob, mime: mimeRef.current || 'audio/webm', dur: secondsRef.current, beautify: false, reference });
+    onUpload({ blob, mime: mimeRef.current || 'audio/webm', dur: secondsRef.current, beautify: false, reference, public: showShareToggle ? sharePublic : undefined });
     onDone?.();
   };
 
@@ -400,6 +405,17 @@ export default function VerseVoiceRecorder({ t, reference, verseText, onUpload, 
                 📂 {fileName}
               </div>
             ) : (deviceSelect || inputMonitor())}
+            {showShareToggle && (
+              <label style={{ display: 'flex', alignItems: 'flex-start', gap: 8, textAlign: 'left', margin: '0 0 0.9rem', cursor: 'pointer', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 8, padding: '0.55rem 0.7rem' }}>
+                <input type="checkbox" checked={sharePublic} onChange={(e) => setSharePublic(e.target.checked)} style={{ marginTop: 3, width: 18, height: 18, accentColor: '#16a34a', flexShrink: 0 }} />
+                <span style={{ fontSize: '0.85rem', color: '#166534', lineHeight: 1.45 }}>
+                  <b>{t('分享給大家', 'Share with everyone')}</b>
+                  <span style={{ display: 'block', color: '#15803d', fontSize: '0.78rem' }}>
+                    {t('你的錄音會成為這個經文組的公開語音選項,別人播放時可以選擇聽你的聲音。', 'Your recording becomes a public voice option for this set — others can choose to hear your voice when they play it.')}
+                  </span>
+                </span>
+              </label>
+            )}
             <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap' }}>
               <button onClick={togglePreview} disabled={phase !== 'preview'} style={{ padding: '0.55rem 1.1rem', borderRadius: 10, border: '1px solid #cbd5e1', background: '#f8fafc', color: '#334155', cursor: 'pointer' }}>
                 {previewPlaying ? `⏸ ${t('停止', 'Stop')}` : `▶ ${t('試聽', 'Preview')} (${timeLabel})`}

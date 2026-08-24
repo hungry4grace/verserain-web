@@ -1392,10 +1392,17 @@ export default class Server {
       //   pointer: user-verse-voice:{ownerId}:{setId}:{refKey} → meta
       // Playback priority (client): personal › owner › TTS.
 
-      // POST /sets/user-verse-voice/set — { email, setId, reference, voiceId, voiceMime, voiceDur, recordedBy }
+      // POST /sets/user-verse-voice/set — { email, setId, reference, voiceId, voiceMime, voiceDur, recordedBy, public }
+      // `public` (default true for new recordings) opts this reading into the
+      // set's shared-voice picker. When true, we also touch a per-set
+      // contributor index (set-voice-index:{setId}) so the picker can list
+      // "who has recorded for this set" — the pointer keys bury ownerId in
+      // front of setId and can't be prefix-scanned by set alone.
       if (url.pathname.endsWith('/sets/user-verse-voice/set') && request.method === 'POST') {
          try {
-            const { email, setId, reference, voiceId, voiceMime, voiceDur, recordedBy } = await request.json();
+            const body = await request.json();
+            const { email, setId, reference, voiceId, voiceMime, voiceDur, recordedBy } = body;
+            const isPublic = body.public !== false; // default true
             if (!email || !setId || !reference) return new Response(JSON.stringify({ error: 'email, setId, reference required' }), { status: 400, headers: corsHeaders });
             if (!/^v_[A-Za-z0-9]{6,20}$/.test(String(voiceId || ''))) return new Response(JSON.stringify({ error: 'bad voiceId' }), { status: 400, headers: corsHeaders });
             const ownerId = await voiceOwnerId(email);
@@ -1406,9 +1413,34 @@ export default class Server {
                voiceMime: String(voiceMime || 'audio/webm').slice(0, 40),
                voiceDur: Math.min(Math.max(0, Number(voiceDur) || 0), 600),
                recordedBy: String(recordedBy || '').trim().slice(0, 30),
+               public: isPublic,
                at: new Date().toISOString(),
             };
-            await this.room.storage.put(`user-verse-voice:${ownerId}:${String(setId)}:${refKey}`, meta);
+            const key = `user-verse-voice:${ownerId}:${String(setId)}:${refKey}`;
+            const wasNew = !(await this.room.storage.get(key));
+            await this.room.storage.put(key, meta);
+            // Maintain the contributor index (best-effort; the picker tolerates
+            // stale entries by skipping any whose audio can't be fetched).
+            if (isPublic) {
+               const idxKey = `set-voice-index:${String(setId)}`;
+               const idx = (await this.room.storage.get(idxKey)) || {};
+               const prev = idx[ownerId] || { count: 0, hidden: false };
+               idx[ownerId] = {
+                  recordedBy: meta.recordedBy || prev.recordedBy || '',
+                  count: prev.count + (wasNew ? 1 : 0),
+                  updatedAt: meta.at,
+                  hidden: prev.hidden === true,
+               };
+               // Cap the index so a runaway set can't blow the 128KB key limit.
+               const owners = Object.keys(idx);
+               if (owners.length > 60) {
+                  owners
+                     .sort((a, b) => (idx[a].updatedAt < idx[b].updatedAt ? -1 : 1))
+                     .slice(0, owners.length - 60)
+                     .forEach((o) => { if (o !== ownerId) delete idx[o]; });
+               }
+               await this.room.storage.put(idxKey, idx);
+            }
             return new Response(JSON.stringify({ success: true, ownerId, verseVoice: meta }), { status: 200, headers: corsHeaders });
          } catch {
             return new Response(JSON.stringify({ error: 'Failed to save personal verse voice' }), { status: 500, headers: corsHeaders });
@@ -1452,9 +1484,67 @@ export default class Server {
                for (const k of chunks.keys()) await this.room.storage.delete(k);
             }
             await this.room.storage.delete(key);
+            // Decrement the contributor index; drop the owner entry at zero.
+            if (meta) {
+               const idxKey = `set-voice-index:${String(setId)}`;
+               const idx = await this.room.storage.get(idxKey);
+               if (idx && idx[ownerId]) {
+                  const c = (idx[ownerId].count || 1) - 1;
+                  if (c <= 0) delete idx[ownerId];
+                  else idx[ownerId] = { ...idx[ownerId], count: c, updatedAt: new Date().toISOString() };
+                  if (Object.keys(idx).length === 0) await this.room.storage.delete(idxKey);
+                  else await this.room.storage.put(idxKey, idx);
+               }
+            }
             return new Response(JSON.stringify({ success: true }), { status: 200, headers: corsHeaders });
          } catch {
             return new Response(JSON.stringify({ error: 'Failed to delete personal verse voice' }), { status: 500, headers: corsHeaders });
+         }
+      }
+
+      // GET /sets/voice-contributors?setId=<setId> — list users who have shared
+      // (public && !hidden) recordings for this set, for the play-time voice
+      // picker: { contributors: [{ ownerId, recordedBy, count }] }.
+      if (url.pathname.endsWith('/sets/voice-contributors') && request.method === 'GET') {
+         try {
+            const setId = url.searchParams.get('setId');
+            if (!setId) return new Response(JSON.stringify({ error: 'setId required' }), { status: 400, headers: corsHeaders });
+            const idx = (await this.room.storage.get(`set-voice-index:${String(setId)}`)) || {};
+            const contributors = Object.entries(idx)
+               .filter(([, v]) => v && v.hidden !== true && (v.count || 0) > 0)
+               .map(([ownerId, v]) => ({ ownerId, recordedBy: v.recordedBy || '', count: v.count || 0 }))
+               .sort((a, b) => b.count - a.count);
+            return new Response(JSON.stringify({ success: true, contributors }), { status: 200, headers: corsHeaders });
+         } catch {
+            return new Response(JSON.stringify({ error: 'Failed to list voice contributors' }), { status: 500, headers: corsHeaders });
+         }
+      }
+
+      // POST /sets/voice-contributor/hide — { setId, ownerId, requesterEmail?, requesterName?, hidden? }
+      // Moderation: mark a contributor hidden (reversible; keeps their audio).
+      // Auth = admin token / trusted admin email|name, OR the requester is the
+      // set's original publisher (ownerEmail). Pass hidden:false to un-hide.
+      if (url.pathname.endsWith('/sets/voice-contributor/hide') && request.method === 'POST') {
+         try {
+            const { setId, ownerId, requesterEmail, requesterName, hidden } = await request.json();
+            if (!setId || !ownerId) return new Response(JSON.stringify({ error: 'setId, ownerId required' }), { status: 400, headers: corsHeaders });
+            let authorized = isCustomSetWriteAuthorized() || isTrustedAdminEmail(requesterEmail) || isTrustedAdminName(requesterName);
+            if (!authorized && requesterEmail) {
+               const set = await this.room.storage.get(`verseset:${String(setId)}`);
+               if (set && set.ownerEmail && String(set.ownerEmail).trim().toLowerCase() === String(requesterEmail).trim().toLowerCase()) {
+                  authorized = true;
+               }
+            }
+            if (!authorized) return new Response(JSON.stringify({ error: 'Not authorized' }), { status: 403, headers: corsHeaders });
+            const idxKey = `set-voice-index:${String(setId)}`;
+            const idx = await this.room.storage.get(idxKey);
+            if (idx && idx[ownerId]) {
+               idx[ownerId] = { ...idx[ownerId], hidden: hidden !== false };
+               await this.room.storage.put(idxKey, idx);
+            }
+            return new Response(JSON.stringify({ success: true }), { status: 200, headers: corsHeaders });
+         } catch {
+            return new Response(JSON.stringify({ error: 'Failed to update contributor' }), { status: 500, headers: corsHeaders });
          }
       }
 

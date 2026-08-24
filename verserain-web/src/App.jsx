@@ -2462,6 +2462,12 @@ function VerseSetContinuousRainPlayer({
   // Scoped to this playback (rides on the set object), so a later non-shared
   // play naturally clears it. See the /lc → listenSet deep-link handler.
   const sharedVoiceOwner = verseSet?.sharedVoiceOwner || null;
+  // Play-time voice source overrides (from the 播放方式 picker). forceTTS =
+  // computer voice only (skip every recording); forceOwnerLayer = the set
+  // author's recording only (ignore the listener's own personal voice). A
+  // contributor pick instead rides sharedVoiceOwner above.
+  const forceTTS = verseSet?.forceTTS || false;
+  const forceOwnerLayer = verseSet?.forceOwnerLayer || false;
   const [currentVerse, setCurrentVerse] = useState(() => startVerse || pickRandomVerse(verses));
 
   // 創作者親聲朗讀 — recordings for this set, keyed by verse reference.
@@ -2510,6 +2516,7 @@ function VerseSetContinuousRainPlayer({
   // playVerse: override › owner (verseVoicesRef) › TTS.
   const personalVoicesRef = useRef({});
   const overrideVoicesRef = useRef({});
+  const forceTTSRef = useRef(false); // picker chose 電腦語音 → skip all recordings
   const personalVoicesReadyRef = useRef(Promise.resolve());
   const myOwnerIdRef = useRef(null);
   const [voiceRecTarget, setVoiceRecTarget] = useState(null); // { reference, text }
@@ -2523,6 +2530,7 @@ function VerseSetContinuousRainPlayer({
     let cancelled = false;
     personalVoicesRef.current = {};
     overrideVoicesRef.current = {};
+    forceTTSRef.current = forceTTS;
     myOwnerIdRef.current = null;
     // Cross-context merge: inside a real set, also surface any recording the
     // user made on this verse as a LOOSE verse (random/search/single). The set's
@@ -2550,26 +2558,33 @@ function VerseSetContinuousRainPlayer({
         myOwnerIdRef.current = mine;
         if (mine) {
           const merged = await loadMerged(mine);
-          if (!cancelled) personalVoicesRef.current = merged;
+          if (!cancelled) personalVoicesRef.current = merged; // keep for badges
         }
-        // A shared link's sender voice wins over the viewer's own recording.
-        const activeOwner = sharedVoiceOwner || mine;
-        if (activeOwner && activeOwner === mine) {
-          overrideVoicesRef.current = personalVoicesRef.current;
-        } else if (activeOwner) {
-          const merged = await loadMerged(activeOwner);
-          if (!cancelled) overrideVoicesRef.current = merged;
+        // Picker forced 電腦語音 or 作者錄音 → leave override empty: forceTTS is
+        // honored at the decision point (skips the owner layer too); forceOwnerLayer
+        // simply lets the owner layer (verseVoicesRef) win over the listener's own.
+        if (forceTTS || forceOwnerLayer) {
+          overrideVoicesRef.current = {};
+        } else {
+          // A shared link's / picked contributor's voice wins over the viewer's own.
+          const activeOwner = sharedVoiceOwner || mine;
+          if (activeOwner && activeOwner === mine) {
+            overrideVoicesRef.current = personalVoicesRef.current;
+          } else if (activeOwner) {
+            const merged = await loadMerged(activeOwner);
+            if (!cancelled) overrideVoicesRef.current = merged;
+          }
         }
       } catch { /* personal voice is optional */ }
       if (!cancelled) bumpPersonalVoices();
     })();
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [personalVoiceSetId, userEmail, sharedVoiceOwner]);
+  }, [personalVoiceSetId, userEmail, sharedVoiceOwner, forceTTS, forceOwnerLayer]);
 
   // Record / re-record my voice for the current verse, then refresh caches.
   const recordedByName = playerName || (userEmail || '').split('@')[0] || 'Anonymous';
-  const saveMyVoice = ({ blob, mime, dur, beautify }) => {
+  const saveMyVoice = ({ blob, mime, dur, beautify, public: isPublic = true }) => {
     if (!userEmail) return;
     const ref = voiceRecTarget?.reference || currentVerse.reference;
     // Bake (realtime ✨enhance ≈ clip length) + upload run in the BACKGROUND so
@@ -2579,7 +2594,7 @@ function VerseSetContinuousRainPlayer({
     setVoiceStatus(prev => ({ ...prev, [ref]: 'processing' }));
     const job = (async () => {
       const finalBlob = beautify ? await bakeBeautifiedBlob(blob, mime) : blob;
-      const uploaded = await uploadUserVerseVoice({ email: userEmail, setId: personalVoiceSetId, reference: ref, blob: finalBlob, mime, dur, recordedBy: recordedByName });
+      const uploaded = await uploadUserVerseVoice({ email: userEmail, setId: personalVoiceSetId, reference: ref, blob: finalBlob, mime, dur, recordedBy: recordedByName, public: isPublic });
       // Tag with the bucket it was stored under so playback/delete resolve it
       // even when this recording later surfaces in a different context.
       const meta = { ...uploaded, voiceBucket: personalVoiceSetId };
@@ -3109,9 +3124,10 @@ function VerseSetContinuousRainPlayer({
       await Promise.race([Promise.all([verseVoicesReadyRef.current, personalVoicesReadyRef.current]), wait(VOICE_LIST_WAIT_MS)]);
       if (cancelled || runRef.current !== runId) { stopLoadingHint(); return; }
       let creatorPlayed = false;
-      // Priority: my (or the share sender's) personal voice › set owner's › TTS.
-      const personalRec = overrideVoicesRef.current?.[currentVerse.reference] || null;
-      const ownerRec = voiceSetId ? (verseVoicesRef.current?.[currentVerse.reference] || null) : null;
+      // Priority: my (or the share sender's / picked contributor's) personal
+      // voice › set owner's › TTS. forceTTS (picker: 電腦語音) skips both layers.
+      const personalRec = forceTTSRef.current ? null : (overrideVoicesRef.current?.[currentVerse.reference] || null);
+      const ownerRec = (forceTTSRef.current || !voiceSetId) ? null : (verseVoicesRef.current?.[currentVerse.reference] || null);
       const creatorRec = personalRec || ownerRec;
       if (creatorRec?.voiceId) {
         // Attribution for the green「{name} 親聲朗讀」badge. When it's the
@@ -3634,6 +3650,7 @@ function VerseSetContinuousRainPlayer({
           onUpload={saveMyVoice}
           onCancel={() => setVoiceRecTarget(null)}
           onDone={() => setVoiceRecTarget(null)}
+          showShareToggle
         />
       )}
     </div>
@@ -7065,8 +7082,39 @@ export default function App() {
   const [teamReadReturn, setTeamReadReturn] = useState(null);
   // 播放順序選擇 — holds the set while the user picks 隨機 or 按序.
   const [playOrderChooser, setPlayOrderChooser] = useState(null);
+  // Play-time voice source: null = auto (my voice › author › TTS). Otherwise
+  // { type:'tts'|'owner'|'personal', ownerId?, label }. Chosen in the 播放方式
+  // modal; threaded onto continuousRainSet as sharedVoiceOwner/forceTTS/
+  // forceOwnerLayer, which the player's override machinery already understands.
+  const [voiceChoice, setVoiceChoice] = useState(null);
+  // Fetched when the modal opens: { contributors:[{ownerId,recordedBy,count}],
+  // ownerHasVoice, ownerName, mineId }. null while loading / no set.
+  const [voiceOptions, setVoiceOptions] = useState(null);
+  useEffect(() => {
+    if (!playOrderChooser?.id) { setVoiceOptions(null); setVoiceChoice(null); return undefined; }
+    let cancelled = false;
+    setVoiceOptions(null);
+    setVoiceChoice(null);
+    const setId = playOrderChooser.voiceSetId || playOrderChooser.id;
+    (async () => {
+      const [contribRes, ownerRes, mineId] = await Promise.all([
+        userVoiceApi.getContributors(setId).catch(() => null),
+        setVoiceApi.getAll(setId).catch(() => null),
+        userEmail ? voiceOwnerId(userEmail).catch(() => null) : Promise.resolve(null),
+      ]);
+      if (cancelled) return;
+      const contributors = contribRes?.contributors || [];
+      const ownerVoices = ownerRes?.voices || {};
+      const ownerHasVoice = Object.keys(ownerVoices).length > 0;
+      const ownerName = ownerHasVoice ? (Object.values(ownerVoices)[0]?.recordedBy || '') : '';
+      setVoiceOptions({ contributors, ownerHasVoice, ownerName, mineId });
+    })();
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [playOrderChooser, userEmail]);
   const startContinuousPlay = (set, order) => {
     if (!set?.verses?.length) return;
+    const vc = voiceChoice;
     setPlayOrderChooser(null);
     setContinuousRainSet({
       id: set.id,
@@ -7080,6 +7128,11 @@ export default function App() {
       bgMusic: set.bgMusic || '',
       bgMusicMime: set.bgMusicMime || '',
       bgMusicVolume: set.bgMusicVolume,
+      // Voice source (see voiceChoice). A contributor pick rides the existing
+      // sharedVoiceOwner path; TTS / author use the two force flags.
+      sharedVoiceOwner: vc?.type === 'personal' ? vc.ownerId : (set.sharedVoiceOwner || null),
+      forceTTS: vc?.type === 'tts',
+      forceOwnerLayer: vc?.type === 'owner',
     });
   };
   const [multiplayerSearchText, setMultiplayerSearchText] = useState('');
@@ -21580,6 +21633,65 @@ const deDict = {
               <p style={{ margin: '0 0 1.2rem', color: '#64748b', fontSize: '0.9rem' }}>
                 {playOrderChooser.title} · {t('無限循環播放', 'Loops forever')}
               </p>
+              {voiceOptions && (voiceOptions.ownerHasVoice || voiceOptions.contributors.length > 0) && (() => {
+                const setId = playOrderChooser.voiceSetId || playOrderChooser.id;
+                const canModerate = (() => {
+                  const em = (userEmail || '').toLowerCase();
+                  if (!em) return false;
+                  if (['samhsiung@gmail.com', 'davidhwang1125@gmail.com', 'hsiungsam@gmail.com', 'hungry4grace@gmail.com', 'verserain.admin@gmail.com'].includes(em)) return true;
+                  return playOrderChooser.ownerEmail && String(playOrderChooser.ownerEmail).toLowerCase() === em;
+                })();
+                const pill = (active) => ({
+                  padding: '0.5rem 0.75rem', borderRadius: '999px', border: active ? '2px solid #8b5cf6' : '1px solid #cbd5e1',
+                  background: active ? '#f5f3ff' : '#fff', color: active ? '#6d28d9' : '#475569', fontWeight: active ? 700 : 500,
+                  fontSize: '0.85rem', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 5,
+                });
+                const isSel = (pred) => voiceChoice ? pred(voiceChoice) : false;
+                return (
+                  <div style={{ margin: '0 0 1.1rem', textAlign: 'left' }}>
+                    <div style={{ fontSize: '0.8rem', color: '#64748b', marginBottom: '0.5rem', fontWeight: 600 }}>
+                      🔊 {t('聲音來源', 'Voice')}
+                    </div>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+                      {/* Auto = current default (your own › author › TTS). */}
+                      <button onClick={() => setVoiceChoice(null)} style={pill(!voiceChoice)}>
+                        ✨ {t('自動', 'Auto')}
+                      </button>
+                      <button onClick={() => setVoiceChoice({ type: 'tts' })} style={pill(isSel(v => v.type === 'tts'))}>
+                        💻 {t('電腦語音', 'Computer voice')}
+                      </button>
+                      {voiceOptions.ownerHasVoice && (
+                        <button onClick={() => setVoiceChoice({ type: 'owner' })} style={pill(isSel(v => v.type === 'owner'))}>
+                          🎙️ {voiceOptions.ownerName ? t('作者:{n}', 'Author: {n}').replace('{n}', voiceOptions.ownerName) : t('作者錄音', 'Author')}
+                        </button>
+                      )}
+                      {voiceOptions.contributors.map((c) => {
+                        const mine = voiceOptions.mineId && c.ownerId === voiceOptions.mineId;
+                        const active = isSel(v => v.type === 'personal' && v.ownerId === c.ownerId);
+                        return (
+                          <span key={c.ownerId} style={{ display: 'inline-flex', alignItems: 'center' }}>
+                            <button onClick={() => setVoiceChoice({ type: 'personal', ownerId: c.ownerId, label: c.recordedBy })} style={pill(active)}>
+                              🎙️ {c.recordedBy || t('某人', 'Someone')}{mine ? ` ${t('(你)', '(you)')}` : ''}
+                            </button>
+                            {canModerate && !mine && (
+                              <button
+                                title={t('把這個人的錄音從此題庫隱藏', 'Hide this contributor from the set')}
+                                onClick={async () => {
+                                  if (!window.confirm(t('確定要隱藏「{n}」的錄音?', 'Hide {n}\'s recording from this set?').replace('{n}', c.recordedBy || '?'))) return;
+                                  await userVoiceApi.hideContributor(setId, c.ownerId, { requesterEmail: userEmail, requesterName: playerName }).catch(() => null);
+                                  setVoiceOptions(prev => prev ? { ...prev, contributors: prev.contributors.filter(x => x.ownerId !== c.ownerId) } : prev);
+                                  if (active) setVoiceChoice(null);
+                                }}
+                                style={{ marginLeft: 2, width: 22, height: 22, borderRadius: '50%', border: 'none', background: '#fee2e2', color: '#b91c1c', cursor: 'pointer', fontSize: '0.75rem', lineHeight: 1 }}
+                              >✕</button>
+                            )}
+                          </span>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })()}
               <div style={{ display: 'flex', gap: '0.8rem' }}>
                 <button
                   onClick={() => startContinuousPlay(playOrderChooser, 'random')}

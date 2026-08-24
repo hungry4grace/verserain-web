@@ -146,18 +146,26 @@ export async function voiceOwnerId(email) {
 }
 
 export const userVoiceApi = {
-  register: (email, setId, reference, { voiceId, voiceMime, voiceDur, recordedBy }) =>
-    jpost('/sets/user-verse-voice/set', { email, setId, reference, voiceId, voiceMime, voiceDur, recordedBy }),
+  register: (email, setId, reference, { voiceId, voiceMime, voiceDur, recordedBy, public: isPublic }) =>
+    jpost('/sets/user-verse-voice/set', { email, setId, reference, voiceId, voiceMime, voiceDur, recordedBy, public: isPublic }),
   // { voices: { [reference]: meta } } — for one owner (self, or a share's vo=).
   getAll: (setId, owner) =>
     jget(`/sets/user-verse-voices?setId=${encodeURIComponent(setId)}&owner=${encodeURIComponent(owner)}`),
   remove: (email, setId, reference) =>
     jpost('/sets/user-verse-voice/delete', { email, setId, reference }),
+  // Play-time picker: who has shared recordings for this set.
+  // { contributors: [{ ownerId, recordedBy, count }] }.
+  getContributors: (setId) =>
+    jget(`/sets/voice-contributors?setId=${encodeURIComponent(setId)}`),
+  // Moderation: hide (or un-hide) one contributor. Auth = admin, or the set's
+  // publisher (requesterEmail must match the set's ownerEmail).
+  hideContributor: (setId, ownerId, { requesterEmail, requesterName, hidden = true } = {}) =>
+    jpost('/sets/voice-contributor/hide', { setId, ownerId, requesterEmail, requesterName, hidden }),
 };
 
 // Record-blob → chunk upload (shared store) → register under the caller's
 // personal namespace. Returns { ...meta, ownerId }.
-export async function uploadUserVerseVoice({ email, setId, reference, blob, mime, dur, recordedBy }) {
+export async function uploadUserVerseVoice({ email, setId, reference, blob, mime, dur, recordedBy, public: isPublic = true }) {
   const base64 = await new Promise((resolve, reject) => {
     const fr = new FileReader();
     fr.onload = () => resolve(String(fr.result).split(',')[1] || '');
@@ -174,7 +182,7 @@ export async function uploadUserVerseVoice({ email, setId, reference, blob, mime
     await setVoiceApi.uploadChunk(email, setId, voiceId, i, total, base64.slice(i * CHUNK, (i + 1) * CHUNK));
   }
   const res = await userVoiceApi.register(email, setId, reference, {
-    voiceId, voiceMime: mime, voiceDur: dur, recordedBy,
+    voiceId, voiceMime: mime, voiceDur: dur, recordedBy, public: isPublic,
   });
   return { ...(res.verseVoice || {}), ownerId: res.ownerId };
 }
