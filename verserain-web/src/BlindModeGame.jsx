@@ -1,7 +1,8 @@
 import React, { useEffect, useState, useRef, useMemo } from 'react';
 import { Heart, Zap, XCircle } from 'lucide-react';
-import { pinyin } from 'pinyin-pro';
 import { planReadback } from './lib/voiceReadback.js';
+import { prepareTarget, scoreBestCandidate } from './lib/recitationMatch.js';
+import { getSpeechLangForVersion } from './lib/speechLang.js';
 
 const REFERENCE_TO_RECITE_PAUSE_MS = 4000;
 const FINAL_BLOCK_REVIEW_MS = 3000;
@@ -74,7 +75,7 @@ export default function BlindModeGame({
         }
     }, [currentSeqIndex]);
 
-    const TTS_LANG = version === 'kjv' ? 'en-US' : (version === 'ja' ? 'ja-JP' : (version === 'ko' ? 'ko-KR' : 'zh-TW'));
+    const TTS_LANG = getSpeechLangForVersion(version);
 
     useEffect(() => {
         isMountedRef.current = true;
@@ -150,7 +151,7 @@ export default function BlindModeGame({
                     missedIndicesRef.current.push(currentSeqIndexRef.current);
                     setMissedIndices([...missedIndicesRef.current]);
                     const isFinalBlock = currentSeqIndexRef.current >= activePhrases.length - 1;
-                    latestTranscriptRef.current = { transcript: '' };
+                    latestTranscriptRef.current = { transcript: '', alternatives: [] };
                     lastMatchedLengthRef.current = 0;
 
                     // Read the block aloud on a MISS too — the user should hear the
@@ -178,7 +179,7 @@ export default function BlindModeGame({
                         }
                         speakText(plan.text, 1.0, TTS_LANG).then(() => {
                             if (!isMountedRef.current) return;
-                            latestTranscriptRef.current = { transcript: '' };
+                            latestTranscriptRef.current = { transcript: '', alternatives: [] };
                             lastMatchedLengthRef.current = 0;
                             setTimeout(advanceMiss, plan.advanceDelayMs);
                         });
@@ -246,7 +247,7 @@ export default function BlindModeGame({
                     setTimeout(() => {
                         if (!isMountedRef.current) return;
                         isSpeakingRef.current = false;
-                        latestTranscriptRef.current = { transcript: '' };
+                        latestTranscriptRef.current = { transcript: '', alternatives: [] };
                         lastMatchedLengthRef.current = 0;
 
                         if (recognitionRef.current) {
@@ -286,92 +287,33 @@ export default function BlindModeGame({
             
             if (block && !isSuccessFlashRef.current) {
                 const targetText = typeof block === 'string' ? block : (block.text || '');
-                const cleanTarget = targetText.replace(/[^\w\u4e00-\u9fa5]/g, '').toLowerCase();
-                
-                const cleanHeard = textToProcess.replace(/[^\w\u4e00-\u9fa5]/g, '').toLowerCase();
-
-                if (!cleanHeard) {
-                    setCurrentAccuracy(0);
-                    return;
+                // Pronunciation-set matcher (src/lib/recitationMatch.js): every
+                // target char accepts ALL of its readings (多音字 fix), fuzzy
+                // pinyin folds tolerate accents (zh=z, ang=an...), both sides are
+                // folded traditional→simplified and digits expanded (40↔四十),
+                // and a proper LCS alignment replaces the old greedy subsequence.
+                // Candidate 0 = the primary prefix-sliced transcript (the only
+                // one with consumed-length bookkeeping); 1..4 = SpeechRecognition
+                // alternatives, each scored whole.
+                const prepared = prepareTarget(targetText, TTS_LANG);
+                const candidates = [textToProcess];
+                const alts = transcriptObj.alternatives || [];
+                const altDepth = alts.reduce((mx, a) => Math.max(mx, a.length), 0);
+                for (let k = 1; k < Math.min(5, altDepth); k++) {
+                    candidates.push(alts.map(a => a[Math.min(k, a.length - 1)] || '').join(' '));
                 }
+                const { score, pass, consumedRawLength, candidateIndex } = scoreBestCandidate(prepared, candidates);
+                setCurrentAccuracy(score);
 
-                // 1. Text match (Order-preserving character match)
-                let matchCount = 0;
-                let heardIdx = 0;
-                for (let c of cleanTarget) {
-                    let foundIdx = cleanHeard.indexOf(c, heardIdx);
-                    if (foundIdx !== -1) {
-                        matchCount++;
-                        heardIdx = foundIdx + 1;
-                    }
-                }
-                const textAccuracy = cleanTarget.length === 0 ? 0 : Math.round((matchCount / cleanTarget.length) * 100);
-
-                // 2. Full Pinyin match (handles exact homophones like '身'/'升')
-                const targetPinyin = pinyin(cleanTarget, { toneType: 'none', type: 'array' });
-                const heardPinyin = pinyin(cleanHeard, { toneType: 'none', type: 'array' });
-                let pyMatchCount = 0;
-                let pyHeardIdx = 0;
-                for (let py of targetPinyin) {
-                    let foundIdx = heardPinyin.indexOf(py, pyHeardIdx);
-                    if (foundIdx !== -1) {
-                        pyMatchCount++;
-                        pyHeardIdx = foundIdx + 1;
-                    }
-                }
-                const pyAccuracy = targetPinyin.length === 0 ? 0 : Math.round((pyMatchCount / targetPinyin.length) * 100);
-
-                // 3. Pinyin Initial match (handles strong accents: z/zh, s/sh, c/ch, etc.)
-                const targetInitials = pinyin(cleanTarget, { pattern: 'first', type: 'array' });
-                const heardInitials = pinyin(cleanHeard, { pattern: 'first', type: 'array' });
-                let initMatchCount = 0;
-                let initHeardIdx = 0;
-                for (let init of targetInitials) {
-                    let foundIdx = heardInitials.indexOf(init, initHeardIdx);
-                    if (foundIdx !== -1) {
-                        initMatchCount++;
-                        initHeardIdx = foundIdx + 1;
-                    }
-                }
-                const initAccuracy = targetInitials.length === 0 ? 0 : Math.round((initMatchCount / targetInitials.length) * 100);
-
-                // Use the best accuracy among the three methods
-                const calculatedAccuracy = Math.max(textAccuracy, pyAccuracy, initAccuracy);
-                setCurrentAccuracy(calculatedAccuracy);
-
-                let isMatch = false;
-                let consumedCleanLength = 0;
-                
-                if (cleanHeard.includes(cleanTarget)) {
-                    isMatch = true;
-                    consumedCleanLength = cleanHeard.indexOf(cleanTarget) + cleanTarget.length;
-                } else if (calculatedAccuracy >= 60) {
-                    isMatch = true;
-                    // Determine how many characters we consumed in the heard string based on the best match method
-                    if (calculatedAccuracy === textAccuracy) {
-                        consumedCleanLength = heardIdx;
-                    } else if (calculatedAccuracy === pyAccuracy) {
-                        consumedCleanLength = pyHeardIdx;
+                if (pass) {
+                    if (candidateIndex === 0) {
+                        lastMatchedLengthRef.current += consumedRawLength;
                     } else {
-                        consumedCleanLength = initHeardIdx;
+                        // An alternative transcript matched; primary-transcript
+                        // offsets don't apply to it, so conservatively consume
+                        // the whole primary transcript — the block just passed.
+                        lastMatchedLengthRef.current = (latestTranscriptRef.current?.transcript || '').length;
                     }
-                }
-
-                if (isMatch) {
-                    // Map consumedCleanLength back to raw length in textToProcess
-                    let rawLength = 0;
-                    let cleanCharsSeen = 0;
-                    for (let i = 0; i < textToProcess.length; i++) {
-                        rawLength = i + 1;
-                        if (/[^\w\u4e00-\u9fa5]/.test(textToProcess[i]) === false) {
-                            cleanCharsSeen++;
-                            if (cleanCharsSeen === consumedCleanLength) {
-                                break;
-                            }
-                        }
-                    }
-                    
-                    lastMatchedLengthRef.current += rawLength;
                     
                     if (timerRef.current) clearTimeout(timerRef.current);
                     if (countdownRef.current) clearInterval(countdownRef.current);
@@ -429,7 +371,7 @@ export default function BlindModeGame({
                             if (!isMountedRef.current) return;
                             // Reset transcript bookkeeping so the readback we just
                             // spoke can never be mis-counted toward the next block.
-                            latestTranscriptRef.current = { transcript: '' };
+                            latestTranscriptRef.current = { transcript: '', alternatives: [] };
                             lastMatchedLengthRef.current = 0;
                             isSpeakingRef.current = false;
                             setTimeout(advance, plan.advanceDelayMs);
@@ -459,6 +401,10 @@ export default function BlindModeGame({
         const recognition = new SpeechRecognition();
         recognition.continuous = true;
         recognition.interimResults = true;
+        // Ask for alternatives so a homophone-mangled primary transcript can
+        // still pass via a better candidate. iOS WKWebView typically returns
+        // just 1 — the consumers index defensively and degrade gracefully.
+        recognition.maxAlternatives = 5;
         recognition.lang = TTS_LANG;
 
         recognition.onstart = () => {
@@ -475,10 +421,15 @@ export default function BlindModeGame({
             }
 
             let sessionTranscript = '';
+            const alternatives = [];
             for (let i = 0; i < event.results.length; i++) {
-                sessionTranscript += event.results[i][0].transcript + ' ';
+                const result = event.results[i];
+                sessionTranscript += result[0].transcript + ' ';
+                const list = [];
+                for (let k = 0; k < result.length; k++) list.push(result[k].transcript);
+                alternatives.push(list);
             }
-            latestTranscriptRef.current = { transcript: sessionTranscript };
+            latestTranscriptRef.current = { transcript: sessionTranscript, alternatives };
             if (evaluateTranscriptRef.current) {
                 evaluateTranscriptRef.current();
             }

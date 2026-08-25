@@ -9,6 +9,7 @@ import { classifyGardenResponse, decideGardenSync, buildFruitAuthorKeys, aggrega
 import { voiceId, voiceMatchesSavedKey, dedupeVoices, buildVoiceOptions } from './lib/voicePicker.js';
 import { splitVersePhrases } from './lib/phraseSplitter.js';
 import { stripBollsMarkup, stripLeadingVerseNumeral } from './lib/bibleTextMarkup.js';
+import { getSpeechLangForVersion } from './lib/speechLang.js';
 import './index.css';
 import { BIBLE_BOOKS, getBookAbbr } from './bibleDictionary';
 import I18N_FILLINS from './i18nFillins';
@@ -1095,22 +1096,10 @@ function isEnglishBibleVersion(v) {
   return v === 'kjv' || v === 'esv' || v === 'niv';
 }
 
+// Delegates to src/lib/speechLang.js — the single source of truth shared with
+// BlindModeGame's speech recognition, so the two maps can never drift.
 function getVoiceLangForVersion(v) {
-  if (isEnglishBibleVersion(v)) return 'en-US';
-  if (v === 'cuvs') return 'zh-CN';
-  if (v === 'ko') return 'ko-KR';
-  if (v === 'ja') return 'ja-JP';
-  if (v === 'he') return 'he-IL';
-  if (v === 'fa') return 'fa-IR';
-  if (v === 'ar') return 'ar-SA';
-  if (v === 'es') return 'es-ES';
-  if (v === 'tr') return 'tr-TR';
-  if (v === 'de') return 'de-DE';
-  if (v === 'my') return 'my-MM';
-  if (v === 'vi') return 'vi-VN';
-  if (v === 'id') return 'id-ID';
-  if (v === 'ms') return 'ms-MY';
-  return 'zh-TW';
+  return getSpeechLangForVersion(v);
 }
 
 const BIBLE_LANGUAGE_OPTIONS = [
