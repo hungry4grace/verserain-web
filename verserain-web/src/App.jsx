@@ -2498,6 +2498,10 @@ function VerseSetContinuousRainPlayer({
   const [activeVoiceLabel, setActiveVoiceLabel] = useState(''); // shown in the selector
   const [voiceMenu, setVoiceMenu] = useState(null);   // { options } while the switch menu is open
   const [voiceMenuLoading, setVoiceMenuLoading] = useState(false);
+  // ⚡ 挑戰 chooser — lets the player pick game mode + difficulty before the
+  // challenge starts, instead of silently inheriting whatever was last set on
+  // the set-detail page. Last choice remembered per device.
+  const [challengeChooser, setChallengeChooser] = useState(null); // { mode, difficulty } while open
   // Shown while we're finding out whether this verse has a recording, and then
   // while its audio downloads. Without it a slow connection is just silence and
   // the listener has no idea anything is coming.
@@ -3686,7 +3690,17 @@ function VerseSetContinuousRainPlayer({
             data-tip={t('挑戰', 'Challenge')}
             onClick={() => {
               haltPlayback();
-              onChallengeVerse(currentVerse);
+              // Open the mode/difficulty chooser instead of launching straight
+              // into whatever mode was last configured elsewhere.
+              let mode = 'square_solo';
+              let difficulty = 0;
+              try {
+                const m = localStorage.getItem('verserain_reader_challenge_mode');
+                if (['square_solo', 'rain_solo', 'voice_solo'].includes(m)) mode = m;
+                const d = parseInt(localStorage.getItem('verserain_reader_challenge_diff') || '0', 10);
+                if (d >= 0 && d <= 3) difficulty = d;
+              } catch { /* defaults stand */ }
+              setChallengeChooser({ mode, difficulty });
             }}
           >
             <Zap size={22} />
@@ -3801,6 +3815,59 @@ function VerseSetContinuousRainPlayer({
               </button>
             </div>
             <button onClick={() => setVoiceMenu(null)} style={{ marginTop: '1rem', width: '100%', background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer', fontSize: '0.9rem' }}>{t('取消', 'Cancel')}</button>
+          </div>
+        </div>
+      )}
+
+      {/* ⚡ 挑戰 chooser — pick mode + difficulty, then launch */}
+      {challengeChooser && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 3000, padding: '1rem' }} onClick={(e) => { if (e.target === e.currentTarget) setChallengeChooser(null); }}>
+          <div style={{ background: '#fff', borderRadius: 14, padding: '1.4rem 1.3rem', width: '100%', maxWidth: 340, boxShadow: '0 20px 40px rgba(0,0,0,0.3)' }}>
+            <h3 style={{ margin: '0 0 0.3rem', color: '#1e293b', display: 'flex', alignItems: 'center', gap: 8 }}>⚡ {t('挑戰', 'Challenge')}</h3>
+            <p style={{ margin: '0 0 1rem', color: '#64748b', fontSize: '0.82rem' }}>{formatVerseReferenceForDisplay(currentVerse.reference, version)}</p>
+            <div style={{ fontSize: '0.78rem', fontWeight: 700, color: '#94a3b8', letterSpacing: '0.05em', marginBottom: '0.4rem' }}>{t('遊戲模式', 'Game Mode')}</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem', marginBottom: '1rem' }}>
+              {[
+                { value: 'square_solo', icon: '🔢', label: t('九宮格', 'Square') },
+                { value: 'rain_solo', icon: '🌧️', label: t('經文雨', 'Verse Rain') },
+                { value: 'voice_solo', icon: '🎤', label: t('語音模式', 'Voice Mode') },
+              ].map((opt) => {
+                const active = challengeChooser.mode === opt.value;
+                return (
+                  <button key={opt.value} onClick={() => setChallengeChooser(c => ({ ...c, mode: opt.value }))}
+                    style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '0.6rem 0.85rem', borderRadius: 10, border: active ? '2px solid #16a34a' : '1px solid #e2e8f0', background: active ? '#f0fdf4' : '#f8fafc', color: active ? '#15803d' : '#334155', fontSize: '0.92rem', fontWeight: 600, cursor: 'pointer', textAlign: 'left' }}>
+                    <span>{opt.icon}</span><span style={{ flex: 1 }}>{opt.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+            <div style={{ fontSize: '0.78rem', fontWeight: 700, color: '#94a3b8', letterSpacing: '0.05em', marginBottom: '0.4rem' }}>{t('難度', 'Difficulty')}</div>
+            <div style={{ display: 'flex', gap: '0.45rem', marginBottom: '1.2rem' }}>
+              {[0, 1, 2, 3].map((d) => {
+                const active = challengeChooser.difficulty === d;
+                return (
+                  <button key={d} onClick={() => setChallengeChooser(c => ({ ...c, difficulty: d }))}
+                    style={{ flex: 1, padding: '0.5rem 0', borderRadius: 10, border: active ? '2px solid #16a34a' : '1px solid #e2e8f0', background: active ? '#f0fdf4' : '#f8fafc', color: active ? '#15803d' : '#334155', fontSize: '0.95rem', fontWeight: 700, cursor: 'pointer' }}>
+                    {d}
+                  </button>
+                );
+              })}
+            </div>
+            <button
+              onClick={() => {
+                const { mode, difficulty } = challengeChooser;
+                try {
+                  localStorage.setItem('verserain_reader_challenge_mode', mode);
+                  localStorage.setItem('verserain_reader_challenge_diff', String(difficulty));
+                } catch { /* remember-me is best-effort */ }
+                setChallengeChooser(null);
+                onChallengeVerse(currentVerse, { mode, difficulty });
+              }}
+              style={{ width: '100%', padding: '0.75rem', borderRadius: 12, border: 'none', background: 'linear-gradient(135deg, #22c55e, #16a34a)', color: '#fff', fontSize: '1rem', fontWeight: 700, cursor: 'pointer', boxShadow: '0 6px 16px rgba(22,163,74,0.35)' }}
+            >
+              ⚡ {t('開始挑戰', 'Start Challenge')}
+            </button>
+            <button onClick={() => setChallengeChooser(null)} style={{ marginTop: '0.7rem', width: '100%', background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer', fontSize: '0.9rem' }}>{t('取消', 'Cancel')}</button>
           </div>
         </div>
       )}
@@ -8147,9 +8214,25 @@ export default function App() {
     });
   };
 
-  const challengeVerseFromReader = (verse) => {
+  // Reader-launched challenge. `opts` ({ mode, difficulty }) comes from the
+  // player's ⚡ chooser; the actual startGame fires from the effect below so it
+  // runs AFTER the re-render commits — startGame reads playMode/distractionLevel
+  // from its render closure, and a same-tick setTimeout would capture the stale
+  // pre-chooser values.
+  const pendingReaderChallengeRef = useRef(null);
+  const [readerChallengeKick, setReaderChallengeKick] = useState(0);
+  useEffect(() => {
+    const pending = pendingReaderChallengeRef.current;
+    if (!pending) return;
+    pendingReaderChallengeRef.current = null;
+    setTimeout(() => startGame(false, pending.verse), 50);
+  }, [readerChallengeKick]);
+
+  const challengeVerseFromReader = (verse, opts = null) => {
     if (!verse) return;
-    initAudio();
+    initAudio(); // synchronous, inside the tap — keeps the iOS audio blessing
+    if (opts?.mode) setPlayMode(opts.mode);
+    if (typeof opts?.difficulty === 'number') setDistractionLevel(opts.difficulty);
     setContinuousRainSet(null);
     setCampaignQueue(null);
     campaignQueueRef.current = null;
@@ -8158,7 +8241,8 @@ export default function App() {
     setActiveCampaignSetTotal(1);
     setActiveVerse(verse);
     setSelectedVerseRefs([verse.reference]);
-    setTimeout(() => startGame(false, verse), 50);
+    pendingReaderChallengeRef.current = { verse };
+    setReaderChallengeKick(k => k + 1);
   };
 
   // Push a verse set to the backend's share-set endpoint so anyone who opens
