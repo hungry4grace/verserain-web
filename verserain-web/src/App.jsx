@@ -2456,7 +2456,8 @@ function VerseSetContinuousRainPlayer({
   userEmail = '',
   playerName = '',
   onRequestLogin = null,
-  onOpenVoiceComments = null
+  onOpenVoiceComments = null,
+  onVoiceRecorded = null
 }) {
   const verses = useMemo(() => verseSet?.verses?.filter(Boolean) || [], [verseSet]);
   // Opened from a share link carrying vo= → play the sender's personal voice.
@@ -2619,6 +2620,9 @@ function VerseSetContinuousRainPlayer({
     job.then(() => {
       setVoiceStatus(prev => { const n = { ...prev }; delete n[ref]; return n; });
       bumpPersonalVoices();
+      // Tell the parent a recording landed, so the set-detail ⭐ refreshes
+      // without a manual page reload when the listener returns to the list.
+      onVoiceRecorded?.();
     }).catch((e) => {
       console.error('personal voice upload failed', e);
       setVoiceStatus(prev => ({ ...prev, [ref]: 'error' }));
@@ -16801,6 +16805,7 @@ const deDict = {
             playerName={playerName}
             onRequestLogin={() => setShowLoginModal('login')}
             onOpenVoiceComments={openVoiceCommentsFromPlayer}
+            onVoiceRecorded={() => setVoiceRefreshTick(x => x + 1)}
             onStop={() => {
               setContinuousRainSet(null);
               // Launched from a team schedule row → return to the teams modal
@@ -17264,6 +17269,7 @@ const deDict = {
                     }}
                     onListenLogged={() => updateGarden('activity_only', 'listen')}
                     onOpenVoiceComments={openVoiceCommentsFromPlayer}
+                    onVoiceRecorded={() => setVoiceRefreshTick(x => x + 1)}
                     onChallengeVerse={challengeVerseFromReader}
                     onShareVerse={(verse, shareOpts) => {
                       if (!verse) return;
@@ -17356,6 +17362,7 @@ const deDict = {
                     }}
                     onListenLogged={() => updateGarden('activity_only', 'listen')}
                     onOpenVoiceComments={openVoiceCommentsFromPlayer}
+                    onVoiceRecorded={() => setVoiceRefreshTick(x => x + 1)}
                     onChallengeVerse={challengeVerseFromReader}
                     onShareVerse={(verse, shareOpts) => {
                       if (!verse) return;
