@@ -3694,13 +3694,15 @@ function VerseSetContinuousRainPlayer({
               // into whatever mode was last configured elsewhere.
               let mode = 'square_solo';
               let difficulty = 0;
+              let debug = false;
               try {
                 const m = localStorage.getItem('verserain_reader_challenge_mode');
                 if (['square_solo', 'rain_solo', 'voice_solo'].includes(m)) mode = m;
                 const d = parseInt(localStorage.getItem('verserain_reader_challenge_diff') || '0', 10);
                 if (d >= 0 && d <= 3) difficulty = d;
+                debug = localStorage.getItem('verseRain_debugMode') === 'true';
               } catch { /* defaults stand */ }
-              setChallengeChooser({ mode, difficulty });
+              setChallengeChooser({ mode, difficulty, debug });
             }}
           >
             <Zap size={22} />
@@ -3842,7 +3844,7 @@ function VerseSetContinuousRainPlayer({
               })}
             </div>
             <div style={{ fontSize: '0.78rem', fontWeight: 700, color: '#94a3b8', letterSpacing: '0.05em', marginBottom: '0.4rem' }}>{t('難度', 'Difficulty')}</div>
-            <div style={{ display: 'flex', gap: '0.45rem', marginBottom: '1.2rem' }}>
+            <div style={{ display: 'flex', gap: '0.45rem', marginBottom: challengeChooser.mode === 'voice_solo' ? '1rem' : '1.2rem' }}>
               {[0, 1, 2, 3].map((d) => {
                 const active = challengeChooser.difficulty === d;
                 return (
@@ -3853,15 +3855,23 @@ function VerseSetContinuousRainPlayer({
                 );
               })}
             </div>
+            {challengeChooser.mode === 'voice_solo' && (
+              <button onClick={() => setChallengeChooser(c => ({ ...c, debug: !c.debug }))}
+                style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '0.55rem 0.7rem', marginBottom: '1.2rem', borderRadius: 10, border: challengeChooser.debug ? '2px solid #6366f1' : '1px solid #e2e8f0', background: challengeChooser.debug ? '#eef2ff' : '#f8fafc', color: challengeChooser.debug ? '#4338ca' : '#64748b', fontSize: '0.88rem', fontWeight: 600, cursor: 'pointer', textAlign: 'left' }}>
+                <span>{challengeChooser.debug ? '☑' : '☐'}</span>
+                <span style={{ flex: 1 }}>🔍 {t('顯示除錯資訊(期待 vs 聽見)', 'Show debug (expects vs heard)')}</span>
+              </button>
+            )}
             <button
               onClick={() => {
-                const { mode, difficulty } = challengeChooser;
+                const { mode, difficulty, debug } = challengeChooser;
                 try {
                   localStorage.setItem('verserain_reader_challenge_mode', mode);
                   localStorage.setItem('verserain_reader_challenge_diff', String(difficulty));
+                  localStorage.setItem('verseRain_debugMode', debug ? 'true' : 'false');
                 } catch { /* remember-me is best-effort */ }
                 setChallengeChooser(null);
-                onChallengeVerse(currentVerse, { mode, difficulty });
+                onChallengeVerse(currentVerse, { mode, difficulty, debug });
               }}
               style={{ width: '100%', padding: '0.75rem', borderRadius: 12, border: 'none', background: 'linear-gradient(135deg, #22c55e, #16a34a)', color: '#fff', fontSize: '1rem', fontWeight: 700, cursor: 'pointer', boxShadow: '0 6px 16px rgba(22,163,74,0.35)' }}
             >
@@ -6772,9 +6782,10 @@ export default function App() {
     // (block stuck at top-left under the rain background).
   }, [activeVerseSets, customVerseSets, playMode, distractionLevel]);
   const [isBlindMode, setIsBlindMode] = useState(() => localStorage.getItem('verseRain_blindMode') === 'true');
-  // Debug mode is now toggled only via localStorage (the settings tile was
-  // removed); the stored flag still feeds debug rendering below.
-  const [isDebugMode] = useState(() => localStorage.getItem('verseRain_debugMode') === 'true');
+  // Debug mode — persisted in localStorage, also toggleable from the ⚡ 挑戰
+  // chooser so a phone user can flip on the voice-mode "expects vs heard" HUD
+  // without dev tools.
+  const [isDebugMode, setIsDebugMode] = useState(() => localStorage.getItem('verseRain_debugMode') === 'true');
 
   const [lightningActive, setLightningActive] = useState(null);
   const [lightningKey, setLightningKey] = useState(0);
@@ -8233,6 +8244,7 @@ export default function App() {
     initAudio(); // synchronous, inside the tap — keeps the iOS audio blessing
     if (opts?.mode) setPlayMode(opts.mode);
     if (typeof opts?.difficulty === 'number') setDistractionLevel(opts.difficulty);
+    if (typeof opts?.debug === 'boolean') setIsDebugMode(opts.debug);
     setContinuousRainSet(null);
     setCampaignQueue(null);
     campaignQueueRef.current = null;

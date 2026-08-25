@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef, useMemo } from 'react';
 import { Heart, Zap, XCircle } from 'lucide-react';
 import { planReadback } from './lib/voiceReadback.js';
-import { prepareTarget, scoreBestCandidate } from './lib/recitationMatch.js';
+import { prepareTarget, scoreBestCandidate, PASS_THRESHOLD } from './lib/recitationMatch.js';
 import { getSpeechLangForVersion } from './lib/speechLang.js';
 
 const REFERENCE_TO_RECITE_PAUSE_MS = 4000;
@@ -46,6 +46,13 @@ export default function BlindModeGame({
     const lastMatchedIndexRef = useRef(-1);
     const lastMatchedLengthRef = useRef(0);
     const latestTranscriptRef = useRef(null);
+    // Always the length of the FULL session transcript from the last onresult —
+    // never faked to 0/'' the way latestTranscriptRef is. Block boundaries set
+    // lastMatchedLengthRef to this so the next block only sees speech heard
+    // AFTER it started, without aborting/restarting recognition.
+    const fullSessionLenRef = useRef(0);
+    // Debug HUD: what the current block expects (target) — mirrors currentBlock.
+    const [debugTarget, setDebugTarget] = useState('');
     const activeBlockRef = useRef(null);
     const pauseTimeoutRef = useRef(null);
     const gameRootRef = useRef(null);
@@ -73,6 +80,11 @@ export default function BlindModeGame({
         if (activeBlockRef.current) {
             activeBlockRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }
+        // Debug HUD: surface what THIS block expects, cleared of prior heard text.
+        const b = currentBlockRef.current;
+        setDebugTarget(typeof b === 'string' ? b : (b?.text || ''));
+        setHeardText('');
+        setCurrentAccuracy(0);
     }, [currentSeqIndex]);
 
     const TTS_LANG = getSpeechLangForVersion(version);
@@ -130,26 +142,20 @@ export default function BlindModeGame({
 
     const isSpeakingRef = useRef(false);
 
-    // Hard-reset the recognition session at every block boundary. With
-    // continuous recognition, event.results accumulates EVERYTHING said since
-    // the session started — the `{ transcript: '' }` bookkeeping resets are
-    // rebuilt from event.results on the very next onresult, so anything
-    // mis-heard during an earlier block would otherwise reappear in
-    // textToProcess and pollute every later block's evaluation ("said one
-    // block wrong → everything after judged wrong"). abort() clears the
-    // session; the onend handler auto-restarts it ~100ms later and onstart
-    // zeroes lastMatchedLengthRef, so each block starts from a clean slate.
-    // Safe to call from advance timeouts (NOT from inside onresult, where
-    // abort/restart races the onend heartbeat). A dead session (iOS audio
-    // focus loss) is also revived by this same abort→restart cycle.
-    const resetRecognitionSession = () => {
-        latestTranscriptRef.current = { transcript: '', alternatives: [] };
-        lastMatchedLengthRef.current = 0;
+    // Advance the consumed-offset to EVERYTHING heard so far, so the next block
+    // only evaluates speech that comes after it. With continuous recognition,
+    // event.results accumulates the whole session, and each onresult rebuilds
+    // the full transcript; slicing from this baseline is what keeps a mis-heard
+    // (or skipped) earlier block from polluting every later block. We do NOT
+    // abort()/restart the recognizer between blocks — that dropped ~100-300ms
+    // of audio on each restart and made every other block fail. Called only
+    // from advance timeouts, never inside onresult.
+    const consumeSessionSoFar = () => {
+        lastMatchedLengthRef.current = fullSessionLenRef.current;
         if (pauseTimeoutRef.current) {
             clearTimeout(pauseTimeoutRef.current);
             pauseTimeoutRef.current = null;
         }
-        try { recognitionRef.current?.abort(); } catch { /* heartbeat will revive */ }
     };
 
     const startTimer = () => {
@@ -173,8 +179,6 @@ export default function BlindModeGame({
                     missedIndicesRef.current.push(currentSeqIndexRef.current);
                     setMissedIndices([...missedIndicesRef.current]);
                     const isFinalBlock = currentSeqIndexRef.current >= activePhrases.length - 1;
-                    latestTranscriptRef.current = { transcript: '', alternatives: [] };
-                    lastMatchedLengthRef.current = 0;
 
                     // Read the block aloud on a MISS too — the user should hear the
                     // correct phrase whether they got it right or ran out of time.
@@ -184,7 +188,7 @@ export default function BlindModeGame({
                     const advanceMiss = () => {
                         if (!isMountedRef.current) return;
                         isSpeakingRef.current = false;
-                        resetRecognitionSession();
+                        consumeSessionSoFar();
                         onWordMissRef.current();
                     };
                     const plan = planReadback(missedBlock, {
@@ -202,8 +206,6 @@ export default function BlindModeGame({
                         }
                         speakText(plan.text, 1.0, TTS_LANG).then(() => {
                             if (!isMountedRef.current) return;
-                            latestTranscriptRef.current = { transcript: '', alternatives: [] };
-                            lastMatchedLengthRef.current = 0;
                             setTimeout(advanceMiss, plan.advanceDelayMs);
                         });
                     } else {
@@ -358,7 +360,7 @@ export default function BlindModeGame({
                         if (!isMountedRef.current) return;
                         isSuccessFlashRef.current = false;
                         setIsSuccessFlash(false);
-                        resetRecognitionSession();
+                        consumeSessionSoFar();
                         const wasMissed = missedIndicesRef.current.includes(currentSeqIndexRef.current);
                         onWordMatchRef.current(block, wasMissed);
                     };
@@ -393,10 +395,6 @@ export default function BlindModeGame({
                         }
                         speakText(plan.text, 1.0, TTS_LANG).then(() => {
                             if (!isMountedRef.current) return;
-                            // Reset transcript bookkeeping so the readback we just
-                            // spoke can never be mis-counted toward the next block.
-                            latestTranscriptRef.current = { transcript: '', alternatives: [] };
-                            lastMatchedLengthRef.current = 0;
                             isSpeakingRef.current = false;
                             setTimeout(advance, plan.advanceDelayMs);
                         });
@@ -440,6 +438,7 @@ export default function BlindModeGame({
             // making the new session's shorter transcript slice to '' — the
             // player's speech becomes invisible and every block times out.
             lastMatchedLengthRef.current = 0;
+            fullSessionLenRef.current = 0;
             latestTranscriptRef.current = { transcript: '', alternatives: [] };
             if (pauseTimeoutRef.current) {
                 clearTimeout(pauseTimeoutRef.current);
@@ -465,6 +464,7 @@ export default function BlindModeGame({
                 alternatives.push(list);
             }
             latestTranscriptRef.current = { transcript: sessionTranscript, alternatives };
+            fullSessionLenRef.current = sessionTranscript.length; // real length — never faked
             if (evaluateTranscriptRef.current) {
                 evaluateTranscriptRef.current();
             }
@@ -745,24 +745,28 @@ export default function BlindModeGame({
                 {t("離開", "Exit")}
             </button>
 
-            {isDebugMode && heardText && (
-                <div style={{ position: 'absolute', bottom: '2%', width: '100%', padding: '1rem 2rem', textAlign: 'center', backgroundColor: 'rgba(0,0,0,0.7)', borderTop: '1px solid #334155' }}>
-                    <p style={{ color: '#bae6fd', fontSize: '2.5rem', margin: 0, wordBreak: 'break-word', fontWeight: 'bold' }}>
-                        {t("聽見：", "Heard: ")}{heardText}
-                        {!isSuccessFlash && heardText !== t("收到正確！等候中...", "Correct! Waiting...") && (
-                            <span style={{ 
-                                marginLeft: '1rem', 
-                                fontSize: '1.5rem', 
-                                color: currentAccuracy >= 60 ? '#4ade80' : (currentAccuracy > 0 ? '#facc15' : '#94a3b8'),
-                                backgroundColor: 'rgba(255,255,255,0.1)',
-                                padding: '0.2rem 0.8rem',
-                                borderRadius: '12px',
-                                verticalAlign: 'middle'
-                            }}>
-                                {t("準確率", "Accuracy")} {currentAccuracy}%
-                            </span>
-                        )}
-                    </p>
+            {isDebugMode && (
+                <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '0.9rem 1.4rem', textAlign: 'left', backgroundColor: 'rgba(0,0,0,0.82)', borderTop: '1px solid #334155', display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.6rem', flexWrap: 'wrap' }}>
+                        <span style={{ color: '#94a3b8', fontSize: '1rem', fontWeight: 700, minWidth: '5.5rem' }}>{t("期待：", "Expects: ")}</span>
+                        <span style={{ color: '#facc15', fontSize: '1.5rem', fontWeight: 'bold', wordBreak: 'break-word' }}>{debugTarget || '—'}</span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.6rem', flexWrap: 'wrap' }}>
+                        <span style={{ color: '#94a3b8', fontSize: '1rem', fontWeight: 700, minWidth: '5.5rem' }}>{t("聽見：", "Heard: ")}</span>
+                        <span style={{ color: '#bae6fd', fontSize: '1.5rem', fontWeight: 'bold', wordBreak: 'break-word' }}>{heardText || '…'}</span>
+                        <span style={{
+                            marginLeft: 'auto',
+                            fontSize: '1.2rem',
+                            fontWeight: 800,
+                            color: currentAccuracy >= PASS_THRESHOLD ? '#4ade80' : (currentAccuracy > 0 ? '#facc15' : '#94a3b8'),
+                            backgroundColor: 'rgba(255,255,255,0.1)',
+                            padding: '0.15rem 0.7rem',
+                            borderRadius: '12px',
+                            whiteSpace: 'nowrap'
+                        }}>
+                            {currentAccuracy}% {currentAccuracy >= PASS_THRESHOLD ? '✓' : ''} <span style={{ fontSize: '0.85rem', opacity: 0.7 }}>(≥{PASS_THRESHOLD})</span>
+                        </span>
+                    </div>
                 </div>
             )}
         </div>
