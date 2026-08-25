@@ -190,3 +190,54 @@ export async function uploadUserVerseVoice({ email, setId, reference, blob, mime
   });
   return { ...(res.verseVoice || {}), ownerId: res.ownerId };
 }
+
+// ── 錄音留言 / 鼓勵 (voice-recording comments) ─────────────────────────
+// YouTube-style feedback attached to ONE recording, identified by
+// (setId, reference, targetOwnerId). targetOwnerId is a contributor's ownerId
+// or the set author's byOwnerId (both surfaced by the picker). Text + audio
+// comments, per-comment reactions, plus a recording-level like. Audio reuses
+// the same content-addressed chunk store as recordings.
+export const voiceCommentApi = {
+  createText: (email, name, setId, reference, targetOwnerId, text) =>
+    jpost('/sets/voice-comment/create', { email, name, setId, reference, targetOwnerId, type: 'text', text }),
+  // { comments: [...], recordingReactions: [...] }
+  list: (setId, reference, targetOwnerId) =>
+    jget(`/sets/voice-comments?setId=${encodeURIComponent(setId)}&reference=${encodeURIComponent(reference)}&targetOwnerId=${encodeURIComponent(targetOwnerId)}`),
+  remove: (email, name, setId, reference, targetOwnerId, cid) =>
+    jpost('/sets/voice-comment/delete', { email, name, setId, reference, targetOwnerId, cid }),
+  reactComment: (email, setId, reference, targetOwnerId, cid, emoji) =>
+    jpost('/sets/voice-comment/react', { email, setId, reference, targetOwnerId, cid, emoji }),
+  reactRecording: (email, name, setId, reference, targetOwnerId, emoji) =>
+    jpost('/sets/voice-recording/react', { email, name, setId, reference, targetOwnerId, emoji }),
+  // { counts: { `${reference}||${ownerId}`: { comments, likes } } } — one round trip.
+  getCounts: (setId) =>
+    jget(`/sets/voice-comment-counts?setId=${encodeURIComponent(setId)}`),
+  // Encouragement inbox for a recorder (by their own ownerId).
+  getEncouragement: (owner) =>
+    jget(`/sets/voice-encourage?owner=${encodeURIComponent(owner)}`),
+  markEncouragementRead: (owner) =>
+    jpost('/sets/voice-encourage/read', { owner }),
+};
+
+// Record-blob → chunk upload (shared set-voice store) → create a VOICE comment
+// on a recording. Mirrors uploadUserVerseVoice but writes a comment doc.
+export async function uploadVoiceComment({ email, name, setId, reference, targetOwnerId, blob, mime, dur }) {
+  const base64 = await new Promise((resolve, reject) => {
+    const fr = new FileReader();
+    fr.onload = () => resolve(String(fr.result).split(',')[1] || '');
+    fr.onerror = reject;
+    fr.readAsDataURL(blob);
+  });
+  const CHUNK = 100000;
+  const total = Math.ceil(base64.length / CHUNK);
+  if (total > 120) throw new Error('Recording too long — keep it under 25 minutes.');
+  const voiceId = 'v_' + Math.random().toString(36).slice(2, 12);
+  for (let i = 0; i < total; i++) {
+    await setVoiceApi.uploadChunk(email, setId, voiceId, i, total, base64.slice(i * CHUNK, (i + 1) * CHUNK));
+  }
+  const res = await jpost('/sets/voice-comment/create', {
+    email, name, setId, reference, targetOwnerId,
+    type: 'voice', voiceId, voiceMime: mime, voiceDur: dur,
+  });
+  return res.comment;
+}

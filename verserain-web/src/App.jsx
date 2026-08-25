@@ -20,7 +20,7 @@ import BlindModeGame from './BlindModeGame';
 import { TransformWrapper, TransformComponent } from 'react-zoom-pan-pinch';
 import { GOOGLE_CLIENT_ID, APPLE_CLIENT_ID, APPLE_REDIRECT_URI, LINE_CHANNEL_ID, startLineLogin } from './oauthConfig';
 import { VAPID_PUBLIC_KEY, urlBase64ToUint8Array, isWebPushSupported, isIOSStandalone, isIOSWithoutPWA, hasNativeDailyPush, callNativeDailyPush } from './pushConfig';
-import { setVoiceApi, uploadVerseVoice, uploadSetAsset, compressBackgroundImage, getSetAssetDataUrl, userVoiceApi, uploadUserVerseVoice, voiceOwnerId } from './setVoiceApi';
+import { setVoiceApi, uploadVerseVoice, uploadSetAsset, compressBackgroundImage, getSetAssetDataUrl, userVoiceApi, uploadUserVerseVoice, voiceOwnerId, voiceCommentApi, uploadVoiceComment } from './setVoiceApi';
 import VerseVoiceRecorder from './VerseVoiceRecorder';
 
 // Loose verses (random / daily / search / shared single verse) have no
@@ -6901,6 +6901,19 @@ export default function App() {
   // listener can pick whose voice to hear. { setId, reference, text, vLang,
   // options:[{kind:'owner'|'personal', ownerId?, recordedBy, voiceId, voiceMime, mine?}], loading }.
   const [verseVoicePicker, setVerseVoicePicker] = useState(null);
+  // 錄音留言 — comments attached to ONE recording. Panel target:
+  // { setId, reference, targetOwnerId, recordedBy, mine }. Data + composer state.
+  const [voiceCommentPanel, setVoiceCommentPanel] = useState(null);
+  const [voiceCommentData, setVoiceCommentData] = useState(null); // { comments, recordingReactions } | null(loading)
+  const [voiceCommentText, setVoiceCommentText] = useState('');
+  const [voiceCommentBusy, setVoiceCommentBusy] = useState(false);
+  const [commentRecTarget, setCommentRecTarget] = useState(null); // opens VerseVoiceRecorder for an audio comment
+  // 💬/❤️ badge counts for the picker rows, keyed `${reference}||${ownerId}`.
+  const [voiceCommentCounts, setVoiceCommentCounts] = useState({});
+  // 鼓勵收件匣 — the logged-in user's own inbox (by their ownerId).
+  const [encourageInbox, setEncourageInbox] = useState(null); // { items, lastReadAt } | null
+  const [showEncouragePanel, setShowEncouragePanel] = useState(false);
+  const [myVoiceOwnerId, setMyVoiceOwnerId] = useState(null);
   // 創作者親聲朗讀 in the verse view modal — when the verse came from a set
   // with a creator recording, the 朗讀 button plays it instead of TTS.
   const verseModalAudioRef = useRef(null);
@@ -6974,7 +6987,9 @@ export default function App() {
       }
       const ownerRec = ownerVoices[reference];
       if (ownerRec?.voiceId) {
-        options.push({ kind: 'owner', recordedBy: ownerRec.recordedBy || '', voiceId: ownerRec.voiceId, voiceMime: ownerRec.voiceMime });
+        // ownerId (author's byOwnerId) lets recording-comments target this
+        // recording the same way they target contributors.
+        options.push({ kind: 'owner', ownerId: ownerRec.byOwnerId || null, recordedBy: ownerRec.recordedBy || '', voiceId: ownerRec.voiceId, voiceMime: ownerRec.voiceMime });
       }
       const cres = await userVoiceApi.getContributors(setId).catch(() => null);
       const contributors = cres?.contributors || [];
@@ -7012,6 +7027,111 @@ export default function App() {
       return false;
     }
   };
+
+  // ── 錄音留言 helpers ────────────────────────────────────────────────
+  // Open the comments panel for one recording (a picker option). Only real
+  // recordings (owner/personal with an ownerId) can carry comments — TTS can't.
+  const openVoiceComments = async (setId, reference, opt) => {
+    if (!opt?.ownerId) return;
+    const panel = { setId, reference, targetOwnerId: opt.ownerId, recordedBy: opt.recordedBy || '', mine: !!opt.mine };
+    setVoiceCommentPanel(panel);
+    setVoiceCommentData(null);
+    setVoiceCommentText('');
+    try {
+      const res = await voiceCommentApi.list(setId, reference, opt.ownerId);
+      setVoiceCommentData({ comments: res?.comments || [], recordingReactions: res?.recordingReactions || [] });
+    } catch {
+      setVoiceCommentData({ comments: [], recordingReactions: [] });
+    }
+  };
+  const refreshVoiceComments = async (panel = voiceCommentPanel) => {
+    if (!panel) return;
+    try {
+      const res = await voiceCommentApi.list(panel.setId, panel.reference, panel.targetOwnerId);
+      setVoiceCommentData({ comments: res?.comments || [], recordingReactions: res?.recordingReactions || [] });
+    } catch { /* keep prior */ }
+  };
+  const submitTextComment = async () => {
+    const panel = voiceCommentPanel;
+    const body = voiceCommentText.trim();
+    if (!panel || !body || !userEmail) return;
+    setVoiceCommentBusy(true);
+    try {
+      await voiceCommentApi.createText(userEmail, recordedByNameApp(), panel.setId, panel.reference, panel.targetOwnerId, body);
+      setVoiceCommentText('');
+      await refreshVoiceComments(panel);
+    } catch (e) { console.error('comment failed', e); }
+    setVoiceCommentBusy(false);
+  };
+  const deleteVoiceComment = async (cid) => {
+    const panel = voiceCommentPanel;
+    if (!panel || !userEmail) return;
+    try {
+      await voiceCommentApi.remove(userEmail, recordedByNameApp(), panel.setId, panel.reference, panel.targetOwnerId, cid);
+      await refreshVoiceComments(panel);
+    } catch (e) { console.error('delete comment failed', e); }
+  };
+  const reactVoiceComment = async (cid, emoji) => {
+    const panel = voiceCommentPanel;
+    if (!panel || !userEmail) return;
+    try {
+      await voiceCommentApi.reactComment(userEmail, panel.setId, panel.reference, panel.targetOwnerId, cid, emoji);
+      await refreshVoiceComments(panel);
+    } catch (e) { console.error('react comment failed', e); }
+  };
+  const likeRecording = async (emoji) => {
+    const panel = voiceCommentPanel;
+    if (!panel || !userEmail) return;
+    try {
+      await voiceCommentApi.reactRecording(userEmail, recordedByNameApp(), panel.setId, panel.reference, panel.targetOwnerId, emoji);
+      await refreshVoiceComments(panel);
+    } catch (e) { console.error('like recording failed', e); }
+  };
+  // Play a voice-comment's audio (same content-addressed store as recordings).
+  const playCommentAudio = async (setId, voiceId, mime) => {
+    try {
+      let dataUrl = setVoiceAudioLookupRef.current.get(voiceId);
+      if (!dataUrl) {
+        const res = await setVoiceApi.getAudio(setId, voiceId);
+        if (!res?.data) return;
+        dataUrl = `data:${mime || 'audio/webm'};base64,${res.data}`;
+        setVoiceAudioLookupRef.current.set(voiceId, dataUrl);
+      }
+      stopSpeechIfActive();
+      stopVerseModalAudio();
+      const audio = new Audio(dataUrl);
+      verseModalAudioRef.current = audio;
+      await audio.play();
+    } catch { /* ignore */ }
+  };
+  const recordedByNameApp = () => playerName || (userEmail || '').split('@')[0] || 'Anonymous';
+
+  // My recorder id + encouragement inbox (for the 🔔 badge). Refetched on login.
+  useEffect(() => {
+    let cancelled = false;
+    if (!userEmail) { setMyVoiceOwnerId(null); setEncourageInbox(null); return undefined; }
+    (async () => {
+      const oid = await voiceOwnerId(userEmail).catch(() => null);
+      if (cancelled) return;
+      setMyVoiceOwnerId(oid);
+      if (oid) {
+        const res = await voiceCommentApi.getEncouragement(oid).catch(() => null);
+        if (!cancelled && res) setEncourageInbox({ items: res.items || [], lastReadAt: res.lastReadAt || '' });
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [userEmail]);
+
+  // 💬/❤️ counts for the recording picker rows, fetched once per open.
+  useEffect(() => {
+    if (!verseVoicePicker?.setId) return undefined;
+    let cancelled = false;
+    voiceCommentApi.getCounts(verseVoicePicker.setId)
+      .then(res => { if (!cancelled && res?.counts) setVoiceCommentCounts(res.counts); })
+      .catch(() => { /* badges are optional */ });
+    return () => { cancelled = true; };
+  }, [verseVoicePicker]);
+
   const [toast, setToast] = useState(null);
   const [isOnline, setIsOnline] = useState(() => typeof navigator !== 'undefined' ? navigator.onLine : true);
   useEffect(() => {
@@ -16743,6 +16863,27 @@ const deDict = {
               <div className="app-auth-actions" style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
                 {playerName ? (
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
+                    {myVoiceOwnerId && (encourageInbox?.items?.length > 0) && (() => {
+                      const items = encourageInbox.items;
+                      const lastRead = encourageInbox.lastReadAt || '';
+                      const unread = items.filter(it => (it.at || '') > lastRead).length;
+                      return (
+                        <button
+                          onClick={() => {
+                            setShowEncouragePanel(v => !v);
+                            if (unread > 0) {
+                              voiceCommentApi.markEncouragementRead(myVoiceOwnerId).catch(() => {});
+                              setEncourageInbox(prev => prev ? { ...prev, lastReadAt: new Date().toISOString() } : prev);
+                            }
+                          }}
+                          title={t('我收到的鼓勵', 'Encouragement I received')}
+                          style={{ position: 'relative', background: 'transparent', border: 'none', cursor: 'pointer', padding: '0.2rem', display: 'flex', alignItems: 'center' }}
+                        >
+                          <span style={{ fontSize: '1.25rem' }}>🔔</span>
+                          {unread > 0 && <span style={{ position: 'absolute', top: -2, right: -2, minWidth: 16, height: 16, padding: '0 4px', borderRadius: 999, background: '#ef4444', color: '#fff', fontSize: '0.65rem', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{unread}</span>}
+                        </button>
+                      );
+                    })()}
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', cursor: 'pointer', padding: '0.3rem 0.6rem', borderRadius: '6px', transition: 'background 0.2s' }}
                       onClick={() => setShowNameEditModal(true)}
                       onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#f1f5f9'}
@@ -22062,28 +22203,44 @@ const deDict = {
               </h3>
               <p style={{ margin: '0 0 1rem', color: '#64748b', fontSize: '0.85rem' }}>{verseVoicePicker.reference}</p>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.55rem' }}>
-                {verseVoicePicker.options.map((opt, i) => (
-                  <button
-                    key={opt.voiceId || i}
-                    onClick={async () => {
-                      const pk = verseVoicePicker;
-                      setVerseVoicePicker(null);
-                      const ok = await playVerseVoiceOption(pk.setId, opt);
-                      if (!ok) speakText(pk.text, 1.0, pk.vLang);
-                    }}
-                    style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '0.7rem 0.9rem', borderRadius: '10px', border: '1px solid #e2e8f0', background: '#f8fafc', color: '#334155', fontSize: '0.95rem', fontWeight: 600, cursor: 'pointer', textAlign: 'left' }}
-                    onMouseOver={(e) => { e.currentTarget.style.background = '#eef2ff'; e.currentTarget.style.borderColor = '#c7d2fe'; }}
-                    onMouseOut={(e) => { e.currentTarget.style.background = '#f8fafc'; e.currentTarget.style.borderColor = '#e2e8f0'; }}
-                  >
-                    <span aria-hidden="true">🎙️</span>
-                    <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {opt.kind === 'owner'
-                        ? (opt.recordedBy ? t('作者:{n}', 'Author: {n}').replace('{n}', opt.recordedBy) : t('作者錄音', 'Author'))
-                        : `${opt.recordedBy || t('某人', 'Someone')}${opt.mine ? ` ${t('(你)', '(you)')}` : ''}`}
-                    </span>
-                    <Play size={15} color="#8b5cf6" fill="#8b5cf6" />
-                  </button>
-                ))}
+                {verseVoicePicker.options.map((opt, i) => {
+                  const cnt = opt.ownerId ? voiceCommentCounts[`${verseVoicePicker.reference}||${opt.ownerId}`] : null;
+                  return (
+                  <div key={opt.voiceId || i} style={{ display: 'flex', alignItems: 'stretch', gap: 6 }}>
+                    <button
+                      onClick={async () => {
+                        const pk = verseVoicePicker;
+                        setVerseVoicePicker(null);
+                        const ok = await playVerseVoiceOption(pk.setId, opt);
+                        if (!ok) speakText(pk.text, 1.0, pk.vLang);
+                      }}
+                      style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: 8, padding: '0.7rem 0.9rem', borderRadius: '10px', border: '1px solid #e2e8f0', background: '#f8fafc', color: '#334155', fontSize: '0.95rem', fontWeight: 600, cursor: 'pointer', textAlign: 'left' }}
+                      onMouseOver={(e) => { e.currentTarget.style.background = '#eef2ff'; e.currentTarget.style.borderColor = '#c7d2fe'; }}
+                      onMouseOut={(e) => { e.currentTarget.style.background = '#f8fafc'; e.currentTarget.style.borderColor = '#e2e8f0'; }}
+                    >
+                      <span aria-hidden="true">🎙️</span>
+                      <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {opt.kind === 'owner'
+                          ? (opt.recordedBy ? t('作者:{n}', 'Author: {n}').replace('{n}', opt.recordedBy) : t('作者錄音', 'Author'))
+                          : `${opt.recordedBy || t('某人', 'Someone')}${opt.mine ? ` ${t('(你)', '(you)')}` : ''}`}
+                        {cnt && (cnt.comments > 0 || cnt.likes > 0) && (
+                          <span style={{ marginLeft: 6, fontSize: '0.72rem', color: '#94a3b8', fontWeight: 500 }}>
+                            {cnt.likes > 0 ? `❤️${cnt.likes} ` : ''}{cnt.comments > 0 ? `💬${cnt.comments}` : ''}
+                          </span>
+                        )}
+                      </span>
+                      <Play size={15} color="#8b5cf6" fill="#8b5cf6" />
+                    </button>
+                    {opt.ownerId && (
+                      <button
+                        title={t('留言 / 鼓勵', 'Comments')}
+                        onClick={() => openVoiceComments(verseVoicePicker.setId, verseVoicePicker.reference, opt)}
+                        style={{ flexShrink: 0, width: 44, borderRadius: '10px', border: '1px solid #e2e8f0', background: '#fff', color: '#8b5cf6', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.15rem' }}
+                      >💬</button>
+                    )}
+                  </div>
+                  );
+                })}
                 {/* 電腦語音 fallback — always offered as the last option. */}
                 <button
                   onClick={() => {
@@ -22102,6 +22259,156 @@ const deDict = {
               <button onClick={() => setVerseVoicePicker(null)} style={{ marginTop: '1rem', width: '100%', background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer', fontSize: '0.9rem' }}>
                 {t('取消', 'Cancel')}
               </button>
+            </div>
+          </div>
+        )}
+
+        {/* 錄音留言面板 — comments + likes on ONE recording */}
+        {voiceCommentPanel && (() => {
+          const meLc = (userEmail || '').toLowerCase();
+          const isAdminEmail = ['samhsiung@gmail.com', 'davidhwang1125@gmail.com', 'hsiungsam@gmail.com', 'hungry4grace@gmail.com', 'verserain.admin@gmail.com'].includes(meLc);
+          const canModerate = isAdminEmail || voiceCommentPanel.mine || (currentSet?.ownerEmail && String(currentSet.ownerEmail).toLowerCase() === meLc && currentSet.id === voiceCommentPanel.setId);
+          const recRx = voiceCommentData?.recordingReactions || [];
+          const myLiked = recRx.some(r => r.from === meLc && r.emoji === '❤️');
+          const commentEmojis = ['❤️', '🙏'];
+          return (
+          <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.6)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1350, padding: '1rem' }} onClick={(e) => { if (e.target === e.currentTarget) setVoiceCommentPanel(null); }}>
+            <div style={{ background: '#fff', borderRadius: '14px', width: '100%', maxWidth: '440px', maxHeight: '86vh', display: 'flex', flexDirection: 'column', boxShadow: '0 20px 40px rgba(0,0,0,0.25)' }}>
+              {/* Header */}
+              <div style={{ padding: '1.1rem 1.3rem 0.8rem', borderBottom: '1px solid #eef2f7' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 }}>
+                  <div style={{ minWidth: 0 }}>
+                    <div style={{ fontWeight: 700, color: '#1e293b', fontSize: '1.05rem' }}>💬 {t('留言 / 鼓勵', 'Comments')}</div>
+                    <div style={{ color: '#64748b', fontSize: '0.82rem', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {voiceCommentPanel.reference} · 🎙️ {voiceCommentPanel.recordedBy || t('某人', 'Someone')}{voiceCommentPanel.mine ? ` ${t('(你)', '(you)')}` : ''}
+                    </div>
+                  </div>
+                  <button onClick={() => setVoiceCommentPanel(null)} style={{ background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer', padding: 0, flexShrink: 0 }}><XCircle size={22} /></button>
+                </div>
+                {/* Recording-level like */}
+                <button
+                  onClick={() => { if (!userEmail) { setShowLoginModal('login'); return; } likeRecording('❤️'); }}
+                  title={t('為這個錄音按讚', 'Like this recording')}
+                  style={{ marginTop: 10, display: 'inline-flex', alignItems: 'center', gap: 6, padding: '0.4rem 0.8rem', borderRadius: 999, border: myLiked ? '1px solid #fecaca' : '1px solid #e2e8f0', background: myLiked ? '#fef2f2' : '#f8fafc', color: myLiked ? '#dc2626' : '#475569', fontWeight: 600, fontSize: '0.85rem', cursor: 'pointer' }}
+                >
+                  ❤️ {t('讚', 'Like')}{recRx.filter(r => r.emoji === '❤️').length > 0 ? ` · ${recRx.filter(r => r.emoji === '❤️').length}` : ''}
+                </button>
+              </div>
+              {/* Comment list */}
+              <div style={{ flex: '1 1 auto', minHeight: 0, overflowY: 'auto', padding: '0.9rem 1.3rem', display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
+                {voiceCommentData === null && <div style={{ color: '#94a3b8', fontSize: '0.9rem', textAlign: 'center' }}>{t('載入中…', 'Loading…')}</div>}
+                {voiceCommentData && voiceCommentData.comments.length === 0 && (
+                  <div style={{ color: '#94a3b8', fontSize: '0.9rem', textAlign: 'center', padding: '1rem 0' }}>{t('還沒有留言。留下第一句鼓勵吧！', 'No comments yet — leave the first word of encouragement!')}</div>
+                )}
+                {voiceCommentData && voiceCommentData.comments.map((c) => {
+                  const canDelete = c.author === meLc || canModerate;
+                  return (
+                    <div key={c.cid} style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <span style={{ fontWeight: 700, color: '#334155', fontSize: '0.88rem' }}>{c.authorName || t('某人', 'Someone')}</span>
+                        <span style={{ color: '#cbd5e1', fontSize: '0.72rem' }}>{new Date(c.at).toLocaleDateString()}</span>
+                        {canDelete && (
+                          <button onClick={() => deleteVoiceComment(c.cid)} title={t('刪除', 'Delete')} style={{ marginLeft: 'auto', background: 'transparent', border: 'none', color: '#f87171', cursor: 'pointer', fontSize: '0.8rem', padding: '0 4px' }}>✕</button>
+                        )}
+                      </div>
+                      {c.type === 'voice' ? (
+                        <button onClick={() => playCommentAudio(voiceCommentPanel.setId, c.voiceId, c.voiceMime)} style={{ alignSelf: 'flex-start', display: 'inline-flex', alignItems: 'center', gap: 6, padding: '0.4rem 0.8rem', borderRadius: 8, border: '1px solid #ddd6fe', background: '#f5f3ff', color: '#6d28d9', fontWeight: 600, fontSize: '0.85rem', cursor: 'pointer' }}>
+                          ▶ {t('語音留言', 'Voice comment')}{c.voiceDur ? ` · ${Math.round(c.voiceDur)}s` : ''}
+                        </button>
+                      ) : (
+                        <div style={{ color: '#334155', fontSize: '0.92rem', lineHeight: 1.5, wordBreak: 'break-word', whiteSpace: 'pre-wrap' }}>{c.text}</div>
+                      )}
+                      {/* Per-comment reactions */}
+                      <div style={{ display: 'flex', gap: 6, marginTop: 2 }}>
+                        {commentEmojis.map((em) => {
+                          const n = (c.reactions || []).filter(r => r.emoji === em).length;
+                          const mine = (c.reactions || []).some(r => r.from === meLc && r.emoji === em);
+                          return (
+                            <button key={em} onClick={() => { if (!userEmail) { setShowLoginModal('login'); return; } reactVoiceComment(c.cid, em); }}
+                              style={{ display: 'inline-flex', alignItems: 'center', gap: 3, padding: '0.15rem 0.5rem', borderRadius: 999, border: mine ? '1px solid #c7d2fe' : '1px solid #e2e8f0', background: mine ? '#eef2ff' : '#fff', color: '#475569', fontSize: '0.78rem', cursor: 'pointer' }}>
+                              {em}{n > 0 ? ` ${n}` : ''}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+              {/* Composer */}
+              <div style={{ borderTop: '1px solid #eef2f7', padding: '0.8rem 1.3rem 1rem' }}>
+                {userEmail ? (
+                  <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8 }}>
+                    <textarea
+                      value={voiceCommentText}
+                      onChange={(e) => setVoiceCommentText(e.target.value.slice(0, 1000))}
+                      placeholder={t('留一句鼓勵…', 'Leave an encouragement…')}
+                      rows={1}
+                      style={{ flex: 1, resize: 'none', minHeight: 40, maxHeight: 120, padding: '0.55rem 0.7rem', borderRadius: 10, border: '1px solid #cbd5e1', fontSize: '0.92rem', fontFamily: 'inherit', color: '#334155' }}
+                    />
+                    <button onClick={() => setCommentRecTarget(voiceCommentPanel)} title={t('錄語音留言', 'Record a voice comment')} style={{ flexShrink: 0, width: 42, height: 42, borderRadius: '50%', border: '1px solid #e2e8f0', background: '#f8fafc', color: '#dc2626', cursor: 'pointer', fontSize: '1.2rem' }}>🎙️</button>
+                    <button onClick={submitTextComment} disabled={voiceCommentBusy || !voiceCommentText.trim()} style={{ flexShrink: 0, height: 42, padding: '0 1rem', borderRadius: 10, border: 'none', background: voiceCommentText.trim() ? 'linear-gradient(135deg,#8b5cf6,#6d28d9)' : '#e2e8f0', color: '#fff', fontWeight: 700, cursor: voiceCommentText.trim() ? 'pointer' : 'default' }}>{t('送出', 'Send')}</button>
+                  </div>
+                ) : (
+                  <button onClick={() => setShowLoginModal('login')} style={{ width: '100%', padding: '0.7rem', borderRadius: 10, border: '1px solid #cbd5e1', background: '#f8fafc', color: '#475569', fontWeight: 600, cursor: 'pointer' }}>
+                    {t('登入後即可留言 / 鼓勵', 'Sign in to comment')}
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+          );
+        })()}
+
+        {/* 語音留言錄音器 — records an audio comment on a recording */}
+        {commentRecTarget && (
+          <VerseVoiceRecorder
+            t={t}
+            reference={commentRecTarget.reference}
+            verseText={t('留一段話,鼓勵 {n} 🎙️', 'Leave a spoken word of encouragement for {n} 🎙️').replace('{n}', commentRecTarget.recordedBy || t('這位錄音者', 'this reader'))}
+            onUpload={({ blob, mime, dur }) => {
+              const target = commentRecTarget;
+              setCommentRecTarget(null);
+              (async () => {
+                try {
+                  await uploadVoiceComment({ email: userEmail, name: recordedByNameApp(), setId: target.setId, reference: target.reference, targetOwnerId: target.targetOwnerId, blob, mime, dur });
+                  await refreshVoiceComments(target);
+                } catch (e) { console.error('voice comment failed', e); }
+              })();
+            }}
+            onCancel={() => setCommentRecTarget(null)}
+            onDone={() => setCommentRecTarget(null)}
+          />
+        )}
+
+        {/* 鼓勵收件匣 — encouragement I've received on my recordings */}
+        {showEncouragePanel && (
+          <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.6)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1360, padding: '1rem' }} onClick={(e) => { if (e.target === e.currentTarget) setShowEncouragePanel(false); }}>
+            <div style={{ background: '#fff', borderRadius: '14px', width: '100%', maxWidth: '400px', maxHeight: '80vh', display: 'flex', flexDirection: 'column', boxShadow: '0 20px 40px rgba(0,0,0,0.25)' }}>
+              <div style={{ padding: '1.1rem 1.3rem 0.8rem', borderBottom: '1px solid #eef2f7', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div style={{ fontWeight: 700, color: '#1e293b', fontSize: '1.05rem' }}>🔔 {t('收到的鼓勵', 'Encouragement received')}</div>
+                <button onClick={() => setShowEncouragePanel(false)} style={{ background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer', padding: 0 }}><XCircle size={22} /></button>
+              </div>
+              <div style={{ flex: '1 1 auto', minHeight: 0, overflowY: 'auto', padding: '0.6rem 0' }}>
+                {(encourageInbox?.items || []).length === 0 && (
+                  <div style={{ color: '#94a3b8', fontSize: '0.9rem', textAlign: 'center', padding: '1.5rem 1rem' }}>{t('還沒有收到鼓勵。錄下你的聲音分享給大家吧！', 'No encouragement yet — record and share your voice!')}</div>
+                )}
+                {(encourageInbox?.items || []).map((it, i) => (
+                  <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '0.6rem 1.3rem' }}>
+                    <span style={{ fontSize: '1.2rem', flexShrink: 0 }}>{it.kind === 'like' ? (it.emoji || '❤️') : '💬'}</span>
+                    <div style={{ minWidth: 0 }}>
+                      <div style={{ color: '#334155', fontSize: '0.9rem', lineHeight: 1.45 }}>
+                        <b>{it.fromName || t('某人', 'Someone')}</b>{' '}
+                        {it.kind === 'like'
+                          ? t('喜歡你在〈{ref}〉的錄音', 'liked your recording of {ref}').replace('{ref}', it.reference || '')
+                          : t('在〈{ref}〉留言鼓勵你', 'commented on your recording of {ref}').replace('{ref}', it.reference || '')}
+                      </div>
+                      {it.preview && it.kind === 'comment' && <div style={{ color: '#64748b', fontSize: '0.82rem', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis' }}>{it.preview}</div>}
+                      <div style={{ color: '#cbd5e1', fontSize: '0.72rem', marginTop: 2 }}>{new Date(it.at).toLocaleString()}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         )}

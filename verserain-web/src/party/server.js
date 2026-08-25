@@ -1353,6 +1353,9 @@ export default class Server {
                voiceDur: Math.min(Math.max(0, Number(voiceDur) || 0), 600),
                recordedBy: String(recordedBy || '').trim().slice(0, 30),
                byEmail: emailLc,
+               // Stable recorder id so recording-comments can target this
+               // (author) recording the same way they target contributors.
+               byOwnerId: await voiceOwnerId(emailLc),
                at: new Date().toISOString(),
             };
             await this.room.storage.put(key, meta);
@@ -1373,7 +1376,12 @@ export default class Server {
             const map = await this.room.storage.list({ prefix });
             const voices = {};
             for (const [, meta] of map.entries()) {
-               if (meta?.reference) voices[meta.reference] = meta;
+               if (meta?.reference) {
+                  // Backfill byOwnerId for recordings saved before it existed, so
+                  // recording-comments can always target the author's recording.
+                  if (!meta.byOwnerId && meta.byEmail) meta.byOwnerId = await voiceOwnerId(meta.byEmail);
+                  voices[meta.reference] = meta;
+               }
             }
             return new Response(JSON.stringify({ success: true, voices }), { status: 200, headers: corsHeaders });
          } catch {
@@ -1570,6 +1578,216 @@ export default class Server {
             return new Response(JSON.stringify({ success: true }), { status: 200, headers: corsHeaders });
          } catch {
             return new Response(JSON.stringify({ error: 'Failed to update contributor' }), { status: 500, headers: corsHeaders });
+         }
+      }
+
+      // ── 錄音留言 / 鼓勵 (voice-recording comments) ─────────────────────
+      // YouTube-style feedback attached to ONE specific recording, so that a
+      // set with A/B/C contributors gets comments on the exact voice a listener
+      // is responding to. Target id T = `${setId}::${enc(reference)}::${ownerId}`
+      // where ownerId identifies the recorder (a contributor's ownerId, or the
+      // set author's byOwnerId). Mirrors the team-reflection subsystem: text +
+      // voice comments with inline emoji reactions, plus a recording-level like.
+      // Audio reuses the content-addressed set-voice store (/sets/verse-voice/chunk).
+      // Encouragement lands in an inbox keyed by the recorder's ownerId — no
+      // email needed, so it stays privacy-preserving (no push).
+      const VC_EMOJI = ['❤️', '🙏', '✨', '🌧️'];
+      const vcLc = (s) => String(s || '').trim().toLowerCase();
+      const vcTarget = (setId, reference, ownerId) => `${String(setId)}::${encodeURIComponent(String(reference).trim().slice(0, 60))}::${String(ownerId)}`;
+      const vcCid = () => 'c_' + Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4);
+      const vcInboxPush = async (ownerId, entry) => {
+         const ik = `voice-encourage:${ownerId}`;
+         const inbox = (await this.room.storage.get(ik)) || [];
+         inbox.unshift(entry);
+         if (inbox.length > 50) inbox.length = 50;
+         await this.room.storage.put(ik, inbox);
+      };
+
+      // POST /sets/voice-comment/create — { email, name, setId, reference, targetOwnerId, type, text?, voiceId?, voiceMime?, voiceDur? }
+      if (url.pathname.endsWith('/sets/voice-comment/create') && request.method === 'POST') {
+         try {
+            const { email, name, setId, reference, targetOwnerId, type, text, voiceId, voiceMime, voiceDur } = await request.json();
+            if (!email || !setId || !reference || !targetOwnerId) return new Response(JSON.stringify({ error: 'email, setId, reference, targetOwnerId required' }), { status: 400, headers: corsHeaders });
+            if (!/^[a-f0-9]{16}$/.test(String(targetOwnerId))) return new Response(JSON.stringify({ error: 'bad targetOwnerId' }), { status: 400, headers: corsHeaders });
+            const isVoice = type === 'voice';
+            const body = String(text || '').trim().slice(0, 1000);
+            if (isVoice) {
+               if (!/^v_[A-Za-z0-9]{6,20}$/.test(String(voiceId || ''))) return new Response(JSON.stringify({ error: 'voiceId required for voice comment' }), { status: 400, headers: corsHeaders });
+            } else if (!body) {
+               return new Response(JSON.stringify({ error: 'text required' }), { status: 400, headers: corsHeaders });
+            }
+            const emailLc = vcLc(email);
+            const cid = vcCid();
+            const doc = {
+               cid,
+               setId: String(setId),
+               reference: String(reference).trim().slice(0, 60),
+               targetOwnerId: String(targetOwnerId),
+               author: emailLc,
+               authorName: String(name || '').trim().slice(0, 30) || emailLc.split('@')[0],
+               type: isVoice ? 'voice' : 'text',
+               text: isVoice ? '' : body,
+               at: new Date().toISOString(),
+               reactions: [],
+               ...(isVoice ? { voiceId: String(voiceId), voiceMime: String(voiceMime || 'audio/webm').slice(0, 40), voiceDur: Math.min(Math.max(0, Number(voiceDur) || 0), 600) } : {}),
+            };
+            const T = vcTarget(setId, reference, targetOwnerId);
+            await this.room.storage.put(`voice-comment:${T}:${cid}`, doc);
+            // Encourage the recorder (skip when commenting on your own recording).
+            const actorOwnerId = await voiceOwnerId(emailLc);
+            if (actorOwnerId !== String(targetOwnerId)) {
+               await vcInboxPush(targetOwnerId, { kind: 'comment', setId: doc.setId, reference: doc.reference, fromName: doc.authorName, preview: isVoice ? '🎙️' : body.slice(0, 60), at: doc.at });
+            }
+            return new Response(JSON.stringify({ success: true, comment: doc }), { status: 200, headers: corsHeaders });
+         } catch {
+            return new Response(JSON.stringify({ error: 'Failed to create comment' }), { status: 500, headers: corsHeaders });
+         }
+      }
+
+      // GET /sets/voice-comments?setId=&reference=&targetOwnerId= — one recording's
+      // comments (newest-first) + the recording-level reactions.
+      if (url.pathname.endsWith('/sets/voice-comments') && request.method === 'GET') {
+         try {
+            const setId = url.searchParams.get('setId');
+            const reference = url.searchParams.get('reference');
+            const targetOwnerId = url.searchParams.get('targetOwnerId');
+            if (!setId || !reference || !targetOwnerId) return new Response(JSON.stringify({ error: 'setId, reference, targetOwnerId required' }), { status: 400, headers: corsHeaders });
+            const T = vcTarget(setId, reference, targetOwnerId);
+            const map = await this.room.storage.list({ prefix: `voice-comment:${T}:` });
+            const comments = Array.from(map.values()).sort((a, b) => (b.at || '').localeCompare(a.at || ''));
+            const rr = (await this.room.storage.get(`voice-recording-reactions:${T}`)) || { reactions: [] };
+            return new Response(JSON.stringify({ success: true, comments, recordingReactions: rr.reactions || [] }), { status: 200, headers: corsHeaders });
+         } catch {
+            return new Response(JSON.stringify({ error: 'Failed to list comments' }), { status: 500, headers: corsHeaders });
+         }
+      }
+
+      // POST /sets/voice-comment/delete — { email, name, setId, reference, targetOwnerId, cid }
+      // Auth = comment author, OR the recorder (targetOwnerId===hash(email)), OR
+      // the set's publisher (ownerEmail), OR admin.
+      if (url.pathname.endsWith('/sets/voice-comment/delete') && request.method === 'POST') {
+         try {
+            const { email, name, setId, reference, targetOwnerId, cid } = await request.json();
+            if (!email || !setId || !reference || !targetOwnerId || !cid) return new Response(JSON.stringify({ error: 'email, setId, reference, targetOwnerId, cid required' }), { status: 400, headers: corsHeaders });
+            const T = vcTarget(setId, reference, targetOwnerId);
+            const key = `voice-comment:${T}:${cid}`;
+            const doc = await this.room.storage.get(key);
+            if (!doc) return new Response(JSON.stringify({ error: 'Not found' }), { status: 404, headers: corsHeaders });
+            const emailLc = vcLc(email);
+            const actorOwnerId = await voiceOwnerId(emailLc);
+            let authorized = doc.author === emailLc
+               || actorOwnerId === String(targetOwnerId)
+               || isCustomSetWriteAuthorized() || isTrustedAdminEmail(email) || isTrustedAdminName(name);
+            if (!authorized) {
+               const set = await this.room.storage.get(`verseset:${String(setId)}`);
+               if (set?.ownerEmail && vcLc(set.ownerEmail) === emailLc) authorized = true;
+            }
+            if (!authorized) return new Response(JSON.stringify({ error: 'Not authorized' }), { status: 403, headers: corsHeaders });
+            await this.room.storage.delete(key);
+            if (doc.voiceId) {
+               const chunks = await this.room.storage.list({ prefix: `set-voice:${String(setId)}:${doc.voiceId}:` });
+               for (const k of chunks.keys()) await this.room.storage.delete(k);
+            }
+            return new Response(JSON.stringify({ success: true }), { status: 200, headers: corsHeaders });
+         } catch {
+            return new Response(JSON.stringify({ error: 'Failed to delete comment' }), { status: 500, headers: corsHeaders });
+         }
+      }
+
+      // POST /sets/voice-comment/react — { email, setId, reference, targetOwnerId, cid, emoji } — toggle.
+      if (url.pathname.endsWith('/sets/voice-comment/react') && request.method === 'POST') {
+         try {
+            const { email, setId, reference, targetOwnerId, cid, emoji } = await request.json();
+            if (!VC_EMOJI.includes(emoji)) return new Response(JSON.stringify({ error: 'Invalid emoji' }), { status: 400, headers: corsHeaders });
+            if (!email || !setId || !reference || !targetOwnerId || !cid) return new Response(JSON.stringify({ error: 'missing fields' }), { status: 400, headers: corsHeaders });
+            const key = `voice-comment:${vcTarget(setId, reference, targetOwnerId)}:${cid}`;
+            const doc = await this.room.storage.get(key);
+            if (!doc) return new Response(JSON.stringify({ error: 'Not found' }), { status: 404, headers: corsHeaders });
+            const me = vcLc(email);
+            const existing = (doc.reactions || []).find(r => r.from === me && r.emoji === emoji);
+            if (existing) doc.reactions = doc.reactions.filter(r => !(r.from === me && r.emoji === emoji));
+            else doc.reactions = [...(doc.reactions || []), { from: me, emoji, at: new Date().toISOString() }];
+            await this.room.storage.put(key, doc);
+            return new Response(JSON.stringify({ success: true, reactions: doc.reactions }), { status: 200, headers: corsHeaders });
+         } catch {
+            return new Response(JSON.stringify({ error: 'Failed to react' }), { status: 500, headers: corsHeaders });
+         }
+      }
+
+      // POST /sets/voice-recording/react — { email, name, setId, reference, targetOwnerId, emoji }
+      // Like/react to a whole recording (YouTube "like the video"). Toggles.
+      if (url.pathname.endsWith('/sets/voice-recording/react') && request.method === 'POST') {
+         try {
+            const { email, name, setId, reference, targetOwnerId, emoji } = await request.json();
+            if (!VC_EMOJI.includes(emoji)) return new Response(JSON.stringify({ error: 'Invalid emoji' }), { status: 400, headers: corsHeaders });
+            if (!email || !setId || !reference || !targetOwnerId) return new Response(JSON.stringify({ error: 'missing fields' }), { status: 400, headers: corsHeaders });
+            if (!/^[a-f0-9]{16}$/.test(String(targetOwnerId))) return new Response(JSON.stringify({ error: 'bad targetOwnerId' }), { status: 400, headers: corsHeaders });
+            const T = vcTarget(setId, reference, targetOwnerId);
+            const key = `voice-recording-reactions:${T}`;
+            const rec = (await this.room.storage.get(key)) || { setId: String(setId), reference: String(reference).trim().slice(0, 60), targetOwnerId: String(targetOwnerId), reactions: [] };
+            const me = vcLc(email);
+            const existing = (rec.reactions || []).find(r => r.from === me && r.emoji === emoji);
+            let added = false;
+            if (existing) rec.reactions = rec.reactions.filter(r => !(r.from === me && r.emoji === emoji));
+            else { rec.reactions = [...(rec.reactions || []), { from: me, emoji, at: new Date().toISOString() }]; added = true; }
+            await this.room.storage.put(key, rec);
+            if (added) {
+               const actorOwnerId = await voiceOwnerId(me);
+               if (actorOwnerId !== String(targetOwnerId)) {
+                  await vcInboxPush(targetOwnerId, { kind: 'like', setId: rec.setId, reference: rec.reference, fromName: String(name || '').trim().slice(0, 30) || me.split('@')[0], emoji, at: new Date().toISOString() });
+               }
+            }
+            return new Response(JSON.stringify({ success: true, reactions: rec.reactions }), { status: 200, headers: corsHeaders });
+         } catch {
+            return new Response(JSON.stringify({ error: 'Failed to react' }), { status: 500, headers: corsHeaders });
+         }
+      }
+
+      // GET /sets/voice-comment-counts?setId= — per (reference, ownerId) tallies
+      // { [`${reference}||${ownerId}`]: { comments, likes } } so pickers can badge
+      // 💬/❤️ in one round trip (mirrors /sets/voice-refs single-scan style).
+      if (url.pathname.endsWith('/sets/voice-comment-counts') && request.method === 'GET') {
+         try {
+            const setId = url.searchParams.get('setId');
+            if (!setId) return new Response(JSON.stringify({ error: 'setId required' }), { status: 400, headers: corsHeaders });
+            const counts = {};
+            const bump = (ref, owner) => {
+               const k = `${ref}||${owner}`;
+               if (!counts[k]) counts[k] = { comments: 0, likes: 0 };
+               return counts[k];
+            };
+            const cmap = await this.room.storage.list({ prefix: `voice-comment:${String(setId)}::` });
+            for (const doc of cmap.values()) { if (doc?.reference && doc?.targetOwnerId) bump(doc.reference, doc.targetOwnerId).comments++; }
+            const rmap = await this.room.storage.list({ prefix: `voice-recording-reactions:${String(setId)}::` });
+            for (const rec of rmap.values()) { if (rec?.reference && rec?.targetOwnerId) bump(rec.reference, rec.targetOwnerId).likes = (rec.reactions || []).length; }
+            return new Response(JSON.stringify({ success: true, counts }), { status: 200, headers: corsHeaders });
+         } catch {
+            return new Response(JSON.stringify({ error: 'Failed to fetch counts' }), { status: 500, headers: corsHeaders });
+         }
+      }
+
+      // GET /sets/voice-encourage?owner=<ownerId> — a recorder's encouragement inbox.
+      if (url.pathname.endsWith('/sets/voice-encourage') && request.method === 'GET') {
+         try {
+            const owner = url.searchParams.get('owner');
+            if (!owner || !/^[a-f0-9]{16}$/.test(owner)) return new Response(JSON.stringify({ error: 'bad owner' }), { status: 400, headers: corsHeaders });
+            const items = (await this.room.storage.get(`voice-encourage:${owner}`)) || [];
+            const lastReadAt = (await this.room.storage.get(`voice-encourage-read:${owner}`)) || '';
+            return new Response(JSON.stringify({ success: true, items, lastReadAt }), { status: 200, headers: corsHeaders });
+         } catch {
+            return new Response(JSON.stringify({ error: 'Failed to fetch encouragement' }), { status: 500, headers: corsHeaders });
+         }
+      }
+
+      // POST /sets/voice-encourage/read — { owner } — mark inbox read up to now.
+      if (url.pathname.endsWith('/sets/voice-encourage/read') && request.method === 'POST') {
+         try {
+            const { owner } = await request.json();
+            if (!owner || !/^[a-f0-9]{16}$/.test(String(owner))) return new Response(JSON.stringify({ error: 'bad owner' }), { status: 400, headers: corsHeaders });
+            await this.room.storage.put(`voice-encourage-read:${owner}`, new Date().toISOString());
+            return new Response(JSON.stringify({ success: true }), { status: 200, headers: corsHeaders });
+         } catch {
+            return new Response(JSON.stringify({ error: 'Failed to mark read' }), { status: 500, headers: corsHeaders });
          }
       }
 
