@@ -2455,7 +2455,8 @@ function VerseSetContinuousRainPlayer({
   allSecondaryVerses = [],
   userEmail = '',
   playerName = '',
-  onRequestLogin = null
+  onRequestLogin = null,
+  onOpenVoiceComments = null
 }) {
   const verses = useMemo(() => verseSet?.verses?.filter(Boolean) || [], [verseSet]);
   // Opened from a share link carrying vo= → play the sender's personal voice.
@@ -2495,6 +2496,13 @@ function VerseSetContinuousRainPlayer({
   const pausedRecordingRef = useRef(false);
   const voiceAudioCacheRef = useRef(new globalThis.Map()); // voiceId → data URL
   const [creatorVoiceName, setCreatorVoiceName] = useState('');
+  // 換聲音 — a runtime voice override the listener can switch mid-playback via
+  // the reader selector. null = follow the set's configured behavior. Otherwise
+  // { type:'tts'|'owner'|'personal', ownerId?, recordedBy?, voices? }.
+  const manualVoiceRef = useRef(null);
+  const [activeVoiceLabel, setActiveVoiceLabel] = useState(''); // shown in the selector
+  const [voiceMenu, setVoiceMenu] = useState(null);   // { options } while the switch menu is open
+  const [voiceMenuLoading, setVoiceMenuLoading] = useState(false);
   // Shown while we're finding out whether this verse has a recording, and then
   // while its audio downloads. Without it a slow connection is just silence and
   // the listener has no idea anything is coming.
@@ -2639,6 +2647,71 @@ function VerseSetContinuousRainPlayer({
     setPersonalBusy(false);
   };
   const myVoiceForCurrent = personalVoicesRef.current?.[currentVerse.reference] || null;
+
+  // ── 換聲音 / 留言 (reader selector) ─────────────────────────────────
+  // Gather the recordings available for the CURRENT verse, for the switch menu.
+  const gatherCurrentVoiceOptions = async () => {
+    const ref = currentVerse.reference;
+    const opts = [];
+    const ownerRec = verseVoicesRef.current?.[ref];
+    if (ownerRec?.voiceId) opts.push({ type: 'owner', ownerId: ownerRec.byOwnerId || null, recordedBy: ownerRec.recordedBy || '' });
+    try {
+      const cres = voiceSetId ? await userVoiceApi.getContributors(voiceSetId).catch(() => null) : null;
+      const contributors = cres?.contributors || [];
+      const mineId = myOwnerIdRef.current;
+      for (const c of contributors) {
+        const vres = await userVoiceApi.getAll(voiceSetId, c.ownerId).catch(() => null);
+        const rec = vres?.voices?.[ref];
+        if (rec?.voiceId) opts.push({ type: 'personal', ownerId: c.ownerId, recordedBy: c.recordedBy || rec.recordedBy || '', mine: !!(mineId && c.ownerId === mineId) });
+      }
+    } catch { /* best-effort */ }
+    return opts;
+  };
+  const openVoiceSwitchMenu = async () => {
+    if (!voiceSetId) return;
+    setVoiceMenuLoading(true);
+    setVoiceMenu({ options: [] });
+    const opts = await gatherCurrentVoiceOptions();
+    setVoiceMenu({ options: opts });
+    setVoiceMenuLoading(false);
+  };
+  const applyVoiceChoice = async (choice) => {
+    setVoiceMenu(null);
+    if (choice.type === 'tts') {
+      manualVoiceRef.current = { type: 'tts' };
+    } else if (choice.type === 'owner') {
+      manualVoiceRef.current = { type: 'owner', ownerId: choice.ownerId, recordedBy: choice.recordedBy };
+    } else {
+      // Load that contributor's recordings for the whole set so subsequent
+      // verses use them too; verses they didn't record fall back to TTS.
+      let voices = {};
+      try { const res = await userVoiceApi.getAll(voiceSetId, choice.ownerId); voices = res?.voices || {}; } catch { /* keep empty */ }
+      manualVoiceRef.current = { type: 'personal', ownerId: choice.ownerId, recordedBy: choice.recordedBy, voices };
+    }
+    // Replay the current verse immediately with the newly-chosen voice.
+    resumeFromPhraseRef.current = 0;
+    setPlayKey(k => k + 1);
+  };
+  // The ownerId of the recording currently targeted (for comments). null = TTS.
+  const currentTargetOwnerId = () => {
+    const ref = currentVerse.reference;
+    const m = manualVoiceRef.current;
+    if (m) {
+      if (m.type === 'tts') return null;
+      if (m.type === 'owner') return verseVoicesRef.current?.[ref]?.byOwnerId || null;
+      return m.ownerId || null;
+    }
+    if (overrideVoicesRef.current?.[ref]) return sharedVoiceOwner || myOwnerIdRef.current || null;
+    return verseVoicesRef.current?.[ref]?.byOwnerId || null;
+  };
+  const openCommentsForCurrent = () => {
+    const ownerId = currentTargetOwnerId();
+    if (!ownerId || !voiceSetId) return;
+    const ref = currentVerse.reference;
+    const m = manualVoiceRef.current;
+    const recordedBy = m?.recordedBy || verseVoicesRef.current?.[ref]?.recordedBy || overrideVoicesRef.current?.[ref]?.recordedBy || '';
+    onOpenVoiceComments?.({ setId: voiceSetId, reference: ref, targetOwnerId: ownerId, recordedBy, mine: ownerId === myOwnerIdRef.current });
+  };
 
   const playCreatorRecording = async (rec, phrasesArr, onPhrase, displayName, onAudioStart) => {
     try {
@@ -3126,8 +3199,18 @@ function VerseSetContinuousRainPlayer({
       let creatorPlayed = false;
       // Priority: my (or the share sender's / picked contributor's) personal
       // voice › set owner's › TTS. forceTTS (picker: 電腦語音) skips both layers.
-      const personalRec = forceTTSRef.current ? null : (overrideVoicesRef.current?.[currentVerse.reference] || null);
-      const ownerRec = (forceTTSRef.current || !voiceSetId) ? null : (verseVoicesRef.current?.[currentVerse.reference] || null);
+      // A live manual switch (manualVoiceRef, set by the reader selector) wins
+      // over everything for as long as it's set.
+      const mv = manualVoiceRef.current;
+      let personalRec, ownerRec;
+      if (mv) {
+        if (mv.type === 'tts') { personalRec = null; ownerRec = null; }
+        else if (mv.type === 'owner') { personalRec = null; ownerRec = voiceSetId ? (verseVoicesRef.current?.[currentVerse.reference] || null) : null; }
+        else { personalRec = mv.voices?.[currentVerse.reference] || null; ownerRec = null; }
+      } else {
+        personalRec = forceTTSRef.current ? null : (overrideVoicesRef.current?.[currentVerse.reference] || null);
+        ownerRec = (forceTTSRef.current || !voiceSetId) ? null : (verseVoicesRef.current?.[currentVerse.reference] || null);
+      }
       const creatorRec = personalRec || ownerRec;
       if (creatorRec?.voiceId) {
         // Attribution for the green「{name} 親聲朗讀」badge. When it's the
@@ -3136,8 +3219,11 @@ function VerseSetContinuousRainPlayer({
         // playerName (e.g. an earlier "hungry@G"). Set-owner / shared-sender
         // recordings keep their name.
         const isOwnVoice = creatorRec === personalRec
-          && (!sharedVoiceOwner || sharedVoiceOwner === myOwnerIdRef.current);
+          && (!sharedVoiceOwner || sharedVoiceOwner === myOwnerIdRef.current) && !mv;
         const voiceLabel = isOwnVoice ? '' : (creatorRec.recordedBy || '');
+        // Reader-selector label: name it even when it's my own recording, so the
+        // switcher shows the current voice clearly.
+        setActiveVoiceLabel(isOwnVoice ? t('我的錄音', 'My recording') : (creatorRec.recordedBy || t('錄音', 'Recording')));
         // The hint stays up through the audio download — that is the slow part
         // on a phone — and playCreatorRecording drops it the moment sound
         // actually starts.
@@ -3149,6 +3235,8 @@ function VerseSetContinuousRainPlayer({
       stopLoadingHint();
 
       if (!creatorPlayed) {
+      // TTS path — reflect it in the reader selector.
+      if (!cancelled && runRef.current === runId) setActiveVoiceLabel(t('電腦語音', 'Computer voice'));
       // Resuming mid-verse: skip re-announcing the reference and pick the
       // reading up at the phrase we were on. A resume point at or past the end
       // (the verse had already finished) falls back to a normal replay.
@@ -3474,9 +3562,22 @@ function VerseSetContinuousRainPlayer({
                   {formatVerseReferenceForDisplay(effectiveSecondaryRef, secondaryVersion)}
                 </span>
               )}
-              {creatorVoiceName && (
-                <span className="continuous-rain-reader">
-                  🎙️ {t('朗讀者：{name}', 'Reader: {name}').replace('{name}', String(creatorVoiceName))}
+              {voiceSetId && (activeVoiceLabel || creatorVoiceName) && (
+                <span className="continuous-rain-reader" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, justifyContent: 'center', flexWrap: 'wrap' }}>
+                  <button
+                    onClick={openVoiceSwitchMenu}
+                    title={t('切換聲音', 'Switch voice')}
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '0.25rem 0.7rem', borderRadius: 999, border: '1px solid rgba(255,255,255,0.35)', background: 'rgba(255,255,255,0.14)', color: '#fff', fontSize: '0.9rem', fontWeight: 600, cursor: 'pointer' }}
+                  >
+                    🎙️ {t('朗讀者：{name}', 'Reader: {name}').replace('{name}', String(activeVoiceLabel || creatorVoiceName))} <span style={{ fontSize: '0.7rem', opacity: 0.85 }}>▾</span>
+                  </button>
+                  {currentTargetOwnerId() && (
+                    <button
+                      onClick={openCommentsForCurrent}
+                      title={t('留言 / 鼓勵', 'Comment / encourage')}
+                      style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 32, height: 32, borderRadius: '50%', border: '1px solid rgba(255,255,255,0.35)', background: 'rgba(255,255,255,0.14)', color: '#fff', fontSize: '1rem', cursor: 'pointer', padding: 0 }}
+                    >💬</button>
+                  )}
                 </span>
               )}
             </div>
@@ -3652,6 +3753,41 @@ function VerseSetContinuousRainPlayer({
           onDone={() => setVoiceRecTarget(null)}
           showShareToggle
         />
+      )}
+
+      {/* 切換聲音 menu — pick which recording (or TTS) reads the set from here on */}
+      {voiceMenu && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 3000, padding: '1rem' }} onClick={(e) => { if (e.target === e.currentTarget) setVoiceMenu(null); }}>
+          <div style={{ background: '#fff', borderRadius: 14, padding: '1.4rem 1.3rem', width: '100%', maxWidth: 340, boxShadow: '0 20px 40px rgba(0,0,0,0.3)' }}>
+            <h3 style={{ margin: '0 0 0.3rem', color: '#1e293b', display: 'flex', alignItems: 'center', gap: 8 }}>🎙️ {t('切換聲音', 'Switch voice')}</h3>
+            <p style={{ margin: '0 0 1rem', color: '#64748b', fontSize: '0.82rem' }}>{formatVerseReferenceForDisplay(currentVerse.reference, version)}</p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+              {voiceMenuLoading && <div style={{ color: '#94a3b8', fontSize: '0.88rem', textAlign: 'center' }}>{t('載入中…', 'Loading…')}</div>}
+              {voiceMenu.options.map((opt, i) => {
+                const active = manualVoiceRef.current?.type === opt.type && (opt.type === 'owner' || manualVoiceRef.current?.ownerId === opt.ownerId);
+                return (
+                  <button key={i} onClick={() => applyVoiceChoice(opt)}
+                    style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '0.65rem 0.85rem', borderRadius: 10, border: active ? '2px solid #8b5cf6' : '1px solid #e2e8f0', background: active ? '#f5f3ff' : '#f8fafc', color: active ? '#6d28d9' : '#334155', fontSize: '0.92rem', fontWeight: 600, cursor: 'pointer', textAlign: 'left' }}>
+                    <span>🎙️</span>
+                    <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {opt.type === 'owner'
+                        ? (opt.recordedBy ? t('作者:{n}', 'Author: {n}').replace('{n}', opt.recordedBy) : t('作者錄音', 'Author'))
+                        : `${opt.recordedBy || t('某人', 'Someone')}${opt.mine ? ` ${t('(你)', '(you)')}` : ''}`}
+                    </span>
+                  </button>
+                );
+              })}
+              {!voiceMenuLoading && voiceMenu.options.length === 0 && (
+                <div style={{ color: '#94a3b8', fontSize: '0.85rem', textAlign: 'center', padding: '0.3rem 0' }}>{t('此節目前只有電腦語音', 'Only the computer voice for this verse')}</div>
+              )}
+              <button onClick={() => applyVoiceChoice({ type: 'tts' })}
+                style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '0.65rem 0.85rem', borderRadius: 10, border: manualVoiceRef.current?.type === 'tts' ? '2px solid #8b5cf6' : '1px dashed #cbd5e1', background: '#fff', color: '#64748b', fontSize: '0.92rem', fontWeight: 600, cursor: 'pointer', textAlign: 'left' }}>
+                <span>💻</span><span style={{ flex: 1 }}>{t('電腦語音', 'Computer voice')}</span>
+              </button>
+            </div>
+            <button onClick={() => setVoiceMenu(null)} style={{ marginTop: '1rem', width: '100%', background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer', fontSize: '0.9rem' }}>{t('取消', 'Cancel')}</button>
+          </div>
+        </div>
       )}
     </div>
   );
@@ -7043,6 +7179,12 @@ export default function App() {
     } catch {
       setVoiceCommentData({ comments: [], recordingReactions: [] });
     }
+  };
+  // Called by the continuous player's 💬 — opens the comment panel for the
+  // recording currently being read.
+  const openVoiceCommentsFromPlayer = (target) => {
+    if (!target?.targetOwnerId) return;
+    openVoiceComments(target.setId, target.reference, { ownerId: target.targetOwnerId, recordedBy: target.recordedBy, mine: target.mine });
   };
   const refreshVoiceComments = async (panel = voiceCommentPanel) => {
     if (!panel) return;
@@ -16658,6 +16800,7 @@ const deDict = {
             userEmail={userEmail}
             playerName={playerName}
             onRequestLogin={() => setShowLoginModal('login')}
+            onOpenVoiceComments={openVoiceCommentsFromPlayer}
             onStop={() => {
               setContinuousRainSet(null);
               // Launched from a team schedule row → return to the teams modal
@@ -17120,6 +17263,7 @@ const deDict = {
                       });
                     }}
                     onListenLogged={() => updateGarden('activity_only', 'listen')}
+                    onOpenVoiceComments={openVoiceCommentsFromPlayer}
                     onChallengeVerse={challengeVerseFromReader}
                     onShareVerse={(verse, shareOpts) => {
                       if (!verse) return;
@@ -17211,6 +17355,7 @@ const deDict = {
                       });
                     }}
                     onListenLogged={() => updateGarden('activity_only', 'listen')}
+                    onOpenVoiceComments={openVoiceCommentsFromPlayer}
                     onChallengeVerse={challengeVerseFromReader}
                     onShareVerse={(verse, shareOpts) => {
                       if (!verse) return;
@@ -22294,7 +22439,7 @@ const deDict = {
           const myLiked = recRx.some(r => r.from === meLc && r.emoji === '❤️');
           const commentEmojis = ['❤️', '🙏'];
           return (
-          <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.6)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1350, padding: '1rem' }} onClick={(e) => { if (e.target === e.currentTarget) setVoiceCommentPanel(null); }}>
+          <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.6)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 2700, padding: '1rem' }} onClick={(e) => { if (e.target === e.currentTarget) setVoiceCommentPanel(null); }}>
             <div style={{ background: '#fff', borderRadius: '14px', width: '100%', maxWidth: '440px', maxHeight: '86vh', display: 'flex', flexDirection: 'column', boxShadow: '0 20px 40px rgba(0,0,0,0.25)' }}>
               {/* Header */}
               <div style={{ padding: '1.1rem 1.3rem 0.8rem', borderBottom: '1px solid #eef2f7' }}>
@@ -22400,6 +22545,7 @@ const deDict = {
             }}
             onCancel={() => setCommentRecTarget(null)}
             onDone={() => setCommentRecTarget(null)}
+            zIndex={2720}
           />
         )}
 

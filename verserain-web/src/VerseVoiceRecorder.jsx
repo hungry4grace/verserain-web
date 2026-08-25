@@ -18,7 +18,7 @@ import { useEffect, useRef, useState } from 'react';
 //                passes its value as `public` to onUpload. Used on the personal
 //                path (recording on someone else's set) so a reading can opt into
 //                the set's shared-voice picker.
-export default function VerseVoiceRecorder({ t, reference, verseText, onUpload, onCancel, onDone, showShareToggle = false }) {
+export default function VerseVoiceRecorder({ t, reference, verseText, onUpload, onCancel, onDone, showShareToggle = false, zIndex = 1400 }) {
   // No user-facing duration limit — long recordings are chunked
   // automatically at upload (backend allows ≈27 min). This ceiling is a
   // safety stop for a mic left running by accident, not a UX cap.
@@ -343,7 +343,7 @@ export default function VerseVoiceRecorder({ t, reference, verseText, onUpload, 
   return (
     <div
       onClick={(e) => { if (e.target === e.currentTarget) close(); }}
-      style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.65)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1400, padding: '1rem' }}
+      style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.65)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex, padding: '1rem' }}
     >
       <div style={{ background: '#fff', borderRadius: 14, padding: '1.6rem 1.5rem', width: 'min(460px, 100%)', maxHeight: '90dvh', overflowY: 'auto', boxShadow: '0 20px 40px rgba(0,0,0,0.25)', borderLeft: '4px solid #16a34a', textAlign: 'center' }}>
         <h3 style={{ color: '#1e293b', marginTop: 0 }}>{t('用你的聲音錄這節', 'Record this verse in your voice')}</h3>
