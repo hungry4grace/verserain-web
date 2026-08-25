@@ -2471,6 +2471,11 @@ function VerseSetContinuousRainPlayer({
   // contributor pick instead rides sharedVoiceOwner above.
   const forceTTS = verseSet?.forceTTS || false;
   const forceOwnerLayer = verseSet?.forceOwnerLayer || false;
+  // Single-verse card (opened via a row's 播放): ‹ › walk the source set but
+  // clamp at the ends (no wrap), and a finished verse loops instead of moving
+  // on — so the card stays put until the listener taps ‹ ›.
+  const clampNav = verseSet?.clampNav || false;
+  const loopCurrent = verseSet?.loopCurrent || false;
   const [currentVerse, setCurrentVerse] = useState(() => startVerse || pickRandomVerse(verses));
 
   // 創作者親聲朗讀 — recordings for this set, keyed by verse reference.
@@ -3312,6 +3317,9 @@ function VerseSetContinuousRainPlayer({
         onCompleteRef.current?.();
         return;
       }
+      // Single-verse card: a finished verse just replays — moving only happens
+      // when the listener taps ‹ ›.
+      if (loopCurrent) { setPlayKey(k => k + 1); return; }
       // 按序模式 loops through the set in order; 隨機 (default) shuffles.
       const list = versesRef.current || [];
       const nextVerse = verseSet?.playOrder === 'sequential'
@@ -3403,9 +3411,16 @@ function VerseSetContinuousRainPlayer({
     // back to reference-only so ‹ › never restart from a wrong position.
     if (idx < 0) idx = verses.findIndex(v => v.reference === currentVerse?.reference);
     if (idx < 0) idx = direction > 0 ? -1 : 0;
-    // Wrap around at both ends — the old boundary behavior replayed the
-    // last verse forever, which read as「按 › 卡住」.
-    const nextIdx = ((idx + direction) % len + len) % len;
+    let nextIdx;
+    if (clampNav) {
+      // Single-verse card: stop at the ends instead of wrapping.
+      nextIdx = idx + direction;
+      if (nextIdx < 0 || nextIdx >= len) return;
+    } else {
+      // Wrap around at both ends — the old boundary behavior replayed the
+      // last verse forever, which read as「按 › 卡住」.
+      nextIdx = ((idx + direction) % len + len) % len;
+    }
     const next = verses[nextIdx];
     setCurrentVerse(next);
     // Same reference as the current verse (duplicate refs in a set) would
@@ -3414,7 +3429,7 @@ function VerseSetContinuousRainPlayer({
   };
 
   const handlePrevious = () => {
-    if (prevDisabled) return;
+    if (prevDisabled || navAtFirst) return;
     haltPlayback();
     if (onPrevious) {
       onPrevious();
@@ -3424,7 +3439,7 @@ function VerseSetContinuousRainPlayer({
   };
 
   const handleNext = () => {
-    if (nextDisabled) return;
+    if (nextDisabled || navAtLast) return;
     haltPlayback();
     if (onNext) {
       onNext();
@@ -3432,6 +3447,12 @@ function VerseSetContinuousRainPlayer({
     }
     navigateVerse(1);
   };
+  // Disable ‹ › at the ends of a single-verse card (clampNav).
+  const clampIdx = clampNav
+    ? verses.findIndex(v => v.reference === currentVerse?.reference && v.text === currentVerse?.text)
+    : -1;
+  const navAtFirst = clampNav && clampIdx <= 0;
+  const navAtLast = clampNav && clampIdx >= 0 && clampIdx >= verses.length - 1;
 
   const handleSelectTopicSet = (set) => {
     if (!set?.id || !onSelectTopicSet) return;
@@ -3520,7 +3541,7 @@ function VerseSetContinuousRainPlayer({
           </div>
           <div className="daily-verse-rain-content continuous-rain-content">
             <div className="daily-verse-rain-topbar continuous-rain-topbar">
-              {showNav && <button type="button" onClick={handlePrevious} disabled={prevDisabled} aria-label={onPrevious ? t('前一節', 'Previous verse') : t('上一節隨機經文', 'Previous random verse')}>‹</button>}
+              {showNav && <button type="button" onClick={handlePrevious} disabled={prevDisabled || navAtFirst} aria-label={t('上一節', 'Previous verse')}>‹</button>}
               <div ref={topicPickerRef} style={{ position: 'relative' }}>
                 <button
                   type="button"
@@ -3556,7 +3577,7 @@ function VerseSetContinuousRainPlayer({
                   </div>
                 )}
               </div>
-              {showNav && <button type="button" onClick={handleNext} disabled={nextDisabled} aria-label={onNext ? t('後一天', 'Next day') : t('下一節隨機經文', 'Next random verse')}>›</button>}
+              {showNav && <button type="button" onClick={handleNext} disabled={nextDisabled || navAtLast} aria-label={t('下一節', 'Next verse')}>›</button>}
             </div>
             {/* Reference, its secondary-language twin and the reader credit all
                 share one baseline-aligned row. They used to stack three deep
@@ -7412,10 +7433,6 @@ export default function App() {
   const [multiplayerSelectedVerses, setMultiplayerSelectedVerses] = useState([]);
   const [randomPickCount, setRandomPickCount] = useState(1);
   const [continuousRainSet, setContinuousRainSet] = useState(null);
-  // When a single verse is opened via a row's 播放 button, remember the set it
-  // came from so ‹ › can step to the previous/next verse IN THAT SET (clamped
-  // at the ends). null when playing a whole set or nothing.
-  const [singleCardNav, setSingleCardNav] = useState(null); // { verses, index }
   // When a team schedule row launches the play card ('read' mode), this
   // holds the team id so closing the card reopens the teams modal.
   const [teamReadReturn, setTeamReadReturn] = useState(null);
@@ -7455,7 +7472,6 @@ export default function App() {
     if (!set?.verses?.length) return;
     const vc = voiceChoice;
     setPlayOrderChooser(null);
-    setSingleCardNav(null); // whole-set play — ‹ › walk the set internally
     setContinuousRainSet({
       id: set.id,
       title: set.title,
@@ -8299,10 +8315,6 @@ export default function App() {
   const playSingleVerseCard = async (verse, sourceSet = null) => {
     initAudio();
     const setId = sourceSet?.id || null;
-    // Track position within the source set so ‹ › can walk it (clamped).
-    const srcVerses = sourceSet?.verses || [];
-    const idx = srcVerses.findIndex(v => v?.reference === verse?.reference && v?.text === verse?.text);
-    setSingleCardNav(srcVerses.length > 1 && idx >= 0 ? { verses: srcVerses, index: idx, sourceSet } : null);
     // Resolve the voice BEFORE mounting the card so the first play already
     // knows whose recording to use. The set author's recording plays via the
     // creator layer, and the viewer's own via the default override — but a
@@ -8321,11 +8333,20 @@ export default function App() {
         }
       } catch { /* best-effort — fall back to the default auto behavior */ }
     }
+    // Carry the FULL set's verses so the player's own (synchronous) ‹ › can
+    // walk them — critical on iOS, where audio must start inside the tap
+    // gesture; rebuilding the card async between verses loses that blessing and
+    // the next verse comes up silent / stuck. clampNav = stop at the ends
+    // (no wrap); loopCurrent = a finished verse replays instead of auto-moving,
+    // so the card stays on the verse you opened until you tap ‹ ›.
+    const fullVerses = sourceSet?.verses?.length ? sourceSet.verses : [verse];
     setContinuousRainSet({
       id: `single-${verse.reference}`,
       title: verse.reference,
-      verses: [verse],
+      verses: fullVerses,
       startVerse: verse,
+      clampNav: fullVerses.length > 1,
+      loopCurrent: true,
       // 創作者親聲朗讀 / custom assets need the REAL originating set id —
       // the synthetic `single-…` id has nothing stored under it.
       voiceSetId: setId,
@@ -8335,20 +8356,6 @@ export default function App() {
       bgMusic: sourceSet?.bgMusic || '',
       bgMusicMime: sourceSet?.bgMusicMime || '',
       bgMusicVolume: sourceSet?.bgMusicVolume,
-    });
-  };
-
-  // ‹ › on a single-verse card → step to the prev/next verse in its source set,
-  // clamped (no wrap): the card doesn't move past the first / last verse.
-  const stepSingleCard = (dir) => {
-    setSingleCardNav(cur => {
-      if (!cur) return cur;
-      const nextIdx = cur.index + dir;
-      if (nextIdx < 0 || nextIdx >= cur.verses.length) return cur; // clamp
-      const nextVerse = cur.verses[nextIdx];
-      // playSingleVerseCard resets singleCardNav itself (with the new index).
-      playSingleVerseCard(nextVerse, cur.sourceSet);
-      return cur;
     });
   };
 
@@ -16831,15 +16838,8 @@ const deDict = {
             onRequestLogin={() => setShowLoginModal('login')}
             onOpenVoiceComments={openVoiceCommentsFromPlayer}
             onVoiceRecorded={() => setVoiceRefreshTick(x => x + 1)}
-            {...(continuousRainSet?.id?.startsWith('single-') && singleCardNav ? {
-              onPrevious: () => stepSingleCard(-1),
-              onNext: () => stepSingleCard(1),
-              prevDisabled: singleCardNav.index <= 0,
-              nextDisabled: singleCardNav.index >= singleCardNav.verses.length - 1,
-            } : {})}
             onStop={() => {
               setContinuousRainSet(null);
-              setSingleCardNav(null);
               // Launched from a team schedule row → return to the teams modal
               // so the member sees their freshly-updated progress.
               if (teamReadReturn) {
@@ -16849,7 +16849,6 @@ const deDict = {
             }}
             onSelectTopicSet={(set) => {
               setSelectedSetId(set.id);
-              setSingleCardNav(null);
               setContinuousRainSet({
                 ...set,
                 startVerse: pickRandomVerse(set.verses || [])
