@@ -130,6 +130,28 @@ export default function BlindModeGame({
 
     const isSpeakingRef = useRef(false);
 
+    // Hard-reset the recognition session at every block boundary. With
+    // continuous recognition, event.results accumulates EVERYTHING said since
+    // the session started — the `{ transcript: '' }` bookkeeping resets are
+    // rebuilt from event.results on the very next onresult, so anything
+    // mis-heard during an earlier block would otherwise reappear in
+    // textToProcess and pollute every later block's evaluation ("said one
+    // block wrong → everything after judged wrong"). abort() clears the
+    // session; the onend handler auto-restarts it ~100ms later and onstart
+    // zeroes lastMatchedLengthRef, so each block starts from a clean slate.
+    // Safe to call from advance timeouts (NOT from inside onresult, where
+    // abort/restart races the onend heartbeat). A dead session (iOS audio
+    // focus loss) is also revived by this same abort→restart cycle.
+    const resetRecognitionSession = () => {
+        latestTranscriptRef.current = { transcript: '', alternatives: [] };
+        lastMatchedLengthRef.current = 0;
+        if (pauseTimeoutRef.current) {
+            clearTimeout(pauseTimeoutRef.current);
+            pauseTimeoutRef.current = null;
+        }
+        try { recognitionRef.current?.abort(); } catch { /* heartbeat will revive */ }
+    };
+
     const startTimer = () => {
         if (timerRef.current) clearTimeout(timerRef.current);
         if (countdownRef.current) clearInterval(countdownRef.current);
@@ -162,6 +184,7 @@ export default function BlindModeGame({
                     const advanceMiss = () => {
                         if (!isMountedRef.current) return;
                         isSpeakingRef.current = false;
+                        resetRecognitionSession();
                         onWordMissRef.current();
                     };
                     const plan = planReadback(missedBlock, {
@@ -335,6 +358,7 @@ export default function BlindModeGame({
                         if (!isMountedRef.current) return;
                         isSuccessFlashRef.current = false;
                         setIsSuccessFlash(false);
+                        resetRecognitionSession();
                         const wasMissed = missedIndicesRef.current.includes(currentSeqIndexRef.current);
                         onWordMatchRef.current(block, wasMissed);
                     };
@@ -409,7 +433,18 @@ export default function BlindModeGame({
 
         recognition.onstart = () => {
             setMicStatus(t("聆聽中...", "Listening..."));
+            // A fresh session starts with empty event.results — zero ALL the
+            // bookkeeping to match. Critically, cancel any pending 1500ms
+            // silence-commit from the PREVIOUS session: firing late, it would
+            // set lastMatchedLengthRef to the old (longer) transcript length,
+            // making the new session's shorter transcript slice to '' — the
+            // player's speech becomes invisible and every block times out.
             lastMatchedLengthRef.current = 0;
+            latestTranscriptRef.current = { transcript: '', alternatives: [] };
+            if (pauseTimeoutRef.current) {
+                clearTimeout(pauseTimeoutRef.current);
+                pauseTimeoutRef.current = null;
+            }
             setIsMicReady(true);
         };
 
