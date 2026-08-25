@@ -48,7 +48,6 @@ const VOICE_LIST_WAIT_MS = 12000;
 import { bakeBeautifiedBlob } from './voiceBeautify';
 import { SET_BACKGROUND_THEMES, getSetBackgroundUrl, getSetBackgroundVideoUrl } from './setBackgrounds';
 import QrScanner from 'qr-scanner';
-import TeamsModal from './teams/TeamsModal';
 
 const quillModules = {
   toolbar: [
@@ -4790,39 +4789,12 @@ export default function App() {
   // May also carry { verseVoice } — a family member's recording of today's
   // verse, played right after the tap (親人聲音唸經文).
   const [deepLinkStartGate, setDeepLinkStartGate] = useState(null);
-  // Non-null while the family recording is playing: { name, skip }.
-  const [familyVoicePlaying, setFamilyVoicePlaying] = useState(null);
 
-  // Tap on the gate: play the family verse recording first (if any), then
-  // launch. Any failure falls through to a normal launch — the recording is
-  // a warm extra, never a blocker.
+  // Tap on the gate: unlock audio and launch the pending deep-linked set.
   const beginDeepLinkStart = async () => {
     const gate = deepLinkStartGate;
     if (!gate) return;
     setDeepLinkStartGate(null);
-    const vv = gate.verseVoice;
-    if (vv) {
-      try {
-        const host = 'https://verserain-party.hungry4grace.partykit.dev/parties/main/global-auth-db';
-        const itemId = `vv-${vv.setId}-${vv.verseIndex}`;
-        const r = await fetch(`${host}/teams/voice?id=${encodeURIComponent(vv.teamId)}&email=${encodeURIComponent(userEmail || '')}&itemId=${encodeURIComponent(itemId)}&voiceId=${encodeURIComponent(vv.voiceId)}`);
-        const data = r.ok ? await r.json() : null;
-        if (data?.data) {
-          await new Promise((resolve) => {
-            const audio = new Audio(`data:${vv.voiceMime || 'audio/webm'};base64,${data.data}`);
-            let done = false;
-            const finish = () => { if (!done) { done = true; setFamilyVoicePlaying(null); resolve(); } };
-            audio.onended = finish;
-            audio.onerror = finish;
-            setFamilyVoicePlaying({
-              name: vv.recordedBy || t('家人', 'family'),
-              skip: () => { try { audio.pause(); } catch { /* noop */ } finish(); },
-            });
-            audio.play().catch(finish);
-          });
-        }
-      } catch { /* fall through to launch */ }
-    }
     gate.run();
   };
   const swRegRef = useRef(null);
@@ -6429,51 +6401,18 @@ export default function App() {
         }
       }
 
-      // Team deep-link: ?join=<INVITE-CODE>. Persist so it survives an
-      // auth detour, auto-open the Teams modal, and strip the param from
-      // the URL so a refresh after joining doesn't re-trigger.
-      const joinParam = params.get('join');
-      if (joinParam) {
-        const code = joinParam.trim().toUpperCase();
-        localStorage.setItem('verserain_pending_join', code);
-        setPendingJoinCode(code);
-        setShowTeamsModal(true);
-        const url = new URL(window.location.href);
-        url.searchParams.delete('join');
-        window.history.replaceState({}, '', url.toString());
-      }
-
-      // ?startSet=<setId>[&mode=play|campaign][&teamId=<id>&verseIndex=<n>]
+      // ?startSet=<setId>[&mode=play|campaign]
       // Stash for the dedicated launch effect below (we don't have
-      // activeVerseSets loaded yet at this stage). teamId + verseIndex
-      // come from team share links — when present, the launch effect
-      // also primes pendingTeamReturn + pendingVerseCompletionRef so
-      // the post-game flow records the verse completion and bounces
-      // the recipient into the team. Strip all params immediately so
-      // a refresh doesn't re-launch unexpectedly.
+      // activeVerseSets loaded yet at this stage). Strip the params
+      // immediately so a refresh doesn't re-launch unexpectedly.
       const startSetParam = params.get('startSet');
       if (startSetParam) {
         const mode = params.get('mode') === 'play' ? 'play' : 'campaign';
         sessionStorage.setItem('verserain_pending_start_set', startSetParam);
         sessionStorage.setItem('verserain_pending_start_set_mode', mode);
-        const teamIdParam = params.get('teamId');
-        const verseIndexParam = params.get('verseIndex');
-        if (teamIdParam) sessionStorage.setItem('verserain_pending_start_set_team', teamIdParam);
-        if (verseIndexParam && /^\d+$/.test(verseIndexParam)) {
-          sessionStorage.setItem('verserain_pending_start_set_verse', verseIndexParam);
-        }
-        // Cloud Family daily link carries &amen=1 — stash the team so we can
-        // record the member's one-tap "Amen" once their identity is known
-        // (see the pending-amen effect below).
-        if (params.get('amen') === '1' && teamIdParam) {
-          sessionStorage.setItem('verserain_pending_amen_team', teamIdParam);
-        }
         const url = new URL(window.location.href);
         url.searchParams.delete('startSet');
         url.searchParams.delete('mode');
-        url.searchParams.delete('teamId');
-        url.searchParams.delete('verseIndex');
-        url.searchParams.delete('amen');
         window.history.replaceState({}, '', url.toString());
       }
 
@@ -6696,49 +6635,14 @@ export default function App() {
     const pending = sessionStorage.getItem('verserain_pending_start_set');
     if (!pending) return;
     const mode = sessionStorage.getItem('verserain_pending_start_set_mode') === 'play' ? 'play' : 'campaign';
-    const teamId = sessionStorage.getItem('verserain_pending_start_set_team') || null;
-    const verseIndexStr = sessionStorage.getItem('verserain_pending_start_set_verse');
-    const verseIndex = verseIndexStr ? parseInt(verseIndexStr, 10) : null;
     sessionStorage.removeItem('verserain_pending_start_set');
     sessionStorage.removeItem('verserain_pending_start_set_mode');
-    sessionStorage.removeItem('verserain_pending_start_set_team');
-    sessionStorage.removeItem('verserain_pending_start_set_verse');
 
-    // Team-aware deep link: prime the return-to-team + verse-complete
-    // pipeline before launching so the recipient gets credit and lands
-    // back in the team after finishing.
-    if (teamId && Number.isFinite(verseIndex) && userEmail) {
-      pendingVerseCompletionRef.current = {
-        email: userEmail,
-        teamId,
-        setId: pending,
-        verseIndex,
-        mode,
-      };
-      setPendingTeamReturn(teamId);
-    }
-
-    // Team share links may reference a bundled set the recipient's bible
-    // version doesn't load. Fetch the team's schedule first to grab the
-    // verses snapshot — admin-picked sets always store verses[] inline,
-    // so we can hand them to launchSetById as a versesOverride and the
-    // recipient can play regardless of their language pack.
     const launch = async () => {
-      let versesOverride = null;
-      if (teamId && Number.isFinite(verseIndex) && userEmail) {
-        try {
-          const r = await fetch(`https://verserain-party.hungry4grace.partykit.dev/parties/main/global-auth-db/teams/schedule?id=${encodeURIComponent(teamId)}&email=${encodeURIComponent(userEmail)}`);
-          if (r.ok) {
-            const data = await r.json();
-            const item = (data?.schedule?.items || []).find(it => it.setId === pending);
-            if (Array.isArray(item?.verses) && item.verses.length > 0) versesOverride = item.verses;
-          }
-        } catch { /* let launchSetById fall back through its own lookups */ }
-      }
       // launchSetById defined below; safe to call here because the effect
       // closes over the latest definition via dependency on activeVerseSets.
       // eslint-disable-next-line no-use-before-define
-      launchSetById(pending, mode, Number.isFinite(verseIndex) ? verseIndex : null, versesOverride).catch(() => {});
+      launchSetById(pending, mode).catch(() => {});
     };
     // Chrome mutes speechSynthesis until the page has received at least one
     // real user gesture ("not-allowed"). Deep links land here with zero
@@ -6749,20 +6653,6 @@ export default function App() {
       launch();
     } else {
       setDeepLinkStartGate({ run: launch });
-      // 親人聲音唸經文: if a family member recorded today's verse, surface it
-      // on the gate ("聽阿嬤唸今天的經文") and play it right after the tap.
-      if (teamId && Number.isFinite(verseIndex) && userEmail) {
-        const host = 'https://verserain-party.hungry4grace.partykit.dev/parties/main/global-auth-db';
-        fetch(`${host}/teams/verse-voice?id=${encodeURIComponent(teamId)}&email=${encodeURIComponent(userEmail)}&setId=${encodeURIComponent(pending)}&i=${verseIndex}`)
-          .then(r => r.ok ? r.json() : null)
-          .then(data => {
-            if (!data?.verseVoice?.voiceId) return;
-            setDeepLinkStartGate(g => (g && g.run === launch)
-              ? { ...g, verseVoice: { ...data.verseVoice, teamId, setId: pending, verseIndex } }
-              : g);
-          })
-          .catch(() => {});
-      }
     }
     // We intentionally omit launchSetById from deps — it's reconstructed
     // every render via useCallback, and depending on it would re-fire the
@@ -6895,68 +6785,6 @@ export default function App() {
       .finally(() => setIsFetchingGlobalLeaderboard(false));
   };
   const [showLoginModal, setShowLoginModal] = useState(null);
-  const [showTeamsModal, setShowTeamsModal] = useState(false);
-  const [pendingTeamReturn, setPendingTeamReturn] = useState(null);
-  // Sum of unread cheers across all the user's teams. Polled every 60s,
-  // refreshed immediately when the teams modal closes (user likely just
-  // read something). Drives the small red badge on the orange tile +
-  // nav pill so people know to open the modal.
-  const [teamsUnread, setTeamsUnread] = useState(0);
-  const refreshTeamsUnread = React.useCallback(async () => {
-    if (!userEmail) { setTeamsUnread(0); return; }
-    try {
-      const r = await fetch(`https://verserain-party.hungry4grace.partykit.dev/parties/main/global-auth-db/my-teams?email=${encodeURIComponent(userEmail)}`);
-      if (!r.ok) return;
-      const d = await r.json();
-      const total = (d.teams || []).reduce((s, t) => s + (t.unreadCount || 0), 0);
-      setTeamsUnread(total);
-    } catch { /* keep prior */ }
-  }, [userEmail]);
-  useEffect(() => {
-    refreshTeamsUnread();
-    if (!userEmail) return;
-    const id = setInterval(refreshTeamsUnread, 60_000);
-    return () => clearInterval(id);
-  }, [userEmail, refreshTeamsUnread]);
-
-  // After a play/challenge session triggered from the Teams modal ends,
-  // (1) bounce the user back into that team and (2) report the verse
-  // completion to PartyKit so the per-day plan ticks forward.
-  //
-  // Why a ref to arm: gameState is 'menu' initially and stays that way
-  // for the 200ms before startGame runs; without arming, the effect
-  // would fire immediately when pendingTeamReturn was set, reopening
-  // the modal before the session even began.
-  const teamReturnArmedRef = useRef(false);
-  // Context for the active session — set by onLaunchSet, consumed once.
-  const pendingVerseCompletionRef = useRef(null);
-  useEffect(() => {
-    if (gameState === 'playing' && pendingTeamReturn) {
-      teamReturnArmedRef.current = true;
-      return;
-    }
-    if (gameState === 'menu' && pendingTeamReturn && teamReturnArmedRef.current) {
-      teamReturnArmedRef.current = false;
-      // Record the verse as done for this team, before reopening the
-      // modal so its refresh shows the new state. Fire-and-forget;
-      // failures are logged but don't block the UX bounce-back.
-      const ctx = pendingVerseCompletionRef.current;
-      pendingVerseCompletionRef.current = null;
-      if (ctx && typeof ctx.verseIndex === 'number') {
-        fetchRetry(`${PARTY_HOST}/teams/verse-complete`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(ctx),
-        }).catch((err) => console.warn('verse-complete post failed', err));
-      }
-      setShowTeamsModal(true);
-    }
-  }, [gameState, pendingTeamReturn]);
-  // Deep-link join code captured from ?join= or localStorage. The Teams
-  // modal auto-opens with the Join form prefilled when this is non-empty.
-  // We keep it in localStorage too so a freshly-arrived user who needs to
-  // log in first still lands on the right team after auth.
-  const [pendingJoinCode, setPendingJoinCode] = useState(() => localStorage.getItem('verserain_pending_join') || '');
 
   // Header language picker — grid/table layout so all 15+ languages are
   // visible at once instead of buried in a scroll-cropped <select>.
@@ -7311,32 +7139,6 @@ export default function App() {
     return () => { window.removeEventListener('online', goOnline); window.removeEventListener('offline', goOffline); };
   }, []);
 
-  // Cloud Family one-tap Amen: a daily-link recipient lands with
-  // ?amen=1 stashed at parse time. Once we know who they are, record the
-  // Amen and warmly confirm it. Idempotent server-side (once per day).
-  useEffect(() => {
-    const teamForAmen = sessionStorage.getItem('verserain_pending_amen_team');
-    if (!teamForAmen) return;
-    const email = userEmail || localStorage.getItem('verserain_player_email');
-    if (!email) return; // wait until the user is identified / signs in
-    sessionStorage.removeItem('verserain_pending_amen_team');
-    fetchRetry(`${PARTY_HOST}/teams/amen`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, teamId: teamForAmen }),
-    })
-      .then((r) => r.json())
-      .then((d) => {
-        if (d && d.success) {
-          // NOTE: the translation fn `t` is defined far lower in this
-          // component, so referencing it here would be a temporal-dead-zone
-          // crash. Use a static bilingual string instead.
-          setToast('🙏 已記錄今天的 Amen · Amen recorded');
-          setTimeout(() => setToast(null), 3500);
-        }
-      })
-      .catch(() => {});
-  }, [userEmail]);
   const [showNameEditModal, setShowNameEditModal] = useState(false);
   const [qrShareModal, setQrShareModal] = useState(null); // { url, reference }
   const [multiplayerRoomId, setMultiplayerRoomId] = useState(null);
@@ -7433,9 +7235,6 @@ export default function App() {
   const [multiplayerSelectedVerses, setMultiplayerSelectedVerses] = useState([]);
   const [randomPickCount, setRandomPickCount] = useState(1);
   const [continuousRainSet, setContinuousRainSet] = useState(null);
-  // When a team schedule row launches the play card ('read' mode), this
-  // holds the team id so closing the card reopens the teams modal.
-  const [teamReadReturn, setTeamReadReturn] = useState(null);
   // 播放順序選擇 — holds the set while the user picks 隨機 or 按序.
   const [playOrderChooser, setPlayOrderChooser] = useState(null);
   // Play-time voice source: null = auto (my voice › author › TTS). Otherwise
@@ -8362,9 +8161,6 @@ export default function App() {
   const challengeVerseFromReader = (verse) => {
     if (!verse) return;
     initAudio();
-    // Challenging leaves the card for the game; don't bounce back to the
-    // teams modal on the (already-cleared) card's stop handler.
-    setTeamReadReturn(null);
     setContinuousRainSet(null);
     setCampaignQueue(null);
     campaignQueueRef.current = null;
@@ -16553,7 +16349,7 @@ const deDict = {
 
   // Every dictionary had holes: t(zh, en) silently falls back to the English
   // gloss (or, for ja/ko/cuvs, to Traditional Chinese) whenever a key is
-  // missing, so a Hebrew user read "Cloud Family" and "Multiplayer" on an
+  // missing, so a Hebrew user read "My Garden" and "Multiplayer" on an
   // otherwise-Hebrew lobby. i18nFillins.js closes every gap across the 13
   // languages — it is the single source of truth, shared with the standalone
   // /blind route via i18n.js. `npm run check:i18n` fails the build if a new
@@ -16840,12 +16636,6 @@ const deDict = {
             onVoiceRecorded={() => setVoiceRefreshTick(x => x + 1)}
             onStop={() => {
               setContinuousRainSet(null);
-              // Launched from a team schedule row → return to the teams modal
-              // so the member sees their freshly-updated progress.
-              if (teamReadReturn) {
-                setTeamReadReturn(null);
-                setShowTeamsModal(true);
-              }
             }}
             onSelectTopicSet={(set) => {
               setSelectedSetId(set.id);
@@ -17098,12 +16888,6 @@ const deDict = {
               <div className="block-tile" onClick={() => setMainTab('multiplayer')} style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', padding: '0.5rem 1.2rem', cursor: 'pointer', backgroundColor: mainTab === 'multiplayer' ? '#ec4899' : 'white', color: mainTab === 'multiplayer' ? 'white' : '#475569', borderRadius: '20px', fontWeight: 'bold', whiteSpace: 'nowrap', transition: 'all 0.2s' }}>
                 <Gamepad2 size={18} /> {t('多人遊戲', 'Multiplayer')}
               </div>
-              <div className="block-tile" onClick={() => setShowTeamsModal(true)} style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: '0.45rem', padding: '0.5rem 1.2rem', cursor: 'pointer', backgroundColor: showTeamsModal ? '#f97316' : 'white', color: showTeamsModal ? 'white' : '#475569', borderRadius: '20px', fontWeight: 'bold', whiteSpace: 'nowrap', transition: 'all 0.2s' }}>
-                <Users size={18} /> {t('雲端家人', 'Cloud Family')}
-                {teamsUnread > 0 && (
-                  <span style={{ position: 'absolute', top: -4, right: -4, background: '#ef4444', color: 'white', fontSize: '0.65rem', fontWeight: 700, borderRadius: 10, padding: '1px 6px', minWidth: 18, textAlign: 'center', boxShadow: '0 1px 2px rgba(0,0,0,0.2)' }}>{teamsUnread >= 99 ? '99+' : teamsUnread}</span>
-                )}
-              </div>
               </>)}
               <div className="block-tile" onClick={() => setMainTab('search')} style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', padding: '0.5rem 1.2rem', cursor: 'pointer', backgroundColor: mainTab === 'search' ? '#8b5cf6' : 'white', color: mainTab === 'search' ? 'white' : '#475569', borderRadius: '20px', fontWeight: 'bold', whiteSpace: 'nowrap', transition: 'all 0.2s' }}>
                 <Search size={18} /> {t('搜尋', 'Search')}
@@ -17142,16 +16926,6 @@ const deDict = {
                       <TreePine size={isNarrowEditor ? 46 : 72} style={{ marginBottom: isNarrowEditor ? '0.15rem' : '1rem' }} />
                       <h2 style={{ fontSize: isNarrowEditor ? '1.9rem' : '2rem', margin: 0, marginBottom: isNarrowEditor ? '0.15rem' : '0.5rem', textShadow: '0 2px 4px rgba(0,0,0,0.2)' }}>{t("我的園子", "My Garden")}</h2>
                       <p style={{ ...tileCaptionStyle(), ...(isNarrowEditor ? { display: 'none' } : {}) }}>{splitCaption(t("主話如霖澆我田，歲歲結果到豐年。", "View your living scripture trees."))}</p>
-                    </div>
-
-                    {/* Cloud Family */}
-                    <div className="primary-button" onClick={() => setShowTeamsModal(true)} style={{ position: 'relative', background: 'linear-gradient(135deg, #fb923c, #ea580c)', borderRadius: '16px', padding: isNarrowEditor ? '0.3rem 0.6rem' : '2.5rem 2rem', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', color: 'white', textAlign: 'center', boxShadow: '0 10px 28px rgba(234, 88, 12, 0.35)' }}>
-                      {teamsUnread > 0 && (
-                        <span style={{ position: 'absolute', top: 14, right: 14, background: '#fff', color: '#dc2626', fontSize: '0.85rem', fontWeight: 800, borderRadius: 14, padding: '3px 12px', minWidth: 28, textAlign: 'center', boxShadow: '0 2px 8px rgba(0,0,0,0.25)' }}>{teamsUnread >= 99 ? '99+' : teamsUnread}</span>
-                      )}
-                      <Users size={isNarrowEditor ? 46 : 72} style={{ marginBottom: isNarrowEditor ? '0.15rem' : '1rem' }} />
-                      <h2 style={{ fontSize: isNarrowEditor ? '1.9rem' : '2rem', margin: 0, marginBottom: isNarrowEditor ? '0.15rem' : '0.5rem', textShadow: '0 2px 4px rgba(0,0,0,0.2)' }}>{t("雲端家人", "Cloud Family")}</h2>
-                      <p style={{ ...tileCaptionStyle(), ...(isNarrowEditor ? { display: 'none' } : {}) }}>{splitCaption(t("呼朋喚友來相伴，相互激勵心同歡。", "Gather friends to walk together — encourage one another, rejoice as one."))}</p>
                     </div>
 
                     {/* Scripture Library */}
@@ -22017,27 +21791,9 @@ const deDict = {
                 {t('點一下開始', 'Tap to Start')}
               </div>
               <div style={{ fontSize: '0.95rem', color: '#94a3b8' }}>
-                {deepLinkStartGate.verseVoice
-                  ? t('聽 {name} 唸今天的經文 🎙️', "Hear {name} read today's verse 🎙️").replace('{name}', String(deepLinkStartGate.verseVoice.recordedBy || t('家人', 'family')))
-                  : t('經文會朗讀出聲 🔊', 'The verse will be read aloud 🔊')}
+                {t('經文會朗讀出聲 🔊', 'The verse will be read aloud 🔊')}
               </div>
             </button>
-          </div>
-        )}
-        {familyVoicePlaying && (
-          <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'linear-gradient(160deg, #0f172a 0%, #1e293b 100%)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1300, padding: '1rem' }}>
-            <div style={{ textAlign: 'center', color: '#e2e8f0' }}>
-              <div style={{ fontSize: '3rem', marginBottom: '1rem', animation: 'pulse 1.6s ease-in-out infinite' }}>🎙️</div>
-              <div style={{ fontSize: '1.15rem', fontWeight: 'bold', marginBottom: '0.4rem' }}>
-                {t('{name} 為你唸今天的經文', "{name} is reading today's verse for you").replace('{name}', String(familyVoicePlaying.name))}
-              </div>
-              <button
-                onClick={familyVoicePlaying.skip}
-                style={{ marginTop: '1.2rem', background: 'rgba(148,163,184,0.15)', color: '#94a3b8', border: '1px solid rgba(148,163,184,0.35)', borderRadius: '999px', padding: '0.45rem 1.3rem', fontSize: '0.9rem', cursor: 'pointer' }}
-              >
-                {t('跳過 ▸', 'Skip ▸')}
-              </button>
-            </div>
           </div>
         )}
         {playOrderChooser && (
@@ -23374,98 +23130,6 @@ const deDict = {
             )}
           </div>
         </div>
-      )}
-
-      {showTeamsModal && (
-        <TeamsModal
-          userEmail={userEmail}
-          playerName={playerName}
-          onEnableDailyPush={subscribeMorningPush}
-          pushStatus={pushStatus}
-          t={t}
-          uiLang={uiLang}
-          onClose={() => {
-            setShowTeamsModal(false);
-            if (pendingTeamReturn) setPendingTeamReturn(null);
-            // User likely just consumed some cheers; bring badge into
-            // sync with server right away.
-            refreshTeamsUnread();
-          }}
-          pendingJoinCode={pendingJoinCode}
-          onJoinHandled={() => {
-            localStorage.removeItem('verserain_pending_join');
-            setPendingJoinCode('');
-          }}
-          topicSets={topicVerseSets}
-          initialTeamId={pendingTeamReturn}
-          playMode={playMode}
-          setPlayMode={setPlayMode}
-          distractionLevel={distractionLevel}
-          setDistractionLevel={setDistractionLevel}
-          onViewMemberGarden={(name) => {
-            // Close the teams modal first so the garden overlay (which
-            // mounts at the app root) isn't visually stacked behind it.
-            setShowTeamsModal(false);
-            if (pendingTeamReturn) setPendingTeamReturn(null);
-            handleViewPlayerGarden(name);
-          }}
-          onLaunchSet={async (setId, mode = 'campaign', returnTeamId = null, verseIndex = null) => {
-            setShowTeamsModal(false);
-
-            // 'read' → open the purple play card (continuous-rain reader) for
-            // today's verse. Reading, challenging, recording and sharing all
-            // live inside that card, so the schedule row just opens it.
-            // Opening counts as today's completion (播放 = 算今天完成).
-            if (mode === 'read') {
-              let set = activeVerseSets.find(s => s.id === setId) || customVerseSets.find(s => s.id === setId);
-              if (!set?.verses?.length) {
-                try {
-                  const r = await fetch(`${PARTY_HOST}/share-set?id=${encodeURIComponent(setId)}`);
-                  if (r.ok) {
-                    const data = await r.json();
-                    if (data?.set?.verses?.length) set = data.set;
-                  }
-                } catch { /* fall through to the not-found alert */ }
-              }
-              const verse = set?.verses?.[verseIndex];
-              if (!verse) {
-                alert(t('找不到這個經文組,請聯絡管理員', "Couldn't find that verse set, please contact the admin"));
-                return;
-              }
-              // Record today's completion for the team (fire-and-forget).
-              if (returnTeamId && typeof verseIndex === 'number' && userEmail) {
-                fetchRetry(`${PARTY_HOST}/teams/verse-complete`, {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ email: userEmail, teamId: returnTeamId, setId, verseIndex, mode: 'read' }),
-                }).catch((err) => console.warn('verse-complete post failed', err));
-              }
-              setTeamReadReturn(returnTeamId || null);
-              playSingleVerseCard(verse, set);
-              return;
-            }
-
-            if (returnTeamId) setPendingTeamReturn(returnTeamId);
-            // Stash so the post-game effect knows what to report.
-            // userEmail must be present for the backend record to mean
-            // anything — otherwise just bounce back without recording.
-            if (returnTeamId && typeof verseIndex === 'number' && userEmail) {
-              pendingVerseCompletionRef.current = {
-                email: userEmail,
-                teamId: returnTeamId,
-                setId,
-                verseIndex,
-                mode,
-              };
-            }
-            const ok = await launchSetById(setId, mode, verseIndex);
-            if (!ok) {
-              if (returnTeamId) setPendingTeamReturn(null);
-              pendingVerseCompletionRef.current = null;
-              alert(t('找不到這個經文組,請聯絡管理員', "Couldn't find that verse set, please contact the admin"));
-            }
-          }}
-        />
       )}
 
       </div>{/* end RTL/font wrapper */}
