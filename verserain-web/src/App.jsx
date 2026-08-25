@@ -22142,6 +22142,28 @@ const deDict = {
                   >
                     <Headphones size={20} />
                   </button>
+                  {/* 留言 / 鼓勵 — shown when this verse has any recording. Picks
+                      the recording directly when there's one, else lets the
+                      viewer choose which recording to comment on. */}
+                  {verseViewModal.setId && currentSetVoiceRefs.has(verseViewModal.reference) && (
+                    <button
+                      onClick={async () => {
+                        const opts = await gatherVerseVoiceOptions(verseViewModal.setId, verseViewModal.reference);
+                        const withOwner = opts.filter(o => o.ownerId);
+                        if (withOwner.length === 0) { setToast(t('這節還沒有錄音可留言', 'No recording to comment on yet')); setTimeout(() => setToast(null), 2500); return; }
+                        if (withOwner.length === 1) {
+                          openVoiceComments(verseViewModal.setId, verseViewModal.reference, withOwner[0]);
+                        } else {
+                          const vLang = isEnglishBibleVersion(version) ? 'en-US' : (version === 'ko' ? 'ko-KR' : (version === 'ja' ? 'ja-JP' : (version === 'he' ? 'he-IL' : (version === 'fa' ? 'fa-IR' : 'zh-TW'))));
+                          setVerseVoicePicker({ setId: verseViewModal.setId, reference: verseViewModal.reference, text: verseViewModal.text, vLang, options: opts });
+                        }
+                      }}
+                      title={t('留言 / 鼓勵', 'Comment / encourage')}
+                      style={{ background: '#f5f3ff', color: '#8b5cf6', border: '1px solid #ddd6fe', borderRadius: '50%', width: '38px', height: '38px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: '1.2rem', padding: 0 }}
+                      onMouseOver={(e) => { e.currentTarget.style.background = '#ede9fe'; e.currentTarget.style.transform = 'scale(1.05)'; }}
+                      onMouseOut={(e) => { e.currentTarget.style.background = '#f5f3ff'; e.currentTarget.style.transform = 'scale(1)'; }}
+                    >💬</button>
+                  )}
                 </h2>
                 <button
                   onClick={() => {
