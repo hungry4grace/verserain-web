@@ -16913,7 +16913,7 @@ const deDict = {
                       injects a newline; combined with whiteSpace:pre-line
                       on the <p> the text renders as two clean rows. */}
                   {(() => null)()}
-                  <div style={{ display: 'grid', gridTemplateColumns: isNarrowEditor ? '1fr' : 'repeat(auto-fit, minmax(280px, 1fr))', gridAutoRows: isNarrowEditor ? '1fr' : 'auto', gap: isNarrowEditor ? '0.5rem' : '1.5rem', minHeight: isNarrowEditor ? 'calc(100dvh - 335px)' : undefined, width: '100%' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gridAutoRows: isNarrowEditor ? '1fr' : 'auto', gap: isNarrowEditor ? '0.5rem' : '1.5rem', minHeight: isNarrowEditor ? 'calc(100dvh - 335px)' : undefined, width: '100%' }}>
                     {/* Daily VerseRain */}
                     <div className="primary-button" onClick={() => setMainTab('daily_verse')} style={{ background: 'linear-gradient(135deg, #818cf8, #6366f1 55%, #4338ca)', borderRadius: '16px', padding: isNarrowEditor ? '0.3rem 0.6rem' : '2.5rem 2rem', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', color: 'white', textAlign: 'center', boxShadow: '0 10px 28px rgba(79, 70, 229, 0.35)' }}>
                       <CloudRain size={isNarrowEditor ? 46 : 72} style={{ marginBottom: isNarrowEditor ? '0.15rem' : '1rem' }} />
