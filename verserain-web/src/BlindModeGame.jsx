@@ -362,7 +362,27 @@ export default function BlindModeGame({
                 const { score, pass, consumedRawLength, candidateIndex } = scoreBestCandidate(prepared, candidates);
                 setCurrentAccuracy(score);
 
-                if (pass) {
+                // A block may only pass on speech produced AFTER it opened.
+                //
+                // Candidate 0 is the only one sliced by lastMatchedLengthRef;
+                // candidates 1..4 are SpeechRecognition alternatives covering the
+                // WHOLE session, so on their own they can "pass" a phrase the
+                // player has not reached yet using words from earlier phrases.
+                // The LCS score is matched/targetLength — extra heard text is
+                // never penalised — so a wider window can only ever raise the
+                // score, never lower it. Requiring real content in the SLICED
+                // window is what makes 「還沒念到就自己通過」 impossible.
+                //
+                // Half the target length (min 2) is deliberately lenient: a
+                // genuine recitation always puts at least as many characters in
+                // the window as the target has, so this never blocks a real
+                // pass — it only refuses one backed by nothing.
+                const targetLen = targetText.replace(/\s+/g, '').length;
+                const spokenIntoThisBlock = textToProcess.replace(/\s+/g, '').length;
+                const minToPass = Math.max(2, Math.round(targetLen * 0.5));
+                const passWithEvidence = pass && spokenIntoThisBlock >= minToPass;
+
+                if (passWithEvidence) {
                     if (candidateIndex === 0) {
                         lastMatchedLengthRef.current += consumedRawLength;
                     } else {
@@ -482,8 +502,6 @@ export default function BlindModeGame({
         };
 
         recognition.onresult = (event) => {
-            if (isSpeakingRef.current) return; // ignore our own TTS
-            
             if (pauseTimeoutRef.current) {
                 clearTimeout(pauseTimeoutRef.current);
             }
@@ -499,6 +517,18 @@ export default function BlindModeGame({
             }
             latestTranscriptRef.current = { transcript: sessionTranscript, alternatives };
             fullSessionLenRef.current = sessionTranscript.length; // real length — never faked
+
+            // While WE are speaking (readback / reference), the mic still hears
+            // our own TTS and it still lands in event.results. This used to
+            // `return` before the two refs above were updated, which meant
+            // consumeSessionSoFar() captured a PRE-TTS length at the block
+            // boundary — so the next block's window opened with our own voice
+            // inside it. Since the LCS score never penalises extra heard text,
+            // that contamination could only ever push a block towards passing.
+            // Keep the bookkeeping current so the TTS ends up in the CONSUMED
+            // region; just don't score against it.
+            if (isSpeakingRef.current) return;
+
             if (evaluateTranscriptRef.current) {
                 evaluateTranscriptRef.current();
             }
