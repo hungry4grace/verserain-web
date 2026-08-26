@@ -688,15 +688,22 @@ export default function BlindModeGame({
                 </div>
             </div>
 
-            <h1 style={{ color: '#fff', position: 'absolute', top: '15%', margin: 0, textAlign: 'center', width: '100%' }}>
-                <h2 style={{ color: '#bae6fd', fontSize: '3rem', margin: 0, textShadow: '0 0 20px rgba(186,230,253,0.5)', letterSpacing: '2px' }}>
+            {/* The outer element is a layout wrapper, not a heading — it used to
+                be an <h1> with an <h2> inside it, which is invalid HTML (React
+                warns: "<h2> cannot be a child of <h1>"). The verse reference is
+                the real heading of this full-screen view, so it carries the
+                <h1>; the status line under it is not heading content. This
+                matters more here than in most views: screen-reader users
+                navigating by heading should land on the verse being recited. */}
+            <div style={{ color: '#fff', position: 'absolute', top: '15%', margin: 0, textAlign: 'center', width: '100%' }}>
+                <h1 style={{ color: '#bae6fd', fontSize: '3rem', margin: 0, textShadow: '0 0 20px rgba(186,230,253,0.5)', letterSpacing: '2px', fontWeight: 'bold' }}>
                     {formatVerseReferenceForDisplay ? formatVerseReferenceForDisplay(activeVerse?.reference || '', version) : activeVerse?.reference}
-                </h2>
+                </h1>
                 <div style={{ fontSize: '1.2rem', opacity: 0.9 }}>
                     {playMode?.startsWith('voice') ? t("語音模式", "Voice Mode") : t("視障模式", "Blind Mode")} - <span style={{ color: '#4ade80' }}>{micStatus}</span>
                     {countdown !== null && <span style={{ color: '#facc15', marginLeft: '1rem' }}>⏱ {countdown}s</span>}
                 </div>
-            </h1>
+            </div>
             <div style={
                 playMode?.startsWith('voice') ? {
                     display: 'grid',
