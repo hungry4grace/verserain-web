@@ -1490,6 +1490,26 @@ textarea {
   to   { opacity: 1; transform: none; }
 }
 
+/* Phone landscape: the screen is short, but the bottom paddings + top chrome
+   were tuned for portrait and left room for only ONE phrase before a flip.
+   Reclaim vertical space top and bottom so at least two bilingual phrases fit
+   per page. Font size is untouched (kept equal to portrait). */
+@media (orientation: landscape) and (max-height: 540px) {
+  .continuous-rain-content {
+    padding-top: clamp(0.55rem, 2.4vh, 1.3rem);
+    padding-bottom: 3.1rem;
+    gap: clamp(0.3rem, 1vh, 0.6rem);
+  }
+
+  .continuous-rain-heading {
+    margin-bottom: 0.12rem;
+  }
+
+  .continuous-rain-phrases {
+    padding-bottom: 0.9rem;
+  }
+}
+
 .continuous-rain-topbar button {
   width: 66px;
   height: 66px;
