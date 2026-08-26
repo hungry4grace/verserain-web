@@ -2952,6 +2952,13 @@ function VerseSetContinuousRainPlayer({
   const [activePhrase, setActivePhrase] = useState(-1);
   const [phrasePageStart, setPhrasePageStart] = useState(0);
   const [isSettled, setIsSettled] = useState(false);
+  // Page-flip transition: while true, the outgoing page's phrases fade out
+  // (~0.3s) before phrasePageStart advances, so the reader never shows the
+  // old「掉到底→跳到頂」flicker. The ref mirrors it for the reactive
+  // paginator effect (which must stand down during a fade).
+  const [isPageFading, setIsPageFading] = useState(false);
+  const isPageFadingRef = useRef(false);
+  useEffect(() => { isPageFadingRef.current = isPageFading; }, [isPageFading]);
   const [fontSizeLevel, setFontSizeLevel] = useState('normal');
   const [showTopicPicker, setShowTopicPicker] = useState(false);
   const bgmRef = useRef(null);
@@ -3039,6 +3046,7 @@ function VerseSetContinuousRainPlayer({
     setPlayKey(k => k + 1);
     setActivePhrase(-1);
     setPhrasePageStart(0);
+    setIsPageFading(false);
     phraseNodeRefs.current = [];
     setIsSettled(false);
     setImageIndex(0);
@@ -3053,6 +3061,7 @@ function VerseSetContinuousRainPlayer({
     if (resumeFromPhraseRef.current > 0) return;
     setActivePhrase(-1);
     setPhrasePageStart(0);
+    setIsPageFading(false);
     setIsSettled(false);
   }, [playKey]);
 
@@ -3064,9 +3073,48 @@ function VerseSetContinuousRainPlayer({
     return () => window.clearTimeout(timeout);
   }, [backgroundImageUrls, imageIndex, imageLoaded, imageOk]);
 
+  // How long the outgoing page fades before the next phrase takes the top.
+  const FLIP_FADE_MS = 300;
+
+  // Predict — BEFORE mounting block i — whether adding it would push the page
+  // past the visual bottom. Measures the already-landed blocks and estimates
+  // block i's height as their average (heights aren't knowable pre-mount).
+  // Shared by the TTS and recording reveal paths so both flip pre-emptively
+  // instead of landing at the bottom and jumping. Returns true → caller should
+  // flip to a fresh page with i at the top.
+  const wouldOverflowAt = React.useCallback((i) => {
+    if (i <= 0) return false;
+    const container = phraseContainerRef.current;
+    if (!container) return false;
+    const actionControls = document.querySelector('.continuous-rain-action-controls:not(.continuous-rain-close-topleft)');
+    const actionControlsTop = actionControls ? actionControls.getBoundingClientRect().top : window.innerHeight;
+    const containerRect = container.getBoundingClientRect();
+    const visualBottomLimit = Math.min(containerRect.bottom, actionControlsTop - 16);
+    let bottomMost = 0;
+    const heights = [];
+    for (let j = 0; j < i; j++) {
+      const node = phraseNodeRefs.current[j];
+      if (!node) continue;
+      const r = node.getBoundingClientRect();
+      // Only count blocks that have visually landed (not still dropping in
+      // from -52vh, which sit far above the container top).
+      if (r.top >= containerRect.top - 20) {
+        bottomMost = Math.max(bottomMost, r.bottom);
+        if (r.height > 0) heights.push(r.height);
+      }
+    }
+    if (!bottomMost) return false;
+    const avgH = heights.length ? heights.reduce((a, b) => a + b, 0) / heights.length : 56;
+    const gap = 12;
+    return bottomMost + avgH + gap > visualBottomLimit;
+  }, []);
+
   useEffect(() => {
     if (activePhrase < 0 || activePhrase < phrasePageStart) return undefined;
     const measureAndTrim = () => {
+      // Stand down while a fade-driven flip is mid-flight — it will set
+      // phrasePageStart itself; racing it here would double-flip.
+      if (isPageFadingRef.current) return;
       const container = phraseContainerRef.current;
       if (!container) return;
 
@@ -3231,7 +3279,22 @@ function VerseSetContinuousRainPlayer({
         // on a phone — and playCreatorRecording drops it the moment sound
         // actually starts.
         creatorPlayed = await playCreatorRecording(creatorRec, currentPhrases, (i) => {
-          if (!cancelled && runRef.current === runId) setActivePhrase(i);
+          if (cancelled || runRef.current !== runId) return;
+          // Predict overflow BEFORE revealing block i (this recording path was
+          // the flicker source — it used to land at the bottom and let the
+          // reactive effect jump it to the top). If it won't fit: fade the
+          // current page out, then bring block i in at the top of a fresh page.
+          if (wouldOverflowAt(i)) {
+            setIsPageFading(true);
+            window.setTimeout(() => {
+              if (cancelled || runRef.current !== runId) return;
+              setPhrasePageStart(i);
+              setIsPageFading(false);
+              setActivePhrase(i);
+            }, FLIP_FADE_MS);
+          } else {
+            setActivePhrase(i);
+          }
         }, voiceLabel, stopLoadingHint);
         if (cancelled || runRef.current !== runId) { stopLoadingHint(); return; }
       }
@@ -3256,41 +3319,15 @@ function VerseSetContinuousRainPlayer({
 
       for (let i = resumeAt; i < currentPhrases.length; i++) {
         if (cancelled || runRef.current !== runId) return;
-        // Predictive pre-trim: BEFORE block i mounts, measure already-landed
-        // blocks. If adding block i would push past the bottom, advance
-        // phrasePageStart to i first so block i falls into an empty area —
-        // never any "block lands at bottom → flash → reappear at top".
-        if (i > 0) {
-          const container = phraseContainerRef.current;
-          if (container) {
-            const actionControls = document.querySelector('.continuous-rain-action-controls:not(.continuous-rain-close-topleft)');
-            const actionControlsTop = actionControls
-              ? actionControls.getBoundingClientRect().top
-              : window.innerHeight;
-            const containerRect = container.getBoundingClientRect();
-            const visualBottomLimit = Math.min(containerRect.bottom, actionControlsTop - 16);
-            let bottomMost = 0;
-            const heights = [];
-            for (let j = 0; j < i; j++) {
-              const node = phraseNodeRefs.current[j];
-              if (!node) continue;
-              const r = node.getBoundingClientRect();
-              // Only count blocks that have visually landed (not still
-              // transitioning from -52vh). Pre-landing rects sit far above
-              // the container top.
-              if (r.top >= containerRect.top - 20) {
-                bottomMost = Math.max(bottomMost, r.bottom);
-                if (r.height > 0) heights.push(r.height);
-              }
-            }
-            const avgH = heights.length
-              ? heights.reduce((a, b) => a + b, 0) / heights.length
-              : 56;
-            const gap = 12;
-            if (bottomMost && bottomMost + avgH + gap > visualBottomLimit) {
-              setPhrasePageStart(i);
-            }
-          }
+        // Predict overflow BEFORE block i mounts (shared with the recording
+        // path). If it won't fit: fade the current page out, then bring block i
+        // in at the top of a fresh page — never「lands at bottom → jumps to top」.
+        if (wouldOverflowAt(i)) {
+          setIsPageFading(true);
+          await wait(FLIP_FADE_MS);
+          if (cancelled || runRef.current !== runId) return;
+          setPhrasePageStart(i);
+          setIsPageFading(false);
         }
         setActivePhrase(i);
         await speakTextTimed(currentPhrases[i], 0.86, lang);
@@ -3629,7 +3666,7 @@ function VerseSetContinuousRainPlayer({
             ) : null}
             <div
               ref={phraseContainerRef}
-              className={`daily-verse-rain-phrases continuous-rain-phrases ${hasSecondaryPhrases ? 'has-secondary' : ''} ${isSettled ? 'is-settled' : ''}`}
+              className={`daily-verse-rain-phrases continuous-rain-phrases ${hasSecondaryPhrases ? 'has-secondary' : ''} ${isSettled ? 'is-settled' : ''} ${isPageFading ? 'is-page-fading' : ''}`}
               aria-live="polite"
             >
               {phrases.map((phrase, index) => {
@@ -3637,13 +3674,16 @@ function VerseSetContinuousRainPlayer({
                 const secondaryPhrase = hasSecondaryPhrases
                   ? getSecondaryPhrasesForIndex(index, phrases.length, effectiveSecondaryPhrases)
                   : '';
+                // First line of a non-first page fades in place (no drop) so a
+                // page flip settles calmly at the top.
+                const isPageHead = index === phrasePageStart && phrasePageStart > 0;
                 return (
                 <span
                   key={`${phrase}-${index}`}
                   ref={node => {
                     phraseNodeRefs.current[index] = node;
                   }}
-                  className={`${index === activePhrase ? 'is-active' : ''} ${index < activePhrase || isSettled ? 'has-landed' : ''}`}
+                  className={`${index === activePhrase ? 'is-active' : ''} ${index < activePhrase || isSettled ? 'has-landed' : ''} ${isPageHead ? 'is-page-head' : ''}`}
                   style={{
                     '--delay': `${Math.min(index * 0.42, 6.2)}s`,
                     '--drift': `${((index % 5) - 2) * 9}px`

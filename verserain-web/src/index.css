@@ -1453,6 +1453,26 @@ textarea {
   }
 }
 
+/* Page flip (stable, no「掉到底→跳到頂」flicker): the outgoing page fades out
+   before phrasePageStart advances, and the new page's first line fades in
+   place at the top instead of dropping from -52vh. */
+.continuous-rain-phrases.is-page-fading span {
+  /* Cancel the drop animation's `both` fill (which would otherwise pin the
+     active line's opacity at 1) so the whole outgoing page can fade. */
+  animation: none !important;
+  opacity: 0 !important;
+  transition: opacity 0.28s ease;
+}
+
+.continuous-rain-phrases span.is-page-head.is-active {
+  animation: continuousVersePhraseFadeIn 0.55s ease both;
+}
+
+@keyframes continuousVersePhraseFadeIn {
+  from { opacity: 0; transform: none; }
+  to   { opacity: 1; transform: none; }
+}
+
 .continuous-rain-topbar button {
   width: 66px;
   height: 66px;
