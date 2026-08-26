@@ -21,6 +21,7 @@ export default function BlindModeGame({
     formatVerseReferenceForSpeech,
     formatVerseReferenceForDisplay,
     isDebugMode,
+    skipReadback,
     playMode,
     health,
     timeLeft,
@@ -36,6 +37,12 @@ export default function BlindModeGame({
     const [missCount, setMissCount] = useState(0);
     const [missedIndices, setMissedIndices] = useState([]);
     const [countdown, setCountdown] = useState(null); // visual countdown
+    // 預備…3…2…1…開始 shown during the silent gap between the spoken verse
+    // reference and the ding. The gap already existed (4 s) but showed
+    // nothing, so players could not tell whether it was their turn yet.
+    // null = hidden | 'ready' | 3 | 2 | 1 | 'go'
+    const [readyPhase, setReadyPhase] = useState(null);
+    const readyTimersRef = useRef([]);
     const recognitionRef = useRef(null);
     const timerRef = useRef(null);
     const countdownRef = useRef(null);
@@ -202,6 +209,7 @@ export default function BlindModeGame({
                         hasSpeakText: Boolean(speakText),
                         reviewMs: FINAL_BLOCK_REVIEW_MS,
                         normalMs: 250,
+                        readback: !skipReadback,
                     });
 
                     if (plan.shouldSpeak) {
@@ -275,6 +283,17 @@ export default function BlindModeGame({
                 const formattedRef = formatVerseReferenceForSpeech ? formatVerseReferenceForSpeech(activeVerse.reference, version) : activeVerse.reference;
                 speakText(formattedRef, 1.0, TTS_LANG).then(() => {
                     if (!isMountedRef.current) return;
+                    // Fill the silent pause with a visible cue. The schedule is
+                    // pinned to REFERENCE_TO_RECITE_PAUSE_MS so 「開始」 lands on
+                    // the same tick as the ding — a countdown that finishes
+                    // before the mic opens would train players to start early.
+                    const step = REFERENCE_TO_RECITE_PAUSE_MS / 4;
+                    readyTimersRef.current.forEach(clearTimeout);
+                    readyTimersRef.current = [
+                        ['ready', 0], [3, step], [2, step * 2], [1, step * 3],
+                    ].map(([v, at]) => setTimeout(() => {
+                        if (isMountedRef.current) setReadyPhase(v);
+                    }, at));
                     setTimeout(() => {
                         if (!isMountedRef.current) return;
                         isSpeakingRef.current = false;
@@ -286,6 +305,10 @@ export default function BlindModeGame({
                         }
 
                         if (playDing) playDing();
+                        setReadyPhase('go');
+                        readyTimersRef.current.push(
+                            setTimeout(() => { if (isMountedRef.current) setReadyPhase(null); }, 800)
+                        );
                         if (onResumeTimer) onResumeTimer();
                         startTimer();
                     }, REFERENCE_TO_RECITE_PAUSE_MS);
@@ -297,6 +320,9 @@ export default function BlindModeGame({
         }
 
         return () => {
+            readyTimersRef.current.forEach(clearTimeout);
+            readyTimersRef.current = [];
+            setReadyPhase(null);
             if (timerRef.current) clearTimeout(timerRef.current);
             if (countdownRef.current) clearInterval(countdownRef.current);
         };
@@ -376,6 +402,7 @@ export default function BlindModeGame({
                         hasSpeakText: Boolean(speakText),
                         reviewMs: FINAL_BLOCK_REVIEW_MS,
                         normalMs: 250,
+                        readback: !skipReadback,
                     });
 
                     if (plan.shouldSpeak) {
@@ -605,6 +632,31 @@ export default function BlindModeGame({
             }}
             style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', backgroundColor: '#000', zIndex: 9999, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '2rem', outline: 'none' }}
         >
+            {/* 預備…3…2…1…開始 — fills the gap between the spoken reference
+                and the ding. Purely visual: blind-mode users already get the
+                same information from the spoken reference and the ding, so
+                this is deliberately NOT announced again via aria-live. */}
+            {readyPhase !== null && (
+                <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none', zIndex: 20 }}>
+                    <div
+                        key={String(readyPhase)}
+                        style={{
+                            fontWeight: 900,
+                            lineHeight: 1,
+                            fontSize: typeof readyPhase === 'number' ? 'clamp(6rem, 28vw, 16rem)' : 'clamp(2.6rem, 12vw, 6rem)',
+                            color: readyPhase === 'go' ? '#4ade80' : '#facc15',
+                            textShadow: readyPhase === 'go' ? '0 0 40px rgba(74,222,128,0.55)' : '0 0 32px rgba(250,204,21,0.4)',
+                            animation: 'readyPop 0.45s cubic-bezier(0.2, 1.4, 0.4, 1)',
+                        }}
+                    >
+                        {readyPhase === 'ready' ? t('預備…', 'Get ready…')
+                            : readyPhase === 'go' ? t('開始！', 'GO!')
+                            : readyPhase}
+                    </div>
+                </div>
+            )}
+            <style>{`@keyframes readyPop { from { transform: scale(0.55); opacity: 0; } to { transform: scale(1); opacity: 1; } }`}</style>
+
             <div aria-live="polite" style={{ position: 'absolute', left: '-9999px' }}>
                 {`${micStatus}. ${t('進度', 'Progress')} ${Math.min(currentSeqIndex + 1, activePhrases.length)} / ${activePhrases.length}. ${currentBlock ? t('請背誦目前片段', 'Recite the current phrase') : t('完成', 'Complete')}`}
             </div>

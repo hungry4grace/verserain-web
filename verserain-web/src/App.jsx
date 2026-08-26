@@ -3695,14 +3695,16 @@ function VerseSetContinuousRainPlayer({
               let mode = 'square_solo';
               let difficulty = 0;
               let debug = false;
+              let noReadback = false;
               try {
                 const m = localStorage.getItem('verserain_reader_challenge_mode');
                 if (['square_solo', 'rain_solo', 'voice_solo'].includes(m)) mode = m;
                 const d = parseInt(localStorage.getItem('verserain_reader_challenge_diff') || '0', 10);
                 if (d >= 0 && d <= 3) difficulty = d;
                 debug = localStorage.getItem('verseRain_debugMode') === 'true';
+                noReadback = localStorage.getItem('verseRain_noReadback') === 'true';
               } catch { /* defaults stand */ }
-              setChallengeChooser({ mode, difficulty, debug });
+              setChallengeChooser({ mode, difficulty, debug, noReadback });
             }}
           >
             <Zap size={22} />
@@ -3856,6 +3858,13 @@ function VerseSetContinuousRainPlayer({
               })}
             </div>
             {challengeChooser.mode === 'voice_solo' && (
+              <button onClick={() => setChallengeChooser(c => ({ ...c, noReadback: !c.noReadback }))}
+                style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '0.55rem 0.7rem', marginBottom: '0.5rem', borderRadius: 10, border: challengeChooser.noReadback ? '2px solid #16a34a' : '1px solid #e2e8f0', background: challengeChooser.noReadback ? '#f0fdf4' : '#f8fafc', color: challengeChooser.noReadback ? '#15803d' : '#64748b', fontSize: '0.88rem', fontWeight: 600, cursor: 'pointer', textAlign: 'left' }}>
+                <span>{challengeChooser.noReadback ? '☑' : '☐'}</span>
+                <span style={{ flex: 1 }}>⏩ {t('不要複誦我背過的經文(比較順暢)', 'Do not repeat what I just recited (faster flow)')}</span>
+              </button>
+            )}
+            {challengeChooser.mode === 'voice_solo' && (
               <button onClick={() => setChallengeChooser(c => ({ ...c, debug: !c.debug }))}
                 style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '0.55rem 0.7rem', marginBottom: '1.2rem', borderRadius: 10, border: challengeChooser.debug ? '2px solid #6366f1' : '1px solid #e2e8f0', background: challengeChooser.debug ? '#eef2ff' : '#f8fafc', color: challengeChooser.debug ? '#4338ca' : '#64748b', fontSize: '0.88rem', fontWeight: 600, cursor: 'pointer', textAlign: 'left' }}>
                 <span>{challengeChooser.debug ? '☑' : '☐'}</span>
@@ -3864,14 +3873,15 @@ function VerseSetContinuousRainPlayer({
             )}
             <button
               onClick={() => {
-                const { mode, difficulty, debug } = challengeChooser;
+                const { mode, difficulty, debug, noReadback } = challengeChooser;
                 try {
                   localStorage.setItem('verserain_reader_challenge_mode', mode);
                   localStorage.setItem('verserain_reader_challenge_diff', String(difficulty));
                   localStorage.setItem('verseRain_debugMode', debug ? 'true' : 'false');
+                  localStorage.setItem('verseRain_noReadback', noReadback ? 'true' : 'false');
                 } catch { /* remember-me is best-effort */ }
                 setChallengeChooser(null);
-                onChallengeVerse(currentVerse, { mode, difficulty, debug });
+                onChallengeVerse(currentVerse, { mode, difficulty, debug, noReadback });
               }}
               style={{ width: '100%', padding: '0.75rem', borderRadius: 12, border: 'none', background: 'linear-gradient(135deg, #22c55e, #16a34a)', color: '#fff', fontSize: '1rem', fontWeight: 700, cursor: 'pointer', boxShadow: '0 6px 16px rgba(22,163,74,0.35)' }}
             >
@@ -6786,6 +6796,8 @@ export default function App() {
   // chooser so a phone user can flip on the voice-mode "expects vs heard" HUD
   // without dev tools.
   const [isDebugMode, setIsDebugMode] = useState(() => localStorage.getItem('verseRain_debugMode') === 'true');
+  // Voice Mode: skip the "repeat the phrase you just recited" TTS beat.
+  const [skipReadback, setSkipReadback] = useState(() => localStorage.getItem('verseRain_noReadback') === 'true');
 
   const [lightningActive, setLightningActive] = useState(null);
   const [lightningKey, setLightningKey] = useState(0);
@@ -8245,6 +8257,7 @@ export default function App() {
     if (opts?.mode) setPlayMode(opts.mode);
     if (typeof opts?.difficulty === 'number') setDistractionLevel(opts.difficulty);
     if (typeof opts?.debug === 'boolean') setIsDebugMode(opts.debug);
+    if (typeof opts?.noReadback === 'boolean') setSkipReadback(opts.noReadback);
     setContinuousRainSet(null);
     setCampaignQueue(null);
     campaignQueueRef.current = null;
@@ -10770,6 +10783,9 @@ export default function App() {
     '儲存題庫': 'セットを保存',
     '建立新題庫': '新しいセット',
     '上傳錄音檔': '音声ファイルをアップロード',
+    '不要複誦我背過的經文(比較順暢)': '暗唱した聖句を読み返さない（テンポが速くなります）',
+    '預備…': '用意…',
+    '開始！': 'スタート！',
     '麥克風權限被拒絕。請點網址列左邊的鎖頭 → 允許麥克風,然後重新整理。': 'マイクの使用が拒否されています。アドレスバー左の鍵アイコン → マイクを許可 に変更し、再読み込みしてください。',
     '瀏覽器不允許使用語音辨識服務。請改用 Chrome 或 Safari。': 'ブラウザが音声認識サービスをブロックしています。Chrome か Safari をお使いください。',
     '找不到可用的麥克風。Chrome 可能選到了虛擬裝置(BlackHole、Zoom 等),請到 Chrome 設定 → 隱私權和安全性 → 網站設定 → 麥克風 改選內建麥克風。': '使用できるマイクが見つかりません。Chrome が仮想デバイス（BlackHole、Zoom など）を選んでいる可能性があります。Chrome 設定 → プライバシーとセキュリティ → サイトの設定 → マイク で内蔵マイクに変更してください。',
@@ -11094,6 +11110,9 @@ export default function App() {
     '儲存題庫': '세트 저장',
     '建立新題庫': '새 문제집',
     '上傳錄音檔': '음성 파일 업로드',
+    '不要複誦我背過的經文(比較順暢)': '내가 암송한 구절을 다시 읽지 않기 (더 매끄럽게)',
+    '預備…': '준비…',
+    '開始！': '시작！',
     '麥克風權限被拒絕。請點網址列左邊的鎖頭 → 允許麥克風,然後重新整理。': '마이크 권한이 거부되었습니다. 주소창 왼쪽 자물쇠 → 마이크 허용으로 바꾼 뒤 새로고침해 주세요.',
     '瀏覽器不允許使用語音辨識服務。請改用 Chrome 或 Safari。': '브라우저가 음성 인식 서비스를 차단했습니다. Chrome 또는 Safari를 사용해 주세요.',
     '找不到可用的麥克風。Chrome 可能選到了虛擬裝置(BlackHole、Zoom 等),請到 Chrome 設定 → 隱私權和安全性 → 網站設定 → 麥克風 改選內建麥克風。': '사용할 수 있는 마이크가 없습니다. Chrome이 가상 장치(BlackHole, Zoom 등)를 선택했을 수 있습니다. Chrome 설정 → 개인정보 보호 및 보안 → 사이트 설정 → 마이크에서 내장 마이크로 변경해 주세요.',
@@ -11596,6 +11615,9 @@ const zhcnDict = {
   "編輯題庫": "编辑题库",
   "建立新題庫": "建立新题库",
   '上傳錄音檔': '上传录音文件',
+  '不要複誦我背過的經文(比較順暢)': '不要复诵我背过的经文(比较顺畅)',
+  '預備…': '预备…',
+  '開始！': '开始！',
   '麥克風權限被拒絕。請點網址列左邊的鎖頭 → 允許麥克風,然後重新整理。': '麦克风权限被拒绝。请点网址栏左边的锁头 → 允许麦克风，然后刷新。',
   '瀏覽器不允許使用語音辨識服務。請改用 Chrome 或 Safari。': '浏览器不允许使用语音识别服务。请改用 Chrome 或 Safari。',
   '找不到可用的麥克風。Chrome 可能選到了虛擬裝置(BlackHole、Zoom 等),請到 Chrome 設定 → 隱私權和安全性 → 網站設定 → 麥克風 改選內建麥克風。': '找不到可用的麦克风。Chrome 可能选到了虚拟设备(BlackHole、Zoom 等)，请到 Chrome 设置 → 隐私和安全 → 网站设置 → 麦克风 改选内置麦克风。',
@@ -20612,6 +20634,7 @@ const deDict = {
             formatVerseReferenceForDisplay={formatVerseReferenceForDisplay}
             onResumeTimer={() => { isGameTimerPausedRef.current = false; }}
             isDebugMode={isDebugMode}
+            skipReadback={skipReadback}
             playMode={playMode}
             playDing={() => {
               if (!window.__sharedDingCtx) {

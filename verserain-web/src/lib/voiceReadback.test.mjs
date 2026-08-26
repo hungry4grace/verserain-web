@@ -54,3 +54,33 @@ test('empty final block: no speak but long review delay still applies', () => {
 });
 
 console.log(`\n${passed} assertions passed.`);
+
+// ─── readback: false — the player's "don't repeat me" setting ──────────────
+
+test('readback off: says nothing, and the mic/mute cascade goes quiet with it', () => {
+  const p = planReadback({ text: '太初有道' }, { ...OPTS, isFinalBlock: false, hasSpeakText: true, readback: false });
+  assert.strictEqual(p.shouldSpeak, false);
+  assert.strictEqual(p.muteRecognition, false, 'nothing is spoken, so nothing to mute for');
+  assert.strictEqual(p.restartRecognitionAfter, false, 'mic was never stopped');
+  assert.strictEqual(p.advanceDelayMs, 250);
+});
+
+test('readback off on the FINAL block drops the long review pause too', () => {
+  // The 3 s review beat exists to let the closing readback finish. With no
+  // readback it is just dead air at the end of every passage.
+  const p = planReadback({ text: '道與神同在' }, { ...OPTS, isFinalBlock: true, hasSpeakText: true, readback: false });
+  assert.strictEqual(p.shouldSpeak, false);
+  assert.strictEqual(p.advanceDelayMs, 250, 'must not hold reviewMs when there is nothing to review');
+});
+
+test('readback on is still the default — omitting the flag changes nothing', () => {
+  const withFlag = planReadback({ text: '太初有道' }, { ...OPTS, isFinalBlock: true, hasSpeakText: true, readback: true });
+  const without  = planReadback({ text: '太初有道' }, { ...OPTS, isFinalBlock: true, hasSpeakText: true });
+  assert.deepStrictEqual(without, withFlag);
+  assert.strictEqual(without.advanceDelayMs, 3000);
+});
+
+test('readback off still reports the text — callers may show it on screen', () => {
+  const p = planReadback({ text: '太初有道' }, { ...OPTS, isFinalBlock: false, hasSpeakText: true, readback: false });
+  assert.strictEqual(p.text, '太初有道');
+});
