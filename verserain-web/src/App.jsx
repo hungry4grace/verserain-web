@@ -18,6 +18,7 @@ import 'react-quill-new/dist/quill.snow.css';
 import { PREMIUM_EMAILS } from './premiumEmails';
 import WorldMap from './WorldMap';
 import BlindModeGame from './BlindModeGame';
+import ChallengeSetupModal, { loadChallengeSetup } from './ChallengeSetupModal';
 import { TransformWrapper, TransformComponent } from 'react-zoom-pan-pinch';
 import { GOOGLE_CLIENT_ID, APPLE_CLIENT_ID, APPLE_REDIRECT_URI, LINE_CHANNEL_ID, startLineLogin } from './oauthConfig';
 import { VAPID_PUBLIC_KEY, urlBase64ToUint8Array, isWebPushSupported, isIOSStandalone, isIOSWithoutPWA, hasNativeDailyPush, callNativeDailyPush } from './pushConfig';
@@ -3692,19 +3693,7 @@ function VerseSetContinuousRainPlayer({
               haltPlayback();
               // Open the mode/difficulty chooser instead of launching straight
               // into whatever mode was last configured elsewhere.
-              let mode = 'square_solo';
-              let difficulty = 0;
-              let debug = false;
-              let noReadback = false;
-              try {
-                const m = localStorage.getItem('verserain_reader_challenge_mode');
-                if (['square_solo', 'rain_solo', 'voice_solo'].includes(m)) mode = m;
-                const d = parseInt(localStorage.getItem('verserain_reader_challenge_diff') || '0', 10);
-                if (d >= 0 && d <= 3) difficulty = d;
-                debug = localStorage.getItem('verseRain_debugMode') === 'true';
-                noReadback = localStorage.getItem('verseRain_noReadback') === 'true';
-              } catch { /* defaults stand */ }
-              setChallengeChooser({ mode, difficulty, debug, noReadback });
+              setChallengeChooser(loadChallengeSetup());
             }}
           >
             <Zap size={22} />
@@ -3825,71 +3814,14 @@ function VerseSetContinuousRainPlayer({
 
       {/* ⚡ 挑戰 chooser — pick mode + difficulty, then launch */}
       {challengeChooser && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 3000, padding: '1rem' }} onClick={(e) => { if (e.target === e.currentTarget) setChallengeChooser(null); }}>
-          <div style={{ background: '#fff', borderRadius: 14, padding: '1.4rem 1.3rem', width: '100%', maxWidth: 340, boxShadow: '0 20px 40px rgba(0,0,0,0.3)' }}>
-            <h3 style={{ margin: '0 0 0.3rem', color: '#1e293b', display: 'flex', alignItems: 'center', gap: 8 }}>⚡ {t('挑戰', 'Challenge')}</h3>
-            <p style={{ margin: '0 0 1rem', color: '#64748b', fontSize: '0.82rem' }}>{formatVerseReferenceForDisplay(currentVerse.reference, version)}</p>
-            <div style={{ fontSize: '0.78rem', fontWeight: 700, color: '#94a3b8', letterSpacing: '0.05em', marginBottom: '0.4rem' }}>{t('遊戲模式', 'Game Mode')}</div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem', marginBottom: '1rem' }}>
-              {[
-                { value: 'square_solo', icon: '🔢', label: t('九宮格', 'Square') },
-                { value: 'rain_solo', icon: '🌧️', label: t('經文雨', 'Verse Rain') },
-                { value: 'voice_solo', icon: '🎤', label: t('語音模式', 'Voice Mode') },
-              ].map((opt) => {
-                const active = challengeChooser.mode === opt.value;
-                return (
-                  <button key={opt.value} onClick={() => setChallengeChooser(c => ({ ...c, mode: opt.value }))}
-                    style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '0.6rem 0.85rem', borderRadius: 10, border: active ? '2px solid #16a34a' : '1px solid #e2e8f0', background: active ? '#f0fdf4' : '#f8fafc', color: active ? '#15803d' : '#334155', fontSize: '0.92rem', fontWeight: 600, cursor: 'pointer', textAlign: 'left' }}>
-                    <span>{opt.icon}</span><span style={{ flex: 1 }}>{opt.label}</span>
-                  </button>
-                );
-              })}
-            </div>
-            <div style={{ fontSize: '0.78rem', fontWeight: 700, color: '#94a3b8', letterSpacing: '0.05em', marginBottom: '0.4rem' }}>{t('難度', 'Difficulty')}</div>
-            <div style={{ display: 'flex', gap: '0.45rem', marginBottom: challengeChooser.mode === 'voice_solo' ? '1rem' : '1.2rem' }}>
-              {[0, 1, 2, 3].map((d) => {
-                const active = challengeChooser.difficulty === d;
-                return (
-                  <button key={d} onClick={() => setChallengeChooser(c => ({ ...c, difficulty: d }))}
-                    style={{ flex: 1, padding: '0.5rem 0', borderRadius: 10, border: active ? '2px solid #16a34a' : '1px solid #e2e8f0', background: active ? '#f0fdf4' : '#f8fafc', color: active ? '#15803d' : '#334155', fontSize: '0.95rem', fontWeight: 700, cursor: 'pointer' }}>
-                    {d}
-                  </button>
-                );
-              })}
-            </div>
-            {challengeChooser.mode === 'voice_solo' && (
-              <button onClick={() => setChallengeChooser(c => ({ ...c, noReadback: !c.noReadback }))}
-                style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '0.55rem 0.7rem', marginBottom: '0.5rem', borderRadius: 10, border: challengeChooser.noReadback ? '2px solid #16a34a' : '1px solid #e2e8f0', background: challengeChooser.noReadback ? '#f0fdf4' : '#f8fafc', color: challengeChooser.noReadback ? '#15803d' : '#64748b', fontSize: '0.88rem', fontWeight: 600, cursor: 'pointer', textAlign: 'left' }}>
-                <span>{challengeChooser.noReadback ? '☑' : '☐'}</span>
-                <span style={{ flex: 1 }}>⏩ {t('不要複誦我背過的經文(比較順暢)', 'Do not repeat what I just recited (faster flow)')}</span>
-              </button>
-            )}
-            {challengeChooser.mode === 'voice_solo' && (
-              <button onClick={() => setChallengeChooser(c => ({ ...c, debug: !c.debug }))}
-                style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '0.55rem 0.7rem', marginBottom: '1.2rem', borderRadius: 10, border: challengeChooser.debug ? '2px solid #6366f1' : '1px solid #e2e8f0', background: challengeChooser.debug ? '#eef2ff' : '#f8fafc', color: challengeChooser.debug ? '#4338ca' : '#64748b', fontSize: '0.88rem', fontWeight: 600, cursor: 'pointer', textAlign: 'left' }}>
-                <span>{challengeChooser.debug ? '☑' : '☐'}</span>
-                <span style={{ flex: 1 }}>🔍 {t('顯示除錯資訊(期待 vs 聽見)', 'Show debug (expects vs heard)')}</span>
-              </button>
-            )}
-            <button
-              onClick={() => {
-                const { mode, difficulty, debug, noReadback } = challengeChooser;
-                try {
-                  localStorage.setItem('verserain_reader_challenge_mode', mode);
-                  localStorage.setItem('verserain_reader_challenge_diff', String(difficulty));
-                  localStorage.setItem('verseRain_debugMode', debug ? 'true' : 'false');
-                  localStorage.setItem('verseRain_noReadback', noReadback ? 'true' : 'false');
-                } catch { /* remember-me is best-effort */ }
-                setChallengeChooser(null);
-                onChallengeVerse(currentVerse, { mode, difficulty, debug, noReadback });
-              }}
-              style={{ width: '100%', padding: '0.75rem', borderRadius: 12, border: 'none', background: 'linear-gradient(135deg, #22c55e, #16a34a)', color: '#fff', fontSize: '1rem', fontWeight: 700, cursor: 'pointer', boxShadow: '0 6px 16px rgba(22,163,74,0.35)' }}
-            >
-              ⚡ {t('開始挑戰', 'Start Challenge')}
-            </button>
-            <button onClick={() => setChallengeChooser(null)} style={{ marginTop: '0.7rem', width: '100%', background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer', fontSize: '0.9rem' }}>{t('取消', 'Cancel')}</button>
-          </div>
-        </div>
+        <ChallengeSetupModal
+          t={t}
+          subtitle={formatVerseReferenceForDisplay(currentVerse.reference, version)}
+          value={challengeChooser}
+          onChange={setChallengeChooser}
+          onStart={(v) => { setChallengeChooser(null); onChallengeVerse(currentVerse, v); }}
+          onCancel={() => setChallengeChooser(null)}
+        />
       )}
     </div>
   );
@@ -5789,8 +5721,6 @@ export default function App() {
   const [levelCounts, setLevelCounts] = useState(null);
   const [globalFruitsMap, setGlobalFruitsMap] = useState({});
   const [viewingPlayerGarden, setViewingPlayerGarden] = useState(null); // { playerName, gardenData } or null
-  const [guestChallengeMode, setGuestChallengeMode] = useState('square_solo');
-  const [guestChallengeLevel, setGuestChallengeLevel] = useState(0);
   const [guestGardenCell, setGuestGardenCell] = useState(null);
   const guestGardenClickTimer = useRef(null);
 
@@ -6791,6 +6721,18 @@ export default function App() {
     // render created it, which made 經文雨 silently launch square mode
     // (block stuck at top-left under the rain background).
   }, [activeVerseSets, customVerseSets, playMode, distractionLevel]);
+  // startGame() and the block builder used to read playMode / distractionLevel
+  // straight off state, so any DEFERRED start (a challenge confirmed in a
+  // modal, a team launch) ran with whatever the closure captured before the
+  // new settings committed. That is the bug the team-launch dependency array
+  // below documents: 經文雨 silently launching as square mode. These refs are
+  // written synchronously the moment a mode is chosen, so the start path
+  // never depends on React having flushed. Reads during play/render still use
+  // the state — those re-run on the next render anyway.
+  const playModeRef = useRef(playMode);
+  const distractionLevelRef = useRef(distractionLevel);
+  useEffect(() => { playModeRef.current = playMode; }, [playMode]);
+  useEffect(() => { distractionLevelRef.current = distractionLevel; }, [distractionLevel]);
   const [isBlindMode, setIsBlindMode] = useState(() => localStorage.getItem('verseRain_blindMode') === 'true');
   // Debug mode — persisted in localStorage, also toggleable from the ⚡ 挑戰
   // chooser so a phone user can flip on the voice-mode "expects vs heard" HUD
@@ -6798,6 +6740,33 @@ export default function App() {
   const [isDebugMode, setIsDebugMode] = useState(() => localStorage.getItem('verseRain_debugMode') === 'true');
   // Voice Mode: skip the "repeat the phrase you just recited" TTS beat.
   const [skipReadback, setSkipReadback] = useState(() => localStorage.getItem('verseRain_noReadback') === 'true');
+
+  // ─── Challenge setup modal ────────────────────────────────────────────
+  // Every single-player 挑戰 button opens this instead of relying on a pair of
+  // <select>s parked in a toolbar. `run` is whatever that particular button
+  // used to do on click; it is deferred until the player confirms.
+  const [challengeSetup, setChallengeSetup] = useState(null); // { subtitle, run, value }
+
+  const openChallengeSetup = ({ subtitle, run }) => {
+    setChallengeSetup({ subtitle: subtitle || '', run, value: loadChallengeSetup() });
+  };
+
+  const confirmChallengeSetup = (v) => {
+    // initAudio() has to happen inside a real tap for iOS to grant audio —
+    // the modal's Start button is that tap now, not the original button.
+    initAudio();
+    // Written synchronously: the start path reads these refs, so it sees the
+    // chosen mode even though setState has not flushed yet.
+    playModeRef.current = v.mode;
+    distractionLevelRef.current = v.difficulty;
+    setPlayMode(v.mode);
+    setDistractionLevel(v.difficulty);
+    setIsDebugMode(v.debug);
+    setSkipReadback(v.noReadback);
+    const run = challengeSetup?.run;
+    setChallengeSetup(null);
+    if (typeof run === 'function') run(v);
+  };
 
   const [lightningActive, setLightningActive] = useState(null);
   const [lightningKey, setLightningKey] = useState(0);
@@ -8143,7 +8112,7 @@ export default function App() {
       let isFake = false;
       const fakesOnScreen = remainingBlocks.filter(b => b.isFake).length;
       let maxFakesAllowed = 0;
-      if (distractionLevel === 3) maxFakesAllowed = 2;
+      if (distractionLevelRef.current === 3) maxFakesAllowed = 2;
       if (distractionLevel === 2) maxFakesAllowed = 1;
       if (distractionLevel === 1) maxFakesAllowed = 1;
 
@@ -8152,7 +8121,7 @@ export default function App() {
 
       if (candidates.includes(targetSeq)) {
         seqToSpawn = targetSeq; // Absolute guarantee the required phrase is spawned
-      } else if (spawnFake && !playMode.startsWith('square')) {
+      } else if (spawnFake && !playModeRef.current.startsWith('square')) {
         isFake = true;
         seqToSpawn = -1;
       } else {
@@ -8440,7 +8409,7 @@ export default function App() {
       activePhrasesRef.current = splitVersePhrases(actualVerse.text);
     }
 
-    isGameTimerPausedRef.current = playMode?.startsWith('voice') || isBlindMode;
+    isGameTimerPausedRef.current = playModeRef.current?.startsWith('voice') || isBlindMode;
 
     if (timerRef.current) clearInterval(timerRef.current);
 
@@ -8455,7 +8424,7 @@ export default function App() {
     }, 10);
 
     if (!isAuto) {
-      if (playMode.startsWith('square')) {
+      if (playModeRef.current.startsWith('square')) {
         initSquareBlocks(false, null, actualVerse);
       } else {
         setTimeout(spawnNextBlock, 100);
@@ -18987,27 +18956,6 @@ const deDict = {
 
                           {/* Top Level Action Bar */}
                           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', borderRight: '1px solid #cbd5e1', paddingRight: '0.5rem', marginRight: '0.5rem' }}>
-                              <select
-                                onChange={(e) => setPlayMode(e.target.value)}
-                                value={playMode}
-                                style={{ padding: '0.4rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.85rem', color: '#334155', backgroundColor: '#fff', fontWeight: 'bold', cursor: 'pointer' }}
-                              >
-                                <option value="square_solo">{t('九宮格', 'Square')}</option>
-                                <option value="rain_solo">{t('經文雨', 'Verse Rain')}</option>
-                                <option value="voice_solo">{t('語音模式', 'Voice Mode')}</option>
-                              </select>
-                              <select
-                                onChange={(e) => setDistractionLevel(Number(e.target.value))}
-                                value={distractionLevel}
-                                style={{ padding: '0.4rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.85rem', color: '#334155', backgroundColor: '#fff', fontWeight: 'bold', cursor: 'pointer' }}
-                              >
-                                <option value={0}>{t("難度 0", "Level 0")}</option>
-                                <option value={1}>{t("難度 1", "Level 1")}</option>
-                                <option value={2}>{t("難度 2", "Level 2")}</option>
-                                <option value={3}>{t("難度 3", "Level 3")}</option>
-                              </select>
-                            </div>
 
                             <button
                               onClick={() => {
@@ -19063,18 +19011,20 @@ const deDict = {
                                 </button>
                               </div>
                               <button
-                                onClick={() => {
-                                  initAudio();
-                                  let queue = [...VERSES_DB];
-                                  let actualCount = Math.min(VERSES_DB.length, Math.max(1, parseInt(randomPickCount) || 1));
-                                  queue = queue.sort(() => 0.5 - Math.random()).slice(0, actualCount);
-                                  setCampaignQueue(queue.slice(1));
-                                  setCampaignResults([]);
-                                  setActiveCampaignSetId(currentSet.id);
-                                  setActiveCampaignSetTotal(queue.length);
-                                  setActiveVerse(queue[0]);
-                                  setTimeout(() => startGame(false, queue[0]), 200);
-                                }}
+                                onClick={() => openChallengeSetup({
+                                  subtitle: currentSet?.title || '',
+                                  run: () => {
+                                    let queue = [...VERSES_DB];
+                                    let actualCount = Math.min(VERSES_DB.length, Math.max(1, parseInt(randomPickCount) || 1));
+                                    queue = queue.sort(() => 0.5 - Math.random()).slice(0, actualCount);
+                                    setCampaignQueue(queue.slice(1));
+                                    setCampaignResults([]);
+                                    setActiveCampaignSetId(currentSet.id);
+                                    setActiveCampaignSetTotal(queue.length);
+                                    setActiveVerse(queue[0]);
+                                    setTimeout(() => startGame(false, queue[0]), 200);
+                                  },
+                                })}
                                 title={t("隨機挑戰所選題數", "Randomly challenge selected number")}
                                 style={{ backgroundColor: '#10b981', color: 'white', border: 'none', borderRadius: '4px', padding: '0 0.8rem', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'transform 0.1s', fontWeight: 'bold', gap: '5px' }}
                                 onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
@@ -19629,34 +19579,6 @@ const deDict = {
 
                         {/* Mode & Level Controls */}
                         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem', flexWrap: 'wrap', padding: '0.8rem 1rem', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-                          <span style={{ fontWeight: 'bold', color: '#475569', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.35rem' }}><Settings size={17} /> {t("挑戰設定", "Challenge Settings")}:</span>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                            <label style={{ fontSize: '0.85rem', color: '#64748b' }}>{t("模式", "Mode")}</label>
-                            <select
-                              onChange={(e) => setPlayMode(e.target.value)}
-                              value={playMode}
-                              style={{ padding: '0.4rem 0.6rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.85rem', color: '#334155', backgroundColor: '#fff', fontWeight: 'bold', cursor: 'pointer' }}
-                            >
-                              <option value="square_solo">{t('九宮格', 'Square')}</option>
-                              <option value="rain_solo">{t('經文雨', 'Verse Rain')}</option>
-                              <option value="voice_solo">{t('語音模式', 'Voice Mode')}</option>
-                            </select>
-                          </div>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                            <Tooltip text={t("等級越高，會有越多錯誤的干擾方塊混在裡面！", "Higher levels mix in more fake blocks!")}>
-                              <label style={{ fontSize: '0.85rem', color: '#64748b', cursor: 'help', borderBottom: '1px dotted #94a3b8', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>{t("難度", "Level")} <Info size={14} /></label>
-                            </Tooltip>
-                            <select
-                              onChange={(e) => setDistractionLevel(Number(e.target.value))}
-                              value={distractionLevel}
-                              style={{ padding: '0.4rem 0.6rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.85rem', color: '#334155', backgroundColor: '#fff', fontWeight: 'bold', cursor: 'pointer' }}
-                            >
-                              <option value={0}>{t("無干擾", "No Distraction")}</option>
-                              <option value={1}>{t("單字干擾", "Level 1")}</option>
-                              <option value={2}>{t("標點干擾", "Level 2")}</option>
-                              <option value={3}>{t("難度 3", "Level 3")}</option>
-                            </select>
-                          </div>
                           <span style={{ fontSize: '0.8rem', color: '#94a3b8' }}>{t("點擊查看經文，雙擊開始挑戰！", "Click to view, double-click to challenge!")}</span>
                         </div>
 
@@ -19785,10 +19707,15 @@ const deDict = {
                                                           versionBeforeChallenge.current = version;
                                                           setVersion(detectedLang);
                                                         }
-                                                        setActiveVerse(targetVerse);
-                                                        setSelectedVerseRefs([targetVerse.reference]);
-                                                        if (cell.setId) setSelectedSetId(cell.setId);
-                                                        setTimeout(() => startGame(false, targetVerse), 50);
+                                                        openChallengeSetup({
+                                                          subtitle: targetVerse.reference,
+                                                          run: () => {
+                                                            setActiveVerse(targetVerse);
+                                                            setSelectedVerseRefs([targetVerse.reference]);
+                                                            if (cell.setId) setSelectedSetId(cell.setId);
+                                                            setTimeout(() => startGame(false, targetVerse), 50);
+                                                          },
+                                                        });
                                                       }
                                                     }
                                                   }}
@@ -21608,6 +21535,17 @@ const deDict = {
           </div>
         )}
         {/* Login Account Modal */}
+        {challengeSetup && (
+          <ChallengeSetupModal
+            t={t}
+            subtitle={challengeSetup.subtitle}
+            value={challengeSetup.value}
+            onChange={(v) => setChallengeSetup(c => (c ? { ...c, value: v } : c))}
+            onStart={confirmChallengeSetup}
+            onCancel={() => setChallengeSetup(null)}
+          />
+        )}
+
         {showLoginModal && (
           <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.6)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000, padding: '1rem' }}>
             <div style={{ background: '#ffffff', borderRadius: '12px', padding: '2rem', width: '100%', maxWidth: '400px', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)', display: 'flex', flexDirection: 'column', gap: '1.5rem', border: '1px solid #e2e8f0' }}>
@@ -22948,28 +22886,6 @@ const deDict = {
                     <div style={{ textAlign: 'center', padding: '3rem', color: '#94a3b8', fontSize: '1rem', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.5rem' }}><Sprout size={20} /> {t('這個玩家的園地還是空的！', 'This player\'s garden is empty!')}</div>
                   ) : (
                     <>
-                      {/* Challenge Settings */}
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem', flexWrap: 'wrap', padding: '0.8rem 1rem', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-                        <span style={{ fontWeight: 'bold', color: '#475569', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.35rem' }}><Settings size={17} /> {t('挑戰設定', 'Challenge Settings')}:</span>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                          <label style={{ fontSize: '0.85rem', color: '#64748b' }}>{t('模式', 'Mode')}</label>
-                          <select value={guestChallengeMode} onChange={e => setGuestChallengeMode(e.target.value)} style={{ padding: '0.4rem 0.6rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.85rem', color: '#334155', backgroundColor: '#fff', fontWeight: 'bold', cursor: 'pointer' }}>
-                            <option value="square_solo">{t('九宮格', 'Square')}</option>
-                            <option value="rain_solo">{t('經文雨', 'Verse Rain')}</option>
-                            <option value="voice_solo">{t('語音模式', 'Voice Mode')}</option>
-                          </select>
-                        </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                          <label style={{ fontSize: '0.85rem', color: '#64748b' }}>{t('難度', 'Difficulty')}</label>
-                          <select value={guestChallengeLevel} onChange={e => setGuestChallengeLevel(Number(e.target.value))} style={{ padding: '0.4rem 0.6rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.85rem', color: '#334155', backgroundColor: '#fff', fontWeight: 'bold', cursor: 'pointer' }}>
-                            <option value={0}>{t('無干擾', 'No Distraction')}</option>
-                            <option value={1}>{t('單字干擾', 'Level 1')}</option>
-                            <option value={2}>{t('標點干擾', 'Level 2')}</option>
-                            <option value={3}>{t("難度 3", "Level 3")}</option>
-                          </select>
-                        </div>
-                      </div>
-
                       {/* Garden Grid - Isometric */}
                       {(() => {
                         const hour = new Date().getHours();
@@ -23074,11 +22990,14 @@ const deDict = {
                                                     setGuestGardenCell(null);
                                                     setViewingPlayerGarden(null);
                                                     if (detectedLang !== version) { versionBeforeChallenge.current = version; setVersion(detectedLang); }
-                                                    setPlayMode(guestChallengeMode);
-                                                    setDistractionLevel(guestChallengeLevel);
-                                                    setActiveVerse(targetVerse);
-                                                    setSelectedVerseRefs([targetVerse.reference]);
-                                                    setTimeout(() => startGame(false, targetVerse), 50);
+                                                    openChallengeSetup({
+                                                      subtitle: targetVerse.reference,
+                                                      run: () => {
+                                                        setActiveVerse(targetVerse);
+                                                        setSelectedVerseRefs([targetVerse.reference]);
+                                                        setTimeout(() => startGame(false, targetVerse), 50);
+                                                      },
+                                                    });
                                                   }
                                                 }}
                                                 style={{
