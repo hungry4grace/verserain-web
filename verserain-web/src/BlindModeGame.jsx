@@ -55,6 +55,12 @@ export default function BlindModeGame({
     const [debugTarget, setDebugTarget] = useState('');
     const activeBlockRef = useRef(null);
     const pauseTimeoutRef = useRef(null);
+    // Set when SpeechRecognition reports an error it will never recover from
+    // by itself (permission / no usable input device / blocked service).
+    // Without this the onend→restart hop and the 5 s heartbeat retry forever,
+    // each attempt failing in milliseconds, while micStatus still reads
+    // 「聆聽中…」 — the player just sees every phrase scored wrong.
+    const fatalMicErrorRef = useRef('');
     const gameRootRef = useRef(null);
 
     const currentBlock = activePhrases[currentSeqIndex] || null;
@@ -430,6 +436,7 @@ export default function BlindModeGame({
         recognition.lang = TTS_LANG;
 
         recognition.onstart = () => {
+            fatalMicErrorRef.current = '';
             setMicStatus(t("聆聽中...", "Listening..."));
             // A fresh session starts with empty event.results — zero ALL the
             // bookkeeping to match. Critically, cancel any pending 1500ms
@@ -479,11 +486,40 @@ export default function BlindModeGame({
             }, 1500);
         };
 
+        // Chrome on the desktop routes Web Speech through Google's servers and
+        // uses whatever input Chrome itself is pointed at — neither is true of
+        // iOS, which is why the same verse can pass on a phone and fail on a
+        // Mac. Reporting the actual error code is what makes the two
+        // distinguishable; before this it was a console.log nobody sees.
         recognition.onerror = (e) => {
-            console.log("Speech recognition error:", e.error);
+            const code = e.error || 'unknown';
+            // no-speech / aborted are normal punctuation in a long session:
+            // Chrome ends a quiet stretch and onend restarts us.
+            if (code === 'no-speech' || code === 'aborted') return;
+            const FATAL = {
+                'not-allowed': t('麥克風權限被拒絕。請點網址列左邊的鎖頭 → 允許麥克風,然後重新整理。',
+                                 'Microphone permission denied. Click the padlock in the address bar → allow the microphone, then reload.'),
+                'service-not-allowed': t('瀏覽器不允許使用語音辨識服務。請改用 Chrome 或 Safari。',
+                                         'The browser blocked the speech service. Please use Chrome or Safari.'),
+                'audio-capture': t('找不到可用的麥克風。Chrome 可能選到了虛擬裝置(BlackHole、Zoom 等),請到 Chrome 設定 → 隱私權和安全性 → 網站設定 → 麥克風 改選內建麥克風。',
+                                   'No usable microphone. Chrome may be pointed at a virtual device (BlackHole, Zoom…). Change it in Chrome Settings → Privacy and security → Site settings → Microphone.'),
+            };
+            if (FATAL[code]) {
+                fatalMicErrorRef.current = code;
+                setMicStatus(FATAL[code]);
+                return;
+            }
+            // network: desktop Chrome could not reach Google's recognizer.
+            // Recoverable, so keep the restart loop running, but say so —
+            // otherwise it looks identical to "the mic is not picking me up".
+            setMicStatus(code === 'network'
+                ? t('語音辨識連線中斷,重試中…(桌面版 Chrome 需要網路才能辨識)',
+                    'Speech service connection lost, retrying… (desktop Chrome needs the network to recognise speech)')
+                : t('語音辨識錯誤：', 'Speech recognition error: ') + code);
         };
 
         recognition.onend = () => {
+            if (fatalMicErrorRef.current) return; // nothing to retry into
             if (isMountedRef.current && recognitionRef.current) {
                 setTimeout(() => {
                     if (isMountedRef.current && recognitionRef.current && !isSpeakingRef.current) {
@@ -508,6 +544,7 @@ export default function BlindModeGame({
         recognitionRef.current = recognition;
 
         let heartbeat = setInterval(() => {
+            if (fatalMicErrorRef.current) return;
             if (recognitionRef.current && isMountedRef.current && !isSpeakingRef.current) {
                 try {
                     recognitionRef.current.start();
