@@ -1360,6 +1360,10 @@ textarea {
   overflow: hidden;
   align-content: flex-start;
   padding-bottom: clamp(6.5rem, 13vh, 9.2rem);
+  /* Tighter than the daily-verse base 0.6rem so more phrases fit per page and
+     it flips less often (the block's own vertical padding is halved below to
+     match). */
+  row-gap: 0.3rem;
 }
 
 /* One row: 提多書 1:1–16 · 多 1:1–16 · 🎙️ 朗讀者：… — wrapping only when a
@@ -1401,7 +1405,10 @@ textarea {
 
 .continuous-rain-phrases span {
   min-height: 1.7em;
-  padding: 0.31em 0.48em;
+  /* Vertical padding halved (0.31em → 0.15em) to bring phrases closer together
+     — the padding is invisible whitespace (boxless type), so this only tightens
+     the gap between blocks, fitting more per page. */
+  padding: 0.15em 0.48em;
   font-size: clamp(1.5em, 4.2vw, 2.18em);
 }
 
@@ -1415,7 +1422,11 @@ textarea {
   flex-direction: column;
   align-items: center;
   gap: 0.18em;
-  min-height: 2.85em;
+  /* Trimmed (2.85em → 2.4em) so a short bilingual block no longer reserves
+     empty space above/below its text — pairs sit closer, more per page. The
+     0.18em internal gap between the primary line and its translation is kept
+     so the two stay visually associated. */
+  min-height: 2.4em;
   max-width: min(92vw, 860px);
   text-align: center;
 }
