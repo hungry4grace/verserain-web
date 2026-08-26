@@ -114,6 +114,11 @@ export default async function handler(req, res) {
   const dest = new URL(`${origin}/`);
   if (set) dest.searchParams.set('listenSet', set);
   if (verse) dest.searchParams.set('listenVerse', verse);
+  // Carry the verse index straight through: for large sets that exceed
+  // /share-set's 128KB cap the fetch above can't resolve idx → reference, so
+  // `verse` stays empty and listenVerse would be dropped — leaving the app to
+  // pick a random verse. The SPA has the full set locally and pins verses[i].
+  if (idx !== null) dest.searchParams.set('listenIndex', String(idx));
   if (version) dest.searchParams.set('version', version);
   // vo = opaque voice-owner id → recipient hears the sender's personal
   // recording for this verse (their voice › set owner › TTS).

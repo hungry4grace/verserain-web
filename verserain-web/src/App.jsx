@@ -7845,9 +7845,18 @@ export default function App() {
         // listenOrder=seq → play ALL verses in canonical order (looping),
         // starting from the first verse unless listenVerse pins a start.
         const sequential = ['seq', 'sequential'].includes(params.get('listenOrder') || '');
+        // listenIndex pins the shared verse BY POSITION — robust for large sets
+        // whose text exceeds /share-set's 128KB cap (listen-card.js then can't
+        // resolve the index → reference server-side and drops listenVerse, which
+        // used to leave the recipient on a random verse). We have the full set
+        // locally here, so index straight into it.
+        const listenIndexRaw = params.get('listenIndex');
+        const listenIndex = /^\d+$/.test(String(listenIndexRaw || '')) ? Number(listenIndexRaw) : null;
         const startVerse = listenVerseRef
           ? (foundSet.verses || []).find(v => v.reference === listenVerseRef)
-          : (sequential ? (foundSet.verses || [])[0] : null);
+          : (listenIndex !== null && listenIndex >= 0 && listenIndex < (foundSet.verses || []).length
+              ? (foundSet.verses || [])[listenIndex]
+              : (sequential ? (foundSet.verses || [])[0] : null));
         setSelectedSetId(foundSet.id);
         setMainTab('versesets');
         const voParam = params.get('vo');
