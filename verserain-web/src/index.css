@@ -1379,7 +1379,10 @@ textarea {
      longer towers over the verse it labels. The children below are fractions
      of THIS — they used to be nested inside the h2 and sized off it, so the
      scale has to live on the row now that they are siblings. */
-  font-size: clamp(1.5em, 4.2vw, 2.18em);
+  /* vmin (not vw) so the size keys off the phone's SHORT side — landscape then
+     matches portrait instead of ballooning with the wider viewport and fitting
+     fewer phrases per page. Heading + phrase share this so they stay matched. */
+  font-size: clamp(1.5em, 4.2vmin, 2.18em);
 }
 
 .continuous-rain-content h2 {
@@ -1409,7 +1412,10 @@ textarea {
      — the padding is invisible whitespace (boxless type), so this only tightens
      the gap between blocks, fitting more per page. */
   padding: 0.15em 0.48em;
-  font-size: clamp(1.5em, 4.2vw, 2.18em);
+  /* vmin (not vw) so the size keys off the phone's SHORT side — landscape then
+     matches portrait instead of ballooning with the wider viewport and fitting
+     fewer phrases per page. Heading + phrase share this so they stay matched. */
+  font-size: clamp(1.5em, 4.2vmin, 2.18em);
 }
 
 .continuous-rain-phrases span b,
