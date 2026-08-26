@@ -1365,6 +1365,36 @@ export default class Server {
          }
       }
 
+      // POST /sets/verse-voice/delete — { email, setId, reference } removes a
+      // creator (owner-layer) recording and its audio chunks. Authorized if the
+      // requester is the original recorder (byEmail), the set's owner, or a
+      // trusted admin. Idempotent: succeeds even if nothing is stored (so a
+      // cleanup pass over stale references never errors).
+      if (url.pathname.endsWith('/sets/verse-voice/delete') && request.method === 'POST') {
+         try {
+            const { email, setId, reference } = await request.json();
+            if (!email || !setId || !reference) return new Response(JSON.stringify({ error: 'email, setId, reference required' }), { status: 400, headers: corsHeaders });
+            const emailLc = String(email).toLowerCase().trim();
+            const refKey = encodeURIComponent(String(reference).trim().slice(0, 60));
+            const key = `set-verse-voice:${String(setId)}:${refKey}`;
+            const meta = await this.room.storage.get(key);
+            if (!meta) return new Response(JSON.stringify({ success: true, deleted: false }), { status: 200, headers: corsHeaders });
+            const setDoc = await this.room.storage.get(`verseset:${String(setId)}`);
+            const authorized = (meta.byEmail && meta.byEmail === emailLc)
+               || (setDoc?.ownerEmail && String(setDoc.ownerEmail).toLowerCase() === emailLc)
+               || isTrustedAdminEmail(email);
+            if (!authorized) return new Response(JSON.stringify({ error: 'Not authorized to delete this recording' }), { status: 403, headers: corsHeaders });
+            if (meta.voiceId) {
+               const chunks = await this.room.storage.list({ prefix: `set-voice:${String(setId)}:${meta.voiceId}:` });
+               for (const k of chunks.keys()) await this.room.storage.delete(k);
+            }
+            await this.room.storage.delete(key);
+            return new Response(JSON.stringify({ success: true, deleted: true }), { status: 200, headers: corsHeaders });
+         } catch {
+            return new Response(JSON.stringify({ error: 'Failed to delete verse voice' }), { status: 500, headers: corsHeaders });
+         }
+      }
+
       // GET /sets/verse-voices?setId=<setId> — all recordings for a set,
       // as { voices: { [reference]: meta } }. Public: anyone playing the
       // set may hear the creator's voice.
