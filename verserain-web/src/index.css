@@ -1327,7 +1327,9 @@ textarea {
   height: 100%;
   justify-content: flex-start;
   gap: clamp(0.65rem, 1.55vh, 1.1rem);
-  padding: clamp(2rem, 5.6vh, 4.2rem) clamp(1rem, 4vw, 3rem) clamp(8.8rem, 18vh, 12rem);
+  /* 下方留白縮到很小:句子容器(flex:1)才會延伸到動作列之下,分頁能填到動作列上方、
+     不浪費空間。動作列/字級鈕是絕對定位浮在底部,不需靠此 padding 讓位。 */
+  padding: clamp(2rem, 5.6vh, 4.2rem) clamp(1rem, 4vw, 3rem) clamp(1.5rem, 3vh, 2.5rem);
   overflow: hidden;
 }
 
@@ -1359,7 +1361,8 @@ textarea {
   max-height: none;
   overflow: hidden;
   align-content: flex-start;
-  padding-bottom: clamp(6.5rem, 13vh, 9.2rem);
+  /* 只需一點下方留白避開動作列(原 6.5–9.2rem 太多,吃掉可用高度、句數變少)。 */
+  padding-bottom: clamp(2rem, 5vh, 3.5rem);
   /* Tighter than the daily-verse base 0.6rem so more phrases fit per page and
      it flips less often (the block's own vertical padding is halved below to
      match). */
@@ -1416,6 +1419,16 @@ textarea {
      matches portrait instead of ballooning with the wider viewport and fitting
      fewer phrases per page. Heading + phrase share this so they stay matched. */
   font-size: clamp(1.5em, 4.2vmin, 2.18em);
+  /* 「就地淡入」:整頁一次擺好,取消掉落(-52vh)與 drop 動畫,只在「已讀到」時
+     以 opacity 淡入,鄰句不位移(消除掉落 / 右擠 / 跳頁的視覺抖動)。 */
+  transform: none;
+  opacity: 0;
+  transition: opacity 0.45s ease, color 0.24s ease, text-shadow 0.24s ease;
+  animation: none;
+}
+
+.continuous-rain-phrases span.is-revealed {
+  opacity: 1;
 }
 
 .continuous-rain-phrases span b,
@@ -1450,7 +1463,9 @@ textarea {
 }
 
 .continuous-rain-phrases span.is-active {
-  animation: continuousVersePhraseDrop 1.35s cubic-bezier(.18, .86, .22, 1) both;
+  /* 目前朗讀中的句子:不再掉落,只保留 opacity 淡入 + 基底的暖光(text-shadow)。 */
+  animation: none;
+  opacity: 1;
 }
 
 @keyframes continuousVersePhraseDrop {
@@ -1470,15 +1485,11 @@ textarea {
   }
 }
 
-/* Page flip (stable, no「掉到底→跳到頂」flicker): the outgoing page fades out
-   before phrasePageStart advances, and the new page's first line fades in
-   place at the top instead of dropping from -52vh. */
+/* Page flip:舊頁「瞬間」清掉(不漸變 → 不會看到新舊頁交疊的花花感),再進新頁。 */
 .continuous-rain-phrases.is-page-fading span {
-  /* Cancel the drop animation's `both` fill (which would otherwise pin the
-     active line's opacity at 1) so the whole outgoing page can fade. */
   animation: none !important;
   opacity: 0 !important;
-  transition: opacity 0.28s ease;
+  transition: none;
 }
 
 .continuous-rain-phrases span.is-page-head.is-active {
@@ -1717,7 +1728,9 @@ textarea {
      correctly reports 0, where a floor would stack dead space on top of that
      header. 1.2rem stays as the ordinary minimum gap. */
   .continuous-rain-content {
-    padding: max(env(safe-area-inset-top), 1.2rem) 0.85rem 10.5rem;
+    /* 下方留白縮到最小(只留安全區),句子容器延伸到動作列之下,分頁填到動作列上方、
+       不再提早跳頁。動作列/字級鈕絕對定位浮在底部,不需此 padding 讓位。 */
+    padding: max(env(safe-area-inset-top), 1.2rem) 0.85rem calc(max(0.75rem, env(safe-area-inset-bottom)) + 0.75rem);
   }
 
   .continuous-rain-action-controls {
@@ -1731,7 +1744,7 @@ textarea {
   }
 
   .continuous-rain-phrases {
-    padding-bottom: clamp(8.8rem, 22vh, 11rem);
+    padding-bottom: clamp(1.5rem, 5vh, 3rem);
   }
 
   .continuous-rain-action-controls button.is-icon {
