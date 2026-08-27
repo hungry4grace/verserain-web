@@ -2959,6 +2959,16 @@ function VerseSetContinuousRainPlayer({
   const [isPageFading, setIsPageFading] = useState(false);
   const isPageFadingRef = useRef(false);
   useEffect(() => { isPageFadingRef.current = isPageFading; }, [isPageFading]);
+  // 預算版位:一頁的最後一句索引(整頁一次擺好,逐句就地淡入,不再逐句 mount 造成右擠)。
+  const [phrasePageEnd, setPhrasePageEnd] = useState(0);
+  const phrasePageStartRef = useRef(0);
+  const phrasePageEndRef = useRef(0);
+  useEffect(() => { phrasePageStartRef.current = phrasePageStart; }, [phrasePageStart]);
+  useEffect(() => { phrasePageEndRef.current = phrasePageEnd; }, [phrasePageEnd]);
+  // 預先量測算好的分頁:[{start,end}]（inclusive）。由隱藏鏡像量測產生。
+  const pagesRef = useRef([]);
+  const phraseMirrorRef = useRef(null);
+  const [phraseContainerWidth, setPhraseContainerWidth] = useState(0);
   const [fontSizeLevel, setFontSizeLevel] = useState('normal');
   const [showTopicPicker, setShowTopicPicker] = useState(false);
   const bgmRef = useRef(null);
@@ -3046,6 +3056,9 @@ function VerseSetContinuousRainPlayer({
     setPlayKey(k => k + 1);
     setActivePhrase(-1);
     setPhrasePageStart(0);
+    setPhrasePageEnd(0);
+    phrasePageStartRef.current = 0;
+    phrasePageEndRef.current = 0;
     setIsPageFading(false);
     phraseNodeRefs.current = [];
     setIsSettled(false);
@@ -3061,6 +3074,9 @@ function VerseSetContinuousRainPlayer({
     if (resumeFromPhraseRef.current > 0) return;
     setActivePhrase(-1);
     setPhrasePageStart(0);
+    setPhrasePageEnd(0);
+    phrasePageStartRef.current = 0;
+    phrasePageEndRef.current = 0;
     setIsPageFading(false);
     setIsSettled(false);
   }, [playKey]);
@@ -3074,144 +3090,91 @@ function VerseSetContinuousRainPlayer({
   }, [backgroundImageUrls, imageIndex, imageLoaded, imageOk]);
 
   // How long the outgoing page fades before the next phrase takes the top.
-  const FLIP_FADE_MS = 300;
+  // 換頁:舊頁瞬間清掉(不漸變),只留極短一格讓 DOM 換到新頁,近似硬切。
+  const FLIP_FADE_MS = 60;
 
-  // Predict — BEFORE mounting block i — whether adding it would push the page
-  // past the visual bottom. Measures the already-landed blocks and estimates
-  // block i's height as their average (heights aren't knowable pre-mount).
-  // Shared by the TTS and recording reveal paths so both flip pre-emptively
-  // instead of landing at the bottom and jumping. Returns true → caller should
-  // flip to a fresh page with i at the top.
-  const wouldOverflowAt = React.useCallback((i) => {
-    if (i <= 0) return false;
+  // 依「隱藏鏡像」預先量測,把所有 phrases 切成一頁頁(每頁容納到 visualBottomLimit)。
+  // 產生 pagesRef.current = [{start,end}]（inclusive）。量測在離屏鏡像上進行,使用者
+  // 看不到任何 reflow;真正顯示時整頁一次擺好、逐句就地淡入(不掉落、不右擠、不跳頁)。
+  const recomputePages = React.useCallback(() => {
+    const mirror = phraseMirrorRef.current;
     const container = phraseContainerRef.current;
-    if (!container) return false;
+    if (!mirror || !container) return;
+    // 每次都用真實容器「當下」的寬度餵鏡像(別用可能過期的 state:曾量到動畫過程中的
+    // 暫時窄值 → 鏡像太窄、句子換行變多、每句量得過高 → 分頁過度保守,一頁只放一句)。
+    const w = container.clientWidth;
+    if (w && Math.abs(parseFloat(mirror.style.width) - w) > 1) mirror.style.width = w + 'px';
+    const spans = mirror.children;
+    if (!spans || spans.length === 0 || !w) { pagesRef.current = []; return; }
+    const containerRect = container.getBoundingClientRect();
+    const cstyle = getComputedStyle(container);
+    const padTop = parseFloat(cstyle.paddingTop) || 0;
     const actionControls = document.querySelector('.continuous-rain-action-controls:not(.continuous-rain-close-topleft)');
     const actionControlsTop = actionControls ? actionControls.getBoundingClientRect().top : window.innerHeight;
-    const containerRect = container.getBoundingClientRect();
-    const visualBottomLimit = Math.min(containerRect.bottom, actionControlsTop - 16);
-    let bottomMost = 0;
-    const heights = [];
-    for (let j = 0; j < i; j++) {
-      const node = phraseNodeRefs.current[j];
-      if (!node) continue;
-      const r = node.getBoundingClientRect();
-      // Only count blocks that have visually landed (not still dropping in
-      // from -52vh, which sit far above the container top).
-      if (r.top >= containerRect.top - 20) {
-        bottomMost = Math.max(bottomMost, r.bottom);
-        if (r.height > 0) heights.push(r.height);
+    // 真正的視覺底部 = 動作列頂端(播放/分享/麥克風)。填到那裡才不浪費空間。容器已把
+    // 下方 padding 縮到很小、border box 會延伸到動作列之下,所以直接用動作列當底,不再被
+    // containerRect.bottom 提早卡住(那會讓一頁少放一句)。
+    const bottomLimit = actionControlsTop - 12;
+    // 保守留邊,避免臨界溢出被 overflow:hidden 裁字。
+    const pageHeight = Math.max(1, bottomLimit - (containerRect.top + padTop) - 4);
+    const pages = [];
+    let start = 0;
+    let pageTop = spans[0].offsetTop;
+    for (let i = 0; i < spans.length; i += 1) {
+      const el = spans[i];
+      const bottom = el.offsetTop + el.offsetHeight;
+      if (i > start && (bottom - pageTop) > pageHeight) {
+        pages.push({ start, end: i - 1 });
+        start = i;
+        pageTop = el.offsetTop;
       }
     }
-    if (!bottomMost) return false;
-    const avgH = heights.length ? heights.reduce((a, b) => a + b, 0) / heights.length : 56;
-    const gap = 12;
-    return bottomMost + avgH + gap > visualBottomLimit;
+    pages.push({ start, end: spans.length - 1 });
+    pagesRef.current = pages;
   }, []);
 
+  // 某 phrase 屬於哪一頁(還沒算好時退化成單句一頁,保底不當機)。
+  const pageForIndex = React.useCallback((i) => {
+    const pages = pagesRef.current;
+    if (pages && pages.length) {
+      const p = pages.find(pg => i >= pg.start && i <= pg.end);
+      if (p) return p;
+    }
+    return { start: i, end: i };
+  }, []);
+
+  // 真實容器寬度變動(視窗/轉向)→ 記錄並重算分頁。ResizeObserver 直接重算,
+  // 不完全依賴 state(避免量到動畫暫時窄值後就卡住)。
   useEffect(() => {
-    if (activePhrase < 0 || activePhrase < phrasePageStart) return undefined;
-    const measureAndTrim = () => {
-      // Stand down while a fade-driven flip is mid-flight — it will set
-      // phrasePageStart itself; racing it here would double-flip.
-      if (isPageFadingRef.current) return;
-      const container = phraseContainerRef.current;
-      if (!container) return;
-
-      const containerRect = container.getBoundingClientRect();
-      const actionControls = document.querySelector('.continuous-rain-action-controls:not(.continuous-rain-close-topleft)');
-      const actionControlsTop = actionControls
-        ? actionControls.getBoundingClientRect().top
-        : window.innerHeight;
-      const visualBottomLimit = Math.min(containerRect.bottom, actionControlsTop - 16);
-
-      const visibleNodes = [];
-      for (let i = phrasePageStart; i <= activePhrase; i += 1) {
-        const node = phraseNodeRefs.current[i];
-        if (node) visibleNodes.push({ index: i, rect: node.getBoundingClientRect() });
-      }
-      if (!visibleNodes.length) return;
-
-      const bottomMost = visibleNodes.reduce((max, item) => Math.max(max, item.rect.bottom), 0);
-      // Predictive overflow: trim BEFORE the bottom block visibly touches the
-      // limit. We estimate the next block's height from what's already
-      // rendered (so block size stays consistent across themes / font sizes),
-      // and trim whenever the current bottom + one more block + a gap would
-      // cross the visual bottom limit. This avoids the "land at bottom →
-      // erase → re-appear at top" flicker the user sees with a strict
-      // "already-overflowed" rule.
-      const blockHeights = visibleNodes.map(n => n.rect.height).filter(h => h > 0);
-      const avgBlockHeight = blockHeights.length
-        ? blockHeights.reduce((a, b) => a + b, 0) / blockHeights.length
-        : 56;
-      const gap = 12;
-      const projectedBottom = bottomMost + avgBlockHeight + gap;
-      if (projectedBottom <= visualBottomLimit || activePhrase <= phrasePageStart) return;
-
-      // Clear the page entirely and restart from the top with the current
-      // phrase as the new page's first block.
-      const nextStart = activePhrase;
-      if (nextStart !== phrasePageStart) {
-        setPhrasePageStart(nextStart);
-      }
+    const container = phraseContainerRef.current;
+    if (!container) return undefined;
+    const sync = () => {
+      const w = container.clientWidth;
+      if (w) setPhraseContainerWidth(prev => (Math.abs(prev - w) > 1 ? w : prev));
+      recomputePages();
     };
+    sync();
+    let ro;
+    if (typeof ResizeObserver !== 'undefined') {
+      ro = new ResizeObserver(sync);
+      ro.observe(container);
+    }
+    window.addEventListener('resize', sync);
+    return () => { if (ro) ro.disconnect(); window.removeEventListener('resize', sync); };
+  }, [recomputePages]);
 
-    const rafs = [];
-    const timers = [];
-    const scheduleMeasure = (delay = 0) => {
-      if (delay > 0) {
-        const timer = window.setTimeout(() => {
-          rafs.push(window.requestAnimationFrame(measureAndTrim));
-        }, delay);
-        timers.push(timer);
-      } else {
-        rafs.push(window.requestAnimationFrame(measureAndTrim));
-      }
-    };
+  // 鏡像量測(尺寸/字級/雙語/內容變動)→ 繪製前重算分頁;並在版面沉澱後補算幾次
+  // (rAF + 短延遲),避免開場動畫期間量到暫時尺寸。
+  React.useLayoutEffect(() => {
+    recomputePages();
+    const raf = requestAnimationFrame(recomputePages);
+    const t1 = window.setTimeout(recomputePages, 180);
+    const t2 = window.setTimeout(recomputePages, 520);
+    return () => { cancelAnimationFrame(raf); window.clearTimeout(t1); window.clearTimeout(t2); };
+  }, [recomputePages, phraseContainerWidth, phrases, effectiveSecondaryPhrases, hasSecondaryPhrases, fontSizeLevel, currentVerse?.reference]);
 
-    scheduleMeasure();
-    scheduleMeasure(460);
-    scheduleMeasure(980);
-    scheduleMeasure(1420);
-    const interval = window.setInterval(measureAndTrim, 260);
-
-    return () => {
-      rafs.forEach(frame => window.cancelAnimationFrame(frame));
-      timers.forEach(timer => window.clearTimeout(timer));
-      window.clearInterval(interval);
-    };
-  }, [activePhrase, phrasePageStart, currentVerse?.reference, fontSizeLevel, isSettled, hasSecondaryPhrases]);
-
-  useEffect(() => {
-    const trimOnResize = () => {
-      const container = phraseContainerRef.current;
-      if (!container || activePhrase < 0) return;
-      const actionControls = document.querySelector('.continuous-rain-action-controls:not(.continuous-rain-close-topleft)');
-      const actionControlsTop = actionControls
-        ? actionControls.getBoundingClientRect().top
-        : window.innerHeight;
-      const visibleNodes = [];
-      for (let i = phrasePageStart; i <= activePhrase; i += 1) {
-        const node = phraseNodeRefs.current[i];
-        if (node) visibleNodes.push({ index: i, rect: node.getBoundingClientRect() });
-      }
-      // Mirror the predictive overflow rule from the main trim effect: if
-      // adding one more block would push past the limit, clear early so we
-      // don't briefly show a block pinned to the bottom on resize.
-      const bottomMost = visibleNodes.reduce((max, item) => Math.max(max, item.rect.bottom), 0);
-      const blockHeights = visibleNodes.map(n => n.rect.height).filter(h => h > 0);
-      const avgBlockHeight = blockHeights.length
-        ? blockHeights.reduce((a, b) => a + b, 0) / blockHeights.length
-        : 56;
-      const gap = 12;
-      const projectedBottom = bottomMost + avgBlockHeight + gap;
-      if (projectedBottom > actionControlsTop - 16 && phrasePageStart < activePhrase) {
-        setPhrasePageStart(activePhrase);
-      }
-    };
-    window.addEventListener('resize', trimOnResize);
-    return () => window.removeEventListener('resize', trimOnResize);
-  }, [activePhrase, phrasePageStart, currentVerse?.reference, fontSizeLevel, hasSecondaryPhrases]);
+  // (舊的事後量測/修剪 measureAndTrim / trimOnResize 已移除 —— 分頁改由上方
+  //  隱藏鏡像預先算好 pagesRef,顯示時不再需要事後修正,故不會再有「跳頁」。)
 
   useEffect(() => {
     if (!currentVerse) return undefined;
@@ -3278,21 +3241,26 @@ function VerseSetContinuousRainPlayer({
         // The hint stays up through the audio download — that is the slow part
         // on a phone — and playCreatorRecording drops it the moment sound
         // actually starts.
+        // 版面此時已沉澱(尺寸不再受開場動畫影響)→ 用當下正確寬度重算分頁,
+        // 避免用到動畫過程中的暫時窄值(那會讓句子量得過高、一頁少放一句)。
+        recomputePages();
         creatorPlayed = await playCreatorRecording(creatorRec, currentPhrases, (i) => {
           if (cancelled || runRef.current !== runId) return;
-          // Predict overflow BEFORE revealing block i (this recording path was
-          // the flicker source — it used to land at the bottom and let the
-          // reactive effect jump it to the top). If it won't fit: fade the
-          // current page out, then bring block i in at the top of a fresh page.
-          if (wouldOverflowAt(i)) {
+          recomputePages(); // 每句決定前用當下寬度重算(見 TTS 路徑說明)
+          // 逐句就地淡入。頁面預先算好:同頁只淡入(鄰句不動);跨到新頁才整頁淡出→換頁,
+          // 絕不「落底→跳頂」。
+          const pg = pageForIndex(i);
+          if (pg.start !== phrasePageStartRef.current) {
             setIsPageFading(true);
             window.setTimeout(() => {
               if (cancelled || runRef.current !== runId) return;
-              setPhrasePageStart(i);
+              setPhrasePageStart(pg.start); setPhrasePageEnd(pg.end);
+              phrasePageStartRef.current = pg.start; phrasePageEndRef.current = pg.end;
               setIsPageFading(false);
               setActivePhrase(i);
             }, FLIP_FADE_MS);
           } else {
+            if (phrasePageEndRef.current !== pg.end) { setPhrasePageEnd(pg.end); phrasePageEndRef.current = pg.end; }
             setActivePhrase(i);
           }
         }, voiceLabel, stopLoadingHint);
@@ -3317,17 +3285,26 @@ function VerseSetContinuousRainPlayer({
         await wait(500);
       }
 
+      // 版面已沉澱 → 用當下正確寬度重算分頁(見上方說明)。
+      recomputePages();
       for (let i = resumeAt; i < currentPhrases.length; i++) {
         if (cancelled || runRef.current !== runId) return;
-        // Predict overflow BEFORE block i mounts (shared with the recording
-        // path). If it won't fit: fade the current page out, then bring block i
-        // in at the top of a fresh page — never「lands at bottom → jumps to top」.
-        if (wouldOverflowAt(i)) {
+        // 每句決定前用「當下」寬度重算分頁,徹底避免鏡像寬度過期(某些裝置版面沉澱較慢
+        // → 一頁少放一句)。同尺寸下結果不變,不會抖動。
+        recomputePages();
+        // 頁面預先算好:同頁只就地淡入(鄰句不動);跨到新頁才整頁淡出→換頁,
+        // 絕不「落底→跳頂」。
+        const pg = pageForIndex(i);
+        if (pg.start !== phrasePageStartRef.current) {
           setIsPageFading(true);
           await wait(FLIP_FADE_MS);
           if (cancelled || runRef.current !== runId) return;
-          setPhrasePageStart(i);
+          setPhrasePageStart(pg.start); setPhrasePageEnd(pg.end);
+          phrasePageStartRef.current = pg.start; phrasePageEndRef.current = pg.end;
           setIsPageFading(false);
+          await wait(40);
+        } else if (phrasePageEndRef.current !== pg.end) {
+          setPhrasePageEnd(pg.end); phrasePageEndRef.current = pg.end;
         }
         setActivePhrase(i);
         await speakTextTimed(currentPhrases[i], 0.86, lang);
@@ -3669,29 +3646,57 @@ function VerseSetContinuousRainPlayer({
               className={`daily-verse-rain-phrases continuous-rain-phrases ${hasSecondaryPhrases ? 'has-secondary' : ''} ${isSettled ? 'is-settled' : ''} ${isPageFading ? 'is-page-fading' : ''}`}
               aria-live="polite"
             >
+              {/* 整頁一次擺好(index 落在 [phrasePageStart..phrasePageEnd] 都在 DOM、占好
+                  最終版位),已讀到的句子才淡入(is-revealed);未讀的占位不顯示。→ 逐句
+                  就地淡入、鄰句不位移(no drop / no squeeze / no jump)。 */}
               {phrases.map((phrase, index) => {
-                if (index < phrasePageStart || index > activePhrase) return null;
+                if (index < phrasePageStart || index > phrasePageEnd) return null;
                 const secondaryPhrase = hasSecondaryPhrases
                   ? getSecondaryPhrasesForIndex(index, phrases.length, effectiveSecondaryPhrases)
                   : '';
-                // First line of a non-first page fades in place (no drop) so a
-                // page flip settles calmly at the top.
-                const isPageHead = index === phrasePageStart && phrasePageStart > 0;
+                const revealed = isSettled || index <= activePhrase;
                 return (
                 <span
                   key={`${phrase}-${index}`}
                   ref={node => {
                     phraseNodeRefs.current[index] = node;
                   }}
-                  className={`${index === activePhrase ? 'is-active' : ''} ${index < activePhrase || isSettled ? 'has-landed' : ''} ${isPageHead ? 'is-page-head' : ''}`}
-                  style={{
-                    '--delay': `${Math.min(index * 0.42, 6.2)}s`,
-                    '--drift': `${((index % 5) - 2) * 9}px`
-                  }}
+                  className={`${index === activePhrase ? 'is-active' : ''} ${revealed ? 'is-revealed' : ''}`}
                 >
                   <b>{phrase}</b>
                   {secondaryPhrase && <small>{secondaryPhrase}</small>}
                 </span>
+                );
+              })}
+            </div>
+            {/* 隱藏量測鏡像:寬度對齊真實容器,含全部句子,用來預先算好分頁(pagesRef)。
+                離屏不可見,使用者不會看到任何 reflow。 */}
+            <div
+              ref={phraseMirrorRef}
+              aria-hidden="true"
+              className={`daily-verse-rain-phrases continuous-rain-phrases ${hasSecondaryPhrases ? 'has-secondary' : ''}`}
+              style={{
+                position: 'absolute',
+                left: '-99999px',
+                top: 0,
+                visibility: 'hidden',
+                pointerEvents: 'none',
+                width: phraseContainerWidth ? `${phraseContainerWidth}px` : undefined,
+                height: 'auto',
+                maxHeight: 'none',
+                minHeight: 0,
+                overflow: 'visible',
+              }}
+            >
+              {phrases.map((phrase, index) => {
+                const secondaryPhrase = hasSecondaryPhrases
+                  ? getSecondaryPhrasesForIndex(index, phrases.length, effectiveSecondaryPhrases)
+                  : '';
+                return (
+                  <span key={`m-${phrase}-${index}`}>
+                    <b>{phrase}</b>
+                    {secondaryPhrase && <small>{secondaryPhrase}</small>}
+                  </span>
                 );
               })}
             </div>
@@ -3968,6 +3973,125 @@ function playTada() {
     osc.start(startTime + i * 0.15);
     osc.stop(startTime + i * 0.15 + 0.6);
   });
+}
+
+// 地圖即時脈動的交響音效:每種動作一種樂器,全取自五聲音階(pentatonic),
+// 所以多人同時活動、聲音疊在一起也永遠和諧、悅耳。複用共享 audioCtx。
+const PENTA_MID = [523.25, 587.33, 659.25, 783.99, 880.00];     // C5 D5 E5 G5 A5
+const PENTA_HI  = [880.00, 1046.50, 1174.66, 1318.51, 1567.98]; // A5 C6 D6 E6 G6
+let __lastPulseToneTs = 0;
+function playPulseTone(action) {
+  initAudio();
+  if (!audioCtx || audioCtx.state === 'suspended') return; // 未解鎖前靜默
+  const wall = Date.now();
+  if (wall - __lastPulseToneTs < 80 && action !== 'done' && action !== 'fruit') return; // 節流(done/fruit 高潮不受限)
+  __lastPulseToneTs = wall;
+  const now = audioCtx.currentTime;
+  const voice = (freq, t0, dur, type, peak) => {
+    const osc = audioCtx.createOscillator();
+    const g = audioCtx.createGain();
+    osc.type = type;
+    osc.frequency.value = freq;
+    g.gain.setValueAtTime(0, t0);
+    g.gain.linearRampToValueAtTime(peak, t0 + 0.008);
+    g.gain.exponentialRampToValueAtTime(0.0008, t0 + dur);
+    osc.connect(g);
+    g.connect(audioCtx.destination);
+    osc.start(t0);
+    osc.stop(t0 + dur + 0.05);
+  };
+  const pick = (a) => a[(Math.random() * a.length) | 0];
+  if (action === 'listen') {          // 聆聽 — 柔和高音鈴(celesta)
+    const f = pick(PENTA_HI);
+    voice(f, now, 0.9, 'sine', 0.10);
+    voice(f * 2, now, 0.5, 'sine', 0.03);   // shimmer 高八度
+  } else if (action === 'play') {     // 開始挑戰 — 溫暖木琴(marimba)
+    const f = pick(PENTA_MID);
+    voice(f, now, 0.55, 'triangle', 0.14);
+    voice(f / 2, now, 0.4, 'sine', 0.04);   // 低八度琴身
+  } else if (action === 'fruit') {    // 創新高 / 得新果子 — 喜慶的鼓聲(taiko)
+    playPulseDrum(now);
+  } else {                            // 完成 — 上行豎琴琶音(高潮)
+    const i = (Math.random() * 3) | 0;
+    const seq = [PENTA_MID[i], PENTA_MID[i + 1], PENTA_MID[i + 2] || PENTA_HI[1]];
+    seq.forEach((fr, k) => {
+      voice(fr, now + k * 0.075, 0.6, 'triangle', 0.12);
+      voice(fr * 2, now + k * 0.075, 0.35, 'sine', 0.03);
+    });
+  }
+}
+
+// 一記結實的太鼓:低頻下沉的鼓身 + 短促打擊噪音,配合鼓面漣漪,
+// 標記「有人在某節經文創新高、結出新果子」。
+function playPulseDrum(now) {
+  if (!audioCtx) return;
+  const t0 = now;
+  // 鼓身:pitch 由 180Hz 快速下沉到 55Hz
+  const osc = audioCtx.createOscillator();
+  const g = audioCtx.createGain();
+  osc.type = 'sine';
+  osc.frequency.setValueAtTime(180, t0);
+  osc.frequency.exponentialRampToValueAtTime(55, t0 + 0.18);
+  g.gain.setValueAtTime(0.0001, t0);
+  g.gain.exponentialRampToValueAtTime(0.34, t0 + 0.01);
+  g.gain.exponentialRampToValueAtTime(0.0008, t0 + 0.38);
+  osc.connect(g);
+  g.connect(audioCtx.destination);
+  osc.start(t0);
+  osc.stop(t0 + 0.45);
+  // 打擊瞬態:短暫的低通噪音,給鼓「啪」的一下
+  try {
+    const len = Math.floor(audioCtx.sampleRate * 0.05);
+    const buf = audioCtx.createBuffer(1, len, audioCtx.sampleRate);
+    const data = buf.getChannelData(0);
+    for (let i = 0; i < len; i++) data[i] = (Math.random() * 2 - 1) * (1 - i / len);
+    const noise = audioCtx.createBufferSource();
+    noise.buffer = buf;
+    const nf = audioCtx.createBiquadFilter();
+    nf.type = 'lowpass';
+    nf.frequency.value = 1400;
+    const ng = audioCtx.createGain();
+    ng.gain.value = 0.14;
+    noise.connect(nf);
+    nf.connect(ng);
+    ng.connect(audioCtx.destination);
+    noise.start(t0);
+    noise.stop(t0 + 0.05);
+  } catch {}
+}
+
+// 地圖:有新朋友加入時播放歡迎小號。走共享 audioCtx(解碼成 AudioBuffer 快取一次),
+// 這樣在 iOS「🔊 開啟聲音」手勢解鎖後,之後(非手勢)也能播放。
+let __welcomeBuffer = null;
+let __welcomeLoading = null;
+let __lastWelcomeTs = 0;
+function playWelcomeFanfare() {
+  initAudio();
+  if (!audioCtx || audioCtx.state === 'suspended') return; // 未解鎖前不播
+  const now = Date.now();
+  if (now - __lastWelcomeTs < 15000) return; // 節流:15 秒內最多一次,避免洗版
+  const playBuf = () => {
+    if (!__welcomeBuffer || !audioCtx) return;
+    try {
+      __lastWelcomeTs = Date.now();
+      const src = audioCtx.createBufferSource();
+      src.buffer = __welcomeBuffer;
+      const g = audioCtx.createGain();
+      g.gain.value = 0.55;
+      src.connect(g);
+      g.connect(audioCtx.destination);
+      src.start();
+    } catch {}
+  };
+  if (__welcomeBuffer) { playBuf(); return; }
+  if (!__welcomeLoading) {
+    __welcomeLoading = fetch('/welcome-fanfare.mp3')
+      .then(r => r.arrayBuffer())
+      .then(ab => new Promise((res, rej) => audioCtx.decodeAudioData(ab, res, rej)))
+      .then(buf => { __welcomeBuffer = buf; return buf; })
+      .catch(() => { __welcomeLoading = null; return null; });
+  }
+  __welcomeLoading.then(buf => { if (buf) playBuf(); });
 }
 
 function playFireworksSound() {
@@ -5834,6 +5958,15 @@ export default function App() {
   const gardenClickTimer = useRef(null);
   const versionBeforeChallenge = useRef(null); // saved version to restore after cross-lang challenge
   const updateGarden = React.useCallback((ref, type, setId, amount = 1) => {
+    // 即時脈動:廣播「本玩家剛做了動作」給所有地圖觀看者(在 updater 之外,
+    // 避免 side effect 進 setState)。login 不發,否則每次開 app 都會洗版。
+    const pulseKind = type === 'listen' ? 'listen'
+      : type === 'played' ? 'play'
+      : type === 'champ' ? 'fruit'        // 創新高 / 得新果子 → 鼓聲
+      : type === 'completed' ? 'done' : null;
+    if (pulseKind && playerNameRef.current) {
+      try { socketRef.current?.send(JSON.stringify({ type: 'PULSE', name: playerNameRef.current, action: pulseKind })); } catch {}
+    }
     setGardenData(prev => {
       const updated = { ...prev };
       let isNewVerseChallenge = false;
@@ -6825,6 +6958,8 @@ export default function App() {
   const [leaderboardModalTab, setLeaderboardModalTab] = useState('alltime'); // 'daily', 'monthly', 'alltime'
   const [isFetchingLeaderboard, setIsFetchingLeaderboard] = useState(false);
   const [mainTab, setMainTab] = useState('lobby');
+  const [mapView, setMapView] = useState('2d');   // 地圖 2D/3D 切換
+  const [mapFocus, setMapFocus] = useState(null);  // 3D→2D 切換時帶入的焦點座標
   const [bilingualRainActive, setBilingualRainActive] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -7601,6 +7736,11 @@ export default function App() {
       try {
         const msg = JSON.parse(e.data);
         if (msg.type === 'PONG') return;
+        if (msg.type === 'PULSE') {
+          // 轉成 window 事件,讓地圖(WorldMap2D)自行畫漣漪,不必穿 props。
+          try { window.dispatchEvent(new CustomEvent('verserain:pulse', { detail: { name: msg.name, action: msg.action } })); } catch {}
+          return;
+        }
         if (msg.type === 'STATE_UPDATE') {
           setMultiplayerState(msg.state);
           // Room validation for guest join:
@@ -16638,20 +16778,23 @@ const deDict = {
       ...blocks.filter(block => block.isFake && !block.hidden).map(block => block.text)
     ];
     const longest = Math.max(1, ...textCandidates.map(measureText));
+    // 讓最長句「對折」成兩行:以半長作為字級依據,字可放更大;超過半長的句子
+    // 會自然換成兩行(ceil(longest/2) 保證最多兩行)。短句(≤9)維持單行。
+    const perLine = longest > 9 ? Math.ceil(longest / 2) : longest;
 
     if (squareGridSize === 2) {
-      if (longest <= 4) return 'clamp(2.6rem, min(7vw, 10vh), 6.25rem)';
-      if (longest <= 7) return 'clamp(2.1rem, min(5.5vw, 8vh), 4.9rem)';
-      if (longest <= 10) return 'clamp(1.75rem, min(4.5vw, 6.6vh), 3.9rem)';
-      if (longest <= 14) return 'clamp(1.45rem, min(3.6vw, 5.4vh), 3.1rem)';
-      return 'clamp(1.15rem, min(2.9vw, 4.4vh), 2.4rem)';
+      if (perLine <= 4) return 'clamp(3.4rem, min(9vw, 13vh), 8rem)';
+      if (perLine <= 7) return 'clamp(2.8rem, min(7vw, 10vh), 6.2rem)';
+      if (perLine <= 10) return 'clamp(2.3rem, min(5.6vw, 8vh), 5rem)';
+      if (perLine <= 14) return 'clamp(1.95rem, min(4.6vw, 6.6vh), 4rem)';
+      return 'clamp(1.6rem, min(3.7vw, 5.4vh), 3.2rem)';
     }
 
-    if (longest <= 4) return 'clamp(1.75rem, min(4.2vw, 6.2vh), 4rem)';
-    if (longest <= 7) return 'clamp(1.45rem, min(3.3vw, 5vh), 3rem)';
-    if (longest <= 10) return 'clamp(1.2rem, min(2.65vw, 4vh), 2.35rem)';
-    if (longest <= 14) return 'clamp(1.05rem, min(2.15vw, 3.25vh), 1.95rem)';
-    return 'clamp(0.9rem, min(1.75vw, 2.6vh), 1.55rem)';
+    if (perLine <= 4) return 'clamp(2.4rem, min(6vw, 8vh), 5.5rem)';
+    if (perLine <= 7) return 'clamp(2.0rem, min(4.6vw, 6.6vh), 4.2rem)';
+    if (perLine <= 10) return 'clamp(1.7rem, min(3.7vw, 5.4vh), 3.3rem)';
+    if (perLine <= 14) return 'clamp(1.45rem, min(3.0vw, 4.5vh), 2.7rem)';
+    return 'clamp(1.25rem, min(2.5vw, 3.6vh), 2.2rem)';
   }, [activePhrases, blocks, squareGridSize]);
 
   // Sync handleBlockClick to ref so Speech can fire it
@@ -17838,8 +17981,15 @@ const deDict = {
                                       setEditorVoiceStatus(prev => { const n = { ...prev }; delete n[ref]; return n; });
                                     } catch (e) {
                                       setEditorVoiceStatus(prev => ({ ...prev, [ref]: 'error' }));
-                                      setToast(t('錄音處理失敗,請重錄這節', 'Recording failed — please re-record this verse'));
-                                      setTimeout(() => setToast(null), 4000);
+                                      // A permission conflict (this verse was recorded under a
+                                      // different account) is NOT a transient failure — re-recording
+                                      // will keep failing. Say the real reason instead of "re-record".
+                                      const locked = /original recorder/i.test(String(e?.message || ''));
+                                      setToast(locked
+                                        ? t('這節之前是用別的帳號錄的,無法覆蓋。請先刪掉這一行再重加,或用原本的帳號登入。',
+                                             'This verse was recorded under a different account and can’t be overwritten. Remove and re-add this row, or sign in with the original account.')
+                                        : t('錄音處理失敗,請重錄這節', 'Recording failed — please re-record this verse'));
+                                      setTimeout(() => setToast(null), locked ? 7000 : 4000);
                                     }
                                   })();
                                 }}
@@ -19306,12 +19456,21 @@ const deDict = {
                                       <button
                                         onClick={(e) => {
                                           e.stopPropagation();
-                                          initAudio();
-                                          setCampaignQueue(null);
-                                          setCampaignResults([]);
-                                          setActiveVerse(v);
-                                          setTimeout(() => startGame(false, v), 50);
+                                          // Open the same challenge chooser (mode + difficulty)
+                                          // as the set-level 挑戰, but scoped to this one verse.
+                                          openChallengeSetup({
+                                            subtitle: formatVerseReferenceForDisplay(v.reference, version),
+                                            run: () => {
+                                              setCampaignQueue(null);
+                                              setCampaignResults([]);
+                                              setActiveVerse(v);
+                                              setSelectedVerseRefs([v.reference]);
+                                              if (currentSet?.id) setSelectedSetId(currentSet.id);
+                                              setTimeout(() => startGame(false, v), 50);
+                                            },
+                                          });
                                         }}
+                                        title={t("挑戰這節經文", "Challenge this verse")}
                                         style={{ backgroundColor: '#10b981', color: 'white', border: 'none', borderRadius: '6px', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'transform 0.1s' }}
                                         onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.1)'}
                                         onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
@@ -20329,7 +20488,21 @@ const deDict = {
                                     const paginatedVerses = matchingVerses.slice((searchVersesPage - 1) * 10, searchVersesPage * 10);
                                     return paginatedVerses.map((v, i) => (
                                       <tr key={i} style={{ borderBottom: '1px solid #e2e8f0', transition: 'background-color 0.1s' }} onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#f8fafc'} onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}>
-                                        <td style={{ padding: '0.8rem 1rem', color: '#64748b', fontSize: '0.85rem' }}>{v.setName}</td>
+                                        <td style={{ padding: '0.8rem 1rem', fontSize: '0.85rem' }}>
+                                          {v.setId ? (
+                                            <button
+                                              onClick={(e) => { e.stopPropagation(); setSelectedSetId(v.setId); setMainTab('versesets'); }}
+                                              title={t("前往這個經文組", "Go to this verse set")}
+                                              style={{ background: 'transparent', border: 'none', color: '#0ea5e9', fontWeight: 'bold', fontSize: '0.85rem', cursor: 'pointer', padding: 0, textAlign: 'left' }}
+                                              onMouseOver={(e) => e.target.style.textDecoration = 'underline'}
+                                              onMouseOut={(e) => e.target.style.textDecoration = 'none'}
+                                            >
+                                              {v.setName}
+                                            </button>
+                                          ) : (
+                                            <span style={{ color: '#64748b' }}>{v.setName}</span>
+                                          )}
+                                        </td>
                                         <td style={{ padding: '0.8rem 1rem', fontWeight: 'bold', color: '#0369a1', fontSize: '0.95rem' }}>
                                           <button onClick={(e) => { e.stopPropagation(); setVerseViewModal(v); }} style={{ background: 'transparent', border: 'none', color: '#0ea5e9', fontWeight: 'bold', fontSize: '0.95rem', cursor: 'pointer', padding: 0, textAlign: 'left' }} onMouseOver={(e) => e.target.style.textDecoration = 'underline'} onMouseOut={(e) => e.target.style.textDecoration = 'none'}>
                                             {formatVerseReferenceForDisplay(v.reference, version)}
@@ -20426,7 +20599,17 @@ const deDict = {
                         <p style={{ margin: '2px 0 0', color: '#64748b', fontSize: '0.85rem' }}>{t('點擊標記查看玩家成績，雙擊遊戲房間加入戰局！', 'Click a marker to see scores, double click a room to join!')}</p>
                       </div>
                     </div>
-                    <WorldMap t={t} playerName={playerName} userEmail={userEmail} onViewGarden={(name) => {
+                    <WorldMap t={t} playerName={playerName} userEmail={userEmail}
+                      currentMode={mapView}
+                      focusLocation={mapFocus}
+                      onToggleMode={(coord) => {
+                        setMapView(v => (v === '2d' ? '3d' : '2d'));
+                        if (coord && typeof coord.lat === 'number') setMapFocus(coord);
+                      }}
+                      playTone={playPulseTone}
+                      playWelcome={playWelcomeFanfare}
+                      onEnableAudio={initAudio}
+                      onViewGarden={(name) => {
                       handleViewPlayerGarden(name);
                     }} onJoinRoom={(roomId) => {
                       setMainTab('multiplayer');
