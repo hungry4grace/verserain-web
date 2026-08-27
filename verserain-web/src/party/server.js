@@ -1343,8 +1343,17 @@ export default class Server {
             const refKey = encodeURIComponent(String(reference).trim().slice(0, 60));
             const key = `set-verse-voice:${String(setId)}:${refKey}`;
             const existing = await this.room.storage.get(key);
+            // The author-voice slot is single-occupancy, locked to the first
+            // recorder's email. But the SET OWNER must never be locked out of
+            // their own set — mirror the delete handler's authorization so the
+            // owner (or an admin) can always replace a foreign/stale recording,
+            // e.g. one made under a different account of theirs.
             if (existing?.byEmail && existing.byEmail !== emailLc) {
-               return new Response(JSON.stringify({ error: 'Only the original recorder can replace this recording' }), { status: 403, headers: corsHeaders });
+               const setDoc = await this.room.storage.get(`verseset:${String(setId)}`);
+               const isOwner = setDoc?.ownerEmail && String(setDoc.ownerEmail).toLowerCase() === emailLc;
+               if (!isOwner && !isTrustedAdminEmail(email)) {
+                  return new Response(JSON.stringify({ error: 'Only the original recorder or the set owner can replace this recording' }), { status: 403, headers: corsHeaders });
+               }
             }
             const meta = {
                reference: String(reference).trim().slice(0, 60),
@@ -2169,21 +2178,58 @@ export default class Server {
 
       if (url.pathname.endsWith('/all-gardens') && request.method === 'GET') {
          try {
-            const list = await this.room.storage.list();
+            // 快取:整包統計是重負載(大量玩家時要掃全部 garden)。60 秒內共用同一份,
+            // 避免每個地圖 client 每次輪詢都重算(統計本來就變動慢)。
+            if (this._allGardensCache && (Date.now() - this._allGardensCache.ts) < 60000) {
+               return new Response(this._allGardensCache.body, { status: 200, headers: corsHeaders });
+            }
+            // 分頁只讀 garden: 前綴,每頁抽出精簡統計後就讓大物件釋放,
+            // 避免一次 list() 整個 DO 把 isolate 記憶體撐爆。
             const fruitsMap = {};
-            for (const [key, val] of list.entries()) {
-               if (key.startsWith('garden:')) {
-                  const playerName = key.split(':')[1];
-                  let total = 0;
+            const statsMap = {};
+            const now = Date.now();
+            const DAY = 86400000;
+            const PAGE = 25;
+            let startAfter = undefined;
+            while (true) {
+               const opts = { prefix: 'garden:', limit: PAGE };
+               if (startAfter) opts.startAfter = startAfter;
+               const page = await this.room.storage.list(opts);
+               if (!page || page.size === 0) break;
+               let lastKey;
+               for (const [key, val] of page.entries()) {
+                  lastKey = key;
+                  const playerName = key.slice('garden:'.length);
+                  let total = 0, plants = 0, maxGridIndex = -1, activity7d = 0;
                   if (typeof val === 'object' && val !== null) {
-                     for (const verseData of Object.values(val)) {
-                         total += verseData.fruits || 0;
+                     for (const [vk, vd] of Object.entries(val)) {
+                         if (vk === '_activity') {
+                            // _activity: { 'YYYY-MM-DD': points } — 加總最近 7 天
+                            if (vd && typeof vd === 'object') {
+                               for (const [dateStr, pts] of Object.entries(vd)) {
+                                  const ts = Date.parse(dateStr + 'T00:00:00');
+                                  if (!isNaN(ts) && (now - ts) < 7 * DAY) activity7d += (pts || 0);
+                               }
+                            }
+                            continue;
+                         }
+                         if (!vd || typeof vd !== 'object') continue;
+                         plants++;
+                         total += vd.fruits || 0;
+                         if (typeof vd.gridIndex === 'number' && vd.gridIndex > maxGridIndex) maxGridIndex = vd.gridIndex;
                      }
                   }
                   fruitsMap[playerName] = total;
+                  statsMap[playerName] = {
+                     plants,
+                     squares: Math.max(1, Math.ceil((maxGridIndex + 1) / 100)),
+                     activity7d,
+                  };
                }
+               if (page.size < PAGE) break;
+               startAfter = lastKey;
             }
-            return new Response(JSON.stringify({ success: true, fruitsMap }), { status: 200, headers: corsHeaders });
+            return new Response(JSON.stringify({ success: true, fruitsMap, statsMap }), { status: 200, headers: corsHeaders });
          } catch(e) {
             return new Response(JSON.stringify({ error: 'Failed to fetch all gardens' }), { status: 500, headers: corsHeaders });
          }
@@ -2364,6 +2410,17 @@ export default class Server {
 
       if (data.type === 'PING') {
         sender.send(JSON.stringify({ type: 'PONG', ts: data.ts }));
+        return;
+      }
+
+      // 即時脈動:某玩家剛聆聽/挑戰/完成一節經文 → 廣播給同房所有人,
+      // 讓地圖觀看者從那個點盪出光波。輕量防洪:每連線最多每 400ms 一次。
+      if (data.type === 'PULSE') {
+        const nowTs = Date.now();
+        if (!this._lastPulse) this._lastPulse = {};
+        if (nowTs - (this._lastPulse[sender.id] || 0) < 400) return;
+        this._lastPulse[sender.id] = nowTs;
+        this.room.broadcast(JSON.stringify({ type: 'PULSE', name: data.name, action: data.action, ts: nowTs }));
         return;
       }
 

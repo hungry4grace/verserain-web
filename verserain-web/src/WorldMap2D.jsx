@@ -9,6 +9,46 @@ function getRoomColor(roomId) {
   return ROOM_COLORS[hash];
 }
 
+// 「地上的光點」：點的大小 = 園子塊地數，亮度/顏色 = 近 7 天活躍度。
+// 大小：中等 + 封頂(~28px)，讓大園子明顯但世界視角不擠爆。
+function sizeForSquares(sq) {
+  return Math.min(28, 6 + (sq || 1) * 5); // 1→11, 2→16, 3→21, 4→26, 5+→28
+}
+// Ember → Starlight 暖色帶：沉睡=暗琥珀微光 … 火熱=白熱＋青白光暈。
+// 光暈強度隨活躍度加大 → 活躍玩家聚集區自然更亮。
+// 門檻依真實活躍分布校準(活躍玩家 p50≈2700、p90≈20000):
+// 分數來源約 login=100/日、聆聽=+100、新節=+1000、完成=+500。
+function emberRamp(a) {
+  const v = a || 0;
+  if (v <= 0)      return { color: '#7c5230', glow: '0 0 6px rgba(150,100,60,0.45)',  opacity: 0.7,  tierKey: 'dormant' };
+  if (v < 1000)    return { color: '#f59e0b', glow: '0 0 10px rgba(245,158,11,0.7)',  opacity: 0.92, tierKey: 'ember' };
+  if (v < 5000)    return { color: '#fbbf24', glow: '0 0 13px rgba(251,191,36,0.85)', opacity: 0.95, tierKey: 'warm' };
+  if (v < 20000)   return { color: '#fef3c7', glow: '0 0 18px rgba(253,224,71,0.95)', opacity: 0.97, tierKey: 'bright' };
+  return { color: '#ffffff', glow: '0 0 10px #ffffff, 0 0 24px rgba(191,219,254,1)', opacity: 1, tierKey: 'starlight' };
+}
+
+// 即時脈動漣漪:每種動作是一種「樂器」的音波。加大加厚、加發光衝擊波(blast)
+// 與中心白閃(flash),讓深色地圖上的波更明顯有戲劇性(與 3D 一致,尺寸略小)。
+const PULSE_STYLES = {
+  listen: { c: '56,189,248',  max: 110, rings: 2, dur: 1900 }, // 聆聽 — 青色衝擊波(輕)
+  play:   { c: '245,158,11',  max: 150, rings: 2, dur: 2000 }, // 開始挑戰 — 琥珀衝擊波(中)
+  done:   { c: '253,224,71',  max: 210, rings: 3, dur: 2300 }, // 完成 — 金色大衝擊波(高潮)
+  fruit:  { c: '252,211,77',  max: 260, rings: 4, dur: 2500 }, // 創新高得新果子 — 最盛大的金色衝擊波
+};
+// 防洪/防塞:同時最多 40 個漣漪;超過時只保留 done(高潮),丟棄 listen/play。
+let activePulseCount = 0;
+const lastPulseAt = {}; // name+action → ts,600ms 內去重
+function buildPulseHtml(action) {
+  const cfg = PULSE_STYLES[action] || PULSE_STYLES.listen;
+  const { c, dur, max } = cfg;
+  let html = `<span class="vr-pulse-blast" style="--vr-rgb:${c}; --vr-dur:${dur}ms; width:${max}px; height:${max}px;"></span>`;
+  for (let i = 0; i < cfg.rings; i++) {
+    html += `<span class="vr-pulse-ring" style="--vr-rgb:${c}; --vr-max:${max}px; --vr-dur:${dur}ms; animation-delay:${i * 180}ms;"></span>`;
+  }
+  html += `<span class="vr-pulse-flash" style="--vr-rgb:${c};"></span>`;
+  return { html, life: dur + (cfg.rings - 1) * 180 + 200 };
+}
+
 const LAND_GEOJSON_URL = 'https://cdn.jsdelivr.net/gh/johan/world.geo.json@master/countries.geo.json';
 const LABEL_TILE_URL = 'https://{s}.basemaps.cartocdn.com/rastertiles/dark_only_labels/{z}/{x}/{y}{r}.png';
 
@@ -44,10 +84,42 @@ function loadLeafletAndCluster() {
 
 const TEAMS_HOST = 'https://verserain-party.hungry4grace.partykit.dev/parties/main/global-auth-db';
 
-export default function WorldMap2D({ t, playerName, userEmail, onJoinRoom, onViewGarden, onToggleMode, currentMode, focusLocation }) {
+export default function WorldMap2D({ t, playerName, userEmail, onJoinRoom, onViewGarden, onToggleMode, currentMode, focusLocation, playTone, playWelcome, onEnableAudio }) {
   const mapRef = useRef(null);
   const leafletMapRef = useRef(null);
+  const markersByNameRef = useRef({}); // name → Leaflet marker,供即時脈動查座標
+  // 地圖交響音效:預設關,🔊 開啟(首次點按同時解鎖 iOS 音訊)。
+  const [soundOn, setSoundOn] = useState(() => {
+    try { return localStorage.getItem('verseRain_mapSound') === '1'; } catch { return false; }
+  });
+  const soundOnRef = useRef(soundOn);
+  const playToneRef = useRef(playTone);
+  const playWelcomeRef = useRef(playWelcome);
+  const prevPlayerNamesRef = useRef(null); // 上一輪玩家名字集合(null=尚未初始化)
+  useEffect(() => { soundOnRef.current = soundOn; }, [soundOn]);
+  useEffect(() => { playToneRef.current = playTone; }, [playTone]);
+  useEffect(() => { playWelcomeRef.current = playWelcome; }, [playWelcome]);
   const [players, setPlayers] = useState([]);
+  // 有新朋友加入地圖(名字上一輪沒出現過)→ 播放歡迎小號(需已開啟 🔊)。
+  // 首次載入不觸發(否則整批都算「新」);之後每次輪詢比對差集。
+  useEffect(() => {
+    const names = new Set(players.map(p => p && p.name).filter(Boolean));
+    const prev = prevPlayerNamesRef.current;
+    // 等到第一次「真的有玩家」才建立基準(players 會先是空陣列,不能把空清單當基準,
+    // 否則第一批載入的人全被當成「新加入」)。在此之前都不觸發。
+    if (prev === null) {
+      if (names.size > 0) prevPlayerNamesRef.current = names;
+      return;
+    }
+    prevPlayerNamesRef.current = names;
+    let hasNew = false;
+    for (const n of names) { if (!prev.has(n)) { hasNew = true; break; } }
+    if (hasNew && soundOnRef.current) {
+      try { playWelcomeRef.current?.(); } catch {}
+    }
+  }, [players]);
+  // 每位玩家的園子統計(來自 /all-gardens)：{ name: { plants, squares, activity7d } }
+  const [statsByName, setStatsByName] = useState({});
   const [loading, setLoading] = useState(true);
   const [selectedPlayer, setSelectedPlayer] = useState(null);
   const [error, setError] = useState(null);
@@ -99,16 +171,29 @@ export default function WorldMap2D({ t, playerName, userEmail, onJoinRoom, onVie
     return () => { cancelled = true; };
   }, [userEmail]);
 
-  // Fetch player map data + auto-refresh every 30s
+  // Fetch player map data + auto-refresh every 30s。園子統計(塊地/活躍)變動慢且
+  // 在大量玩家時是重負載(整包 statsMap),所以只在首次 + 每 ~2 分鐘拉一次,不跟每次輪詢。
   useEffect(() => {
-    const load = () => {
+    let n = 0;
+    const loadPositions = () => {
       fetch('/api/get-player-map')
         .then(r => r.json())
         .then(data => { if (Array.isArray(data)) setPlayers(data); else setPlayers([]); setLoading(false); })
         .catch(() => { setError('Failed to load map data'); setLoading(false); });
     };
-    load();
-    const interval = setInterval(load, 30000);
+    const loadStats = () => {
+      fetch(`${TEAMS_HOST}/all-gardens`)
+        .then(r => r.ok ? r.json() : { statsMap: {} })
+        .then(d => setStatsByName(d.statsMap || {}))
+        .catch(() => {});
+    };
+    loadPositions();
+    loadStats();
+    const interval = setInterval(() => {
+      loadPositions();
+      n += 1;
+      if (n % 4 === 0) loadStats(); // 每 4 次輪詢(~2 分鐘)才刷新統計
+    }, 30000);
     return () => clearInterval(interval);
   }, []);
 
@@ -176,13 +261,34 @@ export default function WorldMap2D({ t, playerName, userEmail, onJoinRoom, onVie
             maxZoom: 20
           }).addTo(map);
 
-          markersGroupRef.current = L.layerGroup().addTo(map);
+          // 用 MarkerCluster 群組:只渲染畫面內/聚合後的標記,可撐到 10K+ 玩家不卡。
+          // 聚合泡泡做成「發光金色光團」,呼應「地上的光點」主題;數字越大泡泡越大越亮。
+          markersGroupRef.current = (L.markerClusterGroup
+            ? L.markerClusterGroup({
+                chunkedLoading: true,
+                showCoverageOnHover: false,
+                spiderfyOnMaxZoom: true,
+                removeOutsideVisibleBounds: true,
+                maxClusterRadius: 46,
+                iconCreateFunction: (cluster) => {
+                  const n = cluster.getChildCount();
+                  const size = Math.round(Math.min(56, 26 + Math.log2(n + 1) * 5.5));
+                  const glow = Math.min(26, 12 + Math.log2(n + 1) * 2.5);
+                  return L.divIcon({
+                    className: '',
+                    html: `<div style="width:${size}px;height:${size}px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;color:#231400;background:radial-gradient(circle at 35% 30%, #fff3c4, #fbbf24 55%, #f59e0b);border:1px solid rgba(255,255,255,0.9);box-shadow:0 0 0 2px rgba(2,8,23,0.55), 0 0 ${glow}px rgba(251,191,36,0.95);font-size:${n > 999 ? '0.72rem' : '0.86rem'};">${n >= 1000 ? (n / 1000).toFixed(n >= 10000 ? 0 : 1) + 'k' : n}</div>`,
+                    iconSize: [size, size],
+                  });
+                },
+              })
+            : L.layerGroup()).addTo(map);
 
           leafletMapRef.current = map;
         }
 
         // Clear existing markers for this update
         markersGroupRef.current.clearLayers();
+        markersByNameRef.current = {}; // 重建 name→marker 對照(供即時脈動)
 
         const playerMarkers = [];
 
@@ -194,28 +300,17 @@ export default function WorldMap2D({ t, playerName, userEmail, onJoinRoom, onVie
 
           const isCurrentUser = p.name === playerName;
           const roomColor = getRoomColor(p.roomId);
-          
-          let baseColor = '#fb923c'; // Warm amber for historical players
-          let glowColor = 'rgba(251,146,60,0.95)';
-          
-          if (p.updatedAt) {
-            const upDate = new Date(p.updatedAt);
-            const now = new Date();
-            
-            if (upDate.toDateString() === now.toDateString() || (now - upDate) < 24 * 60 * 60 * 1000) {
-              baseColor = '#ffffff'; // White for today
-              glowColor = 'rgba(186,230,253,0.98)';
-            } else if (upDate.getMonth() === now.getMonth() && upDate.getFullYear() === now.getFullYear()) {
-              baseColor = '#fbbf24'; // Gold for this month
-              glowColor = 'rgba(251,191,36,0.95)';
-            }
-          }
 
-          let bgColor = roomColor || baseColor;
+          // 「地上的光點」：大小 = 塊地數,亮度/顏色 = 近 7 天活躍度。
+          const stats = statsByName[p.name] || { plants: 0, squares: 1, activity7d: 0 };
+          const ramp = emberRamp(stats.activity7d);
+
+          // 現場多人遊戲的玩家保留房間色跳出來,其餘走活躍度色帶。
+          let bgColor = roomColor || ramp.color;
           let glowStyle = roomColor
             ? `border: 1px solid rgba(255,255,255,0.9); box-shadow: 0 0 0 3px ${roomColor}66, 0 0 18px ${roomColor}dd;`
-            : `border: 1px solid rgba(255,255,255,0.95); box-shadow: 0 0 0 3px rgba(2,8,23,0.85), 0 0 18px ${glowColor};`;
-          let opacity = 0.92;
+            : `border: 1px solid rgba(255,255,255,0.9); box-shadow: 0 0 0 2px rgba(2,8,23,0.85), ${ramp.glow};`;
+          let opacity = roomColor ? 0.95 : ramp.opacity;
           let filter = 'none';
 
           if (selectedRoom) {
@@ -245,21 +340,22 @@ export default function WorldMap2D({ t, playerName, userEmail, onJoinRoom, onVie
             }
           }
 
-          let size = 10;
-          
+          // 大小 = 塊地數(封頂);高亮情境仍確保最小可視尺寸。
+          let size = sizeForSquares(stats.squares);
+
           if (isCurrentUser) {
             bgColor = '#fde047'; // Yellow
             glowStyle = 'border: 2px solid white; box-shadow: 0 0 0 4px rgba(8,47,63,0.95), 0 0 22px #fde047;';
             opacity = 1;
             filter = 'none';
-            size = 14; // slightly larger for visibility
+            size = Math.max(size, 14); // 保證自己看得見
           }
 
           // Bump team members up a notch so the highlight reads even
           // on a crowded global view.
           {
             const at = myTeams.find(tm => tm.id === selectedTeam);
-            if (at && at.memberNames.has(p.name) && !isCurrentUser) size = 13;
+            if (at && at.memberNames.has(p.name) && !isCurrentUser) size = Math.max(size, 13);
           }
 
           const icon = L.divIcon({
@@ -284,11 +380,22 @@ export default function WorldMap2D({ t, playerName, userEmail, onJoinRoom, onVie
 
           const lastOnline = p.updatedAt ? new Date(p.updatedAt).toLocaleString() : 'Unknown';
 
+          const activityLabels = {
+            dormant:   t('安靜', 'Quiet'),
+            ember:     t('微亮', 'A spark'),
+            warm:      t('活躍', 'Active'),
+            bright:    t('很活躍', 'Very active'),
+            starlight: t('火熱', 'On fire'),
+          };
+          const activityLabel = activityLabels[ramp.tierKey];
+
           const popup = L.popup({ maxWidth: 220, className: 'verse-map-popup' }).setContent(`
             <div style="font-family: system-ui, sans-serif; text-align:center; min-width: 120px;">
               <div style="font-weight:bold; font-size:1.1rem; color:#1e293b; margin-bottom:4px; display:flex; flex-direction:column; align-items:center; gap:5px;">
                 <button class="map-garden-btn" data-name="${p.name}" style="font-size: 0.95rem; background-color: #f1f5f9; color: #2563eb; padding: 0.3rem 0.8rem; border-radius: 16px; border: 1px solid #bfdbfe; cursor: pointer; font-weight: bold; margin-top:2px; display:flex; align-items:center; gap:4px;">🌳 ${t('{name} 的園子', "{name}'s garden").replace('{name}', p.name)}</button>
               </div>
+              <div style="font-size:0.85rem; color:#334155; margin-bottom:2px;">🟩 <b>${stats.squares}</b> ${t('塊地', stats.squares === 1 ? 'plot' : 'plots')} · ${stats.plants} ${t('棵植物', 'plants')}</div>
+              <div style="font-size:0.85rem; color:#334155; margin-bottom:4px;">🔥 ${t('近7天', 'Last 7d')}: <b>${activityLabel}</b></div>
               <div style="font-size:0.85rem; color:#64748b;">📍 ${p.city ? p.city + ', ' : ''}${p.country || 'Unknown'}</div>
               ${roomBadge}
               <div style="margin-top:8px; font-size:0.75rem; color:#94a3b8;">🕒 ${t('最後上線', 'Last Online')}: ${lastOnline}</div>
@@ -299,6 +406,7 @@ export default function WorldMap2D({ t, playerName, userEmail, onJoinRoom, onVie
 
           marker.addTo(markersGroupRef.current);
           playerMarkers.push({ p, marker });
+          markersByNameRef.current[p.name] = marker;
         });
 
         // Bind custom map interactions
@@ -371,7 +479,46 @@ export default function WorldMap2D({ t, playerName, userEmail, onJoinRoom, onVie
     return () => {
       // Don't remove the map instance on unmount/re-render to preserve view
     };
-  }, [loading, players, playerName, selectedRoom, selectedTeam, myTeams]);
+  }, [loading, players, statsByName, playerName, selectedRoom, selectedTeam, myTeams]);
+
+  // 即時脈動:訂閱 window 事件,從對應玩家的點盪出光波(imperative,不觸發 React
+  // 重繪/重建標記)。只掛一次,靠 ref 讀取當前 map 與 name→marker 對照。
+  useEffect(() => {
+    const onPulse = (e) => {
+      const map = leafletMapRef.current;
+      const L = window.L;
+      if (!map || !L) return;
+      const { name, action } = (e && e.detail) || {};
+      const marker = markersByNameRef.current[name];
+      if (!marker) return; // 沒座標/尚未載入 → 略過
+
+      // 同名 600ms 內去重
+      const key = name + ':' + action;
+      const now = Date.now();
+      if (now - (lastPulseAt[key] || 0) < 600) return;
+      lastPulseAt[key] = now;
+
+      // 塞車保護:太多同時漣漪時,只保留 done(高潮)
+      if (activePulseCount > 40 && action !== 'done' && action !== 'fruit') return;
+
+      const { html, life } = buildPulseHtml(action);
+      const icon = L.divIcon({ className: 'vr-pulse-icon', html, iconSize: [0, 0], iconAnchor: [0, 0] });
+      let ripple;
+      try {
+        ripple = L.marker(marker.getLatLng(), { icon, interactive: false, keyboard: false, zIndexOffset: -1000 }).addTo(map);
+      } catch { return; }
+      activePulseCount++;
+      setTimeout(() => {
+        try { map.removeLayer(ripple); } catch {}
+        activePulseCount = Math.max(0, activePulseCount - 1);
+      }, life);
+
+      // 交響音效(僅在使用者開啟聲音時)
+      if (soundOnRef.current) { try { playToneRef.current?.(action); } catch {} }
+    };
+    window.addEventListener('verserain:pulse', onPulse);
+    return () => window.removeEventListener('verserain:pulse', onPulse);
+  }, []);
 
   return (
     <div>
@@ -478,6 +625,27 @@ export default function WorldMap2D({ t, playerName, userEmail, onJoinRoom, onVie
 
         <div style={{ marginLeft: 'auto', display: 'flex', gap: '10px' }}>
           <button
+            title={soundOn ? t('關閉聲音', 'Mute') : t('開啟交響音效', 'Play the symphony')}
+            onClick={() => {
+              setSoundOn(v => {
+                const n = !v;
+                try { localStorage.setItem('verseRain_mapSound', n ? '1' : '0'); } catch {}
+                if (n) { onEnableAudio?.(); playTone?.('play'); } // 手勢內解鎖 + 試響一聲
+                return n;
+              });
+            }}
+            style={{ background: soundOn ? '#0ea5e9' : '#e2e8f0', color: soundOn ? '#fff' : '#475569', border: 'none', padding: '0.3rem 0.7rem', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.8rem' }}
+          >
+            {soundOn ? '🔊' : '🔈'} {t('聲音', 'Sound')}
+          </button>
+          <button
+            title={t('切換 2D / 3D 地球', 'Toggle 2D / 3D globe')}
+            onClick={() => onToggleMode?.()}
+            style={{ background: '#1e293b', color: '#fff', border: 'none', padding: '0.3rem 0.8rem', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.8rem' }}
+          >
+            🌐 {t('3D 地球', '3D Globe')}
+          </button>
+          <button
             onClick={() => {
               if (leafletMapRef.current) {
                 leafletMapRef.current.setView([20, 0], 2, { animate: true });
@@ -505,6 +673,25 @@ export default function WorldMap2D({ t, playerName, userEmail, onJoinRoom, onVie
             </div>
           )}
           <div className="verse-map-frame" ref={mapRef} style={{ height: '520px', width: '100%', background: '#051936' }} />
+          {/* 圖例:大小=塊地數 · 亮度=近7天活躍 */}
+          <div style={{ position: 'absolute', bottom: '14px', right: '14px', zIndex: 1000, background: 'rgba(4,16,31,0.82)', border: '1px solid #14324f', borderRadius: '10px', padding: '9px 11px', color: '#e2e8f0', fontSize: '0.7rem', lineHeight: 1.5, pointerEvents: 'none', backdropFilter: 'blur(2px)', maxWidth: '190px' }}>
+            <div style={{ fontWeight: 700, marginBottom: '5px', color: '#f8fafc' }}>{t('地上的光點', 'Lights on Earth')}</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 4 }}>
+              <span style={{ display: 'inline-flex', alignItems: 'flex-end', gap: 4 }}>
+                <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#fbbf24', boxShadow: '0 0 8px rgba(251,191,36,0.8)' }} />
+                <span style={{ width: 14, height: 14, borderRadius: '50%', background: '#fbbf24', boxShadow: '0 0 10px rgba(251,191,36,0.8)' }} />
+              </span>
+              <span>{t('大小 = 塊地數', 'size = plots')}</span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3 }}>
+                <span style={{ width: 11, height: 11, borderRadius: '50%', background: '#7c5230', boxShadow: '0 0 5px rgba(150,100,60,0.45)' }} />
+                <span style={{ width: 11, height: 11, borderRadius: '50%', background: '#fbbf24', boxShadow: '0 0 9px rgba(251,191,36,0.85)' }} />
+                <span style={{ width: 11, height: 11, borderRadius: '50%', background: '#ffffff', boxShadow: '0 0 6px #fff, 0 0 12px rgba(191,219,254,1)' }} />
+              </span>
+              <span>{t('亮度 = 近7天活躍', 'glow = 7-day activity')}</span>
+            </div>
+          </div>
           {players.length === 0 && !error && (
             <div style={{ position: 'relative', top: '-260px', textAlign: 'center', color: '#94a3b8', pointerEvents: 'none', fontSize: '1rem' }}>
               {t('還沒有玩家資料，完成一局遊戲後你的位置就會出現！', 'No players yet — complete a game to appear on the map!')}
@@ -514,6 +701,47 @@ export default function WorldMap2D({ t, playerName, userEmail, onJoinRoom, onVie
       )}
 
       <style>{`
+        /* 即時脈動漣漪(發光衝擊波) */
+        .vr-pulse-icon { position: absolute; }
+        .vr-pulse-blast {
+          position: absolute; left: 0; top: 0; border-radius: 50%;
+          transform: translate(-50%, -50%) scale(0);
+          background: radial-gradient(circle, rgba(var(--vr-rgb),0.5) 0%, rgba(var(--vr-rgb),0.16) 42%, transparent 70%);
+          animation: vr-blast var(--vr-dur) cubic-bezier(.2,.7,.3,1) forwards;
+          pointer-events: none;
+        }
+        .vr-pulse-ring {
+          position: absolute; left: 0; top: 0; border-radius: 50%;
+          border: 4px solid rgba(var(--vr-rgb),0.95);
+          box-shadow: 0 0 28px rgba(var(--vr-rgb),0.9), inset 0 0 14px rgba(var(--vr-rgb),0.8);
+          transform: translate(-50%, -50%);
+          animation: vr-ripple var(--vr-dur) cubic-bezier(.2,.7,.3,1) forwards;
+          pointer-events: none; will-change: width, height, opacity;
+        }
+        .vr-pulse-flash {
+          position: absolute; left: 0; top: 0; width: 20px; height: 20px;
+          border-radius: 50%; background: #fff;
+          box-shadow: 0 0 24px rgba(var(--vr-rgb),1), 0 0 38px rgba(255,255,255,0.7);
+          transform: translate(-50%, -50%) scale(0.4);
+          animation: vr-flash 700ms ease-out forwards;
+          pointer-events: none;
+        }
+        @keyframes vr-ripple {
+          from { width: 6px; height: 6px; opacity: 0.95; }
+          15% { opacity: 0.9; }
+          to { width: var(--vr-max); height: var(--vr-max); opacity: 0; }
+        }
+        @keyframes vr-blast {
+          from { transform: translate(-50%,-50%) scale(0); opacity: 0.9; }
+          to { transform: translate(-50%,-50%) scale(1); opacity: 0; }
+        }
+        @keyframes vr-flash {
+          0% { transform: translate(-50%,-50%) scale(0.4); opacity: 1; }
+          100% { transform: translate(-50%,-50%) scale(2.6); opacity: 0; }
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .vr-pulse-ring, .vr-pulse-blast, .vr-pulse-flash { animation-duration: 700ms !important; }
+        }
         .verse-map-frame {
           isolation: isolate;
           background:
