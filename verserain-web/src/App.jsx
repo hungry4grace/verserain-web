@@ -20738,8 +20738,8 @@ const deDict = {
               </div>
 
               {!isAutoPlay && (
-                <div className="hud-glass game-hud-reference" style={{ justifySelf: 'center', padding: '0.45rem 1.4rem', display: 'flex', alignItems: 'center', minHeight: '52px', pointerEvents: 'none' }}>
-                  <span style={{ fontSize: 'clamp(2.2rem, 4.5vw, 3.4rem)', lineHeight: 1, fontWeight: 900, color: '#bfdbfe', textShadow: '0 3px 16px rgba(147, 197, 253, 0.45)', whiteSpace: 'nowrap' }}>{formatVerseReferenceForDisplay(activeVerse.reference, version)}</span>
+                <div className="hud-glass game-hud-reference" style={{ justifySelf: 'center', padding: '0.35rem 1rem', display: 'flex', alignItems: 'center', minHeight: '40px', pointerEvents: 'none' }}>
+                  <span style={{ fontSize: 'clamp(1.35rem, 3vw, 2.1rem)', lineHeight: 1, fontWeight: 900, color: '#bfdbfe', textShadow: '0 3px 16px rgba(147, 197, 253, 0.45)', whiteSpace: 'nowrap' }}>{formatVerseReferenceForDisplay(activeVerse.reference, version)}</span>
                 </div>
               )}
 
