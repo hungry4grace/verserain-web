@@ -16654,6 +16654,24 @@ const deDict = {
     return 'clamp(0.9rem, min(1.75vw, 2.6vh), 1.55rem)';
   }, [activePhrases, blocks, squareGridSize]);
 
+  // 經文雨（下落方塊）字體：仿照九宮格的作法，依每一塊自己的文字長度自動放大，
+  // 讓玩家的眼睛不會那麼累。每塊獨立漂浮，故可以各自算出最大可用字級。
+  const measureBlockText = React.useCallback((text) => {
+    const value = String(text || '').trim();
+    if (!value) return 1;
+    const cjkCount = (value.match(/[㐀-鿿぀-ヿ가-힯]/g) || []).length;
+    const latinCount = Math.max(0, value.length - cjkCount);
+    return cjkCount + Math.ceil(latinCount * 0.58);
+  }, []);
+  const getRainBlockFontSize = React.useCallback((text) => {
+    const longest = measureBlockText(text);
+    if (longest <= 4) return 'clamp(1.9rem, min(6.5vw, 5.5vh), 3.4rem)';
+    if (longest <= 7) return 'clamp(1.6rem, min(5.2vw, 4.6vh), 2.9rem)';
+    if (longest <= 10) return 'clamp(1.35rem, min(4.3vw, 3.9vh), 2.4rem)';
+    if (longest <= 14) return 'clamp(1.15rem, min(3.5vw, 3.2vh), 2.05rem)';
+    return 'clamp(1rem, min(2.9vw, 2.7vh), 1.8rem)';
+  }, [measureBlockText]);
+
   // Sync handleBlockClick to ref so Speech can fire it
   useEffect(() => {
     handleBlockClickRef.current = handleBlockClick;
@@ -20820,7 +20838,7 @@ const deDict = {
                       style={{
                         position: 'absolute',
                         top: '-30px',
-                        left: `${Math.min(block.xPos, 75)}%`,
+                        left: `${Math.min(block.xPos, 68)}%`,
                         animation: `fall ${block.duration}s linear forwards`,
                         animationPlayState: 'running',
                         zIndex: block.seqIndex === currentSeqIndex ? 50 : 10
@@ -20833,10 +20851,11 @@ const deDict = {
                         style={{
                           pointerEvents: 'auto',
                           cursor: 'pointer',
-                          minWidth: 'clamp(100px, 20vw, 240px)',
-                          minHeight: 'clamp(2.5rem, 12vh, 100px)',
-                          fontSize: 'clamp(0.9rem, 2.5vw, 1.5rem)',
-                          padding: 'clamp(0.4rem, 2vh, 1.5rem) clamp(0.6rem, 2.5vw, 1.5rem)',
+                          minWidth: 'clamp(140px, 27vw, 330px)',
+                          maxWidth: 'min(78vw, 520px)',
+                          minHeight: 'clamp(3.3rem, 15vh, 140px)',
+                          fontSize: getRainBlockFontSize(block.text),
+                          padding: 'clamp(0.6rem, 2.6vh, 2rem) clamp(0.9rem, 3.2vw, 2rem)',
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
