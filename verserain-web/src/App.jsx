@@ -942,7 +942,7 @@ function estimateSpeechDuration(text, lang) {
   return Math.max(1800, Math.min(estimated + 2200, 30000));
 }
 
-function speakTextTimed(text, rate = 1.0, lang = 'zh-TW') {
+function speakTextTimed(text, rate = 1.0, lang = 'zh-TW', voiceOverride = null) {
   return new Promise(async resolve => {
     const startedAt = Date.now();
     const minHoldMs = Math.min(estimateSpeechDuration(text, lang), 2200);
@@ -956,7 +956,9 @@ function speakTextTimed(text, rate = 1.0, lang = 'zh-TW') {
     utterance.lang = lang;
     utterance.rate = rate;
     utterance.volume = 1;
-    const voice = pickSpeechVoice(lang);
+    // An explicit voiceOverride (e.g. the 朗讀第二語言 picker) wins over the
+    // per-version saved default; skip a suspect (session-blacklisted) override.
+    const voice = (voiceOverride && !isSuspectVoice(voiceOverride)) ? voiceOverride : pickSpeechVoice(lang);
     if (voice) utterance.voice = voice;
 
     window.__speech_utterances = window.__speech_utterances || [];
@@ -2907,6 +2909,42 @@ function VerseSetContinuousRainPlayer({
   const [swapped, setSwapped] = useState(false);
   const swappedRef = useRef(false);
   useEffect(() => { swappedRef.current = swapped; }, [swapped]);
+  // 對調時朗讀第二語言用的 TTS 語音(玩家在「朗讀第二語言」時選的)。純本地、會話性:
+  // 不寫入 App 的 verseRain_voiceByVersion,離開讀經頁即消失,不影響 App 語音設定。
+  const [swapVoice, setSwapVoice] = useState(null);
+  const swapVoiceRef = useRef(null);
+  useEffect(() => { swapVoiceRef.current = swapVoice; }, [swapVoice]);
+  // 「朗讀第二語言」的語音選單(挑好語音才開始播放)。null = 未開;陣列 = 可選語音清單。
+  const [swapVoiceMenu, setSwapVoiceMenu] = useState(null);
+  // 系統可用的 TTS 語音清單(voiceschanged 後才會齊全);用來為第二語言列出可選語音。
+  const [availableVoices, setAvailableVoices] = useState(() =>
+    (typeof window !== 'undefined' && window.speechSynthesis) ? window.speechSynthesis.getVoices() : []);
+  useEffect(() => {
+    if (typeof window === 'undefined' || !window.speechSynthesis) return undefined;
+    const load = () => setAvailableVoices(window.speechSynthesis.getVoices());
+    load();
+    window.speechSynthesis.addEventListener('voiceschanged', load);
+    return () => window.speechSynthesis.removeEventListener('voiceschanged', load);
+  }, []);
+  // 為第二語言(對調後要朗讀的語言)過濾＋去重＋建立可顯示的語音選項。
+  const secondaryVoiceOptions = useMemo(() => {
+    if (!secondaryVersion) return [];
+    const prefix = String(getVoiceLangForVersion(secondaryVersion) || '').toLowerCase().split('-')[0];
+    if (!prefix) return [];
+    const matched = availableVoices.filter(vc => String(vc.lang || '').toLowerCase().startsWith(prefix));
+    return buildVoiceOptions(dedupeVoices(matched), { cloudLabel: '☁️' });
+  }, [availableVoices, secondaryVersion]);
+  // 進入對調並(可選)指定語音,然後由 readingKey effect 重新從頭朗讀。
+  const startSwapWithVoice = (voice) => {
+    setSwapVoice(voice || null);
+    setSwapVoiceMenu(null);
+    setSwapped(true);
+  };
+  const stopSwap = () => {
+    setSwapVoiceMenu(null);
+    setSwapVoice(null);
+    setSwapped(false);
+  };
   // 對調後的「有效」語言與片語。currentVerse/導覽/錄音鍵完全不動,只換「哪個語言當主片語」。
   const activePrimaryVersion = swapped ? secondaryVersion : version;
   const activeSecondaryVersion = swapped ? version : secondaryVersion;
@@ -2922,7 +2960,7 @@ function VerseSetContinuousRainPlayer({
   // 何時該從頭重讀:對調開/關、對調中換第二語言、或對調中第二語言文字晚到(片語數 0→N)。
   // 未對調時固定 'P'(主語言本身變動由既有 play effect 的 version 依賴處理,避免重複重讀)。
   const readingKey = swapped
-    ? `S|${secondaryVersion || ''}|${effectiveSecondaryPhrases.length}`
+    ? `S|${secondaryVersion || ''}|${effectiveSecondaryPhrases.length}|${voiceId(swapVoice)}`
     : 'P';
 
   const imageDateLabel = useMemo(() => {
@@ -3313,7 +3351,7 @@ function VerseSetContinuousRainPlayer({
       resumeFromPhraseRef.current = 0;
 
       if (resumeAt === 0) {
-        await speakTextTimed(formatVerseReferenceForSpeech(currentVerse.reference, version), 0.9, lang);
+        await speakTextTimed(formatVerseReferenceForSpeech(currentVerse.reference, swappedRef.current ? secondaryVersion : version), 0.9, lang, swappedRef.current ? swapVoiceRef.current : null);
         if (cancelled || runRef.current !== runId) return;
         await wait(500);
       }
@@ -3340,7 +3378,7 @@ function VerseSetContinuousRainPlayer({
           setPhrasePageEnd(pg.end); phrasePageEndRef.current = pg.end;
         }
         setActivePhrase(i);
-        await speakTextTimed(currentPhrases[i], 0.86, lang);
+        await speakTextTimed(currentPhrases[i], 0.86, lang, swappedRef.current ? swapVoiceRef.current : null);
         if (cancelled || runRef.current !== runId) return;
         await wait(180);
       }
@@ -3863,9 +3901,14 @@ function VerseSetContinuousRainPlayer({
               ? t('改回第一語言朗讀', 'Back to reading the 1st language')
               : t('暫時改用第二語言朗讀（不改變 App 語言）', 'Temporarily read in the 2nd language (does not change the app language)')}
             onClick={() => {
-              // 純本地暫時對調:只切換 swapped;重跑朗讀交給 readingKey effect(它也涵蓋
-              // 對調中換語言/第二語言文字晚到的情況)。不動 App 全域語言,離開讀經頁即還原。
-              setSwapped(s => !s);
+              // 已對調 → 還原第一語言。未對調 → 讓玩家先選第二語言的朗讀語音再開始播放:
+              // 有多個可選語音時開選單;只有一個或沒有就直接用它開始。純本地,不動 App 語言。
+              if (swapped) { stopSwap(); return; }
+              if (secondaryVoiceOptions.length > 1) {
+                setSwapVoiceMenu(secondaryVoiceOptions);
+              } else {
+                startSwapWithVoice(secondaryVoiceOptions[0]?.voice || null);
+              }
             }}
             style={{
               display: 'inline-flex', alignItems: 'center', gap: '0.4rem', whiteSpace: 'nowrap',
@@ -3925,6 +3968,31 @@ function VerseSetContinuousRainPlayer({
               </button>
             </div>
             <button onClick={() => setVoiceMenu(null)} style={{ marginTop: '1rem', width: '100%', background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer', fontSize: '0.9rem' }}>{t('取消', 'Cancel')}</button>
+          </div>
+        </div>
+      )}
+
+      {/* 朗讀第二語言 — 先選 TTS 語音,再開始播放(挑好即進入對調並從頭朗讀)。 */}
+      {swapVoiceMenu && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 3000, padding: '1rem' }} onClick={(e) => { if (e.target === e.currentTarget) setSwapVoiceMenu(null); }}>
+          <div style={{ background: '#fff', borderRadius: 14, padding: '1.4rem 1.3rem', width: '100%', maxWidth: 340, boxShadow: '0 20px 40px rgba(0,0,0,0.3)' }}>
+            <h3 style={{ margin: '0 0 0.3rem', color: '#1e293b', display: 'flex', alignItems: 'center', gap: 8 }}>🔊 {t('選擇朗讀語音', 'Choose a voice')}</h3>
+            <p style={{ margin: '0 0 1rem', color: '#64748b', fontSize: '0.82rem' }}>
+              {t('選好語音就開始用第二語言朗讀。', 'Pick a voice to start reading in the 2nd language.')}
+            </p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', maxHeight: '50vh', overflowY: 'auto' }}>
+              {swapVoiceMenu.map((opt) => {
+                const active = voiceId(swapVoice) === opt.id;
+                return (
+                  <button key={opt.id} onClick={() => startSwapWithVoice(opt.voice)}
+                    style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '0.65rem 0.85rem', borderRadius: 10, border: active ? '2px solid #2563eb' : '1px solid #e2e8f0', background: active ? '#eff6ff' : '#f8fafc', color: active ? '#1d4ed8' : '#334155', fontSize: '0.92rem', fontWeight: 600, cursor: 'pointer', textAlign: 'left' }}>
+                    <span>🔊</span>
+                    <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{opt.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+            <button onClick={() => setSwapVoiceMenu(null)} style={{ marginTop: '1rem', width: '100%', background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer', fontSize: '0.9rem' }}>{t('取消', 'Cancel')}</button>
           </div>
         </div>
       )}
