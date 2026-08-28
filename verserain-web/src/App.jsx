@@ -17221,7 +17221,7 @@ const deDict = {
                     title="Language"
                     style={{ padding: '0.3rem 0.7rem', borderRadius: '4px', border: '1px solid #cbd5e1', background: '#3b82f6', color: '#fff', fontWeight: 'bold', cursor: 'pointer', fontSize: '0.8rem', fontFamily: 'var(--control-font-family)', display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}
                   >
-                    <span>{BIBLE_LANGUAGE_OPTIONS.find(o => o.value === version)?.label || version}</span>
+                    <span>{t('版本：', 'Version: ')}{BIBLE_LANGUAGE_OPTIONS.find(o => o.value === version)?.label || version}</span>
                     <span style={{ fontSize: '0.6rem', opacity: 0.85 }}>▾</span>
                   </button>
                   {showLangPicker && (
@@ -17290,7 +17290,7 @@ const deDict = {
                 >
                   <option value="">{t('語音：系統預設', 'Voice: Default')}</option>
                   {voiceOptionsForVersion.map(o => (
-                    <option key={o.id} value={o.id}>{o.label}</option>
+                    <option key={o.id} value={o.id}>{t('語音：', 'Voice: ')}{o.label}</option>
                   ))}
                 </select>
               </div>
