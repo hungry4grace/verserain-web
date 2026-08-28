@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { Play, Pause, RotateCcw, Heart, Zap, Trophy, Crown, Star, Home, XCircle, Headphones, Music, VolumeX, Search, Share2, Dices, Mic, MicOff, Users, CloudRain, Info, Edit, TreePine, Gamepad2, Map, Settings, Library, Volume2, Shuffle, Swords, ShoppingBasket, Apple, Mail, Lock, Sprout, Leaf, RotateCw, Smartphone, Hourglass, Frown, X, Camera, Square, Copy } from 'lucide-react';
+import { Play, Pause, RotateCcw, Heart, Zap, Trophy, Crown, Star, Home, XCircle, Headphones, Music, VolumeX, Search, Share2, Dices, Mic, MicOff, Users, CloudRain, Info, Edit, TreePine, Gamepad2, Map, Settings, Library, Volume2, Shuffle, Swords, ShoppingBasket, Apple, Mail, Lock, Sprout, Leaf, RotateCw, Smartphone, Hourglass, Frown, X, Camera, Square, Copy, ArrowRightLeft } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import usePartySocket from 'partysocket/react';
 import PartySocket from 'partysocket';
@@ -3809,13 +3809,20 @@ function VerseSetContinuousRainPlayer({
           <button
             type="button"
             className={`is-icon ${myVoiceForCurrent ? 'is-primary' : ''}`}
-            title={!userEmail
-              ? t('登入後即可錄製親聲', 'Sign in to record your voice')
-              : (myVoiceForCurrent ? t('重錄我的親聲', 'Re-record my voice') : t('錄我的親聲', 'Record my voice'))}
-            data-tip={!userEmail
-              ? t('登入後可錄音', 'Sign in to record')
-              : (myVoiceForCurrent ? t('重錄', 'Re-record') : t('錄音', 'Record'))}
+            disabled={swapped}
+            title={swapped
+              ? t('對調中無法錄音，請先按還原', 'Recording is off while swapped — restore first')
+              : (!userEmail
+                ? t('登入後即可錄製親聲', 'Sign in to record your voice')
+                : (myVoiceForCurrent ? t('重錄我的親聲', 'Re-record my voice') : t('錄我的親聲', 'Record my voice')))}
+            data-tip={swapped
+              ? t('對調中無法錄音', 'Off while swapped')
+              : (!userEmail
+                ? t('登入後可錄音', 'Sign in to record')
+                : (myVoiceForCurrent ? t('重錄', 'Re-record') : t('錄音', 'Record')))}
             onClick={() => {
+              // 對調中錄音會錄到原第一語言、且以節數為 key 覆蓋該節錄音 → 停用,請先還原。
+              if (swapped) return;
               // Not signed in → recordings are tied to your account (so they
               // sync across devices and can be attributed when shared), so
               // send the user to sign in instead of opening the recorder.
@@ -3843,12 +3850,16 @@ function VerseSetContinuousRainPlayer({
               setSwapped(s => !s);
             }}
           >
-            🔄
+            <ArrowRightLeft size={22} />
           </button>
         )}
         {onSecondaryVersionChange && (
           // Tooltip lives on a wrapper span — ::after doesn't render on <select>.
-          <span data-tip={t('選擇第二語言', 'Second language')} style={{ display: 'inline-flex' }}>
+          <span data-tip={t('選擇第二語言', 'Second language')} style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}>
+            {/* 對調中,下拉裡的語言其實正被當主語言朗讀 → 標示改成「朗讀中：」較貼合實況。 */}
+            <span style={{ color: '#cbd5e1', fontSize: '0.85rem', fontWeight: 600, whiteSpace: 'nowrap' }}>
+              {swapped ? t('朗讀中：', 'Reading: ') : t('第二語言：', '2nd: ')}
+            </span>
             <select
               value={secondaryVersion || ''}
               onChange={(event) => onSecondaryVersionChange(event.target.value)}
