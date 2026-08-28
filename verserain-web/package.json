@@ -10,7 +10,9 @@
     "validate-refs": "node scripts/validate-refs.mjs",
     "check:i18n": "node scripts/check-i18n.mjs",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test:party": "node --test src/party/*.test.mjs",
+    "deploy:party": "partykit deploy"
   },
   "dependencies": {
     "@upstash/redis": "^1.37.0",
