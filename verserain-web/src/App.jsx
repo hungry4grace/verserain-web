@@ -848,7 +848,16 @@ function pickSpeechVoice(lang) {
     // voiceURI is what fixes "picked a different same-named voice but the
     // sound never changed" on Android — name lookup always hit the first one.
     const exactByVersion = voices.find(v => voiceMatchesSavedKey(v, savedVoiceKey));
-    if (exactByVersion) return exactByVersion;
+    // Only reuse the saved voice when its language matches the text being
+    // spoken. The saved key is keyed to the app's ACTIVE version, but the
+    // 雙語對調「朗讀第二語言」path calls this with the SECOND language's lang
+    // while the active version is still the primary — without this guard we
+    // handed e.g. a Chinese voice to Japanese text (iOS then read 日文 with a
+    // 中文 voice, choppy). Normal playback is unaffected: there lang always
+    // matches the active version's language, so this still returns the save.
+    if (exactByVersion
+        && String(exactByVersion.lang || '').toLowerCase().startsWith(langPrefix)
+        && isAllowed(exactByVersion)) return exactByVersion;
     // Legacy name-only save (`verseRain_voiceName`) could be stale state
     // from a different Bible version → validate before using.
     const byName = voices.find(v => v.name === savedVoiceKey);
@@ -2926,14 +2935,26 @@ function VerseSetContinuousRainPlayer({
     window.speechSynthesis.addEventListener('voiceschanged', load);
     return () => window.speechSynthesis.removeEventListener('voiceschanged', load);
   }, []);
-  // 為第二語言(對調後要朗讀的語言)過濾＋去重＋建立可顯示的語音選項。
-  const secondaryVoiceOptions = useMemo(() => {
-    if (!secondaryVersion) return [];
+  // 為第二語言(對調後要朗讀的語言)算可選語音。用「當下」的 getVoices()(iOS 會延後載入,
+  // 首次進讀經頁時 React state 可能還沒收到 voiceschanged → 選單列不出日文語音),並沿用
+  // 使用者對該語言已存的偏好語音(verseRain_voiceByVersion[secondaryVersion])當預設。
+  const liveSecondaryVoiceOptions = () => {
+    const live = (typeof window !== 'undefined' && window.speechSynthesis)
+      ? (window.speechSynthesis.getVoices() || []) : availableVoices;
+    if (live.length) setAvailableVoices(live); // 順手更新 state
+    if (!secondaryVersion) return { options: [], preferred: null };
     const prefix = String(getVoiceLangForVersion(secondaryVersion) || '').toLowerCase().split('-')[0];
-    if (!prefix) return [];
-    const matched = availableVoices.filter(vc => String(vc.lang || '').toLowerCase().startsWith(prefix));
-    return buildVoiceOptions(dedupeVoices(matched), { cloudLabel: '☁️' });
-  }, [availableVoices, secondaryVersion]);
+    if (!prefix) return { options: [], preferred: null };
+    const matched = live.filter(vc => String(vc.lang || '').toLowerCase().startsWith(prefix));
+    const options = buildVoiceOptions(dedupeVoices(matched), { cloudLabel: '☁️' });
+    let preferred = null;
+    try {
+      const byVersion = JSON.parse(localStorage.getItem('verseRain_voiceByVersion') || '{}');
+      const savedKey = byVersion?.[secondaryVersion];
+      if (savedKey) preferred = matched.find(v => voiceMatchesSavedKey(v, savedKey)) || null;
+    } catch { /* ignore */ }
+    return { options, preferred };
+  };
   // 進入對調並(可選)指定語音,然後由 readingKey effect 重新從頭朗讀。
   const startSwapWithVoice = (voice) => {
     setSwapVoice(voice || null);
@@ -3904,10 +3925,12 @@ function VerseSetContinuousRainPlayer({
               // 已對調 → 還原第一語言。未對調 → 讓玩家先選第二語言的朗讀語音再開始播放:
               // 有多個可選語音時開選單;只有一個或沒有就直接用它開始。純本地,不動 App 語言。
               if (swapped) { stopSwap(); return; }
-              if (secondaryVoiceOptions.length > 1) {
-                setSwapVoiceMenu(secondaryVoiceOptions);
+              const { options, preferred } = liveSecondaryVoiceOptions();
+              if (options.length > 1) {
+                setSwapVoice(preferred || null); // 預先高亮偏好語音
+                setSwapVoiceMenu(options);
               } else {
-                startSwapWithVoice(secondaryVoiceOptions[0]?.voice || null);
+                startSwapWithVoice(preferred || options[0]?.voice || null);
               }
             }}
             style={{
