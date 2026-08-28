@@ -490,7 +490,14 @@ textarea {
     min-height: calc(env(safe-area-inset-top) + 6.25rem);
   }
 
+  /* Span the full header width so the version + voice controls (which wrap
+     onto their own line below the brand) can use the whole row instead of
+     being squeezed into column 1 by a wide, logged-in account column. The
+     account actions are pinned to the top-right cell and layer on top via
+     z-index, sitting over the empty right side of the brand line. */
   .app-header-primary {
+    grid-column: 1 / -1;
+    grid-row: 1;
     min-width: 0;
     width: 100%;
     flex-wrap: wrap;
@@ -540,6 +547,8 @@ textarea {
   }
 
   .app-auth-actions {
+    grid-column: 2;
+    grid-row: 1;
     justify-self: end;
     align-self: start;
     flex: 0 0 auto;
@@ -582,6 +591,7 @@ textarea {
   }
 
   .app-auth-actions {
+    grid-column: 1;
     justify-self: start;
     grid-row: 2;
   }
