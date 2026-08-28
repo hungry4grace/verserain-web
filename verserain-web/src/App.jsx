@@ -3764,7 +3764,7 @@ function VerseSetContinuousRainPlayer({
         {onChallengeVerse && (
           <button
             type="button"
-            className="is-icon is-primary"
+            className="is-icon"
             title={t('挑戰', 'Challenge')}
             data-tip={t('挑戰', 'Challenge')}
             onClick={() => {
@@ -3834,25 +3834,6 @@ function VerseSetContinuousRainPlayer({
             <Mic size={22} />
           </button>
         )}
-        {secondaryVersion && (
-          <button
-            type="button"
-            className={`is-icon ${swapped ? 'is-primary' : ''}`}
-            disabled={!swapped && !canSwapToSecondary}
-            aria-pressed={swapped}
-            title={swapped
-              ? t('還原語言順序', 'Restore language order')
-              : t('雙語對調（暫時聽第二語言）', 'Swap languages (temporarily hear the 2nd)')}
-            data-tip={t('雙語對調', 'Swap languages')}
-            onClick={() => {
-              // 純本地暫時對調:只切換 swapped;重跑朗讀交給下方 readingKey effect(它也涵蓋
-              // 對調中換語言/第二語言文字晚到的情況)。不動 App 全域語言,離開讀經頁即還原。
-              setSwapped(s => !s);
-            }}
-          >
-            <ArrowRightLeft size={22} />
-          </button>
-        )}
         {onSecondaryVersionChange && (
           // Tooltip lives on a wrapper span — ::after doesn't render on <select>.
           <span data-tip={t('選擇第二語言', 'Second language')} style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}>
@@ -3871,6 +3852,34 @@ function VerseSetContinuousRainPlayer({
               ))}
             </select>
           </span>
+        )}
+        {secondaryVersion && (
+          // 放在「第二語言：…」之後,用文字說明用途:一鍵改用第二語言朗讀,再按還原第一語言。
+          <button
+            type="button"
+            disabled={!swapped && !canSwapToSecondary}
+            aria-pressed={swapped}
+            title={swapped
+              ? t('改回第一語言朗讀', 'Back to reading the 1st language')
+              : t('暫時改用第二語言朗讀（不改變 App 語言）', 'Temporarily read in the 2nd language (does not change the app language)')}
+            onClick={() => {
+              // 純本地暫時對調:只切換 swapped;重跑朗讀交給 readingKey effect(它也涵蓋
+              // 對調中換語言/第二語言文字晚到的情況)。不動 App 全域語言,離開讀經頁即還原。
+              setSwapped(s => !s);
+            }}
+            style={{
+              display: 'inline-flex', alignItems: 'center', gap: '0.4rem', whiteSpace: 'nowrap',
+              padding: '0.45rem 0.85rem', borderRadius: '999px', fontSize: '0.85rem', fontWeight: 700,
+              cursor: (!swapped && !canSwapToSecondary) ? 'not-allowed' : 'pointer',
+              opacity: (!swapped && !canSwapToSecondary) ? 0.5 : 1,
+              border: swapped ? '1px solid #2563eb' : '1px solid rgba(255,255,255,0.25)',
+              background: swapped ? '#2563eb' : 'rgba(15,23,42,0.6)',
+              color: '#fff',
+            }}
+          >
+            <ArrowRightLeft size={16} />
+            {swapped ? t('還原第一語言', 'Back to 1st') : t('朗讀第二語言', 'Read the 2nd')}
+          </button>
         )}
       </div>
       {voiceRecTarget && (
