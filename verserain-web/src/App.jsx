@@ -7226,6 +7226,10 @@ export default function App() {
       localStorage.setItem('verserain_player_name', user.name || displayName);
       localStorage.setItem('verserain_player_email', user.email);
       localStorage.setItem('verserain_is_premium', isPrem ? 'true' : 'false');
+      // Remember this is an OAuth (Google/Apple/LINE) login → these accounts
+      // have no password, so the profile editor hides the password fields and
+      // saves without one (the server allows password-less updates for them).
+      localStorage.setItem('verserain_auth_provider', user.oauthProvider || provider || 'oauth');
       if (user.personalCode) adoptAccountPersonalCode(user.personalCode);
       if (user.city) localStorage.setItem('verserain_custom_city', user.city);
       if (user.country) localStorage.setItem('verserain_custom_country', user.country);
@@ -17327,7 +17331,7 @@ const deDict = {
                         <Crown size={14} style={{ color: '#fbbf24' }} />
                       </button>
                     </div>
-                    <button onClick={() => { setPlayerName(''); setIsPremium(false); setUserEmail(''); localStorage.removeItem('verserain_player_name'); localStorage.removeItem('verserain_is_premium'); localStorage.removeItem('verserain_player_email'); localStorage.removeItem('verseRain_gardenData'); setGardenData({}); localStorage.removeItem('verseRain_custom_sets'); localStorage.removeItem('verseRain_custom_sets_owner'); lastPushedPrivateSetsRef.current = ''; setCustomVerseSets([]); }} style={{ background: 'transparent', border: '1px solid #cbd5e1', color: '#64748b', cursor: 'pointer', borderRadius: '4px', padding: '0.3rem 0.6rem', fontSize: '0.85rem' }}>{t("登出", "Logout")}</button>
+                    <button onClick={() => { setPlayerName(''); setIsPremium(false); setUserEmail(''); localStorage.removeItem('verserain_player_name'); localStorage.removeItem('verserain_is_premium'); localStorage.removeItem('verserain_player_email'); localStorage.removeItem('verserain_auth_provider'); localStorage.removeItem('verseRain_gardenData'); setGardenData({}); localStorage.removeItem('verseRain_custom_sets'); localStorage.removeItem('verseRain_custom_sets_owner'); lastPushedPrivateSetsRef.current = ''; setCustomVerseSets([]); }} style={{ background: 'transparent', border: '1px solid #cbd5e1', color: '#64748b', cursor: 'pointer', borderRadius: '4px', padding: '0.3rem 0.6rem', fontSize: '0.85rem' }}>{t("登出", "Logout")}</button>
                   </div>
                 ) : (
                   <>
@@ -22059,6 +22063,9 @@ const deDict = {
                         localStorage.setItem('verserain_player_name', data.user.name || email.split('@')[0]);
                         localStorage.setItem('verserain_player_email', data.user.email);
                         localStorage.setItem('verserain_is_premium', isPrem ? 'true' : 'false');
+                        // Email/password account → clear any stale OAuth marker so
+                        // the profile editor shows the password fields for them.
+                        localStorage.removeItem('verserain_auth_provider');
                         if (data.user.personalCode) adoptAccountPersonalCode(data.user.personalCode);
 
                         if (data.user.city) localStorage.setItem('verserain_custom_city', data.user.city);
@@ -22809,7 +22816,7 @@ const deDict = {
                   />
                 </div>
 
-                {userEmail && (
+                {userEmail && !localStorage.getItem('verserain_auth_provider') && (
                   <>
                     <div>
                       <label style={{ display: 'block', fontSize: '0.9rem', color: '#64748b', marginBottom: '0.3rem', fontWeight: 'bold' }}>{t("目前密碼 (必填)", "Current Password (Required)")}</label>
@@ -22935,8 +22942,11 @@ const deDict = {
                   const newPasswordInput = document.getElementById('profileNewPassword');
                   const oldPassword = oldPasswordInput ? oldPasswordInput.value : "";
                   const newPassword = newPasswordInput ? newPasswordInput.value : "";
+                  // OAuth (Google/Apple/LINE) accounts have no password — the
+                  // server updates them by email alone, so don't demand one here.
+                  const isOAuthUser = !!localStorage.getItem('verserain_auth_provider');
 
-                  if (!oldPassword) {
+                  if (!isOAuthUser && !oldPassword) {
                     return alert(t("請輸入您目前的密碼以確認身分！", "Please enter your current password to confirm!"));
                   }
                   if (!newName) {

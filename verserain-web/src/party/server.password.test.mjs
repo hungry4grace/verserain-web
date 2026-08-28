@@ -18,7 +18,16 @@ function makeServer(initial = {}) {
     async get(k) { return map.has(k) ? map.get(k) : undefined; },
     async put(k, v) { map.set(k, v); },
     async delete(k) { map.delete(k); },
-    async list() { return map; },
+    // Real PartyKit storage.list honours { prefix }; mirror that so a rename's
+    // prefix scan (migratePlayerName) doesn't sweep unrelated keys.
+    async list(opts) {
+      if (opts && opts.prefix) {
+        const out = new Map();
+        for (const [k, v] of map) if (k.startsWith(opts.prefix)) out.set(k, v);
+        return out;
+      }
+      return map;
+    },
   };
   const srv = new Server({ id: 'global-auth-db', storage, env: {} });
   const sent = [];
@@ -175,4 +184,38 @@ test('update-profile response never carries the credential field', async () => {
   assert.ok(!('password' in body.user), 'password must be stripped from the response');
   assert.ok(!JSON.stringify(body).includes('hunter3'));
   assert.ok(await verifyPassword('hunter3', storage.map.get('user:a@example.com').password));
+});
+
+// ── OAuth accounts (no password) can edit their profile ────────────────────
+
+test('OAuth account updates name/city/country WITHOUT a password', async () => {
+  const { srv, storage } = makeServer({
+    'user:g@example.com': { email: 'g@example.com', password: null, oauthProvider: 'google', name: 'Old', verified: true },
+  });
+  const res = await post(srv, '/update-profile', { email: 'g@example.com', newName: 'New', newCity: 'Taipei', newCountry: 'Taiwan' });
+  assert.strictEqual(res.status, 200);
+  const body = await res.json();
+  assert.strictEqual(body.success, true);
+  const saved = storage.map.get('user:g@example.com');
+  assert.strictEqual(saved.name, 'New');
+  assert.strictEqual(saved.city, 'Taipei');
+  assert.strictEqual(saved.country, 'Taiwan');
+  assert.strictEqual(saved.password, null, 'OAuth account keeps password:null');
+});
+
+test('OAuth account update ignores a supplied newPassword (stays password-less)', async () => {
+  const { srv, storage } = makeServer({
+    'user:g@example.com': { email: 'g@example.com', password: null, oauthProvider: 'apple', name: 'Old', verified: true },
+  });
+  const res = await post(srv, '/update-profile', { email: 'g@example.com', newName: 'New', newPassword: 'sneaky1' });
+  assert.strictEqual(res.status, 200);
+  assert.strictEqual(storage.map.get('user:g@example.com').password, null, 'newPassword must not set a password on an OAuth account');
+});
+
+test('password account still requires the current password', async () => {
+  const { srv } = makeServer();
+  await post(srv, '/register', { email: 'p@example.com', password: 'hunter2', nickname: 'Pat' });
+  // Missing password → 400; wrong password → 401; both leave the row unchanged.
+  assert.strictEqual((await post(srv, '/update-profile', { email: 'p@example.com', newName: 'X' })).status, 400);
+  assert.strictEqual((await post(srv, '/update-profile', { email: 'p@example.com', password: 'wrong', newName: 'X' })).status, 401);
 });

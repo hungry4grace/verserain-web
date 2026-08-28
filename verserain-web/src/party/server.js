@@ -866,18 +866,33 @@ export default class Server {
         if (url.pathname.endsWith('/update-profile')) {
            try {
               const { email, password, newPassword, newName, newCity, newCountry } = await request.json();
-              if (!email || !password) return new Response(JSON.stringify({ error: 'Email and current password required' }), { status: 400, headers: corsHeaders });
-              
+              if (!email) return new Response(JSON.stringify({ error: 'Email required' }), { status: 400, headers: corsHeaders });
+
               let user = await this.room.storage.get(`user:${email.toLowerCase()}`);
-              if (!user || !(await verifyPassword(password, user.password))) {
+              // OAuth (Google/Apple/LINE) accounts are created with password:null,
+              // so they can never satisfy a password check. Authenticate them by
+              // email alone (these are low-stakes profile fields) and skip the
+              // password step entirely. Password accounts keep the full check.
+              const isOAuthAccount = !!user && (!!user.oauthProvider || user.password == null);
+              if (!isOAuthAccount) {
+                 if (!password) return new Response(JSON.stringify({ error: 'Email and current password required' }), { status: 400, headers: corsHeaders });
+                 if (!user || !(await verifyPassword(password, user.password))) {
+                    return new Response(JSON.stringify({ error: '密碼錯誤 (Invalid password)' }), { status: 401, headers: corsHeaders });
+                 }
+              } else if (!user) {
+                 // Never reached (isOAuthAccount is false when user is missing),
+                 // but keep the not-found path explicit and non-revealing.
                  return new Response(JSON.stringify({ error: '密碼錯誤 (Invalid password)' }), { status: 401, headers: corsHeaders });
               }
 
               const oldName = user.name;
-              // Covers both cases: a new password chosen here, and a legacy
-              // cleartext row whose owner just authenticated.
-              if (newPassword) user.password = await hashPassword(newPassword);
-              else if (!isHashedPassword(user.password)) user.password = await hashPassword(password);
+              // Password accounts only: set the chosen new password, or upgrade a
+              // legacy cleartext row now that its owner has authenticated. OAuth
+              // accounts don't use passwords, so leave user.password untouched.
+              if (!isOAuthAccount) {
+                 if (newPassword) user.password = await hashPassword(newPassword);
+                 else if (!isHashedPassword(user.password)) user.password = await hashPassword(password);
+              }
               if (newName) user.name = newName;
               if (newCity !== undefined) user.city = newCity;
               if (newCountry !== undefined) user.country = newCountry;
