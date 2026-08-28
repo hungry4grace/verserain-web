@@ -7226,6 +7226,10 @@ export default function App() {
       localStorage.setItem('verserain_player_name', user.name || displayName);
       localStorage.setItem('verserain_player_email', user.email);
       localStorage.setItem('verserain_is_premium', isPrem ? 'true' : 'false');
+      // Remember this is an OAuth (Google/Apple/LINE) login → these accounts
+      // have no password, so the profile editor hides the password fields and
+      // saves without one (the server allows password-less updates for them).
+      localStorage.setItem('verserain_auth_provider', user.oauthProvider || provider || 'oauth');
       if (user.personalCode) adoptAccountPersonalCode(user.personalCode);
       if (user.city) localStorage.setItem('verserain_custom_city', user.city);
       if (user.country) localStorage.setItem('verserain_custom_country', user.country);
@@ -17327,7 +17331,7 @@ const deDict = {
                         <Crown size={14} style={{ color: '#fbbf24' }} />
                       </button>
                     </div>
-                    <button onClick={() => { setPlayerName(''); setIsPremium(false); setUserEmail(''); localStorage.removeItem('verserain_player_name'); localStorage.removeItem('verserain_is_premium'); localStorage.removeItem('verserain_player_email'); localStorage.removeItem('verseRain_gardenData'); setGardenData({}); localStorage.removeItem('verseRain_custom_sets'); localStorage.removeItem('verseRain_custom_sets_owner'); lastPushedPrivateSetsRef.current = ''; setCustomVerseSets([]); }} style={{ background: 'transparent', border: '1px solid #cbd5e1', color: '#64748b', cursor: 'pointer', borderRadius: '4px', padding: '0.3rem 0.6rem', fontSize: '0.85rem' }}>{t("登出", "Logout")}</button>
+                    <button onClick={() => { setPlayerName(''); setIsPremium(false); setUserEmail(''); localStorage.removeItem('verserain_player_name'); localStorage.removeItem('verserain_is_premium'); localStorage.removeItem('verserain_player_email'); localStorage.removeItem('verserain_auth_provider'); localStorage.removeItem('verseRain_gardenData'); setGardenData({}); localStorage.removeItem('verseRain_custom_sets'); localStorage.removeItem('verseRain_custom_sets_owner'); lastPushedPrivateSetsRef.current = ''; setCustomVerseSets([]); }} style={{ background: 'transparent', border: '1px solid #cbd5e1', color: '#64748b', cursor: 'pointer', borderRadius: '4px', padding: '0.3rem 0.6rem', fontSize: '0.85rem' }}>{t("登出", "Logout")}</button>
                   </div>
                 ) : (
                   <>
@@ -19366,54 +19370,6 @@ const deDict = {
                               <Share2 size={16} />
                             </button>
 
-                            <div style={{ display: 'flex', alignItems: 'center', backgroundColor: '#f1f5f9', borderRadius: '6px', border: '1px solid #cbd5e1', padding: '2px' }}>
-                              <div style={{ display: 'flex', alignItems: 'center', background: 'transparent', borderRadius: '4px' }}>
-                                <button
-                                  onClick={() => setRandomPickCount(Math.max(1, (parseInt(randomPickCount) || 1) - 1))}
-                                  style={{ width: '28px', height: '30px', border: 'none', background: '#e2e8f0', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#64748b', fontWeight: 'bold', fontSize: '1.2rem', borderTopLeftRadius: '4px', borderBottomLeftRadius: '4px', transform: 'none' }}
-                                >
-                                  -
-                                </button>
-                                <input
-                                  type="number"
-                                  min="1"
-                                  max={VERSES_DB.length}
-                                  value={randomPickCount > VERSES_DB.length ? VERSES_DB.length : randomPickCount}
-                                  onChange={(e) => setRandomPickCount(e.target.value === '' ? '' : Math.min(VERSES_DB.length, Math.max(1, parseInt(e.target.value))))}
-                                  style={{ width: '40px', height: '30px', padding: '0', border: 'none', background: 'white', outline: 'none', textAlign: 'center', fontSize: '1rem', color: '#334155', fontWeight: 'bold', margin: '0' }}
-                                  title={t("選擇隨機題數", "Number of random verses")}
-                                />
-                                <button
-                                  onClick={() => setRandomPickCount(Math.min(VERSES_DB.length, (parseInt(randomPickCount) || 1) + 1))}
-                                  style={{ width: '28px', height: '30px', border: 'none', background: '#e2e8f0', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#64748b', fontWeight: 'bold', fontSize: '1.2rem', borderTopRightRadius: '4px', borderBottomRightRadius: '4px', transform: 'none' }}
-                                >
-                                  +
-                                </button>
-                              </div>
-                              <button
-                                onClick={() => openChallengeSetup({
-                                  subtitle: currentSet?.title || '',
-                                  run: () => {
-                                    let queue = [...VERSES_DB];
-                                    let actualCount = Math.min(VERSES_DB.length, Math.max(1, parseInt(randomPickCount) || 1));
-                                    queue = queue.sort(() => 0.5 - Math.random()).slice(0, actualCount);
-                                    setCampaignQueue(queue.slice(1));
-                                    setCampaignResults([]);
-                                    setActiveCampaignSetId(currentSet.id);
-                                    setActiveCampaignSetTotal(queue.length);
-                                    setActiveVerse(queue[0]);
-                                    setTimeout(() => startGame(false, queue[0]), 200);
-                                  },
-                                })}
-                                title={t("隨機挑戰所選題數", "Randomly challenge selected number")}
-                                style={{ backgroundColor: '#10b981', color: 'white', border: 'none', borderRadius: '4px', padding: '0 0.8rem', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'transform 0.1s', fontWeight: 'bold', gap: '5px' }}
-                                onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
-                                onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
-                              >
-                                <Zap size={16} fill="white" /> {t("挑戰", "Challenge")}
-                              </button>
-                            </div>
-
                             <button
                               onClick={() => {
                                 initAudio();
@@ -19461,29 +19417,6 @@ const deDict = {
                               onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
                             >
                               <Users size={16} /> {t("邀人PK", "Invite")}
-                            </button>
-
-                            <button
-                              onClick={() => {
-                                setLeaderboardSetId(currentSet.id);
-                                setShowSetLeaderboard(true);
-                              }}
-                              title={t("查看這個經文組的通關紀錄", "View clear records for this set")}
-                              style={{ backgroundColor: '#f59e0b', color: 'white', border: 'none', borderRadius: '6px', padding: '0 0.8rem', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'transform 0.1s', fontWeight: 'bold', gap: '5px' }}
-                              onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
-                              onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
-                            >
-                              <Trophy size={16} fill="white" /> {t("通關紀錄", "Records")}
-                            </button>
-
-                            <button
-                              onClick={() => copyVerseSetToMine(currentSet)}
-                              title={t("複製成我的題庫，可自行編輯，不影響原本的", "Copy into my sets — edit freely without touching the original")}
-                              style={{ backgroundColor: '#4f46e5', color: 'white', border: 'none', borderRadius: '6px', padding: '0 0.8rem', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'transform 0.1s', fontWeight: 'bold', gap: '5px' }}
-                              onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
-                              onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
-                            >
-                              <Copy size={16} /> {t("複製", "Copy")}
                             </button>
 
                             {(playerName === currentSet?.authorName || playerName === 'hungry@G') && (
@@ -22130,6 +22063,9 @@ const deDict = {
                         localStorage.setItem('verserain_player_name', data.user.name || email.split('@')[0]);
                         localStorage.setItem('verserain_player_email', data.user.email);
                         localStorage.setItem('verserain_is_premium', isPrem ? 'true' : 'false');
+                        // Email/password account → clear any stale OAuth marker so
+                        // the profile editor shows the password fields for them.
+                        localStorage.removeItem('verserain_auth_provider');
                         if (data.user.personalCode) adoptAccountPersonalCode(data.user.personalCode);
 
                         if (data.user.city) localStorage.setItem('verserain_custom_city', data.user.city);
@@ -22880,7 +22816,7 @@ const deDict = {
                   />
                 </div>
 
-                {userEmail && (
+                {userEmail && !localStorage.getItem('verserain_auth_provider') && (
                   <>
                     <div>
                       <label style={{ display: 'block', fontSize: '0.9rem', color: '#64748b', marginBottom: '0.3rem', fontWeight: 'bold' }}>{t("目前密碼 (必填)", "Current Password (Required)")}</label>
@@ -23006,8 +22942,11 @@ const deDict = {
                   const newPasswordInput = document.getElementById('profileNewPassword');
                   const oldPassword = oldPasswordInput ? oldPasswordInput.value : "";
                   const newPassword = newPasswordInput ? newPasswordInput.value : "";
+                  // OAuth (Google/Apple/LINE) accounts have no password — the
+                  // server updates them by email alone, so don't demand one here.
+                  const isOAuthUser = !!localStorage.getItem('verserain_auth_provider');
 
-                  if (!oldPassword) {
+                  if (!isOAuthUser && !oldPassword) {
                     return alert(t("請輸入您目前的密碼以確認身分！", "Please enter your current password to confirm!"));
                   }
                   if (!newName) {
