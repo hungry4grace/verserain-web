@@ -19366,54 +19366,6 @@ const deDict = {
                               <Share2 size={16} />
                             </button>
 
-                            <div style={{ display: 'flex', alignItems: 'center', backgroundColor: '#f1f5f9', borderRadius: '6px', border: '1px solid #cbd5e1', padding: '2px' }}>
-                              <div style={{ display: 'flex', alignItems: 'center', background: 'transparent', borderRadius: '4px' }}>
-                                <button
-                                  onClick={() => setRandomPickCount(Math.max(1, (parseInt(randomPickCount) || 1) - 1))}
-                                  style={{ width: '28px', height: '30px', border: 'none', background: '#e2e8f0', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#64748b', fontWeight: 'bold', fontSize: '1.2rem', borderTopLeftRadius: '4px', borderBottomLeftRadius: '4px', transform: 'none' }}
-                                >
-                                  -
-                                </button>
-                                <input
-                                  type="number"
-                                  min="1"
-                                  max={VERSES_DB.length}
-                                  value={randomPickCount > VERSES_DB.length ? VERSES_DB.length : randomPickCount}
-                                  onChange={(e) => setRandomPickCount(e.target.value === '' ? '' : Math.min(VERSES_DB.length, Math.max(1, parseInt(e.target.value))))}
-                                  style={{ width: '40px', height: '30px', padding: '0', border: 'none', background: 'white', outline: 'none', textAlign: 'center', fontSize: '1rem', color: '#334155', fontWeight: 'bold', margin: '0' }}
-                                  title={t("選擇隨機題數", "Number of random verses")}
-                                />
-                                <button
-                                  onClick={() => setRandomPickCount(Math.min(VERSES_DB.length, (parseInt(randomPickCount) || 1) + 1))}
-                                  style={{ width: '28px', height: '30px', border: 'none', background: '#e2e8f0', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#64748b', fontWeight: 'bold', fontSize: '1.2rem', borderTopRightRadius: '4px', borderBottomRightRadius: '4px', transform: 'none' }}
-                                >
-                                  +
-                                </button>
-                              </div>
-                              <button
-                                onClick={() => openChallengeSetup({
-                                  subtitle: currentSet?.title || '',
-                                  run: () => {
-                                    let queue = [...VERSES_DB];
-                                    let actualCount = Math.min(VERSES_DB.length, Math.max(1, parseInt(randomPickCount) || 1));
-                                    queue = queue.sort(() => 0.5 - Math.random()).slice(0, actualCount);
-                                    setCampaignQueue(queue.slice(1));
-                                    setCampaignResults([]);
-                                    setActiveCampaignSetId(currentSet.id);
-                                    setActiveCampaignSetTotal(queue.length);
-                                    setActiveVerse(queue[0]);
-                                    setTimeout(() => startGame(false, queue[0]), 200);
-                                  },
-                                })}
-                                title={t("隨機挑戰所選題數", "Randomly challenge selected number")}
-                                style={{ backgroundColor: '#10b981', color: 'white', border: 'none', borderRadius: '4px', padding: '0 0.8rem', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'transform 0.1s', fontWeight: 'bold', gap: '5px' }}
-                                onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
-                                onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
-                              >
-                                <Zap size={16} fill="white" /> {t("挑戰", "Challenge")}
-                              </button>
-                            </div>
-
                             <button
                               onClick={() => {
                                 initAudio();
@@ -19461,29 +19413,6 @@ const deDict = {
                               onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
                             >
                               <Users size={16} /> {t("邀人PK", "Invite")}
-                            </button>
-
-                            <button
-                              onClick={() => {
-                                setLeaderboardSetId(currentSet.id);
-                                setShowSetLeaderboard(true);
-                              }}
-                              title={t("查看這個經文組的通關紀錄", "View clear records for this set")}
-                              style={{ backgroundColor: '#f59e0b', color: 'white', border: 'none', borderRadius: '6px', padding: '0 0.8rem', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'transform 0.1s', fontWeight: 'bold', gap: '5px' }}
-                              onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
-                              onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
-                            >
-                              <Trophy size={16} fill="white" /> {t("通關紀錄", "Records")}
-                            </button>
-
-                            <button
-                              onClick={() => copyVerseSetToMine(currentSet)}
-                              title={t("複製成我的題庫，可自行編輯，不影響原本的", "Copy into my sets — edit freely without touching the original")}
-                              style={{ backgroundColor: '#4f46e5', color: 'white', border: 'none', borderRadius: '6px', padding: '0 0.8rem', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'transform 0.1s', fontWeight: 'bold', gap: '5px' }}
-                              onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
-                              onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
-                            >
-                              <Copy size={16} /> {t("複製", "Copy")}
                             </button>
 
                             {(playerName === currentSet?.authorName || playerName === 'hungry@G') && (
