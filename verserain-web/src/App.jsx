@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { Play, Pause, RotateCcw, Heart, Zap, Trophy, Crown, Star, Home, XCircle, Headphones, Music, VolumeX, Search, Share2, Dices, Mic, MicOff, Users, CloudRain, Info, Edit, TreePine, Gamepad2, Map, Settings, Library, Volume2, Shuffle, Swords, ShoppingBasket, Apple, Mail, Lock, Sprout, Leaf, RotateCw, Smartphone, Hourglass, Frown, X, Camera, Square, Copy } from 'lucide-react';
+import { Play, Pause, RotateCcw, Heart, Zap, Trophy, Crown, Star, Home, XCircle, Headphones, Music, VolumeX, Search, Share2, Dices, Mic, MicOff, Users, CloudRain, Info, Edit, TreePine, Gamepad2, Map, Settings, Library, Volume2, Shuffle, Swords, ShoppingBasket, Apple, Mail, Lock, Sprout, Leaf, RotateCw, Smartphone, Hourglass, Frown, X, Camera, Square, Copy, ArrowRightLeft } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import usePartySocket from 'partysocket/react';
 import PartySocket from 'partysocket';
@@ -2895,12 +2895,35 @@ function VerseSetContinuousRainPlayer({
     return phrases.map(p => isTextLikelyForVersion(p, secondaryVersion) ? p : '');
   }, [secondaryPhrases, secondaryVerse, lookedUpText, secondaryVersion]);
 
-  const hasSecondaryPhrases = Boolean(secondaryVersion && effectiveSecondaryPhrases.length);
-  const effectiveSecondaryRef = useMemo(() => {
+  const rawSecondaryRef = useMemo(() => {
     if (secondaryVerse) return secondaryVerse.reference;
     if (lookedUpRef) return lookedUpRef;
     return null;
   }, [secondaryVerse, lookedUpRef]);
+
+  // 「雙語對調」：讀經時暫時把第一/第二語言互換,主畫面改用第二語言落字＋朗讀,原第一語言退到
+  // 下方小字。純本地狀態(不寫 localStorage、不動 App 全域 version/secondaryVersion)→ 離開讀經頁
+  // 元件卸載即自然還原。已確認:對調後一律走電腦語音 TTS,且對調維持整個讀經階段。
+  const [swapped, setSwapped] = useState(false);
+  const swappedRef = useRef(false);
+  useEffect(() => { swappedRef.current = swapped; }, [swapped]);
+  // 對調後的「有效」語言與片語。currentVerse/導覽/錄音鍵完全不動,只換「哪個語言當主片語」。
+  const activePrimaryVersion = swapped ? secondaryVersion : version;
+  const activeSecondaryVersion = swapped ? version : secondaryVersion;
+  const primaryPhrases = swapped ? effectiveSecondaryPhrases : phrases;
+  const secondaryDisplayPhrases = swapped ? phrases : effectiveSecondaryPhrases;
+  // 對調時需要的第二語言文字是否已備妥(外部抓取可能還沒回來)→ 決定對調鈕可否按。
+  const canSwapToSecondary = effectiveSecondaryPhrases.length > 0;
+  const hasSecondaryPhrases = Boolean(activeSecondaryVersion && secondaryDisplayPhrases.length);
+  // 下方參考節號:對調時顯示原第一語言的節號(格式用原 version);未對調沿用既有的第二語言查得節號。
+  const secondaryHeadingText = swapped
+    ? formatVerseReferenceForDisplay(currentVerse?.reference, version)
+    : (rawSecondaryRef ? formatVerseReferenceForDisplay(rawSecondaryRef, secondaryVersion) : null);
+  // 何時該從頭重讀:對調開/關、對調中換第二語言、或對調中第二語言文字晚到(片語數 0→N)。
+  // 未對調時固定 'P'(主語言本身變動由既有 play effect 的 version 依賴處理,避免重複重讀)。
+  const readingKey = swapped
+    ? `S|${secondaryVersion || ''}|${effectiveSecondaryPhrases.length}`
+    : 'P';
 
   const imageDateLabel = useMemo(() => {
     const day = (getStableNumber(`${verseSet?.id || verseSet?.title}-${currentVerse?.reference || ''}`) % 31) + 1;
@@ -2980,16 +3003,24 @@ function VerseSetContinuousRainPlayer({
   const phraseContainerRef = useRef(null);
   const phraseNodeRefs = useRef([]);
   // Refs for values used inside the auto-play effect but that should NOT re-trigger it
-  const phrasesRef = useRef(phrases);
+  const phrasesRef = useRef(primaryPhrases);
   const versesRef = useRef(verses);
   const playOnceRef = useRef(playOnce);
   const onCompleteRef = useRef(onComplete);
 
   useEffect(() => { onListenLoggedRef.current = onListenLogged; }, [onListenLogged]);
-  useEffect(() => { phrasesRef.current = phrases; }, [phrases]);
+  useEffect(() => { phrasesRef.current = primaryPhrases; }, [primaryPhrases]);
   useEffect(() => { versesRef.current = verses; }, [verses]);
   useEffect(() => { playOnceRef.current = playOnce; }, [playOnce]);
   useEffect(() => { onCompleteRef.current = onComplete; }, [onComplete]);
+
+  // 雙語對調的重讀觸發:readingKey 變動就 bump playKey → play effect(依賴 playKey)從頭重讀
+  // 現在的第一語言。跳過首次掛載(初始播放由既有流程負責,不要多重讀一次)。
+  const readingKeyInitRef = useRef(true);
+  useEffect(() => {
+    if (readingKeyInitRef.current) { readingKeyInitRef.current = false; return; }
+    setPlayKey(k => k + 1);
+  }, [readingKey]);
 
   useEffect(() => {
     if (!showTopicPicker) return undefined;
@@ -3171,7 +3202,7 @@ function VerseSetContinuousRainPlayer({
     const t1 = window.setTimeout(recomputePages, 180);
     const t2 = window.setTimeout(recomputePages, 520);
     return () => { cancelAnimationFrame(raf); window.clearTimeout(t1); window.clearTimeout(t2); };
-  }, [recomputePages, phraseContainerWidth, phrases, effectiveSecondaryPhrases, hasSecondaryPhrases, fontSizeLevel, currentVerse?.reference]);
+  }, [recomputePages, phraseContainerWidth, primaryPhrases, secondaryDisplayPhrases, hasSecondaryPhrases, fontSizeLevel, currentVerse?.reference]);
 
   // (舊的事後量測/修剪 measureAndTrim / trimOnResize 已移除 —— 分頁改由上方
   //  隱藏鏡像預先算好 pagesRef,顯示時不再需要事後修正,故不會再有「跳頁」。)
@@ -3197,7 +3228,7 @@ function VerseSetContinuousRainPlayer({
       window.speechSynthesis?.resume?.();
       bgmRef.current?.play().catch(() => {});
 
-      const lang = getVoiceLangForVersion(version);
+      const lang = getVoiceLangForVersion(swappedRef.current ? secondaryVersion : version);
       const currentPhrases = phrasesRef.current;
 
       // 創作者親聲朗讀 — play the creator's recording instead of TTS when one
@@ -3225,6 +3256,8 @@ function VerseSetContinuousRainPlayer({
         personalRec = forceTTSRef.current ? null : (overrideVoicesRef.current?.[currentVerse.reference] || null);
         ownerRec = (forceTTSRef.current || !voiceSetId) ? null : (verseVoicesRef.current?.[currentVerse.reference] || null);
       }
+      // 雙語對調中一律走電腦語音 TTS:親聲/作者錄音都是用原第一語言錄的,不適用於現在朗讀的第二語言。
+      if (swappedRef.current) { personalRec = null; ownerRec = null; }
       const creatorRec = personalRec || ownerRec;
       if (creatorRec?.voiceId) {
         // Attribution for the green「{name} 親聲朗讀」badge. When it's the
@@ -3590,10 +3623,10 @@ function VerseSetContinuousRainPlayer({
                 share one baseline-aligned row. They used to stack three deep
                 above the verse, which is space the falling phrases need more. */}
             <div className="continuous-rain-heading">
-              <h2>{formatVerseReferenceForDisplay(currentVerse.reference, version)}</h2>
-              {effectiveSecondaryRef && (
+              <h2>{formatVerseReferenceForDisplay(currentVerse.reference, activePrimaryVersion)}</h2>
+              {secondaryHeadingText && (
                 <span className="continuous-rain-secondary-reference">
-                  {formatVerseReferenceForDisplay(effectiveSecondaryRef, secondaryVersion)}
+                  {secondaryHeadingText}
                 </span>
               )}
               {voiceSetId && (activeVoiceLabel || creatorVoiceName) && (
@@ -3649,10 +3682,10 @@ function VerseSetContinuousRainPlayer({
               {/* 整頁一次擺好(index 落在 [phrasePageStart..phrasePageEnd] 都在 DOM、占好
                   最終版位),已讀到的句子才淡入(is-revealed);未讀的占位不顯示。→ 逐句
                   就地淡入、鄰句不位移(no drop / no squeeze / no jump)。 */}
-              {phrases.map((phrase, index) => {
+              {primaryPhrases.map((phrase, index) => {
                 if (index < phrasePageStart || index > phrasePageEnd) return null;
                 const secondaryPhrase = hasSecondaryPhrases
-                  ? getSecondaryPhrasesForIndex(index, phrases.length, effectiveSecondaryPhrases)
+                  ? getSecondaryPhrasesForIndex(index, primaryPhrases.length, secondaryDisplayPhrases)
                   : '';
                 const revealed = isSettled || index <= activePhrase;
                 return (
@@ -3688,9 +3721,9 @@ function VerseSetContinuousRainPlayer({
                 overflow: 'visible',
               }}
             >
-              {phrases.map((phrase, index) => {
+              {primaryPhrases.map((phrase, index) => {
                 const secondaryPhrase = hasSecondaryPhrases
-                  ? getSecondaryPhrasesForIndex(index, phrases.length, effectiveSecondaryPhrases)
+                  ? getSecondaryPhrasesForIndex(index, primaryPhrases.length, secondaryDisplayPhrases)
                   : '';
                 return (
                   <span key={`m-${phrase}-${index}`}>
@@ -3731,7 +3764,7 @@ function VerseSetContinuousRainPlayer({
         {onChallengeVerse && (
           <button
             type="button"
-            className="is-icon is-primary"
+            className="is-icon"
             title={t('挑戰', 'Challenge')}
             data-tip={t('挑戰', 'Challenge')}
             onClick={() => {
@@ -3776,13 +3809,20 @@ function VerseSetContinuousRainPlayer({
           <button
             type="button"
             className={`is-icon ${myVoiceForCurrent ? 'is-primary' : ''}`}
-            title={!userEmail
-              ? t('登入後即可錄製親聲', 'Sign in to record your voice')
-              : (myVoiceForCurrent ? t('重錄我的親聲', 'Re-record my voice') : t('錄我的親聲', 'Record my voice'))}
-            data-tip={!userEmail
-              ? t('登入後可錄音', 'Sign in to record')
-              : (myVoiceForCurrent ? t('重錄', 'Re-record') : t('錄音', 'Record'))}
+            disabled={swapped}
+            title={swapped
+              ? t('對調中無法錄音，請先按還原', 'Recording is off while swapped — restore first')
+              : (!userEmail
+                ? t('登入後即可錄製親聲', 'Sign in to record your voice')
+                : (myVoiceForCurrent ? t('重錄我的親聲', 'Re-record my voice') : t('錄我的親聲', 'Record my voice')))}
+            data-tip={swapped
+              ? t('對調中無法錄音', 'Off while swapped')
+              : (!userEmail
+                ? t('登入後可錄音', 'Sign in to record')
+                : (myVoiceForCurrent ? t('重錄', 'Re-record') : t('錄音', 'Record')))}
             onClick={() => {
+              // 對調中錄音會錄到原第一語言、且以節數為 key 覆蓋該節錄音 → 停用,請先還原。
+              if (swapped) return;
               // Not signed in → recordings are tied to your account (so they
               // sync across devices and can be attributed when shared), so
               // send the user to sign in instead of opening the recorder.
@@ -3796,7 +3836,11 @@ function VerseSetContinuousRainPlayer({
         )}
         {onSecondaryVersionChange && (
           // Tooltip lives on a wrapper span — ::after doesn't render on <select>.
-          <span data-tip={t('選擇第二語言', 'Second language')} style={{ display: 'inline-flex' }}>
+          <span data-tip={t('選擇第二語言', 'Second language')} style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}>
+            {/* 對調中,下拉裡的語言其實正被當主語言朗讀 → 標示改成「朗讀中：」較貼合實況。 */}
+            <span style={{ color: '#cbd5e1', fontSize: '0.85rem', fontWeight: 600, whiteSpace: 'nowrap' }}>
+              {swapped ? t('朗讀中：', 'Reading: ') : t('第二語言：', '2nd: ')}
+            </span>
             <select
               value={secondaryVersion || ''}
               onChange={(event) => onSecondaryVersionChange(event.target.value)}
@@ -3808,6 +3852,34 @@ function VerseSetContinuousRainPlayer({
               ))}
             </select>
           </span>
+        )}
+        {secondaryVersion && (
+          // 放在「第二語言：…」之後,用文字說明用途:一鍵改用第二語言朗讀,再按還原第一語言。
+          <button
+            type="button"
+            disabled={!swapped && !canSwapToSecondary}
+            aria-pressed={swapped}
+            title={swapped
+              ? t('改回第一語言朗讀', 'Back to reading the 1st language')
+              : t('暫時改用第二語言朗讀（不改變 App 語言）', 'Temporarily read in the 2nd language (does not change the app language)')}
+            onClick={() => {
+              // 純本地暫時對調:只切換 swapped;重跑朗讀交給 readingKey effect(它也涵蓋
+              // 對調中換語言/第二語言文字晚到的情況)。不動 App 全域語言,離開讀經頁即還原。
+              setSwapped(s => !s);
+            }}
+            style={{
+              display: 'inline-flex', alignItems: 'center', gap: '0.4rem', whiteSpace: 'nowrap',
+              padding: '0.45rem 0.85rem', borderRadius: '999px', fontSize: '0.85rem', fontWeight: 700,
+              cursor: (!swapped && !canSwapToSecondary) ? 'not-allowed' : 'pointer',
+              opacity: (!swapped && !canSwapToSecondary) ? 0.5 : 1,
+              border: swapped ? '1px solid #2563eb' : '1px solid rgba(255,255,255,0.25)',
+              background: swapped ? '#2563eb' : 'rgba(15,23,42,0.6)',
+              color: '#fff',
+            }}
+          >
+            <ArrowRightLeft size={16} />
+            {swapped ? t('還原第一語言', 'Back to 1st') : t('朗讀第二語言', 'Read the 2nd')}
+          </button>
         )}
       </div>
       {voiceRecTarget && (
