@@ -22963,6 +22963,10 @@ const deDict = {
                       body: JSON.stringify({
                         email: userEmail,
                         password: oldPassword,
+                        // Tell the server this is an OAuth (Google/Apple/LINE)
+                        // session so it can update by email without a password,
+                        // even if the stored record isn't yet flagged as OAuth.
+                        authProvider: localStorage.getItem('verserain_auth_provider') || undefined,
                         newName: newName,
                         newPassword: newPassword || undefined,
                         newCity,

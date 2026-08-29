@@ -219,3 +219,27 @@ test('password account still requires the current password', async () => {
   assert.strictEqual((await post(srv, '/update-profile', { email: 'p@example.com', newName: 'X' })).status, 400);
   assert.strictEqual((await post(srv, '/update-profile', { email: 'p@example.com', password: 'wrong', newName: 'X' })).status, 401);
 });
+
+// ── OAuth session marker (Option A): trust the client's login method ────────
+
+test('a LINE session (authProvider) updates a password account without its password', async () => {
+  // David's case: the record has a password and no oauthProvider yet, but the
+  // request comes from a LINE session. Update succeeds, password is untouched,
+  // and oauthProvider self-heals so the account is classified correctly later.
+  const { srv, storage } = makeServer();
+  await post(srv, '/register', { email: 'd@example.com', password: 'hunter2', nickname: 'David' });
+  const before = storage.map.get('user:d@example.com').password;
+  const res = await post(srv, '/update-profile', { email: 'd@example.com', authProvider: 'line', newName: 'David(LINE)', newCity: 'New Taipei' });
+  assert.strictEqual(res.status, 200);
+  const saved = storage.map.get('user:d@example.com');
+  assert.strictEqual(saved.name, 'David(LINE)');
+  assert.strictEqual(saved.city, 'New Taipei');
+  assert.strictEqual(saved.password, before, 'password must be left untouched');
+  assert.strictEqual(saved.oauthProvider, 'line', 'oauthProvider self-heals from the client hint');
+});
+
+test('update-profile on an unknown email returns 404 (not the password error)', async () => {
+  const { srv } = makeServer();
+  const res = await post(srv, '/update-profile', { email: 'nobody@example.com', newName: 'X' });
+  assert.strictEqual(res.status, 404);
+});

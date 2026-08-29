@@ -865,24 +865,27 @@ export default class Server {
         // 3.5. Update Profile
         if (url.pathname.endsWith('/update-profile')) {
            try {
-              const { email, password, newPassword, newName, newCity, newCountry } = await request.json();
+              const { email, password, newPassword, newName, newCity, newCountry, authProvider } = await request.json();
               if (!email) return new Response(JSON.stringify({ error: 'Email required' }), { status: 400, headers: corsHeaders });
 
               let user = await this.room.storage.get(`user:${email.toLowerCase()}`);
-              // OAuth (Google/Apple/LINE) accounts are created with password:null,
-              // so they can never satisfy a password check. Authenticate them by
-              // email alone (these are low-stakes profile fields) and skip the
-              // password step entirely. Password accounts keep the full check.
-              const isOAuthAccount = !!user && (!!user.oauthProvider || user.password == null);
+              if (!user) return new Response(JSON.stringify({ error: '帳號不存在 (account not found)' }), { status: 404, headers: corsHeaders });
+
+              // Skip the password step for OAuth (Google/Apple/LINE) profile edits.
+              // Two signals mean "no password needed": the stored record is already
+              // an OAuth account (oauthProvider set, or password:null), OR the
+              // request comes from an OAuth session (the client sends authProvider).
+              // The latter covers accounts that predate oauthProvider or that also
+              // have a password (a user who now signs in with LINE). These are
+              // low-stakes fields (display name / city / country) and the password
+              // is never changed on this path.
+              const clientOAuth = typeof authProvider === 'string' && authProvider.trim() !== '';
+              const isOAuthAccount = !!user.oauthProvider || user.password == null || clientOAuth;
               if (!isOAuthAccount) {
                  if (!password) return new Response(JSON.stringify({ error: 'Email and current password required' }), { status: 400, headers: corsHeaders });
-                 if (!user || !(await verifyPassword(password, user.password))) {
+                 if (!(await verifyPassword(password, user.password))) {
                     return new Response(JSON.stringify({ error: '密碼錯誤 (Invalid password)' }), { status: 401, headers: corsHeaders });
                  }
-              } else if (!user) {
-                 // Never reached (isOAuthAccount is false when user is missing),
-                 // but keep the not-found path explicit and non-revealing.
-                 return new Response(JSON.stringify({ error: '密碼錯誤 (Invalid password)' }), { status: 401, headers: corsHeaders });
               }
 
               const oldName = user.name;
@@ -892,6 +895,10 @@ export default class Server {
               if (!isOAuthAccount) {
                  if (newPassword) user.password = await hashPassword(newPassword);
                  else if (!isHashedPassword(user.password)) user.password = await hashPassword(password);
+              } else if (clientOAuth && !user.oauthProvider) {
+                 // Self-heal: record the OAuth identity so this account is
+                 // classified correctly (without the client hint) next time.
+                 user.oauthProvider = authProvider.trim();
               }
               if (newName) user.name = newName;
               if (newCity !== undefined) user.city = newCity;
