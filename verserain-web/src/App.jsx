@@ -2001,6 +2001,40 @@ function normalizeVerseReferenceKey(reference = '') {
   return `${bookId || normalizedBookPart}|${chapterVerse}`;
 }
 
+// Parse a reference-shaped string ("詩篇 150", "詩 150", "Psalms 150:6") into a
+// comparable { bookId, chapter, verses } via normalizeVerseReferenceKey, which
+// already unifies book abbreviations across every language in BIBLE_BOOKS.
+// Returns null when the string doesn't resolve to a real book + chapter.
+function parseScriptureKey(ref) {
+  const key = normalizeVerseReferenceKey(ref);
+  const m = /^(\d+)\|(\d+)(?::([\d,\-\s]+))?$/.exec(key);
+  if (!m) return null;
+  return { bookId: parseInt(m[1], 10), chapter: parseInt(m[2], 10), verses: m[3] ? m[3].trim() : null };
+}
+
+// Parse a chapter range out of a verse-set title ("詩篇 107-150",
+// "Psalms 107-150 (KJV)") into { bookId, start, end }, resolving the book from
+// the text before the range by reusing parseScriptureKey. Returns null when the
+// title has no chapter range or the leading text isn't a recognizable book.
+function parseSetChapterRange(title) {
+  if (!title) return null;
+  const norm = asciifyDigits(String(title)).replace(/[–—]/g, '-');
+  const m = norm.match(/(\d+)\s*-\s*(\d+)/);
+  if (!m) return null;
+  const start = parseInt(m[1], 10);
+  const end = parseInt(m[2], 10);
+  if (!(start >= 1 && end >= start)) return null;
+  const before = norm.slice(0, m.index).trim();
+  if (!before) return null;
+  const candidates = [before, before.split(/\s+/)[0]];
+  for (const c of candidates) {
+    if (!c) continue;
+    const k = parseScriptureKey(`${c} ${start}`);
+    if (k && k.chapter === start) return { bookId: k.bookId, start, end };
+  }
+  return null;
+}
+
 function findMatchingVerse(primaryVerse, primaryVerses = [], secondaryVerses = [], options = {}) {
   if (!primaryVerse || !secondaryVerses?.length) return null;
   const { allowIndexFallback = true } = options;
@@ -20506,23 +20540,42 @@ const deDict = {
                   {(() => {
                     if (!searchQuery.trim()) return <div style={{ color: '#64748b' }}>{t("請輸入關鍵字開始搜尋。", "Please enter a keyword to search.")}</div>;
                     const query = searchQuery.trim().toLowerCase();
+                    // When the query looks like a scripture reference ("詩篇 150", "詩 150",
+                    // "Psalms 150"), also match by book+chapter so ranges and abbreviations
+                    // resolve. Null for plain keyword searches, which skip this extra work.
+                    const scriptureQ = parseScriptureKey(searchQuery.trim());
 
-                    // Search in sets — title, description, or author name.
+                    // Search in sets — title, description, author name, or (for a
+                    // reference query) a chapter range in the title that contains the chapter.
                     const matchingSets = activeVerseSets.filter(s =>
                       s && s.title && (
                         s.title.toLowerCase().includes(query) ||
                         (s.description && s.description.replace(/<[^>]+>/g, '').toLowerCase().includes(query)) ||
-                        (s.authorName && s.authorName.toLowerCase().includes(query))
+                        (s.authorName && s.authorName.toLowerCase().includes(query)) ||
+                        (scriptureQ && (() => {
+                          const r = parseSetChapterRange(s.title);
+                          return !!r && r.bookId === scriptureQ.bookId &&
+                            scriptureQ.chapter >= r.start && scriptureQ.chapter <= r.end;
+                        })())
                       )
                     );
-                    // Search in individual verses
+                    // Search in individual verses — reference/title/text substring, or (for a
+                    // reference query) a matching book+chapter regardless of abbreviation form.
                     const matchingVerses = activeVerseSets.flatMap(s =>
                       (s && s.verses) ? s.verses.map(v => ({ ...v, setId: s.id, setName: s.title })) : []
                     ).filter(v =>
                       v && (
                         (v.reference && v.reference.toLowerCase().includes(query)) ||
                         (v.title && v.title.toLowerCase().includes(query)) ||
-                        (v.text && v.text.toLowerCase().includes(query))
+                        (v.text && v.text.toLowerCase().includes(query)) ||
+                        (scriptureQ && v.reference && (() => {
+                          const vk = parseScriptureKey(v.reference);
+                          if (!vk || vk.bookId !== scriptureQ.bookId || vk.chapter !== scriptureQ.chapter) return false;
+                          if (!scriptureQ.verses) return true;
+                          if (!vk.verses) return false;
+                          return vk.verses === scriptureQ.verses ||
+                            vk.verses.split(/[,\-\s]+/).includes(scriptureQ.verses);
+                        })())
                       )
                     );
 
