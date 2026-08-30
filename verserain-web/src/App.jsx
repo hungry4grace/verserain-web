@@ -2637,17 +2637,39 @@ function VerseSetContinuousRainPlayer({
 
   // Record / re-record my voice for the current verse, then refresh caches.
   const recordedByName = playerName || (userEmail || '').split('@')[0] || 'Anonymous';
+  // Per-reference save generation. Bake + upload run in the BACKGROUND (so the
+  // user can move straight on), which means re-recording the SAME verse fires a
+  // new upload before the previous one has finished. Without ordering, whichever
+  // upload's register call happened to land LAST would win — so an earlier take
+  // could silently overwrite a later one, and the recorder would keep playing
+  // the first take no matter how many times you re-recorded ("重錄了還是聽到第一次").
+  // We stamp each save with a monotonic seq per reference, chain saves of the
+  // same verse so their registers land in recording order, and drop any take a
+  // newer one has already superseded. Different verses still upload concurrently.
+  const saveSeqRef = useRef({}); // reference → latest issued seq
   const saveMyVoice = ({ blob, mime, dur, beautify, public: isPublic = true }) => {
     if (!userEmail) return;
     const ref = voiceRecTarget?.reference || currentVerse.reference;
-    // Bake (realtime ✨enhance ≈ clip length) + upload run in the BACKGROUND so
-    // the user can immediately record the NEXT verse — the recorder closes now.
+    const seq = (saveSeqRef.current[ref] || 0) + 1;
+    saveSeqRef.current[ref] = seq;
+    const isLatest = () => saveSeqRef.current[ref] === seq;
     // The promise is tracked so a share of this verse can await it (otherwise
     // the link would go out before the recording lands on the server).
+    const prevJob = uploadPromisesRef.current[ref];
     setVoiceStatus(prev => ({ ...prev, [ref]: 'processing' }));
     const job = (async () => {
+      // Wait for any in-flight save of THIS verse so registers land in the order
+      // the takes were made — the last take must win on the server, not just in
+      // memory. (Only same-verse re-records serialize; other verses are unaffected.)
+      if (prevJob) { try { await prevJob; } catch { /* prior take failed — still record this one */ } }
+      // A newer take was started while we waited → this one is already stale.
+      if (!isLatest()) return null;
       const finalBlob = beautify ? await bakeBeautifiedBlob(blob, mime) : blob;
+      if (!isLatest()) return null; // superseded during the bake
       const uploaded = await uploadUserVerseVoice({ email: userEmail, setId: personalVoiceSetId, reference: ref, blob: finalBlob, mime, dur, recordedBy: recordedByName, public: isPublic });
+      // Superseded while uploading → don't touch the caches, so the newer take's
+      // recording is what plays back.
+      if (!isLatest()) return null;
       // Tag with the bucket it was stored under so playback/delete resolve it
       // even when this recording later surfaces in a different context.
       const meta = { ...uploaded, voiceBucket: personalVoiceSetId };
@@ -2662,6 +2684,10 @@ function VerseSetContinuousRainPlayer({
     })();
     uploadPromisesRef.current[ref] = job;
     job.then(() => {
+      // Only the latest take clears the spinner / signals completion; a
+      // superseded take resolving must not pull the UI out from under the take
+      // that replaced it.
+      if (!isLatest()) return;
       setVoiceStatus(prev => { const n = { ...prev }; delete n[ref]; return n; });
       bumpPersonalVoices();
       // Tell the parent a recording landed, so the set-detail ⭐ refreshes
@@ -2669,7 +2695,7 @@ function VerseSetContinuousRainPlayer({
       onVoiceRecorded?.();
     }).catch((e) => {
       console.error('personal voice upload failed', e);
-      setVoiceStatus(prev => ({ ...prev, [ref]: 'error' }));
+      if (isLatest()) setVoiceStatus(prev => ({ ...prev, [ref]: 'error' }));
     }).finally(() => {
       if (uploadPromisesRef.current[ref] === job) delete uploadPromisesRef.current[ref];
     });
@@ -5916,6 +5942,12 @@ export default function App() {
   // reference → 'processing' | 'error' while a recording bakes + uploads in the
   // background (so the creator isn't blocked and can record the next verse).
   const [editorVoiceStatus, setEditorVoiceStatus] = useState({});
+  // Same last-take-wins ordering as saveMyVoice: re-recording a verse in the
+  // editor fires a fresh background upload before the previous one lands, so
+  // without this an earlier take's register could overwrite a later one and the
+  // row would keep the first take. Chain same-verse saves and drop superseded takes.
+  const editorSaveSeqRef = useRef({});   // reference → latest issued seq
+  const editorUploadJobRef = useRef({}); // reference → in-flight save promise
   useEffect(() => {
     let cancelled = false;
     const setId = editingCustomSet?.id;
@@ -18183,16 +18215,27 @@ const deDict = {
                                   const setId = editingCustomSet.id;
                                   const recordedBy = playerName || (userEmail || '').split('@')[0] || 'Anonymous';
                                   const email = userEmail || '';
+                                  const seq = (editorSaveSeqRef.current[ref] || 0) + 1;
+                                  editorSaveSeqRef.current[ref] = seq;
+                                  const isLatest = () => editorSaveSeqRef.current[ref] === seq;
+                                  const prevJob = editorUploadJobRef.current[ref];
                                   setEditorVoiceStatus(prev => ({ ...prev, [ref]: 'processing' }));
-                                  (async () => {
+                                  const job = (async () => {
+                                    // Serialize same-verse re-records so the last take wins on the
+                                    // server, not whichever upload finishes last.
+                                    if (prevJob) { try { await prevJob; } catch { /* prior take failed — still record this one */ } }
+                                    if (!isLatest()) return;
                                     try {
                                       const finalBlob = beautify ? await bakeBeautifiedBlob(blob, mime) : blob;
+                                      if (!isLatest()) return; // superseded during the bake
                                       const meta = await uploadVerseVoice({ email, setId, reference: ref, blob: finalBlob, mime, dur, recordedBy });
+                                      if (!isLatest()) return; // a newer take already replaced this one
                                       setEditorVerseVoices(prev => ({ ...prev, [ref]: meta }));
                                       // No success toast — the mic button turning green is enough,
                                       // and extra notifications distract mid-recording.
                                       setEditorVoiceStatus(prev => { const n = { ...prev }; delete n[ref]; return n; });
                                     } catch (e) {
+                                      if (!isLatest()) return;
                                       setEditorVoiceStatus(prev => ({ ...prev, [ref]: 'error' }));
                                       // A permission conflict (this verse was recorded under a
                                       // different account) is NOT a transient failure — re-recording
@@ -18205,6 +18248,8 @@ const deDict = {
                                       setTimeout(() => setToast(null), locked ? 7000 : 4000);
                                     }
                                   })();
+                                  editorUploadJobRef.current[ref] = job;
+                                  job.finally(() => { if (editorUploadJobRef.current[ref] === job) delete editorUploadJobRef.current[ref]; });
                                 }}
                                 onCancel={() => setEditorVoiceTarget(null)}
                                 onDone={() => setEditorVoiceTarget(null)}
