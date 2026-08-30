@@ -6781,17 +6781,27 @@ export default function App() {
   const safeActiveSets = activeVerseSets.length > 0 ? activeVerseSets : dummySet;
   const [favoriteVerseSetIds, setFavoriteVerseSetIds] = useState([]);
   const favoriteVerseSetIdSet = React.useMemo(() => new Set(favoriteVerseSetIds), [favoriteVerseSetIds]);
-  const saveFavoriteVerseSetIds = React.useCallback((nextIds) => {
-    if (!userEmail) return;
-    fetchRetry(`${PARTY_HOST}/verse-set-favorites`, {
+  const saveFavoriteVerseSetIds = React.useCallback(async (nextIds) => {
+    if (!userEmail) return false;
+    const res = await fetchRetry(`${PARTY_HOST}/verse-set-favorites`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ userEmail, playerName, setIds: nextIds }),
-    }).catch(() => {
+    });
+    if (!res.ok) {
+      throw new Error(`favorites save failed: ${res.status}`);
+    }
+    const data = await res.json().catch(() => null);
+    if (Array.isArray(data?.setIds)) {
+      setFavoriteVerseSetIds(data.setIds);
+    }
+    return true;
+  }, [userEmail, playerName]);
+
+  const handleFavoriteSaveError = React.useCallback(() => {
       setToast(t('我的最愛同步失敗，稍後再試', 'Favorites sync failed, please try again later'));
       setTimeout(() => setToast(null), 3000);
-    });
-  }, [userEmail, playerName]);
+  }, []);
 
   useEffect(() => {
     if (!userEmail) {
@@ -6823,14 +6833,16 @@ export default function App() {
       setShowLoginModal('login');
       return;
     }
-    setFavoriteVerseSetIds(prev => {
-      const next = prev.includes(setId)
-        ? prev.filter(id => id !== setId)
-        : [...prev, setId];
-      saveFavoriteVerseSetIds(next);
-      return next;
+    const previous = favoriteVerseSetIds;
+    const next = previous.includes(setId)
+      ? previous.filter(id => id !== setId)
+      : [...previous, setId];
+    setFavoriteVerseSetIds(next);
+    saveFavoriteVerseSetIds(next).catch(() => {
+      setFavoriteVerseSetIds(previous);
+      handleFavoriteSaveError();
     });
-  }, [userEmail, saveFavoriteVerseSetIds]);
+  }, [userEmail, favoriteVerseSetIds, saveFavoriteVerseSetIds, handleFavoriteSaveError]);
 
   const favoriteVerseSets = React.useMemo(() => {
     const byId = new globalThis.Map(safeActiveSets.filter(set => set?.id).map(set => [set.id, set]));
