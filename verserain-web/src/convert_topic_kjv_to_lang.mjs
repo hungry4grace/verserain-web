@@ -1,5 +1,5 @@
 /**
- * convert_topic_kjv_to_lang.mjs  <pt|fr|ru>
+ * convert_topic_kjv_to_lang.mjs  <pt|fr|ru|hi>
  *
  * Fetches all "Topic:" KJV published sets from PartyKit, converts each verse to
  * the target language via bolls.life, and republishes the converted set to
@@ -9,7 +9,7 @@
  *   node src/convert_topic_kjv_to_lang.mjs pt   # Almeida Revista e Corrigida 2009 (ARC09)
  *   node src/convert_topic_kjv_to_lang.mjs fr   # Louis Segond 1910 (FRLSG)
  *   node src/convert_topic_kjv_to_lang.mjs ru   # Russian Synodal (SYNOD)
- *   node src/convert_topic_kjv_to_lang.mjs hi   # Hindi (bolls slug — verify)
+ *   node src/convert_topic_kjv_to_lang.mjs hi   # Hindi Old Version (HIOV)
  *
  * Requires network access to bolls.life and the PartyKit host (won't run from a
  * sandbox with a restricted egress policy — run it from a normal machine).
@@ -85,7 +85,7 @@ const LANGS = {
     },
   },
   hi: {
-    slug: 'HNV',
+    slug: 'HIOV',
     names: {
       1:'उत्पत्ति',2:'निर्गमन',3:'लैव्यव्यवस्था',4:'गिनती',5:'व्यवस्थाविवरण',6:'यहोशू',7:'न्यायियों',8:'रूत',9:'1 शमूएल',10:'2 शमूएल',
       11:'1 राजा',12:'2 राजा',13:'1 इतिहास',14:'2 इतिहास',15:'एज्रा',16:'नहेम्याह',17:'एस्तेर',18:'अय्यूब',19:'भजन संहिता',20:'नीतिवचन',
@@ -100,7 +100,7 @@ const LANGS = {
 
 const lang = (process.argv[2] || '').toLowerCase();
 const cfg = LANGS[lang];
-if (!cfg) { console.error('Usage: node src/convert_topic_kjv_to_lang.mjs <pt|fr|ru>'); process.exit(1); }
+if (!cfg) { console.error('Usage: node src/convert_topic_kjv_to_lang.mjs <pt|fr|ru|hi>'); process.exit(1); }
 const { slug: BOLLS_SLUG, names: NAMES } = cfg;
 
 function parseRef(ref) {

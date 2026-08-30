@@ -1227,7 +1227,7 @@ const BOLLS_TRANSLATIONS = {
   pt:   'ARC09',  // Portuguese Almeida Revista e Corrigida 2009 (bolls slug)
   fr:   'FRLSG',  // French Louis Segond 1910 (bolls slug)
   ru:   'SYNOD',  // Russian Synodal (bolls slug)
-  hi:   'HNV',    // Hindi — bolls slug (verify against languages.json before ship)
+  hi:   'HIOV',   // Hindi Old Version (BSI re-edited; bolls slug)
   // he: OT → HAC, NT → DHNT  (handled below)
   // tr, my: not available on bolls.life
 };
