@@ -1,5 +1,5 @@
 /**
- * convert_topic_kjv_to_lang.mjs  <pt|fr|ru>
+ * convert_topic_kjv_to_lang.mjs  <pt|fr|ru|hi>
  *
  * Fetches all "Topic:" KJV published sets from PartyKit, converts each verse to
  * the target language via bolls.life, and republishes the converted set to
@@ -9,6 +9,7 @@
  *   node src/convert_topic_kjv_to_lang.mjs pt   # Almeida Revista e Corrigida 2009 (ARC09)
  *   node src/convert_topic_kjv_to_lang.mjs fr   # Louis Segond 1910 (FRLSG)
  *   node src/convert_topic_kjv_to_lang.mjs ru   # Russian Synodal (SYNOD)
+ *   node src/convert_topic_kjv_to_lang.mjs hi   # Hindi Old Version (HIOV)
  *
  * Requires network access to bolls.life and the PartyKit host (won't run from a
  * sandbox with a restricted egress policy — run it from a normal machine).
@@ -83,11 +84,23 @@ const LANGS = {
       61:'2 Петра',62:'1 Иоанна',63:'2 Иоанна',64:'3 Иоанна',65:'Иуды',66:'Откровение',
     },
   },
+  hi: {
+    slug: 'HIOV',
+    names: {
+      1:'उत्पत्ति',2:'निर्गमन',3:'लैव्यव्यवस्था',4:'गिनती',5:'व्यवस्थाविवरण',6:'यहोशू',7:'न्यायियों',8:'रूत',9:'1 शमूएल',10:'2 शमूएल',
+      11:'1 राजा',12:'2 राजा',13:'1 इतिहास',14:'2 इतिहास',15:'एज्रा',16:'नहेम्याह',17:'एस्तेर',18:'अय्यूब',19:'भजन संहिता',20:'नीतिवचन',
+      21:'सभोपदेशक',22:'श्रेष्ठगीत',23:'यशायाह',24:'यिर्मयाह',25:'विलापगीत',26:'यहेजकेल',27:'दानिय्येल',28:'होशे',29:'योएल',30:'आमोस',
+      31:'ओबद्याह',32:'योना',33:'मीका',34:'नहूम',35:'हबक्कूक',36:'सपन्याह',37:'हाग्गै',38:'जकर्याह',39:'मलाकी',40:'मत्ती',
+      41:'मरकुस',42:'लूका',43:'यूहन्ना',44:'प्रेरितों के काम',45:'रोमियों',46:'1 कुरिन्थियों',47:'2 कुरिन्थियों',48:'गलातियों',49:'इफिसियों',50:'फिलिप्पियों',
+      51:'कुलुस्सियों',52:'1 थिस्सलुनीकियों',53:'2 थिस्सलुनीकियों',54:'1 तीमुथियुस',55:'2 तीमुथियुस',56:'तीतुस',57:'फिलेमोन',58:'इब्रानियों',59:'याकूब',60:'1 पतरस',
+      61:'2 पतरस',62:'1 यूहन्ना',63:'2 यूहन्ना',64:'3 यूहन्ना',65:'यहूदा',66:'प्रकाशितवाक्य',
+    },
+  },
 };
 
 const lang = (process.argv[2] || '').toLowerCase();
 const cfg = LANGS[lang];
-if (!cfg) { console.error('Usage: node src/convert_topic_kjv_to_lang.mjs <pt|fr|ru>'); process.exit(1); }
+if (!cfg) { console.error('Usage: node src/convert_topic_kjv_to_lang.mjs <pt|fr|ru|hi>'); process.exit(1); }
 const { slug: BOLLS_SLUG, names: NAMES } = cfg;
 
 function parseRef(ref) {
