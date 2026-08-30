@@ -2488,6 +2488,7 @@ function VerseSetContinuousRainPlayer({
   secondaryVersion = null,
   onSecondaryVersionChange = null,
   t,
+  uiLang = 'zh',
   onStop,
   onListenLogged,
   playOnce = false,
@@ -3634,7 +3635,7 @@ function VerseSetContinuousRainPlayer({
     setShowTopicPicker(false);
     onSelectTopicSet(set);
   };
-  const stripTopicPrefix = (title = '') => stripTopicPrefixLabel(title);
+  const stripTopicPrefix = (title = '') => localizeTopicTitle(title, uiLang);
   const currentTopicLabel = (label || verseSet?.title || t('經文組', 'Verse Set'));
   const normalizedTopicButtonLabel = stripTopicPrefix(currentTopicLabel);
 
@@ -4413,6 +4414,36 @@ const topicStrokeCollator = (() => {
 const TOPIC_PREFIX_REGEX = /^(主題|主题|Topic|Tema|Thema|Konu|موضوع|נושא|テーマ|주제|ခေါင်းစဉ်|Chủ đề)\s*[：:]\s*/i;
 
 const stripTopicPrefixLabel = (title = '') => String(title).replace(TOPIC_PREFIX_REGEX, '');
+
+// Topic verse sets are published to PartyKit with English titles
+// ("Topic: Covenant"), so a reader whose UI is Russian/Portuguese/etc. would
+// otherwise see the English word in the topic picker. This map localizes the
+// canonical topic name (prefix stripped, lowercased) into every UI language.
+// Titles that arrive already localized — the Chinese source sets carry
+// "主題：話語的權能" — don't match any English key and fall through unchanged.
+const TOPIC_TITLE_I18N = {
+  'covenant': { zh:'約', cuvs:'约', en:'Covenant', es:'Pacto', pt:'Aliança', fr:'Alliance', de:'Bund', ru:'Завет', hi:'वाचा', tr:'Antlaşma', id:'Perjanjian', ms:'Perjanjian', vi:'Giao ước', ja:'契約', ko:'언약', my:'ပဋိညာဉ်', fa:'عهد', ar:'العهد', he:'ברית' },
+  "god's word": { zh:'神的話', cuvs:'神的话', en:"God's Word", es:'La Palabra de Dios', pt:'A Palavra de Deus', fr:'La Parole de Dieu', de:'Gottes Wort', ru:'Слово Божье', hi:'परमेश्वर का वचन', tr:"Tanrı'nın Sözü", id:'Firman Allah', ms:'Firman Tuhan', vi:'Lời Chúa', ja:'神の言葉', ko:'하나님의 말씀', my:'ဘုရားသခင်၏ နှုတ်ကပတ်တော်', fa:'کلام خدا', ar:'كلمة الله', he:'דבר האלוהים' },
+  'heal': { zh:'醫治', cuvs:'医治', en:'Healing', es:'Sanidad', pt:'Cura', fr:'Guérison', de:'Heilung', ru:'Исцеление', hi:'चंगाई', tr:'Şifa', id:'Kesembuhan', ms:'Kesembuhan', vi:'Chữa lành', ja:'癒やし', ko:'치유', my:'ကုသခြင်း', fa:'شفا', ar:'الشفاء', he:'רפואה' },
+  'healing': { zh:'醫治', cuvs:'医治', en:'Healing', es:'Sanidad', pt:'Cura', fr:'Guérison', de:'Heilung', ru:'Исцеление', hi:'चंगाई', tr:'Şifa', id:'Kesembuhan', ms:'Kesembuhan', vi:'Chữa lành', ja:'癒やし', ko:'치유', my:'ကုသခြင်း', fa:'شفا', ar:'الشفاء', he:'רפואה' },
+  'mercy': { zh:'憐憫', cuvs:'怜悯', en:'Mercy', es:'Misericordia', pt:'Misericórdia', fr:'Miséricorde', de:'Barmherzigkeit', ru:'Милость', hi:'दया', tr:'Merhamet', id:'Belas Kasihan', ms:'Belas Kasihan', vi:'Lòng thương xót', ja:'憐れみ', ko:'자비', my:'ကရုဏာ', fa:'رحمت', ar:'الرحمة', he:'רחמים' },
+  'pentecost': { zh:'五旬節', cuvs:'五旬节', en:'Pentecost', es:'Pentecostés', pt:'Pentecostes', fr:'Pentecôte', de:'Pfingsten', ru:'Пятидесятница', hi:'पिन्तेकुस्त', tr:'Pentikost', id:'Pentakosta', ms:'Pentakosta', vi:'Lễ Ngũ Tuần', ja:'ペンテコステ', ko:'오순절', my:'ပင်တေကုတ္တေပွဲ', fa:'پنطیکاست', ar:'يوم الخمسين', he:'שבועות' },
+  'praise': { zh:'讚美', cuvs:'赞美', en:'Praise', es:'Alabanza', pt:'Louvor', fr:'Louange', de:'Lobpreis', ru:'Хвала', hi:'स्तुति', tr:'Övgü', id:'Pujian', ms:'Pujian', vi:'Ngợi khen', ja:'賛美', ko:'찬양', my:'ချီးမွမ်းခြင်း', fa:'ستایش', ar:'التسبيح', he:'תהילה' },
+  'prayer': { zh:'禱告', cuvs:'祷告', en:'Prayer', es:'Oración', pt:'Oração', fr:'Prière', de:'Gebet', ru:'Молитва', hi:'प्रार्थना', tr:'Dua', id:'Doa', ms:'Doa', vi:'Cầu nguyện', ja:'祈り', ko:'기도', my:'ဆုတောင်းခြင်း', fa:'دعا', ar:'الصلاة', he:'תפילה' },
+  'power of words': { zh:'話語的權能', cuvs:'话语的权能', en:'Power of Words', es:'El Poder de las Palabras', pt:'O Poder das Palavras', fr:'Le Pouvoir des Mots', de:'Die Macht der Worte', ru:'Сила слов', hi:'शब्दों की शक्ति', tr:'Sözlerin Gücü', id:'Kuasa Perkataan', ms:'Kuasa Kata-kata', vi:'Quyền năng của lời nói', ja:'言葉の力', ko:'말의 능력', my:'စကား၏ တန်ခိုး', fa:'قدرت کلمات', ar:'قوة الكلمات', he:'כוח המילים' },
+};
+
+const normalizeTopicKey = (s) => String(s || '').trim().toLowerCase().replace(/\s+/g, ' ');
+
+// Prefix-strip a topic-set title AND localize the bare topic name to `uiLang`.
+// Unknown topics (not in TOPIC_TITLE_I18N) fall back to the stripped label, so
+// non-topic sets and any yet-untranslated topic render exactly as before.
+const localizeTopicTitle = (title = '', uiLang = 'zh') => {
+  const stripped = stripTopicPrefixLabel(title);
+  const entry = TOPIC_TITLE_I18N[normalizeTopicKey(stripped)];
+  if (!entry) return stripped;
+  return entry[uiLang] || entry.en || stripped;
+};
 
 const extractVerseSetTopic = (title = '') => {
   const plainTitle = String(title).replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
@@ -23256,6 +23287,7 @@ const deDict = {
             startVerse={continuousRainSet.startVerse || null}
             version={version}
             t={t}
+            uiLang={uiLang}
             userEmail={userEmail}
             playerName={playerName}
             onRequestLogin={() => setShowLoginModal('login')}
@@ -23373,7 +23405,7 @@ const deDict = {
                     verserain
                   </div>
                   <div className="app-brand-version" style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', marginTop: '4px', marginLeft: '2px' }}>
-                    v3.25.0
+                    v3.26.0
                   </div>
                 </div>
                 <div ref={langPickerRef} className="app-lang-control" style={{ position: 'relative' }}>
@@ -23677,6 +23709,7 @@ const deDict = {
                     startVerse={displayedDailyVerse}
                     version={version}
                     t={t}
+                    uiLang={uiLang}
                     userEmail={userEmail}
                     playerName={playerName}
                     onRequestLogin={() => setShowLoginModal('login')}
@@ -23770,6 +23803,7 @@ const deDict = {
                     onSecondaryVersionChange={setBilingualSecondaryVersion}
                     allSecondaryVerses={allSecondaryVerses}
                     t={t}
+                    uiLang={uiLang}
                     userEmail={userEmail}
                     playerName={playerName}
                     label={t('雙語經文雨 Beta', 'Bilingual VerseRain Beta')}
