@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { Play, Pause, RotateCcw, Heart, Zap, Trophy, Crown, Star, Home, XCircle, Headphones, Music, VolumeX, Search, Share2, Dices, Mic, MicOff, Users, CloudRain, Info, Edit, TreePine, Gamepad2, Map, Settings, Library, Volume2, Shuffle, Swords, ShoppingBasket, Apple, Mail, Lock, Sprout, Leaf, RotateCw, Smartphone, Hourglass, Frown, X, Camera, Square, Copy, ArrowRightLeft } from 'lucide-react';
+import { Play, Pause, RotateCcw, Heart, Zap, Trophy, Crown, Star, Home, XCircle, Headphones, Music, VolumeX, Search, Share2, Dices, Mic, MicOff, Users, CloudRain, Info, Edit, TreePine, Gamepad2, Map, Settings, Library, Volume2, Shuffle, Swords, ShoppingBasket, Apple, Mail, Lock, Sprout, Leaf, RotateCw, Smartphone, Hourglass, Frown, X, Camera, Square, Copy, ArrowRightLeft, MessageCircle } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import usePartySocket from 'partysocket/react';
 import PartySocket from 'partysocket';
@@ -3788,24 +3788,6 @@ function VerseSetContinuousRainPlayer({
                   {secondaryHeadingText}
                 </span>
               )}
-              {voiceSetId && (activeVoiceLabel || creatorVoiceName) && (
-                <span className="continuous-rain-reader" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, justifyContent: 'center', flexWrap: 'wrap' }}>
-                  <button
-                    onClick={openVoiceSwitchMenu}
-                    title={t('切換聲音', 'Switch voice')}
-                    style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '0.25rem 0.7rem', borderRadius: 999, border: '1px solid rgba(255,255,255,0.35)', background: 'rgba(255,255,255,0.14)', color: '#fff', fontSize: '0.9rem', fontWeight: 600, cursor: 'pointer' }}
-                  >
-                    🎙️ {t('朗讀者：{name}', 'Reader: {name}').replace('{name}', String(activeVoiceLabel || creatorVoiceName))} <span style={{ fontSize: '0.7rem', opacity: 0.85 }}>▾</span>
-                  </button>
-                  {currentTargetOwnerId() && (
-                    <button
-                      onClick={openCommentsForCurrent}
-                      title={t('留言 / 鼓勵', 'Comment / encourage')}
-                      style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 32, height: 32, borderRadius: '50%', border: '1px solid rgba(255,255,255,0.35)', background: 'rgba(255,255,255,0.14)', color: '#fff', fontSize: '1rem', cursor: 'pointer', padding: 0 }}
-                    >💬</button>
-                  )}
-                </span>
-              )}
             </div>
             {voiceLoading && (
               <div style={{ textAlign: 'center', margin: '-0.1rem 0 0.4rem', fontSize: '0.82rem' }}>
@@ -3911,100 +3893,136 @@ function VerseSetContinuousRainPlayer({
         </button>
       </div>
       <div className="continuous-rain-action-controls" aria-label={t('播放操作', 'Playback actions')}>
-        <button
-          type="button"
-          className="is-icon is-play-pause"
-          title={isPaused ? t('播放', 'Play') : t('暫停', 'Pause')}
-          data-tip={isPaused ? t('播放', 'Play') : t('暫停', 'Pause')}
-          onClick={togglePause}
-        >
-          {isPaused ? <Play size={22} fill="currentColor" /> : <Pause size={22} />}
-        </button>
-        {onChallengeVerse && (
+        <span className="continuous-rain-primary-actions">
           <button
             type="button"
-            className="is-icon"
-            title={t('挑戰', 'Challenge')}
-            data-tip={t('挑戰', 'Challenge')}
-            onClick={() => {
-              haltPlayback();
-              // Open the mode/difficulty chooser instead of launching straight
-              // into whatever mode was last configured elsewhere.
-              setChallengeChooser(loadChallengeSetup());
-            }}
+            className="is-icon is-play-pause"
+            title={isPaused ? t('播放', 'Play') : t('暫停', 'Pause')}
+            data-tip={isPaused ? t('播放', 'Play') : t('暫停', 'Pause')}
+            onClick={togglePause}
           >
-            <Zap size={22} />
+            {isPaused ? <Play size={22} fill="currentColor" /> : <Pause size={22} />}
           </button>
-        )}
-        {onShareVerse && (
-          <button
-            type="button"
-            className="is-icon"
-            disabled={shareBusy}
-            title={shareBusy
-              ? t('親聲上傳中,請稍候…', 'Uploading your voice…')
-              : (myVoiceForCurrent ? t('分享（附上你的親聲）', 'Share (with your voice)') : t('分享', 'Share'))}
-            data-tip={shareBusy
-              ? t('親聲上傳中…', 'Uploading…')
-              : (myVoiceForCurrent ? t('分享（附上你的親聲）', 'Share (with your voice)') : t('分享', 'Share'))}
-            onClick={async () => {
-              const ref = currentVerse.reference;
-              // If this verse's recording is still baking/uploading, wait for it
-              // so the shared link actually carries the voice (not owner/TTS).
-              const pending = uploadPromisesRef.current[ref];
-              if (pending) {
-                setShareBusy(true);
-                try { await pending; } catch { /* share without the voice */ }
-                setShareBusy(false);
-              }
-              const hasMine = !!personalVoicesRef.current[ref];
-              onShareVerse(currentVerse, { voiceOwner: hasMine ? myOwnerIdRef.current : null });
-            }}
-          >
-            <Share2 size={22} />
-          </button>
-        )}
-        {personalVoiceSetId && (
-          <button
-            type="button"
-            className={`is-icon ${myVoiceForCurrent ? 'is-primary' : ''}`}
-            disabled={swapped}
-            title={swapped
-              ? t('對調中無法錄音，請先按還原', 'Recording is off while swapped — restore first')
-              : (!userEmail
-                ? t('登入後即可錄製親聲', 'Sign in to record your voice')
-                : (myVoiceForCurrent ? t('重錄我的親聲', 'Re-record my voice') : t('錄我的親聲', 'Record my voice')))}
-            data-tip={swapped
-              ? t('對調中無法錄音', 'Off while swapped')
-              : (!userEmail
-                ? t('登入後可錄音', 'Sign in to record')
-                : (myVoiceForCurrent ? t('重錄', 'Re-record') : t('錄音', 'Record')))}
-            onClick={() => {
-              // 對調中錄音會錄到原第一語言、且以節數為 key 覆蓋該節錄音 → 停用,請先還原。
-              if (swapped) return;
-              // Not signed in → recordings are tied to your account (so they
-              // sync across devices and can be attributed when shared), so
-              // send the user to sign in instead of opening the recorder.
-              if (!userEmail) { haltPlayback(); onRequestLogin?.(); return; }
-              haltPlayback();
-              setVoiceRecTarget({ reference: currentVerse.reference, text: currentVerse.text });
-            }}
-          >
-            <Mic size={22} />
-          </button>
+          {onChallengeVerse && (
+            <button
+              type="button"
+              className="is-icon"
+              title={t('挑戰', 'Challenge')}
+              data-tip={t('挑戰', 'Challenge')}
+              onClick={() => {
+                haltPlayback();
+                // Open the mode/difficulty chooser instead of launching straight
+                // into whatever mode was last configured elsewhere.
+                setChallengeChooser(loadChallengeSetup());
+              }}
+            >
+              <Zap size={22} />
+            </button>
+          )}
+          {onShareVerse && (
+            <button
+              type="button"
+              className="is-icon"
+              disabled={shareBusy}
+              title={shareBusy
+                ? t('親聲上傳中,請稍候…', 'Uploading your voice…')
+                : (myVoiceForCurrent ? t('分享（附上你的親聲）', 'Share (with your voice)') : t('分享', 'Share'))}
+              data-tip={shareBusy
+                ? t('親聲上傳中…', 'Uploading…')
+                : (myVoiceForCurrent ? t('分享（附上你的親聲）', 'Share (with your voice)') : t('分享', 'Share'))}
+              onClick={async () => {
+                const ref = currentVerse.reference;
+                // If this verse's recording is still baking/uploading, wait for it
+                // so the shared link actually carries the voice (not owner/TTS).
+                const pending = uploadPromisesRef.current[ref];
+                if (pending) {
+                  setShareBusy(true);
+                  try { await pending; } catch { /* share without the voice */ }
+                  setShareBusy(false);
+                }
+                const hasMine = !!personalVoicesRef.current[ref];
+                onShareVerse(currentVerse, { voiceOwner: hasMine ? myOwnerIdRef.current : null });
+              }}
+            >
+              <Share2 size={22} />
+            </button>
+          )}
+          {personalVoiceSetId && userEmail && (
+            <button
+              type="button"
+              className={`is-icon ${myVoiceForCurrent ? 'is-primary' : ''}`}
+              disabled={swapped}
+              title={swapped
+                ? t('對調中無法錄音，請先按還原', 'Recording is off while swapped — restore first')
+                : (myVoiceForCurrent ? t('重錄我的親聲', 'Re-record my voice') : t('錄我的親聲', 'Record my voice'))}
+              data-tip={swapped
+                ? t('對調中無法錄音', 'Off while swapped')
+                : (myVoiceForCurrent ? t('重錄', 'Re-record') : t('錄音', 'Record'))}
+              onClick={() => {
+                // 對調中錄音會錄到原第一語言、且以節數為 key 覆蓋該節錄音 → 停用,請先還原。
+                if (swapped) return;
+                haltPlayback();
+                setVoiceRecTarget({ reference: currentVerse.reference, text: currentVerse.text });
+              }}
+            >
+              <Mic size={22} />
+            </button>
+          )}
+        </span>
+        <span className="continuous-rain-language-actions">
+        {voiceSetId && (activeVoiceLabel || creatorVoiceName) && (
+          <span className="continuous-rain-reader" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, justifyContent: 'center', flexWrap: 'nowrap', flexShrink: 0 }}>
+            <button
+              type="button"
+              onClick={openVoiceSwitchMenu}
+              title={t('切換聲音', 'Switch voice')}
+              data-tip={t('切換聲音', 'Switch voice')}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '0.45rem 0.68rem', borderRadius: 999, border: '1px solid rgba(255,255,255,0.25)', background: 'rgba(15,23,42,0.6)', color: '#fff', fontSize: '0.85rem', fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap', maxWidth: 'min(150px, 30vw)' }}
+            >
+              <Mic size={16} />
+              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{String(activeVoiceLabel || creatorVoiceName)}</span>
+              <span style={{ fontSize: '0.7rem', opacity: 0.85 }}>▾</span>
+            </button>
+            {currentTargetOwnerId() && (
+              <button
+                type="button"
+                onClick={openCommentsForCurrent}
+                title={t('鼓勵這位朗讀者', 'Encourage this reader')}
+                data-tip={t('鼓勵這位朗讀者', 'Encourage this reader')}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 5,
+                  minWidth: 0,
+                  height: 36,
+                  padding: '0 0.72rem',
+                  borderRadius: 999,
+                  border: '1px solid rgba(250,204,21,0.72)',
+                  background: 'linear-gradient(135deg, rgba(250,204,21,0.95), rgba(245,158,11,0.9))',
+                  color: '#422006',
+                  boxShadow: '0 8px 20px rgba(245,158,11,0.28)',
+                  fontSize: '0.84rem',
+                  fontWeight: 800,
+                  cursor: 'pointer',
+                  whiteSpace: 'nowrap',
+                  flexShrink: 0
+                }}
+              >
+                <MessageCircle size={16} />
+                <span>{t('鼓勵', 'Encourage')}</span>
+              </button>
+            )}
+          </span>
         )}
         {onSecondaryVersionChange && (
           // Tooltip lives on a wrapper span — ::after doesn't render on <select>.
-          <span data-tip={t('選擇第二語言', 'Second language')} style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}>
-            {/* 對調中,下拉裡的語言其實正被當主語言朗讀 → 標示改成「朗讀中：」較貼合實況。 */}
-            <span style={{ color: '#cbd5e1', fontSize: '0.85rem', fontWeight: 600, whiteSpace: 'nowrap' }}>
-              {swapped ? t('朗讀中：', 'Reading: ') : t('第二語言：', '2nd: ')}
-            </span>
+          <span data-tip={t('選擇第二語言', 'Second language')} style={{ display: 'inline-flex', alignItems: 'center', gap: '0.32rem' }}>
             <select
               value={secondaryVersion || ''}
               onChange={(event) => onSecondaryVersionChange(event.target.value)}
-              title={t('選擇第二語言', 'Second language')}
-              style={{ padding: '0.4rem 0.6rem', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.25)', background: 'rgba(15,23,42,0.6)', color: '#e2e8f0', fontSize: '0.85rem', cursor: 'pointer' }}
+              title={swapped ? t('正在朗讀第二語言', 'Reading the second language') : t('選擇第二語言', 'Second language')}
+              style={{ width: 142, maxWidth: '34vw', padding: '0.4rem 0.5rem', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.25)', background: 'rgba(15,23,42,0.6)', color: '#e2e8f0', fontSize: '0.85rem', cursor: 'pointer' }}
             >
               {BIBLE_LANGUAGE_OPTIONS.filter(option => option.value !== version).map(option => (
                 <option key={option.value} value={option.value}>{option.label}</option>
@@ -4044,9 +4062,10 @@ function VerseSetContinuousRainPlayer({
             }}
           >
             <ArrowRightLeft size={16} />
-            {swapped ? t('還原第一語言', 'Back to 1st') : t('朗讀第二語言', 'Read the 2nd')}
+            {swapped ? t('還原', 'Back') : t('朗讀', 'Read')}
           </button>
         )}
+        </span>
       </div>
       {voiceRecTarget && (
         <VerseVoiceRecorder
