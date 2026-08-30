@@ -1455,7 +1455,7 @@ textarea {
      empty space above/below its text — pairs sit closer, more per page. The
      0.18em internal gap between the primary line and its translation is kept
      so the two stay visually associated. */
-  min-height: 2.4em;
+  min-height: 2.5em;
   max-width: min(92vw, 860px);
   text-align: center;
 }
@@ -1466,9 +1466,9 @@ textarea {
 
 .continuous-rain-phrases.has-secondary span small {
   color: rgba(219, 234, 254, 0.86);
-  font-size: 0.72em;
+  font-size: 0.75em;
   font-weight: 800;
-  line-height: 1.22;
+  line-height: 1.18;
   text-shadow: 0.06em 0.08em 2px rgba(0, 0, 0, 0.85), 0.14em 0.18em 10px rgba(0, 0, 0, 0.5);
 }
 
