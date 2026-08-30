@@ -1146,6 +1146,13 @@ const PLAY_DURATION_OPTIONS = [
   { value: 'infinite', minutes: null }
 ];
 const DEFAULT_PLAY_DURATION_CHOICE = '10';
+const PLAY_FONT_OPTIONS = [
+  { value: 'xlarge', label: '最大', enLabel: 'XL' },
+  { value: 'large', label: '大', enLabel: 'Large' },
+  { value: 'normal', label: '中', enLabel: 'Medium' },
+  { value: 'small', label: '小', enLabel: 'Small' }
+];
+const DEFAULT_PLAY_FONT_CHOICE = 'normal';
 
 // --- Bible verse cross-language lookup utilities ---
 function getEnglishReferenceFromKey(normalizedKey) {
@@ -2499,6 +2506,7 @@ function VerseSetContinuousRainPlayer({
   onStop,
   onListenLogged,
   playDurationMinutes = null,
+  initialFontSizeLevel = DEFAULT_PLAY_FONT_CHOICE,
   playOnce = false,
   onComplete,
   label,
@@ -3135,7 +3143,9 @@ function VerseSetContinuousRainPlayer({
   const pagesRef = useRef([]);
   const phraseMirrorRef = useRef(null);
   const [phraseContainerWidth, setPhraseContainerWidth] = useState(0);
-  const [fontSizeLevel, setFontSizeLevel] = useState('normal');
+  const [fontSizeLevel, setFontSizeLevel] = useState(
+    RAIN_FONT_LEVELS.includes(initialFontSizeLevel) ? initialFontSizeLevel : DEFAULT_PLAY_FONT_CHOICE
+  );
   const [showTopicPicker, setShowTopicPicker] = useState(false);
   const bgmRef = useRef(null);
   const runRef = useRef(0);
@@ -7770,6 +7780,21 @@ export default function App() {
       // Ignore storage failures; playback can still use the in-memory choice.
     }
   }, [selectedPlayDuration.value]);
+  const [playFontChoice, setPlayFontChoice] = useState(() => {
+    try {
+      return localStorage.getItem('verseRainPlayFontSize') || DEFAULT_PLAY_FONT_CHOICE;
+    } catch {
+      return DEFAULT_PLAY_FONT_CHOICE;
+    }
+  });
+  const selectedPlayFont = PLAY_FONT_OPTIONS.find(option => option.value === playFontChoice) || PLAY_FONT_OPTIONS[2];
+  useEffect(() => {
+    try {
+      localStorage.setItem('verseRainPlayFontSize', selectedPlayFont.value);
+    } catch {
+      // Ignore storage failures; playback can still use the in-memory choice.
+    }
+  }, [selectedPlayFont.value]);
   // Play-time voice source: null = auto (my voice › author › TTS). Otherwise
   // { type:'tts'|'owner'|'personal', ownerId?, label }. Chosen in the 播放方式
   // modal; threaded onto continuousRainSet as sharedVoiceOwner/forceTTS/
@@ -7810,6 +7835,7 @@ export default function App() {
       verses: set.verses,
       playOrder: order, // 'random' | 'sequential' — both loop forever
       playDurationMinutes: selectedPlayDuration.minutes,
+      fontSizeLevel: selectedPlayFont.value,
       startVerse: order === 'sequential' ? set.verses[0] : undefined,
       voiceSetId: set.voiceSetId || null,
       background: set.background || '',
@@ -23315,6 +23341,7 @@ const deDict = {
             topicSets={topicVerseSets}
             startVerse={continuousRainSet.startVerse || null}
             playDurationMinutes={continuousRainSet.playDurationMinutes ?? null}
+            initialFontSizeLevel={continuousRainSet.fontSizeLevel || DEFAULT_PLAY_FONT_CHOICE}
             version={version}
             t={t}
             userEmail={userEmail}
@@ -23330,7 +23357,8 @@ const deDict = {
               setContinuousRainSet({
                 ...set,
                 startVerse: pickRandomVerse(set.verses || []),
-                playDurationMinutes: continuousRainSet.playDurationMinutes ?? null
+                playDurationMinutes: continuousRainSet.playDurationMinutes ?? null,
+                fontSizeLevel: continuousRainSet.fontSizeLevel || DEFAULT_PLAY_FONT_CHOICE
               });
             }}
             onListenLogged={() => updateGarden('activity_only', 'listen')}
@@ -28492,6 +28520,36 @@ const deDict = {
                         }}
                       >
                         {labelText}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+              <div style={{ margin: '0 0 1.1rem', textAlign: 'left' }}>
+                <div style={{ fontSize: '0.8rem', color: '#64748b', marginBottom: '0.5rem', fontWeight: 600 }}>
+                  Aa {t('字體大小', 'Font size')}
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: '0.45rem' }}>
+                  {PLAY_FONT_OPTIONS.map(option => {
+                    const active = option.value === selectedPlayFont.value;
+                    return (
+                      <button
+                        key={option.value}
+                        type="button"
+                        onClick={() => setPlayFontChoice(option.value)}
+                        style={{
+                          padding: '0.52rem 0.35rem',
+                          borderRadius: '999px',
+                          border: active ? '2px solid #2563eb' : '1px solid #cbd5e1',
+                          background: active ? '#eff6ff' : '#fff',
+                          color: active ? '#1d4ed8' : '#475569',
+                          fontWeight: active ? 800 : 600,
+                          fontSize: '0.82rem',
+                          cursor: 'pointer',
+                          whiteSpace: 'nowrap'
+                        }}
+                      >
+                        {t(option.label, option.enLabel)}
                       </button>
                     );
                   })}
