@@ -2138,6 +2138,41 @@ export default class Server {
          }
       }
 
+      // 4.7 Player Verse Set Favorites — account-backed quick-access list.
+      // This is intentionally keyed by email rather than playerName, so the
+      // same favorites follow the player across phones, tablets and computers
+      // even if they later edit their display name.
+      if (url.pathname.endsWith('/verse-set-favorites') && request.method === 'GET') {
+         try {
+            const email = String(url.searchParams.get('email') || '').trim().toLowerCase();
+            if (!email) return new Response(JSON.stringify({ error: 'email required' }), { status: 403, headers: corsHeaders });
+            const data = await this.room.storage.get(`favorites:${email}`);
+            const setIds = Array.isArray(data?.setIds) ? data.setIds.filter(id => typeof id === 'string') : [];
+            return new Response(JSON.stringify({ success: true, setIds }), { status: 200, headers: corsHeaders });
+         } catch (e) {
+            return new Response(JSON.stringify({ error: 'Failed to fetch favorites' }), { status: 500, headers: corsHeaders });
+         }
+      }
+
+      if (url.pathname.endsWith('/verse-set-favorites') && request.method === 'POST') {
+         try {
+            const { userEmail, playerName, setIds } = await request.json();
+            const email = String(userEmail || '').trim().toLowerCase();
+            if (!email) return new Response(JSON.stringify({ error: 'Login required' }), { status: 403, headers: corsHeaders });
+            if (!Array.isArray(setIds)) return new Response(JSON.stringify({ error: 'setIds[] required' }), { status: 400, headers: corsHeaders });
+            const cleanIds = Array.from(new Set(setIds.map(id => String(id || '').trim()).filter(Boolean))).slice(0, 80);
+            await this.room.storage.put(`favorites:${email}`, {
+               userEmail: email,
+               playerName: String(playerName || '').trim(),
+               setIds: cleanIds,
+               updatedAt: new Date().toISOString(),
+            });
+            return new Response(JSON.stringify({ success: true, setIds: cleanIds }), { status: 200, headers: corsHeaders });
+         } catch (e) {
+            return new Response(JSON.stringify({ error: 'Failed to save favorites' }), { status: 500, headers: corsHeaders });
+         }
+      }
+
       // 5. Garden Sync — Save & Retrieve player garden data
       //
       // Server-side defensive merge: even if a client pushes an incomplete or

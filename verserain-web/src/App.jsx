@@ -2498,6 +2498,7 @@ function DailyVerseRainExperience({ verse, version, t, onRead, onChallenge, onSh
 function VerseSetContinuousRainPlayer({
   verseSet,
   topicSets = [],
+  favoriteVerseSets = [],
   version,
   secondaryVerseSet = null,
   secondaryVersion = null,
@@ -3761,30 +3762,57 @@ function VerseSetContinuousRainPlayer({
                   <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '100%' }}>{normalizedTopicButtonLabel}</span>
                   <span style={{ fontSize: '0.8rem', fontWeight: 700, opacity: 0.9, whiteSpace: 'nowrap', letterSpacing: '0.02em' }}>{t('【更多的主題經文】', 'More topic verses')}</span>
                 </button>
-                {showTopicPicker && (
-                  <div style={{ position: 'absolute', top: 'calc(100% + 8px)', left: '50%', transform: 'translateX(-50%)', width: 'min(92vw, 540px)', maxHeight: '60vh', overflowY: 'auto', background: 'rgba(15, 23, 42, 0.94)', border: '1px solid rgba(148, 163, 184, 0.45)', borderRadius: '14px', boxShadow: '0 16px 36px rgba(2,6,23,.45)', zIndex: 30, padding: '0.5rem', display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: '0.35rem' }}>
-                    {[...topicSets]
-                      .sort((a, b) => {
-                        const ta = stripTopicPrefix(a.title) || '';
-                        const tb = stripTopicPrefix(b.title) || '';
-                        try {
-                          return new Intl.Collator('zh-Hant', { collation: 'stroke' }).compare(ta, tb);
-                        } catch {
-                          return ta.localeCompare(tb, 'zh-Hant');
-                        }
-                      })
-                      .map(set => (
-                      <button
-                        key={set.id}
-                        type="button"
-                        onClick={() => handleSelectTopicSet(set)}
-                        style={{ width: '100%', textAlign: 'center', border: 'none', borderRadius: '10px', background: set.id === verseSet?.id ? 'rgba(59,130,246,.28)' : 'rgba(148,163,184,0.08)', color: '#e2e8f0', padding: '0.5rem 0.4rem', fontSize: '0.9rem', cursor: 'pointer', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
-                      >
-                        {stripTopicPrefix(set.title)}
-                      </button>
-                    ))}
-                  </div>
-                )}
+                {showTopicPicker && (() => {
+                  const compareByLabel = (a, b) => {
+                    const ta = stripTopicPrefix(a.title) || '';
+                    const tb = stripTopicPrefix(b.title) || '';
+                    try {
+                      return new Intl.Collator('zh-Hant', { collation: 'stroke' }).compare(ta, tb);
+                    } catch {
+                      return ta.localeCompare(tb, 'zh-Hant');
+                    }
+                  };
+                  const favorites = [...favoriteVerseSets].filter(set => set?.id).sort(compareByLabel);
+                  const favoriteIds = new Set(favorites.map(set => set.id));
+                  const topics = [...topicSets].filter(set => !favoriteIds.has(set?.id)).sort(compareByLabel);
+                  const renderSetButton = (set, isFavorite = false) => (
+                    <button
+                      key={set.id}
+                      type="button"
+                      onClick={() => handleSelectTopicSet(set)}
+                      style={{ width: '100%', textAlign: 'center', border: isFavorite ? '1px solid rgba(250, 204, 21, 0.45)' : 'none', borderRadius: '8px', background: set.id === verseSet?.id ? 'rgba(59,130,246,.32)' : (isFavorite ? 'rgba(250,204,21,0.12)' : 'rgba(148,163,184,0.08)'), color: '#e2e8f0', padding: '0.5rem 0.4rem', fontSize: '0.9rem', cursor: 'pointer', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '0.28rem' }}
+                    >
+                      {isFavorite && <Star size={13} fill="#facc15" color="#facc15" />}
+                      <span style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis' }}>{stripTopicPrefix(set.title)}</span>
+                    </button>
+                  );
+                  return (
+                    <div style={{ position: 'absolute', top: 'calc(100% + 8px)', left: '50%', transform: 'translateX(-50%)', width: 'min(92vw, 560px)', maxHeight: '60vh', overflowY: 'auto', background: 'rgba(15, 23, 42, 0.94)', border: '1px solid rgba(148, 163, 184, 0.45)', borderRadius: '14px', boxShadow: '0 16px 36px rgba(2,6,23,.45)', zIndex: 30, padding: '0.55rem', display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+                      <section>
+                        <div style={{ color: '#fde68a', fontSize: '0.78rem', fontWeight: 900, margin: '0 0 0.35rem 0', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.3rem', width: '100%', textAlign: 'center' }}>
+                          <Star size={14} fill="currentColor" /> {t('我的最愛', 'Favorites')}
+                        </div>
+                        {favorites.length > 0 ? (
+                          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: '0.35rem' }}>
+                            {favorites.map(set => renderSetButton(set, true))}
+                          </div>
+                        ) : (
+                          <div style={{ color: '#94a3b8', fontSize: '0.82rem', padding: '0.45rem 0.35rem', textAlign: 'center', border: '1px dashed rgba(148,163,184,0.35)', borderRadius: '8px' }}>
+                            {userEmail ? t('到經文題庫按星號加入', 'Star sets in Scripture Sets') : t('登入後可加入我的最愛', 'Log in to save favorites')}
+                          </div>
+                        )}
+                      </section>
+                      <section>
+                        <div style={{ color: '#cbd5e1', fontSize: '0.78rem', fontWeight: 900, margin: '0 0 0.35rem 0.1rem' }}>
+                          {t('主題經文', 'Topic verses')}
+                        </div>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: '0.35rem' }}>
+                          {topics.map(set => renderSetButton(set))}
+                        </div>
+                      </section>
+                    </div>
+                  );
+                })()}
               </div>
               {showNav && <button type="button" onClick={handleNext} disabled={nextDisabled || navAtLast} aria-label={t('下一節', 'Next verse')}>›</button>}
             </div>
@@ -4464,13 +4492,126 @@ const topicStrokeCollator = (() => {
   }
 })();
 
-const TOPIC_PREFIX_REGEX = /^(主題|主题|Topic|Tema|Thema|Konu|موضوع|נושא|テーマ|주제|ခေါင်းစဉ်|Chủ đề)\s*[：:]\s*/i;
+const TOPIC_PREFIX_REGEX = /^(主題|主题|Topic|Tema|Thema|Thème|Konu|موضوع|נושא|テーマ|주제|ခေါင်းစဉ်|Chủ đề|Тема|विषय|Topik)\s*[：:]\s*/i;
 
 const stripTopicPrefixLabel = (title = '') => String(title).replace(TOPIC_PREFIX_REGEX, '');
 
+const TOPIC_TITLE_PREFIX_BY_LANG = {
+  cuv: '主題',
+  cuvs: '主题',
+  tw: '主題',
+  kjv: 'Topic',
+  esv: 'Topic',
+  niv: 'Topic',
+  fa: 'موضوع',
+  ar: 'موضوع',
+  he: 'נושא',
+  ja: 'テーマ',
+  ko: '주제',
+  es: 'Tema',
+  tr: 'Konu',
+  de: 'Thema',
+  pt: 'Tema',
+  fr: 'Thème',
+  ru: 'Тема',
+  hi: 'विषय',
+  my: 'ခေါင်းစဉ်',
+  vi: 'Chủ đề',
+  id: 'Topik',
+  ms: 'Topik'
+};
+
+const OFFICIAL_TOPIC_TITLE_TRANSLATIONS = {
+  covenant: {
+    cuv: '盟約', cuvs: '盟约', tw: '盟約', kjv: 'Covenant', esv: 'Covenant', niv: 'Covenant',
+    fa: 'میثاق', ar: 'العهد', he: 'ברית', ja: '契約', ko: '언약',
+    es: 'Pacto', tr: 'Antlaşma', de: 'Bund', pt: 'Aliança', fr: 'Alliance', ru: 'Завет',
+    hi: 'वाचा', my: 'ပဋိညာဉ်', vi: 'Giao ước', id: 'Perjanjian', ms: 'Perjanjian'
+  },
+  heal: {
+    cuv: '醫治', cuvs: '医治', tw: '醫治', kjv: 'Healing', esv: 'Healing', niv: 'Healing',
+    fa: 'شفا', ar: 'الشفاء', he: 'ריפוי', ja: '癒やし', ko: '치유',
+    es: 'Sanidad', tr: 'Şifa', de: 'Heilung', pt: 'Cura', fr: 'Guérison', ru: 'Исцеление',
+    hi: 'चंगाई', my: 'ကုစားခြင်း', vi: 'Chữa lành', id: 'Penyembuhan', ms: 'Penyembuhan'
+  },
+  mercy: {
+    cuv: '憐憫', cuvs: '怜悯', tw: '憐憫', kjv: 'Mercy', esv: 'Mercy', niv: 'Mercy',
+    fa: 'رحمت', ar: 'الرحمة', he: 'רחמים', ja: 'あわれみ', ko: '자비',
+    es: 'Misericordia', tr: 'Merhamet', de: 'Barmherzigkeit', pt: 'Misericórdia', fr: 'Miséricorde', ru: 'Милость',
+    hi: 'दया', my: 'ကရုဏာ', vi: 'Lòng thương xót', id: 'Belas kasihan', ms: 'Belas kasihan'
+  },
+  pentecost: {
+    cuv: '五旬節', cuvs: '五旬节', tw: '五旬節', kjv: 'Pentecost', esv: 'Pentecost', niv: 'Pentecost',
+    fa: 'پنطیکاست', ar: 'الخمسين', he: 'חג השבועות', ja: 'ペンテコステ', ko: '오순절',
+    es: 'Pentecostés', tr: 'Pentikost', de: 'Pfingsten', pt: 'Pentecostes', fr: 'Pentecôte', ru: 'Пятидесятница',
+    hi: 'पिन्तेकुस्त', my: 'ပင်တေကုတ္တေပွဲ', vi: 'Lễ Ngũ Tuần', id: 'Pentakosta', ms: 'Pentakosta'
+  },
+  praise: {
+    cuv: '讚美', cuvs: '赞美', tw: '讚美', kjv: 'Praise', esv: 'Praise', niv: 'Praise',
+    fa: 'ستایش', ar: 'التسبيح', he: 'שבח', ja: '賛美', ko: '찬양',
+    es: 'Alabanza', tr: 'Övgü', de: 'Lobpreis', pt: 'Louvor', fr: 'Louange', ru: 'Хвала',
+    hi: 'स्तुति', my: 'ချီးမွမ်းခြင်း', vi: 'Ca ngợi', id: 'Pujian', ms: 'Pujian'
+  },
+  wordOfGod: {
+    cuv: '神的話', cuvs: '神的话', tw: '神的話', kjv: "God's word", esv: "God's word", niv: "God's word",
+    fa: 'کلام خدا', ar: 'كلمة الله', he: 'דבר אלוהים', ja: '神の言葉', ko: '하나님의 말씀',
+    es: 'Palabra de Dios', tr: "Tanrı'nın sözü", de: 'Gottes Wort', pt: 'Palavra de Deus', fr: 'Parole de Dieu', ru: 'Слово Божье',
+    hi: 'परमेश्वर का वचन', my: 'ဘုရားသခင်၏ စကားတော်', vi: 'Lời Chúa', id: 'Firman Tuhan', ms: 'Firman Tuhan'
+  },
+  prayer: {
+    cuv: '禱告', cuvs: '祷告', tw: '禱告', kjv: 'Prayer', esv: 'Prayer', niv: 'Prayer',
+    fa: 'دعا', ar: 'الصلاة', he: 'תפילה', ja: '祈り', ko: '기도',
+    es: 'Oración', tr: 'Dua', de: 'Gebet', pt: 'Oração', fr: 'Prière', ru: 'Молитва',
+    hi: 'प्रार्थना', my: 'ဆုတောင်းခြင်း', vi: 'Cầu nguyện', id: 'Doa', ms: 'Doa'
+  },
+  scriptureRain: {
+    cuv: '經文雨', cuvs: '经文雨', tw: '經文雨', kjv: 'Scripture Rain', esv: 'Scripture Rain', niv: 'Scripture Rain',
+    fa: 'باران کتاب مقدس', ar: 'مطر الكتاب المقدس', he: 'גשם הכתובים', ja: '聖句の雨', ko: '말씀 비',
+    es: 'Lluvia de Escrituras', tr: 'Kutsal Yazı Yağmuru', de: 'Schriftregen', pt: 'Chuva da Palavra', fr: 'Pluie de la Parole', ru: 'Дождь Писания',
+    hi: 'वचन वर्षा', my: 'ကျမ်းချက်မိုး', vi: 'Mưa Kinh Thánh', id: 'Hujan Firman', ms: 'Hujan Firman'
+  },
+  mutualizedEconomics: {
+    cuv: '互惠經濟', cuvs: '互惠经济', tw: '互惠經濟', kjv: 'Mutualized Economics', esv: 'Mutualized Economics', niv: 'Mutualized Economics',
+    fa: 'اقتصاد متقابل', ar: 'الاقتصاد التشاركي', he: 'כלכלה הדדית', ja: '相互経済', ko: '상호 경제',
+    es: 'Economía mutua', tr: 'Karşılıklı ekonomi', de: 'Gegenseitige Wirtschaft', pt: 'Economia mutualizada', fr: 'Économie mutualisée', ru: 'Взаимная экономика',
+    hi: 'पारस्परिक अर्थव्यवस्था', my: 'အပြန်အလှန် စီးပွားရေး', vi: 'Kinh tế tương hỗ', id: 'Ekonomi Saling Menguntungkan', ms: 'Ekonomi Bersama'
+  },
+  powerOfWords: {
+    cuv: '話語的權能', cuvs: '话语的权能', tw: '話語的權能', kjv: 'Power of Words', esv: 'Power of Words', niv: 'Power of Words',
+    fa: 'قدرت کلمات', ar: 'قوة الكلمات', he: 'כוח המילים', ja: '言葉の力', ko: '말의 능력',
+    es: 'Poder de las palabras', tr: 'Sözlerin gücü', de: 'Kraft der Worte', pt: 'Poder das palavras', fr: 'Puissance des paroles', ru: 'Сила слов',
+    hi: 'वचनों की सामर्थ्य', my: 'စကားလုံးများ၏ တန်ခိုး', vi: 'Quyền năng của lời nói', id: 'Kuasa perkataan', ms: 'Kuasa kata-kata'
+  }
+};
+
+function inferOfficialTopicKey(set = {}) {
+  const id = String(set.id || '').toLowerCase();
+  const title = String(set.title || '').toLowerCase();
+  if (id.includes('word-of-god') || title.includes("god's word")) return 'wordOfGod';
+  if (id.includes('mutualized-economics')) return 'mutualizedEconomics';
+  if (id.includes('power-of-words')) return 'powerOfWords';
+  if (id.includes('rain-verses') || title.includes('scripture rain')) return 'scriptureRain';
+  if (id.includes('topic-prayer') || title.includes('prayer')) return 'prayer';
+  if (id.includes('pentecost') || title.includes('pentecost')) return 'pentecost';
+  if (id.includes('covenant') || title.includes('covenant')) return 'covenant';
+  if (id.includes('healing') || /\bheal\b/.test(title) || title.includes('healing')) return 'heal';
+  if (id.includes('mercy') || title.includes('mercy')) return 'mercy';
+  if (id.includes('praise') || title.includes('praise')) return 'praise';
+  return null;
+}
+
+function localizeOfficialTopicSetTitle(set, lang) {
+  const topicKey = inferOfficialTopicKey(set);
+  if (!topicKey) return set;
+  const term = OFFICIAL_TOPIC_TITLE_TRANSLATIONS[topicKey]?.[lang] || OFFICIAL_TOPIC_TITLE_TRANSLATIONS[topicKey]?.en || set.title;
+  const prefix = TOPIC_TITLE_PREFIX_BY_LANG[lang] || 'Topic';
+  const suffix = /-esv(?:-|$)/i.test(String(set.id || '')) && !['kjv', 'esv', 'niv'].includes(lang) ? ' (ESV)' : '';
+  return { ...set, title: `${prefix}: ${term}${suffix}` };
+}
+
 const extractVerseSetTopic = (title = '') => {
   const plainTitle = String(title).replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
-  const match = plainTitle.match(/(?:主題|主题|Topic|Tema|Thema|Konu|موضوع|נושא|テーマ|주제|ခေါင်းစဉ်|Chủ đề)\s*[：:]\s*([^，,。；;、/／|｜\s]+)/i);
+  const match = plainTitle.match(/(?:主題|主题|Topic|Tema|Thema|Thème|Konu|موضوع|נושא|テーマ|주제|ခေါင်းစဉ်|Chủ đề|Тема|विषय|Topik)\s*[：:]\s*([^，,。；;、/／|｜\s]+)/i);
   return match?.[1]?.trim() || '';
 };
 
@@ -6446,7 +6587,7 @@ export default function App() {
       }
     });
     const filteredBase = baseVerseSets.filter(bs => !merged.some(m => m.id === bs.id) && !hiddenOfficialSetIds.includes(bs.id));
-    return [...filteredBase, ...merged];
+    return [...filteredBase, ...merged].map(set => localizeOfficialTopicSetTitle(set, version));
   }, [customVerseSets, publishedVerseSets, baseVerseSets, playerName, version, hiddenOfficialSetIds]);
 
   // Pick a random verse from the "rain-verses" set for the homepage subtitle
@@ -6638,6 +6779,64 @@ export default function App() {
   }], [version]);
 
   const safeActiveSets = activeVerseSets.length > 0 ? activeVerseSets : dummySet;
+  const [favoriteVerseSetIds, setFavoriteVerseSetIds] = useState([]);
+  const favoriteVerseSetIdSet = React.useMemo(() => new Set(favoriteVerseSetIds), [favoriteVerseSetIds]);
+  const saveFavoriteVerseSetIds = React.useCallback((nextIds) => {
+    if (!userEmail) return;
+    fetchRetry(`${PARTY_HOST}/verse-set-favorites`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userEmail, playerName, setIds: nextIds }),
+    }).catch(() => {
+      setToast(t('我的最愛同步失敗，稍後再試', 'Favorites sync failed, please try again later'));
+      setTimeout(() => setToast(null), 3000);
+    });
+  }, [userEmail, playerName]);
+
+  useEffect(() => {
+    if (!userEmail) {
+      setFavoriteVerseSetIds([]);
+      return;
+    }
+    let cancelled = false;
+    fetch(`${PARTY_HOST}/verse-set-favorites?email=${encodeURIComponent(userEmail)}`)
+      .then(res => res.ok ? res.json() : Promise.reject(new Error(`status ${res.status}`)))
+      .then(data => {
+        if (cancelled) return;
+        const setIds = Array.isArray(data?.setIds) ? data.setIds.filter(id => typeof id === 'string' && id.trim()) : [];
+        setFavoriteVerseSetIds(Array.from(new Set(setIds)));
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setFavoriteVerseSetIds([]);
+          setToast(t('無法載入我的最愛', 'Could not load favorites'));
+          setTimeout(() => setToast(null), 3000);
+        }
+      });
+    return () => { cancelled = true; };
+  }, [userEmail]);
+
+  const toggleFavoriteVerseSet = React.useCallback((set) => {
+    const setId = typeof set === 'string' ? set : set?.id;
+    if (!setId) return;
+    if (!userEmail) {
+      setShowLoginModal('login');
+      return;
+    }
+    setFavoriteVerseSetIds(prev => {
+      const next = prev.includes(setId)
+        ? prev.filter(id => id !== setId)
+        : [...prev, setId];
+      saveFavoriteVerseSetIds(next);
+      return next;
+    });
+  }, [userEmail, saveFavoriteVerseSetIds]);
+
+  const favoriteVerseSets = React.useMemo(() => {
+    const byId = new globalThis.Map(safeActiveSets.filter(set => set?.id).map(set => [set.id, set]));
+    return favoriteVerseSetIds.map(id => byId.get(id)).filter(Boolean);
+  }, [favoriteVerseSetIds, safeActiveSets]);
+
   const topicVerseSets = React.useMemo(
     () => safeActiveSets.filter(set => TOPIC_PREFIX_REGEX.test(String(set?.title || '').trim())),
     [safeActiveSets]
@@ -23339,6 +23538,7 @@ const deDict = {
             onSecondaryVersionChange={setBilingualSecondaryVersion}
             allSecondaryVerses={allSecondaryVerses}
             topicSets={topicVerseSets}
+            favoriteVerseSets={favoriteVerseSets}
             startVerse={continuousRainSet.startVerse || null}
             playDurationMinutes={continuousRainSet.playDurationMinutes ?? null}
             initialFontSizeLevel={continuousRainSet.fontSizeLevel || DEFAULT_PLAY_FONT_CHOICE}
@@ -23463,7 +23663,7 @@ const deDict = {
                     verserain
                   </div>
                   <div className="app-brand-version" style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', marginTop: '4px', marginLeft: '2px' }}>
-                    v3.25.0
+                    v3.26.0
                   </div>
                 </div>
                 <div ref={langPickerRef} className="app-lang-control" style={{ position: 'relative' }}>
@@ -23575,7 +23775,7 @@ const deDict = {
                       <span style={{ color: '#1e293b', fontWeight: 'bold', fontSize: '0.95rem' }}>{playerName}</span>
                       {isPremium && <Crown size={14} style={{ color: '#fbbf24' }} />}
                     </div>
-                    <button onClick={() => { setPlayerName(''); setIsPremium(false); setUserEmail(''); localStorage.removeItem('verserain_player_name'); localStorage.removeItem('verserain_is_premium'); localStorage.removeItem('verserain_player_email'); localStorage.removeItem('verserain_auth_provider'); localStorage.removeItem('verseRain_gardenData'); setGardenData({}); localStorage.removeItem('verseRain_custom_sets'); localStorage.removeItem('verseRain_custom_sets_owner'); lastPushedPrivateSetsRef.current = ''; setCustomVerseSets([]); }} style={{ background: 'transparent', border: '1px solid #cbd5e1', color: '#64748b', cursor: 'pointer', borderRadius: '4px', padding: '0.3rem 0.6rem', fontSize: '0.85rem' }}>{t("登出", "Logout")}</button>
+                    <button onClick={() => { setPlayerName(''); setIsPremium(false); setUserEmail(''); setFavoriteVerseSetIds([]); localStorage.removeItem('verserain_player_name'); localStorage.removeItem('verserain_is_premium'); localStorage.removeItem('verserain_player_email'); localStorage.removeItem('verserain_auth_provider'); localStorage.removeItem('verseRain_gardenData'); setGardenData({}); localStorage.removeItem('verseRain_custom_sets'); localStorage.removeItem('verseRain_custom_sets_owner'); lastPushedPrivateSetsRef.current = ''; setCustomVerseSets([]); }} style={{ background: 'transparent', border: '1px solid #cbd5e1', color: '#64748b', cursor: 'pointer', borderRadius: '4px', padding: '0.3rem 0.6rem', fontSize: '0.85rem' }}>{t("登出", "Logout")}</button>
                   </div>
                 ) : (
                   <>
@@ -23772,6 +23972,7 @@ const deDict = {
                     onRequestLogin={() => setShowLoginModal('login')}
                     label={remoteDailyVerse?.date || dailyVerseDate}
                     topicSets={topicVerseSets}
+                    favoriteVerseSets={favoriteVerseSets}
                     showNav
                     onPrevious={() => changeDailyVerseDate(prev => formatLocalDate(addDays(`${prev}T00:00:00`, -1)))}
                     onNext={() => changeDailyVerseDate(prev => formatLocalDate(addDays(`${prev}T00:00:00`, 1)))}
@@ -23864,6 +24065,7 @@ const deDict = {
                     playerName={playerName}
                     label={t('雙語經文雨 Beta', 'Bilingual VerseRain Beta')}
                     topicSets={topicVerseSets}
+                    favoriteVerseSets={favoriteVerseSets}
                     showNav
                     onStop={() => {
                       setBilingualRainActive(false);
@@ -25414,7 +25616,34 @@ const deDict = {
                                 }} onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#eff6ff'} onMouseOut={(e) => e.currentTarget.style.backgroundColor = i % 2 === 0 ? '#ffffff' : '#f8fafc'}>
                                   <td style={{ padding: '1rem', textAlign: 'center', color: '#3b82f6', fontSize: '1.2rem' }}>{customVerseSets.some(c => c.id === set.id) ? <Crown size={22} /> : <Library size={22} />}</td>
                                   <td style={{ padding: '1rem', fontWeight: 'bold', color: '#1e293b', fontSize: '1.05rem' }}>
-                                    <span>{set.title}</span>
+                                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.45rem', minWidth: 0 }}>
+                                      <button
+                                        type="button"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          toggleFavoriteVerseSet(set);
+                                        }}
+                                        title={favoriteVerseSetIdSet.has(set.id) ? t('從我的最愛移除', 'Remove from favorites') : (userEmail ? t('加入我的最愛', 'Add to favorites') : t('登入後可加入我的最愛', 'Log in to save favorites'))}
+                                        aria-label={favoriteVerseSetIdSet.has(set.id) ? t('從我的最愛移除', 'Remove from favorites') : t('加入我的最愛', 'Add to favorites')}
+                                        style={{
+                                          width: '30px',
+                                          height: '30px',
+                                          borderRadius: '8px',
+                                          border: favoriteVerseSetIdSet.has(set.id) ? '1px solid #facc15' : '1px solid #cbd5e1',
+                                          background: favoriteVerseSetIdSet.has(set.id) ? '#fef3c7' : '#ffffff',
+                                          color: favoriteVerseSetIdSet.has(set.id) ? '#ca8a04' : '#94a3b8',
+                                          cursor: 'pointer',
+                                          display: 'inline-flex',
+                                          alignItems: 'center',
+                                          justifyContent: 'center',
+                                          padding: 0,
+                                          flex: '0 0 auto'
+                                        }}
+                                      >
+                                        <Star size={17} fill={favoriteVerseSetIdSet.has(set.id) ? 'currentColor' : 'none'} />
+                                      </button>
+                                      <span>{set.title}</span>
+                                    </span>
                                     {isAdmin && (
                                       <span style={{ marginLeft: '1rem', display: 'inline-flex', gap: '0.5rem' }}>
                                         <button onClick={(e) => {
@@ -25570,7 +25799,21 @@ const deDict = {
                             <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: '1rem', flex: 1, minWidth: 0 }}>
                               <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
                                 <span style={{ fontSize: '0.8rem', color: '#64748b', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{t("目前選擇", "Current Set")}</span>
-                                <span style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#1e293b', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{currentSet?.title}</span>
+                                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.45rem', minWidth: 0 }}>
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      toggleFavoriteVerseSet(currentSet);
+                                    }}
+                                    title={favoriteVerseSetIdSet.has(currentSet?.id) ? t('從我的最愛移除', 'Remove from favorites') : (userEmail ? t('加入我的最愛', 'Add to favorites') : t('登入後可加入我的最愛', 'Log in to save favorites'))}
+                                    aria-label={favoriteVerseSetIdSet.has(currentSet?.id) ? t('從我的最愛移除', 'Remove from favorites') : t('加入我的最愛', 'Add to favorites')}
+                                    style={{ width: '30px', height: '30px', borderRadius: '8px', border: favoriteVerseSetIdSet.has(currentSet?.id) ? '1px solid #facc15' : '1px solid #cbd5e1', background: favoriteVerseSetIdSet.has(currentSet?.id) ? '#fef3c7' : '#ffffff', color: favoriteVerseSetIdSet.has(currentSet?.id) ? '#ca8a04' : '#94a3b8', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', padding: 0, flex: '0 0 auto' }}
+                                  >
+                                    <Star size={17} fill={favoriteVerseSetIdSet.has(currentSet?.id) ? 'currentColor' : 'none'} />
+                                  </button>
+                                  <span style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#1e293b', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{currentSet?.title}</span>
+                                </span>
                               </div>
                               <div style={{ marginLeft: 'auto', textAlign: 'right', color: '#64748b', fontSize: '0.85rem', fontWeight: 'bold', flexShrink: 0, maxWidth: '360px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                                 <div>
