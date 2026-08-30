@@ -1224,8 +1224,8 @@ const BOLLS_TRANSLATIONS = {
   id:   'TB',     // Indonesian Terjemahan Baru (most widely-used)
   ms:   'TB',     // Malay fallback to Indonesian TB (no public Malay Bible API; ~80% intelligible)
   pt:   'ARC09',  // Portuguese Almeida Revista e Corrigida 2009 (bolls slug)
-  fr:   'LSG',    // French Louis Segond 1910 (public domain)
-  ru:   'SYNO',   // Russian Synodal (public domain)
+  fr:   'FRLSG',  // French Louis Segond 1910 (bolls slug)
+  ru:   'SYNOD',  // Russian Synodal (bolls slug)
   // he: OT → HAC, NT → DHNT  (handled below)
   // tr, my: not available on bolls.life
 };
