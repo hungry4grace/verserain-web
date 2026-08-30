@@ -7,8 +7,8 @@
  * languages added together (Portuguese / French / Russian).
  *
  *   node src/convert_topic_kjv_to_lang.mjs pt   # Almeida Revista e Corrigida 2009 (ARC09)
- *   node src/convert_topic_kjv_to_lang.mjs fr   # Louis Segond 1910 (LSG)
- *   node src/convert_topic_kjv_to_lang.mjs ru   # Russian Synodal (SYNO)
+ *   node src/convert_topic_kjv_to_lang.mjs fr   # Louis Segond 1910 (FRLSG)
+ *   node src/convert_topic_kjv_to_lang.mjs ru   # Russian Synodal (SYNOD)
  *
  * Requires network access to bolls.life and the PartyKit host (won't run from a
  * sandbox with a restricted egress policy — run it from a normal machine).
@@ -60,7 +60,7 @@ const LANGS = {
     },
   },
   fr: {
-    slug: 'LSG',
+    slug: 'FRLSG',
     names: {
       1:'Genèse',2:'Exode',3:'Lévitique',4:'Nombres',5:'Deutéronome',6:'Josué',7:'Juges',8:'Ruth',9:'1 Samuel',10:'2 Samuel',
       11:'1 Rois',12:'2 Rois',13:'1 Chroniques',14:'2 Chroniques',15:'Esdras',16:'Néhémie',17:'Esther',18:'Job',19:'Psaumes',20:'Proverbes',
@@ -72,7 +72,7 @@ const LANGS = {
     },
   },
   ru: {
-    slug: 'SYNO',
+    slug: 'SYNOD',
     names: {
       1:'Бытие',2:'Исход',3:'Левит',4:'Числа',5:'Второзаконие',6:'Иисус Навин',7:'Судьи',8:'Руфь',9:'1 Царств',10:'2 Царств',
       11:'3 Царств',12:'4 Царств',13:'1 Паралипоменон',14:'2 Паралипоменон',15:'Ездра',16:'Неемия',17:'Есфирь',18:'Иов',19:'Псалтирь',20:'Притчи',
