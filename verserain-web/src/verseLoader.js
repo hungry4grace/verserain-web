@@ -78,6 +78,18 @@ export const loadLanguageSets = async (lang) => {
       const m = await import('./verses_ms');
       return { sets: m.VERSE_SETS_MS, verses: m.VERSE_SETS_MS.flatMap(s => s.verses) };
     }
+    case 'pt': {
+      const m = await import('./verses_pt');
+      return { sets: m.VERSE_SETS_PT, verses: m.VERSE_SETS_PT.flatMap(s => s.verses) };
+    }
+    case 'fr': {
+      const m = await import('./verses_fr');
+      return { sets: m.VERSE_SETS_FR, verses: m.VERSE_SETS_FR.flatMap(s => s.verses) };
+    }
+    case 'ru': {
+      const m = await import('./verses_ru');
+      return { sets: m.VERSE_SETS_RU, verses: m.VERSE_SETS_RU.flatMap(s => s.verses) };
+    }
     default:
       return { sets: [], verses: [] };
   }
