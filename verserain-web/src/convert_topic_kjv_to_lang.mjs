@@ -6,7 +6,7 @@
  * PartyKit. Mirrors convert_topic_kjv_to_id.mjs but parametrized for the three
  * languages added together (Portuguese / French / Russian).
  *
- *   node src/convert_topic_kjv_to_lang.mjs pt   # Almeida (ARC)
+ *   node src/convert_topic_kjv_to_lang.mjs pt   # Almeida Revista e Corrigida 2009 (ARC09)
  *   node src/convert_topic_kjv_to_lang.mjs fr   # Louis Segond 1910 (LSG)
  *   node src/convert_topic_kjv_to_lang.mjs ru   # Russian Synodal (SYNO)
  *
@@ -48,7 +48,7 @@ const BOOK_ID = {
 // Per-language config: bolls slug + native book names (id 1-66) for the display reference.
 const LANGS = {
   pt: {
-    slug: 'ARC',
+    slug: 'ARC09',
     names: {
       1:'Gênesis',2:'Êxodo',3:'Levítico',4:'Números',5:'Deuteronômio',6:'Josué',7:'Juízes',8:'Rute',9:'1 Samuel',10:'2 Samuel',
       11:'1 Reis',12:'2 Reis',13:'1 Crônicas',14:'2 Crônicas',15:'Esdras',16:'Neemias',17:'Ester',18:'Jó',19:'Salmos',20:'Provérbios',
