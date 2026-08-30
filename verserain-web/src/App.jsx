@@ -1223,7 +1223,7 @@ const BOLLS_TRANSLATIONS = {
   vi:   'VI1934', // Vietnamese 1934
   id:   'TB',     // Indonesian Terjemahan Baru (most widely-used)
   ms:   'TB',     // Malay fallback to Indonesian TB (no public Malay Bible API; ~80% intelligible)
-  pt:   'ARC',    // Portuguese Almeida Revista e Corrigida (public domain)
+  pt:   'ARC09',  // Portuguese Almeida Revista e Corrigida 2009 (bolls slug)
   fr:   'LSG',    // French Louis Segond 1910 (public domain)
   ru:   'SYNO',   // Russian Synodal (public domain)
   // he: OT → HAC, NT → DHNT  (handled below)
