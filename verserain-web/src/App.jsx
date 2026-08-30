@@ -1139,6 +1139,14 @@ const BIBLE_LANGUAGE_OPTIONS = [
   { value: 'ms', label: 'Bahasa Melayu' }
 ];
 
+const PLAY_DURATION_OPTIONS = [
+  { value: '5', minutes: 5 },
+  { value: '10', minutes: 10 },
+  { value: '20', minutes: 20 },
+  { value: 'infinite', minutes: null }
+];
+const DEFAULT_PLAY_DURATION_CHOICE = '10';
+
 // --- Bible verse cross-language lookup utilities ---
 function getEnglishReferenceFromKey(normalizedKey) {
   if (!normalizedKey) return null;
@@ -2490,6 +2498,7 @@ function VerseSetContinuousRainPlayer({
   t,
   onStop,
   onListenLogged,
+  playDurationMinutes = null,
   playOnce = false,
   onComplete,
   label,
@@ -3134,6 +3143,9 @@ function VerseSetContinuousRainPlayer({
   const verseSetIdRef = useRef(verseSet?.id);
   const verseSourceRef = useRef(`${verseSet?.id || ''}-${startVerse?.reference || ''}-${startVerse?.text || ''}`);
   const onListenLoggedRef = useRef(onListenLogged);
+  const onStopRef = useRef(onStop);
+  const playDurationMinutesRef = useRef(playDurationMinutes);
+  const playbackStartedAtRef = useRef(Date.now());
   const phraseContainerRef = useRef(null);
   const phraseNodeRefs = useRef([]);
   // Refs for values used inside the auto-play effect but that should NOT re-trigger it
@@ -3143,10 +3155,16 @@ function VerseSetContinuousRainPlayer({
   const onCompleteRef = useRef(onComplete);
 
   useEffect(() => { onListenLoggedRef.current = onListenLogged; }, [onListenLogged]);
+  useEffect(() => { onStopRef.current = onStop; }, [onStop]);
+  useEffect(() => { playDurationMinutesRef.current = playDurationMinutes; }, [playDurationMinutes]);
   useEffect(() => { phrasesRef.current = primaryPhrases; }, [primaryPhrases]);
   useEffect(() => { versesRef.current = verses; }, [verses]);
   useEffect(() => { playOnceRef.current = playOnce; }, [playOnce]);
   useEffect(() => { onCompleteRef.current = onComplete; }, [onComplete]);
+
+  useEffect(() => {
+    playbackStartedAtRef.current = Date.now();
+  }, [verseSet?.id, startVerse?.reference, playDurationMinutes]);
 
   // 雙語對調的重讀觸發:readingKey 變動就 bump playKey → play effect(依賴 playKey)從頭重讀
   // 現在的第一語言。跳過首次掛載(初始播放由既有流程負責,不要多重讀一次)。
@@ -3484,6 +3502,13 @@ function VerseSetContinuousRainPlayer({
       setActivePhrase(currentPhrases.length);
       setIsSettled(true);
       onListenLoggedRef.current?.();
+      const durationLimit = playDurationMinutesRef.current;
+      if (durationLimit && Date.now() - playbackStartedAtRef.current >= durationLimit * 60 * 1000) {
+        bgmRef.current?.pause();
+        onCompleteRef.current?.();
+        onStopRef.current?.();
+        return;
+      }
       await wait(4300);
       if (cancelled || runRef.current !== runId) return;
       if (playOnceRef.current) {
@@ -7711,6 +7736,21 @@ export default function App() {
   const [continuousRainSet, setContinuousRainSet] = useState(null);
   // 播放順序選擇 — holds the set while the user picks 隨機 or 按序.
   const [playOrderChooser, setPlayOrderChooser] = useState(null);
+  const [playDurationChoice, setPlayDurationChoice] = useState(() => {
+    try {
+      return localStorage.getItem('verseRainPlayDuration') || DEFAULT_PLAY_DURATION_CHOICE;
+    } catch {
+      return DEFAULT_PLAY_DURATION_CHOICE;
+    }
+  });
+  const selectedPlayDuration = PLAY_DURATION_OPTIONS.find(option => option.value === playDurationChoice) || PLAY_DURATION_OPTIONS[1];
+  useEffect(() => {
+    try {
+      localStorage.setItem('verseRainPlayDuration', selectedPlayDuration.value);
+    } catch {
+      // Ignore storage failures; playback can still use the in-memory choice.
+    }
+  }, [selectedPlayDuration.value]);
   // Play-time voice source: null = auto (my voice › author › TTS). Otherwise
   // { type:'tts'|'owner'|'personal', ownerId?, label }. Chosen in the 播放方式
   // modal; threaded onto continuousRainSet as sharedVoiceOwner/forceTTS/
@@ -7750,6 +7790,7 @@ export default function App() {
       title: set.title,
       verses: set.verses,
       playOrder: order, // 'random' | 'sequential' — both loop forever
+      playDurationMinutes: selectedPlayDuration.minutes,
       startVerse: order === 'sequential' ? set.verses[0] : undefined,
       voiceSetId: set.voiceSetId || null,
       background: set.background || '',
@@ -23254,6 +23295,7 @@ const deDict = {
             allSecondaryVerses={allSecondaryVerses}
             topicSets={topicVerseSets}
             startVerse={continuousRainSet.startVerse || null}
+            playDurationMinutes={continuousRainSet.playDurationMinutes ?? null}
             version={version}
             t={t}
             userEmail={userEmail}
@@ -23268,7 +23310,8 @@ const deDict = {
               setSelectedSetId(set.id);
               setContinuousRainSet({
                 ...set,
-                startVerse: pickRandomVerse(set.verses || [])
+                startVerse: pickRandomVerse(set.verses || []),
+                playDurationMinutes: continuousRainSet.playDurationMinutes ?? null
               });
             }}
             onListenLogged={() => updateGarden('activity_only', 'listen')}
@@ -28398,8 +28441,43 @@ const deDict = {
             <div style={{ background: '#fff', borderRadius: '14px', padding: '1.6rem 1.5rem', width: '100%', maxWidth: '380px', boxShadow: '0 20px 40px rgba(0,0,0,0.25)', textAlign: 'center' }}>
               <h3 style={{ margin: '0 0 0.3rem', color: '#1e293b' }}>{t('播放方式', 'Play Mode')}</h3>
               <p style={{ margin: '0 0 1.2rem', color: '#64748b', fontSize: '0.9rem' }}>
-                {playOrderChooser.title} · {t('無限循環播放', 'Loops forever')}
+                {playOrderChooser.title} · {selectedPlayDuration.minutes
+                  ? t('{n} 分鐘後停止', 'Stops after {n} min').replace('{n}', selectedPlayDuration.minutes)
+                  : t('無限循環播放', 'Loops forever')}
               </p>
+              <div style={{ margin: '0 0 1.1rem', textAlign: 'left' }}>
+                <div style={{ fontSize: '0.8rem', color: '#64748b', marginBottom: '0.5rem', fontWeight: 600 }}>
+                  ⏱️ {t('播放時間', 'Duration')}
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: '0.45rem' }}>
+                  {PLAY_DURATION_OPTIONS.map(option => {
+                    const active = option.value === selectedPlayDuration.value;
+                    const labelText = option.minutes
+                      ? t('{n}分', '{n}m').replace('{n}', option.minutes)
+                      : t('無限', '∞');
+                    return (
+                      <button
+                        key={option.value}
+                        type="button"
+                        onClick={() => setPlayDurationChoice(option.value)}
+                        style={{
+                          padding: '0.52rem 0.35rem',
+                          borderRadius: '999px',
+                          border: active ? '2px solid #2563eb' : '1px solid #cbd5e1',
+                          background: active ? '#eff6ff' : '#fff',
+                          color: active ? '#1d4ed8' : '#475569',
+                          fontWeight: active ? 800 : 600,
+                          fontSize: '0.82rem',
+                          cursor: 'pointer',
+                          whiteSpace: 'nowrap'
+                        }}
+                      >
+                        {labelText}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
               {voiceOptions && (voiceOptions.ownerHasVoice || voiceOptions.contributors.length > 0) && (() => {
                 const setId = playOrderChooser.voiceSetId || playOrderChooser.id;
                 const canModerate = (() => {
