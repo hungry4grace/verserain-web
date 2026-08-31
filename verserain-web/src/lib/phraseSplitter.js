@@ -152,6 +152,21 @@ export function splitKoreanClauses(text, { minChars = 8, maxChars = 30 } = {}) {
   return out;
 }
 
+// Authors used to sprinkle spaces INTO Chinese verse text to coax the old
+// punctuation splitter into breaking at a good spot (e.g. "遵守 我的道"). The
+// semantic segmenter reads a space between two Han characters as a hard
+// boundary, so those hints now PREVENT it from choosing a better cut. Strip
+// them before segmenting — but only whitespace flanked by Han on both sides, so
+// a space beside an embedded Latin word or number is left intact. No lookbehind
+// (older Safari lacks it); loop until no inter-Han gap remains ("一 二 三").
+const INTER_CJK_SPACE = /([㐀-鿿])[ \t 　]+([㐀-鿿])/gu;
+function stripInterCjkSpaces(text) {
+  let out = String(text || '');
+  let prev;
+  do { prev = out; out = out.replace(INTER_CJK_SPACE, '$1$2'); } while (out !== prev);
+  return out;
+}
+
 // ─── Chinese (semantic) ─────────────────────────────────────────────────────
 // Opt-in delegation to the isolated segmenter under
 // contrib/semantic-scripture-segmenter/. It returns fragments that reconstruct
@@ -161,7 +176,7 @@ export function splitKoreanClauses(text, { minChars = 8, maxChars = 30 } = {}) {
 // punctuation rules, so a bad segmentation can never break the reader.
 function splitChineseSemantic(text) {
   try {
-    const result = segmentScripture(text);
+    const result = segmentScripture(stripInterCjkSpaces(text));
     if (!result || !Array.isArray(result.fragments) || !result.fragments.length) return null;
     // NEEDS_REPAIR means the segmenter could not produce a safe cut; don't
     // show a questionable result — fall back to punctuation splitting instead.

@@ -31,11 +31,20 @@ test('Japanese also splits on 。and spaces', () => {
 test('Chinese routes through the semantic segmenter (merges short 、-lists to card length)', () => {
   // Traditional Chinese now delegates to contrib/semantic-scripture-segmenter/
   // instead of splitting on every 、/space. Short list items (仁義、公平、正直的)
-  // merge into one readable card rather than one block each. The ~8-char card
-  // target can still make a length cut mid-run (…使 | 少年人…) — an accepted
-  // tradeoff of small cards; the segmenter reports it VALID/HIGH.
+  // merge into one readable card rather than one block each. Author-inserted
+  // inter-Han spaces are stripped first, so blocks never carry a stray space.
+  // The ~8-char card target can still make a length cut mid-run (…使 | 少年人…)
+  // — an accepted tradeoff of small cards.
   const phrases = splitVersePhrases('使人處事領受智慧、仁義、公平、正直的訓誨 使愚人靈明 使少年人有知識和謀略');
-  assert.deepStrictEqual(phrases, ['使人處事領受智慧', '仁義、公平、正直的', '訓誨 使愚人靈明 使', '少年人有知識和謀略']);
+  assert.deepStrictEqual(phrases, ['使人處事領受智慧', '仁義、公平、正直的', '訓誨使愚人靈明使', '少年人有知識和謀略']);
+});
+
+test('author-inserted spaces between Han are stripped before semantic segmentation', () => {
+  // Spaces that used to hint the old splitter now block the segmenter, so they
+  // are removed first — no block keeps an inter-Han space (John 8:31-32).
+  const phrases = splitVersePhrases('耶穌對信他的 猶太人說：你們若常常遵守 我的道，就真是我的門徒；你們必曉得真理，真理必叫你們得以 自由。');
+  assert.deepStrictEqual(phrases, ['耶穌對信他的猶太人說', '你們若常常遵守我的道', '就真是我的門徒', '你們必曉得真理', '真理必叫你們得以自由']);
+  assert.ok(phrases.every((p) => !/[㐀-鿿] [㐀-鿿]/.test(p)));
 });
 
 test('semantic:false keeps Chinese on punctuation splitting (bilingual alignment)', () => {
