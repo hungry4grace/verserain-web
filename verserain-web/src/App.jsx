@@ -3245,7 +3245,14 @@ function VerseSetContinuousRainPlayer({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [verseSet?.bgMusic, verseSet?.bgMusicVolume]);
 
-  useEffect(() => {
+  // useLayoutEffect (not useEffect) so the outgoing verse's revealed/settled
+  // phrases are cleared BEFORE the browser paints the new verse. With a plain
+  // useEffect the new scene first paints while isSettled/activePhrase still
+  // held the previous verse's "all revealed" state, so the last page lingered
+  // and then faded out (via the 0.45s opacity transition) before re-revealing.
+  // Resetting pre-paint makes the last page disappear immediately — a clean cut
+  // between verses instead of a cross-fade.
+  React.useLayoutEffect(() => {
     // A different verse always starts from the top, never from a stale
     // resume point left behind by a pause on the previous verse.
     resumeFromPhraseRef.current = 0;
