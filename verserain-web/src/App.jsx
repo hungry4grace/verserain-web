@@ -2907,15 +2907,23 @@ function VerseSetContinuousRainPlayer({
       return false;
     }
   };
-  const phrases = useMemo(() => splitVersePhrases(currentVerse?.text || ''), [currentVerse]);
+  // In bilingual mode the primary blocks pair with the secondary line by index,
+  // so keep Chinese on punctuation splitting (semantic:false) to stay aligned;
+  // monolingual reading gets the semantic segmenter.
+  const phrases = useMemo(
+    () => splitVersePhrases(currentVerse?.text || '', { semantic: !secondaryVersion }),
+    [currentVerse, secondaryVersion]
+  );
   const secondaryVerse = useMemo(() => {
     const secondaryVerses = secondaryVerseSet?.verses?.filter(Boolean) || [];
     return findMatchingVerse(currentVerse, verses, secondaryVerses, {
       allowIndexFallback: areLikelyParallelVerseSets(verseSet, secondaryVerseSet)
     });
   }, [currentVerse, secondaryVerseSet, verseSet, verses]);
+  // Secondary line is only shown in bilingual mode and pairs by index, so it
+  // stays on punctuation splitting (semantic:false) to match the primary.
   const secondaryPhrases = useMemo(
-    () => splitVersePhrases(secondaryVerse?.text || ''),
+    () => splitVersePhrases(secondaryVerse?.text || '', { semantic: false }),
     [secondaryVerse]
   );
 
@@ -3004,7 +3012,7 @@ function VerseSetContinuousRainPlayer({
     if (secondaryVerse && secondaryPhrases.length && isTextLikelyForVersion(secondaryVerse.text, secondaryVersion)) {
       phrases = secondaryPhrases;
     } else if (lookedUpText) {
-      phrases = splitVersePhrases(lookedUpText);
+      phrases = splitVersePhrases(lookedUpText, { semantic: false });
     }
     // Per-phrase validation: replace any phrase in the wrong script with '' so it
     // doesn't render. This handles stored verse texts that mix Hebrew with embedded
