@@ -1409,6 +1409,11 @@ textarea {
   font-weight: 800;
   letter-spacing: 0;
   text-transform: none;
+  /* Match the drop shadow the primary reference (h2) and the verse phrases
+     carry, so the second-language reference stays readable over bright water. */
+  text-shadow:
+    0 2px 4px rgba(0, 0, 0, 0.9),
+    0 4px 14px rgba(0, 0, 0, 0.6);
 }
 
 .continuous-rain-reader {
