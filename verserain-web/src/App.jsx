@@ -2525,7 +2525,12 @@ function VerseSetContinuousRainPlayer({
   playerName = '',
   onRequestLogin = null,
   onOpenVoiceComments = null,
-  onVoiceRecorded = null
+  onVoiceRecorded = null,
+  isFavoriteSet = false,
+  onToggleFavoriteSet = null,
+  onSelectDailyVerse = null,
+  autoOpenPicker = false,
+  onAutoPickerOpened = null
 }) {
   const verses = useMemo(() => verseSet?.verses?.filter(Boolean) || [], [verseSet]);
   // Opened from a share link carrying vo= → play the sender's personal voice.
@@ -3148,6 +3153,31 @@ function VerseSetContinuousRainPlayer({
     RAIN_FONT_LEVELS.includes(initialFontSizeLevel) ? initialFontSizeLevel : DEFAULT_PLAY_FONT_CHOICE
   );
   const [showTopicPicker, setShowTopicPicker] = useState(false);
+  // When entered from the lobby's 話語甘霖 card we open the picker AND hold
+  // playback: the listener first chooses 每日經文 / 我的最愛 / 主題經文, and only
+  // that choice starts the reading (initialized from the prop so the very first
+  // play effect on mount already sees it — no race with effect ordering).
+  const deferInitialPlayRef = useRef(autoOpenPicker);
+  const pickerOpenedOnceRef = useRef(false);
+  // Auto-open the picker when the player is entered from the lobby's 話語甘霖
+  // card, so the listener lands straight on the 每日經文 / 我的最愛 / 主題經文
+  // chooser. The parent clears its flag via onAutoPickerOpened so it fires once.
+  useEffect(() => {
+    if (!autoOpenPicker) return;
+    setShowTopicPicker(true);
+    onAutoPickerOpened?.();
+  }, [autoOpenPicker]); // eslint-disable-line react-hooks/exhaustive-deps
+  // When playback is held for a lobby entry, start the default (today's daily
+  // verse) once the picker actually closes — an explicit 每日經文 pick or a
+  // plain dismiss both land here. A 我的最愛 / 主題經文 pick clears the flag
+  // first (it navigates away), so it never auto-starts the daily verse.
+  useEffect(() => {
+    if (showTopicPicker) { pickerOpenedOnceRef.current = true; return; }
+    if (deferInitialPlayRef.current && pickerOpenedOnceRef.current) {
+      deferInitialPlayRef.current = false;
+      setPlayKey(k => k + 1);
+    }
+  }, [showTopicPicker]);
   const bgmRef = useRef(null);
   const runRef = useRef(0);
   const topicPickerRef = useRef(null);
@@ -3243,7 +3273,14 @@ function VerseSetContinuousRainPlayer({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [verseSet?.bgMusic, verseSet?.bgMusicVolume]);
 
-  useEffect(() => {
+  // useLayoutEffect (not useEffect) so the outgoing verse's revealed/settled
+  // phrases are cleared BEFORE the browser paints the new verse. With a plain
+  // useEffect the new scene first paints while isSettled/activePhrase still
+  // held the previous verse's "all revealed" state, so the last page lingered
+  // and then faded out (via the 0.45s opacity transition) before re-revealing.
+  // Resetting pre-paint makes the last page disappear immediately — a clean cut
+  // between verses instead of a cross-fade.
+  React.useLayoutEffect(() => {
     // A different verse always starts from the top, never from a stale
     // resume point left behind by a pause on the previous verse.
     resumeFromPhraseRef.current = 0;
@@ -3372,6 +3409,9 @@ function VerseSetContinuousRainPlayer({
 
   useEffect(() => {
     if (!currentVerse) return undefined;
+    // Held after a lobby 話語甘霖 entry until the listener picks from the auto-
+    // opened chooser. handlePickDailyVerse lifts this and bumps playKey to start.
+    if (deferInitialPlayRef.current) return undefined;
     let cancelled = false;
     const runId = runRef.current + 1;
     runRef.current = runId;
@@ -3666,9 +3706,19 @@ function VerseSetContinuousRainPlayer({
 
   const handleSelectTopicSet = (set) => {
     if (!set?.id || !onSelectTopicSet) return;
+    // Navigating to another set — don't let the picker-close effect start the
+    // held daily verse; the target set's own player will start playing.
+    deferInitialPlayRef.current = false;
     haltPlayback();
     setShowTopicPicker(false);
     onSelectTopicSet(set);
+  };
+  const handlePickDailyVerse = () => {
+    // While held (lobby entry) closing the picker starts today's daily verse
+    // via the picker-close effect. Otherwise this jumps to the daily verse.
+    if (deferInitialPlayRef.current) { setShowTopicPicker(false); return; }
+    setShowTopicPicker(false);
+    onSelectDailyVerse?.();
   };
   const stripTopicPrefix = (title = '') => stripTopicPrefixLabel(title);
   const currentTopicLabel = (label || verseSet?.title || t('經文組', 'Verse Set'));
@@ -3788,6 +3838,17 @@ function VerseSetContinuousRainPlayer({
                   );
                   return (
                     <div style={{ position: 'absolute', top: 'calc(100% + 8px)', left: '50%', transform: 'translateX(-50%)', width: 'min(92vw, 560px)', maxHeight: '60vh', overflowY: 'auto', background: 'rgba(15, 23, 42, 0.94)', border: '1px solid rgba(148, 163, 184, 0.45)', borderRadius: '14px', boxShadow: '0 16px 36px rgba(2,6,23,.45)', zIndex: 30, padding: '0.55rem', display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+                      {onSelectDailyVerse && (
+                        <section>
+                          <button
+                            type="button"
+                            onClick={handlePickDailyVerse}
+                            style={{ width: '100%', textAlign: 'center', border: '1px solid rgba(129,140,248,0.55)', borderRadius: '8px', background: 'linear-gradient(135deg, rgba(129,140,248,0.30), rgba(99,102,241,0.22))', color: '#e2e8f0', padding: '0.6rem 0.4rem', fontSize: '0.95rem', fontWeight: 800, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem' }}
+                          >
+                            <CloudRain size={16} /> {t('每日經文', 'Daily Verse')}
+                          </button>
+                        </section>
+                      )}
                       <section>
                         <div style={{ color: '#fde68a', fontSize: '0.78rem', fontWeight: 900, margin: '0 0 0.35rem 0', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.3rem', width: '100%', textAlign: 'center' }}>
                           <Star size={14} fill="currentColor" /> {t('我的最愛', 'Favorites')}
@@ -3983,6 +4044,22 @@ function VerseSetContinuousRainPlayer({
               }}
             >
               <Share2 size={22} />
+            </button>
+          )}
+          {onToggleFavoriteSet && (
+            <button
+              type="button"
+              className="is-icon"
+              style={isFavoriteSet
+                ? { borderColor: 'rgba(250,204,21,0.9)', background: 'rgba(250,204,21,0.18)', color: '#facc15' }
+                : undefined}
+              title={isFavoriteSet
+                ? t('從我的最愛移除', 'Remove from favorites')
+                : (userEmail ? t('加入我的最愛', 'Add to favorites') : t('登入後可加入我的最愛', 'Log in to save favorites'))}
+              data-tip={isFavoriteSet ? t('已在我的最愛', 'In favorites') : t('我的最愛', 'Favorites')}
+              onClick={() => onToggleFavoriteSet()}
+            >
+              <Star size={22} fill={isFavoriteSet ? 'currentColor' : 'none'} />
             </button>
           )}
           {personalVoiceSetId && userEmail && (
@@ -6183,9 +6260,13 @@ export default function App() {
 
   const [publishedVerseSets, setPublishedVerseSets] = useState([]);
   const [viewCounts, setViewCounts] = useState({});
+  // Favorite verse-set ids (synced with PartyKit below). Declared here so the
+  // 我的專屬題庫 "favorites" sort can read them; the load/save effects live further down.
+  const [favoriteVerseSetIds, setFavoriteVerseSetIds] = useState([]);
+  const favoriteVerseSetIdSet = React.useMemo(() => new Set(favoriteVerseSetIds), [favoriteVerseSetIds]);
   // 我的專屬題庫 list controls — sort + 10-per-page pagination.
   // (Lives after viewCounts — the popular sort reads it.)
-  const [customSetsSort, setCustomSetsSort] = useState('newest'); // newest | title | popular
+  const [customSetsSort, setCustomSetsSort] = useState('newest'); // newest | title | popular | favorites
   const [customSetsPage, setCustomSetsPage] = useState(1);
   const sortedCustomSets = React.useMemo(() => {
     const arr = [...customVerseSets];
@@ -6205,11 +6286,20 @@ export default function App() {
       arr.sort((a, b) => topicStrokeCollator.compare(titleSortKey(a.title), titleSortKey(b.title)));
     } else if (customSetsSort === 'popular') {
       arr.sort((a, b) => (viewCounts[b.id] || 0) - (viewCounts[a.id] || 0));
+    } else if (customSetsSort === 'favorites') {
+      // Float favorited sets to the top so the user's favorites are seen at a
+      // glance; within each group keep most-recently-updated first.
+      arr.sort((a, b) => {
+        const favA = favoriteVerseSetIdSet.has(a.id) ? 1 : 0;
+        const favB = favoriteVerseSetIdSet.has(b.id) ? 1 : 0;
+        if (favA !== favB) return favB - favA;
+        return updatedMs(b) - updatedMs(a);
+      });
     } else {
       arr.sort((a, b) => updatedMs(b) - updatedMs(a));
     }
     return arr;
-  }, [customVerseSets, customSetsSort, viewCounts]);
+  }, [customVerseSets, customSetsSort, viewCounts, favoriteVerseSetIdSet]);
 
   const [versesetsPage, setVersesetsPage] = useState(1);
   const [versesetsSort, setVersesetsSort] = useState('newest'); // 'newest' | 'title' | 'popular'
@@ -6682,6 +6772,9 @@ export default function App() {
   }, [preferredRainSet, rainVerseIndex]);
 
   const [dailyVerseDate, setDailyVerseDate] = useState(() => formatLocalDate(new Date()));
+  // Set when the lobby 話語甘霖 card is tapped, so the daily player auto-opens
+  // its 每日經文 / 我的最愛 / 主題經文 picker on entry. Cleared once consumed.
+  const [openDailyPickerOnEnter, setOpenDailyPickerOnEnter] = useState(false);
   // vo= from a listenDaily share link — the sender's personal-voice owner id,
   // passed through to the daily player so recipients hear the sender's
   // recording instead of TTS. Cleared when leaving the daily player.
@@ -6779,8 +6872,8 @@ export default function App() {
   }], [version]);
 
   const safeActiveSets = activeVerseSets.length > 0 ? activeVerseSets : dummySet;
-  const [favoriteVerseSetIds, setFavoriteVerseSetIds] = useState([]);
-  const favoriteVerseSetIdSet = React.useMemo(() => new Set(favoriteVerseSetIds), [favoriteVerseSetIds]);
+  // favoriteVerseSetIds / favoriteVerseSetIdSet are declared earlier (near the
+  // 我的專屬題庫 sort controls) so the "favorites" sort can read them.
   const saveFavoriteVerseSetIds = React.useCallback(async (nextIds) => {
     if (!userEmail) return false;
     const res = await fetchRetry(`${PARTY_HOST}/verse-set-favorites`, {
@@ -10417,6 +10510,7 @@ export default function App() {
 
     // Daily verse / home
     '今日經文': 'آية اليوم',
+    '話語甘霖': 'مطر الكلمة',
     '每日經文': 'آية يومية',
     '讀經': 'قراءة',
     '朗讀': 'استماع',
@@ -11175,6 +11269,7 @@ export default function App() {
     '每天一句神的話，心意更新而變化': 'מילה אחת של אלוהים בכל יום, דעתך תתחדש וישתנה',
     '每挑戰一節新經文，就會在空地上長出嫩芽。持續練習讓它長大！通過經文變成大樹，創新高則結出果子。': 'עם כל אתגר לפסוק חדש, נבט בקרחת היער. תמשיך להתאמן וזה יגדל! הפוך לעץ גדול דרך הכתובים, הגיע לגבהים חדשים והניב פרי.',
     '每日一句神的話，心意更新而變化。': 'מילה אחת של אלוהים בכל יום, דעתך תתחדש וישתנה.',
+    '話語甘霖': 'גשם הדבר',
     '每日經文': 'כתבי הקודש היומי',
     '每次挑戰一節已「過關」的經文並創下個人最高分，這棵樹就會結出一顆果子。果子數量就是你在「我的園子」裡所有樹上果子的總和。': 'בכל פעם שתאתגרו פסוק "עבר" ותקבעו ציון גבוה אישי, העץ ישא פרי. מספר הפירות הוא המספר הכולל של הפירות על כל העצים ב"גינה שלי" שלך.',
     '比賽進行中': 'המשחק בעיצומו',
@@ -12916,6 +13011,7 @@ const idDict = {
     "刪除題庫": "Hapus Set",
     // ─── Homepage hero + tile copy ───────────────────────────────
     "每天一句神的話，心意更新而變化": "Satu ayat sehari, jauhkan iblis darimu",
+    "話語甘霖": "Hujan Firman",
     "每日經文": "Renungan Harian",
     "每日一句神的話，心意更新而變化。": "Satu ayat sehari untuk memperbarui pikiranmu.",
     "主話如霖澆我田，歲歲結果到豐年。": "Lihat pohon firman hidupmu.",
@@ -13181,6 +13277,7 @@ const msDict = {
     '匯入中…': "Mengimport…",
     '朗讀這節': "Bacakan ayat ini",
     "每天一句神的話，心意更新而變化": "Satu ayat sehari, jauhkan iblis daripada anda",
+    "話語甘霖": "Hujan Firman",
     "每日經文": "Renungan Harian",
     "每日一句神的話，心意更新而變化。": "Satu ayat sehari untuk membaharui fikiran anda.",
     "我的園子": "Taman Saya",
@@ -14016,6 +14113,7 @@ const deDict = {
     '每天一句神的話，心意更新而變化': 'هر روز یک کلمه خدا، ذهن شما تجدید و تغییر خواهد کرد',
     '每挑戰一節新經文，就會在空地上長出嫩芽。持續練習讓它長大！通過經文變成大樹，創新高則結出果子。': 'با هر چالش برای یک آیه جدید، جوانه ای در پاکسازی جوانه می زند. به تمرین ادامه دهید و رشد خواهد کرد! از طریق کتاب مقدس به یک درخت بزرگ تبدیل شوید، به ارتفاعات جدید برسید و میوه بدهید.',
     '每日一句神的話，心意更新而變化。': 'هر روز یک کلمه خدا، ذهن شما تجدید و تغییر خواهد کرد.',
+    '話語甘霖': 'باران کلام',
     '每日經文': 'کتاب مقدس روزانه',
     '每次挑戰一節已「過關」的經文並創下個人最高分，這棵樹就會結出一顆果子。果子數量就是你在「我的園子」裡所有樹上果子的總和。': 'هر بار که شما یک آیه "گذرانده شده" را به چالش بکشید و نمره بالایی شخصی تعیین کنید، درخت میوه می دهد. تعداد میوه ها، تعداد کل میوه های تمام درختان «باغ من» شماست.',
     '比賽進行中': 'بازی در حال انجام است',
@@ -14314,6 +14412,7 @@ const deDict = {
     '每天一句神的話，心意更新而變化': '毎日神の言葉一つで、あなたの心は新しくなり、変わります。',
     '每挑戰一節新經文，就會在空地上長出嫩芽。持續練習讓它長大！通過經文變成大樹，創新高則結出果子。': '新しい詩に挑戦するたびに、空き地に新芽が芽吹きます。練習を続ければ必ず成長します！経典を通して大木となり、新たな高みに達し、実を結びます。',
     '每日一句神的話，心意更新而變化。': '毎日神の言葉を一つ伝えるだけで、あなたの心は新たになり、変わります。',
+    '話語甘霖': '御言葉の雨',
     '每日經文': '毎日の聖句',
     '每次挑戰一節已「過關」的經文並創下個人最高分，這棵樹就會結出一顆果子。果子數量就是你在「我的園子」裡所有樹上果子的總和。': '「合格」した詩に挑戦して自己最高得点を達成するたびに、木に実がなります。果実の数は、「私の庭」にあるすべての木の実の合計数です。',
     '比賽進行中': 'ゲームが進行中です',
@@ -14539,6 +14638,7 @@ const deDict = {
     '每天一句神的話，心意更新而變化': '날마다 하나님의 말씀 한 마디로 마음이 새롭게 되고 변화됩니다',
     '每挑戰一節新經文，就會在空地上長出嫩芽。持續練習讓它長大！通過經文變成大樹，創新高則結出果子。': '새로운 구절에 도전할 때마다 공터에 새싹이 돋아납니다. 계속 연습하면 성장할 거예요! 경전을 통해 큰 나무가 되어 새로운 높이에 도달하고 열매를 맺으세요.',
     '每日一句神的話，心意更新而變化。': '날마다 하나님의 말씀 한 마디로 당신의 마음이 새롭게 되고 변화될 것입니다.',
+    '話語甘霖': '말씀의 비',
     '每日經文': '매일의 성경',
     '每次挑戰一節已「過關」的經文並創下個人最高分，這棵樹就會結出一顆果子。果子數量就是你在「我的園子」裡所有樹上果子的總和。': '"통과한" 구절에 도전하고 개인 최고 점수를 세울 때마다 나무는 열매를 맺게 됩니다. 과일의 수는 "나의 정원"에 있는 모든 나무에 달린 총 과일 수입니다.',
     '比賽進行中': '게임이 진행 중입니다.',
@@ -14981,6 +15081,7 @@ const deDict = {
     '每天一句神的話，心意更新而變化': 'Mỗi ngày một lời Chúa, tâm trí bạn sẽ được đổi mới và thay đổi',
     '每挑戰一節新經文，就會在空地上長出嫩芽。持續練習讓它長大！通過經文變成大樹，創新高則結出果子。': 'Với mỗi thử thách đối với một câu thơ mới, một mầm cây sẽ nảy mầm trên bãi đất trống. Hãy tiếp tục luyện tập và nó sẽ phát triển! Trở thành một cái cây lớn thông qua kinh thánh, đạt đến những tầm cao mới và sinh hoa kết trái.',
     '每日一句神的話，心意更新而變化。': 'Mỗi ngày một lời Chúa, tâm trí bạn sẽ được đổi mới và thay đổi.',
+    '話語甘霖': 'Mưa Lời Chúa',
     '每日經文': 'Kinh thánh hàng ngày',
     '每次挑戰一節已「過關」的經文並創下個人最高分，這棵樹就會結出一顆果子。果子數量就是你在「我的園子」裡所有樹上果子的總和。': 'Mỗi khi bạn thử thách một câu thơ “đạt” và đạt điểm cao cá nhân, cái cây sẽ kết trái. Số quả là tổng số quả trên tất cả các cây trong “khu vườn của tôi” của bạn.',
     '比賽結束': 'trò chơi kết thúc',
@@ -15522,6 +15623,7 @@ const deDict = {
     '每天一句神的話，心意更新而變化': 'နေ့တိုင်း ဘုရားသခင်ရဲ့ နှုတ်ကပတ်တော် တစ်လုံး၊ မင်းရဲ့စိတ်ဟာ အသစ်တဖန် ပြောင်းလဲလာလိမ့်မယ်။',
     '每挑戰一節新經文，就會在空地上長出嫩芽。持續練習讓它長大！通過經文變成大樹，創新高則結出果子。': 'ကျမ်းပိုဒ်အသစ်အတွက် စိန်ခေါ်မှုတစ်ခုစီတိုင်းသည် ရှင်းလင်းရေးတွင် အညှောက်ပေါက်သည်။ ဆက်လက်လေ့ကျင့်ပါ ကြီးထွားလာမှာပါ။ ကျမ်းချက်အားဖြင့် သစ်ပင်ကြီးတစ်ပင်ဖြစ်ရန်၊ အမြင့်အသစ်သို့ရောက်ပြီး အသီးအနှံများ သီးသည်။',
     '每日一句神的話，心意更新而變化。': 'နေ့တိုင်း ဘုရားသခင်ရဲ့ နှုတ်ကပတ်တော် တစ်လုံး၊ မင်းရဲ့ စိတ်ဟာ အသစ်တဖန် ပြောင်းလဲလာလိမ့်မယ်။',
+    '話語甘霖': 'နှုတ်ကပတ်တော်မိုး',
     '每日經文': 'နေ့စဉ်ကျမ်းဂန်',
     '每次挑戰一節已「過關」的經文並創下個人最高分，這棵樹就會結出一顆果子。果子數量就是你在「我的園子」裡所有樹上果子的總和。': 'သင် "အောင်မြင်သည်" ကျမ်းပိုဒ်ကို စိန်ခေါ်ပြီး ကိုယ်ပိုင်အမှတ်ကို သတ်မှတ်ပြီးတိုင်း၊ သစ်ပင်သည် အသီးတစ်ခု သီးလိမ့်မည်။ အသီးအနှံအရေအတွက်သည် သင်၏ "ငါ့ဥယျာဉ်" ရှိ သစ်ပင်များအားလုံးတွင်ရှိသော အသီးအနှံများဖြစ်သည်။',
     '比賽結束': 'ပြီးသွားပါပြီ',
@@ -16027,6 +16129,7 @@ const deDict = {
     '每天一句神的話，心意更新而變化': 'Una palabra de Dios cada día, tu mente será renovada y cambiada',
     '每挑戰一節新經文，就會在空地上長出嫩芽。持續練習讓它長大！通過經文變成大樹，創新高則結出果子。': 'Con cada desafío a un nuevo verso, un brote brota en el claro. ¡Sigue practicando y crecerá! Conviértete en un gran árbol a través de las Escrituras, alcanza nuevas alturas y da frutos.',
     '每日一句神的話，心意更新而變化。': 'Una palabra de Dios cada día, tu mente será renovada y cambiada.',
+    '話語甘霖': 'Lluvia de la Palabra',
     '每日經文': 'Escritura diaria',
     '每次挑戰一節已「過關」的經文並創下個人最高分，這棵樹就會結出一顆果子。果子數量就是你在「我的園子」裡所有樹上果子的總和。': 'Cada vez que desafías un verso "aprobado" y estableces una puntuación personal alta, el árbol dará un fruto. El número de frutos es el número total de frutos de todos los árboles de tu "mi jardín".',
     '比賽結束': 'juego terminado',
@@ -16521,6 +16624,7 @@ const deDict = {
     '每天一句神的話，心意更新而變化': 'Her gün Tanrı\'nın bir sözü, zihniniz yenilenecek ve değişecek',
     '每挑戰一節新經文，就會在空地上長出嫩芽。持續練習讓它長大！通過經文變成大樹，創新高則結出果子。': 'Yeni bir dizeye her meydan okumada, açıklıkta bir filiz filizlenir. Pratik yapmaya devam edin, büyüyecektir! Kutsal yazılara göre büyük bir ağaç olun, yeni zirvelere ulaşın ve meyve verin.',
     '每日一句神的話，心意更新而變化。': 'Her gün Tanrı\'nın bir sözüyle zihniniz yenilenecek ve değişecek.',
+    '話語甘霖': 'Söz Yağmuru',
     '每日經文': 'Günlük Kutsal Yazı',
     '每次挑戰一節已「過關」的經文並創下個人最高分，這棵樹就會結出一顆果子。果子數量就是你在「我的園子」裡所有樹上果子的總和。': '"Geçti" bir ayete meydan okuduğunuzda ve kişisel olarak yüksek bir puan belirlediğinizde, ağaç meyve verecektir. Meyve sayısı, "bahçem"deki tüm ağaçlardaki toplam meyve sayısıdır.',
     '比賽結束': 'oyun bitti',
@@ -17015,6 +17119,7 @@ const deDict = {
     '每天一句神的話，心意更新而變化': 'Ein Wort Gottes jeden Tag, Ihr Geist wird erneuert und verändert',
     '每挑戰一節新經文，就會在空地上長出嫩芽。持續練習讓它長大！通過經文變成大樹，創新高則結出果子。': 'Mit jeder Herausforderung zu einem neuen Vers sprießt ein Spross auf der Lichtung. Übe weiter und es wird wachsen! Werde durch die Schriften ein großer Baum, erreiche neue Höhen und bringe Früchte.',
     '每日一句神的話，心意更新而變化。': 'Ein Wort Gottes jeden Tag, Ihr Geist wird erneuert und verändert.',
+    '話語甘霖': 'Regen des Wortes',
     '每日經文': 'Tägliche Schrift',
     '每次挑戰一節已「過關」的經文並創下個人最高分，這棵樹就會結出一顆果子。果子數量就是你在「我的園子」裡所有樹上果子的總和。': 'Jedes Mal, wenn Sie einen „bestandenen“ Vers herausfordern und einen persönlichen Highscore erzielen, trägt der Baum eine Frucht. Die Anzahl der Früchte ist die Gesamtzahl der Früchte aller Bäume in Ihrem „mein Garten“.',
     '比賽結束': 'Spiel vorbei',
@@ -17661,6 +17766,7 @@ const deDict = {
     "每天一句神的話，心意更新而變化": "Uma palavra de Deus a cada dia, e sua mente será renovada e transformada",
     "每挑戰一節新經文，就會在空地上長出嫩芽。持續練習讓它長大！通過經文變成大樹，創新高則結出果子。": "A cada novo versículo desafiado, um broto surge no terreno. Continue praticando e ele crescerá! Passe o versículo para virar uma árvore grande; bata seu recorde e dê frutos.",
     "每日一句神的話，心意更新而變化。": "Uma palavra de Deus a cada dia, e sua mente será renovada e transformada.",
+    "話語甘霖": "Chuva da Palavra",
     "每日經文": "Versículo diário",
     "每次挑戰一節已「過關」的經文並創下個人最高分，這棵樹就會結出一顆果子。果子數量就是你在「我的園子」裡所有樹上果子的總和。": "Cada vez que você desafia um versículo já \"aprovado\" e bate seu recorde pessoal, aquela árvore dá um fruto. O número de frutos é a soma de todos os frutos das árvores do seu \"Meu Jardim\".",
     "比賽結束": "Fim da partida",
@@ -18265,6 +18371,7 @@ const deDict = {
     "每天一句神的話，心意更新而變化": "Une parole de Dieu chaque jour, et votre esprit sera renouvelé et transformé",
     "每挑戰一節新經文，就會在空地上長出嫩芽。持續練習讓它長大！通過經文變成大樹，創新高則結出果子。": "À chaque nouveau verset relevé, une pousse sort de la terre. Continuez à vous entraîner et elle grandira ! Réussissez le verset pour en faire un grand arbre ; battez votre record et portez du fruit.",
     "每日一句神的話，心意更新而變化。": "Une parole de Dieu chaque jour, et votre esprit sera renouvelé et transformé.",
+    "話語甘霖": "Pluie de la Parole",
     "每日經文": "Verset du jour",
     "每次挑戰一節已「過關」的經文並創下個人最高分，這棵樹就會結出一顆果子。果子數量就是你在「我的園子」裡所有樹上果子的總和。": "Chaque fois que vous relevez un verset déjà « réussi » et battez votre record personnel, cet arbre porte un fruit. Le nombre de fruits est la somme de tous les fruits des arbres de votre « Mon jardin ».",
     "比賽結束": "Fin de la partie",
@@ -18869,6 +18976,7 @@ const deDict = {
     "每天一句神的話，心意更新而變化": "Каждый день слово Божье — и ваш ум обновляется и преображается",
     "每挑戰一節新經文，就會在空地上長出嫩芽。持續練習讓它長大！通過經文變成大樹，創新高則結出果子。": "С каждым новым испытанным стихом на пустом месте появляется росток. Продолжайте практиковаться, и он вырастет! Пройдите стих — вырастет большое дерево; побейте рекорд — принесёт плод.",
     "每日一句神的話，心意更新而變化。": "Каждый день слово Божье — и ваш ум обновляется и преображается.",
+    "話語甘霖": "Дождь Слова",
     "每日經文": "Стих дня",
     "每次挑戰一節已「過關」的經文並創下個人最高分，這棵樹就會結出一顆果子。果子數量就是你在「我的園子」裡所有樹上果子的總和。": "Каждый раз, когда вы испытываете уже «пройденный» стих и ставите личный рекорд, это дерево приносит плод. Число плодов — это сумма всех плодов на всех деревьях вашего «Моего сада».",
     "比賽結束": "Игра окончена",
@@ -19475,6 +19583,7 @@ const deDict = {
     "每天一句神的話，心意更新而變化": "हर दिन परमेश्वर का एक वचन, और आपका मन नया और रूपांतरित होगा",
     "每挑戰一節新經文，就會在空地上長出嫩芽。持續練習讓它長大！通過經文變成大樹，創新高則結出果子。": "हर नए वचन की चुनौती के साथ, खाली जगह पर एक अंकुर उगता है। अभ्यास करते रहें और वह बढ़ेगा! वचन पार करके बड़ा पेड़ बनें; रिकॉर्ड तोड़ें और फल लाएँ।",
     "每日一句神的話，心意更新而變化。": "हर दिन परमेश्वर का एक वचन, और आपका मन नया और रूपांतरित होगा।",
+    "話語甘霖": "वचन की वर्षा",
     "每日經文": "दैनिक वचन",
     "每次挑戰一節已「過關」的經文並創下個人最高分，這棵樹就會結出一顆果子。果子數量就是你在「我的園子」裡所有樹上果子的總和。": "हर बार जब आप किसी \"पास\" वचन की चुनौती लेते हैं और अपना व्यक्तिगत रिकॉर्ड तोड़ते हैं, तो वह पेड़ एक फल लाता है। फलों की संख्या आपके \"मेरे बग़ीचे\" के सभी पेड़ों के फलों का योग है।",
     "比賽結束": "खेल समाप्त",
@@ -22259,6 +22368,8 @@ const deDict = {
     "開始雙語經文雨": "开始双语经文雨",
     "目前使用「經文雨」官方經文組做測試。": "目前使用「经文雨」官方经文组做测试。",
     "正在載入語言資料...": "正在载入语言资料...",
+    "話語甘霖": "话语甘霖",
+    "每日經文": "每日经文",
     "已開啟每日經文推播": "已开启每日经文推播",
     "開啟每日經文推播": "开启每日经文推播",
     "每天上午 7 點手機推播今日經文": "每天上午 7 点手机推播今日经文",
@@ -23561,6 +23672,9 @@ const deDict = {
             onRequestLogin={() => setShowLoginModal('login')}
             onOpenVoiceComments={openVoiceCommentsFromPlayer}
             onVoiceRecorded={() => setVoiceRefreshTick(x => x + 1)}
+            isFavoriteSet={favoriteVerseSetIdSet.has(continuousRainSet.voiceSetId || continuousRainSet.id)}
+            onToggleFavoriteSet={() => toggleFavoriteVerseSet(continuousRainSet.voiceSetId || continuousRainSet.id)}
+            onSelectDailyVerse={() => { setContinuousRainSet(null); setMainTab('daily_verse'); }}
             onStop={() => {
               setContinuousRainSet(null);
             }}
@@ -23839,9 +23953,9 @@ const deDict = {
                   {(() => null)()}
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gridAutoRows: isNarrowEditor ? '1fr' : 'auto', gap: isNarrowEditor ? '0.5rem' : '1.5rem', minHeight: isNarrowEditor ? 'calc(100dvh - 335px)' : undefined, width: '100%' }}>
                     {/* Daily VerseRain */}
-                    <div className="primary-button" onClick={() => setMainTab('daily_verse')} style={{ background: 'linear-gradient(135deg, #818cf8, #6366f1 55%, #4338ca)', borderRadius: '16px', padding: isNarrowEditor ? '0.3rem 0.6rem' : '2.5rem 2rem', cursor: 'pointer', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', color: 'white', textAlign: 'center', boxShadow: '0 10px 28px rgba(79, 70, 229, 0.35)' }}>
+                    <div className="primary-button" onClick={() => { setOpenDailyPickerOnEnter(true); setMainTab('daily_verse'); }} style={{ background: 'linear-gradient(135deg, #818cf8, #6366f1 55%, #4338ca)', borderRadius: '16px', padding: isNarrowEditor ? '0.3rem 0.6rem' : '2.5rem 2rem', cursor: 'pointer', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', color: 'white', textAlign: 'center', boxShadow: '0 10px 28px rgba(79, 70, 229, 0.35)' }}>
                       <CloudRain size={isNarrowEditor ? 46 : 72} style={{ marginBottom: isNarrowEditor ? '0.15rem' : '1rem' }} />
-                      <h2 style={{ fontSize: isNarrowEditor ? '1.9rem' : '2rem', margin: 0, marginBottom: isNarrowEditor ? '0.15rem' : '0.5rem', textShadow: '0 2px 4px rgba(0,0,0,0.2)' }}>{t("每日經文", "Daily Verse")}</h2>
+                      <h2 style={{ fontSize: isNarrowEditor ? '1.9rem' : '2rem', margin: 0, marginBottom: isNarrowEditor ? '0.15rem' : '0.5rem', textShadow: '0 2px 4px rgba(0,0,0,0.2)' }}>{t("話語甘霖", "Verse Rain")}</h2>
                       <p style={{ ...tileCaptionStyle(0.95) }}>{splitCaption(t("每日一句神的話，心意更新而變化。", "A verse a day to renew your mind."))}</p>
                     </div>
 
@@ -23985,6 +24099,9 @@ const deDict = {
                     label={remoteDailyVerse?.date || dailyVerseDate}
                     topicSets={topicVerseSets}
                     favoriteVerseSets={favoriteVerseSets}
+                    autoOpenPicker={openDailyPickerOnEnter}
+                    onAutoPickerOpened={() => setOpenDailyPickerOnEnter(false)}
+                    onSelectDailyVerse={() => changeDailyVerseDate(() => formatLocalDate(new Date()))}
                     showNav
                     onPrevious={() => changeDailyVerseDate(prev => formatLocalDate(addDays(`${prev}T00:00:00`, -1)))}
                     onNext={() => changeDailyVerseDate(prev => formatLocalDate(addDays(`${prev}T00:00:00`, 1)))}
@@ -24079,6 +24196,9 @@ const deDict = {
                     topicSets={topicVerseSets}
                     favoriteVerseSets={favoriteVerseSets}
                     showNav
+                    isFavoriteSet={favoriteVerseSetIdSet.has(preferredRainSet.voiceSetId || preferredRainSet.id)}
+                    onToggleFavoriteSet={() => toggleFavoriteVerseSet(preferredRainSet.voiceSetId || preferredRainSet.id)}
+                    onSelectDailyVerse={() => { setBilingualRainActive(false); setMainTab('daily_verse'); }}
                     onStop={() => {
                       setBilingualRainActive(false);
                       setMainTab('advanced');
@@ -24844,6 +24964,7 @@ const deDict = {
                                   <option value="newest">{t('最新', 'Newest')}</option>
                                   <option value="title">{t('標題', 'Title')}</option>
                                   <option value="popular">{t('最受歡迎', 'Most Popular')}</option>
+                                  <option value="favorites">{t('我的最愛', 'Favorites')}</option>
                                 </select>
                               </div>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>

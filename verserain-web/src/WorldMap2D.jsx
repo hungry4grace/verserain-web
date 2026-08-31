@@ -674,7 +674,7 @@ export default function WorldMap2D({ t, playerName, userEmail, onJoinRoom, onVie
           )}
           <div className="verse-map-frame" ref={mapRef} style={{ height: '520px', width: '100%', background: '#051936' }} />
           {/* 圖例:大小=塊地數 · 亮度=近7天活躍 */}
-          <div style={{ position: 'absolute', bottom: '14px', right: '14px', zIndex: 1000, background: 'rgba(4,16,31,0.82)', border: '1px solid #14324f', borderRadius: '10px', padding: '9px 11px', color: '#e2e8f0', fontSize: '0.7rem', lineHeight: 1.5, pointerEvents: 'none', backdropFilter: 'blur(2px)', maxWidth: '190px' }}>
+          <div style={{ position: 'absolute', top: '14px', right: '14px', zIndex: 1000, background: 'rgba(4,16,31,0.82)', border: '1px solid #14324f', borderRadius: '10px', padding: '9px 11px', color: '#e2e8f0', fontSize: '0.7rem', lineHeight: 1.5, pointerEvents: 'none', backdropFilter: 'blur(2px)', maxWidth: '190px' }}>
             <div style={{ fontWeight: 700, marginBottom: '5px', color: '#f8fafc' }}>{t('地上的光點', 'Lights on Earth')}</div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 4 }}>
               <span style={{ display: 'inline-flex', alignItems: 'flex-end', gap: 4 }}>
