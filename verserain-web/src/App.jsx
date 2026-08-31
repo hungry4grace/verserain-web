@@ -25,6 +25,10 @@ import { VAPID_PUBLIC_KEY, urlBase64ToUint8Array, isWebPushSupported, isIOSStand
 import { setVoiceApi, uploadVerseVoice, uploadSetAsset, compressBackgroundImage, getSetAssetDataUrl, userVoiceApi, uploadUserVerseVoice, voiceOwnerId, voiceCommentApi, uploadVoiceComment } from './setVoiceApi';
 import VerseVoiceRecorder from './VerseVoiceRecorder';
 
+// Temporarily hide the per-row action buttons on the Scripture Sets list
+// (Admin 編輯 / Admin 刪除 / 複製) — low value for now. Flip to true to restore.
+const SHOW_SET_LIST_ROW_ACTIONS = false;
+
 // Loose verses (random / daily / search / shared single verse) have no
 // originating set to file a personal recording under. They all share this one
 // reserved per-user bucket — a private "single-verse collection" keyed by
@@ -25777,7 +25781,7 @@ const deDict = {
                                       </button>
                                       <span>{set.title}</span>
                                     </span>
-                                    {isAdmin && (
+                                    {SHOW_SET_LIST_ROW_ACTIONS && isAdmin && (
                                       <span style={{ marginLeft: '1rem', display: 'inline-flex', gap: '0.5rem' }}>
                                         <button onClick={(e) => {
                                           e.stopPropagation();
@@ -25820,11 +25824,13 @@ const deDict = {
                                         )}
                                       </span>
                                     )}
+                                    {SHOW_SET_LIST_ROW_ACTIONS && (
                                     <button onClick={(e) => { e.stopPropagation(); copyVerseSetToMine(set); }}
                                       title={t('複製成我的題庫，可自行編輯，不影響原本的', 'Copy into my sets — edit freely without touching the original')}
                                       style={{ marginLeft: isAdmin ? '0.5rem' : '1rem', background: '#eef2ff', border: '1px solid #c7d2fe', padding: '0.2rem 0.5rem', borderRadius: '4px', cursor: 'pointer', fontSize: '0.8rem', color: '#4338ca' }}>
                                       {t('複製', 'Copy')}
                                     </button>
+                                    )}
                                   </td>
                                   <td style={{ padding: '1rem', color: '#337ab7', fontSize: '0.9rem', fontWeight: 'bold' }}>{set.authorName && set.authorName !== "Anonymous" ? set.authorName : (String(set.id).startsWith("custom-") ? t('匿名玩家', 'Anonymous') : t('Verserain 官方', 'Official'))}</td>
                                   <td style={{ padding: '1rem', textAlign: 'right', color: '#64748b', fontWeight: 'bold' }}>{viewCounts[set.id] || 0}</td>
