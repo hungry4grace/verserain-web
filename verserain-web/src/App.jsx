@@ -3153,6 +3153,12 @@ function VerseSetContinuousRainPlayer({
     RAIN_FONT_LEVELS.includes(initialFontSizeLevel) ? initialFontSizeLevel : DEFAULT_PLAY_FONT_CHOICE
   );
   const [showTopicPicker, setShowTopicPicker] = useState(false);
+  // When entered from the lobby's 話語甘霖 card we open the picker AND hold
+  // playback: the listener first chooses 每日經文 / 我的最愛 / 主題經文, and only
+  // that choice starts the reading (initialized from the prop so the very first
+  // play effect on mount already sees it — no race with effect ordering).
+  const deferInitialPlayRef = useRef(autoOpenPicker);
+  const pickerOpenedOnceRef = useRef(false);
   // Auto-open the picker when the player is entered from the lobby's 話語甘霖
   // card, so the listener lands straight on the 每日經文 / 我的最愛 / 主題經文
   // chooser. The parent clears its flag via onAutoPickerOpened so it fires once.
@@ -3161,6 +3167,17 @@ function VerseSetContinuousRainPlayer({
     setShowTopicPicker(true);
     onAutoPickerOpened?.();
   }, [autoOpenPicker]); // eslint-disable-line react-hooks/exhaustive-deps
+  // When playback is held for a lobby entry, start the default (today's daily
+  // verse) once the picker actually closes — an explicit 每日經文 pick or a
+  // plain dismiss both land here. A 我的最愛 / 主題經文 pick clears the flag
+  // first (it navigates away), so it never auto-starts the daily verse.
+  useEffect(() => {
+    if (showTopicPicker) { pickerOpenedOnceRef.current = true; return; }
+    if (deferInitialPlayRef.current && pickerOpenedOnceRef.current) {
+      deferInitialPlayRef.current = false;
+      setPlayKey(k => k + 1);
+    }
+  }, [showTopicPicker]);
   const bgmRef = useRef(null);
   const runRef = useRef(0);
   const topicPickerRef = useRef(null);
@@ -3392,6 +3409,9 @@ function VerseSetContinuousRainPlayer({
 
   useEffect(() => {
     if (!currentVerse) return undefined;
+    // Held after a lobby 話語甘霖 entry until the listener picks from the auto-
+    // opened chooser. handlePickDailyVerse lifts this and bumps playKey to start.
+    if (deferInitialPlayRef.current) return undefined;
     let cancelled = false;
     const runId = runRef.current + 1;
     runRef.current = runId;
@@ -3686,9 +3706,19 @@ function VerseSetContinuousRainPlayer({
 
   const handleSelectTopicSet = (set) => {
     if (!set?.id || !onSelectTopicSet) return;
+    // Navigating to another set — don't let the picker-close effect start the
+    // held daily verse; the target set's own player will start playing.
+    deferInitialPlayRef.current = false;
     haltPlayback();
     setShowTopicPicker(false);
     onSelectTopicSet(set);
+  };
+  const handlePickDailyVerse = () => {
+    // While held (lobby entry) closing the picker starts today's daily verse
+    // via the picker-close effect. Otherwise this jumps to the daily verse.
+    if (deferInitialPlayRef.current) { setShowTopicPicker(false); return; }
+    setShowTopicPicker(false);
+    onSelectDailyVerse?.();
   };
   const stripTopicPrefix = (title = '') => stripTopicPrefixLabel(title);
   const currentTopicLabel = (label || verseSet?.title || t('經文組', 'Verse Set'));
@@ -3812,7 +3842,7 @@ function VerseSetContinuousRainPlayer({
                         <section>
                           <button
                             type="button"
-                            onClick={() => { setShowTopicPicker(false); onSelectDailyVerse(); }}
+                            onClick={handlePickDailyVerse}
                             style={{ width: '100%', textAlign: 'center', border: '1px solid rgba(129,140,248,0.55)', borderRadius: '8px', background: 'linear-gradient(135deg, rgba(129,140,248,0.30), rgba(99,102,241,0.22))', color: '#e2e8f0', padding: '0.6rem 0.4rem', fontSize: '0.95rem', fontWeight: 800, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem' }}
                           >
                             <CloudRain size={16} /> {t('每日經文', 'Daily Verse')}
