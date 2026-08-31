@@ -6183,9 +6183,13 @@ export default function App() {
 
   const [publishedVerseSets, setPublishedVerseSets] = useState([]);
   const [viewCounts, setViewCounts] = useState({});
+  // Favorite verse-set ids (synced with PartyKit below). Declared here so the
+  // 我的專屬題庫 "favorites" sort can read them; the load/save effects live further down.
+  const [favoriteVerseSetIds, setFavoriteVerseSetIds] = useState([]);
+  const favoriteVerseSetIdSet = React.useMemo(() => new Set(favoriteVerseSetIds), [favoriteVerseSetIds]);
   // 我的專屬題庫 list controls — sort + 10-per-page pagination.
   // (Lives after viewCounts — the popular sort reads it.)
-  const [customSetsSort, setCustomSetsSort] = useState('newest'); // newest | title | popular
+  const [customSetsSort, setCustomSetsSort] = useState('newest'); // newest | title | popular | favorites
   const [customSetsPage, setCustomSetsPage] = useState(1);
   const sortedCustomSets = React.useMemo(() => {
     const arr = [...customVerseSets];
@@ -6205,11 +6209,20 @@ export default function App() {
       arr.sort((a, b) => topicStrokeCollator.compare(titleSortKey(a.title), titleSortKey(b.title)));
     } else if (customSetsSort === 'popular') {
       arr.sort((a, b) => (viewCounts[b.id] || 0) - (viewCounts[a.id] || 0));
+    } else if (customSetsSort === 'favorites') {
+      // Float favorited sets to the top so the user's favorites are seen at a
+      // glance; within each group keep most-recently-updated first.
+      arr.sort((a, b) => {
+        const favA = favoriteVerseSetIdSet.has(a.id) ? 1 : 0;
+        const favB = favoriteVerseSetIdSet.has(b.id) ? 1 : 0;
+        if (favA !== favB) return favB - favA;
+        return updatedMs(b) - updatedMs(a);
+      });
     } else {
       arr.sort((a, b) => updatedMs(b) - updatedMs(a));
     }
     return arr;
-  }, [customVerseSets, customSetsSort, viewCounts]);
+  }, [customVerseSets, customSetsSort, viewCounts, favoriteVerseSetIdSet]);
 
   const [versesetsPage, setVersesetsPage] = useState(1);
   const [versesetsSort, setVersesetsSort] = useState('newest'); // 'newest' | 'title' | 'popular'
@@ -6779,8 +6792,8 @@ export default function App() {
   }], [version]);
 
   const safeActiveSets = activeVerseSets.length > 0 ? activeVerseSets : dummySet;
-  const [favoriteVerseSetIds, setFavoriteVerseSetIds] = useState([]);
-  const favoriteVerseSetIdSet = React.useMemo(() => new Set(favoriteVerseSetIds), [favoriteVerseSetIds]);
+  // favoriteVerseSetIds / favoriteVerseSetIdSet are declared earlier (near the
+  // 我的專屬題庫 sort controls) so the "favorites" sort can read them.
   const saveFavoriteVerseSetIds = React.useCallback(async (nextIds) => {
     if (!userEmail) return false;
     const res = await fetchRetry(`${PARTY_HOST}/verse-set-favorites`, {
@@ -24844,6 +24857,7 @@ const deDict = {
                                   <option value="newest">{t('最新', 'Newest')}</option>
                                   <option value="title">{t('標題', 'Title')}</option>
                                   <option value="popular">{t('最受歡迎', 'Most Popular')}</option>
+                                  <option value="favorites">{t('我的最愛', 'Favorites')}</option>
                                 </select>
                               </div>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
