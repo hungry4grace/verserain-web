@@ -2525,7 +2525,9 @@ function VerseSetContinuousRainPlayer({
   playerName = '',
   onRequestLogin = null,
   onOpenVoiceComments = null,
-  onVoiceRecorded = null
+  onVoiceRecorded = null,
+  isFavoriteSet = false,
+  onToggleFavoriteSet = null
 }) {
   const verses = useMemo(() => verseSet?.verses?.filter(Boolean) || [], [verseSet]);
   // Opened from a share link carrying vo= → play the sender's personal voice.
@@ -3983,6 +3985,22 @@ function VerseSetContinuousRainPlayer({
               }}
             >
               <Share2 size={22} />
+            </button>
+          )}
+          {onToggleFavoriteSet && (
+            <button
+              type="button"
+              className="is-icon"
+              style={isFavoriteSet
+                ? { borderColor: 'rgba(250,204,21,0.9)', background: 'rgba(250,204,21,0.18)', color: '#facc15' }
+                : undefined}
+              title={isFavoriteSet
+                ? t('從我的最愛移除', 'Remove from favorites')
+                : (userEmail ? t('加入我的最愛', 'Add to favorites') : t('登入後可加入我的最愛', 'Log in to save favorites'))}
+              data-tip={isFavoriteSet ? t('已在我的最愛', 'In favorites') : t('我的最愛', 'Favorites')}
+              onClick={() => onToggleFavoriteSet()}
+            >
+              <Star size={22} fill={isFavoriteSet ? 'currentColor' : 'none'} />
             </button>
           )}
           {personalVoiceSetId && userEmail && (
@@ -23574,6 +23592,8 @@ const deDict = {
             onRequestLogin={() => setShowLoginModal('login')}
             onOpenVoiceComments={openVoiceCommentsFromPlayer}
             onVoiceRecorded={() => setVoiceRefreshTick(x => x + 1)}
+            isFavoriteSet={favoriteVerseSetIdSet.has(continuousRainSet.voiceSetId || continuousRainSet.id)}
+            onToggleFavoriteSet={() => toggleFavoriteVerseSet(continuousRainSet.voiceSetId || continuousRainSet.id)}
             onStop={() => {
               setContinuousRainSet(null);
             }}
@@ -24092,6 +24112,8 @@ const deDict = {
                     topicSets={topicVerseSets}
                     favoriteVerseSets={favoriteVerseSets}
                     showNav
+                    isFavoriteSet={favoriteVerseSetIdSet.has(preferredRainSet.voiceSetId || preferredRainSet.id)}
+                    onToggleFavoriteSet={() => toggleFavoriteVerseSet(preferredRainSet.voiceSetId || preferredRainSet.id)}
                     onStop={() => {
                       setBilingualRainActive(false);
                       setMainTab('advanced');
