@@ -180,15 +180,22 @@ function splitChineseSemantic(text) {
 // the bilingual secondary line, which renders text whose version the caller
 // doesn't always know, and it means one call site can't drift from another by
 // passing the wrong label.
-export function splitVersePhrases(text) {
+//
+// semantic: opt Chinese verses into the semantic segmenter. Default on for
+// monolingual reading. The bilingual view pairs each primary block with a
+// secondary-language block BY INDEX, and the semantic segmenter merges clauses
+// (fewer, longer blocks) while the other scripts still split per clause — so a
+// bilingual caller passes semantic:false to keep the Chinese side on the same
+// punctuation rules as its partner and preserve 1:1 alignment.
+export function splitVersePhrases(text, { semantic = true } = {}) {
   const source = String(text || '');
   if (!source.trim()) return [];
 
   if (isKoreanText(source)) return splitKoreanClauses(source);
   if (isHebrewText(source)) return splitHebrewClauses(source);
-  if (isChineseHanText(source)) {
-    const semantic = splitChineseSemantic(source);
-    if (semantic) return semantic;
+  if (semantic && isChineseHanText(source)) {
+    const segmented = splitChineseSemantic(source);
+    if (segmented) return segmented;
     // else fall through to the generic CJK punctuation path
   }
 

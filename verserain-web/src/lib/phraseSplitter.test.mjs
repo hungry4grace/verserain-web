@@ -38,6 +38,14 @@ test('Chinese routes through the semantic segmenter (merges short 、-lists to c
   assert.deepStrictEqual(phrases, ['使人處事領受智慧', '仁義、公平、正直的', '訓誨 使愚人靈明 使', '少年人有知識和謀略']);
 });
 
+test('semantic:false keeps Chinese on punctuation splitting (bilingual alignment)', () => {
+  // The bilingual view pairs primary/secondary blocks by index, so Chinese must
+  // split per clause to stay aligned with the secondary line — the segmenter's
+  // clause-merging would otherwise drift them apart.
+  const phrases = splitVersePhrases('使人處事領受智慧、仁義、公平、正直的訓誨 使愚人靈明 使少年人有知識和謀略', { semantic: false });
+  assert.deepStrictEqual(phrases, ['使人處事領受智慧', '仁義', '公平', '正直的訓誨', '使愚人靈明', '使少年人有知識和謀略']);
+});
+
 test('Chinese ordinary punctuation is unchanged', () => {
   assert.deepStrictEqual(
     splitVersePhrases('耶和華是我的牧者，我必不致缺乏。他使我躺臥在青草地上，領我在可安歇的水邊。'),
