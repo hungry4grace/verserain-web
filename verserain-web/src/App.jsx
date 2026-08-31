@@ -2795,6 +2795,10 @@ function VerseSetContinuousRainPlayer({
     setVoiceMenu(null);
     if (choice.type === 'tts') {
       manualVoiceRef.current = { type: 'tts' };
+    } else if (choice.type === 'silent') {
+      // 無聲音 — no TTS and no recordings; blocks still appear (paced by the
+      // usual per-phrase timing) while only the background music plays.
+      manualVoiceRef.current = { type: 'silent' };
     } else if (choice.type === 'owner') {
       manualVoiceRef.current = { type: 'owner', ownerId: choice.ownerId, recordedBy: choice.recordedBy };
     } else {
@@ -3456,7 +3460,7 @@ function VerseSetContinuousRainPlayer({
       const mv = manualVoiceRef.current;
       let personalRec, ownerRec;
       if (mv) {
-        if (mv.type === 'tts') { personalRec = null; ownerRec = null; }
+        if (mv.type === 'tts' || mv.type === 'silent') { personalRec = null; ownerRec = null; }
         else if (mv.type === 'owner') { personalRec = null; ownerRec = voiceSetId ? (verseVoicesRef.current?.[currentVerse.reference] || null) : null; }
         else { personalRec = mv.voices?.[currentVerse.reference] || null; ownerRec = null; }
       } else {
@@ -3509,8 +3513,14 @@ function VerseSetContinuousRainPlayer({
       stopLoadingHint();
 
       if (!creatorPlayed) {
+      // 無聲音 (silent) — same paced block reveal as the TTS path, but speak
+      // nothing: just hold each phrase for its estimated duration so the
+      // background music carries the reading.
+      const silent = mv?.type === 'silent';
+      const readAloud = (text, rate, lng, override) =>
+        silent ? wait(estimateSpeechDuration(text, lng)) : speakTextTimed(text, rate, lng, override);
       // TTS path — reflect it in the reader selector.
-      if (!cancelled && runRef.current === runId) setActiveVoiceLabel(t('電腦語音', 'Computer voice'));
+      if (!cancelled && runRef.current === runId) setActiveVoiceLabel(silent ? t('無聲音', 'No voice') : t('電腦語音', 'Computer voice'));
       // Resuming mid-verse: skip re-announcing the reference and pick the
       // reading up at the phrase we were on. A resume point at or past the end
       // (the verse had already finished) falls back to a normal replay.
@@ -3520,7 +3530,7 @@ function VerseSetContinuousRainPlayer({
       resumeFromPhraseRef.current = 0;
 
       if (resumeAt === 0) {
-        await speakTextTimed(formatVerseReferenceForSpeech(currentVerse.reference, swappedRef.current ? secondaryVersion : version), 0.9, lang, swappedRef.current ? swapVoiceRef.current : null);
+        await readAloud(formatVerseReferenceForSpeech(currentVerse.reference, swappedRef.current ? secondaryVersion : version), 0.9, lang, swappedRef.current ? swapVoiceRef.current : null);
         if (cancelled || runRef.current !== runId) return;
         await wait(500);
       }
@@ -3547,7 +3557,7 @@ function VerseSetContinuousRainPlayer({
           setPhrasePageEnd(pg.end); phrasePageEndRef.current = pg.end;
         }
         setActivePhrase(i);
-        await speakTextTimed(currentPhrases[i], 0.86, lang, swappedRef.current ? swapVoiceRef.current : null);
+        await readAloud(currentPhrases[i], 0.86, lang, swappedRef.current ? swapVoiceRef.current : null);
         if (cancelled || runRef.current !== runId) return;
         await wait(180);
       }
@@ -4226,6 +4236,11 @@ function VerseSetContinuousRainPlayer({
               <button onClick={() => applyVoiceChoice({ type: 'tts' })}
                 style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '0.65rem 0.85rem', borderRadius: 10, border: manualVoiceRef.current?.type === 'tts' ? '2px solid #8b5cf6' : '1px dashed #cbd5e1', background: '#fff', color: '#64748b', fontSize: '0.92rem', fontWeight: 600, cursor: 'pointer', textAlign: 'left' }}>
                 <span>💻</span><span style={{ flex: 1 }}>{t('電腦語音', 'Computer voice')}</span>
+              </button>
+              {/* 無聲音 — only background music + blocks, no TTS or recordings. */}
+              <button onClick={() => applyVoiceChoice({ type: 'silent' })}
+                style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '0.65rem 0.85rem', borderRadius: 10, border: manualVoiceRef.current?.type === 'silent' ? '2px solid #8b5cf6' : '1px dashed #cbd5e1', background: '#fff', color: '#64748b', fontSize: '0.92rem', fontWeight: 600, cursor: 'pointer', textAlign: 'left' }}>
+                <span>🔇</span><span style={{ flex: 1 }}>{t('無聲音', 'No voice')}</span>
               </button>
             </div>
             <button onClick={() => setVoiceMenu(null)} style={{ marginTop: '1rem', width: '100%', background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer', fontSize: '0.9rem' }}>{t('取消', 'Cancel')}</button>
@@ -19754,6 +19769,7 @@ const deDict = {
     "我的錄音": "Mi grabación",
     "錄音": "Grabación",
     "電腦語音": "Voz del ordenador",
+    "無聲音": "Sin voz",
     "上一節": "Versículo anterior",
     "下一節": "Siguiente versículo",
     "切換聲音": "Cambiar voz",
@@ -19971,6 +19987,7 @@ const deDict = {
     "我的錄音": "Meine Aufnahme",
     "錄音": "Aufnahme",
     "電腦語音": "Computerstimme",
+    "無聲音": "Keine Stimme",
     "上一節": "Vorheriger Vers",
     "下一節": "Nächster Vers",
     "切換聲音": "Stimme wechseln",
@@ -20188,6 +20205,7 @@ const deDict = {
     "我的錄音": "Kaydım",
     "錄音": "Kayıt",
     "電腦語音": "Bilgisayar sesi",
+    "無聲音": "Sessiz",
     "上一節": "Önceki ayet",
     "下一節": "Sonraki ayet",
     "切換聲音": "Sesi değiştir",
@@ -20404,6 +20422,7 @@ const deDict = {
     "我的錄音": "ضبط من",
     "錄音": "ضبط",
     "電腦語音": "صدای رایانه",
+    "無聲音": "بدون صدا",
     "上一節": "آیهٔ قبلی",
     "下一節": "آیهٔ بعدی",
     "切換聲音": "تغییر صدا",
@@ -20615,6 +20634,7 @@ const deDict = {
     "我的錄音": "تسجيلي",
     "錄音": "تسجيل",
     "電腦語音": "صوت الحاسوب",
+    "無聲音": "بدون صوت",
     "切換聲音": "تبديل الصوت",
     "朗讀者：{name}": "القارئ: {name}",
     "留言 / 鼓勵": "تعليق / تشجيع",
@@ -20819,6 +20839,7 @@ const deDict = {
     "我的錄音": "ההקלטה שלי",
     "錄音": "הקלטה",
     "電腦語音": "קול מחשב",
+    "無聲音": "ללא קול",
     "上一節": "הפסוק הקודם",
     "下一節": "הפסוק הבא",
     "切換聲音": "החלף קול",
@@ -21036,6 +21057,7 @@ const deDict = {
     "我的錄音": "私の録音",
     "錄音": "録音",
     "電腦語音": "コンピューター音声",
+    "無聲音": "音声なし",
     "上一節": "前の節",
     "下一節": "次の節",
     "切換聲音": "声を切り替え",
@@ -21251,6 +21273,7 @@ const deDict = {
     "我的錄音": "내 녹음",
     "錄音": "녹음",
     "電腦語音": "컴퓨터 음성",
+    "無聲音": "음성 없음",
     "上一節": "이전 구절",
     "下一節": "다음 구절",
     "切換聲音": "음성 전환",
@@ -21467,6 +21490,7 @@ const deDict = {
     "我的錄音": "ကျွန်ုပ်၏အသံဖမ်း",
     "錄音": "အသံဖမ်းခြင်း",
     "電腦語音": "ကွန်ပျူတာအသံ",
+    "無聲音": "အသံမပါ",
     "上一節": "ယခင်ကျမ်းပိုဒ်",
     "下一節": "နောက်ကျမ်းပိုဒ်",
     "切換聲音": "အသံပြောင်းရန်",
@@ -21684,6 +21708,7 @@ const deDict = {
     "我的錄音": "Bản ghi của tôi",
     "錄音": "Bản ghi",
     "電腦語音": "Giọng máy tính",
+    "無聲音": "Không có giọng",
     "上一節": "Câu trước",
     "下一節": "Câu tiếp",
     "切換聲音": "Đổi giọng",
@@ -21898,6 +21923,7 @@ const deDict = {
     "我的錄音": "Rekaman saya",
     "錄音": "Rekaman",
     "電腦語音": "Suara komputer",
+    "無聲音": "Tanpa suara",
     "上一節": "Ayat sebelumnya",
     "下一節": "Ayat berikutnya",
     "切換聲音": "Ganti suara",
@@ -22098,6 +22124,7 @@ const deDict = {
     "我的錄音": "Rakaman saya",
     "錄音": "Rakaman",
     "電腦語音": "Suara komputer",
+    "無聲音": "Tanpa suara",
     "上一節": "Ayat sebelumnya",
     "下一節": "Ayat seterusnya",
     "切換聲音": "Tukar suara",
@@ -22313,6 +22340,7 @@ const deDict = {
     "我的錄音": "我的录音",
     "錄音": "录音",
     "電腦語音": "电脑语音",
+    "無聲音": "无声音",
     "上一節": "上一节",
     "下一節": "下一节",
     "切換聲音": "切换声音",
@@ -22531,6 +22559,7 @@ const deDict = {
     "我的錄音": "Minha gravação",
     "錄音": "Gravação",
     "電腦語音": "Voz do computador",
+    "無聲音": "Sem voz",
     "上一節": "Versículo anterior",
     "下一節": "Próximo versículo",
     "切換聲音": "Trocar voz",
@@ -22748,6 +22777,7 @@ const deDict = {
     "我的錄音": "Mon enregistrement",
     "錄音": "Enregistrement",
     "電腦語音": "Voix de l’ordinateur",
+    "無聲音": "Sans voix",
     "上一節": "Verset précédent",
     "下一節": "Verset suivant",
     "切換聲音": "Changer de voix",
@@ -22965,6 +22995,7 @@ const deDict = {
     "我的錄音": "Моя запись",
     "錄音": "Запись",
     "電腦語音": "Компьютерный голос",
+    "無聲音": "Без голоса",
     "上一節": "Предыдущий стих",
     "下一節": "Следующий стих",
     "切換聲音": "Сменить голос",
@@ -23182,6 +23213,7 @@ const deDict = {
     "我的錄音": "मेरी रिकॉर्डिंग",
     "錄音": "रिकॉर्डिंग",
     "電腦語音": "कंप्यूटर आवाज़",
+    "無聲音": "कोई आवाज़ नहीं",
     "上一節": "पिछला वचन",
     "下一節": "अगला वचन",
     "切換聲音": "आवाज़ बदलें",
