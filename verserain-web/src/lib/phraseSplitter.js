@@ -1,5 +1,10 @@
 // Pure, testable phrase splitting shared by the rain player and challenge mode.
 //
+// Traditional-Chinese verses additionally route through the opt-in semantic
+// segmenter in contrib/ (see splitChineseSemantic below): it groups clauses to
+// a readable length and protects Biblical names, falling back to the
+// punctuation rules here on any failure so nothing ever regresses.
+//
 // A verse becomes one falling block per phrase, so how the text is cut decides
 // whether the game is readable. Three scripts need three different rules, and
 // getting any of them wrong is very visible:
@@ -17,6 +22,10 @@
 //     a space between every word. Punctuation-only leaves one giant block;
 //     space-splitting yields 354 one-word blocks. Korean marks clause
 //     boundaries with VERB ENDINGS (어미) instead, so that is what we split on.
+
+// The segmenter is vendored at the repo root, one level above this app's Vite
+// root; the relative path reaches it and Rollup bundles it at build time.
+import segmentScripture from '../../../contrib/semantic-scripture-segmenter/src/index.js';
 
 // Quote/bracket characters are stripped from phrase edges rather than split on,
 // so an opening 「 doesn't produce an empty leading block.
@@ -41,6 +50,12 @@ const PUNCT_CJK_QUOTES = '「」『』《》〈〉';
 const isCjkNoSpaceScript = (s) => /[぀-ヿ㐀-鿿]/u.test(s);
 export const isKoreanText = (s) => /[가-힯]/u.test(String(s || ''));
 export const isHebrewText = (s) => /[֐-׿]/u.test(String(s || ''));
+// Chinese Han text with no Japanese kana — the segmenter is tuned for Chinese
+// Scripture, so Japanese (which mixes kana with kanji) stays on the generic
+// CJK punctuation path below.
+const hasKana = (s) => /[぀-ヿ]/u.test(String(s || ''));
+export const isChineseHanText = (s) =>
+  /[㐀-鿿]/u.test(String(s || '')) && !hasKana(s) && !isKoreanText(s);
 
 // ─── Hebrew ───────────────────────────────────────────────────────────────
 // Hebrew ships its own clause division and we only have to stop discarding it.
@@ -137,6 +152,29 @@ export function splitKoreanClauses(text, { minChars = 8, maxChars = 30 } = {}) {
   return out;
 }
 
+// ─── Chinese (semantic) ─────────────────────────────────────────────────────
+// Opt-in delegation to the isolated segmenter under
+// contrib/semantic-scripture-segmenter/. It returns fragments that reconstruct
+// the source exactly (punctuation kept), so we strip trailing punctuation and
+// edge quotes to match the house block style, exactly as the Korean path does.
+// Any throw or empty/degraded result returns null → caller falls back to the
+// punctuation rules, so a bad segmentation can never break the reader.
+function splitChineseSemantic(text) {
+  try {
+    const result = segmentScripture(text);
+    if (!result || !Array.isArray(result.fragments) || !result.fragments.length) return null;
+    // NEEDS_REPAIR means the segmenter could not produce a safe cut; don't
+    // show a questionable result — fall back to punctuation splitting instead.
+    if (result.healthState === 'NEEDS_REPAIR') return null;
+    const out = result.fragments
+      .map((fragment) => cleanPhraseBlock(String(fragment).replace(TRAILING_PUNCT, '')))
+      .filter((phrase) => phrase && hasReadablePhraseContent(phrase));
+    return out.length ? out : null;
+  } catch {
+    return null;
+  }
+}
+
 // ─── Entry point ──────────────────────────────────────────────────────────
 // Script is detected from the text, not from a version code. That matters for
 // the bilingual secondary line, which renders text whose version the caller
@@ -148,6 +186,11 @@ export function splitVersePhrases(text) {
 
   if (isKoreanText(source)) return splitKoreanClauses(source);
   if (isHebrewText(source)) return splitHebrewClauses(source);
+  if (isChineseHanText(source)) {
+    const semantic = splitChineseSemantic(source);
+    if (semantic) return semantic;
+    // else fall through to the generic CJK punctuation path
+  }
 
   const cjk = isCjkNoSpaceScript(source);
   const charClass = `[${PUNCT_CORE}${cjk ? PUNCT_CJK_QUOTES : ''}]`;

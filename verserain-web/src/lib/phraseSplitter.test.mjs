@@ -28,9 +28,14 @@ test('Japanese also splits on 。and spaces', () => {
 
 // ── Chinese ───────────────────────────────────────────────────────────────
 
-test('Chinese splits on 、 and on spaces used as clause breaks', () => {
+test('Chinese routes through the semantic segmenter (merges short 、-lists to card length)', () => {
+  // Traditional Chinese now delegates to contrib/semantic-scripture-segmenter/
+  // instead of splitting on every 、/space. Short list items (仁義、公平、正直的)
+  // merge into one readable card rather than one block each. The ~8-char card
+  // target can still make a length cut mid-run (…使 | 少年人…) — an accepted
+  // tradeoff of small cards; the segmenter reports it VALID/HIGH.
   const phrases = splitVersePhrases('使人處事領受智慧、仁義、公平、正直的訓誨 使愚人靈明 使少年人有知識和謀略');
-  assert.deepStrictEqual(phrases, ['使人處事領受智慧', '仁義', '公平', '正直的訓誨', '使愚人靈明', '使少年人有知識和謀略']);
+  assert.deepStrictEqual(phrases, ['使人處事領受智慧', '仁義、公平、正直的', '訓誨 使愚人靈明 使', '少年人有知識和謀略']);
 });
 
 test('Chinese ordinary punctuation is unchanged', () => {
