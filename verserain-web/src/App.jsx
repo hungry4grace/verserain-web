@@ -2534,7 +2534,10 @@ function VerseSetContinuousRainPlayer({
   onToggleFavoriteSet = null,
   onSelectDailyVerse = null,
   autoOpenPicker = false,
-  onAutoPickerOpened = null
+  onAutoPickerOpened = null,
+  // Returned from a challenge: mount held (no narration) and paused, showing the
+  // verse we came back to. Playback starts when the listener taps Play or ‹ ›.
+  startPaused = false
 }) {
   const verses = useMemo(() => verseSet?.verses?.filter(Boolean) || [], [verseSet]);
   // Opened from a share link carrying vo= → play the sender's personal voice.
@@ -3139,7 +3142,7 @@ function VerseSetContinuousRainPlayer({
   const [imageOk, setImageOk] = useState(true);
   const [imageLoaded, setImageLoaded] = useState(false);
   const [playKey, setPlayKey] = useState(0);
-  const [isPaused, setIsPaused] = useState(false);
+  const [isPaused, setIsPaused] = useState(startPaused);
   // Where Play should pick the verse back up. A creator recording can be truly
   // paused mid-audio, but TTS can't be held, so pausing tears the run down and
   // Play restarts the effect — this ref is what stops that restart from going
@@ -3173,7 +3176,7 @@ function VerseSetContinuousRainPlayer({
   // playback: the listener first chooses 每日經文 / 我的最愛 / 主題經文, and only
   // that choice starts the reading (initialized from the prop so the very first
   // play effect on mount already sees it — no race with effect ordering).
-  const deferInitialPlayRef = useRef(autoOpenPicker);
+  const deferInitialPlayRef = useRef(autoOpenPicker || startPaused);
   const pickerOpenedOnceRef = useRef(false);
   // Auto-open the picker when the player is entered from the lobby's 話語甘霖
   // card, so the listener lands straight on the 每日經文 / 我的最愛 / 主題經文
@@ -3641,6 +3644,9 @@ function VerseSetContinuousRainPlayer({
     const audio = creatorAudioRef.current;
     if (isPaused) {
       setIsPaused(false);
+      // First Play after a paused challenge-return lifts the initial-play hold
+      // so the reading actually starts.
+      deferInitialPlayRef.current = false;
       if (pausedRecordingRef.current && audio) {
         // Resume the recording from exactly where it was paused.
         pausedRecordingRef.current = false;
@@ -3672,6 +3678,9 @@ function VerseSetContinuousRainPlayer({
 
   const navigateVerse = (direction) => {
     if (!showNav) return;
+    // Moving off the returned-to verse resumes normal auto-play behavior.
+    deferInitialPlayRef.current = false;
+    setIsPaused(false);
     haltPlayback();
     const len = verses.length;
     if (!len) return;
@@ -9069,6 +9078,10 @@ export default function App() {
   // from its render closure, and a same-tick setTimeout would capture the stale
   // pre-chooser values.
   const pendingReaderChallengeRef = useRef(null);
+  // The reader (continuousRainSet) the challenge was launched from, stashed so
+  // the game-over 回到主頁 button can drop the player back into that reading
+  // instead of the lobby — they can then ‹ › to the next verse and ⚡ again.
+  const readerReturnRef = useRef(null);
   const [readerChallengeKick, setReaderChallengeKick] = useState(0);
   useEffect(() => {
     const pending = pendingReaderChallengeRef.current;
@@ -9084,6 +9097,13 @@ export default function App() {
     if (typeof opts?.difficulty === 'number') setDistractionLevel(opts.difficulty);
     if (typeof opts?.debug === 'boolean') setIsDebugMode(opts.debug);
     if (typeof opts?.noReadback === 'boolean') setSkipReadback(opts.noReadback);
+    // Remember the reading we came from so 回到主頁 can return to it (see
+    // readerReturnRef). The reader is torn down during the challenge to stop its
+    // playback; we re-open it when the game ends — at the verse just challenged
+    // and PAUSED, so it doesn't re-narrate. Play or ‹ › resumes.
+    readerReturnRef.current = continuousRainSet
+      ? { ...continuousRainSet, startVerse: verse, startPaused: true }
+      : null;
     setContinuousRainSet(null);
     setCampaignQueue(null);
     campaignQueueRef.current = null;
@@ -23707,6 +23727,7 @@ const deDict = {
             topicSets={topicVerseSets}
             favoriteVerseSets={favoriteVerseSets}
             startVerse={continuousRainSet.startVerse || null}
+            startPaused={continuousRainSet.startPaused || false}
             playDurationMinutes={continuousRainSet.playDurationMinutes ?? null}
             initialFontSizeLevel={continuousRainSet.fontSizeLevel || DEFAULT_PLAY_FONT_CHOICE}
             version={version}
@@ -28280,7 +28301,16 @@ const deDict = {
                   {campaignQueue === null && (
                     <div style={{ display: 'flex', gap: '1rem', width: '100%', maxWidth: '350px', margin: 'clamp(0.6rem, 2vh, 1rem) auto' }}>
                       <button
-                        onClick={() => { setGameState('menu'); setCampaignQueue(null); }}
+                        onClick={() => {
+                          // If the challenge came from a reading, drop the player
+                          // back into it (so they can ‹ › to the next verse and
+                          // ⚡ again) instead of the lobby.
+                          const back = readerReturnRef.current;
+                          readerReturnRef.current = null;
+                          setGameState('menu');
+                          setCampaignQueue(null);
+                          if (back) setContinuousRainSet(back);
+                        }}
                         className="play-btn"
                         style={{
                           flex: 1,
@@ -28292,7 +28322,9 @@ const deDict = {
                           gap: '0.4rem', transition: 'all 0.2s'
                         }}
                       >
-                        <Home size={18} /> {t("回到主頁", "Home")}
+                        {readerReturnRef.current
+                          ? (<><Headphones size={18} /> {t("返回朗讀", "Back to reading")}</>)
+                          : (<><Home size={18} /> {t("回到主頁", "Home")}</>)}
                       </button>
                       <button
                         onClick={() => startGame()}
