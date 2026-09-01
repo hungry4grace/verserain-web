@@ -9069,6 +9069,10 @@ export default function App() {
   // from its render closure, and a same-tick setTimeout would capture the stale
   // pre-chooser values.
   const pendingReaderChallengeRef = useRef(null);
+  // The reader (continuousRainSet) the challenge was launched from, stashed so
+  // the game-over 回到主頁 button can drop the player back into that reading
+  // instead of the lobby — they can then ‹ › to the next verse and ⚡ again.
+  const readerReturnRef = useRef(null);
   const [readerChallengeKick, setReaderChallengeKick] = useState(0);
   useEffect(() => {
     const pending = pendingReaderChallengeRef.current;
@@ -9084,6 +9088,10 @@ export default function App() {
     if (typeof opts?.difficulty === 'number') setDistractionLevel(opts.difficulty);
     if (typeof opts?.debug === 'boolean') setIsDebugMode(opts.debug);
     if (typeof opts?.noReadback === 'boolean') setSkipReadback(opts.noReadback);
+    // Remember the reading we came from so 回到主頁 can return to it (see
+    // readerReturnRef). The reader is torn down during the challenge to stop its
+    // playback; we re-open the same set object when the game ends.
+    readerReturnRef.current = continuousRainSet || null;
     setContinuousRainSet(null);
     setCampaignQueue(null);
     campaignQueueRef.current = null;
@@ -28280,7 +28288,16 @@ const deDict = {
                   {campaignQueue === null && (
                     <div style={{ display: 'flex', gap: '1rem', width: '100%', maxWidth: '350px', margin: 'clamp(0.6rem, 2vh, 1rem) auto' }}>
                       <button
-                        onClick={() => { setGameState('menu'); setCampaignQueue(null); }}
+                        onClick={() => {
+                          // If the challenge came from a reading, drop the player
+                          // back into it (so they can ‹ › to the next verse and
+                          // ⚡ again) instead of the lobby.
+                          const back = readerReturnRef.current;
+                          readerReturnRef.current = null;
+                          setGameState('menu');
+                          setCampaignQueue(null);
+                          if (back) setContinuousRainSet(back);
+                        }}
                         className="play-btn"
                         style={{
                           flex: 1,
@@ -28292,7 +28309,9 @@ const deDict = {
                           gap: '0.4rem', transition: 'all 0.2s'
                         }}
                       >
-                        <Home size={18} /> {t("回到主頁", "Home")}
+                        {readerReturnRef.current
+                          ? (<><Headphones size={18} /> {t("返回朗讀", "Back to reading")}</>)
+                          : (<><Home size={18} /> {t("回到主頁", "Home")}</>)}
                       </button>
                       <button
                         onClick={() => startGame()}
