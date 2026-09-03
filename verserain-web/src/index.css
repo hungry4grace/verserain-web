@@ -988,6 +988,11 @@ textarea {
 
 .daily-verse-rain-shell {
   display: grid;
+  /* Single column that can shrink below its content's max-content width.
+     Without minmax(0, 1fr) the implicit grid column sizes to the widest child
+     (e.g. the 歡迎使用經文雨 setup card / action rows), pushing the shell wider
+     than the phone viewport and spilling off-screen. */
+  grid-template-columns: minmax(0, 1fr);
   gap: 0.8rem;
   width: 100%;
   color: #f8fafc;
@@ -1606,11 +1611,11 @@ textarea {
 }
 
 .continuous-rain-primary-actions {
-  flex-wrap: nowrap;
+  flex-wrap: wrap;
 }
 
 .continuous-rain-language-actions {
-  flex-wrap: nowrap;
+  flex-wrap: wrap;
   min-width: 0;
 }
 
