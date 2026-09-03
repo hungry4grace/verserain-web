@@ -3856,6 +3856,12 @@ function VerseSetContinuousRainPlayer({
                   const favorites = [...favoriteVerseSets].filter(set => set?.id).sort(compareByLabel);
                   const favoriteIds = new Set(favorites.map(set => set.id));
                   const topics = [...topicSets].filter(set => !favoriteIds.has(set?.id)).sort(compareByLabel);
+                  // Anchor the popover just below the title button but center it on the
+                  // viewport, not on the (off-centre) button wrapper — otherwise on a phone
+                  // its right edge spills off-screen. The whole player is a fixed full-screen
+                  // overlay, so position:fixed here is safe and non-scrolling.
+                  const anchorRect = topicPickerRef.current?.getBoundingClientRect();
+                  const dropTop = anchorRect ? Math.round(anchorRect.bottom + 8) : 72;
                   const renderSetButton = (set, isFavorite = false) => (
                     <button
                       key={set.id}
@@ -3868,7 +3874,7 @@ function VerseSetContinuousRainPlayer({
                     </button>
                   );
                   return (
-                    <div style={{ position: 'absolute', top: 'calc(100% + 8px)', left: '50%', transform: 'translateX(-50%)', width: 'min(92vw, 560px)', maxHeight: '60vh', overflowY: 'auto', background: 'rgba(15, 23, 42, 0.94)', border: '1px solid rgba(148, 163, 184, 0.45)', borderRadius: '14px', boxShadow: '0 16px 36px rgba(2,6,23,.45)', zIndex: 30, padding: '0.55rem', display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+                    <div style={{ position: 'fixed', top: dropTop, left: '50%', transform: 'translateX(-50%)', width: 'min(92vw, 560px)', maxHeight: '60vh', overflowY: 'auto', background: 'rgba(15, 23, 42, 0.94)', border: '1px solid rgba(148, 163, 184, 0.45)', borderRadius: '14px', boxShadow: '0 16px 36px rgba(2,6,23,.45)', zIndex: 30, padding: '0.55rem', display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
                       {onSelectDailyVerse && (
                         <section>
                           <button
@@ -4117,7 +4123,7 @@ function VerseSetContinuousRainPlayer({
         </span>
         <span className="continuous-rain-language-actions">
         {voiceSetId && (activeVoiceLabel || creatorVoiceName) && (
-          <span className="continuous-rain-reader" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, justifyContent: 'center', flexWrap: 'nowrap', flexShrink: 0 }}>
+          <span className="continuous-rain-reader" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, justifyContent: 'center', flexWrap: 'wrap', minWidth: 0 }}>
             <button
               type="button"
               onClick={openVoiceSwitchMenu}
@@ -4151,8 +4157,7 @@ function VerseSetContinuousRainPlayer({
                   fontSize: '0.84rem',
                   fontWeight: 800,
                   cursor: 'pointer',
-                  whiteSpace: 'nowrap',
-                  flexShrink: 0
+                  whiteSpace: 'nowrap'
                 }}
               >
                 <MessageCircle size={16} />
@@ -4168,7 +4173,7 @@ function VerseSetContinuousRainPlayer({
               value={secondaryVersion || ''}
               onChange={(event) => onSecondaryVersionChange(event.target.value)}
               title={swapped ? t('正在朗讀第二語言', 'Reading the second language') : t('選擇第二語言', 'Second language')}
-              style={{ width: 142, maxWidth: '34vw', padding: '0.4rem 0.5rem', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.25)', background: 'rgba(15,23,42,0.6)', color: '#e2e8f0', fontSize: '0.85rem', cursor: 'pointer' }}
+              style={{ minWidth: 0, flex: '0 1 142px', maxWidth: '34vw', padding: '0.4rem 0.5rem', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.25)', background: 'rgba(15,23,42,0.6)', color: '#e2e8f0', fontSize: '0.85rem', cursor: 'pointer' }}
             >
               {BIBLE_LANGUAGE_OPTIONS.filter(option => option.value !== version).map(option => (
                 <option key={option.value} value={option.value}>{option.label}</option>
@@ -28631,7 +28636,7 @@ const deDict = {
         )}
 
         {showLoginModal && (
-          <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.6)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000, padding: '1rem' }}>
+          <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.6)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 3000, padding: '1rem' }}>
             <div style={{ background: '#ffffff', borderRadius: '12px', padding: '2rem', width: '100%', maxWidth: '400px', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)', display: 'flex', flexDirection: 'column', gap: '1.5rem', border: '1px solid #e2e8f0' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <h2 style={{ margin: 0, color: '#1e293b', fontSize: '1.5rem', fontWeight: 'bold' }}>
