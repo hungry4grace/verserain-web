@@ -34,6 +34,11 @@ export const setVoiceApi = {
   // { voices: { [reference]: { voiceId, voiceMime, voiceDur, recordedBy, at } } }
   getAll: (setId) =>
     jget(`/sets/verse-voices?setId=${encodeURIComponent(setId)}`),
+  // The newest PUBLIC human recording per verse across the author + all
+  // contributors, so the player can default to a real voice over TTS.
+  // { latest: { [reference]: { ownerId, recordedBy, voiceId, voiceMime, voiceDur, at, source } } }
+  getLatest: (setId) =>
+    jget(`/sets/voice-latest?setId=${encodeURIComponent(setId)}`),
   getAudio: (setId, voiceId) =>
     jget(`/sets/voice?setId=${encodeURIComponent(setId)}&voiceId=${encodeURIComponent(voiceId)}`),
 };

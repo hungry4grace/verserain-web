@@ -2572,6 +2572,12 @@ function VerseSetContinuousRainPlayer({
   const isEphemeralSetId = (id) => !id || /^(single|daily)-/.test(String(id));
   const personalVoiceSetId = isEphemeralSetId(voiceSetId) ? PERSONAL_LOOSE_SET_ID : voiceSetId;
   const verseVoicesRef = useRef({});
+  // 最新公開人聲 — the newest public recording per verse across the author AND
+  // every contributor (from /sets/voice-latest). When there's no personal/shared
+  // override, the player defaults to this real voice instead of TTS whenever
+  // anyone has recorded the verse — not just when the set author did. Each entry
+  // is tagged voiceBucket=voiceSetId (both layers' audio lives in that store).
+  const latestVoicesRef = useRef({});
   // Resolves once the voices list has loaded — playVerse awaits this (with
   // a cap) so the FIRST verse doesn't race the fetch on slow mobile
   // networks and wrongly fall back to TTS.
@@ -2600,10 +2606,22 @@ function VerseSetContinuousRainPlayer({
   useEffect(() => {
     let cancelled = false;
     verseVoicesRef.current = {};
+    latestVoicesRef.current = {};
     if (!voiceSetId) { verseVoicesReadyRef.current = Promise.resolve(); return undefined; }
-    verseVoicesReadyRef.current = setVoiceApi.getAll(voiceSetId)
+    const ownerJob = setVoiceApi.getAll(voiceSetId)
       .then(res => { if (!cancelled) verseVoicesRef.current = res?.voices || {}; })
       .catch(() => { /* no recordings — TTS as usual */ });
+    // Newest public human voice per verse (author + all contributors). Tag each
+    // with the bucket its audio lives in so playCreatorRecording fetches it.
+    const latestJob = setVoiceApi.getLatest(voiceSetId)
+      .then(res => {
+        if (cancelled) return;
+        const map = res?.latest || {};
+        for (const ref of Object.keys(map)) map[ref] = { ...map[ref], voiceBucket: voiceSetId };
+        latestVoicesRef.current = map;
+      })
+      .catch(() => { /* fall back to the author layer / TTS */ });
+    verseVoicesReadyRef.current = Promise.all([ownerJob, latestJob]);
     return () => { cancelled = true; };
   }, [voiceSetId]);
 
@@ -2815,16 +2833,21 @@ function VerseSetContinuousRainPlayer({
     resumeFromPhraseRef.current = 0;
     setPlayKey(k => k + 1);
   };
-  // The ownerId of the recording currently targeted (for comments). null = TTS.
+  // The ownerId of the recording currently targeted — for comments AND for the
+  // share button (so a link carries the exact voice the sharer is hearing). Must
+  // mirror playVerse's default priority: my/shared override › newest public human
+  // (latestVoicesRef) › author layer › TTS (null). A live manual switch wins.
   const currentTargetOwnerId = () => {
     const ref = currentVerse.reference;
     const m = manualVoiceRef.current;
     if (m) {
-      if (m.type === 'tts') return null;
+      if (m.type === 'tts' || m.type === 'silent') return null;
       if (m.type === 'owner') return verseVoicesRef.current?.[ref]?.byOwnerId || null;
       return m.ownerId || null;
     }
+    if (forceTTSRef.current) return null;
     if (overrideVoicesRef.current?.[ref]) return sharedVoiceOwner || myOwnerIdRef.current || null;
+    if (latestVoicesRef.current?.[ref]?.voiceId) return latestVoicesRef.current[ref].ownerId || null;
     return verseVoicesRef.current?.[ref]?.byOwnerId || null;
   };
   const openCommentsForCurrent = () => {
@@ -3476,7 +3499,21 @@ function VerseSetContinuousRainPlayer({
         else { personalRec = mv.voices?.[currentVerse.reference] || null; ownerRec = null; }
       } else {
         personalRec = forceTTSRef.current ? null : (overrideVoicesRef.current?.[currentVerse.reference] || null);
-        ownerRec = (forceTTSRef.current || !voiceSetId) ? null : (verseVoicesRef.current?.[currentVerse.reference] || null);
+        // Default: my/shared voice › newest public human (author or any
+        // contributor) › author layer › TTS. latestVoicesRef already picked the
+        // most-recent recording across everyone, so a verse with any human voice
+        // never falls back to TTS. Author layer stays as a fallback if /voice-latest
+        // hasn't resolved.
+        const latestRec = (forceTTSRef.current || !voiceSetId) ? null : (latestVoicesRef.current?.[currentVerse.reference] || null);
+        const authorRec = (forceTTSRef.current || !voiceSetId) ? null : (verseVoicesRef.current?.[currentVerse.reference] || null);
+        // A share link pinned to the set author's OWN voice (vo=author): the
+        // author layer lives in verseVoicesRef, not the personal-override bucket
+        // loadMerged() reads — so match it here so the recipient hears exactly
+        // the voice that was shared instead of the newest-public default.
+        if (!personalRec && sharedVoiceOwner && authorRec?.byOwnerId === sharedVoiceOwner) {
+          personalRec = authorRec;
+        }
+        ownerRec = latestRec || authorRec || null;
       }
       // 雙語對調中一律走電腦語音 TTS:親聲/作者錄音都是用原第一語言錄的,不適用於現在朗讀的第二語言。
       if (swappedRef.current) { personalRec = null; ownerRec = null; }
@@ -4076,8 +4113,13 @@ function VerseSetContinuousRainPlayer({
                   try { await pending; } catch { /* share without the voice */ }
                   setShareBusy(false);
                 }
-                const hasMine = !!personalVoicesRef.current[ref];
-                onShareVerse(currentVerse, { voiceOwner: hasMine ? myOwnerIdRef.current : null });
+                // Carry the voice the sharer is actually hearing (a contributor
+                // like Bene, my own, or the author) so the recipient opens
+                // straight into that recording. null = TTS → recipient gets the
+                // set's own default (newest public voice). currentTargetOwnerId
+                // mirrors playVerse's live selection, so it already accounts for
+                // "my own wins" and the newest-public-voice default.
+                onShareVerse(currentVerse, { voiceOwner: currentTargetOwnerId() });
               }}
             >
               <Share2 size={22} />
