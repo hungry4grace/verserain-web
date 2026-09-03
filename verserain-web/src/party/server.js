@@ -1614,6 +1614,58 @@ export default class Server {
          }
       }
 
+      // GET /sets/voice-latest?setId=<setId> — the NEWEST public human recording
+      // for each verse reference, across the set author's layer AND every public,
+      // non-hidden contributor. One round-trip so the player can default to a real
+      // voice (the most recent one) instead of TTS whenever anyone has recorded a
+      // verse — not just when the set author did. Shape:
+      //   { latest: { [reference]: { ownerId, recordedBy, voiceId, voiceMime, voiceDur, at, source } } }
+      // ownerId is the opaque recorder id (byOwnerId for the author layer), so the
+      // client can attribute it, target comments, and share it (vo=). Audio for
+      // both layers lives in the shared set-voice:{setId}:{voiceId} store, so the
+      // client fetches every winner with getAudio(setId, voiceId).
+      if (url.pathname.endsWith('/sets/voice-latest') && request.method === 'GET') {
+         try {
+            const setId = url.searchParams.get('setId');
+            if (!setId) return new Response(JSON.stringify({ error: 'setId required' }), { status: 400, headers: corsHeaders });
+            const latest = {};
+            // Later `at` wins; ISO-8601 strings compare lexicographically.
+            const consider = (ref, cand) => {
+               if (!ref || !cand?.voiceId) return;
+               const cur = latest[ref];
+               if (!cur || String(cand.at || '') > String(cur.at || '')) latest[ref] = cand;
+            };
+            // Author layer.
+            const ownerMap = await this.room.storage.list({ prefix: `set-verse-voice:${String(setId)}:` });
+            for (const [, meta] of ownerMap.entries()) {
+               consider(meta?.reference, {
+                  ownerId: meta.byOwnerId || null,
+                  recordedBy: meta.recordedBy || '',
+                  voiceId: meta.voiceId, voiceMime: meta.voiceMime || 'audio/webm',
+                  voiceDur: meta.voiceDur || 0, at: meta.at || '', source: 'owner',
+               });
+            }
+            // Public, non-hidden contributors.
+            const idx = (await this.room.storage.get(`set-voice-index:${String(setId)}`)) || {};
+            for (const [ownerId, v] of Object.entries(idx)) {
+               if (!v || v.hidden === true || (v.count || 0) <= 0) continue;
+               const pmap = await this.room.storage.list({ prefix: `user-verse-voice:${ownerId}:${String(setId)}:` });
+               for (const [, meta] of pmap.entries()) {
+                  if (meta?.public === false) continue;
+                  consider(meta?.reference, {
+                     ownerId,
+                     recordedBy: meta.recordedBy || v.recordedBy || '',
+                     voiceId: meta.voiceId, voiceMime: meta.voiceMime || 'audio/webm',
+                     voiceDur: meta.voiceDur || 0, at: meta.at || '', source: 'contributor',
+                  });
+               }
+            }
+            return new Response(JSON.stringify({ success: true, latest }), { status: 200, headers: corsHeaders });
+         } catch {
+            return new Response(JSON.stringify({ error: 'Failed to list latest voices' }), { status: 500, headers: corsHeaders });
+         }
+      }
+
       // POST /sets/voice-contributor/hide — { setId, ownerId, requesterEmail?, requesterName?, hidden? }
       // Moderation: mark a contributor hidden (reversible; keeps their audio).
       // Auth = admin token / trusted admin email|name, OR the requester is the
