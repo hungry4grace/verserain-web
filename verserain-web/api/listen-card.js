@@ -145,7 +145,10 @@ export default async function handler(req, res) {
     ? `「${vtext}」`
     : `“${vtext}”`;
   const ogDesc = vtext ? quote : L.desc;
-  const ogImage = `${origin}/og-family.png`;
+  // 經文雨-branded card — the listen share is VerseRain, not 雲端家人 (that's the
+  // /fc Cloud Family feature, which keeps og-family.png). A distinct filename
+  // also dodges LINE/Facebook's per-URL OG-image cache for the switchover.
+  const ogImage = `${origin}/og-verserain.png`;
   const pageUrl = `${origin}${req.url || '/lc'}`;
 
   const html = `<!doctype html>
@@ -159,6 +162,8 @@ export default async function handler(req, res) {
 <meta property="og:title" content="${esc(ogTitle)}" />
 <meta property="og:description" content="${esc(ogDesc)}" />
 <meta property="og:image" content="${esc(ogImage)}" />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
 <meta property="og:url" content="${esc(pageUrl)}" />
 <meta name="twitter:card" content="summary_large_image" />
 <meta name="twitter:title" content="${esc(ogTitle)}" />
