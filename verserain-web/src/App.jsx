@@ -29210,13 +29210,6 @@ const deDict = {
                 </div>
               </div>
               {voiceOptions && (voiceOptions.ownerHasVoice || voiceOptions.contributors.length > 0) && (() => {
-                const setId = playOrderChooser.voiceSetId || playOrderChooser.id;
-                const canModerate = (() => {
-                  const em = (userEmail || '').toLowerCase();
-                  if (!em) return false;
-                  if (['samhsiung@gmail.com', 'davidhwang1125@gmail.com', 'hsiungsam@gmail.com', 'hungry4grace@gmail.com', 'verserain.admin@gmail.com'].includes(em)) return true;
-                  return playOrderChooser.ownerEmail && String(playOrderChooser.ownerEmail).toLowerCase() === em;
-                })();
                 const pill = (active) => ({
                   padding: '0.5rem 0.75rem', borderRadius: '999px', border: active ? '2px solid #8b5cf6' : '1px solid #cbd5e1',
                   background: active ? '#f5f3ff' : '#fff', color: active ? '#6d28d9' : '#475569', fontWeight: active ? 700 : 500,
@@ -29245,23 +29238,9 @@ const deDict = {
                         const mine = voiceOptions.mineId && c.ownerId === voiceOptions.mineId;
                         const active = isSel(v => v.type === 'personal' && v.ownerId === c.ownerId);
                         return (
-                          <span key={c.ownerId} style={{ display: 'inline-flex', alignItems: 'center' }}>
-                            <button onClick={() => setVoiceChoice({ type: 'personal', ownerId: c.ownerId, label: c.recordedBy })} style={pill(active)}>
-                              🎙️ {c.recordedBy || t('某人', 'Someone')}{mine ? ` ${t('(你)', '(you)')}` : ''}
-                            </button>
-                            {canModerate && !mine && (
-                              <button
-                                title={t('把這個人的錄音從此題庫隱藏', 'Hide this contributor from the set')}
-                                onClick={async () => {
-                                  if (!window.confirm(t('確定要隱藏「{n}」的錄音?', 'Hide {n}\'s recording from this set?').replace('{n}', c.recordedBy || '?'))) return;
-                                  await userVoiceApi.hideContributor(setId, c.ownerId, { requesterEmail: userEmail, requesterName: playerName }).catch(() => null);
-                                  setVoiceOptions(prev => prev ? { ...prev, contributors: prev.contributors.filter(x => x.ownerId !== c.ownerId) } : prev);
-                                  if (active) setVoiceChoice(null);
-                                }}
-                                style={{ marginLeft: 2, width: 22, height: 22, borderRadius: '50%', border: 'none', background: '#fee2e2', color: '#b91c1c', cursor: 'pointer', fontSize: '0.75rem', lineHeight: 1 }}
-                              >✕</button>
-                            )}
-                          </span>
+                          <button key={c.ownerId} onClick={() => setVoiceChoice({ type: 'personal', ownerId: c.ownerId, label: c.recordedBy })} style={pill(active)}>
+                            🎙️ {c.recordedBy || t('某人', 'Someone')}{mine ? ` ${t('(你)', '(you)')}` : ''}
+                          </button>
                         );
                       })}
                     </div>
