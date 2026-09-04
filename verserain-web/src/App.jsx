@@ -10788,12 +10788,12 @@ export default function App() {
     '<strong>個人過關積點排行：</strong> 只要完成挑戰就能累積積分，破自己的紀錄也算分！': '<strong>رتبه‌بندی امتیازات شخصی:</strong> با تکمیل چالش‌ها امتیاز جمع کنید. شکستن رکورد خودتان هم به حساب می‌آید!',
     '<strong>最受歡迎的經文組排名：</strong> 被玩越多次的經文組，將會在此看板上獲得頂級榮耀。': '<strong>رتبه‌بندی محبوب‌ترین مجموعه‌های آیات:</strong> هر چه یک مجموعه آیات بیشتر بازی شود، شکوه آن در این جدول بیشتر می‌شود.',
     '想獲得好名次？那就持之以恆地回來挑戰，或是創建讓大家愛不釋手的經文組合吧！': 'رتبه خوب می‌خواهید؟ به چالش‌های مداوم ادامه دهید یا مجموعه آیاتی بسازید که همه دوستش داشته باشند!',
-    '🎤 四、全新語音模式 (Voice Mode)': '🎤 ۴. حالت صوتی جدید',
+    '🎤 三、全新語音模式 (Voice Mode)': '🎤 ۴. حالت صوتی جدید',
     '除了點擊方塊，您現在可以直接<strong>用「唸」的來背經文！</strong>': 'علاوه بر کلیک روی بلوک‌ها، اکنون می‌توانید مستقیماً <strong>با استفاده از صدای خود</strong> آیات را تلاوت کنید!',
     '<strong>智慧模糊辨識：</strong> 系統內建強大的中文拼音模糊比對。就算有台灣國語、捲舌平舌音不分，只要發音相近就能過關！': '<strong>تشخیص هوشمند فازی:</strong> سیستم دارای تطبیق قدرتمند پین‌یین فازی است. حتی با لهجه‌ها یا تلفظ غیردقیق، صداهای مشابه عبور خواهند کرد!',
     '<strong>貼心提示系統：</strong> 如果卡詞了，系統會在 3 秒後自動給予局部提示，幫助您順利接下去。': '<strong>سیستم راهنمای مفید:</strong> اگر گیر کردید، سیستم پس از 3 ثانیه به طور خودکار یک راهنمایی جزئی ارائه می‌دهد تا به شما در ادامه کمک کند.',
     '<strong>分數加成獎勵：</strong> 為了鼓勵大家開口宣告神的話語，在語音模式中，您的<strong>「剩餘時間加成」權重會大幅提升 50%</strong>！': '<strong>امتیاز اضافی:</strong> برای تشویق به اعلام بلند کلام خدا، وزن <strong>«پاداش زمان باقیمانده» شما در حالت صوتی ۵۰ درصد افزایش می‌یابد</strong>!',
-    '⚔️ 五、多人即時連線對戰': '⚔️ ۵. نبرد چند نفره در زمان واقعی',
+    '⚔️ 四、多人即時連線對戰': '⚔️ ۵. نبرد چند نفره در زمان واقعی',
     '背經文不再是一個人孤單的事！': 'حفظ آیات دیگر یک کار انفرادی نیست!',
     '點擊 <strong>「多人連線」</strong> 創建專屬房間，邀請小組成員或家人一起加入。': 'برای ایجاد یک اتاق خصوصی و دعوت از اعضای گروه یا خانواده خود برای پیوستن، روی <strong>«چند نفره»</strong> کلیک کنید.',
     '房主可以從全域題庫中挑選 <strong>「比賽經文」</strong>。': 'میزبان می‌تواند <strong>«آیات مسابقه»</strong> را از بانک آیات جهانی انتخاب کند.',
@@ -11322,12 +11322,12 @@ export default function App() {
     '<strong>個人過關積點排行：</strong> 只要完成挑戰就能累積積分，破自己的紀錄也算分！': '<strong>דירוג נקודות סיום אישי:</strong> צבור נקודות על ידי השלמת אתגרים. גם שבירת השיא של עצמך נחשבת!',
     '<strong>最受歡迎的經文組排名：</strong> 被玩越多次的經文組，將會在此看板上獲得頂級榮耀。': '<strong>דירוג סטי הפסוקים הפופולריים ביותר:</strong> ככל שמשחקים יותר בסט פסוקים, כך תהילתו בלוח זה גבוהה יותר.',
     '想獲得好名次？那就持之以恆地回來挑戰，或是創建讓大家愛不釋手的經文組合吧！': 'רוצה דירוג טוב? המשך לאתגר את עצמך כל הזמן, או צור סט פסוקים שכולם אוהבים!',
-    '🎤 四、全新語音模式 (Voice Mode)': '🎤 4. מצב קולי חדש',
+    '🎤 三、全新語音模式 (Voice Mode)': '🎤 4. מצב קולי חדש',
     '除了點擊方塊，您現在可以直接<strong>用「唸」的來背經文！</strong>': 'מלבד לחיצה על בלוקים, כעת אתה יכול לדקלם פסוקים ישירות <strong>באמצעות הקול שלך!</strong>',
     '<strong>智慧模糊辨識：</strong> 系統內建強大的中文拼音模糊比對。就算有台灣國語、捲舌平舌音不分，只要發音相近就能過關！': '<strong>זיהוי עמום חכם:</strong> המערכת כוללת התאמת פין-יין עמומה חזקה. אפילו עם מבטאים או הגייה לא מדויקת, צלילים דומים יעברו!',
     '<strong>貼心提示系統：</strong> 如果卡詞了，系統會在 3 秒後自動給予局部提示，幫助您順利接下去。': '<strong>מערכת רמזים מועילה:</strong> אם תיתקע, המערכת תספק באופן אוטומטי רמז חלקי לאחר 3 שניות כדי לעזור לך להמשיך.',
     '<strong>分數加成獎勵：</strong> 為了鼓勵大家開口宣告神的話語，在語音模式中，您的<strong>「剩餘時間加成」權重會大幅提升 50%</strong>！': '<strong>בונוס ניקוד:</strong> כדי לעודד להכריז את דבר אלוהים בקול רם, המשקל של <strong>"בונוס זמן נותר" שלך מוגדל ב-50%</strong> במצב הקולי!',
-    '⚔️ 五、多人即時連線對戰': '⚔️ 5. קרב מרובה משתתפים בזמן אמת',
+    '⚔️ 四、多人即時連線對戰': '⚔️ 5. קרב מרובה משתתפים בזמן אמת',
     '背經文不再是一個人孤單的事！': 'שינון פסוקים הוא כבר לא משימה בודדת!',
     '點擊 <strong>「多人連線」</strong> 創建專屬房間，邀請小組成員或家人一起加入。': 'לחץ על <strong>"מרובה משתתפים"</strong> כדי ליצור חדר פרטי ולהזמין את חברי הקבוצה או המשפחה שלך להצטרף.',
     '房主可以從全域題庫中挑選 <strong>「比賽經文」</strong>。': 'המארח יכול לבחור <strong>"פסוקי תחרות"</strong> ממאגר הפסוקים העולמי.',
@@ -11667,7 +11667,7 @@ export default function App() {
     '可隨時結束比賽，結果會用隊伍平均分排名。': 'ניתן לסיים את המשחק בכל עת, והתוצאות ידורגו לפי הציון הממוצע של הקבוצה.',
     '同心競走天路程，並肩得勝主名榮。': 'בואו נרוץ יחד לצעוד במסע השמימי ולזכות בשמו ובתהילתו של האדון זה לצד זה.',
     '哈囉': 'שלום',
-    '四、全新語音模式 (Voice Mode)': '4. מצב קול חדש (מצב קול)',
+    '三、全新語音模式 (Voice Mode)': '4. מצב קול חדש (מצב קול)',
     '團隊競賽準備！': 'תחרות קבוצתית מוכנה!',
     '團隊競賽結束！': 'התחרות הקבוצתית הסתיימה!',
     '團隊競賽進行中': 'תחרות קבוצתית בעיצומה',
@@ -12124,12 +12124,12 @@ export default function App() {
     '<strong>個人過關積點排行：</strong> 只要完成挑戰就能累積積分，破自己的紀錄也算分！': '<strong>個人のクリアポイントランキング：</strong> チャレンジをクリアする限りポイントが貯まり、自己ベストを更新してもカウントされます！',
     '<strong>最受歡迎的經文組排名：</strong> 被玩越多次的經文組，將會在此看板上獲得頂級榮耀。': '<strong>最も人気のある経文セットのランキング：</strong> 多くプレイされた経文セットほど、このボードで最高の栄誉を獲得します。',
     '想獲得好名次？那就持之以恆地回來挑戰，或是創建讓大家愛不釋手的經文組合吧！': '高順位を獲得したいですか？それなら根気よく挑戦し続けるか、誰もが楽しめる経文セットを作成しましょう！',
-    '🎤 四、全新語音模式 (Voice Mode)': '🎤 4. 新しい音声モード',
+    '🎤 三、全新語音模式 (Voice Mode)': '🎤 4. 新しい音声モード',
     '除了點擊方塊，您現在可以直接<strong>用「唸」的來背經文！</strong>': 'ブロックをクリックするだけでなく、自分の声で直接<strong>経文を暗唱できるようになりました！</strong>',
     '<strong>智慧模糊辨識：</strong> 系統內建強大的中文拼音模糊比對。就算有台灣國語、捲舌平舌音不分，只要發音相近就能過關！': '<strong>スマートな曖昧認識：</strong> システムには強力な曖昧な音声認識機能が組み込まれています。不正確な発音や訛りがあっても、似た音であれば通過できます！',
     '<strong>貼心提示系統：</strong> 如果卡詞了，系統會在 3 秒後自動給予局部提示，幫助您順利接下去。': '<strong>役立つヒントシステム：</strong> もし行き詰まったら、システムは3秒後に自動的に部分的なヒントを出してくれます。',
     '<strong>分數加成獎勵：</strong> 為了鼓勵大家開口宣告神的話語，在語音模式中，您的<strong>「剩餘時間加成」權重會大幅提升 50%</strong>！': '<strong>スコアボーナス：</strong> 神の言葉を声に出して宣言することを奨励するために、音声モードでは<strong>「残り時間ボーナス」の比重が50%増加します</strong>！',
-    '⚔️ 五、多人即時連線對戰': '⚔️ 5. リアルタイムマルチプレイ',
+    '⚔️ 四、多人即時連線對戰': '⚔️ 5. リアルタイムマルチプレイ',
     '背經文不再是一個人孤單的事！': '経文の暗唱はもう孤独な作業ではありません！',
     '點擊 <strong>「多人連線」</strong> 創建專屬房間，邀請小組成員或家人一起加入。': '<strong>「マルチプレイ」</strong>をクリックして専用の部屋を作成し、グループメンバーや家族を招待して参加させましょう。',
     '房主可以從全域題庫中挑選 <strong>「比賽經文」</strong>。': 'ホストはグローバルな問題集から<strong>「競技用の経文」</strong>を選ぶことができます。',
@@ -12679,12 +12679,12 @@ export default function App() {
     '<strong>個人過關積點排行：</strong> 只要完成挑戰就能累積積分，破自己的紀錄也算分！': '<strong>개인 클리어 포인트 랭킹:</strong> 도전을 완료하여 포인트를 모으세요. 자신의 기록을 깨도 점수에 반영됩니다!',
     '<strong>最受歡迎的經文組排名：</strong> 被玩越多次的經文組，將會在此看板上獲得頂級榮耀。': '<strong>가장 인기 있는 구절 세트 순위:</strong> 구절 세트가 더 많이 플레이될수록 이 보드에서 영광이 더 높아집니다.',
     '想獲得好名次？那就持之以恆地回來挑戰，或是創建讓大家愛不釋手的經文組合吧！': '높은 순위를 원하시나요? 끊임없이 도전하거나 모두가 사랑하는 구절 세트를 만들어 보세요!',
-    '🎤 四、全新語音模式 (Voice Mode)': '🎤 4. 새로운 음성 모드',
+    '🎤 三、全新語音模式 (Voice Mode)': '🎤 4. 새로운 음성 모드',
     '除了點擊方塊，您現在可以直接<strong>用「唸」的來背經文！</strong>': '블록을 클릭하는 것 외에도 이제 직접 <strong>음성으로 구절을 암송할 수 있습니다!</strong>',
     '<strong>智慧模糊辨識：</strong> 系統內建強大的中文拼音模糊比對。就算有台灣國語、捲舌平舌音不分，只要發音相近就能過關！': '<strong>스마트 흐림 인식:</strong> 시스템은 강력한 모호한 음성 일치를 갖추고 있습니다. 부정확한 발음이나 억양에도 비슷한 소리가 통과됩니다!',
     '<strong>貼心提示系統：</strong> 如果卡詞了，系統會在 3 秒後自動給予局部提示，幫助您順利接下去。': '<strong>도움말 힌트 시스템:</strong> 막히면 3초 후 시스템이 자동으로 부분 힌트를 주어 계속할 수 있도록 도와줍니다.',
     '<strong>分數加成獎勵：</strong> 為了鼓勵大家開口宣告神的話語，在語音模式中，您的<strong>「剩餘時間加成」權重會大幅提升 50%</strong>！': '<strong>점수 보너스:</strong> 하나님의 말씀을 소리내어 선포하도록 장려하기 위해 음성 모드에서 <strong>"남은 시간 보너스" 가중치가 50% 증가합니다!</strong>',
-    '⚔️ 五、多人即時連線對戰': '⚔️ 5. 멀티플레이어 실시간 대전',
+    '⚔️ 四、多人即時連線對戰': '⚔️ 5. 멀티플레이어 실시간 대전',
     '背經文不再是一個人孤單的事！': '성경 암송은 더 이상 혼자 하는 일이 아닙니다!',
     '點擊 <strong>「多人連線」</strong> 創建專屬房間，邀請小組成員或家人一起加入。': '<strong>"멀티플레이"</strong>를 클릭하여 비공개 방을 만들고 그룹 멤버나 가족을 초대하여 참여하세요.',
     '房主可以從全域題庫中挑選 <strong>「比賽經文」</strong>。': '호스트는 글로벌 구절 은행에서 <strong>"경쟁 구절"</strong>을 선택할 수 있습니다.',
@@ -12903,7 +12903,7 @@ const zhcnDict = {
   "<strong>不只作者，人人都能錄：</strong>任何登入的玩家都可以為一節經文錄下自己的聲音並公開分享。打開播放器的「播放方式」→「聲音來源」，就能在 自動／電腦語音／無聲音／作者錄音／其他貢獻者的聲音 之間切換，聽聽弟兄姊妹怎麼讀這一節。": "<strong>不只作者，人人都能录：</strong>任何登录的玩家都可以为一节经文录下自己的声音并公开分享。打开播放器的「播放方式」→「声音来源」，就能在 自动／电脑语音／无声音／作者录音／其他贡献者的声音 之间切换，听听弟兄姊妹怎么读这一节。",
   "<strong>播放優先順序：</strong>「自動」會優先播你自己的親聲，其次是最新公開的人聲，再來是題庫作者的親聲，最後才是電腦語音（TTS）。只要有人錄過，就不會聽到機器音。": "<strong>播放优先顺序：</strong>「自动」会优先播你自己的亲声，其次是最新公开的人声，再来是题库作者的亲声，最后才是电脑语音（TTS）。只要有人录过，就不会听到机器音。",
   "<strong>分享你正在聽的聲音：</strong>點 🔗 分享鍵，連結會帶著「你現在正在聽的那個聲音」——不論是你自己、作者或其他貢獻者的親聲，朋友打開連結聽到的就是同一個聲音。若錄音還在上傳，分享鍵會先等上傳完成再產生連結，確保對方一定聽得到。": "<strong>分享你正在听的声音：</strong>点 🔗 分享键，链接会带着「你现在正在听的那个声音」——不论是你自己、作者或其他贡献者的亲声，朋友打开链接听到的就是同一个声音。若录音还在上传，分享键会先等上传完成再产生链接，确保对方一定听得到。",
-  "七、播放方式、我的最愛與更多聆聽小工具": "七、播放方式、我的最爱与更多聆听小工具",
+  "六、播放方式、我的最愛與更多聆聽小工具": "六、播放方式、我的最爱与更多聆听小工具",
   "聆聽畫面的 <strong>「播放方式」</strong> 視窗和幾顆新按鈕，讓連續聆聽更貼近你的習慣：": "聆听画面的 <strong>「播放方式」</strong> 窗口和几颗新按钮，让连续聆听更贴近你的习惯：",
   "<strong>⏱️ 播放時間：</strong>可設定播放幾分鐘後自動停止，或無限循環播放——睡前、靈修時段都好用。": "<strong>⏱️ 播放时间：</strong>可设定播放几分钟后自动停止，或无限循环播放——睡前、灵修时段都好用。",
   "<strong>🔠 字體大小：</strong>同一個視窗裡可以調整聆聽畫面的字級，長輩或投影使用時把字放大更清楚。": "<strong>🔠 字体大小：</strong>同一个窗口里可以调整聆听画面的字级，长辈或投影使用时把字放大更清楚。",
@@ -12911,12 +12911,12 @@ const zhcnDict = {
   "<strong>▶️ 一鍵播放：</strong>「我的專屬題庫」每張卡片都多了「播放」鍵，不必先進入經文組就能開始連續聆聽（可選隨機或按序）。": "<strong>▶️ 一键播放：</strong>「我的专属题库」每张卡片都多了「播放」键，不必先进入经文组就能开始连续聆听（可选随机或按序）。",
   "<strong>🔄 雙語對調：</strong>讀經頁的「朗讀第二語言」按鈕會暫時把主／次語言互換，改用第二語言落字並朗讀，原語言退到下方小字；離開後自動還原，練習外語聽讀很方便。": "<strong>🔄 双语对调：</strong>读经页的「朗读第二语言」按钮会暂时把主／次语言互换，改用第二语言落字并朗读，原语言退到下方小字；离开后自动还原，练习外语听读很方便。",
   "<strong>⚡ 邊聽邊挑戰：</strong>聆聽中按 ⚡ 立刻挑戰這一節；結束後按「返回朗讀」會回到同一節並暫停等你，按播放或 ‹ › 就能接著聽下一節。": "<strong>⚡ 边听边挑战：</strong>聆听中按 ⚡ 立刻挑战这一节；结束后按「返回朗读」会回到同一节并暂停等你，按播放或 ‹ › 就能接着听下一节。",
-  "八、經文組一鍵「翻譯」到其他語言": "八、经文组一键「翻译」到其他语言",
+  "七、經文組一鍵「翻譯」到其他語言": "七、经文组一键「翻译」到其他语言",
   "辛苦建好的經文組，想給說別種語言的弟兄姊妹用？現在不必重打一次。": "辛苦建好的经文组，想给说别种语言的弟兄姊妹用？现在不必重打一次。",
   "在經文組詳情頁點 <strong>「翻譯」</strong>，選擇目標語言。系統會自動翻譯標題、把每節出處換成該語言的書名，並抓取<strong>該語言官方譯本的真實經文</strong>（不是機器翻譯的經文）。": "在经文组详情页点 <strong>「翻译」</strong>，选择目标语言。系统会自动翻译标题、把每节出处换成该语言的书名，并抓取<strong>该语言官方译本的真实经文</strong>（不是机器翻译的经文）。",
   "預覽畫面可以修改標題、逐節查看成功／失敗並重試；確認後點 <strong>「加入並編輯」</strong>，經文組就會發佈到該語言的題庫，並自動切換過去讓你補上簡介。": "预览画面可以修改标题、逐节查看成功／失败并重试；确认后点 <strong>「加入并编辑」</strong>，经文组就会发布到该语言的题库，并自动切换过去让你补上简介。",
   "VerseRain 現已支援 20 多種聖經版本與介面語言：繁／簡中文、台語、英文（KJV／ESV／NIV）、日文、韓文、西班牙文、葡萄牙文、法文、德文、俄文、印地文、阿拉伯文、波斯文、希伯來文、土耳其文、緬甸文、越南文、印尼文與馬來文——切換左上角的「版本」即可。": "VerseRain 现已支持 20 多种圣经版本与界面语言：繁／简中文、台语、英文（KJV／ESV／NIV）、日文、韩文、西班牙文、葡萄牙文、法文、德文、俄文、印地文、阿拉伯文、波斯文、希伯来文、土耳其文、缅甸文、越南文、印尼文与马来文——切换左上角的「版本」即可。",
-  "九、全球玩家地圖（2D／3D）": "九、全球玩家地图（2D／3D）",
+  "八、全球玩家地圖（2D／3D）": "八、全球玩家地图（2D／3D）",
   "點上方的 <strong>「地圖」</strong> 頁籤，看看世界各地的經文雨玩家都在哪裡。": "点上方的 <strong>「地图」</strong> 页签，看看世界各地的经文雨玩家都在哪里。",
   "點擊標記可以查看該玩家的成績；地圖上若有進行中的多人遊戲房間，<strong>雙擊房間就能直接加入戰局</strong>！": "点击标记可以查看该玩家的成绩；地图上若有进行中的多人游戏房间，<strong>双击房间就能直接加入战局</strong>！",
   "右上角可在 <strong>「2D 地圖」</strong> 與 <strong>「3D 地球」</strong> 之間切換，轉動地球，看看全球背經的即時脈動。": "右上角可在 <strong>「2D 地图」</strong> 与 <strong>「3D 地球」</strong> 之间切换，转动地球，看看全球背经的实时脉动。",
@@ -12934,6 +12934,17 @@ const zhcnDict = {
   "教學影片：在經文組頁按「翻譯」→ 選 Bahasa Melayu → 系統翻譯標題並抓取馬來文譯本 → 預覽 16 節全部成功 → 「加入並編輯」。": "教学视频：在经文组页按「翻译」→ 选 Bahasa Melayu → 系统翻译标题并抓取马来文译本 → 预览 16 节全部成功 → 「加入并编辑」。",
   "教學影片：點「地圖」看全球玩家分佈 → 按「3D 地球」→ 拖曳轉動地球。": "教学视频：点「地图」看全球玩家分布 → 按「3D 地球」→ 拖拽转动地球。",
   "同一章的其他節可以用逗號接在後面：「約翰福音 1:1, 4」＝ 1:1 與 1:4；「創世記 1:26-28, 2:7」＝ 同書卷的 2:7。": "同一章的其他节可以用逗号接在后面：「约翰福音 1:1, 4」＝ 1:1 与 1:4；「创世记 1:26-28, 2:7」＝ 同书卷的 2:7。",
+  // 操作手冊：第二章改寫、移除排行榜/美化人聲（v3.27.7）
+  "歡迎進入 <strong>VerseRain 經文雨</strong>！這是一個結合聆聽、挑戰與學習的互動背經平台。<br />在這裡您可以挑戰全球經文組、建立個人專屬的題庫，也能用自己的聲音把經文分享給朋友！": "欢迎进入 <strong>VerseRain 经文雨</strong>！这是一个结合聆听、挑战与学习的互动背经平台。<br />在这里您可以挑战全球经文组、建立个人专属的题库，也能用自己的声音把经文分享给朋友！",
+  "二、如何自建專屬「經文組」？": "二、如何自建专属「经文组」？",
+  "只要登入帳號，任何人都可以打造自己的主日學、小組或個人靈修專屬題庫，建好就能聆聽、挑戰、分享。": "只要登录账号，任何人都可以打造自己的主日学、小组或个人灵修专属题库，建好就能聆听、挑战、分享。",
+  "先<strong>登入</strong>，再從大廳點 <strong>「經文題庫」</strong>，進入上方的 <strong>「我的專屬題庫」</strong>。": "先<strong>登录</strong>，再从大厅点 <strong>「经文题库」</strong>，进入上方的 <strong>「我的专属题库」</strong>。",
+  "點 <strong>「＋ 建立新題庫」</strong>，填上標題與簡介；也可以挑一張背景圖片、選背景音樂或上傳自己的音樂。": "点 <strong>「＋ 建立新题库」</strong>，填上标题与简介；也可以挑一张背景图片、选背景音乐或上传自己的音乐。",
+  "在經文列表選好書卷、輸入 <strong>章:節</strong>（如 <code>3:16</code> 或 <code>6:9-13</code>），按 <strong>Enter 或 Tab</strong>，系統就會自動抓取完整經文。": "在经文列表选好书卷、输入 <strong>章:节</strong>（如 <code>3:16</code> 或 <code>6:9-13</code>），按 <strong>Enter 或 Tab</strong>，系统就会自动抓取完整经文。",
+  "經文很多？用 <strong>「輸入出處批次匯入」</strong>，一次貼上多個出處（每行一個或用逗號分隔）。逗號後面的純節數會接在同一章：<code>約翰福音 1:1, 4</code> 就是 1:1 與 1:4。": "经文很多？用 <strong>「输入出处批次导入」</strong>，一次贴上多个出处（每行一个或用逗号分隔）。逗号后面的纯节数会接在同一章：<code>约翰福音 1:1, 4</code> 就是 1:1 与 1:4。",
+  "每一節旁邊都有 🎙️ 麥克風，可以順手錄下自己的親聲朗讀。": "每一节旁边都有 🎙️ 麦克风，可以顺手录下自己的亲声朗读。",
+  "確認無誤後點 <strong>「儲存題庫」</strong>。這份經文組就會出現在「經文題庫」，大家都可以聆聽與挑戰。": "确认无误后点 <strong>「储存题库」</strong>。这份经文组就会出现在「经文题库」，大家都可以聆听与挑战。",
+  "<strong>提示：</strong>經文抓取串接了各語言的聖經資料庫（和合本、ESV、KJV…），能大幅省去打字與校稿的時間；建好的經文組還能用「翻譯」一鍵在地化到其他語言（見第七章）。": "<strong>提示：</strong>经文抓取串接了各语言的圣经数据库（和合本、ESV、KJV…），能大幅省去打字与校稿的时间；建好的经文组还能用「翻译」一键本地化到其他语言（见第七章）。",
 };
 
 // ─── Vietnamese (Tiếng Việt) UI Dictionary ────────────────────────────────────────
@@ -13376,12 +13387,12 @@ const idDict = {
     '<strong>個人過關積點排行：</strong> 只要完成挑戰就能累積積分，破自己的紀錄也算分！': '<strong>Peringkat Poin Pribadi:</strong> Kumpulkan poin dengan menyelesaikan tantangan. Pecahkan rekor Anda sendiri juga dihitung!',
     '<strong>最受歡迎的經文組排名：</strong> 被玩越多次的經文組，將會在此看板上獲得頂級榮耀。': '<strong>Set Ayat Terpopuler:</strong> Semakin sering set ayat dimainkan, semakin tinggi peringkatnya.',
     '想獲得好名次？那就持之以恆地回來挑戰，或是創建讓大家愛不釋手的經文組合吧！': 'Ingin peringkat bagus? Terus tantang secara konsisten atau buat set ayat yang disukai semua orang!',
-    '🎤 四、全新語音模式 (Voice Mode)': '🎤 4. Mode Suara Baru',
+    '🎤 三、全新語音模式 (Voice Mode)': '🎤 4. Mode Suara Baru',
     '除了點擊方塊，您現在可以直接<strong>用「唸」的來背經文！</strong>': 'Selain klik blok, Anda dapat melafalkan ayat <strong>menggunakan suara Anda!</strong>',
     '<strong>智慧模糊辨識：</strong> 系統內建強大的中文拼音模糊比對。就算有台灣國語、捲舌平舌音不分，只要發音相近就能過關！': '<strong>Pengenalan Cerdas:</strong> Bahkan dengan pengucapan tidak tepat, suara serupa dapat lolos!',
     '<strong>貼心提示系統：</strong> 如果卡詞了，系統會在 3 秒後自動給予局部提示，幫助您順利接下去。': '<strong>Sistem Bantuan:</strong> Jika Anda macet, sistem otomatis memberikan petunjuk setelah 3 detik.',
     '<strong>分數加成獎勵：</strong> 為了鼓勵大家開口宣告神的話語，在語音模式中，您的<strong>「剩餘時間加成」權重會大幅提升 50%</strong>！': '<strong>Bonus Skor:</strong> Bobot <strong>"Bonus Waktu Tersisa"</strong> meningkat <strong>50%</strong> dalam Mode Suara!',
-    '⚔️ 五、多人即時連線對戰': '⚔️ 5. Pertandingan Multipemain Waktu Nyata',
+    '⚔️ 四、多人即時連線對戰': '⚔️ 5. Pertandingan Multipemain Waktu Nyata',
     '背經文不再是一個人孤單的事！': 'Menghafal Alkitab tidak lagi tugas yang kesepian!',
     '點擊 <strong>「多人連線」</strong> 創建專屬房間，邀請小組成員或家人一起加入。': 'Klik <strong>"Multipemain"</strong> untuk membuat ruang pribadi dan undang anggota kelompok atau keluarga.',
     '房主可以從全域題庫中挑選 <strong>「比賽經文」</strong>。': 'Host dapat memilih <strong>"Ayat Kompetisi"</strong> dari bank ayat global.',
@@ -13952,12 +13963,12 @@ const esDict = {
     '<strong>個人過關積點排行：</strong> 只要完成挑戰就能累積積分，破自己的紀錄也算分！': '<strong>Clasificación Personal de Puntos:</strong> Acumula puntos completando desafíos. ¡Romper tu propio récord también cuenta!',
     '<strong>最受歡迎的經文組排名：</strong> 被玩越多次的經文組，將會在此看板上獲得頂級榮耀。': '<strong>Clasificación de Conjuntos de Versículos Más Populares:</strong> Cuanto más se juegue un conjunto de versículos, mayor será su gloria en esta tabla.',
     '想獲得好名次？那就持之以恆地回來挑戰，或是創建讓大家愛不釋手的經文組合吧！': '¿Quieres un buen puesto? ¡Sigue desafiando constantemente o crea un conjunto de versículos que a todos les encante!',
-    '🎤 四、全新語音模式 (Voice Mode)': '🎤 4. Nuevo Modo de Voz',
+    '🎤 三、全新語音模式 (Voice Mode)': '🎤 4. Nuevo Modo de Voz',
     '除了點擊方塊，您現在可以直接<strong>用「唸」的來背經文！</strong>': 'Además de hacer clic en los bloques, ¡ahora puedes recitar versículos directamente <strong>usando tu voz!</strong>',
     '<strong>智慧模糊辨識：</strong> 系統內建強大的中文拼音模糊比對。就算有台灣國語、捲舌平舌音不分，只要發音相近就能過關！': '<strong>Reconocimiento Inteligente Difuso:</strong> El sistema cuenta con un potente emparejamiento pinyin difuso. ¡Incluso con acentos o pronunciación imprecisa, los sonidos similares pasarán!',
     '<strong>貼心提示系統：</strong> 如果卡詞了，系統會在 3 秒後自動給予局部提示，幫助您順利接下去。': '<strong>Sistema de Ayuda:</strong> Si te atascas, el sistema te proporcionará automáticamente una pista parcial después de 3 segundos para ayudarte a continuar.',
     '<strong>分數加成獎勵：</strong> 為了鼓勵大家開口宣告神的話語，在語音模式中，您的<strong>「剩餘時間加成」權重會大幅提升 50%</strong>！': '<strong>Bonus de Puntuación:</strong> Para animar a proclamar en voz alta la palabra de Dios, ¡el peso de tu <strong>"Bono de Tiempo Restante" aumenta un 50%</strong> en el Modo de Voz!',
-    '⚔️ 五、多人即時連線對戰': '⚔️ 5. Batalla Multijugador en Tiempo Real',
+    '⚔️ 四、多人即時連線對戰': '⚔️ 5. Batalla Multijugador en Tiempo Real',
     '背經文不再是一個人孤單的事！': '¡Memorizar las Escrituras ya no es una tarea solitaria!',
     '點擊 <strong>「多人連線」</strong> 創建專屬房間，邀請小組成員或家人一起加入。': 'Haz clic en <strong>"Multijugador"</strong> para crear una sala privada e invitar a los miembros de tu grupo o familia a unirse.',
     '房主可以從全域題庫中挑選 <strong>「比賽經文」</strong>。': 'El anfitrión puede seleccionar <strong>"Versículos de Competición"</strong> del banco global de versículos.',
@@ -14144,12 +14155,12 @@ const trDict = {
     '<strong>個人過關積點排行：</strong> 只要完成挑戰就能累積積分，破自己的紀錄也算分！': '<strong>Kişisel Puan Sıralaması:</strong> Meydan okumaları tamamlayarak puan toplayın. Kendi rekorunuzu kırmak da sayılır!',
     '<strong>最受歡迎的經文組排名：</strong> 被玩越多次的經文組，將會在此看板上獲得頂級榮耀。': '<strong>En Popüler Ayet Setleri Sıralaması:</strong> Bir ayet seti ne kadar çok oynanırsa, bu panodaki ünü o kadar yüksek olur.',
     '想獲得好名次？那就持之以恆地回來挑戰，或是創建讓大家愛不釋手的經文組合吧！': 'İyi bir sıra mı istiyorsunuz? Sürekli olarak meydan okumaya devam edin veya herkesin sevdiği bir ayet seti yaratın!',
-    '🎤 四、全新語音模式 (Voice Mode)': '🎤 4. Yeni Ses Modu',
+    '🎤 三、全新語音模式 (Voice Mode)': '🎤 4. Yeni Ses Modu',
     '除了點擊方塊，您現在可以直接<strong>用「唸」的來背經文！</strong>': 'Bloklara tıklamanın yanı sıra, artık <strong>sesinizi kullanarak</strong> ayetleri doğrudan ezberden okuyabilirsiniz!',
     '<strong>智慧模糊辨識：</strong> 系統內建強大的中文拼音模糊比對。就算有台灣國語、捲舌平舌音不分，只要發音相近就能過關！': '<strong>Akıllı Bulanık Tanıma:</strong> Sistem güçlü bir bulanık eşleştirme özelliğine sahiptir. Aksanlarla veya kesin olmayan telaffuzla bile, benzer sesler geçecektir!',
     '<strong>貼心提示系統：</strong> 如果卡詞了，系統會在 3 秒後自動給予局部提示，幫助您順利接下去。': '<strong>Yardımcı İpucu Sistemi:</strong> Takılırsanız, devam etmenize yardımcı olmak için sistem 3 saniye sonra otomatik olarak kısmi bir ipucu sağlayacaktır.',
     '<strong>分數加成獎勵：</strong> 為了鼓勵大家開口宣告神的話語，在語音模式中，您的<strong>「剩餘時間加成」權重會大幅提升 50%</strong>！': '<strong>Puan Bonusu:</strong> Tanrı\'nın sözünü yüksek sesle duyurmayı teşvik etmek için, Ses Modunda <strong>"Kalan Süre Bonusu" ağırlığınız %30 artırılır</strong>!',
-    '⚔️ 五、多人即時連線對戰': '⚔️ 5. Çok Oyunculu Gerçek Zamanlı Savaş',
+    '⚔️ 四、多人即時連線對戰': '⚔️ 5. Çok Oyunculu Gerçek Zamanlı Savaş',
     '背經文不再是一個人孤單的事！': 'Kutsal metinleri ezberlemek artık yalnız yapılan bir iş değil!',
     '點擊 <strong>「多人連線」</strong> 創建專屬房間，邀請小組成員或家人一起加入。': 'Özel bir oda oluşturmak ve grup üyelerinizi veya ailenizi katılmaya davet etmek için <strong>"Çok Oyunculu"</strong> seçeneğine tıklayın.',
     '房主可以從全域題庫中挑選 <strong>「比賽經文」</strong>。': 'Oda sahibi, küresel ayet bankasından <strong>"Yarışma Ayetleri"</strong>ni seçebilir.',
@@ -14336,12 +14347,12 @@ const deDict = {
     '<strong>個人過關積點排行：</strong> 只要完成挑戰就能累積積分，破自己的紀錄也算分！': '<strong>Persönliches Punkte-Ranking:</strong> Sammeln Sie Punkte durch das Abschließen von Herausforderungen. Das Brechen Ihres eigenen Rekords zählt ebenfalls!',
     '<strong>最受歡迎的經文組排名：</strong> 被玩越多次的經文組，將會在此看板上獲得頂級榮耀。': '<strong>Ranking der beliebtesten Vers-Sets:</strong> Je öfter ein Vers-Set gespielt wird, desto höher ist sein Ruhm auf dieser Tafel.',
     '想獲得好名次？那就持之以恆地回來挑戰，或是創建讓大家愛不釋手的經文組合吧！': 'Möchten Sie einen guten Rang? Fordern Sie weiterhin ständig heraus oder erstellen Sie ein Vers-Set, das jeder liebt!',
-    '🎤 四、全新語音模式 (Voice Mode)': '🎤 4. Neuer Sprachmodus',
+    '🎤 三、全新語音模式 (Voice Mode)': '🎤 4. Neuer Sprachmodus',
     '除了點擊方塊，您現在可以直接<strong>用「唸」的來背經文！</strong>': 'Neben dem Klicken auf Blöcke können Sie Verse jetzt direkt <strong>mit Ihrer Stimme rezitieren!</strong>',
     '<strong>智慧模糊辨識：</strong> 系統內建強大的中文拼音模糊比對。就算有台灣國語、捲舌平舌音不分，只要發音相近就能過關！': '<strong>Intelligente unscharfe Erkennung:</strong> Das System verfügt über eine leistungsstarke unscharfe Pinyin-Übereinstimmung. Selbst bei ungenauer Aussprache werden ähnliche Töne akzeptiert!',
     '<strong>貼心提示系統：</strong> 如果卡詞了，系統會在 3 秒後自動給予局部提示，幫助您順利接下去。': '<strong>Hilfreiches Hinweissystem:</strong> Wenn Sie stecken bleiben, gibt Ihnen das System nach 3 Sekunden automatisch einen teilweisen Hinweis, damit Sie fortfahren können.',
     '<strong>分數加成獎勵：</strong> 為了鼓勵大家開口宣告神的話語，在語音模式中，您的<strong>「剩餘時間加成」權重會大幅提升 50%</strong>！': '<strong>Punkte-Bonus:</strong> Um die laute Verkündigung von Gottes Wort zu fördern, wird Ihr <strong>"Verbleibender Zeitbonus"-Gewicht im Sprachmodus um 50 % erhöht!</strong>',
-    '⚔️ 五、多人即時連線對戰': '⚔️ 5. Mehrspieler-Echtzeitkampf',
+    '⚔️ 四、多人即時連線對戰': '⚔️ 5. Mehrspieler-Echtzeitkampf',
     '背經文不再是一個人孤單的事！': 'Das Auswendiglernen von Bibelversen ist keine einsame Aufgabe mehr!',
     '點擊 <strong>「多人連線」</strong> 創建專屬房間，邀請小組成員或家人一起加入。': 'Klicken Sie auf <strong>"Mehrspieler"</strong>, um einen privaten Raum zu erstellen und Ihre Gruppenmitglieder oder Familie einzuladen.',
     '房主可以從全域題庫中挑選 <strong>「比賽經文」</strong>。': 'Der Gastgeber kann <strong>"Wettbewerbsverse"</strong> aus der globalen Vers-Datenbank auswählen.',
@@ -14557,7 +14568,7 @@ const deDict = {
     '前 10 頁': '10 صفحه اول',
     '可隨時結束比賽，結果會用隊伍平均分排名。': 'بازی را می توان در هر زمانی به پایان رساند و نتایج با استفاده از میانگین امتیاز تیم رتبه بندی می شود.',
     '哈囉': 'سلام',
-    '四、全新語音模式 (Voice Mode)': '4. حالت صوتی جدید (حالت صوتی)',
+    '三、全新語音模式 (Voice Mode)': '4. حالت صوتی جدید (حالت صوتی)',
     '團隊競賽準備！': 'مسابقه تیمی آماده است',
     '團隊競賽結束！': 'رقابت تیمی به پایان رسید!',
     '團隊競賽進行中': 'رقابت تیمی در حال انجام است',
@@ -14852,7 +14863,7 @@ const deDict = {
     '取消': 'キャンセル',
     '可隨時結束比賽，結果會用隊伍平均分排名。': 'ゲームはいつでも終了することができ、結果はチームの平均スコアを使用してランク付けされます。',
     '哈囉': 'こんにちは',
-    '四、全新語音模式 (Voice Mode)': '4. 新音声モード（Voice Mode）',
+    '三、全新語音模式 (Voice Mode)': '4. 新音声モード（Voice Mode）',
     '團隊競賽準備！': 'チーム戦の準備完了！',
     '團隊競賽結束！': '団体戦終了！',
     '團隊競賽進行中': 'チーム対抗戦開催中',
@@ -15085,7 +15096,7 @@ const deDict = {
     '前 10 頁': '처음 10페이지',
     '可隨時結束比賽，結果會用隊伍平均分排名。': '게임은 언제든지 종료될 수 있으며, 결과는 팀의 평균 점수를 기준으로 순위가 결정됩니다.',
     '哈囉': '안녕하세요',
-    '四、全新語音模式 (Voice Mode)': '4. 새로운 음성 모드(음성 모드)',
+    '三、全新語音模式 (Voice Mode)': '4. 새로운 음성 모드(음성 모드)',
     '團隊競賽準備！': '팀 대결 준비 완료!',
     '團隊競賽結束！': '팀 대결이 끝났습니다!',
     '團隊競賽進行中': '단체전 진행 중',
@@ -15402,7 +15413,7 @@ const deDict = {
     'QR 碼': 'mã QR',
     'VerseRain 經文雨': 'Câu thơMưa',
     'VerseRain 經文雨 操作手冊': 'Hướng dẫn sử dụng VerseRain',
-    '⚔️ 五、多人即時連線對戰': '⚔️ 5. Trận chiến trực tuyến thời gian thực nhiều người chơi',
+    '⚔️ 四、多人即時連線對戰': '⚔️ 5. Trận chiến trực tuyến thời gian thực nhiều người chơi',
     '✔️ 已準備': '✔️ Sẵn sàng',
     '一、如何開始遊玩？': '1. Làm thế nào để bắt đầu chơi?',
     '三、個人積分全球排行榜': '3. Xếp hạng điểm cá nhân toàn cầu',
@@ -15456,7 +15467,7 @@ const deDict = {
     '可隨時結束比賽，結果會用隊伍平均分排名。': 'Trận đấu có thể kết thúc bất cứ lúc nào và kết quả sẽ được xếp hạng dựa trên điểm trung bình của đội.',
     '哈囉': 'Xin chào',
     '單獨經文': 'câu thơ riêng biệt',
-    '四、全新語音模式 (Voice Mode)': '4. Chế độ giọng nói mới (Voice Mode)',
+    '三、全新語音模式 (Voice Mode)': '4. Chế độ giọng nói mới (Voice Mode)',
     '回到主頁': 'Trở về trang chủ',
     '回到大廳': 'Trở lại sảnh',
     '回合': 'tròn',
@@ -15944,7 +15955,7 @@ const deDict = {
     'QR 碼': 'QR ကုဒ်',
     'VerseRain 經文雨': 'VerseRain ပိုဒ်ရေ',
     'VerseRain 經文雨 操作手冊': 'VerseRain စစ်ဆင်ရေးလက်စွဲ',
-    '⚔️ 五、多人即時連線對戰': '⚔️ 5. Multiplayer အချိန်နှင့်တပြေးညီ အွန်လိုင်းတိုက်ပွဲများ',
+    '⚔️ 四、多人即時連線對戰': '⚔️ 5. Multiplayer အချိန်နှင့်တပြေးညီ အွန်လိုင်းတိုက်ပွဲများ',
     '✔️ 已準備': '✔️ အဆင်သင့်',
     '一、如何開始遊玩？': '1. ဘယ်လိုစကစားရမလဲ။',
     '三、個人積分全球排行榜': '3. ကိုယ်ရေးကိုယ်တာအချက်များ၏ ကမ္ဘာလုံးဆိုင်ရာအဆင့်သတ်မှတ်ချက်',
@@ -15998,7 +16009,7 @@ const deDict = {
     '可隨時結束比賽，結果會用隊伍平均分排名。': 'ဂိမ်းသည် အချိန်မရွေး ပြီးဆုံးနိုင်ပြီး ရလဒ်များကို အသင်း၏ ပျမ်းမျှရမှတ်ကို အသုံးပြု၍ အဆင့်သတ်မှတ်မည်ဖြစ်သည်။',
     '哈囉': 'မင်္ဂလာပါ',
     '單獨經文': 'သီးခြားအခန်းငယ်များ',
-    '四、全新語音模式 (Voice Mode)': '4. အသံမုဒ်အသစ် (Voice Mode)',
+    '三、全新語音模式 (Voice Mode)': '4. အသံမုဒ်အသစ် (Voice Mode)',
     '回到主頁': 'ပင်မစာမျက်နှာသို့ ပြန်သွားရန်',
     '回到大廳': 'ဧည့်ခန်းသို့ ပြန်သွားရန်',
     '回合': 'ပတ်ပတ်လည်',
@@ -16513,7 +16524,7 @@ const deDict = {
     '可隨時結束比賽，結果會用隊伍平均分排名。': 'El juego puede finalizar en cualquier momento y los resultados se clasificarán según la puntuación promedio del equipo.',
     '哈囉': 'Hola',
     '單獨經文': 'versos separados',
-    '四、全新語音模式 (Voice Mode)': '4. Nuevo modo de voz (Modo de voz)',
+    '三、全新語音模式 (Voice Mode)': '4. Nuevo modo de voz (Modo de voz)',
     '回到主頁': 'Volver a la página de inicio',
     '回到大廳': 'De vuelta al vestíbulo',
     '回合': 'redondo',
@@ -17008,7 +17019,7 @@ const deDict = {
     '可隨時結束比賽，結果會用隊伍平均分排名。': 'Oyun herhangi bir zamanda sonlandırılabilir ve sonuçlar, takımın ortalama puanına göre sıralanır.',
     '哈囉': 'Merhaba',
     '單獨經文': 'ayrı ayetler',
-    '四、全新語音模式 (Voice Mode)': '4. Yeni ses modu (Ses Modu)',
+    '三、全新語音模式 (Voice Mode)': '4. Yeni ses modu (Ses Modu)',
     '回到主頁': 'Ana sayfaya dön',
     '回到大廳': 'Lobiye geri dön',
     '回合': 'yuvarlak',
@@ -17503,7 +17514,7 @@ const deDict = {
     '可隨時結束比賽，結果會用隊伍平均分排名。': 'Das Spiel kann jederzeit beendet werden und die Ergebnisse werden anhand der Durchschnittspunktzahl der Mannschaft gewertet.',
     '哈囉': 'Hallo',
     '單獨經文': 'separate Verse',
-    '四、全新語音模式 (Voice Mode)': '4. Neuer Sprachmodus (Voice Mode)',
+    '三、全新語音模式 (Voice Mode)': '4. Neuer Sprachmodus (Voice Mode)',
     '回到主頁': 'Zurück zur Startseite',
     '回到大廳': 'Zurück zur Lobby',
     '回合': 'runden',
@@ -17891,12 +17902,12 @@ const deDict = {
     "<strong>個人過關積點排行：</strong> 只要完成挑戰就能累積積分，破自己的紀錄也算分！": "<strong>Classificação pessoal de pontos:</strong> Acumule pontos ao completar desafios. Bater seu próprio recorde também conta!",
     "<strong>最受歡迎的經文組排名：</strong> 被玩越多次的經文組，將會在此看板上獲得頂級榮耀。": "<strong>Classificação dos conjuntos mais populares:</strong> Quanto mais um conjunto for jogado, maior será sua glória neste painel.",
     "想獲得好名次？那就持之以恆地回來挑戰，或是創建讓大家愛不釋手的經文組合吧！": "Quer uma boa colocação? Continue desafiando com constância ou crie um conjunto de versículos que todos adorem!",
-    "🎤 四、全新語音模式 (Voice Mode)": "🎤 4. Novo Modo de Voz",
+    "🎤 三、全新語音模式 (Voice Mode)": "🎤 4. Novo Modo de Voz",
     "除了點擊方塊，您現在可以直接<strong>用「唸」的來背經文！</strong>": "Além de clicar nos blocos, agora você pode recitar versículos diretamente <strong>usando a voz!</strong>",
     "<strong>智慧模糊辨識：</strong> 系統內建強大的中文拼音模糊比對。就算有台灣國語、捲舌平舌音不分，只要發音相近就能過關！": "<strong>Reconhecimento inteligente aproximado:</strong> O sistema tem uma poderosa correspondência fonética. Mesmo com sotaque ou pronúncia imprecisa, sons semelhantes passam!",
     "<strong>貼心提示系統：</strong> 如果卡詞了，系統會在 3 秒後自動給予局部提示，幫助您順利接下去。": "<strong>Sistema de dicas:</strong> Se você travar, o sistema dará automaticamente uma dica parcial após 3 segundos para ajudá-lo a continuar.",
     "<strong>分數加成獎勵：</strong> 為了鼓勵大家開口宣告神的話語，在語音模式中，您的<strong>「剩餘時間加成」權重會大幅提升 50%</strong>！": "<strong>Bônus de pontuação:</strong> Para incentivar a proclamação da palavra de Deus em voz alta, no Modo de Voz o peso do seu <strong>\"bônus de tempo restante\" aumenta 50%</strong>!",
-    "⚔️ 五、多人即時連線對戰": "⚔️ 5. Batalha multijogador em tempo real",
+    "⚔️ 四、多人即時連線對戰": "⚔️ 5. Batalha multijogador em tempo real",
     "背經文不再是一個人孤單的事！": "Memorizar as Escrituras não é mais uma tarefa solitária!",
     "點擊 <strong>「多人連線」</strong> 創建專屬房間，邀請小組成員或家人一起加入。": "Clique em <strong>\"Multijogador\"</strong> para criar uma sala privada e convidar os membros do seu grupo ou família.",
     "房主可以從全域題庫中挑選 <strong>「比賽經文」</strong>。": "O anfitrião pode selecionar <strong>\"versículos da competição\"</strong> do banco global.",
@@ -18157,7 +18168,7 @@ const deDict = {
     "可隨時結束比賽，結果會用隊伍平均分排名。": "Você pode encerrar a partida a qualquer momento; os resultados são ordenados pela média da equipe.",
     "哈囉": "Olá",
     "單獨經文": "Versículo avulso",
-    "四、全新語音模式 (Voice Mode)": "4. Novo Modo de Voz",
+    "三、全新語音模式 (Voice Mode)": "4. Novo Modo de Voz",
     "回到主頁": "Voltar à página inicial",
     "回到大廳": "Voltar ao salão",
     "回合": "Rodada",
@@ -18496,12 +18507,12 @@ const deDict = {
     "<strong>個人過關積點排行：</strong> 只要完成挑戰就能累積積分，破自己的紀錄也算分！": "<strong>Classement personnel des points :</strong> accumulez des points en relevant des défis. Battre votre propre record compte aussi !",
     "<strong>最受歡迎的經文組排名：</strong> 被玩越多次的經文組，將會在此看板上獲得頂級榮耀。": "<strong>Classement des ensembles les plus populaires :</strong> plus un ensemble est joué, plus il rayonne dans ce tableau.",
     "想獲得好名次？那就持之以恆地回來挑戰，或是創建讓大家愛不釋手的經文組合吧！": "Vous voulez un bon classement ? Relevez des défis avec constance ou créez un ensemble de versets que tout le monde adore !",
-    "🎤 四、全新語音模式 (Voice Mode)": "🎤 4. Nouveau Mode Voix",
+    "🎤 三、全新語音模式 (Voice Mode)": "🎤 4. Nouveau Mode Voix",
     "除了點擊方塊，您現在可以直接<strong>用「唸」的來背經文！</strong>": "En plus de cliquer sur les blocs, vous pouvez désormais réciter les versets <strong>à voix haute !</strong>",
     "<strong>智慧模糊辨識：</strong> 系統內建強大的中文拼音模糊比對。就算有台灣國語、捲舌平舌音不分，只要發音相近就能過關！": "<strong>Reconnaissance approximative intelligente :</strong> le système intègre une puissante correspondance phonétique. Même avec un accent ou une prononciation imprécise, les sons proches sont acceptés !",
     "<strong>貼心提示系統：</strong> 如果卡詞了，系統會在 3 秒後自動給予局部提示，幫助您順利接下去。": "<strong>Système d’indices :</strong> si vous bloquez, le système vous donne automatiquement un indice partiel au bout de 3 secondes pour vous aider à continuer.",
     "<strong>分數加成獎勵：</strong> 為了鼓勵大家開口宣告神的話語，在語音模式中，您的<strong>「剩餘時間加成」權重會大幅提升 50%</strong>！": "<strong>Bonus de score :</strong> pour encourager la proclamation de la parole de Dieu à voix haute, en Mode Voix le poids de votre <strong>« bonus de temps restant » augmente de 50 %</strong> !",
-    "⚔️ 五、多人即時連線對戰": "⚔️ 5. Bataille multijoueur en temps réel",
+    "⚔️ 四、多人即時連線對戰": "⚔️ 5. Bataille multijoueur en temps réel",
     "背經文不再是一個人孤單的事！": "Mémoriser les Écritures n’est plus une affaire solitaire !",
     "點擊 <strong>「多人連線」</strong> 創建專屬房間，邀請小組成員或家人一起加入。": "Cliquez sur <strong>« Multijoueur »</strong> pour créer une salle privée et inviter les membres de votre groupe ou de votre famille.",
     "房主可以從全域題庫中挑選 <strong>「比賽經文」</strong>。": "L’hôte peut choisir les <strong>« versets du concours »</strong> dans la banque mondiale.",
@@ -18762,7 +18773,7 @@ const deDict = {
     "可隨時結束比賽，結果會用隊伍平均分排名。": "Vous pouvez terminer la partie à tout moment ; les résultats sont classés selon la moyenne de l’équipe.",
     "哈囉": "Bonjour",
     "單獨經文": "Verset isolé",
-    "四、全新語音模式 (Voice Mode)": "4. Nouveau Mode Voix",
+    "三、全新語音模式 (Voice Mode)": "4. Nouveau Mode Voix",
     "回到主頁": "Retour à la page d’accueil",
     "回到大廳": "Retour au salon",
     "回合": "Manche",
@@ -19101,12 +19112,12 @@ const deDict = {
     "<strong>個人過關積點排行：</strong> 只要完成挑戰就能累積積分，破自己的紀錄也算分！": "<strong>Личный рейтинг очков:</strong> набирайте очки, проходя испытания. Побитие собственного рекорда тоже засчитывается!",
     "<strong>最受歡迎的經文組排名：</strong> 被玩越多次的經文組，將會在此看板上獲得頂級榮耀。": "<strong>Рейтинг самых популярных наборов:</strong> чем чаще играют набор, тем выше его слава в этой таблице.",
     "想獲得好名次？那就持之以恆地回來挑戰，或是創建讓大家愛不釋手的經文組合吧！": "Хотите хорошее место? Проходите испытания постоянно или создайте набор, который все полюбят!",
-    "🎤 四、全新語音模式 (Voice Mode)": "🎤 4. Новый голосовой режим",
+    "🎤 三、全新語音模式 (Voice Mode)": "🎤 4. Новый голосовой режим",
     "除了點擊方塊，您現在可以直接<strong>用「唸」的來背經文！</strong>": "Помимо нажатия на блоки, теперь вы можете заучивать стихи <strong>вслух!</strong>",
     "<strong>智慧模糊辨識：</strong> 系統內建強大的中文拼音模糊比對。就算有台灣國語、捲舌平舌音不分，只要發音相近就能過關！": "<strong>Умное нечёткое распознавание:</strong> в системе есть мощное фонетическое сопоставление. Даже с акцентом или неточным произношением похожие звуки засчитываются!",
     "<strong>貼心提示系統：</strong> 如果卡詞了，系統會在 3 秒後自動給予局部提示，幫助您順利接下去。": "<strong>Система подсказок:</strong> если вы запнулись, через 3 секунды система автоматически даст частичную подсказку, чтобы помочь продолжить.",
     "<strong>分數加成獎勵：</strong> 為了鼓勵大家開口宣告神的話語，在語音模式中，您的<strong>「剩餘時間加成」權重會大幅提升 50%</strong>！": "<strong>Бонус к очкам:</strong> чтобы поощрить провозглашение слова Божьего вслух, в голосовом режиме вес вашего <strong>«бонуса за оставшееся время» увеличивается на 50 %</strong>!",
-    "⚔️ 五、多人即時連線對戰": "⚔️ 5. Многопользовательская битва в реальном времени",
+    "⚔️ 四、多人即時連線對戰": "⚔️ 5. Многопользовательская битва в реальном времени",
     "背經文不再是一個人孤單的事！": "Заучивать Писание больше не одиноко!",
     "點擊 <strong>「多人連線」</strong> 創建專屬房間，邀請小組成員或家人一起加入。": "Нажмите <strong>«Мультиплеер»</strong>, чтобы создать закрытую комнату и пригласить членов группы или семьи.",
     "房主可以從全域題庫中挑選 <strong>「比賽經文」</strong>。": "Ведущий может выбрать <strong>«стихи для соревнования»</strong> из мирового банка.",
@@ -19367,7 +19378,7 @@ const deDict = {
     "可隨時結束比賽，結果會用隊伍平均分排名。": "Игру можно завершить в любой момент; результаты ранжируются по среднему баллу команды.",
     "哈囉": "Привет",
     "單獨經文": "Отдельный стих",
-    "四、全新語音模式 (Voice Mode)": "4. Новый голосовой режим",
+    "三、全新語音模式 (Voice Mode)": "4. Новый голосовой режим",
     "回到主頁": "На главную",
     "回到大廳": "Вернуться в холл",
     "回合": "Раунд",
@@ -19708,12 +19719,12 @@ const deDict = {
     "<strong>個人過關積點排行：</strong> 只要完成挑戰就能累積積分，破自己的紀錄也算分！": "<strong>व्यक्तिगत अंक रैंकिंग:</strong> चुनौतियाँ पूरी करके अंक जमा करें। अपना ही रिकॉर्ड तोड़ना भी गिना जाता है!",
     "<strong>最受歡迎的經文組排名：</strong> 被玩越多次的經文組，將會在此看板上獲得頂級榮耀。": "<strong>सबसे लोकप्रिय वचन समूह रैंकिंग:</strong> जितना अधिक कोई समूह खेला जाएगा, इस बोर्ड पर उसकी महिमा उतनी ही अधिक होगी।",
     "想獲得好名次？那就持之以恆地回來挑戰，或是創建讓大家愛不釋手的經文組合吧！": "अच्छी रैंक चाहते हैं? लगातार चुनौती लेते रहें या ऐसा वचन समूह बनाएँ जिसे सब पसंद करें!",
-    "🎤 四、全新語音模式 (Voice Mode)": "🎤 4. नया वॉइस मोड",
+    "🎤 三、全新語音模式 (Voice Mode)": "🎤 4. नया वॉइस मोड",
     "除了點擊方塊，您現在可以直接<strong>用「唸」的來背經文！</strong>": "ब्लॉक क्लिक करने के अलावा, अब आप वचनों को सीधे <strong>बोलकर</strong> याद कर सकते हैं!",
     "<strong>智慧模糊辨識：</strong> 系統內建強大的中文拼音模糊比對。就算有台灣國語、捲舌平舌音不分，只要發音相近就能過關！": "<strong>बुद्धिमान अनुमानित पहचान:</strong> सिस्टम में शक्तिशाली ध्वन्यात्मक मिलान है। उच्चारण या अशुद्धि के बावजूद, मिलते-जुलते स्वर स्वीकार होते हैं!",
     "<strong>貼心提示系統：</strong> 如果卡詞了，系統會在 3 秒後自動給予局部提示，幫助您順利接下去。": "<strong>संकेत प्रणाली:</strong> यदि आप अटक जाएँ, तो सिस्टम 3 सेकंड बाद अपने-आप आंशिक संकेत देगा ताकि आप आगे बढ़ सकें।",
     "<strong>分數加成獎勵：</strong> 為了鼓勵大家開口宣告神的話語，在語音模式中，您的<strong>「剩餘時間加成」權重會大幅提升 50%</strong>！": "<strong>अंक बोनस:</strong> परमेश्वर के वचन को ज़ोर से घोषित करने को प्रोत्साहित करने के लिए, वॉइस मोड में आपके <strong>\"शेष समय बोनस\" का भार 50% बढ़ जाता है</strong>!",
-    "⚔️ 五、多人即時連線對戰": "⚔️ 5. रियल-टाइम मल्टीप्लेयर मुकाबला",
+    "⚔️ 四、多人即時連線對戰": "⚔️ 5. रियल-टाइम मल्टीप्लेयर मुकाबला",
     "背經文不再是一個人孤單的事！": "वचन याद करना अब अकेले की बात नहीं रही!",
     "點擊 <strong>「多人連線」</strong> 創建專屬房間，邀請小組成員或家人一起加入。": "निजी कमरा बनाने और अपने समूह या परिवार को बुलाने के लिए <strong>\"मल्टीप्लेयर\"</strong> पर क्लिक करें।",
     "房主可以從全域題庫中挑選 <strong>「比賽經文」</strong>。": "मेज़बान वैश्विक बैंक से <strong>\"प्रतियोगिता के वचन\"</strong> चुन सकता है।",
@@ -19974,7 +19985,7 @@ const deDict = {
     "可隨時結束比賽，結果會用隊伍平均分排名。": "खेल कभी भी समाप्त किया जा सकता है; परिणाम टीम के औसत अंक से क्रमबद्ध होंगे।",
     "哈囉": "नमस्ते",
     "單獨經文": "अलग वचन",
-    "四、全新語音模式 (Voice Mode)": "4. नया वॉइस मोड",
+    "三、全新語音模式 (Voice Mode)": "4. नया वॉइस मोड",
     "回到主頁": "मुखपृष्ठ पर वापस",
     "回到大廳": "लॉबी पर वापस",
     "回合": "दौर",
@@ -20343,7 +20354,7 @@ const deDict = {
     "已栽種": "Árboles",
     "結果子": "Con fruto",
     "前往這個經文組": "Ir a este conjunto de versículos",
-    "六、親聲朗讀 — 用你自己的聲音讀經": "6. Lee en voz alta con tu propia voz",
+    "五、親聲朗讀 — 用你自己的聲音讀經": "6. Lee en voz alta con tu propia voz",
     "在<strong>聆聽經文組</strong>時，你可以錄下自己的聲音來讀某一節。之後再聽這一節，聽到的就是你自己的聲音，而不是電腦語音；還能把它分享給朋友，讓他們也聽見你的親聲。": "Mientras <strong>escuchas un conjunto de versículos</strong>, puedes grabar tu propia voz leyendo un versículo. La próxima vez que lo reproduzcas te oirás a ti en vez de la voz del ordenador — y puedes compartirlo para que tus amigos también te oigan.",
     "<strong>錄下你的親聲：</strong>（需先登入）聆聽畫面下方那排按鈕中有一顆 🎙️ 麥克風鍵，點它、照著經文唸一遍、儲存即可。": "<strong>Graba tu voz:</strong> (requiere iniciar sesión) En la fila de botones al pie de la pantalla de escucha, toca el 🎙️ micrófono, lee el versículo en voz alta y guarda.",
     "<strong>播放優先順序：</strong>你的親聲 ＞ 題庫作者的親聲 ＞ 電腦語音（TTS）。只要你錄了，聽到的一定是你自己的聲音。": "<strong>Prioridad de reproducción:</strong> tu voz ＞ la voz del autor del conjunto ＞ voz del ordenador (TTS). Una vez que grabas, siempre te oirás a ti.",
@@ -20561,7 +20572,7 @@ const deDict = {
     "已栽種": "Bäume",
     "結果子": "Frucht getragen",
     "前往這個經文組": "Zu diesem Versset gehen",
-    "六、親聲朗讀 — 用你自己的聲音讀經": "6. Lies laut mit deiner eigenen Stimme",
+    "五、親聲朗讀 — 用你自己的聲音讀經": "6. Lies laut mit deiner eigenen Stimme",
     "在<strong>聆聽經文組</strong>時，你可以錄下自己的聲音來讀某一節。之後再聽這一節，聽到的就是你自己的聲音，而不是電腦語音；還能把它分享給朋友，讓他們也聽見你的親聲。": "Während du <strong>ein Versset anhörst</strong>, kannst du deine eigene Stimme aufnehmen, wie du einen Vers liest. Beim nächsten Mal hörst du dich selbst statt der Computerstimme — und du kannst es teilen, damit Freunde auch deine Stimme hören.",
     "<strong>錄下你的親聲：</strong>（需先登入）聆聽畫面下方那排按鈕中有一顆 🎙️ 麥克風鍵，點它、照著經文唸一遍、儲存即可。": "<strong>Nimm deine Stimme auf:</strong> (Anmeldung nötig) In der Buttonreihe unten im Hörbildschirm tippe auf das 🎙️ Mikrofon, lies den Vers laut und speichere.",
     "<strong>播放優先順序：</strong>你的親聲 ＞ 題庫作者的親聲 ＞ 電腦語音（TTS）。只要你錄了，聽到的一定是你自己的聲音。": "<strong>Wiedergabe-Priorität:</strong> deine Stimme ＞ die Stimme des Set-Autors ＞ Computerstimme (TTS). Sobald du aufgenommen hast, hörst du immer dich selbst.",
@@ -20779,7 +20790,7 @@ const deDict = {
     "已栽種": "Ağaçlar",
     "結果子": "Meyve verdi",
     "前往這個經文組": "Bu ayet setine git",
-    "六、親聲朗讀 — 用你自己的聲音讀經": "6. Kendi Sesinle Sesli Oku",
+    "五、親聲朗讀 — 用你自己的聲音讀經": "6. Kendi Sesinle Sesli Oku",
     "在<strong>聆聽經文組</strong>時，你可以錄下自己的聲音來讀某一節。之後再聽這一節，聽到的就是你自己的聲音，而不是電腦語音；還能把它分享給朋友，讓他們也聽見你的親聲。": "Bir <strong>ayet setini dinlerken</strong> bir ayeti okurken kendi sesini kaydedebilirsin. O ayeti bir dahaki oynatışında bilgisayar sesi yerine kendini duyarsın — ve arkadaşların da sesini duysun diye paylaşabilirsin.",
     "<strong>錄下你的親聲：</strong>（需先登入）聆聽畫面下方那排按鈕中有一顆 🎙️ 麥克風鍵，點它、照著經文唸一遍、儲存即可。": "<strong>Sesini kaydet:</strong> (giriş gerekli) Dinleme ekranının altındaki düğme sırasında 🎙️ mikrofona dokun, ayeti sesli oku ve kaydet.",
     "<strong>播放優先順序：</strong>你的親聲 ＞ 題庫作者的親聲 ＞ 電腦語音（TTS）。只要你錄了，聽到的一定是你自己的聲音。": "<strong>Oynatma önceliği:</strong> senin sesin ＞ set yazarının sesi ＞ bilgisayar sesi (TTS). Kaydettiğinde hep kendini duyarsın.",
@@ -20996,7 +21007,7 @@ const deDict = {
     "已栽種": "درختان",
     "結果子": "میوه داد",
     "前往這個經文組": "رفتن به این مجموعهٔ آیه",
-    "六、親聲朗讀 — 用你自己的聲音讀經": "۶. با صدای خودتان بلند بخوانید",
+    "五、親聲朗讀 — 用你自己的聲音讀經": "۶. با صدای خودتان بلند بخوانید",
     "在<strong>聆聽經文組</strong>時，你可以錄下自己的聲音來讀某一節。之後再聽這一節，聽到的就是你自己的聲音，而不是電腦語音；還能把它分享給朋友，讓他們也聽見你的親聲。": "هنگام <strong>شنیدن یک مجموعهٔ آیه</strong>، می‌توانید صدای خودتان را در خواندن یک آیه ضبط کنید. دفعهٔ بعد که آن آیه را پخش کنید، به‌جای صدای رایانه صدای خودتان را می‌شنوید — و می‌توانید آن را به اشتراک بگذارید تا دوستان هم صدای شما را بشنوند.",
     "<strong>錄下你的親聲：</strong>（需先登入）聆聽畫面下方那排按鈕中有一顆 🎙️ 麥克風鍵，點它、照著經文唸一遍、儲存即可。": "<strong>صدای خود را ضبط کنید:</strong> (نیاز به ورود) در ردیف دکمه‌های پایین صفحهٔ شنیدن، روی میکروفون 🎙️ بزنید، آیه را بلند بخوانید و ذخیره کنید.",
     "<strong>播放優先順序：</strong>你的親聲 ＞ 題庫作者的親聲 ＞ 電腦語音（TTS）。只要你錄了，聽到的一定是你自己的聲音。": "<strong>اولویت پخش:</strong> صدای شما ＞ صدای نویسندهٔ مجموعه ＞ صدای رایانه (TTS). پس از ضبط، همیشه صدای خودتان را می‌شنوید.",
@@ -21196,7 +21207,7 @@ const deDict = {
     "今天開始建立連續紀錄吧！": "ابدأ سلسلتك اليوم!",
     "最長連續：{n} 天": "الأفضل: {n} يوم",
     "前往這個經文組": "الانتقال إلى مجموعة الآيات هذه",
-    "六、親聲朗讀 — 用你自己的聲音讀經": "6. اقرأ بصوت عالٍ بصوتك الخاص",
+    "五、親聲朗讀 — 用你自己的聲音讀經": "6. اقرأ بصوت عالٍ بصوتك الخاص",
     "在<strong>聆聽經文組</strong>時，你可以錄下自己的聲音來讀某一節。之後再聽這一節，聽到的就是你自己的聲音，而不是電腦語音；還能把它分享給朋友，讓他們也聽見你的親聲。": "أثناء <strong>الاستماع إلى مجموعة آيات</strong>، يمكنك تسجيل صوتك وأنت تقرأ آية. في المرة التالية التي تشغّل فيها تلك الآية ستسمع نفسك بدل صوت الحاسوب — ويمكنك مشاركتها ليسمع أصدقاؤك صوتك أيضًا.",
     "<strong>錄下你的親聲：</strong>（需先登入）聆聽畫面下方那排按鈕中有一顆 🎙️ 麥克風鍵，點它、照著經文唸一遍、儲存即可。": "<strong>سجّل صوتك:</strong> (يلزم تسجيل الدخول) في صف الأزرار أسفل شاشة الاستماع، انقر ميكروفون 🎙️، اقرأ الآية بصوت عالٍ ثم احفظ.",
     "<strong>播放優先順序：</strong>你的親聲 ＞ 題庫作者的親聲 ＞ 電腦語音（TTS）。只要你錄了，聽到的一定是你自己的聲音。": "<strong>أولوية التشغيل:</strong> صوتك ＞ صوت مؤلف المجموعة ＞ صوت الحاسوب (TTS). بمجرد التسجيل ستسمع نفسك دائمًا.",
@@ -21413,7 +21424,7 @@ const deDict = {
     "已栽種": "עצים",
     "結果子": "הניב פרי",
     "前往這個經文組": "עבור לסט הפסוקים הזה",
-    "六、親聲朗讀 — 用你自己的聲音讀經": "6. קרא בקול בקולך שלך",
+    "五、親聲朗讀 — 用你自己的聲音讀經": "6. קרא בקול בקולך שלך",
     "在<strong>聆聽經文組</strong>時，你可以錄下自己的聲音來讀某一節。之後再聽這一節，聽到的就是你自己的聲音，而不是電腦語音；還能把它分享給朋友，讓他們也聽見你的親聲。": "בזמן <strong>האזנה לסט פסוקים</strong>, אפשר להקליט את קולך קורא פסוק. בפעם הבאה שתנגן את הפסוק תשמע את עצמך במקום קול המחשב — ואפשר לשתף כדי שגם חברים ישמעו את קולך.",
     "<strong>錄下你的親聲：</strong>（需先登入）聆聽畫面下方那排按鈕中有一顆 🎙️ 麥克風鍵，點它、照著經文唸一遍、儲存即可。": "<strong>הקלט את קולך:</strong> (נדרשת התחברות) בשורת הכפתורים בתחתית מסך ההאזנה, הקש על המיקרופון 🎙️, קרא את הפסוק בקול ושמור.",
     "<strong>播放優先順序：</strong>你的親聲 ＞ 題庫作者的親聲 ＞ 電腦語音（TTS）。只要你錄了，聽到的一定是你自己的聲音。": "<strong>סדר עדיפות בנגינה:</strong> הקול שלך ＞ קול מחבר הסט ＞ קול מחשב (TTS). לאחר שהקלטת, תמיד תשמע את עצמך.",
@@ -21631,7 +21642,7 @@ const deDict = {
     "已栽種": "木",
     "結果子": "実を結んだ",
     "前往這個經文組": "この聖句セットへ",
-    "六、親聲朗讀 — 用你自己的聲音讀經": "6. 自分の声で音読する",
+    "五、親聲朗讀 — 用你自己的聲音讀經": "6. 自分の声で音読する",
     "在<strong>聆聽經文組</strong>時，你可以錄下自己的聲音來讀某一節。之後再聽這一節，聽到的就是你自己的聲音，而不是電腦語音；還能把它分享給朋友，讓他們也聽見你的親聲。": "<strong>聖句セットを聴いている</strong>とき、ある節を読む自分の声を録音できます。次にその節を再生すると、コンピューター音声ではなく自分の声が聞こえ、友だちにも共有して聞いてもらえます。",
     "<strong>錄下你的親聲：</strong>（需先登入）聆聽畫面下方那排按鈕中有一顆 🎙️ 麥克風鍵，點它、照著經文唸一遍、儲存即可。": "<strong>あなたの声を録音：</strong>（要ログイン）聴く画面の下のボタン列にある🎙️マイクをタップし、節を音読して保存します。",
     "<strong>播放優先順序：</strong>你的親聲 ＞ 題庫作者的親聲 ＞ 電腦語音（TTS）。只要你錄了，聽到的一定是你自己的聲音。": "<strong>再生の優先順位：</strong>あなたの声 ＞ セット作者の声 ＞ コンピューター音声（TTS）。一度録音すれば常に自分の声が聞こえます。",
@@ -21847,7 +21858,7 @@ const deDict = {
     "已栽種": "나무",
     "結果子": "열매 맺음",
     "前往這個經文組": "이 구절 세트로 이동",
-    "六、親聲朗讀 — 用你自己的聲音讀經": "6. 당신의 목소리로 소리 내어 읽기",
+    "五、親聲朗讀 — 用你自己的聲音讀經": "6. 당신의 목소리로 소리 내어 읽기",
     "在<strong>聆聽經文組</strong>時，你可以錄下自己的聲音來讀某一節。之後再聽這一節，聽到的就是你自己的聲音，而不是電腦語音；還能把它分享給朋友，讓他們也聽見你的親聲。": "<strong>구절 세트를 들을</strong> 때, 한 구절을 읽는 자신의 목소리를 녹음할 수 있어요. 다음에 그 구절을 재생하면 컴퓨터 음성 대신 자신의 목소리가 들리고, 공유하면 친구도 당신의 목소리를 들을 수 있어요.",
     "<strong>錄下你的親聲：</strong>（需先登入）聆聽畫面下方那排按鈕中有一顆 🎙️ 麥克風鍵，點它、照著經文唸一遍、儲存即可。": "<strong>목소리 녹음:</strong> (로그인 필요) 듣기 화면 하단 버튼 줄에서 🎙️ 마이크를 누르고 구절을 소리 내어 읽은 뒤 저장하세요.",
     "<strong>播放優先順序：</strong>你的親聲 ＞ 題庫作者的親聲 ＞ 電腦語音（TTS）。只要你錄了，聽到的一定是你自己的聲音。": "<strong>재생 우선순위:</strong> 당신의 목소리 ＞ 세트 저자의 목소리 ＞ 컴퓨터 음성(TTS). 한 번 녹음하면 항상 자신의 목소리가 들려요.",
@@ -22064,7 +22075,7 @@ const deDict = {
     "已栽種": "သစ်ပင်များ",
     "結果子": "အသီးသီးပြီ",
     "前往這個經文組": "ဤကျမ်းပိုဒ်အစုသို့ သွားရန်",
-    "六、親聲朗讀 — 用你自己的聲音讀經": "၆။ ကိုယ့်အသံဖြင့် အသံထွက်ဖတ်ခြင်း",
+    "五、親聲朗讀 — 用你自己的聲音讀經": "၆။ ကိုယ့်အသံဖြင့် အသံထွက်ဖတ်ခြင်း",
     "在<strong>聆聽經文組</strong>時，你可以錄下自己的聲音來讀某一節。之後再聽這一節，聽到的就是你自己的聲音，而不是電腦語音；還能把它分享給朋友，讓他們也聽見你的親聲。": "<strong>ကျမ်းပိုဒ်အစုကို နားထောင်</strong>နေစဉ် ကျမ်းပိုဒ်တစ်ခုကို ဖတ်သည့် ကိုယ့်အသံကို ဖမ်းနိုင်သည်။ နောက်တစ်ကြိမ် ထိုကျမ်းပိုဒ်ကို ဖွင့်လျှင် ကွန်ပျူတာအသံအစား ကိုယ့်အသံကို ကြားရမည် — မိတ်ဆွေများလည်း သင့်အသံကို ကြားရအောင် မျှဝေနိုင်သည်။",
     "<strong>錄下你的親聲：</strong>（需先登入）聆聽畫面下方那排按鈕中有一顆 🎙️ 麥克風鍵，點它、照著經文唸一遍、儲存即可。": "<strong>သင့်အသံ ဖမ်းရန်:</strong> (ဝင်ရောက်ရန်လို) နားထောင်စာမျက်နှာအောက်ရှိ ခလုတ်တန်းတွင် 🎙️ မိုက်ကို တို့ပြီး ကျမ်းပိုဒ်ကို အသံထွက်ဖတ်ကာ သိမ်းပါ။",
     "<strong>播放優先順序：</strong>你的親聲 ＞ 題庫作者的親聲 ＞ 電腦語音（TTS）。只要你錄了，聽到的一定是你自己的聲音。": "<strong>ဖွင့်ရာ ဦးစားပေးအစီအစဉ်:</strong> သင့်အသံ ＞ အစုစာရေးသူ၏အသံ ＞ ကွန်ပျူတာအသံ (TTS)။ တစ်ကြိမ်ဖမ်းပြီးလျှင် အမြဲ ကိုယ့်အသံ ကြားရမည်။",
@@ -22282,7 +22293,7 @@ const deDict = {
     "已栽種": "Cây",
     "結果子": "Đã kết trái",
     "前往這個經文組": "Đến bộ câu này",
-    "六、親聲朗讀 — 用你自己的聲音讀經": "6. Đọc thành tiếng bằng giọng của bạn",
+    "五、親聲朗讀 — 用你自己的聲音讀經": "6. Đọc thành tiếng bằng giọng của bạn",
     "在<strong>聆聽經文組</strong>時，你可以錄下自己的聲音來讀某一節。之後再聽這一節，聽到的就是你自己的聲音，而不是電腦語音；還能把它分享給朋友，讓他們也聽見你的親聲。": "Khi <strong>nghe một bộ câu</strong>, bạn có thể ghi giọng mình đọc một câu. Lần sau phát câu đó, bạn sẽ nghe chính mình thay vì giọng máy tính — và có thể chia sẻ để bạn bè cũng nghe giọng bạn.",
     "<strong>錄下你的親聲：</strong>（需先登入）聆聽畫面下方那排按鈕中有一顆 🎙️ 麥克風鍵，點它、照著經文唸一遍、儲存即可。": "<strong>Ghi giọng của bạn:</strong> (cần đăng nhập) Trong hàng nút ở dưới màn hình nghe, chạm 🎙️ micro, đọc to câu và lưu.",
     "<strong>播放優先順序：</strong>你的親聲 ＞ 題庫作者的親聲 ＞ 電腦語音（TTS）。只要你錄了，聽到的一定是你自己的聲音。": "<strong>Thứ tự ưu tiên phát:</strong> giọng bạn ＞ giọng tác giả bộ ＞ giọng máy tính (TTS). Một khi đã ghi, bạn luôn nghe chính mình.",
@@ -22484,7 +22495,7 @@ const deDict = {
     "已挑戰": "Main",
     "結果子": "Berbuah",
     "前往這個經文組": "Buka set ayat ini",
-    "六、親聲朗讀 — 用你自己的聲音讀經": "6. Baca Nyaring dengan Suaramu Sendiri",
+    "五、親聲朗讀 — 用你自己的聲音讀經": "6. Baca Nyaring dengan Suaramu Sendiri",
     "在<strong>聆聽經文組</strong>時，你可以錄下自己的聲音來讀某一節。之後再聽這一節，聽到的就是你自己的聲音，而不是電腦語音；還能把它分享給朋友，讓他們也聽見你的親聲。": "Saat <strong>mendengarkan set ayat</strong>, kamu bisa merekam suaramu membaca sebuah ayat. Lain kali memutarnya, kamu mendengar dirimu, bukan suara komputer — dan bisa dibagikan agar teman juga mendengar suaramu.",
     "<strong>錄下你的親聲：</strong>（需先登入）聆聽畫面下方那排按鈕中有一顆 🎙️ 麥克風鍵，點它、照著經文唸一遍、儲存即可。": "<strong>Rekam suaramu:</strong> (perlu masuk) Pada deretan tombol di bawah layar dengar, ketuk 🎙️ mikrofon, baca ayat nyaring, lalu simpan.",
     "<strong>播放優先順序：</strong>你的親聲 ＞ 題庫作者的親聲 ＞ 電腦語音（TTS）。只要你錄了，聽到的一定是你自己的聲音。": "<strong>Prioritas pemutaran:</strong> suaramu ＞ suara penulis set ＞ suara komputer (TTS). Setelah merekam, kamu selalu mendengar dirimu.",
@@ -22696,7 +22707,7 @@ const deDict = {
     "已栽種": "Pokok",
     "結果子": "Berbuah",
     "前往這個經文組": "Pergi ke set ayat ini",
-    "六、親聲朗讀 — 用你自己的聲音讀經": "6. Baca Kuat dengan Suara Sendiri",
+    "五、親聲朗讀 — 用你自己的聲音讀經": "6. Baca Kuat dengan Suara Sendiri",
     "在<strong>聆聽經文組</strong>時，你可以錄下自己的聲音來讀某一節。之後再聽這一節，聽到的就是你自己的聲音，而不是電腦語音；還能把它分享給朋友，讓他們也聽見你的親聲。": "Semasa <strong>mendengar set ayat</strong>, anda boleh merakam suara sendiri membaca sesuatu ayat. Kali seterusnya memainkannya, anda mendengar diri sendiri, bukan suara komputer — dan boleh dikongsi supaya rakan turut mendengar suara anda.",
     "<strong>錄下你的親聲：</strong>（需先登入）聆聽畫面下方那排按鈕中有一顆 🎙️ 麥克風鍵，點它、照著經文唸一遍、儲存即可。": "<strong>Rakam suara anda:</strong> (perlu log masuk) Pada deretan butang di bawah skrin dengar, ketik 🎙️ mikrofon, baca ayat dengan kuat, kemudian simpan.",
     "<strong>播放優先順序：</strong>你的親聲 ＞ 題庫作者的親聲 ＞ 電腦語音（TTS）。只要你錄了，聽到的一定是你自己的聲音。": "<strong>Keutamaan main:</strong> suara anda ＞ suara penulis set ＞ suara komputer (TTS). Setelah merakam, anda sentiasa mendengar diri sendiri.",
@@ -22916,7 +22927,7 @@ const deDict = {
     "已栽種": "已栽种",
     "結果子": "结果子",
     "前往這個經文組": "前往这个经文组",
-    "六、親聲朗讀 — 用你自己的聲音讀經": "六、亲声朗读 — 用你自己的声音读经",
+    "五、親聲朗讀 — 用你自己的聲音讀經": "六、亲声朗读 — 用你自己的声音读经",
     "在<strong>聆聽經文組</strong>時，你可以錄下自己的聲音來讀某一節。之後再聽這一節，聽到的就是你自己的聲音，而不是電腦語音；還能把它分享給朋友，讓他們也聽見你的親聲。": "在<strong>聆听经文组</strong>时，你可以录下自己的声音来读某一节。之后再听这一节，听到的就是你自己的声音，而不是电脑语音；还能把它分享给朋友，让他们也听见你的亲声。",
     "<strong>錄下你的親聲：</strong>（需先登入）聆聽畫面下方那排按鈕中有一顆 🎙️ 麥克風鍵，點它、照著經文唸一遍、儲存即可。": "<strong>录下你的亲声：</strong>（需先登入）聆听画面下方那排按钮中有一颗 🎙️ 麦克风键，点它、照着经文念一遍、储存即可。",
     "<strong>播放優先順序：</strong>你的親聲 ＞ 題庫作者的親聲 ＞ 電腦語音（TTS）。只要你錄了，聽到的一定是你自己的聲音。": "<strong>播放优先顺序：</strong>你的亲声 ＞ 题库作者的亲声 ＞ 电脑语音（TTS）。只要你录了，听到的一定是你自己的声音。",
@@ -23133,7 +23144,7 @@ const deDict = {
     "已栽種": "Árvores",
     "結果子": "Frutificou",
     "前往這個經文組": "Ir para este conjunto de versículos",
-    "六、親聲朗讀 — 用你自己的聲音讀經": "6. Leia em voz alta com sua própria voz",
+    "五、親聲朗讀 — 用你自己的聲音讀經": "6. Leia em voz alta com sua própria voz",
     "在<strong>聆聽經文組</strong>時，你可以錄下自己的聲音來讀某一節。之後再聽這一節，聽到的就是你自己的聲音，而不是電腦語音；還能把它分享給朋友，讓他們也聽見你的親聲。": "Enquanto <strong>ouve um conjunto de versículos</strong>, você pode gravar sua própria voz lendo um versículo. Da próxima vez que reproduzi-lo, ouvirá você mesmo em vez da voz do computador — e pode compartilhá-lo para que amigos também ouçam sua voz.",
     "<strong>錄下你的親聲：</strong>（需先登入）聆聽畫面下方那排按鈕中有一顆 🎙️ 麥克風鍵，點它、照著經文唸一遍、儲存即可。": "<strong>Grave sua voz:</strong> (requer login) Na fileira de botões no rodapé da tela de escuta, toque no 🎙️ microfone, leia o versículo em voz alta e salve.",
     "<strong>播放優先順序：</strong>你的親聲 ＞ 題庫作者的親聲 ＞ 電腦語音（TTS）。只要你錄了，聽到的一定是你自己的聲音。": "<strong>Prioridade de reprodução:</strong> sua voz ＞ a voz do autor do conjunto ＞ voz do computador (TTS). Depois de gravar, você sempre ouvirá a si mesmo.",
@@ -23351,7 +23362,7 @@ const deDict = {
     "已栽種": "Arbres",
     "結果子": "A porté du fruit",
     "前往這個經文組": "Aller à cet ensemble de versets",
-    "六、親聲朗讀 — 用你自己的聲音讀經": "6. Lisez à voix haute avec votre propre voix",
+    "五、親聲朗讀 — 用你自己的聲音讀經": "6. Lisez à voix haute avec votre propre voix",
     "在<strong>聆聽經文組</strong>時，你可以錄下自己的聲音來讀某一節。之後再聽這一節，聽到的就是你自己的聲音，而不是電腦語音；還能把它分享給朋友，讓他們也聽見你的親聲。": "Pendant l’<strong>écoute d’un ensemble de versets</strong>, vous pouvez enregistrer votre propre voix lisant un verset. La prochaine fois, vous vous entendrez au lieu de la voix de l’ordinateur — et vous pouvez le partager pour que vos amis entendent aussi votre voix.",
     "<strong>錄下你的親聲：</strong>（需先登入）聆聽畫面下方那排按鈕中有一顆 🎙️ 麥克風鍵，點它、照著經文唸一遍、儲存即可。": "<strong>Enregistrez votre voix :</strong> (connexion requise) Dans la rangée de boutons en bas de l’écran d’écoute, touchez le 🎙️ micro, lisez le verset à voix haute et enregistrez.",
     "<strong>播放優先順序：</strong>你的親聲 ＞ 題庫作者的親聲 ＞ 電腦語音（TTS）。只要你錄了，聽到的一定是你自己的聲音。": "<strong>Priorité de lecture :</strong> votre voix ＞ la voix de l’auteur de l’ensemble ＞ voix de l’ordinateur (TTS). Une fois enregistrée, vous vous entendrez toujours.",
@@ -23569,7 +23580,7 @@ const deDict = {
     "已栽種": "Деревья",
     "結果子": "Принесло плод",
     "前往這個經文組": "Перейти к этому набору стихов",
-    "六、親聲朗讀 — 用你自己的聲音讀經": "6. Читайте вслух своим голосом",
+    "五、親聲朗讀 — 用你自己的聲音讀經": "6. Читайте вслух своим голосом",
     "在<strong>聆聽經文組</strong>時，你可以錄下自己的聲音來讀某一節。之後再聽這一節，聽到的就是你自己的聲音，而不是電腦語音；還能把它分享給朋友，讓他們也聽見你的親聲。": "Во время <strong>прослушивания набора стихов</strong> вы можете записать свой голос, читая стих. В следующий раз вы услышите себя вместо компьютерного голоса — и можете поделиться, чтобы друзья тоже услышали ваш голос.",
     "<strong>錄下你的親聲：</strong>（需先登入）聆聽畫面下方那排按鈕中有一顆 🎙️ 麥克風鍵，點它、照著經文唸一遍、儲存即可。": "<strong>Запишите свой голос:</strong> (нужен вход) В ряду кнопок внизу экрана прослушивания нажмите 🎙️ микрофон, прочитайте стих вслух и сохраните.",
     "<strong>播放優先順序：</strong>你的親聲 ＞ 題庫作者的親聲 ＞ 電腦語音（TTS）。只要你錄了，聽到的一定是你自己的聲音。": "<strong>Приоритет воспроизведения:</strong> ваш голос ＞ голос автора набора ＞ компьютерный голос (TTS). Записав, вы всегда будете слышать себя.",
@@ -23787,7 +23798,7 @@ const deDict = {
     "已栽種": "पेड़",
     "結果子": "फल लाए",
     "前往這個經文組": "इस वचन समूह पर जाएँ",
-    "六、親聲朗讀 — 用你自己的聲音讀經": "6. अपनी आवाज़ में ज़ोर से पढ़ें",
+    "五、親聲朗讀 — 用你自己的聲音讀經": "6. अपनी आवाज़ में ज़ोर से पढ़ें",
     "在<strong>聆聽經文組</strong>時，你可以錄下自己的聲音來讀某一節。之後再聽這一節，聽到的就是你自己的聲音，而不是電腦語音；還能把它分享給朋友，讓他們也聽見你的親聲。": "<strong>किसी वचन समूह को सुनते</strong> समय, आप किसी वचन को पढ़ते हुए अपनी आवाज़ रिकॉर्ड कर सकते हैं। अगली बार उस वचन को चलाने पर आप कंप्यूटर आवाज़ के बजाय स्वयं को सुनेंगे — और इसे साझा कर सकते हैं ताकि दोस्त भी आपकी आवाज़ सुनें।",
     "<strong>錄下你的親聲：</strong>（需先登入）聆聽畫面下方那排按鈕中有一顆 🎙️ 麥克風鍵，點它、照著經文唸一遍、儲存即可。": "<strong>अपनी आवाज़ रिकॉर्ड करें:</strong> (लॉगिन आवश्यक) सुनने की स्क्रीन के नीचे बटनों की पंक्ति में 🎙️ माइक पर स्पर्श करें, वचन ज़ोर से पढ़ें और सहेजें।",
     "<strong>播放優先順序：</strong>你的親聲 ＞ 題庫作者的親聲 ＞ 電腦語音（TTS）。只要你錄了，聽到的一定是你自己的聲音。": "<strong>प्लेबैक प्राथमिकता:</strong> आपकी आवाज़ ＞ समूह लेखक की आवाज़ ＞ कंप्यूटर आवाज़ (TTS)। एक बार रिकॉर्ड करने पर, आप हमेशा स्वयं को सुनेंगे।",
@@ -24281,7 +24292,7 @@ const deDict = {
                     verserain
                   </div>
                   <div className="app-brand-version" style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', marginTop: '4px', marginLeft: '2px' }}>
-                    v3.27.6
+                    v3.27.7
                   </div>
                 </div>
                 <div ref={langPickerRef} className="app-lang-control" style={{ position: 'relative' }}>
@@ -27934,7 +27945,7 @@ const deDict = {
                   <>
                     <h1 style={{ color: '#3b82f6', marginBottom: '1.5rem', textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}><CloudRain size={32} /> {t("VerseRain 經文雨 操作手冊", "VerseRain User Manual")}</h1>
                     <p style={{ textAlign: 'center', fontSize: '1.1rem', marginBottom: '3rem' }}>
-                      <span dangerouslySetInnerHTML={{ __html: t("歡迎進入 <strong>VerseRain 經文雨</strong>！這是一個結合挑戰與學習的互動背經平台。<br />在這裡您可以挑戰全球經文組、建立個人專屬的題庫，同時登上互惠經濟的全球排行榜！", "Welcome to <strong>VerseRain</strong>! An interactive scripture memorization platform combining challenge and learning.<br />Here you can challenge global verse sets, create your own personal library, and climb the Global Leaderboard of the Mutualized Economics!") }} />
+                      <span dangerouslySetInnerHTML={{ __html: t("歡迎進入 <strong>VerseRain 經文雨</strong>！這是一個結合聆聽、挑戰與學習的互動背經平台。<br />在這裡您可以挑戰全球經文組、建立個人專屬的題庫，也能用自己的聲音把經文分享給朋友！", "Welcome to <strong>VerseRain</strong>! An interactive Scripture-memory platform that combines listening, challenge and learning.<br />Here you can challenge global verse sets, build your own library, and share verses in your own voice with friends!") }} />
                     </p>
 
                     <h2 style={{ borderBottom: '2px solid #e2e8f0', paddingBottom: '0.5rem', marginTop: '2rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Play size={22} /> {t("一、如何開始遊玩？", "1. How to Play?")}</h2>
@@ -27948,29 +27959,21 @@ const deDict = {
                     <p><span dangerouslySetInnerHTML={{ __html: t("點該節右側的綠色 <strong>⚡ 挑戰</strong> 鍵，選擇遊戲模式（九宮格／經文雨／語音模式）與難度，按「開始挑戰」——三秒後經文雨就傾盆而下！依正確順序點擊落下的方塊，越快完成、時間加成越高。", "Tap the green <strong>⚡ Challenge</strong> button next to a verse, choose the game mode (Square / Verse Rain / Voice Mode) and difficulty, then press \"Start Challenge\" — three seconds later the verse rain pours down! Tap the falling blocks in the right order; the faster you finish, the bigger the time bonus.") }} /></p>
                     <ManualVideo src="/manual/start-game.mp4" poster="/manual/start-game.jpg" caption={t("教學影片：從大廳進入經文題庫 → 選經文組 → ⚡ 挑戰 → 選模式 → 依序點擊方塊，完成一次挑戰。", "Tutorial: lobby → Scripture Sets → pick a set → ⚡ Challenge → choose a mode → tap the blocks in order to finish a challenge.")} />
 
-                    <h2 style={{ borderBottom: '2px solid #e2e8f0', paddingBottom: '0.5rem', marginTop: '2rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Crown size={24} /> {t("二、如何自建專屬「經文組」？（Premium 會員獨享）", "2. How to create custom \"Verse Sets\"? (Premium Only)")}</h2>
-                    <p>{t("如果您是「互惠經濟」社群的尊榮會員，就可以盡情打造自己的主日學或小組背經專屬題庫！", "If you are a Premium Member of the \"Mutualized Economics\" community, you can freely create your own customized scripture libraries for Sunday school or cell groups!")}</p>
+                    <h2 style={{ borderBottom: '2px solid #e2e8f0', paddingBottom: '0.5rem', marginTop: '2rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Edit size={24} /> {t("二、如何自建專屬「經文組」？", "2. How to Build Your Own \"Verse Set\"")}</h2>
+                    <p>{t("只要登入帳號，任何人都可以打造自己的主日學、小組或個人靈修專屬題庫，建好就能聆聽、挑戰、分享。", "Any signed-in user can build a verse set for Sunday school, a small group or personal devotion, then listen to it, challenge it and share it.")}</p>
                     <ol style={{ paddingLeft: '1.5rem', marginBottom: '2rem' }}>
-                      <li><span dangerouslySetInnerHTML={{ __html: t("點擊上方導航列的 <strong>「我的題庫」</strong>。", "Click <strong>\"Custom Sets\"</strong> in the top navigation bar.") }} /></li>
-                      <li><span dangerouslySetInnerHTML={{ __html: t("在輸入框打下你想要的 <strong>新經文組名稱</strong>。", "Type your desired <strong>New Verse Set Title</strong> in the input box.") }} /></li>
-                      <li><span dangerouslySetInnerHTML={{ __html: t("利用強大的 <strong>魔法一鍵抓取功能</strong>：在區塊中輸入經文章節出處（如：<code>約 3:16</code>），點擊旁邊的魔法星號按鈕。", "Use the powerful <strong>Magic One-Click Fetch Feature</strong>: Enter the scripture reference in the section (e.g., <code>John 3:16</code>), and click the magic star button next to it.") }} /></li>
-                      <li>{t("系統將為您自動帶入完整的經文內容！", "The system will automatically import the complete verse content for you!")}</li>
-                      <li><span dangerouslySetInnerHTML={{ __html: t("在左上角確認一切無誤後，點擊 <strong>「發佈 (Publish)」</strong>。", "After verifying everything is correct, click <strong>\"Publish\"</strong>.") }} /></li>
-                      <li>{t("恭喜！這份經文組就會瞬間上傳到全球資料庫，供大眾在「經文組」挑戰了！", "Congratulations! This verse set will be instantly uploaded to the global database, available for public challenge in \"Verse Sets\"!")}</li>
+                      <li><span dangerouslySetInnerHTML={{ __html: t("先<strong>登入</strong>，再從大廳點 <strong>「經文題庫」</strong>，進入上方的 <strong>「我的專屬題庫」</strong>。", "<strong>Sign in</strong>, open <strong>\"Scripture Sets\"</strong> from the lobby, then go to <strong>\"My Custom Sets\"</strong> at the top.") }} /></li>
+                      <li><span dangerouslySetInnerHTML={{ __html: t("點 <strong>「＋ 建立新題庫」</strong>，填上標題與簡介；也可以挑一張背景圖片、選背景音樂或上傳自己的音樂。", "Tap <strong>\"+ Create New Set\"</strong>, give it a title and a description; you can also pick a background image and background music (or upload your own).") }} /></li>
+                      <li><span dangerouslySetInnerHTML={{ __html: t("在經文列表選好書卷、輸入 <strong>章:節</strong>（如 <code>3:16</code> 或 <code>6:9-13</code>），按 <strong>Enter 或 Tab</strong>，系統就會自動抓取完整經文。", "In the verse list pick the book, type the <strong>chapter:verse</strong> (e.g. <code>3:16</code> or <code>6:9-13</code>) and press <strong>Enter or Tab</strong> — the full text is fetched for you.") }} /></li>
+                      <li><span dangerouslySetInnerHTML={{ __html: t("經文很多？用 <strong>「輸入出處批次匯入」</strong>，一次貼上多個出處（每行一個或用逗號分隔）。逗號後面的純節數會接在同一章：<code>約翰福音 1:1, 4</code> 就是 1:1 與 1:4。", "Many verses? Use <strong>\"Import by references\"</strong> and paste several references at once (one per line or comma-separated). A bare verse number after a comma stays in the same chapter: <code>John 1:1, 4</code> means 1:1 and 1:4.") }} /></li>
+                      <li><span dangerouslySetInnerHTML={{ __html: t("每一節旁邊都有 🎙️ 麥克風，可以順手錄下自己的親聲朗讀。", "Each verse row has a 🎙️ mic so you can record your own reading right there.") }} /></li>
+                      <li><span dangerouslySetInnerHTML={{ __html: t("確認無誤後點 <strong>「儲存題庫」</strong>。這份經文組就會出現在「經文題庫」，大家都可以聆聽與挑戰。", "When everything looks right, tap <strong>\"Save Set\"</strong>. The set appears in \"Scripture Sets\" for everyone to listen to and challenge.") }} /></li>
                     </ol>
                     <div style={{ backgroundColor: '#f0fdf4', borderLeft: '4px solid #22c55e', padding: '1rem', borderRadius: '4px', marginBottom: '3rem' }}>
-                      <span dangerouslySetInnerHTML={{ __html: t("<strong>提示：</strong> 魔法一鍵抓取功能串接了精準的華語聖經資料庫，能夠大幅省去手動打字、校稿的時間。您可以直接嘗試輸入「創世紀 1:1」，感受一秒匯入的流暢度！", "<strong>Tip:</strong> The Magic One-Click Fetch connects to an accurate Bible database, saving a significant amount of manual typing and proofreading time. Try entering \"Genesis 1:1\" to experience the smooth 1-second import!") }} />
+                      <span dangerouslySetInnerHTML={{ __html: t("<strong>提示：</strong>經文抓取串接了各語言的聖經資料庫（和合本、ESV、KJV…），能大幅省去打字與校稿的時間；建好的經文組還能用「翻譯」一鍵在地化到其他語言（見第七章）。", "<strong>Tip:</strong> Verse fetching is wired to Bible databases in every supported language (CUV, ESV, KJV…), which saves a lot of typing and proofreading; a finished set can also be localized to another language with one tap via \"Translate\" (see section 7).") }} />
                     </div>
 
-                    <h2 style={{ borderBottom: '2px solid #e2e8f0', paddingBottom: '0.5rem', marginTop: '2rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Trophy size={24} /> {t("三、個人積分全球排行榜", "3. Global Leaderboard")}</h2>
-                    <p><span dangerouslySetInnerHTML={{ __html: t("點選 <strong>「排行榜」</strong>，您將會看到三大首頁看板：", "Click <strong>\"Leaderboard\"</strong> to view the main top rankings:") }} /></p>
-                    <ul style={{ paddingLeft: '1.5rem', marginBottom: '2rem' }}>
-                      <li><span dangerouslySetInnerHTML={{ __html: t("<strong>個人過關積點排行：</strong> 只要完成挑戰就能累積積分，破自己的紀錄也算分！", "<strong>Personal Clear Points Ranking:</strong> Accumulate points by completing challenges. Beating your own record also counts!") }} /></li>
-                      <li><span dangerouslySetInnerHTML={{ __html: t("<strong>最受歡迎的經文組排名：</strong> 被玩越多次的經文組，將會在此看板上獲得頂級榮耀。", "<strong>Most Popular Verse Sets Ranking:</strong> The more a verse set is played, the higher its glory on this board.") }} /></li>
-                    </ul>
-                    <p style={{ textAlign: 'center', fontSize: '1.1rem', fontWeight: 'bold', color: '#3b82f6' }}>{t("想獲得好名次？那就持之以恆地回來挑戰，或是創建讓大家愛不釋手的經文組合吧！", "Want a good rank? Keep challenging constantly, or create a verse set that everyone loves!")}</p>
-
-                    <h2 style={{ borderBottom: '2px solid #e2e8f0', paddingBottom: '0.5rem', marginTop: '2rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Mic size={22} /> {t("四、全新語音模式 (Voice Mode)", "4. New Voice Mode")}</h2>
+                    <h2 style={{ borderBottom: '2px solid #e2e8f0', paddingBottom: '0.5rem', marginTop: '2rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Mic size={22} /> {t("三、全新語音模式 (Voice Mode)", "3. New Voice Mode")}</h2>
                     <p><span dangerouslySetInnerHTML={{ __html: t("除了點擊方塊，您現在可以直接<strong>用「唸」的來背經文！</strong>", "Besides clicking blocks, you can now recite verses directly <strong>using your voice!</strong>") }} /></p>
                     <ul style={{ paddingLeft: '1.5rem', marginBottom: '2rem' }}>
                       <li><span dangerouslySetInnerHTML={{ __html: t("<strong>智慧模糊辨識：</strong> 系統內建強大的中文拼音模糊比對。就算有台灣國語、捲舌平舌音不分，只要發音相近就能過關！", "<strong>Smart Fuzzy Recognition:</strong> The system features powerful fuzzy pinyin matching. Even with accents or imprecise pronunciation, similar sounds will pass!") }} /></li>
@@ -27980,7 +27983,7 @@ const deDict = {
                       <li><span dangerouslySetInnerHTML={{ __html: t("<strong>挑戰前先設定：</strong>按下「挑戰」會先跳出設定視窗，讓你選擇遊戲模式（九宮格／經文雨／語音模式）與難度。語音模式可勾選「不要複誦我背過的經文」，節奏更順暢。", "<strong>Set up before you play:</strong> Tapping \"Challenge\" opens a setup dialog where you pick the game mode (Square / Verse Rain / Voice Mode) and difficulty. In Voice Mode you can tick \"Do not repeat what I just recited\" for a faster flow.") }} /></li>
                     </ul>
 
-                    <h2 style={{ borderBottom: '2px solid #e2e8f0', paddingBottom: '0.5rem', marginTop: '2rem' }}>{t("⚔️ 五、多人即時連線對戰", "⚔️ 5. Multiplayer Real-time Battle")}</h2>
+                    <h2 style={{ borderBottom: '2px solid #e2e8f0', paddingBottom: '0.5rem', marginTop: '2rem' }}>{t("⚔️ 四、多人即時連線對戰", "⚔️ 4. Multiplayer Real-time Battle")}</h2>
                     <p>{t("背經文不再是一個人孤單的事！", "Memorizing scripture is no longer a solitary task!")}</p>
                     <ul style={{ paddingLeft: '1.5rem', marginBottom: '2rem' }}>
                       <li><span dangerouslySetInnerHTML={{ __html: t("點擊上方的 <strong>「多人遊戲」</strong> 創建專屬房間，邀請小組成員或家人一起加入。", "Tap <strong>\"Multiplayer\"</strong> at the top to create a private room and invite your group members or family to join.") }} /></li>
@@ -27990,13 +27993,12 @@ const deDict = {
                     </ul>
                     <ManualVideo src="/manual/multiplayer.mp4" poster="/manual/multiplayer.jpg" caption={t("教學影片：左邊是主持人（繁體中文）在經文組頁按「邀人PK」開房；右邊是朋友把版本切成 English - ESV 後輸入代碼加入。比賽開始後，同一節經文各自看到自己的語言。", "Tutorial: on the left the host (Traditional Chinese) opens a room with \"Invite PK\" from the set page; on the right a friend switches to English - ESV and joins with the code. Once the match starts, each sees the same verse in their own language.")} />
 
-                    <h2 style={{ borderBottom: '2px solid #e2e8f0', paddingBottom: '0.5rem', marginTop: '2rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Mic size={22} /> {t("六、親聲朗讀 — 用你自己的聲音讀經", "6. Read Aloud in Your Own Voice")}</h2>
+                    <h2 style={{ borderBottom: '2px solid #e2e8f0', paddingBottom: '0.5rem', marginTop: '2rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Mic size={22} /> {t("五、親聲朗讀 — 用你自己的聲音讀經", "5. Read Aloud in Your Own Voice")}</h2>
                     <p><span dangerouslySetInnerHTML={{ __html: t("在<strong>聆聽經文組</strong>時，你可以錄下自己的聲音來讀某一節。之後再聽這一節，聽到的就是你自己的聲音，而不是電腦語音；還能把它分享給朋友，讓他們也聽見你的親聲。", "While <strong>listening to a verse set</strong>, you can record your own voice reading a verse. Next time you play that verse you'll hear yourself instead of the computer voice — and you can share it so friends hear your voice too.") }} /></p>
                     <ul style={{ paddingLeft: '1.5rem', marginBottom: '2rem' }}>
                       <li><span dangerouslySetInnerHTML={{ __html: t("<strong>錄下你的親聲：</strong>（需先登入）聆聽畫面下方那排按鈕中有一顆 🎙️ 麥克風鍵，點它、照著經文唸一遍、儲存即可。", "<strong>Record your voice:</strong> (login required) In the row of buttons at the bottom of the listen screen, tap the 🎙️ mic, read the verse aloud, and save.") }} /></li>
                       <li><span dangerouslySetInnerHTML={{ __html: t("<strong>不只作者，人人都能錄：</strong>任何登入的玩家都可以為一節經文錄下自己的聲音並公開分享。打開播放器的「播放方式」→「聲音來源」，就能在 自動／電腦語音／無聲音／作者錄音／其他貢獻者的聲音 之間切換，聽聽弟兄姊妹怎麼讀這一節。", "<strong>Not just the author — anyone can record:</strong> Any signed-in player can record a verse in their own voice and share it publicly. Open the player's \"Play Mode\" → \"Voice\" to switch between Auto / Computer voice / No voice / Author / other contributors' voices and hear how brothers and sisters read the verse.") }} /></li>
                       <li><span dangerouslySetInnerHTML={{ __html: t("<strong>播放優先順序：</strong>「自動」會優先播你自己的親聲，其次是最新公開的人聲，再來是題庫作者的親聲，最後才是電腦語音（TTS）。只要有人錄過，就不會聽到機器音。", "<strong>Playback priority:</strong> \"Auto\" plays your own voice first, then the newest public recording, then the set author's voice, and only then the computer voice (TTS). As long as someone has recorded, you never hear a robot.") }} /></li>
-                      <li><span dangerouslySetInnerHTML={{ __html: t("<strong>✨ 美化人聲：</strong>錄完可勾選「美化人聲」讓聲音更清晰。處理與上傳會在<strong>背景進行</strong>（畫面顯示「⏳ 親聲處理中…」），你可以馬上去錄下一節，不必等它跑完。", "<strong>✨ Enhance voice:</strong> After recording you can enable \"Enhance voice\" for clarity. Processing and upload run <strong>in the background</strong> (shown as \"⏳ Processing…\"), so you can record the next verse right away.") }} /></li>
                       <li><span dangerouslySetInnerHTML={{ __html: t("<strong>分享你正在聽的聲音：</strong>點 🔗 分享鍵，連結會帶著「你現在正在聽的那個聲音」——不論是你自己、作者或其他貢獻者的親聲，朋友打開連結聽到的就是同一個聲音。若錄音還在上傳，分享鍵會先等上傳完成再產生連結，確保對方一定聽得到。", "<strong>Share the voice you're listening to:</strong> Tap the 🔗 share button and the link carries whichever voice you're hearing right now — yours, the author's, or another contributor's — so your friend hears exactly the same voice. If a recording is still uploading, the button waits for it to finish before creating the link.") }} /></li>
                       <li><span dangerouslySetInnerHTML={{ __html: t("<strong>暫停 / 繼續：</strong>播放親聲錄音時按暫停會停在原處，再按繼續會<strong>從原處接著播</strong>，不會從頭重讀。", "<strong>Pause / Resume:</strong> When a voice recording is playing, Pause holds the position and Resume <strong>continues from where it stopped</strong> instead of restarting.") }} /></li>
                       <li><span dangerouslySetInnerHTML={{ __html: t("<strong>刪除：</strong>經文出處下方若顯示「🎙️ 這節有你的親聲」，點旁邊的「刪除 ✕」即可移除你的錄音，之後會回到作者的親聲或電腦語音。", "<strong>Delete:</strong> If \"🎙️ Your voice on this verse\" shows under the reference, tap \"Delete ✕\" next to it to remove your recording; playback then falls back to the author's or computer voice.") }} /></li>
@@ -28004,7 +28006,7 @@ const deDict = {
                     <div style={{ backgroundColor: '#eff6ff', borderLeft: '4px solid #3b82f6', padding: '1rem', borderRadius: '4px', marginBottom: '3rem' }}>
                       <span dangerouslySetInnerHTML={{ __html: t("<strong>小提示：</strong>聆聽畫面上方中間、顯示日期或主題名稱的按鈕，下面寫著 <strong>【更多的主題經文】</strong> —— 點一下就能展開更多主題經文組，快速切換聆聽不同主題。", "<strong>Tip:</strong> The button at the top-center of the listen screen (showing the date or topic name) has <strong>[More topic verses]</strong> underneath — tap it to open more topic verse sets and switch quickly.") }} />
                     </div>
-                    <h2 style={{ borderBottom: '2px solid #e2e8f0', paddingBottom: '0.5rem', marginTop: '2rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Headphones size={22} /> {t("七、播放方式、我的最愛與更多聆聽小工具", "7. Play Mode, Favorites & More Listening Tools")}</h2>
+                    <h2 style={{ borderBottom: '2px solid #e2e8f0', paddingBottom: '0.5rem', marginTop: '2rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Headphones size={22} /> {t("六、播放方式、我的最愛與更多聆聽小工具", "6. Play Mode, Favorites & More Listening Tools")}</h2>
                     <p><span dangerouslySetInnerHTML={{ __html: t("聆聽畫面的 <strong>「播放方式」</strong> 視窗和幾顆新按鈕，讓連續聆聽更貼近你的習慣：", "The listen screen's <strong>\"Play Mode\"</strong> dialog and a few new buttons make continuous listening fit your routine:") }} /></p>
                     <ul style={{ paddingLeft: '1.5rem', marginBottom: '2rem' }}>
                       <li><span dangerouslySetInnerHTML={{ __html: t("<strong>⏱️ 播放時間：</strong>可設定播放幾分鐘後自動停止，或無限循環播放——睡前、靈修時段都好用。", "<strong>⏱️ Duration:</strong> Set playback to stop after a number of minutes, or loop forever — handy at bedtime or during devotions.") }} /></li>
@@ -28016,7 +28018,7 @@ const deDict = {
                     </ul>
                     <ManualVideo src="/manual/play-mode.mp4" poster="/manual/play-mode.jpg" caption={t("教學影片：在經文組頁按「播放」→ 播放方式視窗設定播放時間、字體大小、聲音來源 → 選「按序」開始連續聆聽。", "Tutorial: press \"Play\" on a set page → set duration, font size and voice source in the Play Mode dialog → choose \"In Order\" to start continuous listening.")} />
                     <ManualVideo src="/manual/listen.mp4" poster="/manual/listen.jpg" caption={t("教學影片：大廳「話語甘霖」→ 選「每日經文」或主題經文 → 按「朗讀」做雙語對調（改用第二語言朗讀）→ 按「切換聲音」選電腦語音、無聲音或親聲。", "Tutorial: lobby \"Verse Rain\" → pick \"Daily Verse\" or a topic → press \"Read\" to swap languages (read in the second language) → \"Switch voice\" to choose computer voice, no voice, or a recorded voice.")} />
-                    <h2 style={{ borderBottom: '2px solid #e2e8f0', paddingBottom: '0.5rem', marginTop: '2rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Languages size={22} /> {t("八、經文組一鍵「翻譯」到其他語言", "8. Translate a Verse Set into Other Languages in One Click")}</h2>
+                    <h2 style={{ borderBottom: '2px solid #e2e8f0', paddingBottom: '0.5rem', marginTop: '2rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Languages size={22} /> {t("七、經文組一鍵「翻譯」到其他語言", "7. Translate a Verse Set into Other Languages in One Click")}</h2>
                     <p><span dangerouslySetInnerHTML={{ __html: t("辛苦建好的經文組，想給說別種語言的弟兄姊妹用？現在不必重打一次。", "Built a great verse set and want to share it with brothers and sisters who speak another language? No need to retype it.") }} /></p>
                     <ul style={{ paddingLeft: '1.5rem', marginBottom: '2rem' }}>
                       <li><span dangerouslySetInnerHTML={{ __html: t("在經文組詳情頁點 <strong>「翻譯」</strong>，選擇目標語言。系統會自動翻譯標題、把每節出處換成該語言的書名，並抓取<strong>該語言官方譯本的真實經文</strong>（不是機器翻譯的經文）。", "On a verse set's page tap <strong>\"Translate\"</strong> and pick a target language. The title is translated, each reference is converted to that language's book name, and the <strong>real text from that language's official Bible translation</strong> is fetched (not machine-translated scripture).") }} /></li>
@@ -28024,7 +28026,7 @@ const deDict = {
                       <li><span dangerouslySetInnerHTML={{ __html: t("VerseRain 現已支援 20 多種聖經版本與介面語言：繁／簡中文、台語、英文（KJV／ESV／NIV）、日文、韓文、西班牙文、葡萄牙文、法文、德文、俄文、印地文、阿拉伯文、波斯文、希伯來文、土耳其文、緬甸文、越南文、印尼文與馬來文——切換左上角的「版本」即可。", "VerseRain now supports 20+ Bible versions and interface languages: Traditional/Simplified Chinese, Taiwanese, English (KJV/ESV/NIV), Japanese, Korean, Spanish, Portuguese, French, German, Russian, Hindi, Arabic, Persian, Hebrew, Turkish, Burmese, Vietnamese, Indonesian and Malay — just switch \"Version\" at the top left.") }} /></li>
                     </ul>
                     <ManualVideo src="/manual/translate.mp4" poster="/manual/translate.jpg" caption={t("教學影片：在經文組頁按「翻譯」→ 選 Bahasa Melayu → 系統翻譯標題並抓取馬來文譯本 → 預覽 16 節全部成功 → 「加入並編輯」。", "Tutorial: press \"Translate\" on a set page → choose Bahasa Melayu → the title is translated and the Malay Bible text fetched → preview shows all 16 verses → \"Add & Edit\".")} />
-                    <h2 style={{ borderBottom: '2px solid #e2e8f0', paddingBottom: '0.5rem', marginTop: '2rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Map size={22} /> {t("九、全球玩家地圖（2D／3D）", "9. Global Player Map (2D / 3D)")}</h2>
+                    <h2 style={{ borderBottom: '2px solid #e2e8f0', paddingBottom: '0.5rem', marginTop: '2rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Map size={22} /> {t("八、全球玩家地圖（2D／3D）", "8. Global Player Map (2D / 3D)")}</h2>
                     <p><span dangerouslySetInnerHTML={{ __html: t("點上方的 <strong>「地圖」</strong> 頁籤，看看世界各地的經文雨玩家都在哪裡。", "Tap the <strong>\"Map\"</strong> tab at the top to see where VerseRain players are around the world.") }} /></p>
                     <ul style={{ paddingLeft: '1.5rem', marginBottom: '2rem' }}>
                       <li><span dangerouslySetInnerHTML={{ __html: t("點擊標記可以查看該玩家的成績；地圖上若有進行中的多人遊戲房間，<strong>雙擊房間就能直接加入戰局</strong>！", "Click a marker to see that player's scores; if a multiplayer room is open on the map, <strong>double-click it to jump straight into the battle</strong>!") }} /></li>
