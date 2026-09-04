@@ -7625,6 +7625,49 @@ export default function App() {
   const [localNextVerse, setLocalNextVerse] = useState(null); // verse shown during intermission countdown
   const [campaignResults, setCampaignResults] = useState([]);
 
+  // ── 多人 *_solo：每位玩家用自己的語言參賽 ──────────────────────────────
+  // The host broadcasts verse objects in the host's language, but each verse
+  // carries a language-neutral `reference`. In individual/PK (*_solo) modes every
+  // player has their OWN board, so we resolve each verse's text into THIS player's
+  // own `version` and build their tiles from that. Team/synchronous modes share
+  // one board and are left on the host's language. Fallback = the host's text.
+  const versionRef = useRef(version);
+  useEffect(() => { versionRef.current = version; }, [version]);
+  const localizedTextByRefRef = useRef({}); // `${ver}|${normKey}` -> resolved text ('' = unresolvable)
+  const resolveVerseTextForVersion = async (reference, ver) => {
+    if (!reference || !ver) return null;
+    const normKey = normalizeVerseReferenceKey(reference);
+    // tier 1: a set already loaded in that language (instant, no network)
+    try {
+      for (const s of getSetsForVersion(ver)) {
+        const hit = (s.verses || []).find(v => normalizeVerseReferenceKey(v.reference) === normKey);
+        if (hit?.text) return hit.text;
+      }
+    } catch { /* ignore */ }
+    // tier 2: bible cache
+    const cached = getCachedBibleVerse(ver, normKey);
+    if (cached) return cached;
+    // tier 3: fetch the official text in that version
+    try {
+      const parsed = parseScriptureKey(reference);
+      if (parsed?.bookId) {
+        const bookInfo = BIBLE_BOOKS.find(b => b.id === parsed.bookId);
+        const cv = parsed.verses ? `${parsed.chapter}:${parsed.verses}` : `${parsed.chapter}`;
+        const text = await fetchEditorVerseText({ bookInfo, sanitized: cv, version: ver });
+        if (text) { setCachedBibleVerse(ver, normKey, text); return text; }
+      }
+    } catch { /* ignore */ }
+    return null;
+  };
+  // Freshest localized text for a reference in the player's CURRENT version, else fallback.
+  const mpLocalTextFor = (reference, fallback) => {
+    if (!reference) return fallback;
+    const t = localizedTextByRefRef.current[`${versionRef.current}|${normalizeVerseReferenceKey(reference)}`];
+    return (t !== undefined && t !== '') ? t : fallback;
+  };
+  // NOTE: the pre-resolve effect lives after the multiplayer state declarations
+  // (it depends on multiplayerState / multiplayerRoomId).
+
   // When activeVerseSets becomes non-empty AND we have a pending startSet
   // from a deep link, fire it once. Sets load asynchronously per language;
   // launching too early would silently fail to find the set.
@@ -8427,6 +8470,31 @@ export default function App() {
 
   const [multiplayerState, setMultiplayerState] = useState(null);
   const [myClientId, setMyClientId] = useState(null);
+  // Pre-resolve the whole *_solo queue into the player's version (during ready-check),
+  // so each verse can start in their own language without a mid-round fetch hitch.
+  // (Placed here because it depends on multiplayerState / multiplayerRoomId.)
+  useEffect(() => {
+    const st = multiplayerState;
+    if (!multiplayerRoomId || !st?.playMode?.endsWith('_solo')) return undefined;
+    const queue = (st.campaignQueue && st.campaignQueue.length)
+      ? st.campaignQueue
+      : (st.verseRef ? [{ reference: st.verseRef, text: st.verseText }] : []);
+    if (!queue.length) return undefined;
+    let cancelled = false;
+    (async () => {
+      for (const v of queue) {
+        if (cancelled) return;
+        if (!v?.reference) continue;
+        const cacheKey = `${version}|${normalizeVerseReferenceKey(v.reference)}`;
+        if (localizedTextByRefRef.current[cacheKey] !== undefined) continue;
+        const text = await resolveVerseTextForVersion(v.reference, version);
+        if (cancelled) return;
+        localizedTextByRefRef.current[cacheKey] = text || '';
+      }
+    })();
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [multiplayerState?.campaignQueue, multiplayerState?.playMode, multiplayerRoomId, version]);
   const [intermissionCountdown, setIntermissionCountdown] = useState(0);
   const [intermissionEndsAt, setIntermissionEndsAt] = useState(null);
   const [joinRoomError, setJoinRoomError] = useState(null);
@@ -8455,14 +8523,16 @@ export default function App() {
     if (gameState === 'intermission' && intermissionCountdown === 0 && intermissionEndsAt === null) {
       // square_solo: each player advances to their next verse independently
       if (multiplayerRoomId && multiplayerState?.playMode?.endsWith('_solo') && localNextVerse) {
-        const verseObj = { reference: localNextVerse.reference, text: localNextVerse.text, title: 'Multiplayer' };
+        // Resolve this next verse into the player's own language (falls back to host text).
+        const nextText = mpLocalTextFor(localNextVerse.reference, localNextVerse.text);
+        const verseObj = { reference: localNextVerse.reference, text: nextText, title: 'Multiplayer' };
         setActiveVerse(verseObj);
         setCurrentSeqIndex(0);
         currentSeqRef.current = 0;
         setScore(0);
         setCombo(0);
         setHealth(3);
-        const phraseCount = splitVersePhrases(localNextVerse.text).length;
+        const phraseCount = splitVersePhrases(nextText).length;
         setTimeLeft(500 + phraseCount * 500);
         setLocalNextVerse(null);
         setGameState('playing');
@@ -8643,28 +8713,40 @@ export default function App() {
             setIsAutoPlay(false);
             isAutoPlayRef.current = false;
 
-            setBlocks(msg.state.blocks);
+            // *_solo: each player renders verse 0 in THEIR OWN language (resolved from
+            // the reference); other (shared-board) modes keep the host's blocks/text.
+            const isSolo = msg.state.playMode?.endsWith('_solo');
+            const verse0Text = (isSolo ? mpLocalTextFor(msg.state.verseRef, msg.state.verseText) : msg.state.verseText)
+              || msg.state.verseText || msg.state.blocks.filter(b => !b.isFake).map(b => b.text).join('');
+            const fakeVerse = { reference: msg.state.verseRef, title: "Multiplayer", text: verse0Text };
+            setActiveVerse(fakeVerse);
+            // Sync the ref synchronously so the local block builder uses the host's
+            // difficulty (state set below is async / this handler's closure can lag).
+            if (msg.state.distractionLevel !== undefined) distractionLevelRef.current = msg.state.distractionLevel;
+            if (isSolo && msg.state.playMode === 'square_solo') {
+              // Build this player's own tiles from their own-language text.
+              initSquareBlocks(false, null, fakeVerse);
+            } else {
+              setBlocks(msg.state.blocks);
+            }
             setGameState('playing');
             setHealth(3);
             setCombo(0);
             setScore(0);
-            const phraseCount = splitVersePhrases(msg.state.verseText).length;
+            const phraseCount = splitVersePhrases(verse0Text).length;
             setTimeLeft(500 + phraseCount * 500);
             setCurrentSeqIndex(0);
             currentSeqRef.current = 0;
             // For square_solo: store full ordered verse list so each player can advance independently.
             // campaignQueue from the server already includes all verses starting from verse 0.
             // Only init if not already set (host sets it in initAutoStart before INIT_GAME)
-            if (msg.state.playMode?.endsWith('_solo') && !multiplayerSoloActiveRef.current) {
+            if (isSolo && !multiplayerSoloActiveRef.current) {
               multiplayerSoloActiveRef.current = true;
               localCampaignListRef.current = (msg.state.campaignQueue && msg.state.campaignQueue.length > 0)
                 ? msg.state.campaignQueue
                 : [{ reference: msg.state.verseRef, text: msg.state.verseText, title: 'Multiplayer' }];
               localVerseIndexRef.current = 0;
             }
-            // Set a placeholder activeVerse so HUD works
-            const fakeVerse = { reference: msg.state.verseRef, title: "Multiplayer", text: msg.state.verseText || msg.state.blocks.filter(b => !b.isFake).map(b => b.text).join('') };
-            setActiveVerse(fakeVerse);
             setPlayMode(msg.state.playMode || 'square_solo');
             if (msg.state.distractionLevel !== undefined) {
               setDistractionLevel(msg.state.distractionLevel);
@@ -9371,10 +9453,13 @@ export default function App() {
       phrases = activePhrasesRef.current;
     }
 
-    // Grid size depends on difficulty
-    const maxGridSize = distractionLevel <= 1 ? 4 : 9;
+    // Grid size depends on difficulty. Read from refs so this stays correct even
+    // when called from the room-join-bound socket handler (whose closured state can
+    // lag), e.g. a joining player building their own square_solo board.
+    const dl = distractionLevelRef.current;
+    const maxGridSize = dl <= 1 ? 4 : 9;
 
-    const fakesCount = distractionLevel > 0 ? distractionLevel : 0;
+    const fakesCount = dl > 0 ? dl : 0;
     const realBlocksAvailable = phrases.length;
 
     const initialRealCount = Math.min(maxGridSize - fakesCount, realBlocksAvailable);
@@ -9394,7 +9479,7 @@ export default function App() {
       for (let i = 0; i < fakesCount; i++) {
         newBlocks.push({
           id: Math.random().toString(36).substr(2, 9),
-          text: getRandomFakePhrase(version, VERSES_DB),
+          text: getRandomFakePhrase(versionRef.current, VERSES_DB),
           seqIndex: -1,
           isSquare: true,
           error: false,
@@ -28329,6 +28414,8 @@ const deDict = {
         {gameState === 'intermission' && multiplayerState && (() => {
           const isSoloMP = multiplayerRoomId && multiplayerState.playMode?.endsWith('_solo');
           const nextVerseData = isSoloMP ? localNextVerse : multiplayerState.campaignQueue?.[0];
+          // In *_solo, preview the next verse in the player's own language.
+          const nextVerseText = (isSoloMP && nextVerseData) ? mpLocalTextFor(nextVerseData.reference, nextVerseData.text) : nextVerseData?.text;
           const remaining = isSoloMP
             ? localCampaignListRef.current.length - localVerseIndexRef.current
             : multiplayerState.campaignQueue?.length;
@@ -28342,9 +28429,9 @@ const deDict = {
                 <p style={{ color: '#93c5fd', fontSize: '1.8rem', fontWeight: 'bold', marginBottom: '1rem' }}>
                   {t("接下來：", "Next Up:")} {nextVerseData?.reference}
                 </p>
-                {nextVerseData?.text && (
+                {nextVerseText && (
                   <div style={{ color: '#e2e8f0', fontSize: '1.1rem', marginBottom: '2rem', padding: '1rem', background: 'rgba(255,255,255,0.05)', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)', maxHeight: '150px', overflowY: 'auto' }}>
-                    {nextVerseData.text}
+                    {nextVerseText}
                   </div>
                 )}
                 <div style={{ fontSize: '6rem', fontWeight: 'bold', color: '#fbbf24', animation: 'bounce 1s infinite' }}>
