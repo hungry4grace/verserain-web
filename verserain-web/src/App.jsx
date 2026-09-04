@@ -1350,7 +1350,9 @@ async function fetchMalayNTVerse(normalizedKey) {
     for (const c of content) {
       if (c?.type !== 'verse') continue;
       if (vStart == null || (c.number >= vStart && c.number <= vEnd)) {
-        const txt = (c.content || []).map(x => typeof x === 'string' ? x : (x?.text || '')).join('').replace(/\s+/g, ' ').trim();
+        // content items are phrase/line segments (incl. poetry) — space-join, not
+        // concat, else adjacent lines merge ("pada-Kukerana"); collapse doubles.
+        const txt = (c.content || []).map(x => typeof x === 'string' ? x : (x?.text || '')).filter(Boolean).join(' ').replace(/\s+/g, ' ').trim();
         if (txt) parts.push(txt);
       }
     }
@@ -24206,7 +24208,7 @@ const deDict = {
                     verserain
                   </div>
                   <div className="app-brand-version" style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', marginTop: '4px', marginLeft: '2px' }}>
-                    v3.27.2
+                    v3.27.3
                   </div>
                 </div>
                 <div ref={langPickerRef} className="app-lang-control" style={{ position: 'relative' }}>
