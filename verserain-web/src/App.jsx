@@ -13,17 +13,22 @@ import { getSpeechLangForVersion } from './lib/speechLang.js';
 import './index.css';
 import { BIBLE_BOOKS, getBookAbbr, getBookFullName } from './bibleDictionary';
 import I18N_FILLINS from './i18nFillins';
-import ReactQuill from 'react-quill-new';
-import 'react-quill-new/dist/quill.snow.css';
 import { PREMIUM_EMAILS } from './premiumEmails';
-import WorldMap from './WorldMap';
-import BlindModeGame from './BlindModeGame';
 import ChallengeSetupModal, { loadChallengeSetup } from './ChallengeSetupModal';
 import { TransformWrapper, TransformComponent } from 'react-zoom-pan-pinch';
 import { GOOGLE_CLIENT_ID, APPLE_CLIENT_ID, APPLE_REDIRECT_URI, LINE_CHANNEL_ID, startLineLogin } from './oauthConfig';
 import { VAPID_PUBLIC_KEY, urlBase64ToUint8Array, isWebPushSupported, isIOSStandalone, isIOSWithoutPWA, hasNativeDailyPush, callNativeDailyPush } from './pushConfig';
 import { setVoiceApi, uploadVerseVoice, uploadSetAsset, compressBackgroundImage, getSetAssetDataUrl, userVoiceApi, uploadUserVerseVoice, voiceOwnerId, voiceCommentApi, uploadVoiceComment } from './setVoiceApi';
 import VerseVoiceRecorder from './VerseVoiceRecorder';
+
+// Lazy-load heavy, feature-specific chunks so they stay OUT of the initial bundle
+// and download only when the feature is opened (behind a <Suspense>):
+//   • WorldMap → the 3D globe (three / react-globe.gl), only on the Map tab
+//   • BlindModeGame → recitation matching (pinyin-pro / opencc-js), only in blind mode
+//   • ReactQuill → the rich-text editor (react-quill-new + its CSS), only when editing a set
+const WorldMap = React.lazy(() => import('./WorldMap'));
+const BlindModeGame = React.lazy(() => import('./BlindModeGame'));
+const ReactQuill = React.lazy(() => import('./LazyQuill'));
 
 // Temporarily hide the per-row action buttons on the Scripture Sets list
 // (Admin 編輯 / Admin 刪除 / 複製) — low value for now. Flip to true to restore.
@@ -24208,7 +24213,7 @@ const deDict = {
                     verserain
                   </div>
                   <div className="app-brand-version" style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', marginTop: '4px', marginLeft: '2px' }}>
-                    v3.27.3
+                    v3.27.4
                   </div>
                 </div>
                 <div ref={langPickerRef} className="app-lang-control" style={{ position: 'relative' }}>
@@ -24794,13 +24799,15 @@ const deDict = {
                             <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '0.5rem', color: '#475569' }}>{t("簡介", "Description")}</label>
                             <div style={{ background: '#fff', color: '#0f172a', borderRadius: '6px', border: '1px solid #cbd5e1', overflow: 'visible' }}>
                               <style>{`.ql-editor { min-height: 100px; }`}</style>
-                              <ReactQuill
-                                theme="snow"
-                                value={editingCustomSet.description || ''}
-                                onChange={content => setEditingCustomSet({ ...editingCustomSet, description: content })}
-                                modules={quillModules}
-                                placeholder={t("描述一下這個題庫的用途...", "Describe this set...")}
-                              />
+                              <React.Suspense fallback={<div style={{ padding: '1rem', color: '#94a3b8', fontSize: '0.9rem' }}>{t('編輯器載入中…', 'Loading editor…')}</div>}>
+                                <ReactQuill
+                                  theme="snow"
+                                  value={editingCustomSet.description || ''}
+                                  onChange={content => setEditingCustomSet({ ...editingCustomSet, description: content })}
+                                  modules={quillModules}
+                                  placeholder={t("描述一下這個題庫的用途...", "Describe this set...")}
+                                />
+                              </React.Suspense>
                             </div>
                           </div>
 
@@ -27815,6 +27822,7 @@ const deDict = {
                         <p style={{ margin: '2px 0 0', color: '#64748b', fontSize: '0.85rem' }}>{t('點擊標記查看玩家成績，雙擊遊戲房間加入戰局！', 'Click a marker to see scores, double click a room to join!')}</p>
                       </div>
                     </div>
+                    <React.Suspense fallback={<div style={{ padding: '3rem', textAlign: 'center', color: '#94a3b8' }}>{t('地圖載入中…', 'Loading map…')}</div>}>
                     <WorldMap t={t} playerName={playerName} userEmail={userEmail}
                       currentMode={mapView}
                       focusLocation={mapFocus}
@@ -27845,6 +27853,7 @@ const deDict = {
                         }
                       }, 5000);
                     }} />
+                    </React.Suspense>
                   </div>
                 );
               })()}
@@ -27970,6 +27979,7 @@ const deDict = {
         )}
 
         {gameState === 'playing' && !isAutoPlay && (isBlindMode || playMode?.startsWith('voice')) && (
+          <React.Suspense fallback={<div style={{ position: 'fixed', inset: 0, display: 'grid', placeItems: 'center', color: '#94a3b8' }}>{t('載入中…', 'Loading…')}</div>}>
           <BlindModeGame
             key={activeVerse?.reference}
             activeVerse={activeVerse}
@@ -28030,6 +28040,7 @@ const deDict = {
             version={version}
             t={t}
           />
+          </React.Suspense>
         )}
 
         {gameState === 'playing' && (isAutoPlay || (!isBlindMode && !playMode?.startsWith('voice'))) && (
