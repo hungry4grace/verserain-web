@@ -588,6 +588,28 @@ function OAuthButtons({ onGoogleCredential, onAppleCredential, disabled, t }) {
 
 // UI languages the app can render directions in. Used to validate ?lang= on
 // incoming share links so a junk value can't strand someone in a half-locale.
+// 操作手冊教學影片：進入視窗才播放、離開就暫停，避免手冊頁一次載入多支影片。
+function ManualVideo({ src, poster, caption }) {
+  const ref = React.useRef(null);
+  React.useEffect(() => {
+    const el = ref.current;
+    if (!el || typeof IntersectionObserver === 'undefined') return;
+    const io = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) el.play().catch(() => {});
+      else el.pause();
+    }, { threshold: 0.35 });
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
+  return (
+    <figure style={{ margin: '0.5rem 0 2.5rem' }}>
+      <video ref={ref} src={src} poster={poster} muted loop playsInline controls preload="metadata"
+        style={{ width: '100%', display: 'block', borderRadius: '10px', boxShadow: '0 6px 16px rgba(15,23,42,0.18)', background: '#0f172a' }} />
+      {caption && <figcaption style={{ fontSize: '0.88rem', color: '#64748b', textAlign: 'center', marginTop: '0.5rem', lineHeight: 1.5 }}>{caption}</figcaption>}
+    </figure>
+  );
+}
+
 const SUPPORTED_UI_LANGS = ['zh', 'cuvs', 'en', 'fa', 'ar', 'he', 'ja', 'ko', 'es', 'tr', 'de', 'my', 'vi', 'id', 'ms'];
 
 // Document title per UI language — index.html ships the zh title, so without
@@ -12865,7 +12887,47 @@ const zhcnDict = {
   "已記住你的語音偏好，下次回來會自動使用。": "已记住你的语音偏好，下次回来会自动使用。",
   "舊約": "旧约",
   "新約": "新约",
-  "選擇書卷": "选择书卷"
+  "選擇書卷": "选择书卷",
+  // 操作手冊：新增功能（v3.27.5）
+  "<strong>預備倒數：</strong>宣告經文出處後，畫面會出現「預備…3…2…1…開始！」的大字倒數，讓你清楚知道什麼時候輪到自己開口。": "<strong>预备倒数：</strong>宣告经文出处后，画面会出现「预备…3…2…1…开始！」的大字倒数，让你清楚知道什么时候轮到自己开口。",
+  "<strong>挑戰前先設定：</strong>按下「挑戰」會先跳出設定視窗，讓你選擇遊戲模式（九宮格／經文雨／語音模式）與難度。語音模式可勾選「不要複誦我背過的經文」，節奏更順暢。": "<strong>挑战前先设定：</strong>按下「挑战」会先跳出设定窗口，让你选择游戏模式（九宫格／经文雨／语音模式）与难度。语音模式可勾选「不要复诵我背过的经文」，节奏更顺畅。",
+  "點擊上方的 <strong>「多人遊戲」</strong> 創建專屬房間，邀請小組成員或家人一起加入。": "点击上方的 <strong>「多人游戏」</strong> 创建专属房间，邀请小组成员或家人一起加入。",
+  "房主可以從全域題庫中挑選 <strong>「比賽經文」</strong>，並選擇比賽方式：獨立九宮格、雨滴瀑布或語音模式。": "房主可以从全域题库中挑选 <strong>「比赛经文」</strong>，并选择比赛方式：独立九宫格、雨滴瀑布或语音模式。",
+  "<strong>🌍 各自用自己的語言參賽（新）：</strong>在個人賽／邀人PK 模式中，每位玩家都用自己選的聖經版本比賽——主持人用中文，朋友可以用英文 ESV 或韓文，同一節經文各自看到自己的語言。計分以節數與分數為準，與語言無關，完全公平。團隊競賽因為大家共用同一個盤面，維持主持人的語言。": "<strong>🌍 各自用自己的语言参赛（新）：</strong>在个人赛／邀人PK 模式中，每位玩家都用自己选的圣经版本比赛——主持人用中文，朋友可以用英文 ESV 或韩文，同一节经文各自看到自己的语言。计分以节数与分数为准，与语言无关，完全公平。团队竞赛因为大家共用同一个盘面，维持主持人的语言。",
+  "所有人同時開始挑戰，並能在遊戲結束後看到即時的成績排行榜，非常適合主日學活動與小組破冰！": "所有人同时开始挑战，并能在游戏结束后看到即时的成绩排行榜，非常适合主日学活动与小组破冰！",
+  "<strong>不只作者，人人都能錄：</strong>任何登入的玩家都可以為一節經文錄下自己的聲音並公開分享。打開播放器的「播放方式」→「聲音來源」，就能在 自動／電腦語音／無聲音／作者錄音／其他貢獻者的聲音 之間切換，聽聽弟兄姊妹怎麼讀這一節。": "<strong>不只作者，人人都能录：</strong>任何登录的玩家都可以为一节经文录下自己的声音并公开分享。打开播放器的「播放方式」→「声音来源」，就能在 自动／电脑语音／无声音／作者录音／其他贡献者的声音 之间切换，听听弟兄姊妹怎么读这一节。",
+  "<strong>播放優先順序：</strong>「自動」會優先播你自己的親聲，其次是最新公開的人聲，再來是題庫作者的親聲，最後才是電腦語音（TTS）。只要有人錄過，就不會聽到機器音。": "<strong>播放优先顺序：</strong>「自动」会优先播你自己的亲声，其次是最新公开的人声，再来是题库作者的亲声，最后才是电脑语音（TTS）。只要有人录过，就不会听到机器音。",
+  "<strong>分享你正在聽的聲音：</strong>點 🔗 分享鍵，連結會帶著「你現在正在聽的那個聲音」——不論是你自己、作者或其他貢獻者的親聲，朋友打開連結聽到的就是同一個聲音。若錄音還在上傳，分享鍵會先等上傳完成再產生連結，確保對方一定聽得到。": "<strong>分享你正在听的声音：</strong>点 🔗 分享键，链接会带着「你现在正在听的那个声音」——不论是你自己、作者或其他贡献者的亲声，朋友打开链接听到的就是同一个声音。若录音还在上传，分享键会先等上传完成再产生链接，确保对方一定听得到。",
+  "七、播放方式、我的最愛與更多聆聽小工具": "七、播放方式、我的最爱与更多聆听小工具",
+  "聆聽畫面的 <strong>「播放方式」</strong> 視窗和幾顆新按鈕，讓連續聆聽更貼近你的習慣：": "聆听画面的 <strong>「播放方式」</strong> 窗口和几颗新按钮，让连续聆听更贴近你的习惯：",
+  "<strong>⏱️ 播放時間：</strong>可設定播放幾分鐘後自動停止，或無限循環播放——睡前、靈修時段都好用。": "<strong>⏱️ 播放时间：</strong>可设定播放几分钟后自动停止，或无限循环播放——睡前、灵修时段都好用。",
+  "<strong>🔠 字體大小：</strong>同一個視窗裡可以調整聆聽畫面的字級，長輩或投影使用時把字放大更清楚。": "<strong>🔠 字体大小：</strong>同一个窗口里可以调整聆听画面的字级，长辈或投影使用时把字放大更清楚。",
+  "<strong>⭐ 我的最愛：</strong>聆聽時點播放器上的星星，或在「我的專屬題庫」的卡片上點星星，就能把經文組加入我的最愛。清單可用「我的最愛」排序，而且會跟著帳號同步到每一台裝置；從大廳「話語甘霖」進入後，也能直接挑「我的最愛」來聽。": "<strong>⭐ 我的最爱：</strong>聆听时点播放器上的星星，或在「我的专属题库」的卡片上点星星，就能把经文组加入我的最爱。清单可用「我的最爱」排序，而且会跟着账号同步到每一台设备；从大厅「话语甘霖」进入后，也能直接挑「我的最爱」来听。",
+  "<strong>▶️ 一鍵播放：</strong>「我的專屬題庫」每張卡片都多了「播放」鍵，不必先進入經文組就能開始連續聆聽（可選隨機或按序）。": "<strong>▶️ 一键播放：</strong>「我的专属题库」每张卡片都多了「播放」键，不必先进入经文组就能开始连续聆听（可选随机或按序）。",
+  "<strong>🔄 雙語對調：</strong>讀經頁的「朗讀第二語言」按鈕會暫時把主／次語言互換，改用第二語言落字並朗讀，原語言退到下方小字；離開後自動還原，練習外語聽讀很方便。": "<strong>🔄 双语对调：</strong>读经页的「朗读第二语言」按钮会暂时把主／次语言互换，改用第二语言落字并朗读，原语言退到下方小字；离开后自动还原，练习外语听读很方便。",
+  "<strong>⚡ 邊聽邊挑戰：</strong>聆聽中按 ⚡ 立刻挑戰這一節；結束後按「返回朗讀」會回到同一節並暫停等你，按播放或 ‹ › 就能接著聽下一節。": "<strong>⚡ 边听边挑战：</strong>聆听中按 ⚡ 立刻挑战这一节；结束后按「返回朗读」会回到同一节并暂停等你，按播放或 ‹ › 就能接着听下一节。",
+  "八、經文組一鍵「翻譯」到其他語言": "八、经文组一键「翻译」到其他语言",
+  "辛苦建好的經文組，想給說別種語言的弟兄姊妹用？現在不必重打一次。": "辛苦建好的经文组，想给说别种语言的弟兄姊妹用？现在不必重打一次。",
+  "在經文組詳情頁點 <strong>「翻譯」</strong>，選擇目標語言。系統會自動翻譯標題、把每節出處換成該語言的書名，並抓取<strong>該語言官方譯本的真實經文</strong>（不是機器翻譯的經文）。": "在经文组详情页点 <strong>「翻译」</strong>，选择目标语言。系统会自动翻译标题、把每节出处换成该语言的书名，并抓取<strong>该语言官方译本的真实经文</strong>（不是机器翻译的经文）。",
+  "預覽畫面可以修改標題、逐節查看成功／失敗並重試；確認後點 <strong>「加入並編輯」</strong>，經文組就會發佈到該語言的題庫，並自動切換過去讓你補上簡介。": "预览画面可以修改标题、逐节查看成功／失败并重试；确认后点 <strong>「加入并编辑」</strong>，经文组就会发布到该语言的题库，并自动切换过去让你补上简介。",
+  "VerseRain 現已支援 20 多種聖經版本與介面語言：繁／簡中文、台語、英文（KJV／ESV／NIV）、日文、韓文、西班牙文、葡萄牙文、法文、德文、俄文、印地文、阿拉伯文、波斯文、希伯來文、土耳其文、緬甸文、越南文、印尼文與馬來文——切換左上角的「版本」即可。": "VerseRain 现已支持 20 多种圣经版本与界面语言：繁／简中文、台语、英文（KJV／ESV／NIV）、日文、韩文、西班牙文、葡萄牙文、法文、德文、俄文、印地文、阿拉伯文、波斯文、希伯来文、土耳其文、缅甸文、越南文、印尼文与马来文——切换左上角的「版本」即可。",
+  "九、全球玩家地圖（2D／3D）": "九、全球玩家地图（2D／3D）",
+  "點上方的 <strong>「地圖」</strong> 頁籤，看看世界各地的經文雨玩家都在哪裡。": "点上方的 <strong>「地图」</strong> 页签，看看世界各地的经文雨玩家都在哪里。",
+  "點擊標記可以查看該玩家的成績；地圖上若有進行中的多人遊戲房間，<strong>雙擊房間就能直接加入戰局</strong>！": "点击标记可以查看该玩家的成绩；地图上若有进行中的多人游戏房间，<strong>双击房间就能直接加入战局</strong>！",
+  "右上角可在 <strong>「2D 地圖」</strong> 與 <strong>「3D 地球」</strong> 之間切換，轉動地球，看看全球背經的即時脈動。": "右上角可在 <strong>「2D 地图」</strong> 与 <strong>「3D 地球」</strong> 之间切换，转动地球，看看全球背经的实时脉动。",
+  // 操作手冊：教學影片與步驟改寫
+  "1. 從大廳進入「經文題庫」": "1. 从大厅进入「经文题库」",
+  "在大廳點 <strong>「經文題庫」</strong> 卡片，就會看到系統與玩家建立的所有公開經文組，可依最新、標題或最受歡迎排序。": "在大厅点 <strong>「经文题库」</strong> 卡片，就会看到系统与玩家建立的所有公开经文组，可依最新、标题或最受欢迎排序。",
+  "2. 選擇想要挑戰的經文組": "2. 选择想要挑战的经文组",
+  "點選列表中的標題（例如：<strong>約翰福音 核心經文</strong>），進入經文組頁面，裡面列出每一節經文，右側有「播放」「排行榜」「挑戰」「分享」等按鈕。": "点选列表中的标题（例如：<strong>约翰福音 核心经文</strong>），进入经文组页面，里面列出每一节经文，右侧有「播放」「排行榜」「挑战」「分享」等按钮。",
+  "3. 開始挑戰": "3. 开始挑战",
+  "點該節右側的綠色 <strong>⚡ 挑戰</strong> 鍵，選擇遊戲模式（九宮格／經文雨／語音模式）與難度，按「開始挑戰」——三秒後經文雨就傾盆而下！依正確順序點擊落下的方塊，越快完成、時間加成越高。": "点该节右侧的绿色 <strong>⚡ 挑战</strong> 键，选择游戏模式（九宫格／经文雨／语音模式）与难度，按「开始挑战」——三秒后经文雨就倾盆而下！依正确顺序点击落下的方块，越快完成、时间加成越高。",
+  "教學影片：從大廳進入經文題庫 → 選經文組 → ⚡ 挑戰 → 選模式 → 依序點擊方塊，完成一次挑戰。": "教学视频：从大厅进入经文题库 → 选经文组 → ⚡ 挑战 → 选模式 → 依序点击方块，完成一次挑战。",
+  "教學影片：左邊是主持人（繁體中文）在經文組頁按「邀人PK」開房；右邊是朋友把版本切成 English - ESV 後輸入代碼加入。比賽開始後，同一節經文各自看到自己的語言。": "教学视频：左边是主持人（繁体中文）在经文组页按「邀人PK」开房；右边是朋友把版本切成 English - ESV 后输入代码加入。比赛开始后，同一节经文各自看到自己的语言。",
+  "教學影片：在經文組頁按「播放」→ 播放方式視窗設定播放時間、字體大小、聲音來源 → 選「按序」開始連續聆聽。": "教学视频：在经文组页按「播放」→ 播放方式窗口设定播放时间、字体大小、声音来源 → 选「按序」开始连续聆听。",
+  "教學影片：大廳「話語甘霖」→ 選「每日經文」或主題經文 → 按「朗讀」做雙語對調（改用第二語言朗讀）→ 按「切換聲音」選電腦語音、無聲音或親聲。": "教学视频：大厅「话语甘霖」→ 选「每日经文」或主题经文 → 按「朗读」做双语对调（改用第二语言朗读）→ 按「切换声音」选电脑语音、无声音或亲声。",
+  "教學影片：在經文組頁按「翻譯」→ 選 Bahasa Melayu → 系統翻譯標題並抓取馬來文譯本 → 預覽 16 節全部成功 → 「加入並編輯」。": "教学视频：在经文组页按「翻译」→ 选 Bahasa Melayu → 系统翻译标题并抓取马来文译本 → 预览 16 节全部成功 → 「加入并编辑」。",
+  "教學影片：點「地圖」看全球玩家分佈 → 按「3D 地球」→ 拖曳轉動地球。": "教学视频：点「地图」看全球玩家分布 → 按「3D 地球」→ 拖拽转动地球。",
 };
 
 // ─── Vietnamese (Tiếng Việt) UI Dictionary ────────────────────────────────────────
@@ -24213,7 +24275,7 @@ const deDict = {
                     verserain
                   </div>
                   <div className="app-brand-version" style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', marginTop: '4px', marginLeft: '2px' }}>
-                    v3.27.4
+                    v3.27.5
                   </div>
                 </div>
                 <div ref={langPickerRef} className="app-lang-control" style={{ position: 'relative' }}>
@@ -27869,21 +27931,13 @@ const deDict = {
                     <h2 style={{ borderBottom: '2px solid #e2e8f0', paddingBottom: '0.5rem', marginTop: '2rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Play size={22} /> {t("一、如何開始遊玩？", "1. How to Play?")}</h2>
                     <p>{t("只需簡單三步，您就能進入背經的挑戰中！", "Just three simple steps to start your scripture memorization challenge!")}</p>
 
-                    <h3 style={{ marginTop: '1.5rem', color: '#0f172a' }}>{t("1. 切換至「經文組」", "1. Switch to \"Verse Sets\"")}</h3>
-                    <p>{t("首先點擊左上角導航列的「經文組」頁籤。這會顯示系統與玩家建立的所有公開經文。", "First, click the \"Verse Sets\" tab in the top left navigation bar. This will display all public verse sets created by the system and players.")}</p>
-                    <img src="/manual/step1.png" alt={t("切換經文組", "Switch Verse Sets")} style={{ width: '100%', borderRadius: '8px', boxShadow: '0 4px 6px rgba(0,0,0,0.1)', marginBottom: '1rem' }} />
-
+                    <h3 style={{ marginTop: '1.5rem', color: '#0f172a' }}>{t("1. 從大廳進入「經文題庫」", "1. Open \"Scripture Sets\" from the lobby")}</h3>
+                    <p><span dangerouslySetInnerHTML={{ __html: t("在大廳點 <strong>「經文題庫」</strong> 卡片，就會看到系統與玩家建立的所有公開經文組，可依最新、標題或最受歡迎排序。", "Tap the <strong>\"Scripture Sets\"</strong> card in the lobby to see every public verse set created by the system and by players. Sort by newest, title, or most popular.") }} /></p>
                     <h3 style={{ marginTop: '1.5rem', color: '#0f172a' }}>{t("2. 選擇想要挑戰的經文組", "2. Select a Verse Set")}</h3>
-                    <p>{t("點選列表中的主題（例如：約翰福音 核心經文），展開內含的經文關卡。", "Click on a topic in the list (e.g., Gospel of John Core Verses) to expand the verse levels within it.")}</p>
-                    <img src="/manual/step2.png" alt={t("選擇經文組", "Select Verse Set")} style={{ width: '100%', borderRadius: '8px', boxShadow: '0 4px 6px rgba(0,0,0,0.1)', marginBottom: '1rem' }} />
-
-                    <h3 style={{ marginTop: '1.5rem', color: '#0f172a' }}>{t("3. 開始遊戲", "3. Start Game")}</h3>
-                    <p>{t("點選該經文組底下的任何一節關卡旁邊的「排行榜/遊玩圖示」，三秒鐘後，滿天掉落的經文雨就會傾盆而下！", "Click the \"Leaderboard/Play icon\" next to any verse level under the verse set. The verse rain will start falling in 3 seconds!")}</p>
-                    <img src="/manual/step3.png" alt={t("開始遊戲", "Start Game")} style={{ width: '100%', borderRadius: '8px', boxShadow: '0 4px 6px rgba(0,0,0,0.1)', marginBottom: '2rem' }} />
-
-                    <h3 style={{ marginTop: '1.5rem', color: '#0f172a', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Play size={20} /> {t("實際遊玩流程示範（動畫）：", "Gameplay Demonstration (Animation):")}</h3>
-                    <p>{t("這是一段實際進入遊戲的流程示範！", "Here is an actual demonstration of the gameplay!")}</p>
-                    <img src="/manual/play.webp" alt={t("遊戲流程動畫", "Gameplay Animation")} style={{ width: '100%', borderRadius: '8px', boxShadow: '0 4px 6px rgba(0,0,0,0.1)', marginBottom: '3rem' }} />
+                    <p><span dangerouslySetInnerHTML={{ __html: t("點選列表中的標題（例如：<strong>約翰福音 核心經文</strong>），進入經文組頁面，裡面列出每一節經文，右側有「播放」「排行榜」「挑戰」「分享」等按鈕。", "Tap a title in the list (e.g. <strong>Gospel of John Core Verses</strong>) to open the set page, which lists every verse with Play, Leaderboard, Challenge, and Share buttons.") }} /></p>
+                    <h3 style={{ marginTop: '1.5rem', color: '#0f172a' }}>{t("3. 開始挑戰", "3. Start the Challenge")}</h3>
+                    <p><span dangerouslySetInnerHTML={{ __html: t("點該節右側的綠色 <strong>⚡ 挑戰</strong> 鍵，選擇遊戲模式（九宮格／經文雨／語音模式）與難度，按「開始挑戰」——三秒後經文雨就傾盆而下！依正確順序點擊落下的方塊，越快完成、時間加成越高。", "Tap the green <strong>⚡ Challenge</strong> button next to a verse, choose the game mode (Square / Verse Rain / Voice Mode) and difficulty, then press \"Start Challenge\" — three seconds later the verse rain pours down! Tap the falling blocks in the right order; the faster you finish, the bigger the time bonus.") }} /></p>
+                    <ManualVideo src="/manual/start-game.mp4" poster="/manual/start-game.jpg" caption={t("教學影片：從大廳進入經文題庫 → 選經文組 → ⚡ 挑戰 → 選模式 → 依序點擊方塊，完成一次挑戰。", "Tutorial: lobby → Scripture Sets → pick a set → ⚡ Challenge → choose a mode → tap the blocks in order to finish a challenge.")} />
 
                     <h2 style={{ borderBottom: '2px solid #e2e8f0', paddingBottom: '0.5rem', marginTop: '2rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Crown size={24} /> {t("二、如何自建專屬「經文組」？（Premium 會員獨享）", "2. How to create custom \"Verse Sets\"? (Premium Only)")}</h2>
                     <p>{t("如果您是「互惠經濟」社群的尊榮會員，就可以盡情打造自己的主日學或小組背經專屬題庫！", "If you are a Premium Member of the \"Mutualized Economics\" community, you can freely create your own customized scripture libraries for Sunday school or cell groups!")}</p>
@@ -27913,29 +27967,61 @@ const deDict = {
                       <li><span dangerouslySetInnerHTML={{ __html: t("<strong>智慧模糊辨識：</strong> 系統內建強大的中文拼音模糊比對。就算有台灣國語、捲舌平舌音不分，只要發音相近就能過關！", "<strong>Smart Fuzzy Recognition:</strong> The system features powerful fuzzy pinyin matching. Even with accents or imprecise pronunciation, similar sounds will pass!") }} /></li>
                       <li><span dangerouslySetInnerHTML={{ __html: t("<strong>貼心提示系統：</strong> 如果卡詞了，系統會在 3 秒後自動給予局部提示，幫助您順利接下去。", "<strong>Helpful Hint System:</strong> If you get stuck, the system will automatically provide a partial hint after 3 seconds to help you continue.") }} /></li>
                       <li><span dangerouslySetInnerHTML={{ __html: t("<strong>分數加成獎勵：</strong> 為了鼓勵大家開口宣告神的話語，在語音模式中，您的<strong>「剩餘時間加成」權重會大幅提升 50%</strong>！", "<strong>Score Bonus:</strong> To encourage proclaiming God's word out loud, your <strong>\"Remaining Time Bonus\" weight is increased by 50%</strong> in Voice Mode!") }} /></li>
+                      <li><span dangerouslySetInnerHTML={{ __html: t("<strong>預備倒數：</strong>宣告經文出處後，畫面會出現「預備…3…2…1…開始！」的大字倒數，讓你清楚知道什麼時候輪到自己開口。", "<strong>Ready countdown:</strong> After the reference is announced, a big \"Ready… 3… 2… 1… Go!\" countdown shows on screen so you know exactly when it's your turn to speak.") }} /></li>
+                      <li><span dangerouslySetInnerHTML={{ __html: t("<strong>挑戰前先設定：</strong>按下「挑戰」會先跳出設定視窗，讓你選擇遊戲模式（九宮格／經文雨／語音模式）與難度。語音模式可勾選「不要複誦我背過的經文」，節奏更順暢。", "<strong>Set up before you play:</strong> Tapping \"Challenge\" opens a setup dialog where you pick the game mode (Square / Verse Rain / Voice Mode) and difficulty. In Voice Mode you can tick \"Do not repeat what I just recited\" for a faster flow.") }} /></li>
                     </ul>
 
                     <h2 style={{ borderBottom: '2px solid #e2e8f0', paddingBottom: '0.5rem', marginTop: '2rem' }}>{t("⚔️ 五、多人即時連線對戰", "⚔️ 5. Multiplayer Real-time Battle")}</h2>
                     <p>{t("背經文不再是一個人孤單的事！", "Memorizing scripture is no longer a solitary task!")}</p>
                     <ul style={{ paddingLeft: '1.5rem', marginBottom: '2rem' }}>
-                      <li><span dangerouslySetInnerHTML={{ __html: t("點擊 <strong>「多人連線」</strong> 創建專屬房間，邀請小組成員或家人一起加入。", "Click <strong>\"Multiplayer\"</strong> to create a private room and invite your group members or family to join.") }} /></li>
-                      <li><span dangerouslySetInnerHTML={{ __html: t("房主可以從全域題庫中挑選 <strong>「比賽經文」</strong>。", "The host can select <strong>\"Competition Verses\"</strong> from the global verse bank.") }} /></li>
-                      <li>{t("所有人同時開始挑戰，並能在遊戲結束後看到即時的成績排行榜，非常適合主日學活動與小組破冰！", "Everyone starts the challenge simultaneously and can see real-time leaderboards after the game ends. Perfect for Sunday school activities and group icebreakers!")}</li>
+                      <li><span dangerouslySetInnerHTML={{ __html: t("點擊上方的 <strong>「多人遊戲」</strong> 創建專屬房間，邀請小組成員或家人一起加入。", "Tap <strong>\"Multiplayer\"</strong> at the top to create a private room and invite your group members or family to join.") }} /></li>
+                      <li><span dangerouslySetInnerHTML={{ __html: t("房主可以從全域題庫中挑選 <strong>「比賽經文」</strong>，並選擇比賽方式：獨立九宮格、雨滴瀑布或語音模式。", "The host picks the <strong>\"Competition Verses\"</strong> from the global verse bank and chooses how to play: Solo Square, Verse Rain, or Voice Mode.") }} /></li>
+                      <li><span dangerouslySetInnerHTML={{ __html: t("<strong>🌍 各自用自己的語言參賽（新）：</strong>在個人賽／邀人PK 模式中，每位玩家都用自己選的聖經版本比賽——主持人用中文，朋友可以用英文 ESV 或韓文，同一節經文各自看到自己的語言。計分以節數與分數為準，與語言無關，完全公平。團隊競賽因為大家共用同一個盤面，維持主持人的語言。", "<strong>🌍 Everyone plays in their own language (new):</strong> In Solo / PK rooms each player competes in the Bible version they chose — the host in Chinese, a friend in English ESV or Korean — and everyone sees the same verse in their own language. Scoring is by verse count and points, independent of language, so it stays fair. Team battles share one board and therefore keep the host's language.") }} /></li>
+                      <li><span dangerouslySetInnerHTML={{ __html: t("所有人同時開始挑戰，並能在遊戲結束後看到即時的成績排行榜，非常適合主日學活動與小組破冰！", "Everyone starts the challenge simultaneously and can see real-time leaderboards after the game ends. Perfect for Sunday school activities and group icebreakers!") }} /></li>
                     </ul>
+                    <ManualVideo src="/manual/multiplayer.mp4" poster="/manual/multiplayer.jpg" caption={t("教學影片：左邊是主持人（繁體中文）在經文組頁按「邀人PK」開房；右邊是朋友把版本切成 English - ESV 後輸入代碼加入。比賽開始後，同一節經文各自看到自己的語言。", "Tutorial: on the left the host (Traditional Chinese) opens a room with \"Invite PK\" from the set page; on the right a friend switches to English - ESV and joins with the code. Once the match starts, each sees the same verse in their own language.")} />
 
                     <h2 style={{ borderBottom: '2px solid #e2e8f0', paddingBottom: '0.5rem', marginTop: '2rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Mic size={22} /> {t("六、親聲朗讀 — 用你自己的聲音讀經", "6. Read Aloud in Your Own Voice")}</h2>
                     <p><span dangerouslySetInnerHTML={{ __html: t("在<strong>聆聽經文組</strong>時，你可以錄下自己的聲音來讀某一節。之後再聽這一節，聽到的就是你自己的聲音，而不是電腦語音；還能把它分享給朋友，讓他們也聽見你的親聲。", "While <strong>listening to a verse set</strong>, you can record your own voice reading a verse. Next time you play that verse you'll hear yourself instead of the computer voice — and you can share it so friends hear your voice too.") }} /></p>
                     <ul style={{ paddingLeft: '1.5rem', marginBottom: '2rem' }}>
                       <li><span dangerouslySetInnerHTML={{ __html: t("<strong>錄下你的親聲：</strong>（需先登入）聆聽畫面下方那排按鈕中有一顆 🎙️ 麥克風鍵，點它、照著經文唸一遍、儲存即可。", "<strong>Record your voice:</strong> (login required) In the row of buttons at the bottom of the listen screen, tap the 🎙️ mic, read the verse aloud, and save.") }} /></li>
-                      <li><span dangerouslySetInnerHTML={{ __html: t("<strong>播放優先順序：</strong>你的親聲 ＞ 題庫作者的親聲 ＞ 電腦語音（TTS）。只要你錄了，聽到的一定是你自己的聲音。", "<strong>Playback priority:</strong> your voice ＞ the set author's voice ＞ computer voice (TTS). Once you've recorded, you'll always hear yourself.") }} /></li>
+                      <li><span dangerouslySetInnerHTML={{ __html: t("<strong>不只作者，人人都能錄：</strong>任何登入的玩家都可以為一節經文錄下自己的聲音並公開分享。打開播放器的「播放方式」→「聲音來源」，就能在 自動／電腦語音／無聲音／作者錄音／其他貢獻者的聲音 之間切換，聽聽弟兄姊妹怎麼讀這一節。", "<strong>Not just the author — anyone can record:</strong> Any signed-in player can record a verse in their own voice and share it publicly. Open the player's \"Play Mode\" → \"Voice\" to switch between Auto / Computer voice / No voice / Author / other contributors' voices and hear how brothers and sisters read the verse.") }} /></li>
+                      <li><span dangerouslySetInnerHTML={{ __html: t("<strong>播放優先順序：</strong>「自動」會優先播你自己的親聲，其次是最新公開的人聲，再來是題庫作者的親聲，最後才是電腦語音（TTS）。只要有人錄過，就不會聽到機器音。", "<strong>Playback priority:</strong> \"Auto\" plays your own voice first, then the newest public recording, then the set author's voice, and only then the computer voice (TTS). As long as someone has recorded, you never hear a robot.") }} /></li>
                       <li><span dangerouslySetInnerHTML={{ __html: t("<strong>✨ 美化人聲：</strong>錄完可勾選「美化人聲」讓聲音更清晰。處理與上傳會在<strong>背景進行</strong>（畫面顯示「⏳ 親聲處理中…」），你可以馬上去錄下一節，不必等它跑完。", "<strong>✨ Enhance voice:</strong> After recording you can enable \"Enhance voice\" for clarity. Processing and upload run <strong>in the background</strong> (shown as \"⏳ Processing…\"), so you can record the next verse right away.") }} /></li>
-                      <li><span dangerouslySetInnerHTML={{ __html: t("<strong>分享給朋友聽你的聲音：</strong>點 🔗 分享鍵，朋友打開連結就會聽到你的親聲。若錄音還在上傳，分享鍵會先等上傳完成再產生連結，確保對方一定聽得到。", "<strong>Share your voice:</strong> Tap the 🔗 share button and your friend hears your voice when they open the link. If the recording is still uploading, the button waits for it to finish first so they always hear it.") }} /></li>
+                      <li><span dangerouslySetInnerHTML={{ __html: t("<strong>分享你正在聽的聲音：</strong>點 🔗 分享鍵，連結會帶著「你現在正在聽的那個聲音」——不論是你自己、作者或其他貢獻者的親聲，朋友打開連結聽到的就是同一個聲音。若錄音還在上傳，分享鍵會先等上傳完成再產生連結，確保對方一定聽得到。", "<strong>Share the voice you're listening to:</strong> Tap the 🔗 share button and the link carries whichever voice you're hearing right now — yours, the author's, or another contributor's — so your friend hears exactly the same voice. If a recording is still uploading, the button waits for it to finish before creating the link.") }} /></li>
                       <li><span dangerouslySetInnerHTML={{ __html: t("<strong>暫停 / 繼續：</strong>播放親聲錄音時按暫停會停在原處，再按繼續會<strong>從原處接著播</strong>，不會從頭重讀。", "<strong>Pause / Resume:</strong> When a voice recording is playing, Pause holds the position and Resume <strong>continues from where it stopped</strong> instead of restarting.") }} /></li>
                       <li><span dangerouslySetInnerHTML={{ __html: t("<strong>刪除：</strong>經文出處下方若顯示「🎙️ 這節有你的親聲」，點旁邊的「刪除 ✕」即可移除你的錄音，之後會回到作者的親聲或電腦語音。", "<strong>Delete:</strong> If \"🎙️ Your voice on this verse\" shows under the reference, tap \"Delete ✕\" next to it to remove your recording; playback then falls back to the author's or computer voice.") }} /></li>
                     </ul>
                     <div style={{ backgroundColor: '#eff6ff', borderLeft: '4px solid #3b82f6', padding: '1rem', borderRadius: '4px', marginBottom: '3rem' }}>
                       <span dangerouslySetInnerHTML={{ __html: t("<strong>小提示：</strong>聆聽畫面上方中間、顯示日期或主題名稱的按鈕，下面寫著 <strong>【更多的主題經文】</strong> —— 點一下就能展開更多主題經文組，快速切換聆聽不同主題。", "<strong>Tip:</strong> The button at the top-center of the listen screen (showing the date or topic name) has <strong>[More topic verses]</strong> underneath — tap it to open more topic verse sets and switch quickly.") }} />
                     </div>
+                    <h2 style={{ borderBottom: '2px solid #e2e8f0', paddingBottom: '0.5rem', marginTop: '2rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Headphones size={22} /> {t("七、播放方式、我的最愛與更多聆聽小工具", "7. Play Mode, Favorites & More Listening Tools")}</h2>
+                    <p><span dangerouslySetInnerHTML={{ __html: t("聆聽畫面的 <strong>「播放方式」</strong> 視窗和幾顆新按鈕，讓連續聆聽更貼近你的習慣：", "The listen screen's <strong>\"Play Mode\"</strong> dialog and a few new buttons make continuous listening fit your routine:") }} /></p>
+                    <ul style={{ paddingLeft: '1.5rem', marginBottom: '2rem' }}>
+                      <li><span dangerouslySetInnerHTML={{ __html: t("<strong>⏱️ 播放時間：</strong>可設定播放幾分鐘後自動停止，或無限循環播放——睡前、靈修時段都好用。", "<strong>⏱️ Duration:</strong> Set playback to stop after a number of minutes, or loop forever — handy at bedtime or during devotions.") }} /></li>
+                      <li><span dangerouslySetInnerHTML={{ __html: t("<strong>🔠 字體大小：</strong>同一個視窗裡可以調整聆聽畫面的字級，長輩或投影使用時把字放大更清楚。", "<strong>🔠 Font size:</strong> Adjust the text size of the listen screen in the same dialog — bigger for seniors or projection.") }} /></li>
+                      <li><span dangerouslySetInnerHTML={{ __html: t("<strong>⭐ 我的最愛：</strong>聆聽時點播放器上的星星，或在「我的專屬題庫」的卡片上點星星，就能把經文組加入我的最愛。清單可用「我的最愛」排序，而且會跟著帳號同步到每一台裝置；從大廳「話語甘霖」進入後，也能直接挑「我的最愛」來聽。", "<strong>⭐ Favorites:</strong> Tap the star on the player, or on a card in \"My Custom Sets\", to add a verse set to your favorites. Sort the list by \"Favorites\", and they sync with your account across all devices. Entering from the lobby's \"Verse Rain\" card, you can pick \"Favorites\" to listen right away.") }} /></li>
+                      <li><span dangerouslySetInnerHTML={{ __html: t("<strong>▶️ 一鍵播放：</strong>「我的專屬題庫」每張卡片都多了「播放」鍵，不必先進入經文組就能開始連續聆聽（可選隨機或按序）。", "<strong>▶️ One-tap Play:</strong> Every card in \"My Custom Sets\" now has a \"Play\" button — start continuous listening (random or in order) without opening the set first.") }} /></li>
+                      <li><span dangerouslySetInnerHTML={{ __html: t("<strong>🔄 雙語對調：</strong>讀經頁的「朗讀第二語言」按鈕會暫時把主／次語言互換，改用第二語言落字並朗讀，原語言退到下方小字；離開後自動還原，練習外語聽讀很方便。", "<strong>🔄 Swap languages:</strong> The reader's \"Read the second language\" button temporarily swaps your primary and secondary languages — the verse falls and is read aloud in the second language while the original shows below in small text. It reverts when you leave; great for practicing a foreign language.") }} /></li>
+                      <li><span dangerouslySetInnerHTML={{ __html: t("<strong>⚡ 邊聽邊挑戰：</strong>聆聽中按 ⚡ 立刻挑戰這一節；結束後按「返回朗讀」會回到同一節並暫停等你，按播放或 ‹ › 就能接著聽下一節。", "<strong>⚡ Challenge while listening:</strong> Tap ⚡ while listening to challenge the current verse. When it ends, \"Back to reading\" returns you to the same verse, paused; press Play or ‹ › to continue.") }} /></li>
+                    </ul>
+                    <ManualVideo src="/manual/play-mode.mp4" poster="/manual/play-mode.jpg" caption={t("教學影片：在經文組頁按「播放」→ 播放方式視窗設定播放時間、字體大小、聲音來源 → 選「按序」開始連續聆聽。", "Tutorial: press \"Play\" on a set page → set duration, font size and voice source in the Play Mode dialog → choose \"In Order\" to start continuous listening.")} />
+                    <ManualVideo src="/manual/listen.mp4" poster="/manual/listen.jpg" caption={t("教學影片：大廳「話語甘霖」→ 選「每日經文」或主題經文 → 按「朗讀」做雙語對調（改用第二語言朗讀）→ 按「切換聲音」選電腦語音、無聲音或親聲。", "Tutorial: lobby \"Verse Rain\" → pick \"Daily Verse\" or a topic → press \"Read\" to swap languages (read in the second language) → \"Switch voice\" to choose computer voice, no voice, or a recorded voice.")} />
+                    <h2 style={{ borderBottom: '2px solid #e2e8f0', paddingBottom: '0.5rem', marginTop: '2rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Languages size={22} /> {t("八、經文組一鍵「翻譯」到其他語言", "8. Translate a Verse Set into Other Languages in One Click")}</h2>
+                    <p><span dangerouslySetInnerHTML={{ __html: t("辛苦建好的經文組，想給說別種語言的弟兄姊妹用？現在不必重打一次。", "Built a great verse set and want to share it with brothers and sisters who speak another language? No need to retype it.") }} /></p>
+                    <ul style={{ paddingLeft: '1.5rem', marginBottom: '2rem' }}>
+                      <li><span dangerouslySetInnerHTML={{ __html: t("在經文組詳情頁點 <strong>「翻譯」</strong>，選擇目標語言。系統會自動翻譯標題、把每節出處換成該語言的書名，並抓取<strong>該語言官方譯本的真實經文</strong>（不是機器翻譯的經文）。", "On a verse set's page tap <strong>\"Translate\"</strong> and pick a target language. The title is translated, each reference is converted to that language's book name, and the <strong>real text from that language's official Bible translation</strong> is fetched (not machine-translated scripture).") }} /></li>
+                      <li><span dangerouslySetInnerHTML={{ __html: t("預覽畫面可以修改標題、逐節查看成功／失敗並重試；確認後點 <strong>「加入並編輯」</strong>，經文組就會發佈到該語言的題庫，並自動切換過去讓你補上簡介。", "In the preview you can edit the title, see each verse's success/failure and retry; then tap <strong>\"Add & Edit\"</strong> to publish it into that language's library, and the app switches over so you can add a description.") }} /></li>
+                      <li><span dangerouslySetInnerHTML={{ __html: t("VerseRain 現已支援 20 多種聖經版本與介面語言：繁／簡中文、台語、英文（KJV／ESV／NIV）、日文、韓文、西班牙文、葡萄牙文、法文、德文、俄文、印地文、阿拉伯文、波斯文、希伯來文、土耳其文、緬甸文、越南文、印尼文與馬來文——切換左上角的「版本」即可。", "VerseRain now supports 20+ Bible versions and interface languages: Traditional/Simplified Chinese, Taiwanese, English (KJV/ESV/NIV), Japanese, Korean, Spanish, Portuguese, French, German, Russian, Hindi, Arabic, Persian, Hebrew, Turkish, Burmese, Vietnamese, Indonesian and Malay — just switch \"Version\" at the top left.") }} /></li>
+                    </ul>
+                    <ManualVideo src="/manual/translate.mp4" poster="/manual/translate.jpg" caption={t("教學影片：在經文組頁按「翻譯」→ 選 Bahasa Melayu → 系統翻譯標題並抓取馬來文譯本 → 預覽 16 節全部成功 → 「加入並編輯」。", "Tutorial: press \"Translate\" on a set page → choose Bahasa Melayu → the title is translated and the Malay Bible text fetched → preview shows all 16 verses → \"Add & Edit\".")} />
+                    <h2 style={{ borderBottom: '2px solid #e2e8f0', paddingBottom: '0.5rem', marginTop: '2rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Map size={22} /> {t("九、全球玩家地圖（2D／3D）", "9. Global Player Map (2D / 3D)")}</h2>
+                    <p><span dangerouslySetInnerHTML={{ __html: t("點上方的 <strong>「地圖」</strong> 頁籤，看看世界各地的經文雨玩家都在哪裡。", "Tap the <strong>\"Map\"</strong> tab at the top to see where VerseRain players are around the world.") }} /></p>
+                    <ul style={{ paddingLeft: '1.5rem', marginBottom: '2rem' }}>
+                      <li><span dangerouslySetInnerHTML={{ __html: t("點擊標記可以查看該玩家的成績；地圖上若有進行中的多人遊戲房間，<strong>雙擊房間就能直接加入戰局</strong>！", "Click a marker to see that player's scores; if a multiplayer room is open on the map, <strong>double-click it to jump straight into the battle</strong>!") }} /></li>
+                      <li><span dangerouslySetInnerHTML={{ __html: t("右上角可在 <strong>「2D 地圖」</strong> 與 <strong>「3D 地球」</strong> 之間切換，轉動地球，看看全球背經的即時脈動。", "Switch between <strong>\"2D Map\"</strong> and <strong>\"3D Globe\"</strong> at the top right, spin the globe, and watch scripture memorization pulse around the world in real time.") }} /></li>
+                    </ul>
+                    <ManualVideo src="/manual/map.mp4" poster="/manual/map.jpg" caption={t("教學影片：點「地圖」看全球玩家分佈 → 按「3D 地球」→ 拖曳轉動地球。", "Tutorial: open \"Map\" to see players worldwide → press \"3D Globe\" → drag to spin the globe.")} />
                   </>
                 </div>
               )}
