@@ -2,8 +2,10 @@ const VERSION_TO_TRANSLATE_LANG = {
   cuv: 'zh-TW',
   zh: 'zh-TW',
   cuvs: 'zh-CN',
+  tw: 'zh-TW',   // Taiwanese Hokkien has no reliable MT target — best-effort 繁中 title
   kjv: 'en',
   esv: 'en',
+  niv: 'en',
   fa: 'fa',
   he: 'he',
   ja: 'ja',
@@ -12,7 +14,14 @@ const VERSION_TO_TRANSLATE_LANG = {
   tr: 'tr',
   de: 'de',
   my: 'my',
-  vi: 'vi'
+  vi: 'vi',
+  ar: 'ar',
+  pt: 'pt',
+  fr: 'fr',
+  ru: 'ru',
+  hi: 'hi',
+  id: 'id',
+  ms: 'ms'
 };
 
 function getTranslateLanguage(version) {

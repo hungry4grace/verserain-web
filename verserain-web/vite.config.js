@@ -5,6 +5,7 @@ import { resolve } from 'path'
 import dailyVerseHandler from './api/daily-verse.js'
 import esvPassageHandler from './api/esv-passage.js'
 import nivPassageHandler from './api/niv-passage.js'
+import translatePassageHandler from './api/translate-passage.js'
 
 // Load .env.local so process.env is available for API handlers in dev
 try {
@@ -61,6 +62,15 @@ export default defineConfig({
           const url = new URL(req.url || '', 'http://127.0.0.1');
           const mockReq = { method: req.method, query: Object.fromEntries(url.searchParams.entries()) };
           await nivPassageHandler(mockReq, makeMockRes(res));
+        });
+
+        // POST { text, targetVersion, sourceVersion } → { text } (title translation)
+        server.middlewares.use('/api/translate-passage', async (req, res) => {
+          const url = new URL(req.url || '', 'http://127.0.0.1');
+          let body = '';
+          await new Promise((done) => { req.on('data', (c) => { body += c; }); req.on('end', done); req.on('error', done); });
+          const mockReq = { method: req.method, query: Object.fromEntries(url.searchParams.entries()), body };
+          await translatePassageHandler(mockReq, makeMockRes(res));
         });
       }
     }
