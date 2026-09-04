@@ -7666,6 +7666,21 @@ export default function App() {
     const t = localizedTextByRefRef.current[`${versionRef.current}|${normalizeVerseReferenceKey(reference)}`];
     return (t !== undefined && t !== '') ? t : fallback;
   };
+  // Localize just the reference LABEL (book name) into the player's version — purely
+  // a book-name remap, so it's synchronous and always available (no fetch needed).
+  const mpLocalRefFor = (reference) => {
+    if (!reference) return reference;
+    try {
+      const parsed = parseScriptureKey(reference);
+      if (parsed?.bookId) {
+        const bookInfo = BIBLE_BOOKS.find(b => b.id === parsed.bookId);
+        const name = getBookFullName(bookInfo, versionRef.current) || getBookAbbr(bookInfo, versionRef.current);
+        const cv = parsed.verses ? `${parsed.chapter}:${parsed.verses}` : `${parsed.chapter}`;
+        if (name) return `${name} ${cv}`.trim();
+      }
+    } catch { /* ignore */ }
+    return reference;
+  };
   // NOTE: the pre-resolve effect lives after the multiplayer state declarations
   // (it depends on multiplayerState / multiplayerRoomId).
 
@@ -24141,7 +24156,7 @@ const deDict = {
                     verserain
                   </div>
                   <div className="app-brand-version" style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', marginTop: '4px', marginLeft: '2px' }}>
-                    v3.27.0
+                    v3.27.1
                   </div>
                 </div>
                 <div ref={langPickerRef} className="app-lang-control" style={{ position: 'relative' }}>
@@ -25571,8 +25586,17 @@ const deDict = {
                           </div>
                           <p style={{ color: '#94a3b8', fontSize: '0.8rem', margin: 0 }}>{t("或掃描此 QR Code 快速加入", "or scan QR to join")}</p>
                         </div>
-                        <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#c026d3', marginBottom: '0.5rem' }}>{multiplayerState.verseRef}</div>
-                        <div style={{ fontSize: '1rem', color: '#701a75', marginBottom: '1rem', fontStyle: 'italic', maxWidth: '300px', lineHeight: '1.4' }}>"{multiplayerState.verseText}"</div>
+                        {(() => {
+                          // *_solo: preview verse 0 in the player's own language (text localizes
+                          // once fetched; the reference label localizes instantly).
+                          const solo = multiplayerRoomId && multiplayerState.playMode?.endsWith('_solo');
+                          const refLabel = solo ? mpLocalRefFor(multiplayerState.verseRef) : multiplayerState.verseRef;
+                          const previewText = solo ? mpLocalTextFor(multiplayerState.verseRef, multiplayerState.verseText) : multiplayerState.verseText;
+                          return (<>
+                            <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#c026d3', marginBottom: '0.5rem' }}>{refLabel}</div>
+                            <div style={{ fontSize: '1rem', color: '#701a75', marginBottom: '1rem', fontStyle: 'italic', maxWidth: '300px', lineHeight: '1.4' }}>"{previewText}"</div>
+                          </>);
+                        })()}
                         <p style={{ color: '#a21caf', fontSize: '0.9rem', margin: 0 }}>{multiplayerState.matchType === 'team' ? t("選好隊伍並準備後，老師就可以開始。", "Choose a team, get ready, then the teacher can start.") : t("雙方準備就緒後即將開始", "Match starts when both are ready")}</p>
                       </div>
 
@@ -28438,6 +28462,7 @@ const deDict = {
           const nextVerseData = isSoloMP ? localNextVerse : multiplayerState.campaignQueue?.[0];
           // In *_solo, preview the next verse in the player's own language.
           const nextVerseText = (isSoloMP && nextVerseData) ? mpLocalTextFor(nextVerseData.reference, nextVerseData.text) : nextVerseData?.text;
+          const nextVerseRef = (isSoloMP && nextVerseData) ? mpLocalRefFor(nextVerseData.reference) : nextVerseData?.reference;
           const remaining = isSoloMP
             ? localCampaignListRef.current.length - localVerseIndexRef.current
             : multiplayerState.campaignQueue?.length;
@@ -28449,7 +28474,7 @@ const deDict = {
                   {t("還剩", "Remaining:")} <strong style={{ color: '#fff' }}>{remaining}</strong> {t("節經文", "verses")}
                 </p>
                 <p style={{ color: '#93c5fd', fontSize: '1.8rem', fontWeight: 'bold', marginBottom: '1rem' }}>
-                  {t("接下來：", "Next Up:")} {nextVerseData?.reference}
+                  {t("接下來：", "Next Up:")} {nextVerseRef}
                 </p>
                 {nextVerseText && (
                   <div style={{ color: '#e2e8f0', fontSize: '1.1rem', marginBottom: '2rem', padding: '1rem', background: 'rgba(255,255,255,0.05)', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)', maxHeight: '150px', overflowY: 'auto' }}>
