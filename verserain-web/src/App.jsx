@@ -5207,29 +5207,19 @@ const parseVerseRef = (v) => {
     return v;
   }
   if (!v.reference) return v;
-  for (const book of BIBLE_BOOKS) {
-    // Recognize the book across EVERY language's names/abbreviations — not just
-    // zh/en/ja/ko — so a translated set (e.g. German "Jes 52:7", Spanish "Sal
-    // 37:9") parses into the book-badge + verse form consistently, instead of
-    // some rows falling back to raw-text because their reference is in a
-    // language this parser didn't know. Longest-first guards against a short
-    // abbrev shadowing a longer full name (e.g. "Isaiah" before es "Is").
-    const allNames = [
-      ...(book.names || []), ...(book.cn || []),
-      book.ja, book.ko, book.es, book.de, book.tr, book.fa, book.ar, book.he,
-      book.my, book.vi, book.idn, book.msy, book.pt, book.fr, book.ru, book.hi,
-    ]
-      .filter(Boolean)
-      .sort((a, b) => b.length - a.length);
-    for (const name of allNames) {
-      if (v.reference.startsWith(name)) {
-        return {
-          ...v,
-          book: book.id,
-          verseInput: v.reference.slice(name.length).trim()
-        };
-      }
-    }
+  // Resolve book + chapter:verse via the app's full reference normalizer. It
+  // knows EVERY language's book names — including full names the abbrev table
+  // lacks (German "Sprüche"/"1. Mose"/"Matthäus", etc.) — and splits on the real
+  // chapter boundary. A naive startsWith over abbreviations mis-parsed those:
+  // abbrev "Spr" sliced "Sprüche 10:11" into the garbage "üche 10:11", and full
+  // names with no matching abbrev fell back to raw text ("missed book").
+  const parsed = parseScriptureKey(v.reference);
+  if (parsed && parsed.bookId) {
+    return {
+      ...v,
+      book: parsed.bookId,
+      verseInput: parsed.verses ? `${parsed.chapter}:${parsed.verses}` : `${parsed.chapter}`,
+    };
   }
   return v;
 };
