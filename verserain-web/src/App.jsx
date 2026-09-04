@@ -1242,7 +1242,8 @@ const BOLLS_TRANSLATIONS = {
   ar:   'SVD',    // Arabic Smith and Van Dyke 1865 (most widely-used)
   vi:   'VI1934', // Vietnamese 1934
   id:   'TB',     // Indonesian Terjemahan Baru (most widely-used)
-  ms:   'TB',     // Malay fallback to Indonesian TB (no public Malay Bible API; ~80% intelligible)
+  ms:   'TB',     // Malay OT fallback → Indonesian TB. NT uses real Malay via
+                  // fetchMalayNTVerse (helloao zlm_ksz); see fetchVerseFromBolls.
   pt:   'ARC09',  // Portuguese Almeida Revista e Corrigida 2009 (bolls slug)
   fr:   'FRLSG',  // French Louis Segond 1910 (bolls slug)
   ru:   'SYNOD',  // Russian Synodal (bolls slug)
@@ -1314,7 +1315,56 @@ async function fetchVerseFromGetBible(normalizedKey, targetVersion) {
   } catch { return null; }
 }
 
+// Modern standard Malay (Bahasa Melayu) — helloao "zlm_ksz" (Kitab Suci Zabur
+// dan Injil), NEW TESTAMENT ONLY. No free API carries a full Malay OT, so OT
+// books fall back to Indonesian TB (getBollsSlug('ms') === 'TB'). Keyless and
+// CORS-open (access-control-allow-origin: *), so fetched straight from client.
+const HELLOAO_MALAY_NT_USFM = {
+  40: 'MAT', 41: 'MRK', 42: 'LUK', 43: 'JHN', 44: 'ACT', 45: 'ROM', 46: '1CO',
+  47: '2CO', 48: 'GAL', 49: 'EPH', 50: 'PHP', 51: 'COL', 52: '1TH', 53: '2TH',
+  54: '1TI', 55: '2TI', 56: 'TIT', 57: 'PHM', 58: 'HEB', 59: 'JAS', 60: '1PE',
+  61: '2PE', 62: '1JN', 63: '2JN', 64: '3JN', 65: 'JUD', 66: 'REV',
+};
+async function fetchMalayNTVerse(normalizedKey) {
+  const [bookPart, chapterVerse] = String(normalizedKey || '').split('|');
+  if (!chapterVerse) return '';
+  const usfm = HELLOAO_MALAY_NT_USFM[parseInt(bookPart, 10)];
+  if (!usfm) return ''; // OT (or unknown) → caller falls back to Indonesian TB
+  const colonIdx = chapterVerse.indexOf(':');
+  const chapter = parseInt(colonIdx < 0 ? chapterVerse : chapterVerse.slice(0, colonIdx), 10);
+  if (Number.isNaN(chapter)) return '';
+  let vStart = null, vEnd = null;
+  if (colonIdx >= 0) {
+    const range = chapterVerse.slice(colonIdx + 1);
+    if (range.includes('-')) {
+      const [s, e] = range.split('-').map(Number);
+      if (!Number.isNaN(s)) { vStart = s; vEnd = Number.isNaN(e) ? s : Math.min(e, s + 8); }
+    } else { const v = parseInt(range, 10); if (!Number.isNaN(v)) { vStart = v; vEnd = v; } }
+  }
+  try {
+    const res = await fetch(`https://bible.helloao.org/api/zlm_ksz/${usfm}/${chapter}.json`);
+    if (!res.ok) return '';
+    const data = await res.json();
+    const content = data?.chapter?.content || [];
+    const parts = [];
+    for (const c of content) {
+      if (c?.type !== 'verse') continue;
+      if (vStart == null || (c.number >= vStart && c.number <= vEnd)) {
+        const txt = (c.content || []).map(x => typeof x === 'string' ? x : (x?.text || '')).join('').replace(/\s+/g, ' ').trim();
+        if (txt) parts.push(txt);
+      }
+    }
+    // chapter-only → verse-boundary separator (matches bolls); range/single → space
+    return parts.join(vStart == null ? '؛ ' : ' ').trim();
+  } catch { return ''; }
+}
+
 async function fetchVerseFromBolls(normalizedKey, targetVersion) {
+  // Malay: prefer the real Bahasa Melayu NT; OT falls through to Indonesian TB below.
+  if (targetVersion === 'ms') {
+    const malay = await fetchMalayNTVerse(normalizedKey);
+    if (malay) return malay;
+  }
   const [bookPart, chapterVerse] = (normalizedKey || '').split('|');
   if (!chapterVerse) return null;
   const bookId = parseInt(bookPart, 10);
@@ -24156,7 +24206,7 @@ const deDict = {
                     verserain
                   </div>
                   <div className="app-brand-version" style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', marginTop: '4px', marginLeft: '2px' }}>
-                    v3.27.1
+                    v3.27.2
                   </div>
                 </div>
                 <div ref={langPickerRef} className="app-lang-control" style={{ position: 'relative' }}>
