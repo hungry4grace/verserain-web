@@ -7634,6 +7634,7 @@ export default function App() {
   const versionRef = useRef(version);
   useEffect(() => { versionRef.current = version; }, [version]);
   const localizedTextByRefRef = useRef({}); // `${ver}|${normKey}` -> resolved text ('' = unresolvable)
+  const [localizedTick, setLocalizedTick] = useState(0); // bumps when a verse finishes localizing (triggers reactive swap)
   const resolveVerseTextForVersion = async (reference, ver) => {
     if (!reference || !ver) return null;
     const normKey = normalizeVerseReferenceKey(reference);
@@ -8490,11 +8491,32 @@ export default function App() {
         const text = await resolveVerseTextForVersion(v.reference, version);
         if (cancelled) return;
         localizedTextByRefRef.current[cacheKey] = text || '';
+        if (text) setLocalizedTick(n => n + 1); // wake the reactive swap below
       }
     })();
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [multiplayerState?.campaignQueue, multiplayerState?.playMode, multiplayerRoomId, version]);
+  // On slow (mobile) networks the localized text can arrive AFTER a *_solo verse
+  // already started in the host's language. When it lands (localizedTick) and we're
+  // still at the very start of the current verse, swap it in and rebuild the board
+  // so the player sees their own language. Guarded to seqIndex 0 to avoid yanking
+  // the board out from under a player who's already begun.
+  useEffect(() => {
+    if (!multiplayerRoomId || !multiplayerState?.playMode?.endsWith('_solo')) return;
+    if (gameState !== 'playing' || !activeVerse?.reference) return;
+    if (currentSeqRef.current !== 0) return;
+    const localized = mpLocalTextFor(activeVerse.reference, null);
+    if (!localized || localized === activeVerse.text) return;
+    const verseObj = { ...activeVerse, text: localized };
+    setActiveVerse(verseObj);
+    if (multiplayerState.playMode === 'square_solo') {
+      initSquareBlocks(false, null, verseObj);
+    } else if (multiplayerState.playMode === 'rain_solo') {
+      setBlocks([]); // upcoming spawns read the now-localized activePhrases
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [localizedTick, gameState, activeVerse?.reference, multiplayerRoomId]);
   const [intermissionCountdown, setIntermissionCountdown] = useState(0);
   const [intermissionEndsAt, setIntermissionEndsAt] = useState(null);
   const [joinRoomError, setJoinRoomError] = useState(null);
@@ -24119,7 +24141,7 @@ const deDict = {
                     verserain
                   </div>
                   <div className="app-brand-version" style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', marginTop: '4px', marginLeft: '2px' }}>
-                    v3.26.0
+                    v3.27.0
                   </div>
                 </div>
                 <div ref={langPickerRef} className="app-lang-control" style={{ position: 'relative' }}>
