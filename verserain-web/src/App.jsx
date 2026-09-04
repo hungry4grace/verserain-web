@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { expandSameChapterRefs } from './lib/expandSameChapterRefs.js';
 import { Play, Pause, RotateCcw, Heart, Zap, Trophy, Crown, Star, Home, XCircle, Headphones, Music, VolumeX, Search, Share2, Dices, Mic, MicOff, Users, CloudRain, Info, Edit, TreePine, Gamepad2, Map, Settings, Library, Volume2, Shuffle, Swords, ShoppingBasket, Apple, Mail, Lock, Sprout, Leaf, RotateCw, Smartphone, Hourglass, Frown, X, Camera, Square, Copy, ArrowRightLeft, MessageCircle, Languages } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import usePartySocket from 'partysocket/react';
@@ -6335,7 +6336,11 @@ export default function App() {
     const raw = bulkImportState?.text || '';
     // Split on newlines AND commas (ASCII "," + full-width "，" + enumeration
     // "、") so references can be pasted one-per-line or comma-separated.
-    const lines = raw.split(/[\n,，、]+/).map(l => l.trim()).filter(Boolean);
+    // 逗號也用來接同一章的其他節：「約翰福音 1:1, 4」→ 1:1 與 1:4；「…, 2:7」→ 同書卷 2:7。
+    const lines = expandSameChapterRefs(
+      raw.split(/[\n,，、]+/).map(l => l.trim()).filter(Boolean),
+      (tok) => { const m = matchBookInLine(tok); return m ? { name: m.name, rest: m.rest } : null; },
+    );
     if (!lines.length) return;
     setBulkImportState(s => ({ ...s, busy: true, progress: `0 / ${lines.length}`, failed: [] }));
     const imported = [];
@@ -12928,6 +12933,7 @@ const zhcnDict = {
   "教學影片：大廳「話語甘霖」→ 選「每日經文」或主題經文 → 按「朗讀」做雙語對調（改用第二語言朗讀）→ 按「切換聲音」選電腦語音、無聲音或親聲。": "教学视频：大厅「话语甘霖」→ 选「每日经文」或主题经文 → 按「朗读」做双语对调（改用第二语言朗读）→ 按「切换声音」选电脑语音、无声音或亲声。",
   "教學影片：在經文組頁按「翻譯」→ 選 Bahasa Melayu → 系統翻譯標題並抓取馬來文譯本 → 預覽 16 節全部成功 → 「加入並編輯」。": "教学视频：在经文组页按「翻译」→ 选 Bahasa Melayu → 系统翻译标题并抓取马来文译本 → 预览 16 节全部成功 → 「加入并编辑」。",
   "教學影片：點「地圖」看全球玩家分佈 → 按「3D 地球」→ 拖曳轉動地球。": "教学视频：点「地图」看全球玩家分布 → 按「3D 地球」→ 拖拽转动地球。",
+  "同一章的其他節可以用逗號接在後面：「約翰福音 1:1, 4」＝ 1:1 與 1:4；「創世記 1:26-28, 2:7」＝ 同書卷的 2:7。": "同一章的其他节可以用逗号接在后面：「约翰福音 1:1, 4」＝ 1:1 与 1:4；「创世记 1:26-28, 2:7」＝ 同书卷的 2:7。",
 };
 
 // ─── Vietnamese (Tiếng Việt) UI Dictionary ────────────────────────────────────────
@@ -24275,7 +24281,7 @@ const deDict = {
                     verserain
                   </div>
                   <div className="app-brand-version" style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', marginTop: '4px', marginLeft: '2px' }}>
-                    v3.27.5
+                    v3.27.6
                   </div>
                 </div>
                 <div ref={langPickerRef} className="app-lang-control" style={{ position: 'relative' }}>
@@ -25284,6 +25290,9 @@ const deDict = {
                                   <h3 style={{ margin: '0 0 0.4rem', color: '#1e293b' }}>📋 {t('輸入出處來建立經文組', 'Build the set from references')}</h3>
                                   <p style={{ margin: '0 0 0.8rem', color: '#64748b', fontSize: '0.88rem', lineHeight: 1.5 }}>
                                     {t('每行或以逗號分隔貼上經文出處(例:太 19:14、詩 139:13-14),系統會自動抓取經文內容。', 'Paste references one per line or separated by commas (e.g. 太 19:14, 詩 139:13-14) — the verse text is fetched automatically.')}
+                                  </p>
+                                  <p style={{ margin: '-0.4rem 0 0.8rem', color: '#64748b', fontSize: '0.85rem', lineHeight: 1.5 }}>
+                                    {t('同一章的其他節可以用逗號接在後面：「約翰福音 1:1, 4」＝ 1:1 與 1:4；「創世記 1:26-28, 2:7」＝ 同書卷的 2:7。', 'After a reference, a comma followed by a bare verse stays in the same chapter: "John 1:1, 4" = 1:1 and 1:4; "Genesis 1:26-28, 2:7" = 2:7 of the same book.')}
                                   </p>
                                   <textarea
                                     value={bulkImportState.text}

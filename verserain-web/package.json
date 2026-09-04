@@ -1,7 +1,7 @@
 {
   "name": "verserain-web",
   "private": true,
-  "version": "3.27.5",
+  "version": "3.27.6",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -12,6 +12,7 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "test:party": "node --test src/party/*.test.mjs",
+    "test:lib": "node --test src/lib/*.test.mjs",
     "deploy:party": "partykit deploy"
   },
   "dependencies": {
