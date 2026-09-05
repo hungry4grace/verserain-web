@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { expandSameChapterRefs } from './lib/expandSameChapterRefs.js';
-import { Play, Pause, RotateCcw, Heart, Zap, Trophy, Crown, Star, Home, XCircle, Headphones, Music, VolumeX, Search, Share2, Dices, Mic, MicOff, Users, CloudRain, Info, Edit, TreePine, Gamepad2, Map, Settings, Library, Volume2, Shuffle, Swords, ShoppingBasket, Apple, Mail, Lock, Sprout, Leaf, RotateCw, Smartphone, Hourglass, Frown, X, Camera, Square, Copy, ArrowRightLeft, MessageCircle, Languages } from 'lucide-react';
+import { Play, Pause, RotateCcw, Heart, Zap, Trophy, Crown, Star, Home, XCircle, Headphones, Music, VolumeX, Search, Share2, Dices, Mic, MicOff, Users, CloudRain, Info, Edit, TreePine, Gamepad2, Map, Settings, Library, Volume2, Shuffle, Swords, ShoppingBasket, Apple, Mail, Lock, Sprout, Leaf, RotateCw, Smartphone, Hourglass, Frown, X, Camera, Square, Copy, ArrowRightLeft, MessageCircle, Languages, ChevronUp, ChevronDown } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import usePartySocket from 'partysocket/react';
 import PartySocket from 'partysocket';
@@ -25163,8 +25163,29 @@ const deDict = {
                                 } catch (e) { /* user can fill manually */ }
                               };
 
+                              const moveVerse = (fromIdx, direction) => {
+                                const toIdx = fromIdx + direction;
+                                if (toIdx < 0 || toIdx >= editingCustomSet.verses.length) return;
+                                const newVerses = [...editingCustomSet.verses];
+                                [newVerses[fromIdx], newVerses[toIdx]] = [newVerses[toIdx], newVerses[fromIdx]];
+                                setEditingCustomSet({ ...editingCustomSet, verses: newVerses });
+                              };
+
                               return (
                                 <div key={idx} style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.8rem', alignItems: 'flex-start', position: 'relative' }}>
+                                  {/* Move column: reorder this verse up/down within the list. */}
+                                  <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', flexShrink: 0 }}>
+                                    <button type="button" disabled={idx === 0} onClick={() => moveVerse(idx, -1)}
+                                      title={t('往上移', 'Move up')}
+                                      style={{ padding: '0.25rem', borderRadius: '4px', border: '1px solid #cbd5e1', background: idx === 0 ? '#f1f5f9' : '#fff', color: idx === 0 ? '#cbd5e1' : '#475569', cursor: idx === 0 ? 'not-allowed' : 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+                                      <ChevronUp size={16} />
+                                    </button>
+                                    <button type="button" disabled={idx === editingCustomSet.verses.length - 1} onClick={() => moveVerse(idx, 1)}
+                                      title={t('往下移', 'Move down')}
+                                      style={{ padding: '0.25rem', borderRadius: '4px', border: '1px solid #cbd5e1', background: idx === editingCustomSet.verses.length - 1 ? '#f1f5f9' : '#fff', color: idx === editingCustomSet.verses.length - 1 ? '#cbd5e1' : '#475569', cursor: idx === editingCustomSet.verses.length - 1 ? 'not-allowed' : 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+                                      <ChevronDown size={16} />
+                                    </button>
+                                  </div>
                                   {/* Reference column: book name on top, chapter:verse below (stacked on phones). */}
                                   <div style={{ display: 'flex', flexDirection: isNarrowEditor ? 'column' : 'row', gap: isNarrowEditor ? '4px' : '0.5rem', alignItems: isNarrowEditor ? 'stretch' : 'flex-start', flexShrink: 0 }}>
                                   <button type="button" onClick={() => setBookPickerIdx(bookPickerIdx === idx ? null : idx)}
