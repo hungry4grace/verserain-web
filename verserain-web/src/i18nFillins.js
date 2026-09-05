@@ -440,6 +440,12 @@ export const he = {
   "點擊標記可以查看該玩家的成績；地圖上若有進行中的多人遊戲房間，<strong>雙擊房間就能直接加入戰局</strong>！": "לחצו על סמן כדי לראות את הניקוד של אותו שחקן; אם יש על המפה חדר רב-משתתפים פתוח, <strong>לחיצה כפולה מכניסה ישירות לקרב</strong>!",
   "右上角可在 <strong>「2D 地圖」</strong> 與 <strong>「3D 地球」</strong> 之間切換，轉動地球，看看全球背經的即時脈動。": "בפינה העליונה אפשר לעבור בין <strong>«מפה 2D»</strong> ל-<strong>«כדור הארץ 3D»</strong>, לסובב את הגלובוס ולראות בזמן אמת את הדופק של שינון הפסוקים בעולם.",
   "教學影片：點「地圖」看全球玩家分佈 → 按「3D 地球」→ 拖曳轉動地球。": "סרטון הדרכה: פתיחת «מפה» לצפייה בשחקנים בעולם → לחיצה על «כדור הארץ 3D» → גרירה לסיבוב הגלובוס.",
+  // ── 導覽列：說明 / 誰在玩 ──
+  "說明": "מדריך",
+  "誰在玩": "מי משחק",
+  "誰在玩：全球玩家地圖": "מי משחק: מפת השחקנים העולמית",
+  "點上方的 <strong>「誰在玩」</strong> 頁籤，看看世界各地的經文雨玩家都在哪裡。": "הקישו על הלשונית <strong>«מי משחק»</strong> למעלה כדי לראות היכן נמצאים שחקני VerseRain ברחבי העולם.",
+  "教學影片：點「誰在玩」看全球玩家分佈 → 按「3D 地球」→ 拖曳轉動地球。": "סרטון הדרכה: פתיחת «מי משחק» לצפייה בשחקנים בעולם → לחיצה על «כדור הארץ 3D» → גרירה לסיבוב הגלובוס.",
 };
 
 export const fa = {
@@ -861,6 +867,12 @@ export const fa = {
   "點擊標記可以查看該玩家的成績；地圖上若有進行中的多人遊戲房間，<strong>雙擊房間就能直接加入戰局</strong>！": "روی یک نشانگر کلیک کنید تا امتیازهای آن بازیکن را ببینید؛ اگر اتاق چندنفرهٔ بازی روی نقشه باشد، <strong>با دوبار کلیک مستقیماً وارد نبرد می‌شوید</strong>!",
   "右上角可在 <strong>「2D 地圖」</strong> 與 <strong>「3D 地球」</strong> 之間切換，轉動地球，看看全球背經的即時脈動。": "در گوشهٔ بالا می‌توانید بین <strong>«نقشهٔ 2D»</strong> و <strong>«کرهٔ 3D»</strong> جابه‌جا شوید، کره را بچرخانید و ضربان حفظ کلام در سراسر جهان را زنده ببینید.",
   "教學影片：點「地圖」看全球玩家分佈 → 按「3D 地球」→ 拖曳轉動地球。": "ویدیوی آموزشی: باز کردن «نقشه» برای دیدن بازیکنان جهان → زدن «کرهٔ 3D» → کشیدن برای چرخاندن کره.",
+  // ── 導覽列：說明 / 誰在玩 ──
+  "說明": "راهنما",
+  "誰在玩": "چه کسی بازی می‌کند",
+  "誰在玩：全球玩家地圖": "چه کسی بازی می‌کند: نقشهٔ جهانی بازیکنان",
+  "點上方的 <strong>「誰在玩」</strong> 頁籤，看看世界各地的經文雨玩家都在哪裡。": "روی برگهٔ <strong>«چه کسی بازی می‌کند»</strong> در بالا بزنید تا ببینید بازیکنان VerseRain در سراسر جهان کجا هستند.",
+  "教學影片：點「誰在玩」看全球玩家分佈 → 按「3D 地球」→ 拖曳轉動地球。": "ویدیوی آموزشی: باز کردن «چه کسی بازی می‌کند» برای دیدن بازیکنان جهان → زدن «کرهٔ 3D» → کشیدن برای چرخاندن کره.",
 };
 
 export const ar = {
@@ -1698,6 +1710,12 @@ export const ar = {
   "點擊標記可以查看該玩家的成績；地圖上若有進行中的多人遊戲房間，<strong>雙擊房間就能直接加入戰局</strong>！": "انقر علامة لترى نتائج ذلك اللاعب؛ وإذا كانت هناك غرفة لعب جماعي مفتوحة على الخريطة، <strong>فانقر عليها مرتين للانضمام إلى المعركة مباشرة</strong>!",
   "右上角可在 <strong>「2D 地圖」</strong> 與 <strong>「3D 地球」</strong> 之間切換，轉動地球，看看全球背經的即時脈動。": "في الزاوية العلوية يمكنك التبديل بين <strong>«خريطة 2D»</strong> و<strong>«الكرة الأرضية 3D»</strong>، وتدوير الكرة ومشاهدة نبض حفظ الكتاب المقدس حول العالم مباشرة.",
   "教學影片：點「地圖」看全球玩家分佈 → 按「3D 地球」→ 拖曳轉動地球。": "فيديو تعليمي: فتح «الخريطة» لرؤية اللاعبين حول العالم → الضغط على «الكرة الأرضية 3D» → السحب لتدوير الكرة.",
+  // ── 導覽列：說明 / 誰在玩 ──
+  "說明": "الدليل",
+  "誰在玩": "من يلعب",
+  "誰在玩：全球玩家地圖": "من يلعب: خريطة اللاعبين العالمية",
+  "點上方的 <strong>「誰在玩」</strong> 頁籤，看看世界各地的經文雨玩家都在哪裡。": "اضغط تبويب <strong>«من يلعب»</strong> في الأعلى لترى أين يوجد لاعبو VerseRain حول العالم.",
+  "教學影片：點「誰在玩」看全球玩家分佈 → 按「3D 地球」→ 拖曳轉動地球。": "فيديو تعليمي: فتح «من يلعب» لرؤية اللاعبين حول العالم → الضغط على «الكرة الأرضية 3D» → السحب لتدوير الكرة.",
 };
 
 export const ja = {
@@ -2120,6 +2138,12 @@ export const ja = {
   "點擊標記可以查看該玩家的成績；地圖上若有進行中的多人遊戲房間，<strong>雙擊房間就能直接加入戰局</strong>！": "マーカーをクリックするとそのプレイヤーのスコアが表示されます。マップ上に進行中のマルチプレイルームがあれば、<strong>ダブルクリックでそのまま対戦に参加</strong>できます！",
   "右上角可在 <strong>「2D 地圖」</strong> 與 <strong>「3D 地球」</strong> 之間切換，轉動地球，看看全球背經的即時脈動。": "右上で <strong>「2D マップ」</strong> と <strong>「3D 地球」</strong> を切り替え、地球を回して世界中の聖句暗唱の鼓動をリアルタイムで眺められます。",
   "教學影片：點「地圖」看全球玩家分佈 → 按「3D 地球」→ 拖曳轉動地球。": "チュートリアル動画：「マップ」で世界のプレイヤー分布を見る → 「3D 地球」を押す → ドラッグして地球を回す。",
+  // ── 導覽列：說明 / 誰在玩 ──
+  "說明": "ガイド",
+  "誰在玩": "誰がプレイ中",
+  "誰在玩：全球玩家地圖": "誰がプレイ中：世界のプレイヤーマップ",
+  "點上方的 <strong>「誰在玩」</strong> 頁籤，看看世界各地的經文雨玩家都在哪裡。": "上部の <strong>「誰がプレイ中」</strong> タブをタップすると、世界中の VerseRain プレイヤーがどこにいるか見られます。",
+  "教學影片：點「誰在玩」看全球玩家分佈 → 按「3D 地球」→ 拖曳轉動地球。": "チュートリアル動画：「誰がプレイ中」で世界のプレイヤー分布を見る → 「3D 地球」を押す → ドラッグして地球を回す。",
 };
 
 export const ko = {
@@ -2541,6 +2565,12 @@ export const ko = {
   "點擊標記可以查看該玩家的成績；地圖上若有進行中的多人遊戲房間，<strong>雙擊房間就能直接加入戰局</strong>！": "마커를 클릭하면 그 플레이어의 점수를 볼 수 있고, 지도에 진행 중인 멀티플레이 방이 있으면 <strong>더블클릭해 바로 대결에 참가</strong>할 수 있습니다!",
   "右上角可在 <strong>「2D 地圖」</strong> 與 <strong>「3D 地球」</strong> 之間切換，轉動地球，看看全球背經的即時脈動。": "오른쪽 위에서 <strong>「2D 지도」</strong>와 <strong>「3D 지구」</strong>를 전환하고 지구를 돌리며 전 세계 성경 암송의 맥박을 실시간으로 볼 수 있습니다.",
   "教學影片：點「地圖」看全球玩家分佈 → 按「3D 地球」→ 拖曳轉動地球。": "튜토리얼 영상: 「지도」에서 전 세계 플레이어 분포 보기 → 「3D 지구」 누르기 → 드래그로 지구 돌리기.",
+  // ── 導覽列：說明 / 誰在玩 ──
+  "說明": "안내",
+  "誰在玩": "누가 플레이 중",
+  "誰在玩：全球玩家地圖": "누가 플레이 중: 전 세계 플레이어 지도",
+  "點上方的 <strong>「誰在玩」</strong> 頁籤，看看世界各地的經文雨玩家都在哪裡。": "상단의 <strong>「누가 플레이 중」</strong> 탭을 누르면 전 세계 VerseRain 플레이어가 어디에 있는지 볼 수 있습니다.",
+  "教學影片：點「誰在玩」看全球玩家分佈 → 按「3D 地球」→ 拖曳轉動地球。": "튜토리얼 영상: 「누가 플레이 중」에서 전 세계 플레이어 분포 보기 → 「3D 지구」 누르기 → 드래그로 지구 돌리기.",
 };
 
 export const es = {
@@ -2963,6 +2993,12 @@ export const es = {
   "點擊標記可以查看該玩家的成績；地圖上若有進行中的多人遊戲房間，<strong>雙擊房間就能直接加入戰局</strong>！": "Haz clic en un marcador para ver las puntuaciones de ese jugador; si hay una sala multijugador abierta en el mapa, <strong>haz doble clic para entrar directamente en la batalla</strong>.",
   "右上角可在 <strong>「2D 地圖」</strong> 與 <strong>「3D 地球」</strong> 之間切換，轉動地球，看看全球背經的即時脈動。": "Arriba a la derecha puedes alternar entre <strong>«Mapa 2D»</strong> y <strong>«Globo 3D»</strong>, girar el globo y ver en tiempo real el pulso de la memorización de las Escrituras en todo el mundo.",
   "教學影片：點「地圖」看全球玩家分佈 → 按「3D 地球」→ 拖曳轉動地球。": "Vídeo tutorial: abre «Mapa» para ver a los jugadores de todo el mundo → pulsa «Globo 3D» → arrastra para girar el globo.",
+  // ── 導覽列：說明 / 誰在玩 ──
+  "說明": "Guía",
+  "誰在玩": "¿Quién juega?",
+  "誰在玩：全球玩家地圖": "¿Quién juega?: mapa global de jugadores",
+  "點上方的 <strong>「誰在玩」</strong> 頁籤，看看世界各地的經文雨玩家都在哪裡。": "Toca la pestaña <strong>«¿Quién juega?»</strong> arriba para ver dónde están los jugadores de VerseRain en todo el mundo.",
+  "教學影片：點「誰在玩」看全球玩家分佈 → 按「3D 地球」→ 拖曳轉動地球。": "Vídeo tutorial: abre «¿Quién juega?» para ver a los jugadores de todo el mundo → pulsa «Globo 3D» → arrastra para girar el globo.",
 };
 
 export const tr = {
@@ -3385,6 +3421,12 @@ export const tr = {
   "點擊標記可以查看該玩家的成績；地圖上若有進行中的多人遊戲房間，<strong>雙擊房間就能直接加入戰局</strong>！": "Bir işarete tıklayarak o oyuncunun puanlarını görün; haritada açık bir çok oyunculu oda varsa <strong>çift tıklayarak doğrudan mücadeleye katılın</strong>!",
   "右上角可在 <strong>「2D 地圖」</strong> 與 <strong>「3D 地球」</strong> 之間切換，轉動地球，看看全球背經的即時脈動。": "Sağ üstte <strong>«2D Harita»</strong> ile <strong>«3D Dünya»</strong> arasında geçiş yapın, küreyi döndürün ve dünya çapındaki Kutsal Yazı ezberleme nabzını canlı izleyin.",
   "教學影片：點「地圖」看全球玩家分佈 → 按「3D 地球」→ 拖曳轉動地球。": "Eğitim videosu: Dünyadaki oyuncuları görmek için «Harita»yı açın → «3D Dünya»ya basın → küreyi döndürmek için sürükleyin.",
+  // ── 導覽列：說明 / 誰在玩 ──
+  "說明": "Kılavuz",
+  "誰在玩": "Kim Oynuyor",
+  "誰在玩：全球玩家地圖": "Kim Oynuyor: Küresel Oyuncu Haritası",
+  "點上方的 <strong>「誰在玩」</strong> 頁籤，看看世界各地的經文雨玩家都在哪裡。": "Üstteki <strong>«Kim Oynuyor»</strong> sekmesine dokunarak VerseRain oyuncularının dünyanın neresinde olduğunu görün.",
+  "教學影片：點「誰在玩」看全球玩家分佈 → 按「3D 地球」→ 拖曳轉動地球。": "Eğitim videosu: Dünyadaki oyuncuları görmek için «Kim Oynuyor»yı açın → «3D Dünya»ya basın → küreyi döndürmek için sürükleyin.",
 };
 
 export const de = {
@@ -3807,6 +3849,12 @@ export const de = {
   "點擊標記可以查看該玩家的成績；地圖上若有進行中的多人遊戲房間，<strong>雙擊房間就能直接加入戰局</strong>！": "Klicke auf eine Markierung, um die Ergebnisse dieses Spielers zu sehen; ist auf der Karte ein Mehrspieler-Raum offen, <strong>bringt dich ein Doppelklick direkt in den Kampf</strong>!",
   "右上角可在 <strong>「2D 地圖」</strong> 與 <strong>「3D 地球」</strong> 之間切換，轉動地球，看看全球背經的即時脈動。": "Oben rechts wechselst du zwischen <strong>„2D-Karte“</strong> und <strong>„3D-Globus“</strong>, drehst den Globus und siehst in Echtzeit, wie weltweit Bibelverse gelernt werden.",
   "教學影片：點「地圖」看全球玩家分佈 → 按「3D 地球」→ 拖曳轉動地球。": "Lehrvideo: „Karte“ öffnen und Spieler weltweit sehen → „3D-Globus“ drücken → ziehen, um den Globus zu drehen.",
+  // ── 導覽列：說明 / 誰在玩 ──
+  "說明": "Anleitung",
+  "誰在玩": "Wer spielt?",
+  "誰在玩：全球玩家地圖": "Wer spielt?: Weltkarte der Spieler",
+  "點上方的 <strong>「誰在玩」</strong> 頁籤，看看世界各地的經文雨玩家都在哪裡。": "Tippe oben auf den Reiter <strong>„Wer spielt?“</strong>, um zu sehen, wo VerseRain-Spieler auf der ganzen Welt sind.",
+  "教學影片：點「誰在玩」看全球玩家分佈 → 按「3D 地球」→ 拖曳轉動地球。": "Lehrvideo: „Wer spielt?“ öffnen und Spieler weltweit sehen → „3D-Globus“ drücken → ziehen, um den Globus zu drehen.",
 };
 
 export const my = {
@@ -4229,6 +4277,12 @@ export const my = {
   "點擊標記可以查看該玩家的成績；地圖上若有進行中的多人遊戲房間，<strong>雙擊房間就能直接加入戰局</strong>！": "အမှတ်အသားကို နှိပ်၍ ထိုကစားသူ၏ ရမှတ်များကို ကြည့်နိုင်သည်; မြေပုံပေါ်တွင် ဆောင်ရွက်ဆဲ ကစားသမားများ အခန်း ရှိပါက <strong>နှစ်ချက်နှိပ်၍ တိုက်ပွဲသို့ တိုက်ရိုက် ဝင်နိုင်သည်</strong>!",
   "右上角可在 <strong>「2D 地圖」</strong> 與 <strong>「3D 地球」</strong> 之間切換，轉動地球，看看全球背經的即時脈動。": "ညာဘက်အပေါ်တွင် <strong>«2D မြေပုံ»</strong> နှင့် <strong>«3D ကမ္ဘာလုံး»</strong> ကြား ပြောင်းနိုင်ပြီး ကမ္ဘာလုံးကို လှည့်ကာ ကမ္ဘာတစ်ဝှမ်း ကျမ်းချက်အလွတ်ကျက်ခြင်း၏ ခုန်နှုန်းကို တိုက်ရိုက် ကြည့်နိုင်သည်။",
   "教學影片：點「地圖」看全球玩家分佈 → 按「3D 地球」→ 拖曳轉動地球。": "သင်ခန်းစာဗီဒီယို - «မြေပုံ» ဖွင့်၍ ကမ္ဘာ့ကစားသူများကို ကြည့် → «3D ကမ္ဘာလုံး» နှိပ် → ဆွဲ၍ ကမ္ဘာလုံး လှည့်ခြင်း။",
+  // ── 導覽列：說明 / 誰在玩 ──
+  "說明": "လမ်းညွှန်",
+  "誰在玩": "ဘယ်သူတွေကစားနေလဲ",
+  "誰在玩：全球玩家地圖": "ဘယ်သူတွေကစားနေလဲ - ကမ္ဘာ့ကစားသူ မြေပုံ",
+  "點上方的 <strong>「誰在玩」</strong> 頁籤，看看世界各地的經文雨玩家都在哪裡。": "အပေါ်ရှိ <strong>«ဘယ်သူတွေကစားနေလဲ»</strong> တက်ဘ်ကို နှိပ်၍ ကမ္ဘာတစ်ဝှမ်းရှိ VerseRain ကစားသူများ မည်သည့်နေရာတွင် ရှိသည်ကို ကြည့်ပါ။",
+  "教學影片：點「誰在玩」看全球玩家分佈 → 按「3D 地球」→ 拖曳轉動地球。": "သင်ခန်းစာဗီဒီယို - «ဘယ်သူတွေကစားနေလဲ» ဖွင့်၍ ကမ္ဘာ့ကစားသူများကို ကြည့် → «3D ကမ္ဘာလုံး» နှိပ် → ဆွဲ၍ ကမ္ဘာလုံး လှည့်ခြင်း။",
 };
 
 export const vi = {
@@ -4651,6 +4705,12 @@ export const vi = {
   "點擊標記可以查看該玩家的成績；地圖上若有進行中的多人遊戲房間，<strong>雙擊房間就能直接加入戰局</strong>！": "Nhấp vào một điểm đánh dấu để xem thành tích của người chơi đó; nếu trên bản đồ có phòng nhiều người chơi đang mở, <strong>nhấp đúp vào phòng để tham gia trận đấu ngay</strong>!",
   "右上角可在 <strong>「2D 地圖」</strong> 與 <strong>「3D 地球」</strong> 之間切換，轉動地球，看看全球背經的即時脈動。": "Góc trên bên phải có thể chuyển giữa <strong>«Bản đồ 2D»</strong> và <strong>«Địa cầu 3D»</strong>, xoay địa cầu và xem nhịp đập học thuộc Kinh Thánh khắp thế giới theo thời gian thực.",
   "教學影片：點「地圖」看全球玩家分佈 → 按「3D 地球」→ 拖曳轉動地球。": "Video hướng dẫn: mở «Bản đồ» xem phân bố người chơi toàn cầu → nhấn «Địa cầu 3D» → kéo để xoay địa cầu.",
+  // ── 導覽列：說明 / 誰在玩 ──
+  "說明": "Hướng dẫn",
+  "誰在玩": "Ai đang chơi",
+  "誰在玩：全球玩家地圖": "Ai đang chơi: bản đồ người chơi toàn cầu",
+  "點上方的 <strong>「誰在玩」</strong> 頁籤，看看世界各地的經文雨玩家都在哪裡。": "Nhấn thẻ <strong>«Ai đang chơi»</strong> ở phía trên để xem người chơi VerseRain khắp thế giới đang ở đâu.",
+  "教學影片：點「誰在玩」看全球玩家分佈 → 按「3D 地球」→ 拖曳轉動地球。": "Video hướng dẫn: mở «Ai đang chơi» xem phân bố người chơi toàn cầu → nhấn «Địa cầu 3D» → kéo để xoay địa cầu.",
 };
 
 export const id = {
@@ -5305,6 +5365,12 @@ export const id = {
   "點擊標記可以查看該玩家的成績；地圖上若有進行中的多人遊戲房間，<strong>雙擊房間就能直接加入戰局</strong>！": "Klik penanda untuk melihat skor pemain itu; jika ada ruang multipemain yang sedang berlangsung di peta, <strong>klik dua kali untuk langsung bergabung ke pertarungan</strong>!",
   "右上角可在 <strong>「2D 地圖」</strong> 與 <strong>「3D 地球」</strong> 之間切換，轉動地球，看看全球背經的即時脈動。": "Di kanan atas Anda bisa beralih antara <strong>«Peta 2D»</strong> dan <strong>«Bola Dunia 3D»</strong>, memutar bola dunia, dan melihat denyut hafalan Alkitab di seluruh dunia secara langsung.",
   "教學影片：點「地圖」看全球玩家分佈 → 按「3D 地球」→ 拖曳轉動地球。": "Video tutorial: buka «Peta» untuk melihat sebaran pemain global → tekan «Bola Dunia 3D» → seret untuk memutar bola dunia.",
+  // ── 導覽列：說明 / 誰在玩 ──
+  "說明": "Panduan",
+  "誰在玩": "Siapa yang Main",
+  "誰在玩：全球玩家地圖": "Siapa yang Main: Peta Pemain Global",
+  "點上方的 <strong>「誰在玩」</strong> 頁籤，看看世界各地的經文雨玩家都在哪裡。": "Ketuk tab <strong>«Siapa yang Main»</strong> di bagian atas untuk melihat di mana saja pemain VerseRain di seluruh dunia.",
+  "教學影片：點「誰在玩」看全球玩家分佈 → 按「3D 地球」→ 拖曳轉動地球。": "Video tutorial: buka «Siapa yang Main» untuk melihat sebaran pemain global → tekan «Bola Dunia 3D» → seret untuk memutar bola dunia.",
 };
 
 export const ms = {
@@ -6161,6 +6227,12 @@ export const ms = {
   "點擊標記可以查看該玩家的成績；地圖上若有進行中的多人遊戲房間，<strong>雙擊房間就能直接加入戰局</strong>！": "Klik penanda untuk melihat markah pemain itu; jika ada bilik berbilang pemain yang sedang berlangsung di peta, <strong>klik dua kali untuk terus menyertai pertempuran</strong>!",
   "右上角可在 <strong>「2D 地圖」</strong> 與 <strong>「3D 地球」</strong> 之間切換，轉動地球，看看全球背經的即時脈動。": "Di kanan atas anda boleh bertukar antara <strong>«Peta 2D»</strong> dan <strong>«Glob 3D»</strong>, memutar glob dan melihat denyut hafazan Kitab Suci di seluruh dunia secara langsung.",
   "教學影片：點「地圖」看全球玩家分佈 → 按「3D 地球」→ 拖曳轉動地球。": "Video tutorial: buka «Peta» untuk melihat taburan pemain global → tekan «Glob 3D» → seret untuk memutar glob.",
+  // ── 導覽列：說明 / 誰在玩 ──
+  "說明": "Panduan",
+  "誰在玩": "Siapa Bermain",
+  "誰在玩：全球玩家地圖": "Siapa Bermain: Peta Pemain Global",
+  "點上方的 <strong>「誰在玩」</strong> 頁籤，看看世界各地的經文雨玩家都在哪裡。": "Ketik tab <strong>«Siapa Bermain»</strong> di bahagian atas untuk melihat di mana pemain VerseRain di seluruh dunia.",
+  "教學影片：點「誰在玩」看全球玩家分佈 → 按「3D 地球」→ 拖曳轉動地球。": "Video tutorial: buka «Siapa Bermain» untuk melihat taburan pemain global → tekan «Glob 3D» → seret untuk memutar glob.",
 };
 
 export const zhcn = {
@@ -6950,6 +7022,12 @@ export const zhcn = {
   // ── 操作手冊 (manual) ──
   "三、全新語音模式 (Voice Mode)": "三、全新语音模式 (Voice Mode)",
   "⚔️ 四、多人即時連線對戰": "⚔️ 四、多人即时连线对战",
+  // ── 導覽列：說明 / 誰在玩 ──
+  "說明": "说明",
+  "誰在玩": "谁在玩",
+  "誰在玩：全球玩家地圖": "谁在玩：全球玩家地图",
+  "點上方的 <strong>「誰在玩」</strong> 頁籤，看看世界各地的經文雨玩家都在哪裡。": "点上方的 <strong>「谁在玩」</strong> 页签，看看世界各地的经文雨玩家都在哪里。",
+  "教學影片：點「誰在玩」看全球玩家分佈 → 按「3D 地球」→ 拖曳轉動地球。": "教学视频：点「谁在玩」看全球玩家分布 → 按「3D 地球」→ 拖拽转动地球。",
 };
 
 export const pt = {
@@ -7006,6 +7084,12 @@ export const pt = {
   "點擊標記可以查看該玩家的成績；地圖上若有進行中的多人遊戲房間，<strong>雙擊房間就能直接加入戰局</strong>！": "Clique em um marcador para ver as pontuações daquele jogador; se houver uma sala multijogador aberta no mapa, <strong>clique duas vezes nela para entrar direto na batalha</strong>!",
   "右上角可在 <strong>「2D 地圖」</strong> 與 <strong>「3D 地球」</strong> 之間切換，轉動地球，看看全球背經的即時脈動。": "No canto superior direito alterne entre <strong>«Mapa 2D»</strong> e <strong>«Globo 3D»</strong>, gire o globo e veja em tempo real o pulso da memorização das Escrituras ao redor do mundo.",
   "教學影片：點「地圖」看全球玩家分佈 → 按「3D 地球」→ 拖曳轉動地球。": "Vídeo tutorial: abra «Mapa» para ver os jogadores do mundo todo → pressione «Globo 3D» → arraste para girar o globo.",
+  // ── 導覽列：說明 / 誰在玩 ──
+  "說明": "Guia",
+  "誰在玩": "Quem está jogando",
+  "誰在玩：全球玩家地圖": "Quem está jogando: mapa global de jogadores",
+  "點上方的 <strong>「誰在玩」</strong> 頁籤，看看世界各地的經文雨玩家都在哪裡。": "Toque na aba <strong>«Quem está jogando»</strong> no topo para ver onde estão os jogadores do VerseRain pelo mundo.",
+  "教學影片：點「誰在玩」看全球玩家分佈 → 按「3D 地球」→ 拖曳轉動地球。": "Vídeo tutorial: abra «Quem está jogando» para ver os jogadores do mundo todo → pressione «Globo 3D» → arraste para girar o globo.",
 };
 
 export const fr = {
@@ -7062,6 +7146,12 @@ export const fr = {
   "點擊標記可以查看該玩家的成績；地圖上若有進行中的多人遊戲房間，<strong>雙擊房間就能直接加入戰局</strong>！": "Cliquez sur un marqueur pour voir les scores de ce joueur ; si un salon multijoueur est ouvert sur la carte, <strong>double-cliquez dessus pour rejoindre directement la bataille</strong> !",
   "右上角可在 <strong>「2D 地圖」</strong> 與 <strong>「3D 地球」</strong> 之間切換，轉動地球，看看全球背經的即時脈動。": "En haut à droite, basculez entre <strong>« Carte 2D »</strong> et <strong>« Globe 3D »</strong>, faites tourner le globe et regardez en temps réel le pouls de la mémorisation des Écritures dans le monde.",
   "教學影片：點「地圖」看全球玩家分佈 → 按「3D 地球」→ 拖曳轉動地球。": "Vidéo tutoriel : ouvrir « Carte » pour voir les joueurs du monde entier → appuyer sur « Globe 3D » → faire glisser pour tourner le globe.",
+  // ── 導覽列：說明 / 誰在玩 ──
+  "說明": "Guide",
+  "誰在玩": "Qui joue ?",
+  "誰在玩：全球玩家地圖": "Qui joue ? : carte mondiale des joueurs",
+  "點上方的 <strong>「誰在玩」</strong> 頁籤，看看世界各地的經文雨玩家都在哪裡。": "Touchez l’onglet <strong>« Qui joue ? »</strong> en haut pour voir où se trouvent les joueurs VerseRain dans le monde.",
+  "教學影片：點「誰在玩」看全球玩家分佈 → 按「3D 地球」→ 拖曳轉動地球。": "Vidéo tutoriel : ouvrir « Qui joue ? » pour voir les joueurs du monde entier → appuyer sur « Globe 3D » → faire glisser pour tourner le globe.",
 };
 
 export const ru = {
@@ -7118,6 +7208,12 @@ export const ru = {
   "點擊標記可以查看該玩家的成績；地圖上若有進行中的多人遊戲房間，<strong>雙擊房間就能直接加入戰局</strong>！": "Нажмите на метку, чтобы увидеть результаты игрока; если на карте есть открытая многопользовательская комната, <strong>двойной клик по ней сразу отправит вас в битву</strong>!",
   "右上角可在 <strong>「2D 地圖」</strong> 與 <strong>「3D 地球」</strong> 之間切換，轉動地球，看看全球背經的即時脈動。": "В правом верхнем углу переключайтесь между <strong>«Картой 2D»</strong> и <strong>«Глобусом 3D»</strong>, вращайте глобус и наблюдайте в реальном времени пульс заучивания Писания по всему миру.",
   "教學影片：點「地圖」看全球玩家分佈 → 按「3D 地球」→ 拖曳轉動地球。": "Обучающее видео: открыть «Карту» и увидеть игроков по всему миру → нажать «Глобус 3D» → потянуть, чтобы повернуть глобус.",
+  // ── 導覽列：說明 / 誰在玩 ──
+  "說明": "Инструкция",
+  "誰在玩": "Кто играет",
+  "誰在玩：全球玩家地圖": "Кто играет: всемирная карта игроков",
+  "點上方的 <strong>「誰在玩」</strong> 頁籤，看看世界各地的經文雨玩家都在哪裡。": "Нажмите вкладку <strong>«Кто играет»</strong> вверху, чтобы увидеть, где по всему миру находятся игроки VerseRain.",
+  "教學影片：點「誰在玩」看全球玩家分佈 → 按「3D 地球」→ 拖曳轉動地球。": "Обучающее видео: открыть «Кто играет» и увидеть игроков по всему миру → нажать «Глобус 3D» → потянуть, чтобы повернуть глобус.",
 };
 
 export const hi = {
@@ -7174,6 +7270,12 @@ export const hi = {
   "點擊標記可以查看該玩家的成績；地圖上若有進行中的多人遊戲房間，<strong>雙擊房間就能直接加入戰局</strong>！": "किसी मार्कर पर क्लिक करके उस खिलाड़ी के अंक देखें; अगर नक्शे पर कोई चल रहा मल्टीप्लेयर कमरा है, तो <strong>उस पर डबल-क्लिक करके सीधे मुकाबले में शामिल हों</strong>!",
   "右上角可在 <strong>「2D 地圖」</strong> 與 <strong>「3D 地球」</strong> 之間切換，轉動地球，看看全球背經的即時脈動。": "ऊपर दाईं ओर <strong>«2D नक्शा»</strong> और <strong>«3D ग्लोब»</strong> के बीच बदलें, ग्लोब घुमाएँ और दुनिया भर में वचन-कंठस्थ की धड़कन रीयल-टाइम में देखें।",
   "教學影片：點「地圖」看全球玩家分佈 → 按「3D 地球」→ 拖曳轉動地球。": "ट्यूटोरियल वीडियो: «नक्शा» खोलकर वैश्विक खिलाड़ी देखें → «3D ग्लोब» दबाएँ → खींचकर ग्लोब घुमाएँ।",
+  // ── 導覽列：說明 / 誰在玩 ──
+  "說明": "गाइड",
+  "誰在玩": "कौन खेल रहा है",
+  "誰在玩：全球玩家地圖": "कौन खेल रहा है: वैश्विक खिलाड़ी नक्शा",
+  "點上方的 <strong>「誰在玩」</strong> 頁籤，看看世界各地的經文雨玩家都在哪裡。": "ऊपर <strong>«कौन खेल रहा है»</strong> टैब दबाकर देखें कि दुनिया भर में VerseRain के खिलाड़ी कहाँ हैं।",
+  "教學影片：點「誰在玩」看全球玩家分佈 → 按「3D 地球」→ 拖曳轉動地球。": "ट्यूटोरियल वीडियो: «कौन खेल रहा है» खोलकर वैश्विक खिलाड़ी देखें → «3D ग्लोब» दबाएँ → खींचकर ग्लोब घुमाएँ।",
 };
 
 const I18N_FILLINS = { he, fa, ar, ja, ko, es, tr, de, my, vi, id, ms, zhcn, pt, fr, ru, hi };
