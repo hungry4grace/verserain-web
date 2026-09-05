@@ -1638,8 +1638,12 @@ export default class Server {
             // Author layer.
             const ownerMap = await this.room.storage.list({ prefix: `set-verse-voice:${String(setId)}:` });
             for (const [, meta] of ownerMap.entries()) {
+               // Backfill byOwnerId for author recordings saved before it existed
+               // (same as /sets/verse-voices) — otherwise the player gets ownerId:null
+               // for the winning voice and hides the Encourage button / can't share it.
+               if (meta && !meta.byOwnerId && meta.byEmail) meta.byOwnerId = await voiceOwnerId(meta.byEmail);
                consider(meta?.reference, {
-                  ownerId: meta.byOwnerId || null,
+                  ownerId: meta?.byOwnerId || null,
                   recordedBy: meta.recordedBy || '',
                   voiceId: meta.voiceId, voiceMime: meta.voiceMime || 'audio/webm',
                   voiceDur: meta.voiceDur || 0, at: meta.at || '', source: 'owner',

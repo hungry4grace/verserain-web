@@ -2927,7 +2927,14 @@ function VerseSetContinuousRainPlayer({
     }
     if (forceTTSRef.current) return null;
     if (overrideVoicesRef.current?.[ref]) return sharedVoiceOwner || myOwnerIdRef.current || null;
-    if (latestVoicesRef.current?.[ref]?.voiceId) return latestVoicesRef.current[ref].ownerId || null;
+    const latest = latestVoicesRef.current?.[ref];
+    if (latest?.voiceId) {
+      if (latest.ownerId) return latest.ownerId;
+      // Older author-layer recordings can arrive without an ownerId from
+      // /voice-latest; the author layer carries the backfilled byOwnerId.
+      const author = verseVoicesRef.current?.[ref];
+      return (author?.voiceId === latest.voiceId && author?.byOwnerId) || null;
+    }
     return verseVoicesRef.current?.[ref]?.byOwnerId || null;
   };
   const openCommentsForCurrent = () => {
@@ -24292,7 +24299,7 @@ const deDict = {
                     verserain
                   </div>
                   <div className="app-brand-version" style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', marginTop: '4px', marginLeft: '2px' }}>
-                    v3.27.8
+                    v3.27.9
                   </div>
                 </div>
                 <div ref={langPickerRef} className="app-lang-control" style={{ position: 'relative' }}>
