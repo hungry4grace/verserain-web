@@ -656,14 +656,49 @@ function buildPublicShareUrl(path = '/', params = {}) {
 // Deep-link params are scrubbed from the address bar once consumed, but ?lang=
 // has to survive: it is what holds the recipient's UI in the sender's language
 // across a reload (we never write it to their localStorage).
+// ─── In-app history (browser ← → buttons) ───────────────────────────────
+// The app keeps every "page" in React state, so without this the browser's
+// Back button left the site. We mirror the page-like state into the URL hash
+// (#garden, #versesets/<id>/listen, #multiplayer/room/<id>, <tab>/play …) and
+// push one history entry per step; popstate applies the hash back to state.
+// Only the query string carries share links (?listenSet= …) — those are
+// consumed and scrubbed as before, and every scrub must keep the hash.
+const ROUTE_TABS = ['lobby', 'versesets', 'custom_verses', 'multiplayer', 'daily_verse', 'advanced', 'garden', 'search', 'map', 'manual', 'about', 'accessible', 'bilingual_rain', 'leaderboard'];
+const ROUTE_FLAGS = ['listen', 'edit', 'play', 'room'];
+function parseRoute(hash) {
+  const seg = String(hash || '').replace(/^#\/?/, '').split('/').filter(Boolean);
+  const tab = ROUTE_TABS.includes(seg[0]) ? seg[0] : 'lobby';
+  const r = { tab, setId: null, listen: false, edit: false, play: false, roomId: null };
+  let i = 1;
+  if (tab === 'versesets' && seg[1] && !ROUTE_FLAGS.includes(seg[1])) { r.setId = decodeURIComponent(seg[1]); i = 2; }
+  for (; i < seg.length; i++) {
+    if (seg[i] === 'room') { r.roomId = seg[i + 1] ? decodeURIComponent(seg[i + 1]) : null; i++; }
+    else if (seg[i] === 'listen') r.listen = true;
+    else if (seg[i] === 'edit') r.edit = true;
+    else if (seg[i] === 'play') r.play = true;
+  }
+  return r;
+}
+function routeFromState({ mainTab, selectedSetId, editing, listening, playing, roomId }) {
+  const tab = ROUTE_TABS.includes(mainTab) ? mainTab : 'lobby';
+  let route = tab;
+  if (tab === 'versesets' && selectedSetId) route += '/' + encodeURIComponent(selectedSetId);
+  if (roomId) route = 'multiplayer/room/' + encodeURIComponent(roomId);
+  else if (tab === 'custom_verses' && editing) route += '/edit';
+  else if (listening) route += '/listen';
+  if (playing) route += '/play';
+  return route;
+}
+
 function pathWithSharedLang() {
+  const hash = window.location.hash || '';
   try {
     const lang = new URLSearchParams(window.location.search).get('lang');
     if (lang && SUPPORTED_UI_LANGS.includes(lang)) {
-      return `${window.location.pathname}?lang=${encodeURIComponent(lang)}`;
+      return `${window.location.pathname}?lang=${encodeURIComponent(lang)}${hash}`;
     }
   } catch { /* noop */ }
-  return window.location.pathname;
+  return window.location.pathname + hash;
 }
 
 function createRoomCode(length = 4) {
@@ -5556,7 +5591,7 @@ export default function App() {
   const [playMode, setPlayMode] = useState('square_solo');
   const [distractionLevel, setDistractionLevel] = useState(0);
   const [performanceMode, setPerformanceMode] = useState(() => localStorage.getItem('verseRainPerformanceMode') === 'true');
-  const [selectedSetId, setSelectedSetId] = useState(null);
+  const [selectedSetId, setSelectedSetId] = useState(() => parseRoute(window.location.hash).setId);
   const [authorSetsModal, setAuthorSetsModal] = useState(null);
   // 'idle' | 'playing' | 'paused' — TTS state for the verse set description.
   const [descTtsState, setDescTtsState] = useState('idle');
@@ -7935,7 +7970,7 @@ export default function App() {
   const [leaderboardModalData, setLeaderboardModalData] = useState({ alltime: [], monthly: [], daily: [] });
   const [leaderboardModalTab, setLeaderboardModalTab] = useState('alltime'); // 'daily', 'monthly', 'alltime'
   const [isFetchingLeaderboard, setIsFetchingLeaderboard] = useState(false);
-  const [mainTab, setMainTab] = useState('lobby');
+  const [mainTab, setMainTab] = useState(() => parseRoute(window.location.hash).tab);
   const [mapView, setMapView] = useState('2d');   // 地圖 2D/3D 切換
   const [mapFocus, setMapFocus] = useState(null);  // 3D→2D 切換時帶入的焦點座標
   const [bilingualRainActive, setBilingualRainActive] = useState(false);
@@ -8083,7 +8118,7 @@ export default function App() {
     sessionStorage.removeItem('verserain_line_redirect');
     ['code', 'state', 'error', 'error_description'].forEach(k => params.delete(k));
     const rest = params.toString();
-    window.history.replaceState({}, '', window.location.pathname + (rest ? '?' + rest : ''));
+    window.history.replaceState({}, '', window.location.pathname + (rest ? '?' + rest : '') + (window.location.hash || ''));
     if (savedState !== state) return; // CSRF state mismatch — ignore the response
     // Re-open the login modal so the spinner shows while we exchange the code
     // and any error has somewhere to surface; success closes it again.
@@ -9481,6 +9516,82 @@ export default function App() {
   // the game-over 回到主頁 button can drop the player back into that reading
   // instead of the lobby — they can then ‹ › to the next verse and ⚡ again.
   const readerReturnRef = useRef(null);
+
+  // ─── Browser history ↔ page state (see parseRoute/routeFromState) ───
+  const quitGame = () => {
+    if (timerRef.current) clearInterval(timerRef.current);
+    try { if ('speechSynthesis' in window) window.speechSynthesis.cancel(); } catch { /* noop */ }
+    multiplayerSoloActiveRef.current = false;
+    const back = readerReturnRef.current;
+    readerReturnRef.current = null;
+    setGameState('menu');
+    setCampaignQueue(null);
+    if (back) setContinuousRainSet(back);
+  };
+  const leaveMultiplayerRoom = () => {
+    if (socketRef.current) { try { socketRef.current.close(); } catch { /* noop */ } socketRef.current = null; }
+    multiplayerSoloActiveRef.current = false;
+    setMultiplayerRoomMode(null);
+    setMultiplayerRoomRole('player');
+    setMultiplayerRoomId(null);
+    setMultiplayerState(null);
+  };
+  const routeStateRef = useRef({});
+  routeStateRef.current = { mainTab, selectedSetId, editing: !!editingCustomSet, listening: !!continuousRainSet, playing: gameState !== 'menu', roomId: multiplayerRoomId };
+  const applyingHistoryRef = useRef(false);
+  // popstate → state: leave every layer the target route doesn't include.
+  useEffect(() => {
+    const onPop = () => {
+      const r = parseRoute(window.location.hash);
+      const st = routeStateRef.current;
+      applyingHistoryRef.current = true;
+      if (st.listening && !r.listen) setContinuousRainSet(null);
+      if (st.playing && !r.play) quitGame();
+      if (st.roomId && r.roomId !== st.roomId) leaveMultiplayerRoom();
+      if (st.editing && !r.edit) setEditingCustomSet(null);
+      if (r.tab !== st.mainTab) setMainTab(r.tab);
+      if (r.tab === 'versesets' && (r.setId || null) !== (st.selectedSetId || null)) setSelectedSetId(r.setId || null);
+      // Layers that need data (listen/play/edit/room) can't be rebuilt from a
+      // URL. If nothing changed (so the sync effect below won't run), rewrite
+      // the hash to what is actually shown.
+      setTimeout(() => {
+        applyingHistoryRef.current = false;
+        const actual = routeFromState(routeStateRef.current);
+        if (window.history.state?.vr !== actual) {
+          const url = window.location.pathname + window.location.search + (actual === 'lobby' ? '' : '#' + actual);
+          try { window.history.replaceState({ ...(window.history.state || {}), vr: actual }, '', url); } catch { /* noop */ }
+        }
+      }, 120);
+    };
+    window.addEventListener('popstate', onPop);
+    return () => window.removeEventListener('popstate', onPop);
+  }, []);
+  // state → history: one entry per step; replace (never push) on first sync
+  // or while applying a popstate, so StrictMode double-runs and Back/Forward
+  // never create extra entries.
+  useEffect(() => {
+    const route = routeFromState(routeStateRef.current);
+    const cur = window.history.state?.vr;
+    if (cur === route) { applyingHistoryRef.current = false; return; }
+    const url = window.location.pathname + window.location.search + (route === 'lobby' ? '' : '#' + route);
+    try {
+      if (cur === undefined || applyingHistoryRef.current) window.history.replaceState({ ...(window.history.state || {}), vr: route }, '', url);
+      else window.history.pushState({ vr: route }, '', url);
+    } catch { /* noop */ }
+    applyingHistoryRef.current = false;
+  }, [mainTab, selectedSetId, !!editingCustomSet, !!continuousRainSet, gameState !== 'menu', multiplayerRoomId]);
+  // A #versesets/<id> that never resolves (deleted set, bad link): fall back to
+  // the list instead of silently showing the first set as if it were that one.
+  useEffect(() => {
+    if (!selectedSetId) return;
+    const found = safeActiveSets.some(s => s.id === selectedSetId) || customVerseSets.some(s => s.id === selectedSetId);
+    if (found) return;
+    const t = setTimeout(() => {
+      const stillMissing = !safeActiveSets.some(s => s.id === selectedSetId) && !customVerseSets.some(s => s.id === selectedSetId);
+      if (stillMissing) setSelectedSetId(null);
+    }, 6000);
+    return () => clearTimeout(t);
+  }, [selectedSetId, safeActiveSets, customVerseSets]);
   const [readerChallengeKick, setReaderChallengeKick] = useState(0);
   useEffect(() => {
     const pending = pendingReaderChallengeRef.current;
@@ -24308,7 +24419,7 @@ const deDict = {
                     verserain
                   </div>
                   <div className="app-brand-version" style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', marginTop: '4px', marginLeft: '2px' }}>
-                    v3.27.11
+                    v3.27.12
                   </div>
                 </div>
                 <div ref={langPickerRef} className="app-lang-control" style={{ position: 'relative' }}>
