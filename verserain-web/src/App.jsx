@@ -800,10 +800,19 @@ function isIOSDevice() {
 // On desktop plain `.volume` works and avoids any suspended-AudioContext
 // silence risk, so we keep it there. Returns the <audio> element; a
 // `_bgmDisconnect()` is attached for graph teardown on cleanup.
+// Editor slider ↔ stored gain. Loudness is logarithmic, so a linear slider makes
+// 5% still sound loud against a quiet voice recording; a squared curve gives the
+// bottom of the slider real headroom (10% → 0.01 gain ≈ −40 dB). The stored
+// bgMusicVolume stays a plain 0–1 gain, so existing sets sound exactly as before.
+const bgmSliderToGain = (pct) => Math.pow(Math.max(0, Math.min(100, pct)) / 100, 2);
+const bgmGainToSlider = (gain) => Math.round(Math.sqrt(Math.max(0, Math.min(1, gain ?? 0.18))) * 100);
+
 function startLoopingBgm(src, volume) {
   const audio = new Audio(src);
   audio.loop = true;
-  const clamp = (v) => Math.min(1, Math.max(0.05, v ?? 0.18));
+  // No floor: the editor slider is perceptual (see bgmSliderToGain), so tiny
+  // gains like 0.001 are legitimate "barely there" settings.
+  const clamp = (v) => Math.min(1, Math.max(0, v ?? 0.18));
   const vol = clamp(volume);
   let gain = null;
   if (isIOSDevice()) {
@@ -24299,7 +24308,7 @@ const deDict = {
                     verserain
                   </div>
                   <div className="app-brand-version" style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', marginTop: '4px', marginLeft: '2px' }}>
-                    v3.27.9
+                    v3.27.10
                   </div>
                 </div>
                 <div ref={langPickerRef} className="app-lang-control" style={{ position: 'relative' }}>
@@ -24970,17 +24979,17 @@ const deDict = {
                                 )}
                                 <span style={{ color: '#64748b', fontSize: '0.88rem' }}>🔉 {t('音量', 'Volume')}</span>
                                 <input
-                                  type="range" min={5} max={100}
-                                  value={Math.round((editingCustomSet.bgMusicVolume ?? 0.18) * 100)}
+                                  type="range" min={1} max={100}
+                                  value={bgmGainToSlider(editingCustomSet.bgMusicVolume)}
                                   onChange={e => {
-                                    const vol = Number(e.target.value) / 100;
+                                    const vol = bgmSliderToGain(Number(e.target.value));
                                     setEditingCustomSet(prev => ({ ...prev, bgMusicVolume: vol }));
                                     editorMusicAudioRef.current?._bgmSetVolume?.(vol);
                                   }}
                                   style={{ width: 180, cursor: 'pointer' }}
                                 />
                                 <span style={{ color: '#334155', fontSize: '0.88rem', fontWeight: 600, minWidth: 38 }}>
-                                  {Math.round((editingCustomSet.bgMusicVolume ?? 0.18) * 100)}%
+                                  {bgmGainToSlider(editingCustomSet.bgMusicVolume)}%
                                 </span>
                               </div>
                             )}
