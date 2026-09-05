@@ -66,7 +66,12 @@ const quillModules = {
     [{ 'header': [1, 2, 3, 4, false] }],
     ['bold', 'italic', 'underline', 'strike', 'blockquote'],
     [{ 'list': 'ordered' }, { 'list': 'bullet' }],
-    ['link', 'image', 'video'],
+    // 'image' intentionally omitted — Quill's default image button embeds
+    // the file as a base64 data URI directly in the description, which can
+    // blow past the party server's storage size limit and fail publishing
+    // with a generic "DB error". Background images have their own proper
+    // upload flow; use that instead.
+    ['link', 'video'],
     ['clean']
   ],
 };
