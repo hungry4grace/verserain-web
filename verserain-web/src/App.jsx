@@ -25631,7 +25631,7 @@ const deDict = {
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                               {pageSets.map(set => (
                                 <div key={set.id} style={{ border: '1px solid #cbd5e1', borderRadius: '8px', padding: '1.5rem', position: 'relative' }}>
-                                  <div style={{ position: 'absolute', top: '1rem', right: '1rem', display: 'flex', gap: '0.5rem', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                                  <div style={{ position: 'absolute', top: '1rem', right: '1rem', display: 'flex', flexDirection: 'column', gap: '0.5rem', alignItems: 'flex-end' }}>
                                     <button type="button" onClick={() => {
                                       // Play straight from the list — same flow as the set page's 播放
                                       // button (opens the 隨機/按序 chooser), no need to open 瀏覽 first.
