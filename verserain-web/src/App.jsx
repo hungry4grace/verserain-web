@@ -25644,7 +25644,10 @@ const deDict = {
                                       setMainTab('versesets');
                                     }} style={{ background: '#10b981', border: '1px solid #059669', padding: '0.4rem 0.8rem', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', color: 'white' }}>{t("瀏覽", "View")}</button>
                                     <button type="button" onClick={() => setEditingCustomSet({ ...set, verses: set.verses?.map(parseVerseRef) || [] })} style={{ background: '#f1f5f9', border: '1px solid #cbd5e1', padding: '0.4rem 0.8rem', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', color: '#475569' }}>{t("編輯", "Edit")}</button>
-                                    <button type="button" onClick={() => copyVerseSetToMine(set)} title={t('複製一份新題庫', 'Duplicate as a new set')} style={{ background: '#eef2ff', border: '1px solid #c7d2fe', padding: '0.4rem 0.8rem', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', color: '#4338ca' }}>{t('複製', 'Copy')}</button>
+                                    <button type="button" onClick={() => {
+                                      if (!set?.verses?.length) return;
+                                      setTranslateModal({ set, target: '', phase: 'pick' });
+                                    }} title={t("把整組經文翻譯到另一種語言的題庫", "Translate this whole set into another language's library")} style={{ background: '#e0f2fe', border: '1px solid #7dd3fc', padding: '0.4rem 0.8rem', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', color: '#0369a1', display: 'flex', alignItems: 'center', gap: '4px' }}><Languages size={14} /> {t("翻譯", "Translate")}</button>
                                     <button type="button" onClick={() => {
                                       // Two-tap confirm — window.confirm is dead inside the iOS App.
                                       if (deleteArmedId !== set.id) { armDelete(set.id); return; }
