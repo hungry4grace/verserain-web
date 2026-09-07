@@ -25639,7 +25639,7 @@ const deDict = {
                                       if (!set?.verses?.length) return;
                                       setPlayOrderChooser(set);
                                     }} title={t("連續播放這個經文組（隨機或按序）", "Continuously play this verse set (shuffled or in order)")} style={{ background: '#8b5cf6', border: '1px solid #7c3aed', padding: '0.4rem 0.8rem', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', color: 'white', display: 'flex', alignItems: 'center', gap: '4px' }}><Headphones size={14} fill="white" /> {t("播放", "Play")}</button>
-                                    <button type="button" onClick={() => setEditingCustomSet({ ...set, verses: set.verses?.map(parseVerseRef) || [] })} style={{ background: '#f1f5f9', border: '1px solid #cbd5e1', padding: '0.4rem 0.8rem', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', color: '#475569' }}>{t("編輯", "Edit")}</button>
+                                    <button type="button" onClick={() => setEditingCustomSet({ ...set, verses: set.verses?.map(parseVerseRef) || [] })} style={{ background: '#10b981', border: 'none', padding: '0.4rem 0.8rem', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', color: 'white', display: 'flex', alignItems: 'center', gap: '4px' }}><Edit size={14} /> {t("編輯", "Edit")}</button>
                                     <button type="button" onClick={() => {
                                       if (!set?.verses?.length) return;
                                       setTranslateModal({ set, target: '', phase: 'pick' });
