@@ -25639,29 +25639,11 @@ const deDict = {
                                       if (!set?.verses?.length) return;
                                       setPlayOrderChooser(set);
                                     }} title={t("連續播放這個經文組（隨機或按序）", "Continuously play this verse set (shuffled or in order)")} style={{ background: '#8b5cf6', border: '1px solid #7c3aed', padding: '0.4rem 0.8rem', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', color: 'white', display: 'flex', alignItems: 'center', gap: '4px' }}><Headphones size={14} fill="white" /> {t("播放", "Play")}</button>
-                                    <button type="button" onClick={() => {
-                                      setSelectedSetId(set.id);
-                                      setMainTab('versesets');
-                                    }} style={{ background: '#10b981', border: '1px solid #059669', padding: '0.4rem 0.8rem', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', color: 'white' }}>{t("瀏覽", "View")}</button>
                                     <button type="button" onClick={() => setEditingCustomSet({ ...set, verses: set.verses?.map(parseVerseRef) || [] })} style={{ background: '#f1f5f9', border: '1px solid #cbd5e1', padding: '0.4rem 0.8rem', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', color: '#475569' }}>{t("編輯", "Edit")}</button>
-                                    <button type="button" onClick={() => copyVerseSetToMine(set)} title={t('複製一份新題庫', 'Duplicate as a new set')} style={{ background: '#eef2ff', border: '1px solid #c7d2fe', padding: '0.4rem 0.8rem', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', color: '#4338ca' }}>{t('複製', 'Copy')}</button>
                                     <button type="button" onClick={() => {
-                                      // Two-tap confirm — window.confirm is dead inside the iOS App.
-                                      if (deleteArmedId !== set.id) { armDelete(set.id); return; }
-                                      setDeleteArmedId(null);
-                                      const updated = customVerseSets.filter(s => s.id !== set.id);
-                                      setCustomVerseSets(updated);
-                                      localStorage.setItem('verseRain_custom_sets', JSON.stringify(updated));
-
-                                      fetch("https://verserain-party.hungry4grace.partykit.dev/parties/main/global-auth-db/custom-sets", {
-                                        method: "DELETE",
-                                        headers: { "Content-Type": "application/json" },
-                                        body: JSON.stringify({ id: set.id, adminEmail: userEmail, adminName: playerName })
-                                      }).catch(e => console.error(e));
-                                      setPublishedVerseSets(prev => prev.filter(p => p.id !== set.id));
-                                      setToast(t('題庫已刪除', 'Set deleted'));
-                                      setTimeout(() => setToast(null), 3000);
-                                    }} style={{ background: deleteArmedId === set.id ? '#b91c1c' : '#fee2e2', border: '1px solid #fca5a5', padding: '0.4rem 0.8rem', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', color: deleteArmedId === set.id ? 'white' : '#ef4444' }}>{deleteArmedId === set.id ? t('確認刪除？', 'Confirm?') : t("刪除", "Delete")}</button>
+                                      if (!set?.verses?.length) return;
+                                      setTranslateModal({ set, target: '', phase: 'pick' });
+                                    }} title={t("把整組經文翻譯到另一種語言的題庫", "Translate this whole set into another language's library")} style={{ background: '#e0f2fe', border: '1px solid #7dd3fc', padding: '0.4rem 0.8rem', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', color: '#0369a1', display: 'flex', alignItems: 'center', gap: '4px' }}><Languages size={14} /> {t("翻譯", "Translate")}</button>
                                   </div>
                                   <h3 style={{ margin: '0 0 0.5rem 0', color: '#1e293b', paddingRight: '120px' }}>{set.title}</h3>
                                   {/* Clamp long rich-text intros to ~3 lines so the list stays scannable.
