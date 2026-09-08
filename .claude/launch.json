@@ -4,16 +4,47 @@
     {
       "name": "verserain-dev",
       "runtimeExecutable": "npx",
-      "runtimeArgs": ["vite", "--port", "5179"],
+      "runtimeArgs": [
+        "vite",
+        "--port",
+        "5179"
+      ],
       "port": 5179,
       "cwd": "verserain-web"
     },
     {
       "name": "blind",
       "runtimeExecutable": "npx",
-      "runtimeArgs": ["vite", "--port", "5180"],
+      "runtimeArgs": [
+        "vite",
+        "--port",
+        "5180"
+      ],
       "port": 5180,
       "cwd": "verserain-for-blind"
+    },
+    {
+      "name": "listen-speak",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": [
+        "vite",
+        "--port",
+        "5181"
+      ],
+      "port": 5181,
+      "cwd": "listen-speak-web"
+    },
+    {
+      "name": "mutualizedrewards",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": [
+        "-m",
+        "http.server",
+        "5191",
+        "--directory",
+        "/Users/davidhwang/Projects/mutualizedrewards-zh/public"
+      ],
+      "port": 5191
     }
   ]
 }
