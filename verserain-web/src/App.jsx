@@ -629,7 +629,7 @@ function ManualVideo({ src, poster, caption }) {
   );
 }
 
-const SUPPORTED_UI_LANGS = ['zh', 'cuvs', 'en', 'fa', 'ar', 'he', 'ja', 'ko', 'es', 'tr', 'de', 'my', 'vi', 'id', 'ms'];
+const SUPPORTED_UI_LANGS = ['zh', 'cuvs', 'en', 'fa', 'ar', 'he', 'ja', 'ko', 'es', 'tr', 'de', 'my', 'vi', 'id', 'ms', 'pt', 'fr', 'ru', 'hi', 'km'];
 
 // Document title per UI language — index.html ships the zh title, so without
 // this the browser tab stays Chinese for everyone (including recipients of a
@@ -1230,7 +1230,8 @@ const BIBLE_LANGUAGE_OPTIONS = [
   { value: 'my', label: 'မြန်မာ' },
   { value: 'vi', label: 'Tiếng Việt' },
   { value: 'id', label: 'Bahasa Indonesia' },
-  { value: 'ms', label: 'Bahasa Melayu' }
+  { value: 'ms', label: 'Bahasa Melayu' },
+  { value: 'km', label: 'ភាសាខ្មែរ' }
 ];
 
 const PLAY_DURATION_OPTIONS = [
@@ -2130,7 +2131,7 @@ function normalizeVerseReferenceKey(reference = '') {
         const names = [
           ...(b.names || []),
           ...(b.cn || []),
-          b.ja, b.ko, b.es, b.de, b.tr, b.fa, b.ar, b.he, b.my, b.vi, b.idn, b.msy, b.pt, b.fr, b.ru, b.hi
+          b.ja, b.ko, b.es, b.de, b.tr, b.fa, b.ar, b.he, b.my, b.vi, b.idn, b.msy, b.pt, b.fr, b.ru, b.hi, b.km
         ].filter(Boolean);
         return names.some(name => {
           const n = String(name).toLowerCase().replace(/\./g, '').replace(/\s+/g, ' ');
@@ -2164,7 +2165,8 @@ function normalizeVerseReferenceKey(reference = '') {
       b.pt,
       b.fr,
       b.ru,
-      b.hi
+      b.hi,
+      b.km
     ].filter(Boolean);
     return names.some(name => {
       const normalizedName = String(name).toLowerCase().replace(/\./g, '').replace(/\s+/g, ' ');
@@ -2230,7 +2232,7 @@ function findMatchingVerse(primaryVerse, primaryVerses = [], secondaryVerses = [
 function normalizeVerseSetIdentity(value = '') {
   return String(value || '')
     .replace(/\s*\((KJV|ESV|NIV)\)\s*/gi, '')
-    .replace(/-(cuv|cuvs|kjv|esv|niv|ja|ko|fa|he|es|tr|de|my|vi|id|ms|tw|pt|fr|ru|hi)$/i, '')
+    .replace(/-(cuv|cuvs|kjv|esv|niv|ja|ko|fa|he|es|tr|de|my|vi|id|ms|tw|pt|fr|ru|hi|km)$/i, '')
     .replace(/\s+/g, ' ')
     .trim()
     .toLowerCase();
@@ -6945,7 +6947,7 @@ export default function App() {
   // remap each verse's 出處 to the target language's book name, and fetch that
   // language's OFFICIAL verse text. The 簡介 (description) is copied untranslated.
   const stripSetLangSuffix = (id) => String(id || '')
-    .replace(/-(cuv|cuvs|kjv|esv|niv|ja|ko|fa|he|es|tr|de|my|vi|id|ms|tw|pt|fr|ru|hi)$/i, '');
+    .replace(/-(cuv|cuvs|kjv|esv|niv|ja|ko|fa|he|es|tr|de|my|vi|id|ms|tw|pt|fr|ru|hi|km)$/i, '');
   const translateTitleText = async (text, targetVersion, sourceVersion) => {
     const src = String(text || '').trim();
     if (!src) return '';
@@ -7492,6 +7494,7 @@ export default function App() {
     else if (newVer === 'fr') setUiLangPersisted('fr');
     else if (newVer === 'ru') setUiLangPersisted('ru');
     else if (newVer === 'hi') setUiLangPersisted('hi');
+    else if (newVer === 'km') setUiLangPersisted('km');
     else if (newVer === 'cuvs') setUiLangPersisted('cuvs');
     else setUiLangPersisted('zh');
 
@@ -8425,7 +8428,7 @@ export default function App() {
       return localStorage.getItem('verseRain_voiceName') || '';
     }
   });
-  const langPrefixForVersion = (v) => (isEnglishBibleVersion(v) ? 'en' : v === 'ja' ? 'ja' : v === 'ko' ? 'ko' : v === 'fa' ? 'fa' : v === 'ar' ? 'ar' : v === 'he' ? 'he' : v === 'es' ? 'es' : v === 'tr' ? 'tr' : v === 'de' ? 'de' : v === 'my' ? 'my' : v === 'vi' ? 'vi' : v === 'id' ? 'id' : v === 'ms' ? 'ms' : v === 'pt' ? 'pt' : v === 'fr' ? 'fr' : v === 'ru' ? 'ru' : v === 'hi' ? 'hi' : 'zh');
+  const langPrefixForVersion = (v) => (isEnglishBibleVersion(v) ? 'en' : v === 'ja' ? 'ja' : v === 'ko' ? 'ko' : v === 'fa' ? 'fa' : v === 'ar' ? 'ar' : v === 'he' ? 'he' : v === 'es' ? 'es' : v === 'tr' ? 'tr' : v === 'de' ? 'de' : v === 'my' ? 'my' : v === 'vi' ? 'vi' : v === 'id' ? 'id' : v === 'ms' ? 'ms' : v === 'pt' ? 'pt' : v === 'fr' ? 'fr' : v === 'ru' ? 'ru' : v === 'hi' ? 'hi' : v === 'km' ? 'km' : 'zh');
   const filteredVoicesForVersion = dedupeVoices(availableVoices.filter(vc => (vc.lang || '').toLowerCase().startsWith(langPrefixForVersion(version))));
   // Deduped + disambiguated display options for the voice <select> (fixes the
   // duplicate "Chinese Hong Kong" entries on Android).
@@ -24015,11 +24018,16 @@ const deDict = {
     "（建立專屬題庫不需要階級 —— 登入就可以。）": "कस्टम वचन समूह बनाने के लिए कोई स्तर ज़रूरी नहीं — बस लॉगिन करें।",
   });
 
+  // Khmer starts as an empty dict — fillMissing() below backfills every
+  // string from i18nFillins.js's `km` table, matching how other minimal
+  // language dicts work.
+  const kmDict = {};
+
   const DICT_BY_LANG = {
     he: heDict, fa: faDict, ar: arDict, ja: jaDict, ko: koDict,
     es: esDict, tr: trDict, de: deDict, my: myDict, vi: viDict,
     id: idDict, ms: msDict, zhcn: zhcnDict,
-    pt: ptDict, fr: frDict, ru: ruDict, hi: hiDict,
+    pt: ptDict, fr: frDict, ru: ruDict, hi: hiDict, km: kmDict,
   };
   for (const [lang, entries] of Object.entries(I18N_FILLINS)) {
     fillMissing(DICT_BY_LANG[lang], entries);
@@ -24044,6 +24052,7 @@ const deDict = {
       if (uiLang === 'fr') return 'Activité';
       if (uiLang === 'ru') return 'Активность';
       if (uiLang === 'hi') return 'गतिविधि';
+      if (uiLang === 'km') return 'សកម្មភាព';
       if (uiLang === 'cuvs') return '活动';
       return '活動';
     }
@@ -24064,6 +24073,7 @@ const deDict = {
     if (uiLang === 'fr') return frDict[zh] || en || zh;
     if (uiLang === 'ru') return ruDict[zh] || en || zh;
     if (uiLang === 'hi') return hiDict[zh] || en || zh;
+    if (uiLang === 'km') return kmDict[zh] || en || zh;
     if (uiLang === 'cuvs') return zhcnDict[zh] || zh;
     if (uiLang !== 'zh' && uiLang !== 'cuv' && uiLang !== 'cuvs') return en || zh;
     return zh; // default: 'zh'
@@ -24437,7 +24447,7 @@ const deDict = {
                     verserain
                   </div>
                   <div className="app-brand-version" style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', marginTop: '4px', marginLeft: '2px' }}>
-                    v3.27.15
+                    v3.27.16
                   </div>
                 </div>
                 <div ref={langPickerRef} className="app-lang-control" style={{ position: 'relative' }}>

@@ -94,6 +94,10 @@ export const loadLanguageSets = async (lang) => {
       const m = await import('./verses_hi');
       return { sets: m.VERSE_SETS_HI, verses: m.VERSE_SETS_HI.flatMap(s => s.verses) };
     }
+    case 'km': {
+      const m = await import('./verses_km');
+      return { sets: m.VERSE_SETS_KM, verses: m.VERSE_SETS_KM.flatMap(s => s.verses) };
+    }
     default:
       return { sets: [], verses: [] };
   }

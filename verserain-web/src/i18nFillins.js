@@ -7278,6 +7278,20 @@ export const hi = {
   "教學影片：點「誰在玩」看全球玩家分佈 → 按「3D 地球」→ 拖曳轉動地球。": "ट्यूटोरियल वीडियो: «कौन खेल रहा है» खोलकर वैश्विक खिलाड़ी देखें → «3D ग्लोब» दबाएँ → खींचकर ग्लोब घुमाएँ।",
 };
 
-const I18N_FILLINS = { he, fa, ar, ja, ko, es, tr, de, my, vi, id, ms, zhcn, pt, fr, ru, hi };
+// Khmer — starter set covering the first screen a Khmer user sees
+// (homepage cards + auth). Everything else falls back to English until a
+// native speaker reviews and expands this table.
+export const km = {
+  "每日經文": "ខគម្ពីរប្រចាំថ្ងៃ",
+  "我的園子": "សួនច្បារខ្ញុំ",
+  "🌳 我的園子": "🌳 សួនច្បារខ្ញុំ",
+  "經文題庫": "បណ្ណសារខគម្ពីរ",
+  "團隊競賽": "ការប្រកួតជាក្រុម",
+  "登入": "ចូល",
+  "申請帳號": "ចុះឈ្មោះ",
+  "使用 Google 繼續": "បន្តជាមួយ Google",
+};
+
+const I18N_FILLINS = { he, fa, ar, ja, ko, es, tr, de, my, vi, id, ms, zhcn, pt, fr, ru, hi, km };
 
 export default I18N_FILLINS;

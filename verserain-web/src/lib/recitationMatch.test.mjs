@@ -224,5 +224,6 @@ test('getSpeechLangForVersion maps every version correctly', () => {
   assert.strictEqual(getSpeechLangForVersion('ja'), 'ja-JP');
   assert.strictEqual(getSpeechLangForVersion('he'), 'he-IL');
   assert.strictEqual(getSpeechLangForVersion('cuv'), 'zh-TW');
+  assert.strictEqual(getSpeechLangForVersion('km'), 'km-KH');
   assert.strictEqual(getSpeechLangForVersion('unknown-version'), 'zh-TW');
 });

@@ -47,6 +47,7 @@ const LANGS = {
   he: 'heDict', fa: 'faDict', ar: 'arDict', ja: 'jaDict', ko: 'koDict',
   es: 'esDict', tr: 'trDict', de: 'deDict', my: 'myDict', vi: 'viDict',
   id: 'idDict', ms: 'msDict', cuvs: 'zhcnDict',
+  pt: 'ptDict', fr: 'frDict', ru: 'ruDict', hi: 'hiDict', km: 'kmDict',
 };
 
 // Keys t() answers inline with a per-language switch instead of a dictionary.

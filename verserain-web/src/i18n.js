@@ -16,6 +16,7 @@ import I18N_FILLINS from './i18nFillins.js';
 const TABLE_BY_LANG = {
   he: 'he', fa: 'fa', ar: 'ar', ja: 'ja', ko: 'ko', es: 'es', tr: 'tr',
   de: 'de', my: 'my', vi: 'vi', id: 'id', ms: 'ms', cuvs: 'zhcn',
+  pt: 'pt', fr: 'fr', ru: 'ru', hi: 'hi', km: 'km',
 };
 
 export const SUPPORTED_UI_LANGS = ['zh', 'cuvs', 'en', ...Object.keys(TABLE_BY_LANG).filter((l) => l !== 'cuvs')];
@@ -27,6 +28,7 @@ export const SPEECH_LANG = {
   zh: 'zh-TW', cuvs: 'zh-CN', en: 'en-US', he: 'he-IL', fa: 'fa-IR', ar: 'ar-SA',
   ja: 'ja-JP', ko: 'ko-KR', es: 'es-ES', tr: 'tr-TR', de: 'de-DE', my: 'my-MM',
   vi: 'vi-VN', id: 'id-ID', ms: 'ms-MY',
+  pt: 'pt-BR', fr: 'fr-FR', ru: 'ru-RU', hi: 'hi-IN', km: 'km-KH',
 };
 
 // The user's UI language: a share link's ?lang= wins (so a link opens in the

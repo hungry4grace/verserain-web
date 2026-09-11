@@ -29,5 +29,6 @@ export function getSpeechLangForVersion(v) {
   if (v === 'fr') return 'fr-FR';
   if (v === 'ru') return 'ru-RU';
   if (v === 'hi') return 'hi-IN';
+  if (v === 'km') return 'km-KH';
   return 'zh-TW';
 }
