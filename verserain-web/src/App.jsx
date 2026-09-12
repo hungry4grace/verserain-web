@@ -61,6 +61,24 @@ import { bakeBeautifiedBlob } from './voiceBeautify';
 import { SET_BACKGROUND_THEMES, getSetBackgroundUrl, getSetBackgroundVideoUrl } from './setBackgrounds';
 import QrScanner from 'qr-scanner';
 
+// A pasted Dropbox share link (?dl=0) opens Dropbox's preview page, not the
+// raw image, so it renders broken when dropped straight into an <img> src.
+// Swapping it for ?raw=1 (Dropbox's direct-file parameter) fixes it without
+// making the user remember to edit the URL themselves.
+function normalizeImageUrl(url) {
+  try {
+    const u = new URL(url);
+    if (/(^|\.)dropbox\.com$/i.test(u.hostname)) {
+      u.searchParams.delete('dl');
+      u.searchParams.set('raw', '1');
+      return u.toString();
+    }
+  } catch {
+    // Not a parseable absolute URL — leave it untouched.
+  }
+  return url;
+}
+
 // Quill's default image button opens a file picker and embeds the photo as a
 // base64 data URI directly in the saved HTML — a single normal phone photo
 // easily exceeds Cloudflare Durable Object storage's 128KB per-value limit
@@ -70,7 +88,7 @@ function quillImageUrlHandler() {
   const url = window.prompt('貼上圖片網址 (Paste an image URL):');
   if (!url) return;
   const range = this.quill.getSelection(true) || { index: this.quill.getLength() };
-  this.quill.insertEmbed(range.index, 'image', url, 'user');
+  this.quill.insertEmbed(range.index, 'image', normalizeImageUrl(url.trim()), 'user');
   this.quill.setSelection(range.index + 1);
 }
 
@@ -24431,7 +24449,7 @@ const deDict = {
                     verserain
                   </div>
                   <div className="app-brand-version" style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', marginTop: '4px', marginLeft: '2px' }}>
-                    v3.27.18
+                    v3.27.19
                   </div>
                 </div>
                 <div ref={langPickerRef} className="app-lang-control" style={{ position: 'relative' }}>
