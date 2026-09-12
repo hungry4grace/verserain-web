@@ -2963,6 +2963,10 @@ function VerseSetContinuousRainPlayer({
         overrideVoicesRef.current = nextOverride;
       }
       bumpPersonalVoices();
+      // Same reason saving does this: the set-detail list caches which verses
+      // have recordings, so without it a deleted recording keeps its ⭐ and its
+      // 🎙️ badge until a full page reload.
+      onVoiceRecorded?.();
     } catch (e) {
       console.error('personal voice delete failed', e);
     }
@@ -24455,6 +24459,12 @@ const deDict = {
             onSelectDailyVerse={() => { setContinuousRainSet(null); setMainTab('daily_verse'); }}
             onStop={() => {
               setContinuousRainSet(null);
+              // Coming back to the verse list: re-read which verses have
+              // recordings. The recorder/delete/visibility handlers already
+              // report their own changes, but this also picks up recordings
+              // other people made while this page sat open — and means the
+              // badges can't drift out of sync if some future path forgets.
+              setVoiceRefreshTick(x => x + 1);
             }}
             onSelectTopicSet={(set) => {
               setSelectedSetId(set.id);
@@ -24571,7 +24581,7 @@ const deDict = {
                     verserain
                   </div>
                   <div className="app-brand-version" style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', marginTop: '4px', marginLeft: '2px' }}>
-                    v3.27.23
+                    v3.27.24
                   </div>
                 </div>
                 <div ref={langPickerRef} className="app-lang-control" style={{ position: 'relative' }}>
