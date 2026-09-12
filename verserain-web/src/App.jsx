@@ -6319,22 +6319,6 @@ export default function App() {
       setTimeout(() => setToast(null), 5000);
       return;
     }
-    // Duration cap: bgm loops, so 3 minutes is plenty — keeps listener
-    // downloads small.
-    try {
-      const duration = await new Promise((resolve, reject) => {
-        const probe = new Audio();
-        probe.preload = 'metadata';
-        probe.onloadedmetadata = () => { const d = probe.duration; URL.revokeObjectURL(probe.src); resolve(d); };
-        probe.onerror = () => { URL.revokeObjectURL(probe.src); reject(new Error('unreadable')); };
-        probe.src = URL.createObjectURL(file);
-      });
-      if (Number.isFinite(duration) && duration > 185) {
-        setToast(t('音樂請在 3 分鐘以內(會循環播放,不需要長)', 'Keep music under 3 minutes — it loops, so it doesn\'t need to be long'));
-        setTimeout(() => setToast(null), 5000);
-        return;
-      }
-    } catch { /* metadata unreadable — let the size cap be the guard */ }
     setMusicUploadBusy(true);
     try {
       const setId = ensureEditingSetId();
@@ -24447,7 +24431,7 @@ const deDict = {
                     verserain
                   </div>
                   <div className="app-brand-version" style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', marginTop: '4px', marginLeft: '2px' }}>
-                    v3.27.16
+                    v3.27.17
                   </div>
                 </div>
                 <div ref={langPickerRef} className="app-lang-control" style={{ position: 'relative' }}>
@@ -25105,7 +25089,7 @@ const deDict = {
                               </button>
                               <button type="button" disabled={musicUploadBusy} onClick={() => musicFileInputRef.current?.click()}
                                 style={{ padding: '0.5rem 1rem', borderRadius: 20, border: `2px solid ${String(editingCustomSet.bgMusic || '').startsWith('custom:') ? '#3b82f6' : '#cbd5e1'}`, background: String(editingCustomSet.bgMusic || '').startsWith('custom:') ? '#eff6ff' : '#fefce8', color: '#334155', cursor: 'pointer', fontWeight: 600 }}>
-                                {musicUploadBusy ? `⏳ ${t('上傳中…', 'Uploading…')}` : (String(editingCustomSet.bgMusic || '').startsWith('custom:') ? `🎶 ${t('自訂音樂 ✓(點擊更換)', 'Custom ✓ (replace)')}` : `⬆️ ${t('上傳 MP3(≤3分鐘,≤5MB)', 'Upload MP3 (≤3 min, ≤5MB)')}`)}
+                                {musicUploadBusy ? `⏳ ${t('上傳中…', 'Uploading…')}` : (String(editingCustomSet.bgMusic || '').startsWith('custom:') ? `🎶 ${t('自訂音樂 ✓(點擊更換)', 'Custom ✓ (replace)')}` : `⬆️ ${t('上傳 MP3(≤5MB)', 'Upload MP3 (≤5MB)')}`)}
                               </button>
                               <input ref={musicFileInputRef} type="file" accept="audio/*" style={{ display: 'none' }} onChange={e => { handleMusicUpload(e.target.files?.[0]); e.target.value = ''; }} />
                             </div>
