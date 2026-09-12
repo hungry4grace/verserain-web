@@ -24462,7 +24462,7 @@ const deDict = {
                     verserain
                   </div>
                   <div className="app-brand-version" style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', marginTop: '4px', marginLeft: '2px' }}>
-                    v3.27.21
+                    v3.27.22
                   </div>
                 </div>
                 <div ref={langPickerRef} className="app-lang-control" style={{ position: 'relative' }}>
@@ -25013,15 +25013,6 @@ const deDict = {
                 <div style={{ backgroundColor: '#ffffff', borderRadius: '8px', border: '1px solid #cbd5e1', padding: '2rem', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
                     <h2 style={{ color: '#1e293b', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Crown size={28} /> {t("我的專屬題庫", "My Custom Sets")}</h2>
-                    {/* Premium is a real distinction; level is NOT — creating sets
-                        only needs a login (see canCreateCustomSets). The old
-                        "Lv.{n} 權限解鎖" badge implied a gate that does not exist,
-                        so a new member read its absence as "I'm not allowed yet". */}
-                    {isPremium && (
-                      <div style={{ background: '#f8fafc', border: '1px solid #cbd5e1', padding: '0.3rem 0.6rem', borderRadius: '4px', fontSize: '0.85rem', color: '#fbbf24', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-                        <Star size={16} /> {t("Premium 認證", "Premium Active")}
-                      </div>
-                    )}
                   </div>
 
                   {!canCreateCustomSets ? (
