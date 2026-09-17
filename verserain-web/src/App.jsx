@@ -5883,6 +5883,9 @@ export default function App() {
         if (Notification.permission === 'denied') { setPushStatus('denied'); return; }
         const existing = await reg.pushManager.getSubscription();
         setPushStatus(existing ? 'subscribed' : 'idle');
+        // Backfill the personalCode → subscription index for devices that
+        // subscribed before this existed.
+        if (existing) registerPushCode(existing.toJSON());
       } catch (e) {
         console.error('SW register failed', e);
         setPushStatus('unsupported');
@@ -5890,6 +5893,17 @@ export default function App() {
     })();
     return () => { cancelled = true; };
   }, []);
+
+  // Also index this web-push subscription by personalCode (Redis) so referral
+  // milestone / cheer notifications can reach this device — the daily-push table
+  // is keyed by endpoint and can't be looked up by code.
+  const registerPushCode = (subJson) => {
+    if (!subJson || !subJson.endpoint || !personalCode) return;
+    fetch('/api/save-push-code', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code: personalCode, subscription: subJson }),
+    }).catch(() => {});
+  };
 
   // Wire a subscription up with the backend. Stores it under the user's
   // playerName so the cron sender can find it. Times are encoded in the
@@ -5940,6 +5954,7 @@ export default function App() {
         }),
       });
       if (!res.ok) throw new Error('save-push-subscription failed');
+      registerPushCode(subscription.toJSON());
       setPushStatus('subscribed');
       localStorage.setItem('verserain_push_subscribed', 'true');
       return true;
@@ -7688,6 +7703,15 @@ export default function App() {
       const vParam = params.get('v');
       const textParam = params.get('text');
       const refParam = params.get('ref');
+
+      // ?notify=1 — arrived by tapping a referral push notification: open the
+      // 🔔 panel once the app is up, then strip the param from the URL.
+      if (params.get('notify') === '1') {
+        setShowEncouragePanel(true);
+        const url = new URL(window.location.href);
+        url.searchParams.delete('notify');
+        window.history.replaceState({}, '', url.toString());
+      }
 
       // ?resetToken=… — the single-use link from the 忘記密碼 email. Strip it
       // from the address bar immediately so the token doesn't linger in

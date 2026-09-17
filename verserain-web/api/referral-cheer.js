@@ -1,4 +1,5 @@
 import { Redis } from '@upstash/redis';
+import { sendReferralPush } from './_lib/webpush.js';
 
 // A (the inviter) sends a 讚 / cheer back to referee B for a milestone. Drops a
 // 'cheer' notification into B's personalCode-keyed inbox. Idempotent per
@@ -38,6 +39,14 @@ export default async function handler(req, res) {
     });
     await redis.lpush(key, record);
     await redis.ltrim(key, 0, 49);
+
+    // Also push to the referee's phone (best-effort; never blocks the response).
+    await sendReferralPush(toCode, {
+      title: '👍 VerseRain',
+      body: `${fromName || '邀請你的人'} 給你一個讚，鼓勵你繼續加油！`,
+      url: 'https://www.verserain.com/?notify=1',
+      tag: `verserain-cheer-${fromCode || ''}-${ms}`,
+    }).catch(() => {});
 
     res.status(200).json({ success: true });
   } catch (error) {
