@@ -1,5 +1,6 @@
 import { Redis } from '@upstash/redis';
 import { sendReferralPush } from './_lib/webpush.js';
+import { sendReferralApns } from './_lib/apns.js';
 
 // A (the inviter) sends a 讚 / cheer back to referee B for a milestone. Drops a
 // 'cheer' notification into B's personalCode-keyed inbox. Idempotent per
@@ -41,12 +42,12 @@ export default async function handler(req, res) {
     await redis.ltrim(key, 0, 49);
 
     // Also push to the referee's phone (best-effort; never blocks the response).
-    await sendReferralPush(toCode, {
-      title: '👍 VerseRain',
-      body: `${fromName || '邀請你的人'} 給你一個讚，鼓勵你繼續加油！`,
-      url: 'https://www.verserain.com/?notify=1',
-      tag: `verserain-cheer-${fromCode || ''}-${ms}`,
-    }).catch(() => {});
+    const cheerBody = `${fromName || '邀請你的人'} 給你一個讚，鼓勵你繼續加油！`;
+    const cheerTag = `verserain-cheer-${fromCode || ''}-${ms}`;
+    await Promise.all([
+      sendReferralPush(toCode, { title: '👍 VerseRain', body: cheerBody, url: 'https://www.verserain.com/?notify=1', tag: cheerTag }).catch(() => {}),
+      sendReferralApns(toCode, { title: '👍 VerseRain', body: cheerBody, url: 'https://www.verserain.com/?notify=1', collapseId: cheerTag }).catch(() => {}),
+    ]);
 
     res.status(200).json({ success: true });
   } catch (error) {

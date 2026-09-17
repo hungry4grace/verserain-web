@@ -48,7 +48,8 @@ final class DailyVersePushBridge: NSObject, WKScriptMessageHandler {
             let email = (body["email"] as? String) ?? ""
             let version = (body["version"] as? String) ?? "cuv"
             let hour = (body["hour"] as? Int) ?? 7
-            Task { await self.subscribe(playerName: playerName, email: email, version: version, hour: hour) }
+            let personalCode = (body["personalCode"] as? String) ?? ""
+            Task { await self.subscribe(playerName: playerName, email: email, version: version, hour: hour, personalCode: personalCode) }
         case "unsubscribe":
             Task { await self.unsubscribe() }
         case "status":
@@ -59,7 +60,7 @@ final class DailyVersePushBridge: NSObject, WKScriptMessageHandler {
     }
 
     // MARK: Actions
-    private func subscribe(playerName: String, email: String, version: String, hour: Int) async {
+    private func subscribe(playerName: String, email: String, version: String, hour: Int, personalCode: String) async {
         let center = UNUserNotificationCenter.current()
         let granted = (try? await center.requestAuthorization(options: [.alert, .sound, .badge])) ?? false
         guard granted else {
@@ -73,6 +74,7 @@ final class DailyVersePushBridge: NSObject, WKScriptMessageHandler {
         defaults.set(email, forKey: DailyVersePush.Keys.email)
         defaults.set(version, forKey: DailyVersePush.Keys.version)
         defaults.set(hour, forKey: DailyVersePush.Keys.hour)
+        if !personalCode.isEmpty { defaults.set(personalCode, forKey: DailyVersePush.Keys.personalCode) }
 
         // APNs first: server-sent pushes carry the actual verse text and
         // keep working however long the app stays closed.
@@ -139,6 +141,7 @@ enum DailyVersePush {
         static let email = "dailyVersePush.email"
         static let version = "dailyVersePush.version"
         static let hour = "dailyVersePush.hour"
+        static let personalCode = "dailyVersePush.personalCode"  // referral code, for on-demand pushes
     }
 
     static let partyBase = "https://verserain-party.hungry4grace.partykit.dev/parties/main/global-auth-db"
@@ -192,6 +195,7 @@ enum DailyVersePush {
 
     static func uploadToken(_ token: String) async -> Bool {
         let defaults = UserDefaults.standard
+        let code = defaults.string(forKey: Keys.personalCode) ?? ""
         let payload: [String: Any] = [
             "playerName": defaults.string(forKey: Keys.playerName) ?? "Anonymous",
             "email": defaults.string(forKey: Keys.email) ?? "",
@@ -201,9 +205,18 @@ enum DailyVersePush {
             "hour": {
                 let h = defaults.integer(forKey: Keys.hour)
                 return (1...23).contains(h) ? h : 7
-            }()
+            }(),
+            "personalCode": code
         ]
-        return await post(path: "/save-apns-token", payload: payload)
+        let ok = await post(path: "/save-apns-token", payload: payload)
+        // Also index this token by personalCode (Vercel + Redis) so referral
+        // milestone / cheer notifications can reach this device on demand.
+        // Best-effort: independent of the daily-push registration above.
+        if !code.isEmpty {
+            _ = await postAbsolute(urlString: "https://www.verserain.com/api/save-apns-code",
+                                   payload: ["code": code, "token": token])
+        }
+        return ok
     }
 
     static func deleteToken(_ token: String) async {
@@ -211,7 +224,11 @@ enum DailyVersePush {
     }
 
     private static func post(path: String, payload: [String: Any]) async -> Bool {
-        guard let url = URL(string: partyBase + path),
+        return await postAbsolute(urlString: partyBase + path, payload: payload)
+    }
+
+    private static func postAbsolute(urlString: String, payload: [String: Any]) async -> Bool {
+        guard let url = URL(string: urlString),
               let body = try? JSONSerialization.data(withJSONObject: payload) else { return false }
         var request = URLRequest(url: url)
         request.httpMethod = "POST"

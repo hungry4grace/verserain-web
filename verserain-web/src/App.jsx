@@ -5917,6 +5917,9 @@ export default function App() {
         email: userEmail || '',
         version,
         hour: 7,
+        // Lets the native app index its APNs token by personalCode so referral
+        // milestone / cheer pushes can reach this device (see save-apns-code).
+        personalCode: personalCode || '',
       });
       if (res?.status === 'subscribed') {
         setPushStatus('subscribed');
