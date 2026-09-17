@@ -1,5 +1,6 @@
 import { Redis } from '@upstash/redis';
 import { sendReferralPush } from './_lib/webpush.js';
+import { sendReferralApns } from './_lib/apns.js';
 
 // A referee (B) reached a garden milestone (1 / 10 / 100 trees planted) → drop
 // a notification into the inviter (A)'s personalCode-keyed inbox so A can cheer
@@ -49,12 +50,11 @@ export default async function handler(req, res) {
       : ms >= 10
         ? `${who} 已種下 10 棵樹（10 個經文）！給他一個讚 👍`
         : `${who} 種下了第一棵樹（第一個經文）！給他一個讚 👍`;
-    await sendReferralPush(inviterCode, {
-      title: '🌱 VerseRain',
-      body: bodyText,
-      url: 'https://www.verserain.com/?notify=1',
-      tag: `verserain-ms-${refereeCode || ''}-${ms}`,
-    }).catch(() => {});
+    const tag = `verserain-ms-${refereeCode || ''}-${ms}`;
+    await Promise.all([
+      sendReferralPush(inviterCode, { title: '🌱 VerseRain', body: bodyText, url: 'https://www.verserain.com/?notify=1', tag }).catch(() => {}),
+      sendReferralApns(inviterCode, { title: '🌱 VerseRain', body: bodyText, url: 'https://www.verserain.com/?notify=1', collapseId: tag }).catch(() => {}),
+    ]);
 
     res.status(200).json({ success: true });
   } catch (error) {
