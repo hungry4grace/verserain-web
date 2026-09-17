@@ -27239,13 +27239,13 @@ const deDict = {
                       </div>
                     )}
 
-                    {/* Gamification Invite Block (Unlocked for Lv.2+, Teaser for Lv.1) */}
+                    {/* Invite Block — available to everyone, including brand-new (Lv.1) players */}
                     <div style={{ marginTop: '2rem', padding: '1.5rem', background: '#f8fafc', borderRadius: '12px', border: '1px solid #e2e8f0', textAlign: 'left', position: 'relative', overflow: 'hidden' }}>
-                      <h4 style={{ margin: 0, color: skoolLevel.level >= 2 ? '#10b981' : '#94a3b8', fontSize: '1.3rem', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <h4 style={{ margin: 0, color: '#10b981', fontSize: '1.3rem', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
                         <Mail size={24} /> {t("邀請朋友一起玩", "Invite Friends to Play")}
                       </h4>
 
-                      {skoolLevel.level >= 2 ? (
+                      {(
                         <>
                           <p style={{ margin: 0, color: '#475569', fontSize: '1rem', lineHeight: '1.5', marginBottom: '1.2rem' }}>
                             {t("你的專屬推廣連結：當朋友們透過此連結直接進入加入 VerseRain，並完成他們的第一次背經遊戲，雙方都會自動獲得「推廣點數」獎勵，同時你也將累積推廣大使進度！", "Your personal invite link: When friends load VerseRain via this link and complete their first game, both of you earn bonus points!")}
@@ -27278,18 +27278,6 @@ const deDict = {
                             )}
                           </div>
                         </>
-                      ) : (
-                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '0.8rem' }}>
-                          <p style={{ margin: 0, color: '#64748b', fontSize: '1rem', lineHeight: '1.5' }}>
-                            {t("想要擁有你的個人推薦碼並賺取推廣點數嗎？", "Want to get your personal invite code and earn referral points?")}
-                          </p>
-                          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: '#f1f5f9', padding: '0.6rem 1rem', borderRadius: '8px', border: '1px dashed #cbd5e1' }}>
-                            <Lock size={18} />
-                            <span style={{ color: '#475569', fontSize: '0.95rem' }}>
-                              {t("再結出 ", "Bear ")} <strong>{2 - totalFruits}</strong> {t(" 個果子，達到 Lv.2 即可解鎖個人專屬連結！", " more fruits to reach Lv.2 and unlock your invite link!")}
-                            </span>
-                          </div>
-                        </div>
                       )}
                     </div>
                   </div>
