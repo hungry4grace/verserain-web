@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { expandSameChapterRefs } from './lib/expandSameChapterRefs.js';
-import { Play, Pause, RotateCcw, Heart, Zap, Trophy, Crown, Star, Home, XCircle, Headphones, Music, VolumeX, Search, Share2, Dices, Mic, MicOff, Users, CloudRain, Info, Edit, TreePine, Gamepad2, Map, Settings, Library, Volume2, Shuffle, Swords, ShoppingBasket, Apple, Mail, Lock, Sprout, Leaf, RotateCw, Smartphone, Hourglass, Frown, X, Camera, Square, Copy, ArrowRightLeft, MessageCircle, Languages, ChevronUp, ChevronDown } from 'lucide-react';
+import { Play, Pause, RotateCcw, Heart, Zap, Trophy, Crown, Star, Home, XCircle, Headphones, Music, VolumeX, Search, Share2, Dices, Mic, MicOff, Users, CloudRain, Info, Edit, TreePine, Gamepad2, Map, Settings, Library, Volume2, Shuffle, Swords, ShoppingBasket, Apple, Mail, Lock, Sprout, Leaf, RotateCw, Smartphone, Hourglass, Frown, X, Camera, Square, Copy, ArrowRightLeft, MessageCircle, Languages, ChevronUp, ChevronDown, Check } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import usePartySocket from 'partysocket/react';
 import PartySocket from 'partysocket';
@@ -5993,6 +5993,8 @@ export default function App() {
   };
   const [userEmail, setUserEmail] = useState(() => localStorage.getItem('verserain_player_email') || "");
   const [playerName, setPlayerName] = useState(() => localStorage.getItem('verserain_player_name') || "");
+  // Inline rename in the header — null when not editing, else the draft value.
+  const [editingPlayerName, setEditingPlayerName] = useState(null);
   // Personal invite code. Generated per-device on first run, but once the user
   // logs in we adopt the ACCOUNT's canonical code (returned by the server) so
   // every device shares one code — keeping referral/fruit-point keys aligned.
@@ -24800,11 +24802,52 @@ const deDict = {
                         </button>
                       );
                     })()}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', padding: '0.3rem 0.6rem' }}>
-                      <span style={{ color: '#1e293b', fontWeight: 'bold', fontSize: '0.95rem' }}>{playerName}</span>
-                      {isPremium && <Crown size={14} style={{ color: '#fbbf24' }} />}
-                    </div>
-                    <button onClick={() => { setPlayerName(''); setIsPremium(false); setUserEmail(''); setFavoriteVerseSetIds([]); localStorage.removeItem('verserain_player_name'); localStorage.removeItem('verserain_is_premium'); localStorage.removeItem('verserain_player_email'); localStorage.removeItem('verserain_auth_provider'); localStorage.removeItem('verseRain_gardenData'); setGardenData({}); localStorage.removeItem('verseRain_custom_sets'); localStorage.removeItem('verseRain_custom_sets_owner'); lastPushedPrivateSetsRef.current = ''; setCustomVerseSets([]); }} style={{ background: 'transparent', border: '1px solid #cbd5e1', color: '#64748b', cursor: 'pointer', borderRadius: '4px', padding: '0.3rem 0.6rem', fontSize: '0.85rem' }}>{t("登出", "Logout")}</button>
+                    {editingPlayerName !== null ? (() => {
+                      const savePlayerName = () => {
+                        const val = editingPlayerName.trim();
+                        if (!val) return;
+                        setPlayerName(val);
+                        localStorage.setItem('verserain_player_name', val);
+                        setEditingPlayerName(null);
+                      };
+                      return (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', padding: '0.3rem 0.6rem' }}>
+                        <input
+                          type="text"
+                          autoFocus
+                          maxLength={20}
+                          value={editingPlayerName}
+                          onChange={(e) => setEditingPlayerName(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') savePlayerName();
+                            if (e.key === 'Escape') setEditingPlayerName(null);
+                          }}
+                          style={{ width: '120px', padding: '0.3rem 0.5rem', borderRadius: '4px', border: '1px solid #3b82f6', fontSize: '0.95rem' }}
+                        />
+                        <button
+                          onClick={savePlayerName}
+                          title={t('儲存', 'Save')}
+                          style={{ background: '#3b82f6', color: 'white', border: 'none', borderRadius: '4px', padding: '0.3rem 0.5rem', cursor: 'pointer', display: 'inline-flex', alignItems: 'center' }}
+                        ><Check size={16} /></button>
+                        <button
+                          onClick={() => setEditingPlayerName(null)}
+                          title={t('取消', 'Cancel')}
+                          style={{ background: 'transparent', color: '#64748b', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '0.3rem 0.5rem', cursor: 'pointer', display: 'inline-flex', alignItems: 'center' }}
+                        ><X size={16} /></button>
+                      </div>
+                      );
+                    })() : (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', padding: '0.3rem 0.6rem' }}>
+                        <span style={{ color: '#1e293b', fontWeight: 'bold', fontSize: '0.95rem' }}>{playerName}</span>
+                        {isPremium && <Crown size={14} style={{ color: '#fbbf24' }} />}
+                        <button
+                          onClick={() => setEditingPlayerName(playerName)}
+                          title={t('改暱稱', 'Edit display name')}
+                          style={{ background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer', padding: '0.1rem', display: 'inline-flex', alignItems: 'center' }}
+                        ><Edit size={14} /></button>
+                      </div>
+                    )}
+                    <button onClick={() => { setPlayerName(''); setIsPremium(false); setUserEmail(''); setFavoriteVerseSetIds([]); setEditingPlayerName(null); localStorage.removeItem('verserain_player_name'); localStorage.removeItem('verserain_is_premium'); localStorage.removeItem('verserain_player_email'); localStorage.removeItem('verserain_auth_provider'); localStorage.removeItem('verseRain_gardenData'); setGardenData({}); localStorage.removeItem('verseRain_custom_sets'); localStorage.removeItem('verseRain_custom_sets_owner'); lastPushedPrivateSetsRef.current = ''; setCustomVerseSets([]); }} style={{ background: 'transparent', border: '1px solid #cbd5e1', color: '#64748b', cursor: 'pointer', borderRadius: '4px', padding: '0.3rem 0.6rem', fontSize: '0.85rem' }}>{t("登出", "Logout")}</button>
                   </div>
                 ) : (
                   <>
