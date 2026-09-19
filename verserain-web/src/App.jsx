@@ -5995,6 +5995,9 @@ export default function App() {
   const [playerName, setPlayerName] = useState(() => localStorage.getItem('verserain_player_name') || "");
   // Inline rename in the header — null when not editing, else the draft value.
   const [editingPlayerName, setEditingPlayerName] = useState(null);
+  const [editingPlayerNamePassword, setEditingPlayerNamePassword] = useState('');
+  const [editingPlayerNameError, setEditingPlayerNameError] = useState('');
+  const [savingPlayerName, setSavingPlayerName] = useState(false);
   // Personal invite code. Generated per-device on first run, but once the user
   // logs in we adopt the ACCOUNT's canonical code (returned by the server) so
   // every device shares one code — keeping referral/fruit-point keys aligned.
@@ -24803,37 +24806,103 @@ const deDict = {
                       );
                     })()}
                     {editingPlayerName !== null ? (() => {
-                      const savePlayerName = () => {
+                      // Accounts with a password need it re-entered to confirm
+                      // the change server-side; OAuth accounts (and pure
+                      // guests with no account at all) don't.
+                      const needsPassword = !!userEmail && !localStorage.getItem('verserain_auth_provider');
+                      const cancelEdit = () => {
+                        setEditingPlayerName(null);
+                        setEditingPlayerNamePassword('');
+                        setEditingPlayerNameError('');
+                      };
+                      const savePlayerName = async () => {
                         const val = editingPlayerName.trim();
                         if (!val) return;
-                        setPlayerName(val);
-                        localStorage.setItem('verserain_player_name', val);
-                        setEditingPlayerName(null);
+                        if (!userEmail) {
+                          // No account to sync — this is a local-only guest name.
+                          setPlayerName(val);
+                          localStorage.setItem('verserain_player_name', val);
+                          cancelEdit();
+                          return;
+                        }
+                        if (needsPassword && !editingPlayerNamePassword) {
+                          setEditingPlayerNameError(t('請輸入密碼以確認變更', 'Enter your password to confirm'));
+                          return;
+                        }
+                        setSavingPlayerName(true);
+                        setEditingPlayerNameError('');
+                        try {
+                          const authProvider = localStorage.getItem('verserain_auth_provider') || undefined;
+                          const res = await fetch("https://verserain-party.hungry4grace.partykit.dev/parties/main/global-auth-db/update-profile", {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ email: userEmail, password: needsPassword ? editingPlayerNamePassword : undefined, newName: val, authProvider })
+                          });
+                          const data = await res.json().catch(() => ({}));
+                          if (!res.ok || !data.success) {
+                            setEditingPlayerNameError(data.error || t('改名失敗，請再試一次', 'Rename failed — please try again'));
+                            setSavingPlayerName(false);
+                            return;
+                          }
+                          // Server confirmed — safe to update local state now.
+                          // Doing this only after success (not optimistically)
+                          // is what keeps the name from reverting to the old
+                          // one on the next login.
+                          setPlayerName(val);
+                          localStorage.setItem('verserain_player_name', val);
+                          setSavingPlayerName(false);
+                          cancelEdit();
+                        } catch (e) {
+                          setEditingPlayerNameError(t('網路錯誤，請再試一次', 'Network error — please try again'));
+                          setSavingPlayerName(false);
+                        }
                       };
                       return (
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', padding: '0.3rem 0.6rem' }}>
-                        <input
-                          type="text"
-                          autoFocus
-                          maxLength={20}
-                          value={editingPlayerName}
-                          onChange={(e) => setEditingPlayerName(e.target.value)}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter') savePlayerName();
-                            if (e.key === 'Escape') setEditingPlayerName(null);
-                          }}
-                          style={{ width: '120px', padding: '0.3rem 0.5rem', borderRadius: '4px', border: '1px solid #3b82f6', fontSize: '0.95rem' }}
-                        />
-                        <button
-                          onClick={savePlayerName}
-                          title={t('儲存', 'Save')}
-                          style={{ background: '#3b82f6', color: 'white', border: 'none', borderRadius: '4px', padding: '0.3rem 0.5rem', cursor: 'pointer', display: 'inline-flex', alignItems: 'center' }}
-                        ><Check size={16} /></button>
-                        <button
-                          onClick={() => setEditingPlayerName(null)}
-                          title={t('取消', 'Cancel')}
-                          style={{ background: 'transparent', color: '#64748b', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '0.3rem 0.5rem', cursor: 'pointer', display: 'inline-flex', alignItems: 'center' }}
-                        ><X size={16} /></button>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem', padding: '0.3rem 0.6rem' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                          <input
+                            type="text"
+                            autoFocus
+                            maxLength={20}
+                            disabled={savingPlayerName}
+                            value={editingPlayerName}
+                            onChange={(e) => setEditingPlayerName(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') savePlayerName();
+                              if (e.key === 'Escape') cancelEdit();
+                            }}
+                            style={{ width: '120px', padding: '0.3rem 0.5rem', borderRadius: '4px', border: '1px solid #3b82f6', fontSize: '0.95rem' }}
+                          />
+                          {needsPassword && (
+                            <input
+                              type="password"
+                              disabled={savingPlayerName}
+                              value={editingPlayerNamePassword}
+                              onChange={(e) => setEditingPlayerNamePassword(e.target.value)}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') savePlayerName();
+                                if (e.key === 'Escape') cancelEdit();
+                              }}
+                              placeholder={t('目前密碼', 'Current password')}
+                              style={{ width: '110px', padding: '0.3rem 0.5rem', borderRadius: '4px', border: '1px solid #3b82f6', fontSize: '0.95rem' }}
+                            />
+                          )}
+                          <button
+                            onClick={savePlayerName}
+                            disabled={savingPlayerName}
+                            title={t('儲存', 'Save')}
+                            style={{ background: '#3b82f6', color: 'white', border: 'none', borderRadius: '4px', padding: '0.3rem 0.5rem', cursor: savingPlayerName ? 'default' : 'pointer', opacity: savingPlayerName ? 0.6 : 1, display: 'inline-flex', alignItems: 'center' }}
+                          ><Check size={16} /></button>
+                          <button
+                            onClick={cancelEdit}
+                            disabled={savingPlayerName}
+                            title={t('取消', 'Cancel')}
+                            style={{ background: 'transparent', color: '#64748b', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '0.3rem 0.5rem', cursor: 'pointer', display: 'inline-flex', alignItems: 'center' }}
+                          ><X size={16} /></button>
+                        </div>
+                        {editingPlayerNameError && (
+                          <span style={{ color: '#ef4444', fontSize: '0.75rem', fontWeight: 'bold' }}>{editingPlayerNameError}</span>
+                        )}
                       </div>
                       );
                     })() : (
