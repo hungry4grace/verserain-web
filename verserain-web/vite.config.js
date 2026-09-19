@@ -6,6 +6,10 @@ import dailyVerseHandler from './api/daily-verse.js'
 import esvPassageHandler from './api/esv-passage.js'
 import nivPassageHandler from './api/niv-passage.js'
 import translatePassageHandler from './api/translate-passage.js'
+import referralMilestoneHandler from './api/referral-milestone.js'
+import rewardsHandler from './api/rewards.js'
+import rewardClaimHandler from './api/reward-claim.js'
+import getNotifyHandler from './api/get-notify.js'
 
 // Load .env.local so process.env is available for API handlers in dev
 try {
@@ -72,6 +76,22 @@ export default defineConfig({
           const mockReq = { method: req.method, query: Object.fromEntries(url.searchParams.entries()), body };
           await translatePassageHandler(mockReq, makeMockRes(res));
         });
+
+        // Referral / reward routes — JSON bodies parsed like Vercel does. Without
+        // Upstash env in .env.local they answer with { mocked: true }.
+        const jsonRoute = (path, handler) => server.middlewares.use(path, async (req, res) => {
+          const url = new URL(req.url || '', 'http://127.0.0.1');
+          let raw = '';
+          await new Promise((done) => { req.on('data', (c) => { raw += c; }); req.on('end', done); req.on('error', done); });
+          let body = {};
+          try { body = raw ? JSON.parse(raw) : {}; } catch { body = {}; }
+          const mockReq = { method: req.method, query: Object.fromEntries(url.searchParams.entries()), body };
+          await handler(mockReq, makeMockRes(res));
+        });
+        jsonRoute('/api/referral-milestone', referralMilestoneHandler);
+        jsonRoute('/api/rewards', rewardsHandler);
+        jsonRoute('/api/reward-claim', rewardClaimHandler);
+        jsonRoute('/api/get-notify', getNotifyHandler);
       }
     }
   ],

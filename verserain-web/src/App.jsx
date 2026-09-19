@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { expandSameChapterRefs } from './lib/expandSameChapterRefs.js';
-import { Play, Pause, RotateCcw, Heart, Zap, Trophy, Crown, Star, Home, XCircle, Headphones, Music, VolumeX, Search, Share2, Dices, Mic, MicOff, Users, CloudRain, Info, Edit, TreePine, Gamepad2, Map, Settings, Library, Volume2, Shuffle, Swords, ShoppingBasket, Apple, Mail, Lock, Sprout, Leaf, RotateCw, Smartphone, Hourglass, Frown, X, Camera, Square, Copy, ArrowRightLeft, MessageCircle, Languages, ChevronUp, ChevronDown, Check } from 'lucide-react';
+import { Play, Pause, RotateCcw, Heart, Zap, Trophy, Crown, Star, Home, XCircle, Headphones, Music, VolumeX, Search, Share2, Dices, Mic, MicOff, Users, CloudRain, Info, Edit, TreePine, Gamepad2, Map, Settings, Library, Volume2, Shuffle, Swords, ShoppingBasket, Apple, Mail, Lock, Sprout, Leaf, RotateCw, Smartphone, Hourglass, Frown, X, Camera, Square, Copy, ArrowRightLeft, MessageCircle, Languages, ChevronUp, ChevronDown, Check, Gift } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import usePartySocket from 'partysocket/react';
 import PartySocket from 'partysocket';
@@ -712,7 +712,7 @@ function buildPublicShareUrl(path = '/', params = {}) {
 // push one history entry per step; popstate applies the hash back to state.
 // Only the query string carries share links (?listenSet= …) — those are
 // consumed and scrubbed as before, and every scrub must keep the hash.
-const ROUTE_TABS = ['lobby', 'versesets', 'custom_verses', 'multiplayer', 'daily_verse', 'advanced', 'garden', 'search', 'map', 'manual', 'about', 'accessible', 'bilingual_rain', 'leaderboard'];
+const ROUTE_TABS = ['lobby', 'versesets', 'custom_verses', 'multiplayer', 'daily_verse', 'advanced', 'garden', 'search', 'map', 'manual', 'about', 'accessible', 'bilingual_rain', 'leaderboard', 'rewards_admin'];
 const ROUTE_FLAGS = ['listen', 'edit', 'play', 'room'];
 function parseRoute(hash) {
   const seg = String(hash || '').replace(/^#\/?/, '').split('/').filter(Boolean);
@@ -6739,17 +6739,24 @@ export default function App() {
   const skoolLevel = React.useMemo(() => getSkoolLevel(totalFruits), [totalFruits]);
 
   // ── 推薦里程碑 (referral milestone) ────────────────────────────────────────
-  // When a referred player (B) plants their 1st / 10th / 100th tree, notify the
-  // inviter (A) so A can cheer them on. Milestone = distinct trees in the
-  // garden (treesPlanted). One-shot per milestone via a localStorage latch;
-  // the server also de-dupes. On first run we seed latches for already-reached
-  // milestones so existing installs don't retro-notify their inviter.
-  const REFERRAL_MILESTONES = [1, 10, 100];
+  // When a referred player (B) plants their 1st / 10th / every 100th tree,
+  // notify the inviter (A) so A can cheer them on; the server also turns the
+  // 1st tree into a qualified referral for A and every 100th into a reward for
+  // B. Milestone = distinct trees in the garden (treesPlanted). One-shot per
+  // milestone via a localStorage latch; the server also de-dupes. On first run
+  // we seed latches for already-reached milestones so existing installs don't
+  // retro-notify their inviter.
+  const referralMilestonesUpTo = (trees) => {
+    const list = [1, 10];
+    for (let m = 100; m <= trees; m += 100) list.push(m);
+    return list;
+  };
   useEffect(() => {
     let inviter = null;
     try { inviter = localStorage.getItem('verserain_inviter'); } catch { /* storage off */ }
     if (!inviter || inviter === personalCode) return;
     const trees = personalProgress?.treesPlanted || 0;
+    const REFERRAL_MILESTONES = referralMilestonesUpTo(trees);
     const seeded = (() => { try { return localStorage.getItem('verserain_ms_init'); } catch { return true; } })();
     if (!seeded) {
       // First run: mark milestones already reached as sent (no retro-notify).
@@ -6768,7 +6775,7 @@ export default function App() {
       try { localStorage.setItem(`verserain_ms_${m}_sent`, '1'); } catch { /* ignore */ }
       fetch('/api/referral-milestone', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ inviterCode: inviter, refereeCode: personalCode, refereeName, milestone: m }),
+        body: JSON.stringify({ inviterCode: inviter, refereeCode: personalCode, refereeName, refereeEmail: userEmail || '', milestone: m }),
       }).catch(() => {});
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -8599,6 +8606,69 @@ export default function App() {
     } : prev);
     setToast(t('已送出鼓勵 👍', 'Cheer sent 👍'));
     setTimeout(() => setToast(null), 2500);
+  };
+
+  // ── 獎勵 (rewards) ─────────────────────────────────────────────────────────
+  // A reward lands in the 🔔 inbox as kind:'reward'; the recipient confirms an
+  // email to send it to (→ /api/reward-claim). Admins fulfil it by hand from
+  // the 獎勵管理 page (→ /api/rewards) and the recipient gets kind:'reward_sent'.
+  const rewardLabel = (kind, milestone) => kind === 'invites'
+    ? t('邀請的 {n} 位朋友都開始種樹了', '{n} friends you invited each planted a tree').replace('{n}', milestone)
+    : t('完成了 {n} 個經文', 'completed {n} verses').replace('{n}', milestone);
+  const [rewardClaimEmail, setRewardClaimEmail] = useState({});
+  const [claimedRewards, setClaimedRewards] = useState(() => new Set());
+  const isRewardClaimed = (id) => {
+    if (claimedRewards.has(id)) return true;
+    try { return !!localStorage.getItem(`verserain_reward_claimed_${id}`); } catch { return false; }
+  };
+  const claimReward = async (item) => {
+    const id = item?.rewardId;
+    if (!id) return;
+    const email = String(rewardClaimEmail[id] ?? userEmail ?? '').trim();
+    if (!email) { setToast(t('請輸入要收獎勵的 Email', 'Enter the email to send the reward to')); setTimeout(() => setToast(null), 2500); return; }
+    try {
+      const res = await fetch('/api/reward-claim', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ rewardId: id, code: personalCode, email, name: playerName || '' }),
+      });
+      const d = await res.json().catch(() => ({}));
+      if (!res.ok || !d.success) throw new Error(d.error || res.status);
+      setClaimedRewards(prev => new Set(prev).add(id));
+      try { localStorage.setItem(`verserain_reward_claimed_${id}`, '1'); } catch { /* ignore */ }
+      setToast(t('已登記！獎勵會寄到 {email}', 'Registered! Your reward will go to {email}').replace('{email}', email));
+    } catch (e) {
+      setToast(t('領取失敗：{error}', 'Claim failed: {error}').replace('{error}', String(e?.message || e)));
+    }
+    setTimeout(() => setToast(null), 3500);
+  };
+  // Admin: the reward ledger, loaded when the 獎勵管理 page opens.
+  const [rewardsAdmin, setRewardsAdmin] = useState(null); // { loading, rewards, error } | null
+  const [rewardsAdminFilter, setRewardsAdminFilter] = useState('pending');
+  const [rewardNoteDraft, setRewardNoteDraft] = useState({});
+  useEffect(() => {
+    if (mainTab !== 'rewards_admin' || !isSuperAdmin) return undefined;
+    let cancelled = false;
+    setRewardsAdmin(prev => ({ rewards: prev?.rewards || [], error: '', loading: true }));
+    fetch(`/api/rewards?adminEmail=${encodeURIComponent(userEmail)}`)
+      .then(r => r.json().then(d => ({ ok: r.ok, d })))
+      .then(({ ok, d }) => { if (!cancelled) setRewardsAdmin({ loading: false, rewards: d.rewards || [], error: ok ? '' : String(d.error || 'error') }); })
+      .catch(e => { if (!cancelled) setRewardsAdmin({ loading: false, rewards: [], error: String(e?.message || e) }); });
+    return () => { cancelled = true; };
+  }, [mainTab, isSuperAdmin, userEmail]);
+  const markReward = async (reward, action) => {
+    try {
+      const res = await fetch('/api/rewards', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ adminEmail: userEmail, rewardId: reward.id, action, note: rewardNoteDraft[reward.id] ?? reward.note ?? '' }),
+      });
+      const d = await res.json().catch(() => ({}));
+      if (!res.ok || !d.success) throw new Error(d.error || res.status);
+      setRewardsAdmin(prev => prev ? { ...prev, rewards: prev.rewards.map(r => r.id === d.reward.id ? d.reward : r) } : prev);
+      setToast(action === 'sent' ? t('已標記為寄出，並通知對方 🎁', 'Marked as sent — recipient notified 🎁') : t('已改回待處理', 'Moved back to pending'));
+    } catch (e) {
+      setToast(t('更新失敗：{error}', 'Update failed: {error}').replace('{error}', String(e?.message || e)));
+    }
+    setTimeout(() => setToast(null), 3000);
   };
 
   // Merge the two inboxes (voice encouragement by email, referral notifications
@@ -25324,7 +25394,8 @@ const deDict = {
                     {[
                       { id: 'morningPush', Icon: Mail, label: pushStatus === 'subscribed' ? t('已開啟每日經文推播', 'Daily Verse Push: On') : t('開啟每日經文推播', 'Daily Verse Push'), desc: t('每天上午 7 點手機推播今日經文', 'Get today\'s verse pushed at 7am'), color: '#10b981' },
                       { id: 'about', Icon: Info, label: t('關於我們', 'About'), desc: t('VerseRain 開發資訊', 'Info & Credits'), color: '#14b8a6' },
-                      { id: 'feedback', link: `mailto:hungry4grace@gmail.com?subject=${encodeURIComponent('經文雨 意見回饋（VerseRain Feedback）')}`, Icon: Mail, label: t('意見回饋', 'Feedback'), desc: t('聯絡與建議', 'Bugs & Suggestions'), color: '#ec4899' }
+                      { id: 'feedback', link: `mailto:hungry4grace@gmail.com?subject=${encodeURIComponent('經文雨 意見回饋（VerseRain Feedback）')}`, Icon: Mail, label: t('意見回饋', 'Feedback'), desc: t('聯絡與建議', 'Bugs & Suggestions'), color: '#ec4899' },
+                      ...(isSuperAdmin ? [{ id: 'rewards_admin', Icon: Gift, label: t('獎勵管理', 'Reward Admin'), desc: t('待發送的禮券與獎勵', 'Gift cards & rewards to send'), color: '#f59e0b' }] : [])
                     ].map(item => {
                       const Icon = item.Icon;
                       return (
@@ -27909,6 +27980,81 @@ const deDict = {
                     </div>
                   </div>
 
+                </div>
+              )}
+
+              {mainTab === 'rewards_admin' && (
+                <div style={{ backgroundColor: '#ffffff', borderRadius: '8px', border: '1px solid #cbd5e1', padding: '1.5rem', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.6rem', marginBottom: '1rem' }}>
+                    <h2 style={{ color: '#1e293b', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Gift size={26} /> {t('獎勵管理', 'Reward Admin')}</h2>
+                    <button type="button" onClick={() => setMainTab('advanced')} style={{ background: 'transparent', border: '1px solid #cbd5e1', color: '#64748b', borderRadius: '6px', padding: '0.35rem 0.8rem', cursor: 'pointer', fontSize: '0.85rem' }}>← {t('返回', 'Back')}</button>
+                  </div>
+                  {!isSuperAdmin ? (
+                    <div style={{ color: '#94a3b8', textAlign: 'center', padding: '2rem' }}>{t('僅限管理員', 'Admins only')}</div>
+                  ) : (() => {
+                    const all = rewardsAdmin?.rewards || [];
+                    const pendingCount = all.filter(r => r.status !== 'sent').length;
+                    const shown = all.filter(r => rewardsAdminFilter === 'all' ? true : rewardsAdminFilter === 'sent' ? r.status === 'sent' : r.status !== 'sent');
+                    const statusBadge = (s) => s === 'sent'
+                      ? { text: t('已寄出', 'Sent'), bg: '#dcfce7', fg: '#166534' }
+                      : s === 'claimed'
+                        ? { text: t('已登記 Email', 'Email confirmed'), bg: '#dbeafe', fg: '#1e40af' }
+                        : { text: t('待處理', 'Pending'), bg: '#fef3c7', fg: '#92400e' };
+                    return (
+                      <div>
+                        <p style={{ color: '#64748b', fontSize: '0.9rem', marginTop: 0, lineHeight: 1.6 }}>
+                          {t('玩家完成 100 個經文，或邀請的 10 位朋友都種下第一棵樹時，會出現在這裡。把禮券寄給對方後，按「標記已寄出」通知他。', 'A player appears here when they complete 100 verses, or when 10 friends they invited each plant a first tree. Send the gift card yourself, then tap "Mark as sent" to notify them.')}
+                        </p>
+                        <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem', flexWrap: 'wrap' }}>
+                          {[['pending', t('待處理', 'Pending'), pendingCount], ['sent', t('已寄出', 'Sent'), all.length - pendingCount], ['all', t('全部', 'All'), all.length]].map(([id, label, n]) => (
+                            <button key={id} type="button" onClick={() => setRewardsAdminFilter(id)} style={{ padding: '0.4rem 0.9rem', borderRadius: '20px', border: 'none', background: rewardsAdminFilter === id ? '#f59e0b' : '#e2e8f0', color: rewardsAdminFilter === id ? '#fff' : '#475569', fontWeight: 'bold', cursor: 'pointer', fontSize: '0.85rem' }}>{label} ({n})</button>
+                          ))}
+                        </div>
+                        {rewardsAdmin?.error && <div style={{ color: '#ef4444', fontSize: '0.85rem', marginBottom: '0.8rem' }}>{rewardsAdmin.error}</div>}
+                        {rewardsAdmin?.loading && all.length === 0 && <div style={{ color: '#94a3b8', textAlign: 'center', padding: '1.5rem' }}>{t('載入中…', 'Loading…')}</div>}
+                        {!rewardsAdmin?.loading && shown.length === 0 && <div style={{ color: '#94a3b8', textAlign: 'center', padding: '1.5rem', border: '1px dashed #cbd5e1', borderRadius: '8px' }}>{t('目前沒有項目', 'Nothing here yet')}</div>}
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.7rem' }}>
+                          {shown.map(r => {
+                            const badge = statusBadge(r.status);
+                            const contact = r.contactEmail || r.email || '';
+                            return (
+                              <div key={r.id} style={{ border: '1px solid #e2e8f0', borderRadius: '10px', padding: '0.9rem 1rem', display: 'flex', flexDirection: 'column', gap: '0.5rem', background: r.status === 'sent' ? '#f8fafc' : '#fff' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.6rem', flexWrap: 'wrap' }}>
+                                  <div style={{ minWidth: 0 }}>
+                                    <div style={{ fontWeight: 700, color: '#1e293b', fontSize: '1rem' }}>{r.kind === 'invites' ? '🤝' : '🏞️'} {r.contactName || r.name || t('（未提供名字）', '(no name)')} · {rewardLabel(r.kind, r.milestone)}</div>
+                                    <div style={{ color: '#64748b', fontSize: '0.82rem', marginTop: 3, wordBreak: 'break-all' }}>
+                                      📧 {contact ? <b style={{ color: '#1e293b' }}>{contact}</b> : <span style={{ color: '#ef4444' }}>{t('尚未登記 Email', 'No email yet')}</span>}
+                                      {' · '}{t('代碼', 'code')} <code>{r.code}</code>
+                                      {r.inviterCode ? <> · {t('邀請人', 'invited by')} <code>{r.inviterCode}</code></> : null}
+                                    </div>
+                                    <div style={{ color: '#94a3b8', fontSize: '0.75rem', marginTop: 2 }}>
+                                      {t('達成', 'Earned')} {new Date(r.at).toLocaleString()}
+                                      {r.sentAt ? <> · {t('寄出', 'Sent')} {new Date(r.sentAt).toLocaleString()}{r.sentBy ? ` (${r.sentBy})` : ''}</> : null}
+                                    </div>
+                                  </div>
+                                  <span style={{ background: badge.bg, color: badge.fg, borderRadius: '999px', padding: '0.2rem 0.7rem', fontSize: '0.78rem', fontWeight: 700, whiteSpace: 'nowrap' }}>{badge.text}</span>
+                                </div>
+                                <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
+                                  <input
+                                    type="text"
+                                    value={rewardNoteDraft[r.id] ?? r.note ?? ''}
+                                    onChange={e => setRewardNoteDraft(prev => ({ ...prev, [r.id]: e.target.value }))}
+                                    placeholder={t('備註（例：Starbucks $200，已用 LINE 傳）', 'Note (e.g. Starbucks $200, sent via LINE)')}
+                                    style={{ flex: '1 1 220px', padding: '0.4rem 0.6rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.85rem' }}
+                                  />
+                                  {r.status === 'sent' ? (
+                                    <button type="button" onClick={() => markReward(r, 'unsent')} style={{ background: 'transparent', color: '#64748b', border: '1px solid #cbd5e1', borderRadius: '6px', padding: '0.4rem 0.8rem', cursor: 'pointer', fontSize: '0.85rem' }}>{t('改回待處理', 'Undo')}</button>
+                                  ) : (
+                                    <button type="button" onClick={() => markReward(r, 'sent')} style={{ background: '#10b981', color: '#fff', border: 'none', borderRadius: '6px', padding: '0.45rem 0.9rem', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 700 }}>✓ {t('標記已寄出', 'Mark as sent')}</button>
+                                  )}
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    );
+                  })()}
                 </div>
               )}
 
@@ -30719,6 +30865,53 @@ const deDict = {
                           <div style={{ color: '#334155', fontSize: '0.9rem', lineHeight: 1.45 }}>
                             <b>{it.fromName || t('邀請你的人', 'the one who invited you')}</b>{' '}
                             {t('給你一個讚，鼓勵你繼續加油！', 'sent you a cheer — keep going!')}
+                          </div>
+                          <div style={{ color: '#cbd5e1', fontSize: '0.72rem', marginTop: 2 }}>{new Date(it.at).toLocaleString()}</div>
+                        </div>
+                      </div>
+                    );
+                  }
+                  // Reward earned (me) — confirm an email so the admin can send it.
+                  if (it.kind === 'reward') {
+                    const claimed = isRewardClaimed(it.rewardId);
+                    const draft = rewardClaimEmail[it.rewardId] ?? (userEmail || '');
+                    return (
+                      <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '0.6rem 1.3rem', background: claimed ? 'transparent' : '#fffbeb' }}>
+                        <span style={{ fontSize: '1.2rem', flexShrink: 0 }}>🎁</span>
+                        <div style={{ minWidth: 0, flex: 1 }}>
+                          <div style={{ color: '#334155', fontSize: '0.9rem', lineHeight: 1.45 }}>
+                            <b>{t('恭喜！你{what}，獲得一份獎勵！', 'Congrats! You {what} — you earned a reward!').replace('{what}', rewardLabel(it.rewardKind, it.milestone))}</b>
+                          </div>
+                          {claimed ? (
+                            <div style={{ color: '#16a34a', fontSize: '0.82rem', fontWeight: 600, marginTop: 6 }}>{t('已登記，管理員會盡快把獎勵寄給你 ✓', 'Registered — the admin will send it soon ✓')}</div>
+                          ) : (
+                            <div style={{ marginTop: 6, display: 'flex', flexDirection: 'column', gap: 6 }}>
+                              <div style={{ color: '#64748b', fontSize: '0.8rem' }}>{t('請確認要收獎勵的 Email：', 'Confirm the email to send it to:')}</div>
+                              <div style={{ display: 'flex', gap: 6 }}>
+                                <input
+                                  type="email"
+                                  value={draft}
+                                  onChange={e => setRewardClaimEmail(prev => ({ ...prev, [it.rewardId]: e.target.value }))}
+                                  placeholder="you@example.com"
+                                  style={{ flex: 1, minWidth: 0, padding: '0.35rem 0.5rem', borderRadius: 6, border: '1px solid #cbd5e1', fontSize: '0.85rem' }}
+                                />
+                                <button onClick={() => claimReward(it)} style={{ background: '#f59e0b', color: '#fff', border: 'none', borderRadius: 8, padding: '0.35rem 0.9rem', fontSize: '0.82rem', fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap' }}>{t('領取 🎁', 'Claim 🎁')}</button>
+                              </div>
+                            </div>
+                          )}
+                          <div style={{ color: '#cbd5e1', fontSize: '0.72rem', marginTop: 2 }}>{new Date(it.at).toLocaleString()}</div>
+                        </div>
+                      </div>
+                    );
+                  }
+                  // Reward sent (me) — the admin has sent it.
+                  if (it.kind === 'reward_sent') {
+                    return (
+                      <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '0.6rem 1.3rem' }}>
+                        <span style={{ fontSize: '1.2rem', flexShrink: 0 }}>📬</span>
+                        <div style={{ minWidth: 0 }}>
+                          <div style={{ color: '#334155', fontSize: '0.9rem', lineHeight: 1.45 }}>
+                            {t('你{what}的獎勵已經寄出了！請查看 Email 或訊息 🎁', 'Your reward for having {what} is on its way — check your email or messages 🎁').replace('{what}', rewardLabel(it.rewardKind, it.milestone))}
                           </div>
                           <div style={{ color: '#cbd5e1', fontSize: '0.72rem', marginTop: 2 }}>{new Date(it.at).toLocaleString()}</div>
                         </div>
