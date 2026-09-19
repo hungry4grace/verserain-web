@@ -1229,7 +1229,13 @@ export default class Server {
                      return new Response(JSON.stringify({ error: 'Only the original publisher can update this set' }), { status: 403, headers: corsHeaders });
                   }
                }
-               if (existing && existing.authorName && existing.authorName !== "Anonymous") {
+               // Preserve the original author's byline on every update EXCEPT
+               // when the confirmed owner is the one saving — e.g. after they
+               // rename their display name, their own sets should pick it up.
+               // An admin editing someone else's (or a legacy/unowned) set
+               // must never overwrite the real author's credit with their own.
+               const isOwnerRequest = !!(existing && requesterEmail && existing.ownerEmail === requesterEmail);
+               if (existing && existing.authorName && existing.authorName !== "Anonymous" && !isOwnerRequest) {
                   payload.authorName = existing.authorName;
                }
                if (payload.lastEditorName) {

@@ -25284,8 +25284,38 @@ const deDict = {
 
               {mainTab === 'custom_verses' && (
                 <div style={{ backgroundColor: '#ffffff', borderRadius: '8px', border: '1px solid #cbd5e1', padding: '2rem', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '0.5rem' }}>
                     <h2 style={{ color: '#1e293b', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Crown size={28} /> {t("我的專屬題庫", "My Custom Sets")}</h2>
+                    {canCreateCustomSets && playerName && customVerseSets.some(s => s.authorName && s.authorName !== playerName) && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const stale = customVerseSets.filter(s => s.authorName && s.authorName !== playerName);
+                          if (stale.length === 0) return;
+                          const updated = customVerseSets.map(s => (s.authorName && s.authorName !== playerName) ? { ...s, authorName: playerName } : s);
+                          setCustomVerseSets(updated);
+                          try { localStorage.setItem('verseRain_custom_sets', JSON.stringify(updated)); } catch { /* quota */ }
+                          // Push the rename to the server for already-published
+                          // sets too — a save-time rename only reaches sets the
+                          // user reopens, this catches everything at once.
+                          stale.filter(s => s.isPublished).forEach(s => {
+                            const publishedObj = { ...s, authorName: playerName };
+                            fetch("https://verserain-party.hungry4grace.partykit.dev/parties/main/global-auth-db/custom-sets", {
+                              method: "POST",
+                              headers: { "Content-Type": "application/json" },
+                              body: JSON.stringify({ ...publishedObj, adminEmail: userEmail, adminName: playerName })
+                            }).catch(e => console.error("Author rename sync failed", e));
+                            setPublishedVerseSets(prev => prev.map(p => p.id === s.id ? { ...p, authorName: playerName } : p));
+                          });
+                          setToast(t('已將 {n} 個題庫的作者名稱更新為「{name}」', 'Updated author name to "{name}" on {n} sets').replace('{n}', stale.length).replace('{name}', playerName));
+                          setTimeout(() => setToast(null), 4000);
+                        }}
+                        title={t('把所有題庫的作者名稱都改成目前的暱稱', "Update every set's author name to your current display name")}
+                        style={{ background: '#eff6ff', color: '#1d4ed8', border: '1px dashed #93c5fd', borderRadius: '6px', padding: '0.4rem 0.8rem', fontSize: '0.85rem', fontWeight: 'bold', cursor: 'pointer' }}
+                      >
+                        🔄 {t("更新舊題庫的作者名稱", "Update author name on old sets")}
+                      </button>
+                    )}
                   </div>
 
                   {!canCreateCustomSets ? (
@@ -25834,9 +25864,12 @@ const deDict = {
                                 ...editingCustomSet,
                                 language: version,
                                 id: editingCustomSet.id || `custom-${Date.now()}`,
-                                authorName: (editingCustomSet.authorName && editingCustomSet.authorName !== "Anonymous")
-                                  ? editingCustomSet.authorName
-                                  : (playerName || "Anonymous"),
+                                // Sets opened in this editor are always the
+                                // current user's own — keep the byline live
+                                // so a display-name change (edit-profile
+                                // rename) carries through on the next save
+                                // instead of freezing the old name forever.
+                                authorName: playerName || "Anonymous",
                                 lastEditedAt: new Date().toISOString(),
                                 lastEditorName: playerName || "Anonymous"
                               };
@@ -25857,13 +25890,8 @@ const deDict = {
 
                               // Handle publishing sync
                               if (setObj.isPublished) {
-                                const existingPublishedSet = publishedVerseSets.find(p => p.id === setObj.id);
-                                const originalAuthorName = (existingPublishedSet?.authorName && existingPublishedSet.authorName !== "Anonymous")
-                                  ? existingPublishedSet.authorName
-                                  : ((setObj.authorName && setObj.authorName !== "Anonymous") ? setObj.authorName : (playerName || "Anonymous"));
                                 const publishedObj = {
                                   ...setObj,
-                                  authorName: originalAuthorName,
                                   lastEditorName: playerName || "Anonymous",
                                   lastEditedAt: new Date().toISOString()
                                 };
