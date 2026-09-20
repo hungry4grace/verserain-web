@@ -4887,7 +4887,7 @@ const findVerseByRef = (allVerses, ref) => {
 
 // Memoised normalizeVerseReferenceKey: the fallback above runs it over every
 // verse in a pool, and the same reference strings recur across pools.
-const __verseRefKeyCache = new Map();
+const __verseRefKeyCache = new globalThis.Map(); // `Map` here is the lucide icon — never the builtin
 function verseRefKey(ref) {
   if (!ref) return '';
   let key = __verseRefKeyCache.get(ref);
@@ -24853,7 +24853,7 @@ const deDict = {
                     verserain
                   </div>
                   <div className="app-brand-version" style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', marginTop: '4px', marginLeft: '2px' }}>
-                    v4.0.2
+                    v4.0.3
                   </div>
                 </div>
                 <div ref={langPickerRef} className="app-lang-control" style={{ position: 'relative' }}>
