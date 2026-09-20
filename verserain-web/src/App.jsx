@@ -6724,6 +6724,11 @@ export default function App() {
   const [creatorHistory, setCreatorHistory] = useState([]);
   const [referralHistory, setReferralHistory] = useState([]);
   const [referralHistoryPage, setReferralHistoryPage] = useState(1);
+  // People who joined through my invite: [{ name, joinedAt, referredCount }]
+  // (null while loading) + their garden progress keyed by name (null while loading).
+  const [myReferees, setMyReferees] = useState(null);
+  const [refereeGardenStats, setRefereeGardenStats] = useState(null);
+  const [refereesPage, setRefereesPage] = useState(1);
   const [creatorHistoryPage, setCreatorHistoryPage] = useState(1);
   const HISTORY_PAGE_SIZE = 5;
 
@@ -6752,6 +6757,31 @@ export default function App() {
         setCreatorHistory(agg.creatorHist);
         setReferralHistory(agg.refHist);
       }).catch(e => console.error(e));
+
+      // 我推薦的朋友 — who joined through my invite, how many people they
+      // referred, and their garden progress. Referees are named by playerName,
+      // which is also the garden key, so the card can link to their garden.
+      setMyReferees(null);
+      setRefereeGardenStats(null);
+      setRefereesPage(1);
+      fetch(`/api/get-referees?authors=${encodeURIComponent(authorKeys.join(','))}`)
+        .then(r => r.ok ? r.json() : { referees: [] })
+        .then(async (d) => {
+          const list = Array.isArray(d?.referees) ? d.referees : [];
+          setMyReferees(list);
+          if (!list.length) { setRefereeGardenStats({}); return; }
+          // Trees / fruits live in the PartyKit garden, not Redis; the cached
+          // all-gardens stats cover every player in one call.
+          const g = await fetch('https://verserain-party.hungry4grace.partykit.dev/parties/main/global-auth-db/all-gardens')
+            .then(r => r.ok ? r.json() : null).catch(() => null);
+          const stats = {};
+          for (const r of list) {
+            const s = g?.statsMap?.[r.name];
+            if (s) stats[r.name] = { plants: s.plants || 0, fruits: g?.fruitsMap?.[r.name] || 0 };
+          }
+          setRefereeGardenStats(stats);
+        })
+        .catch(() => { setMyReferees([]); setRefereeGardenStats({}); });
     }
   }, [playerName, personalCode]);
 
@@ -24861,7 +24891,7 @@ const deDict = {
                     verserain
                   </div>
                   <div className="app-brand-version" style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', marginTop: '4px', marginLeft: '2px' }}>
-                    v4.0.4
+                    v4.0.5
                   </div>
                 </div>
                 <div ref={langPickerRef} className="app-lang-control" style={{ position: 'relative' }}>
@@ -28036,6 +28066,60 @@ const deDict = {
                             {t('尚未有任何推薦紀錄。分享邀請碼邀請朋友獲得互惠點數！', 'No referral history yet. Share your invite code to get reciprocity points!')}
                           </div>
                         )}
+                      </div>
+
+                      {/* People I referred: name → their garden, how many they referred, reading progress */}
+                      <div>
+                        <h4 style={{ color: '#0f766e', marginTop: 0, marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <Sprout size={18} /> {t('我推薦的朋友', 'Friends I referred')}
+                          {Array.isArray(myReferees) && myReferees.length > 0 && (
+                            <span style={{ background: '#ccfbf1', color: '#0f766e', borderRadius: '10px', padding: '1px 8px', fontSize: '0.75rem' }}>{myReferees.length}</span>
+                          )}
+                        </h4>
+                        {myReferees === null ? (
+                          <div style={{ padding: '1rem', color: '#94a3b8', fontSize: '0.9rem', textAlign: 'center' }}>{t('載入中…', 'Loading…')}</div>
+                        ) : myReferees.length === 0 ? (
+                          <div style={{ padding: '1.5rem', background: '#fff', border: '1px dashed #cbd5e1', borderRadius: '8px', color: '#94a3b8', textAlign: 'center', fontSize: '0.9rem' }}>
+                            {t('還沒有朋友透過你的邀請加入。', 'No one has joined through your invite yet.')}
+                          </div>
+                        ) : (() => {
+                          const totalPages = Math.ceil(myReferees.length / HISTORY_PAGE_SIZE);
+                          const page = Math.min(refereesPage, totalPages);
+                          const sliced = myReferees.slice((page - 1) * HISTORY_PAGE_SIZE, page * HISTORY_PAGE_SIZE);
+                          const statsLoading = refereeGardenStats === null;
+                          return (
+                            <>
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                {sliced.map((r) => {
+                                  const st = statsLoading ? null : refereeGardenStats[r.name];
+                                  return (
+                                    <div key={r.name} style={{ background: '#fff', padding: '10px 15px', borderRadius: '8px', borderLeft: '4px solid #10b981', boxShadow: '0 1px 2px rgba(0,0,0,0.05)', fontSize: '0.9rem', color: '#475569', display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                                      <div style={{ flex: 1, minWidth: '160px' }}>
+                                        <button type="button" onClick={() => handleViewPlayerGarden(r.name)} title={t('查看園子', 'View garden')} style={{ background: 'none', border: 'none', padding: 0, color: '#0f766e', fontWeight: 'bold', fontSize: '1rem', cursor: 'pointer', textDecoration: 'underline', textUnderlineOffset: '3px' }}>{r.name}</button>
+                                        {r.joinedAt > 0 && <div style={{ fontSize: '0.75rem', color: '#94a3b8', marginTop: '2px' }}>{t('加入於', 'Joined')} {new Date(r.joinedAt).toLocaleDateString()}</div>}
+                                        <div style={{ marginTop: '6px', display: 'flex', gap: '14px', flexWrap: 'wrap', alignItems: 'center' }}>
+                                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}><Users size={14} /> {t('推薦了', 'Referred')} <strong style={{ color: '#0369a1' }}>{r.referredCount}</strong> {t('人', 'people')}</span>
+                                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}><TreePine size={14} /> {statsLoading ? '…' : st ? <><strong style={{ color: '#15803d' }}>{st.plants}</strong> {t('棵樹', 'trees')}</> : t('尚未種樹', 'No trees yet')}</span>
+                                          {st && <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}><Apple size={14} /> <strong style={{ color: '#ea580c' }}>{st.fruits}</strong> {t('果子', 'fruits')}</span>}
+                                        </div>
+                                      </div>
+                                      <button type="button" onClick={() => handleViewPlayerGarden(r.name)} style={{ background: '#ecfdf5', border: '1px solid #a7f3d0', color: '#047857', borderRadius: '8px', padding: '6px 12px', fontWeight: 'bold', cursor: 'pointer', fontSize: '0.85rem', whiteSpace: 'nowrap' }}>{t('查看園子', 'View garden')} →</button>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                              {totalPages > 1 && (
+                                <div style={{ display: 'flex', justifyContent: 'center', gap: '6px', marginTop: '10px' }}>
+                                  <button onClick={() => setRefereesPage(p => Math.max(1, p - 1))} disabled={page <= 1} style={{ padding: '4px 10px', borderRadius: '6px', border: '1px solid #cbd5e1', background: page <= 1 ? '#f1f5f9' : '#fff', color: page <= 1 ? '#94a3b8' : '#334155', cursor: page <= 1 ? 'default' : 'pointer', fontWeight: 'bold' }}>‹</button>
+                                  {Array.from({ length: totalPages }, (_, idx) => (
+                                    <button key={idx} onClick={() => setRefereesPage(idx + 1)} style={{ padding: '4px 10px', borderRadius: '6px', border: 'none', background: page === idx + 1 ? '#0f766e' : '#f1f5f9', color: page === idx + 1 ? '#fff' : '#334155', cursor: 'pointer', fontWeight: 'bold' }}>{idx + 1}</button>
+                                  ))}
+                                  <button onClick={() => setRefereesPage(p => Math.min(totalPages, p + 1))} disabled={page >= totalPages} style={{ padding: '4px 10px', borderRadius: '6px', border: '1px solid #cbd5e1', background: page >= totalPages ? '#f1f5f9' : '#fff', color: page >= totalPages ? '#94a3b8' : '#334155', cursor: page >= totalPages ? 'default' : 'pointer', fontWeight: 'bold' }}>›</button>
+                                </div>
+                              )}
+                            </>
+                          );
+                        })()}
                       </div>
 
                     </div>
