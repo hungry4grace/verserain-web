@@ -4870,9 +4870,59 @@ const findVerseByRef = (allVerses, ref) => {
         });
       }
     }
+
+    // Script/language-agnostic fallback: compare normalized "<bookId>|<c:v>"
+    // keys. The lookup above only knows BIBLE_BOOKS.names/ja/ko, so a
+    // reference planted from 简体 (「诗 111:10」) never matched the 繁體 verse
+    // (「詩 111:10」) — nor any other language's spelling of the same book.
+    if (!target) {
+      const wantKey = verseRefKey(ref);
+      if (wantKey && /^\d+\|/.test(wantKey)) {
+        target = allVerses.find(v => verseRefKey(v.reference) === wantKey);
+      }
+    }
   }
   return target;
 };
+
+// Memoised normalizeVerseReferenceKey: the fallback above runs it over every
+// verse in a pool, and the same reference strings recur across pools.
+const __verseRefKeyCache = new Map();
+function verseRefKey(ref) {
+  if (!ref) return '';
+  let key = __verseRefKeyCache.get(ref);
+  if (key === undefined) {
+    key = normalizeVerseReferenceKey(ref);
+    __verseRefKeyCache.set(ref, key);
+  }
+  return key;
+}
+
+// Bundled verse-set languages the garden searches when a planted reference
+// isn't in the viewer's own sets — the planter may have been on any language.
+// Callers try the viewer's current version first.
+const GARDEN_LOOKUP_LANGS = ['cuv', 'cuvs', 'tw', 'kjv', 'esv', 'niv', 'ko', 'ja', 'fa', 'he', 'es', 'tr', 'de', 'my', 'ar', 'vi', 'id', 'ms', 'pt', 'fr', 'ru', 'hi', 'km'];
+
+// Last resort for a garden cell whose reference is in no bundled set (e.g. a
+// verse the planter added to a custom set): fetch the text live in the
+// viewer's own version and return a minimal verse object the popup and the
+// challenge (startGame only needs reference + text) can use. Null on miss.
+async function fetchGardenVerseOnline(ref, targetVersion) {
+  const key = verseRefKey(ref);
+  const m = /^(\d+)\|(\d+(?::[\d,-]+)?)$/.exec(key || '');
+  if (!m) return null;
+  const bookInfo = BIBLE_BOOKS.find(b => b.id === parseInt(m[1], 10));
+  if (!bookInfo) return null;
+  const sanitized = m[2];
+  try {
+    const text = await fetchEditorVerseText({ bookInfo, sanitized, version: targetVersion });
+    if (!text) return null;
+    const bookName = getBookFullName(bookInfo, targetVersion) || bookInfo.names[0];
+    return { reference: `${bookName} ${sanitized}`, text, fetchedOnline: true };
+  } catch {
+    return null;
+  }
+}
 
 // Title-sort key: strip leading punctuation/quotes/brackets so
 // 「敬拜」/《青少年》/(力量) sort by their first real character instead of
@@ -7381,6 +7431,43 @@ export default function App() {
   }], [version]);
 
   const safeActiveSets = activeVerseSets.length > 0 ? activeVerseSets : dummySet;
+
+  // Resolve a garden cell's planted reference to a verse the viewer can read
+  // and challenge. Order: the viewer's own sets → bundled sets of the viewer's
+  // version → a live fetch in the viewer's version (so a 繁體 viewer sees 繁體
+  // even when the planter used 简体 or a custom verse) → every other bundled
+  // language. Returns { verse, lang }; lang !== version means the verse text
+  // is in another language and the challenge should switch to it.
+  const resolveGardenVerse = async (ref) => {
+    const ownVerses = [...safeActiveSets, ...customVerseSets].flatMap(s => s.verses);
+    const own = findVerseByRef(ownVerses, ref);
+    if (own) return { verse: own, lang: version };
+    setIsLangsLoading(true);
+    try {
+      const loadLang = async (lang) => {
+        let data = loadedLangs[lang];
+        if (!data) {
+          try { data = await loadLanguageSets(lang); } catch { return null; }
+          setLoadedLangs(prev => ({ ...prev, [lang]: data }));
+        }
+        return data;
+      };
+      const mine = await loadLang(version);
+      const inMine = mine && findVerseByRef(mine.verses, ref);
+      if (inMine) return { verse: inMine, lang: version };
+      const online = await fetchGardenVerseOnline(ref, version);
+      if (online) return { verse: online, lang: version };
+      for (const lang of GARDEN_LOOKUP_LANGS) {
+        if (lang === version) continue;
+        const data = await loadLang(lang);
+        const found = data && findVerseByRef(data.verses, ref);
+        if (found) return { verse: found, lang };
+      }
+    } finally {
+      setIsLangsLoading(false);
+    }
+    return { verse: null, lang: version };
+  };
   // favoriteVerseSetIds / favoriteVerseSetIdSet are declared earlier (near the
   // 我的專屬題庫 sort controls) so the "favorites" sort can read them.
   const saveFavoriteVerseSetIds = React.useCallback(async (nextIds) => {
@@ -24766,7 +24853,7 @@ const deDict = {
                     verserain
                   </div>
                   <div className="app-brand-version" style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', marginTop: '4px', marginLeft: '2px' }}>
-                    v4.0.1
+                    v4.0.2
                   </div>
                 </div>
                 <div ref={langPickerRef} className="app-lang-control" style={{ position: 'relative' }}>
@@ -27751,26 +27838,9 @@ const deDict = {
                                                       if (gardenClickTimer.current) { clearTimeout(gardenClickTimer.current); gardenClickTimer.current = null; return; }
                                                       gardenClickTimer.current = setTimeout(async () => {
                                                         gardenClickTimer.current = null;
-                                                        const allCurrentVerses = [...safeActiveSets, ...customVerseSets].flatMap(s => s.verses);
-                                                        let targetVerse = findVerseByRef(allCurrentVerses, cell.ref);
-                                                        let detectedLang = version;
-                                                        if (!targetVerse) {
-                                                          setIsLangsLoading(true);
-                                                          const langKeys = ['kjv', 'cuv', 'cuvs', 'ko', 'ja', 'fa', 'he', 'es', 'tr', 'de', 'my'];
-                                                          for (const lang of langKeys) {
-                                                            if (lang === version) continue;
-                                                            let data = loadedLangs[lang];
-                                                            if (!data) {
-                                                              data = await loadLanguageSets(lang);
-                                                              setLoadedLangs(prev => ({ ...prev, [lang]: data }));
-                                                            }
-                                                            const found = findVerseByRef(data.verses, cell.ref);
-                                                            if (found) { targetVerse = found; detectedLang = lang; break; }
-                                                          }
-                                                          setIsLangsLoading(false);
-                                                        }
+                                                        const { verse: targetVerse, lang: detectedLang } = await resolveGardenVerse(cell.ref);
                                                         setSelectedGardenCell({
-                                                          ref: cell.ref,
+                                                          ref: targetVerse?.reference || cell.ref,
                                                           text: targetVerse?.text || '',
                                                           stage: cell.stage,
                                                           fruits: cell.fruits || 0,
@@ -27788,24 +27858,7 @@ const deDict = {
                                                   onDoubleClick={async () => {
                                                     if (cell) {
                                                       if (gardenClickTimer.current) { clearTimeout(gardenClickTimer.current); gardenClickTimer.current = null; }
-                                                      const allCurrentVerses = [...safeActiveSets, ...customVerseSets].flatMap(s => s.verses);
-                                                      let targetVerse = findVerseByRef(allCurrentVerses, cell.ref);
-                                                      let detectedLang = version;
-                                                      if (!targetVerse) {
-                                                        setIsLangsLoading(true);
-                                                        const langKeys = ['kjv', 'cuv', 'cuvs', 'ko', 'ja', 'fa', 'he', 'es', 'tr', 'de', 'my'];
-                                                        for (const lang of langKeys) {
-                                                          if (lang === version) continue;
-                                                          let data = loadedLangs[lang];
-                                                          if (!data) {
-                                                            data = await loadLanguageSets(lang);
-                                                            setLoadedLangs(prev => ({ ...prev, [lang]: data }));
-                                                          }
-                                                          const found = findVerseByRef(data.verses, cell.ref);
-                                                          if (found) { targetVerse = found; detectedLang = lang; break; }
-                                                        }
-                                                        setIsLangsLoading(false);
-                                                      }
+                                                      const { verse: targetVerse, lang: detectedLang } = await resolveGardenVerse(cell.ref);
                                                       if (targetVerse) {
                                                         setSelectedGardenCell(null);
                                                         if (detectedLang !== version) {
@@ -28301,8 +28354,7 @@ const deDict = {
                                       }
                                       if (!targetVerse) {
                                         setIsLangsLoading(true);
-                                        const langKeys = ['kjv', 'cuv', 'cuvs', 'ko', 'ja', 'fa', 'he', 'es', 'tr', 'de', 'my'];
-                                        for (const lang of langKeys) {
+                                        for (const lang of GARDEN_LOOKUP_LANGS) {
                                           if (lang === version) continue;
                                           let data = loadedLangs[lang];
                                           if (!data) {
@@ -31245,45 +31297,14 @@ const deDict = {
                                                   if (guestGardenClickTimer.current) { clearTimeout(guestGardenClickTimer.current); guestGardenClickTimer.current = null; return; }
                                                   guestGardenClickTimer.current = setTimeout(async () => {
                                                     guestGardenClickTimer.current = null;
-                                                    const allVerses = [...safeActiveSets, ...customVerseSets].flatMap(s => s.verses);
-                                                    let targetVerse = findVerseByRef(allVerses, cell.ref);
-                                                    if (!targetVerse) {
-                                                      setIsLangsLoading(true);
-                                                      const langKeys = ['kjv', 'cuv', 'cuvs', 'ko', 'ja', 'fa', 'he', 'es', 'tr', 'de', 'my'];
-                                                      for (const lang of langKeys) {
-                                                        let data = loadedLangs[lang];
-                                                        if (!data) {
-                                                          data = await loadLanguageSets(lang);
-                                                          setLoadedLangs(prev => ({ ...prev, [lang]: data }));
-                                                        }
-                                                        const found = findVerseByRef(data.verses, cell.ref);
-                                                        if (found) { targetVerse = found; break; }
-                                                      }
-                                                      setIsLangsLoading(false);
-                                                    }
-                                                    setGuestGardenCell({ ref: cell.ref, text: targetVerse?.text || '', stage: cell.stage, fruits: cell.fruits || 0 });
+                                                    const { verse: targetVerse } = await resolveGardenVerse(cell.ref);
+                                                    setGuestGardenCell({ ref: targetVerse?.reference || cell.ref, text: targetVerse?.text || '', stage: cell.stage, fruits: cell.fruits || 0 });
                                                   }, 250);
                                                 }}
                                                 onDoubleClick={async () => {
                                                   if (!cell) return;
                                                   if (guestGardenClickTimer.current) { clearTimeout(guestGardenClickTimer.current); guestGardenClickTimer.current = null; }
-                                                  const allVerses = [...safeActiveSets, ...customVerseSets].flatMap(s => s.verses);
-                                                  let targetVerse = findVerseByRef(allVerses, cell.ref);
-                                                  let detectedLang = version;
-                                                  if (!targetVerse) {
-                                                    setIsLangsLoading(true);
-                                                    const langKeys = ['kjv', 'cuv', 'cuvs', 'ko', 'ja', 'fa', 'he', 'es', 'tr', 'de', 'my'];
-                                                    for (const lang of langKeys) {
-                                                      let data = loadedLangs[lang];
-                                                      if (!data) {
-                                                        data = await loadLanguageSets(lang);
-                                                        setLoadedLangs(prev => ({ ...prev, [lang]: data }));
-                                                      }
-                                                      const found = findVerseByRef(data.verses, cell.ref);
-                                                      if (found) { targetVerse = found; detectedLang = lang; break; }
-                                                    }
-                                                    setIsLangsLoading(false);
-                                                  }
+                                                  const { verse: targetVerse, lang: detectedLang } = await resolveGardenVerse(cell.ref);
                                                   if (targetVerse) {
                                                     setGuestGardenCell(null);
                                                     setViewingPlayerGarden(null);
