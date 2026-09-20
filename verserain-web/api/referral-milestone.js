@@ -33,9 +33,15 @@ export default async function handler(req, res) {
 
     // Server-side idempotency guard (client also latches in localStorage): only
     // the first report of a given milestone for this referee gets through.
-    if (refereeCode) {
-      const added = await redis.sadd(`gamification:ms-sent:${refereeCode}`, String(ms));
-      if (!added) return res.status(200).json({ success: true, duplicate: true });
+    // personalCode is per-DEVICE (and swapped for the account's canonical code
+    // on login), so the same person reporting from a second phone, or after
+    // logging in, arrives with a different code — key on their email too, which
+    // is stable across devices. Either latch already set → duplicate.
+    const emailKey = String(refereeEmail || '').trim().toLowerCase();
+    const latches = [refereeCode && `gamification:ms-sent:${refereeCode}`, emailKey && `gamification:ms-sent:email:${emailKey}`].filter(Boolean);
+    if (latches.length) {
+      const results = await Promise.all(latches.map((k) => redis.sadd(k, String(ms))));
+      if (results.some((added) => !added)) return res.status(200).json({ success: true, duplicate: true });
     }
 
     const key = `gamification:notify:${inviterCode}`;
@@ -66,7 +72,7 @@ export default async function handler(req, res) {
     // re-count a referral or re-award a field.
     const rewards = {};
     if (ms === 1) {
-      rewards.qualifiedReferral = await recordQualifiedReferral(redis, { inviterCode, refereeCode });
+      rewards.qualifiedReferral = await recordQualifiedReferral(redis, { inviterCode, refereeCode, refereeEmail });
     }
     if (ms >= VERSES_PER_REWARD && ms % VERSES_PER_REWARD === 0 && refereeCode) {
       rewards.verses = await createReward(redis, { code: refereeCode, name: refereeName, email: refereeEmail, kind: 'verses', milestone: ms, inviterCode });

@@ -24,9 +24,21 @@ export default async function handler(req, res) {
       redis.lrange(`gamification:notify:${code}`, 0, 49),
       redis.get(`notify-read:${code}`),
     ]);
-    const items = (rows || []).map((s) => {
+    const parsed = (rows || []).map((s) => {
       try { return typeof s === 'string' ? JSON.parse(s) : s; } catch { return null; }
     }).filter(Boolean);
+    // Collapse repeat milestone notices for the same friend (they could be
+    // reported once per device before the guard keyed on email). The list is
+    // newest-first, so the one we keep carries the friend's current code — a
+    // 讚 sent from it reaches the inbox they actually read.
+    const seen = new Set();
+    const items = parsed.filter((it) => {
+      if (it.kind !== 'milestone') return true;
+      const k = `${it.refereeName || it.refereeCode || ''}:${it.milestone}`;
+      if (seen.has(k)) return false;
+      seen.add(k);
+      return true;
+    });
     res.status(200).json({ items, lastReadAt: lastReadAt || '' });
   } catch (error) {
     res.status(500).json({ error: error.message });
