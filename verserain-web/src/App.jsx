@@ -6746,13 +6746,27 @@ export default function App() {
       try { prevCodes = JSON.parse(localStorage.getItem('verserain_prev_personal_codes') || '[]'); } catch { prevCodes = []; }
       const authorKeys = buildFruitAuthorKeys(playerName, personalCode, prevCodes);
 
-      Promise.all(
-        authorKeys.map(key =>
-          fetch(`/api/get-creator-points?author=${encodeURIComponent(key)}&history=true`)
-            .then(r => r.json())
-            .catch(() => null)
-        )
-      ).then((results) => {
+      // Points and referral records live under whatever code/name this person
+      // had when they were written (old name, a code from another phone), so
+      // first link this device's keys to the account — they accumulate across
+      // devices and renames — then read everything through the union so every
+      // device shows the same totals and the same history.
+      const email = (userEmail || '').trim().toLowerCase();
+      const linkStep = email
+        ? fetch('/api/link-identity', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, keys: authorKeys }) }).catch(() => null)
+        : Promise.resolve();
+
+      linkStep.then(() => Promise.all(
+        email
+          ? [fetch(`/api/get-creator-points?author=${encodeURIComponent(authorKeys[0])}&authors=${encodeURIComponent(authorKeys.join(','))}&email=${encodeURIComponent(email)}&history=true`)
+              .then(r => r.json())
+              .catch(() => null)]
+          : authorKeys.map(key =>
+              fetch(`/api/get-creator-points?author=${encodeURIComponent(key)}&history=true`)
+                .then(r => r.json())
+                .catch(() => null)
+            )
+      )).then((results) => {
         const agg = aggregateFruitResults(results);
         setCreatorOnlyPoints(agg.creator);
         setReferralOnlyPoints(agg.referral);
@@ -6764,16 +6778,9 @@ export default function App() {
       // 我推薦的朋友 — who joined through my invite, how many people they
       // referred, and their garden progress. Referees are named by playerName,
       // which is also the garden key, so the card can link to their garden.
-      // Referral records live under whatever code/name the inviter had when
-      // the invite was shared, so first link this device's keys to the account
-      // (they accumulate across devices and renames), then search the union.
       setMyReferees(null);
       setRefereeGardenStats(null);
       setRefereesPage(1);
-      const email = (userEmail || '').trim().toLowerCase();
-      const linkStep = email
-        ? fetch('/api/link-identity', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, keys: authorKeys }) }).catch(() => null)
-        : Promise.resolve();
       const refereesQuery = new URLSearchParams({ authors: authorKeys.join(',') });
       if (email) refereesQuery.set('email', email);
       linkStep
@@ -10473,16 +10480,20 @@ export default function App() {
         const inviter = localStorage.getItem('verserain_inviter');
         const claimed = localStorage.getItem('verserain_invite_claimed');
         if (inviter && inviter !== personalCode && !claimed) {
+          // `claimed` is per device, so the server also dedupes the claim per
+          // account (refereeEmail) — a second phone must not pay the inviter
+          // twice or hand out a second welcome fruit.
+          const refereeEmail = (userEmail || '').trim().toLowerCase() || undefined;
           // Reward the inviter (+1 fruit, +5000 score)
           fetch("/api/submit-referral-point", {
             method: "POST", headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ author: inviter, amount: 1, scoreAmount: 5000, player: currentPlayerName, type: 'referred' })
+            body: JSON.stringify({ author: inviter, amount: 1, scoreAmount: 5000, player: currentPlayerName, type: 'referred', refereeEmail })
           }).catch(e => e);
 
           // Reward the new player (+1 fruit)
           fetch("/api/submit-referral-point", {
             method: "POST", headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ author: personalCode || currentPlayerName, amount: 1, scoreAmount: 0, player: inviter, type: 'invited_by' })
+            body: JSON.stringify({ author: personalCode || currentPlayerName, amount: 1, scoreAmount: 0, player: inviter, type: 'invited_by', refereeEmail })
           }).catch(e => e);
 
           localStorage.setItem('verserain_invite_claimed', 'true');
@@ -24909,7 +24920,7 @@ const deDict = {
                     verserain
                   </div>
                   <div className="app-brand-version" style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', marginTop: '4px', marginLeft: '2px' }}>
-                    v4.0.6
+                    v4.0.7
                   </div>
                 </div>
                 <div ref={langPickerRef} className="app-lang-control" style={{ position: 'relative' }}>
