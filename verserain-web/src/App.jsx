@@ -2077,11 +2077,19 @@ function lookupFullBookId(bookPart) {
   const raw = bookPart;
   const trimmed = bookPart.trim();
   const key = normalizeBookKey(bookPart);
-  return (
+  const direct = (
     HEBREW_FULL_BOOK_ID[raw] ?? HEBREW_FULL_BOOK_ID[trimmed] ?? HEBREW_FULL_BOOK_ID_NORM[key]
     ?? KOREAN_FULL_BOOK_ID[raw] ?? KOREAN_FULL_BOOK_ID[trimmed] ?? KOREAN_FULL_BOOK_ID_NORM[key]
     ?? MULTILANG_FULL_BOOK_ID[raw] ?? MULTILANG_FULL_BOOK_ID[trimmed] ?? MULTILANG_FULL_BOOK_ID_NORM[key]
   );
+  if (direct) return direct;
+  // Modern-Hebrew NT epistles are usually written with the preposition and/or
+  // definite article — 「אל העברים」 / 「העברים」 (to the Hebrews) — while the
+  // table stores the bare 「עברים」. Retry without them so references planted
+  // from a custom Hebrew set still resolve. Real names starting with ה
+  // (הושע, התגלות) were already matched directly above.
+  const bare = trimmed.replace(/^אל\s+/u, '').replace(/^ה(?=[א-ת]{2,})/u, '');
+  return bare !== trimmed ? lookupFullBookId(bare) : undefined;
 }
 
 // Convert a Hebrew gematria string (e.g. "יב" → 12, "כא" → 21) to a number.
@@ -24853,7 +24861,7 @@ const deDict = {
                     verserain
                   </div>
                   <div className="app-brand-version" style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', marginTop: '4px', marginLeft: '2px' }}>
-                    v4.0.3
+                    v4.0.4
                   </div>
                 </div>
                 <div ref={langPickerRef} className="app-lang-control" style={{ position: 'relative' }}>
