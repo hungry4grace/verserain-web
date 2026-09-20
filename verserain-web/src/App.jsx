@@ -8405,10 +8405,15 @@ export default function App() {
       // Forward the referral code from localStorage so the backend can bind
       // the inviter to this account — see [App.jsx:5060] reward flow.
       const inviter = localStorage.getItem('verserain_inviter') || undefined;
+      // This device's referral code: the server binds the first one it sees
+      // as the account's canonical code and returns it, so every device that
+      // signs in with Google/Apple/LINE ends up sharing ONE code (adopted
+      // below) — the same as the password login path.
+      const devicePersonalCode = localStorage.getItem('verserain_personal_code') || undefined;
       const response = await fetch(host + '/oauth-login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ provider, inviter, ...credential })
+        body: JSON.stringify({ provider, inviter, personalCode: devicePersonalCode, ...credential })
       });
       const data = await response.json().catch(() => ({}));
 
