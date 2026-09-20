@@ -98,10 +98,13 @@ export async function saveReward(redis, reward) {
 
 // Called from the milestone report when a referee plants their FIRST tree:
 // counts them as a qualified referral of their inviter, and grants the inviter
-// a reward at every INVITES_PER_REWARD-th qualified referral.
-export async function recordQualifiedReferral(redis, { inviterCode, refereeCode }) {
-  if (!inviterCode || !refereeCode || inviterCode === refereeCode) return { count: 0 };
-  const added = await redis.sadd(qualifiedReferralsKey(inviterCode), refereeCode);
+// a reward at every INVITES_PER_REWARD-th qualified referral. The referee is
+// identified by email when known (stable across devices) and only falls back
+// to their per-device personalCode, so one person can't count twice.
+export async function recordQualifiedReferral(redis, { inviterCode, refereeCode, refereeEmail }) {
+  const refereeId = String(refereeEmail || '').trim().toLowerCase() || refereeCode;
+  if (!inviterCode || !refereeId || inviterCode === refereeCode) return { count: 0 };
+  const added = await redis.sadd(qualifiedReferralsKey(inviterCode), refereeId);
   if (!added) return { count: null, duplicate: true };
   const count = await redis.scard(qualifiedReferralsKey(inviterCode));
   if (count % INVITES_PER_REWARD !== 0) return { count };
