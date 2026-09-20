@@ -6729,6 +6729,9 @@ export default function App() {
   const [myReferees, setMyReferees] = useState(null);
   const [refereeGardenStats, setRefereeGardenStats] = useState(null);
   const [refereesPage, setRefereesPage] = useState(1);
+  const [refereesReload, setRefereesReload] = useState(0); // bump to refetch after linking an old name/code
+  const [linkOldKeyInput, setLinkOldKeyInput] = useState('');
+  const [linkingOldKey, setLinkingOldKey] = useState(false);
   const [creatorHistoryPage, setCreatorHistoryPage] = useState(1);
   const HISTORY_PAGE_SIZE = 5;
 
@@ -6761,10 +6764,20 @@ export default function App() {
       // 我推薦的朋友 — who joined through my invite, how many people they
       // referred, and their garden progress. Referees are named by playerName,
       // which is also the garden key, so the card can link to their garden.
+      // Referral records live under whatever code/name the inviter had when
+      // the invite was shared, so first link this device's keys to the account
+      // (they accumulate across devices and renames), then search the union.
       setMyReferees(null);
       setRefereeGardenStats(null);
       setRefereesPage(1);
-      fetch(`/api/get-referees?authors=${encodeURIComponent(authorKeys.join(','))}`)
+      const email = (userEmail || '').trim().toLowerCase();
+      const linkStep = email
+        ? fetch('/api/link-identity', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, keys: authorKeys }) }).catch(() => null)
+        : Promise.resolve();
+      const refereesQuery = new URLSearchParams({ authors: authorKeys.join(',') });
+      if (email) refereesQuery.set('email', email);
+      linkStep
+        .then(() => fetch(`/api/get-referees?${refereesQuery.toString()}`))
         .then(r => r.ok ? r.json() : { referees: [] })
         .then(async (d) => {
           const list = Array.isArray(d?.referees) ? d.referees : [];
@@ -6783,7 +6796,7 @@ export default function App() {
         })
         .catch(() => { setMyReferees([]); setRefereeGardenStats({}); });
     }
-  }, [playerName, personalCode]);
+  }, [playerName, personalCode, userEmail, refereesReload]);
 
   const localFruits = React.useMemo(() => Object.entries(gardenData || {}).filter(([k]) => k !== '_activity').reduce((sum, [, curr]) => sum + (curr.fruits || 0), 0), [gardenData]);
   const totalFruits = localFruits + creatorPoints;
@@ -8392,10 +8405,15 @@ export default function App() {
       // Forward the referral code from localStorage so the backend can bind
       // the inviter to this account — see [App.jsx:5060] reward flow.
       const inviter = localStorage.getItem('verserain_inviter') || undefined;
+      // This device's referral code: the server binds the first one it sees
+      // as the account's canonical code and returns it, so every device that
+      // signs in with Google/Apple/LINE ends up sharing ONE code (adopted
+      // below) — the same as the password login path.
+      const devicePersonalCode = localStorage.getItem('verserain_personal_code') || undefined;
       const response = await fetch(host + '/oauth-login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ provider, inviter, ...credential })
+        body: JSON.stringify({ provider, inviter, personalCode: devicePersonalCode, ...credential })
       });
       const data = await response.json().catch(() => ({}));
 
@@ -24891,7 +24909,7 @@ const deDict = {
                     verserain
                   </div>
                   <div className="app-brand-version" style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', marginTop: '4px', marginLeft: '2px' }}>
-                    v4.0.5
+                    v4.0.6
                   </div>
                 </div>
                 <div ref={langPickerRef} className="app-lang-control" style={{ position: 'relative' }}>
@@ -25043,6 +25061,11 @@ const deDict = {
                           // Doing this only after success (not optimistically)
                           // is what keeps the name from reverting to the old
                           // one on the next login.
+                          // Keep the old name linked to the account so referrals
+                          // recorded against it still show under the new name.
+                          if (playerName && playerName !== val && userEmail) {
+                            fetch('/api/link-identity', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: userEmail, keys: [playerName] }) }).catch(() => {});
+                          }
                           setPlayerName(val);
                           localStorage.setItem('verserain_player_name', val);
                           setSavingPlayerName(false);
@@ -28120,6 +28143,43 @@ const deDict = {
                             </>
                           );
                         })()}
+                        {/* Referrals are recorded under the code/name the inviter had at the
+                            time; an old name or a code from another device can be linked here. */}
+                        {userEmail && (
+                          <form
+                            onSubmit={async (e) => {
+                              e.preventDefault();
+                              const key = linkOldKeyInput.trim();
+                              if (!key || linkingOldKey) return;
+                              setLinkingOldKey(true);
+                              try {
+                                const r = await fetch('/api/link-identity', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: userEmail, keys: [key] }) });
+                                if (!r.ok) throw new Error('link failed');
+                                setLinkOldKeyInput('');
+                                setRefereesReload(n => n + 1);
+                              } catch {
+                                setToast(t('併入失敗，請再試一次', 'Link failed — please try again'));
+                                setTimeout(() => setToast(null), 4000);
+                              }
+                              setLinkingOldKey(false);
+                            }}
+                            style={{ marginTop: '12px', padding: '10px 12px', background: '#f1f5f9', borderRadius: '8px', fontSize: '0.8rem', color: '#64748b' }}
+                          >
+                            <div style={{ marginBottom: '6px' }}>{t('以前用過別的名字或邀請碼？併進來，舊的推薦紀錄就會出現。', 'Used another name or invite code before? Link it and those referrals will show up.')}</div>
+                            <div style={{ display: 'flex', gap: '6px' }}>
+                              <input
+                                type="text"
+                                value={linkOldKeyInput}
+                                onChange={e => setLinkOldKeyInput(e.target.value)}
+                                placeholder={t('舊名字或邀請碼', 'Old name or invite code')}
+                                maxLength={40}
+                                disabled={linkingOldKey}
+                                style={{ flex: 1, minWidth: 0, padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '0.85rem', background: '#fff' }}
+                              />
+                              <button type="submit" disabled={linkingOldKey || !linkOldKeyInput.trim()} style={{ padding: '6px 14px', borderRadius: '6px', border: 'none', background: linkOldKeyInput.trim() ? '#0f766e' : '#cbd5e1', color: '#fff', fontWeight: 'bold', cursor: linkOldKeyInput.trim() ? 'pointer' : 'default', fontSize: '0.85rem', whiteSpace: 'nowrap' }}>{linkingOldKey ? '…' : t('併入', 'Link')}</button>
+                            </div>
+                          </form>
+                        )}
                       </div>
 
                     </div>

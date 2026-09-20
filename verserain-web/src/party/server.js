@@ -880,6 +880,12 @@ export default class Server {
               // Bind inviter (referral code from ?ref=) to this account so it
               // survives cross-device login — set once, never overwrite.
               const cleanInviter = typeof inviter === 'string' ? inviter.trim() : '';
+              // Canonical personalCode, same rule as /register + /login: the
+              // first device to sign in donates its local code, every later
+              // device adopts it. Without this, Google/Apple/LINE users got a
+              // different referral code on the phone than on the computer, so
+              // their referral history and fruit points split across buckets.
+              const cleanPersonalCode = typeof body.personalCode === 'string' ? body.personalCode.trim() : '';
 
               let user = await this.room.storage.get(`user:${email}`);
               if (!user) {
@@ -895,6 +901,7 @@ export default class Server {
                     createdAt: new Date().toISOString()
                  };
                  if (cleanInviter) user.invitedBy = cleanInviter;
+                 if (cleanPersonalCode) user.personalCode = cleanPersonalCode;
                  await this.room.storage.put(`user:${email}`, user);
               } else {
                  // Existing user — record OAuth identity so future logins can
@@ -906,6 +913,7 @@ export default class Server {
                  if (!user.oauthProvider) { user.oauthProvider = provider; dirty = true; }
                  if (!user.oauthSub) { user.oauthSub = sub; dirty = true; }
                  if (cleanInviter && !user.invitedBy) { user.invitedBy = cleanInviter; dirty = true; }
+                 if (cleanPersonalCode && !user.personalCode) { user.personalCode = cleanPersonalCode; dirty = true; }
                  if (dirty) await this.room.storage.put(`user:${email}`, user);
               }
 
@@ -917,7 +925,8 @@ export default class Server {
                     isPremium: user.isPremium || false,
                     city: user.city,
                     country: user.country,
-                    invitedBy: user.invitedBy || null
+                    invitedBy: user.invitedBy || null,
+                    personalCode: user.personalCode || null
                  }
               }), { status: 200, headers: corsHeaders });
            } catch (e) {
