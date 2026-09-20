@@ -6742,7 +6742,6 @@ export default function App() {
   const [referralOnlyPoints, setReferralOnlyPoints] = useState(0);
   const [creatorHistory, setCreatorHistory] = useState([]);
   const [referralHistory, setReferralHistory] = useState([]);
-  const [referralHistoryPage, setReferralHistoryPage] = useState(1);
   // People who joined through my invite: [{ name, joinedAt, referredCount }]
   // (null while loading) + their garden progress keyed by name (null while loading).
   const [myReferees, setMyReferees] = useState(null);
@@ -24939,7 +24938,7 @@ const deDict = {
                     verserain
                   </div>
                   <div className="app-brand-version" style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', marginTop: '4px', marginLeft: '2px' }}>
-                    v4.0.8
+                    v4.0.9
                   </div>
                 </div>
                 <div ref={langPickerRef} className="app-lang-control" style={{ position: 'relative' }}>
@@ -28065,61 +28064,34 @@ const deDict = {
                       </div>
                     </div>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2rem' }}>
-                      {/* Referrals */}
-                      <div>
-                        <h4 style={{ color: '#0369a1', marginTop: 0, marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                          <Users size={18} /> {t('推薦紀錄', 'Referrals')}
-                        </h4>
-                        {referralHistory && referralHistory.length > 0 ? (() => {
-                          // Group: same player + same type → sum amounts, keep latest timestamp
-                          const grouped = [];
-                          const keyMap = {};
-                          referralHistory.forEach(h => {
-                            const key = `${h.type}::${h.player}`;
-                            if (keyMap[key] !== undefined) {
-                              grouped[keyMap[key]].amount += h.amount;
-                              if (h.timestamp > grouped[keyMap[key]].timestamp) grouped[keyMap[key]].timestamp = h.timestamp;
-                              grouped[keyMap[key]].count = (grouped[keyMap[key]].count || 1) + 1;
-                            } else {
-                              keyMap[key] = grouped.length;
-                              grouped.push({ ...h, count: 1 });
-                            }
-                          });
-                          const totalPages = Math.ceil(grouped.length / HISTORY_PAGE_SIZE);
-                          const page = Math.min(referralHistoryPage, totalPages);
-                          const sliced = grouped.slice((page - 1) * HISTORY_PAGE_SIZE, page * HISTORY_PAGE_SIZE);
-                          return (
-                            <>
-                              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                                {sliced.map((h, i) => (
-                                  <div key={i} style={{ background: '#fff', padding: '10px 15px', borderRadius: '8px', borderLeft: h.type === 'referred' ? '4px solid #10b981' : '4px solid #3b82f6', boxShadow: '0 1px 2px rgba(0,0,0,0.05)', fontSize: '0.9rem', color: '#475569' }}>
-                                    <div style={{ fontSize: '0.75rem', color: '#94a3b8', marginBottom: '4px' }}>{new Date(h.timestamp).toLocaleString()} {h.count > 1 && <span style={{ background: '#e0f2fe', color: '#0369a1', borderRadius: '10px', padding: '1px 7px', fontSize: '0.7rem', fontWeight: 'bold', marginLeft: '4px' }}>×{h.count}</span>}</div>
-                                    {h.type === 'referred' ? (
-                                      <span>{t('推薦了玩家', 'Referred player')} <strong style={{ color: '#0f766e' }}>{h.player}</strong> {t('加入了 VerseRain', 'to VerseRain')} <span style={{ color: '#10b981', fontWeight: 'bold' }}>(+{h.amount} {t('點', 'pts')})</span></span>
-                                    ) : (
-                                      <span>{t('透過', 'Joined via')} <strong style={{ color: '#1d4ed8' }}>{h.player}</strong> {t('的推薦加入', "'s referral")} <span style={{ color: '#3b82f6', fontWeight: 'bold' }}>(+{h.amount} {t('點', 'pts')})</span></span>
-                                    )}
-                                  </div>
-                                ))}
+                    <div>
+                      {/* 我的推薦人 — the invited_by records, grouped by inviter (each device that
+                          claimed the welcome fruit wrote one; the points add up). */}
+                      {(() => {
+                        const byInviter = {};
+                        for (const h of referralHistory || []) {
+                          if (h.type !== 'invited_by' || !h.player) continue;
+                          const cur = byInviter[h.player] || { player: h.player, amount: 0, timestamp: 0 };
+                          cur.amount += h.amount || 0;
+                          if ((h.timestamp || 0) > cur.timestamp) cur.timestamp = h.timestamp;
+                          byInviter[h.player] = cur;
+                        }
+                        const inviters = Object.values(byInviter);
+                        if (!inviters.length) return null;
+                        return (
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '1.25rem' }}>
+                            {inviters.map(inv => (
+                              <div key={inv.player} style={{ background: '#fff', padding: '10px 15px', borderRadius: '8px', borderLeft: '4px solid #3b82f6', boxShadow: '0 1px 2px rgba(0,0,0,0.05)', fontSize: '0.9rem', color: '#475569', display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                                <span style={{ flex: 1 }}>
+                                  {t('我的推薦人', 'Invited by')}：<button type="button" onClick={() => handleViewPlayerGarden(inv.player)} title={t('查看園子', 'View garden')} style={{ background: 'none', border: 'none', padding: 0, color: '#1d4ed8', fontWeight: 'bold', fontSize: '1rem', cursor: 'pointer', textDecoration: 'underline', textUnderlineOffset: '3px' }}>{inv.player}</button>
+                                  {' '}<span style={{ color: '#3b82f6', fontWeight: 'bold' }}>(+{inv.amount} {t('點', 'pts')})</span>
+                                </span>
+                                {inv.timestamp > 0 && <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>{new Date(inv.timestamp).toLocaleDateString()}</span>}
                               </div>
-                              {totalPages > 1 && (
-                                <div style={{ display: 'flex', justifyContent: 'center', gap: '6px', marginTop: '10px' }}>
-                                  <button onClick={() => setReferralHistoryPage(p => Math.max(1, p - 1))} disabled={page <= 1} style={{ padding: '4px 10px', borderRadius: '6px', border: '1px solid #cbd5e1', background: page <= 1 ? '#f1f5f9' : '#fff', color: page <= 1 ? '#94a3b8' : '#334155', cursor: page <= 1 ? 'default' : 'pointer', fontWeight: 'bold' }}>‹</button>
-                                  {Array.from({ length: totalPages }, (_, idx) => (
-                                    <button key={idx} onClick={() => setReferralHistoryPage(idx + 1)} style={{ padding: '4px 10px', borderRadius: '6px', border: 'none', background: page === idx + 1 ? '#0369a1' : '#f1f5f9', color: page === idx + 1 ? '#fff' : '#334155', cursor: 'pointer', fontWeight: 'bold' }}>{idx + 1}</button>
-                                  ))}
-                                  <button onClick={() => setReferralHistoryPage(p => Math.min(totalPages, p + 1))} disabled={page >= totalPages} style={{ padding: '4px 10px', borderRadius: '6px', border: '1px solid #cbd5e1', background: page >= totalPages ? '#f1f5f9' : '#fff', color: page >= totalPages ? '#94a3b8' : '#334155', cursor: page >= totalPages ? 'default' : 'pointer', fontWeight: 'bold' }}>›</button>
-                                </div>
-                              )}
-                            </>
-                          );
-                        })() : (
-                          <div style={{ padding: '1.5rem', background: '#fff', border: '1px dashed #cbd5e1', borderRadius: '8px', color: '#94a3b8', textAlign: 'center', fontSize: '0.9rem' }}>
-                            {t('尚未有任何推薦紀錄。分享邀請碼邀請朋友獲得互惠點數！', 'No referral history yet. Share your invite code to get reciprocity points!')}
+                            ))}
                           </div>
-                        )}
-                      </div>
+                        );
+                      })()}
 
                       {/* People I referred: name → their garden, how many they referred, reading progress */}
                       <div>
@@ -28145,11 +28117,17 @@ const deDict = {
                               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                                 {sliced.map((r) => {
                                   const st = statsLoading ? null : refereeGardenStats[r.name];
+                                  const pts = (referralHistory || []).filter(h => h.type === 'referred' && h.player === r.name).reduce((sum, h) => sum + (h.amount || 0), 0);
                                   return (
                                     <div key={r.name} style={{ background: '#fff', padding: '10px 15px', borderRadius: '8px', borderLeft: '4px solid #10b981', boxShadow: '0 1px 2px rgba(0,0,0,0.05)', fontSize: '0.9rem', color: '#475569', display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
                                       <div style={{ flex: 1, minWidth: '160px' }}>
                                         <button type="button" onClick={() => handleViewPlayerGarden(r.name)} title={t('查看園子', 'View garden')} style={{ background: 'none', border: 'none', padding: 0, color: '#0f766e', fontWeight: 'bold', fontSize: '1rem', cursor: 'pointer', textDecoration: 'underline', textUnderlineOffset: '3px' }}>{r.name}</button>
-                                        {r.joinedAt > 0 && <div style={{ fontSize: '0.75rem', color: '#94a3b8', marginTop: '2px' }}>{t('加入於', 'Joined')} {new Date(r.joinedAt).toLocaleDateString()}</div>}
+                                        {(r.joinedAt > 0 || pts > 0) && (
+                                          <div style={{ fontSize: '0.75rem', color: '#94a3b8', marginTop: '2px' }}>
+                                            {r.joinedAt > 0 && <>{t('加入於', 'Joined')} {new Date(r.joinedAt).toLocaleDateString()}</>}
+                                            {pts > 0 && <span style={{ color: '#10b981', fontWeight: 'bold', marginLeft: r.joinedAt > 0 ? '8px' : 0 }}>+{pts} {t('點', 'pts')}</span>}
+                                          </div>
+                                        )}
                                         <div style={{ marginTop: '6px', display: 'flex', gap: '14px', flexWrap: 'wrap', alignItems: 'center' }}>
                                           <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}><Users size={14} /> {t('推薦了', 'Referred')} <strong style={{ color: '#0369a1' }}>{r.referredCount}</strong> {t('人', 'people')}</span>
                                           <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}><TreePine size={14} /> {statsLoading ? '…' : st ? <><strong style={{ color: '#15803d' }}>{st.plants}</strong> {t('棵樹', 'trees')}</> : t('尚未種樹', 'No trees yet')}</span>
