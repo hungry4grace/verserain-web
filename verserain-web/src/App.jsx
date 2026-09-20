@@ -6087,6 +6087,25 @@ export default function App() {
     setPersonalCode(code);
   }, []);
 
+  // A restored session never goes through /login or /oauth-login again, so a
+  // device that signed in before codes were unified would keep its own random
+  // code forever (phone ≠ computer). On every start-up with a signed-in
+  // account, ask the server for the account's canonical code and adopt it;
+  // an account that has none yet takes this device's code.
+  useEffect(() => {
+    const email = (userEmail || '').trim().toLowerCase();
+    if (!email) return;
+    const deviceCode = localStorage.getItem('verserain_personal_code') || '';
+    fetch('https://verserain-party.hungry4grace.partykit.dev/parties/main/global-auth-db/sync-code', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, personalCode: deviceCode || undefined }),
+    })
+      .then(r => (r.ok ? r.json() : null))
+      .then(d => { if (d?.personalCode) adoptAccountPersonalCode(d.personalCode); })
+      .catch(() => {});
+  }, [userEmail, adoptAccountPersonalCode]);
+
   const playerNameRef = useRef(playerName);
 
   // UI Language — independent of Bible version for scalable i18n
@@ -24920,7 +24939,7 @@ const deDict = {
                     verserain
                   </div>
                   <div className="app-brand-version" style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', marginTop: '4px', marginLeft: '2px' }}>
-                    v4.0.7
+                    v4.0.8
                   </div>
                 </div>
                 <div ref={langPickerRef} className="app-lang-control" style={{ position: 'relative' }}>

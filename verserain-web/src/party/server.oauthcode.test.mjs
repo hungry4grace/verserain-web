@@ -75,4 +75,42 @@ await test('an account that also has a password login shares the same code', asy
   assert.strictEqual(data.user.personalCode, 'RegAAA2222', 'OAuth on a password account adopts the existing code');
 });
 
+
+console.log('\n/sync-code on start-up:');
+
+await test('restored session adopts the account code without logging in again', async () => {
+  const { srv } = makeServer({
+    'user:g@x.com': { email: 'g@x.com', password: null, name: 'Gee', verified: true, oauthProvider: 'google', oauthSub: 'google-sub-1', personalCode: 'PhoneAAA22' },
+  });
+  const data = await json(await srv.onRequest(req('/sync-code', { email: 'G@X.com', personalCode: 'LaptopBBB2' })));
+  assert.strictEqual(data.success, true);
+  assert.strictEqual(data.personalCode, 'PhoneAAA22', 'laptop must be told the phone\'s code');
+});
+
+await test('account without a code takes the first device\'s code', async () => {
+  const { srv, storage } = makeServer({
+    'user:g@x.com': { email: 'g@x.com', password: null, name: 'Gee', verified: true, oauthProvider: 'google', oauthSub: 'google-sub-1' },
+  });
+  const first = await json(await srv.onRequest(req('/sync-code', { email: 'g@x.com', personalCode: 'LaptopBBB2' })));
+  assert.strictEqual(first.personalCode, 'LaptopBBB2');
+  assert.strictEqual(storage.map.get('user:g@x.com').personalCode, 'LaptopBBB2');
+  const second = await json(await srv.onRequest(req('/sync-code', { email: 'g@x.com', personalCode: 'PhoneAAA22' })));
+  assert.strictEqual(second.personalCode, 'LaptopBBB2', 'second device adopts, never overwrites');
+});
+
+await test('sync without a device code returns whatever is bound (or null) and stores nothing', async () => {
+  const { srv, storage } = makeServer({
+    'user:g@x.com': { email: 'g@x.com', password: null, name: 'Gee', verified: true },
+  });
+  const data = await json(await srv.onRequest(req('/sync-code', { email: 'g@x.com' })));
+  assert.strictEqual(data.personalCode, null);
+  assert.strictEqual(storage.map.get('user:g@x.com').personalCode, undefined);
+});
+
+await test('unknown email → 404, missing email → 400', async () => {
+  const { srv } = makeServer();
+  assert.strictEqual((await srv.onRequest(req('/sync-code', { email: 'nobody@x.com', personalCode: 'X' }))).status, 404);
+  assert.strictEqual((await srv.onRequest(req('/sync-code', { personalCode: 'X' }))).status, 400);
+});
+
 console.log(`\n${passed} passed${process.exitCode ? ' (with failures)' : ''}`);

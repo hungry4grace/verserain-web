@@ -1022,6 +1022,33 @@ export default class Server {
            }
         }
 
+        // 3.7. Sync personalCode — a device that restored a saved session never
+        // hits /login or /oauth-login again, so it would keep its own random
+        // code forever. The client calls this on every start-up: the account's
+        // canonical code is returned (and adopted); an account that has none
+        // yet takes this device's code, exactly like the login paths.
+        if (url.pathname.endsWith('/sync-code') && request.method === 'POST') {
+           try {
+              const { email, personalCode } = await request.json();
+              const cleanEmail = String(email || '').toLowerCase().trim();
+              const cleanPersonalCode = typeof personalCode === 'string' ? personalCode.trim() : '';
+              if (!cleanEmail) {
+                 return new Response(JSON.stringify({ error: 'email required' }), { status: 400, headers: corsHeaders });
+              }
+              const user = await this.room.storage.get(`user:${cleanEmail}`);
+              if (!user) {
+                 return new Response(JSON.stringify({ error: 'User not found' }), { status: 404, headers: corsHeaders });
+              }
+              if (!user.personalCode && cleanPersonalCode) {
+                 user.personalCode = cleanPersonalCode;
+                 await this.room.storage.put(`user:${cleanEmail}`, user);
+              }
+              return new Response(JSON.stringify({ success: true, personalCode: user.personalCode || null }), { status: 200, headers: corsHeaders });
+           } catch {
+              return new Response(JSON.stringify({ error: 'Failed to sync code' }), { status: 500, headers: corsHeaders });
+           }
+        }
+
         // 3.8. Forgot Password
         if (url.pathname.endsWith('/forgot-password')) {
            try {
