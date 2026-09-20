@@ -11,6 +11,7 @@ import rewardsHandler from './api/rewards.js'
 import rewardClaimHandler from './api/reward-claim.js'
 import getNotifyHandler from './api/get-notify.js'
 import getRefereesHandler from './api/get-referees.js'
+import linkIdentityHandler from './api/link-identity.js'
 
 // Load .env.local so process.env is available for API handlers in dev
 try {
@@ -94,6 +95,7 @@ export default defineConfig({
         jsonRoute('/api/reward-claim', rewardClaimHandler);
         jsonRoute('/api/get-notify', getNotifyHandler);
         jsonRoute('/api/get-referees', getRefereesHandler);
+        jsonRoute('/api/link-identity', linkIdentityHandler);
       }
     }
   ],
