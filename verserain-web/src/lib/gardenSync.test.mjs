@@ -4,6 +4,7 @@ import {
   mergeGardens, stampTodayLogin, classifyGardenResponse,
   decideGardenSync, buildFruitAuthorKeys, aggregateFruitResults,
   canonicalGardenKey, findGardenKey, dedupeGarden, repackGardenCells, tidyGarden,
+  isTestFixtureRef, dropTestFixtures,
 } from './gardenSync.js';
 
 const TODAY = '2026-06-16';
@@ -202,3 +203,39 @@ await test('tidyGarden: dedupe first (frees cells), then repack; same result fro
 });
 
 console.log(`\n${passed} assertions passed.`);
+
+console.log('test-fixture trees:');
+
+await test('isTestFixtureRef matches only the injected "FakeVerse N" keys', async () => {
+  assert.ok(isTestFixtureRef('FakeVerse 0'));
+  assert.ok(isTestFixtureRef('FakeVerse 153'));
+  assert.ok(!isTestFixtureRef('FakeVerse'));
+  assert.ok(!isTestFixtureRef('fakeverse 1'));
+  assert.ok(!isTestFixtureRef('John 3:16'));
+  assert.ok(!isTestFixtureRef('約翰福音 3:16'));
+  assert.ok(!isTestFixtureRef('_activity'));
+  assert.ok(!isTestFixtureRef(null));
+});
+
+await test('dropTestFixtures removes fixtures, keeps real trees and _activity', async () => {
+  const gd = {
+    'John 3:16': { gridIndex: 0, stage: 3, fruits: 1 },
+    'FakeVerse 0': { gridIndex: 1, stage: 9, fruits: 4 },
+    'FakeVerse 12': { gridIndex: 2, stage: 1, fruits: 0 },
+    _activity: { '2026-06-16': 100 },
+  };
+  const { garden, dropped } = dropTestFixtures(gd);
+  assert.deepStrictEqual(dropped.sort(), ['FakeVerse 0', 'FakeVerse 12']);
+  assert.deepStrictEqual(Object.keys(garden).sort(), ['John 3:16', '_activity']);
+  assert.deepStrictEqual(garden._activity, { '2026-06-16': 100 });
+});
+
+await test('tidyGarden drops fixtures before dedupe/repack so they never take a cell', async () => {
+  const gd = {
+    'FakeVerse 0': { gridIndex: 0, stage: 9, fruits: 4 },
+    'John 3:16': { gridIndex: 0, stage: 2, fruits: 0 },
+  };
+  const { garden } = tidyGarden(gd, (r) => r);
+  assert.deepStrictEqual(Object.keys(garden), ['John 3:16']);
+  assert.strictEqual(garden['John 3:16'].gridIndex, 0, 'real tree keeps cell 0, fixture did not push it');
+});

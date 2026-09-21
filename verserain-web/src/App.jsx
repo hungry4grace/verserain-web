@@ -2145,7 +2145,12 @@ function normalizeVerseReferenceKey(reference = '') {
   // gershayim on one side, digits on the other. The earlier version demanded
   // letters on BOTH sides and no gershayim, so that shape returned '' and the
   // bilingual secondary silently rendered nothing at all.
-  const heRefMatch = value.match(/^(.+?)\s+(\S+)\s*[:׃]\s*(\S+)$/u);
+  //
+  // Printed Hebrew Bibles separate chapter and verse with a comma rather than
+  // a colon (「דברים ל"ב, ב」 = Deuteronomy 32:2), and a custom set can carry
+  // that spelling into the garden, so the comma is accepted too. Only a Hebrew
+  // book name gets past the lookup below, so 「Genesis 1:1, 3」 is unaffected.
+  const heRefMatch = value.match(/^(.+?)\s+(\S+)\s*[:׃,]\s*(\S+)$/u);
   if (heRefMatch) {
     const bookRaw = heRefMatch[1].trim();
     const bookId = HEBREW_FULL_BOOK_ID[bookRaw] ?? BIBLE_BOOKS.find(b => b.he === bookRaw)?.id;
@@ -25056,7 +25061,7 @@ const deDict = {
                     verserain
                   </div>
                   <div className="app-brand-version" style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', marginTop: '4px', marginLeft: '2px' }}>
-                    v4.0.15
+                    v4.0.17
                   </div>
                 </div>
                 <div ref={langPickerRef} className="app-lang-control" style={{ position: 'relative' }}>
