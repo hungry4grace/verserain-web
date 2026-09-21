@@ -6,7 +6,7 @@ import usePartySocket from 'partysocket/react';
 import PartySocket from 'partysocket';
 import QRCode from 'qrcode';
 import { QRCodeSVG } from 'qrcode.react';
-import { classifyGardenResponse, decideGardenSync, buildFruitAuthorKeys, aggregateFruitResults, dedupeGarden, findGardenKey } from './lib/gardenSync.js';
+import { classifyGardenResponse, decideGardenSync, buildFruitAuthorKeys, aggregateFruitResults, tidyGarden, findGardenKey } from './lib/gardenSync.js';
 import { voiceId, voiceMatchesSavedKey, dedupeVoices, buildVoiceOptions } from './lib/voicePicker.js';
 import { splitVersePhrases } from './lib/phraseSplitter.js';
 import { stripBollsMarkup, stripLeadingVerseNumeral } from './lib/bibleTextMarkup.js';
@@ -6191,8 +6191,8 @@ export default function App() {
       // Fold duplicate trees after the merge (the cloud copy may still hold
       // both spellings); `mergedInto` tells the server which keys to drop so
       // its own field-level merge doesn't resurrect them.
-      const { garden, mergedInto, merged } = dedupeGarden(decision.garden, verseRefKey);
-      if (merged) console.info(`[garden-sync] merged ${merged} duplicate tree(s)`);
+      const { garden, mergedInto, merged, moved } = tidyGarden(decision.garden, verseRefKey);
+      if (merged || moved) console.info(`[garden-sync] merged ${merged} duplicate tree(s), moved ${moved} to free cells`);
       localStorage.setItem('verseRain_gardenData', JSON.stringify(garden));
       setGardenData(garden);
       if (decision.shouldPushToCloud) {
@@ -6740,8 +6740,8 @@ export default function App() {
 
   // Garden data: keyed by verseRef, each slot has { gridIndex, stage (1-10), fruits, setId }
   const [gardenData, setGardenData] = useState(() => {
-    // Fold duplicate trees (same verse, different spelling) on the way in.
-    try { return dedupeGarden(JSON.parse(localStorage.getItem('verseRain_gardenData')) || {}, verseRefKey).garden; } catch { return {}; }
+    // Fold duplicate trees and give every tree its own cell on the way in.
+    try { return tidyGarden(JSON.parse(localStorage.getItem('verseRain_gardenData')) || {}, verseRefKey).garden; } catch { return {}; }
   });
 
   const [creatorPoints, setCreatorPoints] = useState(0);
@@ -6944,7 +6944,7 @@ export default function App() {
         } catch (e) {}
       }
       if (data.success) {
-        setViewingPlayerGarden({ playerName: name, gardenData: dedupeGarden(data.gardenData, verseRefKey).garden, creatorPoints: creatorPts, referralPoints: refPts, loading: false });
+        setViewingPlayerGarden({ playerName: name, gardenData: tidyGarden(data.gardenData, verseRefKey).garden, creatorPoints: creatorPts, referralPoints: refPts, loading: false });
       } else {
         setViewingPlayerGarden({ playerName: name, gardenData: {}, creatorPoints: creatorPts, referralPoints: refPts, loading: false, error: t('該玩家尚未分享園地', 'This player has not shared their garden yet') });
       }
@@ -28106,7 +28106,7 @@ const deDict = {
                                             } catch (e) {}
                                           }
                                           if (data.success) {
-                                            setViewingPlayerGarden({ playerName: name, gardenData: dedupeGarden(data.gardenData, verseRefKey).garden, creatorPoints: creatorPts, referralPoints: refPts, loading: false });
+                                            setViewingPlayerGarden({ playerName: name, gardenData: tidyGarden(data.gardenData, verseRefKey).garden, creatorPoints: creatorPts, referralPoints: refPts, loading: false });
                                           } else {
                                             setViewingPlayerGarden({ playerName: name, gardenData: {}, creatorPoints: creatorPts, referralPoints: refPts, loading: false, error: t('該玩家尚未分享園地', 'This player has not shared their garden yet') });
                                           }

@@ -112,6 +112,55 @@ export function dedupeGarden(gd, keyFn) {
   return { garden: out, mergedInto, merged: Object.keys(mergedInto).length };
 }
 
+// Every tree gets its own cell. Older data (and merges of gardens planted on
+// several devices, each numbering from 0) can hold many trees on the same
+// gridIndex — the field draws one per cell, so the rest were invisible — or
+// none at all. The tree with the most progress keeps its cell; the others
+// move, in a deterministic order, to the lowest free cells so every device
+// computes the same layout. Returns { garden, moved: count }.
+export function repackGardenCells(gd) {
+  const out = { ...(gd || {}) };
+  const entries = [];
+  for (const [k, v] of Object.entries(out)) {
+    if (k === '_activity' || !v || typeof v !== 'object') continue;
+    const gi = Number(v.gridIndex);
+    entries.push({ k, v, gi: Number.isFinite(gi) && gi >= 0 ? Math.floor(gi) : -1 });
+  }
+  const byCell = new Map();
+  for (const e of entries) {
+    if (e.gi < 0) continue;
+    if (!byCell.has(e.gi)) byCell.set(e.gi, []);
+    byCell.get(e.gi).push(e);
+  }
+  const rank = (a, b) => ((b.v.stage || 0) - (a.v.stage || 0)) || ((b.v.fruits || 0) - (a.v.fruits || 0)) || a.k.localeCompare(b.k);
+  const used = new Set();
+  const movers = [];
+  for (const [gi, list] of byCell) {
+    list.sort(rank);
+    used.add(gi);
+    for (const e of list.slice(1)) movers.push(e);
+  }
+  for (const e of entries) if (e.gi < 0) movers.push(e);
+  if (!movers.length) return { garden: out, moved: 0 };
+  const ord = (e) => (e.gi < 0 ? Infinity : e.gi); // cell-less entries go last
+  movers.sort((a, b) => (ord(a) - ord(b)) || a.k.localeCompare(b.k));
+  let next = 0;
+  for (const e of movers) {
+    while (used.has(next)) next++;
+    used.add(next);
+    out[e.k] = { ...e.v, gridIndex: next };
+  }
+  return { garden: out, moved: movers.length };
+}
+
+// Everything the garden does on the way in: fold duplicate trees, then give
+// every tree its own cell. Idempotent.
+export function tidyGarden(gd, keyFn) {
+  const d = dedupeGarden(gd, keyFn);
+  const r = repackGardenCells(d.garden);
+  return { garden: r.garden, mergedInto: d.mergedInto, merged: d.merged, moved: r.moved };
+}
+
 // Stamp today's login activity (>= 100) without lowering an existing value.
 export function stampTodayLogin(gd, todayStr) {
   const day = todayStr || new Date().toLocaleDateString('en-CA');

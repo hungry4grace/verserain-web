@@ -1870,3 +1870,14 @@ textarea {
   100% { opacity: 1; transform: translateY(0); }
 }
 .garden-field-enter { animation: gardenFieldEnter 0.18s ease-out; }
+
+/* Garden list mode: a box about ten rows tall with an always-visible scrollbar
+   (iOS hides overlay scrollbars unless ::-webkit-scrollbar is styled). */
+.garden-list-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: #94a3b8 #f1f5f9;
+  scrollbar-gutter: stable;
+}
+.garden-list-scroll::-webkit-scrollbar { -webkit-appearance: none; width: 8px; }
+.garden-list-scroll::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 4px; }
+.garden-list-scroll::-webkit-scrollbar-thumb { background: #94a3b8; border-radius: 4px; }

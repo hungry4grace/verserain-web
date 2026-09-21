@@ -3,7 +3,7 @@ import assert from 'node:assert';
 import {
   mergeGardens, stampTodayLogin, classifyGardenResponse,
   decideGardenSync, buildFruitAuthorKeys, aggregateFruitResults,
-  canonicalGardenKey, findGardenKey, dedupeGarden,
+  canonicalGardenKey, findGardenKey, dedupeGarden, repackGardenCells, tidyGarden,
 } from './gardenSync.js';
 
 const TODAY = '2026-06-16';
@@ -151,6 +151,54 @@ await test('findGardenKey: exact key, then same verse under another spelling, el
   assert.strictEqual(findGardenKey(gd, 'Matthew 9:14', keyFn), null);
   assert.strictEqual(findGardenKey(gd, '_activity', keyFn), null, 'never resolves to the activity map');
   assert.strictEqual(findGardenKey(gd, '  ', keyFn), null);
+});
+
+console.log('\none tree per cell (格子編號重複):');
+
+await test('repackGardenCells: the strongest tree keeps the cell, the rest move to the lowest free cells', () => {
+  const gd = {
+    'A 1:1': { gridIndex: 0, stage: 3, fruits: 0 },
+    'B 1:1': { gridIndex: 0, stage: 10, fruits: 2 },
+    'C 1:1': { gridIndex: 0, stage: 3, fruits: 1 },
+    'D 1:1': { gridIndex: 2, stage: 1, fruits: 0 },
+    'E 1:1': { gridIndex: 2, stage: 1, fruits: 0 },
+    'F 1:1': { stage: 5, fruits: 0 },            // legacy: no cell at all → was invisible
+    _activity: { '2026-09-20': 100 },
+  };
+  const { garden, moved } = repackGardenCells(gd);
+  assert.strictEqual(moved, 4);
+  assert.strictEqual(garden['B 1:1'].gridIndex, 0, 'highest stage keeps cell 0');
+  assert.strictEqual(garden['D 1:1'].gridIndex, 2, 'tie → key order keeps the cell');
+  // movers (A, C from cell 0; E from cell 2) in (old cell, key) order take 1, 3, 4; the cell-less F goes last
+  assert.strictEqual(garden['A 1:1'].gridIndex, 1);
+  assert.strictEqual(garden['C 1:1'].gridIndex, 3);
+  assert.strictEqual(garden['E 1:1'].gridIndex, 4);
+  assert.strictEqual(garden['F 1:1'].gridIndex, 5);
+  assert.deepStrictEqual(garden['B 1:1'], { gridIndex: 0, stage: 10, fruits: 2 }, 'progress untouched');
+  assert.deepStrictEqual(garden._activity, { '2026-09-20': 100 });
+  assert.strictEqual(gd['A 1:1'].gridIndex, 0, 'input untouched');
+  assert.strictEqual(repackGardenCells(garden).moved, 0, 'idempotent');
+  assert.strictEqual(repackGardenCells({ 'A 1:1': { gridIndex: 7, stage: 1 } }).moved, 0, 'nothing to do');
+});
+
+await test('tidyGarden: dedupe first (frees cells), then repack; same result from any device', () => {
+  const gd = {
+    'Isaiah 55:10-11': { gridIndex: 0, stage: 2, fruits: 0 },
+    'Isaiah 55:10–11': { gridIndex: 1, stage: 9, fruits: 1 },   // duplicate → folded into cell 0, cell 1 freed
+    'Matthew 9:13': { gridIndex: 0, stage: 4, fruits: 0 },      // collides with cell 0 → moves to the freed cell 1
+    '마태복음 9:13': { gridIndex: 0, stage: 1, fruits: 0 },       // duplicate of Matthew → folded
+  };
+  const a = tidyGarden(gd, keyFn);
+  assert.strictEqual(a.merged, 2);
+  assert.strictEqual(a.moved, 1);
+  assert.deepStrictEqual(a.mergedInto, { 'Isaiah 55:10–11': 'Isaiah 55:10-11', '마태복음 9:13': 'Matthew 9:13' });
+  assert.deepStrictEqual(a.garden, {
+    'Isaiah 55:10-11': { gridIndex: 0, stage: 9, fruits: 1 },
+    'Matthew 9:13': { gridIndex: 1, stage: 4, fruits: 0 },
+  });
+  const b = tidyGarden(mergeGardens(gd, a.garden), keyFn); // stale cloud copy merged back in
+  const { _activity, ...bTrees } = b.garden; // mergeGardens always adds the activity map
+  assert.deepStrictEqual(bTrees, a.garden, 'stable layout after a re-merge');
 });
 
 console.log(`\n${passed} assertions passed.`);
