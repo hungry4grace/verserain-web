@@ -5275,6 +5275,21 @@ function formatVerseReferenceForDisplay(ref, version) {
     }
   }
 
+  // The reference can arrive in any language (the secondary line's cached
+  // lookup passes the primary Chinese "羅 16:20" through), so English — and any
+  // other version still showing a Chinese book name — gets its book rebuilt
+  // from BIBLE_BOOKS instead of echoing the input back.
+  const isEnglish = version === 'esv' || version === 'kjv' || version === 'niv';
+  if (isEnglish || /[一-鿿]/.test(ref || '')) {
+    const parsed = parseScriptureKey(ref);
+    const bookInfo = parsed && BIBLE_BOOKS.find(b => b.id === parsed.bookId);
+    const name = bookInfo && getBookFullName(bookInfo, version);
+    if (name && (isEnglish || !/[一-鿿]/.test(name) || version === 'ja')) {
+      const cv = parsed.verses ? `${parsed.chapter}:${parsed.verses}` : `${parsed.chapter}`;
+      return `${name} ${cv}`;
+    }
+  }
+
   return ref;
 }
 
@@ -25041,7 +25056,7 @@ const deDict = {
                     verserain
                   </div>
                   <div className="app-brand-version" style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', marginTop: '4px', marginLeft: '2px' }}>
-                    v4.0.14
+                    v4.0.15
                   </div>
                 </div>
                 <div ref={langPickerRef} className="app-lang-control" style={{ position: 'relative' }}>
