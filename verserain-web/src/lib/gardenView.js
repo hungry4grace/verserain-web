@@ -22,6 +22,13 @@ export const APPLE_POSITIONS = [
 ];
 
 const norm = (s) => String(s || '').replace(/\s+/g, ' ').trim().toLowerCase();
+
+// A reference with no visible characters: empty, whitespace only, or just
+// zero-width / bidi / BOM marks (pasted along with a custom verse's text).
+// Such keys reach the garden from verse sets whose 出處 field was left blank.
+export function isBlankRef(ref) {
+  return !String(ref ?? '').replace(/[\s\u200b-\u200f\u2028-\u202f\u2060\ufeff]/gu, '');
+}
 const compact = (s) => norm(s).replace(/\s+/g, '');
 // normalizeVerseReferenceKey returns "<bookId>|<chapter>[:<verses>]" when it
 // recognised the book; anything else is the lowercased raw string.
