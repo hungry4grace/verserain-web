@@ -131,6 +131,25 @@ export function generateResetToken() {
 
 export const RESET_TOKEN_TTL_MS = 30 * 60 * 1000;
 
+// Test-fixture trees ("FakeVerse 0" … "FakeVerse 153") were injected into a
+// few gardens by a dev script. They are not verses, so every garden read and
+// write strips them — the field-level merge below would otherwise keep them
+// alive forever (it never lowers anything). Mirrors isTestFixtureRef in
+// src/lib/gardenSync.js (server.js has no imports so it is duplicated here).
+const TEST_FIXTURE_REF_RE = /^FakeVerse \d+$/;
+export function isTestFixtureRef(ref) {
+  return typeof ref === 'string' && TEST_FIXTURE_REF_RE.test(ref);
+}
+export function dropTestFixtures(gd) {
+  const out = {};
+  const dropped = [];
+  for (const [k, v] of Object.entries(gd || {})) {
+    if (isTestFixtureRef(k)) { dropped.push(k); continue; }
+    out[k] = v;
+  }
+  return { garden: out, dropped };
+}
+
 export default class Server {
   constructor(room) {
     this.room = room;
@@ -2501,12 +2520,13 @@ export default class Server {
             const { playerName, gardenData, mergedInto } = await request.json();
             if (!playerName || !gardenData) return new Response(JSON.stringify({ error: 'playerName and gardenData required' }), { status: 400, headers: corsHeaders });
 
-            const existing = (await this.room.storage.get(`garden:${playerName}`)) || {};
+            const existing = dropTestFixtures((await this.room.storage.get(`garden:${playerName}`)) || {}).garden;
 
             // Field-level merge: keep the higher stage/fruits per verse.
             const merged = { ...existing };
             for (const [ref, incoming] of Object.entries(gardenData)) {
                if (ref === '_activity') continue; // handled below
+               if (isTestFixtureRef(ref)) continue; // never re-plant a fixture from a stale device
                if (!incoming || typeof incoming !== 'object') continue;
                const prev = merged[ref];
                if (!prev || typeof prev !== 'object') {
@@ -2565,9 +2585,50 @@ export default class Server {
             if (!playerName) return new Response(JSON.stringify({ error: 'player param required' }), { status: 400, headers: corsHeaders });
             const data = await this.room.storage.get(`garden:${playerName}`);
             if (!data) return new Response(JSON.stringify({ error: 'No garden found for this player' }), { status: 404, headers: corsHeaders });
-            return new Response(JSON.stringify({ success: true, gardenData: data }), { status: 200, headers: corsHeaders });
+            return new Response(JSON.stringify({ success: true, gardenData: dropTestFixtures(data).garden }), { status: 200, headers: corsHeaders });
          } catch(e) {
             return new Response(JSON.stringify({ error: 'Failed to fetch garden' }), { status: 500, headers: corsHeaders });
+         }
+      }
+
+      // Admin one-off: walk every stored garden and delete the fixture trees
+      // in place (the read/write filters above only clean a garden the next
+      // time its owner plays). Pages by prefix like /all-gardens so a big DO
+      // never gets list()ed in one go. Body: { adminEmail? } or admin token.
+      // Returns { purged: { player: count }, gardensScanned }.
+      if (url.pathname.endsWith('/purge-garden-fixtures') && request.method === 'POST') {
+         try {
+            let body = {};
+            try { body = await request.json(); } catch { body = {}; }
+            if (!isCustomSetWriteAuthorized() && !isTrustedAdminEmail(body?.adminEmail)) {
+               return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: corsHeaders });
+            }
+            const purged = {};
+            let gardensScanned = 0;
+            const PAGE = 25;
+            let startAfter = undefined;
+            while (true) {
+               const opts = { prefix: 'garden:', limit: PAGE };
+               if (startAfter) opts.startAfter = startAfter;
+               const page = await this.room.storage.list(opts);
+               if (!page || page.size === 0) break;
+               let lastKey;
+               for (const [key, val] of page.entries()) {
+                  lastKey = key;
+                  gardensScanned++;
+                  if (!val || typeof val !== 'object') continue;
+                  const { garden, dropped } = dropTestFixtures(val);
+                  if (!dropped.length) continue;
+                  await this.room.storage.put(key, garden);
+                  purged[key.slice('garden:'.length)] = dropped.length;
+               }
+               if (page.size < PAGE) break;
+               startAfter = lastKey;
+            }
+            this._allGardensCache = null; // map stats must not show the old plant counts
+            return new Response(JSON.stringify({ success: true, purged, gardensScanned }), { status: 200, headers: corsHeaders });
+         } catch(e) {
+            return new Response(JSON.stringify({ error: 'Failed to purge garden fixtures' }), { status: 500, headers: corsHeaders });
          }
       }
 

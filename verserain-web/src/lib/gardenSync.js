@@ -153,10 +153,31 @@ export function repackGardenCells(gd) {
   return { garden: out, moved: movers.length };
 }
 
-// Everything the garden does on the way in: fold duplicate trees, then give
-// every tree its own cell. Idempotent.
+// Test-fixture trees ("FakeVerse 0" … "FakeVerse 153") were once injected
+// into a few gardens by a dev script to stress the grid. They are not verses:
+// their text never resolves and they count as plants on the map. Both the
+// client and the PartyKit server drop them on every read/write so a stale
+// device copy can never plant them again.
+const TEST_FIXTURE_REF_RE = /^FakeVerse \d+$/;
+export function isTestFixtureRef(ref) {
+  return typeof ref === 'string' && TEST_FIXTURE_REF_RE.test(ref);
+}
+
+// Returns { garden, dropped: [refs] } with every fixture tree removed.
+export function dropTestFixtures(gd) {
+  const out = {};
+  const dropped = [];
+  for (const [k, v] of Object.entries(gd || {})) {
+    if (isTestFixtureRef(k)) { dropped.push(k); continue; }
+    out[k] = v;
+  }
+  return { garden: out, dropped };
+}
+
+// Everything the garden does on the way in: drop test fixtures, fold
+// duplicate trees, then give every tree its own cell. Idempotent.
 export function tidyGarden(gd, keyFn) {
-  const d = dedupeGarden(gd, keyFn);
+  const d = dedupeGarden(dropTestFixtures(gd).garden, keyFn);
   const r = repackGardenCells(d.garden);
   return { garden: r.garden, mergedInto: d.mergedInto, merged: d.merged, moved: r.moved };
 }
