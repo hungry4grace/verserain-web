@@ -4,7 +4,7 @@ import {
   mergeGardens, stampTodayLogin, classifyGardenResponse,
   decideGardenSync, buildFruitAuthorKeys, aggregateFruitResults,
   canonicalGardenKey, findGardenKey, dedupeGarden, repackGardenCells, tidyGarden,
-  isTestFixtureRef, dropTestFixtures, dropBlankKeysMissingFrom,
+  isTestFixtureRef, dropTestFixtures, dropBlankKeysMissingFrom, dropTombstoned,
 } from './gardenSync.js';
 
 const TODAY = '2026-06-16';
@@ -270,4 +270,32 @@ await test('dropBlankKeysMissingFrom treats zero-width-only keys as blank and ke
   const gd = { '\u200b': { stage: 1 }, _activity: { [TODAY]: 100 }, 'Ps 1': { stage: 1 } };
   const out = dropBlankKeysMissingFrom(gd, {});
   assert.deepStrictEqual(Object.keys(out).sort(), ['Ps 1', '_activity']);
+});
+
+console.log('admin-deleted trees (tombstones):');
+
+await test('classifyGardenResponse carries tombstones (defaults to {})', async () => {
+  const a = await classifyGardenResponse(resp(200, { gardenData: {}, tombstones: { 'Philippians ': { stage: 1, fruits: 0 } } }));
+  assert.deepStrictEqual(a.tombstones, { 'Philippians ': { stage: 1, fruits: 0 } });
+  const b = await classifyGardenResponse(resp(200, { gardenData: {} }));
+  assert.deepStrictEqual(b.tombstones, {});
+});
+
+await test('ok sync: stale local copy of a deleted tree is dropped', async () => {
+  const local = { 'Philippians ': { stage: 1, fruits: 0 }, 'John 3:16': { stage: 2, fruits: 0 } };
+  const cls = { kind: 'ok', remoteGd: { 'John 3:16': { stage: 2, fruits: 0 } }, tombstones: { 'Philippians ': { stage: 1, fruits: 0 } } };
+  const d = decideGardenSync(cls, local, TODAY);
+  assert.deepStrictEqual(Object.keys(d.garden).filter(k => k !== '_activity'), ['John 3:16']);
+});
+
+await test('ok sync: higher local progress on a deleted reference is real play and stays', async () => {
+  const local = { 'Philippians ': { stage: 4, fruits: 0 } };
+  const cls = { kind: 'ok', remoteGd: {}, tombstones: { 'Philippians ': { stage: 1, fruits: 0 } } };
+  assert.strictEqual(decideGardenSync(cls, local, TODAY).garden['Philippians '].stage, 4);
+});
+
+await test('dropTombstoned ignores _activity and tolerates missing tombstones', async () => {
+  const gd = { _activity: { [TODAY]: 100 }, 'Ps 1': { stage: 1 } };
+  assert.deepStrictEqual(dropTombstoned(gd, undefined), gd);
+  assert.deepStrictEqual(Object.keys(dropTombstoned(gd, { _activity: { stage: 99 } })).sort(), ['Ps 1', '_activity']);
 });

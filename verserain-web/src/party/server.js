@@ -2527,6 +2527,7 @@ export default class Server {
             if (!playerName || !gardenData) return new Response(JSON.stringify({ error: 'playerName and gardenData required' }), { status: 400, headers: corsHeaders });
 
             const existing = dropTestFixtures((await this.room.storage.get(`garden:${playerName}`)) || {}).garden;
+            const tombstones = (await this.room.storage.get(`garden-tombstones:${playerName}`)) || {};
 
             // Field-level merge: keep the higher stage/fruits per verse.
             const merged = { ...existing };
@@ -2540,6 +2541,11 @@ export default class Server {
                // push one after an admin re-keyed it to the real reference; keep the
                // progress only where the stored garden still holds the blank key.
                if (!prev && isBlankGardenRef(ref)) continue;
+               // A tree an admin deleted (/delete-garden-key) must not come back
+               // from a device that still holds the old copy. Genuinely new
+               // progress on the same reference (higher stage/fruits) still plants.
+               const tomb = !prev && tombstones[ref];
+               if (tomb && (incoming.stage || 0) <= (tomb.stage || 0) && (incoming.fruits || 0) <= (tomb.fruits || 0)) continue;
                if (!prev || typeof prev !== 'object') {
                   merged[ref] = incoming;
                } else {
@@ -2596,9 +2602,44 @@ export default class Server {
             if (!playerName) return new Response(JSON.stringify({ error: 'player param required' }), { status: 400, headers: corsHeaders });
             const data = await this.room.storage.get(`garden:${playerName}`);
             if (!data) return new Response(JSON.stringify({ error: 'No garden found for this player' }), { status: 404, headers: corsHeaders });
-            return new Response(JSON.stringify({ success: true, gardenData: dropTestFixtures(data).garden }), { status: 200, headers: corsHeaders });
+            const tombstones = (await this.room.storage.get(`garden-tombstones:${playerName}`)) || {};
+            return new Response(JSON.stringify({ success: true, gardenData: dropTestFixtures(data).garden, tombstones }), { status: 200, headers: corsHeaders });
          } catch(e) {
             return new Response(JSON.stringify({ error: 'Failed to fetch garden' }), { status: 500, headers: corsHeaders });
+         }
+      }
+
+      // Admin: delete one tree from one garden. Body { playerName, ref }.
+      // The deleted entry's stage/fruits are kept in garden-tombstones:<player>
+      // so save-garden can tell a stale device copy (same or lower progress,
+      // dropped) from the player really playing that reference again (higher
+      // progress, planted). GET /garden returns the tombstones so the client
+      // drops its own stale copy too.
+      if (url.pathname.endsWith('/delete-garden-key') && request.method === 'POST') {
+         try {
+            let body = {};
+            try { body = await request.json(); } catch { body = {}; }
+            if (!isCustomSetWriteAuthorized() && !isTrustedAdminEmail(body?.adminEmail)) {
+               return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: corsHeaders });
+            }
+            const { playerName, ref } = body || {};
+            if (!playerName || typeof ref !== 'string' || ref === '_activity') {
+               return new Response(JSON.stringify({ error: 'playerName and ref required' }), { status: 400, headers: corsHeaders });
+            }
+            const garden = await this.room.storage.get(`garden:${playerName}`);
+            const entry = garden && garden[ref];
+            if (!entry || typeof entry !== 'object') {
+               return new Response(JSON.stringify({ error: 'No such tree' }), { status: 404, headers: corsHeaders });
+            }
+            const tombstones = (await this.room.storage.get(`garden-tombstones:${playerName}`)) || {};
+            tombstones[ref] = { stage: entry.stage || 0, fruits: entry.fruits || 0, at: new Date().toISOString() };
+            delete garden[ref];
+            await this.room.storage.put(`garden:${playerName}`, garden);
+            await this.room.storage.put(`garden-tombstones:${playerName}`, tombstones);
+            this._allGardensCache = null;
+            return new Response(JSON.stringify({ success: true, deleted: ref, tombstone: tombstones[ref] }), { status: 200, headers: corsHeaders });
+         } catch(e) {
+            return new Response(JSON.stringify({ error: 'Failed to delete garden key' }), { status: 500, headers: corsHeaders });
          }
       }
 

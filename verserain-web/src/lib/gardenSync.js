@@ -202,7 +202,8 @@ export async function classifyGardenResponse(r) {
   if (r && r.ok) {
     const data = await r.json().catch(() => null);
     const remoteGd = (data && data.gardenData && typeof data.gardenData === 'object') ? data.gardenData : {};
-    return { kind: 'ok', remoteGd };
+    const tombstones = (data && data.tombstones && typeof data.tombstones === 'object') ? data.tombstones : {};
+    return { kind: 'ok', remoteGd, tombstones };
   }
   if (r && r.status === 404) return { kind: 'empty' };
   return { kind: 'unknown' };
@@ -223,9 +224,27 @@ export function decideGardenSync(classification, localGd, todayStr) {
   // copy of what the cloud once held. When the cloud copy is confirmed and no
   // longer has it — an admin re-keyed it to the real reference — drop the
   // local one too; otherwise this device would show it forever.
-  if (classification.kind === 'ok') merged = dropBlankKeysMissingFrom(merged, remoteGd);
+  if (classification.kind === 'ok') {
+    merged = dropBlankKeysMissingFrom(merged, remoteGd);
+    merged = dropTombstoned(merged, classification.tombstones);
+  }
   merged = stampTodayLogin(merged, todayStr);
   return { garden: merged, shouldPushToCloud: true };
+}
+
+// Trees an admin deleted server-side (GET /garden returns them as
+// `tombstones: { ref: { stage, fruits } }`). A local copy with the same or
+// lower progress is the stale one and goes; higher progress means the player
+// really played that reference again and it stays (the server re-plants it).
+export function dropTombstoned(gd, tombstones) {
+  if (!tombstones || typeof tombstones !== 'object') return gd;
+  const out = {};
+  for (const [k, v] of Object.entries(gd || {})) {
+    const t = k !== '_activity' && tombstones[k];
+    if (t && v && typeof v === 'object' && (v.stage || 0) <= (t.stage || 0) && (v.fruits || 0) <= (t.fruits || 0)) continue;
+    out[k] = v;
+  }
+  return out;
 }
 
 export function dropBlankKeysMissingFrom(gd, authority) {
