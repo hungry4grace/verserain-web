@@ -131,6 +131,8 @@ export default async function handler(req, res) {
   if (q.lang) dest.searchParams.set('lang', lang);
   // order=seq → the app plays the whole set in canonical order.
   if (['seq', 'sequential'].includes(String(q.order || ''))) dest.searchParams.set('listenOrder', 'seq');
+  // Sender's referral code — the app records the touch (deferred referral).
+  if (/^[A-HJ-NP-Za-km-z2-9]{10}$/.test(String(q.ref || ''))) dest.searchParams.set('ref', String(q.ref));
   const destUrl = dest.toString();
 
   const normalize = (s) => String(s || '').replace(/\s+/g, '');

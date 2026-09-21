@@ -131,6 +131,17 @@ export function generateResetToken() {
 
 export const RESET_TOKEN_TTL_MS = 30 * 60 * 1000;
 
+import { CODE_RE as REFERRAL_CODE_RE, TOUCH_KINDS, MAX_DEVICES as TOUCH_MAX_DEVICES, normalizeEvents as normalizeTouchEvents, pickInviter, ipMatchAllowed } from './referral.js';
+
+// Hashed request IP for the deferred-referral network bucket (never the raw IP).
+function requestIp(request) {
+  return (request.headers.get('cf-connecting-ip') || (request.headers.get('x-forwarded-for') || '').split(',')[0] || '').trim();
+}
+async function touchIpKey(request) {
+  const ip = requestIp(request);
+  return ip ? `touch-ip:${await sha256Hex('touch|' + ip)}` : null;
+}
+
 // Test-fixture trees ("FakeVerse 0" … "FakeVerse 153") were injected into a
 // few gardens by a dev script. They are not verses, so every garden read and
 // write strips them — the field-level merge below would otherwise keep them
@@ -761,6 +772,7 @@ export default class Server {
               } else if (cleanPersonalCode) {
                  newUserObj.personalCode = cleanPersonalCode;
               }
+              if (!newUserObj.invitedBy) await this.attributeDeferredInviter(newUserObj, cleanPersonalCode, request, { isNew: true });
               await this.room.storage.put(`user:${email.toLowerCase()}`, newUserObj);
               
               // Send the OTP via email
@@ -801,6 +813,7 @@ export default class Server {
               if (!user.personalCode && cleanVerifyCode) {
                  user.personalCode = cleanVerifyCode;
               }
+              await this.attributeDeferredInviter(user, cleanVerifyCode, request);
               await this.room.storage.put(`user:${email.toLowerCase()}`, user);
 
               return new Response(JSON.stringify({ success: true, user: { email: user.email, name: user.name, isPremium: user.isPremium, personalCode: user.personalCode || null } }), { status: 200, headers: corsHeaders });
@@ -864,6 +877,7 @@ export default class Server {
                  user.personalCode = cleanPersonalCode;
                  dirty = true;
               }
+              if (await this.attributeDeferredInviter(user, cleanPersonalCode, request)) dirty = true;
 
               if (dirty) {
                  await this.room.storage.put(`user:${email.toLowerCase()}`, user);
@@ -970,6 +984,7 @@ export default class Server {
                  };
                  if (cleanInviter) user.invitedBy = cleanInviter;
                  if (cleanPersonalCode) user.personalCode = cleanPersonalCode;
+                 await this.attributeDeferredInviter(user, cleanPersonalCode, request, { isNew: true });
                  await this.room.storage.put(`user:${email}`, user);
               } else {
                  // Existing user — record OAuth identity so future logins can
@@ -982,6 +997,7 @@ export default class Server {
                  if (!user.oauthSub) { user.oauthSub = sub; dirty = true; }
                  if (cleanInviter && !user.invitedBy) { user.invitedBy = cleanInviter; dirty = true; }
                  if (cleanPersonalCode && !user.personalCode) { user.personalCode = cleanPersonalCode; dirty = true; }
+                 if (await this.attributeDeferredInviter(user, cleanPersonalCode, request)) dirty = true;
                  if (dirty) await this.room.storage.put(`user:${email}`, user);
               }
 
@@ -1134,6 +1150,34 @@ export default class Server {
         // similar), and wants to attach themselves to a referrer. Set-once
         // only — already-bound accounts can't change their referrer this
         // way (prevents griefing / late-attribution farming).
+        // POST /touch — { deviceCode, inviter, kind, roomId? }. A guest device
+        // records "I took part in <inviter>'s room / opened their link". Read
+        // back by attributeDeferredInviter() on register/login (see referral.js).
+        if (url.pathname.endsWith('/touch') && request.method === 'POST') {
+           try {
+              const { deviceCode, inviter, kind, roomId } = await request.json();
+              const dev = String(deviceCode || '').trim(); const inv = String(inviter || '').trim();
+              if (!REFERRAL_CODE_RE.test(dev) || !REFERRAL_CODE_RE.test(inv) || dev === inv) {
+                 return new Response(JSON.stringify({ error: 'bad codes' }), { status: 400, headers: corsHeaders });
+              }
+              const ev = { inviter: inv, kind: TOUCH_KINDS.includes(kind) ? kind : 'link', at: Date.now(), ...(roomId ? { roomId: String(roomId).slice(0, 12) } : {}) };
+              const devKey = `touch:${dev}`;
+              const devRec = (await this.room.storage.get(devKey)) || { events: [] };
+              devRec.events = normalizeTouchEvents([...(devRec.events || []), ev]);
+              await this.room.storage.put(devKey, devRec);
+              const ipKey = await touchIpKey(request);
+              if (ipKey) {
+                 const ipRec = (await this.room.storage.get(ipKey)) || { events: [], devices: [] };
+                 ipRec.events = normalizeTouchEvents([...(ipRec.events || []), ev]);
+                 ipRec.devices = Array.from(new Set([...(ipRec.devices || []), dev])).slice(-TOUCH_MAX_DEVICES);
+                 await this.room.storage.put(ipKey, ipRec);
+              }
+              return new Response(JSON.stringify({ success: true, events: devRec.events.length }), { status: 200, headers: corsHeaders });
+           } catch {
+              return new Response(JSON.stringify({ error: 'touch failed' }), { status: 400, headers: corsHeaders });
+           }
+        }
+
         if (url.pathname.endsWith('/bind-inviter') && request.method === 'POST') {
            try {
               const { email, inviter } = await request.json();
@@ -2788,7 +2832,16 @@ export default class Server {
                   users.push({
                      email: value.email,
                      name: value.name || value.skoolName || "Unknown",
-                     isPremium: value.isPremium || false
+                     isPremium: value.isPremium || false,
+                     // Referral analytics (codes only, no secrets): who invited
+                     // this account, when it was created, and how it signs in.
+                     invitedBy: value.invitedBy || null,
+                     invitedByVia: value.invitedByVia || null,
+                     invitedAt: value.invitedAt || null,
+                     personalCode: value.personalCode || null,
+                     createdAt: value.createdAt || null,
+                     verified: value.verified !== false,
+                     oauthProvider: value.oauthProvider || null
                   });
                }
             }
@@ -2838,6 +2891,12 @@ export default class Server {
       this.state.hostName = name;
     }
 
+    // The host's own referral code rides along so guests can credit the host
+    // as their inviter when the game starts (deferred referral, referral.js).
+    if (requestedRole === 'host' && this.state.host === conn.id) {
+      const hostKey = url.searchParams.get('hostKey') || '';
+      if (REFERRAL_CODE_RE.test(hostKey)) this.state.hostKey = hostKey;
+    }
     const isTeamHostController = this.state.matchType === 'team' && requestedRole === 'host' && this.state.host === conn.id;
     if (isTeamHostController) {
       this.state.hostName = name;
@@ -3216,6 +3275,38 @@ export default class Server {
 
     } catch (e) {
       console.error("[PARTY] Message error", e);
+    }
+  }
+
+  // Deferred referral attribution: fill user.invitedBy from a touch left by
+  // this device (same browser) or, for young/new accounts, by this network.
+  // Mutates `user`; returns true when it set invitedBy.
+  async attributeDeferredInviter(user, deviceCode, request, { isNew = false } = {}) {
+    try {
+      if (!user || user.invitedBy) return false;
+      const now = Date.now();
+      const ownCodes = [user.personalCode, deviceCode];
+      let hit = null, via = null;
+      if (deviceCode && REFERRAL_CODE_RE.test(deviceCode)) {
+        const rec = await this.room.storage.get(`touch:${deviceCode}`);
+        hit = pickInviter(rec?.events, { now, ownCodes });
+        if (hit) via = 'device';
+      }
+      if (!hit && (isNew || ipMatchAllowed(user, now))) {
+        const ipKey = await touchIpKey(request);
+        const rec = ipKey ? await this.room.storage.get(ipKey) : null;
+        hit = pickInviter(rec?.events, { now, ownCodes });
+        if (hit) via = 'ip';
+      }
+      if (!hit) return false;
+      user.invitedBy = hit.inviter;
+      user.invitedByVia = via;
+      user.invitedByKind = hit.kind;
+      user.invitedAt = new Date(now).toISOString();
+      return true;
+    } catch (e) {
+      console.error('attributeDeferredInviter failed', e);
+      return false;
     }
   }
 

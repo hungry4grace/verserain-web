@@ -740,6 +740,15 @@ function routeFromState({ mainTab, selectedSetId, editing, listening, playing, r
   return route;
 }
 
+// Deferred referral (see src/party/referral.js): tell the server this device
+// took part in <inviter>'s room / opened their link. Fire-and-forget.
+const PARTY_AUTH_DB_URL = "https://verserain-party.hungry4grace.partykit.dev/parties/main/global-auth-db";
+function postTouch(body) {
+  try {
+    fetch(PARTY_AUTH_DB_URL + '/touch', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body), keepalive: true }).catch(() => {});
+  } catch { /* noop */ }
+}
+
 function pathWithSharedLang() {
   const hash = window.location.hash || '';
   try {
@@ -8052,6 +8061,7 @@ export default function App() {
         if (refParam !== ownCode) {
           localStorage.setItem('verserain_inviter', refParam);
           localStorage.removeItem('verserain_invite_claimed');
+          if (ownCode) postTouch({ deviceCode: ownCode, inviter: refParam, kind: 'link' });
         }
       }
 
@@ -9407,11 +9417,30 @@ export default function App() {
   const socketRef = useRef(null);
   const pendingInvitePKRef = useRef(null);
 
+  // Deferred referral: the first time this guest sees the host's game start,
+  // record "I played in <hostKey>'s room" (server /touch, src/party/referral.js)
+  // and, if this browser has no inviter yet, adopt the host locally too.
+  useEffect(() => {
+    if (!multiplayerRoomId || multiplayerRoomRole === 'host') return;
+    const hostKey = multiplayerState?.hostKey;
+    if (!hostKey || multiplayerState?.status !== 'playing' || hostKey === personalCode) return;
+    const guard = 'verserain_touched_' + multiplayerRoomId;
+    try { if (sessionStorage.getItem(guard)) return; sessionStorage.setItem(guard, '1'); } catch { /* noop */ }
+    postTouch({ deviceCode: personalCode, inviter: hostKey, kind: 'room', roomId: multiplayerRoomId });
+    try {
+      if (!localStorage.getItem('verserain_inviter')) {
+        localStorage.setItem('verserain_inviter', hostKey);
+        localStorage.removeItem('verserain_invite_claimed');
+      }
+    } catch { /* noop */ }
+  }, [multiplayerRoomId, multiplayerRoomRole, multiplayerState?.status, multiplayerState?.hostKey, personalCode]);
+
   useEffect(() => {
     const targetRoom = multiplayerRoomId || "global-lobby";
     const socketQuery = { name: playerName || "Player" + Math.floor(Math.random() * 999) };
     if (multiplayerRoomId) {
       socketQuery.playerKey = personalCode;
+      if (multiplayerRoomRole === 'host') socketQuery.hostKey = personalCode;
       if (multiplayerRoomMode) socketQuery.mode = multiplayerRoomMode;
       if (multiplayerRoomRole) socketQuery.role = multiplayerRoomRole;
       if (multiplayerRoomMode === 'team' && multiplayerRoomRole === 'host') {
@@ -24996,6 +25025,7 @@ const deDict = {
               // set title + verse text server-side from /share-set.
               const verseIdx = (fullSet.verses || []).findIndex(v => v?.reference === verse.reference);
               const link = buildPublicShareUrl('/lc', {
+                ref: personalCode,
                 set: shareSetId,
                 ...(verseIdx >= 0 ? { i: verseIdx } : { verse: verse.reference }),
                 // vo = opaque voice-owner id → recipient hears MY personal
@@ -25080,7 +25110,7 @@ const deDict = {
                     verserain
                   </div>
                   <div className="app-brand-version" style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', marginTop: '4px', marginLeft: '2px' }}>
-                    v4.0.20
+                    v4.0.21
                   </div>
                 </div>
                 <div ref={langPickerRef} className="app-lang-control" style={{ position: 'relative' }}>
@@ -25538,6 +25568,7 @@ const deDict = {
                       if (!verse) return;
                       const dateLabel = remoteDailyVerse?.date || dailyVerseDate;
                       const link = buildPublicShareUrl('/', {
+                ref: personalCode,
                         listenDaily: dateLabel,
                         version,
                         ...(shareOpts?.voiceOwner ? { vo: shareOpts.voiceOwner } : {}),
@@ -25636,6 +25667,7 @@ const deDict = {
                       pushSetForSharing(preferredRainSet, true);
                       const verseIdx = (preferredRainSet.verses || []).findIndex(v => v?.reference === verse.reference);
                       const link = buildPublicShareUrl('/lc', {
+                ref: personalCode,
                         set: preferredRainSet.id,
                         ...(verseIdx >= 0 ? { i: verseIdx } : { verse: verse.reference }),
                         ...(shareOpts?.voiceOwner ? { vo: shareOpts.voiceOwner } : {}),
@@ -27424,6 +27456,7 @@ const deDict = {
                                 // (creator recordings included) via the /lc card.
                                 pushSetForSharing(currentSet, true);
                                 const link = buildPublicShareUrl('/lc', {
+                ref: personalCode,
                                   set: currentSet.id,
                                   order: 'seq',
                                   version,
@@ -27711,6 +27744,7 @@ const deDict = {
                                           pushSetForSharing(currentSet, true);
                                           const verseIdx = (currentSet?.verses || []).findIndex(x => x?.reference === v.reference);
                                           const link = buildPublicShareUrl('/lc', {
+                ref: personalCode,
                                             set: currentSet?.id,
                                             ...(verseIdx >= 0 ? { i: verseIdx } : { verse: v.reference }),
                                             version,
