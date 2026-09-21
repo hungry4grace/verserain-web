@@ -158,9 +158,12 @@ export function repackGardenCells(gd) {
 // their text never resolves and they count as plants on the map. Both the
 // client and the PartyKit server drop them on every read/write so a stale
 // device copy can never plant them again.
+// "N/A" is the reference of the placeholder verse shown when a language has
+// no verse sets yet (「尚未發現經文組」); playing it planted a tree too.
 const TEST_FIXTURE_REF_RE = /^FakeVerse \d+$/;
 export function isTestFixtureRef(ref) {
-  return typeof ref === 'string' && TEST_FIXTURE_REF_RE.test(ref);
+  if (typeof ref !== 'string') return false;
+  return TEST_FIXTURE_REF_RE.test(ref) || ref.trim().toUpperCase() === 'N/A';
 }
 
 // Returns { garden, dropped: [refs] } with every fixture tree removed.

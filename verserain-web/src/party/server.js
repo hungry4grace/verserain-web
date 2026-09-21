@@ -136,9 +136,11 @@ export const RESET_TOKEN_TTL_MS = 30 * 60 * 1000;
 // write strips them — the field-level merge below would otherwise keep them
 // alive forever (it never lowers anything). Mirrors isTestFixtureRef in
 // src/lib/gardenSync.js (server.js has no imports so it is duplicated here).
+// "N/A" is the placeholder verse's reference (「尚未發現經文組」) — not a verse.
 const TEST_FIXTURE_REF_RE = /^FakeVerse \d+$/;
 export function isTestFixtureRef(ref) {
-  return typeof ref === 'string' && TEST_FIXTURE_REF_RE.test(ref);
+  if (typeof ref !== 'string') return false;
+  return TEST_FIXTURE_REF_RE.test(ref) || ref.trim().toUpperCase() === 'N/A';
 }
 // Mirrors isBlankRef in src/lib/gardenView.js: no visible characters at all.
 export function isBlankGardenRef(ref) {

@@ -209,6 +209,8 @@ console.log('test-fixture trees:');
 await test('isTestFixtureRef matches only the injected "FakeVerse N" keys', async () => {
   assert.ok(isTestFixtureRef('FakeVerse 0'));
   assert.ok(isTestFixtureRef('FakeVerse 153'));
+  assert.ok(isTestFixtureRef('N/A'), 'placeholder verse reference');
+  assert.ok(isTestFixtureRef('n/a '));
   assert.ok(!isTestFixtureRef('FakeVerse'));
   assert.ok(!isTestFixtureRef('fakeverse 1'));
   assert.ok(!isTestFixtureRef('John 3:16'));
