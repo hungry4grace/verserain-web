@@ -140,6 +140,10 @@ const TEST_FIXTURE_REF_RE = /^FakeVerse \d+$/;
 export function isTestFixtureRef(ref) {
   return typeof ref === 'string' && TEST_FIXTURE_REF_RE.test(ref);
 }
+// Mirrors isBlankRef in src/lib/gardenView.js: no visible characters at all.
+export function isBlankGardenRef(ref) {
+  return !String(ref ?? '').replace(/[\s\u200b-\u200f\u2028-\u202f\u2060\ufeff]/gu, '');
+}
 export function dropTestFixtures(gd) {
   const out = {};
   const dropped = [];
@@ -2529,6 +2533,11 @@ export default class Server {
                if (isTestFixtureRef(ref)) continue; // never re-plant a fixture from a stale device
                if (!incoming || typeof incoming !== 'object') continue;
                const prev = merged[ref];
+               // Blank-reference keys (custom verses saved without 出處) are legacy —
+               // the client stopped planting them in v4.0.11. A stale device may still
+               // push one after an admin re-keyed it to the real reference; keep the
+               // progress only where the stored garden still holds the blank key.
+               if (!prev && isBlankGardenRef(ref)) continue;
                if (!prev || typeof prev !== 'object') {
                   merged[ref] = incoming;
                } else {

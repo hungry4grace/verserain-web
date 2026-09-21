@@ -214,8 +214,24 @@ export function decideGardenSync(classification, localGd, todayStr) {
     return { garden: stampTodayLogin(localGd, todayStr), shouldPushToCloud: false };
   }
   const remoteGd = classification.kind === 'ok' ? classification.remoteGd : {};
-  const merged = stampTodayLogin(mergeGardens(remoteGd, localGd), todayStr);
+  let merged = mergeGardens(remoteGd, localGd);
+  // Blank-reference trees (custom verses saved without 出處) are legacy: new
+  // ones are no longer planted, so a blank key on this device can only be a
+  // copy of what the cloud once held. When the cloud copy is confirmed and no
+  // longer has it — an admin re-keyed it to the real reference — drop the
+  // local one too; otherwise this device would show it forever.
+  if (classification.kind === 'ok') merged = dropBlankKeysMissingFrom(merged, remoteGd);
+  merged = stampTodayLogin(merged, todayStr);
   return { garden: merged, shouldPushToCloud: true };
+}
+
+export function dropBlankKeysMissingFrom(gd, authority) {
+  const out = {};
+  for (const [k, v] of Object.entries(gd || {})) {
+    if (k !== '_activity' && !hasVisibleText(k) && !(authority && Object.prototype.hasOwnProperty.call(authority, k))) continue;
+    out[k] = v;
+  }
+  return out;
 }
 
 // Build the deduped list of point-bucket keys to query for a logged-in user:
