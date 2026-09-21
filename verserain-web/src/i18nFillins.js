@@ -446,6 +446,14 @@ export const he = {
   "誰在玩：全球玩家地圖": "מי משחק: מפת השחקנים העולמית",
   "點上方的 <strong>「誰在玩」</strong> 頁籤，看看世界各地的經文雨玩家都在哪裡。": "הקישו על הלשונית <strong>«מי משחק»</strong> למעלה כדי לראות היכן נמצאים שחקני VerseRain ברחבי העולם.",
   "教學影片：點「誰在玩」看全球玩家分佈 → 按「3D 地球」→ 拖曳轉動地球。": "סרטון הדרכה: פתיחת «מי משחק» לצפייה בשחקנים בעולם → לחיצה על «כדור הארץ 3D» → גרירה לסיבוב הגלובוס.",
+  // 我的果子 (map influence overlay)
+  "我的果子": "הפירות שלי",
+  "看看你推薦的人在哪裡": "ראה היכן נמצאים האנשים שהזמנת",
+  "金線 = 我推薦的人": "קו זהב = אנשים שהזמנתי",
+  "虛線 = 他們推薦的人": "קו מקווקו = אנשים שהם הזמינו",
+  "第一層 {a} · 第二層 {b}": "דרגה 1: {a} · דרגה 2: {b}",
+  "找不到你的位置，只標出果子": "המיקום שלך לא ידוע; רק הפירות מודגשים",
+  "還沒有果子——把邀請連結分享給朋友吧": "עדיין אין פירות — שתף את קישור ההזמנה עם חבר",
 };
 
 export const fa = {
@@ -873,6 +881,14 @@ export const fa = {
   "誰在玩：全球玩家地圖": "چه کسی بازی می‌کند: نقشهٔ جهانی بازیکنان",
   "點上方的 <strong>「誰在玩」</strong> 頁籤，看看世界各地的經文雨玩家都在哪裡。": "روی برگهٔ <strong>«چه کسی بازی می‌کند»</strong> در بالا بزنید تا ببینید بازیکنان VerseRain در سراسر جهان کجا هستند.",
   "教學影片：點「誰在玩」看全球玩家分佈 → 按「3D 地球」→ 拖曳轉動地球。": "ویدیوی آموزشی: باز کردن «چه کسی بازی می‌کند» برای دیدن بازیکنان جهان → زدن «کرهٔ 3D» → کشیدن برای چرخاندن کره.",
+  // 我的果子 (map influence overlay)
+  "我的果子": "میوه‌های من",
+  "看看你推薦的人在哪裡": "ببین افرادی که دعوت کردی کجا هستند",
+  "金線 = 我推薦的人": "خط طلایی = افرادی که دعوت کردم",
+  "虛線 = 他們推薦的人": "خط‌چین = افرادی که آن‌ها دعوت کردند",
+  "第一層 {a} · 第二層 {b}": "سطح ۱: {a} · سطح ۲: {b}",
+  "找不到你的位置，只標出果子": "مکان شما مشخص نیست؛ فقط میوه‌ها برجسته شدند",
+  "還沒有果子——把邀請連結分享給朋友吧": "هنوز میوه‌ای نیست — لینک دعوت را با دوستی به اشتراک بگذار",
 };
 
 export const ar = {
@@ -1716,6 +1732,14 @@ export const ar = {
   "誰在玩：全球玩家地圖": "من يلعب: خريطة اللاعبين العالمية",
   "點上方的 <strong>「誰在玩」</strong> 頁籤，看看世界各地的經文雨玩家都在哪裡。": "اضغط تبويب <strong>«من يلعب»</strong> في الأعلى لترى أين يوجد لاعبو VerseRain حول العالم.",
   "教學影片：點「誰在玩」看全球玩家分佈 → 按「3D 地球」→ 拖曳轉動地球。": "فيديو تعليمي: فتح «من يلعب» لرؤية اللاعبين حول العالم → الضغط على «الكرة الأرضية 3D» → السحب لتدوير الكرة.",
+  // 我的果子 (map influence overlay)
+  "我的果子": "ثماري",
+  "看看你推薦的人在哪裡": "انظر أين يوجد من دعوتهم",
+  "金線 = 我推薦的人": "خط ذهبي = من دعوتُهم",
+  "虛線 = 他們推薦的人": "خط متقطع = من دعوهم هؤلاء",
+  "第一層 {a} · 第二層 {b}": "المستوى 1: {a} · المستوى 2: {b}",
+  "找不到你的位置，只標出果子": "موقعك غير معروف؛ تم إبراز الثمار فقط",
+  "還沒有果子——把邀請連結分享給朋友吧": "لا ثمار بعد — شارك رابط الدعوة مع صديق",
 };
 
 export const ja = {
@@ -2144,6 +2168,14 @@ export const ja = {
   "誰在玩：全球玩家地圖": "誰がプレイ中：世界のプレイヤーマップ",
   "點上方的 <strong>「誰在玩」</strong> 頁籤，看看世界各地的經文雨玩家都在哪裡。": "上部の <strong>「誰がプレイ中」</strong> タブをタップすると、世界中の VerseRain プレイヤーがどこにいるか見られます。",
   "教學影片：點「誰在玩」看全球玩家分佈 → 按「3D 地球」→ 拖曳轉動地球。": "チュートリアル動画：「誰がプレイ中」で世界のプレイヤー分布を見る → 「3D 地球」を押す → ドラッグして地球を回す。",
+  // 我的果子 (map influence overlay)
+  "我的果子": "わたしの実",
+  "看看你推薦的人在哪裡": "招待した人がどこにいるか見る",
+  "金線 = 我推薦的人": "金の線 = 私が招待した人",
+  "虛線 = 他們推薦的人": "点線 = その人が招待した人",
+  "第一層 {a} · 第二層 {b}": "第1層 {a} · 第2層 {b}",
+  "找不到你的位置，只標出果子": "あなたの位置が不明なので、実だけを強調表示",
+  "還沒有果子——把邀請連結分享給朋友吧": "まだ実がありません — 招待リンクを友だちに送りましょう",
 };
 
 export const ko = {
@@ -2571,6 +2603,14 @@ export const ko = {
   "誰在玩：全球玩家地圖": "누가 플레이 중: 전 세계 플레이어 지도",
   "點上方的 <strong>「誰在玩」</strong> 頁籤，看看世界各地的經文雨玩家都在哪裡。": "상단의 <strong>「누가 플레이 중」</strong> 탭을 누르면 전 세계 VerseRain 플레이어가 어디에 있는지 볼 수 있습니다.",
   "教學影片：點「誰在玩」看全球玩家分佈 → 按「3D 地球」→ 拖曳轉動地球。": "튜토리얼 영상: 「누가 플레이 중」에서 전 세계 플레이어 분포 보기 → 「3D 지구」 누르기 → 드래그로 지구 돌리기.",
+  // 我的果子 (map influence overlay)
+  "我的果子": "나의 열매",
+  "看看你推薦的人在哪裡": "내가 초대한 사람들이 어디 있는지 보기",
+  "金線 = 我推薦的人": "금색 선 = 내가 초대한 사람",
+  "虛線 = 他們推薦的人": "점선 = 그들이 초대한 사람",
+  "第一層 {a} · 第二層 {b}": "1단계 {a} · 2단계 {b}",
+  "找不到你的位置，只標出果子": "내 위치를 알 수 없어 열매만 표시했습니다",
+  "還沒有果子——把邀請連結分享給朋友吧": "아직 열매가 없어요 — 초대 링크를 친구에게 보내 보세요",
 };
 
 export const es = {
@@ -2999,6 +3039,14 @@ export const es = {
   "誰在玩：全球玩家地圖": "¿Quién juega?: mapa global de jugadores",
   "點上方的 <strong>「誰在玩」</strong> 頁籤，看看世界各地的經文雨玩家都在哪裡。": "Toca la pestaña <strong>«¿Quién juega?»</strong> arriba para ver dónde están los jugadores de VerseRain en todo el mundo.",
   "教學影片：點「誰在玩」看全球玩家分佈 → 按「3D 地球」→ 拖曳轉動地球。": "Vídeo tutorial: abre «¿Quién juega?» para ver a los jugadores de todo el mundo → pulsa «Globo 3D» → arrastra para girar el globo.",
+  // 我的果子 (map influence overlay)
+  "我的果子": "Mis frutos",
+  "看看你推薦的人在哪裡": "Ver dónde están las personas que invitaste",
+  "金線 = 我推薦的人": "línea dorada = personas que invité",
+  "虛線 = 他們推薦的人": "línea discontinua = personas que ellos invitaron",
+  "第一層 {a} · 第二層 {b}": "nivel 1: {a} · nivel 2: {b}",
+  "找不到你的位置，只標出果子": "No se conoce tu ubicación; solo se resaltan los frutos",
+  "還沒有果子——把邀請連結分享給朋友吧": "Aún no hay frutos — comparte tu enlace de invitación con un amigo",
 };
 
 export const tr = {
@@ -3427,6 +3475,14 @@ export const tr = {
   "誰在玩：全球玩家地圖": "Kim Oynuyor: Küresel Oyuncu Haritası",
   "點上方的 <strong>「誰在玩」</strong> 頁籤，看看世界各地的經文雨玩家都在哪裡。": "Üstteki <strong>«Kim Oynuyor»</strong> sekmesine dokunarak VerseRain oyuncularının dünyanın neresinde olduğunu görün.",
   "教學影片：點「誰在玩」看全球玩家分佈 → 按「3D 地球」→ 拖曳轉動地球。": "Eğitim videosu: Dünyadaki oyuncuları görmek için «Kim Oynuyor»yı açın → «3D Dünya»ya basın → küreyi döndürmek için sürükleyin.",
+  // 我的果子 (map influence overlay)
+  "我的果子": "Meyvelerim",
+  "看看你推薦的人在哪裡": "Davet ettiğin kişilerin nerede olduğunu gör",
+  "金線 = 我推薦的人": "altın çizgi = davet ettiğim kişiler",
+  "虛線 = 他們推薦的人": "kesik çizgi = onların davet ettikleri",
+  "第一層 {a} · 第二層 {b}": "1. seviye {a} · 2. seviye {b}",
+  "找不到你的位置，只標出果子": "Konumun bilinmiyor; yalnızca meyveler vurgulandı",
+  "還沒有果子——把邀請連結分享給朋友吧": "Henüz meyve yok — davet bağlantını bir arkadaşınla paylaş",
 };
 
 export const de = {
@@ -3855,6 +3911,14 @@ export const de = {
   "誰在玩：全球玩家地圖": "Wer spielt?: Weltkarte der Spieler",
   "點上方的 <strong>「誰在玩」</strong> 頁籤，看看世界各地的經文雨玩家都在哪裡。": "Tippe oben auf den Reiter <strong>„Wer spielt?“</strong>, um zu sehen, wo VerseRain-Spieler auf der ganzen Welt sind.",
   "教學影片：點「誰在玩」看全球玩家分佈 → 按「3D 地球」→ 拖曳轉動地球。": "Lehrvideo: „Wer spielt?“ öffnen und Spieler weltweit sehen → „3D-Globus“ drücken → ziehen, um den Globus zu drehen.",
+  // 我的果子 (map influence overlay)
+  "我的果子": "Meine Frucht",
+  "看看你推薦的人在哪裡": "Sieh, wo die von dir Eingeladenen sind",
+  "金線 = 我推薦的人": "goldene Linie = von mir Eingeladene",
+  "虛線 = 他們推薦的人": "gestrichelt = von ihnen Eingeladene",
+  "第一層 {a} · 第二層 {b}": "Ebene 1: {a} · Ebene 2: {b}",
+  "找不到你的位置，只標出果子": "Dein Standort ist unbekannt; nur die Frucht wird hervorgehoben",
+  "還沒有果子——把邀請連結分享給朋友吧": "Noch keine Frucht — teile deinen Einladungslink mit einem Freund",
 };
 
 export const my = {
@@ -4283,6 +4347,14 @@ export const my = {
   "誰在玩：全球玩家地圖": "ဘယ်သူတွေကစားနေလဲ - ကမ္ဘာ့ကစားသူ မြေပုံ",
   "點上方的 <strong>「誰在玩」</strong> 頁籤，看看世界各地的經文雨玩家都在哪裡。": "အပေါ်ရှိ <strong>«ဘယ်သူတွေကစားနေလဲ»</strong> တက်ဘ်ကို နှိပ်၍ ကမ္ဘာတစ်ဝှမ်းရှိ VerseRain ကစားသူများ မည်သည့်နေရာတွင် ရှိသည်ကို ကြည့်ပါ။",
   "教學影片：點「誰在玩」看全球玩家分佈 → 按「3D 地球」→ 拖曳轉動地球。": "သင်ခန်းစာဗီဒီယို - «ဘယ်သူတွေကစားနေလဲ» ဖွင့်၍ ကမ္ဘာ့ကစားသူများကို ကြည့် → «3D ကမ္ဘာလုံး» နှိပ် → ဆွဲ၍ ကမ္ဘာလုံး လှည့်ခြင်း။",
+  // 我的果子 (map influence overlay)
+  "我的果子": "ကျွန်ုပ်၏အသီးများ",
+  "看看你推薦的人在哪裡": "သင်ဖိတ်ခေါ်ထားသူများ ဘယ်မှာရှိသည်ကို ကြည့်ပါ",
+  "金線 = 我推薦的人": "ရွှေရောင်မျဉ်း = ကျွန်ုပ်ဖိတ်ခေါ်ထားသူများ",
+  "虛線 = 他們推薦的人": "မျဉ်းပြတ် = သူတို့ဖိတ်ခေါ်ထားသူများ",
+  "第一層 {a} · 第二層 {b}": "အဆင့် ၁: {a} · အဆင့် ၂: {b}",
+  "找不到你的位置，只標出果子": "သင့်တည်နေရာ မသိပါ၊ အသီးများကိုသာ ပြထားသည်",
+  "還沒有果子——把邀請連結分享給朋友吧": "အသီးမရှိသေးပါ — ဖိတ်ခေါ်လင့်ခ်ကို မိတ်ဆွေထံ မျှဝေပါ",
 };
 
 export const vi = {
@@ -4711,6 +4783,14 @@ export const vi = {
   "誰在玩：全球玩家地圖": "Ai đang chơi: bản đồ người chơi toàn cầu",
   "點上方的 <strong>「誰在玩」</strong> 頁籤，看看世界各地的經文雨玩家都在哪裡。": "Nhấn thẻ <strong>«Ai đang chơi»</strong> ở phía trên để xem người chơi VerseRain khắp thế giới đang ở đâu.",
   "教學影片：點「誰在玩」看全球玩家分佈 → 按「3D 地球」→ 拖曳轉動地球。": "Video hướng dẫn: mở «Ai đang chơi» xem phân bố người chơi toàn cầu → nhấn «Địa cầu 3D» → kéo để xoay địa cầu.",
+  // 我的果子 (map influence overlay)
+  "我的果子": "Trái của tôi",
+  "看看你推薦的人在哪裡": "Xem những người bạn đã mời đang ở đâu",
+  "金線 = 我推薦的人": "đường vàng = người tôi đã mời",
+  "虛線 = 他們推薦的人": "đường đứt = người họ đã mời",
+  "第一層 {a} · 第二層 {b}": "tầng 1: {a} · tầng 2: {b}",
+  "找不到你的位置，只標出果子": "Không rõ vị trí của bạn; chỉ đánh dấu các trái",
+  "還沒有果子——把邀請連結分享給朋友吧": "Chưa có trái nào — hãy chia sẻ liên kết mời với bạn bè",
 };
 
 export const id = {
@@ -5371,6 +5451,14 @@ export const id = {
   "誰在玩：全球玩家地圖": "Siapa yang Main: Peta Pemain Global",
   "點上方的 <strong>「誰在玩」</strong> 頁籤，看看世界各地的經文雨玩家都在哪裡。": "Ketuk tab <strong>«Siapa yang Main»</strong> di bagian atas untuk melihat di mana saja pemain VerseRain di seluruh dunia.",
   "教學影片：點「誰在玩」看全球玩家分佈 → 按「3D 地球」→ 拖曳轉動地球。": "Video tutorial: buka «Siapa yang Main» untuk melihat sebaran pemain global → tekan «Bola Dunia 3D» → seret untuk memutar bola dunia.",
+  // 我的果子 (map influence overlay)
+  "我的果子": "Buahku",
+  "看看你推薦的人在哪裡": "Lihat di mana orang-orang yang kamu undang",
+  "金線 = 我推薦的人": "garis emas = orang yang saya undang",
+  "虛線 = 他們推薦的人": "garis putus = orang yang mereka undang",
+  "第一層 {a} · 第二層 {b}": "tingkat 1: {a} · tingkat 2: {b}",
+  "找不到你的位置，只標出果子": "Lokasimu tidak diketahui; hanya buah yang disorot",
+  "還沒有果子——把邀請連結分享給朋友吧": "Belum ada buah — bagikan tautan undanganmu ke teman",
 };
 
 export const ms = {
@@ -6233,6 +6321,14 @@ export const ms = {
   "誰在玩：全球玩家地圖": "Siapa Bermain: Peta Pemain Global",
   "點上方的 <strong>「誰在玩」</strong> 頁籤，看看世界各地的經文雨玩家都在哪裡。": "Ketik tab <strong>«Siapa Bermain»</strong> di bahagian atas untuk melihat di mana pemain VerseRain di seluruh dunia.",
   "教學影片：點「誰在玩」看全球玩家分佈 → 按「3D 地球」→ 拖曳轉動地球。": "Video tutorial: buka «Siapa Bermain» untuk melihat taburan pemain global → tekan «Glob 3D» → seret untuk memutar glob.",
+  // 我的果子 (map influence overlay)
+  "我的果子": "Buah saya",
+  "看看你推薦的人在哪裡": "Lihat di mana orang yang anda jemput",
+  "金線 = 我推薦的人": "garis emas = orang yang saya jemput",
+  "虛線 = 他們推薦的人": "garis putus = orang yang mereka jemput",
+  "第一層 {a} · 第二層 {b}": "tahap 1: {a} · tahap 2: {b}",
+  "找不到你的位置，只標出果子": "Lokasi anda tidak diketahui; hanya buah diserlahkan",
+  "還沒有果子——把邀請連結分享給朋友吧": "Belum ada buah — kongsi pautan jemputan anda dengan rakan",
 };
 
 export const zhcn = {
@@ -7028,6 +7124,14 @@ export const zhcn = {
   "誰在玩：全球玩家地圖": "谁在玩：全球玩家地图",
   "點上方的 <strong>「誰在玩」</strong> 頁籤，看看世界各地的經文雨玩家都在哪裡。": "点上方的 <strong>「谁在玩」</strong> 页签，看看世界各地的经文雨玩家都在哪里。",
   "教學影片：點「誰在玩」看全球玩家分佈 → 按「3D 地球」→ 拖曳轉動地球。": "教学视频：点「谁在玩」看全球玩家分布 → 按「3D 地球」→ 拖拽转动地球。",
+  // 我的果子 (map influence overlay)
+  "我的果子": "我的果子",
+  "看看你推薦的人在哪裡": "看看你推荐的人在哪里",
+  "金線 = 我推薦的人": "金线 = 我推荐的人",
+  "虛線 = 他們推薦的人": "虚线 = 他们推荐的人",
+  "第一層 {a} · 第二層 {b}": "第一层 {a} · 第二层 {b}",
+  "找不到你的位置，只標出果子": "找不到你的位置，只标出果子",
+  "還沒有果子——把邀請連結分享給朋友吧": "还没有果子——把邀请链接分享给朋友吧",
 };
 
 export const pt = {
@@ -7090,6 +7194,14 @@ export const pt = {
   "誰在玩：全球玩家地圖": "Quem está jogando: mapa global de jogadores",
   "點上方的 <strong>「誰在玩」</strong> 頁籤，看看世界各地的經文雨玩家都在哪裡。": "Toque na aba <strong>«Quem está jogando»</strong> no topo para ver onde estão os jogadores do VerseRain pelo mundo.",
   "教學影片：點「誰在玩」看全球玩家分佈 → 按「3D 地球」→ 拖曳轉動地球。": "Vídeo tutorial: abra «Quem está jogando» para ver os jogadores do mundo todo → pressione «Globo 3D» → arraste para girar o globo.",
+  // 我的果子 (map influence overlay)
+  "我的果子": "Meus frutos",
+  "看看你推薦的人在哪裡": "Veja onde estão as pessoas que você convidou",
+  "金線 = 我推薦的人": "linha dourada = pessoas que convidei",
+  "虛線 = 他們推薦的人": "linha tracejada = pessoas que elas convidaram",
+  "第一層 {a} · 第二層 {b}": "nível 1: {a} · nível 2: {b}",
+  "找不到你的位置，只標出果子": "Sua localização é desconhecida; apenas os frutos foram destacados",
+  "還沒有果子——把邀請連結分享給朋友吧": "Ainda não há frutos — compartilhe seu link de convite com um amigo",
 };
 
 export const fr = {
@@ -7152,6 +7264,14 @@ export const fr = {
   "誰在玩：全球玩家地圖": "Qui joue ? : carte mondiale des joueurs",
   "點上方的 <strong>「誰在玩」</strong> 頁籤，看看世界各地的經文雨玩家都在哪裡。": "Touchez l’onglet <strong>« Qui joue ? »</strong> en haut pour voir où se trouvent les joueurs VerseRain dans le monde.",
   "教學影片：點「誰在玩」看全球玩家分佈 → 按「3D 地球」→ 拖曳轉動地球。": "Vidéo tutoriel : ouvrir « Qui joue ? » pour voir les joueurs du monde entier → appuyer sur « Globe 3D » → faire glisser pour tourner le globe.",
+  // 我的果子 (map influence overlay)
+  "我的果子": "Mes fruits",
+  "看看你推薦的人在哪裡": "Voir où sont les personnes que tu as invitées",
+  "金線 = 我推薦的人": "ligne dorée = personnes que j’ai invitées",
+  "虛線 = 他們推薦的人": "pointillés = personnes qu’elles ont invitées",
+  "第一層 {a} · 第二層 {b}": "niveau 1 : {a} · niveau 2 : {b}",
+  "找不到你的位置，只標出果子": "Ta position est inconnue ; seuls les fruits sont mis en évidence",
+  "還沒有果子——把邀請連結分享給朋友吧": "Pas encore de fruits — partage ton lien d’invitation avec un ami",
 };
 
 export const ru = {
@@ -7214,6 +7334,14 @@ export const ru = {
   "誰在玩：全球玩家地圖": "Кто играет: всемирная карта игроков",
   "點上方的 <strong>「誰在玩」</strong> 頁籤，看看世界各地的經文雨玩家都在哪裡。": "Нажмите вкладку <strong>«Кто играет»</strong> вверху, чтобы увидеть, где по всему миру находятся игроки VerseRain.",
   "教學影片：點「誰在玩」看全球玩家分佈 → 按「3D 地球」→ 拖曳轉動地球。": "Обучающее видео: открыть «Кто играет» и увидеть игроков по всему миру → нажать «Глобус 3D» → потянуть, чтобы повернуть глобус.",
+  // 我的果子 (map influence overlay)
+  "我的果子": "Мои плоды",
+  "看看你推薦的人在哪裡": "Посмотреть, где те, кого вы пригласили",
+  "金線 = 我推薦的人": "золотая линия = кого пригласил я",
+  "虛線 = 他們推薦的人": "пунктир = кого пригласили они",
+  "第一層 {a} · 第二層 {b}": "уровень 1: {a} · уровень 2: {b}",
+  "找不到你的位置，只標出果子": "Ваше местоположение неизвестно; выделены только плоды",
+  "還沒有果子——把邀請連結分享給朋友吧": "Плодов пока нет — поделитесь ссылкой-приглашением с другом",
 };
 
 export const hi = {
@@ -7276,6 +7404,14 @@ export const hi = {
   "誰在玩：全球玩家地圖": "कौन खेल रहा है: वैश्विक खिलाड़ी नक्शा",
   "點上方的 <strong>「誰在玩」</strong> 頁籤，看看世界各地的經文雨玩家都在哪裡。": "ऊपर <strong>«कौन खेल रहा है»</strong> टैब दबाकर देखें कि दुनिया भर में VerseRain के खिलाड़ी कहाँ हैं।",
   "教學影片：點「誰在玩」看全球玩家分佈 → 按「3D 地球」→ 拖曳轉動地球。": "ट्यूटोरियल वीडियो: «कौन खेल रहा है» खोलकर वैश्विक खिलाड़ी देखें → «3D ग्लोब» दबाएँ → खींचकर ग्लोब घुमाएँ।",
+  // 我的果子 (map influence overlay)
+  "我的果子": "मेरे फल",
+  "看看你推薦的人在哪裡": "देखें कि आपके आमंत्रित लोग कहाँ हैं",
+  "金線 = 我推薦的人": "सुनहरी रेखा = जिन्हें मैंने आमंत्रित किया",
+  "虛線 = 他們推薦的人": "बिंदीदार रेखा = जिन्हें उन्होंने आमंत्रित किया",
+  "第一層 {a} · 第二層 {b}": "स्तर 1: {a} · स्तर 2: {b}",
+  "找不到你的位置，只標出果子": "आपका स्थान अज्ञात है; केवल फल हाइलाइट किए गए",
+  "還沒有果子——把邀請連結分享給朋友吧": "अभी कोई फल नहीं — अपना आमंत्रण लिंक किसी मित्र के साथ साझा करें",
 };
 
 // Khmer (Cambodian) — full UI coverage, machine-translated in bulk from the
@@ -8143,6 +8279,14 @@ export const km = {
   "我的錄音（不公開）": "ការថតរបស់ខ្ញុំ(មិនសាធារណៈ)",
   "我的錄音（已公開）· 點一下改為不公開": "ការថតរបស់ខ្ញុំ(សាធារណៈ) · ចុចដើម្បីប្តូរទៅមិនសាធារណៈ",
   "我的錄音（不公開）· 點一下改為公開": "ការថតរបស់ខ្ញុំ(មិនសាធារណៈ) · ចុចដើម្បីប្តូរទៅសាធារណៈ",
+  // 我的果子 (map influence overlay)
+  "我的果子": "ផ្លែផ្កា​របស់ខ្ញុំ",
+  "看看你推薦的人在哪裡": "មើលថាអ្នកដែលអ្នកបានអញ្ជើញនៅទីណា",
+  "金線 = 我推薦的人": "បន្ទាត់មាស = អ្នកដែលខ្ញុំបានអញ្ជើញ",
+  "虛線 = 他們推薦的人": "បន្ទាត់ដាច់ = អ្នកដែលពួកគេបានអញ្ជើញ",
+  "第一層 {a} · 第二層 {b}": "កម្រិត ១: {a} · កម្រិត ២: {b}",
+  "找不到你的位置，只標出果子": "មិនស្គាល់ទីតាំងរបស់អ្នក; បង្ហាញតែផ្លែផ្កាប៉ុណ្ណោះ",
+  "還沒有果子——把邀請連結分享給朋友吧": "មិនទាន់មានផ្លែផ្កាទេ — ចែករំលែកតំណអញ្ជើញទៅមិត្តភក្តិ",
 };
 
 const I18N_FILLINS = { he, fa, ar, ja, ko, es, tr, de, my, vi, id, ms, zhcn, pt, fr, ru, hi, km };

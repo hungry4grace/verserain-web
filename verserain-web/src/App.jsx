@@ -8504,6 +8504,48 @@ export default function App() {
   const [mainTab, setMainTab] = useState(() => parseRoute(window.location.hash).tab);
   const [mapView, setMapView] = useState('2d');   // 地圖 2D/3D 切換
   const [mapFocus, setMapFocus] = useState(null);  // 3D→2D 切換時帶入的焦點座標
+  // 我的果子 (map influence overlay): who I invited (level1) and whom they
+  // invited (level2). Merged from PartyKit user.invitedBy (/fruit-tree, includes
+  // deferred attribution) and the Redis referral history (myReferees).
+  const [fruitMode, setFruitMode] = useState(false);
+  const [fruitTree, setFruitTree] = useState(null);
+  const [fruitLoading, setFruitLoading] = useState(false);
+  const loadFruitTree = async () => {
+    if (fruitLoading) return;
+    setFruitLoading(true);
+    try {
+      let prevCodes = [];
+      try { prevCodes = JSON.parse(localStorage.getItem('verserain_prev_personal_codes') || '[]'); } catch { prevCodes = []; }
+      const codes = buildFruitAuthorKeys(playerName, personalCode, prevCodes).filter(k => /^[A-HJ-NP-Za-km-z2-9]{10}$/.test(k));
+      const self = new Set([playerName]);
+      const level1 = new Set(); const level2 = []; const l2seen = new Set();
+      const tree = codes.length
+        ? await fetch(`${PARTY_AUTH_DB_URL}/fruit-tree?codes=${encodeURIComponent(codes.join(','))}`).then(r => r.json()).catch(() => null)
+        : null;
+      (tree?.level1 || []).forEach(x => { if (x?.name && !self.has(x.name)) level1.add(x.name); });
+      (myReferees || []).forEach(r => { if (r?.name && !self.has(r.name)) level1.add(r.name); });
+      (tree?.level2 || []).forEach(x => { if (x?.name && !self.has(x.name) && !level1.has(x.name) && !l2seen.has(x.name)) { l2seen.add(x.name); level2.push({ name: x.name, parent: x.parent || null }); } });
+      if (level1.size) {
+        const names = Array.from(level1).slice(0, 100);
+        const res = await fetch(`/api/get-referees?authors=${encodeURIComponent(names.join(','))}`).then(r => r.json()).catch(() => null);
+        (res?.referees || []).forEach(r => { if (r?.name && !self.has(r.name) && !level1.has(r.name) && !l2seen.has(r.name)) { l2seen.add(r.name); level2.push({ name: r.name, parent: null }); } });
+      }
+      setFruitTree({ level1: Array.from(level1), level2 });
+    } finally { setFruitLoading(false); }
+  };
+  const toggleFruitMode = () => {
+    if (!fruitMode && !fruitTree) loadFruitTree();
+    setFruitMode(v => !v);
+  };
+  const getSelfLocation = () => {
+    try {
+      const la = parseFloat(localStorage.getItem('verserain_custom_lat')), ln = parseFloat(localStorage.getItem('verserain_custom_lng'));
+      if (Number.isFinite(la) && Number.isFinite(ln)) return { lat: la, lng: ln };
+    } catch { /* noop */ }
+    const g = geoRef.current;
+    if (g && Number.isFinite(parseFloat(g.latitude)) && Number.isFinite(parseFloat(g.longitude))) return { lat: parseFloat(g.latitude), lng: parseFloat(g.longitude) };
+    return null;
+  };
   const [bilingualRainActive, setBilingualRainActive] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -25110,7 +25152,7 @@ const deDict = {
                     verserain
                   </div>
                   <div className="app-brand-version" style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', marginTop: '4px', marginLeft: '2px' }}>
-                    v4.0.21
+                    v4.0.22
                   </div>
                 </div>
                 <div ref={langPickerRef} className="app-lang-control" style={{ position: 'relative' }}>
@@ -28720,6 +28762,7 @@ const deDict = {
                     </div>
                     <React.Suspense fallback={<div style={{ padding: '3rem', textAlign: 'center', color: '#94a3b8' }}>{t('地圖載入中…', 'Loading map…')}</div>}>
                     <WorldMap t={t} playerName={playerName} userEmail={userEmail}
+                      fruitMode={fruitMode} fruitTree={fruitTree} fruitLoading={fruitLoading} onToggleFruit={toggleFruitMode} selfLocation={getSelfLocation()}
                       currentMode={mapView}
                       focusLocation={mapFocus}
                       onToggleMode={(coord) => {

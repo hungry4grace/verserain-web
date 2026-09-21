@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 // Same deterministic room color as in App.jsx
 const ROOM_COLORS = ['#ef4444','#f97316','#eab308','#22c55e','#14b8a6','#0ea5e9','#8b5cf6','#ec4899','#06b6d4','#84cc16'];
@@ -84,7 +84,18 @@ function loadLeafletAndCluster() {
 
 const TEAMS_HOST = 'https://verserain-party.hungry4grace.partykit.dev/parties/main/global-auth-db';
 
-export default function WorldMap2D({ t, playerName, userEmail, onJoinRoom, onViewGarden, onToggleMode, currentMode, focusLocation, playTone, playWelcome, onEnableAudio }) {
+export default function WorldMap2D({ t, playerName, userEmail, onJoinRoom, onViewGarden, onToggleMode, currentMode, focusLocation, playTone, playWelcome, onEnableAudio, fruitMode = false, fruitTree = null, fruitLoading = false, onToggleFruit, selfLocation = null }) {
+  // 我的果子: name → 1 (I invited them) | 2 (they were invited by someone I invited)
+  const fruitLevel = useMemo(() => {
+    const m = new Map();
+    if (fruitTree) {
+      (fruitTree.level1 || []).forEach(n => m.set(n, 1));
+      (fruitTree.level2 || []).forEach(x => { if (x?.name && !m.has(x.name)) m.set(x.name, 2); });
+    }
+    return m;
+  }, [fruitTree]);
+  const fruitLinesRef = useRef(null);
+  const fruitMarkersRef = useRef(null);
   const mapRef = useRef(null);
   const leafletMapRef = useRef(null);
   const markersByNameRef = useRef({}); // name → Leaflet marker,供即時脈動查座標
@@ -288,6 +299,8 @@ export default function WorldMap2D({ t, playerName, userEmail, onJoinRoom, onVie
 
         // Clear existing markers for this update
         markersGroupRef.current.clearLayers();
+        if (!fruitMarkersRef.current) fruitMarkersRef.current = L.layerGroup().addTo(leafletMapRef.current);
+        fruitMarkersRef.current.clearLayers();
         markersByNameRef.current = {}; // 重建 name→marker 對照(供即時脈動)
 
         const playerMarkers = [];
@@ -340,8 +353,26 @@ export default function WorldMap2D({ t, playerName, userEmail, onJoinRoom, onVie
             }
           }
 
+          // 我的果子:我推薦的人金環、他們推薦的人細金環,其他人暗化。
+          const fruitLvl = fruitMode && fruitTree ? (fruitLevel.get(p.name) || 0) : 0;
+          if (fruitMode && fruitTree) {
+            if (fruitLvl === 1) {
+              bgColor = '#fde68a';
+              glowStyle = 'border: 2px solid #f59e0b; box-shadow: 0 0 0 4px rgba(245,158,11,0.9), 0 0 22px #fbbf24;';
+              opacity = 1; filter = 'none';
+            } else if (fruitLvl === 2) {
+              bgColor = '#fef3c7';
+              glowStyle = 'border: 1.5px solid #fbbf24; box-shadow: 0 0 0 2px rgba(251,191,36,0.7), 0 0 14px rgba(251,191,36,0.8);';
+              opacity = 0.95; filter = 'none';
+            } else if (!isCurrentUser) {
+              bgColor = '#0f2d3b'; opacity = 0.18; filter = 'grayscale(100%)'; glowStyle = 'none';
+            }
+          }
+
           // 大小 = 塊地數(封頂);高亮情境仍確保最小可視尺寸。
           let size = sizeForSquares(stats.squares);
+          if (fruitLvl === 1) size = Math.max(size, 14);
+          if (fruitLvl === 2) size = Math.max(size, 11);
 
           if (isCurrentUser) {
             bgColor = '#fde047'; // Yellow
@@ -404,7 +435,9 @@ export default function WorldMap2D({ t, playerName, userEmail, onJoinRoom, onVie
 
           marker.bindPopup(popup);
 
-          marker.addTo(markersGroupRef.current);
+          // 果子(與我自己)不進叢集,線的端點才不會被泡泡吃掉。
+          if (fruitMode && fruitTree && (fruitLvl || isCurrentUser) && fruitMarkersRef.current) marker.addTo(fruitMarkersRef.current);
+          else marker.addTo(markersGroupRef.current);
           playerMarkers.push({ p, marker });
           markersByNameRef.current[p.name] = marker;
         });
@@ -479,7 +512,41 @@ export default function WorldMap2D({ t, playerName, userEmail, onJoinRoom, onVie
     return () => {
       // Don't remove the map instance on unmount/re-render to preserve view
     };
-  }, [loading, players, statsByName, playerName, selectedRoom, selectedTeam, myTeams]);
+  }, [loading, players, statsByName, playerName, selectedRoom, selectedTeam, myTeams, fruitMode, fruitTree, fruitLevel]);
+
+  // 我的果子:以我為中心的輻射線。level1 金實線、level2 淡虛線(從推薦他的人出發,
+  // 找不到就從我出發)。獨立 layerGroup,不受標記重建影響。
+  useEffect(() => {
+    const map = leafletMapRef.current;
+    const L = window.L;
+    if (!map || !L) return;
+    if (!map.getPane('fruitPane')) { map.createPane('fruitPane'); map.getPane('fruitPane').style.zIndex = 400; }
+    if (!fruitLinesRef.current) fruitLinesRef.current = L.layerGroup().addTo(map);
+    const layer = fruitLinesRef.current;
+    layer.clearLayers();
+    if (!fruitMode || !fruitTree) return;
+    const byName = new Map();
+    players.forEach(p => { if (p && p.name && p.lat != null && p.lng != null && !isNaN(p.lat) && !isNaN(p.lng)) byName.set(p.name, [p.lat, p.lng]); });
+    const me = byName.get(playerName) || (selfLocation && Number.isFinite(selfLocation.lat) ? [selfLocation.lat, selfLocation.lng] : null);
+    const pts = [];
+    if (me) pts.push(me);
+    (fruitTree.level1 || []).forEach(n => {
+      const to = byName.get(n); if (!to) return;
+      pts.push(to);
+      if (me) L.polyline([me, to], { pane: 'fruitPane', color: '#fbbf24', weight: 2.5, opacity: 0.9 }).addTo(layer);
+    });
+    (fruitTree.level2 || []).forEach(x => {
+      const to = byName.get(x?.name); if (!to) return;
+      const from = (x.parent && byName.get(x.parent)) || me;
+      pts.push(to);
+      if (from) L.polyline([from, to], { pane: 'fruitPane', color: '#fde68a', weight: 1.5, opacity: 0.55, dashArray: '4 6' }).addTo(layer);
+    });
+    if (pts.length >= 2) {
+      try { map.fitBounds(L.latLngBounds(pts).pad(0.25), { animate: true, maxZoom: 6 }); } catch { /* noop */ }
+    } else if (me) {
+      map.setView(me, Math.max(map.getZoom(), 4), { animate: true });
+    }
+  }, [fruitMode, fruitTree, players, playerName, selfLocation, loading]);
 
   // 即時脈動:訂閱 window 事件,從對應玩家的點盪出光波(imperative,不觸發 React
   // 重繪/重建標記)。只掛一次,靠 ref 讀取當前 map 與 name→marker 對照。
@@ -638,6 +705,15 @@ export default function WorldMap2D({ t, playerName, userEmail, onJoinRoom, onVie
           >
             {soundOn ? '🔊' : '🔈'} {t('聲音', 'Sound')}
           </button>
+          {playerName && onToggleFruit && (
+            <button
+              title={t('看看你推薦的人在哪裡', 'See where the people you invited are')}
+              onClick={() => onToggleFruit()}
+              style={{ background: fruitMode ? '#f59e0b' : '#fef3c7', color: fruitMode ? '#fff' : '#92400e', border: 'none', padding: '0.3rem 0.8rem', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.8rem' }}
+            >
+              🍎 {t('我的果子', 'My Fruit')}{fruitLoading ? ' …' : (fruitMode && fruitTree ? ` (${(fruitTree.level1 || []).length + (fruitTree.level2 || []).length})` : '')}
+            </button>
+          )}
           <button
             title={t('切換 2D / 3D 地球', 'Toggle 2D / 3D globe')}
             onClick={() => onToggleMode?.()}
@@ -691,7 +767,30 @@ export default function WorldMap2D({ t, playerName, userEmail, onJoinRoom, onVie
               </span>
               <span>{t('亮度 = 近7天活躍', 'glow = 7-day activity')}</span>
             </div>
+            {fruitMode && fruitTree && (
+              <div style={{ marginTop: 6, paddingTop: 6, borderTop: '1px solid #14324f' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 3 }}>
+                  <span style={{ width: 22, height: 0, borderTop: '2.5px solid #fbbf24' }} />
+                  <span>{t('金線 = 我推薦的人', 'gold = people I invited')}</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 3 }}>
+                  <span style={{ width: 22, height: 0, borderTop: '1.5px dashed #fde68a' }} />
+                  <span>{t('虛線 = 他們推薦的人', 'dashed = people they invited')}</span>
+                </div>
+                <div style={{ color: '#fcd34d', fontWeight: 700 }}>{t('第一層 {a} · 第二層 {b}', 'level 1: {a} · level 2: {b}').replace('{a}', String((fruitTree.level1 || []).length)).replace('{b}', String((fruitTree.level2 || []).length))}</div>
+              </div>
+            )}
           </div>
+          {fruitMode && fruitTree && (fruitTree.level1 || []).length + (fruitTree.level2 || []).length === 0 && (
+            <div style={{ position: 'absolute', bottom: '18px', left: '50%', transform: 'translateX(-50%)', zIndex: 1000, background: 'rgba(4,16,31,0.85)', color: '#fde68a', padding: '6px 14px', borderRadius: '20px', fontSize: '0.85rem', pointerEvents: 'none', whiteSpace: 'nowrap' }}>
+              🍎 {t('還沒有果子——把邀請連結分享給朋友吧', 'No fruit yet — share your invite link with a friend')}
+            </div>
+          )}
+          {fruitMode && fruitTree && (fruitTree.level1 || []).length + (fruitTree.level2 || []).length > 0 && !players.some(p => p.name === playerName) && !selfLocation && (
+            <div style={{ position: 'absolute', bottom: '18px', left: '50%', transform: 'translateX(-50%)', zIndex: 1000, background: 'rgba(4,16,31,0.85)', color: '#fde68a', padding: '6px 14px', borderRadius: '20px', fontSize: '0.85rem', pointerEvents: 'none', whiteSpace: 'nowrap' }}>
+              {t('找不到你的位置，只標出果子', 'Your location is unknown; fruit highlighted only')}
+            </div>
+          )}
           {players.length === 0 && !error && (
             <div style={{ position: 'relative', top: '-260px', textAlign: 'center', color: '#94a3b8', pointerEvents: 'none', fontSize: '1rem' }}>
               {t('還沒有玩家資料，完成一局遊戲後你的位置就會出現！', 'No players yet — complete a game to appear on the map!')}

@@ -2728,6 +2728,54 @@ export default class Server {
          }
       }
 
+      // GET /fruit-tree?codes=a,b — 我的果子: people this person invited (level1)
+      // and the people THEY invited (level2), read from user.invitedBy — which
+      // includes deferred attribution (referral.js). Display names only.
+      if (url.pathname.endsWith('/fruit-tree') && request.method === 'GET') {
+         try {
+            const codes = String(url.searchParams.get('codes') || '').split(',').map(c => c.trim()).filter(c => /^[A-HJ-NP-Za-km-z2-9]{10}$/.test(c)).slice(0, 20);
+            if (!codes.length) return new Response(JSON.stringify({ error: 'codes required' }), { status: 400, headers: corsHeaders });
+            const cacheKey = codes.slice().sort().join(',');
+            this._fruitTreeCache = this._fruitTreeCache || new Map();
+            const hit = this._fruitTreeCache.get(cacheKey);
+            if (hit && (Date.now() - hit.ts) < 60000) return new Response(hit.body, { status: 200, headers: corsHeaders });
+            const users = [];
+            const PAGE = 50;
+            let startAfter;
+            while (true) {
+               const opts = { prefix: 'user:', limit: PAGE };
+               if (startAfter) opts.startAfter = startAfter;
+               const page = await this.room.storage.list(opts);
+               if (!page || page.size === 0) break;
+               let lastKey;
+               for (const [key, v] of page.entries()) {
+                  lastKey = key;
+                  if (v && v.name) users.push({ name: String(v.name), code: v.personalCode || null, invitedBy: v.invitedBy || null });
+               }
+               if (page.size < PAGE) break;
+               startAfter = lastKey;
+            }
+            const codeSet = new Set(codes);
+            const level1 = users.filter(u => u.invitedBy && codeSet.has(u.invitedBy) && !(u.code && codeSet.has(u.code)));
+            const l1codes = new Map();
+            const l1names = new Set();
+            for (const u of level1) { l1names.add(u.name); if (u.code) l1codes.set(u.code, u.name); }
+            const l2names = new Set();
+            const level2 = [];
+            for (const u of users) {
+               if (!u.invitedBy || !l1codes.has(u.invitedBy) || l1names.has(u.name) || (u.code && codeSet.has(u.code)) || l2names.has(u.name)) continue;
+               l2names.add(u.name);
+               level2.push({ name: u.name, parent: l1codes.get(u.invitedBy) });
+            }
+            const body = JSON.stringify({ success: true, level1: Array.from(l1names).map(name => ({ name })), level2 });
+            if (this._fruitTreeCache.size > 50) this._fruitTreeCache.clear();
+            this._fruitTreeCache.set(cacheKey, { ts: Date.now(), body });
+            return new Response(body, { status: 200, headers: corsHeaders });
+         } catch(e) {
+            return new Response(JSON.stringify({ error: 'Failed to build fruit tree' }), { status: 500, headers: corsHeaders });
+         }
+      }
+
       if (url.pathname.endsWith('/all-gardens') && request.method === 'GET') {
          try {
             // 快取:整包統計是重負載(大量玩家時要掃全部 garden)。60 秒內共用同一份,
