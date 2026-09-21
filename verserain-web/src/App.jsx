@@ -6310,17 +6310,28 @@ export default function App() {
   // Tell the server these earlier names are this account's: every published
   // set authored under them gets the current name + ownerEmail. Refreshes the
   // published list when anything changed.
-  const claimAuthorNames = React.useCallback(async (names) => {
+  // Even with no names the server has work to do: sets bound to this email
+  // still carrying an older display name are re-tagged, and that older name
+  // then also claims legacy sets. So a start-up call with an empty list is
+  // made once per device for each (email, name) — stamped only after the
+  // server answered, so an older server (before deploy) doesn't burn it.
+  const claimAuthorNames = React.useCallback(async (names, { force = false } = {}) => {
     const email = String(userEmail || '').trim().toLowerCase();
-    const list = (names || []).map(n => String(n || '').trim()).filter(Boolean);
-    if (!email || !list.length) return 0;
+    const list = Array.from(new Set((names || []).map(n => String(n || '').trim()).filter(Boolean)));
+    if (!email) return 0;
+    const stamp = `${email}|${playerName || ''}|${[...list].sort().join(',')}`;
+    if (!force) {
+      try { if (localStorage.getItem('verserain_author_claimed') === stamp) return 0; } catch { /* storage off */ }
+    }
     try {
       const r = await fetch(`${PARTY_HOST}/sets/claim-author`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, names: list }) });
       const d = await r.json().catch(() => ({}));
-      if (r.ok && d.changed > 0) setPublishedSetsReload(n => n + 1);
-      return r.ok ? (d.changed || 0) : 0;
+      if (!r.ok) return 0;
+      try { localStorage.setItem('verserain_author_claimed', stamp); } catch { /* storage off */ }
+      if (d.changed > 0) setPublishedSetsReload(n => n + 1);
+      return d.changed || 0;
     } catch { return 0; }
-  }, [userEmail]);
+  }, [userEmail, playerName]);
   const privateSetsInitialSyncDoneRef = useRef(false);
   const lastPushedPrivateSetsRef = useRef('');
 
@@ -6827,7 +6838,19 @@ export default function App() {
               // renames / by hand) also claims the sets published under it, so
               // 「作者」 shows the current name and the sets stay editable.
               const names = (Array.isArray(d?.keys) ? d.keys : []).filter(k => k && k !== playerName && !authorKeys.includes(k));
-              if (names.length) claimAuthorNames(names);
+              // This device's 我的題庫 bucket is stamped with the account's email;
+              // author names still on those sets are earlier names of this
+              // account (sets published before renames re-tagged them).
+              try {
+                if ((localStorage.getItem('verseRain_custom_sets_owner') || '').toLowerCase() === email) {
+                  const mine = JSON.parse(localStorage.getItem('verseRain_custom_sets') || '[]');
+                  for (const set of Array.isArray(mine) ? mine : []) {
+                    const a = String(set?.authorName || '').trim();
+                    if (a && a !== 'Anonymous' && a !== playerName && !names.includes(a)) names.push(a);
+                  }
+                }
+              } catch { /* ignore a bad local bucket */ }
+              claimAuthorNames(names); // self-throttled: skipped when this exact hand-in was already answered
             })
             .catch(() => null)
         : Promise.resolve();
@@ -25018,7 +25041,7 @@ const deDict = {
                     verserain
                   </div>
                   <div className="app-brand-version" style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', marginTop: '4px', marginLeft: '2px' }}>
-                    v4.0.13
+                    v4.0.14
                   </div>
                 </div>
                 <div ref={langPickerRef} className="app-lang-control" style={{ position: 'relative' }}>
@@ -27982,7 +28005,7 @@ const deDict = {
                                 const r = await fetch('/api/link-identity', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: userEmail, keys: [key] }) });
                                 if (!r.ok) throw new Error('link failed');
                                 rememberPreviousName(key);
-                                claimAuthorNames([key]); // sets published under that name become mine too
+                                claimAuthorNames([key], { force: true }); // sets published under that name become mine too
                                 setLinkOldKeyInput('');
                                 setRefereesReload(n => n + 1);
                               } catch {
