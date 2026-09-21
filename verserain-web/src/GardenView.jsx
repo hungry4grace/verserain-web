@@ -16,6 +16,9 @@ import {
 
 const VIEW_MODE_KEY = 'verseRain_gardenViewMode';
 const LIST_PAGE = 200;
+// The list scrolls inside a box about ten rows tall instead of running down
+// the whole page (rows are ~38px + 6px gap).
+const LIST_BOX_HEIGHT = '434px';
 // What to print for a reference: the reference itself, or a placeholder when
 // the planted key has no visible text (a custom verse saved without 出處).
 const refLabel = (ref, t) => (isBlankRef(ref) ? t('（未標出處）', '(no reference)') : ref);
@@ -136,7 +139,12 @@ export default function GardenView({
     const f = focusRef ? fieldOfRef(fields.entries, focusRef, refKey) : -1;
     return f >= 0 ? f : fields.latestFieldIndex;
   });
-  const [highlight, setHighlight] = useState(() => (focusRef && focusNonce ? { ref: focusRef, nonce: focusNonce } : null));
+  const [highlight, setHighlight] = useState(() => {
+    // The played reference may be spelled differently from the planted key
+    // (e.g. grown via another language's set), so resolve it to the cell's ref.
+    const cell = focusRef && focusNonce ? findGardenCell(fields.entries, focusRef, refKey, { substring: false }) : null;
+    return cell ? { ref: cell.ref, nonce: focusNonce } : null;
+  });
   const [query, setQuery] = useState('');
   const [searchMiss, setSearchMiss] = useState(false);
   const [sort, setSort] = useState('planted');
@@ -376,12 +384,17 @@ export default function GardenView({
               </select>
             </label>
           </div>
+          {listRows.length > 0 && (
+            <div style={{ fontSize: '0.78rem', color: '#64748b', margin: '0 0 6px', textAlign: 'right' }}>
+              {t('共 {n} 節', '{n} verses').replace('{n}', listRows.length)}{listRows.length > 10 ? t('，往下捲動查看', ' — scroll for more') : ''}
+            </div>
+          )}
           {listRows.length === 0 ? (
             <div style={{ padding: '1.5rem', background: '#fff', border: '1px dashed #cbd5e1', borderRadius: '8px', color: '#94a3b8', textAlign: 'center', fontSize: '0.9rem' }}>
               {fields.treeCount === 0 ? t('園子還是空的，去玩一節經文吧！', 'The garden is empty — go play a verse!') : t('沒有符合的經文', 'No matching verses')}
             </div>
           ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            <div className="garden-list-scroll" style={{ maxHeight: LIST_BOX_HEIGHT, overflowY: 'auto', paddingRight: '6px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
               {listRows.slice(0, listLimit).map((entry) => (
                 <button
                   key={entry.gridIndex}

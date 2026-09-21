@@ -2372,7 +2372,7 @@ export default class Server {
       // class of bug — it makes data loss from a single bad write impossible.
       if (url.pathname.endsWith('/save-garden') && request.method === 'POST') {
          try {
-            const { playerName, gardenData } = await request.json();
+            const { playerName, gardenData, mergedInto } = await request.json();
             if (!playerName || !gardenData) return new Response(JSON.stringify({ error: 'playerName and gardenData required' }), { status: 400, headers: corsHeaders });
 
             const existing = (await this.room.storage.get(`garden:${playerName}`)) || {};
@@ -2392,6 +2392,28 @@ export default class Server {
                      stage: Math.max(prev.stage || 0, incoming.stage || 0),
                      fruits: Math.max(prev.fruits || 0, incoming.fruits || 0),
                   };
+               }
+            }
+
+            // Duplicate trees the client folded together (same verse under two
+            // spellings): `mergedInto` maps the dropped key to the key it was
+            // merged into. Progress only moves — the kept tree takes the higher
+            // stage/fruits — so the field-level merge above stays monotonic and
+            // the dropped key can safely be removed. Without this the merge
+            // would resurrect the duplicate on every save.
+            if (mergedInto && typeof mergedInto === 'object' && !Array.isArray(mergedInto)) {
+               for (const [dropped, kept] of Object.entries(mergedInto)) {
+                  if (typeof kept !== 'string' || !kept || dropped === kept || dropped === '_activity' || kept === '_activity') continue;
+                  const d = merged[dropped];
+                  if (!d || typeof d !== 'object') continue;
+                  const k = merged[kept];
+                  merged[kept] = (!k || typeof k !== 'object') ? d : {
+                     ...k,
+                     stage: Math.max(k.stage || 0, d.stage || 0),
+                     fruits: Math.max(k.fruits || 0, d.fruits || 0),
+                     setId: k.setId || d.setId || null,
+                  };
+                  delete merged[dropped];
                }
             }
 

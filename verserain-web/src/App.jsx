@@ -6,7 +6,7 @@ import usePartySocket from 'partysocket/react';
 import PartySocket from 'partysocket';
 import QRCode from 'qrcode';
 import { QRCodeSVG } from 'qrcode.react';
-import { classifyGardenResponse, decideGardenSync, buildFruitAuthorKeys, aggregateFruitResults } from './lib/gardenSync.js';
+import { classifyGardenResponse, decideGardenSync, buildFruitAuthorKeys, aggregateFruitResults, tidyGarden, findGardenKey } from './lib/gardenSync.js';
 import { voiceId, voiceMatchesSavedKey, dedupeVoices, buildVoiceOptions } from './lib/voicePicker.js';
 import { splitVersePhrases } from './lib/phraseSplitter.js';
 import { stripBollsMarkup, stripLeadingVerseNumeral } from './lib/bibleTextMarkup.js';
@@ -6188,15 +6188,20 @@ export default function App() {
     const localGd = JSON.parse(localStorage.getItem('verseRain_gardenData') || '{}');
 
     const applyDecision = (decision) => {
-      localStorage.setItem('verseRain_gardenData', JSON.stringify(decision.garden));
-      setGardenData(decision.garden);
+      // Fold duplicate trees after the merge (the cloud copy may still hold
+      // both spellings); `mergedInto` tells the server which keys to drop so
+      // its own field-level merge doesn't resurrect them.
+      const { garden, mergedInto, merged, moved } = tidyGarden(decision.garden, verseRefKey);
+      if (merged || moved) console.info(`[garden-sync] merged ${merged} duplicate tree(s), moved ${moved} to free cells`);
+      localStorage.setItem('verseRain_gardenData', JSON.stringify(garden));
+      setGardenData(garden);
       if (decision.shouldPushToCloud) {
         // Safe to push: we either merged confirmed remote data, or confirmed the
         // player has no remote garden yet (404).
         fetchRetry(`${PARTY_HOST}/save-garden`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ playerName, gardenData: decision.garden })
+          body: JSON.stringify({ playerName, gardenData: garden, ...(merged ? { mergedInto } : {}) })
         }).catch(() => { });
       } else {
         console.warn('[garden-sync] cloud state unknown; using local copy without pushing to server to avoid clobbering remote data');
@@ -6735,7 +6740,8 @@ export default function App() {
 
   // Garden data: keyed by verseRef, each slot has { gridIndex, stage (1-10), fruits, setId }
   const [gardenData, setGardenData] = useState(() => {
-    try { return JSON.parse(localStorage.getItem('verseRain_gardenData')) || {}; } catch { return {}; }
+    // Fold duplicate trees and give every tree its own cell on the way in.
+    try { return tidyGarden(JSON.parse(localStorage.getItem('verseRain_gardenData')) || {}, verseRefKey).garden; } catch { return {}; }
   });
 
   const [creatorPoints, setCreatorPoints] = useState(0);
@@ -6938,7 +6944,7 @@ export default function App() {
         } catch (e) {}
       }
       if (data.success) {
-        setViewingPlayerGarden({ playerName: name, gardenData: data.gardenData, creatorPoints: creatorPts, referralPoints: refPts, loading: false });
+        setViewingPlayerGarden({ playerName: name, gardenData: tidyGarden(data.gardenData, verseRefKey).garden, creatorPoints: creatorPts, referralPoints: refPts, loading: false });
       } else {
         setViewingPlayerGarden({ playerName: name, gardenData: {}, creatorPoints: creatorPts, referralPoints: refPts, loading: false, error: t('該玩家尚未分享園地', 'This player has not shared their garden yet') });
       }
@@ -7008,6 +7014,8 @@ export default function App() {
       // A verse saved without 出處 would be planted under a blank key and show
       // up as a nameless tree; count the activity but don't plant it.
       if (ref && ref !== 'activity_only' && !isBlankRef(ref)) {
+        // Same verse already planted under another spelling → grow that tree.
+        ref = findGardenKey(updated, ref, verseRefKey) || ref;
         isNewVerseChallenge = !updated[ref] && type === 'played';
         if (!updated[ref]) {
           const used = new Set(Object.entries(updated).filter(([k]) => k !== '_activity').map(([,v]) => v.gridIndex));
@@ -24959,7 +24967,7 @@ const deDict = {
                     verserain
                   </div>
                   <div className="app-brand-version" style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', marginTop: '4px', marginLeft: '2px' }}>
-                    v4.0.11
+                    v4.0.12
                   </div>
                 </div>
                 <div ref={langPickerRef} className="app-lang-control" style={{ position: 'relative' }}>
@@ -28098,7 +28106,7 @@ const deDict = {
                                             } catch (e) {}
                                           }
                                           if (data.success) {
-                                            setViewingPlayerGarden({ playerName: name, gardenData: data.gardenData, creatorPoints: creatorPts, referralPoints: refPts, loading: false });
+                                            setViewingPlayerGarden({ playerName: name, gardenData: tidyGarden(data.gardenData, verseRefKey).garden, creatorPoints: creatorPts, referralPoints: refPts, loading: false });
                                           } else {
                                             setViewingPlayerGarden({ playerName: name, gardenData: {}, creatorPoints: creatorPts, referralPoints: refPts, loading: false, error: t('該玩家尚未分享園地', 'This player has not shared their garden yet') });
                                           }
