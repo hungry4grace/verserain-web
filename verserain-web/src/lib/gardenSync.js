@@ -158,9 +158,12 @@ export function repackGardenCells(gd) {
 // their text never resolves and they count as plants on the map. Both the
 // client and the PartyKit server drop them on every read/write so a stale
 // device copy can never plant them again.
+// "N/A" is the reference of the placeholder verse shown when a language has
+// no verse sets yet (「尚未發現經文組」); playing it planted a tree too.
 const TEST_FIXTURE_REF_RE = /^FakeVerse \d+$/;
 export function isTestFixtureRef(ref) {
-  return typeof ref === 'string' && TEST_FIXTURE_REF_RE.test(ref);
+  if (typeof ref !== 'string') return false;
+  return TEST_FIXTURE_REF_RE.test(ref) || ref.trim().toUpperCase() === 'N/A';
 }
 
 // Returns { garden, dropped: [refs] } with every fixture tree removed.
@@ -199,7 +202,8 @@ export async function classifyGardenResponse(r) {
   if (r && r.ok) {
     const data = await r.json().catch(() => null);
     const remoteGd = (data && data.gardenData && typeof data.gardenData === 'object') ? data.gardenData : {};
-    return { kind: 'ok', remoteGd };
+    const tombstones = (data && data.tombstones && typeof data.tombstones === 'object') ? data.tombstones : {};
+    return { kind: 'ok', remoteGd, tombstones };
   }
   if (r && r.status === 404) return { kind: 'empty' };
   return { kind: 'unknown' };
@@ -214,8 +218,42 @@ export function decideGardenSync(classification, localGd, todayStr) {
     return { garden: stampTodayLogin(localGd, todayStr), shouldPushToCloud: false };
   }
   const remoteGd = classification.kind === 'ok' ? classification.remoteGd : {};
-  const merged = stampTodayLogin(mergeGardens(remoteGd, localGd), todayStr);
+  let merged = mergeGardens(remoteGd, localGd);
+  // Blank-reference trees (custom verses saved without 出處) are legacy: new
+  // ones are no longer planted, so a blank key on this device can only be a
+  // copy of what the cloud once held. When the cloud copy is confirmed and no
+  // longer has it — an admin re-keyed it to the real reference — drop the
+  // local one too; otherwise this device would show it forever.
+  if (classification.kind === 'ok') {
+    merged = dropBlankKeysMissingFrom(merged, remoteGd);
+    merged = dropTombstoned(merged, classification.tombstones);
+  }
+  merged = stampTodayLogin(merged, todayStr);
   return { garden: merged, shouldPushToCloud: true };
+}
+
+// Trees an admin deleted server-side (GET /garden returns them as
+// `tombstones: { ref: { stage, fruits } }`). A local copy with the same or
+// lower progress is the stale one and goes; higher progress means the player
+// really played that reference again and it stays (the server re-plants it).
+export function dropTombstoned(gd, tombstones) {
+  if (!tombstones || typeof tombstones !== 'object') return gd;
+  const out = {};
+  for (const [k, v] of Object.entries(gd || {})) {
+    const t = k !== '_activity' && tombstones[k];
+    if (t && v && typeof v === 'object' && (v.stage || 0) <= (t.stage || 0) && (v.fruits || 0) <= (t.fruits || 0)) continue;
+    out[k] = v;
+  }
+  return out;
+}
+
+export function dropBlankKeysMissingFrom(gd, authority) {
+  const out = {};
+  for (const [k, v] of Object.entries(gd || {})) {
+    if (k !== '_activity' && !hasVisibleText(k) && !(authority && Object.prototype.hasOwnProperty.call(authority, k))) continue;
+    out[k] = v;
+  }
+  return out;
 }
 
 // Build the deduped list of point-bucket keys to query for a logged-in user:

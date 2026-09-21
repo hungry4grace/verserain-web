@@ -2093,6 +2093,24 @@ function lookupFullBookId(bookPart) {
   return bare !== trimmed ? lookupFullBookId(bare) : undefined;
 }
 
+// English spellings the names[] lists don't carry ("Prov", "1 Cor", "Ps",
+// "2 Tim"). ENGLISH_BOOK_LOCALIZATION_MAP is keyed by every English name and
+// abbreviation, and its Korean abbreviation is unique per book, so it doubles
+// as an abbreviation → book id table. Built lazily on first use.
+let __englishAbbrBookId = null;
+function lookupEnglishAbbrBookId(bookPart) {
+  const key = String(bookPart || '').toLowerCase().replace(/\./g, '').replace(/\s+/g, '');
+  if (!key) return undefined;
+  if (!__englishAbbrBookId) {
+    __englishAbbrBookId = new globalThis.Map(); // `Map` in this file is the lucide icon
+    for (const [abbr, loc] of Object.entries(ENGLISH_BOOK_LOCALIZATION_MAP)) {
+      const b = BIBLE_BOOKS.find(x => x.ko === loc.ko);
+      if (b) __englishAbbrBookId.set(abbr, b.id);
+    }
+  }
+  return __englishAbbrBookId.get(key);
+}
+
 // Convert a Hebrew gematria string (e.g. "יב" → 12, "כא" → 21) to a number.
 // Returns null if the string contains non-Hebrew-letter characters.
 function hebrewLettersToNumber(s) {
@@ -2153,7 +2171,7 @@ function normalizeVerseReferenceKey(reference = '') {
   const heRefMatch = value.match(/^(.+?)\s+(\S+)\s*[:׃,]\s*(\S+)$/u);
   if (heRefMatch) {
     const bookRaw = heRefMatch[1].trim();
-    const bookId = HEBREW_FULL_BOOK_ID[bookRaw] ?? BIBLE_BOOKS.find(b => b.he === bookRaw)?.id;
+    const bookId = HEBREW_FULL_BOOK_ID[bookRaw] ?? BIBLE_BOOKS.find(b => b.he === bookRaw)?.id ?? lookupFullBookId(bookRaw);
     if (bookId) {
       const chap = hebrewOrArabicNumber(heRefMatch[2]);
       const versePart = heRefMatch[3].split('-').map(p => hebrewOrArabicNumber(p));
@@ -2183,7 +2201,7 @@ function normalizeVerseReferenceKey(reference = '') {
           return normalizedBookRaw === n || normalizedBookRaw.endsWith(` ${n}`);
         });
       });
-      const bookId = book?.id ?? lookupFullBookId(bookRaw);
+      const bookId = book?.id ?? lookupFullBookId(bookRaw) ?? lookupEnglishAbbrBookId(bookRaw);
       if (bookId) return `${bookId}|${chapMatch[3]}`;
     }
     return value.toLowerCase();
@@ -2219,8 +2237,9 @@ function normalizeVerseReferenceKey(reference = '') {
     });
   });
   const chapterVerse = `${verseMatch[1]}:${verseMatch[2].replace(/\s+/g, '')}`;
-  // If not found via BIBLE_BOOKS, try the full Hebrew name lookup table
-  const bookId = book?.id ?? lookupFullBookId(bookPart);
+  // If not found via BIBLE_BOOKS, try the full-name tables (Hebrew / Korean /
+  // multi-language) and finally the English abbreviation table.
+  const bookId = book?.id ?? lookupFullBookId(bookPart) ?? lookupEnglishAbbrBookId(bookPart);
   return `${bookId || normalizedBookPart}|${chapterVerse}`;
 }
 
@@ -25061,7 +25080,7 @@ const deDict = {
                     verserain
                   </div>
                   <div className="app-brand-version" style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', marginTop: '4px', marginLeft: '2px' }}>
-                    v4.0.17
+                    v4.0.20
                   </div>
                 </div>
                 <div ref={langPickerRef} className="app-lang-control" style={{ position: 'relative' }}>
