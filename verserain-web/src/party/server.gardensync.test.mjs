@@ -108,4 +108,57 @@ await test('GET /garden returns stored data; 404 when none', async () => {
   assert.strictEqual(miss.status, 404, 'missing player must be 404 so client treats it as empty, not unknown');
 });
 
+console.log('\nsave-garden mergedInto (合併重複的樹):');
+
+await test('mergedInto moves the dropped key into the kept key and removes it', async () => {
+  const { srv, storage } = makeServer({
+    'garden:Amy': {
+      'Isaiah 55:10-11': { gridIndex: 3, stage: 4, fruits: 0 },
+      'Isaiah 55:10–11': { gridIndex: 12, stage: 10, fruits: 2, setId: 'daily' },
+      _activity: { '2026-09-20': 100 },
+    },
+  });
+  const res = await srv.onRequest(req('/save-garden', {
+    playerName: 'Amy',
+    gardenData: { 'Isaiah 55:10-11': { gridIndex: 3, stage: 10, fruits: 2, setId: 'daily' }, _activity: { '2026-09-20': 100 } },
+    mergedInto: { 'Isaiah 55:10–11': 'Isaiah 55:10-11' },
+  }));
+  assert.strictEqual((await json(res)).success, true);
+  const saved = storage.map.get('garden:Amy');
+  assert.strictEqual(saved['Isaiah 55:10–11'], undefined, 'duplicate key dropped');
+  assert.deepStrictEqual(saved['Isaiah 55:10-11'], { gridIndex: 3, stage: 10, fruits: 2, setId: 'daily' });
+});
+
+await test('mergedInto never loses progress: kept key takes the higher stage/fruits even if the client sent less', async () => {
+  const { srv, storage } = makeServer({
+    'garden:Amy': { 'A 1:1': { gridIndex: 0, stage: 2, fruits: 0 }, 'a 1:1': { gridIndex: 9, stage: 8, fruits: 3 } },
+  });
+  await srv.onRequest(req('/save-garden', {
+    playerName: 'Amy',
+    gardenData: { 'A 1:1': { gridIndex: 0, stage: 2, fruits: 0 } },
+    mergedInto: { 'a 1:1': 'A 1:1' },
+  }));
+  const saved = storage.map.get('garden:Amy');
+  assert.strictEqual(saved['a 1:1'], undefined);
+  assert.strictEqual(saved['A 1:1'].stage, 8);
+  assert.strictEqual(saved['A 1:1'].fruits, 3);
+});
+
+await test('mergedInto ignores junk: self, _activity, unknown keys, non-object', async () => {
+  const { srv, storage } = makeServer({
+    'garden:Amy': { 'A 1:1': { gridIndex: 0, stage: 2, fruits: 0 }, _activity: { '2026-09-20': 100 } },
+  });
+  await srv.onRequest(req('/save-garden', {
+    playerName: 'Amy',
+    gardenData: { 'A 1:1': { gridIndex: 0, stage: 2, fruits: 0 } },
+    mergedInto: { 'A 1:1': 'A 1:1', _activity: 'A 1:1', 'A 1:1 ': '_activity', 'nope': 'A 1:1', 'B 2:2': 5 },
+  }));
+  const saved = storage.map.get('garden:Amy');
+  assert.deepStrictEqual(saved['A 1:1'], { gridIndex: 0, stage: 2, fruits: 0 });
+  assert.deepStrictEqual(saved._activity, { '2026-09-20': 100 });
+  const res2 = await srv.onRequest(req('/save-garden', { playerName: 'Amy', gardenData: { 'A 1:1': { gridIndex: 0, stage: 3, fruits: 0 } }, mergedInto: ['x'] }));
+  assert.strictEqual((await json(res2)).success, true, 'array mergedInto is ignored, not an error');
+  assert.strictEqual(storage.map.get('garden:Amy')['A 1:1'].stage, 3);
+});
+
 console.log(`\n${passed} assertions passed.`);

@@ -136,7 +136,12 @@ export default function GardenView({
     const f = focusRef ? fieldOfRef(fields.entries, focusRef, refKey) : -1;
     return f >= 0 ? f : fields.latestFieldIndex;
   });
-  const [highlight, setHighlight] = useState(() => (focusRef && focusNonce ? { ref: focusRef, nonce: focusNonce } : null));
+  const [highlight, setHighlight] = useState(() => {
+    // The played reference may be spelled differently from the planted key
+    // (e.g. grown via another language's set), so resolve it to the cell's ref.
+    const cell = focusRef && focusNonce ? findGardenCell(fields.entries, focusRef, refKey, { substring: false }) : null;
+    return cell ? { ref: cell.ref, nonce: focusNonce } : null;
+  });
   const [query, setQuery] = useState('');
   const [searchMiss, setSearchMiss] = useState(false);
   const [sort, setSort] = useState('planted');

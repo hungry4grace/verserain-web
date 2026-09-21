@@ -34,6 +34,84 @@ export function mergeGardens(remoteGd, localGd) {
   return merged;
 }
 
+// ── Duplicate trees ─────────────────────────────────────────────────────────
+// The same verse can be planted more than once when it was played from sets
+// that spell the reference differently (「Isaiah 55:10–11」 vs 「Isaiah 55:10-11」,
+// 「馬太福音 9:13」 vs 「마태복음 9:13」, trailing spaces, 简/繁). These helpers
+// fold such entries into one tree. `keyFn` is App's verseRefKey: it returns
+// "<bookId>|<c:v>" for any spelling it recognises, so the identity is
+// language- and script-agnostic; unrecognised spellings fall back to the raw
+// text with whitespace and dash variants folded.
+
+const isRealKey = (k) => typeof k === 'string' && /^\d+\|/.test(k);
+const looseKey = (ref) => String(ref || '').replace(/[–—]/g, '-').replace(/\s+/g, '').toLowerCase();
+const hasVisibleText = (ref) => !!String(ref ?? '').replace(/[\s\u200b-\u200f\u2028-\u202f\u2060\ufeff]/gu, '');
+
+// Identity of a planted reference, or null for a blank one (blank refs came
+// from custom verses without 出處 and may each be a different verse — never
+// merged).
+export function canonicalGardenKey(ref, keyFn) {
+  if (!hasVisibleText(ref)) return null;
+  const k = keyFn ? keyFn(ref) : '';
+  return isRealKey(k) ? k : 'raw:' + looseKey(ref);
+}
+
+// The key already in the garden that `ref` belongs to (exact key first, then
+// the same canonical identity), or null when it is a new verse. updateGarden
+// uses this so a verse played under another spelling grows the existing tree
+// instead of planting a second one.
+export function findGardenKey(gd, ref, keyFn) {
+  if (!gd || typeof gd !== 'object' || typeof ref !== 'string') return null;
+  if (ref === '_activity') return null;
+  const own = Object.prototype.hasOwnProperty.call(gd, ref) && gd[ref] && typeof gd[ref] === 'object';
+  if (own) return ref;
+  const want = canonicalGardenKey(ref, keyFn);
+  if (!want) return null;
+  for (const [k, v] of Object.entries(gd)) {
+    if (k === '_activity' || !v || typeof v !== 'object') continue;
+    if (canonicalGardenKey(k, keyFn) === want) return k;
+  }
+  return null;
+}
+
+// Fold duplicate trees into one. The earliest planted (lowest gridIndex) key
+// is kept in its cell; stage and fruits take the higher value (max, not sum,
+// so re-applying over a cloud copy that still holds the duplicate cannot
+// inflate anything); the dropped cells become empty ground.
+// Returns { garden, mergedInto: { droppedRef: keptRef }, merged: count }.
+export function dedupeGarden(gd, keyFn) {
+  const out = { ...(gd || {}) };
+  const groups = new Map();
+  for (const [k, v] of Object.entries(gd || {})) {
+    if (k === '_activity' || !v || typeof v !== 'object') continue;
+    const c = canonicalGardenKey(k, keyFn);
+    if (!c) continue;
+    if (!groups.has(c)) groups.set(c, []);
+    groups.get(c).push(k);
+  }
+  const mergedInto = {};
+  const gi = (k) => { const n = Number(out[k].gridIndex); return Number.isFinite(n) ? n : Infinity; };
+  for (const keys of groups.values()) {
+    if (keys.length < 2) continue;
+    keys.sort((a, b) => (gi(a) - gi(b)) || a.localeCompare(b));
+    const kept = keys[0];
+    let entry = { ...out[kept] };
+    for (const dropped of keys.slice(1)) {
+      const e = out[dropped];
+      entry = {
+        ...entry,
+        stage: Math.max(entry.stage || 0, e.stage || 0),
+        fruits: Math.max(entry.fruits || 0, e.fruits || 0),
+        ...(!entry.setId && e.setId ? { setId: e.setId } : {}),
+      };
+      delete out[dropped];
+      mergedInto[dropped] = kept;
+    }
+    out[kept] = entry;
+  }
+  return { garden: out, mergedInto, merged: Object.keys(mergedInto).length };
+}
+
 // Stamp today's login activity (>= 100) without lowering an existing value.
 export function stampTodayLogin(gd, todayStr) {
   const day = todayStr || new Date().toLocaleDateString('en-CA');
