@@ -1843,3 +1843,30 @@ textarea {
     font-size: clamp(2.1rem, 14vw, 3.7rem);
   }
 }
+
+/* ── Garden (GardenView.jsx) ───────────────────────────────────────────── */
+/* Flash the cell a search / a just-played verse jumped to. The cell's React
+   key includes the jump nonce, so a new jump remounts it and replays this. */
+@keyframes gardenCellFlash {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(250, 204, 21, 0); transform: scale(1); }
+  50% { box-shadow: 0 0 0 6px rgba(250, 204, 21, 0.9); transform: scale(1.12); }
+}
+.garden-cell--flash {
+  animation: gardenCellFlash 0.7s ease-in-out 3;
+  position: relative;
+  z-index: 2;
+}
+/* Hover lift only on devices that actually hover — the old inline
+   onMouseOver handler left a stuck scale(1.08) after a tap on phones. */
+@media (hover: hover) {
+  .garden-cell--planted:hover {
+    filter: brightness(1.15);
+    transform: scale(1.08);
+    z-index: 1;
+  }
+}
+@keyframes gardenFieldEnter {
+  0% { opacity: 0; transform: translateY(8px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+.garden-field-enter { animation: gardenFieldEnter 0.18s ease-out; }

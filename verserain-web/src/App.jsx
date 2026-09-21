@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { expandSameChapterRefs } from './lib/expandSameChapterRefs.js';
-import { Play, Pause, RotateCcw, Heart, Zap, Trophy, Crown, Star, Home, XCircle, Headphones, Music, VolumeX, Search, Share2, Dices, Mic, MicOff, Users, CloudRain, Info, Edit, TreePine, Gamepad2, Map, Settings, Library, Volume2, Shuffle, Swords, ShoppingBasket, Apple, Mail, Lock, Sprout, Leaf, RotateCw, Smartphone, Hourglass, Frown, X, Camera, Square, Copy, ArrowRightLeft, MessageCircle, Languages, ChevronUp, ChevronDown, Check, Gift } from 'lucide-react';
+import { Play, Pause, RotateCcw, Heart, Zap, Trophy, Crown, Star, Home, XCircle, Headphones, Music, VolumeX, Search, Share2, Dices, Mic, MicOff, Users, CloudRain, Info, Edit, TreePine, Gamepad2, Map, Settings, Library, Volume2, Shuffle, Swords, ShoppingBasket, Apple, Mail, Lock, Sprout, Leaf, Hourglass, Frown, X, Camera, Square, Copy, ArrowRightLeft, MessageCircle, Languages, ChevronUp, ChevronDown, Check, Gift } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import usePartySocket from 'partysocket/react';
 import PartySocket from 'partysocket';
@@ -16,7 +16,7 @@ import { BIBLE_BOOKS, getBookAbbr, getBookFullName } from './bibleDictionary';
 import I18N_FILLINS from './i18nFillins';
 import { PREMIUM_EMAILS } from './premiumEmails';
 import ChallengeSetupModal, { loadChallengeSetup } from './ChallengeSetupModal';
-import { TransformWrapper, TransformComponent } from 'react-zoom-pan-pinch';
+import GardenView from './GardenView.jsx';
 import { GOOGLE_CLIENT_ID, APPLE_CLIENT_ID, APPLE_REDIRECT_URI, LINE_CHANNEL_ID, startLineLogin } from './oauthConfig';
 import { VAPID_PUBLIC_KEY, urlBase64ToUint8Array, isWebPushSupported, isIOSStandalone, isIOSWithoutPWA, hasNativeDailyPush, callNativeDailyPush } from './pushConfig';
 import { setVoiceApi, uploadVerseVoice, uploadSetAsset, compressBackgroundImage, getSetAssetDataUrl, userVoiceApi, uploadUserVerseVoice, voiceOwnerId, voiceCommentApi, uploadVoiceComment } from './setVoiceApi';
@@ -6913,14 +6913,11 @@ export default function App() {
   const canCreateCustomSets = !!userEmail;
   const isAdmin = ['samhsiung@gmail.com', 'davidhwang1125@gmail.com', 'hsiungsam@gmail.com', 'hungry4grace@gmail.com', 'verserain.admin@gmail.com'].includes(userEmail.toLowerCase()) || skoolLevel.level >= 5;
   const isSuperAdmin = ['samhsiung@gmail.com', 'davidhwang1125@gmail.com', 'hsiungsam@gmail.com', 'hungry4grace@gmail.com'].includes(userEmail.toLowerCase());
-  const [selectedGardenCell, setSelectedGardenCell] = useState(null);
   const [showLevelInfo, setShowLevelInfo] = useState(false);
   const [showFruitInfo, setShowFruitInfo] = useState(false);
   const [levelCounts, setLevelCounts] = useState(null);
   const [globalFruitsMap, setGlobalFruitsMap] = useState({});
   const [viewingPlayerGarden, setViewingPlayerGarden] = useState(null); // { playerName, gardenData } or null
-  const [guestGardenCell, setGuestGardenCell] = useState(null);
-  const guestGardenClickTimer = useRef(null);
 
   const handleViewPlayerGarden = async (name) => {
     setViewingPlayerGarden({ playerName: name, gardenData: null, loading: true });
@@ -6989,7 +6986,10 @@ export default function App() {
       setLevelCounts(counts);
     }).catch(err => console.error('Could not fetch level stats', err));
   }, [showLevelInfo, skoolLevel.level, playerName]);
-  const gardenClickTimer = useRef(null);
+  // Verse the garden should open on and flash: set when a game starts so the
+  // garden lands on the field of the verse just played. GardenView consumes it.
+  const [gardenFocus, setGardenFocus] = useState(null); // { ref, nonce } | null
+  const clearGardenFocus = React.useCallback(() => setGardenFocus(null), []);
   const versionBeforeChallenge = useRef(null); // saved version to restore after cross-lang challenge
   const updateGarden = React.useCallback((ref, type, setId, amount = 1) => {
     // 即時脈動:廣播「本玩家剛做了動作」給所有地圖觀看者(在 updater 之外,
@@ -7543,6 +7543,23 @@ export default function App() {
       setIsLangsLoading(false);
     }
     return { verse: null, lang: version };
+  };
+
+  // Start a challenge from a garden cell (own garden or a friend's): switch
+  // language temporarily when the verse was found in another one (restored
+  // when the game ends), then go through the usual challenge-setup modal.
+  const challengeGardenVerse = ({ verse, lang, setId }) => {
+    if (!verse) return;
+    if (lang && lang !== version) { versionBeforeChallenge.current = version; setVersion(lang); }
+    openChallengeSetup({
+      subtitle: verse.reference,
+      run: () => {
+        setActiveVerse(verse);
+        setSelectedVerseRefs([verse.reference]);
+        if (setId) setSelectedSetId(setId);
+        setTimeout(() => startGame(false, verse), 50);
+      },
+    });
   };
   // favoriteVerseSetIds / favoriteVerseSetIdSet are declared earlier (near the
   // 我的專屬題庫 sort controls) so the "favorites" sort can read them.
@@ -10325,6 +10342,7 @@ export default function App() {
 
     if (actualVerse && !isAuto) {
       logEvent('versePlayed', { ref: actualVerse.reference, setId: selectedSetId });
+      setGardenFocus({ ref: actualVerse.reference, nonce: Date.now() });
     }
   };
 
@@ -24938,7 +24956,7 @@ const deDict = {
                     verserain
                   </div>
                   <div className="app-brand-version" style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', marginTop: '4px', marginLeft: '2px' }}>
-                    v4.0.9
+                    v4.0.10
                   </div>
                 </div>
                 <div ref={langPickerRef} className="app-lang-control" style={{ position: 'relative' }}>
@@ -27765,291 +27783,21 @@ const deDict = {
                     </div>
                   </div>
 
-                  {(() => {
-                    const entries = Object.entries(gardenData).filter(([k]) => k !== '_activity');
-                    const treeCount = entries.length;
-                    const cellsPerField = 100;
-                    const maxGridIndex = entries.reduce((max, [, data]) => Math.max(max, data.gridIndex), -1);
-                    const fieldCount = Math.max(1, Math.ceil((maxGridIndex + 1) / cellsPerField));
-
-                    // Build grid lookup: gridIndex -> { ref, stage, fruits }
-                    const gridMap = {};
-                    entries.forEach(([ref, data]) => {
-                      gridMap[data.gridIndex] = { ref, ...data };
-                    });
-
-                    // Stage visuals
-                    const applePositions = [
-                      { top: '30%', left: '50%' }, // 1
-                      { top: '45%', left: '30%' }, // 2
-                      { top: '45%', left: '70%' }, // 3
-                      { top: '25%', left: '35%' }, // 4
-                      { top: '25%', left: '65%' }, // 5
-                      { top: '55%', left: '50%' }, // 6
-                      { top: '35%', left: '20%' }, // 7
-                      { top: '35%', left: '80%' }, // 8
-                      { top: '15%', left: '50%' }, // 9
-                    ];
-
-                    const stageEmoji = (stage, fruits) => {
-                      if (stage <= 0) return '';
-                      if (stage <= 3) return <img src="/assets/garden/tree-seedling.png" style={{ width: '150%', height: '150%', objectFit: 'contain', transform: 'translateY(-15%)', filter: 'drop-shadow(0 10px 10px rgba(0,0,0,0.2))' }} alt="seedling" />;
-                      if (stage <= 6) return <img src="/assets/garden/tree-sapling.png" style={{ width: '150%', height: '150%', objectFit: 'contain', transform: 'translateY(-15%)', filter: 'drop-shadow(0 15px 15px rgba(0,0,0,0.2))' }} alt="sapling" />;
-                      if (stage <= 9) return <img src="/assets/garden/tree-mature.png" style={{ width: '150%', height: '150%', objectFit: 'contain', transform: 'translateY(-15%)', filter: 'drop-shadow(0 20px 20px rgba(0,0,0,0.3))' }} alt="mature tree" />;
-
-                      if (fruits > 0) {
-                        const displayApples = Math.min(fruits, 9);
-                        return (
-                          <div style={{ position: 'relative', width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                            <div style={{ position: 'absolute', width: '150%', height: '150%', transform: 'translateY(-15%)' }}>
-                              <img src="/assets/garden/tree-mature.png" style={{ width: '100%', height: '100%', objectFit: 'contain', filter: 'drop-shadow(0 20px 20px rgba(0,0,0,0.3))' }} alt="mature tree" />
-                              {Array.from({ length: displayApples }).map((_, idx) => (
-                                <div key={idx} style={{
-                                  position: 'absolute',
-                                  top: applePositions[idx].top,
-                                  left: applePositions[idx].left,
-                                  fontSize: '14px',
-                                  transform: 'translate(-50%, -50%)',
-                                  filter: 'drop-shadow(0 2px 2px rgba(0,0,0,0.4))',
-                                  zIndex: 2,
-                                  pointerEvents: 'none',
-                                }}><Apple size={14} fill="#dc2626" color="#b91c1c" /></div>
-                              ))}
-                            </div>
-                            {fruits > 9 && (
-                              <span style={{ position: 'absolute', top: '-15px', right: '-15px', fontSize: '12px', fontWeight: 'bold', color: '#b91c1c', background: 'rgba(255,255,255,0.9)', borderRadius: '6px', padding: '1px 4px', zIndex: 3, boxShadow: '0 2px 4px rgba(0,0,0,0.2)' }}>
-                                +{fruits - 9}
-                              </span>
-                            )}
-                          </div>
-                        );
-                      }
-                      return <img src="/assets/garden/tree-mature.png" style={{ width: '150%', height: '150%', objectFit: 'contain', transform: 'translateY(-15%)', filter: 'drop-shadow(0 20px 20px rgba(0,0,0,0.3))' }} alt="mature tree" />;
-                    };
-
-                    const stageLabel = (stage) => {
-                      if (stage === 1) return t('嫩芽', 'Seedling');
-                      if (stage <= 3) return t('幼苗', 'Sprout');
-                      if (stage <= 5) return t('小樹', 'Sapling');
-                      if (stage <= 8) return t('成長中', 'Growing');
-                      if (stage === 9) return t('快完成了', 'Almost there');
-                      return t('大樹', 'Full Tree');
-                    };
-
-                    const stageBg = (stage) => {
-                      if (stage === 0) return '#e8f5e9';
-                      if (stage <= 3) return '#c8e6c9';
-                      if (stage <= 6) return '#a5d6a7';
-                      if (stage <= 9) return '#81c784';
-                      return '#66bb6a';
-                    };
-
-                    return (
-                      <div>
-                        {/* Stats bar */}
-                        <div style={{ display: 'flex', gap: '1.5rem', marginBottom: '1rem', flexWrap: 'wrap' }}>
-                          <div style={{ padding: '0.5rem 1rem', background: '#f0fdf4', borderRadius: '8px', border: '1px solid #bbf7d0', color: '#0f172a', fontWeight: '500' }}>
-                            <Sprout size={18} /> {t("種植", "Planted")}: <strong>{treeCount}</strong>
-                          </div>
-                          <div style={{ padding: '0.5rem 1rem', background: '#f0fdf4', borderRadius: '8px', border: '1px solid #bbf7d0', color: '#4c1d95', fontWeight: '500' }}>
-                            <TreePine size={18} /> {t("大樹", "Full Trees")}: <strong>{entries.filter(([, d]) => d.stage >= 10).length}</strong>
-                          </div>
-                          <div style={{ padding: '0.5rem 1rem', background: '#fef3c7', borderRadius: '8px', border: '1px solid #fde68a', color: '#7f1d1d', fontWeight: '500' }}>
-                            <Apple size={18} /> {t("果子", "Fruits")}: <strong>{entries.reduce((sum, [, d]) => sum + (d.fruits || 0), 0)}</strong>
-                          </div>
-                        </div>
-
-                        {/* Mode & Level Controls */}
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem', flexWrap: 'wrap', padding: '0.8rem 1rem', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-                          <span style={{ fontSize: '0.8rem', color: '#94a3b8' }}>{t("點擊查看經文，雙擊開始挑戰！", "Click to view, double-click to challenge!")}</span>
-                        </div>
-
-                        {/* The Grid - Isometric */}
-                        {(() => {
-                          const hour = new Date().getHours();
-                          let envBg = 'linear-gradient(to bottom, #bae6fd, #e0f2fe)'; // Day
-                          if (hour >= 19 || hour < 5) envBg = 'linear-gradient(to bottom, #0f172a, #1e1b4b)'; // Night
-                          else if (hour >= 17) envBg = 'linear-gradient(to bottom, #fca5a5, #fef08a)'; // Sunset
-                          else if (hour >= 5 && hour < 8) envBg = 'linear-gradient(to bottom, #fce7f3, #fef08a)'; // Sunrise
-
-                          // Square-ish field layout: rows = ceil(sqrt(n)), cols = ceil(n/rows)
-                          const fieldRows = Math.ceil(Math.sqrt(fieldCount));
-                          const fieldCols = Math.ceil(fieldCount / fieldRows);
-
-                          // Auto-zoom to fit all fields: each field = 10×48 + 9×2 = 498px
-                          const FIELD_PX = 498, FIELD_GAP = 40;
-                          const contentW = fieldCols * FIELD_PX + Math.max(0, fieldCols - 1) * FIELD_GAP;
-                          const contentH = fieldRows * FIELD_PX + Math.max(0, fieldRows - 1) * FIELD_GAP;
-                          const fitScale = Math.min(520 / (contentW + 40), 460 / (contentH + 40), 1);
-                          const gardenInitialScale = Math.max(0.25, Math.round(fitScale * 0.85 * 100) / 100);
-
-                          return (
-                            <div style={{
-                              overflow: 'hidden',
-                              width: '100%',
-                              height: '60vh',
-                              minHeight: '400px',
-                              borderRadius: '12px',
-                              border: '4px solid #334155',
-                              background: envBg,
-                              position: 'relative',
-                              boxShadow: 'inset 0 10px 30px rgba(0,0,0,0.1)'
-                            }}>
-                              <TransformWrapper initialScale={gardenInitialScale} minScale={0.2} maxScale={4} centerOnInit={true} doubleClick={{ disabled: true }}>
-                                {({ zoomIn, zoomOut, resetTransform }) => (
-                                  <>
-                                    <div style={{ position: 'absolute', bottom: '15px', right: '15px', zIndex: 10, display: 'flex', gap: '8px', background: 'rgba(255,255,255,0.8)', padding: '5px', borderRadius: '8px', boxShadow: '0 2px 5px rgba(0,0,0,0.2)' }}>
-                                      <button onClick={() => zoomIn()} style={{ width: '32px', height: '32px', borderRadius: '4px', border: '1px solid #cbd5e1', background: '#fff', cursor: 'pointer', fontSize: '18px', fontWeight: 'bold', color: '#475569', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>+</button>
-                                      <button onClick={() => zoomOut()} style={{ width: '32px', height: '32px', borderRadius: '4px', border: '1px solid #cbd5e1', background: '#fff', cursor: 'pointer', fontSize: '18px', fontWeight: 'bold', color: '#475569', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>−</button>
-                                      <button onClick={() => resetTransform()} style={{ width: '32px', height: '32px', borderRadius: '4px', border: '1px solid #cbd5e1', background: '#fff', cursor: 'pointer', fontSize: '16px', fontWeight: 'bold', color: '#475569', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><RotateCw size={18} /></button>
-                                    </div>
-                                    <TransformComponent wrapperStyle={{ width: '100%', height: '100%' }} contentStyle={{ width: '100%', height: '100%', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '20px' }}>
-                                      <div style={{ display: 'grid', gridTemplateColumns: `repeat(${fieldCols}, auto)`, justifyContent: 'center', gap: '40px' }}>
-                                        {Array.from({ length: fieldCount }).map((_, fieldIdx) => (
-                                          <div key={fieldIdx} style={{
-                                            display: 'grid',
-                                            gridTemplateColumns: `repeat(10, 48px)`,
-                                            gridTemplateRows: `repeat(10, 48px)`,
-                                            gap: '2px',
-                                            background: (hour >= 19 || hour < 5) ? 'rgba(30, 41, 59, 0.4)' : 'rgba(34, 197, 94, 0.3)',
-                                            border: '2px solid rgba(255,255,255,0.2)',
-                                            borderRadius: '8px',
-                                          }}>
-                                            {Array.from({ length: cellsPerField }).map((_, i) => {
-                                              const globalIndex = fieldIdx * cellsPerField + i;
-                                              const cell = gridMap[globalIndex];
-                                              const isEmpty = !cell;
-
-                                              return (
-                                                <div
-                                                  key={globalIndex}
-                                                  onClick={() => {
-                                                    if (cell) {
-                                                      if (gardenClickTimer.current) { clearTimeout(gardenClickTimer.current); gardenClickTimer.current = null; return; }
-                                                      gardenClickTimer.current = setTimeout(async () => {
-                                                        gardenClickTimer.current = null;
-                                                        const { verse: targetVerse, lang: detectedLang } = await resolveGardenVerse(cell.ref);
-                                                        setSelectedGardenCell({
-                                                          ref: targetVerse?.reference || cell.ref,
-                                                          text: targetVerse?.text || '',
-                                                          stage: cell.stage,
-                                                          fruits: cell.fruits || 0,
-                                                          setId: cell.setId,
-                                                          verse: targetVerse,
-                                                          detectedLang,
-                                                        });
-                                                        setTimeout(() => {
-                                                          const popup = document.getElementById('garden-verse-popup');
-                                                          if (popup) popup.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-                                                        }, 100);
-                                                      }, 300);
-                                                    }
-                                                  }}
-                                                  onDoubleClick={async () => {
-                                                    if (cell) {
-                                                      if (gardenClickTimer.current) { clearTimeout(gardenClickTimer.current); gardenClickTimer.current = null; }
-                                                      const { verse: targetVerse, lang: detectedLang } = await resolveGardenVerse(cell.ref);
-                                                      if (targetVerse) {
-                                                        setSelectedGardenCell(null);
-                                                        if (detectedLang !== version) {
-                                                          versionBeforeChallenge.current = version;
-                                                          setVersion(detectedLang);
-                                                        }
-                                                        openChallengeSetup({
-                                                          subtitle: targetVerse.reference,
-                                                          run: () => {
-                                                            setActiveVerse(targetVerse);
-                                                            setSelectedVerseRefs([targetVerse.reference]);
-                                                            if (cell.setId) setSelectedSetId(cell.setId);
-                                                            setTimeout(() => startGame(false, targetVerse), 50);
-                                                          },
-                                                        });
-                                                      }
-                                                    }
-                                                  }}
-                                                  title={cell ? `${cell.ref} — ${stageLabel(cell.stage)}${cell.fruits ? ` fruit x ${cell.fruits}` : ''}` : t('空地', 'Empty')}
-                                                  style={{
-                                                    width: '48px', height: '48px', borderRadius: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                                    fontSize: cell ? '20px' : '10px',
-                                                    background: cell ? stageBg(cell.stage) : '#5d4037',
-                                                    border: cell ? '1px solid rgba(0,0,0,0.1)' : 'none',
-                                                    cursor: cell ? 'pointer' : 'default', transition: 'transform 0.1s, filter 0.2s', userSelect: 'none'
-                                                  }}
-                                                  onMouseOver={e => { if (cell) { e.currentTarget.style.filter = 'brightness(1.15)'; e.currentTarget.style.transform = 'scale(1.08)'; } }}
-                                                  onMouseOut={e => { e.currentTarget.style.filter = ''; e.currentTarget.style.transform = ''; }}
-                                                >
-                                                  {cell ? stageEmoji(cell.stage, cell.fruits || 0) : ''}
-                                                </div>
-                                              );
-                                            })}
-                                          </div>
-                                        ))}
-                                      </div>
-                                    </TransformComponent>
-                                  </>
-                                )}
-                              </TransformWrapper>
-                            </div>
-                          );
-                        })()}
-                        <p style={{ fontSize: '0.8rem', color: '#94a3b8', marginTop: '0.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.35rem' }}><Smartphone size={15} /> {t("可用手指滑動來瀏覽園子", "Swipe to pan around the garden")}</p>
-
-                        {/* Verse Info Popup Modal */}
-                        {selectedGardenCell && (
-                          <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }} onClick={() => setSelectedGardenCell(null)}>
-                            <div id="garden-verse-popup" onClick={e => e.stopPropagation()} style={{ width: '100%', maxWidth: '400px', padding: '1.5rem', background: 'linear-gradient(135deg, #f0fdf4, #ecfdf5)', borderRadius: '15px', border: '3px solid #86efac', boxShadow: '0 10px 30px rgba(0,0,0,0.3)', position: 'relative', animation: 'flashSuccess 0.3s ease-out' }}>
-                              <button onClick={() => setSelectedGardenCell(null)} style={{ position: 'absolute', top: '10px', right: '15px', background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer', fontSize: '1.4rem', fontWeight: 'bold' }}><X size={22} /></button>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.8rem', flexWrap: 'wrap' }}>
-                                <div style={{ width: '60px', height: '60px', position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                  <div style={{ width: '100%', height: '100%', position: 'absolute', bottom: '0', display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
-                                    {stageEmoji(selectedGardenCell.stage, selectedGardenCell.fruits)}
-                                  </div>
-                                </div>
-                                <span style={{ fontWeight: 'bold', color: '#166534', fontSize: '1.2rem' }}>{selectedGardenCell.ref}</span>
-                                <span style={{ fontSize: '0.85rem', color: '#166534', background: '#b2f5ea', padding: '3px 10px', borderRadius: '12px', fontWeight: 'bold' }}>{stageLabel(selectedGardenCell.stage)}</span>
-                                {selectedGardenCell.detectedLang && selectedGardenCell.detectedLang !== version && (
-                                  <span style={{ fontSize: '0.75rem', color: '#1d4ed8', background: '#dbeafe', padding: '2px 8px', borderRadius: '10px', fontWeight: 'bold' }}>
-                                    {selectedGardenCell.detectedLang === 'kjv' ? 'KJV 🇬🇧' : selectedGardenCell.detectedLang === 'ko' ? '한국어 🇰🇷' : selectedGardenCell.detectedLang === 'ja' ? '日本語 🇯🇵' : selectedGardenCell.detectedLang === 'fa' ? 'فارسی 🇮🇷' : selectedGardenCell.detectedLang === 'he' ? 'עברית 🇮🇱' : '中文 🇹🇼'}
-                                  </span>
-                                )}
-                              </div>
-                              <p style={{ color: '#334155', lineHeight: '1.6', fontSize: '1rem', margin: '1rem 0 0.8rem', fontStyle: 'italic', maxHeight: '30vh', overflowY: 'auto' }}>
-                                "{selectedGardenCell.text || t('(經文內容未找到)', '(Verse text not found)')}"
-                              </p>
-                              {selectedGardenCell.detectedLang && selectedGardenCell.detectedLang !== version && (
-                                <p style={{ fontSize: '0.78rem', color: '#64748b', margin: '0 0 1rem', textAlign: 'center' }}>
-                                  {t('將暫時切換語言來挑戰，完成後自動恢復', 'Will temporarily switch language for this challenge, then restore')}
-                                </p>
-                              )}
-                              <button onClick={() => {
-                                if (selectedGardenCell.verse) {
-                                  if (selectedGardenCell.detectedLang && selectedGardenCell.detectedLang !== version) {
-                                    versionBeforeChallenge.current = version;
-                                    setVersion(selectedGardenCell.detectedLang);
-                                  }
-                                  setActiveVerse(selectedGardenCell.verse);
-                                  setSelectedVerseRefs([selectedGardenCell.verse.reference]);
-                                  if (selectedGardenCell.setId) setSelectedSetId(selectedGardenCell.setId);
-                                  setSelectedGardenCell(null);
-                                  setTimeout(() => startGame(false, selectedGardenCell.verse), 50);
-                                }
-                              }} style={{ width: '100%', justifyContent: 'center', background: '#22c55e', color: 'white', border: 'none', padding: '0.8rem', borderRadius: '10px', fontWeight: 'bold', fontSize: '1.1rem', cursor: selectedGardenCell.verse ? 'pointer' : 'not-allowed', opacity: selectedGardenCell.verse ? 1 : 0.5, boxShadow: '0 4px 12px rgba(34,197,94,0.3)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                <Play size={20} /> {t('挑戰這節經文', 'Challenge this verse')}
-                              </button>
-                            </div>
-                          </div>
-                        )}
-
-                        {/* Legend */}
-                        <div style={{ marginTop: '1.5rem', display: 'flex', flexWrap: 'wrap', gap: '1.5rem', fontSize: '0.9rem', color: '#475569', alignItems: 'center' }}>
-                          <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><img src="/assets/garden/tree-seedling.png" style={{ height: '28px', filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.2))' }} alt="seedling" /> {t("幼苗 (練習中)", "Sprout (practicing)")}</span>
-                          <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><img src="/assets/garden/tree-sapling.png" style={{ height: '32px', filter: 'drop-shadow(0 3px 5px rgba(0,0,0,0.2))' }} alt="sapling" /> {t("小樹 (持續成長)", "Sapling (growing)")}</span>
-                          <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><img src="/assets/garden/tree-mature.png" style={{ height: '36px', filter: 'drop-shadow(0 4px 6px rgba(0,0,0,0.3))' }} alt="mature tree" /> {t("大樹 (通過!)", "Full tree (cleared!)")}</span>
-                          <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><Apple size={18} /> {t("結果子 (創新高!)", "Fruit (new record!)")}</span>
-                        </div>
-                      </div>
-                    );
-                  })()}
+                  <GardenView
+                    idPrefix="garden"
+                    variant="own"
+                    gardenData={gardenData}
+                    t={t}
+                    version={version}
+                    refKey={verseRefKey}
+                    resolveVerse={resolveGardenVerse}
+                    onChallenge={challengeGardenVerse}
+                    isNarrow={isNarrowEditor}
+                    bleed={isNarrowEditor ? '1rem' : 0}
+                    focusRef={gardenFocus?.ref}
+                    focusNonce={gardenFocus?.nonce}
+                    onFocusConsumed={clearGardenFocus}
+                  />
 
                   <ActivityHeatmap t={t} activityMap={gardenData?._activity || {}} />
 
@@ -31300,69 +31048,8 @@ const deDict = {
           const vgCreatorFruits = viewingPlayerGarden.creatorPoints || 0;
           const vgReferralFruits = viewingPlayerGarden.referralPoints || 0;
           const vgTotalFruits = vgGameFruits + vgCreatorFruits + vgReferralFruits;
-          const vgCellsPerField = 100;
-          const vgMaxGridIndex = vgEntries.reduce((max, [, data]) => Math.max(max, data.gridIndex), -1);
-          const vgFieldCount = Math.max(1, Math.ceil((vgMaxGridIndex + 1) / vgCellsPerField));
-          const vgGridMap = {};
-          vgEntries.forEach(([ref, data]) => { vgGridMap[data.gridIndex] = { ref, ...data }; });
-
-          const applePositions = [
-            { top: '30%', left: '50%' }, // 1
-            { top: '45%', left: '30%' }, // 2
-            { top: '45%', left: '70%' }, // 3
-            { top: '25%', left: '35%' }, // 4
-            { top: '25%', left: '65%' }, // 5
-            { top: '55%', left: '50%' }, // 6
-            { top: '35%', left: '20%' }, // 7
-            { top: '35%', left: '80%' }, // 8
-            { top: '15%', left: '50%' }, // 9
-          ];
-
-          const stageEmoji = (stage, fruits) => {
-            if (stage <= 0) return '';
-            if (stage <= 3) return <img src="/assets/garden/tree-seedling.png" style={{ width: '150%', height: '150%', objectFit: 'contain', transform: 'translateY(-15%)', filter: 'drop-shadow(0 10px 10px rgba(0,0,0,0.2))' }} alt="seedling" />;
-            if (stage <= 6) return <img src="/assets/garden/tree-sapling.png" style={{ width: '150%', height: '150%', objectFit: 'contain', transform: 'translateY(-15%)', filter: 'drop-shadow(0 15px 15px rgba(0,0,0,0.2))' }} alt="sapling" />;
-            if (stage <= 9) return <img src="/assets/garden/tree-mature.png" style={{ width: '150%', height: '150%', objectFit: 'contain', transform: 'translateY(-15%)', filter: 'drop-shadow(0 20px 20px rgba(0,0,0,0.3))' }} alt="mature tree" />;
-
-            if (fruits > 0) {
-              const displayApples = Math.min(fruits, 9);
-              return (
-                <div style={{ position: 'relative', width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <div style={{ position: 'absolute', width: '150%', height: '150%', transform: 'translateY(-15%)' }}>
-                    <img src="/assets/garden/tree-mature.png" style={{ width: '100%', height: '100%', objectFit: 'contain', filter: 'drop-shadow(0 20px 20px rgba(0,0,0,0.3))' }} alt="mature tree" />
-                    {Array.from({ length: displayApples }).map((_, idx) => (
-                      <div key={idx} style={{
-                        position: 'absolute',
-                        top: applePositions[idx].top,
-                        left: applePositions[idx].left,
-                        fontSize: '14px',
-                        transform: 'translate(-50%, -50%)',
-                        filter: 'drop-shadow(0 2px 2px rgba(0,0,0,0.4))',
-                        zIndex: 2,
-                        pointerEvents: 'none',
-                      }}><Apple size={14} fill="#dc2626" color="#b91c1c" /></div>
-                    ))}
-                  </div>
-                  {fruits > 9 && (
-                    <span style={{ position: 'absolute', top: '-15px', right: '-15px', fontSize: '12px', fontWeight: 'bold', color: '#b91c1c', background: 'rgba(255,255,255,0.9)', borderRadius: '6px', padding: '1px 4px', zIndex: 3, boxShadow: '0 2px 4px rgba(0,0,0,0.2)' }}>
-                      +{fruits - 9}
-                    </span>
-                  )}
-                </div>
-              );
-            }
-            return <img src="/assets/garden/tree-mature.png" style={{ width: '150%', height: '150%', objectFit: 'contain', transform: 'translateY(-15%)', filter: 'drop-shadow(0 20px 20px rgba(0,0,0,0.3))' }} alt="mature tree" />;
-          };
-          const stageBg = (stage) => {
-            if (stage <= 0) return '#e8f5e9';
-            if (stage <= 3) return '#c8e6c9';
-            if (stage <= 6) return '#a5d6a7';
-            if (stage <= 9) return '#81c784';
-            return '#66bb6a';
-          };
-
           return (
-            <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.75)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem', backdropFilter: 'blur(4px)' }} onClick={() => { setViewingPlayerGarden(null); setGuestGardenCell(null); }}>
+            <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.75)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem', backdropFilter: 'blur(4px)' }} onClick={() => setViewingPlayerGarden(null)}>
               <div style={{ background: '#fff', borderRadius: '16px', width: '100%', maxWidth: '800px', maxHeight: '92vh', display: 'flex', flexDirection: 'column', overflow: 'hidden', boxShadow: '0 25px 50px rgba(0,0,0,0.3)' }} onClick={e => e.stopPropagation()}>
 
                 {/* Header */}
@@ -31373,7 +31060,7 @@ const deDict = {
                     </h3>
                     <div style={{ fontSize: '0.85rem', opacity: 0.8, marginTop: '4px' }}>
                       <div style={{ marginBottom: '4px' }}>
-                        {vgTreeCount} {t('棵植物', 'plants')} · {t('點擊查看，雙擊挑戰！', 'Click to view, double-click to challenge!')}
+                        {vgTreeCount} {t('棵植物', 'plants')} · {t('點一下格子查看經文並挑戰', 'Tap a cell to read and challenge')}
                       </div>
                       <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
                         <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}><Apple size={16} /> {t('總果子', 'Total Fruits')}: <strong>{vgTotalFruits}</strong></span>
@@ -31383,7 +31070,7 @@ const deDict = {
                       </div>
                     </div>
                   </div>
-                  <button onClick={() => { setViewingPlayerGarden(null); setGuestGardenCell(null); }} style={{ background: 'rgba(255,255,255,0.2)', border: 'none', color: 'white', fontSize: '1.4rem', cursor: 'pointer', borderRadius: '50%', width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><X size={22} /></button>
+                  <button onClick={() => setViewingPlayerGarden(null)} style={{ background: 'rgba(255,255,255,0.2)', border: 'none', color: 'white', fontSize: '1.4rem', cursor: 'pointer', borderRadius: '50%', width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><X size={22} /></button>
                 </div>
 
                 {/* Body */}
@@ -31396,124 +31083,19 @@ const deDict = {
                     <div style={{ textAlign: 'center', padding: '3rem', color: '#94a3b8', fontSize: '1rem', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.5rem' }}><Sprout size={20} /> {t('這個玩家的園地還是空的！', 'This player\'s garden is empty!')}</div>
                   ) : (
                     <>
-                      {/* Garden Grid - Isometric */}
-                      {(() => {
-                        const hour = new Date().getHours();
-                        let envBg = 'linear-gradient(to bottom, #bae6fd, #e0f2fe)'; // Day
-                        if (hour >= 19 || hour < 5) envBg = 'linear-gradient(to bottom, #0f172a, #1e1b4b)'; // Night
-                        else if (hour >= 17) envBg = 'linear-gradient(to bottom, #fca5a5, #fef08a)'; // Sunset
-                        else if (hour >= 5 && hour < 8) envBg = 'linear-gradient(to bottom, #fce7f3, #fef08a)'; // Sunrise
-
-                        // Square-ish field layout
-                        const vgFieldRows = Math.ceil(Math.sqrt(vgFieldCount));
-                        const vgFieldCols = Math.ceil(vgFieldCount / vgFieldRows);
-
-                        // Auto-zoom to fit all fields
-                        const vgContentW = vgFieldCols * 498 + Math.max(0, vgFieldCols - 1) * 40;
-                        const vgContentH = vgFieldRows * 498 + Math.max(0, vgFieldRows - 1) * 40;
-                        const vgFitScale = Math.min(520 / (vgContentW + 40), 420 / (vgContentH + 40), 1);
-                        const vgInitialScale = Math.max(0.25, Math.round(vgFitScale * 0.85 * 100) / 100);
-
-                        return (
-                          <div style={{
-                            overflow: 'hidden',
-                            width: '100%',
-                            height: '50vh',
-                            minHeight: '350px',
-                            borderRadius: '12px',
-                            border: '4px solid #334155',
-                            background: envBg,
-                            position: 'relative',
-                            boxShadow: 'inset 0 10px 30px rgba(0,0,0,0.1)'
-                          }}>
-                            <TransformWrapper initialScale={vgInitialScale} minScale={0.2} maxScale={4} centerOnInit={true} doubleClick={{ disabled: true }}>
-                              {({ zoomIn, zoomOut, resetTransform }) => (
-                                <>
-                                  <div style={{ position: 'absolute', bottom: '15px', right: '15px', zIndex: 10, display: 'flex', gap: '8px', background: 'rgba(255,255,255,0.8)', padding: '5px', borderRadius: '8px', boxShadow: '0 2px 5px rgba(0,0,0,0.2)' }}>
-                                    <button onClick={() => zoomIn()} style={{ width: '32px', height: '32px', borderRadius: '4px', border: '1px solid #cbd5e1', background: '#fff', cursor: 'pointer', fontSize: '18px', fontWeight: 'bold', color: '#475569', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>+</button>
-                                    <button onClick={() => zoomOut()} style={{ width: '32px', height: '32px', borderRadius: '4px', border: '1px solid #cbd5e1', background: '#fff', cursor: 'pointer', fontSize: '18px', fontWeight: 'bold', color: '#475569', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>−</button>
-                                    <button onClick={() => resetTransform()} style={{ width: '32px', height: '32px', borderRadius: '4px', border: '1px solid #cbd5e1', background: '#fff', cursor: 'pointer', fontSize: '16px', fontWeight: 'bold', color: '#475569', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><RotateCw size={18} /></button>
-                                  </div>
-                                  <TransformComponent wrapperStyle={{ width: '100%', height: '100%' }} contentStyle={{ width: '100%', height: '100%', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '20px' }}>
-                                    <div style={{ display: 'grid', gridTemplateColumns: `repeat(${vgFieldCols}, auto)`, justifyContent: 'center', gap: '40px' }}>
-                                      {Array.from({ length: vgFieldCount }).map((_, fieldIdx) => (
-                                        <div key={fieldIdx} style={{
-                                          display: 'grid',
-                                          gridTemplateColumns: `repeat(10, 48px)`,
-                                          gridTemplateRows: `repeat(10, 48px)`,
-                                          gap: '2px',
-                                          background: (hour >= 19 || hour < 5) ? 'rgba(30, 41, 59, 0.4)' : 'rgba(34, 197, 94, 0.3)',
-                                          border: '2px solid rgba(255,255,255,0.2)',
-                                          borderRadius: '8px',
-                                        }}>
-                                          {Array.from({ length: vgCellsPerField }).map((_, i) => {
-                                            const globalIndex = fieldIdx * vgCellsPerField + i;
-                                            const cell = vgGridMap[globalIndex];
-                                            const isEmpty = !cell;
-                                            return (
-                                              <div key={globalIndex}
-                                                onClick={() => {
-                                                  if (!cell) return;
-                                                  if (guestGardenClickTimer.current) { clearTimeout(guestGardenClickTimer.current); guestGardenClickTimer.current = null; return; }
-                                                  guestGardenClickTimer.current = setTimeout(async () => {
-                                                    guestGardenClickTimer.current = null;
-                                                    const { verse: targetVerse } = await resolveGardenVerse(cell.ref);
-                                                    setGuestGardenCell({ ref: targetVerse?.reference || cell.ref, text: targetVerse?.text || '', stage: cell.stage, fruits: cell.fruits || 0 });
-                                                  }, 250);
-                                                }}
-                                                onDoubleClick={async () => {
-                                                  if (!cell) return;
-                                                  if (guestGardenClickTimer.current) { clearTimeout(guestGardenClickTimer.current); guestGardenClickTimer.current = null; }
-                                                  const { verse: targetVerse, lang: detectedLang } = await resolveGardenVerse(cell.ref);
-                                                  if (targetVerse) {
-                                                    setGuestGardenCell(null);
-                                                    setViewingPlayerGarden(null);
-                                                    if (detectedLang !== version) { versionBeforeChallenge.current = version; setVersion(detectedLang); }
-                                                    openChallengeSetup({
-                                                      subtitle: targetVerse.reference,
-                                                      run: () => {
-                                                        setActiveVerse(targetVerse);
-                                                        setSelectedVerseRefs([targetVerse.reference]);
-                                                        setTimeout(() => startGame(false, targetVerse), 50);
-                                                      },
-                                                    });
-                                                  }
-                                                }}
-                                                style={{
-                                                  width: '48px', height: '48px', borderRadius: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                                  fontSize: cell ? '20px' : '10px',
-                                                  background: cell ? stageBg(cell.stage) : '#5d4037',
-                                                  border: cell ? '1px solid rgba(0,0,0,0.1)' : 'none',
-                                                  cursor: cell ? 'pointer' : 'default', transition: 'transform 0.1s, filter 0.2s', userSelect: 'none'
-                                                }}
-                                                onMouseOver={e => { if (cell) { e.currentTarget.style.filter = 'brightness(1.15)'; e.currentTarget.style.transform = 'scale(1.08)'; } }}
-                                                onMouseOut={e => { e.currentTarget.style.filter = ''; e.currentTarget.style.transform = ''; }}
-                                              >
-                                                {cell ? stageEmoji(cell.stage, cell.fruits || 0) : ''}
-                                              </div>
-                                            );
-                                          })}
-                                        </div>
-                                      ))}
-                                    </div>
-                                  </TransformComponent>
-                                </>
-                              )}
-                            </TransformWrapper>
-                          </div>
-                        );
-                      })()}
-
-                      {/* Verse preview on single click */}
-                      {guestGardenCell && (
-                        <div style={{ marginTop: '1rem', padding: '1rem 1.5rem', background: '#f0fdf4', borderRadius: '10px', border: '1px solid #86efac', position: 'relative' }}>
-                          <button onClick={() => setGuestGardenCell(null)} style={{ position: 'absolute', top: '8px', right: '12px', background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer', fontSize: '1.2rem' }}><X size={20} /></button>
-                          <div style={{ fontWeight: 'bold', color: '#166534', marginBottom: '6px' }}>{guestGardenCell.ref}</div>
-                          <div style={{ color: '#1e293b', lineHeight: '1.8', fontSize: '1rem' }}>{guestGardenCell.text || t('（在此裝置上未找到經文文字，但仍可雙擊挑戰）', '(Text not found on this device, but you can still double-click to challenge)')}</div>
-                          <div style={{ fontSize: '0.8rem', color: '#94a3b8', marginTop: '8px' }}>{t('雙擊格子開始挑戰！', 'Double-click the cell to start challenging!')}</div>
-                        </div>
-                      )}
-                      <div style={{ marginTop: '0.8rem', fontSize: '0.75rem', color: '#94a3b8', textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.35rem' }}><Smartphone size={14} /> {t('可用手指滑動來瀏覽園子', 'Swipe to browse the garden')}</div>
+                      <GardenView
+                        idPrefix="guest-garden"
+                        variant="guest"
+                        showStats={false}
+                        gardenData={vgData}
+                        t={t}
+                        version={version}
+                        refKey={verseRefKey}
+                        resolveVerse={resolveGardenVerse}
+                        onChallenge={(p) => { setViewingPlayerGarden(null); challengeGardenVerse({ ...p, setId: null }); }}
+                        isNarrow={isNarrowEditor}
+                        bleed={isNarrowEditor ? '0.6rem' : 0}
+                      />
                       <div style={{ marginTop: '1.5rem' }}>
                         <ActivityHeatmap t={t} activityMap={vgData?._activity || {}} />
                       </div>
