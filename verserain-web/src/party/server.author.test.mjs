@@ -89,6 +89,22 @@ await test('claims sets authored under an earlier name (case-insensitive) and re
   assert.strictEqual(again.changed, 0, 'idempotent');
 });
 
+await test('with NO names handed in, an old author name on my bound sets is derived and claims my legacy sets too', async () => {
+  const { srv, storage } = makeServer({ [`user:${ME}`]: google('瑞爸'), ...sets() });
+  const data = await json(await srv.onRequest(req('/sets/claim-author', { email: ME, names: [] })));
+  assert.strictEqual(data.success, true);
+  assert.deepStrictEqual(data.accepted, ['hungry@G'], 'derived from the bound set');
+  assert.strictEqual(data.changed, 2, 'bound set re-tagged + legacy set claimed');
+  assert.strictEqual(storage.map.get('verseset:s-bound').authorName, '瑞爸');
+  assert.strictEqual(storage.map.get('verseset:s-legacy').authorName, '瑞爸');
+  assert.strictEqual(storage.map.get('verseset:s-legacy').ownerEmail, ME);
+  assert.strictEqual(storage.map.get('verseset:s-other-legacy').authorName, 'Amy');
+  assert.deepStrictEqual(storage.map.get(`user:${ME}`).previousNames, ['hungry@G']);
+  const again = await json(await srv.onRequest(req('/sets/claim-author', { email: ME, names: [] })));
+  assert.strictEqual(again.changed, 0, 'nothing left to do');
+  assert.deepStrictEqual(again.accepted, [], 'nothing left to derive');
+});
+
 await test('refuses a name another account currently uses; never takes a set bound to another email', async () => {
   const { srv, storage } = makeServer({
     [`user:${ME}`]: google('瑞爸'),

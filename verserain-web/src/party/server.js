@@ -1060,8 +1060,22 @@ export default class Server {
               const user = await this.room.storage.get(`user:${cleanEmail}`);
               if (!user) return new Response(JSON.stringify({ error: 'User not found' }), { status: 404, headers: corsHeaders });
               const norm = (n) => String(n || '').trim().toLowerCase();
-              const wanted = Array.from(new Set((Array.isArray(names) ? names : [])
+              const handed = Array.from(new Set((Array.isArray(names) ? names : [])
                  .map((n) => String(n ?? '').trim()).filter((n) => n && n.length <= 40))).slice(0, 20);
+              // Names this account provably used: the author names still on
+              // sets bound to its email (ownerEmail is stamped by the
+              // publisher's own email). They need no hand-in — an account that
+              // renamed before renames re-tagged sets gets them back this way.
+              const derived = [];
+              {
+                 const all = await this.room.storage.list({ prefix: 'verseset:' });
+                 for (const set of all.values()) {
+                    if (!set || norm(set.ownerEmail) !== cleanEmail) continue;
+                    const a = String(set.authorName || '').trim();
+                    if (a && a !== 'Anonymous' && norm(a) !== norm(user.name) && !derived.some((d) => norm(d) === norm(a))) derived.push(a);
+                 }
+              }
+              const wanted = [...handed, ...derived.filter((d) => !handed.some((h) => norm(h) === norm(d)))];
               const known = new Set([user.name, ...(user.previousNames || [])].map(norm).filter(Boolean));
               const unverified = wanted.filter((n) => !known.has(norm(n)));
               const takenByOthers = new Set();
@@ -1075,15 +1089,14 @@ export default class Server {
               }
               const accepted = wanted.filter((n) => !takenByOthers.has(norm(n)) && norm(n) !== norm(user.name));
               const rejected = wanted.filter((n) => takenByOthers.has(norm(n)));
-              let changed = 0;
+              // Always re-tag: sets bound to this email take the current name
+              // even when no earlier name was handed in or derived.
+              const { changed } = await this.retagAuthorSets(cleanEmail, accepted, user.name);
               if (accepted.length) {
-                 ({ changed } = await this.retagAuthorSets(cleanEmail, accepted, user.name));
                  let prev = user.previousNames;
                  for (const n of accepted) prev = rememberName(prev, n);
-                 if (prev !== user.previousNames) {
-                    user.previousNames = prev;
-                    await this.room.storage.put(`user:${cleanEmail}`, user);
-                 }
+                 user.previousNames = prev;
+                 await this.room.storage.put(`user:${cleanEmail}`, user);
               }
               return new Response(JSON.stringify({ success: true, changed, accepted, rejected }), { status: 200, headers: corsHeaders });
            } catch {
