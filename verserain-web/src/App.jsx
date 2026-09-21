@@ -17,6 +17,7 @@ import I18N_FILLINS from './i18nFillins';
 import { PREMIUM_EMAILS } from './premiumEmails';
 import ChallengeSetupModal, { loadChallengeSetup } from './ChallengeSetupModal';
 import GardenView from './GardenView.jsx';
+import { isBlankRef } from './lib/gardenView.js';
 import { GOOGLE_CLIENT_ID, APPLE_CLIENT_ID, APPLE_REDIRECT_URI, LINE_CHANNEL_ID, startLineLogin } from './oauthConfig';
 import { VAPID_PUBLIC_KEY, urlBase64ToUint8Array, isWebPushSupported, isIOSStandalone, isIOSWithoutPWA, hasNativeDailyPush, callNativeDailyPush } from './pushConfig';
 import { setVoiceApi, uploadVerseVoice, uploadSetAsset, compressBackgroundImage, getSetAssetDataUrl, userVoiceApi, uploadUserVerseVoice, voiceOwnerId, voiceCommentApi, uploadVoiceComment } from './setVoiceApi';
@@ -7004,7 +7005,9 @@ export default function App() {
     setGardenData(prev => {
       const updated = { ...prev };
       let isNewVerseChallenge = false;
-      if (ref && ref !== 'activity_only') {
+      // A verse saved without 出處 would be planted under a blank key and show
+      // up as a nameless tree; count the activity but don't plant it.
+      if (ref && ref !== 'activity_only' && !isBlankRef(ref)) {
         isNewVerseChallenge = !updated[ref] && type === 'played';
         if (!updated[ref]) {
           const used = new Set(Object.entries(updated).filter(([k]) => k !== '_activity').map(([,v]) => v.gridIndex));
@@ -24956,7 +24959,7 @@ const deDict = {
                     verserain
                   </div>
                   <div className="app-brand-version" style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', marginTop: '4px', marginLeft: '2px' }}>
-                    v4.0.10
+                    v4.0.11
                   </div>
                 </div>
                 <div ref={langPickerRef} className="app-lang-control" style={{ position: 'relative' }}>

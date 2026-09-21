@@ -1,9 +1,9 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  CELLS_PER_FIELD, buildFields, clampFieldIndex, fieldOfRef, findGardenCell,
+  CELLS_PER_FIELD, gardenEntries, buildFields, clampFieldIndex, fieldOfRef, findGardenCell,
   filterGardenEntries, sortGardenEntries, parseRefKey, stageLabelPair, stageBg,
-  timeOfDayTheme, swipeDirection,
+  timeOfDayTheme, swipeDirection, isBlankRef,
 } from './gardenView.js';
 
 // Tiny stand-in for normalizeVerseReferenceKey: "<book>|<c>:<v>" for a few spellings.
@@ -109,4 +109,14 @@ test('swipeDirection', () => {
   assert.equal(swipeDirection(60, 90), null, 'too vertical');
   assert.equal(swipeDirection(60, 50), null, 'not horizontal enough');
   assert.equal(CELLS_PER_FIELD, 100);
+});
+
+test('isBlankRef: nothing visible → blank', () => {
+  assert.equal(isBlankRef(''), true);
+  assert.equal(isBlankRef('   '), true);
+  assert.equal(isBlankRef('\u200b\u200e\ufeff'), true);
+  assert.equal(isBlankRef(null), true);
+  assert.equal(isBlankRef('約 3:16'), false);
+  assert.equal(isBlankRef(' x '), false);
+  assert.equal(gardenEntries({ ' ': { gridIndex: 3, stage: 2 } }).length, 1, 'blank keys stay listed so the tree is still reachable');
 });

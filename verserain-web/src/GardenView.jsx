@@ -2,7 +2,7 @@ import { useState, useMemo, useRef, useEffect } from 'react';
 import { Apple, Sprout, TreePine, ChevronLeft, ChevronRight, LayoutGrid, List, Search, X, Play, Smartphone } from 'lucide-react';
 import {
   CELLS_PER_FIELD, APPLE_POSITIONS, buildFields, clampFieldIndex, fieldOfRef, fieldOfGridIndex,
-  findGardenCell, filterGardenEntries, sortGardenEntries, stageLabelPair, stageBg, timeOfDayTheme, swipeDirection,
+  findGardenCell, filterGardenEntries, sortGardenEntries, stageLabelPair, stageBg, timeOfDayTheme, swipeDirection, isBlankRef,
 } from './lib/gardenView.js';
 
 // The garden, shared by 我的園子 and a friend's garden overlay.
@@ -16,6 +16,9 @@ import {
 
 const VIEW_MODE_KEY = 'verseRain_gardenViewMode';
 const LIST_PAGE = 200;
+// What to print for a reference: the reference itself, or a placeholder when
+// the planted key has no visible text (a custom verse saved without 出處).
+const refLabel = (ref, t) => (isBlankRef(ref) ? t('（未標出處）', '(no reference)') : ref);
 const LANG_BADGE = { kjv: 'KJV 🇬🇧', ko: '한국어 🇰🇷', ja: '日本語 🇯🇵', fa: 'فارسی 🇮🇷', he: 'עברית 🇮🇱' };
 
 const treeImg = (src, alt, shadow) => (
@@ -58,7 +61,7 @@ export function GardenVerseCard({ card, t, version, isNarrow, onClose, onChallen
     <div onClick={onClose} style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 10000, display: 'flex', alignItems: isNarrow ? 'flex-end' : 'center', justifyContent: 'center', padding: isNarrow ? 0 : '1rem' }}>
       <div
         role="dialog"
-        aria-label={card.ref}
+        aria-label={refLabel(card.ref, t)}
         onClick={(e) => e.stopPropagation()}
         style={{
           width: '100%', maxWidth: isNarrow ? '100%' : '400px', padding: '1.5rem',
@@ -77,7 +80,7 @@ export function GardenVerseCard({ card, t, version, isNarrow, onClose, onChallen
               <GardenSprite stage={card.stage} fruits={card.fruits} />
             </div>
           </div>
-          <span style={{ fontWeight: 'bold', color: '#166534', fontSize: '1.2rem' }}>{card.ref}</span>
+          <span style={{ fontWeight: 'bold', color: isBlankRef(card.ref) ? '#94a3b8' : '#166534', fontSize: '1.2rem' }}>{refLabel(card.ref, t)}</span>
           <span style={{ fontSize: '0.85rem', color: '#166534', background: '#b2f5ea', padding: '3px 10px', borderRadius: '12px', fontWeight: 'bold' }}>{t(...stageLabelPair(card.stage))}</span>
           {crossLang && (
             <span style={{ fontSize: '0.75rem', color: '#1d4ed8', background: '#dbeafe', padding: '2px 8px', borderRadius: '10px', fontWeight: 'bold' }}>
@@ -85,6 +88,11 @@ export function GardenVerseCard({ card, t, version, isNarrow, onClose, onChallen
             </span>
           )}
         </div>
+        {isBlankRef(card.ref) && (
+          <p style={{ fontSize: '0.78rem', color: '#64748b', margin: '0 0 0.2rem' }}>
+            {t('這節經文在經文集裡沒有填出處，所以園子只記得它的內容。', 'This verse was saved without a reference in its verse set, so the garden only knows its text.')}
+          </p>
+        )}
         <p style={{ color: '#334155', lineHeight: '1.6', fontSize: '1rem', margin: '1rem 0 0.8rem', fontStyle: 'italic', maxHeight: '30vh', overflowY: 'auto' }}>
           {card.loading ? t('載入中…', 'Loading…') : `"${card.text || t('(經文內容未找到)', '(Verse text not found)')}"`}
         </p>
@@ -328,7 +336,7 @@ export default function GardenView({
                     key={isFlash ? `${gi}:${highlight.nonce}` : gi}
                     className={'garden-cell' + (entry ? ' garden-cell--planted' : '') + (isFlash ? ' garden-cell--flash' : '')}
                     data-ref={entry ? entry.ref : undefined}
-                    title={entry ? `${entry.ref} — ${t(...stageLabelPair(entry.stage))}${entry.fruits ? ` 🍎×${entry.fruits}` : ''}` : t('空地', 'Empty')}
+                    title={entry ? `${refLabel(entry.ref, t)} — ${t(...stageLabelPair(entry.stage))}${entry.fruits ? ` 🍎×${entry.fruits}` : ''}` : t('空地', 'Empty')}
                     onClick={() => onCellClick(entry)}
                     onDoubleClick={() => onCellDoubleClick(entry)}
                     style={{
@@ -383,7 +391,7 @@ export default function GardenView({
                   style={{ display: 'flex', alignItems: 'center', gap: '10px', width: '100%', textAlign: 'left', padding: '8px 12px', background: '#fff', border: '1px solid #e2e8f0', borderRadius: '8px', cursor: 'pointer', fontSize: '0.9rem', color: '#334155' }}
                 >
                   <span style={{ width: '14px', height: '14px', borderRadius: '4px', background: stageBg(entry.stage), border: '1px solid rgba(0,0,0,0.1)', flexShrink: 0 }} />
-                  <span style={{ fontWeight: 'bold', color: '#166534', flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{entry.ref}</span>
+                  <span style={{ fontWeight: 'bold', color: isBlankRef(entry.ref) ? '#94a3b8' : '#166534', flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{refLabel(entry.ref, t)}</span>
                   <span style={{ fontSize: '0.75rem', color: '#166534', background: '#dcfce7', padding: '2px 8px', borderRadius: '10px', whiteSpace: 'nowrap' }}>{t(...stageLabelPair(entry.stage))}</span>
                   {entry.fruits > 0 && <span style={{ fontSize: '0.8rem', color: '#b91c1c', display: 'inline-flex', alignItems: 'center', gap: '2px', whiteSpace: 'nowrap' }}><Apple size={13} /> {entry.fruits}</span>}
                   <span style={{ fontSize: '0.72rem', color: '#94a3b8', whiteSpace: 'nowrap' }}>{fieldLabel(fieldOfGridIndex(entry.gridIndex))} · #{(entry.gridIndex % CELLS_PER_FIELD) + 1}</span>
