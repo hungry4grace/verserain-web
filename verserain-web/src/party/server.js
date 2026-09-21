@@ -15,6 +15,16 @@ async function voiceOwnerId(email) {
 //   • the requester quoted its voiceId. A private recording is *unlisted*,
 //     not access-controlled: the owner can hand someone a share link and the
 //     random voiceId in it acts as the capability.
+// Append a display name to an account's previousNames (deduped, case-insensitive,
+// newest last, capped so the record stays small).
+export function rememberName(list, name) {
+  const n = String(name || '').trim();
+  if (!n) return Array.isArray(list) ? list : [];
+  const out = (Array.isArray(list) ? list : []).filter((x) => String(x || '').trim().toLowerCase() !== n.toLowerCase());
+  out.push(n);
+  return out.slice(-20);
+}
+
 export function isUserVoiceVisible(meta, requesterOwnerId, ownerId, unlistedVoiceId) {
   if (!meta) return false;
   if (meta.public !== false) return true;
@@ -505,6 +515,39 @@ export default class Server {
   // of relying on the client's localStorage carrying it over (which breaks
   // across devices / in-app browsers). Merge semantics mirror the client:
   // per-verse max(stage, fruits); _activity merged per-day by max.
+  // A published set belongs to an ACCOUNT (ownerEmail), not to the display
+  // name it was published under. Stamp the account's current name on every
+  // set it owns, and adopt legacy sets (no ownerEmail) authored under any of
+  // the account's earlier names — so a rename never strands 「作者」 on an old
+  // name, and the sets stay editable however often the person renames.
+  // Returns { changed } — the number of sets rewritten.
+  async retagAuthorSets(email, oldNames, newName) {
+    const emailLc = String(email || '').trim().toLowerCase();
+    const target = String(newName || '').trim();
+    if (!emailLc || !target) return { changed: 0 };
+    const norm = (n) => String(n || '').trim().toLowerCase();
+    const names = new Set((oldNames || []).map(norm).filter(Boolean));
+    let changed = 0;
+    try {
+      const list = await this.room.storage.list({ prefix: 'verseset:' });
+      for (const [key, set] of list.entries()) {
+        if (!set || typeof set !== 'object') continue;
+        const owner = norm(set.ownerEmail);
+        const mine = owner ? owner === emailLc : names.has(norm(set.authorName));
+        if (!mine) continue;
+        const next = { ...set };
+        let dirty = false;
+        if (next.authorName !== target) { next.authorName = target; dirty = true; }
+        if (owner !== emailLc) { next.ownerEmail = emailLc; dirty = true; }
+        if (next.lastEditorName && names.has(norm(next.lastEditorName)) && next.lastEditorName !== target) { next.lastEditorName = target; dirty = true; }
+        if (dirty) { await this.room.storage.put(key, next); changed++; }
+      }
+    } catch (e) {
+      console.error('retagAuthorSets failed', emailLc, e);
+    }
+    return { changed };
+  }
+
   async migratePlayerName(oldName, newName) {
     if (!oldName || !newName || oldName === newName) return;
     try {
@@ -976,6 +1019,11 @@ export default class Server {
               if (newName) user.name = newName;
               if (newCity !== undefined) user.city = newCity;
               if (newCountry !== undefined) user.country = newCountry;
+              // Remember every name the account has used: published sets
+              // authored under any of them stay this account's.
+              if (newName && oldName && newName !== oldName) {
+                 user.previousNames = rememberName(user.previousNames, oldName);
+              }
 
               await this.room.storage.put(`user:${email.toLowerCase()}`, user);
 
@@ -983,6 +1031,8 @@ export default class Server {
               // orphans progress or duplicates the player on the leaderboard.
               if (newName && oldName && newName !== oldName) {
                  await this.migratePlayerName(oldName, newName);
+                 // …and the published sets: 「作者」 follows the account's name.
+                 await this.retagAuthorSets(email, [oldName, ...(user.previousNames || [])], newName);
               }
 
               // Never echo the credential field back to the client — this used
@@ -991,6 +1041,53 @@ export default class Server {
               return new Response(JSON.stringify({ success: true, user: safeUser }), { status: 200, headers: corsHeaders });
            } catch(e) {
               return new Response(JSON.stringify({ error: 'Update failed' }), { status: 500, headers: corsHeaders });
+           }
+        }
+
+        // 3.55 Claim author names — an account that renamed BEFORE renames
+        // started re-tagging sets (or that published from another device
+        // under an old name) hands in its earlier names; every published set
+        // authored under them becomes the account's and shows its current
+        // name. A name is trusted when the account has used it (user.name /
+        // previousNames); any other name is accepted only while no other
+        // account currently uses it, and never takes a set that is already
+        // bound to a different email.
+        if (url.pathname.endsWith('/sets/claim-author') && request.method === 'POST') {
+           try {
+              const { email, names } = await request.json();
+              const cleanEmail = String(email || '').toLowerCase().trim();
+              if (!cleanEmail) return new Response(JSON.stringify({ error: 'email required' }), { status: 400, headers: corsHeaders });
+              const user = await this.room.storage.get(`user:${cleanEmail}`);
+              if (!user) return new Response(JSON.stringify({ error: 'User not found' }), { status: 404, headers: corsHeaders });
+              const norm = (n) => String(n || '').trim().toLowerCase();
+              const wanted = Array.from(new Set((Array.isArray(names) ? names : [])
+                 .map((n) => String(n ?? '').trim()).filter((n) => n && n.length <= 40))).slice(0, 20);
+              const known = new Set([user.name, ...(user.previousNames || [])].map(norm).filter(Boolean));
+              const unverified = wanted.filter((n) => !known.has(norm(n)));
+              const takenByOthers = new Set();
+              if (unverified.length) {
+                 const users = await this.room.storage.list({ prefix: 'user:' });
+                 for (const [k, u] of users.entries()) {
+                    if (k === `user:${cleanEmail}` || !u) continue;
+                    const cur = norm(u.name);
+                    if (cur && unverified.some((n) => norm(n) === cur)) takenByOthers.add(cur);
+                 }
+              }
+              const accepted = wanted.filter((n) => !takenByOthers.has(norm(n)) && norm(n) !== norm(user.name));
+              const rejected = wanted.filter((n) => takenByOthers.has(norm(n)));
+              let changed = 0;
+              if (accepted.length) {
+                 ({ changed } = await this.retagAuthorSets(cleanEmail, accepted, user.name));
+                 let prev = user.previousNames;
+                 for (const n of accepted) prev = rememberName(prev, n);
+                 if (prev !== user.previousNames) {
+                    user.previousNames = prev;
+                    await this.room.storage.put(`user:${cleanEmail}`, user);
+                 }
+              }
+              return new Response(JSON.stringify({ success: true, changed, accepted, rejected }), { status: 200, headers: corsHeaders });
+           } catch {
+              return new Response(JSON.stringify({ error: 'Failed to claim author names' }), { status: 500, headers: corsHeaders });
            }
         }
 
@@ -1255,24 +1352,40 @@ export default class Server {
                   return new Response(JSON.stringify({ error: 'id required' }), { status: 400, headers: corsHeaders });
                }
                const existing = await this.room.storage.get(`verseset:${payload.id}`);
+               // The requester owns the set when it is bound to their email, or
+               // when it is a legacy set (no ownerEmail) authored under one of
+               // the names their account has used — a rename must not lock
+               // people out of what they published earlier.
+               let ownerMatch = false;
+               if (existing && requesterEmail) {
+                  const owner = String(existing.ownerEmail || '').trim().toLowerCase();
+                  if (owner) ownerMatch = owner === requesterEmail;
+                  else {
+                     const acct = await this.room.storage.get(`user:${requesterEmail}`);
+                     const mine = new Set([acct?.name, ...(acct?.previousNames || [])].map((n) => String(n || '').trim().toLowerCase()).filter(Boolean));
+                     ownerMatch = mine.has(String(existing.authorName || '').trim().toLowerCase());
+                  }
+               }
                if (!isAdmin) {
                   if (!requesterEmail) {
                      return new Response(JSON.stringify({ error: 'Login required to publish' }), { status: 403, headers: corsHeaders });
                   }
                   // Non-admins may create NEW sets or update sets they own.
-                  // Legacy sets without ownerEmail are treated as admin-owned.
-                  if (existing && existing.ownerEmail !== requesterEmail) {
+                  if (existing && !ownerMatch) {
                      return new Response(JSON.stringify({ error: 'Only the original publisher can update this set' }), { status: 403, headers: corsHeaders });
                   }
                }
-               if (existing && existing.authorName && existing.authorName !== "Anonymous") {
+               // 「作者」 is the owner's to set (it follows their current name);
+               // anyone else editing (an admin) keeps the original author.
+               if (existing && existing.authorName && existing.authorName !== "Anonymous" && !ownerMatch) {
                   payload.authorName = existing.authorName;
                }
                if (payload.lastEditorName) {
                   payload.lastEditedAt = payload.lastEditedAt || new Date().toISOString();
                }
-               // Bind ownership on first publish; preserve it on updates.
-               payload.ownerEmail = existing?.ownerEmail || requesterEmail || '';
+               // Bind ownership on first publish; preserve it on updates. A
+               // legacy set the owner just proved theirs gets bound now.
+               payload.ownerEmail = existing?.ownerEmail || (ownerMatch ? requesterEmail : '') || requesterEmail || '';
                try {
                   await this.room.storage.put(`verseset:${payload.id}`, payload);
                } catch (putErr) {

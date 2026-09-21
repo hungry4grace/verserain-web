@@ -5667,6 +5667,44 @@ const ActivityHeatmap = ({ t, activityMap = {} }) => {
 
 const PARTY_HOST = "https://verserain-party.hungry4grace.partykit.dev/parties/main/global-auth-db";
 
+// ── Who owns a verse set ─────────────────────────────────────────────────────
+// Names this account has used before (kept locally on every rename; the
+// server keeps its own copy in user.previousNames).
+const myPreviousNames = () => {
+  try { const a = JSON.parse(localStorage.getItem('verserain_prev_names') || '[]'); return Array.isArray(a) ? a : []; } catch { return []; }
+};
+const rememberPreviousName = (name) => {
+  const n = String(name || '').trim();
+  if (!n) return;
+  const list = myPreviousNames().filter(x => String(x).toLowerCase() !== n.toLowerCase());
+  list.push(n);
+  try { localStorage.setItem('verserain_prev_names', JSON.stringify(list.slice(-20))); } catch { /* storage off */ }
+};
+// Strict "this set is mine": bound to my email, or authored under my current
+// or any earlier name (or not attributed at all). Used where the author
+// name is (re)written, so a rename never turns my set into someone else's
+// and a name-prefix guess never renames someone else's.
+const isMySet = (s, currentPlayerName, currentEmail) => {
+  if (!s) return false;
+  const email = String(currentEmail || '').trim().toLowerCase();
+  if (email && s.ownerEmail && String(s.ownerEmail).trim().toLowerCase() === email) return true;
+  if (!s.authorName || s.authorName === 'Anonymous') return true;
+  const author = String(s.authorName).trim().toLowerCase();
+  if (currentPlayerName && author === String(currentPlayerName).trim().toLowerCase()) return true;
+  return myPreviousNames().some(n => String(n).trim().toLowerCase() === author);
+};
+const isOwnedByCurrentUser = (s, currentPlayerName, currentEmail) => {
+  if (!s) return false;
+  if (isMySet(s, currentPlayerName, currentEmail)) return true;
+  const emailLocal = String(currentEmail || '').split('@')[0].toLowerCase();
+  if (!emailLocal) return false;
+  const author = String(s.authorName).toLowerCase();
+  // Match common variants like "hungry", "hungry@G", "hungry@y" all sharing
+  // the email-local prefix "hungry4grace" → use a sensible truncation.
+  const shortLocal = emailLocal.slice(0, 6);
+  return shortLocal.length >= 3 && author.startsWith(shortLocal);
+};
+
 async function fetchRetry(url, opts = {}, { retries = 2, delay = 1500 } = {}) {
   for (let i = 0; i <= retries; i++) {
     try {
@@ -6269,19 +6307,20 @@ export default function App() {
   // playerName would otherwise be permanently stranded in localStorage and
   // never sync to backend. We treat the email's local part as the stable
   // identity and accept any authorName starting with it as "self".
-  const isOwnedByCurrentUser = (s, currentPlayerName, currentEmail) => {
-    if (!s) return false;
-    if (!s.authorName) return true;
-    if (s.authorName === currentPlayerName) return true;
-    if (s.authorName === 'Anonymous') return true;
-    const emailLocal = String(currentEmail || '').split('@')[0].toLowerCase();
-    if (!emailLocal) return false;
-    const author = String(s.authorName).toLowerCase();
-    // Match common variants like "hungry", "hungry@G", "hungry@y" all sharing
-    // the email-local prefix "hungry4grace" → use a sensible truncation.
-    const shortLocal = emailLocal.slice(0, 6);
-    return shortLocal.length >= 3 && author.startsWith(shortLocal);
-  };
+  // Tell the server these earlier names are this account's: every published
+  // set authored under them gets the current name + ownerEmail. Refreshes the
+  // published list when anything changed.
+  const claimAuthorNames = React.useCallback(async (names) => {
+    const email = String(userEmail || '').trim().toLowerCase();
+    const list = (names || []).map(n => String(n || '').trim()).filter(Boolean);
+    if (!email || !list.length) return 0;
+    try {
+      const r = await fetch(`${PARTY_HOST}/sets/claim-author`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, names: list }) });
+      const d = await r.json().catch(() => ({}));
+      if (r.ok && d.changed > 0) setPublishedSetsReload(n => n + 1);
+      return r.ok ? (d.changed || 0) : 0;
+    } catch { return 0; }
+  }, [userEmail]);
   const privateSetsInitialSyncDoneRef = useRef(false);
   const lastPushedPrivateSetsRef = useRef('');
 
@@ -6676,6 +6715,9 @@ export default function App() {
     return () => window.removeEventListener('resize', onResize);
   }, []);
 
+  // Bumped after the server re-tags 「作者」 on this account's sets (rename /
+  // claiming an old name) so the list shows the new name without a reload.
+  const [publishedSetsReload, setPublishedSetsReload] = useState(0);
   const [publishedVerseSets, setPublishedVerseSets] = useState([]);
   const [viewCounts, setViewCounts] = useState({});
   // Favorite verse-set ids (synced with PartyKit below). Declared here so the
@@ -6778,7 +6820,16 @@ export default function App() {
       // device shows the same totals and the same history.
       const email = (userEmail || '').trim().toLowerCase();
       const linkStep = email
-        ? fetch('/api/link-identity', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, keys: authorKeys }) }).catch(() => null)
+        ? fetch('/api/link-identity', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, keys: authorKeys }) })
+            .then(r => r.json())
+            .then((d) => {
+              // Every name this account was ever known by (linked here on past
+              // renames / by hand) also claims the sets published under it, so
+              // 「作者」 shows the current name and the sets stay editable.
+              const names = (Array.isArray(d?.keys) ? d.keys : []).filter(k => k && k !== playerName && !authorKeys.includes(k));
+              if (names.length) claimAuthorNames(names);
+            })
+            .catch(() => null)
         : Promise.resolve();
 
       linkStep.then(() => Promise.all(
@@ -6828,7 +6879,7 @@ export default function App() {
         })
         .catch(() => { setMyReferees([]); setRefereeGardenStats({}); });
     }
-  }, [playerName, personalCode, userEmail, refereesReload]);
+  }, [playerName, personalCode, userEmail, refereesReload, claimAuthorNames]);
 
   const localFruits = React.useMemo(() => Object.entries(gardenData || {}).filter(([k]) => k !== '_activity').reduce((sum, [, curr]) => sum + (curr.fruits || 0), 0), [gardenData]);
   const totalFruits = localFruits + creatorPoints;
@@ -7157,7 +7208,7 @@ export default function App() {
         }
       })
       .catch(err => console.error("Failed to fetch view counts", err));
-  }, []);
+  }, [publishedSetsReload]);
 
   const baseVerseSets = loadedLangs[version]?.sets || [];
   const activeVerseSets = React.useMemo(() => {
@@ -24967,7 +25018,7 @@ const deDict = {
                     verserain
                   </div>
                   <div className="app-brand-version" style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', marginTop: '4px', marginLeft: '2px' }}>
-                    v4.0.12
+                    v4.0.13
                   </div>
                 </div>
                 <div ref={langPickerRef} className="app-lang-control" style={{ position: 'relative' }}>
@@ -25123,6 +25174,11 @@ const deDict = {
                           // recorded against it still show under the new name.
                           if (playerName && playerName !== val && userEmail) {
                             fetch('/api/link-identity', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: userEmail, keys: [playerName] }) }).catch(() => {});
+                            // The server just re-tagged 「作者」 on this account's
+                            // published sets; remember the old name locally too
+                            // so sets still carrying it are treated as mine.
+                            rememberPreviousName(playerName);
+                            setPublishedSetsReload(n => n + 1);
                           }
                           setPlayerName(val);
                           localStorage.setItem('verserain_player_name', val);
@@ -26180,9 +26236,12 @@ const deDict = {
                                 ...editingCustomSet,
                                 language: version,
                                 id: editingCustomSet.id || `custom-${Date.now()}`,
-                                authorName: (editingCustomSet.authorName && editingCustomSet.authorName !== "Anonymous")
-                                  ? editingCustomSet.authorName
-                                  : (playerName || "Anonymous"),
+                                // My own set (bound to my email, or authored under my
+                                // current / an earlier name) carries my current name;
+                                // someone else's keeps its author.
+                                authorName: isMySet(editingCustomSet, playerName, userEmail)
+                                  ? (playerName || "Anonymous")
+                                  : editingCustomSet.authorName,
                                 lastEditedAt: new Date().toISOString(),
                                 lastEditorName: playerName || "Anonymous"
                               };
@@ -26204,9 +26263,9 @@ const deDict = {
                               // Handle publishing sync
                               if (setObj.isPublished) {
                                 const existingPublishedSet = publishedVerseSets.find(p => p.id === setObj.id);
-                                const originalAuthorName = (existingPublishedSet?.authorName && existingPublishedSet.authorName !== "Anonymous")
-                                  ? existingPublishedSet.authorName
-                                  : ((setObj.authorName && setObj.authorName !== "Anonymous") ? setObj.authorName : (playerName || "Anonymous"));
+                                const originalAuthorName = (!existingPublishedSet || isMySet(existingPublishedSet, playerName, userEmail))
+                                  ? ((setObj.authorName && setObj.authorName !== "Anonymous") ? setObj.authorName : (playerName || "Anonymous"))
+                                  : existingPublishedSet.authorName;
                                 const publishedObj = {
                                   ...setObj,
                                   authorName: originalAuthorName,
@@ -27922,6 +27981,8 @@ const deDict = {
                               try {
                                 const r = await fetch('/api/link-identity', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: userEmail, keys: [key] }) });
                                 if (!r.ok) throw new Error('link failed');
+                                rememberPreviousName(key);
+                                claimAuthorNames([key]); // sets published under that name become mine too
                                 setLinkOldKeyInput('');
                                 setRefereesReload(n => n + 1);
                               } catch {
