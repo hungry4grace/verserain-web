@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { expandSameChapterRefs } from './lib/expandSameChapterRefs.js';
 import { Play, Pause, RotateCcw, Heart, Zap, Trophy, Crown, Star, Home, XCircle, Headphones, Music, VolumeX, Search, Share2, Dices, Mic, MicOff, Users, CloudRain, Info, Edit, TreePine, Gamepad2, Map, Settings, Library, Volume2, Shuffle, Swords, ShoppingBasket, Apple, Mail, Lock, Sprout, Leaf, Hourglass, Frown, X, Camera, Square, Copy, ArrowRightLeft, MessageCircle, Languages, ChevronUp, ChevronDown, Check, Gift } from 'lucide-react';
-import { CATALOG as VOUCHER_CATALOG, DEFAULT_VALUE as VOUCHER_DEFAULTS } from '../api/_lib/rewardCatalog.js';
+import { CATALOG as VOUCHER_CATALOG, DEFAULT_VALUE as VOUCHER_DEFAULTS, MAX_REWARDS_PER_YEAR } from '../api/_lib/rewardCatalog.js';
 import confetti from 'canvas-confetti';
 import usePartySocket from 'partysocket/react';
 import PartySocket from 'partysocket';
@@ -25309,7 +25309,7 @@ const deDict = {
                     verserain
                   </div>
                   <div className="app-brand-version" style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', marginTop: '4px', marginLeft: '2px' }}>
-                    v4.0.29
+                    v4.0.30
                   </div>
                 </div>
                 <div ref={langPickerRef} className="app-lang-control" style={{ position: 'relative' }}>
@@ -28596,7 +28596,7 @@ const deDict = {
                       <div style={{ color: '#64748b', fontSize: '0.85rem', marginTop: '0.6rem', lineHeight: 1.6 }}>
                         <div><b>{t('台灣', 'Taiwan')}：</b>{(VOUCHER_CATALOG.tw || []).map(vc => vc.label).join('、')}</div>
                         <div><b>{t('海外', 'Overseas')}：</b>{(VOUCHER_CATALOG.intl || []).map(vc => vc.label).join('、')}</div>
-                        <div style={{ marginTop: 4 }}>{t('領取時可選地區與偏好的禮券；每帳號每個里程碑一份，每年最多 3 份。', 'Choose your region and preferred voucher when claiming; one per milestone per account, up to 3 a year.')}</div>
+                        <div style={{ marginTop: 4 }}>{t('領取時可選地區與偏好的禮券；每帳號每個里程碑一份，每年最多 {n} 份。', 'Choose your region and preferred voucher when claiming; one per milestone per account, up to {n} a year.').replace('{n}', String(MAX_REWARDS_PER_YEAR))}</div>
                       </div>
                     </div>
 
