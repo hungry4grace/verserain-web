@@ -899,6 +899,25 @@ function isIOSDevice() {
 // bottom of the slider real headroom (10% → 0.01 gain ≈ −40 dB). The stored
 // bgMusicVolume stays a plain 0–1 gain, so existing sets sound exactly as before.
 const bgmSliderToGain = (pct) => Math.pow(Math.max(0, Math.min(100, pct)) / 100, 2);
+
+// Built-in background music. A set's bgMusic is '' (author never chose → first
+// entry), 'preset:<id>', 'none', or 'custom:<assetId>'. Unknown ids fall back
+// to the first entry, whose file is /bgm.mp3 so the lobby player and older
+// cached bundles keep working. All three are mastered to −24 LUFS.
+const PRESET_BGM = [
+  { id: 'deer', file: '/bgm.mp3', label: 'As the Deer 如鹿切慕溪水' },
+  { id: 'healing', file: '/bgm/healing.mp3', label: 'Healing 醫治' },
+  { id: 'rest', file: '/bgm/rest.mp3', label: 'Rest 安息' },
+];
+const presetBgmFor = (choice) => {
+  const s = String(choice || '');
+  const id = s.startsWith('preset:') ? s.slice('preset:'.length) : '';
+  return PRESET_BGM.find(p => p.id === id) || PRESET_BGM[0];
+};
+const isPresetBgm = (choice) => {
+  const s = String(choice || '');
+  return !s || s.startsWith('preset:');
+};
 const bgmGainToSlider = (gain) => Math.round(Math.sqrt(Math.max(0, Math.min(1, gain ?? 0.18))) * 100);
 
 function startLoopingBgm(src, volume) {
@@ -3547,12 +3566,12 @@ function VerseSetContinuousRainPlayer({
   }, [verseSet?.id, verses, startVerse]);
 
   useEffect(() => {
-    // Background music source: creator's custom upload > default bgm.mp3;
-    // bgMusic==='none' disables music for this set entirely.
+    // Background music source: creator's custom upload > chosen preset
+    // (PRESET_BGM; '' = first entry); bgMusic==='none' disables music.
     let cancelled = false;
     const setup = async () => {
       const choice = String(verseSet?.bgMusic || '');
-      let src = '/bgm.mp3';
+      let src = presetBgmFor(choice).file;
       if (choice === 'none') src = null;
       else if (choice.startsWith('custom:')) {
         try {
@@ -3561,7 +3580,7 @@ function VerseSetContinuousRainPlayer({
             choice.slice('custom:'.length),
             verseSet?.bgMusicMime || 'audio/mpeg'
           );
-        } catch { src = '/bgm.mp3'; /* asset missing — fall back */ }
+        } catch { src = PRESET_BGM[0].file; /* asset missing — fall back */ }
       }
       if (cancelled) return;
       bgmRef.current?.pause();
@@ -6497,6 +6516,7 @@ export default function App() {
   const [editorBgPreview, setEditorBgPreview] = useState(null);
   const [editorMusicUrl, setEditorMusicUrl] = useState(null);
   const [editorMusicPlaying, setEditorMusicPlaying] = useState(false);
+  const [presetMenuOpen, setPresetMenuOpen] = useState(false);
   const editorMusicAudioRef = useRef(null);
   const editorSetIdRef = useRef(null);
 
@@ -6540,8 +6560,14 @@ export default function App() {
         .then(u => { if (!cancelled) setEditorMusicUrl(u); })
         .catch(() => {});
     } else {
-      setEditorMusicUrl(null);
-      stopEditorMusicPreview();
+      const file = bm === 'none' ? null : presetBgmFor(bm).file;
+      setEditorMusicUrl(file);
+      if (!file) stopEditorMusicPreview();
+      else if (editorMusicAudioRef.current && !String(editorMusicAudioRef.current.src || '').endsWith(file)) {
+        // Preset switched while auditioning: carry the preview over to the new track.
+        try { editorMusicAudioRef.current.pause(); editorMusicAudioRef.current._bgmDisconnect?.(); } catch { /* noop */ }
+        editorMusicAudioRef.current = startLoopingBgm(file, editingCustomSet?.bgMusicVolume ?? 0.18);
+      }
     }
     return () => { cancelled = true; };
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -25152,7 +25178,7 @@ const deDict = {
                     verserain
                   </div>
                   <div className="app-brand-version" style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', marginTop: '4px', marginLeft: '2px' }}>
-                    v4.0.26
+                    v4.0.27
                   </div>
                 </div>
                 <div ref={langPickerRef} className="app-lang-control" style={{ position: 'relative' }}>
@@ -25908,13 +25934,19 @@ const deDict = {
                             </div>
                           </div>
 
-                          {/* 背景音樂 — default / none / custom MP3 upload (≤5MB). */}
+                          {/* 背景音樂 — preset list (PRESET_BGM) / none / custom MP3 upload (≤5MB). */}
                           <div style={{ marginBottom: '1rem' }}>
                             <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '0.5rem', color: '#475569' }}>{t("背景音樂", "Background Music")}</label>
                             <div style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap' }}>
-                              <button type="button" onClick={() => setEditingCustomSet({ ...editingCustomSet, bgMusic: '' })}
-                                style={{ padding: '0.5rem 1rem', borderRadius: 20, border: `2px solid ${!editingCustomSet.bgMusic ? '#3b82f6' : '#cbd5e1'}`, background: !editingCustomSet.bgMusic ? '#eff6ff' : '#f8fafc', color: '#334155', cursor: 'pointer', fontWeight: 600 }}>
+                              <button type="button"
+                                onClick={() => {
+                                  if (isPresetBgm(editingCustomSet.bgMusic)) setPresetMenuOpen(o => !o);
+                                  else { setEditingCustomSet({ ...editingCustomSet, bgMusic: '' }); setPresetMenuOpen(true); }
+                                }}
+                                style={{ padding: '0.5rem 1rem', borderRadius: 20, border: `2px solid ${isPresetBgm(editingCustomSet.bgMusic) ? '#3b82f6' : '#cbd5e1'}`, background: isPresetBgm(editingCustomSet.bgMusic) ? '#eff6ff' : '#f8fafc', color: '#334155', cursor: 'pointer', fontWeight: 600 }}>
                                 🎵 {t('預設音樂', 'Default music')}
+                                {isPresetBgm(editingCustomSet.bgMusic) && <span style={{ fontWeight: 500, color: '#475569' }}> · {presetBgmFor(editingCustomSet.bgMusic).label}</span>}
+                                <span style={{ marginLeft: 6, fontSize: '0.8em' }}>{presetMenuOpen && isPresetBgm(editingCustomSet.bgMusic) ? '▲' : '▼'}</span>
                               </button>
                               <button type="button" onClick={() => setEditingCustomSet({ ...editingCustomSet, bgMusic: 'none' })}
                                 style={{ padding: '0.5rem 1rem', borderRadius: 20, border: `2px solid ${editingCustomSet.bgMusic === 'none' ? '#3b82f6' : '#cbd5e1'}`, background: editingCustomSet.bgMusic === 'none' ? '#eff6ff' : '#f8fafc', color: '#334155', cursor: 'pointer', fontWeight: 600 }}>
@@ -25926,9 +25958,24 @@ const deDict = {
                               </button>
                               <input ref={musicFileInputRef} type="file" accept="audio/*" style={{ display: 'none' }} onChange={e => { handleMusicUpload(e.target.files?.[0]); e.target.value = ''; }} />
                             </div>
+                            {presetMenuOpen && isPresetBgm(editingCustomSet.bgMusic) && (
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', marginTop: '0.6rem', maxWidth: 420 }}>
+                                {PRESET_BGM.map(p => {
+                                  const sel = presetBgmFor(editingCustomSet.bgMusic).id === p.id;
+                                  return (
+                                    <button key={p.id} type="button"
+                                      onClick={() => setEditingCustomSet(prev => ({ ...prev, bgMusic: `preset:${p.id}` }))}
+                                      style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', padding: '0.5rem 0.9rem', borderRadius: 10, border: `2px solid ${sel ? '#3b82f6' : '#e2e8f0'}`, background: sel ? '#eff6ff' : '#fff', color: '#334155', cursor: 'pointer', fontWeight: sel ? 700 : 500, textAlign: 'left' }}>
+                                      <span style={{ color: sel ? '#3b82f6' : '#94a3b8' }}>{sel ? '◉' : '○'}</span>
+                                      <span>{p.label}</span>
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            )}
                             {editingCustomSet.bgMusic !== 'none' && (
                               <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', flexWrap: 'wrap', marginTop: '0.7rem' }}>
-                                {String(editingCustomSet.bgMusic || '').startsWith('custom:') && (
+                                {(
                                   <button
                                     type="button"
                                     disabled={!editorMusicUrl}
