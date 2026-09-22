@@ -84,3 +84,14 @@ test('recordQualifiedReferral counts a person once and never awards', async () =
   const self = await recordQualifiedReferral(r, { inviterCode: 'ABCDEFGHJK', refereeCode: 'ABCDEFGHJK', refereeEmail: '' });
   assert.strictEqual(self.count, 0);
 });
+
+test('grantMilestones never re-pays a milestone already in the legacy ledger', async () => {
+  const r = stubRedis();
+  // Legacy rows: minted by the old client-reported path under an old device code.
+  await createReward(r, { code: 'OLDCODE111', name: 'A', email: 'a@x.com', kind: 'verses', milestone: 100 });
+  await createReward(r, { code: 'OLDCODE222', name: 'A', email: '', kind: 'verses', milestone: 200 }); // no email, but same code as the new check
+  const out = await grantMilestones(r, { code: 'OLDCODE222', name: 'A', email: 'a@x.com', kind: 'verses', count: 300 });
+  assert.deepStrictEqual(out.created.map(x => x.milestone), [300], 'only the genuinely new milestone is minted');
+  assert.strictEqual(r.hashes.get(LEDGER_KEY).size, 3);
+  assert.strictEqual(r.sets.get(milestonesKey('verses', 'a@x.com')).size, 3, 'legacy milestones are latched too');
+});

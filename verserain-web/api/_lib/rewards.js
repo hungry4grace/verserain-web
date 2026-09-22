@@ -108,7 +108,18 @@ export async function grantMilestones(redis, { code, name, email, kind, count, v
   const emailKey = String(email || '').trim().toLowerCase();
   const created = [];
   if (!code || !emailKey || !Number.isFinite(count)) return { created };
+  // Rewards minted before the per-email latch existed live only in the ledger,
+  // keyed by whatever device code the player had then. Treat any ledger row
+  // for this person (same email, or same code) and milestone as already
+  // granted, so a re-check never pays a legacy milestone twice.
+  const legacy = new Set();
+  for (const r of await listRewards(redis)) {
+    if (!r || r.kind !== kind) continue;
+    const rEmail = String(r.email || r.contactEmail || '').trim().toLowerCase();
+    if ((rEmail && rEmail === emailKey) || r.code === code) legacy.add(Number(r.milestone));
+  }
   for (let m = per; m <= count; m += per) {
+    if (legacy.has(m)) { await redis.sadd(milestonesKey(kind, emailKey), String(m)); continue; }
     const added = await redis.sadd(milestonesKey(kind, emailKey), String(m));
     if (!added) continue;
     const r = await createReward(redis, { code, name, email: emailKey, kind, milestone: m, inviterCode, verified, region });
