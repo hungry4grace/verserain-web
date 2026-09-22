@@ -893,6 +893,7 @@ export const he = {
   "商家 = 點數折抵": "בית עסק = הנחה בנקודות",
   "教會、機構 = 贊助者": "קהילה / ארגון = תומך",
   "只定位到街道，請把大頭針拖到正確位置": "אותר רק הרחוב — גרור את הסיכה למיקום המדויק",
+  "舊身分的推薦紀錄 {n} 筆": "{n} רשומות משמות/מכשירים קודמים",
 };
 
 export const fa = {
@@ -1767,6 +1768,7 @@ export const fa = {
   "商家 = 點數折抵": "فروشگاه = تخفیف امتیازی",
   "教會、機構 = 贊助者": "کلیسا / سازمان = حامی",
   "只定位到街道，請把大頭針拖到正確位置": "فقط خیابان پیدا شد — سنجاق را به محل دقیق بکشید",
+  "舊身分的推薦紀錄 {n} 筆": "{n} رکورد از نام‌ها/دستگاه‌های قبلی",
 };
 
 export const ar = {
@@ -3057,6 +3059,7 @@ export const ar = {
   "商家 = 點數折抵": "متجر = خصم بالنقاط",
   "教會、機構 = 贊助者": "كنيسة / مؤسسة = راعٍ",
   "只定位到街道，請把大頭針拖到正確位置": "تم تحديد الشارع فقط — اسحب الدبوس إلى الموقع الصحيح",
+  "舊身分的推薦紀錄 {n} 筆": "{n} سجلات من أسماء/أجهزة سابقة",
 };
 
 export const ja = {
@@ -3919,6 +3922,7 @@ export const ja = {
   "商家 = 點數折抵": "店舗 = ポイント割引",
   "教會、機構 = 贊助者": "教会・団体 = スポンサー",
   "只定位到街道，請把大頭針拖到正確位置": "通りまでしか特定できませんでした。ピンを正しい位置までドラッグしてください",
+  "舊身分的推薦紀錄 {n} 筆": "以前の名前・端末の記録 {n} 件",
 };
 
 export const ko = {
@@ -4779,6 +4783,7 @@ export const ko = {
   "商家 = 點數折抵": "매장 = 포인트 할인",
   "教會、機構 = 贊助者": "교회·단체 = 후원자",
   "只定位到街道，請把大頭針拖到正確位置": "도로까지만 찾았습니다. 핀을 정확한 위치로 드래그해 주세요",
+  "舊身分的推薦紀錄 {n} 筆": "이전 이름·기기의 기록 {n}건",
 };
 
 export const es = {
@@ -5655,6 +5660,7 @@ export const es = {
   "商家 = 點數折抵": "comercio = descuento con puntos",
   "教會、機構 = 贊助者": "iglesia / organización = patrocinador",
   "只定位到街道，請把大頭針拖到正確位置": "Solo se ubicó la calle — arrastra el marcador al punto exacto",
+  "舊身分的推薦紀錄 {n} 筆": "{n} registros de nombres/dispositivos anteriores",
 };
 
 export const tr = {
@@ -6531,6 +6537,7 @@ export const tr = {
   "商家 = 點數折抵": "işletme = puanla indirim",
   "教會、機構 = 贊助者": "kilise / kuruluş = sponsor",
   "只定位到街道，請把大頭針拖到正確位置": "Yalnızca sokak bulundu — iğneyi doğru noktaya sürükleyin",
+  "舊身分的推薦紀錄 {n} 筆": "Önceki adlardan/cihazlardan {n} kayıt",
 };
 
 export const de = {
@@ -7407,6 +7414,7 @@ export const de = {
   "商家 = 點數折抵": "Geschäft = Punkterabatt",
   "教會、機構 = 贊助者": "Gemeinde / Organisation = Sponsor",
   "只定位到街道，請把大頭針拖到正確位置": "Nur die Straße wurde gefunden – zieh die Nadel an die genaue Stelle",
+  "舊身分的推薦紀錄 {n} 筆": "{n} Einträge von früheren Namen/Geräten",
 };
 
 export const my = {
@@ -8283,6 +8291,7 @@ export const my = {
   "商家 = 點數折抵": "ဆိုင် = အမှတ်ဖြင့် လျှော့စျေး",
   "教會、機構 = 贊助者": "ဘုရားကျောင်း / အဖွဲ့အစည်း = ပံ့ပိုးသူ",
   "只定位到街道，請把大頭針拖到正確位置": "လမ်းကိုသာ တွေ့ပါသည် — ပင်ကို မှန်ကန်သောနေရာသို့ ဆွဲပါ",
+  "舊身分的推薦紀錄 {n} 筆": "ယခင်နာမည်/စက်များမှ မှတ်တမ်း {n} ခု",
 };
 
 export const vi = {
@@ -9159,6 +9168,7 @@ export const vi = {
   "商家 = 點數折抵": "cửa hàng = giảm giá bằng điểm",
   "教會、機構 = 贊助者": "hội thánh / tổ chức = nhà tài trợ",
   "只定位到街道，請把大頭針拖到正確位置": "Chỉ định vị được đến đường — hãy kéo ghim đến đúng vị trí",
+  "舊身分的推薦紀錄 {n} 筆": "{n} bản ghi từ tên/thiết bị trước đây",
 };
 
 export const id = {
@@ -10264,6 +10274,7 @@ export const id = {
   "商家 = 點數折抵": "toko = diskon poin",
   "教會、機構 = 贊助者": "gereja / organisasi = sponsor",
   "只定位到街道，請把大頭針拖到正確位置": "Hanya jalannya yang ditemukan — seret pin ke titik yang tepat",
+  "舊身分的推薦紀錄 {n} 筆": "{n} catatan dari nama/perangkat sebelumnya",
 };
 
 export const ms = {
@@ -11572,6 +11583,7 @@ export const ms = {
   "商家 = 點數折抵": "kedai = diskaun mata",
   "教會、機構 = 贊助者": "gereja / organisasi = penaja",
   "只定位到街道，請把大頭針拖到正確位置": "Hanya jalan yang ditemui — seret pin ke titik yang tepat",
+  "舊身分的推薦紀錄 {n} 筆": "{n} rekod daripada nama/peranti terdahulu",
 };
 
 export const zhcn = {
@@ -12800,6 +12812,7 @@ export const zhcn = {
   "商家 = 點數折抵": "商家 = 点数折抵",
   "教會、機構 = 贊助者": "教会、机构 = 赞助者",
   "只定位到街道，請把大頭針拖到正確位置": "只定位到街道，请把大头针拖到正确位置",
+  "舊身分的推薦紀錄 {n} 筆": "旧身份的推荐记录 {n} 笔",
 };
 
 export const pt = {
@@ -13396,6 +13409,7 @@ export const pt = {
   "商家 = 點數折抵": "loja = desconto com pontos",
   "教會、機構 = 贊助者": "igreja / organização = patrocinador",
   "只定位到街道，請把大頭針拖到正確位置": "Só a rua foi localizada — arraste o marcador para o ponto exato",
+  "舊身分的推薦紀錄 {n} 筆": "{n} registos de nomes/dispositivos anteriores",
 };
 
 export const fr = {
@@ -13992,6 +14006,7 @@ export const fr = {
   "商家 = 點數折抵": "commerce = remise en points",
   "教會、機構 = 贊助者": "église / organisation = soutien",
   "只定位到街道，請把大頭針拖到正確位置": "Seule la rue a été localisée — déplacez l’épingle à l’emplacement exact",
+  "舊身分的推薦紀錄 {n} 筆": "{n} enregistrements d’anciens noms/appareils",
 };
 
 export const ru = {
@@ -14588,6 +14603,7 @@ export const ru = {
   "商家 = 點數折抵": "магазин = скидка за очки",
   "教會、機構 = 贊助者": "церковь / организация = спонсор",
   "只定位到街道，請把大頭針拖到正確位置": "Найдена только улица — перетащите метку в точное место",
+  "舊身分的推薦紀錄 {n} 筆": "{n} записей от прежних имён/устройств",
 };
 
 export const hi = {
@@ -15184,6 +15200,7 @@ export const hi = {
   "商家 = 點數折抵": "दुकान = पॉइंट छूट",
   "教會、機構 = 贊助者": "चर्च / संस्था = प्रायोजक",
   "只定位到街道，請把大頭針拖到正確位置": "केवल सड़क तक स्थान मिला — पिन को सही स्थान पर खींचें",
+  "舊身分的推薦紀錄 {n} 筆": "पिछले नामों/डिवाइस से {n} रिकॉर्ड",
 };
 
 // Khmer (Cambodian) — full UI coverage, machine-translated in bulk from the
@@ -16410,6 +16427,7 @@ export const km = {
   "商家 = 點數折抵": "ហាង = បញ្ចុះតម្លៃដោយពិន្ទុ",
   "教會、機構 = 贊助者": "ព្រះវិហារ / អង្គការ = អ្នកឧបត្ថម្ភ",
   "只定位到街道，請把大頭針拖到正確位置": "រកឃើញតែផ្លូវប៉ុណ្ណោះ — សូមអូសម្ជុលទៅទីតាំងត្រឹមត្រូវ",
+  "舊身分的推薦紀錄 {n} 筆": "{n} កំណត់ត្រាពីឈ្មោះ/ឧបករណ៍មុន",
 };
 
 const I18N_FILLINS = { he, fa, ar, ja, ko, es, tr, de, my, vi, id, ms, zhcn, pt, fr, ru, hi, km };

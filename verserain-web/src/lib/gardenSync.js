@@ -268,14 +268,18 @@ export function buildFruitAuthorKeys(playerName, personalCode, prevCodes) {
 // Sum points across the per-key API responses (dedup already handled by keys).
 export function aggregateFruitResults(results) {
   let creator = 0, referral = 0, creatorHist = [], refHist = [];
+  const keys = new Set();
   for (const d of results || []) {
     if (!d) continue;
     creator += (d.points || 0);
     referral += (d.referralPoints || 0);
     creatorHist = creatorHist.concat(d.creatorHistory || []);
     refHist = refHist.concat(d.referralHistory || []);
+    for (const k of d.keysSearched || []) if (typeof k === 'string' && k) keys.add(k);
   }
   creatorHist.sort((a, b) => b.timestamp - a.timestamp);
   refHist.sort((a, b) => b.timestamp - a.timestamp);
-  return { creator, referral, total: creator + referral, creatorHist, refHist };
+  // keys: every name / code the account was ever known by (from the API), so
+  // callers can tell "my old self" apart from other people in the history.
+  return { creator, referral, total: creator + referral, creatorHist, refHist, keys: Array.from(keys) };
 }

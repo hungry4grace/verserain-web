@@ -6908,6 +6908,8 @@ export default function App() {
   const [referralOnlyPoints, setReferralOnlyPoints] = useState(0);
   const [creatorHistory, setCreatorHistory] = useState([]);
   const [referralHistory, setReferralHistory] = useState([]);
+  const [referralKeys, setReferralKeys] = useState([]); // every name/code this account was known by
+  const [showOldInviters, setShowOldInviters] = useState(false);
   // People who joined through my invite: [{ name, joinedAt, referredCount }]
   // (null while loading) + their garden progress keyed by name (null while loading).
   const [myReferees, setMyReferees] = useState(null);
@@ -6978,6 +6980,7 @@ export default function App() {
         setCreatorPoints(agg.total);
         setCreatorHistory(agg.creatorHist);
         setReferralHistory(agg.refHist);
+        setReferralKeys(agg.keys || []);
       }).catch(e => console.error(e));
 
       // 我推薦的朋友 — who joined through my invite, how many people they
@@ -25579,7 +25582,7 @@ const deDict = {
                     verserain
                   </div>
                   <div className="app-brand-version" style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', marginTop: '4px', marginLeft: '2px' }}>
-                    v4.0.36
+                    v4.0.37
                   </div>
                 </div>
                 <div ref={langPickerRef} className="app-lang-control" style={{ position: 'relative' }}>
@@ -28465,21 +28468,37 @@ const deDict = {
                     </div>
 
                     <div>
-                      {/* 我的推薦人 — the invited_by records, grouped by inviter (each device that
-                          claimed the welcome fruit wrote one; the points add up). */}
+                      {/* 我的推薦人 — an account has exactly ONE inviter on the server
+                          (write-once invitedBy). The invited_by history, however, holds one
+                          record per old name / device code this account ever used, and
+                          before codes were unique per account an old device could even be
+                          recorded as inviting the new one. So: show the server's inviter
+                          (or the newest record) as the one referrer, hide records where the
+                          "inviter" is an old self, and fold the rest under 舊身分紀錄. */}
                       {(() => {
+                        const selfKeys = new Set([playerName, personalCode, ...(referralKeys || [])].filter(Boolean).map(k => String(k).toLowerCase()));
                         const byInviter = {};
                         for (const h of referralHistory || []) {
                           if (h.type !== 'invited_by' || !h.player) continue;
+                          if (selfKeys.has(String(h.player).toLowerCase())) continue; // my own old identity, not a referrer
                           const cur = byInviter[h.player] || { player: h.player, amount: 0, timestamp: 0 };
                           cur.amount += h.amount || 0;
                           if ((h.timestamp || 0) > cur.timestamp) cur.timestamp = h.timestamp;
                           byInviter[h.player] = cur;
                         }
-                        const inviters = Object.values(byInviter);
-                        if (!inviters.length) return null;
+                        const all = Object.values(byInviter).sort((a, b) => b.timestamp - a.timestamp);
+                        if (!all.length) return null;
+                        const primaryName = typeof myInviterName === 'string' && myInviterName ? myInviterName : all[0].player;
+                        const primary = all.find(x => x.player === primaryName) || all[0];
+                        const older = all.filter(x => x !== primary);
+                        const inviters = showOldInviters ? [primary, ...older] : [primary];
                         return (
                           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '1.25rem' }}>
+                            {older.length > 0 && (
+                              <button type="button" onClick={() => setShowOldInviters(v => !v)} style={{ alignSelf: 'flex-start', background: 'transparent', border: 'none', color: '#64748b', fontSize: '0.78rem', cursor: 'pointer', padding: 0 }}>
+                                {showOldInviters ? '▾' : '▸'} {t('舊身分的推薦紀錄 {n} 筆', '{n} records from earlier names / devices').replace('{n}', String(older.length))}
+                              </button>
+                            )}
                             {inviters.map(inv => (
                               <div key={inv.player} style={{ background: '#fff', padding: '10px 15px', borderRadius: '8px', borderLeft: '4px solid #3b82f6', boxShadow: '0 1px 2px rgba(0,0,0,0.05)', fontSize: '0.9rem', color: '#475569', display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
                                 <span style={{ flex: 1 }}>
