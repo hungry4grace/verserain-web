@@ -453,7 +453,12 @@ export default function WorldMap2D({ t, playerName, userEmail, onJoinRoom, onVie
               const img = node.querySelector('.map-place-photo');
               if (img && img.getAttribute('data-asset') && !img.getAttribute('src')) {
                 getSetAssetDataUrl(img.getAttribute('data-set'), img.getAttribute('data-asset'), img.getAttribute('data-mime') || 'image/webp')
-                  .then((url) => { img.src = url; img.style.display = 'block'; e.popup.update(); })
+                  .then((url) => {
+                    img.src = url; img.style.display = 'block';
+                    // Re-layout only. popup.update() would re-set innerHTML from
+                    // the content string and wipe the button's onclick + the img.
+                    try { e.popup._updateLayout(); e.popup._updatePosition(); e.popup._adjustPan(); } catch { /* noop */ }
+                  })
                   .catch(() => {});
               }
             }
