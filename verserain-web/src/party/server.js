@@ -186,10 +186,13 @@ export function summarizeGardenForRewards(gd, now = Date.now()) {
   }
   const activity = (src._activity && typeof src._activity === 'object') ? src._activity : {};
   const days = Object.keys(activity).filter((d) => (Number(activity[d]) || 0) > 0 && !Number.isNaN(Date.parse(d + 'T00:00:00'))).sort();
-  let activeDays30 = 0;
-  for (const d of days) { if (now - Date.parse(d + 'T00:00:00') < 30 * 86400000) activeDays30++; }
+  let activeDays30 = 0, activityPoints = 0;
+  for (const d of days) {
+    activityPoints += Math.max(0, Math.floor(Number(activity[d]) || 0));
+    if (now - Date.parse(d + 'T00:00:00') < 30 * 86400000) activeDays30++;
+  }
   return {
-    passedVerses, treesPlanted, fruits,
+    passedVerses, treesPlanted, fruits, activityPoints,
     activeDays: days.length,
     activeDays30,
     firstActiveDay: days[0] || null,

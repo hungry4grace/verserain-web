@@ -6,7 +6,7 @@ import {
   CODE_ALPHABET, CODE_LEN, POINTS_PER_NTD, VOUCHER_MAX_NTD, MONTHLY_MAX_NTD, VOUCHER_TTL_SEC,
   PLAUSIBLE_POINTS_PER_TREE, PLAUSIBLE_SLACK, PLACES_KEY, LEADERBOARD_KEY,
   spentKey, openKey, dayKey, monthKey, placeDayKey, historyKey, refundedKey,
-  taipeiDay, taipeiMonth, newVoucherCode, normalizeCode, formatCode, plausiblePoints, eligibility,
+  taipeiDay, taipeiMonth, newVoucherCode, normalizeCode, formatCode, plausiblePoints, lifetimePoints, eligibility,
   computeDiscount, voucherStatus, maskName, publicVoucher,
   readBalance, issueVoucher, markUsed, expireVoucher, voidVoucher, restoreVoucher, getVoucher, listVouchers,
 } from './points.js';
@@ -84,6 +84,10 @@ test('plausiblePoints clamps to trees × rate + slack', () => {
   assert.strictEqual(plausiblePoints(30000, 0), PLAUSIBLE_SLACK);
   assert.strictEqual(plausiblePoints(-5, 3), 0);
   assert.strictEqual(plausiblePoints(null, null), 0);
+  assert.strictEqual(lifetimePoints(43192, { activityPoints: 778489 }), 778489, 'renamed player: garden log wins');
+  assert.strictEqual(lifetimePoints(90000, { activityPoints: 500 }), 90000, 'truncated log: leaderboard wins');
+  assert.strictEqual(lifetimePoints(null, null), 0);
+  assert.strictEqual(lifetimePoints('abc', { activityPoints: 'x' }), 0);
 });
 
 test('eligibility lists every failing reason', () => {
@@ -220,6 +224,17 @@ test('issueVoucher: too_small releases the day lock; bad input never locks', asy
   await assert.rejects(issueVoucher(r, { email: 'b@x.com', identity: { ...identity, email: 'b@x.com' }, garden, place, billNTD: 12.5, now: NOW }), (e) => e.code === 'bill_invalid');
   await assert.rejects(issueVoucher(r, { email: 'b@x.com', identity: { ...identity, email: 'b@x.com' }, garden, place, billNTD: 100001, now: NOW }), (e) => e.code === 'bill_invalid');
   assert.strictEqual(await r.get(dayKey('b@x.com', 'p1', '2026-09-22')), null);
+});
+
+test('readBalance uses the garden activity total when the leaderboard name is stale', async () => {
+  const r = stubRedis();
+  await seed(r, { earned: 43192 });
+  const g = { ...garden, activityPoints: 778489 };
+  const b = await readBalance(r, { email: 'a@x.com', identity, garden: g, now: NOW });
+  assert.strictEqual(b.earnedPoints, 778489);
+  assert.strictEqual(b.balancePoints, plausiblePoints(778489, garden.treesPlanted));
+  const { voucher } = await issueVoucher(r, { email: 'a@x.com', identity, garden: g, place, billNTD: 1000, now: NOW });
+  assert.strictEqual(voucher.ntd, 100, 'NT$100 off a NT$1000 bill at 10% now fits the balance');
 });
 
 test('issueVoucher is capped by the plausible balance, not the raw leaderboard', async () => {

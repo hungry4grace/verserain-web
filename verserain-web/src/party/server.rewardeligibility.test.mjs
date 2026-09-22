@@ -59,6 +59,7 @@ test('summarizeGardenForRewards counts passed trees after dedupe and fixture dro
   assert.strictEqual(s.passedVerses, 2);
   assert.strictEqual(s.treesPlanted, 3);
   assert.strictEqual(s.activeDays, 2, 'zero-point days do not count');
+  assert.strictEqual(s.activityPoints, 600, 'lifetime score = sum of the activity log');
   assert.strictEqual(s.activeDays30, 2);
   assert.strictEqual(s.firstActiveDay, '2026-09-01');
   assert.deepStrictEqual(summarizeGardenForRewards(null).passedVerses, 0);

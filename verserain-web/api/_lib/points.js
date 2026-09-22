@@ -112,6 +112,14 @@ export function dailyPerPersonOf(place) {
   return Number.isInteger(n) && n >= 0 && n <= MAX_DAILY_PER_PERSON ? n : DEFAULT_DAILY_PER_PERSON;
 }
 
+// Lifetime score. The leaderboard is keyed by playerName, so a renamed
+// player only carries the score earned under the current name; the garden's
+// activity log follows the account. Take the larger — plausiblePoints still
+// caps both against the tree count.
+export function lifetimePoints(leaderboardScore, garden) {
+  return Math.max(0, toInt(leaderboardScore), toInt(garden && garden.activityPoints));
+}
+
 export function eligibility(identity, garden) {
   const id = identity || {};
   const g = garden || {};
@@ -293,7 +301,7 @@ export async function readBalance(redis, { email, identity, garden, now, earnedP
   const em = normEmail(email || (identity && identity.email));
   const g = garden || {};
   const t = toDate(now);
-  const earned = earnedPoints === undefined ? await readEarned(redis, identity) : Math.max(0, toInt(earnedPoints));
+  const earned = lifetimePoints(earnedPoints === undefined ? await readEarned(redis, identity) : earnedPoints, g);
   const plausible = plausiblePoints(earned, g.treesPlanted);
   // Lazy expiry first: an expired open voucher refunds its points, and the
   // ledgers below must reflect that.
@@ -348,7 +356,7 @@ export async function issueVoucher(redis, { email, identity, garden, place, bill
   }
 
   try {
-    const earned = earnedPoints === undefined ? await readEarned(redis, identity) : Math.max(0, toInt(earnedPoints));
+    const earned = lifetimePoints(earnedPoints === undefined ? await readEarned(redis, identity) : earnedPoints, garden);
     const plausible = plausiblePoints(earned, (garden || {}).treesPlanted);
     const [spentRaw, monthRaw, placeDayRaw] = await Promise.all([
       redis.get(spentKey(em)),
