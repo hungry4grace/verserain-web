@@ -911,6 +911,7 @@ export const he = {
   "折抵金額由商家吸收，即為你的贊助；需要對帳可截圖此區。": "ההנחה נספגת על ידי החנות — זו החסות שלך. צלמו מסך של אזור זה לרישומיכם.",
   "還沒有顧客兌換": "עדיין אין המרות של לקוחות",
   "消費 NT${b}": "חשבון NT${b}",
+  "隨機播放（全部）": "ניגון אקראי (הכול)",
 };
 
 export const fa = {
@@ -1803,6 +1804,7 @@ export const fa = {
   "折抵金額由商家吸收，即為你的贊助；需要對帳可截圖此區。": "مبلغ تخفیف را فروشگاه می‌پردازد — این حمایت شماست. برای حسابداری از این بخش عکس بگیرید.",
   "還沒有顧客兌換": "هنوز مشتری‌ای تخفیف نگرفته",
   "消費 NT${b}": "مبلغ NT${b}",
+  "隨機播放（全部）": "پخش تصادفی (همه)",
 };
 
 export const ar = {
@@ -3111,6 +3113,7 @@ export const ar = {
   "折抵金額由商家吸收，即為你的贊助；需要對帳可截圖此區。": "الخصم يتحمّله المتجر — وهذه رعايتك. التقط صورة لهذا القسم لسجلاتك.",
   "還沒有顧客兌換": "لا استبدالات من العملاء بعد",
   "消費 NT${b}": "الفاتورة NT${b}",
+  "隨機播放（全部）": "تشغيل عشوائي (الكل)",
 };
 
 export const ja = {
@@ -3991,6 +3994,7 @@ export const ja = {
   "折抵金額由商家吸收，即為你的贊助；需要對帳可截圖此區。": "割引額はお店が負担します。それがあなたのスポンサーシップです。記録が必要ならこの欄をスクリーンショットしてください。",
   "還沒有顧客兌換": "まだお客様の引換はありません",
   "消費 NT${b}": "会計 NT${b}",
+  "隨機播放（全部）": "シャッフル再生（すべて）",
 };
 
 export const ko = {
@@ -4869,6 +4873,7 @@ export const ko = {
   "折抵金額由商家吸收，即為你的贊助；需要對帳可截圖此區。": "할인 금액은 가게가 부담하며 그것이 여러분의 후원입니다. 정산이 필요하면 이 영역을 캡처하세요.",
   "還沒有顧客兌換": "아직 고객 교환이 없어요",
   "消費 NT${b}": "결제 NT${b}",
+  "隨機播放（全部）": "무작위 재생(전체)",
 };
 
 export const es = {
@@ -5763,6 +5768,7 @@ export const es = {
   "折抵金額由商家吸收，即為你的贊助；需要對帳可截圖此區。": "La tienda asume el descuento: ese es tu patrocinio. Haz una captura de esta sección para tus registros.",
   "還沒有顧客兌換": "Aún no hay canjes de clientes",
   "消費 NT${b}": "Cuenta NT${b}",
+  "隨機播放（全部）": "Aleatorio (todas)",
 };
 
 export const tr = {
@@ -6657,6 +6663,7 @@ export const tr = {
   "折抵金額由商家吸收，即為你的贊助；需要對帳可截圖此區。": "İndirimi mağaza üstlenir; bu senin sponsorluğundur. Kayıt için bu bölümün ekran görüntüsünü al.",
   "還沒有顧客兌換": "Henüz müşteri kullanımı yok",
   "消費 NT${b}": "Hesap NT${b}",
+  "隨機播放（全部）": "Karışık çal (tümü)",
 };
 
 export const de = {
@@ -7551,6 +7558,7 @@ export const de = {
   "折抵金額由商家吸收，即為你的贊助；需要對帳可截圖此區。": "Den Rabatt trägt das Geschäft – das ist dein Sponsoring. Für deine Unterlagen einfach diesen Bereich screenshotten.",
   "還沒有顧客兌換": "Noch keine Kunden-Einlösungen",
   "消費 NT${b}": "Rechnung NT${b}",
+  "隨機播放（全部）": "Zufällig (alle)",
 };
 
 export const my = {
@@ -8445,6 +8453,7 @@ export const my = {
   "折抵金額由商家吸收，即為你的贊助；需要對帳可截圖此區。": "လျှော့ငွေကို ဆိုင်က ခံသည်၊ ၎င်းသည် သင့်ပံ့ပိုးမှုဖြစ်သည်။ မှတ်တမ်းအတွက် ဤအပိုင်းကို screenshot ရိုက်ပါ။",
   "還沒有顧客兌換": "ဖောက်သည် လဲလှယ်မှု မရှိသေးပါ",
   "消費 NT${b}": "ကုန်ကျ NT${b}",
+  "隨機播放（全部）": "ကျပန်းဖွင့် (အားလုံး)",
 };
 
 export const vi = {
@@ -9339,6 +9348,7 @@ export const vi = {
   "折抵金額由商家吸收，即為你的贊助；需要對帳可截圖此區。": "Cửa hàng chịu phần giảm giá — đó chính là tài trợ của bạn. Cần đối chiếu thì chụp màn hình mục này.",
   "還沒有顧客兌換": "Chưa có khách đổi",
   "消費 NT${b}": "Hóa đơn NT${b}",
+  "隨機播放（全部）": "Phát ngẫu nhiên (tất cả)",
 };
 
 export const id = {
@@ -10462,6 +10472,7 @@ export const id = {
   "折抵金額由商家吸收，即為你的贊助；需要對帳可截圖此區。": "Diskon ditanggung toko — itulah sponsormu. Tangkap layar bagian ini untuk catatanmu.",
   "還沒有顧客兌換": "Belum ada penukaran pelanggan",
   "消費 NT${b}": "Tagihan NT${b}",
+  "隨機播放（全部）": "Acak (semua)",
 };
 
 export const ms = {
@@ -11788,6 +11799,7 @@ export const ms = {
   "折抵金額由商家吸收，即為你的贊助；需要對帳可截圖此區。": "Diskaun ditanggung kedai — itulah tajaan anda. Tangkap skrin bahagian ini untuk rekod.",
   "還沒有顧客兌換": "Belum ada penebusan pelanggan",
   "消費 NT${b}": "Bil NT${b}",
+  "隨機播放（全部）": "Rawak (semua)",
 };
 
 export const zhcn = {
@@ -13034,6 +13046,7 @@ export const zhcn = {
   "折抵金額由商家吸收，即為你的贊助；需要對帳可截圖此區。": "折抵金额由商家吸收，即为你的赞助；需要对账可截图此区。",
   "還沒有顧客兌換": "还没有顾客兑换",
   "消費 NT${b}": "消费 NT${b}",
+  "隨機播放（全部）": "随机播放（全部）",
 };
 
 export const pt = {
@@ -13648,6 +13661,7 @@ export const pt = {
   "折抵金額由商家吸收，即為你的贊助；需要對帳可截圖此區。": "O desconto é suportado pela loja — é o seu patrocínio. Faça uma captura desta secção para os seus registos.",
   "還沒有顧客兌換": "Ainda sem resgates de clientes",
   "消費 NT${b}": "Conta NT${b}",
+  "隨機播放（全部）": "Aleatório (todas)",
 };
 
 export const fr = {
@@ -14262,6 +14276,7 @@ export const fr = {
   "折抵金額由商家吸收，即為你的贊助；需要對帳可截圖此區。": "La remise est prise en charge par le commerce : c’est ton parrainage. Fais une capture de cette section pour tes archives.",
   "還沒有顧客兌換": "Aucune utilisation client pour l’instant",
   "消費 NT${b}": "Addition NT${b}",
+  "隨機播放（全部）": "Aléatoire (toutes)",
 };
 
 export const ru = {
@@ -14876,6 +14891,7 @@ export const ru = {
   "折抵金額由商家吸收，即為你的贊助；需要對帳可截圖此區。": "Скидку берёт на себя магазин — это и есть ваше спонсорство. Для отчётности сделайте скриншот этого раздела.",
   "還沒有顧客兌換": "Клиенты пока не обменивали",
   "消費 NT${b}": "Счёт NT${b}",
+  "隨機播放（全部）": "Случайно (все)",
 };
 
 export const hi = {
@@ -15490,6 +15506,7 @@ export const hi = {
   "折抵金額由商家吸收，即為你的贊助；需要對帳可截圖此區。": "छूट दुकान वहन करती है — यही आपका प्रायोजन है। हिसाब के लिए इस भाग का स्क्रीनशॉट लें।",
   "還沒有顧客兌換": "अभी कोई ग्राहक रिडीम नहीं",
   "消費 NT${b}": "बिल NT${b}",
+  "隨機播放（全部）": "शफ़ल (सभी)",
 };
 
 // Khmer (Cambodian) — full UI coverage, machine-translated in bulk from the
@@ -16734,6 +16751,7 @@ export const km = {
   "折抵金額由商家吸收，即為你的贊助；需要對帳可截圖此區。": "ការបញ្ចុះតម្លៃត្រូវហាងទទួលខុសត្រូវ — នោះជាការឧបត្ថម្ភរបស់អ្នក។ ថតអេក្រង់ផ្នែកនេះសម្រាប់កំណត់ត្រា។",
   "還沒有顧客兌換": "មិនទាន់មានអតិថិជនប្តូរទេ",
   "消費 NT${b}": "វិក្កយបត្រ NT${b}",
+  "隨機播放（全部）": "ចាក់ចៃដន្យ (ទាំងអស់)",
 };
 
 const I18N_FILLINS = { he, fa, ar, ja, ko, es, tr, de, my, vi, id, ms, zhcn, pt, fr, ru, hi, km };

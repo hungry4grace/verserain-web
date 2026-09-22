@@ -921,19 +921,27 @@ function isIOSDevice() {
 // bgMusicVolume stays a plain 0–1 gain, so existing sets sound exactly as before.
 const bgmSliderToGain = (pct) => Math.pow(Math.max(0, Math.min(100, pct)) / 100, 2);
 
-// Built-in background music. A set's bgMusic is '' (author never chose → first
-// entry), 'preset:<id>', 'none', or 'custom:<assetId>'. Unknown ids fall back
-// to the first entry, whose file is /bgm.mp3 so the lobby player and older
-// cached bundles keep working. All three are mastered to −24 LUFS.
+// Built-in background music. A set's bgMusic is '' (author never chose →
+// shuffle all tracks), 'preset:random' (chose shuffle), 'preset:<id>' (bound
+// to one track), 'none', or 'custom:<assetId>'. /bgm.mp3 stays the first
+// track so the lobby player and older cached bundles keep working. All
+// three are mastered to −24 LUFS.
 const PRESET_BGM = [
   { id: 'deer', file: '/bgm.mp3', label: 'As the Deer 如鹿切慕溪水' },
   { id: 'healing', file: '/bgm/healing.mp3', label: 'Healing 醫治' },
   { id: 'rest', file: '/bgm/rest.mp3', label: 'Rest 安息' },
 ];
+const PRESET_BGM_RANDOM = { id: 'random', file: null, label: '' };
+// Menu entry / label for a choice: a real track, or the shuffle marker.
 const presetBgmFor = (choice) => {
   const s = String(choice || '');
   const id = s.startsWith('preset:') ? s.slice('preset:'.length) : '';
-  return PRESET_BGM.find(p => p.id === id) || PRESET_BGM[0];
+  return PRESET_BGM.find(p => p.id === id) || PRESET_BGM_RANDOM;
+};
+// The file to play for a choice: the bound track, or a random one.
+const pickPresetBgmFile = (choice) => {
+  const p = presetBgmFor(choice);
+  return p.file || PRESET_BGM[Math.floor(Math.random() * PRESET_BGM.length)].file;
 };
 const isPresetBgm = (choice) => {
   const s = String(choice || '');
@@ -2577,7 +2585,7 @@ function DailyVerseRainExperience({ verse, version, t, onRead, onChallenge, onSh
 
   useEffect(() => {
     if (!bgmRef.current) {
-      bgmRef.current = new Audio('/bgm.mp3');
+      bgmRef.current = new Audio(pickPresetBgmFile(''));
       bgmRef.current.loop = true;
       bgmRef.current.volume = 0.2;
     }
@@ -3588,11 +3596,11 @@ function VerseSetContinuousRainPlayer({
 
   useEffect(() => {
     // Background music source: creator's custom upload > chosen preset
-    // (PRESET_BGM; '' = first entry); bgMusic==='none' disables music.
+    // (PRESET_BGM; '' or 'preset:random' = shuffle); bgMusic==='none' disables music.
     let cancelled = false;
     const setup = async () => {
       const choice = String(verseSet?.bgMusic || '');
-      let src = presetBgmFor(choice).file;
+      let src = pickPresetBgmFile(choice);
       if (choice === 'none') src = null;
       else if (choice.startsWith('custom:')) {
         try {
@@ -6595,7 +6603,11 @@ export default function App() {
         .then(u => { if (!cancelled) setEditorMusicUrl(u); })
         .catch(() => {});
     } else {
-      const file = bm === 'none' ? null : presetBgmFor(bm).file;
+      // Shuffle: keep whatever preset track is already auditioning instead of
+      // re-rolling on every unrelated re-run of this effect.
+      const playing = String(editorMusicAudioRef.current?.src || '');
+      const keep = !presetBgmFor(bm).file && PRESET_BGM.find(p => playing.endsWith(p.file));
+      const file = bm === 'none' ? null : (keep ? keep.file : pickPresetBgmFile(bm));
       setEditorMusicUrl(file);
       if (!file) stopEditorMusicPreview();
       else if (editorMusicAudioRef.current && !String(editorMusicAudioRef.current.src || '').endsWith(file)) {
@@ -25621,7 +25633,7 @@ const deDict = {
                     verserain
                   </div>
                   <div className="app-brand-version" style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', marginTop: '4px', marginLeft: '2px' }}>
-                    v4.0.43
+                    v4.0.44
                   </div>
                 </div>
                 <div ref={langPickerRef} className="app-lang-control" style={{ position: 'relative' }}>
@@ -26393,7 +26405,7 @@ const deDict = {
                                 }}
                                 style={{ padding: '0.5rem 1rem', borderRadius: 20, border: `2px solid ${isPresetBgm(editingCustomSet.bgMusic) ? '#3b82f6' : '#cbd5e1'}`, background: isPresetBgm(editingCustomSet.bgMusic) ? '#eff6ff' : '#f8fafc', color: '#334155', cursor: 'pointer', fontWeight: 600 }}>
                                 🎵 {t('預設音樂', 'Default music')}
-                                {isPresetBgm(editingCustomSet.bgMusic) && <span style={{ fontWeight: 500, color: '#475569' }}> · {presetBgmFor(editingCustomSet.bgMusic).label}</span>}
+                                {isPresetBgm(editingCustomSet.bgMusic) && <span style={{ fontWeight: 500, color: '#475569' }}> · {presetBgmFor(editingCustomSet.bgMusic).id === 'random' ? t('隨機播放（全部）', 'Shuffle all') : presetBgmFor(editingCustomSet.bgMusic).label}</span>}
                                 <span style={{ marginLeft: 6, fontSize: '0.8em' }}>{presetMenuOpen && isPresetBgm(editingCustomSet.bgMusic) ? '▲' : '▼'}</span>
                               </button>
                               <button type="button" onClick={() => setEditingCustomSet({ ...editingCustomSet, bgMusic: 'none' })}
@@ -26408,14 +26420,14 @@ const deDict = {
                             </div>
                             {presetMenuOpen && isPresetBgm(editingCustomSet.bgMusic) && (
                               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', marginTop: '0.6rem', maxWidth: 420 }}>
-                                {PRESET_BGM.map(p => {
+                                {[PRESET_BGM_RANDOM, ...PRESET_BGM].map(p => {
                                   const sel = presetBgmFor(editingCustomSet.bgMusic).id === p.id;
                                   return (
                                     <button key={p.id} type="button"
                                       onClick={() => setEditingCustomSet(prev => ({ ...prev, bgMusic: `preset:${p.id}` }))}
                                       style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', padding: '0.5rem 0.9rem', borderRadius: 10, border: `2px solid ${sel ? '#3b82f6' : '#e2e8f0'}`, background: sel ? '#eff6ff' : '#fff', color: '#334155', cursor: 'pointer', fontWeight: sel ? 700 : 500, textAlign: 'left' }}>
                                       <span style={{ color: sel ? '#3b82f6' : '#94a3b8' }}>{sel ? '◉' : '○'}</span>
-                                      <span>{p.label}</span>
+                                      <span>{p.id === 'random' ? `🔀 ${t('隨機播放（全部）', 'Shuffle all')}` : p.label}</span>
                                     </button>
                                   );
                                 })}
