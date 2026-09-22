@@ -25618,7 +25618,7 @@ const deDict = {
                     verserain
                   </div>
                   <div className="app-brand-version" style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', marginTop: '4px', marginLeft: '2px' }}>
-                    v4.0.41
+                    v4.0.42
                   </div>
                 </div>
                 <div ref={langPickerRef} className="app-lang-control" style={{ position: 'relative' }}>
@@ -29520,7 +29520,7 @@ const deDict = {
                               {myPlaces.map(pl => { const b = statusBadge(pl.status); const led = placeLedger[pl.id]; const open = !!placeLedgerOpen[pl.id]; const canLedger = pl.status === 'approved' && pl.kind === 'merchant'; return (
                                 <div key={pl.id} style={{ border: '1px solid #e2e8f0', borderRadius: 8, padding: '0.5rem 0.8rem', fontSize: '0.9rem' }}>
                                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
-                                    <div><b>{pl.name}</b> <span style={{ color: '#64748b' }}>· {pl.kind === 'merchant' ? `-${pl.discountPct}%` : (pl.kind === 'church' ? t('教會', 'Church') : t('機構', 'Organisation'))} · {pl.address}</span></div>
+                                    <div style={{ color: '#1e293b' }}><b>{pl.name}</b> <span style={{ color: '#64748b' }}>· {pl.kind === 'merchant' ? `-${pl.discountPct}%` : (pl.kind === 'church' ? t('教會', 'Church') : t('機構', 'Organisation'))} · {pl.address}</span></div>
                                     <span style={{ display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
                                       {canLedger && <button type="button" onClick={() => togglePlaceLedger(pl.id)} style={{ background: open ? '#d97706' : '#fef3c7', color: open ? '#fff' : '#92400e', border: 'none', borderRadius: 6, padding: '0.2rem 0.7rem', cursor: 'pointer', fontWeight: 700, fontSize: '0.78rem' }}>📒 {t('收到的點數', 'Points received')}{pl.stats ? ` (${pl.stats.used || 0})` : ''}</button>}
                                       <span style={{ background: b.bg, color: b.fg, borderRadius: 999, padding: '0.15rem 0.6rem', fontSize: '0.78rem', fontWeight: 700, whiteSpace: 'nowrap' }}>{b.text}</span>
@@ -29543,7 +29543,7 @@ const deDict = {
                                             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem', maxHeight: 280, overflowY: 'auto' }}>
                                               {(led.vouchers || []).filter(v => ['used', 'issued'].includes(v.computedStatus || v.status)).map(v => { const st = v.computedStatus || v.status; const vb = voucherStatusBadge(st); return (
                                                 <div key={v.code} style={{ display: 'flex', justifyContent: 'space-between', gap: '0.5rem', flexWrap: 'wrap', fontSize: '0.84rem', background: '#f8fafc', borderRadius: 6, padding: '0.3rem 0.6rem' }}>
-                                                  <span>{new Date(v.usedAt || v.issuedAt).toLocaleString()} · <code>{v.formatted || v.code}</code> · {v.holder} · {t('消費 NT${b}', 'Bill NT${b}').replace('{b}', String(v.billNTD))} · <b style={{ color: '#166534' }}>NT${v.ntd}</b></span>
+                                                  <span style={{ color: '#334155' }}>{new Date(v.usedAt || v.issuedAt).toLocaleString()} · <code>{v.formatted || v.code}</code> · {v.holder} · {t('消費 NT${b}', 'Bill NT${b}').replace('{b}', String(v.billNTD))} · <b style={{ color: '#166534' }}>NT${v.ntd}</b></span>
                                                   <span style={{ background: vb.bg, color: vb.fg, borderRadius: 999, padding: '0.05rem 0.55rem', fontSize: '0.74rem', fontWeight: 700 }}>{vb.text}</span>
                                                 </div>
                                               ); })}
