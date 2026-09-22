@@ -229,6 +229,18 @@ export async function findUserRecord(storage, email) {
     const user = await storage.get(k);
     if (user) return { key: k, user };
   }
+  // LINE / Apple fallback emails carry a mixed-case provider id
+  // (line_Uab12…@privaterelay…). Callers that lowercased the address (every
+  // Vercel route does) would miss the record, so compare case-insensitively
+  // over the small `user:line_` / `user:apple_` prefix.
+  const m = raw.toLowerCase().match(/^(line|apple)_/);
+  if (m) {
+    const want = `user:${raw.toLowerCase()}`;
+    const page = await storage.list({ prefix: `user:${m[1]}_` });
+    for (const [k, user] of page.entries()) {
+      if (k.toLowerCase() === want && user) return { key: k, user };
+    }
+  }
   return { key: null, user: null };
 }
 export const emailKindOf = (email) => {

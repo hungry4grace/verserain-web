@@ -4,7 +4,8 @@ import { loadLeaflet } from './leafletLoader';
 // A small Leaflet map with one draggable pin, used when a merchant / church
 // registers a map marker: the address is geocoded first, then the owner can
 // nudge the pin to the exact door. Light "voyager" tiles so street names read.
-const TILE_URL = 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png';
+// Plain OpenStreetMap tiles: CARTO's light raster set now needs an API key.
+const TILE_URL = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
 
 export default function PlacePinMap({ lat, lng, zoom = 16, onChange, height = 260 }) {
   const elRef = useRef(null);
@@ -18,7 +19,7 @@ export default function PlacePinMap({ lat, lng, zoom = 16, onChange, height = 26
     loadLeaflet().then((L) => {
       if (cancelled || !elRef.current || mapRef.current) return;
       const map = L.map(elRef.current, { zoomControl: true, attributionControl: true }).setView([lat, lng], zoom);
-      L.tileLayer(TILE_URL, { attribution: '© OpenStreetMap contributors © CARTO', subdomains: 'abcd', maxZoom: 20 }).addTo(map);
+      L.tileLayer(TILE_URL, { attribution: '© OpenStreetMap contributors', maxZoom: 19 }).addTo(map);
       const marker = L.marker([lat, lng], { draggable: true }).addTo(map);
       marker.on('dragend', () => {
         const p = marker.getLatLng();

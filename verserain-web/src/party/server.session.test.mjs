@@ -66,3 +66,14 @@ test('map-place photo chunks need a valid session key; set assets do not', async
   assert.strictEqual((await srv.onRequest(chunk('place:pl_123', key))).status, 200);
   assert.strictEqual((await srv.onRequest(chunk('someset', ''))).status, 200, 'ordinary set assets keep the old behaviour');
 });
+
+test('a LINE account is found even when the caller lowercased its synthetic email', async () => {
+  const key = 'user:line_UAbC123xyz@privaterelay.verserain.com';
+  const user = { email: 'line_UAbC123xyz@privaterelay.verserain.com', name: 'L', verified: true };
+  const sk = issueSessionKey(user);
+  const { srv } = makeServer({ [key]: user });
+  const d = await json(await srv.onRequest(req('/reward-eligibility', { email: 'line_uabc123xyz@privaterelay.verserain.com', sessionKey: sk }, { token: 'test-token' })));
+  assert.strictEqual(d.identity.found, true);
+  assert.strictEqual(d.identity.sessionValid, true);
+  assert.strictEqual(d.identity.playerName, 'L');
+});
