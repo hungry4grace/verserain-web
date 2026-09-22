@@ -23,9 +23,6 @@ export const DEFAULT_VALUE = {
   invites: { TWD: 300, USD: 10 },
 };
 
-// Programme cap shown in the terms (enforced by the admin at review time).
-export const MAX_REWARDS_PER_YEAR = 10;
-
 export const isValidRegion = (r) => REGIONS.includes(String(r || ''));
 export const regionCurrency = (region) => (region === 'intl' ? 'USD' : 'TWD');
 export const isValidCurrency = (c) => c === 'TWD' || c === 'USD';
