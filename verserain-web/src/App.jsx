@@ -6179,11 +6179,14 @@ export default function App() {
   // Adopt the account's canonical personalCode returned by login/verify. If it
   // differs from this device's local code, remember the old one so historic
   // fruit/referral points stored under it are still counted (see fruit fetch).
-  const adoptAccountPersonalCode = React.useCallback((accountCode) => {
+  // `rememberDevice` is false when the server says this device's code belongs
+  // to ANOTHER account (shared tablet, or one person with two accounts): the
+  // guest history under it is theirs, so it must not be folded into ours.
+  const adoptAccountPersonalCode = React.useCallback((accountCode, rememberDevice = true) => {
     const code = typeof accountCode === 'string' ? accountCode.trim() : '';
     if (!code) return;
     const current = localStorage.getItem('verserain_personal_code');
-    if (current && current !== code) {
+    if (current && current !== code && rememberDevice) {
       // Preserve the set of prior codes this device used, so no fruits go missing.
       let prev = [];
       try { prev = JSON.parse(localStorage.getItem('verserain_prev_personal_codes') || '[]'); } catch { prev = []; }
@@ -6202,6 +6205,13 @@ export default function App() {
   useEffect(() => {
     const email = (userEmail || '').trim().toLowerCase();
     if (!email) return;
+    // "Previous codes" are per ACCOUNT: switching to a different account on
+    // this device must not inherit the last account's codes.
+    try {
+      const owner = localStorage.getItem('verserain_prev_codes_owner') || '';
+      if (owner && owner !== email) localStorage.setItem('verserain_prev_personal_codes', '[]');
+      localStorage.setItem('verserain_prev_codes_owner', email);
+    } catch { /* storage off */ }
     const deviceCode = localStorage.getItem('verserain_personal_code') || '';
     fetch('https://verserain-party.hungry4grace.partykit.dev/parties/main/global-auth-db/sync-code', {
       method: 'POST',
@@ -6209,7 +6219,7 @@ export default function App() {
       body: JSON.stringify({ email, personalCode: deviceCode || undefined }),
     })
       .then(r => (r.ok ? r.json() : null))
-      .then(d => { if (d?.personalCode) adoptAccountPersonalCode(d.personalCode); })
+      .then(d => { if (d?.personalCode) adoptAccountPersonalCode(d.personalCode, !d.deviceCodeTaken); })
       .catch(() => {});
   }, [userEmail, adoptAccountPersonalCode]);
 
@@ -8733,7 +8743,7 @@ export default function App() {
       // have no password, so the profile editor hides the password fields and
       // saves without one (the server allows password-less updates for them).
       localStorage.setItem('verserain_auth_provider', user.oauthProvider || provider || 'oauth');
-      if (user.personalCode) adoptAccountPersonalCode(user.personalCode);
+      if (user.personalCode) adoptAccountPersonalCode(user.personalCode, !data.deviceCodeTaken);
       if (user.city) localStorage.setItem('verserain_custom_city', user.city);
       if (user.country) localStorage.setItem('verserain_custom_country', user.country);
       // Cross-device referral: the server is the source of truth for
@@ -25309,7 +25319,7 @@ const deDict = {
                     verserain
                   </div>
                   <div className="app-brand-version" style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', marginTop: '4px', marginLeft: '2px' }}>
-                    v4.0.30
+                    v4.0.31
                   </div>
                 </div>
                 <div ref={langPickerRef} className="app-lang-control" style={{ position: 'relative' }}>
@@ -30592,7 +30602,7 @@ const deDict = {
                         // Email/password account → clear any stale OAuth marker so
                         // the profile editor shows the password fields for them.
                         localStorage.removeItem('verserain_auth_provider');
-                        if (data.user.personalCode) adoptAccountPersonalCode(data.user.personalCode);
+                        if (data.user.personalCode) adoptAccountPersonalCode(data.user.personalCode, !data.deviceCodeTaken);
 
                         if (data.user.city) localStorage.setItem('verserain_custom_city', data.user.city);
                         else localStorage.removeItem('verserain_custom_city');

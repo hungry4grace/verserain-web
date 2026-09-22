@@ -225,6 +225,64 @@ export const emailKindOf = (email) => {
   return /@privaterelay\.verserain\.com$/.test(e) ? 'privaterelay' : 'real';
 };
 
+// ─── Personal codes belong to ACCOUNTS ──────────────────────────────────
+// A device mints a random code before anyone signs in, and the first account
+// to sign in there adopts it. Two people sharing one tablet (or one person
+// with two accounts) must NOT both adopt the same device code — the referral
+// key and the fruit-points bucket would merge. So a code is only handed to an
+// account when no other account already owns it; otherwise a fresh one is
+// minted. Ownership is one paged scan of user:*, cached 60 s per instance.
+export const PERSONAL_CODE_CHARS = 'ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
+export function generatePersonalCode(rand = Math.random) {
+  return Array.from({ length: 10 }, () => PERSONAL_CODE_CHARS[Math.floor(rand() * PERSONAL_CODE_CHARS.length)]).join('');
+}
+// The email of some OTHER account (≠ exceptEmail) that holds this code, or
+// null. Codes that leaked to two accounts before this guard existed have two
+// owners, so the answer is always "is anyone else on it", never a single owner.
+export async function personalCodeOwner(srv, code, exceptEmail = '') {
+  const c = String(code || '').trim();
+  if (!c) return null;
+  const now = Date.now();
+  if (!srv._codeOwners || now - srv._codeOwners.ts > 60000) {
+    const map = new Map();
+    await listUsersPaged(srv.room.storage, (v) => {
+      if (v && v.personalCode && v.email) {
+        const k = String(v.personalCode);
+        if (!map.has(k)) map.set(k, []);
+        map.get(k).push(String(v.email).toLowerCase());
+      }
+      return null;
+    });
+    srv._codeOwners = { ts: now, map };
+  }
+  const except = String(exceptEmail || '').toLowerCase();
+  return (srv._codeOwners.map.get(c) || []).find((e) => e !== except) || null;
+}
+const rememberCodeOwner = (srv, code, email) => {
+  if (!srv._codeOwners) return;
+  if (!srv._codeOwners.map.has(code)) srv._codeOwners.map.set(code, []);
+  srv._codeOwners.map.get(code).push(String(email || '').toLowerCase());
+};
+export async function claimPersonalCode(srv, email, wanted) {
+  const e = String(email || '').toLowerCase();
+  const w = String(wanted || '').trim();
+  // Any device code is honoured as long as no other account owns it (legacy
+  // devices minted codes before the alphabet was fixed); only a clash mints.
+  if (w && !(await personalCodeOwner(srv, w, e))) { rememberCodeOwner(srv, w, e); return w; }
+  for (let i = 0; i < 20; i++) {
+    const c = generatePersonalCode();
+    if (!(await personalCodeOwner(srv, c))) { rememberCodeOwner(srv, c, e); return c; }
+  }
+  return generatePersonalCode();
+}
+// True when the device's local code belongs to a DIFFERENT account, so the
+// client must not fold it into this account's "previous codes".
+export async function deviceCodeTaken(srv, email, deviceCode, accountCode) {
+  const d = String(deviceCode || '').trim();
+  if (!d || d === accountCode) return false;
+  return !!(await personalCodeOwner(srv, d, email));
+}
+
 export default class Server {
   constructor(room) {
     this.room = room;
@@ -828,7 +886,7 @@ export default class Server {
               if (user && user.personalCode) {
                  newUserObj.personalCode = user.personalCode; // preserve a ghost/existing binding
               } else if (cleanPersonalCode) {
-                 newUserObj.personalCode = cleanPersonalCode;
+                 newUserObj.personalCode = await claimPersonalCode(this, email, cleanPersonalCode);
               }
               if (!newUserObj.invitedBy) await this.attributeDeferredInviter(newUserObj, cleanPersonalCode, request, { isNew: true });
               await this.room.storage.put(`user:${email.toLowerCase()}`, newUserObj);
@@ -869,7 +927,7 @@ export default class Server {
               // didn't capture it (defensive — keeps every device on one code).
               const cleanVerifyCode = typeof personalCode === 'string' ? personalCode.trim() : '';
               if (!user.personalCode && cleanVerifyCode) {
-                 user.personalCode = cleanVerifyCode;
+                 user.personalCode = await claimPersonalCode(this, email, cleanVerifyCode);
               }
               await this.attributeDeferredInviter(user, cleanVerifyCode, request);
               await this.room.storage.put(`user:${email.toLowerCase()}`, user);
@@ -932,7 +990,7 @@ export default class Server {
               // it (returned below), so referral/fruit keys line up everywhere.
               const cleanPersonalCode = typeof personalCode === 'string' ? personalCode.trim() : '';
               if (!user.personalCode && cleanPersonalCode) {
-                 user.personalCode = cleanPersonalCode;
+                 user.personalCode = await claimPersonalCode(this, email, cleanPersonalCode);
                  dirty = true;
               }
               if (await this.attributeDeferredInviter(user, cleanPersonalCode, request)) dirty = true;
@@ -941,7 +999,7 @@ export default class Server {
                  await this.room.storage.put(`user:${email.toLowerCase()}`, user);
               }
 
-              return new Response(JSON.stringify({ success: true, user: { email: user.email, name: user.name, isPremium: user.isPremium, invitedBy: user.invitedBy || null, personalCode: user.personalCode || null } }), { status: 200, headers: corsHeaders });
+              return new Response(JSON.stringify({ success: true, deviceCodeTaken: await deviceCodeTaken(this, email, cleanPersonalCode, user.personalCode), user: { email: user.email, name: user.name, isPremium: user.isPremium, invitedBy: user.invitedBy || null, personalCode: user.personalCode || null } }), { status: 200, headers: corsHeaders });
            } catch(e) {
               return new Response(JSON.stringify({ error: 'Login failed' }), { status: 500, headers: corsHeaders });
            }
@@ -1041,7 +1099,7 @@ export default class Server {
                     createdAt: new Date().toISOString()
                  };
                  if (cleanInviter) user.invitedBy = cleanInviter;
-                 if (cleanPersonalCode) user.personalCode = cleanPersonalCode;
+                 if (cleanPersonalCode) user.personalCode = await claimPersonalCode(this, email, cleanPersonalCode);
                  await this.attributeDeferredInviter(user, cleanPersonalCode, request, { isNew: true });
                  await this.room.storage.put(`user:${email}`, user);
               } else {
@@ -1054,13 +1112,14 @@ export default class Server {
                  if (!user.oauthProvider) { user.oauthProvider = provider; dirty = true; }
                  if (!user.oauthSub) { user.oauthSub = sub; dirty = true; }
                  if (cleanInviter && !user.invitedBy) { user.invitedBy = cleanInviter; dirty = true; }
-                 if (cleanPersonalCode && !user.personalCode) { user.personalCode = cleanPersonalCode; dirty = true; }
+                 if (cleanPersonalCode && !user.personalCode) { user.personalCode = await claimPersonalCode(this, email, cleanPersonalCode); dirty = true; }
                  if (await this.attributeDeferredInviter(user, cleanPersonalCode, request)) dirty = true;
                  if (dirty) await this.room.storage.put(`user:${email}`, user);
               }
 
               return new Response(JSON.stringify({
                  success: true,
+                 deviceCodeTaken: await deviceCodeTaken(this, email, cleanPersonalCode, user.personalCode),
                  user: {
                     email: user.email,
                     name: user.name || displayName,
@@ -1277,10 +1336,11 @@ export default class Server {
                  return new Response(JSON.stringify({ error: 'User not found' }), { status: 404, headers: corsHeaders });
               }
               if (!user.personalCode && cleanPersonalCode) {
-                 user.personalCode = cleanPersonalCode;
+                 user.personalCode = await claimPersonalCode(this, cleanEmail, cleanPersonalCode);
                  await this.room.storage.put(`user:${cleanEmail}`, user);
               }
-              return new Response(JSON.stringify({ success: true, personalCode: user.personalCode || null }), { status: 200, headers: corsHeaders });
+              const taken = await deviceCodeTaken(this, cleanEmail, cleanPersonalCode, user.personalCode);
+              return new Response(JSON.stringify({ success: true, personalCode: user.personalCode || null, deviceCodeTaken: taken }), { status: 200, headers: corsHeaders });
            } catch {
               return new Response(JSON.stringify({ error: 'Failed to sync code' }), { status: 500, headers: corsHeaders });
            }
@@ -2783,6 +2843,35 @@ export default class Server {
             return new Response(JSON.stringify({ success: true, purged, gardensScanned }), { status: 200, headers: corsHeaders });
          } catch(e) {
             return new Response(JSON.stringify({ error: 'Failed to purge garden fixtures' }), { status: 500, headers: corsHeaders });
+         }
+      }
+
+      // POST /rebind-personal-code { email, code? } — admin (x-admin-token):
+      // give an account a fresh personal code (or a specific unowned one).
+      // Used to split two accounts that adopted the same device code.
+      if (url.pathname.endsWith('/rebind-personal-code') && request.method === 'POST') {
+         if (!isCustomSetWriteAuthorized()) return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: corsHeaders });
+         try {
+            const body = await request.json().catch(() => ({}));
+            const email = String(body.email || '').trim().toLowerCase();
+            const user = email ? await this.room.storage.get(`user:${email}`) : null;
+            if (!user) return new Response(JSON.stringify({ error: 'User not found' }), { status: 404, headers: corsHeaders });
+            const wanted = String(body.code || '').trim();
+            if (wanted) {
+               const owner = await personalCodeOwner(this, wanted, email);
+               if (!REFERRAL_CODE_RE.test(wanted) || owner) return new Response(JSON.stringify({ error: 'code invalid or owned by another account', owner: owner || null }), { status: 409, headers: corsHeaders });
+            }
+            const previous = user.personalCode || null;
+            let next = wanted;
+            if (!next) {
+               do { next = generatePersonalCode(); } while (await personalCodeOwner(this, next));
+            }
+            user.personalCode = next;
+            await this.room.storage.put(`user:${email}`, user);
+            rememberCodeOwner(this, next, email);
+            return new Response(JSON.stringify({ success: true, email, previous, personalCode: next }), { status: 200, headers: corsHeaders });
+         } catch(e) {
+            return new Response(JSON.stringify({ error: 'Failed to rebind code' }), { status: 500, headers: corsHeaders });
          }
       }
 
