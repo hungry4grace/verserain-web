@@ -24,6 +24,10 @@ export const MONTHLY_MAX_NTD = 500;
 export const VOUCHER_TTL_SEC = 1800;
 export const MIN_PASSED_VERSES = 3;
 export const MIN_ACCOUNT_DAYS = 7;
+// Vouchers one person may open at the same shop per Taipei day. Each shop
+// sets its own (0 = unlimited); the monthly NT$ cap still bounds the total.
+export const DEFAULT_DAILY_PER_PERSON = 3;
+export const MAX_DAILY_PER_PERSON = 20;
 export const PLACE_DAILY_MAX_NTD = 2000;
 // Sanity ceiling: someone with N trees can plausibly have earned about
 // N × 8000 points (+ slack). Anything above is treated as not-yet-plausible
@@ -100,6 +104,12 @@ export function plausiblePoints(earned, treesPlanted) {
   const e = Math.max(0, toInt(earned));
   const t = Math.max(0, toInt(treesPlanted));
   return Math.max(0, Math.min(e, t * PLAUSIBLE_POINTS_PER_TREE + PLAUSIBLE_SLACK));
+}
+
+// A shop's per-person daily voucher count: an integer 0..MAX, else the default.
+export function dailyPerPersonOf(place) {
+  const n = Number(place && place.dailyPerPerson);
+  return Number.isInteger(n) && n >= 0 && n <= MAX_DAILY_PER_PERSON ? n : DEFAULT_DAILY_PER_PERSON;
 }
 
 export function eligibility(identity, garden) {
@@ -326,9 +336,16 @@ export async function issueVoucher(redis, { email, identity, garden, place, bill
 
   const day = taipeiDay(t);
   const month = taipeiMonth(t);
+  // Per-person, per-shop, per-day counter: taken before the expensive part
+  // so two concurrent calls cannot both squeeze under the shop's limit.
   const dKey = dayKey(em, place.id, day);
-  const locked = await redis.set(dKey, '1', { nx: true, ex: DAY_LOCK_TTL_SEC });
-  if (locked !== 'OK') throw new PointsError('daily_place_limit');
+  const limit = dailyPerPersonOf(place);
+  const count = await redis.incr(dKey);
+  if (count === 1) await redis.expire(dKey, DAY_LOCK_TTL_SEC);
+  if (limit > 0 && count > limit) {
+    await releaseDaySlot(redis, dKey);
+    throw new PointsError('daily_place_limit', { limit, used: count - 1 });
+  }
 
   try {
     const earned = earnedPoints === undefined ? await readEarned(redis, identity) : Math.max(0, toInt(earnedPoints));
@@ -388,7 +405,7 @@ export async function issueVoucher(redis, { email, identity, garden, place, bill
     return { voucher };
   } catch (e) {
     // Nothing was issued: give the per-day slot back.
-    if (e instanceof PointsError && (e.code === 'too_small' || e.code === 'open_voucher_exists')) await redis.del(dKey);
+    if (e instanceof PointsError && (e.code === 'too_small' || e.code === 'open_voucher_exists')) await releaseDaySlot(redis, dKey);
     throw e;
   }
 }
@@ -409,9 +426,16 @@ async function refundVoucher(redis, v) {
   const issued = v.issuedAt ? new Date(v.issuedAt) : new Date();
   await redis.decrby(spentKey(v.email), toInt(v.points));
   await redis.decrby(monthKey(v.email, taipeiMonth(issued)), toInt(v.ntd));
-  await redis.del(dayKey(v.email, v.placeId, taipeiDay(issued)));
+  await releaseDaySlot(redis, dayKey(v.email, v.placeId, taipeiDay(issued)));
   await redis.decrby(placeDayKey(v.placeId, taipeiDay(issued)), toInt(v.ntd));
   return true;
+}
+
+// Give back one slot of the per-day counter; drop the key once it is empty
+// so an unused day leaves nothing behind.
+async function releaseDaySlot(redis, key) {
+  const left = await redis.decrby(key, 1);
+  if (toInt(left) <= 0) await redis.del(key);
 }
 
 async function releaseOpen(redis, v) {

@@ -151,28 +151,57 @@ test('issueVoucher happy path charges the ledgers and records the voucher', asyn
   assert.strictEqual((await listVouchers(r)).length, 1);
 });
 
-test('issueVoucher refuses a second open voucher and honours the daily place lock', async () => {
+test('issueVoucher refuses a second open voucher and honours the per-shop daily count', async () => {
   const r = stubRedis();
   await seed(r);
-  const { voucher } = await issueVoucher(r, { email: 'a@x.com', identity, garden, place, billNTD: 300, now: NOW });
+  const onePerDay = { ...place, dailyPerPerson: 1 };
+  const { voucher } = await issueVoucher(r, { email: 'a@x.com', identity, garden, place: onePerDay, billNTD: 300, now: NOW });
   await assert.rejects(
     issueVoucher(r, { email: 'a@x.com', identity, garden, place: { ...place, id: 'p2' }, billNTD: 300, now: NOW }),
     (e) => e.code === 'open_voucher_exists' && e.voucher.code === voucher.code,
   );
-  // Use it, then the same place on the same day is locked; another place is fine.
+  // Use it, then the same place on the same day is exhausted (limit 1); another place is fine.
   await markUsed(r, voucher.code, { now: new Date(NOW.getTime() + 60000) });
   await assert.rejects(
-    issueVoucher(r, { email: 'a@x.com', identity, garden, place, billNTD: 300, now: new Date(NOW.getTime() + 120000) }),
-    (e) => e.code === 'daily_place_limit',
+    issueVoucher(r, { email: 'a@x.com', identity, garden, place: onePerDay, billNTD: 300, now: new Date(NOW.getTime() + 120000) }),
+    (e) => e.code === 'daily_place_limit' && e.limit === 1 && e.used === 1,
   );
+  assert.strictEqual(await r.get(dayKey('a@x.com', 'p1', '2026-09-22')), '1', 'a refused attempt does not consume a slot');
   await r.hset(PLACES_KEY, { p2: JSON.stringify({ ...place, id: 'p2' }) });
   const second = await issueVoucher(r, { email: 'a@x.com', identity, garden, place: { ...place, id: 'p2' }, billNTD: 300, now: new Date(NOW.getTime() + 120000) });
   assert.strictEqual(second.voucher.placeId, 'p2');
   // Next Taipei day, the first place opens again.
   await markUsed(r, second.voucher.code, { now: new Date(NOW.getTime() + 180000) });
   const tomorrow = new Date('2026-09-22T16:30:00Z'); // 00:30 Taipei next day
-  const third = await issueVoucher(r, { email: 'a@x.com', identity, garden, place, billNTD: 300, now: tomorrow });
+  const third = await issueVoucher(r, { email: 'a@x.com', identity, garden, place: onePerDay, billNTD: 300, now: tomorrow });
   assert.strictEqual(third.voucher.placeId, 'p1');
+});
+
+test('issueVoucher: default 3 per shop per day, 0 means unlimited', async () => {
+  const r = stubRedis();
+  await seed(r);
+  let t = NOW.getTime();
+  const open = async (pl) => { const { voucher } = await issueVoucher(r, { email: 'a@x.com', identity, garden, place: pl, billNTD: 100, now: new Date(t) }); t += 60000; await markUsed(r, voucher.code, { now: new Date(t) }); t += 60000; return voucher; };
+  await open(place); await open(place); await open(place);
+  assert.strictEqual(await r.get(dayKey('a@x.com', 'p1', '2026-09-22')), '3');
+  await assert.rejects(issueVoucher(r, { email: 'a@x.com', identity, garden, place, billNTD: 100, now: new Date(t) }), (e) => e.code === 'daily_place_limit' && e.limit === 3 && e.used === 3);
+  const unlimited = { ...place, dailyPerPerson: 0 };
+  for (let i = 0; i < 5; i++) await open(unlimited);
+  assert.strictEqual(await r.get(dayKey('a@x.com', 'p1', '2026-09-22')), '8');
+  // A bogus setting falls back to the default of 3.
+  await assert.rejects(issueVoucher(r, { email: 'a@x.com', identity, garden, place: { ...place, dailyPerPerson: 'lots' }, billNTD: 100, now: new Date(t) }), (e) => e.code === 'daily_place_limit' && e.limit === 3);
+});
+
+test('refund gives the day slot back without going negative', async () => {
+  const r = stubRedis();
+  await seed(r);
+  const a = await issueVoucher(r, { email: 'a@x.com', identity, garden, place, billNTD: 100, now: NOW });
+  await markUsed(r, a.voucher.code, { now: new Date(NOW.getTime() + 1000) });
+  const b = await issueVoucher(r, { email: 'a@x.com', identity, garden, place, billNTD: 100, now: new Date(NOW.getTime() + 2000) });
+  assert.strictEqual(await r.get(dayKey('a@x.com', 'p1', '2026-09-22')), '2');
+  const later = new Date(NOW.getTime() + VOUCHER_TTL_SEC * 1000 + 5000);
+  await expireVoucher(r, await getVoucher(r, b.voucher.code), later);
+  assert.strictEqual(await r.get(dayKey('a@x.com', 'p1', '2026-09-22')), '1', 'only the expired one is refunded');
 });
 
 test('issueVoucher: too_small releases the day lock; bad input never locks', async () => {

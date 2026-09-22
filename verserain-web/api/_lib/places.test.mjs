@@ -41,6 +41,12 @@ test('normalizePlaceSubmission validates and fills defaults', () => {
   assert.strictEqual(p.ownerCode, 'ABCDEFGHJK');
   assert.strictEqual(p.status, 'pending');
   assert.strictEqual(p.dailyCapNTD, DEFAULT_DAILY_CAP_NTD);
+  assert.strictEqual(p.dailyPerPerson, 3, 'default per-person daily vouchers');
+  assert.strictEqual(normalizePlaceSubmission({ ...merchant(), dailyPerPerson: 0 }, { ownerEmail: 'o@x.com', now: NOW }).dailyPerPerson, 0, '0 = unlimited');
+  assert.strictEqual(normalizePlaceSubmission({ ...merchant(), dailyPerPerson: '5' }, { ownerEmail: 'o@x.com', now: NOW }).dailyPerPerson, 5);
+  assert.throws(() => normalizePlaceSubmission({ ...merchant(), dailyPerPerson: 21 }, { ownerEmail: 'o@x.com', now: NOW }), /dailyPerPerson/);
+  assert.throws(() => normalizePlaceSubmission({ ...merchant(), dailyPerPerson: -1 }, { ownerEmail: 'o@x.com', now: NOW }), /dailyPerPerson/);
+  assert.strictEqual(normalizePlaceSubmission({ ...merchant(), kind: 'church', discountPct: 0 }, { ownerEmail: 'o@x.com', now: NOW }).dailyPerPerson, 3, 'non-merchants keep the default');
   assert.strictEqual(p.createdAt, NOW.toISOString());
   assert.strictEqual(p.updatedAt, NOW.toISOString());
   assert.strictEqual(p.approvedAt, null);
@@ -101,7 +107,8 @@ test('publicView returns only approved places with public fields', () => {
   const hidden = { ...base, id: 'pl_hidden0001', status: 'hidden' };
   const v = publicView([approved, pending, hidden, null]);
   assert.strictEqual(v.length, 1);
-  assert.deepStrictEqual(Object.keys(v[0]).sort(), ['address', 'description', 'discountPct', 'hours', 'id', 'kind', 'lat', 'lng', 'message', 'name', 'phone', 'photoAssetId', 'photoMime', 'website'].sort());
+  assert.deepStrictEqual(Object.keys(v[0]).sort(), ['address', 'dailyPerPerson', 'description', 'discountPct', 'hours', 'id', 'kind', 'lat', 'lng', 'message', 'name', 'phone', 'photoAssetId', 'photoMime', 'website'].sort());
+  assert.strictEqual(v[0].dailyPerPerson, 3);
   assert.strictEqual(v[0].id, 'pl_approved01');
   assert.strictEqual(v[0].phone, '02-1234');
   assert.ok(!('ownerEmail' in v[0]) && !('ownerCode' in v[0]) && !('note' in v[0]) && !('dailyCapNTD' in v[0]));

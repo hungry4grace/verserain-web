@@ -9264,7 +9264,7 @@ export default function App() {
     place_unavailable: t('此商家目前無法兌換', 'This shop is not available right now'),
     bill_invalid: t('請輸入正確的消費金額', 'Enter a valid bill amount'),
     too_small: t('折抵金額不足 NT$1', 'The discount would be under NT$1'),
-    daily_place_limit: t('同一商家每天只能兌換一次', 'One voucher per shop per day'),
+    daily_place_limit: t('今天在這家店的兌換次數已達上限', 'You have reached today\'s voucher limit at this shop'),
     open_voucher_exists: t('你已有一張未使用的兌換券', 'You already have an unused voucher'),
     verify_unavailable: t('核算服務暫時無法使用，稍後再試', 'Verification is temporarily unavailable, try again later'),
     rate_limited: t('操作太頻繁，請稍後再試', 'Too many requests, please try again later'),
@@ -9315,6 +9315,7 @@ export default function App() {
       const res = await fetch('/api/redeem', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: userEmail, sessionKey, placeId: redeemPlace.id, billNTD: redeemPreview.bill }) });
       const d = await res.json().catch(() => ({}));
       if (d.voucher && (d.success || d.error === 'open_voucher_exists')) { saveActiveVoucher({ ...d.voucher, status: d.voucher.status || 'issued' }); if (d.balance) setPointsBalance(d.balance); setRedeemPlace(null); return; }
+      if (d.error === 'daily_place_limit' && d.limit) throw new Error(t('今天在這家店已兌換 {n} 張，達到上限', 'You have already used {n} vouchers at this shop today, the limit').replace('{n}', String(d.limit)));
       throw new Error(redeemErrorText(d.error || res.status));
     } catch (e) {
       setToast(String(e?.message || e)); setTimeout(() => setToast(null), 3500);
@@ -9376,7 +9377,7 @@ export default function App() {
   }, [mainTab]);
 
   // ── 商家／教會／機構登記 (map place registration) ───────────────────────
-  const newPlaceDraft = () => ({ id: 'pl_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), kind: 'merchant', name: '', address: '', lat: null, lng: null, discountPct: 10, description: '', message: '', phone: '', website: '', hours: '', photoAssetId: '', photoMime: '', agree: false });
+  const newPlaceDraft = () => ({ id: 'pl_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), kind: 'merchant', name: '', address: '', lat: null, lng: null, discountPct: 10, dailyPerPerson: 3, description: '', message: '', phone: '', website: '', hours: '', photoAssetId: '', photoMime: '', agree: false });
   // The draft lives in localStorage: a first-time submit may bounce the owner
   // to re-login (new session key), and nobody should retype a listing.
   const [merchantDraft, setMerchantDraft] = useState(() => {
@@ -25647,7 +25648,7 @@ const deDict = {
                     verserain
                   </div>
                   <div className="app-brand-version" style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', marginTop: '4px', marginLeft: '2px' }}>
-                    v4.0.46
+                    v4.0.47
                   </div>
                 </div>
                 <div ref={langPickerRef} className="app-lang-control" style={{ position: 'relative' }}>
@@ -28821,6 +28822,7 @@ const deDict = {
                                   <input type="number" step="0.00001" value={ed.lng} onChange={e => setPlaceEdit(d => ({ ...d, lng: Number(e.target.value) }))} placeholder="lng" style={inputStyle} />
                                   {ed.kind === 'merchant' && <input type="number" min={5} max={20} value={ed.discountPct} onChange={e => setPlaceEdit(d => ({ ...d, discountPct: Number(e.target.value) }))} placeholder={t('折扣 %', 'Discount %')} style={inputStyle} />}
                                   <input type="number" min={1} value={ed.dailyCapNTD} onChange={e => setPlaceEdit(d => ({ ...d, dailyCapNTD: Number(e.target.value) }))} placeholder={t('每日折抵上限 NT$', 'Daily cap NT$')} style={inputStyle} />
+                                  {ed.kind === 'merchant' && <input type="number" min={0} max={20} value={ed.dailyPerPerson ?? 3} onChange={e => setPlaceEdit(d => ({ ...d, dailyPerPerson: Number(e.target.value) }))} placeholder={t('每人每天張數（0=不限）', 'Per person per day (0 = unlimited)')} title={t('同一位客人每天可兌換張數（0 = 不限）', 'Vouchers per customer per day (0 = unlimited)')} style={inputStyle} />}
                                   <select value={ed.sponsorId || ''} onChange={e => setPlaceEdit(d => ({ ...d, sponsorId: e.target.value }))} style={inputStyle}><option value="">{t('（不連結贊助紀錄）', '(no sponsor record)')}</option>{(rewardsAdmin?.sponsors || []).map(sp => <option key={sp.id} value={sp.id}>{sp.displayName}</option>)}</select>
                                   <textarea value={ed.kind === 'merchant' ? ed.description : ed.message} onChange={e => setPlaceEdit(d => ({ ...d, [ed.kind === 'merchant' ? 'description' : 'message']: e.target.value }))} placeholder={ed.kind === 'merchant' ? t('介紹', 'Description') : t('祝福語或簡介', 'Blessing or intro')} rows={2} style={{ ...inputStyle, gridColumn: '1 / -1' }} />
                                   <input type="text" value={ed.hours || ''} onChange={e => setPlaceEdit(d => ({ ...d, hours: e.target.value }))} placeholder={t('營業時間', 'Hours')} style={inputStyle} />
@@ -29345,6 +29347,7 @@ const deDict = {
                           <div style={{ color: '#64748b', fontSize: '0.8rem' }}>🏪 {t('點數折抵', 'Points discount')}</div>
                           <div style={{ fontWeight: 800, fontSize: '1.15rem', color: '#1e293b' }}>{redeemPlace.name}</div>
                           <div style={{ color: '#92400e', fontWeight: 700 }}>-{Number(redeemPlace.discountPct) || 0}%</div>
+                          {Number(redeemPlace.dailyPerPerson) > 0 && <div style={{ color: '#64748b', fontSize: '0.78rem' }}>{t('每人每天最多 {n} 張', 'Up to {n} per person per day').replace('{n}', String(redeemPlace.dailyPerPerson))}</div>}
                         </div>
                         <button type="button" onClick={() => setRedeemPlace(null)} style={{ background: 'transparent', border: 'none', fontSize: '1.3rem', cursor: 'pointer', color: '#64748b' }}>✕</button>
                       </div>
@@ -29515,6 +29518,9 @@ const deDict = {
                             <>
                               <label style={label}>{t('折扣（商家自行吸收）', 'Discount (absorbed by the shop)')}: <b style={{ color: '#92400e' }}>{m.discountPct}%</b></label>
                               <input type="range" min={5} max={20} step={1} value={m.discountPct} onChange={e => setMerchantDraft(d => ({ ...d, discountPct: Number(e.target.value) }))} style={{ width: '100%' }} />
+                              <label style={label}>{t('同一位客人每天可兌換張數（0 = 不限）', 'Vouchers per customer per day (0 = unlimited)')}</label>
+                              <input type="number" min={0} max={20} step={1} value={m.dailyPerPerson ?? 3} onChange={e => setMerchantDraft(d => ({ ...d, dailyPerPerson: Math.max(0, Math.min(20, Math.floor(Number(e.target.value) || 0))) }))} style={{ ...field, width: 120 }} />
+                              <div style={{ color: '#64748b', fontSize: '0.8rem', marginTop: -4, marginBottom: 8 }}>{t('每張券最多折 NT$200，每位玩家每月最多 NT$500；預設 3 張可避免拆單。', 'Each voucher is capped at NT$200 and each player at NT$500 a month; the default of 3 discourages bill splitting.')}</div>
                               <label style={label}>{t('介紹（≤300 字）', 'Description (≤300 chars)')}</label>
                               <textarea value={m.description} onChange={e => setMerchantDraft(d => ({ ...d, description: e.target.value }))} maxLength={300} rows={3} style={field} />
                             </>

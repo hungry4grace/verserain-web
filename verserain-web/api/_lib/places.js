@@ -25,7 +25,11 @@ export const MAX_SUBMISSIONS_PER_DAY = 3;
 
 // Fields an admin may change through the `update` action (everything a
 // submitter can set, plus the admin-only note / cap / sponsor link).
-const ADMIN_PATCH_FIELDS = ['name', 'address', 'lat', 'lng', 'discountPct', 'description', 'message', 'photoAssetId', 'photoMime', 'phone', 'website', 'hours', 'dailyCapNTD', 'note', 'kind', 'sponsorId'];
+const ADMIN_PATCH_FIELDS = ['name', 'address', 'lat', 'lng', 'discountPct', 'description', 'message', 'photoAssetId', 'photoMime', 'phone', 'website', 'hours', 'dailyCapNTD', 'dailyPerPerson', 'note', 'kind', 'sponsorId'];
+// Vouchers one person may open at this shop per day; 0 = unlimited. Mirrors
+// api/_lib/points.js (kept literal here so the validator stays dependency-free).
+export const DEFAULT_DAILY_PER_PERSON = 3;
+export const MAX_DAILY_PER_PERSON = 20;
 
 function parse(s) {
   try { return typeof s === 'string' ? JSON.parse(s) : s; } catch { return null; }
@@ -64,10 +68,15 @@ export function normalizePlaceSubmission(input, { ownerEmail, ownerCode = '', no
   const lat = coord(src.lat, 'lat', 90);
   const lng = coord(src.lng, 'lng', 180);
   let discountPct = 0;
+  let dailyPerPerson = DEFAULT_DAILY_PER_PERSON;
   if (kind === 'merchant') {
     const d = Number(src.discountPct);
     if (!Number.isInteger(d) || d < DISCOUNT_MIN || d > DISCOUNT_MAX) throw new Error(`discountPct must be an integer between ${DISCOUNT_MIN} and ${DISCOUNT_MAX}`);
     discountPct = d;
+    const rawPer = src.dailyPerPerson !== undefined && src.dailyPerPerson !== '' && src.dailyPerPerson !== null ? src.dailyPerPerson : (ex && ex.dailyPerPerson !== undefined ? ex.dailyPerPerson : DEFAULT_DAILY_PER_PERSON);
+    const n = Number(rawPer);
+    if (!Number.isInteger(n) || n < 0 || n > MAX_DAILY_PER_PERSON) throw new Error(`dailyPerPerson must be an integer between 0 and ${MAX_DAILY_PER_PERSON} (0 = unlimited)`);
+    dailyPerPerson = n;
   }
   const photoAssetId = clip(src.photoAssetId, 40);
   if (photoAssetId && !ASSET_ID_RE.test(photoAssetId)) throw new Error('photoAssetId is not valid');
@@ -88,6 +97,7 @@ export function normalizePlaceSubmission(input, { ownerEmail, ownerCode = '', no
     lat,
     lng,
     discountPct,
+    dailyPerPerson,
     description: clip(src.description, 300),
     message: clip(src.message, 200),
     photoAssetId: photoAssetId ? photoAssetId : '',
@@ -158,6 +168,7 @@ export function publicView(places) {
       lat: p.lat,
       lng: p.lng,
       discountPct: p.discountPct || 0,
+      dailyPerPerson: Number.isInteger(p.dailyPerPerson) ? p.dailyPerPerson : DEFAULT_DAILY_PER_PERSON,
       description: p.description || '',
       message: p.message || '',
       photoAssetId: p.photoAssetId || '',

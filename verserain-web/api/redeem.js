@@ -75,6 +75,7 @@ export default async function handler(req, res) {
       const out = { error: e.code };
       if (e.code === 'not_eligible') out.reasons = e.reasons || [];
       if (e.code === 'open_voucher_exists' && e.voucher) out.voucher = publicVoucher(e.voucher, now);
+      if (e.code === 'daily_place_limit') { out.limit = e.limit; out.used = e.used; }
       return res.status(status).json(out);
     }
 
