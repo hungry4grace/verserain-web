@@ -31,7 +31,7 @@ function build3DPulseHtml(action) {
   return { html, life: dur + (cfg.rings - 1) * 180 + 200 };
 }
 
-export default function WorldMap3D({ t, playerName, onJoinRoom, onToggleMode, currentMode, focusLocation, playTone, playWelcome, onEnableAudio, fruitMode = false, fruitTree = null, fruitLoading = false, onToggleFruit, selfLocation = null }) {
+export default function WorldMap3D({ t, playerName, onJoinRoom, onToggleMode, currentMode, focusLocation, playTone, playWelcome, onEnableAudio, fruitMode = false, fruitTree = null, fruitLoading = false, onToggleFruit, selfLocation = null, places = [], placesMode = false, onTogglePlaces }) {
   const fruitLevel = useMemo(() => {
     const m = new Map();
     if (fruitTree) {
@@ -329,9 +329,26 @@ export default function WorldMap3D({ t, playerName, onJoinRoom, onToggleMode, cu
     if (at) { try { globeEl.current.controls().autoRotate = false; globeEl.current.pointOfView({ lat: at.lat, lng: at.lng, altitude: 1.6 }, 1200); } catch { /* noop */ } }
   }, [fruitMode, fruitTree, loading]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // 商家／教會／機構:不進叢集;點一下就切到 2D 並打開該標記的 popup。
+  const PLACE_3D = { merchant: { bg: '#f59e0b', emoji: '🏪' }, church: { bg: '#7c3aed', emoji: '⛪' }, org: { bg: '#0d9488', emoji: '🏢' } };
+  const placeElems = useMemo(() => (placesMode ? (places || []).filter(pl => pl && Number.isFinite(Number(pl.lat)) && Number.isFinite(Number(pl.lng))).map(pl => ({ isPlace: true, id: pl.id, kind: pl.kind, name: pl.name, discountPct: pl.discountPct, lat: Number(pl.lat), lng: Number(pl.lng) })) : []), [places, placesMode]);
+
   const htmlElement = (d) => {
     const el = document.createElement('div');
-    
+
+    if (d.isPlace) {
+      const st = PLACE_3D[d.kind] || PLACE_3D.org;
+      el.innerHTML = `<div style="width:26px;height:26px;border-radius:${d.kind === 'church' ? '50%' : '8px'};background:${st.bg};border:2px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;font-size:14px;cursor:pointer;pointer-events:auto;transition:transform 0.2s;" onmouseover="this.style.transform='scale(1.2)'" onmouseout="this.style.transform='scale(1)'">${st.emoji}</div>`;
+      el.title = `${d.name}${d.kind === 'merchant' && d.discountPct ? ` · -${d.discountPct}%` : ''}`;
+      el.onclick = () => {
+        if (globeEl.current && onToggleMode) {
+          globeEl.current.controls().autoRotate = false;
+          onToggleMode({ lat: d.lat, lng: d.lng, placeId: d.id });
+        }
+      };
+      return el;
+    }
+
     if (d.isCluster) {
       el.innerHTML = `<div style="
           background-color: ${d.bgColor};
@@ -510,6 +527,15 @@ export default function WorldMap3D({ t, playerName, onJoinRoom, onToggleMode, cu
               🍎 {t('我的果子', 'My Fruit')}{fruitLoading ? ' …' : (fruitMode && fruitTree ? ` (${(fruitTree.level1 || []).length + (fruitTree.level2 || []).length})` : '')}
             </button>
           )}
+          {onTogglePlaces && (
+            <button
+              title={t('顯示贊助的商家、教會與機構', 'Show sponsoring shops, churches and organisations')}
+              onClick={() => onTogglePlaces()}
+              style={{ background: placesMode ? '#d97706' : '#fef3c7', color: placesMode ? '#fff' : '#92400e', border: 'none', padding: '0.3rem 0.8rem', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.8rem' }}
+            >
+              🏪 {t('商家', 'Shops')}{places.length ? ` (${places.length})` : ''}
+            </button>
+          )}
           <button
             title={t('切換 2D / 3D 地球', 'Toggle 2D / 3D globe')}
             onClick={() => onToggleMode?.()}
@@ -552,7 +578,7 @@ export default function WorldMap3D({ t, playerName, onJoinRoom, onToggleMode, cu
               globeImageUrl="//unpkg.com/three-globe/example/img/earth-blue-marble.jpg"
               bumpImageUrl="//unpkg.com/three-globe/example/img/earth-topology.png"
               backgroundImageUrl="//unpkg.com/three-globe/example/img/night-sky.png"
-              htmlElementsData={mapData}
+              htmlElementsData={placeElems.length ? [...mapData, ...placeElems] : mapData}
               htmlElement={htmlElement}
               onZoom={({ altitude: newAltitude }) => setAltitude(newAltitude)}
               htmlAltitude={0.05}

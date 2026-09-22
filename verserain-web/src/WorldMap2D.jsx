@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { loadLeafletAndCluster } from './leafletLoader';
+import { getSetAssetDataUrl } from './setVoiceApi';
 
 // Same deterministic room color as in App.jsx
 const ROOM_COLORS = ['#ef4444','#f97316','#eab308','#22c55e','#14b8a6','#0ea5e9','#8b5cf6','#ec4899','#06b6d4','#84cc16'];
@@ -52,39 +54,17 @@ function buildPulseHtml(action) {
 const LAND_GEOJSON_URL = 'https://cdn.jsdelivr.net/gh/johan/world.geo.json@master/countries.geo.json';
 const LABEL_TILE_URL = 'https://{s}.basemaps.cartocdn.com/rastertiles/dark_only_labels/{z}/{x}/{y}{r}.png';
 
-// Load Leaflet and MarkerCluster Plugin dynamically
-function loadLeafletAndCluster() {
-  return new Promise((resolve, reject) => {
-    if (window.L && window.L.markerClusterGroup) return resolve(window.L);
-    
-    if (!document.getElementById('leaflet-css')) {
-      const css1 = document.createElement('link'); css1.id = 'leaflet-css'; css1.rel = 'stylesheet'; css1.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css'; document.head.appendChild(css1);
-      const css2 = document.createElement('link'); css2.id = 'leaflet-cluster-css'; css2.rel = 'stylesheet'; css2.href = 'https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css'; document.head.appendChild(css2);
-    }
-
-    const loadCluster = () => {
-      const script = document.createElement('script');
-      script.src = 'https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js';
-      script.onload = () => resolve(window.L);
-      script.onerror = () => reject(new Error('Failed to load markercluster plugin'));
-      document.head.appendChild(script);
-    };
-
-    if (!window.L) {
-      const script = document.createElement('script');
-      script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
-      script.onload = () => loadCluster();
-      script.onerror = () => reject(new Error('Failed to load Leaflet script'));
-      document.head.appendChild(script);
-    } else {
-      loadCluster();
-    }
-  });
-}
+// Map places (merchants / churches / organisations) — icon per kind.
+const PLACE_STYLE = {
+  merchant: { bg: '#f59e0b', border: '#fde68a', emoji: '🏪' },
+  church:   { bg: '#7c3aed', border: '#ddd6fe', emoji: '⛪' },
+  org:      { bg: '#0d9488', border: '#99f6e4', emoji: '🏢' },
+};
+const escapeHtml = (v) => String(v ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
 const TEAMS_HOST = 'https://verserain-party.hungry4grace.partykit.dev/parties/main/global-auth-db';
 
-export default function WorldMap2D({ t, playerName, userEmail, onJoinRoom, onViewGarden, onToggleMode, currentMode, focusLocation, playTone, playWelcome, onEnableAudio, fruitMode = false, fruitTree = null, fruitLoading = false, onToggleFruit, selfLocation = null }) {
+export default function WorldMap2D({ t, playerName, userEmail, onJoinRoom, onViewGarden, onToggleMode, currentMode, focusLocation, playTone, playWelcome, onEnableAudio, fruitMode = false, fruitTree = null, fruitLoading = false, onToggleFruit, selfLocation = null, places = [], placesMode = false, onTogglePlaces, onRedeem }) {
   // 我的果子: name → 1 (I invited them) | 2 (they were invited by someone I invited)
   const fruitLevel = useMemo(() => {
     const m = new Map();
@@ -209,6 +189,15 @@ export default function WorldMap2D({ t, playerName, userEmail, onJoinRoom, onVie
   }, []);
 
   const markersGroupRef = useRef(null);
+  // Places layer: separate from the player markers so it is neither clustered
+  // nor rebuilt every 30 s; refs keep the big marker effect's deps unchanged.
+  const placeMarkersRef = useRef(null);
+  const placesRef = useRef(places);
+  const onRedeemRef = useRef(onRedeem);
+  const openedPlaceRef = useRef(null);
+  const [mapReady, setMapReady] = useState(false);
+  useEffect(() => { placesRef.current = places; }, [places]);
+  useEffect(() => { onRedeemRef.current = onRedeem; }, [onRedeem]);
 
   // Init Leaflet map and markers
   const initialFlyDone = useRef(false);
@@ -295,6 +284,7 @@ export default function WorldMap2D({ t, playerName, userEmail, onJoinRoom, onVie
             : L.layerGroup()).addTo(map);
 
           leafletMapRef.current = map;
+          setMapReady(true);
         }
 
         // Clear existing markers for this update
@@ -450,11 +440,21 @@ export default function WorldMap2D({ t, playerName, userEmail, onJoinRoom, onVie
 
           map.on('popupopen', function(e) {
             if (e.popup && e.popup._contentNode) {
-              const btn = e.popup._contentNode.querySelector('.map-garden-btn');
+              const node = e.popup._contentNode;
+              const btn = node.querySelector('.map-garden-btn');
               if (btn && onViewGarden) {
                 btn.onclick = () => {
                   onViewGarden(btn.getAttribute('data-name'));
                 };
+              }
+              // Place popups: voucher button + lazy photo (only fetched on open).
+              const redeemBtn = node.querySelector('.map-redeem-btn');
+              if (redeemBtn) redeemBtn.onclick = () => { const id = redeemBtn.getAttribute('data-place-id'); onRedeemRef.current?.((placesRef.current || []).find(pl => pl.id === id) || { id }); };
+              const img = node.querySelector('.map-place-photo');
+              if (img && img.getAttribute('data-asset') && !img.getAttribute('src')) {
+                getSetAssetDataUrl(img.getAttribute('data-set'), img.getAttribute('data-asset'), img.getAttribute('data-mime') || 'image/webp')
+                  .then((url) => { img.src = url; img.style.display = 'block'; e.popup.update(); })
+                  .catch(() => {});
               }
             }
           });
@@ -465,6 +465,8 @@ export default function WorldMap2D({ t, playerName, userEmail, onJoinRoom, onVie
           });
 
           map.on('click', function(e) {
+            const tgt = e.originalEvent && e.originalEvent.target;
+            if (tgt && tgt.closest && tgt.closest('.vr-place-marker, .leaflet-popup')) return;
             let closestMarker = null;
             let minDistance = Infinity;
             
@@ -547,6 +549,60 @@ export default function WorldMap2D({ t, playerName, userEmail, onJoinRoom, onVie
       map.setView(me, Math.max(map.getZoom(), 4), { animate: true });
     }
   }, [fruitMode, fruitTree, players, playerName, selfLocation, loading]);
+
+  // 商家／教會／機構標記:獨立圖層與 pane(在玩家點之上、popup 之下),
+  // 不進叢集;圖片只在 popup 打開時才抓(見 popupopen)。
+  useEffect(() => {
+    const map = leafletMapRef.current;
+    const L = window.L;
+    if (!mapReady || !map || !L) return;
+    if (!map.getPane('placePane')) { map.createPane('placePane'); map.getPane('placePane').style.zIndex = 610; }
+    if (!placeMarkersRef.current) placeMarkersRef.current = L.layerGroup().addTo(map);
+    const layer = placeMarkersRef.current;
+    layer.clearLayers();
+    if (!placesMode) return;
+    const byId = new Map();
+    (places || []).forEach((pl) => {
+      if (!pl || !Number.isFinite(Number(pl.lat)) || !Number.isFinite(Number(pl.lng))) return;
+      const st = PLACE_STYLE[pl.kind] || PLACE_STYLE.org;
+      const pct = pl.kind === 'merchant' && pl.discountPct ? `<span style="position:absolute;right:-8px;bottom:-6px;background:#fff;color:#92400e;border:1px solid ${st.border};border-radius:999px;font-size:9px;font-weight:800;padding:0 4px;line-height:14px;">-${Number(pl.discountPct)}%</span>` : '';
+      const icon = L.divIcon({
+        className: 'vr-place-marker',
+        html: `<div style="position:relative;width:30px;height:30px;border-radius:${pl.kind === 'church' ? '50%' : '9px'};background:${st.bg};border:2px solid #fff;box-shadow:0 0 0 2px ${st.border}55, 0 3px 10px rgba(0,0,0,0.45);display:flex;align-items:center;justify-content:center;font-size:16px;cursor:pointer;">${st.emoji}${pct}</div>`,
+        iconSize: [30, 30], iconAnchor: [15, 15], popupAnchor: [0, -14],
+      });
+      const marker = L.marker([Number(pl.lat), Number(pl.lng)], { pane: 'placePane', icon, zIndexOffset: 1000 });
+      const kindLabel = pl.kind === 'merchant' ? t('商家', 'Shop') : pl.kind === 'church' ? t('教會', 'Church') : t('機構', 'Organisation');
+      const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${pl.lat},${pl.lng}`)}`;
+      const photo = pl.photoAssetId ? `<img class="map-place-photo" data-set="place:${escapeHtml(pl.id)}" data-asset="${escapeHtml(pl.photoAssetId)}" data-mime="${escapeHtml(pl.photoMime || 'image/webp')}" alt="" style="display:none;width:100%;max-height:140px;object-fit:cover;border-radius:8px;margin-bottom:6px;" />` : '';
+      const discount = pl.kind === 'merchant' && pl.discountPct ? `<div style="display:inline-block;background:#fef3c7;color:#92400e;border-radius:999px;padding:2px 10px;font-weight:800;font-size:0.85rem;margin-bottom:6px;">🎟️ ${t('點數折抵 {n}%', '{n}% off with points').replace('{n}', String(Number(pl.discountPct)))}</div>` : '';
+      const text = pl.kind === 'merchant' ? pl.description : (pl.message || pl.description);
+      const html = `
+        <div style="font-family: system-ui, sans-serif; min-width: 180px; max-width: 240px; color:#1e293b;">
+          ${photo}
+          <div style="font-size:0.72rem;color:#64748b;margin-bottom:2px;">${st.emoji} ${escapeHtml(kindLabel)}</div>
+          <div style="font-weight:800;font-size:1.05rem;margin-bottom:4px;">${escapeHtml(pl.name)}</div>
+          ${discount}
+          ${text ? `<div style="font-size:0.85rem;color:#334155;line-height:1.5;margin-bottom:6px;white-space:pre-wrap;">${escapeHtml(text)}</div>` : ''}
+          <div style="font-size:0.8rem;color:#64748b;margin-bottom:2px;">📍 <a href="${mapsUrl}" target="_blank" rel="noopener noreferrer" style="color:#2563eb;">${escapeHtml(pl.address)}</a></div>
+          ${pl.hours ? `<div style="font-size:0.8rem;color:#64748b;">🕒 ${escapeHtml(pl.hours)}</div>` : ''}
+          ${pl.phone ? `<div style="font-size:0.8rem;color:#64748b;">☎️ ${escapeHtml(pl.phone)}</div>` : ''}
+          ${pl.website ? `<div style="font-size:0.8rem;"><a href="${escapeHtml(pl.website)}" target="_blank" rel="noopener noreferrer" style="color:#2563eb;">🔗 ${escapeHtml(pl.website.replace(/^https?:\/\//, ''))}</a></div>` : ''}
+          ${pl.kind === 'merchant' ? `<button class="map-redeem-btn" data-place-id="${escapeHtml(pl.id)}" style="margin-top:8px;width:100%;background:#f59e0b;color:#fff;border:none;border-radius:8px;padding:0.45rem 0.8rem;font-weight:800;cursor:pointer;">🎟️ ${escapeHtml(t('產生兌換券', 'Get a voucher'))}</button>` : ''}
+        </div>`;
+      marker.bindPopup(L.popup({ maxWidth: 260, className: 'verse-map-popup' }).setContent(html));
+      marker.on('click', (ev) => { L.DomEvent.stopPropagation(ev); });
+      marker.addTo(layer);
+      byId.set(pl.id, marker);
+    });
+    // Arrived from the 3D globe with a place selected: open it once.
+    const want = focusLocation && focusLocation.placeId;
+    if (want && byId.has(want) && openedPlaceRef.current !== want) {
+      openedPlaceRef.current = want;
+      const m = byId.get(want);
+      setTimeout(() => { try { map.setView(m.getLatLng(), Math.max(map.getZoom(), 14), { animate: false }); m.openPopup(); } catch { /* noop */ } }, 150);
+    }
+  }, [mapReady, places, placesMode, focusLocation, t]);
 
   // 即時脈動:訂閱 window 事件,從對應玩家的點盪出光波(imperative,不觸發 React
   // 重繪/重建標記)。只掛一次,靠 ref 讀取當前 map 與 name→marker 對照。
@@ -714,6 +770,15 @@ export default function WorldMap2D({ t, playerName, userEmail, onJoinRoom, onVie
               🍎 {t('我的果子', 'My Fruit')}{fruitLoading ? ' …' : (fruitMode && fruitTree ? ` (${(fruitTree.level1 || []).length + (fruitTree.level2 || []).length})` : '')}
             </button>
           )}
+          {onTogglePlaces && (
+            <button
+              title={t('顯示贊助的商家、教會與機構', 'Show sponsoring shops, churches and organisations')}
+              onClick={() => onTogglePlaces()}
+              style={{ background: placesMode ? '#d97706' : '#fef3c7', color: placesMode ? '#fff' : '#92400e', border: 'none', padding: '0.3rem 0.8rem', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.8rem' }}
+            >
+              🏪 {t('商家', 'Shops')}{places.length ? ` (${places.length})` : ''}
+            </button>
+          )}
           <button
             title={t('切換 2D / 3D 地球', 'Toggle 2D / 3D globe')}
             onClick={() => onToggleMode?.()}
@@ -767,6 +832,18 @@ export default function WorldMap2D({ t, playerName, userEmail, onJoinRoom, onVie
               </span>
               <span>{t('亮度 = 近7天活躍', 'glow = 7-day activity')}</span>
             </div>
+            {placesMode && places.length > 0 && (
+              <div style={{ marginTop: 6, paddingTop: 6, borderTop: '1px solid #14324f' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 3 }}>
+                  <span style={{ width: 14, height: 14, borderRadius: 4, background: '#f59e0b', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 9 }}>🏪</span>
+                  <span>{t('商家 = 點數折抵', 'shop = points discount')}</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+                  <span style={{ width: 14, height: 14, borderRadius: '50%', background: '#7c3aed', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 9 }}>⛪</span>
+                  <span>{t('教會、機構 = 贊助者', 'church / org = sponsor')}</span>
+                </div>
+              </div>
+            )}
             {fruitMode && fruitTree && (
               <div style={{ marginTop: 6, paddingTop: 6, borderTop: '1px solid #14324f' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 3 }}>
@@ -893,6 +970,7 @@ export default function WorldMap2D({ t, playerName, userEmail, onJoinRoom, onVie
           border: 1px solid #e2e8f0;
         }
         .verse-map-popup .leaflet-popup-tip { background: white; }
+        .vr-place-marker { background: transparent; border: none; }
       `}</style>
     </div>
   );

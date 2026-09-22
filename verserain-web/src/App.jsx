@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { expandSameChapterRefs } from './lib/expandSameChapterRefs.js';
-import { Play, Pause, RotateCcw, Heart, Zap, Trophy, Crown, Star, Home, XCircle, Headphones, Music, VolumeX, Search, Share2, Dices, Mic, MicOff, Users, CloudRain, Info, Edit, TreePine, Gamepad2, Map, Settings, Library, Volume2, Shuffle, Swords, ShoppingBasket, Apple, Mail, Lock, Sprout, Leaf, Hourglass, Frown, X, Camera, Square, Copy, ArrowRightLeft, MessageCircle, Languages, ChevronUp, ChevronDown, Check, Gift } from 'lucide-react';
+import { Play, Pause, RotateCcw, Heart, Zap, Trophy, Crown, Star, Home, XCircle, Headphones, Music, VolumeX, Search, Share2, Dices, Mic, MicOff, Users, CloudRain, Info, Edit, TreePine, Gamepad2, Map, Settings, Library, Volume2, Shuffle, Swords, ShoppingBasket, Apple, Mail, Lock, Sprout, Leaf, Hourglass, Frown, X, Camera, Square, Copy, ArrowRightLeft, MessageCircle, Languages, ChevronUp, ChevronDown, Check, Gift, Store, Ticket, MapPin } from 'lucide-react';
 import { CATALOG as VOUCHER_CATALOG, DEFAULT_VALUE as VOUCHER_DEFAULTS } from '../api/_lib/rewardCatalog.js';
 import confetti from 'canvas-confetti';
 import usePartySocket from 'partysocket/react';
@@ -30,6 +30,7 @@ import VerseVoiceRecorder from './VerseVoiceRecorder';
 //   • BlindModeGame → recitation matching (pinyin-pro / opencc-js), only in blind mode
 //   • ReactQuill → the rich-text editor (react-quill-new + its CSS), only when editing a set
 const WorldMap = React.lazy(() => import('./WorldMap'));
+const PlacePinMap = React.lazy(() => import('./PlacePinMap'));
 const BlindModeGame = React.lazy(() => import('./BlindModeGame'));
 const ReactQuill = React.lazy(() => import('./LazyQuill'));
 
@@ -714,16 +715,28 @@ function buildPublicShareUrl(path = '/', params = {}) {
 // push one history entry per step; popstate applies the hash back to state.
 // Only the query string carries share links (?listenSet= …) — those are
 // consumed and scrubbed as before, and every scrub must keep the hash.
-const ROUTE_TABS = ['lobby', 'versesets', 'custom_verses', 'multiplayer', 'daily_verse', 'advanced', 'garden', 'search', 'map', 'manual', 'about', 'accessible', 'bilingual_rain', 'leaderboard', 'rewards_admin', 'sponsors', 'donate', 'sponsor'];
+const ROUTE_TABS = ['lobby', 'versesets', 'custom_verses', 'multiplayer', 'daily_verse', 'advanced', 'garden', 'search', 'map', 'manual', 'about', 'accessible', 'bilingual_rain', 'leaderboard', 'rewards_admin', 'sponsors', 'donate', 'sponsor', 'merchant', 'verify'];
 // 支持開發（Donate）頁的收款資訊。這是對開發者個人的贈與，不是公益勸募，
 // 也開不了捐贈收據 — 獎勵資金池另走教會／非營利代收（見 sponsor 頁）。
 // 空字串 → 頁面顯示「即將公布」。
 const DONATE_INFO = { bankName: '', bankCode: '', account: '', holder: '', paypalMe: '', contactEmail: 'hungry4grace@gmail.com' };
 const ROUTE_FLAGS = ['listen', 'edit', 'play', 'room'];
+// The voucher QR deep link (#verify/<code>) is read once at module load, before
+// any router sync can rewrite the hash to plain #verify.
+const INITIAL_VERIFY_CODE = (() => {
+  try {
+    const m = String(window.location.hash || '').match(/^#\/?verify\/([A-Za-z0-9-]{6,12})/);
+    const code = m ? m[1].toUpperCase().replace(/[^A-Z0-9]/g, '') : '';
+    if (code) sessionStorage.setItem('verserain_verify_code', code);
+    return code || sessionStorage.getItem('verserain_verify_code') || '';
+  } catch { return ''; }
+})();
 function parseRoute(hash) {
   const seg = String(hash || '').replace(/^#\/?/, '').split('/').filter(Boolean);
   const tab = ROUTE_TABS.includes(seg[0]) ? seg[0] : 'lobby';
-  const r = { tab, setId: null, listen: false, edit: false, play: false, roomId: null };
+  const r = { tab, setId: null, listen: false, edit: false, play: false, roomId: null, code: null };
+  // #verify/<code> — the store-side voucher check, deep-linked from the QR.
+  if (tab === 'verify') { r.code = seg[1] ? decodeURIComponent(seg[1]) : null; return r; }
   let i = 1;
   if (tab === 'versesets' && seg[1] && !ROUTE_FLAGS.includes(seg[1])) { r.setId = decodeURIComponent(seg[1]); i = 2; }
   for (; i < seg.length; i++) {
@@ -6227,6 +6240,10 @@ export default function App() {
       .catch(() => {});
   }, [userEmail, adoptAccountPersonalCode]);
 
+  // Proof of sign-in for money routes (points → merchant discounts). Minted by
+  // PartyKit on login; see sessionKey in src/party/server.js.
+  const [sessionKey, setSessionKey] = useState(() => { try { return localStorage.getItem('verserain_session_key') || ''; } catch { return ''; } });
+
   const playerNameRef = useRef(playerName);
 
   // UI Language — independent of Bible version for scalable i18n
@@ -8747,6 +8764,7 @@ export default function App() {
       // have no password, so the profile editor hides the password fields and
       // saves without one (the server allows password-less updates for them).
       localStorage.setItem('verserain_auth_provider', user.oauthProvider || provider || 'oauth');
+      if (data.sessionKey) { try { localStorage.setItem('verserain_session_key', data.sessionKey); } catch { /* ignore */ } setSessionKey(data.sessionKey); }
       if (user.personalCode) adoptAccountPersonalCode(user.personalCode, !data.deviceCodeTaken);
       if (user.city) localStorage.setItem('verserain_custom_city', user.city);
       if (user.country) localStorage.setItem('verserain_custom_country', user.country);
@@ -9200,6 +9218,238 @@ export default function App() {
     } catch (e) {
       setToast(t('更新失敗：{error}', 'Update failed: {error}').replace('{error}', String(e?.message || e)));
     }
+    setTimeout(() => setToast(null), 3000);
+  };
+
+  // ── 商家折扣：點數兌換 (points → merchant discount) ──────────────────
+  // Leaderboard scores are never deducted; the server keeps a separate
+  // "spent" ledger and issues one-time vouchers (see api/redeem.js).
+  const [redeemPlace, setRedeemPlace] = useState(null); // place object from the map popup
+  const [pointsBalance, setPointsBalance] = useState(null);
+  const [pointsBalanceBusy, setPointsBalanceBusy] = useState(false);
+  const [redeemBill, setRedeemBill] = useState('');
+  const [redeemBusy, setRedeemBusy] = useState(false);
+  const [activeVoucher, setActiveVoucher] = useState(() => {
+    try { const v = JSON.parse(localStorage.getItem('verserain_active_voucher') || 'null'); return v && v.code ? v : null; } catch { return null; }
+  });
+  const [voucherNow, setVoucherNow] = useState(Date.now());
+  const saveActiveVoucher = (v) => {
+    setActiveVoucher(v);
+    try { if (v) localStorage.setItem('verserain_active_voucher', JSON.stringify(v)); else localStorage.removeItem('verserain_active_voucher'); } catch { /* ignore */ }
+  };
+  const redeemErrorText = (code) => ({
+    session_invalid: t('為了安全，請重新登入一次再兌換', 'For security, please sign in again before redeeming'),
+    not_eligible: t('尚未符合兌換資格：需通過 3 節經文且帳號滿 7 天', 'Not eligible yet: pass 3 verses and have an account at least 7 days old'),
+    place_unavailable: t('此商家目前無法兌換', 'This shop is not available right now'),
+    bill_invalid: t('請輸入正確的消費金額', 'Enter a valid bill amount'),
+    too_small: t('折抵金額不足 NT$1', 'The discount would be under NT$1'),
+    daily_place_limit: t('同一商家每天只能兌換一次', 'One voucher per shop per day'),
+    open_voucher_exists: t('你已有一張未使用的兌換券', 'You already have an unused voucher'),
+    verify_unavailable: t('核算服務暫時無法使用，稍後再試', 'Verification is temporarily unavailable, try again later'),
+    rate_limited: t('操作太頻繁，請稍後再試', 'Too many requests, please try again later'),
+    login_required: t('請先登入', 'Please sign in first'),
+  })[code] || String(code || 'error');
+  const fetchPointsBalance = async () => {
+    if (!userEmail) return null;
+    setPointsBalanceBusy(true);
+    try {
+      const res = await fetch(`/api/points-balance?email=${encodeURIComponent(userEmail)}&sessionKey=${encodeURIComponent(sessionKey)}`);
+      const d = await res.json().catch(() => ({}));
+      if (!res.ok) { setPointsBalance({ error: d.error || String(res.status) }); return null; }
+      setPointsBalance(d);
+      if (d.openVoucher && (!activeVoucher || activeVoucher.code !== d.openVoucher.code)) saveActiveVoucher({ ...d.openVoucher, status: 'issued' });
+      return d;
+    } catch (e) {
+      setPointsBalance({ error: String(e?.message || e) });
+      return null;
+    } finally {
+      setPointsBalanceBusy(false);
+    }
+  };
+  const openRedeem = (place) => {
+    if (!place || !place.id) return;
+    if (!userEmail) { setShowLoginModal('login'); setToast(t('請先登入才能兌換折扣', 'Sign in to redeem a discount')); setTimeout(() => setToast(null), 2500); return; }
+    setRedeemPlace(place); setRedeemBill(''); setPointsBalance(null);
+    fetchPointsBalance();
+  };
+  const redeemPreview = (() => {
+    const pb = pointsBalance; const place = redeemPlace;
+    if (!pb || pb.error || !place) return null;
+    const bill = Math.floor(Number(redeemBill) || 0);
+    const pct = Number(place.discountPct) || 0;
+    const raw = Math.floor(bill * pct / 100);
+    const caps = [
+      ['voucher_cap', pb.voucherCapNTD ?? 200],
+      ['monthly', Math.max(0, (pb.monthlyCapNTD ?? 500) - (pb.monthlyUsedNTD || 0))],
+      ['balance', Math.floor((pb.balancePoints || 0) / (pb.pointsPerNTD || 1000))],
+    ];
+    let ntd = raw, limitedBy = null;
+    for (const [k, cap] of caps) { if (cap < ntd) { ntd = cap; limitedBy = k; } }
+    return { bill, raw, ntd: Math.max(0, ntd), points: Math.max(0, ntd) * (pb.pointsPerNTD || 1000), limitedBy };
+  })();
+  const confirmRedeem = async () => {
+    if (!redeemPlace || !redeemPreview || redeemPreview.ntd < 1) return;
+    setRedeemBusy(true);
+    try {
+      const res = await fetch('/api/redeem', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: userEmail, sessionKey, placeId: redeemPlace.id, billNTD: redeemPreview.bill }) });
+      const d = await res.json().catch(() => ({}));
+      if (d.voucher && (d.success || d.error === 'open_voucher_exists')) { saveActiveVoucher({ ...d.voucher, status: d.voucher.status || 'issued' }); if (d.balance) setPointsBalance(d.balance); setRedeemPlace(null); return; }
+      throw new Error(redeemErrorText(d.error || res.status));
+    } catch (e) {
+      setToast(String(e?.message || e)); setTimeout(() => setToast(null), 3500);
+    } finally {
+      setRedeemBusy(false);
+    }
+  };
+  // Countdown + status poll while a voucher is open (staff marks it used).
+  useEffect(() => {
+    if (!activeVoucher || activeVoucher.status !== 'issued') return undefined;
+    const tick = setInterval(() => setVoucherNow(Date.now()), 1000);
+    const poll = setInterval(async () => {
+      try {
+        const r = await fetch(`/api/redeem-verify?code=${encodeURIComponent(activeVoucher.code)}`);
+        const d = await r.json().catch(() => ({}));
+        if (d.status && d.status !== 'issued') saveActiveVoucher({ ...activeVoucher, status: d.status, usedAt: d.usedAt || null });
+      } catch { /* offline */ }
+    }, 10000);
+    return () => { clearInterval(tick); clearInterval(poll); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeVoucher?.code, activeVoucher?.status]);
+  const voucherSecondsLeft = activeVoucher && activeVoucher.expiresAt ? Math.max(0, Math.floor((Date.parse(activeVoucher.expiresAt) - voucherNow) / 1000)) : 0;
+  const formatVoucherCode = (c) => String(c || '').replace(/(.{4})(.{4})/, '$1-$2');
+
+  // ── 兌換券核銷 (store-side verify page) ──────────────────────────────
+  // The QR deep link is #verify/<code>. The router rewrites the hash to plain
+  // #verify on its first sync, so the code is stashed in sessionStorage the
+  // moment it is seen and survives that rewrite (and a reload).
+  const [verifyCodeInput, setVerifyCodeInput] = useState(() => INITIAL_VERIFY_CODE);
+  const [verifyResult, setVerifyResult] = useState(null);
+  const [verifyBusy, setVerifyBusy] = useState(false);
+  const lookupVoucher = async (codeRaw) => {
+    const code = String(codeRaw || verifyCodeInput || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+    if (code.length !== 8) { setVerifyResult({ status: 'not_found' }); return; }
+    setVerifyBusy(true);
+    try {
+      const r = await fetch(`/api/redeem-verify?code=${encodeURIComponent(code)}`);
+      const d = await r.json().catch(() => ({}));
+      setVerifyResult(r.ok ? d : { status: d.status || 'not_found', error: d.error });
+    } catch { setVerifyResult({ status: 'error' }); }
+    finally { setVerifyBusy(false); }
+  };
+  const useVoucher = async () => {
+    if (!verifyResult || verifyResult.status !== 'issued') return;
+    if (!window.confirm(t('確認顧客已結帳並給了折扣？此動作無法復原。', 'Confirm the customer has paid with the discount applied? This cannot be undone.'))) return;
+    setVerifyBusy(true);
+    try {
+      const r = await fetch('/api/redeem-verify', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code: verifyResult.code, action: 'use' }) });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok || !d.success) throw new Error(d.error === 'already_used' ? t('這張券已經用過了', 'This voucher was already used') : d.error === 'expired' ? t('這張券已過期', 'This voucher has expired') : String(d.error || r.status));
+      setVerifyResult({ ...verifyResult, ...(d.voucher || {}), status: 'used' });
+      setToast(t('已核銷 ✓', 'Marked as used ✓'));
+    } catch (e) { setToast(String(e?.message || e)); }
+    finally { setVerifyBusy(false); setTimeout(() => setToast(null), 3000); }
+  };
+  useEffect(() => {
+    if (mainTab === 'verify' && verifyCodeInput.length === 8 && !verifyResult) lookupVoucher(verifyCodeInput);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mainTab]);
+
+  // ── 商家／教會／機構登記 (map place registration) ───────────────────────
+  const newPlaceDraft = () => ({ id: 'pl_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), kind: 'merchant', name: '', address: '', lat: null, lng: null, discountPct: 10, description: '', message: '', phone: '', website: '', hours: '', photoAssetId: '', photoMime: '', agree: false });
+  const [merchantDraft, setMerchantDraft] = useState(newPlaceDraft);
+  const [merchantBusy, setMerchantBusy] = useState(false);
+  const [merchantGeoBusy, setMerchantGeoBusy] = useState(false);
+  const [merchantPhotoPreview, setMerchantPhotoPreview] = useState(null);
+  const [merchantPhotoBusy, setMerchantPhotoBusy] = useState(false);
+  const [myPlaces, setMyPlaces] = useState(null);
+  const merchantPhotoInputRef = useRef(null);
+  const loadMyPlaces = React.useCallback(() => {
+    if (!userEmail) { setMyPlaces([]); return; }
+    fetch(`/api/places?mine=1&email=${encodeURIComponent(userEmail)}`).then(r => r.json()).then(d => setMyPlaces(Array.isArray(d.places) ? d.places : [])).catch(() => setMyPlaces([]));
+  }, [userEmail]);
+  useEffect(() => { if (mainTab === 'merchant') loadMyPlaces(); }, [mainTab, loadMyPlaces]);
+  const geocodeMerchant = async () => {
+    const q = String(merchantDraft.address || '').trim();
+    if (!q) return;
+    setMerchantGeoBusy(true);
+    try {
+      const r = await fetch(`/api/geocode?q=${encodeURIComponent(q)}&lang=${encodeURIComponent(uiLang === 'en' ? 'en' : 'zh-TW')}`);
+      const d = await r.json().catch(() => ({}));
+      if (r.ok && Number.isFinite(d.lat)) { setMerchantDraft(m => ({ ...m, lat: d.lat, lng: d.lng })); setToast(d.approximate ? t('只定位到街道，請把大頭針拖到正確位置', 'Located the street only — drag the pin to the exact spot') : t('已定位，可在地圖上拖曳大頭針微調', 'Located — drag the pin to fine-tune')); }
+      else { setMerchantDraft(m => ({ ...m, lat: m.lat ?? 23.7, lng: m.lng ?? 121.0 })); setToast(t('找不到這個地址，請在地圖上點選或拖曳大頭針', 'Address not found — click or drag the pin on the map')); }
+    } catch { setToast(t('定位失敗，請稍後再試', 'Geocoding failed, try again later')); }
+    finally { setMerchantGeoBusy(false); setTimeout(() => setToast(null), 3000); }
+  };
+  const useMyLocationForMerchant = () => {
+    if (!navigator.geolocation) return;
+    navigator.geolocation.getCurrentPosition(
+      (pos) => setMerchantDraft(m => ({ ...m, lat: Number(pos.coords.latitude.toFixed(5)), lng: Number(pos.coords.longitude.toFixed(5)) })),
+      () => { setToast(t('無法取得目前位置', 'Could not get your location')); setTimeout(() => setToast(null), 2500); },
+      { enableHighAccuracy: true, timeout: 8000 }
+    );
+  };
+  const handleMerchantPhoto = async (file) => {
+    if (!file || !userEmail) return;
+    setMerchantPhotoBusy(true);
+    try {
+      const blob = await compressBackgroundImage(file, { maxWidth: 1200, maxBytes: 300000 });
+      const assetId = await uploadSetAsset({ email: userEmail, setId: `place:${merchantDraft.id}`, blob, kind: 'image', sessionKey });
+      setMerchantDraft(m => ({ ...m, photoAssetId: assetId, photoMime: blob.type || 'image/webp' }));
+      setMerchantPhotoPreview(URL.createObjectURL(blob));
+    } catch (e) {
+      setToast(String(e?.message || e).includes('session') ? redeemErrorText('session_invalid') : t('照片上傳失敗：{error}', 'Photo upload failed: {error}').replace('{error}', String(e?.message || e)));
+      setTimeout(() => setToast(null), 3500);
+    } finally { setMerchantPhotoBusy(false); }
+  };
+  const submitMerchant = async () => {
+    const m = merchantDraft;
+    if (!m.name.trim() || !m.address.trim()) { setToast(t('請填寫名稱與地址', 'Name and address are required')); setTimeout(() => setToast(null), 2500); return; }
+    if (!Number.isFinite(m.lat) || !Number.isFinite(m.lng)) { setToast(t('請先按「定位」或在地圖上點選位置', 'Locate the address or pick the spot on the map first')); setTimeout(() => setToast(null), 2500); return; }
+    if (!m.agree) { setToast(t('請勾選同意條款', 'Please tick the agreement'), 2500); setTimeout(() => setToast(null), 2500); return; }
+    setMerchantBusy(true);
+    try {
+      const { agree, ...place } = m; void agree;
+      const res = await fetch('/api/places', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'register', email: userEmail, sessionKey, place }) });
+      const d = await res.json().catch(() => ({}));
+      if (!res.ok || !d.success) throw new Error(d.error === 'daily_limit' ? t('今天已達登記上限（3 筆）', 'Daily registration limit (3) reached') : redeemErrorText(d.error || res.status));
+      setToast(t('已送出，管理員審核後就會出現在地圖上 🎉', 'Submitted — it will appear on the map once approved 🎉'));
+      setMerchantDraft(newPlaceDraft()); setMerchantPhotoPreview(null); loadMyPlaces();
+    } catch (e) { setToast(String(e?.message || e)); }
+    finally { setMerchantBusy(false); setTimeout(() => setToast(null), 3500); }
+  };
+
+  // ── 管理員：地圖標記審核與兌換券 ────────────────────────────────────
+  const [placesAdmin, setPlacesAdmin] = useState(null);
+  const [placesAdminFilter, setPlacesAdminFilter] = useState('pending');
+  const [placeEdit, setPlaceEdit] = useState(null); // { ...place, isNew? }
+  const [vouchersAdmin, setVouchersAdmin] = useState(null);
+  useEffect(() => {
+    if (mainTab !== 'rewards_admin' || !isSuperAdmin) return undefined;
+    let cancelled = false;
+    fetch(`/api/places?all=1&adminEmail=${encodeURIComponent(userEmail)}`, { headers: adminHeaders() }).then(r => r.json()).then(d => { if (!cancelled) setPlacesAdmin(Array.isArray(d.places) ? d.places : []); }).catch(() => { if (!cancelled) setPlacesAdmin([]); });
+    fetch(`/api/redeem-verify?all=1&adminEmail=${encodeURIComponent(userEmail)}`, { headers: adminHeaders() }).then(r => r.json()).then(d => { if (!cancelled) setVouchersAdmin(Array.isArray(d.vouchers) ? d.vouchers : []); }).catch(() => { if (!cancelled) setVouchersAdmin([]); });
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mainTab, isSuperAdmin, userEmail, rewardsAdminReload]);
+  const placeAdminAction = async (action, { placeId, patch, place } = {}) => {
+    try {
+      const res = await fetch('/api/places', { method: 'POST', headers: adminHeaders(), body: JSON.stringify({ action, adminEmail: userEmail, placeId, patch, place }) });
+      const d = await res.json().catch(() => ({}));
+      if (!res.ok || !d.success) throw new Error(d.error || res.status);
+      if (Array.isArray(d.places)) setPlacesAdmin(d.places);
+      setPlaceEdit(null);
+      setToast(t('已更新地圖標記', 'Map marker updated'));
+    } catch (e) { setToast(t('更新失敗：{error}', 'Update failed: {error}').replace('{error}', String(e?.message || e))); }
+    setTimeout(() => setToast(null), 3000);
+  };
+  const voucherAdminAction = async (code, action) => {
+    try {
+      const res = await fetch('/api/redeem-verify', { method: 'POST', headers: adminHeaders(), body: JSON.stringify({ action, adminEmail: userEmail, code }) });
+      const d = await res.json().catch(() => ({}));
+      if (!res.ok || !d.success) throw new Error(d.error || res.status);
+      setRewardsAdminReload(n => n + 1);
+      setToast(t('已更新兌換券', 'Voucher updated'));
+    } catch (e) { setToast(t('更新失敗：{error}', 'Update failed: {error}').replace('{error}', String(e?.message || e))); }
     setTimeout(() => setToast(null), 3000);
   };
 
@@ -10432,6 +10682,12 @@ export default function App() {
       if (st.editing && !r.edit) setEditingCustomSet(null);
       if (r.tab !== st.mainTab) setMainTab(r.tab);
       if (r.tab === 'versesets' && (r.setId || null) !== (st.selectedSetId || null)) setSelectedSetId(r.setId || null);
+      // #verify/<code> reached by in-app navigation (the QR opens it in an
+      // already-running app): take the code before the hash gets normalised.
+      if (r.tab === 'verify' && r.code) {
+        const code = String(r.code).toUpperCase().replace(/[^A-Z0-9]/g, '');
+        if (code) { setVerifyCodeInput(code); setVerifyResult(null); try { sessionStorage.setItem('verserain_verify_code', code); } catch { /* ignore */ } }
+      }
       // Layers that need data (listen/play/edit/room) can't be rebuilt from a
       // URL. If nothing changed (so the sync effect below won't run), rewrite
       // the hash to what is actually shown.
@@ -25323,7 +25579,7 @@ const deDict = {
                     verserain
                   </div>
                   <div className="app-brand-version" style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', marginTop: '4px', marginLeft: '2px' }}>
-                    v4.0.35
+                    v4.0.36
                   </div>
                 </div>
                 <div ref={langPickerRef} className="app-lang-control" style={{ position: 'relative' }}>
@@ -25553,7 +25809,7 @@ const deDict = {
                         ><Edit size={14} /></button>
                       </div>
                     )}
-                    <button onClick={() => { setPlayerName(''); setIsPremium(false); setUserEmail(''); setFavoriteVerseSetIds([]); setEditingPlayerName(null); localStorage.removeItem('verserain_player_name'); localStorage.removeItem('verserain_is_premium'); localStorage.removeItem('verserain_player_email'); localStorage.removeItem('verserain_auth_provider'); localStorage.removeItem('verseRain_gardenData'); setGardenData({}); localStorage.removeItem('verseRain_custom_sets'); localStorage.removeItem('verseRain_custom_sets_owner'); lastPushedPrivateSetsRef.current = ''; setCustomVerseSets([]); }} style={{ background: 'transparent', border: '1px solid #cbd5e1', color: '#64748b', cursor: 'pointer', borderRadius: '4px', padding: '0.3rem 0.6rem', fontSize: '0.85rem' }}>{t("登出", "Logout")}</button>
+                    <button onClick={() => { setPlayerName(''); setIsPremium(false); setUserEmail(''); setFavoriteVerseSetIds([]); setEditingPlayerName(null); localStorage.removeItem('verserain_player_name'); localStorage.removeItem('verserain_is_premium'); localStorage.removeItem('verserain_player_email'); localStorage.removeItem('verserain_auth_provider'); localStorage.removeItem('verserain_session_key'); setSessionKey(''); localStorage.removeItem('verseRain_gardenData'); setGardenData({}); localStorage.removeItem('verseRain_custom_sets'); localStorage.removeItem('verseRain_custom_sets_owner'); lastPushedPrivateSetsRef.current = ''; setCustomVerseSets([]); }} style={{ background: 'transparent', border: '1px solid #cbd5e1', color: '#64748b', cursor: 'pointer', borderRadius: '4px', padding: '0.3rem 0.6rem', fontSize: '0.85rem' }}>{t("登出", "Logout")}</button>
                   </div>
                 ) : (
                   <>
@@ -25967,6 +26223,8 @@ const deDict = {
                       { id: 'sponsors', Icon: Gift, label: t('贊助獎勵計劃', 'Sponsored Rewards'), desc: t('通過經文、邀請朋友，贏得禮券', 'Pass verses, invite friends, earn vouchers'), color: '#f59e0b' },
                       { id: 'donate', Icon: Heart, label: t('支持經文雨', 'Support VerseRain'), desc: t('小額支持 App 開發與維運', 'Help fund development & hosting'), color: '#ef4444' },
                       { id: 'sponsor', Icon: Gift, label: t('贊助經文雨', 'Sponsor VerseRain'), desc: t('企業家與教會如何加入推廣讀經', 'How businesses & churches can join'), color: '#7c3aed' },
+                      { id: 'merchant', Icon: Store, label: t('登記商家／教會', 'Register a shop / church'), desc: t('在「誰在玩」地圖上標記，提供點數折扣', 'Get on the map and offer a points discount'), color: '#d97706' },
+                      { id: 'verify', Icon: Ticket, label: t('兌換券核銷', 'Verify a voucher'), desc: t('店家輸入代碼確認折扣', 'Shops confirm a customer’s voucher here'), color: '#0d9488' },
                       ...(isSuperAdmin ? [{ id: 'rewards_admin', Icon: Gift, label: t('獎勵管理', 'Reward Admin'), desc: t('待發送的禮券與獎勵', 'Gift cards & rewards to send'), color: '#f59e0b' }] : [])
                     ].map(item => {
                       const Icon = item.Icon;
@@ -28441,6 +28699,7 @@ const deDict = {
                                   </div>
                                   <div style={{ display: 'flex', gap: '0.4rem' }}>
                                     <button type="button" onClick={() => setSponsorDraft({ ...sp })} style={smallBtn('transparent', '#334155', '1px solid #cbd5e1')}>{t('編輯', 'Edit')}</button>
+                                    <button type="button" onClick={() => setPlaceEdit({ isNew: true, kind: sp.scope === 'church' ? 'church' : 'org', name: sp.churchName || sp.displayName, address: '', lat: 23.7, lng: 121, discountPct: 0, description: '', message: sp.message || '', phone: '', website: '', hours: '', dailyCapNTD: 2000, note: '', sponsorId: sp.id })} style={smallBtn('transparent', '#5b21b6', '1px solid #ddd6fe')}>＋ {t('地圖標記', 'Map marker')}</button>
                                     <button type="button" onClick={() => saveSponsorRecord(sp, sp.active === false ? 'activate' : 'deactivate')} style={smallBtn('transparent', '#64748b', '1px solid #cbd5e1')}>{sp.active === false ? t('啟用', 'Activate') : t('停用', 'Deactivate')}</button>
                                   </div>
                                 </div>
@@ -28448,6 +28707,92 @@ const deDict = {
                             </div>
                           )}
                         </div>
+
+                        {/* 地圖標記審核（商家／教會／機構）+ 兌換券 */}
+                        {(() => {
+                          const all = placesAdmin || [];
+                          const shown = all.filter(pl => placesAdminFilter === 'all' ? true : pl.status === placesAdminFilter);
+                          const counts = { pending: all.filter(p => p.status === 'pending').length, approved: all.filter(p => p.status === 'approved').length, hidden: all.filter(p => p.status === 'hidden').length, rejected: all.filter(p => p.status === 'rejected').length };
+                          const inputStyle = { padding: '0.4rem 0.6rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.85rem', background: '#fff' };
+                          const smallBtn = (bg, fg = '#fff', border = 'none') => ({ background: bg, color: fg, border, borderRadius: '6px', padding: '0.35rem 0.7rem', cursor: 'pointer', fontSize: '0.82rem', fontWeight: 600 });
+                          const kindLabel = (k) => k === 'merchant' ? `🏪 ${t('商家', 'Shop')}` : k === 'church' ? `⛪ ${t('教會', 'Church')}` : `🏢 ${t('機構', 'Organisation')}`;
+                          const ed = placeEdit;
+                          return (
+                            <div style={{ border: '1px solid #ddd6fe', background: '#faf5ff', borderRadius: 10, padding: '0.9rem 1rem', marginBottom: '1rem' }}>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
+                                <b style={{ color: '#5b21b6' }}>🗺️ {t('地圖標記（商家／教會／機構）', 'Map markers (shops / churches / orgs)')}</b>
+                                <button type="button" onClick={() => setPlaceEdit({ isNew: true, kind: 'church', name: '', address: '', lat: 23.7, lng: 121, discountPct: 0, description: '', message: '', phone: '', website: '', hours: '', dailyCapNTD: 2000, note: '', sponsorId: '' })} style={smallBtn('#7c3aed')}>＋ {t('新增教會／機構標記', 'Add church / org marker')}</button>
+                              </div>
+                              <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap', margin: '0.6rem 0' }}>
+                                {[['pending', t('待審核', 'Pending')], ['approved', t('已上地圖', 'On the map')], ['hidden', t('已隱藏', 'Hidden')], ['rejected', t('已退回', 'Rejected')], ['all', t('全部', 'All')]].map(([id, lbl]) => (
+                                  <button key={id} type="button" onClick={() => setPlacesAdminFilter(id)} style={{ padding: '0.3rem 0.8rem', borderRadius: 20, border: 'none', background: placesAdminFilter === id ? '#7c3aed' : '#ede9fe', color: placesAdminFilter === id ? '#fff' : '#4c1d95', cursor: 'pointer', fontWeight: 600, fontSize: '0.82rem' }}>{lbl}{id !== 'all' ? ` (${counts[id]})` : ` (${all.length})`}</button>
+                                ))}
+                              </div>
+                              {ed && (
+                                <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 8, padding: '0.8rem', marginBottom: '0.8rem', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '0.5rem' }}>
+                                  <select value={ed.kind} onChange={e => setPlaceEdit(d => ({ ...d, kind: e.target.value }))} style={inputStyle}><option value="merchant">{t('商家', 'Shop')}</option><option value="church">{t('教會', 'Church')}</option><option value="org">{t('機構', 'Organisation')}</option></select>
+                                  <input type="text" value={ed.name} onChange={e => setPlaceEdit(d => ({ ...d, name: e.target.value }))} placeholder={t('名稱', 'Name')} style={inputStyle} />
+                                  <input type="text" value={ed.address} onChange={e => setPlaceEdit(d => ({ ...d, address: e.target.value }))} placeholder={t('地址', 'Address')} style={{ ...inputStyle, gridColumn: '1 / -1' }} />
+                                  <input type="number" step="0.00001" value={ed.lat} onChange={e => setPlaceEdit(d => ({ ...d, lat: Number(e.target.value) }))} placeholder="lat" style={inputStyle} />
+                                  <input type="number" step="0.00001" value={ed.lng} onChange={e => setPlaceEdit(d => ({ ...d, lng: Number(e.target.value) }))} placeholder="lng" style={inputStyle} />
+                                  {ed.kind === 'merchant' && <input type="number" min={5} max={20} value={ed.discountPct} onChange={e => setPlaceEdit(d => ({ ...d, discountPct: Number(e.target.value) }))} placeholder={t('折扣 %', 'Discount %')} style={inputStyle} />}
+                                  <input type="number" min={1} value={ed.dailyCapNTD} onChange={e => setPlaceEdit(d => ({ ...d, dailyCapNTD: Number(e.target.value) }))} placeholder={t('每日折抵上限 NT$', 'Daily cap NT$')} style={inputStyle} />
+                                  <select value={ed.sponsorId || ''} onChange={e => setPlaceEdit(d => ({ ...d, sponsorId: e.target.value }))} style={inputStyle}><option value="">{t('（不連結贊助紀錄）', '(no sponsor record)')}</option>{(rewardsAdmin?.sponsors || []).map(sp => <option key={sp.id} value={sp.id}>{sp.displayName}</option>)}</select>
+                                  <textarea value={ed.kind === 'merchant' ? ed.description : ed.message} onChange={e => setPlaceEdit(d => ({ ...d, [ed.kind === 'merchant' ? 'description' : 'message']: e.target.value }))} placeholder={ed.kind === 'merchant' ? t('介紹', 'Description') : t('祝福語或簡介', 'Blessing or intro')} rows={2} style={{ ...inputStyle, gridColumn: '1 / -1' }} />
+                                  <input type="text" value={ed.hours || ''} onChange={e => setPlaceEdit(d => ({ ...d, hours: e.target.value }))} placeholder={t('營業時間', 'Hours')} style={inputStyle} />
+                                  <input type="text" value={ed.phone || ''} onChange={e => setPlaceEdit(d => ({ ...d, phone: e.target.value }))} placeholder={t('電話', 'Phone')} style={inputStyle} />
+                                  <input type="text" value={ed.website || ''} onChange={e => setPlaceEdit(d => ({ ...d, website: e.target.value }))} placeholder="https://" style={inputStyle} />
+                                  <input type="text" value={ed.note || ''} onChange={e => setPlaceEdit(d => ({ ...d, note: e.target.value }))} placeholder={t('內部備註', 'Internal note')} style={{ ...inputStyle, gridColumn: '1 / -1' }} />
+                                  <div style={{ gridColumn: '1 / -1' }}>
+                                    <React.Suspense fallback={null}>{Number.isFinite(ed.lat) && Number.isFinite(ed.lng) && <PlacePinMap lat={ed.lat} lng={ed.lng} zoom={ed.isNew ? 7 : 15} height={220} onChange={({ lat, lng }) => setPlaceEdit(d => ({ ...d, lat, lng }))} />}</React.Suspense>
+                                  </div>
+                                  <div style={{ gridColumn: '1 / -1', display: 'flex', gap: '0.5rem' }}>
+                                    <button type="button" onClick={() => { const { isNew, id, status, ownerEmail, ownerCode, createdAt, updatedAt, approvedAt, approvedBy, stats, ...fields } = ed; void status; void ownerEmail; void ownerCode; void createdAt; void updatedAt; void approvedAt; void approvedBy; void stats; if (isNew) placeAdminAction('create', { place: fields }); else placeAdminAction('update', { placeId: id, patch: fields }); }} style={smallBtn('#10b981')}>{t('儲存', 'Save')}</button>
+                                    <button type="button" onClick={() => setPlaceEdit(null)} style={smallBtn('transparent', '#64748b', '1px solid #cbd5e1')}>{t('取消', 'Cancel')}</button>
+                                  </div>
+                                </div>
+                              )}
+                              {placesAdmin === null ? <div style={{ color: '#94a3b8', fontSize: '0.85rem' }}>{t('載入中…', 'Loading…')}</div> : shown.length === 0 ? <div style={{ color: '#94a3b8', fontSize: '0.85rem' }}>{t('目前沒有項目', 'Nothing here yet')}</div> : (
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                                  {shown.map(pl => (
+                                    <div key={pl.id} style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 8, padding: '0.6rem 0.8rem', fontSize: '0.85rem', display: 'flex', justifyContent: 'space-between', gap: '0.6rem', flexWrap: 'wrap' }}>
+                                      <div style={{ minWidth: 0 }}>
+                                        <div><b style={{ color: '#1e293b' }}>{pl.name}</b> <span style={{ color: '#64748b' }}>· {kindLabel(pl.kind)}{pl.kind === 'merchant' ? ` · -${pl.discountPct}%` : ''}</span></div>
+                                        <div style={{ color: '#64748b' }}>📍 {pl.address} <span style={{ color: '#94a3b8' }}>({pl.lat}, {pl.lng})</span></div>
+                                        <div style={{ color: '#94a3b8', fontSize: '0.78rem' }}>{pl.ownerEmail} · {new Date(pl.createdAt).toLocaleDateString()}{pl.stats ? ` · ${t('已發 {a} 張／已用 {b} 張／NT${c}', '{a} issued / {b} used / NT${c}').replace('{a}', String(pl.stats.issued || 0)).replace('{b}', String(pl.stats.used || 0)).replace('{c}', String(pl.stats.usedNTD || 0))}` : ''}{pl.note ? ` · 🔒 ${pl.note}` : ''}</div>
+                                        {(pl.description || pl.message) && <div style={{ color: '#475569', fontSize: '0.8rem' }}>{pl.description || pl.message}</div>}
+                                      </div>
+                                      <div style={{ display: 'flex', gap: '0.35rem', flexWrap: 'wrap', alignItems: 'flex-start' }}>
+                                        {pl.status !== 'approved' && <button type="button" onClick={() => placeAdminAction('approve', { placeId: pl.id })} style={smallBtn('#10b981')}>✅ {t('核准', 'Approve')}</button>}
+                                        {pl.status === 'approved' && <button type="button" onClick={() => placeAdminAction('hide', { placeId: pl.id })} style={smallBtn('transparent', '#64748b', '1px solid #cbd5e1')}>{t('隱藏', 'Hide')}</button>}
+                                        {pl.status === 'hidden' && <button type="button" onClick={() => placeAdminAction('unhide', { placeId: pl.id })} style={smallBtn('transparent', '#64748b', '1px solid #cbd5e1')}>{t('恢復', 'Restore')}</button>}
+                                        {pl.status === 'pending' && <button type="button" onClick={() => placeAdminAction('reject', { placeId: pl.id })} style={smallBtn('transparent', '#991b1b', '1px solid #fecaca')}>{t('退回', 'Reject')}</button>}
+                                        <button type="button" onClick={() => setPlaceEdit({ ...pl })} style={smallBtn('transparent', '#334155', '1px solid #cbd5e1')}>{t('編輯', 'Edit')}</button>
+                                        {(pl.status === 'rejected' || pl.status === 'hidden') && <button type="button" onClick={() => { if (window.confirm(t('確定刪除？', 'Delete?'))) placeAdminAction('delete', { placeId: pl.id }); }} style={smallBtn('transparent', '#991b1b', '1px solid #fecaca')}>{t('刪除', 'Delete')}</button>}
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                              <div style={{ marginTop: '0.9rem', paddingTop: '0.7rem', borderTop: '1px dashed #ddd6fe' }}>
+                                <b style={{ color: '#5b21b6' }}>🎟️ {t('最近兌換券', 'Recent vouchers')}</b>
+                                {!vouchersAdmin ? <div style={{ color: '#94a3b8', fontSize: '0.85rem' }}>{t('載入中…', 'Loading…')}</div> : vouchersAdmin.length === 0 ? <div style={{ color: '#94a3b8', fontSize: '0.85rem' }}>{t('目前沒有項目', 'Nothing here yet')}</div> : (
+                                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem', marginTop: '0.4rem', maxHeight: 320, overflowY: 'auto' }}>
+                                    {vouchersAdmin.slice(0, 100).map(v => { const st = v.computedStatus || v.status; return (
+                                      <div key={v.code} style={{ display: 'flex', justifyContent: 'space-between', gap: '0.5rem', flexWrap: 'wrap', background: '#fff', border: '1px solid #e2e8f0', borderRadius: 6, padding: '0.35rem 0.6rem', fontSize: '0.8rem' }}>
+                                        <span><code>{v.code}</code> · {v.placeName} · NT${v.ntd} · {v.playerName} · <b>{st}</b> · {new Date(v.issuedAt).toLocaleString()}</span>
+                                        <span style={{ display: 'flex', gap: '0.3rem' }}>
+                                          {(st === 'issued' || st === 'used') && <button type="button" onClick={() => { if (window.confirm(t('作廢並退還點數？', 'Void and refund points?'))) voucherAdminAction(v.code, 'void'); }} style={smallBtn('transparent', '#991b1b', '1px solid #fecaca')}>{t('作廢', 'Void')}</button>}
+                                          {st === 'void' && <button type="button" onClick={() => voucherAdminAction(v.code, 'restore')} style={smallBtn('transparent', '#64748b', '1px solid #cbd5e1')}>{t('恢復', 'Restore')}</button>}
+                                        </span>
+                                      </div>
+                                    ); })}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })()}
 
                         <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem', flexWrap: 'wrap' }}>
                           {[['pending', t('待處理', 'Pending'), pendingCount], ['sent', t('已寄出', 'Sent'), all.filter(r => r.status === 'sent').length], ['rejected', t('無效', 'Invalid'), all.filter(r => r.status === 'rejected').length], ['all', t('全部', 'All'), all.length]].map(([id, label, n]) => (
@@ -28829,6 +29174,20 @@ const deDict = {
                     </div>
 
                     <div style={card}>
+                      <h3 style={h3}>🏪 {t('商家贊助：折扣換點數', 'Shop sponsorship: discounts for points')}</h3>
+                      <div style={{ color: '#475569', fontSize: '0.9rem', lineHeight: 1.7 }}>
+                        <div>1️⃣ {t('商家登記名稱、地址、5–20% 的折扣與照片，經審核後出現在「誰在玩」地圖上。', 'A shop registers its name, address, a 5–20% discount and a photo; after review it appears on the map.')}</div>
+                        <div>2️⃣ {t('玩家在地圖上點商家，用遊戲點數產生一次性兌換券（1,000 點 = NT$1）。', 'Players tap the shop on the map and turn game points into a one-time voucher (1,000 pts = NT$1).')}</div>
+                        <div>3️⃣ {t('結帳時出示兌換券，店家在核銷頁確認；折扣由商家吸收，這就是商家的贊助。', 'The customer shows the voucher at checkout and the shop confirms it on the verify page; the shop absorbs the discount — that is its sponsorship.')}</div>
+                        <div style={{ color: '#64748b', fontSize: '0.82rem', marginTop: 4 }}>{t('每張券上限 NT$200、每人每月 NT$500、同一商家每天一張、30 分鐘內有效；商家可設每日折抵上限。', 'Caps: NT$200 per voucher, NT$500 per person per month, one per shop per day, valid 30 minutes; shops can set a daily cap.')}</div>
+                      </div>
+                      <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginTop: '0.7rem' }}>
+                        <button type="button" onClick={() => setMainTab('merchant')} style={{ background: '#d97706', color: '#fff', border: 'none', borderRadius: 6, padding: '0.35rem 0.9rem', cursor: 'pointer', fontWeight: 700, fontSize: '0.85rem' }}>🏪 {t('登記商家／教會', 'Register a shop / church')}</button>
+                        <button type="button" onClick={() => setMainTab('verify')} style={{ background: 'transparent', color: '#0d9488', border: '1px solid #99f6e4', borderRadius: 6, padding: '0.35rem 0.9rem', cursor: 'pointer', fontWeight: 700, fontSize: '0.85rem' }}>🎟️ {t('店家核銷頁', 'Shop verify page')}</button>
+                      </div>
+                    </div>
+
+                    <div style={card}>
                       <h3 style={h3}>🔍 {t('透明與隱私', 'Transparency & privacy')}</h3>
                       <ul style={{ margin: 0, paddingLeft: '1.2rem', color: '#475569', fontSize: '0.9rem', lineHeight: 1.8 }}>
                         <li>{t('每個贊助池的累計、已發出與剩餘額度都在 App 內公開。', 'Each pool’s total, sent and remaining amounts are public inside the app.')}</li>
@@ -28849,6 +29208,229 @@ const deDict = {
                         <button type="button" onClick={() => setMainTab('donate')} style={{ background: 'transparent', border: 'none', color: '#3b82f6', cursor: 'pointer', fontWeight: 700, padding: 0, fontSize: '0.82rem' }}>{t('支持經文雨', 'Support VerseRain')} →</button>
                       </div>
                     </div>
+                  </div>
+                );
+              })()}
+
+              {/* ── 兌換視窗：用點數換商家折扣 ── */}
+              {redeemPlace && (() => {
+                const pb = pointsBalance;
+                const pv = redeemPreview;
+                const field = { width: '100%', boxSizing: 'border-box', padding: '0.6rem 0.8rem', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: '1.1rem', fontWeight: 700 };
+                const limitText = { voucher_cap: t('單張兌換券上限 NT${n}', 'Per-voucher cap NT${n}').replace('{n}', String(pb?.voucherCapNTD ?? 200)), monthly: t('本月剩餘額度 NT${n}', 'NT${n} left this month').replace('{n}', String(Math.max(0, (pb?.monthlyCapNTD ?? 500) - (pb?.monthlyUsedNTD || 0)))), balance: t('點數只夠折抵這麼多', 'Limited by your points') };
+                return (
+                  <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 3000, padding: '1rem' }} onClick={(e) => { if (e.target === e.currentTarget && !redeemBusy) setRedeemPlace(null); }}>
+                    <div style={{ background: '#fff', borderRadius: 14, padding: '1.3rem 1.4rem', width: '100%', maxWidth: 420, boxShadow: '0 20px 60px rgba(0,0,0,0.3)' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.6rem' }}>
+                        <div>
+                          <div style={{ color: '#64748b', fontSize: '0.8rem' }}>🏪 {t('點數折抵', 'Points discount')}</div>
+                          <div style={{ fontWeight: 800, fontSize: '1.15rem', color: '#1e293b' }}>{redeemPlace.name}</div>
+                          <div style={{ color: '#92400e', fontWeight: 700 }}>-{Number(redeemPlace.discountPct) || 0}%</div>
+                        </div>
+                        <button type="button" onClick={() => setRedeemPlace(null)} style={{ background: 'transparent', border: 'none', fontSize: '1.3rem', cursor: 'pointer', color: '#64748b' }}>✕</button>
+                      </div>
+                      {activeVoucher && activeVoucher.status === 'issued' && voucherSecondsLeft > 0 ? (
+                        <div style={{ marginTop: '0.9rem', background: '#fef3c7', border: '1px solid #fde68a', borderRadius: 10, padding: '0.7rem 0.9rem', color: '#78350f', fontSize: '0.9rem' }}>
+                          {t('你已有一張未使用的兌換券（{place}），請先使用或等它過期。', 'You already have an unused voucher ({place}); use it or let it expire first.').replace('{place}', String(activeVoucher.placeName || ''))}
+                          <div><button type="button" onClick={() => setRedeemPlace(null)} style={{ marginTop: 6, background: '#f59e0b', color: '#fff', border: 'none', borderRadius: 6, padding: '0.35rem 0.9rem', cursor: 'pointer', fontWeight: 700 }}>{t('查看兌換券', 'Show voucher')}</button></div>
+                        </div>
+                      ) : pointsBalanceBusy || !pb ? (
+                        <div style={{ marginTop: '1rem', color: '#94a3b8' }}>{t('核算中…', 'Checking…')}</div>
+                      ) : pb.error ? (
+                        <div style={{ marginTop: '1rem', color: '#b45309', fontSize: '0.9rem' }}>
+                          {redeemErrorText(pb.error)}
+                          {pb.error === 'session_invalid' && <div><button type="button" onClick={() => { setRedeemPlace(null); setShowLoginModal('login'); }} style={{ marginTop: 6, background: '#3b82f6', color: '#fff', border: 'none', borderRadius: 6, padding: '0.35rem 0.9rem', cursor: 'pointer', fontWeight: 700 }}>{t('重新登入', 'Sign in again')}</button></div>}
+                        </div>
+                      ) : !pb.eligible ? (
+                        <div style={{ marginTop: '1rem', color: '#b45309', fontSize: '0.9rem', lineHeight: 1.6 }}>
+                          {redeemErrorText((pb.reasons || [])[0] === 'session_invalid' ? 'session_invalid' : 'not_eligible')}
+                          <div style={{ color: '#64748b', fontSize: '0.82rem', marginTop: 4 }}>{t('目前通過 {n} 節', '{n} verses passed so far').replace('{n}', String(pb.passedVerses ?? 0))}</div>
+                        </div>
+                      ) : (
+                        <div style={{ marginTop: '0.9rem' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem', color: '#334155', marginBottom: 6 }}>
+                            <span>{t('可用點數', 'Available points')}</span>
+                            <b>{(pb.balancePoints || 0).toLocaleString()} {t('點', 'pts')} ≈ NT${pb.balanceNTD || 0}</b>
+                          </div>
+                          <label style={{ color: '#64748b', fontSize: '0.82rem' }}>{t('消費金額（NT$）', 'Bill amount (NT$)')}</label>
+                          <input type="number" inputMode="numeric" min={1} value={redeemBill} onChange={e => setRedeemBill(e.target.value)} placeholder="500" style={field} autoFocus />
+                          {pv && pv.bill > 0 && (
+                            <div style={{ marginTop: '0.7rem', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 10, padding: '0.7rem 0.9rem' }}>
+                              <div style={{ fontSize: '1.05rem', color: '#166534' }}>{t('折抵 NT${n}（扣 {p} 點）', 'NT${n} off (spend {p} points)').replace('{n}', String(pv.ntd)).replace('{p}', pv.points.toLocaleString())}</div>
+                              {pv.limitedBy && <div style={{ color: '#64748b', fontSize: '0.8rem', marginTop: 2 }}>{limitText[pv.limitedBy]}</div>}
+                              <div style={{ color: '#64748b', fontSize: '0.8rem', marginTop: 2 }}>{t('實付約 NT${n}', 'You pay about NT${n}').replace('{n}', String(Math.max(0, pv.bill - pv.ntd)))}</div>
+                            </div>
+                          )}
+                          <div style={{ color: '#94a3b8', fontSize: '0.75rem', marginTop: '0.6rem', lineHeight: 1.5 }}>{t('1,000 點 = NT$1；以目前名字的累計分數計算。兌換券 30 分鐘內有效、只能用一次，請在結帳時出示。', '1,000 pts = NT$1, based on the score under your current name. The voucher is valid 30 minutes and single-use; show it at checkout.')}</div>
+                          <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.9rem', justifyContent: 'flex-end' }}>
+                            <button type="button" onClick={() => setRedeemPlace(null)} style={{ background: 'transparent', border: '1px solid #cbd5e1', color: '#64748b', borderRadius: 8, padding: '0.5rem 1rem', cursor: 'pointer' }}>{t('取消', 'Cancel')}</button>
+                            <button type="button" disabled={redeemBusy || !pv || pv.ntd < 1} onClick={confirmRedeem} style={{ background: (!pv || pv.ntd < 1) ? '#e2e8f0' : '#f59e0b', color: (!pv || pv.ntd < 1) ? '#94a3b8' : '#fff', border: 'none', borderRadius: 8, padding: '0.5rem 1.1rem', cursor: redeemBusy ? 'wait' : 'pointer', fontWeight: 800 }}>{redeemBusy ? '…' : `🎟️ ${t('產生兌換券', 'Get a voucher')}`}</button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {/* ── 兌換券卡（可跨頁存在，重新整理後仍在） ── */}
+              {activeVoucher && !redeemPlace && (() => {
+                const v = activeVoucher;
+                const live = v.status === 'issued' && voucherSecondsLeft > 0;
+                const mm = String(Math.floor(voucherSecondsLeft / 60)).padStart(2, '0'), ss = String(voucherSecondsLeft % 60).padStart(2, '0');
+                const statusText = v.status === 'used' ? t('已使用 ✓', 'Used ✓') : (v.status === 'expired' || !live) ? t('已過期', 'Expired') : v.status === 'void' ? t('已作廢', 'Voided') : null;
+                return (
+                  <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 3000, padding: '1rem' }} onClick={(e) => { if (e.target === e.currentTarget && !live) saveActiveVoucher(null); }}>
+                    <div style={{ background: '#fffbeb', border: '2px dashed #f59e0b', borderRadius: 16, padding: '1.3rem 1.4rem', width: '100%', maxWidth: 380, textAlign: 'center', boxShadow: '0 20px 60px rgba(0,0,0,0.35)' }}>
+                      <div style={{ color: '#92400e', fontWeight: 700, fontSize: '0.85rem' }}>🎟️ {t('經文雨兌換券', 'VerseRain voucher')}</div>
+                      <div style={{ fontWeight: 800, fontSize: '1.15rem', color: '#1e293b', marginTop: 4 }}>{v.placeName}</div>
+                      <div style={{ fontSize: '2rem', fontWeight: 900, color: '#166534', margin: '0.3rem 0' }}>NT${v.ntd} {t('折抵', 'off')}</div>
+                      <div style={{ color: '#64748b', fontSize: '0.8rem' }}>{t('消費 NT${b} · 折扣 {p}% · 扣 {pts} 點', 'Bill NT${b} · {p}% · {pts} pts').replace('{b}', String(v.billNTD)).replace('{p}', String(v.discountPct)).replace('{pts}', Number(v.points || 0).toLocaleString())}</div>
+                      <div style={{ fontFamily: 'monospace', fontSize: '1.9rem', fontWeight: 800, letterSpacing: 3, color: '#1e293b', margin: '0.8rem 0 0.4rem' }}>{formatVoucherCode(v.code)}</div>
+                      <div style={{ display: 'flex', justifyContent: 'center', margin: '0.4rem 0' }}><QRCodeSVG value={`${window.location.origin}/#verify/${v.code}`} size={120} /></div>
+                      {statusText ? (
+                        <div style={{ fontSize: '1.2rem', fontWeight: 800, color: v.status === 'used' ? '#166534' : '#991b1b', margin: '0.5rem 0' }}>{statusText}</div>
+                      ) : (
+                        <div style={{ color: '#b45309', fontWeight: 700, margin: '0.4rem 0' }}>⏳ {t('剩餘 {t}', '{t} left').replace('{t}', `${mm}:${ss}`)}</div>
+                      )}
+                      <div style={{ color: '#64748b', fontSize: '0.8rem', lineHeight: 1.5 }}>{t('請店員掃描 QR，或到 verserain.com/#verify 輸入代碼核銷。', 'Ask staff to scan the QR, or enter the code at verserain.com/#verify.')}</div>
+                      <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center', marginTop: '0.8rem', flexWrap: 'wrap' }}>
+                        <button type="button" onClick={() => { try { navigator.clipboard.writeText(v.code); setToast(t('已複製代碼', 'Code copied')); setTimeout(() => setToast(null), 2000); } catch { /* ignore */ } }} style={{ background: '#fff', border: '1px solid #cbd5e1', borderRadius: 8, padding: '0.4rem 0.9rem', cursor: 'pointer', color: '#334155' }}>{t('複製代碼', 'Copy code')}</button>
+                        <button type="button" onClick={() => saveActiveVoucher(null)} style={{ background: live ? '#e2e8f0' : '#f59e0b', color: live ? '#334155' : '#fff', border: 'none', borderRadius: 8, padding: '0.4rem 0.9rem', cursor: 'pointer', fontWeight: 700 }}>{live ? t('先關閉（稍後可從商家標記再打開）', 'Close for now') : t('關閉', 'Close')}</button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {mainTab === 'verify' && (() => {
+                const r = verifyResult;
+                const badge = (st) => st === 'issued' ? { text: t('有效', 'Valid'), bg: '#dcfce7', fg: '#166534' } : st === 'used' ? { text: t('已使用', 'Used'), bg: '#e2e8f0', fg: '#334155' } : st === 'expired' ? { text: t('已過期', 'Expired'), bg: '#fee2e2', fg: '#991b1b' } : st === 'void' ? { text: t('已作廢', 'Voided'), bg: '#fee2e2', fg: '#991b1b' } : { text: t('找不到這張券', 'Not found'), bg: '#fee2e2', fg: '#991b1b' };
+                return (
+                  <div style={{ backgroundColor: '#ffffff', borderRadius: '8px', border: '1px solid #cbd5e1', padding: '1.5rem', boxShadow: '0 1px 3px rgba(0,0,0,0.05)', maxWidth: 560, margin: '0 auto' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.6rem', marginBottom: '0.8rem' }}>
+                      <h2 style={{ color: '#1e293b', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Ticket size={26} /> {t('兌換券核銷', 'Verify a voucher')}</h2>
+                      <button type="button" onClick={() => setMainTab('advanced')} style={{ background: 'transparent', border: '1px solid #cbd5e1', color: '#64748b', borderRadius: '6px', padding: '0.35rem 0.8rem', cursor: 'pointer', fontSize: '0.85rem' }}>← {t('返回', 'Back')}</button>
+                    </div>
+                    <p style={{ color: '#475569', lineHeight: 1.6, marginTop: 0, fontSize: '0.9rem' }}>{t('店家專用：輸入顧客兌換券上的 8 碼代碼（或掃描 QR 自動帶入），確認金額後於結帳時按「確認已使用」。', 'For shops: enter the 8-character code from the customer’s voucher (or scan the QR), check the amount, and press “Confirm used” at checkout.')}</p>
+                    <div style={{ display: 'flex', gap: '0.5rem' }}>
+                      <input type="text" value={verifyCodeInput} onChange={e => { setVerifyCodeInput(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 8)); setVerifyResult(null); }} onKeyDown={e => { if (e.key === 'Enter') lookupVoucher(); }} placeholder="ABCDEFGH" maxLength={9} style={{ flex: 1, padding: '0.6rem 0.8rem', borderRadius: 8, border: '1px solid #cbd5e1', fontFamily: 'monospace', fontSize: '1.3rem', letterSpacing: 3, textTransform: 'uppercase' }} />
+                      <button type="button" disabled={verifyBusy || verifyCodeInput.length !== 8} onClick={() => lookupVoucher()} style={{ background: verifyCodeInput.length === 8 ? '#0d9488' : '#e2e8f0', color: verifyCodeInput.length === 8 ? '#fff' : '#94a3b8', border: 'none', borderRadius: 8, padding: '0.6rem 1rem', cursor: 'pointer', fontWeight: 800 }}>{verifyBusy ? '…' : t('查詢', 'Look up')}</button>
+                    </div>
+                    {r && (() => { const b = badge(r.status); return (
+                      <div style={{ marginTop: '1rem', border: `1px solid ${r.status === 'issued' ? '#86efac' : '#e2e8f0'}`, borderRadius: 12, padding: '1rem', background: r.status === 'issued' ? '#f0fdf4' : '#f8fafc' }}>
+                        <span style={{ background: b.bg, color: b.fg, borderRadius: 999, padding: '0.2rem 0.8rem', fontWeight: 800 }}>{b.text}</span>
+                        {r.placeName && (
+                          <div style={{ marginTop: '0.6rem', color: '#1e293b' }}>
+                            <div style={{ fontWeight: 800, fontSize: '1.05rem' }}>{r.placeName}</div>
+                            <div style={{ fontSize: '2rem', fontWeight: 900, color: r.status === 'issued' ? '#166534' : '#64748b' }}>NT${r.ntd} {t('折抵', 'off')}</div>
+                            <div style={{ color: '#64748b', fontSize: '0.85rem' }}>{t('消費 NT${b} · 折扣 {p}%', 'Bill NT${b} · {p}%').replace('{b}', String(r.billNTD)).replace('{p}', String(r.discountPct))} · {t('持有人', 'Holder')} {r.holder || ''}</div>
+                            {r.status === 'issued' && typeof r.secondsLeft === 'number' && <div style={{ color: '#b45309', fontSize: '0.85rem', marginTop: 2 }}>⏳ {t('剩餘 {t}', '{t} left').replace('{t}', `${Math.floor(r.secondsLeft / 60)}:${String(r.secondsLeft % 60).padStart(2, '0')}`)}</div>}
+                            {r.usedAt && <div style={{ color: '#64748b', fontSize: '0.8rem', marginTop: 2 }}>{t('使用時間', 'Used at')} {new Date(r.usedAt).toLocaleString()}</div>}
+                          </div>
+                        )}
+                        {r.status === 'issued' && (
+                          <button type="button" disabled={verifyBusy} onClick={useVoucher} style={{ marginTop: '0.9rem', width: '100%', background: '#166534', color: '#fff', border: 'none', borderRadius: 10, padding: '0.7rem 1rem', cursor: 'pointer', fontWeight: 800, fontSize: '1rem' }}>✅ {t('確認已使用（結帳時按）', 'Confirm used (press at checkout)')}</button>
+                        )}
+                      </div>
+                    ); })()}
+                    <div style={{ color: '#94a3b8', fontSize: '0.8rem', marginTop: '1rem', lineHeight: 1.6 }}>{t('店家請把這一頁加入書籤：verserain.com/#verify。核銷後顧客的 App 會自動顯示「已使用」。', 'Shops: bookmark verserain.com/#verify. After confirming, the customer’s app shows the voucher as used.')}</div>
+                  </div>
+                );
+              })()}
+
+              {mainTab === 'merchant' && (() => {
+                const m = merchantDraft;
+                const field = { width: '100%', boxSizing: 'border-box', padding: '0.5rem 0.7rem', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: '0.95rem', background: '#fff' };
+                const label = { display: 'block', color: '#475569', fontSize: '0.82rem', fontWeight: 700, margin: '0.8rem 0 0.25rem' };
+                const card = { background: '#fff', border: '1px solid #e2e8f0', borderRadius: 12, padding: '1rem 1.2rem', marginBottom: '1rem' };
+                const statusBadge = (st) => st === 'approved' ? { text: t('已上地圖', 'On the map'), bg: '#dcfce7', fg: '#166534' } : st === 'rejected' ? { text: t('已退回', 'Rejected'), bg: '#fee2e2', fg: '#991b1b' } : st === 'hidden' ? { text: t('已隱藏', 'Hidden'), bg: '#e2e8f0', fg: '#334155' } : { text: t('審核中', 'Pending review'), bg: '#fef3c7', fg: '#92400e' };
+                return (
+                  <div style={{ backgroundColor: '#fffdf7', borderRadius: '8px', border: '1px solid #fde68a', padding: '1.5rem', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.6rem', marginBottom: '0.8rem' }}>
+                      <h2 style={{ color: '#1e293b', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Store size={26} /> {t('登記商家／教會', 'Register a shop / church')}</h2>
+                      <button type="button" onClick={() => setMainTab('advanced')} style={{ background: 'transparent', border: '1px solid #cbd5e1', color: '#64748b', borderRadius: '6px', padding: '0.35rem 0.8rem', cursor: 'pointer', fontSize: '0.85rem' }}>← {t('返回', 'Back')}</button>
+                    </div>
+                    <p style={{ color: '#475569', lineHeight: 1.7, marginTop: 0 }}>
+                      {t('商家提供 5–20% 折扣，玩家用遊戲點數折抵（1,000 點 = NT$1），折扣由商家自行吸收，經文雨不經手款項。教會與機構可登記為贊助者標記。經管理員審核後就會出現在「誰在玩」地圖上。', 'Shops offer a 5–20% discount that players pay with game points (1,000 pts = NT$1); the shop absorbs the discount and VerseRain never handles money. Churches and organisations can register as sponsor markers. Markers appear on the map after admin review.')}
+                    </p>
+                    {!userEmail ? (
+                      <div style={{ textAlign: 'center', padding: '2rem 1rem', background: '#f8fafc', borderRadius: 8, border: '1px solid #e2e8f0' }}>
+                        <div style={{ marginBottom: '0.8rem', color: '#64748b' }}><Lock size={48} /></div>
+                        <div style={{ color: '#334155', marginBottom: '1rem' }}>{t('登入後即可登記', 'Sign in to register')}</div>
+                        <button type="button" onClick={() => setShowLoginModal('login')} style={{ background: '#3b82f6', color: '#fff', border: 'none', padding: '0.6rem 1.6rem', borderRadius: 8, fontWeight: 700, cursor: 'pointer' }}>{t('登入', 'Sign in')}</button>
+                      </div>
+                    ) : (
+                      <>
+                        <div style={card}>
+                          <label style={label}>{t('類型', 'Type')}</label>
+                          <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                            {[['merchant', `🏪 ${t('商家', 'Shop')}`], ['church', `⛪ ${t('教會', 'Church')}`], ['org', `🏢 ${t('機構', 'Organisation')}`]].map(([k, lbl]) => (
+                              <button key={k} type="button" onClick={() => setMerchantDraft(d => ({ ...d, kind: k }))} style={{ padding: '0.4rem 0.9rem', borderRadius: 999, border: `2px solid ${m.kind === k ? '#d97706' : '#cbd5e1'}`, background: m.kind === k ? '#fef3c7' : '#fff', color: '#334155', cursor: 'pointer', fontWeight: 700 }}>{lbl}</button>
+                            ))}
+                          </div>
+                          <label style={label}>{t('名稱', 'Name')}</label>
+                          <input type="text" value={m.name} onChange={e => setMerchantDraft(d => ({ ...d, name: e.target.value }))} maxLength={60} style={field} />
+                          <label style={label}>{t('地址', 'Address')}</label>
+                          <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                            <input type="text" value={m.address} onChange={e => setMerchantDraft(d => ({ ...d, address: e.target.value }))} maxLength={160} style={{ ...field, flex: '1 1 240px' }} />
+                            <button type="button" disabled={merchantGeoBusy || !m.address.trim()} onClick={geocodeMerchant} style={{ background: '#0d9488', color: '#fff', border: 'none', borderRadius: 8, padding: '0.5rem 0.9rem', cursor: 'pointer', fontWeight: 700 }}>{merchantGeoBusy ? '…' : `📍 ${t('定位', 'Locate')}`}</button>
+                            <button type="button" onClick={useMyLocationForMerchant} style={{ background: '#fff', color: '#334155', border: '1px solid #cbd5e1', borderRadius: 8, padding: '0.5rem 0.9rem', cursor: 'pointer' }}>{t('使用目前位置', 'Use my location')}</button>
+                          </div>
+                          {Number.isFinite(m.lat) && Number.isFinite(m.lng) && (
+                            <div style={{ marginTop: '0.6rem' }}>
+                              <div style={{ color: '#64748b', fontSize: '0.8rem', marginBottom: 4 }}>{t('拖曳大頭針或點地圖微調位置', 'Drag the pin or click the map to fine-tune')} · {m.lat}, {m.lng}</div>
+                              <React.Suspense fallback={<div style={{ height: 260, background: '#e2e8f0', borderRadius: 10 }} />}>
+                                <PlacePinMap lat={m.lat} lng={m.lng} onChange={({ lat, lng }) => setMerchantDraft(d => ({ ...d, lat, lng }))} />
+                              </React.Suspense>
+                            </div>
+                          )}
+                          {m.kind === 'merchant' && (
+                            <>
+                              <label style={label}>{t('折扣（商家自行吸收）', 'Discount (absorbed by the shop)')}: <b style={{ color: '#92400e' }}>{m.discountPct}%</b></label>
+                              <input type="range" min={5} max={20} step={1} value={m.discountPct} onChange={e => setMerchantDraft(d => ({ ...d, discountPct: Number(e.target.value) }))} style={{ width: '100%' }} />
+                              <label style={label}>{t('介紹（≤300 字）', 'Description (≤300 chars)')}</label>
+                              <textarea value={m.description} onChange={e => setMerchantDraft(d => ({ ...d, description: e.target.value }))} maxLength={300} rows={3} style={field} />
+                            </>
+                          )}
+                          {m.kind !== 'merchant' && (
+                            <>
+                              <label style={label}>{t('祝福語或簡介（公開顯示，≤200 字）', 'Blessing or short intro (public, ≤200 chars)')}</label>
+                              <textarea value={m.message} onChange={e => setMerchantDraft(d => ({ ...d, message: e.target.value }))} maxLength={200} rows={3} style={field} />
+                            </>
+                          )}
+                          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '0.5rem' }}>
+                            <div><label style={label}>{t('營業時間', 'Hours')}</label><input type="text" value={m.hours} onChange={e => setMerchantDraft(d => ({ ...d, hours: e.target.value }))} maxLength={80} style={field} /></div>
+                            <div><label style={label}>{t('電話', 'Phone')}</label><input type="text" value={m.phone} onChange={e => setMerchantDraft(d => ({ ...d, phone: e.target.value }))} maxLength={30} style={field} /></div>
+                            <div><label style={label}>{t('網站（含 https://）', 'Website (with https://)')}</label><input type="url" value={m.website} onChange={e => setMerchantDraft(d => ({ ...d, website: e.target.value }))} maxLength={120} style={field} /></div>
+                          </div>
+                          <label style={label}>{t('照片（選填，≤300KB，會自動壓縮）', 'Photo (optional, ≤300KB, auto-compressed)')}</label>
+                          <div style={{ display: 'flex', gap: '0.6rem', alignItems: 'center', flexWrap: 'wrap' }}>
+                            <button type="button" disabled={merchantPhotoBusy} onClick={() => merchantPhotoInputRef.current?.click()} style={{ background: '#fff', border: '1px solid #cbd5e1', borderRadius: 8, padding: '0.45rem 0.9rem', cursor: 'pointer', color: '#334155' }}>{merchantPhotoBusy ? t('上傳中…', 'Uploading…') : (m.photoAssetId ? t('更換照片', 'Replace photo') : t('選擇照片', 'Choose photo'))}</button>
+                            <input ref={merchantPhotoInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={e => { handleMerchantPhoto(e.target.files?.[0]); e.target.value = ''; }} />
+                            {merchantPhotoPreview && <img src={merchantPhotoPreview} alt="" style={{ height: 70, borderRadius: 8, objectFit: 'cover' }} />}
+                          </div>
+                          <label style={{ display: 'flex', gap: 8, alignItems: 'flex-start', marginTop: '1rem', color: '#334155', fontSize: '0.88rem', lineHeight: 1.5 }}>
+                            <input type="checkbox" checked={!!m.agree} onChange={e => setMerchantDraft(d => ({ ...d, agree: e.target.checked }))} style={{ marginTop: 3 }} />
+                            <span>{t('我確認以上資料屬實並同意公開顯示；商家折扣由商家自行吸收，經文雨不經手款項，並保留審核與下架的權利。', 'I confirm the details are accurate and may be shown publicly; the shop absorbs its own discount, VerseRain never handles money and may review or remove listings.')}</span>
+                          </label>
+                          <button type="button" disabled={merchantBusy} onClick={submitMerchant} style={{ marginTop: '0.9rem', background: '#d97706', color: '#fff', border: 'none', borderRadius: 10, padding: '0.65rem 1.4rem', cursor: 'pointer', fontWeight: 800, fontSize: '1rem' }}>{merchantBusy ? '…' : t('送出審核', 'Submit for review')}</button>
+                        </div>
+                        <div style={card}>
+                          <h3 style={{ margin: '0 0 0.6rem', color: '#1e293b', fontSize: '1.05rem' }}>📋 {t('我的登記', 'My submissions')}</h3>
+                          {!myPlaces ? <div style={{ color: '#94a3b8' }}>{t('載入中…', 'Loading…')}</div> : myPlaces.length === 0 ? <div style={{ color: '#94a3b8', fontSize: '0.9rem' }}>{t('尚未登記', 'Nothing submitted yet')}</div> : (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                              {myPlaces.map(pl => { const b = statusBadge(pl.status); return (
+                                <div key={pl.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.6rem', border: '1px solid #e2e8f0', borderRadius: 8, padding: '0.5rem 0.8rem', fontSize: '0.9rem' }}>
+                                  <div><b>{pl.name}</b> <span style={{ color: '#64748b' }}>· {pl.kind === 'merchant' ? `-${pl.discountPct}%` : (pl.kind === 'church' ? t('教會', 'Church') : t('機構', 'Organisation'))} · {pl.address}</span></div>
+                                  <span style={{ background: b.bg, color: b.fg, borderRadius: 999, padding: '0.15rem 0.6rem', fontSize: '0.78rem', fontWeight: 700, whiteSpace: 'nowrap' }}>{b.text}</span>
+                                </div>
+                              ); })}
+                            </div>
+                          )}
+                        </div>
+                      </>
+                    )}
                   </div>
                 );
               })()}
@@ -29380,7 +29962,7 @@ const deDict = {
                     <div style={{ padding: '1.5rem 2rem 1rem', borderBottom: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', gap: '10px' }}>
                       <Map size={24} />
                       <div>
-                        <h2 style={{ margin: 0, color: '#1e293b', fontSize: '1.2rem' }}>{t('誰在玩：全球玩家地圖', "Who's Playing: Global Player Map")}</h2>
+                        <h2 style={{ margin: 0, color: '#1e293b', fontSize: '1.2rem' }}>{t('誰在玩：全球玩家地圖', "Who's Playing: Global Player Map")} <button type="button" onClick={() => setMainTab('merchant')} style={{ marginLeft: 8, background: '#fef3c7', color: '#92400e', border: '1px solid #fde68a', borderRadius: 999, padding: '0.15rem 0.7rem', cursor: 'pointer', fontSize: '0.75rem', fontWeight: 700, verticalAlign: 'middle' }}>🏪 {t('登記商家／教會', 'Register a shop / church')}</button></h2>
                         <p style={{ margin: '2px 0 0', color: '#64748b', fontSize: '0.85rem' }}>{t('點擊標記查看玩家成績，雙擊遊戲房間加入戰局！', 'Click a marker to see scores, double click a room to join!')}</p>
                       </div>
                     </div>
@@ -29396,6 +29978,7 @@ const deDict = {
                       playTone={playPulseTone}
                       playWelcome={playWelcomeFanfare}
                       onEnableAudio={initAudio}
+                      onRedeem={openRedeem}
                       onViewGarden={(name) => {
                       handleViewPlayerGarden(name);
                     }} onJoinRoom={(roomId) => {
@@ -30771,6 +31354,7 @@ const deDict = {
                         // Email/password account → clear any stale OAuth marker so
                         // the profile editor shows the password fields for them.
                         localStorage.removeItem('verserain_auth_provider');
+                        if (data.sessionKey) { try { localStorage.setItem('verserain_session_key', data.sessionKey); } catch { /* ignore */ } setSessionKey(data.sessionKey); }
                         if (data.user.personalCode) adoptAccountPersonalCode(data.user.personalCode, !data.deviceCodeTaken);
 
                         if (data.user.city) localStorage.setItem('verserain_custom_city', data.user.city);
@@ -31704,6 +32288,21 @@ const deDict = {
                               </button>
                             </div>
                           )}
+                          <div style={{ color: '#cbd5e1', fontSize: '0.72rem', marginTop: 2 }}>{new Date(it.at).toLocaleString()}</div>
+                        </div>
+                      </div>
+                    );
+                  }
+                  if (it.kind === 'voucher_used' || it.kind === 'place_approved') {
+                    return (
+                      <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '0.6rem 1.3rem' }}>
+                        <span style={{ fontSize: '1.2rem', flexShrink: 0 }}>{it.kind === 'voucher_used' ? '🎟️' : '🏪'}</span>
+                        <div style={{ minWidth: 0 }}>
+                          <div style={{ color: '#334155', fontSize: '0.9rem', lineHeight: 1.45 }}>
+                            {it.kind === 'voucher_used'
+                              ? t('你在 {place} 的兌換券已核銷，折抵 NT${n} 🎉', 'Your voucher at {place} was used — NT${n} off 🎉').replace('{place}', String(it.placeName || '')).replace('{n}', String(it.ntd ?? ''))
+                              : t('你的地圖標記「{name}」已通過審核，現在出現在「誰在玩」地圖上了 🗺️', 'Your map marker “{name}” was approved and is now on the map 🗺️').replace('{name}', String(it.name || ''))}
+                          </div>
                           <div style={{ color: '#cbd5e1', fontSize: '0.72rem', marginTop: 2 }}>{new Date(it.at).toLocaleString()}</div>
                         </div>
                       </div>

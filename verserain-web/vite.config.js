@@ -14,6 +14,11 @@ import getRefereesHandler from './api/get-referees.js'
 import linkIdentityHandler from './api/link-identity.js'
 import sponsorsHandler from './api/sponsors.js'
 import rewardCheckHandler from './api/reward-check.js'
+import placesHandler from './api/places.js'
+import geocodeHandler from './api/geocode.js'
+import pointsBalanceHandler from './api/points-balance.js'
+import redeemHandler from './api/redeem.js'
+import redeemVerifyHandler from './api/redeem-verify.js'
 
 // Load .env.local so process.env is available for API handlers in dev
 try {
@@ -100,6 +105,11 @@ export default defineConfig({
         jsonRoute('/api/link-identity', linkIdentityHandler);
         jsonRoute('/api/sponsors', sponsorsHandler);
         jsonRoute('/api/reward-check', rewardCheckHandler);
+        jsonRoute('/api/places', placesHandler);
+        jsonRoute('/api/geocode', geocodeHandler);
+        jsonRoute('/api/points-balance', pointsBalanceHandler);
+        jsonRoute('/api/redeem', redeemHandler);
+        jsonRoute('/api/redeem-verify', redeemVerifyHandler);
       }
     }
   ],

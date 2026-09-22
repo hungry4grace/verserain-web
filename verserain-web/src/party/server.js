@@ -295,6 +295,27 @@ export async function deviceCodeTaken(srv, email, deviceCode, accountCode) {
   return !!(await personalCodeOwner(srv, d, email));
 }
 
+// ─── Session keys ─────────────────────────────────────────────────────
+// Every login used to return the bare user object; the client then sent its
+// email, self-asserted, on every request. That is fine for reading, but a
+// route that spends a player's points must know the caller really signed in
+// as that account. So a login now also mints a random session key, kept on
+// the user record (last 5, one per device), and money routes pass it to
+// /reward-eligibility which answers identity.sessionValid.
+export const MAX_SESSION_KEYS = 5;
+export function issueSessionKey(user, now = new Date()) {
+  const key = (typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2)) + Math.random().toString(36).slice(2, 10);
+  const list = Array.isArray(user.sessionKeys) ? user.sessionKeys.filter(k => k && k.key) : [];
+  list.push({ key, createdAt: now.toISOString() });
+  user.sessionKeys = list.slice(-MAX_SESSION_KEYS);
+  return key;
+}
+export function sessionValidFor(user, key) {
+  const k = String(key || '').trim();
+  if (!user || !k || !Array.isArray(user.sessionKeys)) return false;
+  return user.sessionKeys.some(s => s && s.key === k);
+}
+
 export default class Server {
   constructor(room) {
     this.room = room;
@@ -942,9 +963,10 @@ export default class Server {
                  user.personalCode = await claimPersonalCode(this, email, cleanVerifyCode);
               }
               await this.attributeDeferredInviter(user, cleanVerifyCode, request);
+              const sessionKey = issueSessionKey(user);
               await this.room.storage.put(`user:${email.toLowerCase()}`, user);
 
-              return new Response(JSON.stringify({ success: true, user: { email: user.email, name: user.name, isPremium: user.isPremium, personalCode: user.personalCode || null } }), { status: 200, headers: corsHeaders });
+              return new Response(JSON.stringify({ success: true, sessionKey, user: { email: user.email, name: user.name, isPremium: user.isPremium, personalCode: user.personalCode || null } }), { status: 200, headers: corsHeaders });
            } catch(e) {
               return new Response(JSON.stringify({ error: 'Verification failed' }), { status: 500, headers: corsHeaders });
            }
@@ -1007,11 +1029,13 @@ export default class Server {
               }
               if (await this.attributeDeferredInviter(user, cleanPersonalCode, request)) dirty = true;
 
+              const sessionKey = issueSessionKey(user);
+              dirty = true;
               if (dirty) {
                  await this.room.storage.put(`user:${email.toLowerCase()}`, user);
               }
 
-              return new Response(JSON.stringify({ success: true, deviceCodeTaken: await deviceCodeTaken(this, email, cleanPersonalCode, user.personalCode), user: { email: user.email, name: user.name, isPremium: user.isPremium, invitedBy: user.invitedBy || null, personalCode: user.personalCode || null } }), { status: 200, headers: corsHeaders });
+              return new Response(JSON.stringify({ success: true, sessionKey, deviceCodeTaken: await deviceCodeTaken(this, email, cleanPersonalCode, user.personalCode), user: { email: user.email, name: user.name, isPremium: user.isPremium, invitedBy: user.invitedBy || null, personalCode: user.personalCode || null } }), { status: 200, headers: corsHeaders });
            } catch(e) {
               return new Response(JSON.stringify({ error: 'Login failed' }), { status: 500, headers: corsHeaders });
            }
@@ -1129,8 +1153,12 @@ export default class Server {
                  if (dirty) await this.room.storage.put(`user:${email}`, user);
               }
 
+              const sessionKey = issueSessionKey(user);
+              await this.room.storage.put(`user:${email}`, user);
+
               return new Response(JSON.stringify({
                  success: true,
+                 sessionKey,
                  deviceCodeTaken: await deviceCodeTaken(this, email, cleanPersonalCode, user.personalCode),
                  user: {
                     email: user.email,
@@ -2366,8 +2394,14 @@ export default class Server {
       // POST /sets/asset/chunk — { email, setId, assetId, kind, index, total, data }
       if (url.pathname.endsWith('/sets/asset/chunk') && request.method === 'POST') {
          try {
-            const { email, setId, assetId, kind, index, total, data } = await request.json();
+            const { email, setId, assetId, kind, index, total, data, sessionKey } = await request.json();
             if (!email || !setId || !assetId) return new Response(JSON.stringify({ error: 'email, setId, assetId required' }), { status: 400, headers: corsHeaders });
+            // Map-place photos (setId 'place:<id>') are public-facing, so the
+            // uploader must prove the sign-in (session key) or be an admin.
+            if (String(setId).startsWith('place:') && !isCustomSetWriteAuthorized()) {
+               const { user: uploader } = await findUserRecord(this.room.storage, email);
+               if (!sessionValidFor(uploader, sessionKey)) return new Response(JSON.stringify({ error: 'session_invalid' }), { status: 401, headers: corsHeaders });
+            }
             if (!/^a_[A-Za-z0-9]{6,20}$/.test(assetId)) return new Response(JSON.stringify({ error: 'bad assetId' }), { status: 400, headers: corsHeaders });
             const maxChunks = kind === 'music' ? 72 : 6;
             const idx = Number(index), tot = Number(total);
@@ -2913,6 +2947,7 @@ export default class Server {
                emailKind: emailKindOf(email),
                verified: user ? user.verified !== false : false,
                oauthProvider: (user && user.oauthProvider) || null,
+               sessionValid: sessionValidFor(user, body.sessionKey),
             };
             const gardenStats = summarizeGardenForRewards(garden, now);
             let referrals;

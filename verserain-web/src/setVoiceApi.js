@@ -65,7 +65,7 @@ export async function getSetAssetDataUrl(setId, assetId, mime) {
   return dataUrl;
 }
 
-export async function uploadSetAsset({ email, setId, blob, kind }) {
+export async function uploadSetAsset({ email, setId, blob, kind, sessionKey }) {
   const base64 = await new Promise((resolve, reject) => {
     const fr = new FileReader();
     fr.onload = () => resolve(String(fr.result).split(',')[1] || '');
@@ -84,6 +84,7 @@ export async function uploadSetAsset({ email, setId, blob, kind }) {
   for (let i = 0; i < total; i++) {
     await jpost('/sets/asset/chunk', {
       email, setId, assetId, kind, index: i, total,
+      ...(sessionKey ? { sessionKey } : {}),
       data: base64.slice(i * CHUNK, (i + 1) * CHUNK),
     });
   }
@@ -92,9 +93,9 @@ export async function uploadSetAsset({ email, setId, blob, kind }) {
 
 // Resize + re-encode an image file to a web-friendly background
 // (max 1600px wide, WebP/JPEG ≤ ~420KB so it fits the 6-chunk cap).
-export async function compressBackgroundImage(file) {
+export async function compressBackgroundImage(file, { maxWidth = 1600, maxBytes = 420000 } = {}) {
   const bitmap = await createImageBitmap(file);
-  const scale = Math.min(1, 1600 / bitmap.width);
+  const scale = Math.min(1, maxWidth / bitmap.width);
   const w = Math.round(bitmap.width * scale);
   const h = Math.round(bitmap.height * scale);
   const canvas = document.createElement('canvas');
@@ -103,10 +104,10 @@ export async function compressBackgroundImage(file) {
   const tryEncode = (type, quality) => new Promise(resolve => canvas.toBlob(resolve, type, quality));
   for (const [type, quality] of [['image/webp', 0.82], ['image/webp', 0.6], ['image/jpeg', 0.75], ['image/jpeg', 0.55]]) {
     const blob = await tryEncode(type, quality);
-    if (blob && blob.size <= 420000) return blob;
+    if (blob && blob.size <= maxBytes) return blob;
   }
   const last = await tryEncode('image/jpeg', 0.4);
-  if (last && last.size <= 420000) return last;
+  if (last && last.size <= maxBytes) return last;
   throw new Error('Image too large — please choose a smaller photo.');
 }
 
