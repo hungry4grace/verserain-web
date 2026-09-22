@@ -89,6 +89,20 @@ test('/reward-eligibility returns verified garden counts for the account', async
   assert.strictEqual(d.referrals, undefined, 'no inviter codes → no referral scan');
 });
 
+test('/reward-eligibility falls back to the garden first active day when createdAt is missing', async () => {
+  const garden = { 'A 1:1': tree(10), _activity: { [dayAgo(40).slice(0, 10)]: 50, [dayAgo(2).slice(0, 10)]: 80 } };
+  const { srv } = makeServer({
+    'user:old@x.com': { email: 'old@x.com', name: 'Old', personalCode: 'BBBBBBBBBB', verified: true },
+    'garden:Old': garden,
+  });
+  const d = await json(await srv.onRequest(req('/reward-eligibility', { email: 'old@x.com' })));
+  assert.strictEqual(d.identity.createdAt, null);
+  assert.strictEqual(d.identity.accountAgeSource, 'firstActiveDay');
+  assert.ok(d.identity.accountAgeDays >= 39 && d.identity.accountAgeDays <= 41, `got ${d.identity.accountAgeDays}`);
+  const noGarden = await json(await srv.onRequest(req('/reward-eligibility', { email: 'ghost2@x.com' })));
+  assert.strictEqual(noGarden.identity.accountAgeDays, null, 'unknown account with no garden stays null');
+});
+
 test('/reward-eligibility flags private-relay emails and unknown accounts', async () => {
   const { srv } = makeServer({ 'user:line_123@privaterelay.verserain.com': { email: 'line_123@privaterelay.verserain.com', name: 'L', createdAt: dayAgo(1) } });
   const d = await json(await srv.onRequest(req('/reward-eligibility', { email: 'line_123@privaterelay.verserain.com' })));

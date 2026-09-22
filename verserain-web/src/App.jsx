@@ -9258,6 +9258,9 @@ export default function App() {
   const redeemErrorText = (code) => ({
     session_invalid: t('為了安全，請重新登入一次再兌換', 'For security, please sign in again before redeeming'),
     not_eligible: t('尚未符合兌換資格：需通過 3 節經文且帳號滿 7 天', 'Not eligible yet: pass 3 verses and have an account at least 7 days old'),
+    not_enough_passed: t('尚未符合兌換資格：需先通過 3 節經文', 'Not eligible yet: pass 3 verses first'),
+    account_too_new: t('尚未符合兌換資格：帳號需滿 7 天', 'Not eligible yet: your account must be at least 7 days old'),
+    no_email: t('尚未符合兌換資格：需以 Email 或 LINE／Google 帳號登入', 'Not eligible yet: sign in with an email, LINE or Google account'),
     place_unavailable: t('此商家目前無法兌換', 'This shop is not available right now'),
     bill_invalid: t('請輸入正確的消費金額', 'Enter a valid bill amount'),
     too_small: t('折抵金額不足 NT$1', 'The discount would be under NT$1'),
@@ -25644,7 +25647,7 @@ const deDict = {
                     verserain
                   </div>
                   <div className="app-brand-version" style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', marginTop: '4px', marginLeft: '2px' }}>
-                    v4.0.45
+                    v4.0.46
                   </div>
                 </div>
                 <div ref={langPickerRef} className="app-lang-control" style={{ position: 'relative' }}>
@@ -29359,7 +29362,7 @@ const deDict = {
                         </div>
                       ) : !pb.eligible ? (
                         <div style={{ marginTop: '1rem', color: '#b45309', fontSize: '0.9rem', lineHeight: 1.6 }}>
-                          {redeemErrorText((pb.reasons || [])[0] === 'session_invalid' ? 'session_invalid' : 'not_eligible')}
+                          {redeemErrorText(['session_invalid', 'not_enough_passed', 'account_too_new', 'no_email'].find(r => (pb.reasons || []).includes(r)) || 'not_eligible')}
                           <div style={{ color: '#64748b', fontSize: '0.82rem', marginTop: 4 }}>{t('目前通過 {n} 節', '{n} verses passed so far').replace('{n}', String(pb.passedVerses ?? 0))}</div>
                         </div>
                       ) : (

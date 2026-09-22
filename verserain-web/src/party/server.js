@@ -2947,7 +2947,17 @@ export default class Server {
             const playerName = String((user && user.name) || body.playerName || '').trim();
             const garden = playerName ? await this.room.storage.get(`garden:${playerName}`) : null;
             const now = Date.now();
-            const createdTs = user && user.createdAt ? Date.parse(user.createdAt) : NaN;
+            const gardenStats = summarizeGardenForRewards(garden, now);
+            // Accounts older than the createdAt field have no creation date;
+            // their garden's first active day is a conservative stand-in
+            // (never earlier than the account itself), so long-time players
+            // are not treated as "too new" for age-gated rewards.
+            let createdTs = user && user.createdAt ? Date.parse(user.createdAt) : NaN;
+            let accountAgeSource = Number.isNaN(createdTs) ? null : 'createdAt';
+            if (Number.isNaN(createdTs) && user && gardenStats.firstActiveDay) {
+               createdTs = Date.parse(gardenStats.firstActiveDay + 'T00:00:00Z');
+               accountAgeSource = Number.isNaN(createdTs) ? null : 'firstActiveDay';
+            }
             const identity = {
                email,
                found: !!user,
@@ -2956,12 +2966,12 @@ export default class Server {
                invitedBy: (user && user.invitedBy) || null,
                createdAt: (user && user.createdAt) || null,
                accountAgeDays: Number.isNaN(createdTs) ? null : Math.floor((now - createdTs) / 86400000),
+               accountAgeSource,
                emailKind: emailKindOf(email),
                verified: user ? user.verified !== false : false,
                oauthProvider: (user && user.oauthProvider) || null,
                sessionValid: sessionValidFor(user, body.sessionKey),
             };
-            const gardenStats = summarizeGardenForRewards(garden, now);
             let referrals;
             const inviterCodes = (Array.isArray(body.inviterCodes) ? body.inviterCodes : [body.inviterCode])
                .map((c) => String(c || '').trim()).filter((c) => REFERRAL_CODE_RE.test(c)).slice(0, 5);
