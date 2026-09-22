@@ -9287,6 +9287,15 @@ export default function App() {
       setPointsBalanceBusy(false);
     }
   };
+  // 我的園子 shows the spendable balance; refresh it on entry, at most once a minute.
+  const pointsBalanceAtRef = useRef(0);
+  useEffect(() => {
+    if (mainTab !== 'garden' || !userEmail || !sessionKey) return;
+    if (Date.now() - pointsBalanceAtRef.current < 60000) return;
+    pointsBalanceAtRef.current = Date.now();
+    fetchPointsBalance();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mainTab, userEmail, sessionKey]);
   const openRedeem = (place) => {
     if (!place || !place.id) return;
     if (!userEmail) { setShowLoginModal('login'); setToast(t('請先登入才能兌換折扣', 'Sign in to redeem a discount')); setTimeout(() => setToast(null), 2500); return; }
@@ -25648,7 +25657,7 @@ const deDict = {
                     verserain
                   </div>
                   <div className="app-brand-version" style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', marginTop: '4px', marginLeft: '2px' }}>
-                    v4.0.47
+                    v4.0.48
                   </div>
                 </div>
                 <div ref={langPickerRef} className="app-lang-control" style={{ position: 'relative' }}>
@@ -28399,6 +28408,18 @@ const deDict = {
                           <div style={{ fontSize: '0.78rem', color: '#1e3a8a', marginTop: '0.25rem' }}>{t('總果子', 'Fruits')}</div>
                         </div>
                       </div>
+                      {userEmail && (
+                        pointsBalance && !pointsBalance.error && Number.isFinite(Number(pointsBalance.balancePoints)) ? (
+                          <div style={{ marginTop: '0.7rem', textAlign: 'center', fontSize: '0.85rem', color: '#1e3a8a' }}>
+                            🎟️ {t('可用點數 {a}（已用 {b}）', 'Available points {a} (spent {b})').replace('{a}', Number(pointsBalance.balancePoints || 0).toLocaleString()).replace('{b}', Number(pointsBalance.spentPoints || 0).toLocaleString())}
+                            <span style={{ color: '#64748b' }}> ≈ NT${pointsBalance.balanceNTD || 0}</span>
+                          </div>
+                        ) : (!sessionKey || (pointsBalance && pointsBalance.error === 'session_invalid')) ? (
+                          <div onClick={() => setShowLoginModal('login')} style={{ marginTop: '0.7rem', textAlign: 'center', fontSize: '0.8rem', color: '#64748b', cursor: 'pointer', textDecoration: 'underline' }}>
+                            🎟️ {t('可用點數：重新登入後顯示', 'Available points: sign in again to show')}
+                          </div>
+                        ) : null
+                      )}
                       <div onClick={() => setMainTab('sponsors')} style={{ marginTop: '0.8rem', textAlign: 'center', fontSize: '0.82rem', color: '#92400e', background: '#fef3c7', border: '1px solid #fde68a', borderRadius: 8, padding: '0.4rem 0.6rem', cursor: 'pointer' }}>
                         🎁 {t('再通過 {n} 節經文，就能獲得贊助獎勵', 'Pass {n} more verses to earn a sponsored reward').replace('{n}', String(rewardProgress?.nextVerses ?? (100 - ((personalProgress.passedVerses || 0) % 100))))}
                       </div>
