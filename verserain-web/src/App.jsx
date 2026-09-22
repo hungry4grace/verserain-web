@@ -9639,6 +9639,17 @@ export default function App() {
   const [multiplayerSelectedVerses, setMultiplayerSelectedVerses] = useState([]);
   const [randomPickCount, setRandomPickCount] = useState(1);
   const [continuousRainSet, setContinuousRainSet] = useState(null);
+  // The lobby music must not play over a set's own soundtrack. Pause it while
+  // a listening session, a game, or the daily player (話語甘霖) is on screen,
+  // and resume it afterwards only if it was on before.
+  const lobbyMusicResumeRef = useRef(false);
+  useEffect(() => {
+    const busy = !!continuousRainSet || gameState !== 'menu' || mainTab === 'daily_verse';
+    if (busy && isMusicPlaying) { lobbyMusicResumeRef.current = true; setIsMusicPlaying(false); }
+    else if (!busy && lobbyMusicResumeRef.current) { lobbyMusicResumeRef.current = false; setIsMusicPlaying(true); }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [continuousRainSet, gameState, mainTab]);
+
   // 播放順序選擇 — holds the set while the user picks 隨機 or 按序.
   const [playOrderChooser, setPlayOrderChooser] = useState(null);
   const [playDurationChoice, setPlayDurationChoice] = useState(() => {
@@ -25633,7 +25644,7 @@ const deDict = {
                     verserain
                   </div>
                   <div className="app-brand-version" style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', marginTop: '4px', marginLeft: '2px' }}>
-                    v4.0.44
+                    v4.0.45
                   </div>
                 </div>
                 <div ref={langPickerRef} className="app-lang-control" style={{ position: 'relative' }}>
