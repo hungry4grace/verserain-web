@@ -714,7 +714,11 @@ function buildPublicShareUrl(path = '/', params = {}) {
 // push one history entry per step; popstate applies the hash back to state.
 // Only the query string carries share links (?listenSet= …) — those are
 // consumed and scrubbed as before, and every scrub must keep the hash.
-const ROUTE_TABS = ['lobby', 'versesets', 'custom_verses', 'multiplayer', 'daily_verse', 'advanced', 'garden', 'search', 'map', 'manual', 'about', 'accessible', 'bilingual_rain', 'leaderboard', 'rewards_admin', 'sponsors'];
+const ROUTE_TABS = ['lobby', 'versesets', 'custom_verses', 'multiplayer', 'daily_verse', 'advanced', 'garden', 'search', 'map', 'manual', 'about', 'accessible', 'bilingual_rain', 'leaderboard', 'rewards_admin', 'sponsors', 'donate', 'sponsor'];
+// 支持開發（Donate）頁的收款資訊。這是對開發者個人的贈與，不是公益勸募，
+// 也開不了捐贈收據 — 獎勵資金池另走教會／非營利代收（見 sponsor 頁）。
+// 空字串 → 頁面顯示「即將公布」。
+const DONATE_INFO = { bankName: '', bankCode: '', account: '', holder: '', paypalMe: '', contactEmail: 'hungry4grace@gmail.com' };
 const ROUTE_FLAGS = ['listen', 'edit', 'play', 'room'];
 function parseRoute(hash) {
   const seg = String(hash || '').replace(/^#\/?/, '').split('/').filter(Boolean);
@@ -25319,7 +25323,7 @@ const deDict = {
                     verserain
                   </div>
                   <div className="app-brand-version" style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', marginTop: '4px', marginLeft: '2px' }}>
-                    v4.0.33
+                    v4.0.34
                   </div>
                 </div>
                 <div ref={langPickerRef} className="app-lang-control" style={{ position: 'relative' }}>
@@ -25961,6 +25965,8 @@ const deDict = {
                       { id: 'about', Icon: Info, label: t('關於我們', 'About'), desc: t('VerseRain 開發資訊', 'Info & Credits'), color: '#14b8a6' },
                       { id: 'feedback', link: `mailto:hungry4grace@gmail.com?subject=${encodeURIComponent('經文雨 意見回饋（VerseRain Feedback）')}`, Icon: Mail, label: t('意見回饋', 'Feedback'), desc: t('聯絡與建議', 'Bugs & Suggestions'), color: '#ec4899' },
                       { id: 'sponsors', Icon: Gift, label: t('贊助獎勵計劃', 'Sponsored Rewards'), desc: t('通過經文、邀請朋友，贏得禮券', 'Pass verses, invite friends, earn vouchers'), color: '#f59e0b' },
+                      { id: 'donate', Icon: Heart, label: t('支持經文雨', 'Support VerseRain'), desc: t('小額支持 App 開發與維運', 'Help fund development & hosting'), color: '#ef4444' },
+                      { id: 'sponsor', Icon: Gift, label: t('贊助經文雨', 'Sponsor VerseRain'), desc: t('企業家與教會如何加入推廣讀經', 'How businesses & churches can join'), color: '#7c3aed' },
                       ...(isSuperAdmin ? [{ id: 'rewards_admin', Icon: Gift, label: t('獎勵管理', 'Reward Admin'), desc: t('待發送的禮券與獎勵', 'Gift cards & rewards to send'), color: '#f59e0b' }] : [])
                     ].map(item => {
                       const Icon = item.Icon;
@@ -28667,7 +28673,10 @@ const deDict = {
                       )}
                       <div style={{ marginTop: '0.9rem', padding: '0.7rem 0.9rem', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 8, fontSize: '0.88rem', color: '#166534', lineHeight: 1.6 }}>
                         {t('想成為贊助者？贊助金由教會／非營利機構代收並開立收據，經文雨只做媒合與核發；報告只有統計數字，不會提供玩家個資。', 'Want to sponsor? Gifts are received and receipted by a church / non-profit; VerseRain only matches and fulfils. Reports contain statistics only — never player data.')}{' '}
-                        <a href={`mailto:hungry4grace@gmail.com?subject=${encodeURIComponent('經文雨 贊助獎勵計劃（VerseRain Sponsorship）')}`} style={{ color: '#166534', fontWeight: 700 }}>{t('聯絡我們', 'Contact us')} →</a>
+                        <span style={{ display: 'inline-flex', gap: '0.5rem', flexWrap: 'wrap', marginTop: 6 }}>
+                          <button type="button" onClick={() => setMainTab('sponsor')} style={{ background: '#166534', color: '#fff', border: 'none', borderRadius: 6, padding: '0.3rem 0.9rem', cursor: 'pointer', fontWeight: 700, fontSize: '0.85rem' }}>{t('了解贊助方案', 'Sponsorship options')} →</button>
+                          <a href={`mailto:hungry4grace@gmail.com?subject=${encodeURIComponent('經文雨 贊助獎勵計劃（VerseRain Sponsorship）')}`} style={{ color: '#166534', fontWeight: 700, alignSelf: 'center' }}>{t('聯絡我們', 'Contact us')} →</a>
+                        </span>
                       </div>
                     </div>
 
@@ -28680,6 +28689,165 @@ const deDict = {
                         <li>{t('人工審核後 7 個工作天內寄出；使用 LINE／Apple 隱藏信箱的帳號請提供可收信的 Email。', 'Sent within 7 working days after manual review; accounts using a hidden LINE / Apple email must provide a reachable one.')}</li>
                         <li>{t('額度以贊助池為限；主辦方保留審核、調整與終止本計劃的權利。', 'Limited by the sponsor pool; the organiser may review, adjust or end the programme.')}</li>
                       </ul>
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {mainTab === 'donate' && (() => {
+                const info = DONATE_INFO;
+                const soon = t('即將公布', 'Coming soon');
+                const card = { background: '#fff', border: '1px solid #e2e8f0', borderRadius: 12, padding: '1rem 1.2rem', marginBottom: '1rem' };
+                const h3 = { margin: '0 0 0.6rem', color: '#1e293b', fontSize: '1.05rem' };
+                const copy = async (label, value) => {
+                  try { await navigator.clipboard.writeText(value); setToast(t('已複製{what}', 'Copied {what}').replace('{what}', label)); } catch { setToast(value); }
+                  setTimeout(() => setToast(null), 2000);
+                };
+                const row = (label, value) => (
+                  <div key={label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.6rem', padding: '0.45rem 0', borderBottom: '1px solid #f1f5f9', fontSize: '0.92rem' }}>
+                    <span style={{ color: '#64748b' }}>{label}</span>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <b style={{ color: value ? '#1e293b' : '#94a3b8', fontFamily: value ? 'monospace' : 'inherit', fontWeight: value ? 700 : 500 }}>{value || soon}</b>
+                      {value && <button type="button" onClick={() => copy(label, value)} style={{ background: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: 6, padding: '0.15rem 0.55rem', cursor: 'pointer', fontSize: '0.78rem', color: '#334155' }}>{t('複製', 'Copy')}</button>}
+                    </span>
+                  </div>
+                );
+                return (
+                  <div style={{ backgroundColor: '#ffffff', borderRadius: '8px', border: '1px solid #cbd5e1', padding: '1.5rem', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.6rem', marginBottom: '0.8rem' }}>
+                      <h2 style={{ color: '#1e293b', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Heart size={26} /> {t('支持經文雨', 'Support VerseRain')}</h2>
+                      <button type="button" onClick={() => setMainTab('advanced')} style={{ background: 'transparent', border: '1px solid #cbd5e1', color: '#64748b', borderRadius: '6px', padding: '0.35rem 0.8rem', cursor: 'pointer', fontSize: '0.85rem' }}>← {t('返回', 'Back')}</button>
+                    </div>
+                    <p style={{ color: '#475569', lineHeight: 1.7, marginTop: 0 }}>
+                      {t('經文雨免費、沒有廣告，也不販售任何資料。你的支持會用在伺服器、語音朗讀、多語翻譯與持續開發，讓更多人能免費讀經、背經。', 'VerseRain is free, ad-free, and sells no data. Your support pays for servers, voice narration, translations, and ongoing development so more people can read and memorise Scripture for free.')}
+                    </p>
+                    <div style={{ background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 10, padding: '0.8rem 1rem', marginBottom: '1rem', color: '#78350f', fontSize: '0.9rem', lineHeight: 1.7 }}>
+                      <b>{t('請先了解：', 'Please note:')}</b>{' '}
+                      {t('這是對開發者個人的支持（贈與），不是公益勸募，因此無法開立捐贈收據、不能抵稅。若你是教會或企業，想資助讀經獎勵並需要收據，請走「贊助經文雨」方案，由教會／非營利機構代收。', 'This is a personal gift to the developer, not a charitable appeal, so no donation receipt or tax deduction can be issued. Churches and businesses that want to fund reading rewards and need a receipt should use the “Sponsor VerseRain” programme, where a church / non-profit receives the gift.')}{' '}
+                      <button type="button" onClick={() => setMainTab('sponsor')} style={{ background: '#7c3aed', color: '#fff', border: 'none', borderRadius: 6, padding: '0.25rem 0.8rem', cursor: 'pointer', fontWeight: 700, fontSize: '0.82rem' }}>{t('贊助經文雨', 'Sponsor VerseRain')} →</button>
+                    </div>
+
+                    <div style={card}>
+                      <h3 style={h3}>🏦 {t('台灣銀行匯款', 'Bank transfer (Taiwan)')}</h3>
+                      {row(t('銀行', 'Bank'), info.bankName)}
+                      {row(t('銀行代碼', 'Bank code'), info.bankCode)}
+                      {row(t('帳號', 'Account'), info.account)}
+                      {row(t('戶名', 'Account holder'), info.holder)}
+                      <div style={{ color: '#64748b', fontSize: '0.82rem', marginTop: '0.6rem' }}>
+                        {t('匯款後歡迎寄信告訴我，我會回信致謝。', 'After transferring, feel free to email me — I will write back to say thank you.')}{' '}
+                        <a href={`mailto:${info.contactEmail}?subject=${encodeURIComponent('經文雨 支持（VerseRain Support）')}`} style={{ color: '#3b82f6', fontWeight: 600 }}>{info.contactEmail}</a>
+                      </div>
+                    </div>
+
+                    <div style={card}>
+                      <h3 style={h3}>🌏 {t('海外朋友：PayPal', 'Overseas: PayPal')}</h3>
+                      {info.paypalMe ? (
+                        <a href={info.paypalMe} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-block', background: '#0070ba', color: '#fff', borderRadius: 8, padding: '0.5rem 1.1rem', fontWeight: 700, textDecoration: 'none' }}>PayPal.me →</a>
+                      ) : (
+                        <span style={{ color: '#94a3b8' }}>{soon}</span>
+                      )}
+                      <div style={{ color: '#64748b', fontSize: '0.82rem', marginTop: '0.6rem' }}>{t('台灣的 PayPal 帳戶只能收境外付款，台灣朋友請用上方匯款。', 'A Taiwan PayPal account can only receive payments from abroad; friends in Taiwan please use the bank transfer above.')}</div>
+                    </div>
+
+                    <div style={{ ...card, opacity: 0.7 }}>
+                      <h3 style={h3}>💳 {t('線上刷卡／LINE Pay', 'Card / LINE Pay')}</h3>
+                      <span style={{ background: '#e2e8f0', color: '#64748b', borderRadius: 999, padding: '0.2rem 0.8rem', fontSize: '0.82rem', fontWeight: 600 }}>{t('即將開放', 'Coming later')}</span>
+                    </div>
+
+                    <div style={{ color: '#94a3b8', fontSize: '0.8rem', lineHeight: 1.6 }}>
+                      {t('支持者的資料不會提供給任何第三方；只有在你同意時，才會把你的名字列入感謝名單。', 'Supporter details are never shared with third parties; your name appears on the thank-you list only with your consent.')}
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {mainTab === 'sponsor' && (() => {
+                const card = { background: '#fff', border: '1px solid #e2e8f0', borderRadius: 12, padding: '1rem 1.2rem', marginBottom: '1rem' };
+                const h3 = { margin: '0 0 0.6rem', color: '#1e293b', fontSize: '1.05rem' };
+                const step = (n, title, body) => (
+                  <div key={n} style={{ display: 'flex', gap: '0.8rem', alignItems: 'flex-start' }}>
+                    <div style={{ flexShrink: 0, width: 28, height: 28, borderRadius: '50%', background: '#7c3aed', color: '#fff', display: 'grid', placeItems: 'center', fontWeight: 700, fontSize: '0.9rem' }}>{n}</div>
+                    <div><b style={{ color: '#1e293b' }}>{title}</b><div style={{ color: '#475569', fontSize: '0.9rem', lineHeight: 1.6 }}>{body}</div></div>
+                  </div>
+                );
+                const tiers = [
+                  { name: t('種子', 'Seed'), amount: 'NT$5,000+', perks: t('感謝牆列名（可匿名）、可附一句祝福經文', 'Name on the thank-you wall (or anonymous), one verse of blessing') },
+                  { name: t('灌溉', 'Water'), amount: 'NT$20,000+', perks: t('以上 + 季度成效報告（發出份數、帶動多少人通過多少節）', 'Above + a quarterly impact report (vouchers sent, people and verses moved)') },
+                  { name: t('豐收', 'Harvest'), amount: 'NT$50,000+', perks: t('以上 + 可指定用途，或限定只獎勵自家教會會友', 'Above + earmark the gift, or restrict it to your own congregation') },
+                ];
+                return (
+                  <div style={{ backgroundColor: '#fbf8ff', borderRadius: '8px', border: '1px solid #ddd6fe', padding: '1.5rem', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.6rem', marginBottom: '0.8rem' }}>
+                      <h2 style={{ color: '#1e293b', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Gift size={26} /> {t('贊助經文雨', 'Sponsor VerseRain')}</h2>
+                      <button type="button" onClick={() => setMainTab('advanced')} style={{ background: 'transparent', border: '1px solid #cbd5e1', color: '#64748b', borderRadius: '6px', padding: '0.35rem 0.8rem', cursor: 'pointer', fontSize: '0.85rem' }}>← {t('返回', 'Back')}</button>
+                    </div>
+                    <p style={{ color: '#475569', lineHeight: 1.7, marginTop: 0 }}>
+                      {t('一起推廣讀經與背經。你的贊助會變成電子禮券，獎勵真正通過經文、並邀請朋友一起來的人，幫助更多人養成每天讀神話語的習慣。', 'Help spread Bible reading and memorisation. Your gift becomes e-vouchers that reward people who genuinely pass verses and bring friends along, helping more people build a daily habit in God’s Word.')}
+                    </p>
+
+                    <div style={card}>
+                      <h3 style={h3}>🔁 {t('怎麼運作', 'How it works')}</h3>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
+                        {step(1, t('贊助金由教會／非營利機構代收', 'A church / non-profit receives the gift'), t('由代收單位開立收據，經文雨本身不經手款項。', 'The receiving body issues the receipt; VerseRain never handles the money.'))}
+                        {step(2, t('記入 App 的贊助池並公開', 'Recorded in the app’s sponsor pool, publicly'), t('管理員登記金額與你的祝福語，累計贊助、已發出與剩餘額度即時公開。', 'An admin records the amount and your blessing; totals raised, sent and remaining are shown live.'))}
+                        {step(3, t('玩家達標，禮券從你的池發出', 'Players hit milestones, vouchers go out from your pool'), t('達標由伺服器核算，管理員審核後寄出電子禮券並從贊助池扣款。', 'Milestones are verified server-side; an admin reviews, sends the e-voucher, and debits the pool.'))}
+                      </div>
+                    </div>
+
+                    <div style={card}>
+                      <h3 style={h3}>🎁 {t('目前的獎勵', 'Current rewards')}</h3>
+                      <div style={{ color: '#475569', fontSize: '0.9rem', lineHeight: 1.7 }}>
+                        <div>🏞️ {t('每通過 {n} 節經文', 'Every {n} verses passed').replace('{n}', '100')} → {fmtMoney(VOUCHER_DEFAULTS.verses.TWD, 'TWD')} / {fmtMoney(VOUCHER_DEFAULTS.verses.USD, 'USD')}</div>
+                        <div>🤝 {t('每邀請 {n} 位朋友，各通過 {p} 節', 'Every {n} friends invited, each passing {p} verses').replace('{n}', '10').replace('{p}', '3')} → {fmtMoney(VOUCHER_DEFAULTS.invites.TWD, 'TWD')} / {fmtMoney(VOUCHER_DEFAULTS.invites.USD, 'USD')}</div>
+                        <div style={{ color: '#64748b', fontSize: '0.82rem', marginTop: 4 }}>{t('禮券以 LINE POINTS、7-ELEVEN、星巴克、書房禮券為主，海外用 Amazon eGift；每份約 NT$300。', 'Vouchers are mainly LINE POINTS, 7-ELEVEN, Starbucks and Christian bookshop vouchers; Amazon eGift overseas; about NT$300 each.')}</div>
+                      </div>
+                    </div>
+
+                    <div style={card}>
+                      <h3 style={h3}>🌱 {t('贊助方案', 'Sponsorship tiers')}</h3>
+                      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.9rem', color: '#334155' }}>
+                        <tbody>
+                          {tiers.map(tier => (
+                            <tr key={tier.name} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                              <td style={{ padding: '0.5rem 0', fontWeight: 700, whiteSpace: 'nowrap', verticalAlign: 'top' }}>{tier.name}</td>
+                              <td style={{ padding: '0.5rem 0.6rem', whiteSpace: 'nowrap', verticalAlign: 'top', color: '#5b21b6', fontWeight: 700 }}>{tier.amount}</td>
+                              <td style={{ padding: '0.5rem 0', verticalAlign: 'top', color: '#475569' }}>{tier.perks}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                      <div style={{ color: '#64748b', fontSize: '0.82rem', marginTop: '0.6rem', lineHeight: 1.6 }}>
+                        {t('回饋只有致謝與統計，不含廣告曝光；感謝牆只列名字與祝福語，不放商標或連結。', 'Perks are thanks and statistics only, never advertising; the wall shows names and blessings, no logos or links.')}
+                      </div>
+                    </div>
+
+                    <div style={card}>
+                      <h3 style={h3}>⛪ {t('教會限定池', 'Church-only pools')}</h3>
+                      <div style={{ color: '#475569', fontSize: '0.9rem', lineHeight: 1.7 }}>
+                        {t('教會可以選擇只獎勵自己的會友：我們給教會一個代碼，會友在 App 填入後，達標時就從該教會的池領取。一個人一次只會從一個池領一份獎勵，不會重複。', 'A church may reward only its own members: we give the church a code, members enter it in the app, and their rewards are paid from that church’s pool. One person receives one reward per milestone from one pool, never twice.')}
+                      </div>
+                    </div>
+
+                    <div style={card}>
+                      <h3 style={h3}>🔍 {t('透明與隱私', 'Transparency & privacy')}</h3>
+                      <ul style={{ margin: 0, paddingLeft: '1.2rem', color: '#475569', fontSize: '0.9rem', lineHeight: 1.8 }}>
+                        <li>{t('每個贊助池的累計、已發出與剩餘額度都在 App 內公開。', 'Each pool’s total, sent and remaining amounts are public inside the app.')}</li>
+                        <li>{t('成效報告只有統計數字，不會提供任何玩家個資。', 'Impact reports contain statistics only — never any player data.')}</li>
+                        <li>{t('禮券序號不會存在系統裡，由管理員親自寄出。', 'Voucher codes are never stored in the system; an admin sends them personally.')}</li>
+                      </ul>
+                    </div>
+
+                    <div style={{ padding: '0.9rem 1rem', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 10, color: '#166534', fontSize: '0.9rem', lineHeight: 1.7 }}>
+                      <b>{t('想加入？', 'Want to join?')}</b>{' '}
+                      {t('寫信告訴我們你的名稱、希望贊助的金額與用途（開放或限定會友），我們會回覆代收與收據的細節。', 'Email us your name, the amount you have in mind, and whether it is open or for your own members; we will reply with the receiving and receipt details.')}
+                      <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginTop: '0.6rem' }}>
+                        <a href={`mailto:hungry4grace@gmail.com?subject=${encodeURIComponent('經文雨 贊助獎勵計劃（VerseRain Sponsorship）')}`} style={{ background: '#166534', color: '#fff', borderRadius: 6, padding: '0.35rem 0.9rem', fontWeight: 700, textDecoration: 'none', fontSize: '0.85rem' }}>{t('聯絡我們', 'Contact us')} →</a>
+                        <button type="button" onClick={() => setMainTab('sponsors')} style={{ background: 'transparent', color: '#166534', border: '1px solid #86efac', borderRadius: 6, padding: '0.35rem 0.9rem', cursor: 'pointer', fontWeight: 700, fontSize: '0.85rem' }}>{t('查看贊助獎勵計劃現況', 'See the programme status')}</button>
+                      </div>
+                      <div style={{ color: '#64748b', fontSize: '0.82rem', marginTop: '0.6rem' }}>
+                        {t('個人小額支持 App 開發，請到', 'For small personal gifts toward development, see')}{' '}
+                        <button type="button" onClick={() => setMainTab('donate')} style={{ background: 'transparent', border: 'none', color: '#3b82f6', cursor: 'pointer', fontWeight: 700, padding: 0, fontSize: '0.82rem' }}>{t('支持經文雨', 'Support VerseRain')} →</button>
+                      </div>
                     </div>
                   </div>
                 );
