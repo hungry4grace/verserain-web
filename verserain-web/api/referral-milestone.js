@@ -1,16 +1,19 @@
 import { Redis } from '@upstash/redis';
 import { sendReferralPush } from './_lib/webpush.js';
 import { sendReferralApns } from './_lib/apns.js';
-import { createReward, recordQualifiedReferral, VERSES_PER_REWARD } from './_lib/rewards.js';
+import { recordQualifiedReferral } from './_lib/rewards.js';
+import { partyFetch } from './_lib/party.js';
 
 // A referee (B) reached a garden milestone (1 / 10 / every 100 trees planted):
 //   • drop a notification into the inviter (A)'s personalCode-keyed inbox so A
 //     can cheer B on;
-//   • at B's FIRST tree, count B as a qualified referral of A (A earns a reward
-//     at every 10th qualified referral);
-//   • at every 100th tree, B earns a reward.
-// Idempotent per (refereeCode, milestone) so replays never double-notify or
-// double-award.
+//   • at B's FIRST tree, count B as a qualified referral of A for A's
+//     dashboard — after confirming with the auth store that B's account really
+//     is bound to A (a hand-crafted POST can't invent a referral).
+// Money-backed rewards are NOT minted here any more: the client-reported
+// `milestone` is trusted only for the cheer. Both the 100-verses and the
+// 10-invites rewards come from /api/reward-check, which counts server-side.
+// Idempotent per (refereeCode, milestone) so replays never double-notify.
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Credentials', true);
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -58,7 +61,7 @@ export default async function handler(req, res) {
     // Also push to the inviter's phone (best-effort; never blocks the response).
     const who = refereeName || '你邀請的朋友';
     const bodyText = ms >= 100
-      ? `${who} 完成了 ${ms} 個經文，種滿了 ${ms / 100} 塊田地！給他一個讚 👍`
+      ? `${who} 種下了 ${ms} 棵樹，種滿了 ${ms / 100} 塊田地！給他一個讚 👍`
       : ms >= 10
         ? `${who} 已種下 10 棵樹（10 個經文）！給他一個讚 👍`
         : `${who} 種下了第一棵樹（第一個經文）！給他一個讚 👍`;
@@ -68,14 +71,18 @@ export default async function handler(req, res) {
       sendReferralApns(inviterCode, { title: '🌱 VerseRain', body: bodyText, url: 'https://www.verserain.com/?notify=1', collapseId: tag }).catch(() => {}),
     ]);
 
-    // Rewards. Both are guarded by the ms-sent latch above, so a replay can't
-    // re-count a referral or re-award a field.
+    // Dashboard count of qualified referrals. Only a logged-in referee whose
+    // account the auth store says was invited by this inviter counts; guests
+    // and mismatches are ignored (the cheer above still went out).
     const rewards = {};
-    if (ms === 1) {
-      rewards.qualifiedReferral = await recordQualifiedReferral(redis, { inviterCode, refereeCode, refereeEmail });
-    }
-    if (ms >= VERSES_PER_REWARD && ms % VERSES_PER_REWARD === 0 && refereeCode) {
-      rewards.verses = await createReward(redis, { code: refereeCode, name: refereeName, email: refereeEmail, kind: 'verses', milestone: ms, inviterCode });
+    if (ms === 1 && emailKey) {
+      let bound = false;
+      try {
+        const elig = await partyFetch('/reward-eligibility', { email: emailKey });
+        bound = !!(elig && elig.identity && elig.identity.invitedBy === inviterCode);
+      } catch { bound = false; }
+      if (bound) rewards.qualifiedReferral = await recordQualifiedReferral(redis, { inviterCode, refereeCode, refereeEmail: emailKey });
+      else rewards.qualifiedReferral = { count: 0, unbound: true };
     }
 
     res.status(200).json({ success: true, rewards });

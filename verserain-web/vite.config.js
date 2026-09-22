@@ -12,6 +12,8 @@ import rewardClaimHandler from './api/reward-claim.js'
 import getNotifyHandler from './api/get-notify.js'
 import getRefereesHandler from './api/get-referees.js'
 import linkIdentityHandler from './api/link-identity.js'
+import sponsorsHandler from './api/sponsors.js'
+import rewardCheckHandler from './api/reward-check.js'
 
 // Load .env.local so process.env is available for API handlers in dev
 try {
@@ -87,7 +89,7 @@ export default defineConfig({
           await new Promise((done) => { req.on('data', (c) => { raw += c; }); req.on('end', done); req.on('error', done); });
           let body = {};
           try { body = raw ? JSON.parse(raw) : {}; } catch { body = {}; }
-          const mockReq = { method: req.method, query: Object.fromEntries(url.searchParams.entries()), body };
+          const mockReq = { method: req.method, headers: req.headers || {}, query: Object.fromEntries(url.searchParams.entries()), body };
           await handler(mockReq, makeMockRes(res));
         });
         jsonRoute('/api/referral-milestone', referralMilestoneHandler);
@@ -96,6 +98,8 @@ export default defineConfig({
         jsonRoute('/api/get-notify', getNotifyHandler);
         jsonRoute('/api/get-referees', getRefereesHandler);
         jsonRoute('/api/link-identity', linkIdentityHandler);
+        jsonRoute('/api/sponsors', sponsorsHandler);
+        jsonRoute('/api/reward-check', rewardCheckHandler);
       }
     }
   ],

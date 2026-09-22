@@ -132,6 +132,7 @@ export function generateResetToken() {
 export const RESET_TOKEN_TTL_MS = 30 * 60 * 1000;
 
 import { CODE_RE as REFERRAL_CODE_RE, TOUCH_KINDS, MAX_DEVICES as TOUCH_MAX_DEVICES, normalizeEvents as normalizeTouchEvents, pickInviter, ipMatchAllowed } from './referral.js';
+import { dedupeGarden } from '../lib/gardenSync.js';
 
 // Hashed request IP for the deferred-referral network bucket (never the raw IP).
 function requestIp(request) {
@@ -166,6 +167,63 @@ export function dropTestFixtures(gd) {
   }
   return { garden: out, dropped };
 }
+
+// ─── Sponsored rewards: server-side truth ───────────────────────────────
+// What the reward admin may trust about one garden. The client only ever
+// tells us "I passed 100 verses"; this reads the synced garden itself and
+// counts trees at stage 10 (通過), after dropping fixtures and folding
+// duplicate spellings, so a reward is never minted from a client number.
+export const REWARD_QUALIFIED_PASSES = 3;
+export function summarizeGardenForRewards(gd, now = Date.now()) {
+  const src = (gd && typeof gd === 'object') ? gd : {};
+  const { garden } = dedupeGarden(dropTestFixtures(src).garden);
+  let passedVerses = 0, treesPlanted = 0, fruits = 0;
+  for (const [k, v] of Object.entries(garden)) {
+    if (k === '_activity' || !v || typeof v !== 'object' || isBlankGardenRef(k)) continue;
+    treesPlanted++;
+    fruits += Number(v.fruits) || 0;
+    if ((Number(v.stage) || 0) >= 10) passedVerses++;
+  }
+  const activity = (src._activity && typeof src._activity === 'object') ? src._activity : {};
+  const days = Object.keys(activity).filter((d) => (Number(activity[d]) || 0) > 0 && !Number.isNaN(Date.parse(d + 'T00:00:00'))).sort();
+  let activeDays30 = 0;
+  for (const d of days) { if (now - Date.parse(d + 'T00:00:00') < 30 * 86400000) activeDays30++; }
+  return {
+    passedVerses, treesPlanted, fruits,
+    activeDays: days.length,
+    activeDays30,
+    firstActiveDay: days[0] || null,
+    lastActiveDay: days[days.length - 1] || null,
+  };
+}
+// Every account, paged through storage.list() the way /fruit-tree does so a
+// large user table never has to sit in memory as one list() result.
+export async function listUsersPaged(storage, pick = (v) => v) {
+  const out = [];
+  const PAGE = 50;
+  let startAfter;
+  while (true) {
+    const opts = { prefix: 'user:', limit: PAGE };
+    if (startAfter) opts.startAfter = startAfter;
+    const page = await storage.list(opts);
+    if (!page || page.size === 0) break;
+    let lastKey;
+    for (const [key, v] of page.entries()) {
+      lastKey = key;
+      if (!key.startsWith('user:')) continue;
+      const row = v ? pick(v, key) : null;
+      if (row) out.push(row);
+    }
+    if (page.size < PAGE) break;
+    startAfter = lastKey;
+  }
+  return out;
+}
+export const emailKindOf = (email) => {
+  const e = String(email || '').trim().toLowerCase();
+  if (!e) return 'none';
+  return /@privaterelay\.verserain\.com$/.test(e) ? 'privaterelay' : 'real';
+};
 
 export default class Server {
   constructor(room) {
@@ -2728,6 +2786,65 @@ export default class Server {
          }
       }
 
+      // POST /reward-eligibility — what a money-backed reward may rely on.
+      // Called server-to-server by /api/reward-check (x-admin-token). Returns
+      // the account's verified garden counts and, given the account's codes,
+      // every referee bound to them (user.invitedBy) with THEIR passed count,
+      // so "10 qualified invites" means 10 real people who each passed ≥ 3.
+      if (url.pathname.endsWith('/reward-eligibility') && request.method === 'POST') {
+         if (!isCustomSetWriteAuthorized()) return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: corsHeaders });
+         try {
+            const body = await request.json().catch(() => ({}));
+            const email = String(body.email || '').trim().toLowerCase();
+            const user = email ? await this.room.storage.get(`user:${email}`) : null;
+            const playerName = String((user && user.name) || body.playerName || '').trim();
+            const garden = playerName ? await this.room.storage.get(`garden:${playerName}`) : null;
+            const now = Date.now();
+            const createdTs = user && user.createdAt ? Date.parse(user.createdAt) : NaN;
+            const identity = {
+               email,
+               found: !!user,
+               playerName,
+               personalCode: (user && user.personalCode) || null,
+               invitedBy: (user && user.invitedBy) || null,
+               createdAt: (user && user.createdAt) || null,
+               accountAgeDays: Number.isNaN(createdTs) ? null : Math.floor((now - createdTs) / 86400000),
+               emailKind: emailKindOf(email),
+               verified: user ? user.verified !== false : false,
+               oauthProvider: (user && user.oauthProvider) || null,
+            };
+            const gardenStats = summarizeGardenForRewards(garden, now);
+            let referrals;
+            const inviterCodes = (Array.isArray(body.inviterCodes) ? body.inviterCodes : [body.inviterCode])
+               .map((c) => String(c || '').trim()).filter((c) => REFERRAL_CODE_RE.test(c)).slice(0, 5);
+            if (inviterCodes.length) {
+               const codeSet = new Set(inviterCodes);
+               const users = await listUsersPaged(this.room.storage, (v) => (v && v.name ? { name: String(v.name), email: String(v.email || '').toLowerCase(), code: v.personalCode || null, invitedBy: v.invitedBy || null, createdAt: v.createdAt || null } : null));
+               const referees = users.filter((u) => u.invitedBy && codeSet.has(u.invitedBy) && !(u.code && codeSet.has(u.code)) && (!email || u.email !== email));
+               const list = [];
+               const byDay = new Map();
+               const seen = new Set();
+               for (const u of referees) {
+                  const id = u.email || u.code || u.name;
+                  if (seen.has(id)) continue;
+                  seen.add(id);
+                  const g = await this.room.storage.get(`garden:${u.name}`);
+                  const st = summarizeGardenForRewards(g, now);
+                  const day = u.createdAt ? String(u.createdAt).slice(0, 10) : '';
+                  if (day) byDay.set(day, (byDay.get(day) || 0) + 1);
+                  list.push({ name: u.name, emailKind: emailKindOf(u.email), createdAt: u.createdAt, passedVerses: st.passedVerses, treesPlanted: st.treesPlanted, qualified: st.passedVerses >= REWARD_QUALIFIED_PASSES });
+                  if (list.length >= 200) break;
+               }
+               let sameDayClusters = 0;
+               for (const n of byDay.values()) if (n > sameDayClusters) sameDayClusters = n;
+               referrals = { total: list.length, qualified: list.filter((r) => r.qualified).length, qualifiedPasses: REWARD_QUALIFIED_PASSES, sameDayClusters, list };
+            }
+            return new Response(JSON.stringify({ success: true, identity, garden: gardenStats, referrals }), { status: 200, headers: corsHeaders });
+         } catch(e) {
+            return new Response(JSON.stringify({ error: 'Failed to compute eligibility' }), { status: 500, headers: corsHeaders });
+         }
+      }
+
       // GET /fruit-tree?codes=a,b — 我的果子: people this person invited (level1)
       // and the people THEY invited (level2), read from user.invitedBy — which
       // includes deferred attribution (referral.js). Display names only.
@@ -2841,9 +2958,15 @@ export default class Server {
       //   loggedIn/guests  — split of the above by identity type
       //   newRegistrations — accounts whose createdAt falls on that day
       // Note: dau/new counting is only accurate from the deploy date onward.
+      // Admin exports: the ADMIN_TOKEN header, or ?secret= matching the
+      // EXPORT_SECRET env (unset → header only). No secret lives in the code.
+      const isExportAuthorized = () => {
+         if (isCustomSetWriteAuthorized()) return true;
+         const configured = this.room.env.EXPORT_SECRET || '';
+         return !!configured && url.searchParams.get("secret") === configured;
+      };
       if (url.pathname.endsWith('/dau-stats') && (request.method === 'GET' || request.method === 'POST')) {
-         const secret = url.searchParams.get("secret");
-         if (secret !== "vrain_export_2026") return new Response("Unauthorized", { status: 401 });
+         if (!isExportAuthorized()) return new Response("Unauthorized", { status: 401 });
          try {
             const day = url.searchParams.get('date') || dauDay();
             const prefix = `dau:${day}:`;
@@ -2870,8 +2993,7 @@ export default class Server {
       // above — this is an admin GET call, so gating it on POST made it
       // unreachable (it 404'd via GET). Accept both methods to be safe.
       if (url.pathname.endsWith('/export-users') && (request.method === 'GET' || request.method === 'POST')) {
-         const secret = url.searchParams.get("secret");
-         if (secret !== "vrain_export_2026") return new Response("Unauthorized", { status: 401 });
+         if (!isExportAuthorized()) return new Response("Unauthorized", { status: 401 });
          try {
             const list = await this.room.storage.list({ prefix: "user:" });
             const users = [];

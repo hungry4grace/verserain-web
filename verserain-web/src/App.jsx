@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { expandSameChapterRefs } from './lib/expandSameChapterRefs.js';
 import { Play, Pause, RotateCcw, Heart, Zap, Trophy, Crown, Star, Home, XCircle, Headphones, Music, VolumeX, Search, Share2, Dices, Mic, MicOff, Users, CloudRain, Info, Edit, TreePine, Gamepad2, Map, Settings, Library, Volume2, Shuffle, Swords, ShoppingBasket, Apple, Mail, Lock, Sprout, Leaf, Hourglass, Frown, X, Camera, Square, Copy, ArrowRightLeft, MessageCircle, Languages, ChevronUp, ChevronDown, Check, Gift } from 'lucide-react';
+import { CATALOG as VOUCHER_CATALOG, DEFAULT_VALUE as VOUCHER_DEFAULTS } from '../api/_lib/rewardCatalog.js';
 import confetti from 'canvas-confetti';
 import usePartySocket from 'partysocket/react';
 import PartySocket from 'partysocket';
@@ -713,7 +714,7 @@ function buildPublicShareUrl(path = '/', params = {}) {
 // push one history entry per step; popstate applies the hash back to state.
 // Only the query string carries share links (?listenSet= …) — those are
 // consumed and scrubbed as before, and every scrub must keep the hash.
-const ROUTE_TABS = ['lobby', 'versesets', 'custom_verses', 'multiplayer', 'daily_verse', 'advanced', 'garden', 'search', 'map', 'manual', 'about', 'accessible', 'bilingual_rain', 'leaderboard', 'rewards_admin'];
+const ROUTE_TABS = ['lobby', 'versesets', 'custom_verses', 'multiplayer', 'daily_verse', 'advanced', 'garden', 'search', 'map', 'manual', 'about', 'accessible', 'bilingual_rain', 'leaderboard', 'rewards_admin', 'sponsors'];
 const ROUTE_FLAGS = ['listen', 'edit', 'play', 'room'];
 function parseRoute(hash) {
   const seg = String(hash || '').replace(/^#\/?/, '').split('/').filter(Boolean);
@@ -6992,6 +6993,9 @@ export default function App() {
     // Trees + champ counts.
     const treesPlanted = verseEntries.length;
     const champVerses = verseEntries.filter(([, v]) => (v?.fruits || 0) > 0).length;
+    // Passed (大樹, stage 10) — a local hint only; sponsored rewards use the
+    // server's count (see runRewardCheck).
+    const passedVerses = verseEntries.filter(([, v]) => (v?.stage || 0) >= 10).length;
 
     // Streaks: walk back from today, counting consecutive days with activity.
     const today = new Date(`${todayDateStr}T00:00:00`);
@@ -7015,7 +7019,7 @@ export default function App() {
     const todayCount = activity[todayDateStr] || 0;
     const totalActivities = Object.values(activity).reduce((s, n) => s + (n || 0), 0);
 
-    return { todayCount, currentStreak, longestStreak, treesPlanted, champVerses, totalActivities };
+    return { todayCount, currentStreak, longestStreak, treesPlanted, champVerses, passedVerses, totalActivities };
   }, [gardenData, todayDateStr]);
   const skoolLevel = React.useMemo(() => getSkoolLevel(totalFruits), [totalFruits]);
 
@@ -7062,11 +7066,56 @@ export default function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [personalProgress?.treesPlanted, personalCode, playerName, userEmail]);
 
+  // ── 贊助獎勵 (sponsored rewards) ───────────────────────────────────────
+  // Progress toward the sponsored rewards, as the SERVER counts it. The local
+  // garden's passed count is only a hint: /api/reward-check asks the PartyKit
+  // garden store, mints anything earned (once per person), and returns the
+  // numbers the progress bars show. Logged-in players only.
+  const [rewardProgress, setRewardProgress] = useState(null); // last /api/reward-check result | null
+  const [rewardProgressBusy, setRewardProgressBusy] = useState(false);
+  const [notifyInboxReload, setNotifyInboxReload] = useState(0);
+  const runRewardCheck = React.useCallback(async (kind = 'both') => {
+    if (!userEmail || !personalCode) return null;
+    setRewardProgressBusy(true);
+    try {
+      let prev = [];
+      try { prev = JSON.parse(localStorage.getItem('verserain_prev_personal_codes') || '[]'); } catch { prev = []; }
+      const res = await fetch('/api/reward-check', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code: personalCode, codes: Array.isArray(prev) ? prev.slice(0, 4) : [], email: userEmail, playerName: playerName || '', kind }),
+      });
+      const d = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(d.error || String(res.status));
+      setRewardProgress(d);
+      if (Array.isArray(d.created) && d.created.length) setNotifyInboxReload(n => n + 1);
+      return d;
+    } catch (e) {
+      setRewardProgress(prev => ({ ...(prev || {}), error: String(e?.message || e) }));
+      return null;
+    } finally {
+      setRewardProgressBusy(false);
+    }
+  }, [userEmail, personalCode, playerName]);
+  // When the local garden crosses a 100-passed boundary, ask the server once.
+  // A short delay lets the garden sync land before the server is asked.
+  useEffect(() => {
+    if (!userEmail || !personalCode) return undefined;
+    const reached = Math.floor((personalProgress?.passedVerses || 0) / 100) * 100;
+    if (reached < 100) return undefined;
+    let last = 0;
+    try { last = Number(localStorage.getItem('verserain_reward_check_verses') || 0); } catch { last = 0; }
+    if (reached <= last) return undefined;
+    try { localStorage.setItem('verserain_reward_check_verses', String(reached)); } catch { /* ignore */ }
+    const id = setTimeout(() => { runRewardCheck('verses'); }, 4000);
+    return () => clearTimeout(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [personalProgress?.passedVerses, userEmail, personalCode]);
+
   // Creating custom verse sets is open to ANY signed-in user — the publish
   // endpoint is owner-protected on the server, so no premium check is needed.
   // Premium / Lv.3 now only earns a celebratory badge; it's not a gate.
   const canCreateCustomSets = !!userEmail;
-  const isAdmin = ['samhsiung@gmail.com', 'davidhwang1125@gmail.com', 'hsiungsam@gmail.com', 'hungry4grace@gmail.com', 'verserain.admin@gmail.com'].includes(userEmail.toLowerCase()) || skoolLevel.level >= 5;
+  const isAdmin = ['samhsiung@gmail.com', 'davidhwang1125@gmail.com', 'hsiungsam@gmail.com', 'hungry4grace@gmail.com', 'verserain.admin@gmail.com'].includes(userEmail.toLowerCase());
   const isSuperAdmin = ['samhsiung@gmail.com', 'davidhwang1125@gmail.com', 'hsiungsam@gmail.com', 'hungry4grace@gmail.com'].includes(userEmail.toLowerCase());
   const [showLevelInfo, setShowLevelInfo] = useState(false);
   const [showFruitInfo, setShowFruitInfo] = useState(false);
@@ -8977,7 +9026,7 @@ export default function App() {
       } catch { /* offline — badge just stays empty */ }
     })();
     return () => { cancelled = true; };
-  }, [personalCode]);
+  }, [personalCode, notifyInboxReload]);
 
   // A cheers a referee B for a milestone (adds a 讚 to B's inbox).
   const sendReferralCheer = (item) => {
@@ -9000,9 +9049,21 @@ export default function App() {
   // email to send it to (→ /api/reward-claim). Admins fulfil it by hand from
   // the 獎勵管理 page (→ /api/rewards) and the recipient gets kind:'reward_sent'.
   const rewardLabel = (kind, milestone) => kind === 'invites'
-    ? t('邀請的 {n} 位朋友都開始種樹了', '{n} friends you invited each planted a tree').replace('{n}', milestone)
-    : t('完成了 {n} 個經文', 'completed {n} verses').replace('{n}', milestone);
-  const [rewardClaimEmail, setRewardClaimEmail] = useState({});
+    ? t('邀請的 {n} 位朋友都通過了經文', '{n} friends you invited each passed verses').replace('{n}', milestone)
+    : t('通過了 {n} 個經文', 'passed {n} verses').replace('{n}', milestone);
+  // Claim form per reward: { email, region, lineId, voucher }. Region and the
+  // preferred voucher are the player's choice — never inferred.
+  const [rewardClaimForm, setRewardClaimForm] = useState({});
+  const readChurchCode = () => { try { return localStorage.getItem('verserain_church_code') || ''; } catch { return ''; } };
+  const [myChurchCode, setMyChurchCode] = useState(readChurchCode);
+  const saveChurchCode = (v) => {
+    const code = String(v || '').trim().toUpperCase().replace(/\s+/g, '-');
+    setMyChurchCode(code);
+    try { if (code) localStorage.setItem('verserain_church_code', code); else localStorage.removeItem('verserain_church_code'); } catch { /* ignore */ }
+    setSponsorsInfo(null); // refetch the wall with my church marked
+  };
+  const claimFormFor = (id) => ({ email: userEmail || '', region: 'tw', lineId: '', voucher: '', church: myChurchCode, ...(rewardClaimForm[id] || {}) });
+  const setClaimField = (id, field, value) => setRewardClaimForm(prev => ({ ...prev, [id]: { ...claimFormFor(id), [field]: value, ...(field === 'region' ? { voucher: '' } : {}) } }));
   const [claimedRewards, setClaimedRewards] = useState(() => new Set());
   const isRewardClaimed = (id) => {
     if (claimedRewards.has(id)) return true;
@@ -9011,15 +9072,17 @@ export default function App() {
   const claimReward = async (item) => {
     const id = item?.rewardId;
     if (!id) return;
-    const email = String(rewardClaimEmail[id] ?? userEmail ?? '').trim();
+    const f = claimFormFor(id);
+    const email = String(f.email || '').trim();
     if (!email) { setToast(t('請輸入要收獎勵的 Email', 'Enter the email to send the reward to')); setTimeout(() => setToast(null), 2500); return; }
     try {
       const res = await fetch('/api/reward-claim', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ rewardId: id, code: personalCode, email, name: playerName || '' }),
+        body: JSON.stringify({ rewardId: id, code: personalCode, email, name: playerName || '', region: f.region, lineId: f.lineId, preferredVoucherId: f.voucher || undefined, churchCode: f.church || '' }),
       });
       const d = await res.json().catch(() => ({}));
       if (!res.ok || !d.success) throw new Error(d.error || res.status);
+      if ((f.church || '') !== myChurchCode) saveChurchCode(f.church);
       setClaimedRewards(prev => new Set(prev).add(id));
       try { localStorage.setItem(`verserain_reward_claimed_${id}`, '1'); } catch { /* ignore */ }
       setToast(t('已登記！獎勵會寄到 {email}', 'Registered! Your reward will go to {email}').replace('{email}', email));
@@ -9028,30 +9091,98 @@ export default function App() {
     }
     setTimeout(() => setToast(null), 3500);
   };
-  // Admin: the reward ledger, loaded when the 獎勵管理 page opens.
-  const [rewardsAdmin, setRewardsAdmin] = useState(null); // { loading, rewards, error } | null
+  const voucherLabel = (region, id) => ((VOUCHER_CATALOG[region] || []).find(v => v.id === id) || {}).label || id || '';
+  const fmtMoney = (n, cur) => `${cur === 'USD' ? 'US$' : 'NT$'}${Number(n || 0).toLocaleString()}`;
+
+  // Sponsor wall + pool totals for the public 贊助獎勵計劃 page.
+  const [sponsorsInfo, setSponsorsInfo] = useState(null); // { sponsors, pool } | null
+  useEffect(() => {
+    if (mainTab !== 'sponsors' || sponsorsInfo) return undefined;
+    let cancelled = false;
+    fetch(`/api/sponsors${myChurchCode ? `?church=${encodeURIComponent(myChurchCode)}` : ''}`).then(r => r.json()).then(d => { if (!cancelled) setSponsorsInfo(d || {}); }).catch(() => { if (!cancelled) setSponsorsInfo({}); });
+    return () => { cancelled = true; };
+  }, [mainTab, sponsorsInfo, myChurchCode]);
+  useEffect(() => {
+    if (mainTab === 'sponsors' && userEmail && personalCode && !rewardProgress && !rewardProgressBusy) runRewardCheck('both');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mainTab, userEmail, personalCode]);
+
+  // Admin: the reward ledger + sponsor pool, loaded when the 獎勵管理 page
+  // opens. Money-backed routes need the ADMIN_TOKEN header on top of the
+  // email whitelist; the token is typed once and kept in localStorage.
+  const [adminToken, setAdminToken] = useState(() => { try { return localStorage.getItem('verserain_admin_token') || ''; } catch { return ''; } });
+  const saveAdminToken = (v) => { setAdminToken(v); try { localStorage.setItem('verserain_admin_token', v); } catch { /* ignore */ } };
+  const adminHeaders = () => ({ 'Content-Type': 'application/json', ...(adminToken ? { 'X-Admin-Token': adminToken } : {}) });
+  const [rewardsAdmin, setRewardsAdmin] = useState(null); // { loading, rewards, sponsors, pool, error } | null
   const [rewardsAdminFilter, setRewardsAdminFilter] = useState('pending');
   const [rewardNoteDraft, setRewardNoteDraft] = useState({});
+  const [rewardSendDraft, setRewardSendDraft] = useState({}); // id → { poolId, voucherId, voucherValue, deliveredVia }
+  const [sponsorDraft, setSponsorDraft] = useState(null); // sponsor being added/edited | null
+  const [rewardsAdminReload, setRewardsAdminReload] = useState(0);
   useEffect(() => {
     if (mainTab !== 'rewards_admin' || !isSuperAdmin) return undefined;
     let cancelled = false;
-    setRewardsAdmin(prev => ({ rewards: prev?.rewards || [], error: '', loading: true }));
-    fetch(`/api/rewards?adminEmail=${encodeURIComponent(userEmail)}`)
-      .then(r => r.json().then(d => ({ ok: r.ok, d })))
-      .then(({ ok, d }) => { if (!cancelled) setRewardsAdmin({ loading: false, rewards: d.rewards || [], error: ok ? '' : String(d.error || 'error') }); })
-      .catch(e => { if (!cancelled) setRewardsAdmin({ loading: false, rewards: [], error: String(e?.message || e) }); });
+    setRewardsAdmin(prev => ({ ...(prev || {}), rewards: prev?.rewards || [], sponsors: prev?.sponsors || [], error: '', loading: true }));
+    fetch(`/api/rewards?adminEmail=${encodeURIComponent(userEmail)}`, { headers: adminHeaders() })
+      .then(r => r.json().then(d => ({ ok: r.ok, status: r.status, d })))
+      .then(({ ok, status, d }) => { if (!cancelled) setRewardsAdmin({ loading: false, rewards: d.rewards || [], sponsors: d.sponsors || [], pool: d.pool || null, error: ok ? '' : (status === 401 ? 'token' : String(d.error || 'error')) }); })
+      .catch(e => { if (!cancelled) setRewardsAdmin({ loading: false, rewards: [], sponsors: [], pool: null, error: String(e?.message || e) }); });
     return () => { cancelled = true; };
-  }, [mainTab, isSuperAdmin, userEmail]);
-  const markReward = async (reward, action) => {
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mainTab, isSuperAdmin, userEmail, rewardsAdminReload]);
+  const rewardCurrency = (r) => ((r.region || 'tw') === 'intl' ? 'USD' : 'TWD');
+  // Pools this reward may be paid from: same currency, active, and for a
+  // church pool the claimant must have entered that church's code.
+  const poolsFor = (r) => (rewardsAdmin?.sponsors || []).filter(sp => sp.active !== false && sp.currency === rewardCurrency(r) && (sp.scope !== 'church' || (sp.churchCode && sp.churchCode === String(r.churchCode || '').toUpperCase())));
+  const sendDraftFor = (r) => {
+    const region = r.region || 'tw';
+    const currency = rewardCurrency(r);
+    // Default pool: the player's own church pool first; otherwise the open
+    // pool that was received earliest (first in, first used), so every
+    // sponsor sees their gift spent in order. The admin can override.
+    const pools = poolsFor(r);
+    const churchPool = pools.find(sp => sp.scope === 'church');
+    const remainingOf = (sp) => (rewardsAdmin?.pool?.bySponsor?.[sp.id]?.remaining ?? sp.amount);
+    const fifoOpen = pools.filter(sp => sp.scope !== 'church' && remainingOf(sp) > 0).sort((x, y) => String(x.receivedAt || '').localeCompare(String(y.receivedAt || '')))[0];
+    return {
+      poolId: r.poolId || (churchPool ? churchPool.id : (fifoOpen ? fifoOpen.id : '')),
+      voucherId: r.voucherId || r.preferredVoucherId || ((VOUCHER_CATALOG[region] || [])[0] || {}).id || '',
+      voucherValue: r.voucherValue || (VOUCHER_DEFAULTS[r.kind] || VOUCHER_DEFAULTS.verses)[currency] || 0,
+      deliveredVia: r.deliveredVia || (r.lineId ? 'line' : 'email'),
+      ...(rewardSendDraft[r.id] || {}),
+    };
+  };
+  const setSendField = (id, r, field, value) => setRewardSendDraft(prev => ({ ...prev, [id]: { ...sendDraftFor(r), [field]: value } }));
+  const markReward = async (reward, action, extra = {}) => {
     try {
+      const draft = action === 'sent' ? sendDraftFor(reward) : {};
       const res = await fetch('/api/rewards', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ adminEmail: userEmail, rewardId: reward.id, action, note: rewardNoteDraft[reward.id] ?? reward.note ?? '' }),
+        method: 'POST', headers: adminHeaders(),
+        body: JSON.stringify({
+          adminEmail: userEmail, rewardId: reward.id, action, note: rewardNoteDraft[reward.id] ?? reward.note ?? '', region: reward.region || 'tw',
+          ...(action === 'sent' ? { ...draft, voucherValue: Number(draft.voucherValue) || 0, voucherCurrency: rewardCurrency(reward) } : {}),
+          ...extra,
+        }),
       });
       const d = await res.json().catch(() => ({}));
-      if (!res.ok || !d.success) throw new Error(d.error || res.status);
+      if (!res.ok || !d.success) throw new Error(d.error === 'insufficient_pool' ? t('贊助池餘額不足', 'Sponsor pool balance too low') : d.error === 'church_mismatch' ? t('此池僅限該教會會友，玩家的教會代碼不符', 'This pool is for that church’s members only; the player’s church code does not match') : (d.error || res.status));
       setRewardsAdmin(prev => prev ? { ...prev, rewards: prev.rewards.map(r => r.id === d.reward.id ? d.reward : r) } : prev);
-      setToast(action === 'sent' ? t('已標記為寄出，並通知對方 🎁', 'Marked as sent — recipient notified 🎁') : t('已改回待處理', 'Moved back to pending'));
+      setRewardsAdminReload(n => n + 1);
+      setToast(action === 'sent' ? t('已標記為寄出，並通知對方 🎁', 'Marked as sent — recipient notified 🎁') : action === 'reject' ? t('已標記為無效', 'Marked as invalid') : t('已改回待處理', 'Moved back to pending'));
+    } catch (e) {
+      setToast(t('更新失敗：{error}', 'Update failed: {error}').replace('{error}', String(e?.message || e)));
+    }
+    setTimeout(() => setToast(null), 3000);
+  };
+  const saveSponsorRecord = async (sponsor, action = 'upsert') => {
+    try {
+      const res = await fetch('/api/sponsors', { method: 'POST', headers: adminHeaders(), body: JSON.stringify({ adminEmail: userEmail, action, sponsor, sponsorId: sponsor?.id }) });
+      const d = await res.json().catch(() => ({}));
+      if (!res.ok || !d.success) throw new Error(d.error || res.status);
+      setRewardsAdmin(prev => prev ? { ...prev, sponsors: d.sponsors || prev.sponsors, pool: d.pool || prev.pool } : prev);
+      setSponsorDraft(null);
+      setSponsorsInfo(null);
+      setToast(t('贊助紀錄已儲存', 'Sponsor record saved'));
     } catch (e) {
       setToast(t('更新失敗：{error}', 'Update failed: {error}').replace('{error}', String(e?.message || e)));
     }
@@ -25178,7 +25309,7 @@ const deDict = {
                     verserain
                   </div>
                   <div className="app-brand-version" style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', marginTop: '4px', marginLeft: '2px' }}>
-                    v4.0.27
+                    v4.0.28
                   </div>
                 </div>
                 <div ref={langPickerRef} className="app-lang-control" style={{ position: 'relative' }}>
@@ -25819,6 +25950,7 @@ const deDict = {
                       { id: 'morningPush', Icon: Mail, label: pushStatus === 'subscribed' ? t('已開啟每日經文推播', 'Daily Verse Push: On') : t('開啟每日經文推播', 'Daily Verse Push'), desc: t('每天上午 7 點手機推播今日經文', 'Get today\'s verse pushed at 7am'), color: '#10b981' },
                       { id: 'about', Icon: Info, label: t('關於我們', 'About'), desc: t('VerseRain 開發資訊', 'Info & Credits'), color: '#14b8a6' },
                       { id: 'feedback', link: `mailto:hungry4grace@gmail.com?subject=${encodeURIComponent('經文雨 意見回饋（VerseRain Feedback）')}`, Icon: Mail, label: t('意見回饋', 'Feedback'), desc: t('聯絡與建議', 'Bugs & Suggestions'), color: '#ec4899' },
+                      { id: 'sponsors', Icon: Gift, label: t('贊助獎勵計劃', 'Sponsored Rewards'), desc: t('通過經文、邀請朋友，贏得禮券', 'Pass verses, invite friends, earn vouchers'), color: '#f59e0b' },
                       ...(isSuperAdmin ? [{ id: 'rewards_admin', Icon: Gift, label: t('獎勵管理', 'Reward Admin'), desc: t('待發送的禮券與獎勵', 'Gift cards & rewards to send'), color: '#f59e0b' }] : [])
                     ].map(item => {
                       const Icon = item.Icon;
@@ -27924,6 +28056,9 @@ const deDict = {
                           <div style={{ fontSize: '0.78rem', color: '#1e3a8a', marginTop: '0.25rem' }}>{t('總果子', 'Fruits')}</div>
                         </div>
                       </div>
+                      <div onClick={() => setMainTab('sponsors')} style={{ marginTop: '0.8rem', textAlign: 'center', fontSize: '0.82rem', color: '#92400e', background: '#fef3c7', border: '1px solid #fde68a', borderRadius: 8, padding: '0.4rem 0.6rem', cursor: 'pointer' }}>
+                        🎁 {t('再通過 {n} 節經文，就能獲得贊助獎勵', 'Pass {n} more verses to earn a sponsored reward').replace('{n}', String(rewardProgress?.nextVerses ?? (100 - ((personalProgress.passedVerses || 0) % 100))))}
+                      </div>
                     </div>
                   </div>
 
@@ -28199,61 +28334,187 @@ const deDict = {
                     <div style={{ color: '#94a3b8', textAlign: 'center', padding: '2rem' }}>{t('僅限管理員', 'Admins only')}</div>
                   ) : (() => {
                     const all = rewardsAdmin?.rewards || [];
-                    const pendingCount = all.filter(r => r.status !== 'sent').length;
-                    const shown = all.filter(r => rewardsAdminFilter === 'all' ? true : rewardsAdminFilter === 'sent' ? r.status === 'sent' : r.status !== 'sent');
-                    const statusBadge = (s) => s === 'sent'
+                    const sponsors = rewardsAdmin?.sponsors || [];
+                    const pool = rewardsAdmin?.pool || { byCurrency: {}, bySponsor: {} };
+                    const isOpen = (r) => r.status !== 'sent' && r.status !== 'rejected';
+                    const pendingCount = all.filter(isOpen).length;
+                    const shown = all.filter(r => rewardsAdminFilter === 'all' ? true : rewardsAdminFilter === 'sent' ? r.status === 'sent' : rewardsAdminFilter === 'rejected' ? r.status === 'rejected' : isOpen(r));
+                    const statusBadge = (st) => st === 'sent'
                       ? { text: t('已寄出', 'Sent'), bg: '#dcfce7', fg: '#166534' }
-                      : s === 'claimed'
-                        ? { text: t('已登記 Email', 'Email confirmed'), bg: '#dbeafe', fg: '#1e40af' }
-                        : { text: t('待處理', 'Pending'), bg: '#fef3c7', fg: '#92400e' };
+                      : st === 'rejected'
+                        ? { text: t('無效', 'Invalid'), bg: '#fee2e2', fg: '#991b1b' }
+                        : st === 'claimed'
+                          ? { text: t('已登記 Email', 'Email confirmed'), bg: '#dbeafe', fg: '#1e40af' }
+                          : { text: t('待處理', 'Pending'), bg: '#fef3c7', fg: '#92400e' };
+                    const flagLabel = (f) => ({
+                      unverified: t('舊資料，未經伺服器核算', 'Legacy — not server-verified'),
+                      low_active_days: t('活躍天數少', 'Few active days'),
+                      young_account: t('新帳號', 'New account'),
+                      privaterelay_email: t('隱藏信箱帳號', 'Hidden-email account'),
+                      referee_cluster: t('多位推薦人同日註冊', 'Several referees signed up the same day'),
+                    })[f] || f;
+                    const inputStyle = { padding: '0.4rem 0.6rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.85rem', background: '#fff' };
+                    const smallBtn = (bg, fg = '#fff', border = 'none') => ({ background: bg, color: fg, border, borderRadius: '6px', padding: '0.4rem 0.8rem', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 600 });
+                    const todayIso = new Date().toLocaleDateString('en-CA');
                     return (
                       <div>
                         <p style={{ color: '#64748b', fontSize: '0.9rem', marginTop: 0, lineHeight: 1.6 }}>
-                          {t('玩家完成 100 個經文，或邀請的 10 位朋友都種下第一棵樹時，會出現在這裡。把禮券寄給對方後，按「標記已寄出」通知他。', 'A player appears here when they complete 100 verses, or when 10 friends they invited each plant a first tree. Send the gift card yourself, then tap "Mark as sent" to notify them.')}
+                          {t('玩家經伺服器核算通過 100 個經文、或邀請的 10 位朋友各通過 3 節時，會出現在這裡。核對下方的核算資料與標記後，寄出禮券並選擇扣款的贊助池。', 'Players appear here when the server verifies 100 passed verses, or 10 invited friends who each passed 3. Review the verification data and flags, send the voucher, and pick the sponsor pool to debit.')}
                         </p>
+                        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap', marginBottom: '1rem', background: rewardsAdmin?.error === 'token' ? '#fef2f2' : '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 8, padding: '0.6rem 0.8rem' }}>
+                          <span style={{ fontSize: '0.85rem', color: '#475569' }}>🔑 {t('管理員密鑰', 'Admin token')}</span>
+                          <input type="password" value={adminToken} onChange={e => saveAdminToken(e.target.value)} placeholder="ADMIN_TOKEN" autoComplete="off" style={{ ...inputStyle, flex: '1 1 200px' }} />
+                          <button type="button" onClick={() => setRewardsAdminReload(n => n + 1)} style={smallBtn('#e2e8f0', '#334155')}>{t('重新載入', 'Reload')}</button>
+                          {rewardsAdmin?.error === 'token' && <span style={{ color: '#ef4444', fontSize: '0.8rem' }}>{t('密鑰錯誤或未填', 'Token missing or wrong')}</span>}
+                        </div>
+
+                        {/* 贊助池 */}
+                        <div style={{ border: '1px solid #fde68a', background: '#fffbeb', borderRadius: 10, padding: '0.9rem 1rem', marginBottom: '1rem' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
+                            <b style={{ color: '#92400e' }}>💰 {t('贊助池', 'Sponsor pool')}</b>
+                            <button type="button" onClick={() => setSponsorDraft({ displayName: '', amount: '', currency: 'TWD', region: 'tw', anonymous: false, showAmount: true, message: '', receivedAt: todayIso, note: '', scope: 'open', churchCode: '', churchName: '' })} style={smallBtn('#f59e0b')}>＋ {t('新增贊助紀錄', 'Add sponsor')}</button>
+                          </div>
+                          <div style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap', marginTop: '0.6rem' }}>
+                            {Object.entries(pool.byCurrency || {}).length === 0 && <span style={{ color: '#94a3b8', fontSize: '0.85rem' }}>{t('尚無贊助紀錄', 'No sponsors recorded yet')}</span>}
+                            {Object.entries(pool.byCurrency || {}).map(([cur, st]) => (
+                              <div key={cur} style={{ background: '#fff', border: '1px solid #fde68a', borderRadius: 8, padding: '0.5rem 0.8rem', fontSize: '0.85rem', color: '#334155' }}>
+                                <b>{cur}</b> · {t('累計贊助', 'Raised')} {fmtMoney(st.raised, cur)} · {t('已發出 {n} 份', '{n} sent').replace('{n}', String(st.sentCount))} {fmtMoney(st.sentValue, cur)} · {t('待處理 {n} 份', '{n} pending').replace('{n}', String(st.pendingCount))} · <b style={{ color: st.remaining > 0 ? '#166534' : '#991b1b' }}>{t('剩餘', 'Remaining')} {fmtMoney(st.remaining, cur)}</b>
+                              </div>
+                            ))}
+                          </div>
+                          {sponsorDraft && (
+                            <div style={{ marginTop: '0.8rem', background: '#fff', border: '1px solid #e2e8f0', borderRadius: 8, padding: '0.8rem', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '0.5rem' }}>
+                              <input type="text" value={sponsorDraft.displayName} onChange={e => setSponsorDraft(d => ({ ...d, displayName: e.target.value }))} placeholder={t('贊助者名稱（教會／公司／個人）', 'Sponsor name (church / company / person)')} maxLength={60} style={inputStyle} />
+                              <input type="number" min={1} value={sponsorDraft.amount} onChange={e => setSponsorDraft(d => ({ ...d, amount: e.target.value }))} placeholder={t('金額', 'Amount')} style={inputStyle} />
+                              <select value={sponsorDraft.currency} onChange={e => setSponsorDraft(d => ({ ...d, currency: e.target.value, region: e.target.value === 'USD' ? 'intl' : 'tw' }))} style={inputStyle}>
+                                <option value="TWD">TWD（{t('台灣', 'Taiwan')}）</option>
+                                <option value="USD">USD（{t('海外', 'Overseas')}）</option>
+                              </select>
+                              <input type="date" value={sponsorDraft.receivedAt} onChange={e => setSponsorDraft(d => ({ ...d, receivedAt: e.target.value }))} style={inputStyle} />
+                              <select value={sponsorDraft.scope || 'open'} onChange={e => setSponsorDraft(d => ({ ...d, scope: e.target.value }))} style={inputStyle}>
+                                <option value="open">{t('開放池：所有達標者', 'Open pool: anyone who qualifies')}</option>
+                                <option value="church">{t('教會限定：只給該教會會友', 'Church-only: that church’s members')}</option>
+                              </select>
+                              {(sponsorDraft.scope === 'church') && (
+                                <>
+                                  <input type="text" value={sponsorDraft.churchCode || ''} onChange={e => setSponsorDraft(d => ({ ...d, churchCode: e.target.value.toUpperCase() }))} placeholder={t('教會代碼（給會友輸入，如 GRACE-TPE）', 'Church code (members enter it, e.g. GRACE-TPE)')} maxLength={20} style={inputStyle} />
+                                  <input type="text" value={sponsorDraft.churchName || ''} onChange={e => setSponsorDraft(d => ({ ...d, churchName: e.target.value }))} placeholder={t('教會名稱（公開顯示）', 'Church name (shown publicly)')} maxLength={60} style={inputStyle} />
+                                </>
+                              )}
+                              <input type="text" value={sponsorDraft.message} onChange={e => setSponsorDraft(d => ({ ...d, message: e.target.value }))} placeholder={t('祝福語或經文（公開顯示）', 'Blessing or verse (shown publicly)')} maxLength={200} style={{ ...inputStyle, gridColumn: '1 / -1' }} />
+                              <input type="text" value={sponsorDraft.note} onChange={e => setSponsorDraft(d => ({ ...d, note: e.target.value }))} placeholder={t('內部備註（收據編號等，不公開）', 'Internal note (receipt no. etc., private)')} maxLength={200} style={{ ...inputStyle, gridColumn: '1 / -1' }} />
+                              <label style={{ fontSize: '0.85rem', color: '#334155', display: 'flex', gap: 6, alignItems: 'center' }}><input type="checkbox" checked={!!sponsorDraft.anonymous} onChange={e => setSponsorDraft(d => ({ ...d, anonymous: e.target.checked }))} /> {t('匿名（不公開名稱）', 'Anonymous (hide name)')}</label>
+                              <label style={{ fontSize: '0.85rem', color: '#334155', display: 'flex', gap: 6, alignItems: 'center' }}><input type="checkbox" checked={!!sponsorDraft.showAmount} onChange={e => setSponsorDraft(d => ({ ...d, showAmount: e.target.checked }))} /> {t('公開金額', 'Show amount publicly')}</label>
+                              <div style={{ gridColumn: '1 / -1', display: 'flex', gap: '0.5rem' }}>
+                                <button type="button" onClick={() => saveSponsorRecord(sponsorDraft)} style={smallBtn('#10b981')}>{t('儲存', 'Save')}</button>
+                                <button type="button" onClick={() => setSponsorDraft(null)} style={smallBtn('transparent', '#64748b', '1px solid #cbd5e1')}>{t('取消', 'Cancel')}</button>
+                              </div>
+                            </div>
+                          )}
+                          {sponsors.length > 0 && (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', marginTop: '0.8rem' }}>
+                              {sponsors.map(sp => (
+                                <div key={sp.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap', background: '#fff', border: '1px solid #e2e8f0', borderRadius: 8, padding: '0.5rem 0.8rem', fontSize: '0.85rem', opacity: sp.active === false ? 0.55 : 1 }}>
+                                  <div style={{ minWidth: 0 }}>
+                                    <b style={{ color: '#1e293b' }}>{sp.displayName}</b>{sp.anonymous ? <span style={{ color: '#94a3b8' }}> · {t('匿名', 'anonymous')}</span> : null}
+                                    {sp.scope === 'church' ? <span style={{ background: '#ede9fe', color: '#5b21b6', borderRadius: 999, padding: '0.05rem 0.5rem', fontSize: '0.75rem', marginLeft: 6 }}>⛪ {sp.churchName || sp.displayName} · {sp.churchCode}</span> : null}
+                                    <span style={{ color: '#475569' }}> · {fmtMoney(sp.amount, sp.currency)} · {sp.receivedAt}</span>
+                                    {pool.bySponsor && pool.bySponsor[sp.id] ? <span style={{ color: '#166534' }}> · {t('剩餘', 'Remaining')} {fmtMoney(pool.bySponsor[sp.id].remaining, sp.currency)}</span> : null}
+                                    {sp.message ? <div style={{ color: '#64748b', fontSize: '0.8rem' }}>「{sp.message}」</div> : null}
+                                    {sp.note ? <div style={{ color: '#94a3b8', fontSize: '0.78rem' }}>🔒 {sp.note}</div> : null}
+                                  </div>
+                                  <div style={{ display: 'flex', gap: '0.4rem' }}>
+                                    <button type="button" onClick={() => setSponsorDraft({ ...sp })} style={smallBtn('transparent', '#334155', '1px solid #cbd5e1')}>{t('編輯', 'Edit')}</button>
+                                    <button type="button" onClick={() => saveSponsorRecord(sp, sp.active === false ? 'activate' : 'deactivate')} style={smallBtn('transparent', '#64748b', '1px solid #cbd5e1')}>{sp.active === false ? t('啟用', 'Activate') : t('停用', 'Deactivate')}</button>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+
                         <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem', flexWrap: 'wrap' }}>
-                          {[['pending', t('待處理', 'Pending'), pendingCount], ['sent', t('已寄出', 'Sent'), all.length - pendingCount], ['all', t('全部', 'All'), all.length]].map(([id, label, n]) => (
-                            <button key={id} type="button" onClick={() => setRewardsAdminFilter(id)} style={{ padding: '0.4rem 0.9rem', borderRadius: '20px', border: 'none', background: rewardsAdminFilter === id ? '#f59e0b' : '#e2e8f0', color: rewardsAdminFilter === id ? '#fff' : '#475569', fontWeight: 'bold', cursor: 'pointer', fontSize: '0.85rem' }}>{label} ({n})</button>
+                          {[['pending', t('待處理', 'Pending'), pendingCount], ['sent', t('已寄出', 'Sent'), all.filter(r => r.status === 'sent').length], ['rejected', t('無效', 'Invalid'), all.filter(r => r.status === 'rejected').length], ['all', t('全部', 'All'), all.length]].map(([id, label, n]) => (
+                            <button key={id} type="button" onClick={() => setRewardsAdminFilter(id)} style={{ padding: '0.4rem 0.9rem', borderRadius: '20px', border: 'none', background: rewardsAdminFilter === id ? '#f59e0b' : '#e2e8f0', color: rewardsAdminFilter === id ? '#fff' : '#334155', cursor: 'pointer', fontWeight: 600, fontSize: '0.85rem' }}>{label} ({n})</button>
                           ))}
                         </div>
-                        {rewardsAdmin?.error && <div style={{ color: '#ef4444', fontSize: '0.85rem', marginBottom: '0.8rem' }}>{rewardsAdmin.error}</div>}
+                        {rewardsAdmin?.error && rewardsAdmin.error !== 'token' && <div style={{ color: '#ef4444', fontSize: '0.85rem', marginBottom: '0.8rem' }}>{rewardsAdmin.error}</div>}
                         {rewardsAdmin?.loading && all.length === 0 && <div style={{ color: '#94a3b8', textAlign: 'center', padding: '1.5rem' }}>{t('載入中…', 'Loading…')}</div>}
                         {!rewardsAdmin?.loading && shown.length === 0 && <div style={{ color: '#94a3b8', textAlign: 'center', padding: '1.5rem', border: '1px dashed #cbd5e1', borderRadius: '8px' }}>{t('目前沒有項目', 'Nothing here yet')}</div>}
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.7rem' }}>
                           {shown.map(r => {
                             const badge = statusBadge(r.status);
                             const contact = r.contactEmail || r.email || '';
+                            const region = r.region || 'tw';
+                            const cur = rewardCurrency(r);
+                            const v = r.verified;
+                            const flags = r.flags || [];
+                            const draft = sendDraftFor(r);
+                            const pools = poolsFor(r);
                             return (
-                              <div key={r.id} style={{ border: '1px solid #e2e8f0', borderRadius: '10px', padding: '0.9rem 1rem', display: 'flex', flexDirection: 'column', gap: '0.5rem', background: r.status === 'sent' ? '#f8fafc' : '#fff' }}>
+                              <div key={r.id} style={{ border: `1px solid ${flags.length && isOpen(r) ? '#fcd34d' : '#e2e8f0'}`, borderRadius: '10px', padding: '0.9rem 1rem', display: 'flex', flexDirection: 'column', gap: '0.5rem', background: r.status === 'sent' ? '#f8fafc' : r.status === 'rejected' ? '#fff5f5' : '#fff' }}>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.6rem', flexWrap: 'wrap' }}>
                                   <div style={{ minWidth: 0 }}>
                                     <div style={{ fontWeight: 700, color: '#1e293b', fontSize: '1rem' }}>{r.kind === 'invites' ? '🤝' : '🏞️'} {r.contactName || r.name || t('（未提供名字）', '(no name)')} · {rewardLabel(r.kind, r.milestone)}</div>
                                     <div style={{ color: '#64748b', fontSize: '0.82rem', marginTop: 3, wordBreak: 'break-all' }}>
                                       📧 {contact ? <b style={{ color: '#1e293b' }}>{contact}</b> : <span style={{ color: '#ef4444' }}>{t('尚未登記 Email', 'No email yet')}</span>}
+                                      {' · '}{region === 'intl' ? t('海外', 'Overseas') : t('台灣', 'Taiwan')}
+                                      {r.lineId ? <> · LINE <b style={{ color: '#1e293b' }}>{r.lineId}</b></> : null}
+                                      {r.churchCode ? <> · ⛪ <b style={{ color: '#1e293b' }}>{r.churchCode}</b></> : null}
+                                      {r.preferredVoucherId ? <> · {t('偏好', 'prefers')} {voucherLabel(region, r.preferredVoucherId)}</> : null}
                                       {' · '}{t('代碼', 'code')} <code>{r.code}</code>
-                                      {r.inviterCode ? <> · {t('邀請人', 'invited by')} <code>{r.inviterCode}</code></> : null}
                                     </div>
+                                    <div style={{ color: '#475569', fontSize: '0.8rem', marginTop: 3 }}>
+                                      {v ? (
+                                        <>🔎 {t('伺服器核算', 'Server-verified')}: {t('通過 {n} 節', '{n} passed').replace('{n}', String(v.passedVerses ?? '?'))} · {t('活躍 {n} 天', '{n} active days').replace('{n}', String(v.activeDays ?? '?'))} · {t('帳號 {n} 天', 'account {n} days').replace('{n}', String(v.accountAgeDays ?? '?'))}{r.kind === 'invites' ? <> · {t('合格推薦 {n} 位', '{n} qualified referrals').replace('{n}', String(v.qualified ?? '?'))}</> : null}</>
+                                      ) : null}
+                                    </div>
+                                    {flags.length > 0 && (
+                                      <div style={{ display: 'flex', gap: '0.3rem', flexWrap: 'wrap', marginTop: 4 }}>
+                                        {flags.map(f => <span key={f} style={{ background: '#fef3c7', color: '#92400e', borderRadius: 999, padding: '0.1rem 0.55rem', fontSize: '0.75rem', fontWeight: 600 }}>⚠️ {flagLabel(f)}</span>)}
+                                      </div>
+                                    )}
                                     <div style={{ color: '#94a3b8', fontSize: '0.75rem', marginTop: 2 }}>
                                       {t('達成', 'Earned')} {new Date(r.at).toLocaleString()}
-                                      {r.sentAt ? <> · {t('寄出', 'Sent')} {new Date(r.sentAt).toLocaleString()}{r.sentBy ? ` (${r.sentBy})` : ''}</> : null}
+                                      {r.sentAt ? <> · {t('寄出', 'Sent')} {new Date(r.sentAt).toLocaleString()}{r.sentBy ? ` (${r.sentBy})` : ''}{r.voucherId ? ` · ${voucherLabel(region, r.voucherId)} ${fmtMoney(r.voucherValue, r.voucherCurrency || cur)}` : ''}{r.poolId ? ` · ${(sponsors.find(sp => sp.id === r.poolId) || {}).displayName || r.poolId}` : ''}</> : null}
+                                      {r.rejectedAt ? <> · {t('標記無效', 'Marked invalid')} {new Date(r.rejectedAt).toLocaleString()}{r.rejectReason ? `：${r.rejectReason}` : ''}</> : null}
                                     </div>
                                   </div>
                                   <span style={{ background: badge.bg, color: badge.fg, borderRadius: '999px', padding: '0.2rem 0.7rem', fontSize: '0.78rem', fontWeight: 700, whiteSpace: 'nowrap' }}>{badge.text}</span>
                                 </div>
-                                <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
-                                  <input
-                                    type="text"
-                                    value={rewardNoteDraft[r.id] ?? r.note ?? ''}
-                                    onChange={e => setRewardNoteDraft(prev => ({ ...prev, [r.id]: e.target.value }))}
-                                    placeholder={t('備註（例：Starbucks $200，已用 LINE 傳）', 'Note (e.g. Starbucks $200, sent via LINE)')}
-                                    style={{ flex: '1 1 220px', padding: '0.4rem 0.6rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.85rem' }}
-                                  />
-                                  {r.status === 'sent' ? (
-                                    <button type="button" onClick={() => markReward(r, 'unsent')} style={{ background: 'transparent', color: '#64748b', border: '1px solid #cbd5e1', borderRadius: '6px', padding: '0.4rem 0.8rem', cursor: 'pointer', fontSize: '0.85rem' }}>{t('改回待處理', 'Undo')}</button>
-                                  ) : (
-                                    <button type="button" onClick={() => markReward(r, 'sent')} style={{ background: '#10b981', color: '#fff', border: 'none', borderRadius: '6px', padding: '0.45rem 0.9rem', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 700 }}>✓ {t('標記已寄出', 'Mark as sent')}</button>
-                                  )}
-                                </div>
+                                {isOpen(r) ? (
+                                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '0.5rem', alignItems: 'center' }}>
+                                    <select value={draft.poolId} onChange={e => setSendField(r.id, r, 'poolId', e.target.value)} style={inputStyle}>
+                                      <option value="">{t('不扣贊助池', 'No sponsor pool')}</option>
+                                      {pools.map(sp => <option key={sp.id} value={sp.id}>{sp.displayName} · {t('剩餘', 'Remaining')} {fmtMoney((pool.bySponsor && pool.bySponsor[sp.id] ? pool.bySponsor[sp.id].remaining : sp.amount), sp.currency)}</option>)}
+                                    </select>
+                                    <select value={draft.voucherId} onChange={e => setSendField(r.id, r, 'voucherId', e.target.value)} style={inputStyle}>
+                                      {(VOUCHER_CATALOG[region] || []).map(vc => <option key={vc.id} value={vc.id}>{vc.label}</option>)}
+                                    </select>
+                                    <input type="number" min={0} value={draft.voucherValue} onChange={e => setSendField(r.id, r, 'voucherValue', e.target.value)} placeholder={cur} style={inputStyle} />
+                                    <select value={draft.deliveredVia} onChange={e => setSendField(r.id, r, 'deliveredVia', e.target.value)} style={inputStyle}>
+                                      <option value="email">Email</option>
+                                      <option value="line">LINE</option>
+                                      <option value="other">{t('其他', 'Other')}</option>
+                                    </select>
+                                    <input
+                                      type="text"
+                                      value={rewardNoteDraft[r.id] ?? r.note ?? ''}
+                                      onChange={e => setRewardNoteDraft(prev => ({ ...prev, [r.id]: e.target.value }))}
+                                      placeholder={t('備註（不要填禮券序號）', 'Note (never the voucher code)')}
+                                      style={{ ...inputStyle, gridColumn: '1 / -1' }}
+                                    />
+                                    <div style={{ gridColumn: '1 / -1', display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                                      <button type="button" onClick={() => markReward(r, 'sent')} style={smallBtn('#10b981')}>✅ {t('標記已寄出', 'Mark as sent')}</button>
+                                      <button type="button" onClick={() => { const reason = window.prompt(t('標記無效的原因', 'Reason for marking invalid')) ; if (reason !== null) markReward(r, 'reject', { reason }); }} style={smallBtn('transparent', '#991b1b', '1px solid #fecaca')}>🚫 {t('標記無效', 'Mark invalid')}</button>
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
+                                    {r.note ? <span style={{ color: '#64748b', fontSize: '0.82rem' }}>📝 {r.note}</span> : null}
+                                    <button type="button" onClick={() => markReward(r, 'unsent')} style={smallBtn('transparent', '#64748b', '1px solid #cbd5e1')}>↩︎ {t('改回待處理', 'Back to pending')}</button>
+                                  </div>
+                                )}
                               </div>
                             );
                           })}
@@ -28263,6 +28524,155 @@ const deDict = {
                   })()}
                 </div>
               )}
+
+              {mainTab === 'sponsors' && (() => {
+                const info = sponsorsInfo;
+                const byCur = (info && info.pool && info.pool.byCurrency) || {};
+                const wallAll = (info && info.sponsors) || [];
+                const wall = wallAll.filter(sp => sp.scope !== 'church');
+                const churchWall = wallAll.filter(sp => sp.scope === 'church');
+                const remainingOf = (sp) => (info && info.pool && info.pool.bySponsor && info.pool.bySponsor[sp.id]) ? info.pool.bySponsor[sp.id].remaining : null;
+                const per = rewardProgress?.versesPerReward || 100;
+                const perInv = rewardProgress?.invitesPerReward || 10;
+                const passed = rewardProgress?.passedVerses ?? (personalProgress?.passedVerses || 0);
+                const qualified = rewardProgress?.qualifiedReferrals || 0;
+                const needPasses = rewardProgress?.qualifiedPasses || 3;
+                const bar = (value, total, color) => (
+                  <div style={{ background: '#e2e8f0', borderRadius: 999, height: 10, overflow: 'hidden', margin: '0.35rem 0' }}>
+                    <div style={{ width: `${Math.min(100, Math.round(((value % total) / total) * 100))}%`, background: color, height: '100%', transition: 'width .4s' }} />
+                  </div>
+                );
+                const card = { background: '#fff', border: '1px solid #e2e8f0', borderRadius: 12, padding: '1rem 1.2rem', marginBottom: '1rem' };
+                const h3 = { margin: '0 0 0.6rem', color: '#1e293b', fontSize: '1.05rem' };
+                return (
+                  <div style={{ backgroundColor: '#fffdf7', borderRadius: '8px', border: '1px solid #fde68a', padding: '1.5rem', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.6rem', marginBottom: '0.8rem' }}>
+                      <h2 style={{ color: '#1e293b', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Gift size={26} /> {t('贊助獎勵計劃', 'Sponsored Rewards')}</h2>
+                      <button type="button" onClick={() => setMainTab('advanced')} style={{ background: 'transparent', border: '1px solid #cbd5e1', color: '#64748b', borderRadius: '6px', padding: '0.35rem 0.8rem', cursor: 'pointer', fontSize: '0.85rem' }}>← {t('返回', 'Back')}</button>
+                    </div>
+                    <p style={{ color: '#475569', lineHeight: 1.7, marginTop: 0 }}>
+                      {t('企業家與教會贊助的禮券，獎勵認真讀經、背經、並邀請朋友一起來的人。達標由伺服器核算，管理員審核後把電子禮券寄給你。', 'Vouchers funded by entrepreneurs and churches, for those who read, memorise, and bring friends along. Milestones are verified server-side; an admin reviews and sends your e-voucher.')}
+                    </p>
+
+                    <div style={card}>
+                      <h3 style={h3}>📈 {t('我的進度', 'My progress')}</h3>
+                      {!userEmail ? (
+                        <div style={{ color: '#64748b', fontSize: '0.9rem' }}>
+                          {t('登入後才能累計並領取獎勵。', 'Sign in to accumulate and claim rewards.')}{' '}
+                          <button type="button" onClick={() => setShowLoginModal('login')} style={{ background: '#3b82f6', color: '#fff', border: 'none', borderRadius: 6, padding: '0.3rem 0.9rem', cursor: 'pointer', fontWeight: 600 }}>{t('登入', 'Sign in')}</button>
+                        </div>
+                      ) : (
+                        <div>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem', color: '#334155' }}>
+                            <span>🏞️ {t('通過經文', 'Verses passed')}</span>
+                            <b>{passed % per} / {per}</b>
+                          </div>
+                          {bar(passed, per, '#10b981')}
+                          <div style={{ color: '#64748b', fontSize: '0.82rem' }}>{t('再通過 {n} 節就能獲得下一份獎勵（累計已通過 {total} 節）', 'Pass {n} more for the next reward ({total} passed so far)').replace('{n}', String(per - (passed % per))).replace('{total}', String(passed))}</div>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem', color: '#334155', marginTop: '0.9rem' }}>
+                            <span>🤝 {t('合格推薦', 'Qualified referrals')}</span>
+                            <b>{qualified % perInv} / {perInv}</b>
+                          </div>
+                          {bar(qualified, perInv, '#3b82f6')}
+                          <div style={{ color: '#64748b', fontSize: '0.82rem' }}>{t('再邀請 {n} 位朋友（各通過 {p} 節）就能獲得下一份獎勵（累計 {total} 位合格）', '{n} more friends (each passing {p} verses) for the next reward ({total} qualified so far)').replace('{n}', String(perInv - (qualified % perInv))).replace('{p}', String(needPasses)).replace('{total}', String(qualified))}</div>
+                          <div style={{ display: 'flex', gap: '0.6rem', alignItems: 'center', flexWrap: 'wrap', marginTop: '0.8rem' }}>
+                            <button type="button" disabled={rewardProgressBusy} onClick={() => runRewardCheck('both')} style={{ background: rewardProgressBusy ? '#e2e8f0' : '#f59e0b', color: rewardProgressBusy ? '#94a3b8' : '#fff', border: 'none', borderRadius: 6, padding: '0.35rem 0.9rem', cursor: rewardProgressBusy ? 'wait' : 'pointer', fontWeight: 600, fontSize: '0.85rem' }}>{rewardProgressBusy ? t('核算中…', 'Checking…') : t('重新核算', 'Re-check')}</button>
+                            {rewardProgress?.checkedAt && <span style={{ color: '#94a3b8', fontSize: '0.78rem' }}>{t('伺服器核算時間', 'Verified at')} {new Date(rewardProgress.checkedAt).toLocaleString()}{rewardProgress.throttled ? ` · ${t('10 分鐘內只核算一次', 'once per 10 minutes')}` : ''}</span>}
+                            {rewardProgress?.error && <span style={{ color: '#ef4444', fontSize: '0.78rem' }}>{rewardProgress.error === 'verify_unavailable' ? t('核算服務暫時無法使用，稍後再試', 'Verification is temporarily unavailable, try again later') : rewardProgress.error}</span>}
+                            {!rewardProgress && !rewardProgressBusy && <span style={{ color: '#94a3b8', fontSize: '0.78rem' }}>{t('（以上為本機估計，按「重新核算」取得伺服器數字）', '(local estimate — press Re-check for the server count)')}</span>}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    <div style={card}>
+                      <h3 style={h3}>🎁 {t('獎勵內容', 'Rewards')}</h3>
+                      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.9rem', color: '#334155' }}>
+                        <tbody>
+                          <tr style={{ borderBottom: '1px solid #f1f5f9' }}><td style={{ padding: '0.4rem 0' }}>🏞️ {t('每通過 {n} 節經文', 'Every {n} verses passed').replace('{n}', String(per))}</td><td style={{ textAlign: 'right', fontWeight: 700 }}>{fmtMoney(VOUCHER_DEFAULTS.verses.TWD, 'TWD')} / {fmtMoney(VOUCHER_DEFAULTS.verses.USD, 'USD')}</td></tr>
+                          <tr style={{ borderBottom: '1px solid #f1f5f9' }}><td style={{ padding: '0.4rem 0' }}>🤝 {t('每邀請 {n} 位朋友，各通過 {p} 節', 'Every {n} friends invited, each passing {p} verses').replace('{n}', String(perInv)).replace('{p}', String(needPasses))}</td><td style={{ textAlign: 'right', fontWeight: 700 }}>{fmtMoney(VOUCHER_DEFAULTS.invites.TWD, 'TWD')} / {fmtMoney(VOUCHER_DEFAULTS.invites.USD, 'USD')}</td></tr>
+                        </tbody>
+                      </table>
+                      <div style={{ color: '#64748b', fontSize: '0.85rem', marginTop: '0.6rem', lineHeight: 1.6 }}>
+                        <div><b>{t('台灣', 'Taiwan')}：</b>{(VOUCHER_CATALOG.tw || []).map(vc => vc.label).join('、')}</div>
+                        <div><b>{t('海外', 'Overseas')}：</b>{(VOUCHER_CATALOG.intl || []).map(vc => vc.label).join('、')}</div>
+                        <div style={{ marginTop: 4 }}>{t('領取時可選地區與偏好的禮券；每帳號每個里程碑一份，每年最多 3 份。', 'Choose your region and preferred voucher when claiming; one per milestone per account, up to 3 a year.')}</div>
+                      </div>
+                    </div>
+
+                    <div style={card}>
+                      <h3 style={h3}>💛 {t('感謝贊助者', 'Thank you, sponsors')}</h3>
+                      {Object.keys(byCur).length > 0 && (
+                        <div style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap', marginBottom: '0.8rem' }}>
+                          {Object.entries(byCur).map(([cur, st]) => (
+                            <div key={cur} style={{ background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 8, padding: '0.5rem 0.8rem', fontSize: '0.85rem', color: '#334155' }}>
+                              {t('累計贊助', 'Raised')} <b>{fmtMoney(st.raised, cur)}</b> · {t('已發出 {n} 份', '{n} sent').replace('{n}', String(st.sentCount))} · {t('剩餘', 'Remaining')} <b style={{ color: st.remaining > 0 ? '#166534' : '#991b1b' }}>{fmtMoney(st.remaining, cur)}</b>
+                              {st.remaining <= 0 ? <div style={{ color: '#991b1b', fontSize: '0.8rem' }}>{t('本期額度已用完，下一期開放', 'This round is fully allocated — next round soon')}</div> : null}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      {info === null ? (
+                        <div style={{ color: '#94a3b8', fontSize: '0.85rem' }}>{t('載入中…', 'Loading…')}</div>
+                      ) : wall.length === 0 ? (
+                        <div style={{ color: '#94a3b8', fontSize: '0.85rem' }}>{t('第一位贊助者的位置還空著。', 'The first sponsor’s spot is still open.')}</div>
+                      ) : (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                          {wall.map(sp => (
+                            <div key={sp.id} style={{ borderLeft: '3px solid #f59e0b', paddingLeft: '0.7rem', fontSize: '0.9rem', color: '#334155' }}>
+                              <b>{sp.anonymous || !sp.displayName ? t('匿名贊助者', 'Anonymous sponsor') : sp.displayName}</b>
+                              {sp.amount ? <span style={{ color: '#64748b' }}> · {fmtMoney(sp.amount, sp.currency)}</span> : null}
+                              {sp.receivedAt ? <span style={{ color: '#94a3b8', fontSize: '0.8rem' }}> · {sp.receivedAt}</span> : null}
+                              {sp.message ? <div style={{ color: '#475569', fontSize: '0.85rem' }}>「{sp.message}」</div> : null}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      {(churchWall.length > 0 || myChurchCode) && (
+                        <div style={{ marginTop: '1rem', paddingTop: '0.8rem', borderTop: '1px dashed #e2e8f0' }}>
+                          <div style={{ fontWeight: 700, color: '#5b21b6', marginBottom: '0.4rem' }}>⛪ {t('教會限定池', 'Church-only pools')}</div>
+                          <div style={{ color: '#64748b', fontSize: '0.82rem', marginBottom: '0.5rem' }}>{t('有些教會只獎勵自己的會友。向你的教會索取代碼並填入，達標時就能從該池領取。', 'Some churches reward only their own members. Ask your church for its code and enter it here to draw from that pool.')}</div>
+                          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: '0.6rem' }}>
+                            <input type="text" defaultValue={myChurchCode} id="church-code-input" placeholder={t('教會代碼', 'Church code')} maxLength={20} style={{ padding: '0.35rem 0.6rem', borderRadius: 6, border: '1px solid #cbd5e1', fontSize: '0.85rem', textTransform: 'uppercase' }} />
+                            <button type="button" onClick={() => saveChurchCode(document.getElementById('church-code-input')?.value)} style={{ background: '#7c3aed', color: '#fff', border: 'none', borderRadius: 6, padding: '0.35rem 0.9rem', cursor: 'pointer', fontWeight: 600, fontSize: '0.85rem' }}>{t('儲存代碼', 'Save code')}</button>
+                            {myChurchCode && <span style={{ color: '#64748b', fontSize: '0.82rem', alignSelf: 'center' }}>{t('目前代碼', 'Current code')}: <b>{myChurchCode}</b></span>}
+                          </div>
+                          {churchWall.length === 0 ? (
+                            <div style={{ color: '#94a3b8', fontSize: '0.85rem' }}>{t('目前沒有教會限定池。', 'No church-only pools at the moment.')}</div>
+                          ) : (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                              {churchWall.map(sp => (
+                                <div key={sp.id} style={{ borderLeft: `3px solid ${sp.mine ? '#7c3aed' : '#c4b5fd'}`, paddingLeft: '0.7rem', fontSize: '0.9rem', color: '#334155', background: sp.mine ? '#f5f3ff' : 'transparent', borderRadius: 6, padding: '0.3rem 0.7rem' }}>
+                                  <b>{sp.churchName}</b>{sp.mine ? <span style={{ color: '#5b21b6', fontWeight: 700 }}> · {t('你的教會', 'your church')}</span> : null}
+                                  <span style={{ color: '#64748b' }}> · {t('僅限會友', 'members only')}</span>
+                                  {sp.amount ? <span style={{ color: '#64748b' }}> · {fmtMoney(sp.amount, sp.currency)}</span> : null}
+                                  {sp.mine && remainingOf(sp) !== null ? <span style={{ color: '#166534' }}> · {t('剩餘', 'Remaining')} {fmtMoney(remainingOf(sp), sp.currency)}</span> : null}
+                                  {sp.message ? <div style={{ color: '#475569', fontSize: '0.85rem' }}>「{sp.message}」</div> : null}
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                      <div style={{ marginTop: '0.9rem', padding: '0.7rem 0.9rem', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 8, fontSize: '0.88rem', color: '#166534', lineHeight: 1.6 }}>
+                        {t('想成為贊助者？贊助金由教會／非營利機構代收並開立收據，經文雨只做媒合與核發；報告只有統計數字，不會提供玩家個資。', 'Want to sponsor? Gifts are received and receipted by a church / non-profit; VerseRain only matches and fulfils. Reports contain statistics only — never player data.')}{' '}
+                        <a href={`mailto:hungry4grace@gmail.com?subject=${encodeURIComponent('經文雨 贊助獎勵計劃（VerseRain Sponsorship）')}`} style={{ color: '#166534', fontWeight: 700 }}>{t('聯絡我們', 'Contact us')} →</a>
+                      </div>
+                    </div>
+
+                    <div style={{ ...card, marginBottom: 0 }}>
+                      <h3 style={h3}>📜 {t('條款', 'Terms')}</h3>
+                      <ul style={{ margin: 0, paddingLeft: '1.2rem', color: '#475569', fontSize: '0.85rem', lineHeight: 1.8 }}>
+                        <li>{t('需登入帳號；達標以伺服器核算的園子為準，客戶端數字僅供參考。', 'A signed-in account is required; milestones are verified from the server-side garden, the local count is only indicative.')}</li>
+                        <li>{t('每帳號每個里程碑一份獎勵；同一人多個帳號不重複發放。', 'One reward per milestone per account; one person with several accounts is paid once.')}</li>
+                        <li>{t('合格推薦 = 被邀請的朋友登入帳號並通過 {p} 節經文。', 'A qualified referral = an invited friend who signed in and passed {p} verses.').replace('{p}', String(needPasses))}</li>
+                        <li>{t('人工審核後 7 個工作天內寄出；使用 LINE／Apple 隱藏信箱的帳號請提供可收信的 Email。', 'Sent within 7 working days after manual review; accounts using a hidden LINE / Apple email must provide a reachable one.')}</li>
+                        <li>{t('額度以贊助池為限；主辦方保留審核、調整與終止本計劃的權利。', 'Limited by the sponsor pool; the organiser may review, adjust or end the programme.')}</li>
+                      </ul>
+                    </div>
+                  </div>
+                );
+              })()}
 
               {mainTab === 'leaderboard' && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
@@ -31080,7 +31490,9 @@ const deDict = {
                   // Reward earned (me) — confirm an email so the admin can send it.
                   if (it.kind === 'reward') {
                     const claimed = isRewardClaimed(it.rewardId);
-                    const draft = rewardClaimEmail[it.rewardId] ?? (userEmail || '');
+                    const f = claimFormFor(it.rewardId);
+                    const chip = (on) => ({ padding: '0.25rem 0.7rem', borderRadius: 999, border: `1px solid ${on ? '#f59e0b' : '#cbd5e1'}`, background: on ? '#fef3c7' : '#fff', color: '#334155', fontSize: '0.8rem', fontWeight: on ? 700 : 500, cursor: 'pointer' });
+                    const field = { width: '100%', boxSizing: 'border-box', padding: '0.35rem 0.5rem', borderRadius: 6, border: '1px solid #cbd5e1', fontSize: '0.85rem', background: '#fff' };
                     return (
                       <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '0.6rem 1.3rem', background: claimed ? 'transparent' : '#fffbeb' }}>
                         <span style={{ fontSize: '1.2rem', flexShrink: 0 }}>🎁</span>
@@ -31090,19 +31502,27 @@ const deDict = {
                           </div>
                           {claimed ? (
                             <div style={{ color: '#16a34a', fontSize: '0.82rem', fontWeight: 600, marginTop: 6 }}>{t('已登記，管理員會盡快把獎勵寄給你 ✓', 'Registered — the admin will send it soon ✓')}</div>
+                          ) : !userEmail ? (
+                            <div style={{ color: '#b45309', fontSize: '0.82rem', marginTop: 6 }}>{t('請先登入才能領取獎勵', 'Sign in to claim this reward')}</div>
                           ) : (
                             <div style={{ marginTop: 6, display: 'flex', flexDirection: 'column', gap: 6 }}>
-                              <div style={{ color: '#64748b', fontSize: '0.8rem' }}>{t('請確認要收獎勵的 Email：', 'Confirm the email to send it to:')}</div>
-                              <div style={{ display: 'flex', gap: 6 }}>
-                                <input
-                                  type="email"
-                                  value={draft}
-                                  onChange={e => setRewardClaimEmail(prev => ({ ...prev, [it.rewardId]: e.target.value }))}
-                                  placeholder="you@example.com"
-                                  style={{ flex: 1, minWidth: 0, padding: '0.35rem 0.5rem', borderRadius: 6, border: '1px solid #cbd5e1', fontSize: '0.85rem' }}
-                                />
-                                <button onClick={() => claimReward(it)} style={{ background: '#f59e0b', color: '#fff', border: 'none', borderRadius: 8, padding: '0.35rem 0.9rem', fontSize: '0.82rem', fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap' }}>{t('領取 🎁', 'Claim 🎁')}</button>
+                              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
+                                <span style={{ color: '#64748b', fontSize: '0.8rem' }}>{t('所在地區：', 'Region:')}</span>
+                                {[['tw', t('台灣', 'Taiwan')], ['intl', t('海外', 'Overseas')]].map(([id, label]) => (
+                                  <button key={id} type="button" onClick={() => setClaimField(it.rewardId, 'region', id)} style={chip(f.region === id)}>{label}</button>
+                                ))}
                               </div>
+                              <div style={{ color: '#64748b', fontSize: '0.8rem' }}>{t('請確認要收獎勵的 Email：', 'Confirm the email to send it to:')}</div>
+                              <input type="email" value={f.email} onChange={e => setClaimField(it.rewardId, 'email', e.target.value)} placeholder="you@example.com" style={field} />
+                              <input type="text" value={f.lineId} onChange={e => setClaimField(it.rewardId, 'lineId', e.target.value)} placeholder={t('LINE ID（選填，方便傳禮券）', 'LINE ID (optional, for sending the voucher)')} maxLength={40} style={field} />
+                              <input type="text" value={f.church} onChange={e => setClaimField(it.rewardId, 'church', e.target.value.toUpperCase())} placeholder={t('教會代碼（選填，會友可從教會專屬池領取）', 'Church code (optional, for your church’s own pool)')} maxLength={20} style={field} />
+                              <select value={f.voucher} onChange={e => setClaimField(it.rewardId, 'voucher', e.target.value)} style={field}>
+                                <option value="">{t('偏好的禮券（選填）', 'Preferred voucher (optional)')}</option>
+                                {(VOUCHER_CATALOG[f.region] || []).map(v => <option key={v.id} value={v.id}>{v.label}</option>)}
+                              </select>
+                              <button onClick={() => claimReward(it)} style={{ alignSelf: 'flex-start', background: '#f59e0b', color: '#fff', border: 'none', borderRadius: 8, padding: '0.4rem 1rem', fontSize: '0.85rem', fontWeight: 700, cursor: 'pointer' }}>
+                                {t('領取 🎁', 'Claim 🎁')}
+                              </button>
                             </div>
                           )}
                           <div style={{ color: '#cbd5e1', fontSize: '0.72rem', marginTop: 2 }}>{new Date(it.at).toLocaleString()}</div>
