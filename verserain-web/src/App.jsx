@@ -9466,6 +9466,32 @@ export default function App() {
     setTimeout(() => setToast(null), 3000);
   };
 
+  // ── 兌換紀錄 (redemption history) ───────────────────────────────────
+  const [myVouchers, setMyVouchers] = useState(null); // { vouchers, summary } | { error } | null
+  const [placeLedger, setPlaceLedger] = useState({}); // placeId → { loading } | { vouchers, summary, place } | { error }
+  const [placeLedgerOpen, setPlaceLedgerOpen] = useState({});
+  const loadMyVouchers = React.useCallback(async () => {
+    if (!userEmail) { setMyVouchers(null); return; }
+    try {
+      const r = await fetch(`/api/redeem-history?scope=me&email=${encodeURIComponent(userEmail)}&sessionKey=${encodeURIComponent(sessionKey)}`);
+      const d = await r.json().catch(() => ({}));
+      setMyVouchers(r.ok ? d : { error: d.error || String(r.status) });
+    } catch (e) { setMyVouchers({ error: String(e?.message || e) }); }
+  }, [userEmail, sessionKey]);
+  useEffect(() => { if (mainTab === 'sponsors' && userEmail) loadMyVouchers(); }, [mainTab, userEmail, loadMyVouchers, activeVoucher?.status]);
+  const togglePlaceLedger = async (placeId) => {
+    const opening = !placeLedgerOpen[placeId];
+    setPlaceLedgerOpen(o => ({ ...o, [placeId]: opening }));
+    if (!opening || (placeLedger[placeId] && !placeLedger[placeId].error && !placeLedger[placeId].loading)) return;
+    setPlaceLedger(l => ({ ...l, [placeId]: { loading: true } }));
+    try {
+      const r = await fetch(`/api/redeem-history?scope=place&placeId=${encodeURIComponent(placeId)}&email=${encodeURIComponent(userEmail)}&sessionKey=${encodeURIComponent(sessionKey)}`);
+      const d = await r.json().catch(() => ({}));
+      setPlaceLedger(l => ({ ...l, [placeId]: r.ok ? d : { error: d.error || String(r.status) } }));
+    } catch (e) { setPlaceLedger(l => ({ ...l, [placeId]: { error: String(e?.message || e) } })); }
+  };
+  const voucherStatusBadge = (st) => st === 'issued' ? { text: t('有效', 'Valid'), bg: '#dcfce7', fg: '#166534' } : st === 'used' ? { text: t('已使用', 'Used'), bg: '#e2e8f0', fg: '#334155' } : st === 'expired' ? { text: t('已過期', 'Expired'), bg: '#fee2e2', fg: '#991b1b' } : { text: t('已作廢', 'Voided'), bg: '#fee2e2', fg: '#991b1b' };
+
   // Merge the two inboxes (voice encouragement by email, referral notifications
   // by personalCode) into one 🔔 list, newest first, with a combined unread
   // count. Each item is tagged with _src so the panel and read-marking know
@@ -25592,7 +25618,7 @@ const deDict = {
                     verserain
                   </div>
                   <div className="app-brand-version" style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', marginTop: '4px', marginLeft: '2px' }}>
-                    v4.0.40
+                    v4.0.41
                   </div>
                 </div>
                 <div ref={langPickerRef} className="app-lang-control" style={{ position: 'relative' }}>
@@ -28977,6 +29003,41 @@ const deDict = {
                     </div>
 
                     <div style={card}>
+                      <h3 style={h3}>🎟️ {t('我的兌換紀錄', 'My redemptions')}</h3>
+                      {!userEmail ? (
+                        <div style={{ color: '#94a3b8', fontSize: '0.9rem' }}>{t('登入後可查看兌換紀錄', 'Sign in to see your redemptions')}</div>
+                      ) : !myVouchers ? (
+                        <div style={{ color: '#94a3b8', fontSize: '0.9rem' }}>{t('載入中…', 'Loading…')}</div>
+                      ) : myVouchers.error ? (
+                        <div style={{ color: '#b45309', fontSize: '0.9rem' }}>{redeemErrorText(myVouchers.error)}{myVouchers.error === 'session_invalid' && <> <button type="button" onClick={() => setShowLoginModal('login')} style={{ background: '#3b82f6', color: '#fff', border: 'none', borderRadius: 6, padding: '0.25rem 0.8rem', cursor: 'pointer', fontWeight: 700 }}>{t('重新登入', 'Sign in again')}</button></>}</div>
+                      ) : (
+                        <div>
+                          <div style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap', marginBottom: '0.6rem', fontSize: '0.88rem', color: '#334155' }}>
+                            <span style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 8, padding: '0.35rem 0.7rem' }}>{t('已折抵', 'Saved')} <b style={{ color: '#166534' }}>NT${myVouchers.summary?.usedNTD || 0}</b> · {t('用了 {n} 點', '{n} pts spent').replace('{n}', Number(myVouchers.summary?.usedPoints || 0).toLocaleString())}</span>
+                            <span style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 8, padding: '0.35rem 0.7rem' }}>{t('已使用 {a} 張 · 過期 {b} 張', '{a} used · {b} expired').replace('{a}', String(myVouchers.summary?.used || 0)).replace('{b}', String(myVouchers.summary?.expired || 0))}</span>
+                          </div>
+                          {(myVouchers.vouchers || []).length === 0 ? (
+                            <div style={{ color: '#94a3b8', fontSize: '0.9rem' }}>{t('還沒有兌換過。到「誰在玩」地圖點商家標記就能產生兌換券。', 'No redemptions yet. Tap a shop marker on the map to get a voucher.')}</div>
+                          ) : (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                              {(myVouchers.vouchers || []).map(v => { const st = v.computedStatus || v.status; const b = voucherStatusBadge(st); return (
+                                <div key={v.code} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap', border: '1px solid #e2e8f0', borderRadius: 8, padding: '0.45rem 0.7rem', fontSize: '0.88rem', background: st === 'issued' ? '#fffbeb' : '#fff' }}>
+                                  <div style={{ minWidth: 0 }}>
+                                    <b style={{ color: '#1e293b' }}>{v.placeName}</b> <span style={{ color: '#166534', fontWeight: 700 }}>NT${v.ntd}</span> <span style={{ color: '#64748b' }}>· {t('消費 NT${b} · 折扣 {p}%', 'Bill NT${b} · {p}%').replace('{b}', String(v.billNTD)).replace('{p}', String(v.discountPct))} · {new Date(v.usedAt || v.issuedAt).toLocaleString()}</span>
+                                  </div>
+                                  <span style={{ display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
+                                    <span style={{ background: b.bg, color: b.fg, borderRadius: 999, padding: '0.1rem 0.6rem', fontSize: '0.76rem', fontWeight: 700 }}>{b.text}</span>
+                                    {st === 'issued' && <button type="button" onClick={() => saveActiveVoucher({ ...v, status: 'issued' })} style={{ background: '#f59e0b', color: '#fff', border: 'none', borderRadius: 6, padding: '0.2rem 0.7rem', cursor: 'pointer', fontWeight: 700, fontSize: '0.78rem' }}>{t('顯示兌換券', 'Show voucher')}</button>}
+                                  </span>
+                                </div>
+                              ); })}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+
+                    <div style={card}>
                       <h3 style={h3}>🎁 {t('獎勵內容', 'Rewards')}</h3>
                       <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.9rem', color: '#334155' }}>
                         <tbody>
@@ -29327,6 +29388,7 @@ const deDict = {
                         <button type="button" onClick={() => { try { navigator.clipboard.writeText(v.code); setToast(t('已複製代碼', 'Code copied')); setTimeout(() => setToast(null), 2000); } catch { /* ignore */ } }} style={{ background: '#fff', border: '1px solid #cbd5e1', borderRadius: 8, padding: '0.4rem 0.9rem', cursor: 'pointer', color: '#334155' }}>{t('複製代碼', 'Copy code')}</button>
                         <button type="button" onClick={() => saveActiveVoucher(null)} style={{ background: live ? '#e2e8f0' : '#f59e0b', color: live ? '#334155' : '#fff', border: 'none', borderRadius: 8, padding: '0.4rem 0.9rem', cursor: 'pointer', fontWeight: 700 }}>{live ? t('先關閉（稍後可從商家標記再打開）', 'Close for now') : t('關閉', 'Close')}</button>
                       </div>
+                      <button type="button" onClick={() => { saveActiveVoucher(null); setMainTab('sponsors'); }} style={{ marginTop: '0.6rem', background: 'transparent', border: 'none', color: '#3b82f6', cursor: 'pointer', fontSize: '0.82rem', fontWeight: 600 }}>{t('查看我的兌換紀錄', 'See my redemptions')} →</button>
                     </div>
                   </div>
                 );
@@ -29455,10 +29517,42 @@ const deDict = {
                           <h3 style={{ margin: '0 0 0.6rem', color: '#1e293b', fontSize: '1.05rem' }}>📋 {t('我的登記', 'My submissions')}</h3>
                           {!myPlaces ? <div style={{ color: '#94a3b8' }}>{t('載入中…', 'Loading…')}</div> : myPlaces.length === 0 ? <div style={{ color: '#94a3b8', fontSize: '0.9rem' }}>{t('尚未登記', 'Nothing submitted yet')}</div> : (
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                              {myPlaces.map(pl => { const b = statusBadge(pl.status); return (
-                                <div key={pl.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.6rem', border: '1px solid #e2e8f0', borderRadius: 8, padding: '0.5rem 0.8rem', fontSize: '0.9rem' }}>
-                                  <div><b>{pl.name}</b> <span style={{ color: '#64748b' }}>· {pl.kind === 'merchant' ? `-${pl.discountPct}%` : (pl.kind === 'church' ? t('教會', 'Church') : t('機構', 'Organisation'))} · {pl.address}</span></div>
-                                  <span style={{ background: b.bg, color: b.fg, borderRadius: 999, padding: '0.15rem 0.6rem', fontSize: '0.78rem', fontWeight: 700, whiteSpace: 'nowrap' }}>{b.text}</span>
+                              {myPlaces.map(pl => { const b = statusBadge(pl.status); const led = placeLedger[pl.id]; const open = !!placeLedgerOpen[pl.id]; const canLedger = pl.status === 'approved' && pl.kind === 'merchant'; return (
+                                <div key={pl.id} style={{ border: '1px solid #e2e8f0', borderRadius: 8, padding: '0.5rem 0.8rem', fontSize: '0.9rem' }}>
+                                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
+                                    <div><b>{pl.name}</b> <span style={{ color: '#64748b' }}>· {pl.kind === 'merchant' ? `-${pl.discountPct}%` : (pl.kind === 'church' ? t('教會', 'Church') : t('機構', 'Organisation'))} · {pl.address}</span></div>
+                                    <span style={{ display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
+                                      {canLedger && <button type="button" onClick={() => togglePlaceLedger(pl.id)} style={{ background: open ? '#d97706' : '#fef3c7', color: open ? '#fff' : '#92400e', border: 'none', borderRadius: 6, padding: '0.2rem 0.7rem', cursor: 'pointer', fontWeight: 700, fontSize: '0.78rem' }}>📒 {t('收到的點數', 'Points received')}{pl.stats ? ` (${pl.stats.used || 0})` : ''}</button>}
+                                      <span style={{ background: b.bg, color: b.fg, borderRadius: 999, padding: '0.15rem 0.6rem', fontSize: '0.78rem', fontWeight: 700, whiteSpace: 'nowrap' }}>{b.text}</span>
+                                    </span>
+                                  </div>
+                                  {canLedger && open && (
+                                    <div style={{ marginTop: '0.6rem', paddingTop: '0.6rem', borderTop: '1px dashed #e2e8f0' }}>
+                                      {!led || led.loading ? <div style={{ color: '#94a3b8' }}>{t('載入中…', 'Loading…')}</div> : led.error ? (
+                                        <div style={{ color: '#b45309', fontSize: '0.88rem' }}>{redeemErrorText(led.error)}{led.error === 'session_invalid' && <> <button type="button" onClick={() => setShowLoginModal('login')} style={{ background: '#3b82f6', color: '#fff', border: 'none', borderRadius: 6, padding: '0.2rem 0.7rem', cursor: 'pointer', fontWeight: 700 }}>{t('重新登入', 'Sign in again')}</button></>}</div>
+                                      ) : (
+                                        <div>
+                                          <div style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap', marginBottom: '0.5rem', fontSize: '0.86rem', color: '#334155' }}>
+                                            <span style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 8, padding: '0.3rem 0.7rem' }}>{t('已核銷 {n} 張', '{n} redeemed').replace('{n}', String(led.summary?.used || 0))} · {t('折抵合計', 'Total discount')} <b style={{ color: '#166534' }}>NT${led.summary?.usedNTD || 0}</b> · {Number(led.summary?.usedPoints || 0).toLocaleString()} {t('點', 'pts')}</span>
+                                            {(led.summary?.open || 0) > 0 && <span style={{ background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 8, padding: '0.3rem 0.7rem' }}>{t('尚未核銷 {n} 張', '{n} not yet used').replace('{n}', String(led.summary.open))}</span>}
+                                          </div>
+                                          <div style={{ color: '#64748b', fontSize: '0.78rem', marginBottom: '0.5rem' }}>{t('折抵金額由商家吸收，即為你的贊助；需要對帳可截圖此區。', 'The discount is absorbed by the shop — that is your sponsorship. Screenshot this section for your records.')}</div>
+                                          {(led.vouchers || []).filter(v => ['used', 'issued'].includes(v.computedStatus || v.status)).length === 0 ? (
+                                            <div style={{ color: '#94a3b8', fontSize: '0.86rem' }}>{t('還沒有顧客兌換', 'No customer redemptions yet')}</div>
+                                          ) : (
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem', maxHeight: 280, overflowY: 'auto' }}>
+                                              {(led.vouchers || []).filter(v => ['used', 'issued'].includes(v.computedStatus || v.status)).map(v => { const st = v.computedStatus || v.status; const vb = voucherStatusBadge(st); return (
+                                                <div key={v.code} style={{ display: 'flex', justifyContent: 'space-between', gap: '0.5rem', flexWrap: 'wrap', fontSize: '0.84rem', background: '#f8fafc', borderRadius: 6, padding: '0.3rem 0.6rem' }}>
+                                                  <span>{new Date(v.usedAt || v.issuedAt).toLocaleString()} · <code>{v.formatted || v.code}</code> · {v.holder} · {t('消費 NT${b}', 'Bill NT${b}').replace('{b}', String(v.billNTD))} · <b style={{ color: '#166534' }}>NT${v.ntd}</b></span>
+                                                  <span style={{ background: vb.bg, color: vb.fg, borderRadius: 999, padding: '0.05rem 0.55rem', fontSize: '0.74rem', fontWeight: 700 }}>{vb.text}</span>
+                                                </div>
+                                              ); })}
+                                            </div>
+                                          )}
+                                        </div>
+                                      )}
+                                    </div>
+                                  )}
                                 </div>
                               ); })}
                             </div>

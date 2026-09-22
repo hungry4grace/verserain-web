@@ -327,3 +327,24 @@ test('readBalance math and lazy expiry of the open voucher', async () => {
   assert.strictEqual(noSession.eligible, false);
   assert.deepStrictEqual(noSession.reasons, ['session_invalid', 'not_enough_passed']);
 });
+
+test('history: per-place index, owner list, scan fallback, and summary', async () => {
+  const { listVouchersForEmail, listVouchersForPlace, summarizeVouchers, placeHistoryKey, VOUCHERS_KEY } = await import('./points.js');
+  const r = stubRedis();
+  const identity = { email: 'h@x.com', playerName: 'Hana', personalCode: 'HHHHHHHHHH', accountAgeDays: 30, emailKind: 'real', sessionValid: true };
+  const garden = { passedVerses: 10, treesPlanted: 10 };
+  const place = { id: 'pl_shop1', kind: 'merchant', name: 'Shop', status: 'approved', discountPct: 10, dailyCapNTD: 2000 };
+  await r.hset('map:places', { [place.id]: JSON.stringify(place) });
+  const { voucher } = await issueVoucher(r, { email: 'h@x.com', identity, garden, place, billNTD: 500, earnedPoints: 200000, now: new Date('2026-09-22T10:00:00Z') });
+  assert.deepStrictEqual(await r.lrange(placeHistoryKey(place.id), 0, -1), [voucher.code], 'place index written');
+  const mine = await listVouchersForEmail(r, 'H@x.com', { now: new Date('2026-09-22T10:05:00Z') });
+  assert.strictEqual(mine.length, 1);
+  assert.strictEqual(mine[0].computedStatus, 'issued');
+  const forPlace = await listVouchersForPlace(r, place.id, { now: new Date('2026-09-22T10:05:00Z') });
+  assert.strictEqual(forPlace[0].code, voucher.code);
+  // Legacy voucher without an index entry is still found by scan.
+  await r.hset(VOUCHERS_KEY, { LEGACYAB12: JSON.stringify({ code: 'LEGACYAB12', placeId: 'pl_old', status: 'used', ntd: 30, points: 30000, issuedAt: '2026-09-01T00:00:00Z' }) });
+  const old = await listVouchersForPlace(r, 'pl_old', { now: new Date() });
+  assert.strictEqual(old.length, 1);
+  assert.deepStrictEqual(summarizeVouchers([...old, ...mine]), { issued: 2, open: 1, used: 1, usedNTD: 30, usedPoints: 30000, expired: 0, void: 0 });
+});

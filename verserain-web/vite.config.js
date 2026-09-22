@@ -19,6 +19,7 @@ import geocodeHandler from './api/geocode.js'
 import pointsBalanceHandler from './api/points-balance.js'
 import redeemHandler from './api/redeem.js'
 import redeemVerifyHandler from './api/redeem-verify.js'
+import redeemHistoryHandler from './api/redeem-history.js'
 
 // Load .env.local so process.env is available for API handlers in dev
 try {
@@ -110,6 +111,7 @@ export default defineConfig({
         jsonRoute('/api/points-balance', pointsBalanceHandler);
         jsonRoute('/api/redeem', redeemHandler);
         jsonRoute('/api/redeem-verify', redeemVerifyHandler);
+        jsonRoute('/api/redeem-history', redeemHistoryHandler);
       }
     }
   ],

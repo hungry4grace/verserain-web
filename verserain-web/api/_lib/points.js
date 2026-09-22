@@ -51,6 +51,8 @@ export const dayKey = (email, placeId, day) => `redeem:day:${normEmail(email)}:$
 export const monthKey = (email, month) => `redeem:month:${normEmail(email)}:${month}`;
 export const placeDayKey = (placeId, day) => `redeem:place:${placeId}:${day}`;
 export const historyKey = (email) => `redeem:by-email:${normEmail(email)}`;
+export const placeHistoryKey = (placeId) => `redeem:by-place:${placeId}`;
+const PLACE_HISTORY_MAX = 500;
 export const refundedKey = (code) => `redeem:refunded:${code}`;
 
 function parse(s) {
@@ -224,6 +226,42 @@ export async function listVouchers(redis, limit = 100) {
     .slice(0, limit);
 }
 
+// Vouchers by index list (newest first). Empty codes / missing rows skipped.
+async function vouchersByCodes(redis, codes, now) {
+  const out = [];
+  for (const c of codes || []) {
+    const v = await getVoucher(redis, c);
+    if (v) out.push({ ...v, computedStatus: voucherStatus(v, now) });
+  }
+  return out;
+}
+// A player's own history (full records — the caller owns them).
+export async function listVouchersForEmail(redis, email, { limit = HISTORY_MAX, now } = {}) {
+  const codes = (await redis.lrange(historyKey(email), 0, limit - 1)) || [];
+  return vouchersByCodes(redis, codes, now);
+}
+// A merchant's ledger. Vouchers issued before the per-place index existed are
+// found by a full scan, so the ledger is complete either way.
+export async function listVouchersForPlace(redis, placeId, { limit = PLACE_HISTORY_MAX, now } = {}) {
+  const codes = (await redis.lrange(placeHistoryKey(placeId), 0, limit - 1)) || [];
+  if (codes.length) return vouchersByCodes(redis, codes, now);
+  return (await listVouchers(redis, 1000)).filter((v) => v.placeId === placeId).map((v) => ({ ...v, computedStatus: voucherStatus(v, now) }));
+}
+// Pure: totals for a history list (uses computedStatus when present).
+export function summarizeVouchers(list) {
+  const sum = { issued: 0, open: 0, used: 0, usedNTD: 0, usedPoints: 0, expired: 0, void: 0 };
+  for (const v of list || []) {
+    if (!v) continue;
+    sum.issued += 1;
+    const st = v.computedStatus || v.status;
+    if (st === 'used') { sum.used += 1; sum.usedNTD += toInt(v.ntd); sum.usedPoints += toInt(v.points); }
+    else if (st === 'issued') sum.open += 1;
+    else if (st === 'expired') sum.expired += 1;
+    else if (st === 'void') sum.void += 1;
+  }
+  return sum;
+}
+
 async function readEarned(redis, identity) {
   const name = identity && identity.playerName;
   if (!name) return 0;
@@ -344,6 +382,8 @@ export async function issueVoucher(redis, { email, identity, garden, place, bill
     await saveVoucher(redis, voucher);
     await redis.lpush(historyKey(em), code);
     await redis.ltrim(historyKey(em), 0, HISTORY_MAX - 1);
+    await redis.lpush(placeHistoryKey(place.id), code);
+    await redis.ltrim(placeHistoryKey(place.id), 0, PLACE_HISTORY_MAX - 1);
     await bumpPlaceStats(redis, place.id, { issued: 1 });
     return { voucher };
   } catch (e) {
