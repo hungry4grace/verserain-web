@@ -25319,7 +25319,7 @@ const deDict = {
                     verserain
                   </div>
                   <div className="app-brand-version" style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', marginTop: '4px', marginLeft: '2px' }}>
-                    v4.0.32
+                    v4.0.33
                   </div>
                 </div>
                 <div ref={langPickerRef} className="app-lang-control" style={{ position: 'relative' }}>
@@ -28590,6 +28590,7 @@ const deDict = {
                             {rewardProgress?.checkedAt && <span style={{ color: '#94a3b8', fontSize: '0.78rem' }}>{t('伺服器核算時間', 'Verified at')} {new Date(rewardProgress.checkedAt).toLocaleString()}{rewardProgress.throttled ? ` · ${t('10 分鐘內只核算一次', 'once per 10 minutes')}` : ''}</span>}
                             {rewardProgress?.error && <span style={{ color: '#ef4444', fontSize: '0.78rem' }}>{rewardProgress.error === 'verify_unavailable' ? t('核算服務暫時無法使用，稍後再試', 'Verification is temporarily unavailable, try again later') : rewardProgress.error}</span>}
                             {!rewardProgress && !rewardProgressBusy && <span style={{ color: '#94a3b8', fontSize: '0.78rem' }}>{t('（以上為本機估計，按「重新核算」取得伺服器數字）', '(local estimate — press Re-check for the server count)')}</span>}
+                            {rewardProgress && (personalProgress?.passedVerses || 0) > passed && <span style={{ color: '#b45309', fontSize: '0.78rem' }}>{t('本機園子已通過 {n} 節，雲端同步後再核算就會更新', 'Your device shows {n} passed; it will update once the cloud sync catches up').replace('{n}', String(personalProgress?.passedVerses || 0))}</span>}
                           </div>
                         </div>
                       )}

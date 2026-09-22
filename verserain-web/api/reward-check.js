@@ -38,19 +38,40 @@ export default async function handler(req, res) {
     const redis = new Redis({ url: redisUrl, token: redisToken });
     const lastKey = `rewards:check:last:${email}`;
     const gate = await redis.set(`rewards:check:${email}`, '1', { nx: true, ex: CHECK_TTL });
-    if (gate !== 'OK') {
-      const last = await redis.get(lastKey);
-      const parsed = typeof last === 'string' ? safeJson(last) : (last || {});
-      return res.status(200).json({ success: true, throttled: true, created: [], ...parsed });
-    }
+    const throttled = gate !== 'OK';
 
+    // Throttled calls skip the expensive part (the referee scan) and never
+    // grant, but still read the garden so the progress bar shows the live
+    // server count instead of a stale snapshot.
     let elig;
     try {
-      elig = await partyFetch('/reward-eligibility', { email, playerName: body.playerName || '', inviterCodes: codes });
+      elig = await partyFetch('/reward-eligibility', { email, playerName: body.playerName || '', inviterCodes: throttled ? [] : codes });
     } catch (e) {
+      if (throttled) {
+        const last = await redis.get(lastKey);
+        const parsed = typeof last === 'string' ? safeJson(last) : (last || {});
+        return res.status(200).json({ success: true, throttled: true, created: [], ...parsed });
+      }
       // Fail closed: without server truth we grant nothing.
       const status = e instanceof PartyError && e.status ? 502 : 503;
       return res.status(status).json({ error: 'verify_unavailable', detail: e.message });
+    }
+    if (throttled) {
+      const last = await redis.get(lastKey);
+      const parsed = typeof last === 'string' ? safeJson(last) : (last || {});
+      const passed = (elig.garden && elig.garden.passedVerses) || 0;
+      const merged = { ...parsed, passedVerses: passed, treesPlanted: (elig.garden && elig.garden.treesPlanted) || 0, nextVerses: VERSES_PER_REWARD - (passed % VERSES_PER_REWARD), versesPerReward: VERSES_PER_REWARD, invitesPerReward: INVITES_PER_REWARD, qualifiedPasses: QUALIFIED_PASSES };
+      await redis.set(lastKey, JSON.stringify(merged), { ex: 86400 });
+      // The verses reward needs no scan and is idempotent, so a player who
+      // crosses 100 inside the throttle window is still paid on time.
+      const created = [];
+      const id = elig.identity || {};
+      if (kind !== 'invites' && id.emailKind && id.emailKind !== 'none') {
+        const g = elig.garden || {};
+        const r = await grantMilestones(redis, { code, name: String(body.playerName || id.playerName || '').slice(0, 40), email, kind: 'verses', count: passed, verified: { passedVerses: passed, treesPlanted: g.treesPlanted || 0, activeDays: g.activeDays || 0, accountAgeDays: id.accountAgeDays ?? null, emailKind: id.emailKind } });
+        created.push(...r.created);
+      }
+      return res.status(200).json({ success: true, throttled: true, created, ...merged });
     }
     const identity = elig.identity || {};
     const garden = elig.garden || {};

@@ -719,6 +719,7 @@ export const he = {
   "你的教會": "הקהילה שלך",
   "僅限會友": "לחברי הקהילה בלבד",
   "教會代碼（選填，會友可從教會專屬池領取）": "קוד קהילה (לא חובה, לקבלה מהמאגר של הקהילה שלך)",
+  "本機園子已通過 {n} 節，雲端同步後再核算就會更新": "במכשיר שלך עברת {n} פסוקים; זה יתעדכן אחרי שהסנכרון לענן ישלים",
 };
 
 export const fa = {
@@ -1419,6 +1420,7 @@ export const fa = {
   "你的教會": "کلیسای شما",
   "僅限會友": "فقط اعضا",
   "教會代碼（選填，會友可從教會專屬池領取）": "کد کلیسا (اختیاری، اعضا می‌توانند از صندوق ویژهٔ کلیسا دریافت کنند)",
+  "本機園子已通過 {n} 節，雲端同步後再核算就會更新": "دستگاه شما {n} آیهٔ گذرانده‌شده نشان می‌دهد؛ پس از همگام‌سازی ابری به‌روز می‌شود",
 };
 
 export const ar = {
@@ -2535,6 +2537,7 @@ export const ar = {
   "你的教會": "كنيستك",
   "僅限會友": "للأعضاء فقط",
   "教會代碼（選填，會友可從教會專屬池領取）": "رمز الكنيسة (اختياري، يمكن للأعضاء الاستلام من صندوق كنيستهم الخاص)",
+  "本機園子已通過 {n} 節，雲端同步後再核算就會更新": "يعرض جهازك {n} آية مجتازة؛ سيتحدّث بعد اكتمال المزامنة السحابية",
 };
 
 export const ja = {
@@ -3223,6 +3226,7 @@ export const ja = {
   "你的教會": "あなたの教会",
   "僅限會友": "会員限定",
   "教會代碼（選填，會友可從教會專屬池領取）": "教会コード（任意、会員は教会専用基金から受け取れます）",
+  "本機園子已通過 {n} 節，雲端同步後再核算就會更新": "この端末では {n} 節が合格済みです。クラウド同期が追いつくと更新されます",
 };
 
 export const ko = {
@@ -3909,6 +3913,7 @@ export const ko = {
   "你的教會": "내 교회",
   "僅限會友": "교인 전용",
   "教會代碼（選填，會友可從教會專屬池領取）": "교회 코드(선택, 교인은 교회 전용 기금에서 받을 수 있음)",
+  "本機園子已通過 {n} 節，雲端同步後再核算就會更新": "이 기기에서는 {n}절을 통과했어요. 클라우드 동기화가 끝나면 갱신됩니다",
 };
 
 export const es = {
@@ -4611,6 +4616,7 @@ export const es = {
   "你的教會": "tu iglesia",
   "僅限會友": "solo miembros",
   "教會代碼（選填，會友可從教會專屬池領取）": "Código de iglesia (opcional, para el fondo propio de tu iglesia)",
+  "本機園子已通過 {n} 節，雲端同步後再核算就會更新": "Tu dispositivo muestra {n} versículos superados; se actualizará cuando la sincronización en la nube se ponga al día",
 };
 
 export const tr = {
@@ -5313,6 +5319,7 @@ export const tr = {
   "你的教會": "kilisen",
   "僅限會友": "yalnızca üyeler",
   "教會代碼（選填，會友可從教會專屬池領取）": "Kilise kodu (isteğe bağlı, üyeler kilisenin kendi havuzundan alabilir)",
+  "本機園子已通過 {n} 節，雲端同步後再核算就會更新": "Cihazın {n} geçilmiş ayet gösteriyor; bulut eşitlemesi tamamlanınca güncellenecek",
 };
 
 export const de = {
@@ -6015,6 +6022,7 @@ export const de = {
   "你的教會": "deine Gemeinde",
   "僅限會友": "nur Mitglieder",
   "教會代碼（選填，會友可從教會專屬池領取）": "Gemeindecode (optional, für den eigenen Pool deiner Gemeinde)",
+  "本機園子已通過 {n} 節，雲端同步後再核算就會更新": "Dein Gerät zeigt {n} bestandene Verse; es wird aktualisiert, sobald die Cloud-Synchronisierung aufgeholt hat",
 };
 
 export const my = {
@@ -6717,6 +6725,7 @@ export const my = {
   "你的教會": "သင့်အသင်းတော်",
   "僅限會友": "အသင်းတော်ဝင်များသာ",
   "教會代碼（選填，會友可從教會專屬池領取）": "အသင်းတော်ကုဒ် (ရွေးချယ်နိုင်၊ အသင်းတော်ဝင်များ အသင်းတော်သီးသန့် ရန်ပုံငွေမှ ရယူနိုင်)",
+  "本機園子已通過 {n} 節，雲端同步後再核算就會更新": "သင့်စက်တွင် အောင်မြင်ပြီး ကျမ်းချက် {n} ခုပြသည်; cloud ချိန်ကိုက်ပြီးနောက် အသစ်ပြင်ဆင်ပါမည်",
 };
 
 export const vi = {
@@ -7419,6 +7428,7 @@ export const vi = {
   "你的教會": "hội thánh của bạn",
   "僅限會友": "chỉ dành cho tín hữu",
   "教會代碼（選填，會友可從教會專屬池領取）": "Mã hội thánh (tùy chọn, tín hữu có thể nhận từ quỹ riêng của hội thánh)",
+  "本機園子已通過 {n} 節，雲端同步後再核算就會更新": "Thiết bị của bạn hiển thị {n} câu đã vượt qua; sẽ cập nhật sau khi đồng bộ đám mây hoàn tất",
 };
 
 export const id = {
@@ -8350,6 +8360,7 @@ export const id = {
   "你的教會": "gerejamu",
   "僅限會友": "khusus jemaat",
   "教會代碼（選填，會友可從教會專屬池領取）": "Kode gereja (opsional, jemaat bisa mengklaim dari dana khusus gerejanya)",
+  "本機園子已通過 {n} 節，雲端同步後再核算就會更新": "Perangkatmu menampilkan {n} ayat lulus; akan diperbarui setelah sinkronisasi cloud selesai",
 };
 
 export const ms = {
@@ -9484,6 +9495,7 @@ export const ms = {
   "你的教會": "gereja anda",
   "僅限會友": "ahli sahaja",
   "教會代碼（選填，會友可從教會專屬池領取）": "Kod gereja (pilihan, ahli boleh menuntut daripada dana khusus gereja)",
+  "本機園子已通過 {n} 節，雲端同步後再核算就會更新": "Peranti anda menunjukkan {n} ayat lulus; akan dikemas kini selepas penyegerakan awan selesai",
 };
 
 export const zhcn = {
@@ -10538,6 +10550,7 @@ export const zhcn = {
   "你的教會": "你的教会",
   "僅限會友": "仅限会友",
   "教會代碼（選填，會友可從教會專屬池領取）": "教会代码（选填，会友可从教会专属池领取）",
+  "本機園子已通過 {n} 節，雲端同步後再核算就會更新": "本机园子已通过 {n} 节，云端同步后再核算就会更新",
 };
 
 export const pt = {
@@ -10960,6 +10973,7 @@ export const pt = {
   "你的教會": "a sua igreja",
   "僅限會友": "só membros",
   "教會代碼（選填，會友可從教會專屬池領取）": "Código da igreja (opcional, para o fundo próprio da sua igreja)",
+  "本機園子已通過 {n} 節，雲端同步後再核算就會更新": "O seu dispositivo mostra {n} versículos aprovados; será atualizado quando a sincronização na nuvem terminar",
 };
 
 export const fr = {
@@ -11382,6 +11396,7 @@ export const fr = {
   "你的教會": "ton église",
   "僅限會友": "membres uniquement",
   "教會代碼（選填，會友可從教會專屬池領取）": "Code d’église (facultatif, pour le fonds propre de ton église)",
+  "本機園子已通過 {n} 節，雲端同步後再核算就會更新": "Ton appareil affiche {n} versets réussis ; la mise à jour se fera une fois la synchronisation cloud terminée",
 };
 
 export const ru = {
@@ -11804,6 +11819,7 @@ export const ru = {
   "你的教會": "ваша церковь",
   "僅限會友": "только для членов",
   "教會代碼（選填，會友可從教會專屬池領取）": "Код церкви (необязательно, члены могут получать из фонда своей церкви)",
+  "本機園子已通過 {n} 節，雲端同步後再核算就會更新": "На вашем устройстве пройдено {n} стихов; обновится после завершения облачной синхронизации",
 };
 
 export const hi = {
@@ -12226,6 +12242,7 @@ export const hi = {
   "你的教會": "आपका चर्च",
   "僅限會友": "केवल सदस्य",
   "教會代碼（選填，會友可從教會專屬池領取）": "चर्च कोड (वैकल्पिक, सदस्य अपने चर्च के कोष से पा सकते हैं)",
+  "本機園子已通過 {n} 節，雲端同步後再核算就會更新": "आपके डिवाइस पर {n} पद पास दिख रहे हैं; क्लाउड सिंक पूरा होने पर अपडेट होगा",
 };
 
 // Khmer (Cambodian) — full UI coverage, machine-translated in bulk from the
@@ -13278,6 +13295,7 @@ export const km = {
   "你的教會": "ព្រះវិហាររបស់អ្នក",
   "僅限會友": "តែសមាជិកប៉ុណ្ណោះ",
   "教會代碼（選填，會友可從教會專屬池領取）": "កូដព្រះវិហារ (ជម្រើស សមាជិកអាចទទួលពីមូលនិធិផ្ទាល់របស់ព្រះវិហារ)",
+  "本機園子已通過 {n} 節，雲端同步後再核算就會更新": "ឧបករណ៍របស់អ្នកបង្ហាញ {n} ខគម្ពីរដែលបានឆ្លង; នឹងធ្វើបច្ចុប្បន្នភាពបន្ទាប់ពីការធ្វើសមកាលកម្មពពកបញ្ចប់",
 };
 
 const I18N_FILLINS = { he, fa, ar, ja, ko, es, tr, de, my, vi, id, ms, zhcn, pt, fr, ru, hi, km };
