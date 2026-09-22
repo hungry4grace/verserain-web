@@ -894,6 +894,8 @@ export const he = {
   "教會、機構 = 贊助者": "קהילה / ארגון = תומך",
   "只定位到街道，請把大頭針拖到正確位置": "אותר רק הרחוב — גרור את הסיכה למיקום המדויק",
   "舊身分的推薦紀錄 {n} 筆": "{n} רשומות משמות/מכשירים קודמים",
+  "為了安全，請重新登入一次；你填的資料已保留，登入後再按一次送出": "מטעמי אבטחה יש להתחבר שוב; הטופס נשמר, לאחר ההתחברות לחצו שוב על שליחה",
+  "你的登入早於這項功能上線，送出前請重新登入一次（表單內容會保留）。": "התחברת לפני שהתכונה הושקה; יש להתחבר שוב לפני השליחה (הטופס נשמר).",
 };
 
 export const fa = {
@@ -1769,6 +1771,8 @@ export const fa = {
   "教會、機構 = 贊助者": "کلیسا / سازمان = حامی",
   "只定位到街道，請把大頭針拖到正確位置": "فقط خیابان پیدا شد — سنجاق را به محل دقیق بکشید",
   "舊身分的推薦紀錄 {n} 筆": "{n} رکورد از نام‌ها/دستگاه‌های قبلی",
+  "為了安全，請重新登入一次；你填的資料已保留，登入後再按一次送出": "برای امنیت، لطفاً دوباره وارد شوید؛ فرم شما ذخیره شده، پس از ورود دوباره ارسال را بزنید",
+  "你的登入早於這項功能上線，送出前請重新登入一次（表單內容會保留）。": "ورود شما پیش از راه‌اندازی این قابلیت بوده؛ پیش از ارسال دوباره وارد شوید (فرم حفظ می‌شود).",
 };
 
 export const ar = {
@@ -3060,6 +3064,8 @@ export const ar = {
   "教會、機構 = 贊助者": "كنيسة / مؤسسة = راعٍ",
   "只定位到街道，請把大頭針拖到正確位置": "تم تحديد الشارع فقط — اسحب الدبوس إلى الموقع الصحيح",
   "舊身分的推薦紀錄 {n} 筆": "{n} سجلات من أسماء/أجهزة سابقة",
+  "為了安全，請重新登入一次；你填的資料已保留，登入後再按一次送出": "للأمان، يرجى تسجيل الدخول مجددًا؛ تم حفظ النموذج، اضغط إرسال مرة أخرى بعد الدخول",
+  "你的登入早於這項功能上線，送出前請重新登入一次（表單內容會保留）。": "سجّلت الدخول قبل إطلاق هذه الميزة؛ يرجى تسجيل الدخول مجددًا قبل الإرسال (يُحفظ النموذج).",
 };
 
 export const ja = {
@@ -3923,6 +3929,8 @@ export const ja = {
   "教會、機構 = 贊助者": "教会・団体 = スポンサー",
   "只定位到街道，請把大頭針拖到正確位置": "通りまでしか特定できませんでした。ピンを正しい位置までドラッグしてください",
   "舊身分的推薦紀錄 {n} 筆": "以前の名前・端末の記録 {n} 件",
+  "為了安全，請重新登入一次；你填的資料已保留，登入後再按一次送出": "安全のためもう一度ログインしてください。入力内容は保存されています。ログイン後にもう一度送信してください",
+  "你的登入早於這項功能上線，送出前請重新登入一次（表單內容會保留）。": "この機能の公開前にログインしています。送信前にもう一度ログインしてください（入力内容は保存されます）。",
 };
 
 export const ko = {
@@ -4784,6 +4792,8 @@ export const ko = {
   "教會、機構 = 贊助者": "교회·단체 = 후원자",
   "只定位到街道，請把大頭針拖到正確位置": "도로까지만 찾았습니다. 핀을 정확한 위치로 드래그해 주세요",
   "舊身分的推薦紀錄 {n} 筆": "이전 이름·기기의 기록 {n}건",
+  "為了安全，請重新登入一次；你填的資料已保留，登入後再按一次送出": "보안을 위해 다시 로그인해 주세요. 입력 내용은 저장되어 있으니 로그인 후 다시 제출을 눌러 주세요",
+  "你的登入早於這項功能上線，送出前請重新登入一次（表單內容會保留）。": "이 기능 출시 전에 로그인하셨습니다. 제출 전에 다시 로그인해 주세요(입력 내용은 유지됩니다).",
 };
 
 export const es = {
@@ -5661,6 +5671,8 @@ export const es = {
   "教會、機構 = 贊助者": "iglesia / organización = patrocinador",
   "只定位到街道，請把大頭針拖到正確位置": "Solo se ubicó la calle — arrastra el marcador al punto exacto",
   "舊身分的推薦紀錄 {n} 筆": "{n} registros de nombres/dispositivos anteriores",
+  "為了安全，請重新登入一次；你填的資料已保留，登入後再按一次送出": "Por seguridad, vuelve a iniciar sesión; el formulario se ha guardado, pulsa enviar de nuevo tras entrar",
+  "你的登入早於這項功能上線，送出前請重新登入一次（表單內容會保留）。": "Iniciaste sesión antes de lanzar esta función; vuelve a iniciar sesión antes de enviar (el formulario se conserva).",
 };
 
 export const tr = {
@@ -6538,6 +6550,8 @@ export const tr = {
   "教會、機構 = 贊助者": "kilise / kuruluş = sponsor",
   "只定位到街道，請把大頭針拖到正確位置": "Yalnızca sokak bulundu — iğneyi doğru noktaya sürükleyin",
   "舊身分的推薦紀錄 {n} 筆": "Önceki adlardan/cihazlardan {n} kayıt",
+  "為了安全，請重新登入一次；你填的資料已保留，登入後再按一次送出": "Güvenlik için lütfen yeniden giriş yap; formun kaydedildi, girişten sonra tekrar gönder",
+  "你的登入早於這項功能上線，送出前請重新登入一次（表單內容會保留）。": "Bu özellik yayınlanmadan önce giriş yapmışsın; göndermeden önce yeniden giriş yap (form korunur).",
 };
 
 export const de = {
@@ -7415,6 +7429,8 @@ export const de = {
   "教會、機構 = 贊助者": "Gemeinde / Organisation = Sponsor",
   "只定位到街道，請把大頭針拖到正確位置": "Nur die Straße wurde gefunden – zieh die Nadel an die genaue Stelle",
   "舊身分的推薦紀錄 {n} 筆": "{n} Einträge von früheren Namen/Geräten",
+  "為了安全，請重新登入一次；你填的資料已保留，登入後再按一次送出": "Bitte aus Sicherheitsgründen erneut anmelden; das Formular ist gespeichert, danach einfach noch einmal absenden",
+  "你的登入早於這項功能上線，送出前請重新登入一次（表單內容會保留）。": "Du hast dich vor dem Start dieser Funktion angemeldet; bitte vor dem Absenden erneut anmelden (das Formular bleibt erhalten).",
 };
 
 export const my = {
@@ -8292,6 +8308,8 @@ export const my = {
   "教會、機構 = 贊助者": "ဘုရားကျောင်း / အဖွဲ့အစည်း = ပံ့ပိုးသူ",
   "只定位到街道，請把大頭針拖到正確位置": "လမ်းကိုသာ တွေ့ပါသည် — ပင်ကို မှန်ကန်သောနေရာသို့ ဆွဲပါ",
   "舊身分的推薦紀錄 {n} 筆": "ယခင်နာမည်/စက်များမှ မှတ်တမ်း {n} ခု",
+  "為了安全，請重新登入一次；你填的資料已保留，登入後再按一次送出": "လုံခြုံရေးအတွက် ပြန်ဝင်ပါ; သင့်ဖောင် သိမ်းထားပြီး ဝင်ပြီးနောက် ထပ်တင်ပါ",
+  "你的登入早於這項功能上線，送出前請重新登入一次（表單內容會保留）。": "ဤလုပ်ဆောင်ချက် မထွက်မီ ဝင်ထားသည်; မတင်မီ ပြန်ဝင်ပါ (ဖောင် ဆက်ရှိမည်)။",
 };
 
 export const vi = {
@@ -9169,6 +9187,8 @@ export const vi = {
   "教會、機構 = 贊助者": "hội thánh / tổ chức = nhà tài trợ",
   "只定位到街道，請把大頭針拖到正確位置": "Chỉ định vị được đến đường — hãy kéo ghim đến đúng vị trí",
   "舊身分的推薦紀錄 {n} 筆": "{n} bản ghi từ tên/thiết bị trước đây",
+  "為了安全，請重新登入一次；你填的資料已保留，登入後再按一次送出": "Vì lý do bảo mật, hãy đăng nhập lại; biểu mẫu đã được lưu, sau khi đăng nhập hãy bấm gửi lần nữa",
+  "你的登入早於這項功能上線，送出前請重新登入一次（表單內容會保留）。": "Bạn đã đăng nhập trước khi tính năng này ra mắt; hãy đăng nhập lại trước khi gửi (biểu mẫu được giữ lại).",
 };
 
 export const id = {
@@ -10275,6 +10295,8 @@ export const id = {
   "教會、機構 = 贊助者": "gereja / organisasi = sponsor",
   "只定位到街道，請把大頭針拖到正確位置": "Hanya jalannya yang ditemukan — seret pin ke titik yang tepat",
   "舊身分的推薦紀錄 {n} 筆": "{n} catatan dari nama/perangkat sebelumnya",
+  "為了安全，請重新登入一次；你填的資料已保留，登入後再按一次送出": "Demi keamanan, silakan masuk lagi; formulir tersimpan, tekan kirim sekali lagi setelah masuk",
+  "你的登入早於這項功能上線，送出前請重新登入一次（表單內容會保留）。": "Kamu masuk sebelum fitur ini diluncurkan; masuk lagi sebelum mengirim (formulir tetap tersimpan).",
 };
 
 export const ms = {
@@ -11584,6 +11606,8 @@ export const ms = {
   "教會、機構 = 贊助者": "gereja / organisasi = penaja",
   "只定位到街道，請把大頭針拖到正確位置": "Hanya jalan yang ditemui — seret pin ke titik yang tepat",
   "舊身分的推薦紀錄 {n} 筆": "{n} rekod daripada nama/peranti terdahulu",
+  "為了安全，請重新登入一次；你填的資料已保留，登入後再按一次送出": "Untuk keselamatan, sila log masuk semula; borang anda disimpan, tekan hantar sekali lagi selepas log masuk",
+  "你的登入早於這項功能上線，送出前請重新登入一次（表單內容會保留）。": "Anda log masuk sebelum ciri ini dilancarkan; sila log masuk semula sebelum menghantar (borang dikekalkan).",
 };
 
 export const zhcn = {
@@ -12813,6 +12837,8 @@ export const zhcn = {
   "教會、機構 = 贊助者": "教会、机构 = 赞助者",
   "只定位到街道，請把大頭針拖到正確位置": "只定位到街道，请把大头针拖到正确位置",
   "舊身分的推薦紀錄 {n} 筆": "旧身份的推荐记录 {n} 笔",
+  "為了安全，請重新登入一次；你填的資料已保留，登入後再按一次送出": "为了安全，请重新登录一次；你填的资料已保留，登录后再按一次送出",
+  "你的登入早於這項功能上線，送出前請重新登入一次（表單內容會保留）。": "你的登录早于这项功能上线，送出前请重新登录一次（表单内容会保留）。",
 };
 
 export const pt = {
@@ -13410,6 +13436,8 @@ export const pt = {
   "教會、機構 = 贊助者": "igreja / organização = patrocinador",
   "只定位到街道，請把大頭針拖到正確位置": "Só a rua foi localizada — arraste o marcador para o ponto exato",
   "舊身分的推薦紀錄 {n} 筆": "{n} registos de nomes/dispositivos anteriores",
+  "為了安全，請重新登入一次；你填的資料已保留，登入後再按一次送出": "Por segurança, inicie sessão novamente; o formulário foi guardado, prima enviar de novo depois de entrar",
+  "你的登入早於這項功能上線，送出前請重新登入一次（表單內容會保留）。": "Iniciou sessão antes do lançamento desta função; volte a iniciar sessão antes de enviar (o formulário é mantido).",
 };
 
 export const fr = {
@@ -14007,6 +14035,8 @@ export const fr = {
   "教會、機構 = 贊助者": "église / organisation = soutien",
   "只定位到街道，請把大頭針拖到正確位置": "Seule la rue a été localisée — déplacez l’épingle à l’emplacement exact",
   "舊身分的推薦紀錄 {n} 筆": "{n} enregistrements d’anciens noms/appareils",
+  "為了安全，請重新登入一次；你填的資料已保留，登入後再按一次送出": "Par sécurité, reconnecte-toi ; ton formulaire est conservé, appuie à nouveau sur envoyer après connexion",
+  "你的登入早於這項功能上線，送出前請重新登入一次（表單內容會保留）。": "Tu t’es connecté avant le lancement de cette fonction ; reconnecte-toi avant d’envoyer (le formulaire est conservé).",
 };
 
 export const ru = {
@@ -14604,6 +14634,8 @@ export const ru = {
   "教會、機構 = 贊助者": "церковь / организация = спонсор",
   "只定位到街道，請把大頭針拖到正確位置": "Найдена только улица — перетащите метку в точное место",
   "舊身分的推薦紀錄 {n} 筆": "{n} записей от прежних имён/устройств",
+  "為了安全，請重新登入一次；你填的資料已保留，登入後再按一次送出": "В целях безопасности войдите снова; форма сохранена, после входа нажмите «отправить» ещё раз",
+  "你的登入早於這項功能上線，送出前請重新登入一次（表單內容會保留）。": "Вы вошли до запуска этой функции; войдите снова перед отправкой (форма сохранится).",
 };
 
 export const hi = {
@@ -15201,6 +15233,8 @@ export const hi = {
   "教會、機構 = 贊助者": "चर्च / संस्था = प्रायोजक",
   "只定位到街道，請把大頭針拖到正確位置": "केवल सड़क तक स्थान मिला — पिन को सही स्थान पर खींचें",
   "舊身分的推薦紀錄 {n} 筆": "पिछले नामों/डिवाइस से {n} रिकॉर्ड",
+  "為了安全，請重新登入一次；你填的資料已保留，登入後再按一次送出": "सुरक्षा के लिए कृपया दोबारा साइन इन करें; आपका फ़ॉर्म सहेजा गया है, साइन इन के बाद फिर से सबमिट दबाएँ",
+  "你的登入早於這項功能上線，送出前請重新登入一次（表單內容會保留）。": "आपने यह सुविधा शुरू होने से पहले साइन इन किया था; सबमिट करने से पहले दोबारा साइन इन करें (फ़ॉर्म सुरक्षित रहेगा)।",
 };
 
 // Khmer (Cambodian) — full UI coverage, machine-translated in bulk from the
@@ -16428,6 +16462,8 @@ export const km = {
   "教會、機構 = 贊助者": "ព្រះវិហារ / អង្គការ = អ្នកឧបត្ថម្ភ",
   "只定位到街道，請把大頭針拖到正確位置": "រកឃើញតែផ្លូវប៉ុណ្ណោះ — សូមអូសម្ជុលទៅទីតាំងត្រឹមត្រូវ",
   "舊身分的推薦紀錄 {n} 筆": "{n} កំណត់ត្រាពីឈ្មោះ/ឧបករណ៍មុន",
+  "為了安全，請重新登入一次；你填的資料已保留，登入後再按一次送出": "ដើម្បីសុវត្ថិភាព សូមចូលម្តងទៀត; ទម្រង់របស់អ្នកបានរក្សាទុក បន្ទាប់ពីចូល សូមចុចដាក់ស្នើម្តងទៀត",
+  "你的登入早於這項功能上線，送出前請重新登入一次（表單內容會保留）。": "អ្នកបានចូលមុនពេលមុខងារនេះចេញ; សូមចូលម្តងទៀតមុនដាក់ស្នើ (ទម្រង់នឹងត្រូវរក្សាទុក)។",
 };
 
 const I18N_FILLINS = { he, fa, ar, ja, ko, es, tr, de, my, vi, id, ms, zhcn, pt, fr, ru, hi, km };

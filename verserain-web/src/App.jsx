@@ -9359,7 +9359,15 @@ export default function App() {
 
   // ── 商家／教會／機構登記 (map place registration) ───────────────────────
   const newPlaceDraft = () => ({ id: 'pl_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), kind: 'merchant', name: '', address: '', lat: null, lng: null, discountPct: 10, description: '', message: '', phone: '', website: '', hours: '', photoAssetId: '', photoMime: '', agree: false });
-  const [merchantDraft, setMerchantDraft] = useState(newPlaceDraft);
+  // The draft lives in localStorage: a first-time submit may bounce the owner
+  // to re-login (new session key), and nobody should retype a listing.
+  const [merchantDraft, setMerchantDraft] = useState(() => {
+    try { const d = JSON.parse(localStorage.getItem('verserain_merchant_draft') || 'null'); if (d && d.id && d.kind) return { ...newPlaceDraft(), ...d, agree: false }; } catch { /* ignore */ }
+    return newPlaceDraft();
+  });
+  useEffect(() => {
+    try { localStorage.setItem('verserain_merchant_draft', JSON.stringify(merchantDraft)); } catch { /* ignore */ }
+  }, [merchantDraft]);
   const [merchantBusy, setMerchantBusy] = useState(false);
   const [merchantGeoBusy, setMerchantGeoBusy] = useState(false);
   const [merchantPhotoPreview, setMerchantPhotoPreview] = useState(null);
@@ -9414,9 +9422,11 @@ export default function App() {
       const { agree, ...place } = m; void agree;
       const res = await fetch('/api/places', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'register', email: userEmail, sessionKey, place }) });
       const d = await res.json().catch(() => ({}));
+      if (d.error === 'session_invalid') { setShowLoginModal('login'); throw new Error(t('為了安全，請重新登入一次；你填的資料已保留，登入後再按一次送出', 'For security, please sign in again — your form is saved, just press submit once more')); }
       if (!res.ok || !d.success) throw new Error(d.error === 'daily_limit' ? t('今天已達登記上限（3 筆）', 'Daily registration limit (3) reached') : redeemErrorText(d.error || res.status));
       setToast(t('已送出，管理員審核後就會出現在地圖上 🎉', 'Submitted — it will appear on the map once approved 🎉'));
       setMerchantDraft(newPlaceDraft()); setMerchantPhotoPreview(null); loadMyPlaces();
+      try { localStorage.removeItem('verserain_merchant_draft'); } catch { /* ignore */ }
     } catch (e) { setToast(String(e?.message || e)); }
     finally { setMerchantBusy(false); setTimeout(() => setToast(null), 3500); }
   };
@@ -25582,7 +25592,7 @@ const deDict = {
                     verserain
                   </div>
                   <div className="app-brand-version" style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', marginTop: '4px', marginLeft: '2px' }}>
-                    v4.0.37
+                    v4.0.38
                   </div>
                 </div>
                 <div ref={langPickerRef} className="app-lang-control" style={{ position: 'relative' }}>
@@ -29381,6 +29391,12 @@ const deDict = {
                       </div>
                     ) : (
                       <>
+                        {!sessionKey && (
+                          <div style={{ background: '#fef3c7', border: '1px solid #fde68a', borderRadius: 10, padding: '0.7rem 0.9rem', marginBottom: '1rem', color: '#78350f', fontSize: '0.9rem', display: 'flex', gap: '0.6rem', alignItems: 'center', flexWrap: 'wrap' }}>
+                            <span>🔐 {t('你的登入早於這項功能上線，送出前請重新登入一次（表單內容會保留）。', 'You signed in before this feature launched — please sign in again before submitting (your form is kept).')}</span>
+                            <button type="button" onClick={() => setShowLoginModal('login')} style={{ background: '#3b82f6', color: '#fff', border: 'none', borderRadius: 6, padding: '0.35rem 0.9rem', cursor: 'pointer', fontWeight: 700 }}>{t('重新登入', 'Sign in again')}</button>
+                          </div>
+                        )}
                         <div style={card}>
                           <label style={label}>{t('類型', 'Type')}</label>
                           <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
