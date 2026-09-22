@@ -720,6 +720,9 @@ const ROUTE_TABS = ['lobby', 'versesets', 'custom_verses', 'multiplayer', 'daily
 // 也開不了捐贈收據 — 獎勵資金池另走教會／非營利代收（見 sponsor 頁）。
 // 空字串 → 頁面顯示「即將公布」。
 const DONATE_INFO = { bankName: '', bankCode: '', account: '', holder: '', paypalMe: '', contactEmail: 'hungry4grace@gmail.com' };
+// The personal-support page is built but not offered yet: flip to true to
+// show its tile and links again (the #donate route keeps working regardless).
+const SHOW_DONATE = false;
 const ROUTE_FLAGS = ['listen', 'edit', 'play', 'room'];
 // The voucher QR deep link (#verify/<code>) is read once at module load, before
 // any router sync can rewrite the hash to plain #verify.
@@ -25618,7 +25621,7 @@ const deDict = {
                     verserain
                   </div>
                   <div className="app-brand-version" style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', marginTop: '4px', marginLeft: '2px' }}>
-                    v4.0.42
+                    v4.0.43
                   </div>
                 </div>
                 <div ref={langPickerRef} className="app-lang-control" style={{ position: 'relative' }}>
@@ -26260,7 +26263,7 @@ const deDict = {
                       { id: 'about', Icon: Info, label: t('關於我們', 'About'), desc: t('VerseRain 開發資訊', 'Info & Credits'), color: '#14b8a6' },
                       { id: 'feedback', link: `mailto:hungry4grace@gmail.com?subject=${encodeURIComponent('經文雨 意見回饋（VerseRain Feedback）')}`, Icon: Mail, label: t('意見回饋', 'Feedback'), desc: t('聯絡與建議', 'Bugs & Suggestions'), color: '#ec4899' },
                       { id: 'sponsors', Icon: Gift, label: t('贊助獎勵計劃', 'Sponsored Rewards'), desc: t('通過經文、邀請朋友，贏得禮券', 'Pass verses, invite friends, earn vouchers'), color: '#f59e0b' },
-                      { id: 'donate', Icon: Heart, label: t('支持經文雨', 'Support VerseRain'), desc: t('小額支持 App 開發與維運', 'Help fund development & hosting'), color: '#ef4444' },
+                      ...(SHOW_DONATE ? [{ id: 'donate', Icon: Heart, label: t('支持經文雨', 'Support VerseRain'), desc: t('小額支持 App 開發與維運', 'Help fund development & hosting'), color: '#ef4444' }] : []),
                       { id: 'sponsor', Icon: Gift, label: t('贊助經文雨', 'Sponsor VerseRain'), desc: t('企業家與教會如何加入推廣讀經', 'How businesses & churches can join'), color: '#7c3aed' },
                       { id: 'merchant', Icon: Store, label: t('登記商家／教會', 'Register a shop / church'), desc: t('在「誰在玩」地圖上標記，提供點數折扣', 'Get on the map and offer a points discount'), color: '#d97706' },
                       { id: 'verify', Icon: Ticket, label: t('兌換券核銷', 'Verify a voucher'), desc: t('店家輸入代碼確認折扣', 'Shops confirm a customer’s voucher here'), color: '#0d9488' },
@@ -29293,10 +29296,10 @@ const deDict = {
                         <a href={`mailto:hungry4grace@gmail.com?subject=${encodeURIComponent('經文雨 贊助獎勵計劃（VerseRain Sponsorship）')}`} style={{ background: '#166534', color: '#fff', borderRadius: 6, padding: '0.35rem 0.9rem', fontWeight: 700, textDecoration: 'none', fontSize: '0.85rem' }}>{t('聯絡我們', 'Contact us')} →</a>
                         <button type="button" onClick={() => setMainTab('sponsors')} style={{ background: 'transparent', color: '#166534', border: '1px solid #86efac', borderRadius: 6, padding: '0.35rem 0.9rem', cursor: 'pointer', fontWeight: 700, fontSize: '0.85rem' }}>{t('查看贊助獎勵計劃現況', 'See the programme status')}</button>
                       </div>
-                      <div style={{ color: '#64748b', fontSize: '0.82rem', marginTop: '0.6rem' }}>
+                      {SHOW_DONATE && <div style={{ color: '#64748b', fontSize: '0.82rem', marginTop: '0.6rem' }}>
                         {t('個人小額支持 App 開發，請到', 'For small personal gifts toward development, see')}{' '}
                         <button type="button" onClick={() => setMainTab('donate')} style={{ background: 'transparent', border: 'none', color: '#3b82f6', cursor: 'pointer', fontWeight: 700, padding: 0, fontSize: '0.82rem' }}>{t('支持經文雨', 'Support VerseRain')} →</button>
-                      </div>
+                      </div>}
                     </div>
                   </div>
                 );
