@@ -78,3 +78,14 @@ test('/rebind-personal-code is admin-only and never hands out a code another acc
   assert.strictEqual(storage.map.get('user:a@x.com').personalCode, 'SHAREDCDEE');
   assert.strictEqual((await srv.onRequest(req('/rebind-personal-code', { email: 'nobody@x.com' }, { token: 'test-token' }))).status, 404);
 });
+
+test('/rebind-personal-code and /sync-code find LINE/Apple accounts keyed by a mixed-case synthetic email', async () => {
+  const key = 'user:line_UABC123@privaterelay.verserain.com';
+  const { srv, storage } = makeServer({ [key]: { email: 'line_UABC123@privaterelay.verserain.com', name: 'L', personalCode: 'SHAREDCDEE' } });
+  const d = await json(await srv.onRequest(req('/rebind-personal-code', { email: 'line_UABC123@privaterelay.verserain.com' }, { token: 'test-token' })));
+  assert.strictEqual(d.success, true);
+  assert.strictEqual(storage.map.get(key).personalCode, d.personalCode);
+  assert.strictEqual(storage.map.has(key.toLowerCase()), false, 'no duplicate lowercase record is created');
+  const sc = await json(await srv.onRequest(req('/sync-code', { email: 'line_UABC123@privaterelay.verserain.com', personalCode: 'XYZXYZXYZ2' })));
+  assert.strictEqual(sc.personalCode, d.personalCode);
+});

@@ -219,6 +219,18 @@ export async function listUsersPaged(storage, pick = (v) => v) {
   }
   return out;
 }
+// Accounts created through LINE/Apple fallbacks are keyed by a MIXED-CASE
+// synthetic email (line_U…@privaterelay…), while password accounts are keyed
+// lowercased. Look the record up both ways and return the key that hit.
+export async function findUserRecord(storage, email) {
+  const raw = String(email || '').trim();
+  if (!raw) return { key: null, user: null };
+  for (const k of [`user:${raw}`, `user:${raw.toLowerCase()}`]) {
+    const user = await storage.get(k);
+    if (user) return { key: k, user };
+  }
+  return { key: null, user: null };
+}
 export const emailKindOf = (email) => {
   const e = String(email || '').trim().toLowerCase();
   if (!e) return 'none';
@@ -1331,13 +1343,13 @@ export default class Server {
               if (!cleanEmail) {
                  return new Response(JSON.stringify({ error: 'email required' }), { status: 400, headers: corsHeaders });
               }
-              const user = await this.room.storage.get(`user:${cleanEmail}`);
+              const { key: userKey, user } = await findUserRecord(this.room.storage, email);
               if (!user) {
                  return new Response(JSON.stringify({ error: 'User not found' }), { status: 404, headers: corsHeaders });
               }
               if (!user.personalCode && cleanPersonalCode) {
                  user.personalCode = await claimPersonalCode(this, cleanEmail, cleanPersonalCode);
-                 await this.room.storage.put(`user:${cleanEmail}`, user);
+                 await this.room.storage.put(userKey, user);
               }
               const taken = await deviceCodeTaken(this, cleanEmail, cleanPersonalCode, user.personalCode);
               return new Response(JSON.stringify({ success: true, personalCode: user.personalCode || null, deviceCodeTaken: taken }), { status: 200, headers: corsHeaders });
@@ -2853,8 +2865,8 @@ export default class Server {
          if (!isCustomSetWriteAuthorized()) return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: corsHeaders });
          try {
             const body = await request.json().catch(() => ({}));
+            const { key: userKey, user } = await findUserRecord(this.room.storage, body.email);
             const email = String(body.email || '').trim().toLowerCase();
-            const user = email ? await this.room.storage.get(`user:${email}`) : null;
             if (!user) return new Response(JSON.stringify({ error: 'User not found' }), { status: 404, headers: corsHeaders });
             const wanted = String(body.code || '').trim();
             if (wanted) {
@@ -2867,7 +2879,7 @@ export default class Server {
                do { next = generatePersonalCode(); } while (await personalCodeOwner(this, next));
             }
             user.personalCode = next;
-            await this.room.storage.put(`user:${email}`, user);
+            await this.room.storage.put(userKey, user);
             rememberCodeOwner(this, next, email);
             return new Response(JSON.stringify({ success: true, email, previous, personalCode: next }), { status: 200, headers: corsHeaders });
          } catch(e) {
@@ -2885,7 +2897,7 @@ export default class Server {
          try {
             const body = await request.json().catch(() => ({}));
             const email = String(body.email || '').trim().toLowerCase();
-            const user = email ? await this.room.storage.get(`user:${email}`) : null;
+            const { user } = await findUserRecord(this.room.storage, body.email);
             const playerName = String((user && user.name) || body.playerName || '').trim();
             const garden = playerName ? await this.room.storage.get(`garden:${playerName}`) : null;
             const now = Date.now();
