@@ -7243,6 +7243,10 @@ export default function App() {
   // garden lands on the field of the verse just played. GardenView consumes it.
   const [gardenFocus, setGardenFocus] = useState(null); // { ref, nonce } | null
   const clearGardenFocus = React.useCallback(() => setGardenFocus(null), []);
+  // Where the garden was scrolled to when a challenge was launched from it.
+  // The whole menu unmounts during a game, so without this the player lands
+  // back at the top of the page instead of at the field they were on.
+  const gardenReturnRef = useRef(null);
   const versionBeforeChallenge = useRef(null); // saved version to restore after cross-lang challenge
   const updateGarden = React.useCallback((ref, type, setId, amount = 1) => {
     // 即時脈動:廣播「本玩家剛做了動作」給所有地圖觀看者(在 updater 之外,
@@ -7827,6 +7831,7 @@ export default function App() {
     openChallengeSetup({
       subtitle: verse.reference,
       run: () => {
+        gardenReturnRef.current = { y: window.scrollY, tab: 'garden' };
         setActiveVerse(verse);
         setSelectedVerseRefs([verse.reference]);
         if (setId) setSelectedSetId(setId);
@@ -8642,6 +8647,18 @@ export default function App() {
   const [leaderboardModalTab, setLeaderboardModalTab] = useState('alltime'); // 'daily', 'monthly', 'alltime'
   const [isFetchingLeaderboard, setIsFetchingLeaderboard] = useState(false);
   const [mainTab, setMainTab] = useState(() => parseRoute(window.location.hash).tab);
+  useEffect(() => {
+    if (gameState !== 'menu' || !gardenReturnRef.current) return;
+    const { y, tab } = gardenReturnRef.current;
+    gardenReturnRef.current = null;
+    if (mainTab !== tab) return;
+    // Two passes: once after the garden mounts, once after async data settles.
+    const go = () => window.scrollTo({ top: y, behavior: 'auto' });
+    const t1 = setTimeout(go, 60);
+    const t2 = setTimeout(go, 350);
+    return () => { clearTimeout(t1); clearTimeout(t2); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [gameState]);
   const [mapView, setMapView] = useState('2d');   // 地圖 2D/3D 切換
   const [mapFocus, setMapFocus] = useState(null);  // 3D→2D 切換時帶入的焦點座標
   // 我的果子 (map influence overlay): who I invited (level1) and whom they
@@ -25688,7 +25705,7 @@ const deDict = {
                     verserain
                   </div>
                   <div className="app-brand-version" style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', marginTop: '4px', marginLeft: '2px' }}>
-                    v4.0.58
+                    v4.0.59
                   </div>
                 </div>
                 <div ref={langPickerRef} className="app-lang-control" style={{ position: 'relative' }}>
