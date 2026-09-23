@@ -6930,7 +6930,6 @@ export default function App() {
   const [myReferees, setMyReferees] = useState(null);
   const [refereeGardenStats, setRefereeGardenStats] = useState(null);
   const [refereesPage, setRefereesPage] = useState(1);
-  const [refereesReload, setRefereesReload] = useState(0); // bump to refetch after linking an old name/code
   const [creatorHistoryPage, setCreatorHistoryPage] = useState(1);
   const HISTORY_PAGE_SIZE = 5;
 
@@ -7024,7 +7023,7 @@ export default function App() {
         })
         .catch(() => { setMyReferees([]); setRefereeGardenStats({}); });
     }
-  }, [playerName, personalCode, userEmail, refereesReload, claimAuthorNames]);
+  }, [playerName, personalCode, userEmail, claimAuthorNames]);
 
   const localFruits = React.useMemo(() => Object.entries(gardenData || {}).filter(([k]) => k !== '_activity').reduce((sum, [, curr]) => sum + (curr.fruits || 0), 0), [gardenData]);
   const totalFruits = localFruits + creatorPoints;
@@ -25706,7 +25705,7 @@ const deDict = {
                     verserain
                   </div>
                   <div className="app-brand-version" style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', marginTop: '4px', marginLeft: '2px' }}>
-                    v4.0.64
+                    v4.0.65
                   </div>
                 </div>
                 <div ref={langPickerRef} className="app-lang-control" style={{ position: 'relative' }}>
