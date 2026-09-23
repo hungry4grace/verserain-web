@@ -644,22 +644,6 @@ function OAuthButtons({ onGoogleCredential, onAppleCredential, disabled, t }) {
 // 操作手冊教學影片：進入視窗才播放、離開就暫停，避免手冊頁一次載入多支影片。
 function ManualVideo({ src, poster, caption }) {
   const ref = React.useRef(null);
-  // 整理園子: close the empty cells left by deleted trees. Order is kept;
-  // only gridIndex changes, so the cloud merge (incoming cell wins) follows.
-  const gardenGaps = React.useMemo(() => gardenGapCount(gardenData), [gardenData]);
-  const compactMyGarden = () => {
-    const { garden, moved } = compactGardenCells(gardenData || {});
-    if (!moved) return;
-    setGardenData(garden);
-    try { localStorage.setItem('verseRain_gardenData', JSON.stringify(garden)); } catch { /* ignore */ }
-    const pn = playerNameRef.current;
-    if (pn) {
-      fetchRetry(`${PARTY_HOST}/save-garden`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ playerName: pn, gardenData: garden }) }).catch(() => { });
-    }
-    setToast(t('已整理園子，填補了 {n} 個空格', 'Garden tidied: {n} empty cells closed').replace('{n}', String(moved)));
-    setTimeout(() => setToast(null), 3000);
-  };
-
   React.useEffect(() => {
     const el = ref.current;
     if (!el || typeof IntersectionObserver === 'undefined') return;
@@ -7324,6 +7308,22 @@ export default function App() {
       return updated;
     });
   }, []);
+
+  // 整理園子: close the empty cells left by deleted trees. Order is kept;
+  // only gridIndex changes, so the cloud merge (incoming cell wins) follows.
+  const gardenGaps = React.useMemo(() => gardenGapCount(gardenData), [gardenData]);
+  const compactMyGarden = () => {
+    const { garden, moved } = compactGardenCells(gardenData || {});
+    if (!moved) return;
+    setGardenData(garden);
+    try { localStorage.setItem('verseRain_gardenData', JSON.stringify(garden)); } catch { /* ignore */ }
+    const pn = playerNameRef.current;
+    if (pn) {
+      fetchRetry(`${PARTY_HOST}/save-garden`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ playerName: pn, gardenData: garden }) }).catch(() => { });
+    }
+    setToast(t('已整理園子，填補了 {n} 個空格', 'Garden tidied: {n} empty cells closed').replace('{n}', String(moved)));
+    setTimeout(() => setToast(null), 3000);
+  };
 
   React.useEffect(() => {
     updateGarden('activity_only', 'login');
@@ -25688,7 +25688,7 @@ const deDict = {
                     verserain
                   </div>
                   <div className="app-brand-version" style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', marginTop: '4px', marginLeft: '2px' }}>
-                    v4.0.56
+                    v4.0.57
                   </div>
                 </div>
                 <div ref={langPickerRef} className="app-lang-control" style={{ position: 'relative' }}>
