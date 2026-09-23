@@ -1,4 +1,6 @@
 import { Redis } from '@upstash/redis';
+import { partyFetch } from './_lib/party.js';
+import { creditBonus } from './_lib/points.js';
 
 // POST { author, amount, scoreAmount, player, type, refereeEmail }
 //
@@ -65,7 +67,18 @@ export default async function handler(req, res) {
     }
 
     await Promise.all(promises);
-    res.status(200).json({ success: true });
+
+    // The inviter's score bonus also lands in their account ledger (總積分).
+    // `author` is the inviter's personal code; PartyKit maps it to the
+    // owning account. Failures here never fail the referral itself.
+    let credited = null;
+    if (type === 'referred' && scoreAmount > 0) {
+      try {
+        const owner = await partyFetch('/code-owner', { code: author });
+        if (owner && owner.email) credited = await creditBonus(redis, { email: owner.email, points: scoreAmount, now: new Date() });
+      } catch { credited = null; }
+    }
+    res.status(200).json({ success: true, credited });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

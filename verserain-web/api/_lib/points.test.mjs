@@ -6,7 +6,7 @@ import {
   CODE_ALPHABET, CODE_LEN, POINTS_PER_NTD, VOUCHER_MAX_NTD, MONTHLY_MAX_NTD, VOUCHER_TTL_SEC,
   PLAUSIBLE_POINTS_PER_TREE, PLAUSIBLE_SLACK, PLACES_KEY, LEADERBOARD_KEY,
   spentKey, openKey, dayKey, monthKey, placeDayKey, historyKey, refundedKey,
-  taipeiDay, taipeiMonth, newVoucherCode, normalizeCode, formatCode, plausiblePoints, lifetimePoints, recordScore, ensureEarnedSeeded, earnedKey, bestKey, dailyEarnedKey, seededKey, eligibility,
+  taipeiDay, taipeiMonth, newVoucherCode, normalizeCode, formatCode, plausiblePoints, lifetimePoints, recordScore, ensureEarnedSeeded, creditBonus, earnedKey, bestKey, dailyEarnedKey, seededKey, bonusKey, eligibility,
   computeDiscount, voucherStatus, maskName, publicVoucher,
   readBalance, issueVoucher, markUsed, expireVoucher, voidVoucher, restoreVoucher, getVoucher, listVouchers,
 } from './points.js';
@@ -275,6 +275,22 @@ test('recordScore falls back to the name-keyed per-verse best before the account
   assert.strictEqual(await r.get(earnedKey('a@x.com')), '43192');
   const later = await recordScore(r, { email: 'a@x.com', playerName: 'A', verseRef: 'Ps 1:1', score: 100, now: NOW });
   assert.strictEqual(later.earnedPoints, 43292);
+});
+
+test('creditBonus adds referral points to the account and survives the one-time seed', async () => {
+  const r = stubRedis();
+  const b = await creditBonus(r, { email: 'a@x.com', points: 5000, now: NOW });
+  assert.deepStrictEqual(b, { delta: 5000, earnedPoints: 5000 });
+  assert.strictEqual(await r.get(bonusKey('a@x.com')), '5000');
+  assert.strictEqual(await r.get(dailyEarnedKey('a@x.com', '2026-09-22')), '5000');
+  // Seed after the bonus: history (43192) plus the bonus, not one or the other.
+  const seeded = await ensureEarnedSeeded(r, { email: 'a@x.com', identity, garden: { treesPlanted: 10, activityPoints: 20000 }, leaderboardScore: 43192 });
+  assert.strictEqual(seeded, 48192);
+  // After the seed a bonus simply adds.
+  const later = await creditBonus(r, { email: 'a@x.com', points: 5000, now: NOW });
+  assert.strictEqual(later.earnedPoints, 53192);
+  assert.strictEqual((await creditBonus(r, { email: '', points: 5 })).delta, 0);
+  assert.strictEqual((await creditBonus(r, { email: 'a@x.com', points: 0 })).delta, 0);
 });
 
 test('issueVoucher is capped by the plausible balance, not the raw leaderboard', async () => {

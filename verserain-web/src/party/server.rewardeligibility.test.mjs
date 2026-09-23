@@ -144,3 +144,14 @@ test('export routes accept the admin token or EXPORT_SECRET, never the old liter
   const noSecret = makeServer({}, { ADMIN_TOKEN: 'test-token' }).srv;
   assert.strictEqual((await noSecret.onRequest(req('/dau-stats?secret=', undefined, { method: 'GET', token: '' }))).status, 401);
 });
+
+test('/code-owner maps a personal code to the owning account', async () => {
+  const { srv } = makeServer({
+    'user:amy@x.com': { email: 'amy@x.com', name: 'Amy', personalCode: 'AAAAAAAAAA' },
+  });
+  const d = await json(await srv.onRequest(req('/code-owner', { code: 'AAAAAAAAAA' })));
+  assert.deepStrictEqual({ email: d.email, playerName: d.playerName }, { email: 'amy@x.com', playerName: 'Amy' });
+  const none = await json(await srv.onRequest(req('/code-owner', { code: 'ZZZZZZZZZZ' })));
+  assert.strictEqual(none.email, null);
+  assert.strictEqual((await srv.onRequest(req('/code-owner', { code: 'AAAAAAAAAA' }, { token: '' }))).status, 401);
+});

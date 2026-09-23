@@ -2941,6 +2941,14 @@ export default class Server {
       // the account's verified garden counts and, given the account's codes,
       // every referee bound to them (user.invitedBy) with THEIR passed count,
       // so "10 qualified invites" means 10 real people who each passed ≥ 3.
+      // Which account owns a personal code (for crediting referral bonuses).
+      if (url.pathname.endsWith('/code-owner') && request.method === 'POST') {
+         if (!isCustomSetWriteAuthorized()) return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: corsHeaders });
+         const body = await request.json().catch(() => ({}));
+         const email = await personalCodeOwner(this, body.code);
+         const { user } = email ? await findUserRecord(this.room.storage, email) : { user: null };
+         return new Response(JSON.stringify({ success: true, email: email || null, playerName: (user && user.name) || '' }), { headers: corsHeaders });
+      }
       // Cheap session proof for score submissions: no garden read, no scan.
       if (url.pathname.endsWith('/session-check') && request.method === 'POST') {
          if (!isCustomSetWriteAuthorized()) return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: corsHeaders });

@@ -66,6 +66,9 @@ export const earnedKey = (email) => `points:earned:${normEmail(email)}`;
 export const bestKey = (email) => `points:best:${normEmail(email)}`;
 export const dailyEarnedKey = (email, day) => `points:daily:${normEmail(email)}:${day}`;
 export const seededKey = (email) => `points:seeded:${normEmail(email)}`;
+// Bonus points (e.g. the inviter's +5000 when a referee first clears a
+// verse) are not in the name-keyed leaderboard, so the seed must add them.
+export const bonusKey = (email) => `points:bonus:${normEmail(email)}`;
 const DAILY_EARNED_TTL_SEC = 3 * 86400;
 
 function parse(s) {
@@ -298,7 +301,8 @@ export async function ensureEarnedSeeded(redis, { email, identity, garden, leade
   const [flag, cur] = await Promise.all([redis.get(seededKey(em)), redis.get(earnedKey(em))]);
   if (flag) return Math.max(0, toInt(cur));
   const lb = leaderboardScore === undefined ? await readEarned(redis, identity) : leaderboardScore;
-  const seed = Math.max(toInt(cur), lifetimePoints(lb, garden));
+  const bonus = Math.max(0, toInt(await redis.get(bonusKey(em))));
+  const seed = Math.max(toInt(cur), lifetimePoints(lb, garden) + bonus);
   await redis.set(earnedKey(em), String(seed));
   await redis.set(seededKey(em), new Date().toISOString());
   return seed;
@@ -330,6 +334,22 @@ export async function recordScore(redis, { email, playerName, verseRef, score, n
   }
   const [earnedRaw, todayRaw] = await Promise.all([redis.get(earnedKey(em)), redis.get(dailyEarnedKey(em, day))]);
   return { delta, earnedPoints: Math.max(0, toInt(earnedRaw)), todayPoints: Math.max(0, toInt(todayRaw)), best: Math.max(prevBest, sc) };
+}
+
+// Add a flat bonus to the account (referral rewards). Counted in today's
+// score too, and remembered separately so a later seed does not drop it.
+export async function creditBonus(redis, { email, points, now } = {}) {
+  const em = normEmail(email);
+  const pts = Math.max(0, Math.floor(Number(points) || 0));
+  if (!em || pts <= 0) return { delta: 0, earnedPoints: 0 };
+  const day = taipeiDay(toDate(now));
+  const [earned] = await Promise.all([
+    redis.incrby(earnedKey(em), pts),
+    redis.incrby(bonusKey(em), pts),
+    redis.incrby(dailyEarnedKey(em, day), pts),
+  ]);
+  await redis.expire(dailyEarnedKey(em, day), DAILY_EARNED_TTL_SEC);
+  return { delta: pts, earnedPoints: Math.max(0, toInt(earned)) };
 }
 
 async function readEarned(redis, identity) {
