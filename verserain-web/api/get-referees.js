@@ -1,6 +1,6 @@
 import { Redis } from '@upstash/redis';
 import { partyFetch } from './_lib/party.js';
-import { mergePendingReferees, personalCodesOf } from './_lib/referees.js';
+import { mergePendingReferees, personalCodesOf, dropForeignCodes } from './_lib/referees.js';
 
 // Account-level referees (registered with one of my codes) come from the
 // PartyKit user table via /reward-eligibility; that is a full user scan, so
@@ -105,7 +105,10 @@ export default async function handler(req, res) {
       if (!codesByName[name]) codesByName[name] = [];
       codesByName[name].push(code);
     }
-    const myKeys = expandIdentityKeys([...authors, ...(linked || [])], codesByName);
+    // A code the device remembers but that belongs to another account (shared
+    // tablet, later sign-in by someone else) must not count for this person.
+    const mine = dropForeignCodes(authors, { mapping: mapping || {}, linked: linked || [] });
+    const myKeys = expandIdentityKeys([...mine, ...(linked || [])], codesByName);
 
     const myLists = await Promise.all(myKeys.map((a) => redis.lrange(HISTORY_KEY(a), 0, 499)));
     const referees = collectReferees(myLists)

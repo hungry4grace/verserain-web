@@ -28,3 +28,20 @@ export function mergePendingReferees(referees, accountList) {
   }
   return out.sort((x, y) => (y.joinedAt || 0) - (x.joinedAt || 0));
 }
+
+// A code counts for ONE account. The client sends every code its device ever
+// held; a code that player_mapping assigns to somebody else's name (a shared
+// tablet, a device another account signed in on later) must not pull that
+// person's referrals into my list. Kept: names, codes linked to my account,
+// unmapped codes, and codes mapped to one of my names.
+export function dropForeignCodes(keys, { mapping = {}, linked = [] } = {}) {
+  const list = (keys || []).map((k) => String(k || '').trim()).filter(Boolean);
+  const linkedSet = new Set((linked || []).map((k) => String(k || '').trim()).filter(Boolean));
+  const myNames = new Set([...list, ...linkedSet].filter((k) => !PERSONAL_CODE_RE.test(k)));
+  for (const k of linkedSet) { const n = mapping[k]; if (n) myNames.add(String(n)); }
+  return list.filter((k) => {
+    if (!PERSONAL_CODE_RE.test(k) || linkedSet.has(k)) return true;
+    const owner = mapping[k];
+    return owner === undefined || owner === null || myNames.has(String(owner));
+  });
+}

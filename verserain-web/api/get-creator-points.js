@@ -1,5 +1,6 @@
 import { Redis } from '@upstash/redis';
 import { identityKey } from './link-identity.js';
+import { dropForeignCodes } from './_lib/referees.js';
 import { expandIdentityKeys } from './get-referees.js';
 
 // GET /api/get-creator-points?author=<key>[&history=true]
@@ -62,7 +63,9 @@ export default async function handler(req, res) {
         if (!codesByName[name]) codesByName[name] = [];
         codesByName[name].push(code);
       }
-      keys = expandIdentityKeys([...keys, ...(linked || [])], codesByName);
+      // Same ownership rule as get-referees: a code mapped to someone else's
+      // name is not this person's bucket, whatever the device remembers.
+      keys = expandIdentityKeys([...dropForeignCodes(keys, { mapping: mappingDict, linked: linked || [] }), ...(linked || [])], codesByName);
     }
     if (!keys.length) return res.status(200).json({ points: 0, referralPoints: 0, creatorHistory: [], referralHistory: [] });
 

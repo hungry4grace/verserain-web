@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert';
-import { mergePendingReferees, personalCodesOf } from './referees.js';
+import { mergePendingReferees, personalCodesOf, dropForeignCodes } from './referees.js';
 
 test('personalCodesOf keeps only well-formed codes, deduped, at most five', () => {
   assert.deepStrictEqual(personalCodesOf(['瑞爸', 'gZvyq8PkXB', 'gZvyq8PkXB', 'Shds4UZmmn', 'bad-code', '']), ['gZvyq8PkXB', 'Shds4UZmmn']);
@@ -22,4 +22,20 @@ test('mergePendingReferees adds account-only referees as pending and keeps histo
   assert.strictEqual(merged[1].passedVerses, 3);
   assert.strictEqual(history[0].passedVerses, undefined, 'input untouched');
   assert.deepStrictEqual(mergePendingReferees([], null), []);
+});
+
+test('dropForeignCodes keeps my names, my linked codes and unmapped codes, drops codes owned by someone else', () => {
+  const mapping = { jBx9CwYnk7: '瑞爸', Shds4UZmmn: '黃國瑞 David', gZvyq8PkXB: '瑞爸' };
+  // David's device still remembers 瑞爸's old device code.
+  assert.deepStrictEqual(
+    dropForeignCodes(['黃國瑞 David', 'Shds4UZmmn', 'jBx9CwYnk7', 'ZZZZZZZZZZ'], { mapping, linked: [] }),
+    ['黃國瑞 David', 'Shds4UZmmn', 'ZZZZZZZZZZ'],
+  );
+  // 瑞爸 keeps it: mapped to his own name.
+  assert.deepStrictEqual(dropForeignCodes(['瑞爸', 'gZvyq8PkXB', 'jBx9CwYnk7'], { mapping }), ['瑞爸', 'gZvyq8PkXB', 'jBx9CwYnk7']);
+  // A code explicitly linked to the account always stays, even if the mapping says otherwise.
+  assert.deepStrictEqual(dropForeignCodes(['黃國瑞 David', 'jBx9CwYnk7'], { mapping, linked: ['jBx9CwYnk7'] }), ['黃國瑞 David', 'jBx9CwYnk7']);
+  // Linked old name makes that name's codes mine too.
+  assert.deepStrictEqual(dropForeignCodes(['新名字', 'gZvyq8PkXB'], { mapping, linked: ['瑞爸'] }), ['新名字', 'gZvyq8PkXB']);
+  assert.deepStrictEqual(dropForeignCodes([], {}), []);
 });
