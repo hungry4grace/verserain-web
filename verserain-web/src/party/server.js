@@ -3203,6 +3203,16 @@ export default class Server {
 
     }
 
+    // GET .../<roomId>/status — is anyone still in this game room? The world
+    // map only shows a room badge while the room has a live connection, so a
+    // badge cannot outlive the match (a fresh DO answers connected: 0).
+    if (request.method === 'GET' && new URL(request.url).pathname.endsWith('/status')) {
+      const players = Object.values((this.state && this.state.players) || {});
+      const connected = players.filter((p) => p && p.connected !== false).length
+        + (this.state && this.state.host && !this.state.players[this.state.host] && this.state.hostConnected !== false ? 1 : 0);
+      const live = [...this.room.getConnections()].length;
+      return new Response(JSON.stringify({ roomId: this.room.id, connected: Math.max(connected, live), status: (this.state && this.state.status) || 'waiting', matchType: (this.state && this.state.matchType) || null }), { status: 200, headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' } });
+    }
     // Default route for other random requests to gameplay rooms (if any)
     return new Response("VerseRain Gameplay Room HTTP endpoint OK", { status: 200 });
   }

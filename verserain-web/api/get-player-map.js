@@ -1,5 +1,31 @@
 import { Redis } from '@upstash/redis';
 
+// A room badge on the map must mean "a match is going on right now". The
+// location record only remembers the room a player LAST reported, so before
+// showing a badge we ask that PartyKit room whether anyone is still connected
+// (answers cached briefly; an unknown or empty room drops the badge).
+const PARTY_ROOMS_BASE = (process.env.PARTY_BASE || 'https://verserain-party.hungry4grace.partykit.dev/parties/main/global-auth-db').replace(/\/+$/, '').replace(/\/global-auth-db$/, '');
+const ROOM_LIVE_TTL_SEC = 20;
+async function liveRooms(redis, roomIds) {
+  const out = {};
+  await Promise.all(roomIds.map(async (id) => {
+    const key = `map:roomlive:${id}`;
+    try {
+      const cached = await redis.get(key);
+      if (cached !== null && cached !== undefined) { out[id] = String(cached) === '1'; return; }
+    } catch { /* fall through */ }
+    let alive = false;
+    try {
+      const r = await fetch(`${PARTY_ROOMS_BASE}/${encodeURIComponent(id)}/status`);
+      const d = r.ok ? await r.json().catch(() => null) : null;
+      alive = !!(d && Number(d.connected) > 0);
+    } catch { alive = false; }
+    out[id] = alive;
+    try { await redis.set(key, alive ? '1' : '0', { ex: ROOM_LIVE_TTL_SEC }); } catch { /* best effort */ }
+  }));
+  return out;
+}
+
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Credentials', true);
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -43,6 +69,12 @@ export default async function handler(req, res) {
           updatedAt
         };
       });
+
+    const roomIds = Array.from(new Set(players.map((p) => p.roomId).filter(Boolean)));
+    if (roomIds.length) {
+      const alive = await liveRooms(redis, roomIds);
+      for (const p of players) if (p.roomId && !alive[p.roomId]) p.roomId = null;
+    }
 
     res.status(200).json(players);
   } catch (error) {
