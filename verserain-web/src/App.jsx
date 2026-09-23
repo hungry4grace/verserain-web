@@ -7247,6 +7247,9 @@ export default function App() {
   // The whole menu unmounts during a game, so without this the player lands
   // back at the top of the page instead of at the field they were on.
   const gardenReturnRef = useRef(null);
+  // The menu scrolls inside its own container (100dvh, overflow auto), so the
+  // window's scrollY is always 0; save/restore that container's scrollTop.
+  const menuScrollRef = useRef(null);
   const versionBeforeChallenge = useRef(null); // saved version to restore after cross-lang challenge
   const updateGarden = React.useCallback((ref, type, setId, amount = 1) => {
     // 即時脈動:廣播「本玩家剛做了動作」給所有地圖觀看者(在 updater 之外,
@@ -7831,7 +7834,7 @@ export default function App() {
     openChallengeSetup({
       subtitle: verse.reference,
       run: () => {
-        gardenReturnRef.current = { y: window.scrollY, tab: 'garden' };
+        gardenReturnRef.current = { y: menuScrollRef.current ? menuScrollRef.current.scrollTop : window.scrollY, tab: 'garden' };
         setActiveVerse(verse);
         setSelectedVerseRefs([verse.reference]);
         if (setId) setSelectedSetId(setId);
@@ -8653,7 +8656,7 @@ export default function App() {
     gardenReturnRef.current = null;
     if (mainTab !== tab) return;
     // Two passes: once after the garden mounts, once after async data settles.
-    const go = () => window.scrollTo({ top: y, behavior: 'auto' });
+    const go = () => { const el = menuScrollRef.current; if (el) el.scrollTop = y; else window.scrollTo({ top: y, behavior: 'auto' }); };
     const t1 = setTimeout(go, 60);
     const t2 = setTimeout(go, 350);
     return () => { clearTimeout(t1); clearTimeout(t2); };
@@ -25695,7 +25698,7 @@ const deDict = {
         )}
 
         {gameState === 'menu' && (
-          <div style={{ position: 'relative', width: '100vw', height: '100dvh', overflowY: 'auto', WebkitOverflowScrolling: 'touch', backgroundColor: '#f4f6f8', zIndex: 10, fontFamily: 'var(--app-font-family)' }}>
+          <div ref={menuScrollRef} style={{ position: 'relative', width: '100vw', height: '100dvh', overflowY: 'auto', WebkitOverflowScrolling: 'touch', backgroundColor: '#f4f6f8', zIndex: 10, fontFamily: 'var(--app-font-family)' }}>
 
             {/* Header */}
             <div className="landscape-compact-header app-shell-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#ffffff', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
@@ -25705,7 +25708,7 @@ const deDict = {
                     verserain
                   </div>
                   <div className="app-brand-version" style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', marginTop: '4px', marginLeft: '2px' }}>
-                    v4.0.59
+                    v4.0.60
                   </div>
                 </div>
                 <div ref={langPickerRef} className="app-lang-control" style={{ position: 'relative' }}>
