@@ -9296,6 +9296,16 @@ export default function App() {
     fetchPointsBalance();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mainTab, userEmail, sessionKey]);
+  // Every finished game goes through here so the account ledger (總積分)
+  // gets the session proof; the leaderboard part is unchanged for guests.
+  const submitScoreToServer = (payload) => fetch('/api/submit-score', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ ...payload, ...(userEmail && sessionKey ? { email: userEmail, sessionKey } : {}) }),
+  }).then((r) => {
+    if (userEmail && sessionKey) { pointsBalanceAtRef.current = Date.now(); fetchPointsBalance(); }
+    return r;
+  });
   const openRedeem = (place) => {
     if (!place || !place.id) return;
     if (!userEmail) { setShowLoginModal('login'); setToast(t('請先登入才能兌換折扣', 'Sign in to redeem a discount')); setTimeout(() => setToast(null), 2500); return; }
@@ -11257,11 +11267,7 @@ export default function App() {
         const actualModeName = distractionLevel > 0 ? `${playMode}-dx${distractionLevel}` : playMode;
 
         setIsSubmittingScore(true);
-        fetch('/api/submit-score', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name: playerName, score: finalCalculatedScore, verseRef: activeVerse.reference, mode: actualModeName })
-        }).then(() => {
+        submitScoreToServer({ name: playerName, score: finalCalculatedScore, verseRef: activeVerse.reference, mode: actualModeName }).then(() => {
           // Also submit geolocation for the world map (fire-and-forget)
           fetch('https://ipapi.co/json/')
             .then(r => r.json())
@@ -11339,11 +11345,7 @@ export default function App() {
           // Submit personal scores only for individual PK rooms. Team competition is an ephemeral classroom result.
           if (!isTeamCompetition && playerName && finalCalculatedScore > 0 && healthRef.current > 0) {
             const actualModeName = distractionLevel > 0 ? `${playMode}-dx${distractionLevel}` : playMode;
-            fetch('/api/submit-score', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ name: playerName, score: finalCalculatedScore, verseRef: activeVerse.reference, mode: actualModeName })
-            }).catch(() => { });
+            submitScoreToServer({ name: playerName, score: finalCalculatedScore, verseRef: activeVerse.reference, mode: actualModeName }).catch(() => { });
           }
 
           // Report this verse's score to server (server accumulates campaign results)
@@ -11398,11 +11400,7 @@ export default function App() {
 
           if (playerName && finalCalculatedScore > 0 && healthRef.current > 0) {
             const actualModeName = distractionLevel > 0 ? `${playMode}-dx${distractionLevel}` : playMode;
-            fetch('/api/submit-score', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ name: playerName, score: finalCalculatedScore, verseRef: activeVerse.reference, mode: actualModeName })
-            }).catch(() => { });
+            submitScoreToServer({ name: playerName, score: finalCalculatedScore, verseRef: activeVerse.reference, mode: actualModeName }).catch(() => { });
           }
 
           const nextVerse = campaignQueue[0];
@@ -25657,7 +25655,7 @@ const deDict = {
                     verserain
                   </div>
                   <div className="app-brand-version" style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', marginTop: '4px', marginLeft: '2px' }}>
-                    v4.0.49
+                    v4.0.50
                   </div>
                 </div>
                 <div ref={langPickerRef} className="app-lang-control" style={{ position: 'relative' }}>
@@ -28368,8 +28366,12 @@ const deDict = {
                       <div style={{ color: '#065f46', fontSize: '0.8rem', fontWeight: 'bold', letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: '0.4rem' }}>{t('今日問候', "Today's Greeting")}</div>
                       <div style={{ color: '#065f46', fontSize: '1.05rem', marginBottom: '1rem', fontWeight: 600 }}>
                         {playerName
-                          ? t('{name}，今日的經文雨活動已累積 {n} 分', `{name}, {n} point${personalProgress.todayCount === 1 ? '' : 's'} from today's VerseRain activity`).replace('{name}', String(playerName)).replace('{n}', String(personalProgress.todayCount))
-                          : t('今日的經文雨活動已累積 {n} 分', `{n} point${personalProgress.todayCount === 1 ? '' : 's'} from today's VerseRain activity`).replace('{n}', String(personalProgress.todayCount))}
+                          ? (pointsBalance && !pointsBalance.error && Number.isFinite(Number(pointsBalance.todayPoints))
+                            ? t('{name}，今日得分 {n} 分', '{name}, {n} points scored today').replace('{name}', String(playerName)).replace('{n}', Number(pointsBalance.todayPoints).toLocaleString())
+                            : t('{name}，歡迎回來', '{name}, welcome back').replace('{name}', String(playerName)))
+                          : (pointsBalance && !pointsBalance.error && Number.isFinite(Number(pointsBalance.todayPoints))
+                            ? t('今日得分 {n} 分', '{n} points scored today').replace('{n}', Number(pointsBalance.todayPoints).toLocaleString())
+                            : t('歡迎回來', 'Welcome back'))}
                       </div>
                       <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'center', gap: '0.5rem' }}>
                         <span style={{ fontSize: '2.6rem', filter: personalProgress.currentStreak > 0 ? 'none' : 'grayscale(1) opacity(0.4)' }}>🔥</span>
@@ -28392,8 +28394,8 @@ const deDict = {
                       <div style={{ color: '#1e3a8a', fontSize: '0.8rem', fontWeight: 'bold', letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: '0.7rem', textAlign: 'center' }}>{t('個人累積', 'Cumulative')}</div>
                       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.7rem 1rem' }}>
                         <div style={{ textAlign: 'center' }}>
-                          <div style={{ fontSize: '1.7rem', fontWeight: 800, color: '#1d4ed8', lineHeight: 1 }}>{personalProgress.totalActivities}</div>
-                          <div style={{ fontSize: '0.78rem', color: '#1e3a8a', marginTop: '0.25rem' }}>{t('已挑戰', 'Plays')}</div>
+                          <div style={{ fontSize: '1.7rem', fontWeight: 800, color: '#1d4ed8', lineHeight: 1 }}>{pointsBalance && !pointsBalance.error && Number.isFinite(Number(pointsBalance.earnedPoints)) ? Number(pointsBalance.earnedPoints).toLocaleString() : '—'}</div>
+                          <div style={{ fontSize: '0.78rem', color: '#1e3a8a', marginTop: '0.25rem' }} title={t('每節經文只算你的最佳成績', 'Only your best score on each verse counts')}>{t('總積分', 'Total score')}</div>
                         </div>
                         <div style={{ textAlign: 'center' }}>
                           <div style={{ fontSize: '1.7rem', fontWeight: 800, color: '#1d4ed8', lineHeight: 1 }}>{personalProgress.treesPlanted}</div>
@@ -31156,11 +31158,7 @@ const deDict = {
                                 localStorage.setItem('verserain_player_name', name);
                                 setIsSubmittingScore(true);
                                 const actualModeName = distractionLevel > 0 ? `${playMode}-dx${distractionLevel}` : playMode;
-                                fetch('/api/submit-score', {
-                                  method: 'POST',
-                                  headers: { 'Content-Type': 'application/json' },
-                                  body: JSON.stringify({ name: name, score: score, verseRef: activeVerse.reference, mode: actualModeName })
-                                }).then(() => fetch(`/api/get-scores?verseRef=${encodeURIComponent(activeVerse.reference)}`))
+                                submitScoreToServer({ name: name, score: score, verseRef: activeVerse.reference, mode: actualModeName }).then(() => fetch(`/api/get-scores?verseRef=${encodeURIComponent(activeVerse.reference)}`))
                                   .then(res => res.json())
                                   .then(data => setLeaderboard(data && Array.isArray(data.alltime) ? data : { alltime: Array.isArray(data) ? data : [], monthly: [], daily: [] }))
                                   .catch(e => console.log(e))

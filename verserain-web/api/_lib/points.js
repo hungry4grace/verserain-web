@@ -58,6 +58,15 @@ export const historyKey = (email) => `redeem:by-email:${normEmail(email)}`;
 export const placeHistoryKey = (placeId) => `redeem:by-place:${placeId}`;
 const PLACE_HISTORY_MAX = 500;
 export const refundedKey = (code) => `redeem:refunded:${code}`;
+// Account-keyed score ledger (總積分). The leaderboards stay keyed by
+// playerName; these follow the email so a rename never splits a player's
+// points. earned = Σ per-verse best; best = HASH verseRef → best score;
+// daily = today's gains (Taipei day) for the garden greeting.
+export const earnedKey = (email) => `points:earned:${normEmail(email)}`;
+export const bestKey = (email) => `points:best:${normEmail(email)}`;
+export const dailyEarnedKey = (email, day) => `points:daily:${normEmail(email)}:${day}`;
+export const seededKey = (email) => `points:seeded:${normEmail(email)}`;
+const DAILY_EARNED_TTL_SEC = 3 * 86400;
 
 function parse(s) {
   try { return typeof s === 'string' ? JSON.parse(s) : s; } catch { return null; }
@@ -280,6 +289,49 @@ export function summarizeVouchers(list) {
   return sum;
 }
 
+// One-time migration into the account ledger: the larger of what the
+// leaderboard holds under the current name and the garden's activity total,
+// never less than whatever recordScore already added. Runs once per email.
+export async function ensureEarnedSeeded(redis, { email, identity, garden, leaderboardScore } = {}) {
+  const em = normEmail(email || (identity && identity.email));
+  if (!em) return 0;
+  const [flag, cur] = await Promise.all([redis.get(seededKey(em)), redis.get(earnedKey(em))]);
+  if (flag) return Math.max(0, toInt(cur));
+  const lb = leaderboardScore === undefined ? await readEarned(redis, identity) : leaderboardScore;
+  const seed = Math.max(toInt(cur), lifetimePoints(lb, garden));
+  await redis.set(earnedKey(em), String(seed));
+  await redis.set(seededKey(em), new Date().toISOString());
+  return seed;
+}
+
+// Credit a finished game to the account: only the improvement over the
+// player's best on that verse counts (same rule as the leaderboard sum), so
+// replaying a verse below your record adds nothing. Before the account has a
+// best for the verse, the name-keyed per-verse leaderboard stands in so the
+// first post-migration play is not counted twice.
+export async function recordScore(redis, { email, playerName, verseRef, score, now } = {}) {
+  const em = normEmail(email);
+  const ref = String(verseRef || '').trim();
+  const sc = Math.max(0, Math.floor(Number(score) || 0));
+  if (!em || !ref || sc <= 0) return { delta: 0, earnedPoints: 0, todayPoints: 0, best: 0 };
+  let prev = await redis.hget(bestKey(em), ref);
+  if (prev === null || prev === undefined) {
+    const lb = playerName ? await redis.zscore(`leaderboard:${ref}`, playerName) : null;
+    prev = lb === null || lb === undefined ? 0 : lb;
+  }
+  const prevBest = Math.max(0, toInt(prev));
+  const delta = Math.max(0, sc - prevBest);
+  const day = taipeiDay(toDate(now));
+  if (delta > 0) {
+    await redis.hset(bestKey(em), { [ref]: String(sc) });
+    await redis.incrby(earnedKey(em), delta);
+    await redis.incrby(dailyEarnedKey(em, day), delta);
+    await redis.expire(dailyEarnedKey(em, day), DAILY_EARNED_TTL_SEC);
+  }
+  const [earnedRaw, todayRaw] = await Promise.all([redis.get(earnedKey(em)), redis.get(dailyEarnedKey(em, day))]);
+  return { delta, earnedPoints: Math.max(0, toInt(earnedRaw)), todayPoints: Math.max(0, toInt(todayRaw)), best: Math.max(prevBest, sc) };
+}
+
 async function readEarned(redis, identity) {
   const name = identity && identity.playerName;
   if (!name) return 0;
@@ -301,8 +353,9 @@ export async function readBalance(redis, { email, identity, garden, now, earnedP
   const em = normEmail(email || (identity && identity.email));
   const g = garden || {};
   const t = toDate(now);
-  const earned = lifetimePoints(earnedPoints === undefined ? await readEarned(redis, identity) : earnedPoints, g);
+  const earned = await ensureEarnedSeeded(redis, { email: em, identity, garden: g, leaderboardScore: earnedPoints });
   const plausible = plausiblePoints(earned, g.treesPlanted);
+  const todayRaw = await redis.get(dailyEarnedKey(em, taipeiDay(t)));
   // Lazy expiry first: an expired open voucher refunds its points, and the
   // ledgers below must reflect that.
   const open = await readOpenVoucher(redis, em, t);
@@ -316,6 +369,7 @@ export async function readBalance(redis, { email, identity, garden, now, earnedP
   const { eligible, reasons } = eligibility(identity, garden);
   return {
     earnedPoints: earned,
+    todayPoints: Math.max(0, toInt(todayRaw)),
     plausiblePoints: plausible,
     spentPoints,
     balancePoints,
@@ -356,7 +410,7 @@ export async function issueVoucher(redis, { email, identity, garden, place, bill
   }
 
   try {
-    const earned = lifetimePoints(earnedPoints === undefined ? await readEarned(redis, identity) : earnedPoints, garden);
+    const earned = await ensureEarnedSeeded(redis, { email: em, identity, garden, leaderboardScore: earnedPoints });
     const plausible = plausiblePoints(earned, (garden || {}).treesPlanted);
     const [spentRaw, monthRaw, placeDayRaw] = await Promise.all([
       redis.get(spentKey(em)),

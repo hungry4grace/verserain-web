@@ -17,6 +17,7 @@ import rewardCheckHandler from './api/reward-check.js'
 import placesHandler from './api/places.js'
 import geocodeHandler from './api/geocode.js'
 import pointsBalanceHandler from './api/points-balance.js'
+import submitScoreHandler from './api/submit-score.js'
 import redeemHandler from './api/redeem.js'
 import redeemVerifyHandler from './api/redeem-verify.js'
 import redeemHistoryHandler from './api/redeem-history.js'
@@ -109,6 +110,7 @@ export default defineConfig({
         jsonRoute('/api/places', placesHandler);
         jsonRoute('/api/geocode', geocodeHandler);
         jsonRoute('/api/points-balance', pointsBalanceHandler);
+        jsonRoute('/api/submit-score', submitScoreHandler);
         jsonRoute('/api/redeem', redeemHandler);
         jsonRoute('/api/redeem-verify', redeemVerifyHandler);
         jsonRoute('/api/redeem-history', redeemHistoryHandler);

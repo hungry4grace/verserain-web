@@ -1,4 +1,26 @@
 import { Redis } from '@upstash/redis';
+import { partyFetch } from './_lib/party.js';
+import { recordScore } from './_lib/points.js';
+
+// Leaderboards stay keyed by playerName (guests included). When the caller
+// also sends { email, sessionKey } and PartyKit confirms the session, the
+// score is credited to the account ledger (總積分, api/_lib/points.js) —
+// only the improvement over that verse's best counts. A bad or missing
+// session never blocks the leaderboard write; it just earns no account points.
+async function creditAccount(redis, { email, sessionKey, playerName, verseRef, score }) {
+  const em = String(email || '').trim().toLowerCase();
+  const key = String(sessionKey || '').trim();
+  if (!em || !key) return null;
+  let check;
+  try {
+    check = await partyFetch('/session-check', { email: em, sessionKey: key });
+  } catch {
+    return { error: 'verify_unavailable' };
+  }
+  if (!check || !check.valid) return { error: 'session_invalid' };
+  const r = await recordScore(redis, { email: em, playerName: check.playerName || playerName, verseRef, score, now: new Date() });
+  return { delta: r.delta, earnedPoints: r.earnedPoints, todayPoints: r.todayPoints };
+}
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Credentials', true)
@@ -15,7 +37,8 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { name, score, verseRef, mode } = req.body;
+  const body = typeof req.body === 'string' ? (() => { try { return JSON.parse(req.body); } catch { return {}; } })() : (req.body || {});
+  const { name, score, verseRef, mode, email, sessionKey } = body;
 
   if (!name || typeof score !== 'number' || !verseRef) {
     return res.status(400).json({ error: 'Missing required fields' });
@@ -72,7 +95,10 @@ export default async function handler(req, res) {
         updateZset(`leaderboard:daily:${today}:global`, 'global', null, null)
     ]);
 
-    res.status(200).json({ success: true });
+    let points = null;
+    try { points = await creditAccount(redis, { email, sessionKey, playerName: name, verseRef, score }); }
+    catch (e) { points = { error: e && e.message ? e.message : 'points_failed' }; }
+    res.status(200).json({ success: true, points });
   } catch (error) {
     console.error("Failed to submit score", error);
     res.status(500).json({ error: error.message });

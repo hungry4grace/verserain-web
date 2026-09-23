@@ -77,3 +77,17 @@ test('a LINE account is found even when the caller lowercased its synthetic emai
   assert.strictEqual(d.identity.sessionValid, true);
   assert.strictEqual(d.identity.playerName, 'L');
 });
+
+test('/session-check confirms a live key without reading the garden', async () => {
+  const { srv } = makeServer({
+    'user:amy@x.com': { email: 'amy@x.com', name: 'Amy', sessionKeys: [{ key: 'k-live', at: 1 }] },
+  });
+  const ok = await json(await srv.onRequest(req('/session-check', { email: 'AMY@x.com', sessionKey: 'k-live' }, { token: 'test-token' })));
+  assert.deepStrictEqual({ valid: ok.valid, playerName: ok.playerName, found: ok.found }, { valid: true, playerName: 'Amy', found: true });
+  const bad = await json(await srv.onRequest(req('/session-check', { email: 'amy@x.com', sessionKey: 'nope' }, { token: 'test-token' })));
+  assert.strictEqual(bad.valid, false);
+  assert.strictEqual(bad.playerName, '', 'no name leaks on a bad key');
+  const ghost = await json(await srv.onRequest(req('/session-check', { email: 'ghost@x.com', sessionKey: 'k-live' }, { token: 'test-token' })));
+  assert.strictEqual(ghost.found, false);
+  assert.strictEqual((await srv.onRequest(req('/session-check', { email: 'amy@x.com', sessionKey: 'k-live' }))).status, 401);
+});

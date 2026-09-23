@@ -6,7 +6,7 @@ import {
   CODE_ALPHABET, CODE_LEN, POINTS_PER_NTD, VOUCHER_MAX_NTD, MONTHLY_MAX_NTD, VOUCHER_TTL_SEC,
   PLAUSIBLE_POINTS_PER_TREE, PLAUSIBLE_SLACK, PLACES_KEY, LEADERBOARD_KEY,
   spentKey, openKey, dayKey, monthKey, placeDayKey, historyKey, refundedKey,
-  taipeiDay, taipeiMonth, newVoucherCode, normalizeCode, formatCode, plausiblePoints, lifetimePoints, eligibility,
+  taipeiDay, taipeiMonth, newVoucherCode, normalizeCode, formatCode, plausiblePoints, lifetimePoints, recordScore, ensureEarnedSeeded, earnedKey, bestKey, dailyEarnedKey, seededKey, eligibility,
   computeDiscount, voucherStatus, maskName, publicVoucher,
   readBalance, issueVoucher, markUsed, expireVoucher, voidVoucher, restoreVoucher, getVoucher, listVouchers,
 } from './points.js';
@@ -226,15 +226,55 @@ test('issueVoucher: too_small releases the day lock; bad input never locks', asy
   assert.strictEqual(await r.get(dayKey('b@x.com', 'p1', '2026-09-22')), null);
 });
 
-test('readBalance uses the garden activity total when the leaderboard name is stale', async () => {
+test('readBalance seeds the account ledger once from the larger of leaderboard and activity total', async () => {
   const r = stubRedis();
   await seed(r, { earned: 43192 });
   const g = { ...garden, activityPoints: 778489 };
   const b = await readBalance(r, { email: 'a@x.com', identity, garden: g, now: NOW });
   assert.strictEqual(b.earnedPoints, 778489);
+  assert.strictEqual(await r.get(earnedKey('a@x.com')), '778489');
+  assert.ok(await r.get(seededKey('a@x.com')), 'seed flag set');
+  // Later reads never re-seed, even if the leaderboard grows under the name.
+  await r.zadd(LEADERBOARD_KEY, { score: 999999, member: identity.playerName });
+  const again = await readBalance(r, { email: 'a@x.com', identity, garden: g, now: NOW });
+  assert.strictEqual(again.earnedPoints, 778489);
   assert.strictEqual(b.balancePoints, plausiblePoints(778489, garden.treesPlanted));
   const { voucher } = await issueVoucher(r, { email: 'a@x.com', identity, garden: g, place, billNTD: 1000, now: NOW });
   assert.strictEqual(voucher.ntd, 100, 'NT$100 off a NT$1000 bill at 10% now fits the balance');
+});
+
+test('recordScore credits only the improvement over the verse best, keyed by account', async () => {
+  const r = stubRedis();
+  const em = 'a@x.com';
+  const a = await recordScore(r, { email: em, playerName: 'A', verseRef: 'John 3:16', score: 817, now: NOW });
+  assert.deepStrictEqual({ delta: a.delta, earned: a.earnedPoints, today: a.todayPoints }, { delta: 817, earned: 817, today: 817 });
+  const lower = await recordScore(r, { email: em, playerName: 'A', verseRef: 'John 3:16', score: 500, now: NOW });
+  assert.strictEqual(lower.delta, 0, 'below the record adds nothing');
+  assert.strictEqual(lower.earnedPoints, 817);
+  const better = await recordScore(r, { email: em, playerName: 'A', verseRef: 'John 3:16', score: 1000, now: NOW });
+  assert.strictEqual(better.delta, 183);
+  const other = await recordScore(r, { email: em, playerName: 'A', verseRef: 'Ps 23:1', score: 300, now: NOW });
+  assert.strictEqual(other.earnedPoints, 1300);
+  assert.strictEqual(await r.hget(bestKey(em), 'John 3:16'), '1000');
+  assert.strictEqual(await r.get(dailyEarnedKey(em, '2026-09-22')), '1300');
+  // A rename does not matter: same email, different playerName.
+  const renamed = await recordScore(r, { email: em, playerName: 'A-new', verseRef: 'John 3:16', score: 1100, now: NOW });
+  assert.strictEqual(renamed.delta, 100);
+  // Bad input credits nothing.
+  assert.strictEqual((await recordScore(r, { email: '', verseRef: 'x', score: 10 })).delta, 0);
+  assert.strictEqual((await recordScore(r, { email: em, verseRef: 'x', score: -5 })).delta, 0);
+});
+
+test('recordScore falls back to the name-keyed per-verse best before the account has one', async () => {
+  const r = stubRedis();
+  await r.zadd('leaderboard:John 3:16', { score: 900, member: 'A' });
+  const first = await recordScore(r, { email: 'a@x.com', playerName: 'A', verseRef: 'John 3:16', score: 950, now: NOW });
+  assert.strictEqual(first.delta, 50, 'only the improvement over the old name-keyed best');
+  const seeded = await ensureEarnedSeeded(r, { email: 'a@x.com', identity, garden: { treesPlanted: 10, activityPoints: 20000 }, leaderboardScore: 43192 });
+  assert.strictEqual(seeded, 43192, 'seed takes the larger history, not less than what was already credited');
+  assert.strictEqual(await r.get(earnedKey('a@x.com')), '43192');
+  const later = await recordScore(r, { email: 'a@x.com', playerName: 'A', verseRef: 'Ps 1:1', score: 100, now: NOW });
+  assert.strictEqual(later.earnedPoints, 43292);
 });
 
 test('issueVoucher is capped by the plausible balance, not the raw leaderboard', async () => {
@@ -357,10 +397,11 @@ test('readBalance math and lazy expiry of the open voucher', async () => {
   assert.strictEqual(after.balancePoints, 100000);
   assert.strictEqual((await getVoucher(r, voucher.code)).status, 'expired');
 
-  // A caller may pass earnedPoints it already fetched; spent above plausible floors at 0.
+  // Once seeded, the account ledger is authoritative: a leaderboard value the
+  // caller passes no longer overrides it. Spent above plausible floors at 0.
   await r.set(spentKey('a@x.com'), '999999');
   const floored = await readBalance(r, { email: 'a@x.com', identity, garden, now: NOW, earnedPoints: 50000 });
-  assert.strictEqual(floored.earnedPoints, 50000);
+  assert.strictEqual(floored.earnedPoints, 250000);
   assert.strictEqual(floored.balancePoints, 0);
   assert.strictEqual(floored.balanceNTD, 0);
   // Unknown player on the leaderboard → 0 earned.
