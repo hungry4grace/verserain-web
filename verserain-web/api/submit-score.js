@@ -7,7 +7,7 @@ import { recordScore } from './_lib/points.js';
 // score is credited to the account ledger (總積分, api/_lib/points.js) —
 // only the improvement over that verse's best counts. A bad or missing
 // session never blocks the leaderboard write; it just earns no account points.
-async function creditAccount(redis, { email, sessionKey, playerName, verseRef, score }) {
+async function creditAccount(redis, { email, sessionKey, playerName, verseRef, score, fallbackBest }) {
   const em = String(email || '').trim().toLowerCase();
   const key = String(sessionKey || '').trim();
   if (!em || !key) return null;
@@ -18,7 +18,7 @@ async function creditAccount(redis, { email, sessionKey, playerName, verseRef, s
     return { error: 'verify_unavailable' };
   }
   if (!check || !check.valid) return { error: 'session_invalid' };
-  const r = await recordScore(redis, { email: em, playerName: check.playerName || playerName, verseRef, score, now: new Date() });
+  const r = await recordScore(redis, { email: em, playerName: check.playerName || playerName, verseRef, score, now: new Date(), fallbackBest });
   return { delta: r.delta, earnedPoints: r.earnedPoints, todayPoints: r.todayPoints };
 }
 
@@ -62,6 +62,10 @@ export default async function handler(req, res) {
     const month = today.slice(0, 7);
 
     const allTimeKey = `leaderboard:${verseRef}`;
+    // Captured before the leaderboard is updated below: the account ledger
+    // needs the best as it was, or the improvement would always read as 0.
+    const prevVerseBestRaw = await redis.zscore(allTimeKey, name);
+    const prevVerseBest = prevVerseBestRaw === null || prevVerseBestRaw === undefined ? 0 : Math.max(0, Math.floor(Number(prevVerseBestRaw) || 0));
     const monthlyKey = `leaderboard:monthly:${month}:${verseRef}`;
     const dailyKey = `leaderboard:daily:${today}:${verseRef}`;
 
@@ -96,7 +100,7 @@ export default async function handler(req, res) {
     ]);
 
     let points = null;
-    try { points = await creditAccount(redis, { email, sessionKey, playerName: name, verseRef, score }); }
+    try { points = await creditAccount(redis, { email, sessionKey, playerName: name, verseRef, score, fallbackBest: prevVerseBest }); }
     catch (e) { points = { error: e && e.message ? e.message : 'points_failed' }; }
     // Last outcome per account, so "my total did not move" can be diagnosed
     // without request logs: was a session sent, and what did the ledger say?

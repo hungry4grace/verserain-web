@@ -313,15 +313,21 @@ export async function ensureEarnedSeeded(redis, { email, identity, garden, leade
 // replaying a verse below your record adds nothing. Before the account has a
 // best for the verse, the name-keyed per-verse leaderboard stands in so the
 // first post-migration play is not counted twice.
-export async function recordScore(redis, { email, playerName, verseRef, score, now } = {}) {
+// `fallbackBest` is the name-keyed best as it stood BEFORE this submission
+// touched the leaderboard; the caller must capture it first, because once
+// the leaderboard holds the new score, reading it back would make delta 0.
+export async function recordScore(redis, { email, playerName, verseRef, score, now, fallbackBest } = {}) {
   const em = normEmail(email);
   const ref = String(verseRef || '').trim();
   const sc = Math.max(0, Math.floor(Number(score) || 0));
   if (!em || !ref || sc <= 0) return { delta: 0, earnedPoints: 0, todayPoints: 0, best: 0 };
   let prev = await redis.hget(bestKey(em), ref);
   if (prev === null || prev === undefined) {
-    const lb = playerName ? await redis.zscore(`leaderboard:${ref}`, playerName) : null;
-    prev = lb === null || lb === undefined ? 0 : lb;
+    if (fallbackBest !== undefined) prev = fallbackBest;
+    else {
+      const lb = playerName ? await redis.zscore(`leaderboard:${ref}`, playerName) : null;
+      prev = lb === null || lb === undefined ? 0 : lb;
+    }
   }
   const prevBest = Math.max(0, toInt(prev));
   const delta = Math.max(0, sc - prevBest);

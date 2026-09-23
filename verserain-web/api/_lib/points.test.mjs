@@ -265,6 +265,20 @@ test('recordScore credits only the improvement over the verse best, keyed by acc
   assert.strictEqual((await recordScore(r, { email: em, verseRef: 'x', score: -5 })).delta, 0);
 });
 
+test('recordScore uses the caller-captured best when the leaderboard was already updated', async () => {
+  const r = stubRedis();
+  // submit-score already wrote the new score to the name-keyed leaderboard…
+  await r.zadd('leaderboard:詩篇 18:13', { score: 1023, member: '瑞爸' });
+  // …so without the captured value the improvement would read as 0:
+  const naive = await recordScore(r, { email: 'b@x.com', playerName: '瑞爸', verseRef: '詩篇 18:13', score: 1023, now: NOW });
+  assert.strictEqual(naive.delta, 0);
+  // With the pre-update best (none) the full score is credited.
+  const fixed = await recordScore(r, { email: 'a@x.com', playerName: '瑞爸', verseRef: '詩篇 18:13', score: 1023, now: NOW, fallbackBest: 0 });
+  assert.strictEqual(fixed.delta, 1023);
+  const again = await recordScore(r, { email: 'a@x.com', playerName: '瑞爸', verseRef: '詩篇 18:13', score: 1100, now: NOW, fallbackBest: 1023 });
+  assert.strictEqual(again.delta, 77, 'account best (1023) now wins over the fallback');
+});
+
 test('recordScore falls back to the name-keyed per-verse best before the account has one', async () => {
   const r = stubRedis();
   await r.zadd('leaderboard:John 3:16', { score: 900, member: 'A' });
