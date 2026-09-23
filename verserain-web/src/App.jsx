@@ -9812,6 +9812,9 @@ export default function App() {
   };
   const [multiplayerSearchText, setMultiplayerSearchText] = useState('');
   const [showPickerBrowser, setShowPickerBrowser] = useState(false);
+  // 邀人PK from a set page: the room's setup panel opens with that set already
+  // chosen, so the host only picks mode, difficulty and how many verses.
+  const [pickerLockedSet, setPickerLockedSet] = useState(false);
 
   const multiplayerRoomRef = useRef(multiplayerRoomId);
   useEffect(() => { multiplayerRoomRef.current = multiplayerRoomId; }, [multiplayerRoomId]);
@@ -25705,7 +25708,7 @@ const deDict = {
                     verserain
                   </div>
                   <div className="app-brand-version" style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', marginTop: '4px', marginLeft: '2px' }}>
-                    v4.0.65
+                    v4.0.66
                   </div>
                 </div>
                 <div ref={langPickerRef} className="app-lang-control" style={{ position: 'relative' }}>
@@ -27462,7 +27465,7 @@ const deDict = {
                       </div>
 
                       {/* ── Search Bar ── */}
-                      <div style={{ marginBottom: '1rem' }}>
+                      <div style={{ marginBottom: '1rem', display: pickerLockedSet ? 'none' : undefined }}>
                         <div style={{ position: 'relative' }}>
                           <span style={{ position: 'absolute', left: '0.9rem', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: '#94a3b8', display: 'flex', alignItems: 'center' }}><Search size={18} /></span>
                           <input
@@ -27512,7 +27515,7 @@ const deDict = {
                                     setPlayMode(multiplayerPlayMode);
                                     setDistractionLevel(multiplayerDistractionLevel);
                                     setInitAutoStart({ trigger: true, isAuto: false, isMultiplayerReadyCheck: true, campaignQueue: multiplayerSelectedVerses, verse: multiplayerSelectedVerses[0], playMode: multiplayerPlayMode });
-                                    setShowMultiplayerVersePicker(false);
+                                    setShowMultiplayerVersePicker(false); setPickerLockedSet(false);
                                   }}
                                   style={{ background: '#10b981', color: 'white', border: 'none', padding: '0.5rem 1.2rem', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}
                                 >
@@ -27577,13 +27580,13 @@ const deDict = {
                       })() : (
                         /* ── Browse by Set (collapsed by default) ── */
                         <div>
-                          <button
+                          {!pickerLockedSet && <button
                             onClick={() => setShowPickerBrowser(v => !v)}
                             style={{ width: '100%', background: '#f1f5f9', border: '1px dashed #cbd5e1', borderRadius: '8px', padding: '0.75rem 1rem', cursor: 'pointer', color: '#64748b', fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.95rem' }}
                           >
                             <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}><Library size={16} /> {t('瀏覽經文組', 'Browse Verse Sets')}</span>
                             <span style={{ fontSize: '0.8rem' }}>{showPickerBrowser ? '▲' : '▼'}</span>
-                          </button>
+                          </button>}
                           {showPickerBrowser && (
                             !pickerSelectedSet ? (
                               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: '0.7rem', maxHeight: '340px', overflowY: 'auto', marginTop: '0.75rem' }}>
@@ -27606,9 +27609,9 @@ const deDict = {
                             ) : (
                               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', maxHeight: '360px', overflowY: 'auto', paddingRight: '0.3rem', marginTop: '0.75rem' }}>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '0.4rem' }}>
-                                  <button onClick={() => { setPickerSelectedSet(null); setMultiplayerSelectedVerses([]); }} style={{ background: 'none', border: 'none', color: '#3b82f6', cursor: 'pointer', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '0.4rem', padding: '0.3rem 0' }}>
+                                  {!pickerLockedSet && <button onClick={() => { setPickerSelectedSet(null); setMultiplayerSelectedVerses([]); }} style={{ background: 'none', border: 'none', color: '#3b82f6', cursor: 'pointer', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '0.4rem', padding: '0.3rem 0' }}>
                                     <span>←</span> {t('返回經文組', 'Back to Groups')}
-                                  </button>
+                                  </button>}
                                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', background: '#f8fafc', padding: '0.3rem 0.7rem', borderRadius: '6px', border: '1px solid #cbd5e1' }}>
                                       <span style={{ fontSize: '0.85rem', color: '#64748b' }}>{t('隨機', 'Rand')} ({pickerSelectedSet.verses?.length || 0})</span>
@@ -27617,10 +27620,10 @@ const deDict = {
                                         <input type="number" min="1" max={pickerSelectedSet.verses?.length || 1} value={randomPickCount || 1} onChange={(e) => setRandomPickCount(e.target.value === '' ? '' : Math.min(pickerSelectedSet.verses?.length || 1, Math.max(1, parseInt(e.target.value))))} style={{ width: '36px', height: '24px', padding: '0', border: 'none', background: 'white', outline: 'none', textAlign: 'center', fontSize: '0.9rem', color: '#334155', fontWeight: 'bold', margin: '0' }} />
                                         <button onClick={() => setRandomPickCount(Math.min(pickerSelectedSet.verses?.length || 1, (parseInt(randomPickCount) || 1) + 1))} style={{ width: '24px', height: '24px', border: 'none', background: '#e2e8f0', cursor: 'pointer', fontWeight: 'bold', fontSize: '1rem', transform: 'none' }}>+</button>
                                       </div>
-                                      <button onClick={() => { if (!pickerSelectedSet?.verses) return; const sel = [...pickerSelectedSet.verses].sort(() => 0.5 - Math.random()).slice(0, randomPickCount); setActiveVerse(sel[0]); setPlayMode(multiplayerPlayMode); setDistractionLevel(multiplayerDistractionLevel); setInitAutoStart({ trigger: true, isAuto: false, isMultiplayerReadyCheck: true, campaignQueue: sel, verse: sel[0], playMode: multiplayerPlayMode }); setShowMultiplayerVersePicker(false); }} style={{ background: '#8b5cf6', color: 'white', border: 'none', padding: '0.2rem 0.5rem', borderRadius: '4px', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.2rem', fontSize: '0.75rem' }}><Dices size={13} /> {t('開始', 'Start')}</button>
+                                      <button onClick={() => { if (!pickerSelectedSet?.verses) return; const sel = [...pickerSelectedSet.verses].sort(() => 0.5 - Math.random()).slice(0, randomPickCount); setActiveVerse(sel[0]); setPlayMode(multiplayerPlayMode); setDistractionLevel(multiplayerDistractionLevel); setInitAutoStart({ trigger: true, isAuto: false, isMultiplayerReadyCheck: true, campaignQueue: sel, verse: sel[0], playMode: multiplayerPlayMode }); setShowMultiplayerVersePicker(false); setPickerLockedSet(false); }} style={{ background: '#8b5cf6', color: 'white', border: 'none', padding: '0.2rem 0.5rem', borderRadius: '4px', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.2rem', fontSize: '0.75rem' }}><Dices size={13} /> {t('開始', 'Start')}</button>
                                     </div>
                                     {multiplayerSelectedVerses.length > 0 && (
-                                      <button onClick={() => { setActiveVerse(multiplayerSelectedVerses[0]); setPlayMode(multiplayerPlayMode); setDistractionLevel(multiplayerDistractionLevel); setInitAutoStart({ trigger: true, isAuto: false, isMultiplayerReadyCheck: true, campaignQueue: multiplayerSelectedVerses, verse: multiplayerSelectedVerses[0], playMode: multiplayerPlayMode }); setShowMultiplayerVersePicker(false); }} style={{ background: '#10b981', color: 'white', border: 'none', padding: '0.4rem 0.9rem', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer', fontSize: '0.85rem' }}>
+                                      <button onClick={() => { setActiveVerse(multiplayerSelectedVerses[0]); setPlayMode(multiplayerPlayMode); setDistractionLevel(multiplayerDistractionLevel); setInitAutoStart({ trigger: true, isAuto: false, isMultiplayerReadyCheck: true, campaignQueue: multiplayerSelectedVerses, verse: multiplayerSelectedVerses[0], playMode: multiplayerPlayMode }); setShowMultiplayerVersePicker(false); setPickerLockedSet(false); }} style={{ background: '#10b981', color: 'white', border: 'none', padding: '0.4rem 0.9rem', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer', fontSize: '0.85rem' }}>
                                         ✓ {t('完成揀選', 'Finish')} ({multiplayerSelectedVerses.length})
                                       </button>
                                     )}
@@ -27692,6 +27695,7 @@ const deDict = {
                           <button
                             onClick={() => {
                               setShowMultiplayerVersePicker(true);
+                              setPickerLockedSet(false);
                               setPickerSelectedSet(null);
                               setMultiplayerSearchText('');
                               setShowPickerBrowser(false);
@@ -28109,24 +28113,20 @@ const deDict = {
                             <button
                               onClick={() => {
                                 initAudio();
-                                const queue = [...currentSet.verses];
-                                const selCount = parseInt(randomPickCount) || 1;
-                                const sel = queue.sort(() => 0.5 - Math.random()).slice(0, selCount);
-                                
-                                setCampaignQueue(sel);
-                                setActiveCampaignSetId(currentSet.id);
-                                setActiveCampaignSetTotal(sel.length);
-                                
+                                if (!currentSet?.verses?.length) return;
                                 const pm = playMode.endsWith('_solo') ? playMode : playMode === 'square' ? 'square_solo' : playMode === 'rain' ? 'rain_solo' : 'voice_solo';
                                 setMultiplayerPlayMode(pm);
                                 setMultiplayerDistractionLevel(distractionLevel);
-                                
-                                pendingInvitePKRef.current = {
-                                  queue: sel,
-                                  pm: pm,
-                                  dl: distractionLevel
-                                };
-                                
+                                // Open the room with the setup panel showing this set already
+                                // chosen: the host picks mode, difficulty and how many verses
+                                // (or hand-picks verses), then presses 開始 to start the match.
+                                setPickerSelectedSet(currentSet);
+                                setMultiplayerSelectedVerses([]);
+                                setMultiplayerSearchText('');
+                                setShowPickerBrowser(true);
+                                setPickerLockedSet(true);
+                                setRandomPickCount(Math.min(currentSet.verses.length, Math.max(1, parseInt(randomPickCount) || 1)));
+                                setShowMultiplayerVersePicker(true);
                                 setMainTab('multiplayer');
                                 const newRoom = createRoomCode();
                                 setMultiplayerRoomMode('individual');
