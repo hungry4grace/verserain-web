@@ -1,4 +1,28 @@
 import { Redis } from '@upstash/redis';
+import { partyFetch } from './_lib/party.js';
+import { mergePendingReferees, personalCodesOf } from './_lib/referees.js';
+
+// Account-level referees (registered with one of my codes) come from the
+// PartyKit user table via /reward-eligibility; that is a full user scan, so
+// the answer is cached briefly per code set.
+const PENDING_CACHE_SEC = 120;
+async function accountReferees(redis, email, codes) {
+  if (!codes.length) return [];
+  const cacheKey = `referees:account:${codes.join(',')}`;
+  try {
+    const cached = await redis.get(cacheKey);
+    if (cached) return typeof cached === 'string' ? JSON.parse(cached) : cached;
+  } catch { /* fall through */ }
+  try {
+    const elig = await partyFetch('/reward-eligibility', { email, inviterCodes: codes });
+    const list = (elig && elig.referrals && Array.isArray(elig.referrals.list)) ? elig.referrals.list : [];
+    const slim = list.map((r) => ({ name: r.name, createdAt: r.createdAt || null, passedVerses: r.passedVerses || 0 }));
+    await redis.set(cacheKey, JSON.stringify(slim), { ex: PENDING_CACHE_SEC }).catch(() => {});
+    return slim;
+  } catch {
+    return [];
+  }
+}
 import { identityKey } from './link-identity.js';
 
 // GET /api/get-referees?authors=<code1>,<code2>,<playerName>[&email=…]
@@ -87,16 +111,18 @@ export default async function handler(req, res) {
     const referees = collectReferees(myLists)
       .sort((a, b) => b.joinedAt - a.joinedAt)
       .slice(0, MAX_REFEREES);
-    if (!referees.length) return res.status(200).json({ referees: [], keysSearched: myKeys.length });
 
-    const enriched = await Promise.all(referees.map(async (r) => {
-      const keys = Array.from(new Set([r.name, ...(codesByName[r.name] || [])]));
-      const lists = await Promise.all(keys.map((k) => redis.lrange(HISTORY_KEY(k), 0, 499)));
-      const referredCount = collectReferees(lists).length;
-      return { name: r.name, joinedAt: r.joinedAt, referredCount };
-    }));
+    const [enriched, pendingSource] = await Promise.all([
+      Promise.all(referees.map(async (r) => {
+        const keys = Array.from(new Set([r.name, ...(codesByName[r.name] || [])]));
+        const lists = await Promise.all(keys.map((k) => redis.lrange(HISTORY_KEY(k), 0, 499)));
+        const referredCount = collectReferees(lists).length;
+        return { name: r.name, joinedAt: r.joinedAt, referredCount };
+      })),
+      accountReferees(redis, email, personalCodesOf(myKeys)),
+    ]);
 
-    res.status(200).json({ referees: enriched, keysSearched: myKeys.length });
+    res.status(200).json({ referees: mergePendingReferees(enriched, pendingSource), keysSearched: myKeys.length });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

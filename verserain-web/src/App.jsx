@@ -25708,7 +25708,7 @@ const deDict = {
                     verserain
                   </div>
                   <div className="app-brand-version" style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', marginTop: '4px', marginLeft: '2px' }}>
-                    v4.0.60
+                    v4.0.61
                   </div>
                 </div>
                 <div ref={langPickerRef} className="app-lang-control" style={{ position: 'relative' }}>
@@ -28679,9 +28679,13 @@ const deDict = {
                             {t('還沒有朋友透過你的邀請加入。', 'No one has joined through your invite yet.')}
                           </div>
                         ) : (() => {
-                          const totalPages = Math.ceil(myReferees.length / HISTORY_PAGE_SIZE);
-                          const page = Math.min(refereesPage, totalPages);
-                          const sliced = myReferees.slice((page - 1) * HISTORY_PAGE_SIZE, page * HISTORY_PAGE_SIZE);
+                          // Two tiers: friends who already cleared a verse (referral
+                          // recorded, points paid) and friends who only registered so far.
+                          const activeReferees = myReferees.filter(r => !r.pending);
+                          const pendingReferees = myReferees.filter(r => r.pending);
+                          const totalPages = Math.ceil(activeReferees.length / HISTORY_PAGE_SIZE);
+                          const page = Math.max(1, Math.min(refereesPage, totalPages));
+                          const sliced = activeReferees.slice((page - 1) * HISTORY_PAGE_SIZE, page * HISTORY_PAGE_SIZE);
                           const statsLoading = refereeGardenStats === null;
                           return (
                             <>
@@ -28717,6 +28721,30 @@ const deDict = {
                                     <button key={idx} onClick={() => setRefereesPage(idx + 1)} style={{ padding: '4px 10px', borderRadius: '6px', border: 'none', background: page === idx + 1 ? '#0f766e' : '#f1f5f9', color: page === idx + 1 ? '#fff' : '#334155', cursor: 'pointer', fontWeight: 'bold' }}>{idx + 1}</button>
                                   ))}
                                   <button onClick={() => setRefereesPage(p => Math.min(totalPages, p + 1))} disabled={page >= totalPages} style={{ padding: '4px 10px', borderRadius: '6px', border: '1px solid #cbd5e1', background: page >= totalPages ? '#f1f5f9' : '#fff', color: page >= totalPages ? '#94a3b8' : '#334155', cursor: page >= totalPages ? 'default' : 'pointer', fontWeight: 'bold' }}>›</button>
+                                </div>
+                              )}
+                              {pendingReferees.length > 0 && (
+                                <div style={{ marginTop: '14px' }}>
+                                  <div style={{ fontSize: '0.85rem', color: '#64748b', fontWeight: 700, marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                    ⏳ {t('已加入，還沒開始', 'Joined, not started yet')}
+                                    <span style={{ background: '#f1f5f9', color: '#64748b', borderRadius: '10px', padding: '1px 8px', fontSize: '0.75rem' }}>{pendingReferees.length}</span>
+                                  </div>
+                                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                                    {pendingReferees.map((r) => (
+                                      <div key={r.name} style={{ background: '#f8fafc', padding: '8px 15px', borderRadius: '8px', borderLeft: '4px solid #cbd5e1', fontSize: '0.88rem', color: '#64748b', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', flexWrap: 'wrap' }}>
+                                        <div style={{ flex: 1, minWidth: '160px' }}>
+                                          <button type="button" onClick={() => handleViewPlayerGarden(r.name)} title={t('查看園子', 'View garden')} style={{ background: 'none', border: 'none', padding: 0, color: '#475569', fontWeight: 'bold', cursor: 'pointer', fontSize: '0.95rem' }}>{r.name}</button>
+                                          <div style={{ fontSize: '0.75rem', color: '#94a3b8', marginTop: '2px' }}>
+                                            {r.joinedAt > 0 && <>{t('加入於', 'Joined')} {new Date(r.joinedAt).toLocaleDateString()} · </>}
+                                            {r.passedVerses > 0
+                                              ? t('已通過 {n} 節', '{n} verses passed').replace('{n}', String(r.passedVerses))
+                                              : t('還沒通過經文，提醒他來玩吧！', 'No verse cleared yet, give them a nudge!')}
+                                          </div>
+                                        </div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                  <div style={{ fontSize: '0.75rem', color: '#94a3b8', marginTop: '6px' }}>{t('朋友第一次通過一節經文後，就會升到上面的名單，你也會拿到推薦獎勵。', 'Once a friend clears their first verse they move up to the list above and you receive the referral reward.')}</div>
                                 </div>
                               )}
                             </>
