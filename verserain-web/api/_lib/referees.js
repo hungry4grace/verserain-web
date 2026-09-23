@@ -32,16 +32,19 @@ export function mergePendingReferees(referees, accountList) {
 // A code counts for ONE account. The client sends every code its device ever
 // held; a code that player_mapping assigns to somebody else's name (a shared
 // tablet, a device another account signed in on later) must not pull that
-// person's referrals into my list. Kept: names, codes linked to my account,
-// unmapped codes, and codes mapped to one of my names.
+// person's referrals into my list. The mapping is the authority: a linked or
+// remembered code only counts when it is unmapped or mapped to one of my
+// names (my current name, my linked old names, or names my linked codes map to).
 export function dropForeignCodes(keys, { mapping = {}, linked = [] } = {}) {
   const list = (keys || []).map((k) => String(k || '').trim()).filter(Boolean);
-  const linkedSet = new Set((linked || []).map((k) => String(k || '').trim()).filter(Boolean));
-  const myNames = new Set([...list, ...linkedSet].filter((k) => !PERSONAL_CODE_RE.test(k)));
-  for (const k of linkedSet) { const n = mapping[k]; if (n) myNames.add(String(n)); }
-  return list.filter((k) => {
-    if (!PERSONAL_CODE_RE.test(k) || linkedSet.has(k)) return true;
+  const linkedList = (linked || []).map((k) => String(k || '').trim()).filter(Boolean);
+  const myNames = new Set([...list, ...linkedList].filter((k) => !PERSONAL_CODE_RE.test(k)));
+  const isMine = (k) => {
+    if (!PERSONAL_CODE_RE.test(k)) return true;
     const owner = mapping[k];
     return owner === undefined || owner === null || myNames.has(String(owner));
-  });
+  };
+  // Names reachable through my own (non-foreign) linked codes count as mine too.
+  for (const k of linkedList) if (PERSONAL_CODE_RE.test(k) && mapping[k] && isMine(k)) myNames.add(String(mapping[k]));
+  return list.filter(isMine);
 }

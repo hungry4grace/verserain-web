@@ -1,4 +1,5 @@
 import { Redis } from '@upstash/redis';
+import { dropForeignCodes } from './_lib/referees.js';
 
 // Every name / personalCode an account has ever been known by.
 //
@@ -46,7 +47,12 @@ export default async function handler(req, res) {
     if (req.method === 'POST') {
       const keys = cleanKeys(req.body?.keys);
       if (!keys.length) return res.status(400).json({ error: 'Missing keys' });
-      await Promise.all(keys.map((k) => redis.sadd(identityKey(email), k)));
+      // Never link a code that player_mapping assigns to another person: a
+      // device remembers every code it ever showed, including one a different
+      // account used on it. Names and unmapped codes link as before.
+      const [mapping, existing] = await Promise.all([redis.hgetall('player_mapping'), redis.smembers(identityKey(email))]);
+      const mine = dropForeignCodes(keys, { mapping: mapping || {}, linked: existing || [] });
+      if (mine.length) await Promise.all(mine.map((k) => redis.sadd(identityKey(email), k)));
     }
     const keys = (await redis.smembers(identityKey(email))) || [];
     res.status(200).json({ success: true, keys });
