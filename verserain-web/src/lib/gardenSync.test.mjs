@@ -156,6 +156,16 @@ await test('findGardenKey: exact key, then same verse under another spelling, el
 
 console.log('\none tree per cell (格子編號重複):');
 
+await test('aggregateFruitResults tolerates a numeric keysSearched and reads keys from `keys`', () => {
+  const r = aggregateFruitResults([
+    { points: 3, referralPoints: 1, creatorHistory: [{ timestamp: 1 }], referralHistory: [], keysSearched: 40, keys: ['瑞爸', 'gZvyq8PkXB', '', 7] },
+    null,
+    { points: 2, keysSearched: ['legacy-name'] },
+  ]);
+  assert.strictEqual(r.total, 6);
+  assert.deepStrictEqual(r.keys, ['瑞爸', 'gZvyq8PkXB', 'legacy-name']);
+});
+
 await test('compactGardenCells closes gaps while keeping the trees in order', () => {
   const gd = {
     'A 1:1': { gridIndex: 0, stage: 10, fruits: 1 },

@@ -307,7 +307,9 @@ export function aggregateFruitResults(results) {
     referral += (d.referralPoints || 0);
     creatorHist = creatorHist.concat(d.creatorHistory || []);
     refHist = refHist.concat(d.referralHistory || []);
-    for (const k of d.keysSearched || []) if (typeof k === 'string' && k) keys.add(k);
+    // `keys` is the list; `keysSearched` is only a count on newer API builds.
+    const list = Array.isArray(d.keys) ? d.keys : (Array.isArray(d.keysSearched) ? d.keysSearched : []);
+    for (const k of list) if (typeof k === 'string' && k) keys.add(k);
   }
   creatorHist.sort((a, b) => b.timestamp - a.timestamp);
   refHist.sort((a, b) => b.timestamp - a.timestamp);

@@ -108,6 +108,9 @@ export default async function handler(req, res) {
       creatorHistory,
       referralHistory,
       keysSearched: keys.length,
+      // Every name / code the account was known by, so the client can tell
+      // "my old self" apart from other people in the history.
+      keys,
     });
   } catch (error) {
     res.status(500).json({ error: error.message });
