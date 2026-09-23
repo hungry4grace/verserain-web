@@ -7,7 +7,7 @@ import usePartySocket from 'partysocket/react';
 import PartySocket from 'partysocket';
 import QRCode from 'qrcode';
 import { QRCodeSVG } from 'qrcode.react';
-import { classifyGardenResponse, decideGardenSync, buildFruitAuthorKeys, aggregateFruitResults, tidyGarden, findGardenKey } from './lib/gardenSync.js';
+import { classifyGardenResponse, decideGardenSync, buildFruitAuthorKeys, aggregateFruitResults, tidyGarden, findGardenKey, compactGardenCells, gardenGapCount } from './lib/gardenSync.js';
 import { voiceId, voiceMatchesSavedKey, dedupeVoices, buildVoiceOptions } from './lib/voicePicker.js';
 import { splitVersePhrases } from './lib/phraseSplitter.js';
 import { stripBollsMarkup, stripLeadingVerseNumeral } from './lib/bibleTextMarkup.js';
@@ -644,6 +644,22 @@ function OAuthButtons({ onGoogleCredential, onAppleCredential, disabled, t }) {
 // 操作手冊教學影片：進入視窗才播放、離開就暫停，避免手冊頁一次載入多支影片。
 function ManualVideo({ src, poster, caption }) {
   const ref = React.useRef(null);
+  // 整理園子: close the empty cells left by deleted trees. Order is kept;
+  // only gridIndex changes, so the cloud merge (incoming cell wins) follows.
+  const gardenGaps = React.useMemo(() => gardenGapCount(gardenData), [gardenData]);
+  const compactMyGarden = () => {
+    const { garden, moved } = compactGardenCells(gardenData || {});
+    if (!moved) return;
+    setGardenData(garden);
+    try { localStorage.setItem('verseRain_gardenData', JSON.stringify(garden)); } catch { /* ignore */ }
+    const pn = playerNameRef.current;
+    if (pn) {
+      fetchRetry(`${PARTY_HOST}/save-garden`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ playerName: pn, gardenData: garden }) }).catch(() => { });
+    }
+    setToast(t('已整理園子，填補了 {n} 個空格', 'Garden tidied: {n} empty cells closed').replace('{n}', String(moved)));
+    setTimeout(() => setToast(null), 3000);
+  };
+
   React.useEffect(() => {
     const el = ref.current;
     if (!el || typeof IntersectionObserver === 'undefined') return;
@@ -25672,7 +25688,7 @@ const deDict = {
                     verserain
                   </div>
                   <div className="app-brand-version" style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', marginTop: '4px', marginLeft: '2px' }}>
-                    v4.0.55
+                    v4.0.56
                   </div>
                 </div>
                 <div ref={langPickerRef} className="app-lang-control" style={{ position: 'relative' }}>
@@ -28547,6 +28563,13 @@ const deDict = {
                     </div>
                   </div>
 
+                  {gardenGaps > 0 && (
+                    <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '0.5rem' }}>
+                      <button type="button" onClick={compactMyGarden} title={t('把樹往前排，填掉被刪除的空格；順序不變', 'Move trees forward to close deleted cells; order is kept')} style={{ background: '#fff', border: '1px solid #cbd5e1', color: '#334155', borderRadius: 8, padding: '0.35rem 0.8rem', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 700 }}>
+                        🧹 {t('整理園子（{n} 個空格）', 'Tidy garden ({n} empty cells)').replace('{n}', String(gardenGaps))}
+                      </button>
+                    </div>
+                  )}
                   <GardenView
                     idPrefix="garden"
                     variant="own"

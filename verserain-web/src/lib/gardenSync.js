@@ -153,6 +153,38 @@ export function repackGardenCells(gd) {
   return { garden: out, moved: movers.length };
 }
 
+// Empty cells left behind by deleted trees (test fixtures, admin deletions,
+// merged duplicates). Compacting keeps the trees in their current order but
+// closes every gap, so the fields read as one continuous garden again.
+export function gardenGapCount(gd) {
+  let count = 0, maxGi = -1;
+  for (const [k, v] of Object.entries(gd || {})) {
+    if (k === '_activity' || !v || typeof v !== 'object') continue;
+    const gi = Number(v.gridIndex);
+    if (!Number.isFinite(gi) || gi < 0) continue;
+    count++;
+    if (gi > maxGi) maxGi = gi;
+  }
+  return Math.max(0, (maxGi + 1) - count);
+}
+export function compactGardenCells(gd) {
+  const out = { ...(gd || {}) };
+  const entries = [];
+  for (const [k, v] of Object.entries(out)) {
+    if (k === '_activity' || !v || typeof v !== 'object') continue;
+    const gi = Number(v.gridIndex);
+    entries.push({ k, v, gi: Number.isFinite(gi) && gi >= 0 ? Math.floor(gi) : Infinity });
+  }
+  entries.sort((a, b) => (a.gi - b.gi) || a.k.localeCompare(b.k));
+  let moved = 0;
+  entries.forEach((e, i) => {
+    if (e.gi === i) return;
+    out[e.k] = { ...e.v, gridIndex: i };
+    moved++;
+  });
+  return { garden: out, moved };
+}
+
 // Test-fixture trees ("FakeVerse 0" … "FakeVerse 153") were once injected
 // into a few gardens by a dev script to stress the grid. They are not verses:
 // their text never resolves and they count as plants on the map. Both the

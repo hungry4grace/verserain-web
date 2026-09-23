@@ -3,7 +3,7 @@ import assert from 'node:assert';
 import {
   mergeGardens, stampTodayLogin, classifyGardenResponse,
   decideGardenSync, buildFruitAuthorKeys, aggregateFruitResults,
-  canonicalGardenKey, findGardenKey, dedupeGarden, repackGardenCells, tidyGarden,
+  canonicalGardenKey, findGardenKey, dedupeGarden, repackGardenCells, compactGardenCells, gardenGapCount, tidyGarden,
   isTestFixtureRef, dropTestFixtures, dropBlankKeysMissingFrom, dropTombstoned,
 } from './gardenSync.js';
 
@@ -155,6 +155,31 @@ await test('findGardenKey: exact key, then same verse under another spelling, el
 });
 
 console.log('\none tree per cell (格子編號重複):');
+
+await test('compactGardenCells closes gaps while keeping the trees in order', () => {
+  const gd = {
+    'A 1:1': { gridIndex: 0, stage: 10, fruits: 1 },
+    'B 1:1': { gridIndex: 7, stage: 3, fruits: 0 },
+    'C 1:1': { gridIndex: 150, stage: 1, fruits: 0 },   // second field, alone
+    'D 1:1': { gridIndex: 9, stage: 5, fruits: 0 },
+    'E 1:1': { stage: 2, fruits: 0 },                    // no cell → goes last
+    _activity: { '2026-09-20': 100 },
+  };
+  assert.strictEqual(gardenGapCount(gd), 151 - 4);
+  const { garden, moved } = compactGardenCells(gd);
+  assert.strictEqual(moved, 4);
+  assert.strictEqual(garden['A 1:1'].gridIndex, 0);
+  assert.strictEqual(garden['B 1:1'].gridIndex, 1);
+  assert.strictEqual(garden['D 1:1'].gridIndex, 2);
+  assert.strictEqual(garden['C 1:1'].gridIndex, 3);
+  assert.strictEqual(garden['E 1:1'].gridIndex, 4);
+  assert.deepStrictEqual(garden['A 1:1'], { gridIndex: 0, stage: 10, fruits: 1 }, 'progress untouched');
+  assert.deepStrictEqual(garden._activity, { '2026-09-20': 100 });
+  assert.strictEqual(gd['B 1:1'].gridIndex, 7, 'input untouched');
+  assert.strictEqual(gardenGapCount(garden), 0);
+  assert.strictEqual(compactGardenCells(garden).moved, 0, 'idempotent');
+  assert.strictEqual(gardenGapCount({}), 0);
+});
 
 await test('repackGardenCells: the strongest tree keeps the cell, the rest move to the lowest free cells', () => {
   const gd = {
