@@ -98,6 +98,13 @@ export default async function handler(req, res) {
     let points = null;
     try { points = await creditAccount(redis, { email, sessionKey, playerName: name, verseRef, score }); }
     catch (e) { points = { error: e && e.message ? e.message : 'points_failed' }; }
+    // Last outcome per account, so "my total did not move" can be diagnosed
+    // without request logs: was a session sent, and what did the ledger say?
+    const em = String(email || '').trim().toLowerCase();
+    if (em) {
+      const outcome = !sessionKey ? 'no_session' : (points && points.error) ? points.error : (points ? `credited:${points.delta}` : 'none');
+      await redis.set(`points:lastsubmit:${em}`, JSON.stringify({ at: new Date().toISOString(), name, verseRef, score, outcome }), { ex: 7 * 86400 }).catch(() => {});
+    }
     res.status(200).json({ success: true, points });
   } catch (error) {
     console.error("Failed to submit score", error);

@@ -9298,12 +9298,29 @@ export default function App() {
   }, [mainTab, userEmail, sessionKey]);
   // Every finished game goes through here so the account ledger (總積分)
   // gets the session proof; the leaderboard part is unchanged for guests.
+  const scoreSessionWarnedRef = useRef(false);
   const submitScoreToServer = (payload) => fetch('/api/submit-score', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ ...payload, ...(userEmail && sessionKey ? { email: userEmail, sessionKey } : {}) }),
   }).then((r) => {
-    if (userEmail && sessionKey) { pointsBalanceAtRef.current = Date.now(); fetchPointsBalance(); }
+    if (userEmail && sessionKey) {
+      pointsBalanceAtRef.current = Date.now();
+      fetchPointsBalance();
+      // Tell the player when the score reached the leaderboard but not their
+      // account total, instead of silently leaving 總積分 unchanged.
+      r.clone().json().then((d) => {
+        const err = d && d.points && d.points.error;
+        if (err === 'session_invalid' && !scoreSessionWarnedRef.current) {
+          scoreSessionWarnedRef.current = true;
+          setToast(t('分數已上排行榜，但要重新登入一次才會累積到總積分', 'Score posted to the leaderboard, but sign in again for it to count toward your total score'));
+          setTimeout(() => setToast(null), 5000);
+        } else if (err === 'verify_unavailable') {
+          setToast(t('分數已上排行榜；總積分暫時無法更新，稍後會再試', 'Score posted; your total score could not be updated right now'));
+          setTimeout(() => setToast(null), 4000);
+        }
+      }).catch(() => {});
+    }
     return r;
   });
   const openRedeem = (place) => {
@@ -25655,7 +25672,7 @@ const deDict = {
                     verserain
                   </div>
                   <div className="app-brand-version" style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', marginTop: '4px', marginLeft: '2px' }}>
-                    v4.0.52
+                    v4.0.53
                   </div>
                 </div>
                 <div ref={langPickerRef} className="app-lang-control" style={{ position: 'relative' }}>
