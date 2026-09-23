@@ -25655,7 +25655,7 @@ const deDict = {
                     verserain
                   </div>
                   <div className="app-brand-version" style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', marginTop: '4px', marginLeft: '2px' }}>
-                    v4.0.51
+                    v4.0.52
                   </div>
                 </div>
                 <div ref={langPickerRef} className="app-lang-control" style={{ position: 'relative' }}>
@@ -28395,7 +28395,10 @@ const deDict = {
                       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.7rem 1rem' }}>
                         <div style={{ textAlign: 'center' }}>
                           <div style={{ fontSize: '1.7rem', fontWeight: 800, color: '#1d4ed8', lineHeight: 1 }}>{pointsBalance && !pointsBalance.error && Number.isFinite(Number(pointsBalance.earnedPoints)) ? Number(pointsBalance.earnedPoints).toLocaleString() : '—'}</div>
-                          <div style={{ fontSize: '0.78rem', color: '#1e3a8a', marginTop: '0.25rem' }} title={t('每節經文只算你的最佳成績', 'Only your best score on each verse counts')}>{t('總積分', 'Total score')}</div>
+                          <div style={{ fontSize: '0.78rem', color: '#1e3a8a', marginTop: '0.25rem' }} title={t('每節經文只算你的最佳成績', 'Only your best score on each verse counts')}>
+                            {t('總積分', 'Total score')}
+                            <button type="button" onClick={(e) => { e.stopPropagation(); setMainTab('manual'); setTimeout(() => { const el = document.getElementById('manual-score'); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 350); }} title={t('九、總積分怎麼算？', '9. How Is My Total Score Calculated?')} aria-label={t('九、總積分怎麼算？', '9. How Is My Total Score Calculated?')} style={{ marginLeft: 4, width: 16, height: 16, borderRadius: '50%', border: '1px solid #93c5fd', background: '#eff6ff', color: '#1d4ed8', fontSize: '0.7rem', fontWeight: 800, lineHeight: '14px', padding: 0, cursor: 'pointer', verticalAlign: 'middle' }}>?</button>
+                          </div>
                         </div>
                         <div style={{ textAlign: 'center' }}>
                           <div style={{ fontSize: '1.7rem', fontWeight: 800, color: '#1d4ed8', lineHeight: 1 }}>{personalProgress.treesPlanted}</div>
@@ -30284,6 +30287,31 @@ const deDict = {
                       <li><span dangerouslySetInnerHTML={{ __html: t("右上角可在 <strong>「2D 地圖」</strong> 與 <strong>「3D 地球」</strong> 之間切換，轉動地球，看看全球背經的即時脈動。", "Switch between <strong>\"2D Map\"</strong> and <strong>\"3D Globe\"</strong> at the top right, spin the globe, and watch scripture memorization pulse around the world in real time.") }} /></li>
                     </ul>
                     <ManualVideo src="/manual/map.mp4" poster="/manual/map.jpg" caption={t("教學影片：點「誰在玩」看全球玩家分佈 → 按「3D 地球」→ 拖曳轉動地球。", "Tutorial: open \"Who's Playing\" to see players worldwide → press \"3D Globe\" → drag to spin the globe.")} />
+                    <h2 id="manual-score" style={{ borderBottom: '2px solid #e2e8f0', paddingBottom: '0.5rem', marginTop: '2rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Trophy size={22} /> {t("九、總積分怎麼算？", "9. How Is My Total Score Calculated?")}</h2>
+                    <p>{t("總積分跟著你的帳號走，登入後每一次挑戰都會累積；改暱稱不會影響總積分。", "Your total score belongs to your account: every challenge counts once you are signed in, and changing your nickname never affects it.")}</p>
+                    <h3 style={{ marginTop: '1.5rem', color: '#0f172a' }}>{t("1. 每節經文，只算你最好的一次", "1. Each verse counts your best run only")}</h3>
+                    <ul style={{ paddingLeft: '1.5rem', marginBottom: '1.5rem' }}>
+                      <li><span dangerouslySetInnerHTML={{ __html: t("<strong>第一次挑戰</strong>一節經文：這一局得幾分，總積分就加幾分。", "<strong>First challenge</strong> of a verse: whatever you score is added in full.") }} /></li>
+                      <li><span dangerouslySetInnerHTML={{ __html: t("<strong>再挑戰同一節</strong>：只有超過你自己紀錄的部分會加進來。例如紀錄 800 分、這次 950 分，總積分 +150；沒破紀錄就不加也不減。", "<strong>Replaying the same verse</strong>: only the part above your own record is added. Record 800, this run 950: +150. No new record means no change.") }} /></li>
+                      <li><span dangerouslySetInnerHTML={{ __html: t("<strong>挑戰失敗</strong>（生命耗盡）不計分。想讓總積分長得快，就去挑戰還沒玩過的經文，或把舊經文的紀錄推高。", "<strong>A failed run</strong> (out of lives) does not count. To grow fast, challenge verses you have not played yet, or push your old records higher.") }} /></li>
+                    </ul>
+                    <h3 style={{ marginTop: '1.5rem', color: '#0f172a' }}>{t("2. 多人遊戲", "2. Multiplayer")}</h3>
+                    <p>{t("個人 PK 房間的成績跟單人挑戰一樣計入；團隊賽是課堂當場的比賽，不計入總積分。", "Solo PK rooms count just like single-player challenges; team battles are live classroom events and do not count.")}</p>
+                    <h3 style={{ marginTop: '1.5rem', color: '#0f172a' }}>{t("3. 邀請朋友", "3. Inviting friends")}</h3>
+                    <p><span dangerouslySetInnerHTML={{ __html: t("朋友用你的推薦碼加入並第一次通過一節經文，你得到 <strong>+5000</strong> 積分，每位朋友一次。", "When a friend joins with your referral code and clears their first verse, you get <strong>+5000</strong> points, once per friend.") }} /></p>
+                    <h3 style={{ marginTop: '1.5rem', color: '#0f172a' }}>{t("4. 今日得分", "4. Today's score")}</h3>
+                    <p>{t("園子上方的「今日得分」就是今天新增的總積分：新挑戰的經文、今天破紀錄的部分，加上今天收到的推薦獎勵。", "\"Today's score\" at the top of your garden is what your total gained today: new verses, record improvements and referral bonuses received today.")}</p>
+                    <h3 style={{ marginTop: '1.5rem', color: '#0f172a' }}>{t("5. 總積分能做什麼？", "5. What can I do with it?")}</h3>
+                    <ul style={{ paddingLeft: '1.5rem', marginBottom: '1.5rem' }}>
+                      <li><span dangerouslySetInnerHTML={{ __html: t("到贊助商家消費時可用點數折抵：<strong>1,000 點 = NT$1</strong>。可用點數 = 總積分 − 已用點數；折抵只扣可用點數，總積分不會減少。", "Spend points for a discount at sponsoring shops: <strong>1,000 points = NT$1</strong>. Available points = total score minus points already spent; redeeming lowers your available points, never your total score.") }} /></li>
+                      <li>{t("每張兌換券最多折 NT$200、每人每月最多 NT$500；商家可另外設定每人每天可兌換的張數。", "Each voucher is capped at NT$200 and each player at NT$500 per month; a shop may also set how many vouchers one person can use per day.")}</li>
+                    </ul>
+                    <h3 style={{ marginTop: '1.5rem', color: '#0f172a' }}>{t("6. 和排行榜、園子的差別", "6. How it differs from the leaderboard and the garden")}</h3>
+                    <ul style={{ paddingLeft: '1.5rem', marginBottom: '2rem' }}>
+                      <li><span dangerouslySetInnerHTML={{ __html: t("排行榜依<strong>暱稱</strong>統計，總積分依<strong>帳號</strong>統計；改過暱稱的話，排行榜上舊名字的分數不會搬過來，但總積分完整保留。", "The leaderboard is tallied by <strong>nickname</strong>, the total score by <strong>account</strong>. If you renamed yourself, old-name leaderboard points stay where they are, but your total score is intact.") }} /></li>
+                      <li>{t("連續天數、樹和果子是園子的成長紀錄，不是積分；破紀錄會結果子，但果子不能折抵。", "Streaks, trees and fruit are your garden's growth record, not points; a new record bears fruit, but fruit cannot be redeemed.")}</li>
+                      <li>{t("沒登入只會上排行榜，不會累積到帳號的總積分，也不能兌換折扣；登入後從那一刻開始累積。", "Without signing in you only appear on the leaderboard: nothing is added to an account total and you cannot redeem discounts. Once signed in, it accumulates from that moment.")}</li>
+                    </ul>
                   </>
                 </div>
               )}
