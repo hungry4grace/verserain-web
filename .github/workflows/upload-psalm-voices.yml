@@ -1,0 +1,109 @@
+name: Upload Psalm narrations
+
+# Pulls narrated Psalm recordings from Google Drive and registers them as the
+# creator voice of the Psalms verse sets (PartyKit), credited to the narrator.
+# Wraps verserain-web/scripts/upload-psalm-voices.mjs so it can run from
+# GitHub instead of a laptop. The Drive files must be reachable by link
+# ("Anyone with the link" on the file or its folder).
+#
+# Two ways to run it:
+#   1. Actions → "Upload Psalm narrations" → Run workflow (inputs below).
+#   2. Edit .github/psalm-voices/job.json and push it — the push runs the job
+#      with the values in that file (handy when the dispatch API is not
+#      available to the caller).
+on:
+  push:
+    paths:
+      - '.github/psalm-voices/job.json'
+  workflow_dispatch:
+    inputs:
+      files:
+        description: 'Psalm=DriveFileId pairs, comma-separated (e.g. 1=1Guol…,23=1AbC…)'
+        required: true
+        type: string
+      version:
+        description: 'Which sets get the recording: esv, kjv, niv or all'
+        type: string
+        default: esv
+      narrator:
+        description: 'Name shown as the reader'
+        type: string
+        default: Melody Hwang
+      force:
+        description: 'Replace a recording that already exists for that Psalm'
+        type: boolean
+        default: false
+      dry_run:
+        description: 'Download and convert only, do not upload'
+        type: boolean
+        default: false
+
+concurrency:
+  group: upload-psalm-voices
+  cancel-in-progress: false
+
+jobs:
+  upload:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+
+      - name: Install ffmpeg and gdown
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq ffmpeg
+          python3 -m pip install --quiet --user gdown
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: Resolve job parameters
+        id: job
+        env:
+          IN_FILES: ${{ inputs.files }}
+          IN_VERSION: ${{ inputs.version }}
+          IN_NARRATOR: ${{ inputs.narrator }}
+          IN_FORCE: ${{ inputs.force }}
+          IN_DRY_RUN: ${{ inputs.dry_run }}
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "files=$IN_FILES" >> "$GITHUB_OUTPUT"
+            echo "version=${IN_VERSION:-esv}" >> "$GITHUB_OUTPUT"
+            echo "narrator=${IN_NARRATOR:-Melody Hwang}" >> "$GITHUB_OUTPUT"
+            echo "force=$([ "$IN_FORCE" = "true" ] && echo --force)" >> "$GITHUB_OUTPUT"
+            echo "dry_run=$([ "$IN_DRY_RUN" = "true" ] && echo --dry-run)" >> "$GITHUB_OUTPUT"
+          else
+            J=.github/psalm-voices/job.json
+            echo "files=$(jq -r '.files' $J)" >> "$GITHUB_OUTPUT"
+            echo "version=$(jq -r '.version // "esv"' $J)" >> "$GITHUB_OUTPUT"
+            echo "narrator=$(jq -r '.narrator // "Melody Hwang"' $J)" >> "$GITHUB_OUTPUT"
+            echo "force=$([ "$(jq -r '.force // false' $J)" = "true" ] && echo --force)" >> "$GITHUB_OUTPUT"
+            echo "dry_run=$([ "$(jq -r '.dry_run // false' $J)" = "true" ] && echo --dry-run)" >> "$GITHUB_OUTPUT"
+          fi
+          cat "$GITHUB_OUTPUT"
+
+      - name: Download recordings from Google Drive
+        env:
+          FILES: ${{ steps.job.outputs.files }}
+        run: |
+          mkdir -p psalms
+          IFS=',' read -ra PAIRS <<< "$FILES"
+          for pair in "${PAIRS[@]}"; do
+            pair="$(echo "$pair" | tr -d '[:space:]')"
+            [ -z "$pair" ] && continue
+            n="${pair%%=*}"; id="${pair#*=}"
+            echo "Psalm $n ← $id"
+            gdown "$id" -O "psalms/Bible_19_Psalms_${n}.wav"
+          done
+          ls -la psalms
+
+      - name: Upload to PartyKit
+        working-directory: verserain-web
+        env:
+          VERSION: ${{ steps.job.outputs.version }}
+          NARRATOR: ${{ steps.job.outputs.narrator }}
+          FORCE: ${{ steps.job.outputs.force }}
+          DRY_RUN: ${{ steps.job.outputs.dry_run }}
+        run: node scripts/upload-psalm-voices.mjs ../psalms --version "$VERSION" --narrator "$NARRATOR" $FORCE $DRY_RUN
