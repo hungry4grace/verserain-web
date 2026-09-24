@@ -4,6 +4,6 @@
   "version": "esv",
   "narrator": "Melody Hwang",
   "force": false,
-  "dry_run": true,
-  "run": 2
+  "dry_run": false,
+  "run": 3
 }
