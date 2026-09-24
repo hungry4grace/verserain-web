@@ -18,6 +18,7 @@ import I18N_FILLINS from './i18nFillins';
 import { PREMIUM_EMAILS } from './premiumEmails';
 import ChallengeSetupModal, { loadChallengeSetup } from './ChallengeSetupModal';
 import GardenView from './GardenView.jsx';
+import VoucherScanner from './VoucherScanner.jsx';
 import { isBlankRef } from './lib/gardenView.js';
 import { GOOGLE_CLIENT_ID, APPLE_CLIENT_ID, APPLE_REDIRECT_URI, LINE_CHANNEL_ID, startLineLogin } from './oauthConfig';
 import { VAPID_PUBLIC_KEY, urlBase64ToUint8Array, isWebPushSupported, isIOSStandalone, isIOSWithoutPWA, hasNativeDailyPush, callNativeDailyPush } from './pushConfig';
@@ -9416,6 +9417,7 @@ export default function App() {
   const [verifyCodeInput, setVerifyCodeInput] = useState(() => INITIAL_VERIFY_CODE);
   const [verifyResult, setVerifyResult] = useState(null);
   const [verifyBusy, setVerifyBusy] = useState(false);
+  const [verifyScanOpen, setVerifyScanOpen] = useState(false); // camera scanner modal
   const lookupVoucher = async (codeRaw) => {
     const code = String(codeRaw || verifyCodeInput || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
     if (code.length !== 8) { setVerifyResult({ status: 'not_found' }); return; }
@@ -25708,7 +25710,7 @@ const deDict = {
                     verserain
                   </div>
                   <div className="app-brand-version" style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', marginTop: '4px', marginLeft: '2px' }}>
-                    v4.0.67
+                    v4.0.68
                   </div>
                 </div>
                 <div ref={langPickerRef} className="app-lang-control" style={{ position: 'relative' }}>
@@ -29508,6 +29510,20 @@ const deDict = {
                       <button type="button" onClick={() => setMainTab('advanced')} style={{ background: 'transparent', border: '1px solid #cbd5e1', color: '#64748b', borderRadius: '6px', padding: '0.35rem 0.8rem', cursor: 'pointer', fontSize: '0.85rem' }}>← {t('返回', 'Back')}</button>
                     </div>
                     <p style={{ color: '#475569', lineHeight: 1.6, marginTop: 0, fontSize: '0.9rem' }}>{t('店家專用：輸入顧客兌換券上的 8 碼代碼（或掃描 QR 自動帶入），確認金額後於結帳時按「確認已使用」。', 'For shops: enter the 8-character code from the customer’s voucher (or scan the QR), check the amount, and press “Confirm used” at checkout.')}</p>
+                    {isInIosNativeApp() && !iosAppSupportsCamera() ? (
+                      <div style={{ background: '#fffbeb', border: '1px solid #fde68a', color: '#92400e', padding: '0.7rem 0.9rem', borderRadius: '10px', fontSize: '0.88rem', lineHeight: 1.45, marginBottom: '0.8rem' }}>
+                        📱 {t('目前 App 版本不支援掃描，請在 Safari 開 verserain.com 掃描，或在下方手動貼上推薦碼。下次 App 更新後會自動可用。', 'This App version does not support scanning yet. Open verserain.com in Safari to scan, or paste the code below. It will work automatically after the next App update.')}
+                      </div>
+                    ) : (
+                      <button type="button" onClick={() => { setVerifyResult(null); setVerifyScanOpen(true); }} style={{ width: '100%', padding: '0.9rem 1rem', borderRadius: 10, background: '#0d9488', color: '#fff', border: 'none', fontSize: '1.05rem', fontWeight: 800, cursor: 'pointer', marginBottom: '0.8rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
+                        <Camera size={20} /> {t('掃描 QR 兌換券', 'Scan the voucher QR')}
+                      </button>
+                    )}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', color: '#94a3b8', fontSize: '0.78rem', margin: '0 0 0.5rem' }}>
+                      <div style={{ flex: 1, height: '1px', background: '#e2e8f0' }} />
+                      <span>{t('或手動輸入', 'or paste')}</span>
+                      <div style={{ flex: 1, height: '1px', background: '#e2e8f0' }} />
+                    </div>
                     <div style={{ display: 'flex', gap: '0.5rem' }}>
                       <input type="text" value={verifyCodeInput} onChange={e => { setVerifyCodeInput(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 8)); setVerifyResult(null); }} onKeyDown={e => { if (e.key === 'Enter') lookupVoucher(); }} placeholder="ABCDEFGH" maxLength={9} style={{ flex: 1, padding: '0.6rem 0.8rem', borderRadius: 8, border: '1px solid #cbd5e1', fontFamily: 'monospace', fontSize: '1.3rem', letterSpacing: 3, textTransform: 'uppercase' }} />
                       <button type="button" disabled={verifyBusy || verifyCodeInput.length !== 8} onClick={() => lookupVoucher()} style={{ background: verifyCodeInput.length === 8 ? '#0d9488' : '#e2e8f0', color: verifyCodeInput.length === 8 ? '#fff' : '#94a3b8', border: 'none', borderRadius: 8, padding: '0.6rem 1rem', cursor: 'pointer', fontWeight: 800 }}>{verifyBusy ? '…' : t('查詢', 'Look up')}</button>
@@ -29529,6 +29545,13 @@ const deDict = {
                         )}
                       </div>
                     ); })()}
+                    {verifyScanOpen && (
+                      <VoucherScanner
+                        t={t}
+                        onClose={() => setVerifyScanOpen(false)}
+                        onCode={(code) => { setVerifyScanOpen(false); setVerifyCodeInput(code); setVerifyResult(null); lookupVoucher(code); }}
+                      />
+                    )}
                     <div style={{ color: '#94a3b8', fontSize: '0.8rem', marginTop: '1rem', lineHeight: 1.6 }}>{t('店家請把這一頁加入書籤：verserain.com/#verify。核銷後顧客的 App 會自動顯示「已使用」。', 'Shops: bookmark verserain.com/#verify. After confirming, the customer’s app shows the voucher as used.')}</div>
                   </div>
                 );
