@@ -330,7 +330,7 @@ export default function WorldMap3D({ t, playerName, onJoinRoom, onToggleMode, cu
   }, [fruitMode, fruitTree, loading]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // 商家／教會／機構:不進叢集;點一下就切到 2D 並打開該標記的 popup。
-  const PLACE_3D = { merchant: { bg: '#f59e0b', emoji: '🏪' }, church: { bg: '#7c3aed', emoji: '⛪' }, org: { bg: '#0d9488', emoji: '🏢' } };
+  const PLACE_3D = { merchant: { bg: '#e11d48', emoji: '🏪' }, church: { bg: '#7c3aed', emoji: '⛪' }, org: { bg: '#0d9488', emoji: '🏢' } };
   const placeElems = useMemo(() => (placesMode ? (places || []).filter(pl => pl && Number.isFinite(Number(pl.lat)) && Number.isFinite(Number(pl.lng))).map(pl => ({ isPlace: true, id: pl.id, kind: pl.kind, name: pl.name, discountPct: pl.discountPct, lat: Number(pl.lat), lng: Number(pl.lng) })) : []), [places, placesMode]);
 
   const htmlElement = (d) => {
