@@ -956,6 +956,10 @@ export const he = {
   "還沒有顧客兌換": "עדיין אין המרות של לקוחות",
   "消費 NT${b}": "חשבון NT${b}",
   "隨機播放（全部）": "ניגון אקראי (הכול)",
+  "掃描 QR 兌換券": "סרוק את קוד ה-QR של השובר",
+  "對準顧客兌換券上的 QR，掃到會自動查詢。": "כוונו את המצלמה אל ה-QR שעל שובר הלקוח; הבדיקה מתבצעת אוטומטית.",
+  "從相簿選 QR 圖片": "בחר תמונת QR במקום",
+  "這不是兌換券的 QR": "זה אינו QR של שובר",
 };
 
 export const fa = {
@@ -1893,6 +1897,10 @@ export const fa = {
   "還沒有顧客兌換": "هنوز مشتری‌ای تخفیف نگرفته",
   "消費 NT${b}": "مبلغ NT${b}",
   "隨機播放（全部）": "پخش تصادفی (همه)",
+  "掃描 QR 兌換券": "اسکن QR کوپن",
+  "對準顧客兌換券上的 QR，掃到會自動查詢。": "دوربین را به سمت QR روی کوپن مشتری بگیرید؛ به‌طور خودکار بررسی می‌شود.",
+  "從相簿選 QR 圖片": "انتخاب تصویر QR به جای آن",
+  "這不是兌換券的 QR": "این QR کوپن نیست",
 };
 
 export const ar = {
@@ -3246,6 +3254,10 @@ export const ar = {
   "還沒有顧客兌換": "لا استبدالات من العملاء بعد",
   "消費 NT${b}": "الفاتورة NT${b}",
   "隨機播放（全部）": "تشغيل عشوائي (الكل)",
+  "掃描 QR 兌換券": "امسح رمز QR للقسيمة",
+  "對準顧客兌換券上的 QR，掃到會自動查詢。": "وجّه الكاميرا إلى رمز QR على قسيمة العميل؛ يتم التحقق تلقائيًا.",
+  "從相簿選 QR 圖片": "اختر صورة QR بدلًا من ذلك",
+  "這不是兌換券的 QR": "هذا ليس رمز QR لقسيمة",
 };
 
 export const ja = {
@@ -4171,6 +4183,10 @@ export const ja = {
   "還沒有顧客兌換": "まだお客様の引換はありません",
   "消費 NT${b}": "会計 NT${b}",
   "隨機播放（全部）": "シャッフル再生（すべて）",
+  "掃描 QR 兌換券": "クーポンの QR をスキャン",
+  "對準顧客兌換券上的 QR，掃到會自動查詢。": "お客様のクーポンの QR にカメラを向けると、自動で照会します。",
+  "從相簿選 QR 圖片": "代わりに QR 画像を選ぶ",
+  "這不是兌換券的 QR": "これはクーポンの QR ではありません",
 };
 
 export const ko = {
@@ -5094,6 +5110,10 @@ export const ko = {
   "還沒有顧客兌換": "아직 고객 교환이 없어요",
   "消費 NT${b}": "결제 NT${b}",
   "隨機播放（全部）": "무작위 재생(전체)",
+  "掃描 QR 兌換券": "쿠폰 QR 스캔",
+  "對準顧客兌換券上的 QR，掃到會自動查詢。": "고객 쿠폰의 QR에 카메라를 맞추면 자동으로 조회됩니다.",
+  "從相簿選 QR 圖片": "대신 QR 이미지 선택",
+  "這不是兌換券的 QR": "쿠폰 QR이 아닙니다",
 };
 
 export const es = {
@@ -6033,6 +6053,10 @@ export const es = {
   "還沒有顧客兌換": "Aún no hay canjes de clientes",
   "消費 NT${b}": "Cuenta NT${b}",
   "隨機播放（全部）": "Aleatorio (todas)",
+  "掃描 QR 兌換券": "Escanear el QR del cupón",
+  "對準顧客兌換券上的 QR，掃到會自動查詢。": "Apunta la cámara al QR del cupón del cliente; se consulta automáticamente.",
+  "從相簿選 QR 圖片": "Elegir una imagen del QR",
+  "這不是兌換券的 QR": "Eso no es un QR de cupón",
 };
 
 export const tr = {
@@ -6972,6 +6996,10 @@ export const tr = {
   "還沒有顧客兌換": "Henüz müşteri kullanımı yok",
   "消費 NT${b}": "Hesap NT${b}",
   "隨機播放（全部）": "Karışık çal (tümü)",
+  "掃描 QR 兌換券": "Kupon QR'ını tara",
+  "對準顧客兌換券上的 QR，掃到會自動查詢。": "Kamerayı müşterinin kuponundaki QR'a tutun; otomatik sorgulanır.",
+  "從相簿選 QR 圖片": "Bunun yerine bir QR görseli seç",
+  "這不是兌換券的 QR": "Bu bir kupon QR'ı değil",
 };
 
 export const de = {
@@ -7911,6 +7939,10 @@ export const de = {
   "還沒有顧客兌換": "Noch keine Kunden-Einlösungen",
   "消費 NT${b}": "Rechnung NT${b}",
   "隨機播放（全部）": "Zufällig (alle)",
+  "掃描 QR 兌換券": "Gutschein-QR scannen",
+  "對準顧客兌換券上的 QR，掃到會自動查詢。": "Kamera auf den QR-Code des Kundengutscheins richten; die Prüfung erfolgt automatisch.",
+  "從相簿選 QR 圖片": "Stattdessen ein QR-Bild wählen",
+  "這不是兌換券的 QR": "Das ist kein Gutschein-QR",
 };
 
 export const my = {
@@ -8850,6 +8882,10 @@ export const my = {
   "還沒有顧客兌換": "ဖောက်သည် လဲလှယ်မှု မရှိသေးပါ",
   "消費 NT${b}": "ကုန်ကျ NT${b}",
   "隨機播放（全部）": "ကျပန်းဖွင့် (အားလုံး)",
+  "掃描 QR 兌換券": "ကူပွန် QR ကို စကင်ဖတ်ပါ",
+  "對準顧客兌換券上的 QR，掃到會自動查詢。": "ဖောက်သည်၏ ကူပွန်ပေါ်ရှိ QR ကို ကင်မရာဖြင့် ချိန်ပါ၊ အလိုအလျောက် စစ်ဆေးပေးပါမည်။",
+  "從相簿選 QR 圖片": "QR ပုံကို ရွေးပါ",
+  "這不是兌換券的 QR": "ဤသည် ကူပွန် QR မဟုတ်ပါ",
 };
 
 export const vi = {
@@ -9789,6 +9825,10 @@ export const vi = {
   "還沒有顧客兌換": "Chưa có khách đổi",
   "消費 NT${b}": "Hóa đơn NT${b}",
   "隨機播放（全部）": "Phát ngẫu nhiên (tất cả)",
+  "掃描 QR 兌換券": "Quét mã QR phiếu giảm giá",
+  "對準顧客兌換券上的 QR，掃到會自動查詢。": "Hướng camera vào mã QR trên phiếu của khách; hệ thống tự động tra cứu.",
+  "從相簿選 QR 圖片": "Chọn ảnh QR thay thế",
+  "這不是兌換券的 QR": "Đây không phải mã QR của phiếu",
 };
 
 export const id = {
@@ -10957,6 +10997,10 @@ export const id = {
   "還沒有顧客兌換": "Belum ada penukaran pelanggan",
   "消費 NT${b}": "Tagihan NT${b}",
   "隨機播放（全部）": "Acak (semua)",
+  "掃描 QR 兌換券": "Pindai QR voucher",
+  "對準顧客兌換券上的 QR，掃到會自動查詢。": "Arahkan kamera ke QR pada voucher pelanggan; pemeriksaan dilakukan otomatis.",
+  "從相簿選 QR 圖片": "Pilih gambar QR saja",
+  "這不是兌換券的 QR": "Ini bukan QR voucher",
 };
 
 export const ms = {
@@ -12328,6 +12372,10 @@ export const ms = {
   "還沒有顧客兌換": "Belum ada penebusan pelanggan",
   "消費 NT${b}": "Bil NT${b}",
   "隨機播放（全部）": "Rawak (semua)",
+  "掃描 QR 兌換券": "Imbas QR baucar",
+  "對準顧客兌換券上的 QR，掃到會自動查詢。": "Halakan kamera ke QR pada baucar pelanggan; semakan dibuat secara automatik.",
+  "從相簿選 QR 圖片": "Pilih imej QR sebaliknya",
+  "這不是兌換券的 QR": "Ini bukan QR baucar",
 };
 
 export const zhcn = {
@@ -13619,6 +13667,10 @@ export const zhcn = {
   "還沒有顧客兌換": "还没有顾客兑换",
   "消費 NT${b}": "消费 NT${b}",
   "隨機播放（全部）": "随机播放（全部）",
+  "掃描 QR 兌換券": "扫描 QR 兑换券",
+  "對準顧客兌換券上的 QR，掃到會自動查詢。": "对准顾客兑换券上的 QR，扫到会自动查询。",
+  "從相簿選 QR 圖片": "从相册选 QR 图片",
+  "這不是兌換券的 QR": "这不是兑换券的 QR",
 };
 
 export const pt = {
@@ -14278,6 +14330,10 @@ export const pt = {
   "還沒有顧客兌換": "Ainda sem resgates de clientes",
   "消費 NT${b}": "Conta NT${b}",
   "隨機播放（全部）": "Aleatório (todas)",
+  "掃描 QR 兌換券": "Ler o QR do voucher",
+  "對準顧客兌換券上的 QR，掃到會自動查詢。": "Aponte a câmara para o QR do voucher do cliente; a consulta é automática.",
+  "從相簿選 QR 圖片": "Escolher uma imagem do QR",
+  "這不是兌換券的 QR": "Isto não é um QR de voucher",
 };
 
 export const fr = {
@@ -14937,6 +14993,10 @@ export const fr = {
   "還沒有顧客兌換": "Aucune utilisation client pour l’instant",
   "消費 NT${b}": "Addition NT${b}",
   "隨機播放（全部）": "Aléatoire (toutes)",
+  "掃描 QR 兌換券": "Scanner le QR du bon",
+  "對準顧客兌換券上的 QR，掃到會自動查詢。": "Pointez la caméra vers le QR du bon du client ; la vérification est automatique.",
+  "從相簿選 QR 圖片": "Choisir une image du QR à la place",
+  "這不是兌換券的 QR": "Ce n’est pas le QR d’un bon",
 };
 
 export const ru = {
@@ -15596,6 +15656,10 @@ export const ru = {
   "還沒有顧客兌換": "Клиенты пока не обменивали",
   "消費 NT${b}": "Счёт NT${b}",
   "隨機播放（全部）": "Случайно (все)",
+  "掃描 QR 兌換券": "Сканировать QR купона",
+  "對準顧客兌換券上的 QR，掃到會自動查詢。": "Наведите камеру на QR на купоне клиента — проверка выполнится автоматически.",
+  "從相簿選 QR 圖片": "Выбрать изображение QR",
+  "這不是兌換券的 QR": "Это не QR купона",
 };
 
 export const hi = {
@@ -16255,6 +16319,10 @@ export const hi = {
   "還沒有顧客兌換": "अभी कोई ग्राहक रिडीम नहीं",
   "消費 NT${b}": "बिल NT${b}",
   "隨機播放（全部）": "शफ़ल (सभी)",
+  "掃描 QR 兌換券": "कूपन का QR स्कैन करें",
+  "對準顧客兌換券上的 QR，掃到會自動查詢。": "कैमरा ग्राहक के कूपन पर बने QR की ओर करें; जांच अपने‑आप हो जाएगी।",
+  "從相簿選 QR 圖片": "इसके बजाय QR छवि चुनें",
+  "這不是兌換券的 QR": "यह कूपन का QR नहीं है",
 };
 
 // Khmer (Cambodian) — full UI coverage, machine-translated in bulk from the
@@ -17544,6 +17612,10 @@ export const km = {
   "還沒有顧客兌換": "មិនទាន់មានអតិថិជនប្តូរទេ",
   "消費 NT${b}": "វិក្កយបត្រ NT${b}",
   "隨機播放（全部）": "ចាក់ចៃដន្យ (ទាំងអស់)",
+  "掃描 QR 兌換券": "ស្កេន QR ប័ណ្ណបញ្ចុះតម្លៃ",
+  "對準顧客兌換券上的 QR，掃到會自動查詢。": "តម្រង់កាមេរ៉ាទៅ QR លើប័ណ្ណរបស់អតិថិជន ប្រព័ន្ធនឹងពិនិត្យដោយស្វ័យប្រវត្តិ។",
+  "從相簿選 QR 圖片": "ជ្រើសរូបភាព QR ជំនួសវិញ",
+  "這不是兌換券的 QR": "នេះមិនមែនជា QR ប័ណ្ណទេ",
 };
 
 const I18N_FILLINS = { he, fa, ar, ja, ko, es, tr, de, my, vi, id, ms, zhcn, pt, fr, ru, hi, km };
