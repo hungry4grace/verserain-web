@@ -5,7 +5,8 @@ import assert from 'node:assert';
 import {
   normalizePlaceSubmission, applyAdminAction, publicView, newPlaceId, taipeiDay,
   listPlaces, getPlace, savePlace, deletePlace, countSubmissionsToday, bumpSubmissions,
-  PLACE_ID_RE, DEFAULT_DAILY_CAP_NTD,
+  PLACE_ID_RE, DEFAULT_DAILY_CAP_NTD, STATUSES, MAJOR_FIELDS, MINOR_FIELDS,
+  classifyOwnerEdit, applyOwnerEdit, applyOwnerAction, canOwnerDelete, canAdminDelete, ownerView,
 } from './places.js';
 
 function stubRedis() {
@@ -171,4 +172,113 @@ test('storage helpers and the daily submission counter', async () => {
   assert.strictEqual(r.ttls.get(`places:submit:a@x.com:${day}`), 86400);
   assert.strictEqual(await countSubmissionsToday(r, 'a@x.com', '2026-09-23'), 0, 'counter is per day');
   assert.match(taipeiDay(new Date('2026-09-22T17:30:00Z')), /^2026-09-23$/, 'UTC evening is already the next day in Taipei');
+});
+
+// ── Owner self-service ──────────────────────────────────────────────────────
+const stored = (over = {}) => ({
+  ...normalizePlaceSubmission(merchant(), { ownerEmail: 'o@x.com', ownerCode: 'OWNER00001', now: NOW }),
+  id: 'pl_owner00001', status: 'approved', approvedAt: '2026-09-22T04:00:00Z', approvedBy: 'admin@x.com',
+  note: 'looks fine', dailyCapNTD: 3000, sponsorId: 'sp_1', stats: { issued: 2, used: 1, usedNTD: 30 },
+  ...over,
+});
+const edit = (ex, over) => normalizePlaceSubmission({ ...ex, ...over }, { ownerEmail: ex.ownerEmail, ownerCode: ex.ownerCode, now: new Date('2026-09-24T01:00:00Z'), existing: ex });
+
+test('withdrawn is a known status: the validator keeps it, the public map hides it', () => {
+  assert.ok(STATUSES.includes('withdrawn'));
+  const ex = stored({ status: 'withdrawn' });
+  assert.strictEqual(edit(ex, {}).status, 'withdrawn', 'not reset to pending');
+  assert.deepStrictEqual(publicView([ex]), []);
+  assert.deepStrictEqual(ownerView(ex).note, undefined, 'admin note never reaches the owner');
+  assert.strictEqual(ownerView(ex).sponsorId, 'sp_1');
+});
+
+test('sponsorId is admin-only: ignored on submissions, settable through the admin update', () => {
+  const p = normalizePlaceSubmission({ ...merchant(), sponsorId: 'sp_evil' }, { ownerEmail: 'o@x.com', now: NOW });
+  assert.strictEqual(p.sponsorId, '');
+  const ex = stored();
+  assert.strictEqual(edit(ex, { sponsorId: 'sp_evil' }).sponsorId, 'sp_1', 'an owner edit keeps the admin value');
+  assert.strictEqual(applyAdminAction(ex, 'update', { adminEmail: 'a@x.com', now: NOW, patch: { sponsorId: 'sp_2' } }).sponsorId, 'sp_2');
+  assert.strictEqual(applyAdminAction(ex, 'update', { adminEmail: 'a@x.com', now: NOW, patch: { name: 'x' } }).sponsorId, 'sp_1', 'untouched when not patched');
+});
+
+test('classifyOwnerEdit: minor vs major, tolerant of number/string and legacy defaults', () => {
+  const ex = stored();
+  assert.deepStrictEqual(classifyOwnerEdit(ex, edit(ex, {})), { major: [], minor: [] });
+  for (const f of MINOR_FIELDS) {
+    const val = f === 'website' ? 'https://x.example' : f === 'photoAssetId' ? 'a_photo123' : f === 'photoMime' ? 'image/webp' : 'changed';
+    const over = f === 'photoAssetId' ? { photoAssetId: val, photoMime: 'image/webp' } : f === 'photoMime' ? { photoAssetId: 'a_photo123', photoMime: 'image/png' } : { [f]: val };
+    const c = classifyOwnerEdit(ex, edit(ex, over));
+    assert.deepStrictEqual(c.major, [], `${f} is minor`);
+    assert.ok(c.minor.includes(f), `${f} reported`);
+  }
+  for (const [f, val] of [['name', '新名'], ['address', '台北市中正區另一條路 1 號'], ['lat', 25.1], ['lng', 121.6], ['discountPct', 15], ['dailyPerPerson', 5], ['kind', 'church']]) {
+    const c = classifyOwnerEdit(ex, edit(ex, { [f]: val }));
+    assert.ok(c.major.includes(f), `${f} is major: ${JSON.stringify(c)}`);
+  }
+  assert.deepStrictEqual(MAJOR_FIELDS.length, 7);
+  // same coordinates typed differently, legacy record without dailyPerPerson, church discount 0 vs undefined
+  assert.deepStrictEqual(classifyOwnerEdit({ ...ex, lat: '25.04212' }, edit(ex, {})).major, []);
+  const legacy = { ...ex }; delete legacy.dailyPerPerson;
+  assert.deepStrictEqual(classifyOwnerEdit(legacy, edit(ex, { dailyPerPerson: 3 })).major, []);
+  const church = stored({ kind: 'church', discountPct: 0 }); delete church.discountPct;
+  assert.deepStrictEqual(classifyOwnerEdit(church, edit(church, {})).major, []);
+});
+
+test('applyOwnerEdit: status rules and what carries over', () => {
+  const now = new Date('2026-09-24T01:00:00Z');
+  const ex = stored();
+  const minor = applyOwnerEdit(ex, edit(ex, { phone: '02-1234' }), { now });
+  assert.strictEqual(minor.place.status, 'approved');
+  assert.strictEqual(minor.reviewRequired, false);
+  assert.strictEqual(minor.place.phone, '02-1234');
+  assert.strictEqual(minor.place.approvedAt, ex.approvedAt);
+  assert.strictEqual(minor.place.approvedBy, 'admin@x.com');
+  assert.deepStrictEqual(minor.place.stats, ex.stats);
+  assert.strictEqual(minor.place.note, 'looks fine');
+  assert.strictEqual(minor.place.dailyCapNTD, 3000);
+  assert.strictEqual(minor.place.sponsorId, 'sp_1');
+  assert.strictEqual(minor.place.ownerCode, 'OWNER00001');
+  assert.strictEqual(minor.place.createdAt, ex.createdAt);
+  assert.strictEqual(minor.place.updatedAt, now.toISOString());
+  const major = applyOwnerEdit(ex, edit(ex, { name: '新名', hours: '9-5' }), { now });
+  assert.strictEqual(major.place.status, 'pending');
+  assert.strictEqual(major.reviewRequired, true);
+  assert.deepStrictEqual(major.changed, { major: ['name'], minor: ['hours'] });
+  assert.strictEqual(major.place.approvedAt, null);
+  assert.strictEqual(applyOwnerEdit(stored({ status: 'pending' }), edit(ex, { phone: '1' }), { now }).place.status, 'pending');
+  const rej = applyOwnerEdit(stored({ status: 'rejected' }), edit(ex, { phone: '1' }), { now });
+  assert.strictEqual(rej.place.status, 'pending', 'any edit re-submits a rejected place');
+  assert.strictEqual(rej.reviewRequired, true);
+  assert.strictEqual(applyOwnerEdit(stored({ status: 'hidden' }), edit(ex, { phone: '1' }), { now }).place.status, 'hidden');
+  assert.strictEqual(applyOwnerEdit(stored({ status: 'hidden' }), edit(ex, { name: 'n' }), { now }).place.status, 'pending');
+  const wd = stored({ status: 'withdrawn' });
+  assert.strictEqual(applyOwnerEdit(wd, edit(wd, { name: 'n' }), { now }).place.status, 'withdrawn', 'stays off until re-listed');
+  assert.strictEqual(ex.status, 'approved', 'input untouched');
+});
+
+test('applyOwnerAction: withdraw / relist transitions', () => {
+  const now = new Date('2026-09-24T01:00:00Z');
+  for (const st of ['pending', 'approved', 'hidden']) {
+    const w = applyOwnerAction(stored({ status: st }), 'withdraw', { now });
+    assert.strictEqual(w.status, 'withdrawn');
+    assert.strictEqual(w.withdrawnAt, now.toISOString());
+  }
+  assert.throws(() => applyOwnerAction(stored({ status: 'withdrawn' }), 'withdraw'), /cannot be withdrawn/);
+  assert.throws(() => applyOwnerAction(stored({ status: 'rejected' }), 'withdraw'), /cannot be withdrawn/);
+  const r = applyOwnerAction(stored({ status: 'withdrawn', withdrawnAt: '2026-09-23T00:00:00Z' }), 'relist', { now });
+  assert.strictEqual(r.status, 'pending');
+  assert.strictEqual(r.withdrawnAt, null);
+  assert.strictEqual(r.approvedAt, null);
+  assert.strictEqual(r.updatedAt, now.toISOString());
+  assert.throws(() => applyOwnerAction(stored({ status: 'approved' }), 'relist'), /only a withdrawn/);
+  assert.throws(() => applyOwnerAction(stored(), 'explode'), /withdraw\|relist/);
+});
+
+test('who may delete: owner only before any voucher, admin only off-map statuses', () => {
+  assert.strictEqual(canOwnerDelete(stored({ stats: undefined })), true);
+  assert.strictEqual(canOwnerDelete(stored({ stats: { issued: 0, used: 0, usedNTD: 0 } })), true);
+  assert.strictEqual(canOwnerDelete(stored({ stats: { issued: 1 } })), false);
+  assert.strictEqual(canOwnerDelete(stored({ stats: { issued: '2' } })), false);
+  for (const st of ['rejected', 'hidden', 'withdrawn']) assert.strictEqual(canAdminDelete(stored({ status: st })), true, st);
+  for (const st of ['approved', 'pending']) assert.strictEqual(canAdminDelete(stored({ status: st })), false, st);
 });

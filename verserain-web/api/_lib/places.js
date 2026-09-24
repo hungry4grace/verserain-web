@@ -14,7 +14,15 @@
 export const PLACES_KEY = 'map:places';
 
 export const KINDS = ['merchant', 'church', 'org'];
-export const STATUSES = ['pending', 'approved', 'hidden', 'rejected'];
+// 'withdrawn' = the owner took it off the map themselves (下架); only 重新上架
+// (→ pending) or an admin delete moves it on. Must be listed here: the
+// validator resets any status it does not know back to 'pending'.
+export const STATUSES = ['pending', 'approved', 'hidden', 'rejected', 'withdrawn'];
+// Owner edits: these fields change what a customer sees on the map / what a
+// voucher is worth, so changing them sends the place back through review…
+export const MAJOR_FIELDS = ['kind', 'name', 'address', 'lat', 'lng', 'discountPct', 'dailyPerPerson'];
+// …while these take effect at once and leave the status alone.
+export const MINOR_FIELDS = ['phone', 'hours', 'website', 'description', 'message', 'photoAssetId', 'photoMime'];
 export const PLACE_ID_RE = /^pl_[a-z0-9]{8,20}$/;
 export const ASSET_ID_RE = /^a_[A-Za-z0-9]{6,20}$/;
 export const PHOTO_MIMES = ['image/webp', 'image/jpeg', 'image/png'];
@@ -107,7 +115,9 @@ export function normalizePlaceSubmission(input, { ownerEmail, ownerCode = '', no
     hours: clip(src.hours, 80),
     ownerEmail: String(ownerEmail || (ex && ex.ownerEmail) || '').trim().toLowerCase(),
     ownerCode: String(ownerCode || (ex && ex.ownerCode) || '').trim(),
-    sponsorId: clip(src.sponsorId !== undefined ? src.sponsorId : (ex && ex.sponsorId), 40),
+    // Admin-only: never taken from the submission (a player could otherwise
+    // link their shop to a sponsor record); admins set it via applyAdminAction.
+    sponsorId: clip(ex && ex.sponsorId, 40),
     dailyCapNTD,
     status: (ex && STATUSES.includes(ex.status)) ? ex.status : 'pending',
     createdAt: (ex && ex.createdAt) || now.toISOString(),
@@ -147,12 +157,80 @@ export function applyAdminAction(place, action, { adminEmail = '', now = new Dat
         next.dailyCapNTD = cap;
       }
       if (p.note !== undefined) next.note = clip(p.note, 200);
+      if (p.sponsorId !== undefined) next.sponsorId = clip(p.sponsorId, 40);
       next.status = place.status;
       return next;
     }
     default:
       throw new Error('action must be approve|reject|hide|unhide|update');
   }
+}
+
+// ── Owner self-service ──────────────────────────────────────────────────────
+const normStr = (v) => String(v ?? '').trim();
+const fieldValue = (place, f) => {
+  if (f === 'lat' || f === 'lng') return Number(place[f]);
+  if (f === 'discountPct') return place.kind === 'merchant' ? Number(place.discountPct) || 0 : 0;
+  if (f === 'dailyPerPerson') return place[f] === undefined || place[f] === null || place[f] === '' ? DEFAULT_DAILY_PER_PERSON : Number(place[f]);
+  return normStr(place[f]);
+};
+const sameValue = (a, b) => (typeof a === 'number' && typeof b === 'number') ? (Number.isNaN(a) && Number.isNaN(b)) || a === b : a === b;
+
+// Pure: which fields an owner's edit touched, split into the ones that need
+// a fresh review (MAJOR) and the ones that don't (MINOR). Both records are
+// expected to be normalised (lat/lng rounded, strings clipped).
+export function classifyOwnerEdit(existing, next) {
+  const changed = (fields) => fields.filter((f) => !sameValue(fieldValue(existing || {}, f), fieldValue(next || {}, f)));
+  return { major: changed(MAJOR_FIELDS), minor: changed(MINOR_FIELDS) };
+}
+
+// Pure: the record after an owner edit. Minor-only edits keep the status
+// (approved stays on the map); a major edit goes back to 'pending'; a
+// rejected place is re-submitted by any edit; a withdrawn place stays
+// withdrawn until the owner re-lists it. Identity, owner, timestamps, stats,
+// admin note / cap / sponsor all carry over from `existing` (the validator
+// already did that when `next` was built with { existing }).
+export function applyOwnerEdit(existing, next, { now = new Date() } = {}) {
+  const changed = classifyOwnerEdit(existing, next);
+  const major = changed.major.length > 0;
+  let status = existing.status;
+  if (existing.status === 'withdrawn') status = 'withdrawn';
+  else if (existing.status === 'rejected' || major) status = 'pending';
+  const place = { ...next, status, updatedAt: now.toISOString() };
+  if (status === 'pending' && existing.status !== 'pending') { place.approvedAt = null; place.approvedBy = ''; }
+  const reviewRequired = status === 'pending' && (major || existing.status !== 'pending');
+  return { place, reviewRequired, changed };
+}
+
+// Pure: owner actions on a stored record. Throws on a transition that makes
+// no sense so the route can answer 400 with the message.
+export function applyOwnerAction(place, action, { now = new Date() } = {}) {
+  const at = now.toISOString();
+  if (action === 'withdraw') {
+    if (!['pending', 'approved', 'hidden'].includes(place.status)) throw new Error(`a ${place.status} place cannot be withdrawn`);
+    return { ...place, status: 'withdrawn', withdrawnAt: at, updatedAt: at };
+  }
+  if (action === 'relist') {
+    if (place.status !== 'withdrawn') throw new Error('only a withdrawn place can be re-listed');
+    return { ...place, status: 'pending', withdrawnAt: null, approvedAt: null, approvedBy: '', updatedAt: at };
+  }
+  throw new Error('action must be withdraw|relist');
+}
+
+// An owner may hard-delete only a place that never issued a voucher: after
+// that, vouchers, the ledger and the stats all point at the record.
+export function canOwnerDelete(place) {
+  const issued = place && place.stats ? Number(place.stats.issued) : 0;
+  return !(issued > 0);
+}
+export function canAdminDelete(place) {
+  return !!place && ['rejected', 'hidden', 'withdrawn'].includes(place.status);
+}
+// What the owner gets back: everything but the admin's internal note.
+export function ownerView(place) {
+  if (!place) return place;
+  const { note, ...rest } = place; // eslint-disable-line no-unused-vars
+  return rest;
 }
 
 // Pure: what the public map may show — approved places only, no owner or

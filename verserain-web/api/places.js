@@ -2,10 +2,11 @@ import { Redis } from '@upstash/redis';
 import { requireAdmin } from './_lib/admins.js';
 import { partyFetch } from './_lib/party.js';
 import { pushNotify } from './_lib/rewards.js';
-import { notifyAdmins, placeSubmittedMessage } from './_lib/adminNotify.js';
+import { notifyAdmins, placeSubmittedMessage, placeResubmittedMessage } from './_lib/adminNotify.js';
 import {
   listPlaces, getPlace, savePlace, deletePlace, normalizePlaceSubmission, applyAdminAction, publicView,
   countSubmissionsToday, bumpSubmissions, taipeiDay, MAX_SUBMISSIONS_PER_DAY,
+  applyOwnerEdit, applyOwnerAction, canOwnerDelete, canAdminDelete, ownerView,
 } from './_lib/places.js';
 
 // Map places (地圖標記): merchants / churches / organisations on the world map.
@@ -14,7 +15,17 @@ import {
 //                                         email — it only reveals what that email sent)
 //   GET ?all=1&adminEmail=                admin → { places } (everything, with notes)
 //   POST { action: 'register', email, sessionKey, place }
-//                                         logged-in player → { success, place } (status pending)
+//                                         logged-in player → { success, place } (status pending);
+//                                         a place.id the same owner already has is treated as owner_update
+//   POST { action: 'owner_update', email, sessionKey, placeId, place }
+//                                         owner → { success, place, reviewRequired, changed }: phone/hours/
+//                                         website/description/photo apply at once; name/address/spot/kind/
+//                                         discount/voucher-count changes go back to review (pending)
+//   POST { action: 'withdraw'|'relist'|'owner_delete', email, sessionKey, placeId }
+//                                         owner → 下架 (status withdrawn: off the map, no new vouchers, open
+//                                         vouchers stay redeemable) / 重新上架 (→ pending) / hard delete
+//                                         (only while stats.issued is 0, else 400 has_vouchers)
+//   Owner edits / withdraw / relist / delete never count toward the daily cap.
 //   POST { action: 'approve'|'reject'|'hide'|'unhide'|'update'|'delete', adminEmail, placeId, patch? }
 //   POST { action: 'create', adminEmail, place }   admin → approved straight away
 // A submission is only accepted when PartyKit confirms the (email, sessionKey)
@@ -59,6 +70,7 @@ export default async function handler(req, res) {
     const action = String(body.action || '');
 
     if (action === 'register') return register(req, res, redis, body);
+    if (['owner_update', 'withdraw', 'relist', 'owner_delete'].includes(action)) return ownerAction(req, res, redis, body, action);
 
     // Everything below is admin-only.
     const adminEmail = String(body.adminEmail || '').trim().toLowerCase();
@@ -76,13 +88,14 @@ export default async function handler(req, res) {
       place.status = 'approved';
       place.approvedAt = now.toISOString();
       place.approvedBy = adminEmail;
+      if (body.place && body.place.sponsorId !== undefined) place.sponsorId = String(body.place.sponsorId || '').slice(0, 40);
       await savePlace(redis, place);
     } else if (['approve', 'reject', 'hide', 'unhide', 'update', 'delete'].includes(action)) {
       const placeId = String(body.placeId || '').trim();
       place = placeId ? await getPlace(redis, placeId) : null;
       if (!place) return res.status(404).json({ error: 'Place not found' });
       if (action === 'delete') {
-        if (!['rejected', 'hidden'].includes(place.status)) return res.status(400).json({ error: 'only rejected or hidden places can be deleted' });
+        if (!canAdminDelete(place)) return res.status(400).json({ error: 'only rejected, hidden or withdrawn places can be deleted' });
         await deletePlace(redis, placeId);
       } else {
         try {
@@ -104,45 +117,108 @@ export default async function handler(req, res) {
   }
 }
 
-// A player registers a place. PartyKit vouches for the login; we never trust
-// the client's own claim of who it is.
-async function register(req, res, redis, body) {
+// Login check shared by every player-side action: PartyKit vouches for the
+// (email, sessionKey) pair; we never trust the client's own claim of who it
+// is. Sends the error itself and returns null when the caller must stop.
+async function verifyLogin(res, body) {
   const email = String(body.email || '').trim().toLowerCase();
   const sessionKey = String(body.sessionKey || '').trim();
-  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return res.status(400).json({ error: 'login_required' });
-  if (!sessionKey) return res.status(400).json({ error: 'login_required' });
-
+  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { res.status(400).json({ error: 'login_required' }); return null; }
+  if (!sessionKey) { res.status(400).json({ error: 'login_required' }); return null; }
   let elig;
   try {
     elig = await partyFetch('/reward-eligibility', { email, sessionKey });
   } catch {
-    return res.status(503).json({ error: 'verify_unavailable' });
+    res.status(503).json({ error: 'verify_unavailable' });
+    return null;
   }
   const identity = (elig && elig.identity) || {};
-  if (identity.sessionValid !== true) return res.status(401).json({ error: 'session_invalid' });
+  if (identity.sessionValid !== true) { res.status(401).json({ error: 'session_invalid' }); return null; }
+  return { email, identity };
+}
 
-  const day = taipeiDay();
-  if ((await countSubmissionsToday(redis, email, day)) >= MAX_SUBMISSIONS_PER_DAY) return res.status(429).json({ error: 'daily_limit' });
+// …plus "and this place is theirs" for the self-service actions.
+async function verifyOwner(res, redis, body) {
+  const login = await verifyLogin(res, body);
+  if (!login) return null;
+  const placeId = String(body.placeId || '').trim();
+  const place = placeId ? await getPlace(redis, placeId) : null;
+  if (!place) { res.status(404).json({ error: 'place_not_found' }); return null; }
+  if (String(place.ownerEmail || '').toLowerCase() !== login.email) { res.status(403).json({ error: 'not_owner' }); return null; }
+  return { ...login, place };
+}
+
+const whoIs = (identity, email) => identity.playerName || email;
+
+// A player registers a place. A place.id this owner already holds (a draft
+// re-sent from another device, an old client) is an edit, not a new listing:
+// it goes through the owner-update rules and never burns the daily cap.
+async function register(req, res, redis, body) {
+  const login = await verifyLogin(res, body);
+  if (!login) return undefined;
+  const { email, identity } = login;
 
   const input = body.place || {};
   const existing = input.id ? await getPlace(redis, String(input.id)) : null;
   if (existing && existing.ownerEmail !== email) return res.status(409).json({ error: 'place_taken' });
+  if (existing) return ownerUpdate(res, redis, { email, identity, place: existing }, input);
+
+  const day = taipeiDay();
+  if ((await countSubmissionsToday(redis, email, day)) >= MAX_SUBMISSIONS_PER_DAY) return res.status(429).json({ error: 'daily_limit' });
 
   let place;
   try {
-    place = normalizePlaceSubmission(input, { ownerEmail: email, ownerCode: identity.personalCode || '', existing });
+    place = normalizePlaceSubmission(input, { ownerEmail: email, ownerCode: identity.personalCode || '' });
   } catch (e) {
     return res.status(400).json({ error: e.message });
   }
-  // Every (re)submission goes back through review.
   place.status = 'pending';
   await savePlace(redis, place);
   await bumpSubmissions(redis, email, day);
   // Tell the admins there is something to review (🔔 inbox + phone push);
   // before this the only way to notice a new registration was to open the
   // admin page and look. Best-effort — never fails the registration.
-  try { await notifyAdmins(redis, placeSubmittedMessage(place, identity.playerName || email)); } catch { /* best-effort */ }
-  return res.status(200).json({ success: true, place });
+  try { await notifyAdmins(redis, placeSubmittedMessage(place, whoIs(identity, email))); } catch { /* best-effort */ }
+  return res.status(200).json({ success: true, place: ownerView(place) });
+}
+
+async function ownerUpdate(res, redis, { email, identity, place: existing }, input) {
+  let next;
+  try {
+    next = normalizePlaceSubmission({ ...input, id: existing.id }, { ownerEmail: email, ownerCode: existing.ownerCode || identity.personalCode || '', existing });
+  } catch (e) {
+    return res.status(400).json({ error: e.message });
+  }
+  const { place, reviewRequired, changed } = applyOwnerEdit(existing, next, { now: new Date() });
+  await savePlace(redis, place);
+  if (reviewRequired) {
+    try { await notifyAdmins(redis, placeResubmittedMessage(place, whoIs(identity, email), changed.major)); } catch { /* best-effort */ }
+  }
+  return res.status(200).json({ success: true, place: ownerView(place), reviewRequired, changed });
+}
+
+// Owner self-service: edit (see ownerUpdate), 下架, 重新上架, delete.
+async function ownerAction(req, res, redis, body, action) {
+  const owner = await verifyOwner(res, redis, body);
+  if (!owner) return undefined;
+  const { email, identity, place } = owner;
+  if (action === 'owner_update') return ownerUpdate(res, redis, owner, body.place || {});
+  if (action === 'owner_delete') {
+    if (!canOwnerDelete(place)) return res.status(400).json({ error: 'has_vouchers' });
+    await deletePlace(redis, place.id);
+    return res.status(200).json({ success: true, deleted: place.id });
+  }
+  let updated;
+  try {
+    updated = applyOwnerAction(place, action, { now: new Date() });
+  } catch (e) {
+    return res.status(400).json({ error: e.message });
+  }
+  await savePlace(redis, updated);
+  if (action === 'relist') {
+    try { await notifyAdmins(redis, placeSubmittedMessage(updated, whoIs(identity, email))); } catch { /* best-effort */ }
+  }
+  return res.status(200).json({ success: true, place: ownerView(updated) });
 }
 
 function safeJson(s) { try { return JSON.parse(s); } catch { return {}; } }

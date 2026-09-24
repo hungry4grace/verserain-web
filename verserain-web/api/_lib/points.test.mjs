@@ -220,6 +220,7 @@ test('issueVoucher: too_small releases the day lock; bad input never locks', asy
   await assert.rejects(issueVoucher(r, { email: 'b@x.com', identity: { ...identity, email: 'b@x.com', accountAgeDays: 1 }, garden, place, billNTD: 100, now: NOW }), (e) => e.code === 'not_eligible' && e.reasons.includes('account_too_new'));
   await assert.rejects(issueVoucher(r, { email: 'b@x.com', identity: { ...identity, email: 'b@x.com' }, garden, place: { ...place, status: 'pending' }, billNTD: 100, now: NOW }), (e) => e.code === 'place_unavailable');
   await assert.rejects(issueVoucher(r, { email: 'b@x.com', identity: { ...identity, email: 'b@x.com' }, garden, place: { ...place, kind: 'church' }, billNTD: 100, now: NOW }), (e) => e.code === 'place_unavailable');
+  await assert.rejects(issueVoucher(r, { email: 'b@x.com', identity: { ...identity, email: 'b@x.com' }, garden, place: { ...place, status: 'withdrawn' }, billNTD: 100, now: NOW }), (e) => e.code === 'place_unavailable', 'an owner-withdrawn shop issues no vouchers');
   await assert.rejects(issueVoucher(r, { email: 'b@x.com', identity: { ...identity, email: 'b@x.com' }, garden, place, billNTD: 0, now: NOW }), (e) => e.code === 'bill_invalid');
   await assert.rejects(issueVoucher(r, { email: 'b@x.com', identity: { ...identity, email: 'b@x.com' }, garden, place, billNTD: 12.5, now: NOW }), (e) => e.code === 'bill_invalid');
   await assert.rejects(issueVoucher(r, { email: 'b@x.com', identity: { ...identity, email: 'b@x.com' }, garden, place, billNTD: 100001, now: NOW }), (e) => e.code === 'bill_invalid');
