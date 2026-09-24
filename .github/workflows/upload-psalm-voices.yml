@@ -95,7 +95,7 @@ jobs:
             [ -z "$pair" ] && continue
             n="${pair%%=*}"; id="${pair#*=}"
             echo "Psalm $n ← $id"
-            gdown --id "$id" -O "psalms/Bible_19_Psalms_${n}.wav"
+            gdown "$id" -O "psalms/Bible_19_Psalms_${n}.wav"
           done
           ls -la psalms
 
