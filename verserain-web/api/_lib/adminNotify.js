@@ -38,3 +38,21 @@ export function placeSubmittedMessage(place, who) {
     tag: `verserain-place-${place.id}`,
   };
 }
+
+const FIELD_ZH = { kind: '類型', name: '名稱', address: '地址', lat: '位置', lng: '位置', discountPct: '折扣', dailyPerPerson: '每人每天張數' };
+
+// An owner changed something that needs a fresh look (name, address, spot,
+// discount…): the place is off the map until an admin re-approves it.
+export function placeResubmittedMessage(place, who, majorFields = []) {
+  const name = String((place && place.name) || '').slice(0, 60);
+  const by = String(who || '').slice(0, 40) || '有人';
+  const labels = Array.from(new Set((majorFields || []).map((f) => FIELD_ZH[f]).filter(Boolean)));
+  const what = labels.length ? labels.join('、') : '資料';
+  return {
+    record: { kind: 'place_submitted', placeId: place.id, name, placeKind: place.kind, by, resubmitted: true },
+    title: '🏪 地圖標記修改待重審',
+    body: `${by} 修改了「${name}」的${what}，已暫時下地圖，請重新審核`,
+    url: 'https://www.verserain.com/#rewards_admin',
+    tag: `verserain-place-${place.id}`,
+  };
+}

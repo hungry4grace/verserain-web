@@ -9303,6 +9303,9 @@ export default function App() {
     verify_unavailable: t('核算服務暫時無法使用，稍後再試', 'Verification is temporarily unavailable, try again later'),
     rate_limited: t('操作太頻繁，請稍後再試', 'Too many requests, please try again later'),
     login_required: t('請先登入', 'Please sign in first'),
+    not_owner: t('這不是你登記的項目', 'This listing is not yours'),
+    place_not_found: t('找不到這筆登記，可能已被刪除', 'Listing not found — it may have been deleted'),
+    has_vouchers: t('已發出過兌換券，只能下架不能刪除', 'Vouchers were issued for this place — it can be withdrawn but not deleted'),
   })[code] || String(code || 'error');
   const fetchPointsBalance = async () => {
     if (!userEmail) return null;
@@ -9448,7 +9451,7 @@ export default function App() {
   }, [mainTab]);
 
   // ── 商家／教會／機構登記 (map place registration) ───────────────────────
-  const newPlaceDraft = () => ({ id: 'pl_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), kind: 'merchant', name: '', address: '', lat: null, lng: null, discountPct: 10, dailyPerPerson: 3, description: '', message: '', phone: '', website: '', hours: '', photoAssetId: '', photoMime: '', agree: false });
+  const newPlaceDraft = () => ({ id: 'pl_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), kind: 'merchant', name: '', address: '', lat: null, lng: null, discountPct: 10, dailyPerPerson: 3, description: '', message: '', phone: '', website: '', hours: '', photoAssetId: '', photoMime: '', agree: false, editing: null });
   // The draft lives in localStorage: a first-time submit may bounce the owner
   // to re-login (new session key), and nobody should retype a listing.
   const [merchantDraft, setMerchantDraft] = useState(() => {
@@ -9476,6 +9479,45 @@ export default function App() {
     fetch(`/api/places?mine=1&email=${encodeURIComponent(userEmail)}`).then(r => r.json()).then(d => setMyPlaces(Array.isArray(d.places) ? d.places : [])).catch(() => setMyPlaces([]));
   }, [userEmail]);
   useEffect(() => { if (mainTab === 'merchant') loadMyPlaces(); }, [mainTab, loadMyPlaces]);
+  // ── Owner self-service on 「我的登記」 (edit / 下架 / 重新上架 / delete) ──
+  const [myPlaceBusyId, setMyPlaceBusyId] = useState(null);
+  const merchantFormRef = useRef(null);
+  const PLACE_DRAFT_FIELDS = ['kind', 'name', 'address', 'lat', 'lng', 'discountPct', 'dailyPerPerson', 'description', 'message', 'phone', 'website', 'hours', 'photoAssetId', 'photoMime'];
+  const cancelEditPlace = () => {
+    setMerchantDraft(newPlaceDraft()); setMerchantPhotoPreview(null); setMerchantSubmitStatus(null);
+    try { localStorage.removeItem('verserain_merchant_draft'); } catch { /* ignore */ }
+  };
+  // Load a stored place into the form. Same id → the submit becomes an
+  // owner_update; `editing` rides along in the persisted draft so a reload or
+  // re-login mid-edit keeps the banner and the update semantics.
+  const startEditPlace = (pl) => {
+    const d = merchantDraft;
+    const dirty = !d.editing && ((d.name || '').trim() || (d.address || '').trim());
+    if (dirty && deleteArmedId !== `place-edit-${pl.id}`) { armDelete(`place-edit-${pl.id}`); return; }
+    setDeleteArmedId(null);
+    const next = { ...newPlaceDraft(), id: pl.id, agree: false, editing: { name: pl.name, status: pl.status } };
+    for (const f of PLACE_DRAFT_FIELDS) if (pl[f] !== undefined && pl[f] !== null) next[f] = pl[f];
+    setMerchantDraft(next); setMerchantPhotoPreview(null); setMerchantSubmitStatus(null);
+    setTimeout(() => { try { merchantFormRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch { /* ignore */ } }, 0);
+  };
+  const ownerPlaceAction = async (action, pl) => {
+    if (!userEmail) { setShowLoginModal('login'); return; }
+    setMyPlaceBusyId(pl.id);
+    try {
+      const res = await fetch('/api/places', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action, email: userEmail, sessionKey, placeId: pl.id }) });
+      const d = await res.json().catch(() => ({}));
+      if (d.error === 'session_invalid' || d.error === 'login_required') { setShowLoginModal('login'); throw new Error(redeemErrorText('session_invalid')); }
+      if (!res.ok || !d.success) throw new Error(redeemErrorText(d.error || res.status));
+      setToast(action === 'withdraw'
+        ? t('已下架，已從地圖移除；已發出的兌換券仍可核銷。', 'Withdrawn and removed from the map; vouchers already issued can still be used.')
+        : action === 'relist'
+          ? t('已重新送審，通過後會回到地圖上。', 'Re-submitted — it returns to the map once approved.')
+          : t('已刪除登記', 'Registration deleted'));
+      if (merchantDraft.editing && merchantDraft.id === pl.id) cancelEditPlace();
+      loadMyPlaces();
+    } catch (e) { setToast(String(e?.message || e)); }
+    finally { setMyPlaceBusyId(null); setDeleteArmedId(null); setTimeout(() => setToast(null), 4000); }
+  };
   const geocodeMerchant = async () => {
     const q = String(merchantDraft.address || '').trim();
     if (!q) return;
@@ -9526,13 +9568,21 @@ export default function App() {
     if (!sessionKey) { needLogin(); return; }
     setMerchantBusy(true);
     try {
-      const { agree, ...place } = m; void agree;
-      const res = await fetch('/api/places', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'register', email: userEmail, sessionKey, place }) });
+      const { agree, editing, ...place } = m; void agree;
+      const payload = editing
+        ? { action: 'owner_update', email: userEmail, sessionKey, placeId: m.id, place }
+        : { action: 'register', email: userEmail, sessionKey, place };
+      const res = await fetch('/api/places', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
       const d = await res.json().catch(() => ({}));
       if (d.error === 'session_invalid' || d.error === 'login_required') { needLogin(); return; }
       if (!res.ok || !d.success) throw new Error(d.error === 'daily_limit' ? t('今天已達登記上限（3 筆）', 'Daily registration limit (3) reached') : redeemErrorText(d.error || res.status));
-      setMerchantSubmitStatus({ type: 'ok', text: t('已送出，等待審核。可在下方「我的登記」看到狀態。', 'Submitted and awaiting review — see “My submissions” below.') });
-      setToast(t('已送出，管理員審核後就會出現在地圖上 🎉', 'Submitted — it will appear on the map once approved 🎉'));
+      const okText = !editing
+        ? t('已送出，等待審核。可在下方「我的登記」看到狀態。', 'Submitted and awaiting review — see “My submissions” below.')
+        : d.reviewRequired
+          ? t('已儲存。主要資料有變更，已重新送審，審核通過前暫時不在地圖上。', 'Saved. Key details changed, so it is back in review and off the map until approved.')
+          : t('已儲存修改，地圖上的資料已更新。', 'Changes saved — the map is updated.');
+      setMerchantSubmitStatus({ type: 'ok', text: okText });
+      setToast(editing ? okText : t('已送出，管理員審核後就會出現在地圖上 🎉', 'Submitted — it will appear on the map once approved 🎉'));
       setMerchantDraft(newPlaceDraft()); setMerchantPhotoPreview(null); loadMyPlaces();
       try { localStorage.removeItem('verserain_merchant_draft'); } catch { /* ignore */ }
     } catch (e) {
@@ -25742,7 +25792,7 @@ const deDict = {
                     verserain
                   </div>
                   <div className="app-brand-version" style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', marginTop: '4px', marginLeft: '2px' }}>
-                    v4.0.70
+                    v4.0.71
                   </div>
                 </div>
                 <div ref={langPickerRef} className="app-lang-control" style={{ position: 'relative' }}>
@@ -28903,7 +28953,7 @@ const deDict = {
                         {(() => {
                           const all = placesAdmin || [];
                           const shown = all.filter(pl => placesAdminFilter === 'all' ? true : pl.status === placesAdminFilter);
-                          const counts = { pending: all.filter(p => p.status === 'pending').length, approved: all.filter(p => p.status === 'approved').length, hidden: all.filter(p => p.status === 'hidden').length, rejected: all.filter(p => p.status === 'rejected').length };
+                          const counts = { withdrawn: all.filter(p => p.status === 'withdrawn').length, pending: all.filter(p => p.status === 'pending').length, approved: all.filter(p => p.status === 'approved').length, hidden: all.filter(p => p.status === 'hidden').length, rejected: all.filter(p => p.status === 'rejected').length };
                           const inputStyle = { padding: '0.4rem 0.6rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.85rem', background: '#fff' };
                           const smallBtn = (bg, fg = '#fff', border = 'none') => ({ background: bg, color: fg, border, borderRadius: '6px', padding: '0.35rem 0.7rem', cursor: 'pointer', fontSize: '0.82rem', fontWeight: 600 });
                           const kindLabel = (k) => k === 'merchant' ? `🏪 ${t('商家', 'Shop')}` : k === 'church' ? `⛪ ${t('教會', 'Church')}` : `🏢 ${t('機構', 'Organisation')}`;
@@ -28915,7 +28965,7 @@ const deDict = {
                                 <button type="button" onClick={() => setPlaceEdit({ isNew: true, kind: 'church', name: '', address: '', lat: 23.7, lng: 121, discountPct: 0, description: '', message: '', phone: '', website: '', hours: '', dailyCapNTD: 2000, note: '', sponsorId: '' })} style={smallBtn('#7c3aed')}>＋ {t('新增教會／機構標記', 'Add church / org marker')}</button>
                               </div>
                               <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap', margin: '0.6rem 0' }}>
-                                {[['pending', t('待審核', 'Pending')], ['approved', t('已上地圖', 'On the map')], ['hidden', t('已隱藏', 'Hidden')], ['rejected', t('已退回', 'Rejected')], ['all', t('全部', 'All')]].map(([id, lbl]) => (
+                                {[['pending', t('待審核', 'Pending')], ['approved', t('已上地圖', 'On the map')], ['hidden', t('已隱藏', 'Hidden')], ['rejected', t('已退回', 'Rejected')], ['withdrawn', t('已下架', 'Withdrawn')], ['all', t('全部', 'All')]].map(([id, lbl]) => (
                                   <button key={id} type="button" onClick={() => setPlacesAdminFilter(id)} style={{ padding: '0.3rem 0.8rem', borderRadius: 20, border: 'none', background: placesAdminFilter === id ? '#7c3aed' : '#ede9fe', color: placesAdminFilter === id ? '#fff' : '#4c1d95', cursor: 'pointer', fontWeight: 600, fontSize: '0.82rem' }}>{lbl}{id !== 'all' ? ` (${counts[id]})` : ` (${all.length})`}</button>
                                 ))}
                               </div>
@@ -28955,12 +29005,12 @@ const deDict = {
                                         {(pl.description || pl.message) && <div style={{ color: '#475569', fontSize: '0.8rem' }}>{pl.description || pl.message}</div>}
                                       </div>
                                       <div style={{ display: 'flex', gap: '0.35rem', flexWrap: 'wrap', alignItems: 'flex-start' }}>
-                                        {pl.status !== 'approved' && <button type="button" onClick={() => placeAdminAction('approve', { placeId: pl.id })} style={smallBtn('#10b981')}>✅ {t('核准', 'Approve')}</button>}
+                                        {!['approved', 'withdrawn'].includes(pl.status) && <button type="button" onClick={() => placeAdminAction('approve', { placeId: pl.id })} style={smallBtn('#10b981')}>✅ {t('核准', 'Approve')}</button>}
                                         {pl.status === 'approved' && <button type="button" onClick={() => placeAdminAction('hide', { placeId: pl.id })} style={smallBtn('transparent', '#64748b', '1px solid #cbd5e1')}>{t('隱藏', 'Hide')}</button>}
                                         {pl.status === 'hidden' && <button type="button" onClick={() => placeAdminAction('unhide', { placeId: pl.id })} style={smallBtn('transparent', '#64748b', '1px solid #cbd5e1')}>{t('恢復', 'Restore')}</button>}
                                         {pl.status === 'pending' && <button type="button" onClick={() => placeAdminAction('reject', { placeId: pl.id })} style={smallBtn('transparent', '#991b1b', '1px solid #fecaca')}>{t('退回', 'Reject')}</button>}
                                         <button type="button" onClick={() => setPlaceEdit({ ...pl })} style={smallBtn('transparent', '#334155', '1px solid #cbd5e1')}>{t('編輯', 'Edit')}</button>
-                                        {(pl.status === 'rejected' || pl.status === 'hidden') && <button type="button" onClick={() => { if (window.confirm(t('確定刪除？', 'Delete?'))) placeAdminAction('delete', { placeId: pl.id }); }} style={smallBtn('transparent', '#991b1b', '1px solid #fecaca')}>{t('刪除', 'Delete')}</button>}
+                                        {['rejected', 'hidden', 'withdrawn'].includes(pl.status) && <button type="button" onClick={() => { if (window.confirm(t('確定刪除？', 'Delete?'))) placeAdminAction('delete', { placeId: pl.id }); }} style={smallBtn('transparent', '#991b1b', '1px solid #fecaca')}>{t('刪除', 'Delete')}</button>}
                                       </div>
                                     </div>
                                   ))}
@@ -29594,7 +29644,7 @@ const deDict = {
                 const field = { width: '100%', boxSizing: 'border-box', padding: '0.5rem 0.7rem', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: '0.95rem', background: '#fff' };
                 const label = { display: 'block', color: '#475569', fontSize: '0.82rem', fontWeight: 700, margin: '0.8rem 0 0.25rem' };
                 const card = { background: '#fff', border: '1px solid #e2e8f0', borderRadius: 12, padding: '1rem 1.2rem', marginBottom: '1rem' };
-                const statusBadge = (st) => st === 'approved' ? { text: t('已上地圖', 'On the map'), bg: '#dcfce7', fg: '#166534' } : st === 'rejected' ? { text: t('已退回', 'Rejected'), bg: '#fee2e2', fg: '#991b1b' } : st === 'hidden' ? { text: t('已隱藏', 'Hidden'), bg: '#e2e8f0', fg: '#334155' } : { text: t('審核中', 'Pending review'), bg: '#fef3c7', fg: '#92400e' };
+                const statusBadge = (st) => st === 'withdrawn' ? { text: t('已下架', 'Withdrawn'), bg: '#f1f5f9', fg: '#475569' } : st === 'approved' ? { text: t('已上地圖', 'On the map'), bg: '#dcfce7', fg: '#166534' } : st === 'rejected' ? { text: t('已退回', 'Rejected'), bg: '#fee2e2', fg: '#991b1b' } : st === 'hidden' ? { text: t('已隱藏', 'Hidden'), bg: '#e2e8f0', fg: '#334155' } : { text: t('審核中', 'Pending review'), bg: '#fef3c7', fg: '#92400e' };
                 return (
                   <div style={{ backgroundColor: '#fffdf7', borderRadius: '8px', border: '1px solid #fde68a', padding: '1.5rem', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.6rem', marginBottom: '0.8rem' }}>
@@ -29618,7 +29668,16 @@ const deDict = {
                             <button type="button" onClick={() => setShowLoginModal('login')} style={{ background: '#3b82f6', color: '#fff', border: 'none', borderRadius: 6, padding: '0.35rem 0.9rem', cursor: 'pointer', fontWeight: 700 }}>{t('重新登入', 'Sign in again')}</button>
                           </div>
                         )}
-                        <div style={card}>
+                        <div style={card} ref={merchantFormRef}>
+                          {m.editing && (
+                            <div data-testid="place-edit-banner" style={{ background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 10, padding: '0.7rem 0.9rem', marginBottom: '0.9rem', color: '#1e3a8a', fontSize: '0.88rem', lineHeight: 1.5 }}>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
+                                <b>✏️ {t('正在編輯「{name}」', 'Editing “{name}”').replace('{name}', String(m.editing.name || ''))}</b>
+                                <button type="button" onClick={cancelEditPlace} style={{ background: 'transparent', border: '1px solid #93c5fd', color: '#1e3a8a', borderRadius: 6, padding: '0.25rem 0.8rem', cursor: 'pointer', fontWeight: 700, fontSize: '0.82rem' }}>{t('取消', 'Cancel')}</button>
+                              </div>
+                              <div style={{ marginTop: 4 }}>{t('電話、營業時間、網站、介紹、照片會立即更新；名稱、地址、位置、折扣、張數、類型改了會重新審核。', 'Phone, hours, website, description and photo update right away; changing name, address, location, discount, voucher count or type sends it back for review.')}</div>
+                            </div>
+                          )}
                           <label style={label}>{t('類型', 'Type')}</label>
                           <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
                             {[['merchant', `🏪 ${t('商家', 'Shop')}`], ['church', `⛪ ${t('教會', 'Church')}`], ['org', `🏢 ${t('機構', 'Organisation')}`]].map(([k, lbl]) => (
@@ -29668,12 +29727,13 @@ const deDict = {
                             <button type="button" disabled={merchantPhotoBusy} onClick={() => merchantPhotoInputRef.current?.click()} style={{ background: '#fff', border: '1px solid #cbd5e1', borderRadius: 8, padding: '0.45rem 0.9rem', cursor: 'pointer', color: '#334155' }}>{merchantPhotoBusy ? t('上傳中…', 'Uploading…') : (m.photoAssetId ? t('更換照片', 'Replace photo') : t('選擇照片', 'Choose photo'))}</button>
                             <input ref={merchantPhotoInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={e => { handleMerchantPhoto(e.target.files?.[0]); e.target.value = ''; }} />
                             {merchantPhotoPreview && <img src={merchantPhotoPreview} alt="" style={{ height: 70, borderRadius: 8, objectFit: 'cover' }} />}
+                            {!merchantPhotoPreview && m.photoAssetId && <span style={{ fontSize: '0.8rem', color: '#166534', background: '#dcfce7', borderRadius: 999, padding: '0.2rem 0.7rem' }}>📷 {t('已有照片', 'Photo on file')}</span>}
                           </div>
                           <label style={{ display: 'flex', gap: 8, alignItems: 'flex-start', marginTop: '1rem', color: '#334155', fontSize: '0.88rem', lineHeight: 1.5 }}>
                             <input type="checkbox" checked={!!m.agree} onChange={e => setMerchantDraft(d => ({ ...d, agree: e.target.checked }))} style={{ marginTop: 3 }} />
                             <span>{t('我確認以上資料屬實並同意公開顯示；商家折扣由商家自行吸收，經文雨不經手款項，並保留審核與下架的權利。', 'I confirm the details are accurate and may be shown publicly; the shop absorbs its own discount, VerseRain never handles money and may review or remove listings.')}</span>
                           </label>
-                          <button type="button" disabled={merchantBusy} onClick={submitMerchant} style={{ marginTop: '0.9rem', background: '#d97706', color: '#fff', border: 'none', borderRadius: 10, padding: '0.65rem 1.4rem', cursor: 'pointer', fontWeight: 800, fontSize: '1rem' }}>{merchantBusy ? '…' : t('送出審核', 'Submit for review')}</button>
+                          <button type="button" disabled={merchantBusy} onClick={submitMerchant} style={{ marginTop: '0.9rem', background: '#d97706', color: '#fff', border: 'none', borderRadius: 10, padding: '0.65rem 1.4rem', cursor: 'pointer', fontWeight: 800, fontSize: '1rem' }}>{merchantBusy ? '…' : (m.editing ? t('儲存修改', 'Save changes') : t('送出審核', 'Submit for review'))}</button>
                           {merchantSubmitStatus && (
                             <div role="status" data-status={merchantSubmitStatus.type} style={{ marginTop: '0.7rem', padding: '0.65rem 0.9rem', borderRadius: 10, fontSize: '0.9rem', lineHeight: 1.5,
                               background: merchantSubmitStatus.type === 'ok' ? '#dcfce7' : merchantSubmitStatus.type === 'login' ? '#fef3c7' : '#fee2e2',
@@ -29687,11 +29747,26 @@ const deDict = {
                           <h3 style={{ margin: '0 0 0.6rem', color: '#1e293b', fontSize: '1.05rem' }}>📋 {t('我的登記', 'My submissions')}</h3>
                           {!myPlaces ? <div style={{ color: '#94a3b8' }}>{t('載入中…', 'Loading…')}</div> : myPlaces.length === 0 ? <div style={{ color: '#94a3b8', fontSize: '0.9rem' }}>{t('尚未登記', 'Nothing submitted yet')}</div> : (
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                              {myPlaces.map(pl => { const b = statusBadge(pl.status); const led = placeLedger[pl.id]; const open = !!placeLedgerOpen[pl.id]; const canLedger = pl.status === 'approved' && pl.kind === 'merchant'; return (
+                              {myPlaces.map(pl => { const b = statusBadge(pl.status); const led = placeLedger[pl.id]; const open = !!placeLedgerOpen[pl.id]; const canLedger = ['approved', 'withdrawn', 'hidden'].includes(pl.status) && pl.kind === 'merchant'; const busy = myPlaceBusyId === pl.id || merchantBusy; const ownerBtn = (bg, fg, border) => ({ background: bg, color: fg, border, borderRadius: 6, padding: '0.2rem 0.7rem', cursor: busy ? 'wait' : 'pointer', fontSize: '0.78rem', fontWeight: 700, whiteSpace: 'nowrap' }); return (
                                 <div key={pl.id} style={{ border: '1px solid #e2e8f0', borderRadius: 8, padding: '0.5rem 0.8rem', fontSize: '0.9rem' }}>
                                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
                                     <div style={{ color: '#1e293b' }}><b>{pl.name}</b> <span style={{ color: '#64748b' }}>· {pl.kind === 'merchant' ? `-${pl.discountPct}%` : (pl.kind === 'church' ? t('教會', 'Church') : t('機構', 'Organisation'))} · {pl.address}</span></div>
-                                    <span style={{ display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
+                                    <span style={{ display: 'flex', gap: '0.4rem', alignItems: 'center', flexWrap: 'wrap' }}>
+                                      <button type="button" disabled={busy} onClick={() => startEditPlace(pl)} style={ownerBtn('transparent', '#334155', '1px solid #cbd5e1')}>
+                                        ✏️ {deleteArmedId === `place-edit-${pl.id}` ? t('再按一次會取代目前草稿', 'Tap again to replace the current draft') : t('編輯', 'Edit')}
+                                      </button>
+                                      {pl.status === 'withdrawn' ? (
+                                        <button type="button" disabled={busy} onClick={() => ownerPlaceAction('relist', pl)} style={ownerBtn('#0d9488', '#fff', 'none')}>🔁 {t('重新上架', 'Re-list')}</button>
+                                      ) : ['pending', 'approved', 'hidden'].includes(pl.status) && (
+                                        <button type="button" disabled={busy} onClick={() => { if (deleteArmedId !== `place-withdraw-${pl.id}`) { armDelete(`place-withdraw-${pl.id}`); return; } ownerPlaceAction('withdraw', pl); }} style={ownerBtn(deleteArmedId === `place-withdraw-${pl.id}` ? '#475569' : 'transparent', deleteArmedId === `place-withdraw-${pl.id}` ? '#fff' : '#475569', '1px solid #cbd5e1')}>
+                                          ⏸ {deleteArmedId === `place-withdraw-${pl.id}` ? t('再按一次確認下架', 'Tap again to withdraw') : t('下架', 'Withdraw')}
+                                        </button>
+                                      )}
+                                      {!(pl.stats && Number(pl.stats.issued) > 0) && (
+                                        <button type="button" disabled={busy} onClick={() => { if (deleteArmedId !== `place-delete-${pl.id}`) { armDelete(`place-delete-${pl.id}`); return; } ownerPlaceAction('owner_delete', pl); }} style={ownerBtn(deleteArmedId === `place-delete-${pl.id}` ? '#b91c1c' : 'transparent', deleteArmedId === `place-delete-${pl.id}` ? '#fff' : '#b91c1c', '1px solid #fecaca')}>
+                                          🗑 {deleteArmedId === `place-delete-${pl.id}` ? t('再按一次確認刪除', 'Tap again to confirm') : t('刪除', 'Delete')}
+                                        </button>
+                                      )}
                                       {canLedger && <button type="button" onClick={() => togglePlaceLedger(pl.id)} style={{ background: open ? '#d97706' : '#fef3c7', color: open ? '#fff' : '#92400e', border: 'none', borderRadius: 6, padding: '0.2rem 0.7rem', cursor: 'pointer', fontWeight: 700, fontSize: '0.78rem' }}>📒 {t('收到的點數', 'Points received')}{pl.stats ? ` (${pl.stats.used || 0})` : ''}</button>}
                                       <span style={{ background: b.bg, color: b.fg, borderRadius: 999, padding: '0.15rem 0.6rem', fontSize: '0.78rem', fontWeight: 700, whiteSpace: 'nowrap' }}>{b.text}</span>
                                     </span>

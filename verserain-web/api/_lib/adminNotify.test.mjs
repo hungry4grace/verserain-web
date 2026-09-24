@@ -3,7 +3,7 @@
 // APNs per admin code, nothing when REWARDS_ADMIN_CODES is unset.
 import { test } from 'node:test';
 import assert from 'node:assert';
-import { adminCodes, notifyAdmins, placeSubmittedMessage } from './adminNotify.js';
+import { adminCodes, notifyAdmins, placeSubmittedMessage, placeResubmittedMessage } from './adminNotify.js';
 
 function stubRedis() {
   const lists = new Map();
@@ -65,4 +65,13 @@ test('notifyAdmins: a failing push never fails the call', async () => {
   const out = await notifyAdmins(r, placeSubmittedMessage(place, 'x'), { env: { REWARDS_ADMIN_CODES: 'ADMIN00001' }, push: async () => { throw new Error('boom'); }, apns: async () => { throw new Error('boom'); } });
   assert.deepStrictEqual(out, { notified: 1 });
   assert.strictEqual(r.lists.get('gamification:notify:ADMIN00001').length, 1, 'inbox still written');
+});
+
+test('placeResubmittedMessage: same inbox kind (renders as-is), names the changed fields', () => {
+  const m = placeResubmittedMessage(place, '菲菲檸檬', ['name', 'lat', 'lng']);
+  assert.deepStrictEqual(m.record, { kind: 'place_submitted', placeId: 'pl_abc12345', name: '菲菲檸檬', placeKind: 'merchant', by: '菲菲檸檬', resubmitted: true });
+  assert.match(m.body, /修改了「菲菲檸檬」的名稱、位置，已暫時下地圖/);
+  assert.strictEqual(m.tag, 'verserain-place-pl_abc12345');
+  assert.strictEqual(m.url, 'https://www.verserain.com/#rewards_admin');
+  assert.match(placeResubmittedMessage(place, '', []).body, /^有人 修改了「菲菲檸檬」的資料/);
 });
