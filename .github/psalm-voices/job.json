@@ -1,12 +1,10 @@
 {
   "_comment": "Edit and push this file to run the Upload Psalm narrations workflow. Either files (Psalm=DriveFileId pairs) or folder (public Drive folder id) + only (psalm numbers, empty = all).",
   "folder": "1MMrDntM0MfqGvuuvMVb6oagoDFpxz8rb",
-  "only": [
-    119
-  ],
+  "only": [],
   "version": "esv",
   "narrator": "Melody Hwang",
   "force": false,
   "dry_run": false,
-  "run": 4
+  "run": 5
 }

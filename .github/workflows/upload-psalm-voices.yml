@@ -13,6 +13,8 @@ name: Upload Psalm narrations
 #      available to the caller).
 on:
   push:
+    branches-ignore:
+      - main
     paths:
       - '.github/psalm-voices/job.json'
   workflow_dispatch:
