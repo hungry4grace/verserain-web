@@ -1862,7 +1862,10 @@ export default class Server {
                reference: String(reference).trim().slice(0, 60),
                voiceId: String(voiceId),
                voiceMime: String(voiceMime || 'audio/webm').slice(0, 40),
-               voiceDur: Math.min(Math.max(0, Number(voiceDur) || 0), 600),
+               // 30 min: a whole narrated Psalm (119 runs past 15 min); the player's
+               // safety timeout is voiceDur + 15 s, so a clamp that is too low cuts
+               // long recordings off mid-verse.
+               voiceDur: Math.min(Math.max(0, Number(voiceDur) || 0), 1800),
                recordedBy: String(recordedBy || '').trim().slice(0, 30),
                byEmail: emailLc,
                // Stable recorder id so recording-comments can target this
@@ -1961,7 +1964,10 @@ export default class Server {
                reference: String(reference).trim().slice(0, 60),
                voiceId: String(voiceId),
                voiceMime: String(voiceMime || 'audio/webm').slice(0, 40),
-               voiceDur: Math.min(Math.max(0, Number(voiceDur) || 0), 600),
+               // 30 min: a whole narrated Psalm (119 runs past 15 min); the player's
+               // safety timeout is voiceDur + 15 s, so a clamp that is too low cuts
+               // long recordings off mid-verse.
+               voiceDur: Math.min(Math.max(0, Number(voiceDur) || 0), 1800),
                recordedBy: String(recordedBy || '').trim().slice(0, 30),
                public: isPublic,
                at: new Date().toISOString(),
