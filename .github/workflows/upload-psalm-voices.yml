@@ -1,0 +1,75 @@
+name: Upload Psalm narrations
+
+# Pulls narrated Psalm recordings from Google Drive and registers them as the
+# creator voice of the Psalms verse sets (PartyKit), credited to the narrator.
+# Wraps verserain-web/scripts/upload-psalm-voices.mjs so it can run from
+# GitHub instead of a laptop. The Drive files must be reachable by link
+# ("Anyone with the link" on the file or its folder).
+on:
+  workflow_dispatch:
+    inputs:
+      files:
+        description: 'Psalm=DriveFileId pairs, comma-separated (e.g. 1=1Guol…,23=1AbC…)'
+        required: true
+        type: string
+      version:
+        description: 'Which sets get the recording: esv, kjv, niv or all'
+        type: string
+        default: esv
+      narrator:
+        description: 'Name shown as the reader'
+        type: string
+        default: Melody Hwang
+      force:
+        description: 'Replace a recording that already exists for that Psalm'
+        type: boolean
+        default: false
+      dry_run:
+        description: 'Download and convert only, do not upload'
+        type: boolean
+        default: false
+
+concurrency:
+  group: upload-psalm-voices
+  cancel-in-progress: false
+
+jobs:
+  upload:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+
+      - name: Install ffmpeg and gdown
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq ffmpeg
+          python3 -m pip install --quiet --user gdown
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: Download recordings from Google Drive
+        env:
+          FILES: ${{ inputs.files }}
+        run: |
+          mkdir -p psalms
+          IFS=',' read -ra PAIRS <<< "$FILES"
+          for pair in "${PAIRS[@]}"; do
+            pair="$(echo "$pair" | tr -d '[:space:]')"
+            [ -z "$pair" ] && continue
+            n="${pair%%=*}"; id="${pair#*=}"
+            echo "Psalm $n ← $id"
+            gdown --id "$id" -O "psalms/Bible_19_Psalms_${n}.wav"
+          done
+          ls -la psalms
+
+      - name: Upload to PartyKit
+        working-directory: verserain-web
+        env:
+          VERSION: ${{ inputs.version }}
+          NARRATOR: ${{ inputs.narrator }}
+          FORCE: ${{ inputs.force && '--force' || '' }}
+          DRY_RUN: ${{ inputs.dry_run && '--dry-run' || '' }}
+        run: node scripts/upload-psalm-voices.mjs ../psalms --version "$VERSION" --narrator "$NARRATOR" $FORCE $DRY_RUN
