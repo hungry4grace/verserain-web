@@ -960,6 +960,8 @@ export const he = {
   "對準顧客兌換券上的 QR，掃到會自動查詢。": "כוונו את המצלמה אל ה-QR שעל שובר הלקוח; הבדיקה מתבצעת אוטומטית.",
   "從相簿選 QR 圖片": "בחר תמונת QR במקום",
   "這不是兌換券的 QR": "זה אינו QR של שובר",
+  "{who} 登記了「{name}」（{kind}），等你審核": "{who} רשם/ה את „{name}“ ({kind}) — ממתין לאישורך",
+  "去審核": "לבדיקה",
 };
 
 export const fa = {
@@ -1901,6 +1903,8 @@ export const fa = {
   "對準顧客兌換券上的 QR，掃到會自動查詢。": "دوربین را به سمت QR روی کوپن مشتری بگیرید؛ به‌طور خودکار بررسی می‌شود.",
   "從相簿選 QR 圖片": "انتخاب تصویر QR به جای آن",
   "這不是兌換券的 QR": "این QR کوپن نیست",
+  "{who} 登記了「{name}」（{kind}），等你審核": "{who} «{name}» ({kind}) را ثبت کرد — منتظر بررسی شماست",
+  "去審核": "بررسی",
 };
 
 export const ar = {
@@ -3258,6 +3262,8 @@ export const ar = {
   "對準顧客兌換券上的 QR，掃到會自動查詢。": "وجّه الكاميرا إلى رمز QR على قسيمة العميل؛ يتم التحقق تلقائيًا.",
   "從相簿選 QR 圖片": "اختر صورة QR بدلًا من ذلك",
   "這不是兌換券的 QR": "هذا ليس رمز QR لقسيمة",
+  "{who} 登記了「{name}」（{kind}），等你審核": "{who} سجّل «{name}» ({kind}) — بانتظار مراجعتك",
+  "去審核": "مراجعة",
 };
 
 export const ja = {
@@ -4187,6 +4193,8 @@ export const ja = {
   "對準顧客兌換券上的 QR，掃到會自動查詢。": "お客様のクーポンの QR にカメラを向けると、自動で照会します。",
   "從相簿選 QR 圖片": "代わりに QR 画像を選ぶ",
   "這不是兌換券的 QR": "これはクーポンの QR ではありません",
+  "{who} 登記了「{name}」（{kind}），等你審核": "{who} が「{name}」（{kind}）を登録しました。審査をお願いします",
+  "去審核": "審査する",
 };
 
 export const ko = {
@@ -5114,6 +5122,8 @@ export const ko = {
   "對準顧客兌換券上的 QR，掃到會自動查詢。": "고객 쿠폰의 QR에 카메라를 맞추면 자동으로 조회됩니다.",
   "從相簿選 QR 圖片": "대신 QR 이미지 선택",
   "這不是兌換券的 QR": "쿠폰 QR이 아닙니다",
+  "{who} 登記了「{name}」（{kind}），等你審核": "{who} 님이 「{name}」({kind})을 등록했습니다. 검토가 필요합니다",
+  "去審核": "검토하기",
 };
 
 export const es = {
@@ -6057,6 +6067,8 @@ export const es = {
   "對準顧客兌換券上的 QR，掃到會自動查詢。": "Apunta la cámara al QR del cupón del cliente; se consulta automáticamente.",
   "從相簿選 QR 圖片": "Elegir una imagen del QR",
   "這不是兌換券的 QR": "Eso no es un QR de cupón",
+  "{who} 登記了「{name}」（{kind}），等你審核": "{who} registró «{name}» ({kind}); pendiente de tu revisión",
+  "去審核": "Revisar",
 };
 
 export const tr = {
@@ -7000,6 +7012,8 @@ export const tr = {
   "對準顧客兌換券上的 QR，掃到會自動查詢。": "Kamerayı müşterinin kuponundaki QR'a tutun; otomatik sorgulanır.",
   "從相簿選 QR 圖片": "Bunun yerine bir QR görseli seç",
   "這不是兌換券的 QR": "Bu bir kupon QR'ı değil",
+  "{who} 登記了「{name}」（{kind}），等你審核": "{who}, “{name}” ({kind}) kaydını yaptı; incelemeni bekliyor",
+  "去審核": "İncele",
 };
 
 export const de = {
@@ -7943,6 +7957,8 @@ export const de = {
   "對準顧客兌換券上的 QR，掃到會自動查詢。": "Kamera auf den QR-Code des Kundengutscheins richten; die Prüfung erfolgt automatisch.",
   "從相簿選 QR 圖片": "Stattdessen ein QR-Bild wählen",
   "這不是兌換券的 QR": "Das ist kein Gutschein-QR",
+  "{who} 登記了「{name}」（{kind}），等你審核": "{who} hat „{name}“ ({kind}) eingetragen – wartet auf deine Prüfung",
+  "去審核": "Prüfen",
 };
 
 export const my = {
@@ -8886,6 +8902,8 @@ export const my = {
   "對準顧客兌換券上的 QR，掃到會自動查詢。": "ဖောက်သည်၏ ကူပွန်ပေါ်ရှိ QR ကို ကင်မရာဖြင့် ချိန်ပါ၊ အလိုအလျောက် စစ်ဆေးပေးပါမည်။",
   "從相簿選 QR 圖片": "QR ပုံကို ရွေးပါ",
   "這不是兌換券的 QR": "ဤသည် ကူပွန် QR မဟုတ်ပါ",
+  "{who} 登記了「{name}」（{kind}），等你審核": "{who} သည် 「{name}」 ({kind}) ကို မှတ်ပုံတင်ခဲ့သည် — သင့်စိစစ်မှုကို စောင့်နေသည်",
+  "去審核": "စိစစ်ရန်",
 };
 
 export const vi = {
@@ -9829,6 +9847,8 @@ export const vi = {
   "對準顧客兌換券上的 QR，掃到會自動查詢。": "Hướng camera vào mã QR trên phiếu của khách; hệ thống tự động tra cứu.",
   "從相簿選 QR 圖片": "Chọn ảnh QR thay thế",
   "這不是兌換券的 QR": "Đây không phải mã QR của phiếu",
+  "{who} 登記了「{name}」（{kind}），等你審核": "{who} đã đăng ký “{name}” ({kind}) — đang chờ bạn duyệt",
+  "去審核": "Duyệt",
 };
 
 export const id = {
@@ -11001,6 +11021,8 @@ export const id = {
   "對準顧客兌換券上的 QR，掃到會自動查詢。": "Arahkan kamera ke QR pada voucher pelanggan; pemeriksaan dilakukan otomatis.",
   "從相簿選 QR 圖片": "Pilih gambar QR saja",
   "這不是兌換券的 QR": "Ini bukan QR voucher",
+  "{who} 登記了「{name}」（{kind}），等你審核": "{who} mendaftarkan “{name}” ({kind}) — menunggu tinjauanmu",
+  "去審核": "Tinjau",
 };
 
 export const ms = {
@@ -12376,6 +12398,8 @@ export const ms = {
   "對準顧客兌換券上的 QR，掃到會自動查詢。": "Halakan kamera ke QR pada baucar pelanggan; semakan dibuat secara automatik.",
   "從相簿選 QR 圖片": "Pilih imej QR sebaliknya",
   "這不是兌換券的 QR": "Ini bukan QR baucar",
+  "{who} 登記了「{name}」（{kind}），等你審核": "{who} mendaftarkan “{name}” ({kind}) — menunggu semakan anda",
+  "去審核": "Semak",
 };
 
 export const zhcn = {
@@ -13671,6 +13695,8 @@ export const zhcn = {
   "對準顧客兌換券上的 QR，掃到會自動查詢。": "对准顾客兑换券上的 QR，扫到会自动查询。",
   "從相簿選 QR 圖片": "从相册选 QR 图片",
   "這不是兌換券的 QR": "这不是兑换券的 QR",
+  "{who} 登記了「{name}」（{kind}），等你審核": "{who} 登记了「{name}」（{kind}），等你审核",
+  "去審核": "去审核",
 };
 
 export const pt = {
@@ -14334,6 +14360,8 @@ export const pt = {
   "對準顧客兌換券上的 QR，掃到會自動查詢。": "Aponte a câmara para o QR do voucher do cliente; a consulta é automática.",
   "從相簿選 QR 圖片": "Escolher uma imagem do QR",
   "這不是兌換券的 QR": "Isto não é um QR de voucher",
+  "{who} 登記了「{name}」（{kind}），等你審核": "{who} registou “{name}” ({kind}) — aguarda a sua revisão",
+  "去審核": "Rever",
 };
 
 export const fr = {
@@ -14997,6 +15025,8 @@ export const fr = {
   "對準顧客兌換券上的 QR，掃到會自動查詢。": "Pointez la caméra vers le QR du bon du client ; la vérification est automatique.",
   "從相簿選 QR 圖片": "Choisir une image du QR à la place",
   "這不是兌換券的 QR": "Ce n’est pas le QR d’un bon",
+  "{who} 登記了「{name}」（{kind}），等你審核": "{who} a enregistré « {name} » ({kind}) — en attente de votre validation",
+  "去審核": "Vérifier",
 };
 
 export const ru = {
@@ -15660,6 +15690,8 @@ export const ru = {
   "對準顧客兌換券上的 QR，掃到會自動查詢。": "Наведите камеру на QR на купоне клиента — проверка выполнится автоматически.",
   "從相簿選 QR 圖片": "Выбрать изображение QR",
   "這不是兌換券的 QR": "Это не QR купона",
+  "{who} 登記了「{name}」（{kind}），等你審核": "{who} зарегистрировал(а) «{name}» ({kind}) — ждёт вашей проверки",
+  "去審核": "Проверить",
 };
 
 export const hi = {
@@ -16323,6 +16355,8 @@ export const hi = {
   "對準顧客兌換券上的 QR，掃到會自動查詢。": "कैमरा ग्राहक के कूपन पर बने QR की ओर करें; जांच अपने‑आप हो जाएगी।",
   "從相簿選 QR 圖片": "इसके बजाय QR छवि चुनें",
   "這不是兌換券的 QR": "यह कूपन का QR नहीं है",
+  "{who} 登記了「{name}」（{kind}），等你審核": "{who} ने “{name}” ({kind}) पंजीकृत किया — आपकी समीक्षा की प्रतीक्षा में",
+  "去審核": "समीक्षा करें",
 };
 
 // Khmer (Cambodian) — full UI coverage, machine-translated in bulk from the
@@ -17616,6 +17650,8 @@ export const km = {
   "對準顧客兌換券上的 QR，掃到會自動查詢。": "តម្រង់កាមេរ៉ាទៅ QR លើប័ណ្ណរបស់អតិថិជន ប្រព័ន្ធនឹងពិនិត្យដោយស្វ័យប្រវត្តិ។",
   "從相簿選 QR 圖片": "ជ្រើសរូបភាព QR ជំនួសវិញ",
   "這不是兌換券的 QR": "នេះមិនមែនជា QR ប័ណ្ណទេ",
+  "{who} 登記了「{name}」（{kind}），等你審核": "{who} បានចុះឈ្មោះ “{name}” ({kind}) — រង់ចាំការពិនិត្យរបស់អ្នក",
+  "去審核": "ពិនិត្យ",
 };
 
 const I18N_FILLINS = { he, fa, ar, ja, ko, es, tr, de, my, vi, id, ms, zhcn, pt, fr, ru, hi, km };

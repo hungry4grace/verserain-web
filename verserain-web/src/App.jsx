@@ -25710,7 +25710,7 @@ const deDict = {
                     verserain
                   </div>
                   <div className="app-brand-version" style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', marginTop: '4px', marginLeft: '2px' }}>
-                    v4.0.68
+                    v4.0.69
                   </div>
                 </div>
                 <div ref={langPickerRef} className="app-lang-control" style={{ position: 'relative' }}>
@@ -32583,6 +32583,24 @@ const deDict = {
                               ? t('你在 {place} 的兌換券已核銷，折抵 NT${n} 🎉', 'Your voucher at {place} was used — NT${n} off 🎉').replace('{place}', String(it.placeName || '')).replace('{n}', String(it.ntd ?? ''))
                               : t('你的地圖標記「{name}」已通過審核，現在出現在「誰在玩」地圖上了 🗺️', 'Your map marker “{name}” was approved and is now on the map 🗺️').replace('{name}', String(it.name || ''))}
                           </div>
+                          <div style={{ color: '#cbd5e1', fontSize: '0.72rem', marginTop: 2 }}>{new Date(it.at).toLocaleString()}</div>
+                        </div>
+                      </div>
+                    );
+                  }
+                  // New map place submitted (I'm an admin) — go review it.
+                  if (it.kind === 'place_submitted') {
+                    const kindText = it.placeKind === 'church' ? t('教會', 'Church') : it.placeKind === 'org' ? t('機構', 'Organisation') : t('商家', 'Shop');
+                    return (
+                      <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '0.6rem 1.3rem', background: '#f0fdfa' }}>
+                        <span style={{ fontSize: '1.2rem', flexShrink: 0 }}>🏪</span>
+                        <div style={{ minWidth: 0, flex: 1 }}>
+                          <div style={{ color: '#334155', fontSize: '0.9rem', lineHeight: 1.45 }}>
+                            {t('{who} 登記了「{name}」（{kind}），等你審核', '{who} registered “{name}” ({kind}) — awaiting your review').replace('{who}', String(it.by || '')).replace('{name}', String(it.name || '')).replace('{kind}', kindText)}
+                          </div>
+                          {isSuperAdmin && (
+                            <button onClick={() => { setShowEncouragePanel(false); setMainTab('rewards_admin'); }} style={{ marginTop: 6, background: '#0d9488', color: '#fff', border: 'none', borderRadius: 8, padding: '0.35rem 0.9rem', fontSize: '0.82rem', fontWeight: 600, cursor: 'pointer' }}>{t('去審核', 'Review')}</button>
+                          )}
                           <div style={{ color: '#cbd5e1', fontSize: '0.72rem', marginTop: 2 }}>{new Date(it.at).toLocaleString()}</div>
                         </div>
                       </div>
