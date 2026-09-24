@@ -56,7 +56,7 @@ const LABEL_TILE_URL = 'https://{s}.basemaps.cartocdn.com/rastertiles/dark_only_
 
 // Map places (merchants / churches / organisations) — icon per kind.
 const PLACE_STYLE = {
-  merchant: { bg: '#f59e0b', border: '#fde68a', emoji: '🏪' },
+  merchant: { bg: '#e11d48', border: '#fecdd3', emoji: '🏪' }, // 玫紅：和黃色玩家光點分開
   church:   { bg: '#7c3aed', border: '#ddd6fe', emoji: '⛪' },
   org:      { bg: '#0d9488', border: '#99f6e4', emoji: '🏢' },
 };
@@ -570,7 +570,7 @@ export default function WorldMap2D({ t, playerName, userEmail, onJoinRoom, onVie
     (places || []).forEach((pl) => {
       if (!pl || !Number.isFinite(Number(pl.lat)) || !Number.isFinite(Number(pl.lng))) return;
       const st = PLACE_STYLE[pl.kind] || PLACE_STYLE.org;
-      const pct = pl.kind === 'merchant' && pl.discountPct ? `<span style="position:absolute;right:-8px;bottom:-6px;background:#fff;color:#92400e;border:1px solid ${st.border};border-radius:999px;font-size:9px;font-weight:800;padding:0 4px;line-height:14px;">-${Number(pl.discountPct)}%</span>` : '';
+      const pct = pl.kind === 'merchant' && pl.discountPct ? `<span style="position:absolute;right:-8px;bottom:-6px;background:#fff;color:#be123c;border:1px solid ${st.border};border-radius:999px;font-size:9px;font-weight:800;padding:0 4px;line-height:14px;">-${Number(pl.discountPct)}%</span>` : '';
       const icon = L.divIcon({
         className: 'vr-place-marker',
         html: `<div style="position:relative;width:30px;height:30px;border-radius:${pl.kind === 'church' ? '50%' : '9px'};background:${st.bg};border:2px solid #fff;box-shadow:0 0 0 2px ${st.border}55, 0 3px 10px rgba(0,0,0,0.45);display:flex;align-items:center;justify-content:center;font-size:16px;cursor:pointer;">${st.emoji}${pct}</div>`,
@@ -840,11 +840,14 @@ export default function WorldMap2D({ t, playerName, userEmail, onJoinRoom, onVie
             {placesMode && places.length > 0 && (
               <div style={{ marginTop: 6, paddingTop: 6, borderTop: '1px solid #14324f' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 3 }}>
-                  <span style={{ width: 14, height: 14, borderRadius: 4, background: '#f59e0b', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 9 }}>🏪</span>
+                  <span style={{ width: 14, height: 14, borderRadius: 4, background: '#e11d48', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 9 }}>🏪</span>
                   <span>{t('商家 = 點數折抵', 'shop = points discount')}</span>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
-                  <span style={{ width: 14, height: 14, borderRadius: '50%', background: '#7c3aed', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 9 }}>⛪</span>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3 }}>
+                    <span style={{ width: 14, height: 14, borderRadius: '50%', background: '#7c3aed', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 9 }}>⛪</span>
+                    <span style={{ width: 14, height: 14, borderRadius: 4, background: '#0d9488', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 9 }}>🏢</span>
+                  </span>
                   <span>{t('教會、機構 = 贊助者', 'church / org = sponsor')}</span>
                 </div>
               </div>
