@@ -19,6 +19,7 @@ import { PREMIUM_EMAILS } from './premiumEmails';
 import ChallengeSetupModal, { loadChallengeSetup } from './ChallengeSetupModal';
 import GardenView from './GardenView.jsx';
 import VoucherScanner from './VoucherScanner.jsx';
+import { extractReferralCode, REFERRAL_CODE_RE } from './lib/referralCode.js';
 import { isBlankRef } from './lib/gardenView.js';
 import { GOOGLE_CLIENT_ID, APPLE_CLIENT_ID, APPLE_REDIRECT_URI, LINE_CHANNEL_ID, startLineLogin } from './oauthConfig';
 import { VAPID_PUBLIC_KEY, urlBase64ToUint8Array, isWebPushSupported, isIOSStandalone, isIOSWithoutPWA, hasNativeDailyPush, callNativeDailyPush } from './pushConfig';
@@ -9306,6 +9307,8 @@ export default function App() {
     not_owner: t('這不是你登記的項目', 'This listing is not yours'),
     place_not_found: t('找不到這筆登記，可能已被刪除', 'Listing not found — it may have been deleted'),
     has_vouchers: t('已發出過兌換券，只能下架不能刪除', 'Vouchers were issued for this place — it can be withdrawn but not deleted'),
+    referrer_not_found: t('找不到這個推薦碼，請確認推薦者的分享碼', 'Referral code not found — check the code on their Share page'),
+    referrer_invalid: t('推薦碼格式不正確，應為 10 個字母/數字。', 'Invalid format. Expected 10 letters/numbers.'),
   })[code] || String(code || 'error');
   const fetchPointsBalance = async () => {
     if (!userEmail) return null;
@@ -9324,6 +9327,20 @@ export default function App() {
       setPointsBalanceBusy(false);
     }
   };
+  // 商家推薦獎勵: the 2.5% this account earned from redemptions at shops it
+  // introduced (api/referral-bonus), shown under 互惠點數紀錄 in 我的園子.
+  const [merchantRefBonus, setMerchantRefBonus] = useState(null);
+  const [merchantRefBonusPage, setMerchantRefBonusPage] = useState(1);
+  const fetchReferralBonus = async () => {
+    if (!userEmail || !sessionKey) return;
+    try {
+      const res = await fetch(`/api/referral-bonus?email=${encodeURIComponent(userEmail)}&sessionKey=${encodeURIComponent(sessionKey)}`);
+      const d = await res.json().catch(() => ({}));
+      setMerchantRefBonus(res.ok ? { items: Array.isArray(d.items) ? d.items : [], totalBonus: Number(d.totalBonus) || 0 } : { error: d.error || String(res.status) });
+    } catch (e) {
+      setMerchantRefBonus({ error: String(e?.message || e) });
+    }
+  };
   // 我的園子 shows the spendable balance; refresh it on entry, at most once a minute.
   const pointsBalanceAtRef = useRef(0);
   useEffect(() => {
@@ -9331,6 +9348,7 @@ export default function App() {
     if (Date.now() - pointsBalanceAtRef.current < 60000) return;
     pointsBalanceAtRef.current = Date.now();
     fetchPointsBalance();
+    fetchReferralBonus();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mainTab, userEmail, sessionKey]);
   // Every finished game goes through here so the account ledger (總積分)
@@ -9451,7 +9469,7 @@ export default function App() {
   }, [mainTab]);
 
   // ── 商家／教會／機構登記 (map place registration) ───────────────────────
-  const newPlaceDraft = () => ({ id: 'pl_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), kind: 'merchant', name: '', address: '', lat: null, lng: null, discountPct: 10, dailyPerPerson: 3, description: '', message: '', phone: '', website: '', hours: '', photoAssetId: '', photoMime: '', agree: false, editing: null });
+  const newPlaceDraft = () => ({ id: 'pl_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), kind: 'merchant', name: '', address: '', lat: null, lng: null, discountPct: 10, dailyPerPerson: 3, description: '', message: '', phone: '', website: '', hours: '', photoAssetId: '', photoMime: '', referrerCode: '', agree: false, editing: null });
   // The draft lives in localStorage: a first-time submit may bounce the owner
   // to re-login (new session key), and nobody should retype a listing.
   const [merchantDraft, setMerchantDraft] = useState(() => {
@@ -9474,6 +9492,25 @@ export default function App() {
   const [merchantPhotoBusy, setMerchantPhotoBusy] = useState(false);
   const [myPlaces, setMyPlaces] = useState(null);
   const merchantPhotoInputRef = useRef(null);
+  // 推薦者 (the player who introduced this place) on a new listing: the code
+  // is typed or scanned from their share QR; the name shown under the field
+  // comes from the public code→name mapping (the server checks the account
+  // itself on submit). Kept as {code, name} so the effect never sets state
+  // synchronously; a code the lookup has not answered yet reads as loading.
+  const [merchantScanOpen, setMerchantScanOpen] = useState(false);
+  const [merchantReferrerLookup, setMerchantReferrerLookup] = useState({ code: '', name: null });
+  useEffect(() => {
+    const code = String(merchantDraft.referrerCode || '').trim();
+    if (!REFERRAL_CODE_RE.test(code)) return undefined;
+    let cancelled = false;
+    const id = setTimeout(() => {
+      fetch(`/api/get-name-by-code?code=${encodeURIComponent(code)}`)
+        .then(r => (r.ok ? r.json() : null))
+        .then(d => { if (!cancelled) setMerchantReferrerLookup({ code, name: (d && d.name) || null }); })
+        .catch(() => { if (!cancelled) setMerchantReferrerLookup({ code, name: null }); });
+    }, 400);
+    return () => { cancelled = true; clearTimeout(id); };
+  }, [merchantDraft.referrerCode]);
   const loadMyPlaces = React.useCallback(() => {
     if (!userEmail) { setMyPlaces([]); return; }
     fetch(`/api/places?mine=1&email=${encodeURIComponent(userEmail)}`).then(r => r.json()).then(d => setMyPlaces(Array.isArray(d.places) ? d.places : [])).catch(() => setMyPlaces([]));
@@ -9495,7 +9532,7 @@ export default function App() {
     const dirty = !d.editing && ((d.name || '').trim() || (d.address || '').trim());
     if (dirty && deleteArmedId !== `place-edit-${pl.id}`) { armDelete(`place-edit-${pl.id}`); return; }
     setDeleteArmedId(null);
-    const next = { ...newPlaceDraft(), id: pl.id, agree: false, editing: { name: pl.name, status: pl.status } };
+    const next = { ...newPlaceDraft(), id: pl.id, agree: false, editing: { name: pl.name, status: pl.status, referrerCode: pl.referrerCode || '', referrerName: pl.referrerName || '' } };
     for (const f of PLACE_DRAFT_FIELDS) if (pl[f] !== undefined && pl[f] !== null) next[f] = pl[f];
     setMerchantDraft(next); setMerchantPhotoPreview(null); setMerchantSubmitStatus(null);
     setTimeout(() => { try { merchantFormRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch { /* ignore */ } }, 0);
@@ -9557,6 +9594,8 @@ export default function App() {
     if (!m.name.trim() || !m.address.trim()) { setToast(t('請填寫名稱與地址', 'Name and address are required')); setTimeout(() => setToast(null), 2500); return; }
     if (!Number.isFinite(m.lat) || !Number.isFinite(m.lng)) { setToast(t('請先按「定位」或在地圖上點選位置', 'Locate the address or pick the spot on the map first')); setTimeout(() => setToast(null), 2500); return; }
     if (!m.agree) { setToast(t('請勾選同意條款', 'Please tick the agreement'), 2500); setTimeout(() => setToast(null), 2500); return; }
+    const referrerCode = String(m.referrerCode || '').trim();
+    if (!m.editing && referrerCode && !REFERRAL_CODE_RE.test(referrerCode)) { setToast(t('推薦碼格式不正確，應為 10 個字母/數字。', 'Invalid format. Expected 10 letters/numbers.')); setTimeout(() => setToast(null), 2500); return; }
     // No valid login on this device (signed in before sessionKeys existed,
     // or the key was rotated out by logins elsewhere): get one first, then
     // the effect below sends this same form the moment the key arrives.
@@ -9569,6 +9608,7 @@ export default function App() {
     setMerchantBusy(true);
     try {
       const { agree, editing, ...place } = m; void agree;
+      place.referrerCode = referrerCode;
       const payload = editing
         ? { action: 'owner_update', email: userEmail, sessionKey, placeId: m.id, place }
         : { action: 'register', email: userEmail, sessionKey, place };
@@ -25792,7 +25832,7 @@ const deDict = {
                     verserain
                   </div>
                   <div className="app-brand-version" style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', marginTop: '4px', marginLeft: '2px' }}>
-                    v4.0.72
+                    v4.0.73
                   </div>
                 </div>
                 <div ref={langPickerRef} className="app-lang-control" style={{ position: 'relative' }}>
@@ -28833,6 +28873,44 @@ const deDict = {
                         })()}
                       </div>
 
+                      {/* 商家推薦獎勵 — 2.5% of every redemption at a shop this account introduced */}
+                      {userEmail && merchantRefBonus && !merchantRefBonus.error && (() => {
+                        const items = merchantRefBonus.items || [];
+                        const totalPages = Math.max(1, Math.ceil(items.length / HISTORY_PAGE_SIZE));
+                        const page = Math.min(merchantRefBonusPage, totalPages);
+                        const sliced = items.slice((page - 1) * HISTORY_PAGE_SIZE, page * HISTORY_PAGE_SIZE);
+                        const fmtDate = (at) => { const d = new Date(at); return Number.isNaN(d.getTime()) ? '' : d.toLocaleDateString(undefined, { month: 'numeric', day: 'numeric' }); };
+                        const num = (v) => Number(v || 0).toLocaleString();
+                        return (
+                          <div style={{ marginTop: '1.5rem' }} data-testid="merchant-ref-bonus">
+                            <h4 style={{ margin: '0 0 0.6rem', color: '#1e293b', display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                              <Store size={18} /> {t('商家推薦獎勵', 'Merchant referral rewards')}
+                              <span style={{ marginLeft: 'auto', background: '#fef3c7', color: '#92400e', borderRadius: '10px', padding: '2px 10px', fontSize: '0.8rem', fontWeight: 'bold' }}>{t('累計獲得 {n} 點', '{n} pts earned in total').replace('{n}', num(merchantRefBonus.totalBonus))}</span>
+                            </h4>
+                            {items.length === 0 ? (
+                              <div style={{ color: '#94a3b8', fontSize: '0.85rem', lineHeight: 1.5 }}>{t('推薦商家登記到地圖上，之後每筆核銷你都會獲得顧客所用點數的 2.5%。', 'Refer a shop to the map and earn 2.5% of the points every customer spends there.')}</div>
+                            ) : (
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                {sliced.map((it, idx) => (
+                                  <div key={`${it.code}-${it.kind}-${idx}`} style={{ background: it.kind === 'reversed' ? '#f8fafc' : '#fff', padding: '10px 15px', borderRadius: '8px', borderLeft: `4px solid ${it.kind === 'reversed' ? '#cbd5e1' : '#d97706'}`, boxShadow: '0 1px 2px rgba(0,0,0,0.05)', fontSize: '0.9rem', color: it.kind === 'reversed' ? '#94a3b8' : '#475569', lineHeight: 1.5 }}>
+                                    {it.kind === 'reversed'
+                                      ? t('{place}，{date}，兌換券已作廢，收回 {bonus} 點', '{place}, {date}: voucher voided, {bonus} pts reversed').replace('{place}', String(it.placeName || '')).replace('{date}', fmtDate(it.at)).replace('{bonus}', num(it.bonus))
+                                      : t('{place}，{date}，{who} 使用 {points} 點，因此你也獲得 {bonus} 點', '{place}, {date}: {who} used {points} pts, so you also earned {bonus} pts').replace('{place}', String(it.placeName || '')).replace('{date}', fmtDate(it.at)).replace('{who}', String(it.playerName || '')).replace('{points}', num(it.points)).replace('{bonus}', num(it.bonus))}
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                            {totalPages > 1 && (
+                              <div style={{ display: 'flex', justifyContent: 'center', gap: '6px', marginTop: '10px' }}>
+                                <button type="button" onClick={() => setMerchantRefBonusPage(p => Math.max(1, p - 1))} disabled={page <= 1} style={{ padding: '4px 10px', borderRadius: '6px', border: '1px solid #cbd5e1', background: page <= 1 ? '#f1f5f9' : '#fff', color: page <= 1 ? '#94a3b8' : '#334155', cursor: page <= 1 ? 'default' : 'pointer', fontWeight: 'bold' }}>‹</button>
+                                <span style={{ padding: '4px 6px', color: '#475569', fontSize: '0.85rem' }}>{page} / {totalPages}</span>
+                                <button type="button" onClick={() => setMerchantRefBonusPage(p => Math.min(totalPages, p + 1))} disabled={page >= totalPages} style={{ padding: '4px 10px', borderRadius: '6px', border: '1px solid #cbd5e1', background: page >= totalPages ? '#f1f5f9' : '#fff', color: page >= totalPages ? '#94a3b8' : '#334155', cursor: page >= totalPages ? 'default' : 'pointer', fontWeight: 'bold' }}>›</button>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })()}
+
                     </div>
                   </div>
 
@@ -28962,7 +29040,7 @@ const deDict = {
                             <div style={{ border: '1px solid #ddd6fe', background: '#faf5ff', borderRadius: 10, padding: '0.9rem 1rem', marginBottom: '1rem' }}>
                               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
                                 <b style={{ color: '#5b21b6' }}>🗺️ {t('地圖標記（商家／教會／機構）', 'Map markers (shops / churches / orgs)')}</b>
-                                <button type="button" onClick={() => setPlaceEdit({ isNew: true, kind: 'church', name: '', address: '', lat: 23.7, lng: 121, discountPct: 0, description: '', message: '', phone: '', website: '', hours: '', dailyCapNTD: 2000, note: '', sponsorId: '' })} style={smallBtn('#7c3aed')}>＋ {t('新增教會／機構標記', 'Add church / org marker')}</button>
+                                <button type="button" onClick={() => setPlaceEdit({ isNew: true, kind: 'church', name: '', address: '', lat: 23.7, lng: 121, discountPct: 0, description: '', message: '', phone: '', website: '', hours: '', dailyCapNTD: 2000, note: '', sponsorId: '', referrerCode: '' })} style={smallBtn('#7c3aed')}>＋ {t('新增教會／機構標記', 'Add church / org marker')}</button>
                               </div>
                               <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap', margin: '0.6rem 0' }}>
                                 {[['pending', t('待審核', 'Pending')], ['approved', t('已上地圖', 'On the map')], ['hidden', t('已隱藏', 'Hidden')], ['rejected', t('已退回', 'Rejected')], ['withdrawn', t('已下架', 'Withdrawn')], ['all', t('全部', 'All')]].map(([id, lbl]) => (
@@ -28980,6 +29058,7 @@ const deDict = {
                                   <input type="number" min={1} value={ed.dailyCapNTD} onChange={e => setPlaceEdit(d => ({ ...d, dailyCapNTD: Number(e.target.value) }))} placeholder={t('每日折抵上限 NT$', 'Daily cap NT$')} style={inputStyle} />
                                   {ed.kind === 'merchant' && <input type="number" min={0} max={20} value={ed.dailyPerPerson ?? 3} onChange={e => setPlaceEdit(d => ({ ...d, dailyPerPerson: Number(e.target.value) }))} placeholder={t('每人每天張數（0=不限）', 'Per person per day (0 = unlimited)')} title={t('同一位客人每天可兌換張數（0 = 不限）', 'Vouchers per customer per day (0 = unlimited)')} style={inputStyle} />}
                                   <select value={ed.sponsorId || ''} onChange={e => setPlaceEdit(d => ({ ...d, sponsorId: e.target.value }))} style={inputStyle}><option value="">{t('（不連結贊助紀錄）', '(no sponsor record)')}</option>{(rewardsAdmin?.sponsors || []).map(sp => <option key={sp.id} value={sp.id}>{sp.displayName}</option>)}</select>
+                                  <input type="text" value={ed.referrerCode || ''} onChange={e => setPlaceEdit(d => ({ ...d, referrerCode: e.target.value.trim() }))} maxLength={10} placeholder={t('推薦者推薦碼（10 碼，留空 = 無）', 'Referrer code (10 chars, blank = none)')} title={ed.referrerName ? `🤝 ${ed.referrerName}` : ''} autoCapitalize="off" spellCheck={false} style={inputStyle} />
                                   <textarea value={ed.kind === 'merchant' ? ed.description : ed.message} onChange={e => setPlaceEdit(d => ({ ...d, [ed.kind === 'merchant' ? 'description' : 'message']: e.target.value }))} placeholder={ed.kind === 'merchant' ? t('介紹', 'Description') : t('祝福語或簡介', 'Blessing or intro')} rows={2} style={{ ...inputStyle, gridColumn: '1 / -1' }} />
                                   <input type="text" value={ed.hours || ''} onChange={e => setPlaceEdit(d => ({ ...d, hours: e.target.value }))} placeholder={t('營業時間', 'Hours')} style={inputStyle} />
                                   <input type="text" value={ed.phone || ''} onChange={e => setPlaceEdit(d => ({ ...d, phone: e.target.value }))} placeholder={t('電話', 'Phone')} style={inputStyle} />
@@ -28989,7 +29068,7 @@ const deDict = {
                                     <React.Suspense fallback={null}>{Number.isFinite(ed.lat) && Number.isFinite(ed.lng) && <PlacePinMap lat={ed.lat} lng={ed.lng} zoom={ed.isNew ? 7 : 15} height={220} onChange={({ lat, lng }) => setPlaceEdit(d => ({ ...d, lat, lng }))} />}</React.Suspense>
                                   </div>
                                   <div style={{ gridColumn: '1 / -1', display: 'flex', gap: '0.5rem' }}>
-                                    <button type="button" onClick={() => { const { isNew, id, status, ownerEmail, ownerCode, createdAt, updatedAt, approvedAt, approvedBy, stats, ...fields } = ed; void status; void ownerEmail; void ownerCode; void createdAt; void updatedAt; void approvedAt; void approvedBy; void stats; if (isNew) placeAdminAction('create', { place: fields }); else placeAdminAction('update', { placeId: id, patch: fields }); }} style={smallBtn('#10b981')}>{t('儲存', 'Save')}</button>
+                                    <button type="button" onClick={() => { const { isNew, id, status, ownerEmail, ownerCode, createdAt, updatedAt, approvedAt, approvedBy, stats, referrerName, ...fields } = ed; void status; void ownerEmail; void ownerCode; void createdAt; void updatedAt; void approvedAt; void approvedBy; void stats; void referrerName; if (isNew) placeAdminAction('create', { place: fields }); else placeAdminAction('update', { placeId: id, patch: fields }); }} style={smallBtn('#10b981')}>{t('儲存', 'Save')}</button>
                                     <button type="button" onClick={() => setPlaceEdit(null)} style={smallBtn('transparent', '#64748b', '1px solid #cbd5e1')}>{t('取消', 'Cancel')}</button>
                                   </div>
                                 </div>
@@ -29001,7 +29080,7 @@ const deDict = {
                                       <div style={{ minWidth: 0 }}>
                                         <div><b style={{ color: '#1e293b' }}>{pl.name}</b> <span style={{ color: '#64748b' }}>· {kindLabel(pl.kind)}{pl.kind === 'merchant' ? ` · -${pl.discountPct}%` : ''}</span></div>
                                         <div style={{ color: '#64748b' }}>📍 {pl.address} <span style={{ color: '#94a3b8' }}>({pl.lat}, {pl.lng})</span></div>
-                                        <div style={{ color: '#94a3b8', fontSize: '0.78rem' }}>{pl.ownerEmail} · {new Date(pl.createdAt).toLocaleDateString()}{pl.stats ? ` · ${t('已發 {a} 張／已用 {b} 張／NT${c}', '{a} issued / {b} used / NT${c}').replace('{a}', String(pl.stats.issued || 0)).replace('{b}', String(pl.stats.used || 0)).replace('{c}', String(pl.stats.usedNTD || 0))}` : ''}{pl.note ? ` · 🔒 ${pl.note}` : ''}</div>
+                                        <div style={{ color: '#94a3b8', fontSize: '0.78rem' }}>{pl.ownerEmail} · {new Date(pl.createdAt).toLocaleDateString()}{pl.stats ? ` · ${t('已發 {a} 張／已用 {b} 張／NT${c}', '{a} issued / {b} used / NT${c}').replace('{a}', String(pl.stats.issued || 0)).replace('{b}', String(pl.stats.used || 0)).replace('{c}', String(pl.stats.usedNTD || 0))}` : ''}{pl.note ? ` · 🔒 ${pl.note}` : ''}{pl.referrerCode ? ` · 🤝 ${pl.referrerName || pl.referrerCode}` : ''}</div>
                                         {(pl.description || pl.message) && <div style={{ color: '#475569', fontSize: '0.8rem' }}>{pl.description || pl.message}</div>}
                                       </div>
                                       <div style={{ display: 'flex', gap: '0.35rem', flexWrap: 'wrap', alignItems: 'flex-start' }}>
@@ -29729,6 +29808,34 @@ const deDict = {
                             {merchantPhotoPreview && <img src={merchantPhotoPreview} alt="" style={{ height: 70, borderRadius: 8, objectFit: 'cover' }} />}
                             {!merchantPhotoPreview && m.photoAssetId && <span style={{ fontSize: '0.8rem', color: '#166534', background: '#dcfce7', borderRadius: 999, padding: '0.2rem 0.7rem' }}>📷 {t('已有照片', 'Photo on file')}</span>}
                           </div>
+                          {!m.editing ? (() => {
+                            const refCode = String(m.referrerCode || '').trim();
+                            const refValid = REFERRAL_CODE_RE.test(refCode);
+                            const refName = refValid ? (merchantReferrerLookup.code === refCode ? merchantReferrerLookup.name : 'loading') : undefined;
+                            return (
+                              <div data-testid="place-referrer">
+                                <label style={label}>🤝 {t('推薦者（選填）', 'Referrer (optional)')}</label>
+                                <div style={{ color: '#64748b', fontSize: '0.8rem', lineHeight: 1.5, marginBottom: '0.35rem' }}>{t('掃描推薦者的 QR 分享碼，或輸入 10 碼推薦碼；之後每筆核銷，推薦者都會獲得顧客所用點數的 2.5% 作為獎勵。', 'Scan the referrer’s QR share code or type their 10-character code; on every redemption the referrer earns 2.5% of the points the customer used.')}</div>
+                                <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
+                                  <input type="text" value={m.referrerCode || ''} onChange={e => setMerchantDraft(d => ({ ...d, referrerCode: e.target.value.trim() }))} maxLength={10} placeholder="XXXXXXXXXX" autoCapitalize="off" autoCorrect="off" spellCheck={false} data-testid="place-referrer-input" style={{ ...field, width: 'auto', flex: '1 1 160px', fontFamily: 'monospace', letterSpacing: '1px' }} />
+                                  {!(isInIosNativeApp() && !iosAppSupportsCamera()) && (
+                                    <button type="button" onClick={() => setMerchantScanOpen(true)} style={{ background: '#0d9488', color: '#fff', border: 'none', borderRadius: 8, padding: '0.5rem 0.8rem', cursor: 'pointer', fontWeight: 700, whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: '0.35rem' }}><Camera size={16} /> {t('掃描推薦者 QR', 'Scan referrer QR')}</button>
+                                  )}
+                                </div>
+                                {refCode && !refValid ? <div style={{ color: '#b45309', fontSize: '0.8rem', marginTop: '0.3rem' }}>t('推薦碼格式不正確，應為 10 個字母/數字。', 'Invalid format. Expected 10 letters/numbers.')</div> : null}
+                                {refName === 'loading' && <div style={{ color: '#94a3b8', fontSize: '0.8rem', marginTop: '0.3rem' }}>{t('載入中…', 'Loading…')}</div>}
+                                {typeof refName === 'string' && refName !== 'loading' && <div data-testid="place-referrer-name" style={{ color: '#166534', fontSize: '0.85rem', marginTop: '0.3rem', fontWeight: 700 }}>✓ {t('推薦者：{name}', 'Referrer: {name}').replace('{name}', refName)}</div>}
+                                {refName === null && <div style={{ color: '#b45309', fontSize: '0.8rem', marginTop: '0.3rem' }}>{t('找不到這個推薦碼', 'Referral code not found')}</div>}
+                                {merchantScanOpen && (
+                                  <VoucherScanner t={t} extract={extractReferralCode} title={t('掃描推薦者 QR', 'Scan referrer QR')} hint={t('對準推薦者「分享」頁的 QR，掃到會自動帶入。', 'Point the camera at the QR on the referrer’s Share page; the code is filled in automatically.')} notMatchText={t('這不是推薦碼的 QR', 'That is not a referral QR')} onCode={(code) => { setMerchantDraft(d => ({ ...d, referrerCode: code })); setMerchantScanOpen(false); }} onClose={() => setMerchantScanOpen(false)} />
+                                )}
+                              </div>
+                            );
+                          })() : (
+                            <div data-testid="place-referrer-locked" style={{ marginTop: '0.8rem', color: '#475569', fontSize: '0.85rem', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 8, padding: '0.5rem 0.8rem', lineHeight: 1.5 }}>
+                              🤝 {m.editing.referrerCode ? t('推薦者：{name}', 'Referrer: {name}').replace('{name}', m.editing.referrerName || m.editing.referrerCode) : t('（未填推薦者）', '(no referrer)')} <span style={{ color: '#94a3b8' }}>· {t('送出後只有管理員能修改推薦者', 'After submission only an admin can change the referrer')}</span>
+                            </div>
+                          )}
                           <label style={{ display: 'flex', gap: 8, alignItems: 'flex-start', marginTop: '1rem', color: '#334155', fontSize: '0.88rem', lineHeight: 1.5 }}>
                             <input type="checkbox" checked={!!m.agree} onChange={e => setMerchantDraft(d => ({ ...d, agree: e.target.checked }))} style={{ marginTop: 3 }} />
                             <span>{t('我確認以上資料屬實並同意公開顯示；商家折扣由商家自行吸收，經文雨不經手款項，並保留審核與下架的權利。', 'I confirm the details are accurate and may be shown publicly; the shop absorbs its own discount, VerseRain never handles money and may review or remove listings.')}</span>
@@ -29771,6 +29878,7 @@ const deDict = {
                                       <span style={{ background: b.bg, color: b.fg, borderRadius: 999, padding: '0.15rem 0.6rem', fontSize: '0.78rem', fontWeight: 700, whiteSpace: 'nowrap' }}>{b.text}</span>
                                     </span>
                                   </div>
+                                  {pl.referrerCode ? <div style={{ color: '#64748b', fontSize: '0.8rem', marginTop: '0.25rem' }}>🤝 {t('推薦者', 'Referrer')}：{pl.referrerName || pl.referrerCode}</div> : null}
                                   {canLedger && open && (
                                     <div style={{ marginTop: '0.6rem', paddingTop: '0.6rem', borderTop: '1px dashed #e2e8f0' }}>
                                       {!led || led.loading ? <div style={{ color: '#94a3b8' }}>{t('載入中…', 'Loading…')}</div> : led.error ? (
@@ -32683,6 +32791,20 @@ const deDict = {
                               </button>
                             </div>
                           )}
+                          <div style={{ color: '#cbd5e1', fontSize: '0.72rem', marginTop: 2 }}>{new Date(it.at).toLocaleString()}</div>
+                        </div>
+                      </div>
+                    );
+                  }
+                  // A shop I introduced had a redemption → my 2.5% arrived.
+                  if (it.kind === 'merchant_referral') {
+                    return (
+                      <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '0.6rem 1.3rem', background: '#fffbeb' }}>
+                        <span style={{ fontSize: '1.2rem', flexShrink: 0 }}>🏪</span>
+                        <div style={{ minWidth: 0 }}>
+                          <div style={{ color: '#334155', fontSize: '0.9rem', lineHeight: 1.45 }}>
+                            {t('{place}：{who} 使用 {points} 點，因此你也獲得 {bonus} 點 🎉', '{place}: {who} used {points} pts, so you also earned {bonus} pts 🎉').replace('{place}', String(it.placeName || '')).replace('{who}', String(it.playerName || '')).replace('{points}', Number(it.points || 0).toLocaleString()).replace('{bonus}', Number(it.bonus || 0).toLocaleString())}
+                          </div>
                           <div style={{ color: '#cbd5e1', fontSize: '0.72rem', marginTop: 2 }}>{new Date(it.at).toLocaleString()}</div>
                         </div>
                       </div>

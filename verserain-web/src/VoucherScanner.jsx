@@ -8,21 +8,26 @@ import { extractVoucherCode } from './lib/voucherCode.js';
 // code up through `onCode`. Falls back to picking a QR photo when the camera
 // cannot start (permission denied, in-app browsers without camera access).
 // The camera is released on close / unmount.
-export default function VoucherScanner({ t, onCode, onClose, cameraDisabled = false }) {
+// `extract` / `title` / `hint` / `notMatchText` let other forms reuse the same
+// scanner for a different QR (the merchant form scans a referral share code);
+// the defaults keep the verify page unchanged.
+export default function VoucherScanner({ t, onCode, onClose, cameraDisabled = false, extract = extractVoucherCode, title, hint, notMatchText }) {
   const videoRef = useRef(null);
   const scannerRef = useRef(null);
   const fileRef = useRef(null);
   const doneRef = useRef(false);
   const [error, setError] = useState('');
   const [live, setLive] = useState(false);
+  const heading = title || t('掃描 QR 兌換券', 'Scan the voucher QR');
+  const notMatch = notMatchText || t('這不是兌換券的 QR', 'That is not a voucher QR');
 
   const stop = () => {
     try { scannerRef.current?.stop(); scannerRef.current?.destroy(); } catch { /* already stopped */ }
     scannerRef.current = null;
   };
   const handleDecoded = (data) => {
-    const code = extractVoucherCode(data);
-    if (!code) { setError(t('這不是兌換券的 QR', 'That is not a voucher QR')); return; }
+    const code = extract(data);
+    if (!code) { setError(notMatch); return; }
     if (doneRef.current) return;
     doneRef.current = true;
     stop();
@@ -83,17 +88,17 @@ export default function VoucherScanner({ t, onCode, onClose, cameraDisabled = fa
       const r = await QrScanner.scanImage(file, { returnDetailedScanResult: true });
       handleDecoded(r?.data);
     } catch {
-      setError(t('這不是兌換券的 QR', 'That is not a voucher QR'));
+      setError(notMatch);
     }
   };
   const close = () => { stop(); onClose(); };
 
   return (
     <div onClick={close} style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.6)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1100, padding: '1rem' }}>
-      <div role="dialog" aria-label={t('掃描 QR 兌換券', 'Scan the voucher QR')} onClick={(e) => e.stopPropagation()} style={{ background: '#fff', borderRadius: '14px', padding: '1.2rem 1.2rem 1rem', width: '100%', maxWidth: '440px', boxShadow: '0 20px 40px rgba(0,0,0,0.18)' }}>
+      <div role="dialog" aria-label={heading} onClick={(e) => e.stopPropagation()} style={{ background: '#fff', borderRadius: '14px', padding: '1.2rem 1.2rem 1rem', width: '100%', maxWidth: '440px', boxShadow: '0 20px 40px rgba(0,0,0,0.18)' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.6rem' }}>
           <h2 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 'bold', color: '#1e293b', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <Camera size={20} /> {t('掃描 QR 兌換券', 'Scan the voucher QR')}
+            <Camera size={20} /> {heading}
           </h2>
           <button type="button" onClick={close} aria-label={t('關閉', 'Close')} style={{ background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer' }}><XCircle size={22} /></button>
         </div>
@@ -110,7 +115,7 @@ export default function VoucherScanner({ t, onCode, onClose, cameraDisabled = fa
           </div>
         )}
         <p style={{ margin: '0 0 0.8rem', color: '#475569', fontSize: '0.85rem', lineHeight: 1.5 }}>
-          {t('對準顧客兌換券上的 QR，掃到會自動查詢。', 'Point the camera at the QR on the customer’s voucher; it is looked up automatically.')}
+          {hint || t('對準顧客兌換券上的 QR，掃到會自動查詢。', 'Point the camera at the QR on the customer’s voucher; it is looked up automatically.')}
         </p>
         {error && (
           <div role="alert" style={{ background: '#fef2f2', border: '1px solid #fecaca', color: '#991b1b', padding: '0.65rem 0.8rem', borderRadius: '8px', fontSize: '0.85rem', marginBottom: '0.8rem' }}>

@@ -30,10 +30,11 @@ export function placeSubmittedMessage(place, who) {
   const name = String((place && place.name) || '').slice(0, 60);
   const by = String(who || '').slice(0, 40) || '有人';
   const kind = KIND_ZH[place && place.kind] || '地圖標記';
+  const ref = String((place && place.referrerName) || (place && place.referrerCode) || '').slice(0, 40);
   return {
     record: { kind: 'place_submitted', placeId: place.id, name, placeKind: place.kind, by },
     title: '🏪 新的地圖標記待審核',
-    body: `${by} 登記了「${name}」（${kind}），請到獎勵管理審核`,
+    body: `${by} 登記了「${name}」（${kind}${ref ? `，推薦者：${ref}` : ''}），請到獎勵管理審核`,
     url: 'https://www.verserain.com/#rewards_admin',
     tag: `verserain-place-${place.id}`,
   };

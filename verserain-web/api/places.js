@@ -6,7 +6,7 @@ import { notifyAdmins, placeSubmittedMessage, placeResubmittedMessage } from './
 import {
   listPlaces, getPlace, savePlace, deletePlace, normalizePlaceSubmission, applyAdminAction, publicView,
   countSubmissionsToday, bumpSubmissions, taipeiDay, MAX_SUBMISSIONS_PER_DAY,
-  applyOwnerEdit, applyOwnerAction, canOwnerDelete, canAdminDelete, ownerView,
+  applyOwnerEdit, applyOwnerAction, canOwnerDelete, canAdminDelete, ownerView, REFERRER_CODE_RE,
 } from './_lib/places.js';
 
 // Map places (地圖標記): merchants / churches / organisations on the world map.
@@ -16,7 +16,11 @@ import {
 //   GET ?all=1&adminEmail=                admin → { places } (everything, with notes)
 //   POST { action: 'register', email, sessionKey, place }
 //                                         logged-in player → { success, place } (status pending);
-//                                         a place.id the same owner already has is treated as owner_update
+//                                         a place.id the same owner already has is treated as owner_update.
+//                                         place.referrerCode (optional, the introducer's 10-char referral
+//                                         code, any valid code incl. the submitter's own) is checked against
+//                                         PartyKit and locked afterwards — only an admin update changes it.
+//                                         400 referrer_invalid | referrer_not_found
 //   POST { action: 'owner_update', email, sessionKey, placeId, place }
 //                                         owner → { success, place, reviewRequired, changed }: phone/hours/
 //                                         website/description/photo apply at once; name/address/spot/kind/
@@ -89,6 +93,12 @@ export default async function handler(req, res) {
       place.approvedAt = now.toISOString();
       place.approvedBy = adminEmail;
       if (body.place && body.place.sponsorId !== undefined) place.sponsorId = String(body.place.sponsorId || '').slice(0, 40);
+      if (body.place && body.place.referrerCode !== undefined) {
+        const ref = await resolveReferrer(body.place.referrerCode);
+        if (ref.error) return res.status(ref.status).json({ error: ref.error });
+        place.referrerCode = ref.code;
+        place.referrerName = ref.name;
+      }
       await savePlace(redis, place);
     } else if (['approve', 'reject', 'hide', 'unhide', 'update', 'delete'].includes(action)) {
       const placeId = String(body.placeId || '').trim();
@@ -102,6 +112,11 @@ export default async function handler(req, res) {
           place = applyAdminAction(place, action, { adminEmail, now, patch: body.patch });
         } catch (e) {
           return res.status(400).json({ error: e.message });
+        }
+        if (action === 'update' && place.referrerCode && !place.referrerName) {
+          const ref = await resolveReferrer(place.referrerCode);
+          if (ref.error) return res.status(ref.status).json({ error: ref.error });
+          place.referrerName = ref.name;
         }
         await savePlace(redis, place);
         if (action === 'approve' && place.ownerCode) {
@@ -150,6 +165,23 @@ async function verifyOwner(res, redis, body) {
 
 const whoIs = (identity, email) => identity.playerName || email;
 
+// Turn a referral code into { code, name } through PartyKit's account-true
+// lookup, or { error, status } when the code is malformed / unknown / the
+// lookup is down. Empty input is simply "no referrer".
+async function resolveReferrer(raw) {
+  const code = String(raw || '').trim();
+  if (!code) return { code: '', name: '' };
+  if (!REFERRER_CODE_RE.test(code)) return { error: 'referrer_invalid', status: 400 };
+  let owner;
+  try {
+    owner = await partyFetch('/code-owner', { code });
+  } catch {
+    return { error: 'verify_unavailable', status: 503 };
+  }
+  if (!owner || !owner.email) return { error: 'referrer_not_found', status: 400 };
+  return { code, name: String(owner.playerName || '').trim().slice(0, 40) };
+}
+
 // A player registers a place. A place.id this owner already holds (a draft
 // re-sent from another device, an old client) is an edit, not a new listing:
 // it goes through the owner-update rules and never burns the daily cap.
@@ -172,6 +204,11 @@ async function register(req, res, redis, body) {
   } catch (e) {
     return res.status(400).json({ error: e.message });
   }
+  // The introducer (推薦者), checked once here and locked from then on.
+  const ref = await resolveReferrer(input.referrerCode);
+  if (ref.error) return res.status(ref.status).json({ error: ref.error });
+  place.referrerCode = ref.code;
+  place.referrerName = ref.name;
   place.status = 'pending';
   await savePlace(redis, place);
   await bumpSubmissions(redis, email, day);

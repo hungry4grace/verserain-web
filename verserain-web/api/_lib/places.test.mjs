@@ -6,7 +6,7 @@ import {
   normalizePlaceSubmission, applyAdminAction, publicView, newPlaceId, taipeiDay,
   listPlaces, getPlace, savePlace, deletePlace, countSubmissionsToday, bumpSubmissions,
   PLACE_ID_RE, DEFAULT_DAILY_CAP_NTD, STATUSES, MAJOR_FIELDS, MINOR_FIELDS,
-  classifyOwnerEdit, applyOwnerEdit, applyOwnerAction, canOwnerDelete, canAdminDelete, ownerView,
+  classifyOwnerEdit, applyOwnerEdit, applyOwnerAction, canOwnerDelete, canAdminDelete, ownerView, REFERRER_CODE_RE,
 } from './places.js';
 
 function stubRedis() {
@@ -113,6 +113,7 @@ test('publicView returns only approved places with public fields', () => {
   assert.strictEqual(v[0].id, 'pl_approved01');
   assert.strictEqual(v[0].phone, '02-1234');
   assert.ok(!('ownerEmail' in v[0]) && !('ownerCode' in v[0]) && !('note' in v[0]) && !('dailyCapNTD' in v[0]));
+  assert.ok(!('referrerCode' in v[0]) && !('referrerName' in v[0]), 'the introducer is not public');
 });
 
 test('applyAdminAction transitions and update re-validates', () => {
@@ -178,7 +179,7 @@ test('storage helpers and the daily submission counter', async () => {
 const stored = (over = {}) => ({
   ...normalizePlaceSubmission(merchant(), { ownerEmail: 'o@x.com', ownerCode: 'OWNER00001', now: NOW }),
   id: 'pl_owner00001', status: 'approved', approvedAt: '2026-09-22T04:00:00Z', approvedBy: 'admin@x.com',
-  note: 'looks fine', dailyCapNTD: 3000, sponsorId: 'sp_1', stats: { issued: 2, used: 1, usedNTD: 30 },
+  note: 'looks fine', dailyCapNTD: 3000, sponsorId: 'sp_1', referrerCode: 'dvyBA6Q3pe', referrerName: '小明', stats: { issued: 2, used: 1, usedNTD: 30 },
   ...over,
 });
 const edit = (ex, over) => normalizePlaceSubmission({ ...ex, ...over }, { ownerEmail: ex.ownerEmail, ownerCode: ex.ownerCode, now: new Date('2026-09-24T01:00:00Z'), existing: ex });
@@ -199,6 +200,29 @@ test('sponsorId is admin-only: ignored on submissions, settable through the admi
   assert.strictEqual(edit(ex, { sponsorId: 'sp_evil' }).sponsorId, 'sp_1', 'an owner edit keeps the admin value');
   assert.strictEqual(applyAdminAction(ex, 'update', { adminEmail: 'a@x.com', now: NOW, patch: { sponsorId: 'sp_2' } }).sponsorId, 'sp_2');
   assert.strictEqual(applyAdminAction(ex, 'update', { adminEmail: 'a@x.com', now: NOW, patch: { name: 'x' } }).sponsorId, 'sp_1', 'untouched when not patched');
+});
+
+test('referrerCode is set once by the route, kept through owner edits, changed only by an admin', () => {
+  assert.ok(REFERRER_CODE_RE.test('dvyBA6Q3pe') && !REFERRER_CODE_RE.test('dvyBA0Q3pe') && !REFERRER_CODE_RE.test('short'));
+  const p = normalizePlaceSubmission({ ...merchant(), referrerCode: 'dvyBA6Q3pe', referrerName: 'x' }, { ownerEmail: 'o@x.com', now: NOW });
+  assert.strictEqual(p.referrerCode, '', 'never taken from the submission itself');
+  assert.strictEqual(p.referrerName, '');
+  const ex = stored();
+  const edited = edit(ex, { referrerCode: 'ZZZZZZZZZZ', referrerName: 'evil', phone: '0912' });
+  assert.strictEqual(edited.referrerCode, 'dvyBA6Q3pe', 'an owner edit keeps the stored referrer');
+  assert.strictEqual(edited.referrerName, '小明');
+  assert.strictEqual(ownerView(ex).referrerName, '小明', 'the owner sees who they named');
+  assert.deepStrictEqual(publicView([ex]).map((v) => v.referrerCode), [undefined]);
+  const changed = applyAdminAction(ex, 'update', { adminEmail: 'a@x.com', now: NOW, patch: { referrerCode: 'ABCDEFGHJK' } });
+  assert.strictEqual(changed.referrerCode, 'ABCDEFGHJK');
+  assert.strictEqual(changed.referrerName, '', 'name cleared so the route re-resolves it');
+  const same = applyAdminAction(ex, 'update', { adminEmail: 'a@x.com', now: NOW, patch: { referrerCode: 'dvyBA6Q3pe', note: 'n' } });
+  assert.strictEqual(same.referrerName, '小明', 'unchanged code keeps the name');
+  const cleared = applyAdminAction(ex, 'update', { adminEmail: 'a@x.com', now: NOW, patch: { referrerCode: '' } });
+  assert.strictEqual(cleared.referrerCode, '');
+  assert.strictEqual(cleared.referrerName, '');
+  assert.strictEqual(applyAdminAction(ex, 'update', { adminEmail: 'a@x.com', now: NOW, patch: { name: 'x' } }).referrerCode, 'dvyBA6Q3pe', 'untouched when not patched');
+  assert.throws(() => applyAdminAction(ex, 'update', { adminEmail: 'a@x.com', now: NOW, patch: { referrerCode: 'bad code' } }), /referrerCode/);
 });
 
 test('classifyOwnerEdit: minor vs major, tolerant of number/string and legacy defaults', () => {
