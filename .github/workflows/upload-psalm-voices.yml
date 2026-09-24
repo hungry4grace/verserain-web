@@ -18,7 +18,7 @@ on:
   workflow_dispatch:
     inputs:
       files:
-        description: 'Psalm=DriveFileId pairs, comma-separated (e.g. 1=1Guol…,23=1AbC…)'
+        description: 'Psalm=DriveFileId pairs, comma-separated (e.g. 1=1Guol…,23=1AbC…). Or use job.json with a public folder id.'
         required: true
         type: string
       version:
@@ -70,13 +70,17 @@ jobs:
         run: |
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             echo "files=$IN_FILES" >> "$GITHUB_OUTPUT"
+            echo "folder=" >> "$GITHUB_OUTPUT"
+            echo "only=" >> "$GITHUB_OUTPUT"
             echo "version=${IN_VERSION:-esv}" >> "$GITHUB_OUTPUT"
             echo "narrator=${IN_NARRATOR:-Melody Hwang}" >> "$GITHUB_OUTPUT"
             echo "force=$([ "$IN_FORCE" = "true" ] && echo --force)" >> "$GITHUB_OUTPUT"
             echo "dry_run=$([ "$IN_DRY_RUN" = "true" ] && echo --dry-run)" >> "$GITHUB_OUTPUT"
           else
             J=.github/psalm-voices/job.json
-            echo "files=$(jq -r '.files' $J)" >> "$GITHUB_OUTPUT"
+            echo "files=$(jq -r '.files // ""' $J)" >> "$GITHUB_OUTPUT"
+            echo "folder=$(jq -r '.folder // ""' $J)" >> "$GITHUB_OUTPUT"
+            echo "only=$(jq -r '(.only // []) | map(tostring) | join(",")' $J)" >> "$GITHUB_OUTPUT"
             echo "version=$(jq -r '.version // "esv"' $J)" >> "$GITHUB_OUTPUT"
             echo "narrator=$(jq -r '.narrator // "Melody Hwang"' $J)" >> "$GITHUB_OUTPUT"
             echo "force=$([ "$(jq -r '.force // false' $J)" = "true" ] && echo --force)" >> "$GITHUB_OUTPUT"
@@ -87,8 +91,33 @@ jobs:
       - name: Download recordings from Google Drive
         env:
           FILES: ${{ steps.job.outputs.files }}
+          FOLDER: ${{ steps.job.outputs.folder }}
+          ONLY: ${{ steps.job.outputs.only }}
         run: |
           mkdir -p psalms
+          # A public folder: list it through Drive's embedded folder view (no
+          # API key needed, no 50-file cap), keep Bible_19_Psalms_N.* entries.
+          if [ -n "$FOLDER" ]; then
+            FILES="$(python3 - "$FOLDER" "$ONLY" <<'PY'
+          import re, sys, urllib.request
+          folder, only = sys.argv[1], sys.argv[2]
+          want = {int(x) for x in re.findall(r'\d+', only)} if only.strip() else None
+          html = urllib.request.urlopen(f'https://drive.google.com/embeddedfolderview?id={folder}#list', timeout=60).read().decode('utf-8', 'ignore')
+          pairs = re.findall(r'href="https://drive\.google\.com/file/d/([^/"]+)/view[^"]*"[^>]*>.*?<div class="flip-entry-title">([^<]+)</div>', html, re.S)
+          out = []
+          for fid, name in pairs:
+              m = re.search(r'Psalms?[ _-]*(\d{1,3})(?!\d)', name, re.I)
+              if not m: continue
+              n = int(m.group(1))
+              if want is not None and n not in want: continue
+              out.append(f'{n}={fid}')
+          sys.stderr.write(f'folder lists {len(pairs)} files, {len(out)} selected\n')
+          print(','.join(out))
+          PY
+          )"
+            echo "Selected: $FILES"
+            [ -n "$FILES" ] || { echo "No matching Psalm files found in the folder"; exit 1; }
+          fi
           IFS=',' read -ra PAIRS <<< "$FILES"
           for pair in "${PAIRS[@]}"; do
             pair="$(echo "$pair" | tr -d '[:space:]')"
