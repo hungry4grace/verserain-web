@@ -24,6 +24,8 @@ export const MAJOR_FIELDS = ['kind', 'name', 'address', 'lat', 'lng', 'discountP
 // …while these take effect at once and leave the status alone.
 export const MINOR_FIELDS = ['phone', 'hours', 'website', 'description', 'message', 'photoAssetId', 'photoMime'];
 export const PLACE_ID_RE = /^pl_[a-z0-9]{8,20}$/;
+// A player's referral (personal) code — same alphabet as src/party/referral.js.
+export const REFERRER_CODE_RE = /^[A-HJ-NP-Za-km-z2-9]{10}$/;
 export const ASSET_ID_RE = /^a_[A-Za-z0-9]{6,20}$/;
 export const PHOTO_MIMES = ['image/webp', 'image/jpeg', 'image/png'];
 export const DISCOUNT_MIN = 5;
@@ -33,7 +35,7 @@ export const MAX_SUBMISSIONS_PER_DAY = 3;
 
 // Fields an admin may change through the `update` action (everything a
 // submitter can set, plus the admin-only note / cap / sponsor link).
-const ADMIN_PATCH_FIELDS = ['name', 'address', 'lat', 'lng', 'discountPct', 'description', 'message', 'photoAssetId', 'photoMime', 'phone', 'website', 'hours', 'dailyCapNTD', 'dailyPerPerson', 'note', 'kind', 'sponsorId'];
+const ADMIN_PATCH_FIELDS = ['name', 'address', 'lat', 'lng', 'discountPct', 'description', 'message', 'photoAssetId', 'photoMime', 'phone', 'website', 'hours', 'dailyCapNTD', 'dailyPerPerson', 'note', 'kind', 'sponsorId', 'referrerCode'];
 // Vouchers one person may open at this shop per day; 0 = unlimited. Mirrors
 // api/_lib/points.js (kept literal here so the validator stays dependency-free).
 export const DEFAULT_DAILY_PER_PERSON = 3;
@@ -118,6 +120,10 @@ export function normalizePlaceSubmission(input, { ownerEmail, ownerCode = '', no
     // Admin-only: never taken from the submission (a player could otherwise
     // link their shop to a sponsor record); admins set it via applyAdminAction.
     sponsorId: clip(ex && ex.sponsorId, 40),
+    // Who introduced this place (earns 2.5% of every redemption). Set once by
+    // the registering route, afterwards admin-only — never from an owner edit.
+    referrerCode: clip(ex && ex.referrerCode, 10),
+    referrerName: clip(ex && ex.referrerName, 40),
     dailyCapNTD,
     status: (ex && STATUSES.includes(ex.status)) ? ex.status : 'pending',
     createdAt: (ex && ex.createdAt) || now.toISOString(),
@@ -158,6 +164,13 @@ export function applyAdminAction(place, action, { adminEmail = '', now = new Dat
       }
       if (p.note !== undefined) next.note = clip(p.note, 200);
       if (p.sponsorId !== undefined) next.sponsorId = clip(p.sponsorId, 40);
+      if (p.referrerCode !== undefined) {
+        const code = clip(p.referrerCode, 10);
+        if (code && !REFERRER_CODE_RE.test(code)) throw new Error('referrerCode must be a 10-character referral code');
+        next.referrerCode = code;
+        // The route re-resolves the name for a new code; an empty code clears both.
+        if (code !== clip(place.referrerCode, 10)) next.referrerName = '';
+      }
       next.status = place.status;
       return next;
     }

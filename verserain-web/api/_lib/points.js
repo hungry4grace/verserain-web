@@ -14,6 +14,7 @@
 //   redeem:place:${placeId}:${day}                 INT    NTD the place gave away this Taipei day
 //   redeem:by-email:${email}                       LIST   newest 100 voucher codes of this player
 //   redeem:refunded:${code}                        STR    latch so a voucher is refunded at most once
+//   redeem:refbonus:${email}                       LIST   newest 200 merchant-referral bonus entries of this referrer
 //   map:places                                     HASH   placeId → JSON place (owned by api/_lib/places.js)
 //
 // Voucher lifecycle: issued → used | expired | void; void → (restore) used|issued.
@@ -356,6 +357,91 @@ export async function creditBonus(redis, { email, points, now } = {}) {
   ]);
   await redis.expire(dailyEarnedKey(em, day), DAILY_EARNED_TTL_SEC);
   return { delta: pts, earnedPoints: Math.max(0, toInt(earned)) };
+}
+
+// ---------- merchant referral bonus (商家推薦獎勵) ----------
+// The player who introduced a shop earns 2.5% of the points a customer spends
+// there, paid when the voucher is marked used (a real transaction), clawed
+// back on void and paid again on restore. The place's referrerCode is read at
+// use time (admins may change it later); the account actually paid is
+// snapshotted on the voucher (`referralBonus`) so void / restore always settle
+// with that same account. Ledger per referrer: redeem:refbonus:<email>.
+export const MERCHANT_REFERRAL_RATE = 0.025;
+const REF_BONUS_MAX = 200;
+export const refBonusKey = (email) => `redeem:refbonus:${normEmail(email)}`;
+export function referralBonusFor(points) {
+  return Math.floor(Math.max(0, toInt(points)) * MERCHANT_REFERRAL_RATE);
+}
+
+// Mirror of creditBonus for claw-backs. earned never drops below zero; the
+// bonus / daily counters may (readers clamp them).
+export async function debitBonus(redis, { email, points, now } = {}) {
+  const em = normEmail(email);
+  const pts = Math.max(0, Math.floor(Number(points) || 0));
+  if (!em || pts <= 0) return { delta: 0, earnedPoints: 0 };
+  const day = taipeiDay(toDate(now));
+  const [earned] = await Promise.all([
+    redis.decrby(earnedKey(em), pts),
+    redis.decrby(bonusKey(em), pts),
+    redis.decrby(dailyEarnedKey(em, day), pts),
+  ]);
+  if (toInt(earned) < 0) await redis.set(earnedKey(em), '0');
+  return { delta: -pts, earnedPoints: Math.max(0, toInt(earned)) };
+}
+
+function refBonusEntry(v, snap, kind, at) {
+  return {
+    kind, code: v.code, placeId: v.placeId || '', placeName: String(v.placeName || '').slice(0, 80),
+    playerName: maskName(v.playerName), points: toInt(v.points), bonus: toInt(snap.points), referrerCode: snap.code, at,
+  };
+}
+async function pushRefBonus(redis, email, entry) {
+  await redis.lpush(refBonusKey(email), JSON.stringify(entry));
+  await redis.ltrim(refBonusKey(email), 0, REF_BONUS_MAX - 1);
+}
+
+// direction 'earn'    — after markUsed (needs `place` + `resolveEmail(code)`)
+//                       or after restore (re-pays from the reversed snapshot).
+// direction 'reverse' — after void; only when the snapshot says 'paid'.
+// Idempotent through voucher.referralBonus.status; "nothing to do" never throws.
+export async function settleReferralBonus(redis, { voucher: v, place, resolveEmail, now, direction = 'earn' } = {}) {
+  if (!v || !v.code) return { paid: false, reversed: false, reason: 'no_voucher' };
+  const snap = v.referralBonus || null;
+  const at = toDate(now).toISOString();
+  if (direction === 'reverse') {
+    if (!snap || snap.status !== 'paid') return { reversed: false, reason: snap ? 'not_paid' : 'no_bonus' };
+    await debitBonus(redis, { email: snap.email, points: snap.points, now });
+    v.referralBonus = { ...snap, status: 'reversed', reversedAt: at };
+    await saveVoucher(redis, v);
+    const entry = refBonusEntry(v, snap, 'reversed', at);
+    await pushRefBonus(redis, snap.email, entry);
+    return { reversed: true, email: snap.email, code: snap.code, bonus: toInt(snap.points), entry };
+  }
+  if (snap && snap.status === 'paid') return { paid: false, reason: 'already_paid' };
+  const code = snap ? String(snap.code || '') : String((place && place.referrerCode) || '').trim();
+  if (!code) return { paid: false, reason: 'no_referrer' };
+  let email = snap ? normEmail(snap.email) : '';
+  if (!email) {
+    if (typeof resolveEmail !== 'function') return { paid: false, reason: 'no_resolver' };
+    email = normEmail(await resolveEmail(code));
+    if (!email) return { paid: false, reason: 'referrer_unknown' };
+  }
+  const bonus = snap ? toInt(snap.points) : referralBonusFor(v.points);
+  if (bonus < 1) return { paid: false, reason: 'too_small' };
+  await creditBonus(redis, { email, points: bonus, now });
+  v.referralBonus = { code, email, points: bonus, paidAt: at, status: 'paid' };
+  await saveVoucher(redis, v);
+  const entry = refBonusEntry(v, v.referralBonus, 'earned', at);
+  await pushRefBonus(redis, email, entry);
+  return { paid: true, email, code, bonus, entry };
+}
+
+// The referrer's ledger, newest first, plus the net total.
+export async function listReferralBonus(redis, email, { limit = REF_BONUS_MAX } = {}) {
+  const rows = (await redis.lrange(refBonusKey(email), 0, limit - 1)) || [];
+  const items = rows.map(parse).filter(Boolean);
+  const totalBonus = items.reduce((sum, it) => sum + (it.kind === 'reversed' ? -toInt(it.bonus) : toInt(it.bonus)), 0);
+  return { items, totalBonus: Math.max(0, totalBonus) };
 }
 
 async function readEarned(redis, identity) {

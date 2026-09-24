@@ -9,6 +9,7 @@ import {
   taipeiDay, taipeiMonth, newVoucherCode, normalizeCode, formatCode, plausiblePoints, lifetimePoints, recordScore, ensureEarnedSeeded, creditBonus, earnedKey, bestKey, dailyEarnedKey, seededKey, bonusKey, eligibility,
   computeDiscount, voucherStatus, maskName, publicVoucher,
   readBalance, issueVoucher, markUsed, expireVoucher, voidVoucher, restoreVoucher, getVoucher, listVouchers,
+  MERCHANT_REFERRAL_RATE, referralBonusFor, debitBonus, settleReferralBonus, listReferralBonus, refBonusKey,
 } from './points.js';
 
 function stubRedis() {
@@ -345,6 +346,109 @@ test('markUsed transitions and rejects reuse / void / expired', async () => {
   const v3 = await issueVoucher(r3, { email: 'a@x.com', identity, garden, place, billNTD: 300, now: NOW });
   await voidVoucher(r3, v3.voucher.code, 'hungry4grace@gmail.com', NOW);
   await assert.rejects(markUsed(r3, v3.voucher.code, { now: NOW }), (e) => e.code === 'void');
+});
+
+test('referralBonusFor: 2.5% of the points spent, floored', () => {
+  assert.strictEqual(MERCHANT_REFERRAL_RATE, 0.025);
+  assert.strictEqual(referralBonusFor(1000), 25);
+  assert.strictEqual(referralBonusFor(80000), 2000);
+  assert.strictEqual(referralBonusFor(30), 0);
+  assert.strictEqual(referralBonusFor(0), 0);
+  assert.strictEqual(referralBonusFor('abc'), 0);
+});
+
+test('debitBonus mirrors creditBonus and never takes earned below zero', async () => {
+  const r = stubRedis();
+  await creditBonus(r, { email: 'ref@x.com', points: 300, now: NOW });
+  const d = await debitBonus(r, { email: 'ref@x.com', points: 100, now: NOW });
+  assert.deepStrictEqual(d, { delta: -100, earnedPoints: 200 });
+  assert.strictEqual(await r.get(bonusKey('ref@x.com')), '200');
+  assert.strictEqual(await r.get(dailyEarnedKey('ref@x.com', '2026-09-22')), '200');
+  const floor = await debitBonus(r, { email: 'ref@x.com', points: 999, now: NOW });
+  assert.strictEqual(floor.earnedPoints, 0);
+  assert.strictEqual(await r.get(earnedKey('ref@x.com')), '0');
+  assert.strictEqual((await debitBonus(r, { email: '', points: 5 })).delta, 0);
+});
+
+test('settleReferralBonus pays the shop\'s referrer 2.5% once at 核銷 and records it', async () => {
+  const r = stubRedis();
+  const shop = { ...place, referrerCode: 'dvyBA6Q3pe', referrerName: '小明' };
+  await seed(r, { place: shop });
+  const { voucher } = await issueVoucher(r, { email: 'a@x.com', identity, garden, place: shop, billNTD: 800, now: NOW });
+  const used = await markUsed(r, voucher.code, { now: NOW });
+  const seen = [];
+  const resolveEmail = async (code) => { seen.push(code); return 'REF@x.com'; };
+  const s = await settleReferralBonus(r, { voucher: used, place: shop, resolveEmail, now: NOW, direction: 'earn' });
+  assert.strictEqual(s.paid, true);
+  assert.strictEqual(s.email, 'ref@x.com');
+  assert.strictEqual(s.code, 'dvyBA6Q3pe');
+  assert.strictEqual(s.bonus, 2000, '80000 points × 2.5%');
+  assert.deepStrictEqual(seen, ['dvyBA6Q3pe']);
+  assert.strictEqual(await r.get(earnedKey('ref@x.com')), '2000');
+  assert.strictEqual(await r.get(bonusKey('ref@x.com')), '2000');
+  const stored = await getVoucher(r, voucher.code);
+  assert.deepStrictEqual(stored.referralBonus, { code: 'dvyBA6Q3pe', email: 'ref@x.com', points: 2000, paidAt: NOW.toISOString(), status: 'paid' });
+  assert.strictEqual(stored.status, 'used', 'the voucher itself is untouched');
+  const ledger = await listReferralBonus(r, 'ref@x.com');
+  assert.strictEqual(ledger.totalBonus, 2000);
+  assert.deepStrictEqual(ledger.items, [{ kind: 'earned', code: voucher.code, placeId: 'p1', placeName: '恩典咖啡', playerName: 'A＊＊', points: 80000, bonus: 2000, referrerCode: 'dvyBA6Q3pe', at: NOW.toISOString() }]);
+  // a second settle is a no-op: no double credit, no second ledger row
+  const again = await settleReferralBonus(r, { voucher: stored, place: shop, resolveEmail, now: NOW });
+  assert.deepStrictEqual(again, { paid: false, reason: 'already_paid' });
+  assert.strictEqual(await r.get(earnedKey('ref@x.com')), '2000');
+  assert.strictEqual((await r.lrange(refBonusKey('ref@x.com'), 0, -1)).length, 1);
+  assert.strictEqual(seen.length, 1);
+});
+
+test('settleReferralBonus: no referrer / unknown code / tiny amount → nothing written', async () => {
+  const r = stubRedis();
+  await seed(r);
+  const { voucher } = await issueVoucher(r, { email: 'a@x.com', identity, garden, place, billNTD: 800, now: NOW });
+  const used = await markUsed(r, voucher.code, { now: NOW });
+  assert.deepStrictEqual(await settleReferralBonus(r, { voucher: used, place, resolveEmail: async () => 'x@x.com', now: NOW }), { paid: false, reason: 'no_referrer' });
+  const shop = { ...place, referrerCode: 'dvyBA6Q3pe' };
+  assert.deepStrictEqual(await settleReferralBonus(r, { voucher: used, place: shop, resolveEmail: async () => null, now: NOW }), { paid: false, reason: 'referrer_unknown' });
+  assert.deepStrictEqual(await settleReferralBonus(r, { voucher: used, place: shop, now: NOW }), { paid: false, reason: 'no_resolver' });
+  assert.deepStrictEqual(await settleReferralBonus(r, { voucher: { ...used, points: 30 }, place: shop, resolveEmail: async () => 'x@x.com', now: NOW }), { paid: false, reason: 'too_small' });
+  assert.deepStrictEqual(await settleReferralBonus(r, { voucher: null, now: NOW }), { paid: false, reversed: false, reason: 'no_voucher' });
+  assert.strictEqual((await getVoucher(r, voucher.code)).referralBonus, undefined);
+  assert.strictEqual(r.lists.has(refBonusKey('x@x.com')), false);
+  assert.strictEqual(await r.get(earnedKey('x@x.com')), null);
+});
+
+test('void claws the referral bonus back from the snapshotted account; restore pays it again', async () => {
+  const r = stubRedis();
+  const shop = { ...place, referrerCode: 'dvyBA6Q3pe' };
+  await seed(r, { place: shop });
+  const { voucher } = await issueVoucher(r, { email: 'a@x.com', identity, garden, place: shop, billNTD: 400, now: NOW });
+  const used = await markUsed(r, voucher.code, { now: NOW });
+  await settleReferralBonus(r, { voucher: used, place: shop, resolveEmail: async () => 'ref@x.com', now: NOW });
+  assert.strictEqual(await r.get(earnedKey('ref@x.com')), '1000');
+  // reverse before void is refused (nothing to do), then void → reverse
+  const later = new Date(NOW.getTime() + 60000);
+  const voided = await voidVoucher(r, voucher.code, 'admin@x.com', later);
+  // the admin changed the shop's referrer meanwhile: the snapshot still wins
+  await r.hset(PLACES_KEY, { p1: JSON.stringify({ ...shop, referrerCode: 'ABCDEFGHJK' }) });
+  const rev = await settleReferralBonus(r, { voucher: voided, now: later, direction: 'reverse' });
+  assert.strictEqual(rev.reversed, true);
+  assert.strictEqual(rev.email, 'ref@x.com');
+  assert.strictEqual(rev.bonus, 1000);
+  assert.strictEqual(await r.get(earnedKey('ref@x.com')), '0');
+  assert.strictEqual((await getVoucher(r, voucher.code)).referralBonus.status, 'reversed');
+  const l1 = await listReferralBonus(r, 'ref@x.com');
+  assert.strictEqual(l1.totalBonus, 0);
+  assert.deepStrictEqual(l1.items.map((it) => it.kind), ['reversed', 'earned']);
+  assert.strictEqual(l1.items[0].at, later.toISOString());
+  assert.deepStrictEqual(await settleReferralBonus(r, { voucher: await getVoucher(r, voucher.code), now: later, direction: 'reverse' }), { reversed: false, reason: 'not_paid' });
+  // restore → paid again from the snapshot, no place / resolver needed
+  const restored = await restoreVoucher(r, voucher.code, 'admin@x.com', later);
+  const again = await settleReferralBonus(r, { voucher: restored, now: later, direction: 'earn' });
+  assert.strictEqual(again.paid, true);
+  assert.strictEqual(again.email, 'ref@x.com');
+  assert.strictEqual(await r.get(earnedKey('ref@x.com')), '1000');
+  assert.strictEqual((await listReferralBonus(r, 'ref@x.com')).totalBonus, 1000);
+  // a never-paid voucher cannot be reversed
+  assert.deepStrictEqual(await settleReferralBonus(r, { voucher: { code: 'ZZZZZZZZ', points: 5 }, now: later, direction: 'reverse' }), { reversed: false, reason: 'no_bonus' });
 });
 
 test('expireVoucher refunds exactly once', async () => {
