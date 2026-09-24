@@ -1000,6 +1000,8 @@ export const he = {
   "{place}，{date}，兌換券已作廢，收回 {bonus} 點": "{place}, {date}: השובר בוטל, {bonus} נקודות הוחזרו",
   "推薦商家登記到地圖上，之後每筆核銷你都會獲得顧客所用點數的 2.5%。": "הפנו עסק למפה ותקבלו 2.5% מהנקודות שכל לקוח מוציא שם.",
   "{place}：{who} 使用 {points} 點，因此你也獲得 {bonus} 點 🎉": "{place}: {who} השתמש/ה ב‑{points} נקודות, ולכן גם קיבלת {bonus} נקודות 🎉",
+  "贊助獎勵計劃（實驗階段）": "תוכנית פרסי חסות (ניסיונית)",
+  "本計劃目前為實驗階段：獎勵內容、達標條件與發放方式可能隨時調整或停止，不構成任何契約或承諾；獎勵由贊助者自願提供，經文雨保留審核、調整與最終解釋的權利。": "התוכנית נמצאת בשלב ניסיוני: הפרסים, תנאי הזכאות ואופן המימוש עשויים להשתנות או להיפסק בכל עת ואינם מהווים חוזה או התחייבות; הפרסים ניתנים מרצון על ידי נותני החסות, ו‑VerseRain שומרת לעצמה את הזכות לבדוק, לשנות ולהכריע סופית.",
 };
 
 export const fa = {
@@ -1981,6 +1983,8 @@ export const fa = {
   "{place}，{date}，兌換券已作廢，收回 {bonus} 點": "{place}، {date}: کوپن باطل شد، {bonus} امتیاز برگشت داده شد",
   "推薦商家登記到地圖上，之後每筆核銷你都會獲得顧客所用點數的 2.5%。": "فروشگاهی را به نقشه معرفی کنید و ۲.۵٪ از امتیازهایی را که هر مشتری آنجا خرج می‌کند دریافت کنید.",
   "{place}：{who} 使用 {points} 點，因此你也獲得 {bonus} 點 🎉": "{place}: {who} از {points} امتیاز استفاده کرد، پس شما هم {bonus} امتیاز گرفتید 🎉",
+  "贊助獎勵計劃（實驗階段）": "برنامهٔ پاداش حامیان (مرحلهٔ آزمایشی)",
+  "本計劃目前為實驗階段：獎勵內容、達標條件與發放方式可能隨時調整或停止，不構成任何契約或承諾；獎勵由贊助者自願提供，經文雨保留審核、調整與最終解釋的權利。": "این برنامه در مرحلهٔ آزمایشی است: محتوای پاداش‌ها، شرایط رسیدن به هدف و نحوهٔ اعطا ممکن است هر زمان تغییر کند یا متوقف شود و هیچ قرارداد یا تعهدی ایجاد نمی‌کند؛ پاداش‌ها را حامیان داوطلبانه ارائه می‌کنند و VerseRain حق بررسی، تنظیم و تصمیم نهایی را برای خود محفوظ می‌دارد.",
 };
 
 export const ar = {
@@ -3378,6 +3382,8 @@ export const ar = {
   "{place}，{date}，兌換券已作廢，收回 {bonus} 點": "{place}، {date}: أُلغيت القسيمة، واستُرجعت {bonus} نقطة",
   "推薦商家登記到地圖上，之後每筆核銷你都會獲得顧客所用點數的 2.5%。": "أحِل متجرًا إلى الخريطة واحصل على 2.5% من النقاط التي ينفقها كل عميل هناك.",
   "{place}：{who} 使用 {points} 點，因此你也獲得 {bonus} 點 🎉": "{place}: استخدم {who} {points} نقطة، لذا حصلت أنت أيضًا على {bonus} نقطة 🎉",
+  "贊助獎勵計劃（實驗階段）": "برنامج مكافآت الرعاة (مرحلة تجريبية)",
+  "本計劃目前為實驗階段：獎勵內容、達標條件與發放方式可能隨時調整或停止，不構成任何契約或承諾；獎勵由贊助者自願提供，經文雨保留審核、調整與最終解釋的權利。": "هذا البرنامج في مرحلة تجريبية: قد تتغير المكافآت وشروط الاستحقاق وطريقة التسليم أو تتوقف في أي وقت، ولا تشكّل أي عقد أو التزام؛ يقدّم الرعاة المكافآت طوعًا، وتحتفظ VerseRain بحق المراجعة والتعديل والقرار النهائي.",
 };
 
 export const ja = {
@@ -4347,6 +4353,8 @@ export const ja = {
   "{place}，{date}，兌換券已作廢，收回 {bonus} 點": "{place}、{date}、クーポンが無効になり {bonus} ポイントを回収しました",
   "推薦商家登記到地圖上，之後每筆核銷你都會獲得顧客所用點數的 2.5%。": "店舗を地図に紹介すると、そこでお客さんが使うポイントの 2.5% をクーポン使用ごとに受け取れます。",
   "{place}：{who} 使用 {points} 點，因此你也獲得 {bonus} 點 🎉": "{place}：{who} さんが {points} ポイントを使用したため、あなたも {bonus} ポイントを獲得しました 🎉",
+  "贊助獎勵計劃（實驗階段）": "スポンサー報酬プログラム（試験段階）",
+  "本計劃目前為實驗階段：獎勵內容、達標條件與發放方式可能隨時調整或停止，不構成任何契約或承諾；獎勵由贊助者自願提供，經文雨保留審核、調整與最終解釋的權利。": "このプログラムは試験段階です。報酬の内容・達成条件・提供方法は予告なく変更または終了することがあり、契約や約束を構成するものではありません。報酬はスポンサーの任意提供によるもので、VerseRain は審査・調整・最終判断の権利を留保します。",
 };
 
 export const ko = {
@@ -5314,6 +5322,8 @@ export const ko = {
   "{place}，{date}，兌換券已作廢，收回 {bonus} 點": "{place}, {date}, 쿠폰이 취소되어 {bonus}포인트가 회수되었습니다",
   "推薦商家登記到地圖上，之後每筆核銷你都會獲得顧客所用點數的 2.5%。": "매장을 지도에 추천하면 그곳에서 고객이 사용하는 포인트의 2.5%를 쿠폰 사용 때마다 받습니다.",
   "{place}：{who} 使用 {points} 點，因此你也獲得 {bonus} 點 🎉": "{place}: {who}님이 {points}포인트를 사용하여 당신도 {bonus}포인트를 받았습니다 🎉",
+  "贊助獎勵計劃（實驗階段）": "후원 보상 프로그램(시험 단계)",
+  "本計劃目前為實驗階段：獎勵內容、達標條件與發放方式可能隨時調整或停止，不構成任何契約或承諾；獎勵由贊助者自願提供，經文雨保留審核、調整與最終解釋的權利。": "이 프로그램은 시험 단계입니다. 보상 내용, 달성 조건, 지급 방식은 언제든지 변경되거나 중단될 수 있으며 어떠한 계약이나 약속도 구성하지 않습니다. 보상은 후원자가 자발적으로 제공하며, VerseRain은 심사·조정·최종 결정 권한을 보유합니다.",
 };
 
 export const es = {
@@ -6297,6 +6307,8 @@ export const es = {
   "{place}，{date}，兌換券已作廢，收回 {bonus} 點": "{place}, {date}: cupón anulado, {bonus} puntos revertidos",
   "推薦商家登記到地圖上，之後每筆核銷你都會獲得顧客所用點數的 2.5%。": "Refiere un comercio al mapa y gana el 2,5 % de los puntos que cada cliente gaste allí.",
   "{place}：{who} 使用 {points} 點，因此你也獲得 {bonus} 點 🎉": "{place}: {who} usó {points} puntos, así que tú también ganaste {bonus} puntos 🎉",
+  "贊助獎勵計劃（實驗階段）": "Programa de recompensas patrocinadas (fase piloto)",
+  "本計劃目前為實驗階段：獎勵內容、達標條件與發放方式可能隨時調整或停止，不構成任何契約或承諾；獎勵由贊助者自願提供，經文雨保留審核、調整與最終解釋的權利。": "Este programa está en fase piloto: las recompensas, las metas y la forma de entrega pueden cambiar o cesar en cualquier momento y no constituyen contrato ni promesa alguna; las recompensas las aportan voluntariamente los patrocinadores, y VerseRain se reserva el derecho de revisar, ajustar y tomar la decisión final.",
 };
 
 export const tr = {
@@ -7280,6 +7292,8 @@ export const tr = {
   "{place}，{date}，兌換券已作廢，收回 {bonus} 點": "{place}, {date}: kupon iptal edildi, {bonus} puan geri alındı",
   "推薦商家登記到地圖上，之後每筆核銷你都會獲得顧客所用點數的 2.5%。": "Bir mağazayı haritaya tavsiye edin ve her müşterinin orada harcadığı puanların %2,5'ini kazanın.",
   "{place}：{who} 使用 {points} 點，因此你也獲得 {bonus} 點 🎉": "{place}: {who} {points} puan kullandı, siz de {bonus} puan kazandınız 🎉",
+  "贊助獎勵計劃（實驗階段）": "Sponsorlu Ödül Programı (deneme aşaması)",
+  "本計劃目前為實驗階段：獎勵內容、達標條件與發放方式可能隨時調整或停止，不構成任何契約或承諾；獎勵由贊助者自願提供，經文雨保留審核、調整與最終解釋的權利。": "Bu program deneme aşamasındadır: ödüller, hedef koşulları ve teslim şekli her an değişebilir veya durdurulabilir ve hiçbir sözleşme ya da taahhüt oluşturmaz; ödüller sponsorlar tarafından gönüllü olarak sağlanır ve VerseRain inceleme, düzenleme ve nihai karar hakkını saklı tutar.",
 };
 
 export const de = {
@@ -8263,6 +8277,8 @@ export const de = {
   "{place}，{date}，兌換券已作廢，收回 {bonus} 點": "{place}, {date}: Gutschein storniert, {bonus} Punkte zurückgenommen",
   "推薦商家登記到地圖上，之後每筆核銷你都會獲得顧客所用點數的 2.5%。": "Empfiehl ein Geschäft für die Karte und erhalte 2,5 % der Punkte, die jeder Kunde dort einsetzt.",
   "{place}：{who} 使用 {points} 點，因此你也獲得 {bonus} 點 🎉": "{place}: {who} hat {points} Punkte eingesetzt, daher hast du auch {bonus} Punkte erhalten 🎉",
+  "贊助獎勵計劃（實驗階段）": "Gesponserte Belohnungen (Pilotphase)",
+  "本計劃目前為實驗階段：獎勵內容、達標條件與發放方式可能隨時調整或停止，不構成任何契約或承諾；獎勵由贊助者自願提供，經文雨保留審核、調整與最終解釋的權利。": "Dieses Programm befindet sich in der Pilotphase: Belohnungen, Meilensteine und Auszahlung können sich jederzeit ändern oder eingestellt werden und begründen keinen Vertrag und kein Versprechen; die Belohnungen werden von Sponsoren freiwillig bereitgestellt, und VerseRain behält sich Prüfung, Anpassung und die endgültige Entscheidung vor.",
 };
 
 export const my = {
@@ -9246,6 +9262,8 @@ export const my = {
   "{place}，{date}，兌換券已作廢，收回 {bonus} 點": "{place}၊ {date}၊ ကူပွန် ပယ်ဖျက်သဖြင့် {bonus} မှတ် ပြန်ရုပ်သိမ်းသည်",
   "推薦商家登記到地圖上，之後每筆核銷你都會獲得顧客所用點數的 2.5%。": "ဆိုင်တစ်ဆိုင်ကို မြေပုံသို့ ညွှန်းပြီး ဖောက်သည်တိုင်း ထိုနေရာတွင် သုံးသည့် အမှတ်၏ ၂.၅% ကို ရယူပါ။",
   "{place}：{who} 使用 {points} 點，因此你也獲得 {bonus} 點 🎉": "{place}- {who} သည် {points} မှတ် သုံးသဖြင့် သင်လည်း {bonus} မှတ် ရရှိသည် 🎉",
+  "贊助獎勵計劃（實驗階段）": "ပံ့ပိုးဆုလာဘ် အစီအစဉ် (စမ်းသပ်ကာလ)",
+  "本計劃目前為實驗階段：獎勵內容、達標條件與發放方式可能隨時調整或停止，不構成任何契約或承諾；獎勵由贊助者自願提供，經文雨保留審核、調整與最終解釋的權利。": "ဤအစီအစဉ်သည် စမ်းသပ်ကာလ ဖြစ်သည်။ ဆုလာဘ်၊ အောင်မြင်ရမည့် သတ်မှတ်ချက်နှင့် ပေးအပ်ပုံတို့ကို အချိန်မရွေး ပြောင်းလဲ သို့မဟုတ် ရပ်ဆိုင်းနိုင်ပြီး မည်သည့် စာချုပ် သို့မဟုတ် ကတိကဝတ်ကိုမျှ မဖြစ်စေပါ။ ဆုလာဘ်များကို ပံ့ပိုးသူများက စေတနာအလျောက် ပေးအပ်ပြီး VerseRain သည် စိစစ်ခြင်း၊ ပြင်ဆင်ခြင်းနှင့် နောက်ဆုံး ဆုံးဖြတ်ပိုင်ခွင့်ကို ထိန်းသိမ်းထားသည်။",
 };
 
 export const vi = {
@@ -10229,6 +10247,8 @@ export const vi = {
   "{place}，{date}，兌換券已作廢，收回 {bonus} 點": "{place}, {date}: phiếu đã bị hủy, thu hồi {bonus} điểm",
   "推薦商家登記到地圖上，之後每筆核銷你都會獲得顧客所用點數的 2.5%。": "Giới thiệu một cửa hàng lên bản đồ và nhận 2,5% số điểm mỗi khách hàng dùng ở đó.",
   "{place}：{who} 使用 {points} 點，因此你也獲得 {bonus} 點 🎉": "{place}: {who} đã dùng {points} điểm, nên bạn cũng nhận được {bonus} điểm 🎉",
+  "贊助獎勵計劃（實驗階段）": "Chương trình phần thưởng tài trợ (giai đoạn thử nghiệm)",
+  "本計劃目前為實驗階段：獎勵內容、達標條件與發放方式可能隨時調整或停止，不構成任何契約或承諾；獎勵由贊助者自願提供，經文雨保留審核、調整與最終解釋的權利。": "Chương trình này đang trong giai đoạn thử nghiệm: nội dung phần thưởng, điều kiện đạt mốc và cách trao có thể thay đổi hoặc dừng bất cứ lúc nào và không tạo thành hợp đồng hay cam kết nào; phần thưởng do nhà tài trợ tự nguyện cung cấp, và VerseRain giữ quyền xét duyệt, điều chỉnh và quyết định cuối cùng.",
 };
 
 export const id = {
@@ -11441,6 +11461,8 @@ export const id = {
   "{place}，{date}，兌換券已作廢，收回 {bonus} 點": "{place}, {date}: voucher dibatalkan, {bonus} poin ditarik kembali",
   "推薦商家登記到地圖上，之後每筆核銷你都會獲得顧客所用點數的 2.5%。": "Rujuk sebuah toko ke peta dan dapatkan 2,5% dari poin yang dipakai setiap pelanggan di sana.",
   "{place}：{who} 使用 {points} 點，因此你也獲得 {bonus} 點 🎉": "{place}: {who} memakai {points} poin, jadi kamu juga mendapat {bonus} poin 🎉",
+  "贊助獎勵計劃（實驗階段）": "Program Hadiah Sponsor (tahap uji coba)",
+  "本計劃目前為實驗階段：獎勵內容、達標條件與發放方式可能隨時調整或停止，不構成任何契約或承諾；獎勵由贊助者自願提供，經文雨保留審核、調整與最終解釋的權利。": "Program ini masih dalam tahap uji coba: isi hadiah, syarat pencapaian, dan cara penyerahan dapat berubah atau dihentikan kapan saja dan tidak merupakan kontrak atau janji apa pun; hadiah diberikan secara sukarela oleh sponsor, dan VerseRain berhak meninjau, menyesuaikan, dan mengambil keputusan akhir.",
 };
 
 export const ms = {
@@ -12856,6 +12878,8 @@ export const ms = {
   "{place}，{date}，兌換券已作廢，收回 {bonus} 點": "{place}, {date}: baucar dibatalkan, {bonus} mata ditarik balik",
   "推薦商家登記到地圖上，之後每筆核銷你都會獲得顧客所用點數的 2.5%。": "Rujuk sebuah kedai ke peta dan dapatkan 2.5% daripada mata yang dibelanjakan setiap pelanggan di sana.",
   "{place}：{who} 使用 {points} 點，因此你也獲得 {bonus} 點 🎉": "{place}: {who} menggunakan {points} mata, jadi anda juga mendapat {bonus} mata 🎉",
+  "贊助獎勵計劃（實驗階段）": "Program Ganjaran Tajaan (fasa percubaan)",
+  "本計劃目前為實驗階段：獎勵內容、達標條件與發放方式可能隨時調整或停止，不構成任何契約或承諾；獎勵由贊助者自願提供，經文雨保留審核、調整與最終解釋的權利。": "Program ini dalam fasa percubaan: ganjaran, syarat pencapaian dan cara penyerahan boleh berubah atau dihentikan pada bila-bila masa dan tidak membentuk sebarang kontrak atau janji; ganjaran disediakan secara sukarela oleh penaja, dan VerseRain berhak menyemak, melaraskan dan membuat keputusan muktamad.",
 };
 
 export const zhcn = {
@@ -14191,6 +14215,8 @@ export const zhcn = {
   "{place}，{date}，兌換券已作廢，收回 {bonus} 點": "{place}，{date}，兑换券已作废，收回 {bonus} 点",
   "推薦商家登記到地圖上，之後每筆核銷你都會獲得顧客所用點數的 2.5%。": "推荐商家登记到地图上，之后每笔核销你都会获得顾客所用点数的 2.5%。",
   "{place}：{who} 使用 {points} 點，因此你也獲得 {bonus} 點 🎉": "{place}：{who} 使用 {points} 点，因此你也获得 {bonus} 点 🎉",
+  "贊助獎勵計劃（實驗階段）": "赞助奖励计划（实验阶段）",
+  "本計劃目前為實驗階段：獎勵內容、達標條件與發放方式可能隨時調整或停止，不構成任何契約或承諾；獎勵由贊助者自願提供，經文雨保留審核、調整與最終解釋的權利。": "本计划目前为实验阶段：奖励内容、达标条件与发放方式可能随时调整或停止，不构成任何合同或承诺；奖励由赞助者自愿提供，经文雨保留审核、调整与最终解释的权利。",
 };
 
 export const pt = {
@@ -14894,6 +14920,8 @@ export const pt = {
   "{place}，{date}，兌換券已作廢，收回 {bonus} 點": "{place}, {date}: voucher anulado, {bonus} pontos revertidos",
   "推薦商家登記到地圖上，之後每筆核銷你都會獲得顧客所用點數的 2.5%。": "Indique uma loja para o mapa e ganhe 2,5% dos pontos que cada cliente gastar lá.",
   "{place}：{who} 使用 {points} 點，因此你也獲得 {bonus} 點 🎉": "{place}: {who} usou {points} pontos, por isso você também ganhou {bonus} pontos 🎉",
+  "贊助獎勵計劃（實驗階段）": "Programa de recompensas patrocinadas (fase piloto)",
+  "本計劃目前為實驗階段：獎勵內容、達標條件與發放方式可能隨時調整或停止，不構成任何契約或承諾；獎勵由贊助者自願提供，經文雨保留審核、調整與最終解釋的權利。": "Este programa está em fase piloto: as recompensas, as metas e a forma de entrega podem mudar ou cessar a qualquer momento e não constituem contrato nem promessa; as recompensas são oferecidas voluntariamente pelos patrocinadores, e a VerseRain reserva-se o direito de rever, ajustar e tomar a decisão final.",
 };
 
 export const fr = {
@@ -15597,6 +15625,8 @@ export const fr = {
   "{place}，{date}，兌換券已作廢，收回 {bonus} 點": "{place}, {date} : bon annulé, {bonus} points repris",
   "推薦商家登記到地圖上，之後每筆核銷你都會獲得顧客所用點數的 2.5%。": "Parrainez un commerce sur la carte et gagnez 2,5 % des points que chaque client y dépense.",
   "{place}：{who} 使用 {points} 點，因此你也獲得 {bonus} 點 🎉": "{place} : {who} a utilisé {points} points, vous avez donc aussi gagné {bonus} points 🎉",
+  "贊助獎勵計劃（實驗階段）": "Programme de récompenses sponsorisées (phase pilote)",
+  "本計劃目前為實驗階段：獎勵內容、達標條件與發放方式可能隨時調整或停止，不構成任何契約或承諾；獎勵由贊助者自願提供，經文雨保留審核、調整與最終解釋的權利。": "Ce programme est en phase pilote : les récompenses, les paliers et les modalités de remise peuvent changer ou cesser à tout moment et ne constituent ni contrat ni promesse ; les récompenses sont offertes volontairement par les sponsors, et VerseRain se réserve le droit d’examiner, d’ajuster et de trancher en dernier ressort.",
 };
 
 export const ru = {
@@ -16300,6 +16330,8 @@ export const ru = {
   "{place}，{date}，兌換券已作廢，收回 {bonus} 點": "{place}, {date}: купон аннулирован, {bonus} баллов возвращено",
   "推薦商家登記到地圖上，之後每筆核銷你都會獲得顧客所用點數的 2.5%。": "Порекомендуйте магазин на карту и получайте 2,5 % от баллов, которые там тратит каждый клиент.",
   "{place}：{who} 使用 {points} 點，因此你也獲得 {bonus} 點 🎉": "{place}: {who} использовал(а) {points} баллов, поэтому вы тоже получили {bonus} баллов 🎉",
+  "贊助獎勵計劃（實驗階段）": "Программа спонсорских наград (пилотный этап)",
+  "本計劃目前為實驗階段：獎勵內容、達標條件與發放方式可能隨時調整或停止，不構成任何契約或承諾；獎勵由贊助者自願提供，經文雨保留審核、調整與最終解釋的權利。": "Программа находится на пилотном этапе: награды, условия достижения и порядок выдачи могут измениться или прекратиться в любой момент и не являются договором или обещанием; награды предоставляются спонсорами добровольно, и VerseRain оставляет за собой право проверки, корректировки и окончательного решения.",
 };
 
 export const hi = {
@@ -17003,6 +17035,8 @@ export const hi = {
   "{place}，{date}，兌換券已作廢，收回 {bonus} 點": "{place}, {date}: वाउचर रद्द, {bonus} अंक वापस लिए गए",
   "推薦商家登記到地圖上，之後每筆核銷你都會獲得顧客所用點數的 2.5%。": "किसी दुकान को मानचित्र पर रेफ़र करें और वहाँ हर ग्राहक द्वारा खर्च किए गए अंकों का 2.5% पाएँ।",
   "{place}：{who} 使用 {points} 點，因此你也獲得 {bonus} 點 🎉": "{place}: {who} ने {points} अंक उपयोग किए, इसलिए आपको भी {bonus} अंक मिले 🎉",
+  "贊助獎勵計劃（實驗階段）": "प्रायोजित इनाम कार्यक्रम (परीक्षण चरण)",
+  "本計劃目前為實驗階段：獎勵內容、達標條件與發放方式可能隨時調整或停止，不構成任何契約或承諾；獎勵由贊助者自願提供，經文雨保留審核、調整與最終解釋的權利。": "यह कार्यक्रम अभी परीक्षण चरण में है: इनाम, लक्ष्य की शर्तें और वितरण का तरीका कभी भी बदल या बंद हो सकता है और यह कोई अनुबंध या वादा नहीं है; इनाम प्रायोजक स्वेच्छा से देते हैं, और VerseRain समीक्षा, समायोजन और अंतिम निर्णय का अधिकार सुरक्षित रखता है।",
 };
 
 // Khmer (Cambodian) — full UI coverage, machine-translated in bulk from the
@@ -18336,6 +18370,8 @@ export const km = {
   "{place}，{date}，兌換券已作廢，收回 {bonus} 點": "{place}, {date}៖ ប័ណ្ណត្រូវបានលុបចោល ដកវិញ {bonus} ពិន្ទុ",
   "推薦商家登記到地圖上，之後每筆核銷你都會獲得顧客所用點數的 2.5%。": "ណែនាំហាងមួយទៅផែនទី ហើយទទួលបាន 2.5% នៃពិន្ទុដែលអតិថិជនម្នាក់ៗចំណាយនៅទីនោះ។",
   "{place}：{who} 使用 {points} 點，因此你也獲得 {bonus} 點 🎉": "{place}៖ {who} បានប្រើ {points} ពិន្ទុ ដូច្នេះអ្នកក៏ទទួលបាន {bonus} ពិន្ទុដែរ 🎉",
+  "贊助獎勵計劃（實驗階段）": "កម្មវិធីរង្វាន់ឧបត្ថម្ភ (ដំណាក់កាលសាកល្បង)",
+  "本計劃目前為實驗階段：獎勵內容、達標條件與發放方式可能隨時調整或停止，不構成任何契約或承諾；獎勵由贊助者自願提供，經文雨保留審核、調整與最終解釋的權利。": "កម្មវិធីនេះស្ថិតក្នុងដំណាក់កាលសាកល្បង៖ រង្វាន់ លក្ខខណ្ឌសម្រេចគោលដៅ និងរបៀបផ្តល់ អាចផ្លាស់ប្តូរ ឬបញ្ឈប់បានគ្រប់ពេល ហើយមិនបង្កើតជាកិច្ចសន្យា ឬការសន្យាណាមួយឡើយ; រង្វាន់ត្រូវបានផ្តល់ដោយស្ម័គ្រចិត្តពីអ្នកឧបត្ថម្ភ ហើយ VerseRain រក្សាសិទ្ធិក្នុងការពិនិត្យ កែសម្រួល និងសម្រេចចុងក្រោយ។",
 };
 
 const I18N_FILLINS = { he, fa, ar, ja, ko, es, tr, de, my, vi, id, ms, zhcn, pt, fr, ru, hi, km };

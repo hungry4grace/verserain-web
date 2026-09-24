@@ -25832,7 +25832,7 @@ const deDict = {
                     verserain
                   </div>
                   <div className="app-brand-version" style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', marginTop: '4px', marginLeft: '2px' }}>
-                    v4.0.73
+                    v4.0.74
                   </div>
                 </div>
                 <div ref={langPickerRef} className="app-lang-control" style={{ position: 'relative' }}>
@@ -26473,7 +26473,7 @@ const deDict = {
                       { id: 'morningPush', Icon: Mail, label: pushStatus === 'subscribed' ? t('已開啟每日經文推播', 'Daily Verse Push: On') : t('開啟每日經文推播', 'Daily Verse Push'), desc: t('每天上午 7 點手機推播今日經文', 'Get today\'s verse pushed at 7am'), color: '#10b981' },
                       { id: 'about', Icon: Info, label: t('關於我們', 'About'), desc: t('VerseRain 開發資訊', 'Info & Credits'), color: '#14b8a6' },
                       { id: 'feedback', link: `mailto:hungry4grace@gmail.com?subject=${encodeURIComponent('經文雨 意見回饋（VerseRain Feedback）')}`, Icon: Mail, label: t('意見回饋', 'Feedback'), desc: t('聯絡與建議', 'Bugs & Suggestions'), color: '#ec4899' },
-                      { id: 'sponsors', Icon: Gift, label: t('贊助獎勵計劃', 'Sponsored Rewards'), desc: t('通過經文、邀請朋友，贏得禮券', 'Pass verses, invite friends, earn vouchers'), color: '#f59e0b' },
+                      { id: 'sponsors', Icon: Gift, label: t('贊助獎勵計劃（實驗階段）', 'Sponsored Rewards (pilot)'), desc: t('通過經文、邀請朋友，贏得禮券', 'Pass verses, invite friends, earn vouchers'), color: '#f59e0b' },
                       ...(SHOW_DONATE ? [{ id: 'donate', Icon: Heart, label: t('支持經文雨', 'Support VerseRain'), desc: t('小額支持 App 開發與維運', 'Help fund development & hosting'), color: '#ef4444' }] : []),
                       { id: 'sponsor', Icon: Gift, label: t('贊助經文雨', 'Sponsor VerseRain'), desc: t('企業家與教會如何加入推廣讀經', 'How businesses & churches can join'), color: '#7c3aed' },
                       { id: 'merchant', Icon: Store, label: t('登記商家／教會', 'Register a shop / church'), desc: t('在「誰在玩」地圖上標記，提供點數折扣', 'Get on the map and offer a points discount'), color: '#d97706' },
@@ -29229,11 +29229,14 @@ const deDict = {
                 return (
                   <div style={{ backgroundColor: '#fffdf7', borderRadius: '8px', border: '1px solid #fde68a', padding: '1.5rem', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.6rem', marginBottom: '0.8rem' }}>
-                      <h2 style={{ color: '#1e293b', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Gift size={26} /> {t('贊助獎勵計劃', 'Sponsored Rewards')}</h2>
+                      <h2 style={{ color: '#1e293b', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Gift size={26} /> {t('贊助獎勵計劃（實驗階段）', 'Sponsored Rewards (pilot)')}</h2>
                       <button type="button" onClick={() => setMainTab('advanced')} style={{ background: 'transparent', border: '1px solid #cbd5e1', color: '#64748b', borderRadius: '6px', padding: '0.35rem 0.8rem', cursor: 'pointer', fontSize: '0.85rem' }}>← {t('返回', 'Back')}</button>
                     </div>
                     <p style={{ color: '#475569', lineHeight: 1.7, marginTop: 0 }}>
                       {t('企業家與教會贊助的禮券，獎勵認真讀經、背經、並邀請朋友一起來的人。達標由伺服器核算，管理員審核後把電子禮券寄給你。', 'Vouchers funded by entrepreneurs and churches, for those who read, memorise, and bring friends along. Milestones are verified server-side; an admin reviews and sends your e-voucher.')}
+                    </p>
+                    <p data-testid="sponsors-disclaimer" style={{ color: '#64748b', fontSize: '0.8rem', lineHeight: 1.6, marginTop: '-0.4rem', marginBottom: '1rem' }}>
+                      ⚠️ {t('本計劃目前為實驗階段：獎勵內容、達標條件與發放方式可能隨時調整或停止，不構成任何契約或承諾；獎勵由贊助者自願提供，經文雨保留審核、調整與最終解釋的權利。', 'This programme is a pilot: rewards, milestones and fulfilment may change or stop at any time and form no contract or promise; rewards are provided voluntarily by sponsors, and VerseRain reserves the right to review, adjust and make the final decision.')}
                     </p>
 
                     <div style={card}>
