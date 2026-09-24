@@ -2,6 +2,7 @@ import { Redis } from '@upstash/redis';
 import { requireAdmin } from './_lib/admins.js';
 import { partyFetch } from './_lib/party.js';
 import { pushNotify } from './_lib/rewards.js';
+import { notifyAdmins, placeSubmittedMessage } from './_lib/adminNotify.js';
 import {
   listPlaces, getPlace, savePlace, deletePlace, normalizePlaceSubmission, applyAdminAction, publicView,
   countSubmissionsToday, bumpSubmissions, taipeiDay, MAX_SUBMISSIONS_PER_DAY,
@@ -137,6 +138,10 @@ async function register(req, res, redis, body) {
   place.status = 'pending';
   await savePlace(redis, place);
   await bumpSubmissions(redis, email, day);
+  // Tell the admins there is something to review (🔔 inbox + phone push);
+  // before this the only way to notice a new registration was to open the
+  // admin page and look. Best-effort — never fails the registration.
+  try { await notifyAdmins(redis, placeSubmittedMessage(place, identity.playerName || email)); } catch { /* best-effort */ }
   return res.status(200).json({ success: true, place });
 }
 
