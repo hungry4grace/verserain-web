@@ -1,0 +1,8 @@
+{
+  "_comment": "Edit and push this file to run the Upload Psalm narrations workflow. files = Psalm=DriveFileId pairs, comma-separated.",
+  "files": "1=1GuolCi8S9SBqDw5AHdzW-MoxFLaWTq5m",
+  "version": "esv",
+  "narrator": "Melody Hwang",
+  "force": false,
+  "dry_run": true
+}
