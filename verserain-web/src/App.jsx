@@ -9459,6 +9459,13 @@ export default function App() {
     try { localStorage.setItem('verserain_merchant_draft', JSON.stringify(merchantDraft)); } catch { /* ignore */ }
   }, [merchantDraft]);
   const [merchantBusy, setMerchantBusy] = useState(false);
+  // Inline outcome of the last submit (a toast disappears in 3.5 s — too easy
+  // to miss, which is how a registration that bounced on a stale login got
+  // mistaken for a sent one). { type: 'ok'|'error'|'login', text }
+  const [merchantSubmitStatus, setMerchantSubmitStatus] = useState(null);
+  // Set when a submit was blocked for want of a valid login: once the login
+  // modal hands back a fresh sessionKey the form is sent again by itself.
+  const merchantResubmitAtRef = useRef(0);
   const [merchantGeoBusy, setMerchantGeoBusy] = useState(false);
   const [merchantPhotoPreview, setMerchantPhotoPreview] = useState(null);
   const [merchantPhotoBusy, setMerchantPhotoBusy] = useState(false);
@@ -9504,22 +9511,47 @@ export default function App() {
   };
   const submitMerchant = async () => {
     const m = merchantDraft;
+    setMerchantSubmitStatus(null);
     if (!m.name.trim() || !m.address.trim()) { setToast(t('請填寫名稱與地址', 'Name and address are required')); setTimeout(() => setToast(null), 2500); return; }
     if (!Number.isFinite(m.lat) || !Number.isFinite(m.lng)) { setToast(t('請先按「定位」或在地圖上點選位置', 'Locate the address or pick the spot on the map first')); setTimeout(() => setToast(null), 2500); return; }
     if (!m.agree) { setToast(t('請勾選同意條款', 'Please tick the agreement'), 2500); setTimeout(() => setToast(null), 2500); return; }
+    // No valid login on this device (signed in before sessionKeys existed,
+    // or the key was rotated out by logins elsewhere): get one first, then
+    // the effect below sends this same form the moment the key arrives.
+    const needLogin = () => {
+      merchantResubmitAtRef.current = Date.now();
+      setMerchantSubmitStatus({ type: 'login', text: t('需要重新登入才能送出。登入後會自動幫你送出。', 'Please sign in again to submit — it will be sent automatically once you are back.') });
+      setShowLoginModal('login');
+    };
+    if (!sessionKey) { needLogin(); return; }
     setMerchantBusy(true);
     try {
       const { agree, ...place } = m; void agree;
       const res = await fetch('/api/places', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'register', email: userEmail, sessionKey, place }) });
       const d = await res.json().catch(() => ({}));
-      if (d.error === 'session_invalid') { setShowLoginModal('login'); throw new Error(t('為了安全，請重新登入一次；你填的資料已保留，登入後再按一次送出', 'For security, please sign in again — your form is saved, just press submit once more')); }
+      if (d.error === 'session_invalid' || d.error === 'login_required') { needLogin(); return; }
       if (!res.ok || !d.success) throw new Error(d.error === 'daily_limit' ? t('今天已達登記上限（3 筆）', 'Daily registration limit (3) reached') : redeemErrorText(d.error || res.status));
+      setMerchantSubmitStatus({ type: 'ok', text: t('已送出，等待審核。可在下方「我的登記」看到狀態。', 'Submitted and awaiting review — see “My submissions” below.') });
       setToast(t('已送出，管理員審核後就會出現在地圖上 🎉', 'Submitted — it will appear on the map once approved 🎉'));
       setMerchantDraft(newPlaceDraft()); setMerchantPhotoPreview(null); loadMyPlaces();
       try { localStorage.removeItem('verserain_merchant_draft'); } catch { /* ignore */ }
-    } catch (e) { setToast(String(e?.message || e)); }
+    } catch (e) {
+      const text = String(e?.message || e);
+      setMerchantSubmitStatus({ type: 'error', text: t('送出失敗：{error}', 'Submit failed: {error}').replace('{error}', text) });
+      setToast(text);
+    }
     finally { setMerchantBusy(false); setTimeout(() => setToast(null), 3500); }
   };
+  // A fresh sessionKey after a blocked submit → send the kept form now
+  // (within 10 minutes of the block, so a login next week doesn't fire it).
+  useEffect(() => {
+    if (!sessionKey || !merchantResubmitAtRef.current) return undefined;
+    if (Date.now() - merchantResubmitAtRef.current > 10 * 60 * 1000) { merchantResubmitAtRef.current = 0; return undefined; }
+    merchantResubmitAtRef.current = 0;
+    const id = setTimeout(() => submitMerchant(), 0);
+    return () => clearTimeout(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sessionKey]);
 
   // ── 管理員：地圖標記審核與兌換券 ────────────────────────────────────
   const [placesAdmin, setPlacesAdmin] = useState(null);
@@ -25710,7 +25742,7 @@ const deDict = {
                     verserain
                   </div>
                   <div className="app-brand-version" style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', marginTop: '4px', marginLeft: '2px' }}>
-                    v4.0.69
+                    v4.0.70
                   </div>
                 </div>
                 <div ref={langPickerRef} className="app-lang-control" style={{ position: 'relative' }}>
@@ -29642,6 +29674,14 @@ const deDict = {
                             <span>{t('我確認以上資料屬實並同意公開顯示；商家折扣由商家自行吸收，經文雨不經手款項，並保留審核與下架的權利。', 'I confirm the details are accurate and may be shown publicly; the shop absorbs its own discount, VerseRain never handles money and may review or remove listings.')}</span>
                           </label>
                           <button type="button" disabled={merchantBusy} onClick={submitMerchant} style={{ marginTop: '0.9rem', background: '#d97706', color: '#fff', border: 'none', borderRadius: 10, padding: '0.65rem 1.4rem', cursor: 'pointer', fontWeight: 800, fontSize: '1rem' }}>{merchantBusy ? '…' : t('送出審核', 'Submit for review')}</button>
+                          {merchantSubmitStatus && (
+                            <div role="status" data-status={merchantSubmitStatus.type} style={{ marginTop: '0.7rem', padding: '0.65rem 0.9rem', borderRadius: 10, fontSize: '0.9rem', lineHeight: 1.5,
+                              background: merchantSubmitStatus.type === 'ok' ? '#dcfce7' : merchantSubmitStatus.type === 'login' ? '#fef3c7' : '#fee2e2',
+                              color: merchantSubmitStatus.type === 'ok' ? '#166534' : merchantSubmitStatus.type === 'login' ? '#78350f' : '#991b1b',
+                              border: `1px solid ${merchantSubmitStatus.type === 'ok' ? '#86efac' : merchantSubmitStatus.type === 'login' ? '#fde68a' : '#fecaca'}` }}>
+                              {merchantSubmitStatus.type === 'ok' ? '✅ ' : merchantSubmitStatus.type === 'login' ? '🔐 ' : '⚠️ '}{merchantSubmitStatus.text}
+                            </div>
+                          )}
                         </div>
                         <div style={card}>
                           <h3 style={{ margin: '0 0 0.6rem', color: '#1e293b', fontSize: '1.05rem' }}>📋 {t('我的登記', 'My submissions')}</h3>

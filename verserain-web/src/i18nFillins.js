@@ -962,6 +962,9 @@ export const he = {
   "這不是兌換券的 QR": "זה אינו QR של שובר",
   "{who} 登記了「{name}」（{kind}），等你審核": "{who} רשם/ה את „{name}“ ({kind}) — ממתין לאישורך",
   "去審核": "לבדיקה",
+  "需要重新登入才能送出。登入後會自動幫你送出。": "יש להתחבר שוב כדי לשלוח. לאחר ההתחברות הטופס יישלח אוטומטית.",
+  "已送出，等待審核。可在下方「我的登記」看到狀態。": "נשלח וממתין לאישור. ניתן לראות את המצב ב„ההרשמות שלי“ למטה.",
+  "送出失敗：{error}": "השליחה נכשלה: {error}",
 };
 
 export const fa = {
@@ -1905,6 +1908,9 @@ export const fa = {
   "這不是兌換券的 QR": "این QR کوپن نیست",
   "{who} 登記了「{name}」（{kind}），等你審核": "{who} «{name}» ({kind}) را ثبت کرد — منتظر بررسی شماست",
   "去審核": "بررسی",
+  "需要重新登入才能送出。登入後會自動幫你送出。": "برای ارسال باید دوباره وارد شوید. پس از ورود، به‌طور خودکار ارسال می‌شود.",
+  "已送出，等待審核。可在下方「我的登記」看到狀態。": "ارسال شد و در انتظار بررسی است. وضعیت را در «ثبت‌های من» در پایین ببینید.",
+  "送出失敗：{error}": "ارسال ناموفق بود: {error}",
 };
 
 export const ar = {
@@ -3264,6 +3270,9 @@ export const ar = {
   "這不是兌換券的 QR": "هذا ليس رمز QR لقسيمة",
   "{who} 登記了「{name}」（{kind}），等你審核": "{who} سجّل «{name}» ({kind}) — بانتظار مراجعتك",
   "去審核": "مراجعة",
+  "需要重新登入才能送出。登入後會自動幫你送出。": "يلزم تسجيل الدخول مجددًا للإرسال. سيُرسل تلقائيًا بعد تسجيل الدخول.",
+  "已送出，等待審核。可在下方「我的登記」看到狀態。": "تم الإرسال وبانتظار المراجعة. يمكنك رؤية الحالة في «تسجيلاتي» أدناه.",
+  "送出失敗：{error}": "فشل الإرسال: {error}",
 };
 
 export const ja = {
@@ -4195,6 +4204,9 @@ export const ja = {
   "這不是兌換券的 QR": "これはクーポンの QR ではありません",
   "{who} 登記了「{name}」（{kind}），等你審核": "{who} が「{name}」（{kind}）を登録しました。審査をお願いします",
   "去審核": "審査する",
+  "需要重新登入才能送出。登入後會自動幫你送出。": "送信するには再ログインが必要です。ログイン後に自動で送信されます。",
+  "已送出，等待審核。可在下方「我的登記」看到狀態。": "送信しました。審査待ちです。下の「マイ登録」で状態を確認できます。",
+  "送出失敗：{error}": "送信に失敗しました：{error}",
 };
 
 export const ko = {
@@ -5124,6 +5136,9 @@ export const ko = {
   "這不是兌換券的 QR": "쿠폰 QR이 아닙니다",
   "{who} 登記了「{name}」（{kind}），等你審核": "{who} 님이 「{name}」({kind})을 등록했습니다. 검토가 필요합니다",
   "去審核": "검토하기",
+  "需要重新登入才能送出。登入後會自動幫你送出。": "제출하려면 다시 로그인해야 합니다. 로그인 후 자동으로 제출됩니다.",
+  "已送出，等待審核。可在下方「我的登記」看到狀態。": "제출되었습니다. 검토 대기 중이며 아래 「내 등록」에서 상태를 볼 수 있습니다.",
+  "送出失敗：{error}": "제출 실패: {error}",
 };
 
 export const es = {
@@ -6069,6 +6084,9 @@ export const es = {
   "這不是兌換券的 QR": "Eso no es un QR de cupón",
   "{who} 登記了「{name}」（{kind}），等你審核": "{who} registró «{name}» ({kind}); pendiente de tu revisión",
   "去審核": "Revisar",
+  "需要重新登入才能送出。登入後會自動幫你送出。": "Debes iniciar sesión de nuevo para enviar. Se enviará automáticamente al volver.",
+  "已送出，等待審核。可在下方「我的登記」看到狀態。": "Enviado y pendiente de revisión. Mira el estado en «Mis registros» abajo.",
+  "送出失敗：{error}": "Error al enviar: {error}",
 };
 
 export const tr = {
@@ -7014,6 +7032,9 @@ export const tr = {
   "這不是兌換券的 QR": "Bu bir kupon QR'ı değil",
   "{who} 登記了「{name}」（{kind}），等你審核": "{who}, “{name}” ({kind}) kaydını yaptı; incelemeni bekliyor",
   "去審核": "İncele",
+  "需要重新登入才能送出。登入後會自動幫你送出。": "Göndermek için yeniden giriş yapmalısın. Giriş yapınca otomatik gönderilecek.",
+  "已送出，等待審核。可在下方「我的登記」看到狀態。": "Gönderildi, inceleme bekliyor. Durumu aşağıdaki “Kayıtlarım”da görebilirsin.",
+  "送出失敗：{error}": "Gönderilemedi: {error}",
 };
 
 export const de = {
@@ -7959,6 +7980,9 @@ export const de = {
   "這不是兌換券的 QR": "Das ist kein Gutschein-QR",
   "{who} 登記了「{name}」（{kind}），等你審核": "{who} hat „{name}“ ({kind}) eingetragen – wartet auf deine Prüfung",
   "去審核": "Prüfen",
+  "需要重新登入才能送出。登入後會自動幫你送出。": "Zum Absenden bitte erneut anmelden. Danach wird es automatisch gesendet.",
+  "已送出，等待審核。可在下方「我的登記」看到狀態。": "Gesendet, wartet auf Prüfung. Den Status siehst du unten unter „Meine Einträge“.",
+  "送出失敗：{error}": "Senden fehlgeschlagen: {error}",
 };
 
 export const my = {
@@ -8904,6 +8928,9 @@ export const my = {
   "這不是兌換券的 QR": "ဤသည် ကူပွန် QR မဟုတ်ပါ",
   "{who} 登記了「{name}」（{kind}），等你審核": "{who} သည် 「{name}」 ({kind}) ကို မှတ်ပုံတင်ခဲ့သည် — သင့်စိစစ်မှုကို စောင့်နေသည်",
   "去審核": "စိစစ်ရန်",
+  "需要重新登入才能送出。登入後會自動幫你送出。": "တင်သွင်းရန် ပြန်လည်ဝင်ရောက်ရပါမည်။ ဝင်ပြီးနောက် အလိုအလျောက် တင်သွင်းပေးပါမည်။",
+  "已送出，等待審核。可在下方「我的登記」看到狀態。": "တင်သွင်းပြီး၊ စိစစ်မှုကို စောင့်နေသည်။ အောက်ရှိ 「ကျွန်ုပ်၏ မှတ်ပုံတင်များ」 တွင် အခြေအနေကို ကြည့်နိုင်သည်။",
+  "送出失敗：{error}": "တင်သွင်းမှု မအောင်မြင်ပါ: {error}",
 };
 
 export const vi = {
@@ -9849,6 +9876,9 @@ export const vi = {
   "這不是兌換券的 QR": "Đây không phải mã QR của phiếu",
   "{who} 登記了「{name}」（{kind}），等你審核": "{who} đã đăng ký “{name}” ({kind}) — đang chờ bạn duyệt",
   "去審核": "Duyệt",
+  "需要重新登入才能送出。登入後會自動幫你送出。": "Cần đăng nhập lại để gửi. Sau khi đăng nhập sẽ tự động gửi.",
+  "已送出，等待審核。可在下方「我的登記」看到狀態。": "Đã gửi, đang chờ duyệt. Xem trạng thái ở “Đăng ký của tôi” bên dưới.",
+  "送出失敗：{error}": "Gửi thất bại: {error}",
 };
 
 export const id = {
@@ -11023,6 +11053,9 @@ export const id = {
   "這不是兌換券的 QR": "Ini bukan QR voucher",
   "{who} 登記了「{name}」（{kind}），等你審核": "{who} mendaftarkan “{name}” ({kind}) — menunggu tinjauanmu",
   "去審核": "Tinjau",
+  "需要重新登入才能送出。登入後會自動幫你送出。": "Masuk lagi untuk mengirim. Setelah masuk, formulir dikirim otomatis.",
+  "已送出，等待審核。可在下方「我的登記」看到狀態。": "Terkirim, menunggu tinjauan. Lihat statusnya di “Pendaftaran saya” di bawah.",
+  "送出失敗：{error}": "Gagal mengirim: {error}",
 };
 
 export const ms = {
@@ -12400,6 +12433,9 @@ export const ms = {
   "這不是兌換券的 QR": "Ini bukan QR baucar",
   "{who} 登記了「{name}」（{kind}），等你審核": "{who} mendaftarkan “{name}” ({kind}) — menunggu semakan anda",
   "去審核": "Semak",
+  "需要重新登入才能送出。登入後會自動幫你送出。": "Log masuk semula untuk menghantar. Selepas log masuk, ia dihantar secara automatik.",
+  "已送出，等待審核。可在下方「我的登記」看到狀態。": "Dihantar, menunggu semakan. Lihat status di “Pendaftaran saya” di bawah.",
+  "送出失敗：{error}": "Gagal menghantar: {error}",
 };
 
 export const zhcn = {
@@ -13697,6 +13733,9 @@ export const zhcn = {
   "這不是兌換券的 QR": "这不是兑换券的 QR",
   "{who} 登記了「{name}」（{kind}），等你審核": "{who} 登记了「{name}」（{kind}），等你审核",
   "去審核": "去审核",
+  "需要重新登入才能送出。登入後會自動幫你送出。": "需要重新登录才能送出。登录后会自动帮你送出。",
+  "已送出，等待審核。可在下方「我的登記」看到狀態。": "已送出，等待审核。可在下方「我的登记」看到状态。",
+  "送出失敗：{error}": "送出失败：{error}",
 };
 
 export const pt = {
@@ -14362,6 +14401,9 @@ export const pt = {
   "這不是兌換券的 QR": "Isto não é um QR de voucher",
   "{who} 登記了「{name}」（{kind}），等你審核": "{who} registou “{name}” ({kind}) — aguarda a sua revisão",
   "去審核": "Rever",
+  "需要重新登入才能送出。登入後會自動幫你送出。": "É preciso iniciar sessão de novo para enviar. Depois será enviado automaticamente.",
+  "已送出，等待審核。可在下方「我的登記」看到狀態。": "Enviado, a aguardar revisão. Veja o estado em “Os meus registos” abaixo.",
+  "送出失敗：{error}": "Falha ao enviar: {error}",
 };
 
 export const fr = {
@@ -15027,6 +15069,9 @@ export const fr = {
   "這不是兌換券的 QR": "Ce n’est pas le QR d’un bon",
   "{who} 登記了「{name}」（{kind}），等你審核": "{who} a enregistré « {name} » ({kind}) — en attente de votre validation",
   "去審核": "Vérifier",
+  "需要重新登入才能送出。登入後會自動幫你送出。": "Reconnectez-vous pour envoyer. L’envoi se fera automatiquement ensuite.",
+  "已送出，等待審核。可在下方「我的登記」看到狀態。": "Envoyé, en attente de validation. Voir l’état dans « Mes inscriptions » ci-dessous.",
+  "送出失敗：{error}": "Échec de l’envoi : {error}",
 };
 
 export const ru = {
@@ -15692,6 +15737,9 @@ export const ru = {
   "這不是兌換券的 QR": "Это не QR купона",
   "{who} 登記了「{name}」（{kind}），等你審核": "{who} зарегистрировал(а) «{name}» ({kind}) — ждёт вашей проверки",
   "去審核": "Проверить",
+  "需要重新登入才能送出。登入後會自動幫你送出。": "Чтобы отправить, войдите снова. После входа форма отправится автоматически.",
+  "已送出，等待審核。可在下方「我的登記」看到狀態。": "Отправлено, ожидает проверки. Статус — в разделе «Мои заявки» ниже.",
+  "送出失敗：{error}": "Не удалось отправить: {error}",
 };
 
 export const hi = {
@@ -16357,6 +16405,9 @@ export const hi = {
   "這不是兌換券的 QR": "यह कूपन का QR नहीं है",
   "{who} 登記了「{name}」（{kind}），等你審核": "{who} ने “{name}” ({kind}) पंजीकृत किया — आपकी समीक्षा की प्रतीक्षा में",
   "去審核": "समीक्षा करें",
+  "需要重新登入才能送出。登入後會自動幫你送出。": "भेजने के लिए फिर से साइन इन करें। साइन इन के बाद यह अपने‑आप भेज दिया जाएगा।",
+  "已送出，等待審核。可在下方「我的登記」看到狀態。": "भेज दिया गया, समीक्षा की प्रतीक्षा में। स्थिति नीचे “मेरे पंजीकरण” में देखें।",
+  "送出失敗：{error}": "भेजना विफल: {error}",
 };
 
 // Khmer (Cambodian) — full UI coverage, machine-translated in bulk from the
@@ -17652,6 +17703,9 @@ export const km = {
   "這不是兌換券的 QR": "នេះមិនមែនជា QR ប័ណ្ណទេ",
   "{who} 登記了「{name}」（{kind}），等你審核": "{who} បានចុះឈ្មោះ “{name}” ({kind}) — រង់ចាំការពិនិត្យរបស់អ្នក",
   "去審核": "ពិនិត្យ",
+  "需要重新登入才能送出。登入後會自動幫你送出。": "ត្រូវចូលគណនីម្ដងទៀតដើម្បីផ្ញើ។ បន្ទាប់ពីចូល វានឹងផ្ញើដោយស្វ័យប្រវត្តិ។",
+  "已送出，等待審核。可在下方「我的登記」看到狀態。": "បានផ្ញើ កំពុងរង់ចាំការពិនិត្យ។ មើលស្ថានភាពនៅ “ការចុះឈ្មោះរបស់ខ្ញុំ” ខាងក្រោម។",
+  "送出失敗：{error}": "ផ្ញើបរាជ័យ៖ {error}",
 };
 
 const I18N_FILLINS = { he, fa, ar, ja, ko, es, tr, de, my, vi, id, ms, zhcn, pt, fr, ru, hi, km };
