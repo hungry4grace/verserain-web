@@ -120,15 +120,30 @@ jobs:
             echo "Selected: $FILES"
             [ -n "$FILES" ] || { echo "No matching Psalm files found in the folder"; exit 1; }
           fi
+          # Drive throttles bursts of downloads ("many accesses"): retry each
+          # file with growing pauses and keep going; failures are listed at the
+          # end so a re-run (which skips what is already uploaded) can pick
+          # them up.
           IFS=',' read -ra PAIRS <<< "$FILES"
+          failed=""
           for pair in "${PAIRS[@]}"; do
             pair="$(echo "$pair" | tr -d '[:space:]')"
             [ -z "$pair" ] && continue
             n="${pair%%=*}"; id="${pair#*=}"
+            out="psalms/Bible_19_Psalms_${n}.wav"
             echo "Psalm $n ← $id"
-            gdown "$id" -O "psalms/Bible_19_Psalms_${n}.wav"
+            ok=0
+            for attempt in 1 2 3 4 5 6; do
+              if gdown --quiet "$id" -O "$out" && [ -s "$out" ]; then ok=1; break; fi
+              rm -f "$out"
+              echo "  attempt $attempt failed for Psalm $n — waiting $((attempt * 45))s"
+              sleep $((attempt * 45))
+            done
+            if [ "$ok" = 1 ]; then echo "  ok ($(du -h "$out" | cut -f1))"; else failed="$failed $n"; fi
+            sleep 2
           done
-          ls -la psalms
+          echo "downloaded: $(ls psalms | wc -l) files"
+          echo "download failures:${failed:- none}"
 
       - name: Upload to PartyKit
         working-directory: verserain-web
