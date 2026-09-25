@@ -9349,6 +9349,7 @@ export default function App() {
     contrib_invalid: t('請以 1,000 點為單位投入', 'Contribute in steps of 1,000 pts'),
     merchant_not_in_pool: t('這家商家尚未參與此折抵池', 'This shop has not joined the pool'),
     pool_exists: t('這個教會／機構已經有折抵池了', 'This church / organisation already has a pool'),
+    pool_limit: t('這個標記進行中的愛心折抵池已達上限（5 個）', 'This marker already runs the maximum of 5 open charity pools'),
     org_place_invalid: t('只有已上地圖的教會／機構可以建立折抵池', 'Only a church or organisation already on the map can create a pool'),
     consent_required: t('請先勾選同意條款', 'Please tick the terms first'),
     caps_invalid: t('上限需為整數：單筆 1–2,000、每月 1–10,000', 'Caps must be whole numbers: 1–2,000 per order and 1–10,000 per month'),
@@ -26078,7 +26079,7 @@ const deDict = {
                     verserain
                   </div>
                   <div className="app-brand-version" style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', marginTop: '4px', marginLeft: '2px' }}>
-                    v4.0.82
+                    v4.0.83
                   </div>
                 </div>
                 <div ref={langPickerRef} className="app-lang-control" style={{ position: 'relative' }}>
@@ -29912,8 +29913,9 @@ const deDict = {
                 const pools = charityPools?.pools || [];
                 const mine = charityMine && !charityMine.error ? charityMine : null;
                 const owned = mine?.owned || [];
-                const ownedPlaceIds = new Set(owned.map(p => p.orgPlaceId));
-                const eligibleOrgPlaces = (myPlaces || []).filter(pl => ['church', 'org'].includes(pl.kind) && pl.status === 'approved' && !ownedPlaceIds.has(pl.id));
+                // A marker may run several pools (one per project), so every approved church / org is offered.
+                const eligibleOrgPlaces = (myPlaces || []).filter(pl => ['church', 'org'].includes(pl.kind) && pl.status === 'approved');
+                const focusOrg = (pools.find(p => p.id === charityFocus) || {}).orgPlaceId || '';
                 const bar = (value, max) => (
                   <div style={{ background: '#fee2e2', borderRadius: 999, height: 8, overflow: 'hidden' }}><div style={{ width: `${max > 0 ? Math.min(100, Math.round(value / max * 100)) : 0}%`, background: '#e11d48', height: '100%' }} /></div>
                 );
@@ -29942,7 +29944,7 @@ const deDict = {
                         <div style={{ color: '#94a3b8', fontSize: '0.9rem' }}>{t('目前還沒有開放中的愛心折抵池。已上地圖的教會或機構可以在下方建立。', 'No charity pool is open yet. A church or organisation already on the map can create one below.')}</div>
                       ) : (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
-                          {pools.map(p => { const focus = p.id === charityFocus; return (
+                          {pools.map(p => { const focus = p.id === charityFocus || (!!focusOrg && p.orgPlaceId === focusOrg); return (
                             <div key={p.id} id={`pool-${p.id}`} data-testid="pool-card" style={{ border: focus ? '2px solid #e11d48' : '1px solid #fecdd3', background: '#fff', borderRadius: 10, padding: '0.8rem 1rem' }}>
                               <div style={{ display: 'flex', justifyContent: 'space-between', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'baseline' }}>
                                 <b style={{ color: '#1e293b', fontSize: '1.02rem' }}>❤️ {p.name}</b>
@@ -30048,6 +30050,7 @@ const deDict = {
                           <option value="">{t('請選擇', 'Choose')}</option>
                           {eligibleOrgPlaces.map(pl => <option key={pl.id} value={pl.id}>{pl.name}</option>)}
                         </select>
+                        <div style={{ color: '#94a3b8', fontSize: '0.78rem', marginTop: 4 }}>{t('同一個教會／機構可以建立多個活動（最多 5 個進行中），各自有自己的額度與商家。', 'One church / organisation can run several projects (up to 5 open at once), each with its own allowance and shops.')}</div>
                         <label style={label}>{t('專案名稱', 'Project name')}</label>
                         <input type="text" maxLength={60} value={poolCreateDraft.name} onChange={e => setPoolCreateDraft(d => ({ ...d, name: e.target.value }))} placeholder={t('例如：偏鄉長輩愛筵池', 'e.g. Rural elders’ love-feast pool')} style={field} />
                         <label style={label}>{t('用途說明', 'What it is for')}</label>

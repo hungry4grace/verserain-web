@@ -169,12 +169,18 @@ async function verifyOwner(res, redis, body) {
 
 const whoIs = (identity, email) => identity.playerName || email;
 
-// { orgPlaceId → { id, name } } for the approved charity pools; fails soft so the
+// { orgPlaceId → { id, name, count } } for the approved charity pools; fails soft so the
 // map never goes blank because of the pools table.
 async function approvedPoolsByPlace(redis) {
   try {
     const out = {};
-    for (const p of await listPools(redis)) if (p.status === 'approved' && p.orgPlaceId) out[p.orgPlaceId] = { id: p.id, name: p.name };
+    // listPools is newest first: the first approved pool of a marker is the
+    // one the popup names; poolCount says how many activities the marker runs.
+    for (const p of await listPools(redis)) {
+      if (p.status !== 'approved' || !p.orgPlaceId) continue;
+      if (!out[p.orgPlaceId]) out[p.orgPlaceId] = { id: p.id, name: p.name, count: 0 };
+      out[p.orgPlaceId].count += 1;
+    }
     return out;
   } catch { return {}; }
 }

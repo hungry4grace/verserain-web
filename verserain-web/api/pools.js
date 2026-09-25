@@ -8,7 +8,7 @@ import { notifyAdmins, poolSubmittedMessage } from './_lib/adminNotify.js';
 import { getPlace, listPlaces } from './_lib/places.js';
 import { clientIp, ipRateLimit, readBalance, publicVoucher, maskName, LEADERBOARD_KEY, taipeiDay } from './_lib/points.js';
 import {
-  PoolError, listPools, getPool, savePool, findPoolByOrgPlace, normalizePoolSubmission, applyPoolAdminAction,
+  PoolError, listPools, getPool, savePool, openPoolsForPlace, MAX_OPEN_POOLS_PER_PLACE, normalizePoolSubmission, applyPoolAdminAction,
   applyMerchantJoin, applyMerchantLeave, contribute, issuePoolVoucher, poolCounters, poolMerchantMonthUsed,
   listContributionsForPool, listContributionsForEmail, listVouchersForPool, summarizePoolVouchers,
   publicPool, publicPools, ownerPoolView, publicContribution, countPoolCreatesToday, bumpPoolCreates, MAX_POOL_CREATES_PER_DAY,
@@ -35,7 +35,7 @@ const ERROR_STATUS = {
   pool_unavailable: 404, not_found: 404, place_unavailable: 404, place_not_found: 404,
   contrib_invalid: 400, bill_invalid: 400, too_small: 400, caps_invalid: 400, consent_required: 400,
   org_place_invalid: 400, invalid_state: 400, insufficient_balance: 400, name_required: 400,
-  merchant_not_in_pool: 409, pool_exists: 409, open_voucher_exists: 409,
+  merchant_not_in_pool: 409, pool_exists: 409, pool_limit: 409, open_voucher_exists: 409,
   daily_cap: 429, daily_limit: 429, rate_limited: 429,
 };
 
@@ -190,7 +190,7 @@ async function createByOwner(req, res, redis, body, now) {
   if (input.agree !== true) throw new PoolError('consent_required');
   const orgPlace = await getPlace(redis, String(input.orgPlaceId || '').trim());
   if (!orgPlace || String(orgPlace.ownerEmail || '').toLowerCase() !== email) throw new PoolError('org_place_invalid');
-  if (findPoolByOrgPlace(await listPools(redis), orgPlace.id)) throw new PoolError('pool_exists');
+  if (openPoolsForPlace(await listPools(redis), orgPlace.id).length >= MAX_OPEN_POOLS_PER_PLACE) throw new PoolError('pool_limit', { limit: MAX_OPEN_POOLS_PER_PLACE });
   const day = taipeiDay(now);
   if ((await countPoolCreatesToday(redis, email, day)) >= MAX_POOL_CREATES_PER_DAY) return res.status(429).json({ error: 'daily_limit' });
   let pool;
@@ -216,7 +216,7 @@ async function adminAction(req, res, redis, body, action, now) {
     const input = body.pool || {};
     const orgPlace = await getPlace(redis, String(input.orgPlaceId || '').trim());
     if (!orgPlace) throw new PoolError('org_place_invalid');
-    if (findPoolByOrgPlace(await listPools(redis), orgPlace.id)) throw new PoolError('pool_exists');
+    if (openPoolsForPlace(await listPools(redis), orgPlace.id).length >= MAX_OPEN_POOLS_PER_PLACE) throw new PoolError('pool_limit', { limit: MAX_OPEN_POOLS_PER_PLACE });
     try {
       pool = normalizePoolSubmission(input, { orgPlace, ownerEmail: orgPlace.ownerEmail || adminEmail, ownerCode: orgPlace.ownerCode || '', now });
     } catch (e) {

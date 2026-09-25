@@ -1092,6 +1092,10 @@ export const he = {
   "累計投入 {p} 點 → 折抵額度 NT${n}": "סה\"כ הופקדו {p} נקודות → מסגרת NT${n}",
   "還沒有投入過。到「愛心折抵池」看看有哪些專案。": "עדיין אין הפקדות. ראו במאגרי החסד אילו פרויקטים אפשר לתמוך.",
   "加 ❤️ = 有愛心折抵池，可投入點數": "+ ❤️ = יש מאגר חסד, אפשר להפקיד כאן",
+  "{n} 個愛心折抵池": "{n} מאגרי חסד",
+  "同一個教會／機構可以建立多個活動（最多 5 個進行中），各自有自己的額度與商家。": "קהילה / ארגון יכולים להפעיל כמה פרויקטים (עד 5 פתוחים בו־זמנית), לכל אחד מסגרת וחנויות משלו.",
+  "看看這裡的愛心折抵池": "ראו את מאגרי החסד כאן",
+  "這個標記進行中的愛心折抵池已達上限（5 個）": "לסמן הזה כבר יש 5 מאגרי חסד פתוחים, המקסימום",
 };
 
 export const fa = {
@@ -2165,6 +2169,10 @@ export const fa = {
   "累計投入 {p} 點 → 折抵額度 NT${n}": "در مجموع {p} امتیاز مشارکت → اعتبار NT${n}",
   "還沒有投入過。到「愛心折抵池」看看有哪些專案。": "هنوز مشارکتی نکرده‌اید. در صندوق‌های نیکوکاری ببینید چه پروژه‌هایی هست.",
   "加 ❤️ = 有愛心折抵池，可投入點數": "+ ❤️ = صندوق نیکوکاری دارد، اینجا مشارکت کنید",
+  "{n} 個愛心折抵池": "{n} صندوق نیکوکاری",
+  "同一個教會／機構可以建立多個活動（最多 5 個進行中），各自有自己的額度與商家。": "یک کلیسا / سازمان می‌تواند چند پروژه داشته باشد (حداکثر ۵ باز هم‌زمان)، هر یک با اعتبار و فروشگاه‌های خودش.",
+  "看看這裡的愛心折抵池": "صندوق‌های نیکوکاری اینجا را ببینید",
+  "這個標記進行中的愛心折抵池已達上限（5 個）": "این نشانگر به سقف ۵ صندوق نیکوکاری باز رسیده است",
 };
 
 export const ar = {
@@ -3654,6 +3662,10 @@ export const ar = {
   "累計投入 {p} 點 → 折抵額度 NT${n}": "إجمالي المساهمات {p} نقطة → رصيد NT${n}",
   "還沒有投入過。到「愛心折抵池」看看有哪些專案。": "لا مساهمات بعد. تصفح صناديق المحبة لترى المشاريع المتاحة.",
   "加 ❤️ = 有愛心折抵池，可投入點數": "+ ❤️ = لديه صندوق محبة، ساهم هنا",
+  "{n} 個愛心折抵池": "{n} صناديق محبة",
+  "同一個教會／機構可以建立多個活動（最多 5 個進行中），各自有自己的額度與商家。": "يمكن للكنيسة / المؤسسة تشغيل عدة مشاريع (حتى 5 مفتوحة في آن واحد)، لكل منها رصيده ومتاجره.",
+  "看看這裡的愛心折抵池": "تصفح صناديق المحبة هنا",
+  "這個標記進行中的愛心折抵池已達上限（5 個）": "بلغت هذه العلامة الحد الأقصى وهو 5 صناديق محبة مفتوحة",
 };
 
 export const ja = {
@@ -4715,6 +4727,10 @@ export const ja = {
   "累計投入 {p} 點 → 折抵額度 NT${n}": "累計投入 {p}ポイント → 割引枠 NT${n}",
   "還沒有投入過。到「愛心折抵池」看看有哪些專案。": "まだ投入していません。愛のプールでプロジェクトを見てみましょう。",
   "加 ❤️ = 有愛心折抵池，可投入點數": "+ ❤️ = 愛のプールあり、ここで投入できます",
+  "{n} 個愛心折抵池": "愛のプール{n}件",
+  "同一個教會／機構可以建立多個活動（最多 5 個進行中），各自有自己的額度與商家。": "同じ教会・団体は複数のプロジェクト（同時に最大5件）を運営でき、それぞれに独自の枠と店舗があります。",
+  "看看這裡的愛心折抵池": "ここの愛のプールを見る",
+  "這個標記進行中的愛心折抵池已達上限（5 個）": "このマーカーはすでに上限の5件の愛のプールを運営中です",
 };
 
 export const ko = {
@@ -5774,6 +5790,10 @@ export const ko = {
   "累計投入 {p} 點 → 折抵額度 NT${n}": "누적 투입 {p}포인트 → 할인 한도 NT${n}",
   "還沒有投入過。到「愛心折抵池」看看有哪些專案。": "아직 투입한 적이 없습니다. 사랑 나눔 풀에서 프로젝트를 살펴보세요.",
   "加 ❤️ = 有愛心折抵池，可投入點數": "+ ❤️ = 사랑 나눔 풀 있음, 여기서 투입 가능",
+  "{n} 個愛心折抵池": "사랑 나눔 풀 {n}개",
+  "同一個教會／機構可以建立多個活動（最多 5 個進行中），各自有自己的額度與商家。": "같은 교회/단체가 여러 프로젝트(동시에 최대 5개)를 운영할 수 있으며, 각각 별도의 한도와 가게를 가집니다.",
+  "看看這裡的愛心折抵池": "이곳의 사랑 나눔 풀 보기",
+  "這個標記進行中的愛心折抵池已達上限（5 個）": "이 마커는 이미 최대 5개의 사랑 나눔 풀을 운영 중입니다",
 };
 
 export const es = {
@@ -6849,6 +6869,10 @@ export const es = {
   "累計投入 {p} 點 → 折抵額度 NT${n}": "{p} pts aportados en total → NT${n} de saldo",
   "還沒有投入過。到「愛心折抵池」看看有哪些專案。": "Todavía no has aportado. Mira los fondos solidarios para ver qué proyectos apoyar.",
   "加 ❤️ = 有愛心折抵池，可投入點數": "+ ❤️ = tiene fondo solidario, aporta aquí",
+  "{n} 個愛心折抵池": "{n} fondos solidarios",
+  "同一個教會／機構可以建立多個活動（最多 5 個進行中），各自有自己的額度與商家。": "Una misma iglesia / organización puede tener varios proyectos (hasta 5 abiertos a la vez), cada uno con su propio saldo y comercios.",
+  "看看這裡的愛心折抵池": "Ver los fondos solidarios de aquí",
+  "這個標記進行中的愛心折抵池已達上限（5 個）": "Este marcador ya tiene el máximo de 5 fondos solidarios abiertos",
 };
 
 export const tr = {
@@ -7924,6 +7948,10 @@ export const tr = {
   "累計投入 {p} 點 → 折抵額度 NT${n}": "Toplam {p} puan katkı → NT${n} bakiye",
   "還沒有投入過。到「愛心折抵池」看看有哪些專案。": "Henüz katkı yok. Desteklenecek projeler için yardım havuzlarına bakın.",
   "加 ❤️ = 有愛心折抵池，可投入點數": "+ ❤️ = yardım havuzu var, buradan katkı yapın",
+  "{n} 個愛心折抵池": "{n} yardım havuzu",
+  "同一個教會／機構可以建立多個活動（最多 5 個進行中），各自有自己的額度與商家。": "Aynı kilise / kuruluş birden fazla proje yürütebilir (aynı anda en fazla 5 açık), her birinin kendi bakiyesi ve işletmeleri vardır.",
+  "看看這裡的愛心折抵池": "Buradaki yardım havuzlarını gör",
+  "這個標記進行中的愛心折抵池已達上限（5 個）": "Bu işaret zaten en fazla 5 açık yardım havuzu yürütüyor",
 };
 
 export const de = {
@@ -8999,6 +9027,10 @@ export const de = {
   "累計投入 {p} 點 → 折抵額度 NT${n}": "Insgesamt {p} Punkte beigetragen → NT${n} Guthaben",
   "還沒有投入過。到「愛心折抵池」看看有哪些專案。": "Noch keine Beiträge. Sieh dir die Spendenpools an, um Projekte zu unterstützen.",
   "加 ❤️ = 有愛心折抵池，可投入點數": "+ ❤️ = hat einen Spendenpool, hier beitragen",
+  "{n} 個愛心折抵池": "{n} Spendenpools",
+  "同一個教會／機構可以建立多個活動（最多 5 個進行中），各自有自己的額度與商家。": "Eine Kirche / Organisation kann mehrere Projekte führen (bis zu 5 gleichzeitig offen), jedes mit eigenem Guthaben und eigenen Läden.",
+  "看看這裡的愛心折抵池": "Spendenpools hier ansehen",
+  "這個標記進行中的愛心折抵池已達上限（5 個）": "Diese Markierung führt bereits die maximal 5 offenen Spendenpools",
 };
 
 export const my = {
@@ -10074,6 +10106,10 @@ export const my = {
   "累計投入 {p} 點 → 折抵額度 NT${n}": "စုစုပေါင်း ထည့်ဝင် {p} အမှတ် → အခွင့်အရေး NT${n}",
   "還沒有投入過。到「愛心折抵池」看看有哪些專案。": "ထည့်ဝင်မှု မရှိသေးပါ။ မေတ္တာရန်ပုံငွေများတွင် စီမံကိန်းများကို ကြည့်ပါ။",
   "加 ❤️ = 有愛心折抵池，可投入點數": "+ ❤️ = မေတ္တာရန်ပုံငွေ ရှိသည်၊ ဤနေရာတွင် ထည့်ဝင်နိုင်သည်",
+  "{n} 個愛心折抵池": "မေတ္တာရန်ပုံငွေ {n} ခု",
+  "同一個教會／機構可以建立多個活動（最多 5 個進行中），各自有自己的額度與商家。": "အသင်းတော်/အဖွဲ့အစည်းတစ်ခုသည် စီမံကိန်းများစွာ (တစ်ပြိုင်နက် အများဆုံး ၅ ခု) လုပ်ဆောင်နိုင်ပြီး တစ်ခုစီတွင် ကိုယ်ပိုင်အခွင့်အရေးနှင့် ဆိုင်များရှိသည်။",
+  "看看這裡的愛心折抵池": "ဤနေရာရှိ မေတ္တာရန်ပုံငွေများ ကြည့်ရန်",
+  "這個標記進行中的愛心折抵池已達上限（5 個）": "ဤအမှတ်အသားတွင် ဖွင့်ထားသော မေတ္တာရန်ပုံငွေ အများဆုံး ၅ ခု ရှိပြီးဖြစ်သည်",
 };
 
 export const vi = {
@@ -11149,6 +11185,10 @@ export const vi = {
   "累計投入 {p} 點 → 折抵額度 NT${n}": "Tổng cộng đã góp {p} điểm → hạn mức NT${n}",
   "還沒有投入過。到「愛心折抵池」看看有哪些專案。": "Chưa góp lần nào. Xem các quỹ yêu thương để tìm dự án muốn ủng hộ.",
   "加 ❤️ = 有愛心折抵池，可投入點數": "+ ❤️ = có quỹ yêu thương, góp điểm tại đây",
+  "{n} 個愛心折抵池": "{n} quỹ yêu thương",
+  "同一個教會／機構可以建立多個活動（最多 5 個進行中），各自有自己的額度與商家。": "Một hội thánh / tổ chức có thể mở nhiều dự án (tối đa 5 quỹ đang mở cùng lúc), mỗi quỹ có hạn mức và cửa hàng riêng.",
+  "看看這裡的愛心折抵池": "Xem các quỹ yêu thương ở đây",
+  "這個標記進行中的愛心折抵池已達上限（5 個）": "Điểm đánh dấu này đã đạt tối đa 5 quỹ yêu thương đang mở",
 };
 
 export const id = {
@@ -12452,6 +12492,10 @@ export const id = {
   "累計投入 {p} 點 → 折抵額度 NT${n}": "Total {p} poin disumbangkan → jatah NT${n}",
   "還沒有投入過。到「愛心折抵池」看看有哪些專案。": "Belum ada kontribusi. Lihat kolam kasih untuk proyek yang bisa didukung.",
   "加 ❤️ = 有愛心折抵池，可投入點數": "+ ❤️ = punya kolam kasih, sumbangkan di sini",
+  "{n} 個愛心折抵池": "{n} kolam kasih",
+  "同一個教會／機構可以建立多個活動（最多 5 個進行中），各自有自己的額度與商家。": "Satu gereja / organisasi dapat menjalankan beberapa proyek (maksimal 5 terbuka sekaligus), masing-masing dengan jatah dan toko sendiri.",
+  "看看這裡的愛心折抵池": "Lihat kolam kasih di sini",
+  "這個標記進行中的愛心折抵池已達上限（5 個）": "Penanda ini sudah menjalankan maksimal 5 kolam kasih yang terbuka",
 };
 
 export const ms = {
@@ -13959,6 +14003,10 @@ export const ms = {
   "累計投入 {p} 點 → 折抵額度 NT${n}": "Jumlah {p} mata disumbang → peruntukan NT${n}",
   "還沒有投入過。到「愛心折抵池」看看有哪些專案。": "Belum ada sumbangan. Lihat kolam kasih untuk projek yang boleh disokong.",
   "加 ❤️ = 有愛心折抵池，可投入點數": "+ ❤️ = ada kolam kasih, sumbang di sini",
+  "{n} 個愛心折抵池": "{n} kolam kasih",
+  "同一個教會／機構可以建立多個活動（最多 5 個進行中），各自有自己的額度與商家。": "Satu gereja / organisasi boleh menjalankan beberapa projek (maksimum 5 dibuka serentak), setiap satu dengan peruntukan dan kedai sendiri.",
+  "看看這裡的愛心折抵池": "Lihat kolam kasih di sini",
+  "這個標記進行中的愛心折抵池已達上限（5 個）": "Penanda ini sudah menjalankan maksimum 5 kolam kasih yang dibuka",
 };
 
 export const zhcn = {
@@ -15386,6 +15434,10 @@ export const zhcn = {
   "累計投入 {p} 點 → 折抵額度 NT${n}": "累计投入 {p} 点 → 折抵额度 NT${n}",
   "還沒有投入過。到「愛心折抵池」看看有哪些專案。": "还没有投入过。到「爱心折抵池」看看有哪些项目。",
   "加 ❤️ = 有愛心折抵池，可投入點數": "加 ❤️ = 有爱心折抵池，可投入点数",
+  "{n} 個愛心折抵池": "{n} 个爱心折抵池",
+  "同一個教會／機構可以建立多個活動（最多 5 個進行中），各自有自己的額度與商家。": "同一个教会／机构可以建立多个活动（最多 5 个进行中），各自有自己的额度与商家。",
+  "看看這裡的愛心折抵池": "看看这里的爱心折抵池",
+  "這個標記進行中的愛心折抵池已達上限（5 個）": "这个标记进行中的爱心折抵池已达上限（5 个）",
 };
 
 export const pt = {
@@ -16181,6 +16233,10 @@ export const pt = {
   "累計投入 {p} 點 → 折抵額度 NT${n}": "{p} pts contribuídos no total → NT${n} de saldo",
   "還沒有投入過。到「愛心折抵池」看看有哪些專案。": "Ainda não contribuíste. Vê os fundos solidários para encontrar projetos a apoiar.",
   "加 ❤️ = 有愛心折抵池，可投入點數": "+ ❤️ = tem fundo solidário, contribui aqui",
+  "{n} 個愛心折抵池": "{n} fundos solidários",
+  "同一個教會／機構可以建立多個活動（最多 5 個進行中），各自有自己的額度與商家。": "Uma mesma igreja / organização pode ter vários projetos (até 5 abertos ao mesmo tempo), cada um com o seu saldo e as suas lojas.",
+  "看看這裡的愛心折抵池": "Ver os fundos solidários daqui",
+  "這個標記進行中的愛心折抵池已達上限（5 個）": "Este marcador já tem o máximo de 5 fundos solidários abertos",
 };
 
 export const fr = {
@@ -16976,6 +17032,10 @@ export const fr = {
   "累計投入 {p} 點 → 折抵額度 NT${n}": "{p} pts contribués au total → NT${n} d’enveloppe",
   "還沒有投入過。到「愛心折抵池」看看有哪些專案。": "Aucune contribution pour l’instant. Consultez les cagnottes solidaires pour trouver un projet à soutenir.",
   "加 ❤️ = 有愛心折抵池，可投入點數": "+ ❤️ = cagnotte solidaire, contribuez ici",
+  "{n} 個愛心折抵池": "{n} cagnottes solidaires",
+  "同一個教會／機構可以建立多個活動（最多 5 個進行中），各自有自己的額度與商家。": "Une même église / organisation peut mener plusieurs projets (jusqu’à 5 ouverts en même temps), chacun avec son enveloppe et ses commerces.",
+  "看看這裡的愛心折抵池": "Voir les cagnottes solidaires ici",
+  "這個標記進行中的愛心折抵池已達上限（5 個）": "Ce marqueur a déjà atteint le maximum de 5 cagnottes solidaires ouvertes",
 };
 
 export const ru = {
@@ -17771,6 +17831,10 @@ export const ru = {
   "累計投入 {p} 點 → 折抵額度 NT${n}": "Всего внесено {p} очков → лимит NT${n}",
   "還沒有投入過。到「愛心折抵池」看看有哪些專案。": "Взносов пока нет. Посмотрите фонды добра, чтобы выбрать проект.",
   "加 ❤️ = 有愛心折抵池，可投入點數": "+ ❤️ = есть фонд добра, здесь можно внести очки",
+  "{n} 個愛心折抵池": "Фондов добра: {n}",
+  "同一個教會／機構可以建立多個活動（最多 5 個進行中），各自有自己的額度與商家。": "Одна церковь / организация может вести несколько проектов (до 5 открытых одновременно), у каждого свой лимит и свои магазины.",
+  "看看這裡的愛心折抵池": "Посмотреть фонды добра здесь",
+  "這個標記進行中的愛心折抵池已達上限（5 個）": "У этой метки уже максимум — 5 открытых фондов добра",
 };
 
 export const hi = {
@@ -18566,6 +18630,10 @@ export const hi = {
   "累計投入 {p} 點 → 折抵額度 NT${n}": "कुल {p} अंक योगदान → NT${n} भत्ता",
   "還沒有投入過。到「愛心折抵池」看看有哪些專案。": "अभी कोई योगदान नहीं। समर्थन के लिए प्रेम पूल में परियोजनाएँ देखें।",
   "加 ❤️ = 有愛心折抵池，可投入點數": "+ ❤️ = प्रेम पूल है, यहाँ योगदान करें",
+  "{n} 個愛心折抵池": "{n} प्रेम पूल",
+  "同一個教會／機構可以建立多個活動（最多 5 個進行中），各自有自己的額度與商家。": "एक ही चर्च / संस्था कई परियोजनाएँ चला सकती है (एक साथ अधिकतम 5 खुली), हर एक का अपना भत्ता और दुकानें।",
+  "看看這裡的愛心折抵池": "यहाँ के प्रेम पूल देखें",
+  "這個標記進行中的愛心折抵池已達上限（5 個）": "इस मार्कर पर पहले से अधिकतम 5 खुले प्रेम पूल हैं",
 };
 
 // Khmer (Cambodian) — full UI coverage, machine-translated in bulk from the
@@ -19991,6 +20059,10 @@ export const km = {
   "累計投入 {p} 點 → 折抵額度 NT${n}": "សរុបបានរួមចំណែក {p} ពិន្ទុ → ទឹកប្រាក់ NT${n}",
   "還沒有投入過。到「愛心折抵池」看看有哪些專案。": "មិនទាន់មានការរួមចំណែកទេ។ សូមមើលពូលសេចក្តីស្រឡាញ់ដើម្បីរកគម្រោងដែលត្រូវគាំទ្រ។",
   "加 ❤️ = 有愛心折抵池，可投入點數": "+ ❤️ = មានពូលសេចក្តីស្រឡាញ់ អាចរួមចំណែកនៅទីនេះ",
+  "{n} 個愛心折抵池": "ពូលសេចក្តីស្រឡាញ់ {n}",
+  "同一個教會／機構可以建立多個活動（最多 5 個進行中），各自有自己的額度與商家。": "ព្រះវិហារ / អង្គការតែមួយអាចដំណើរការគម្រោងច្រើន (បើកបានរហូតដល់ 5 ក្នុងពេលតែមួយ) ដោយនីមួយៗមានទឹកប្រាក់ និងហាងផ្ទាល់ខ្លួន។",
+  "看看這裡的愛心折抵池": "មើលពូលសេចក្តីស្រឡាញ់នៅទីនេះ",
+  "這個標記進行中的愛心折抵池已達上限（5 個）": "សញ្ញានេះមានពូលសេចក្តីស្រឡាញ់បើកអតិបរមា 5 រួចហើយ",
 };
 
 const I18N_FILLINS = { he, fa, ar, ja, ko, es, tr, de, my, vi, id, ms, zhcn, pt, fr, ru, hi, km };
