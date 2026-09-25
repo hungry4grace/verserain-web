@@ -7249,6 +7249,22 @@ export default function App() {
   // The menu scrolls inside its own container (100dvh, overflow auto), so the
   // window's scrollY is always 0; save/restore that container's scrollTop.
   const menuScrollRef = useRef(null);
+  // Scroll an element into view inside the menu scroller ONLY. scrollIntoView
+  // would also scroll #root (index.css: height 100vh, overflow hidden), which
+  // the user cannot scroll back — on phones the page then looks cut off and
+  // stuck. `block: 'center'` centres the element, otherwise it goes near the top.
+  const scrollMenuTo = (el, { block = 'start', offset = 12 } = {}) => {
+    const scroller = menuScrollRef.current;
+    if (!el || !scroller) return;
+    try {
+      const root = document.getElementById('root');
+      if (root && root.scrollTop) root.scrollTop = 0;
+      const er = el.getBoundingClientRect();
+      const sr = scroller.getBoundingClientRect();
+      const lead = block === 'center' ? Math.max(0, (scroller.clientHeight - er.height) / 2) : offset;
+      scroller.scrollTo({ top: Math.max(0, scroller.scrollTop + (er.top - sr.top) - lead), behavior: 'smooth' });
+    } catch { /* ignore */ }
+  };
   const versionBeforeChallenge = useRef(null); // saved version to restore after cross-lang challenge
   const updateGarden = React.useCallback((ref, type, setId, amount = 1) => {
     // 即時脈動:廣播「本玩家剛做了動作」給所有地圖觀看者(在 updater 之外,
@@ -9370,6 +9386,7 @@ export default function App() {
   // introduced (api/referral-bonus), shown under 互惠點數紀錄 in 我的園子.
   const [merchantRefBonus, setMerchantRefBonus] = useState(null);
   const [merchantRefBonusPage, setMerchantRefBonusPage] = useState(1);
+  const [charityContribPage, setCharityContribPage] = useState(1);
   const fetchReferralBonus = async () => {
     if (!userEmail || !sessionKey) return;
     try {
@@ -9574,7 +9591,7 @@ export default function App() {
     const next = { ...newPlaceDraft(), id: pl.id, agree: false, editing: { name: pl.name, status: pl.status, referrerCode: pl.referrerCode || '', referrerName: pl.referrerName || '' } };
     for (const f of PLACE_DRAFT_FIELDS) if (pl[f] !== undefined && pl[f] !== null) next[f] = pl[f];
     setMerchantDraft(next); setMerchantPhotoPreview(null); setMerchantSubmitStatus(null);
-    setTimeout(() => { try { merchantFormRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch { /* ignore */ } }, 0);
+    setTimeout(() => scrollMenuTo(merchantFormRef.current), 0);
   };
   const ownerPlaceAction = async (action, pl) => {
     if (!userEmail) { setShowLoginModal('login'); return; }
@@ -9783,12 +9800,12 @@ export default function App() {
   }, [userEmail, sessionKey]);
   useEffect(() => {
     if (mainTab === 'charity') { loadCharityPools(); if (userEmail) { loadCharityMine(); loadMyPlaces(); } }
+    else if (mainTab === 'garden' && userEmail) loadCharityMine();
     else if (mainTab === 'merchant' && userEmail) { loadCharityPools(); loadCharityMine(); }
   }, [mainTab, userEmail, loadCharityPools, loadCharityMine, loadMyPlaces]);
   useEffect(() => {
     if (mainTab !== 'charity' || !charityFocus || !charityPools) return;
-    const el = document.getElementById(`pool-${charityFocus}`);
-    if (el && typeof el.scrollIntoView === 'function') el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    scrollMenuTo(document.getElementById(`pool-${charityFocus}`), { block: 'center' });
   }, [mainTab, charityFocus, charityPools]);
   const charityNoticeText = () => t('點數無現金價值；投入後不可撤回；本機構不開立捐贈收據；折抵額度僅供在指定合作商家折抵消費，不可轉讓、不可兌現。經文雨不經手任何款項，折抵後的餘額由機構直接支付給商家。', 'Points have no cash value; contributions cannot be reversed; the organisation issues no donation receipt; the allowance can only be used as a discount at the listed shops and cannot be transferred or cashed out. VerseRain never handles money; the organisation pays the remainder to the shop directly.');
   const openContribute = (pool) => {
@@ -26061,7 +26078,7 @@ const deDict = {
                     verserain
                   </div>
                   <div className="app-brand-version" style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', marginTop: '4px', marginLeft: '2px' }}>
-                    v4.0.80
+                    v4.0.81
                   </div>
                 </div>
                 <div ref={langPickerRef} className="app-lang-control" style={{ position: 'relative' }}>
@@ -28802,7 +28819,7 @@ const deDict = {
                           <div style={{ fontSize: '1.7rem', fontWeight: 800, color: '#1d4ed8', lineHeight: 1 }}>{pointsBalance && !pointsBalance.error && Number.isFinite(Number(pointsBalance.earnedPoints)) ? Number(pointsBalance.earnedPoints).toLocaleString() : '—'}</div>
                           <div style={{ fontSize: '0.78rem', color: '#1e3a8a', marginTop: '0.25rem' }} title={t('每節經文只算你的最佳成績', 'Only your best score on each verse counts')}>
                             {t('總積分', 'Total score')}
-                            <button type="button" onClick={(e) => { e.stopPropagation(); setMainTab('manual'); setTimeout(() => { const el = document.getElementById('manual-score'); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 350); }} title={t('九、總積分怎麼算？', '9. How Is My Total Score Calculated?')} aria-label={t('九、總積分怎麼算？', '9. How Is My Total Score Calculated?')} style={{ marginLeft: 4, width: 16, height: 16, borderRadius: '50%', border: '1px solid #93c5fd', background: '#eff6ff', color: '#1d4ed8', fontSize: '0.7rem', fontWeight: 800, lineHeight: '14px', padding: 0, cursor: 'pointer', verticalAlign: 'middle' }}>?</button>
+                            <button type="button" onClick={(e) => { e.stopPropagation(); setMainTab('manual'); setTimeout(() => scrollMenuTo(document.getElementById('manual-score')), 350); }} title={t('九、總積分怎麼算？', '9. How Is My Total Score Calculated?')} aria-label={t('九、總積分怎麼算？', '9. How Is My Total Score Calculated?')} style={{ marginLeft: 4, width: 16, height: 16, borderRadius: '50%', border: '1px solid #93c5fd', background: '#eff6ff', color: '#1d4ed8', fontSize: '0.7rem', fontWeight: 800, lineHeight: '14px', padding: 0, cursor: 'pointer', verticalAlign: 'middle' }}>?</button>
                           </div>
                         </div>
                         <div style={{ textAlign: 'center' }}>
@@ -29138,6 +29155,45 @@ const deDict = {
                                 <button type="button" onClick={() => setMerchantRefBonusPage(p => Math.min(totalPages, p + 1))} disabled={page >= totalPages} style={{ padding: '4px 10px', borderRadius: '6px', border: '1px solid #cbd5e1', background: page >= totalPages ? '#f1f5f9' : '#fff', color: page >= totalPages ? '#94a3b8' : '#334155', cursor: page >= totalPages ? 'default' : 'pointer', fontWeight: 'bold' }}>›</button>
                               </div>
                             )}
+                          </div>
+                        );
+                      })()}
+
+                      {/* 愛心折抵池投入紀錄 — points this account put into charity pools (burned, never refunded) */}
+                      {userEmail && charityMine && !charityMine.error && (() => {
+                        const items = charityMine.contributed || [];
+                        const totalPts = items.reduce((a, c) => a + (Number(c.points) || 0), 0);
+                        const totalNTD = items.reduce((a, c) => a + (Number(c.ntd) || 0), 0);
+                        const totalPages = Math.max(1, Math.ceil(items.length / HISTORY_PAGE_SIZE));
+                        const page = Math.min(charityContribPage, totalPages);
+                        const sliced = items.slice((page - 1) * HISTORY_PAGE_SIZE, page * HISTORY_PAGE_SIZE);
+                        const fmtDate = (at) => { const d = new Date(at); return Number.isNaN(d.getTime()) ? '' : d.toLocaleDateString(undefined, { month: 'numeric', day: 'numeric' }); };
+                        return (
+                          <div style={{ marginTop: '1.5rem' }} data-testid="garden-charity-contribs">
+                            <h4 style={{ margin: '0 0 0.6rem', color: '#1e293b', display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                              <Heart size={18} color="#e11d48" /> {t('愛心折抵池投入紀錄', 'Charity pool contributions')}
+                              <span style={{ marginLeft: 'auto', background: '#fff1f2', color: '#9f1239', borderRadius: '10px', padding: '2px 10px', fontSize: '0.8rem', fontWeight: 'bold' }}>{t('累計投入 {p} 點 → 折抵額度 NT${n}', '{p} pts contributed in total → NT${n} of allowance').replace('{p}', totalPts.toLocaleString()).replace('{n}', String(totalNTD))}</span>
+                            </h4>
+                            {items.length === 0 ? (
+                              <div style={{ color: '#94a3b8', fontSize: '0.85rem', lineHeight: 1.5 }}>{t('還沒有投入過。到「愛心折抵池」看看有哪些專案。', 'No contributions yet. See the charity pools for projects to support.')}</div>
+                            ) : (
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                {sliced.map((c, idx) => (
+                                  <div key={`${c.id || idx}`} style={{ background: '#fff', padding: '10px 15px', borderRadius: '8px', borderLeft: '4px solid #e11d48', display: 'flex', justifyContent: 'space-between', gap: '0.5rem', flexWrap: 'wrap', fontSize: '0.88rem', color: '#334155' }}>
+                                    <span>{fmtDate(c.at)} · ❤️ {c.poolName}</span>
+                                    <span style={{ color: '#9f1239', fontWeight: 700 }}>{t('{p} 點 → 額度 NT${n}', '{p} pts → NT${n} allowance').replace('{p}', Number(c.points || 0).toLocaleString()).replace('{n}', String(c.ntd || 0))}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                            {totalPages > 1 && (
+                              <div style={{ display: 'flex', justifyContent: 'center', gap: '6px', marginTop: '10px' }}>
+                                <button type="button" onClick={() => setCharityContribPage(p => Math.max(1, p - 1))} disabled={page <= 1} style={{ padding: '4px 10px', borderRadius: '6px', border: '1px solid #cbd5e1', background: '#fff', cursor: page <= 1 ? 'default' : 'pointer' }}>‹</button>
+                                <span style={{ padding: '4px 6px', color: '#475569', fontSize: '0.85rem' }}>{page} / {totalPages}</span>
+                                <button type="button" onClick={() => setCharityContribPage(p => Math.min(totalPages, p + 1))} disabled={page >= totalPages} style={{ padding: '4px 10px', borderRadius: '6px', border: '1px solid #cbd5e1', background: '#fff', cursor: page >= totalPages ? 'default' : 'pointer' }}>›</button>
+                              </div>
+                            )}
+                            <button type="button" onClick={() => setMainTab('charity')} style={{ marginTop: '0.6rem', background: 'transparent', border: '1px solid #fecdd3', color: '#be123c', borderRadius: 6, padding: '0.3rem 0.8rem', cursor: 'pointer', fontWeight: 700, fontSize: '0.82rem' }}>❤️ {t('看看有哪些愛心折抵池', 'See the charity pools')}</button>
                           </div>
                         );
                       })()}
