@@ -126,7 +126,8 @@ async function get(req, res, redis, now) {
     counters[p.id] = await poolCounters(redis, p.id);
     summaries[p.id] = summarizePoolVouchers(await listVouchersForPool(redis, p.id, { now }));
   }
-  res.setHeader('Cache-Control', 's-maxage=60, stale-while-revalidate=300');
+  // ?fresh=… is the client's own cache-buster right after it contributed or redeemed.
+  res.setHeader('Cache-Control', q.fresh ? 'no-store' : 's-maxage=60, stale-while-revalidate=300');
   return res.status(200).json({ pools: publicPools(pools, counters, summaries) });
 }
 

@@ -9774,7 +9774,7 @@ export default function App() {
   const [charityMine, setCharityMine] = useState(null); // { owned, contributed, merchantOf } | { error } | null
   const [charityFocus, setCharityFocus] = useState(''); // pool id opened from the map
   const [contributeModal, setContributeModal] = useState(null); // { pool } | null
-  const [contributeNTD, setContributeNTD] = useState(10);
+  const [contributeNTD, setContributeNTD] = useState('10'); // raw text while typing; clamped by contributeClampNTD
   const [contributeBusy, setContributeBusy] = useState(false);
   const [poolRedeemModal, setPoolRedeemModal] = useState(null); // { pool, placeId, bill } | null
   const [poolRedeemBusy, setPoolRedeemBusy] = useState(false);
@@ -9784,9 +9784,11 @@ export default function App() {
   const [poolJoinBusy, setPoolJoinBusy] = useState('');
   const [poolsAdmin, setPoolsAdmin] = useState(null);
   const [poolsAdminFilter, setPoolsAdminFilter] = useState('pending');
-  const loadCharityPools = React.useCallback(async () => {
+  // fresh=true bypasses the CDN copy of the public list (s-maxage) right after
+  // this client changed a pool, so the card shows the new numbers at once.
+  const loadCharityPools = React.useCallback(async (fresh = false) => {
     try {
-      const r = await fetch('/api/pools');
+      const r = fresh ? await fetch(`/api/pools?fresh=${Date.now()}`, { cache: 'no-store' }) : await fetch('/api/pools');
       const d = await r.json().catch(() => ({}));
       setCharityPools(r.ok ? { pools: Array.isArray(d.pools) ? d.pools : [] } : { error: d.error || String(r.status) });
     } catch (e) { setCharityPools({ error: String(e?.message || e) }); }
@@ -9812,12 +9814,15 @@ export default function App() {
   const openContribute = (pool) => {
     if (!pool || !pool.id) return;
     if (!userEmail) { setShowLoginModal('login'); setToast(t('請先登入才能投入點數', 'Sign in to contribute points')); setTimeout(() => setToast(null), 2500); return; }
-    setContributeModal({ pool }); setContributeNTD(10); setPointsBalance(null);
+    setContributeModal({ pool }); setContributeNTD('10'); setPointsBalance(null);
     fetchPointsBalance();
   };
+  // NT$ a player may put in right now: 1…100 per day, never more than the balance allows.
+  const contributeMaxNTD = (pb) => (pb && !pb.error ? Math.max(0, Math.min(100, Math.floor((pb.balancePoints || 0) / 1000))) : 100);
+  const contributeClampNTD = (raw, pb) => Math.max(1, Math.min(Math.floor(Number(raw) || 1), Math.max(1, contributeMaxNTD(pb))));
   const confirmContribute = async () => {
     if (!contributeModal) return;
-    const points = Math.max(1, Math.floor(Number(contributeNTD) || 0)) * 1000;
+    const points = contributeClampNTD(contributeNTD, pointsBalance) * 1000;
     setContributeBusy(true);
     try {
       const res = await fetch('/api/pools', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'contribute', email: userEmail, sessionKey, poolId: contributeModal.pool.id, points }) });
@@ -9825,10 +9830,13 @@ export default function App() {
       if (d.error === 'session_invalid' || d.error === 'login_required') { setShowLoginModal('login'); throw new Error(redeemErrorText('session_invalid')); }
       if (!res.ok || !d.success) throw new Error(redeemErrorText(d.error || res.status));
       if (d.balance) setPointsBalance(d.balance);
+      // Patch the card from the response first (the list refetch below may still hit the CDN);
+      // the response carries no voucher summary, so keep the card's usedNTD.
+      if (d.pool?.id) setCharityPools(cp => (cp?.pools ? { pools: cp.pools.map(p => (p.id === d.pool.id ? { ...p, ...d.pool, usedNTD: p.usedNTD } : p)) } : cp));
       setContributeModal(null);
       setToast(t('已投入 {p} 點，「{pool}」折抵額度 +NT${n} ❤️', 'Contributed {p} pts — NT${n} added to “{pool}” ❤️').replace('{p}', points.toLocaleString()).replace('{pool}', String(contributeModal.pool.name || '')).replace('{n}', String(d.contribution?.ntd ?? points / 1000)));
       setTimeout(() => setToast(null), 3500);
-      loadCharityPools(); loadCharityMine();
+      loadCharityPools(true); loadCharityMine();
     } catch (e) {
       setToast(String(e?.message || e)); setTimeout(() => setToast(null), 3500);
     } finally {
@@ -9862,7 +9870,7 @@ export default function App() {
       setToast(action === 'merchant_leave' ? t('已退出愛心折抵池', 'Left the charity pool') : t('已更新愛心折抵池的參與設定', 'Charity pool participation saved'));
       setTimeout(() => setToast(null), 2500);
       setPoolJoinDraft(o => { const n = { ...o }; delete n[placeId]; return n; });
-      loadCharityMine(); loadCharityPools();
+      loadCharityMine(); loadCharityPools(true);
     } catch (e) {
       setToast(String(e?.message || e)); setTimeout(() => setToast(null), 3500);
     } finally {
@@ -26079,7 +26087,7 @@ const deDict = {
                     verserain
                   </div>
                   <div className="app-brand-version" style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', marginTop: '4px', marginLeft: '2px' }}>
-                    v4.0.83
+                    v4.0.84
                   </div>
                 </div>
                 <div ref={langPickerRef} className="app-lang-control" style={{ position: 'relative' }}>
@@ -30070,8 +30078,8 @@ const deDict = {
               {contributeModal && (() => {
                 const pb = pointsBalance; const pool = contributeModal.pool;
                 const field = { width: '100%', boxSizing: 'border-box', padding: '0.6rem 0.8rem', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: '1.1rem', background: '#fff' };
-                const maxNTD = pb && !pb.error ? Math.max(0, Math.min(100, Math.floor((pb.balancePoints || 0) / 1000))) : 100;
-                const ntd = Math.max(1, Math.min(Math.floor(Number(contributeNTD) || 1), Math.max(1, maxNTD)));
+                const maxNTD = contributeMaxNTD(pb);
+                const ntd = contributeClampNTD(contributeNTD, pb);
                 const points = ntd * 1000;
                 return (
                   <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 3000, padding: '1rem' }} onClick={(e) => { if (e.target === e.currentTarget && !contributeBusy) setContributeModal(null); }}>
@@ -30099,8 +30107,9 @@ const deDict = {
                             <b>{(pb.balancePoints || 0).toLocaleString()} {t('點', 'pts')}</b>
                           </div>
                           <label style={{ color: '#64748b', fontSize: '0.82rem' }}>{t('投入的折抵額度（NT$，每 1,000 點 → NT$1）', 'Allowance to contribute (NT$, every 1,000 pts → NT$1)')}</label>
-                          <input type="range" min={1} max={Math.max(1, maxNTD)} step={1} value={ntd} onChange={e => setContributeNTD(Number(e.target.value))} style={{ width: '100%', margin: '0.4rem 0' }} />
-                          <input type="number" inputMode="numeric" min={1} max={Math.max(1, maxNTD)} value={ntd} onChange={e => setContributeNTD(Number(e.target.value))} style={field} />
+                          <input type="range" min={1} max={Math.max(1, maxNTD)} step={1} value={ntd} onChange={e => setContributeNTD(String(e.target.value))} style={{ width: '100%', margin: '0.4rem 0' }} />
+                          {/* Bound to the raw text so the field can be emptied while typing; clamped on blur. */}
+                          <input type="number" inputMode="numeric" min={1} max={Math.max(1, maxNTD)} step={1} value={contributeNTD} onChange={e => setContributeNTD(e.target.value)} onBlur={() => setContributeNTD(String(ntd))} style={field} />
                           <div data-testid="contribute-preview" style={{ marginTop: '0.6rem', background: '#fff1f2', borderRadius: 8, padding: '0.6rem 0.8rem', fontWeight: 700, color: '#9f1239' }}>
                             {t('投入 {p} 點 → 「{pool}」折抵額度 +NT${n}', 'Contribute {p} pts → NT${n} added to “{pool}”').replace('{p}', points.toLocaleString()).replace('{pool}', String(pool.name || '')).replace('{n}', String(ntd))}
                           </div>
