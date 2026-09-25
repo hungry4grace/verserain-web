@@ -9386,6 +9386,7 @@ export default function App() {
   // introduced (api/referral-bonus), shown under 互惠點數紀錄 in 我的園子.
   const [merchantRefBonus, setMerchantRefBonus] = useState(null);
   const [merchantRefBonusPage, setMerchantRefBonusPage] = useState(1);
+  const [charityContribPage, setCharityContribPage] = useState(1);
   const fetchReferralBonus = async () => {
     if (!userEmail || !sessionKey) return;
     try {
@@ -9799,6 +9800,7 @@ export default function App() {
   }, [userEmail, sessionKey]);
   useEffect(() => {
     if (mainTab === 'charity') { loadCharityPools(); if (userEmail) { loadCharityMine(); loadMyPlaces(); } }
+    else if (mainTab === 'garden' && userEmail) loadCharityMine();
     else if (mainTab === 'merchant' && userEmail) { loadCharityPools(); loadCharityMine(); }
   }, [mainTab, userEmail, loadCharityPools, loadCharityMine, loadMyPlaces]);
   useEffect(() => {
@@ -29153,6 +29155,45 @@ const deDict = {
                                 <button type="button" onClick={() => setMerchantRefBonusPage(p => Math.min(totalPages, p + 1))} disabled={page >= totalPages} style={{ padding: '4px 10px', borderRadius: '6px', border: '1px solid #cbd5e1', background: page >= totalPages ? '#f1f5f9' : '#fff', color: page >= totalPages ? '#94a3b8' : '#334155', cursor: page >= totalPages ? 'default' : 'pointer', fontWeight: 'bold' }}>›</button>
                               </div>
                             )}
+                          </div>
+                        );
+                      })()}
+
+                      {/* 愛心折抵池投入紀錄 — points this account put into charity pools (burned, never refunded) */}
+                      {userEmail && charityMine && !charityMine.error && (() => {
+                        const items = charityMine.contributed || [];
+                        const totalPts = items.reduce((a, c) => a + (Number(c.points) || 0), 0);
+                        const totalNTD = items.reduce((a, c) => a + (Number(c.ntd) || 0), 0);
+                        const totalPages = Math.max(1, Math.ceil(items.length / HISTORY_PAGE_SIZE));
+                        const page = Math.min(charityContribPage, totalPages);
+                        const sliced = items.slice((page - 1) * HISTORY_PAGE_SIZE, page * HISTORY_PAGE_SIZE);
+                        const fmtDate = (at) => { const d = new Date(at); return Number.isNaN(d.getTime()) ? '' : d.toLocaleDateString(undefined, { month: 'numeric', day: 'numeric' }); };
+                        return (
+                          <div style={{ marginTop: '1.5rem' }} data-testid="garden-charity-contribs">
+                            <h4 style={{ margin: '0 0 0.6rem', color: '#1e293b', display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                              <Heart size={18} color="#e11d48" /> {t('愛心折抵池投入紀錄', 'Charity pool contributions')}
+                              <span style={{ marginLeft: 'auto', background: '#fff1f2', color: '#9f1239', borderRadius: '10px', padding: '2px 10px', fontSize: '0.8rem', fontWeight: 'bold' }}>{t('累計投入 {p} 點 → 折抵額度 NT${n}', '{p} pts contributed in total → NT${n} of allowance').replace('{p}', totalPts.toLocaleString()).replace('{n}', String(totalNTD))}</span>
+                            </h4>
+                            {items.length === 0 ? (
+                              <div style={{ color: '#94a3b8', fontSize: '0.85rem', lineHeight: 1.5 }}>{t('還沒有投入過。到「愛心折抵池」看看有哪些專案。', 'No contributions yet. See the charity pools for projects to support.')}</div>
+                            ) : (
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                {sliced.map((c, idx) => (
+                                  <div key={`${c.id || idx}`} style={{ background: '#fff', padding: '10px 15px', borderRadius: '8px', borderLeft: '4px solid #e11d48', display: 'flex', justifyContent: 'space-between', gap: '0.5rem', flexWrap: 'wrap', fontSize: '0.88rem', color: '#334155' }}>
+                                    <span>{fmtDate(c.at)} · ❤️ {c.poolName}</span>
+                                    <span style={{ color: '#9f1239', fontWeight: 700 }}>{t('{p} 點 → 額度 NT${n}', '{p} pts → NT${n} allowance').replace('{p}', Number(c.points || 0).toLocaleString()).replace('{n}', String(c.ntd || 0))}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                            {totalPages > 1 && (
+                              <div style={{ display: 'flex', justifyContent: 'center', gap: '6px', marginTop: '10px' }}>
+                                <button type="button" onClick={() => setCharityContribPage(p => Math.max(1, p - 1))} disabled={page <= 1} style={{ padding: '4px 10px', borderRadius: '6px', border: '1px solid #cbd5e1', background: '#fff', cursor: page <= 1 ? 'default' : 'pointer' }}>‹</button>
+                                <span style={{ padding: '4px 6px', color: '#475569', fontSize: '0.85rem' }}>{page} / {totalPages}</span>
+                                <button type="button" onClick={() => setCharityContribPage(p => Math.min(totalPages, p + 1))} disabled={page >= totalPages} style={{ padding: '4px 10px', borderRadius: '6px', border: '1px solid #cbd5e1', background: '#fff', cursor: page >= totalPages ? 'default' : 'pointer' }}>›</button>
+                              </div>
+                            )}
+                            <button type="button" onClick={() => setMainTab('charity')} style={{ marginTop: '0.6rem', background: 'transparent', border: '1px solid #fecdd3', color: '#be123c', borderRadius: 6, padding: '0.3rem 0.8rem', cursor: 'pointer', fontWeight: 700, fontSize: '0.82rem' }}>❤️ {t('看看有哪些愛心折抵池', 'See the charity pools')}</button>
                           </div>
                         );
                       })()}
