@@ -16,8 +16,14 @@
 //   redeem:refunded:${code}                        STR    latch so a voucher is refunded at most once
 //   redeem:refbonus:${email}                       LIST   newest 200 merchant-referral bonus entries of this referrer
 //   map:places                                     HASH   placeId → JSON place (owned by api/_lib/places.js)
+//   charity:allow:${poolId}                        INT    a charity pool's discount allowance in NTD (see pools.js)
+//   charity:mmonth:${poolId}:${placeId}:${month}   INT    NTD a pool has drawn at one shop this Taipei month
+//   charity:open:${poolId}                         STR    code of the pool's one open voucher (TTL 30 min)
 //
 // Voucher lifecycle: issued → used | expired | void; void → (restore) used|issued.
+// A voucher with kind 'pool' was issued from a charity pool's allowance
+// (api/_lib/pools.js), not from a player's points: it charges and refunds the
+// pool ledgers instead of the player ledgers, and its holder is the pool.
 
 export const POINTS_PER_NTD = 1000;
 export const VOUCHER_MAX_NTD = 200;
@@ -57,7 +63,12 @@ export const monthKey = (email, month) => `redeem:month:${normEmail(email)}:${mo
 export const placeDayKey = (placeId, day) => `redeem:place:${placeId}:${day}`;
 export const historyKey = (email) => `redeem:by-email:${normEmail(email)}`;
 export const placeHistoryKey = (placeId) => `redeem:by-place:${placeId}`;
-const PLACE_HISTORY_MAX = 500;
+export const PLACE_HISTORY_MAX = 500;
+export const poolAllowanceKey = (poolId) => `charity:allow:${poolId}`;
+export const poolMerchantMonthKey = (poolId, placeId, month) => `charity:mmonth:${poolId}:${placeId}:${month}`;
+export const poolOpenKey = (poolId) => `charity:open:${poolId}`;
+export const POOL_MONTH_KEY_TTL_SEC = MONTH_KEY_TTL_SEC;
+export const isPoolVoucher = (v) => !!v && v.kind === 'pool';
 export const refundedKey = (code) => `redeem:refunded:${code}`;
 // Account-keyed score ledger (總積分). The leaderboards stay keyed by
 // playerName; these follow the email so a rename never splits a player's
@@ -201,7 +212,12 @@ export function publicVoucher(v, now) {
     expiresAt: v.expiresAt || null,
     usedAt: v.usedAt || null,
     secondsLeft,
-    holder: maskName(v.playerName),
+    kind: v.kind === 'pool' ? 'pool' : 'points',
+    poolId: v.poolId || '',
+    poolName: v.poolName || '',
+    // A pool voucher is paid from the organisation's allowance, so the shop
+    // sees which pool (and organisation) settles the remainder, not a name.
+    holder: v.kind === 'pool' ? String(v.poolName || '') : maskName(v.playerName),
   };
 }
 
@@ -229,7 +245,7 @@ export async function savePlaceRaw(redis, place) {
   await redis.hset(PLACES_KEY, { [place.id]: JSON.stringify(place) });
   return place;
 }
-async function bumpPlaceStats(redis, placeId, delta) {
+export async function bumpPlaceStats(redis, placeId, delta) {
   const place = await getPlaceRaw(redis, placeId);
   if (!place) return null;
   const stats = { issued: 0, used: 0, usedNTD: 0, ...(place.stats || {}) };
@@ -246,7 +262,7 @@ export async function getVoucher(redis, code) {
   const raw = await redis.hget(VOUCHERS_KEY, c);
   return raw ? parse(raw) : null;
 }
-async function saveVoucher(redis, v) {
+export async function saveVoucher(redis, v) {
   await redis.hset(VOUCHERS_KEY, { [v.code]: JSON.stringify(v) });
   return v;
 }
@@ -584,7 +600,7 @@ export async function issueVoucher(redis, { email, identity, garden, place, bill
   }
 }
 
-async function uniqueCode(redis, rand) {
+export async function uniqueCode(redis, rand) {
   for (let i = 0; i < 5; i++) {
     const code = newVoucherCode(rand);
     if (!(await redis.hget(VOUCHERS_KEY, code))) return code;
@@ -598,6 +614,13 @@ async function refundVoucher(redis, v) {
   const latched = await redis.set(refundedKey(v.code), '1', { nx: true, ex: REFUND_LATCH_SEC });
   if (latched !== 'OK') return false;
   const issued = v.issuedAt ? new Date(v.issuedAt) : new Date();
+  if (isPoolVoucher(v)) {
+    // Back to the pool, never to a person: the allowance and the shop's
+    // monthly draw are the only ledgers a pool voucher touched.
+    await redis.incrby(poolAllowanceKey(v.poolId), toInt(v.ntd));
+    await redis.decrby(poolMerchantMonthKey(v.poolId, v.placeId, taipeiMonth(issued)), toInt(v.ntd));
+    return true;
+  }
   await redis.decrby(spentKey(v.email), toInt(v.points));
   await redis.decrby(monthKey(v.email, taipeiMonth(issued)), toInt(v.ntd));
   await releaseDaySlot(redis, dayKey(v.email, v.placeId, taipeiDay(issued)));
@@ -612,9 +635,10 @@ async function releaseDaySlot(redis, key) {
   if (toInt(left) <= 0) await redis.del(key);
 }
 
-async function releaseOpen(redis, v) {
-  const cur = await redis.get(openKey(v.email));
-  if (cur && String(cur) === v.code) await redis.del(openKey(v.email));
+export async function releaseOpen(redis, v) {
+  const key = isPoolVoucher(v) ? poolOpenKey(v.poolId) : openKey(v.email);
+  const cur = await redis.get(key);
+  if (cur && String(cur) === v.code) await redis.del(key);
 }
 
 // Lazy expiry: an issued voucher past expiresAt is refunded and marked expired.

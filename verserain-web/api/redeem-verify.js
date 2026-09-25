@@ -71,14 +71,22 @@ export default async function handler(req, res) {
         if (!status) throw e;
         return res.status(status).json({ error: e.code, voucher: e.voucher ? publicVoucher(e.voucher, now) : undefined });
       }
+      const isPool = voucher.kind === 'pool';
       try {
-        await pushNotify(redis, voucher.ownerCode, { kind: 'voucher_used', code: voucher.code, placeName: voucher.placeName, ntd: voucher.ntd });
+        await pushNotify(redis, voucher.ownerCode, isPool
+          ? { kind: 'pool_voucher_used', code: voucher.code, poolId: voucher.poolId, poolName: voucher.poolName, placeName: voucher.placeName, ntd: voucher.ntd }
+          : { kind: 'voucher_used', code: voucher.code, placeName: voucher.placeName, ntd: voucher.ntd });
       } catch { /* the inbox is best-effort; the redemption already happened */ }
-      try {
-        const place = await getPlaceRaw(redis, voucher.placeId);
-        const settled = await settleReferralBonus(redis, { voucher, place, resolveEmail: codeOwnerEmail, now, direction: 'earn' });
-        if (settled.paid) await notifyReferrer(redis, settled);
-      } catch { /* the referrer's bonus is best-effort too */ }
+      // A pool voucher spends no player points, so there is no referral
+      // bonus to pay: paying one from the pool would move the pool's value
+      // to a third party, which the pool's "not transferable" rule forbids.
+      if (!isPool) {
+        try {
+          const place = await getPlaceRaw(redis, voucher.placeId);
+          const settled = await settleReferralBonus(redis, { voucher, place, resolveEmail: codeOwnerEmail, now, direction: 'earn' });
+          if (settled.paid) await notifyReferrer(redis, settled);
+        } catch { /* the referrer's bonus is best-effort too */ }
+      }
       return res.status(200).json({ success: true, voucher: publicVoucher(voucher, now) });
     }
 
@@ -99,7 +107,8 @@ export default async function handler(req, res) {
       try {
         // Void takes the referrer's bonus back; restore of a used voucher pays
         // it again — both only ever touch the account snapshotted on the voucher.
-        if (action === 'void' && voucher.usedAt) await settleReferralBonus(redis, { voucher, now, direction: 'reverse' });
+        // Pool vouchers never had one (see 'use' above).
+        if (voucher.kind === 'pool') { /* nothing to settle */ } else if (action === 'void' && voucher.usedAt) await settleReferralBonus(redis, { voucher, now, direction: 'reverse' });
         if (action === 'restore' && voucher.status === 'used') await settleReferralBonus(redis, { voucher, now, direction: 'earn' });
       } catch { /* best-effort */ }
       return res.status(200).json({ success: true, voucher });

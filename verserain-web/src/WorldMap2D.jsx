@@ -64,7 +64,7 @@ const escapeHtml = (v) => String(v ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&a
 
 const TEAMS_HOST = 'https://verserain-party.hungry4grace.partykit.dev/parties/main/global-auth-db';
 
-export default function WorldMap2D({ t, playerName, userEmail, onJoinRoom, onViewGarden, onToggleMode, currentMode, focusLocation, playTone, playWelcome, onEnableAudio, fruitMode = false, fruitTree = null, fruitLoading = false, onToggleFruit, selfLocation = null, places = [], placesMode = false, onTogglePlaces, onRedeem }) {
+export default function WorldMap2D({ t, playerName, userEmail, onJoinRoom, onViewGarden, onToggleMode, currentMode, focusLocation, playTone, playWelcome, onEnableAudio, fruitMode = false, fruitTree = null, fruitLoading = false, onToggleFruit, selfLocation = null, places = [], placesMode = false, onTogglePlaces, onRedeem, onOpenPool }) {
   // 我的果子: name → 1 (I invited them) | 2 (they were invited by someone I invited)
   const fruitLevel = useMemo(() => {
     const m = new Map();
@@ -194,10 +194,12 @@ export default function WorldMap2D({ t, playerName, userEmail, onJoinRoom, onVie
   const placeMarkersRef = useRef(null);
   const placesRef = useRef(places);
   const onRedeemRef = useRef(onRedeem);
+  const onOpenPoolRef = useRef(onOpenPool);
   const openedPlaceRef = useRef(null);
   const [mapReady, setMapReady] = useState(false);
   useEffect(() => { placesRef.current = places; }, [places]);
   useEffect(() => { onRedeemRef.current = onRedeem; }, [onRedeem]);
+  useEffect(() => { onOpenPoolRef.current = onOpenPool; }, [onOpenPool]);
 
   // Init Leaflet map and markers
   const initialFlyDone = useRef(false);
@@ -450,6 +452,8 @@ export default function WorldMap2D({ t, playerName, userEmail, onJoinRoom, onVie
               // Place popups: voucher button + lazy photo (only fetched on open).
               const redeemBtn = node.querySelector('.map-redeem-btn');
               if (redeemBtn) redeemBtn.onclick = () => { const id = redeemBtn.getAttribute('data-place-id'); onRedeemRef.current?.((placesRef.current || []).find(pl => pl.id === id) || { id }); };
+              const poolBtn = node.querySelector('.map-pool-btn');
+              if (poolBtn) poolBtn.onclick = () => { onOpenPoolRef.current?.(poolBtn.getAttribute('data-pool-id')); };
               const img = node.querySelector('.map-place-photo');
               if (img && img.getAttribute('data-asset') && !img.getAttribute('src')) {
                 getSetAssetDataUrl(img.getAttribute('data-set'), img.getAttribute('data-asset'), img.getAttribute('data-mime') || 'image/webp')
@@ -594,6 +598,7 @@ export default function WorldMap2D({ t, playerName, userEmail, onJoinRoom, onVie
           ${pl.phone ? `<div style="font-size:0.8rem;color:#64748b;">☎️ ${escapeHtml(pl.phone)}</div>` : ''}
           ${pl.website ? `<div style="font-size:0.8rem;"><a href="${escapeHtml(pl.website)}" target="_blank" rel="noopener noreferrer" style="color:#2563eb;">🔗 ${escapeHtml(pl.website.replace(/^https?:\/\//, ''))}</a></div>` : ''}
           ${pl.kind === 'merchant' ? `<button class="map-redeem-btn" data-place-id="${escapeHtml(pl.id)}" style="margin-top:8px;width:100%;background:#f59e0b;color:#fff;border:none;border-radius:8px;padding:0.45rem 0.8rem;font-weight:800;cursor:pointer;">🎟️ ${escapeHtml(t('產生折扣券', 'Get a coupon'))}</button>` : ''}
+          ${pl.poolId ? `<button class="map-pool-btn" data-pool-id="${escapeHtml(pl.poolId)}" style="margin-top:8px;width:100%;background:#e11d48;color:#fff;border:none;border-radius:8px;padding:0.45rem 0.8rem;font-weight:800;cursor:pointer;">❤️ ${escapeHtml(t('投入愛心折抵池', 'Contribute to the charity pool'))}</button>` : ''}
         </div>`;
       marker.bindPopup(L.popup({ maxWidth: 260, className: 'verse-map-popup' }).setContent(html));
       marker.on('click', (ev) => { L.DomEvent.stopPropagation(ev); });

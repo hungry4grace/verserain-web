@@ -3,7 +3,7 @@
 // APNs per admin code, nothing when REWARDS_ADMIN_CODES is unset.
 import { test } from 'node:test';
 import assert from 'node:assert';
-import { adminCodes, notifyAdmins, placeSubmittedMessage, placeResubmittedMessage } from './adminNotify.js';
+import { adminCodes, notifyAdmins, placeSubmittedMessage, placeResubmittedMessage, poolSubmittedMessage } from './adminNotify.js';
 
 function stubRedis() {
   const lists = new Map();
@@ -74,4 +74,13 @@ test('placeResubmittedMessage: same inbox kind (renders as-is), names the change
   assert.strictEqual(m.tag, 'verserain-place-pl_abc12345');
   assert.strictEqual(m.url, 'https://www.verserain.com/#rewards_admin');
   assert.match(placeResubmittedMessage(place, '', []).body, /^有人 修改了「菲菲檸檬」的資料/);
+});
+
+test('poolSubmittedMessage: inbox record + push text name the organisation and the pool', () => {
+  const m = poolSubmittedMessage({ id: 'cp_abc12345', name: '偏鄉長輩愛筵池', orgPlaceName: '恩典教會' }, '瑞爸');
+  assert.deepStrictEqual(m.record, { kind: 'pool_submitted', poolId: 'cp_abc12345', name: '偏鄉長輩愛筵池', orgPlaceName: '恩典教會', by: '瑞爸' });
+  assert.match(m.title, /愛心折抵池/);
+  assert.match(m.body, /瑞爸.*恩典教會.*偏鄉長輩愛筵池/);
+  assert.strictEqual(m.tag, 'verserain-pool-cp_abc12345');
+  assert.doesNotMatch(m.title + m.body, /捐|募/, 'no donation wording');
 });

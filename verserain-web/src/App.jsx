@@ -717,7 +717,7 @@ function buildPublicShareUrl(path = '/', params = {}) {
 // push one history entry per step; popstate applies the hash back to state.
 // Only the query string carries share links (?listenSet= …) — those are
 // consumed and scrubbed as before, and every scrub must keep the hash.
-const ROUTE_TABS = ['lobby', 'versesets', 'custom_verses', 'multiplayer', 'daily_verse', 'advanced', 'garden', 'search', 'map', 'manual', 'about', 'accessible', 'bilingual_rain', 'leaderboard', 'rewards_admin', 'sponsors', 'donate', 'sponsor', 'merchant', 'verify'];
+const ROUTE_TABS = ['lobby', 'versesets', 'custom_verses', 'multiplayer', 'daily_verse', 'advanced', 'garden', 'search', 'map', 'manual', 'about', 'accessible', 'bilingual_rain', 'leaderboard', 'rewards_admin', 'sponsors', 'donate', 'sponsor', 'merchant', 'verify', 'charity'];
 // 支持開發（Donate）頁的收款資訊。這是對開發者個人的贈與，不是公益勸募，
 // 也開不了捐贈收據 — 獎勵資金池另走教會／非營利代收（見 sponsor 頁）。
 // 空字串 → 頁面顯示「即將公布」。
@@ -9297,6 +9297,15 @@ export default function App() {
     account_too_new: t('尚未符合折抵資格：帳號需滿 7 天', 'Not eligible for a discount yet: your account must be at least 7 days old'),
     no_email: t('尚未符合折抵資格：需以 Email 或 LINE／Google 帳號登入', 'Not eligible for a discount yet: sign in with an email, LINE or Google account'),
     place_unavailable: t('此商家目前無法折抵', 'This shop is not offering a discount right now'),
+    pool_unavailable: t('這個折抵池目前未開放', 'This pool is not open right now'),
+    daily_cap: t('今天在這個折抵池的投入已達上限（NT$100）', 'You have reached today’s limit for this pool (NT$100)'),
+    insufficient_balance: t('可用點數不足', 'Not enough available points'),
+    contrib_invalid: t('請以 1,000 點為單位投入', 'Contribute in steps of 1,000 pts'),
+    merchant_not_in_pool: t('這家商家尚未參與此折抵池', 'This shop has not joined the pool'),
+    pool_exists: t('這個教會／機構已經有折抵池了', 'This church / organisation already has a pool'),
+    org_place_invalid: t('只有已上地圖的教會／機構可以建立折抵池', 'Only a church or organisation already on the map can create a pool'),
+    consent_required: t('請先勾選同意條款', 'Please tick the terms first'),
+    caps_invalid: t('上限需為整數：單筆 1–2,000、每月 1–10,000', 'Caps must be whole numbers: 1–2,000 per order and 1–10,000 per month'),
     bill_invalid: t('請輸入正確的消費金額', 'Enter a valid bill amount'),
     too_small: t('折抵金額不足 NT$1', 'The discount would be under NT$1'),
     daily_place_limit: t('今天在這家店的折抵次數已達上限', 'You have reached today’s coupon limit at this shop'),
@@ -9653,6 +9662,7 @@ export default function App() {
     let cancelled = false;
     fetch(`/api/places?all=1&adminEmail=${encodeURIComponent(userEmail)}`, { headers: adminHeaders() }).then(r => r.json()).then(d => { if (!cancelled) setPlacesAdmin(Array.isArray(d.places) ? d.places : []); }).catch(() => { if (!cancelled) setPlacesAdmin([]); });
     fetch(`/api/redeem-verify?all=1&adminEmail=${encodeURIComponent(userEmail)}`, { headers: adminHeaders() }).then(r => r.json()).then(d => { if (!cancelled) setVouchersAdmin(Array.isArray(d.vouchers) ? d.vouchers : []); }).catch(() => { if (!cancelled) setVouchersAdmin([]); });
+    fetch(`/api/pools?all=1&adminEmail=${encodeURIComponent(userEmail)}`, { headers: adminHeaders() }).then(r => r.json()).then(d => { if (!cancelled) setPoolsAdmin(Array.isArray(d.pools) ? d.pools : []); }).catch(() => { if (!cancelled) setPoolsAdmin([]); });
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mainTab, isSuperAdmin, userEmail, rewardsAdminReload]);
@@ -9703,6 +9713,190 @@ export default function App() {
     } catch (e) { setPlaceLedger(l => ({ ...l, [placeId]: { error: String(e?.message || e) } })); }
   };
   const voucherStatusBadge = (st) => st === 'issued' ? { text: t('有效', 'Valid'), bg: '#dcfce7', fg: '#166534' } : st === 'used' ? { text: t('已使用', 'Used'), bg: '#e2e8f0', fg: '#334155' } : st === 'expired' ? { text: t('已過期', 'Expired'), bg: '#fee2e2', fg: '#991b1b' } : { text: t('已作廢', 'Voided'), bg: '#fee2e2', fg: '#991b1b' };
+
+  // ── 愛心折抵池 (charity discount pools, api/pools.js) ─────────────────
+  // A player "contributes" (投入) points: the points are burned from the
+  // player's balance and become the organisation's discount allowance at the
+  // shops that joined the pool. No transfer, no wallet, no refund, no receipt.
+  const [charityPools, setCharityPools] = useState(null); // { pools } | { error } | null
+  const [charityMine, setCharityMine] = useState(null); // { owned, contributed, merchantOf } | { error } | null
+  const [charityFocus, setCharityFocus] = useState(''); // pool id opened from the map
+  const [contributeModal, setContributeModal] = useState(null); // { pool } | null
+  const [contributeNTD, setContributeNTD] = useState(10);
+  const [contributeBusy, setContributeBusy] = useState(false);
+  const [poolRedeemModal, setPoolRedeemModal] = useState(null); // { pool, placeId, bill } | null
+  const [poolRedeemBusy, setPoolRedeemBusy] = useState(false);
+  const [poolCreateDraft, setPoolCreateDraft] = useState({ orgPlaceId: '', name: '', description: '', agree: false });
+  const [poolCreateBusy, setPoolCreateBusy] = useState(false);
+  const [poolJoinDraft, setPoolJoinDraft] = useState({}); // key → { poolId, perOrderMaxNTD, monthlyMaxNTD, consent }
+  const [poolJoinBusy, setPoolJoinBusy] = useState('');
+  const [poolsAdmin, setPoolsAdmin] = useState(null);
+  const [poolsAdminFilter, setPoolsAdminFilter] = useState('pending');
+  const loadCharityPools = React.useCallback(async () => {
+    try {
+      const r = await fetch('/api/pools');
+      const d = await r.json().catch(() => ({}));
+      setCharityPools(r.ok ? { pools: Array.isArray(d.pools) ? d.pools : [] } : { error: d.error || String(r.status) });
+    } catch (e) { setCharityPools({ error: String(e?.message || e) }); }
+  }, []);
+  const loadCharityMine = React.useCallback(async () => {
+    if (!userEmail) { setCharityMine(null); return; }
+    try {
+      const r = await fetch(`/api/pools?mine=1&email=${encodeURIComponent(userEmail)}&sessionKey=${encodeURIComponent(sessionKey)}`);
+      const d = await r.json().catch(() => ({}));
+      setCharityMine(r.ok ? { owned: d.owned || [], contributed: d.contributed || [], merchantOf: d.merchantOf || [] } : { error: d.error || String(r.status) });
+    } catch (e) { setCharityMine({ error: String(e?.message || e) }); }
+  }, [userEmail, sessionKey]);
+  useEffect(() => {
+    if (mainTab === 'charity') { loadCharityPools(); if (userEmail) { loadCharityMine(); loadMyPlaces(); } }
+    else if (mainTab === 'merchant' && userEmail) { loadCharityPools(); loadCharityMine(); }
+  }, [mainTab, userEmail, loadCharityPools, loadCharityMine, loadMyPlaces]);
+  useEffect(() => {
+    if (mainTab !== 'charity' || !charityFocus || !charityPools) return;
+    const el = document.getElementById(`pool-${charityFocus}`);
+    if (el && typeof el.scrollIntoView === 'function') el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }, [mainTab, charityFocus, charityPools]);
+  const charityNoticeText = () => t('點數無現金價值；投入後不可撤回；本機構不開立捐贈收據；折抵額度僅供在指定合作商家折抵消費，不可轉讓、不可兌現。經文雨不經手任何款項，折抵後的餘額由機構直接支付給商家。', 'Points have no cash value; contributions cannot be reversed; the organisation issues no donation receipt; the allowance can only be used as a discount at the listed shops and cannot be transferred or cashed out. VerseRain never handles money; the organisation pays the remainder to the shop directly.');
+  const openContribute = (pool) => {
+    if (!pool || !pool.id) return;
+    if (!userEmail) { setShowLoginModal('login'); setToast(t('請先登入才能投入點數', 'Sign in to contribute points')); setTimeout(() => setToast(null), 2500); return; }
+    setContributeModal({ pool }); setContributeNTD(10); setPointsBalance(null);
+    fetchPointsBalance();
+  };
+  const confirmContribute = async () => {
+    if (!contributeModal) return;
+    const points = Math.max(1, Math.floor(Number(contributeNTD) || 0)) * 1000;
+    setContributeBusy(true);
+    try {
+      const res = await fetch('/api/pools', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'contribute', email: userEmail, sessionKey, poolId: contributeModal.pool.id, points }) });
+      const d = await res.json().catch(() => ({}));
+      if (d.error === 'session_invalid' || d.error === 'login_required') { setShowLoginModal('login'); throw new Error(redeemErrorText('session_invalid')); }
+      if (!res.ok || !d.success) throw new Error(redeemErrorText(d.error || res.status));
+      if (d.balance) setPointsBalance(d.balance);
+      setContributeModal(null);
+      setToast(t('已投入 {p} 點，「{pool}」折抵額度 +NT${n} ❤️', 'Contributed {p} pts — NT${n} added to “{pool}” ❤️').replace('{p}', points.toLocaleString()).replace('{pool}', String(contributeModal.pool.name || '')).replace('{n}', String(d.contribution?.ntd ?? points / 1000)));
+      setTimeout(() => setToast(null), 3500);
+      loadCharityPools(); loadCharityMine();
+    } catch (e) {
+      setToast(String(e?.message || e)); setTimeout(() => setToast(null), 3500);
+    } finally {
+      setContributeBusy(false);
+    }
+  };
+  const poolRedeem = async () => {
+    const m = poolRedeemModal;
+    if (!m || !m.pool || !m.placeId) return;
+    const bill = Math.floor(Number(m.bill) || 0);
+    if (bill < 1) { setToast(redeemErrorText('bill_invalid')); setTimeout(() => setToast(null), 2500); return; }
+    setPoolRedeemBusy(true);
+    try {
+      const res = await fetch('/api/pools', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'pool_redeem', email: userEmail, sessionKey, poolId: m.pool.id, placeId: m.placeId, billNTD: bill }) });
+      const d = await res.json().catch(() => ({}));
+      if (d.voucher && (d.success || d.error === 'open_voucher_exists')) { saveActiveVoucher({ ...d.voucher, status: d.voucher.status || 'issued' }); setPoolRedeemModal(null); loadCharityMine(); return; }
+      if (d.error === 'too_small' && d.limitedBy === 'monthly') throw new Error(t('這家商家本月的折抵額度已用完', 'This shop’s monthly allowance is used up'));
+      throw new Error(redeemErrorText(d.error || res.status));
+    } catch (e) {
+      setToast(String(e?.message || e)); setTimeout(() => setToast(null), 3500);
+    } finally {
+      setPoolRedeemBusy(false);
+    }
+  };
+  const merchantPoolAction = async (action, placeId, poolId, caps = {}) => {
+    setPoolJoinBusy(placeId);
+    try {
+      const res = await fetch('/api/pools', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action, email: userEmail, sessionKey, poolId, placeId, ...caps }) });
+      const d = await res.json().catch(() => ({}));
+      if (!res.ok || !d.success) throw new Error(redeemErrorText(d.error || res.status));
+      setToast(action === 'merchant_leave' ? t('已退出愛心折抵池', 'Left the charity pool') : t('已更新愛心折抵池的參與設定', 'Charity pool participation saved'));
+      setTimeout(() => setToast(null), 2500);
+      setPoolJoinDraft(o => { const n = { ...o }; delete n[placeId]; return n; });
+      loadCharityMine(); loadCharityPools();
+    } catch (e) {
+      setToast(String(e?.message || e)); setTimeout(() => setToast(null), 3500);
+    } finally {
+      setPoolJoinBusy('');
+    }
+  };
+  const createPool = async () => {
+    const d0 = poolCreateDraft;
+    if (!d0.orgPlaceId || !d0.agree) { setToast(redeemErrorText('consent_required')); setTimeout(() => setToast(null), 2500); return; }
+    setPoolCreateBusy(true);
+    try {
+      const res = await fetch('/api/pools', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'create', email: userEmail, sessionKey, pool: { orgPlaceId: d0.orgPlaceId, name: d0.name, description: d0.description, agree: true } }) });
+      const d = await res.json().catch(() => ({}));
+      if (!res.ok || !d.success) throw new Error(redeemErrorText(d.error || res.status));
+      setPoolCreateDraft({ orgPlaceId: '', name: '', description: '', agree: false });
+      setToast(t('已送出，等待審核', 'Submitted, awaiting review')); setTimeout(() => setToast(null), 2500);
+      loadCharityMine();
+    } catch (e) {
+      setToast(String(e?.message || e)); setTimeout(() => setToast(null), 3500);
+    } finally {
+      setPoolCreateBusy(false);
+    }
+  };
+  const poolAdminAction = async (action, poolId) => {
+    try {
+      const res = await fetch('/api/pools', { method: 'POST', headers: adminHeaders(), body: JSON.stringify({ action, adminEmail: userEmail, poolId }) });
+      const d = await res.json().catch(() => ({}));
+      if (!res.ok || !d.success) throw new Error(d.error || String(res.status));
+      setToast(t('已更新折抵池', 'Pool updated')); setTimeout(() => setToast(null), 2000);
+      setRewardsAdminReload(n => n + 1);
+    } catch (e) { setToast(String(e?.message || e)); setTimeout(() => setToast(null), 3000); }
+  };
+  const poolStatusBadge = (st) => st === 'approved' ? { text: t('進行中', 'Open'), bg: '#dcfce7', fg: '#166534' } : st === 'pending' ? { text: t('待審核', 'Pending'), bg: '#fef3c7', fg: '#92400e' } : st === 'closed' ? { text: t('已關閉', 'Closed'), bg: '#e2e8f0', fg: '#334155' } : { text: t('已退回', 'Rejected'), bg: '#fee2e2', fg: '#991b1b' };
+  // 「我的登記」 card of an approved shop: join / update / leave a pool.
+  const renderMerchantPoolSection = (pl) => {
+    const joinedList = (charityMine && !charityMine.error ? charityMine.merchantOf : []).filter(m => m.placeId === pl.id);
+    const joinedIds = new Set(joinedList.map(m => m.poolId));
+    const openPools = (charityPools?.pools || []).filter(p => !joinedIds.has(p.id));
+    const key = `join-${pl.id}`;
+    const d = poolJoinDraft[key] || { poolId: openPools[0]?.id || '', perOrderMaxNTD: 500, monthlyMaxNTD: 5000, consent: false };
+    const setD = (patch) => setPoolJoinDraft(o => ({ ...o, [key]: { ...d, ...patch } }));
+    const busy = poolJoinBusy === pl.id;
+    const small = { width: 110, padding: '0.35rem 0.5rem', borderRadius: 6, border: '1px solid #cbd5e1', fontSize: '0.85rem', background: '#fff' };
+    const btn = (bg, fg = '#fff', border = 'none') => ({ background: bg, color: fg, border, borderRadius: 6, padding: '0.3rem 0.75rem', cursor: busy ? 'wait' : 'pointer', fontWeight: 700, fontSize: '0.8rem' });
+    return (
+      <div data-testid={`merchant-pool-${pl.id}`} style={{ marginTop: '0.6rem', paddingTop: '0.6rem', borderTop: '1px dashed #fecdd3' }}>
+        <b style={{ color: '#be123c', fontSize: '0.9rem' }}>❤️ {t('參與愛心折抵池', 'Join a charity pool')}</b>
+        {joinedList.map(m => {
+          const ek = `edit-${pl.id}-${m.poolId}`;
+          const ed = poolJoinDraft[ek] || { perOrderMaxNTD: m.perOrderMaxNTD, monthlyMaxNTD: m.monthlyMaxNTD };
+          const setE = (patch) => setPoolJoinDraft(o => ({ ...o, [ek]: { ...ed, ...patch } }));
+          const armed = deleteArmedId === `pool-leave-${pl.id}-${m.poolId}`;
+          return (
+            <div key={m.poolId} style={{ background: '#fff1f2', borderRadius: 8, padding: '0.5rem 0.7rem', marginTop: '0.4rem', fontSize: '0.85rem', color: '#334155' }}>
+              <div><b>{m.poolName}</b> <span style={{ color: '#64748b' }}>· ⛪ {m.orgPlaceName}</span> {m.poolStatus !== 'approved' && <span style={{ color: '#94a3b8' }}>({poolStatusBadge(m.poolStatus).text})</span>}</div>
+              <div style={{ color: '#64748b', fontSize: '0.8rem', marginTop: 2 }}>{t('本月已折抵 NT${n}', 'NT${n} used this month').replace('{n}', String(m.monthUsedNTD || 0))}</div>
+              <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap', alignItems: 'center', marginTop: '0.4rem' }}>
+                <label style={{ fontSize: '0.78rem', color: '#475569' }}>{t('單筆最高折抵 NT$', 'Max discount per order NT$')} <input type="number" min={1} max={2000} value={ed.perOrderMaxNTD} onChange={e => setE({ perOrderMaxNTD: Number(e.target.value) })} style={small} /></label>
+                <label style={{ fontSize: '0.78rem', color: '#475569' }}>{t('每月最高折抵 NT$', 'Max discount per month NT$')} <input type="number" min={1} max={10000} value={ed.monthlyMaxNTD} onChange={e => setE({ monthlyMaxNTD: Number(e.target.value) })} style={small} /></label>
+                <button type="button" disabled={busy} onClick={() => merchantPoolAction('merchant_update', pl.id, m.poolId, { perOrderMaxNTD: ed.perOrderMaxNTD, monthlyMaxNTD: ed.monthlyMaxNTD, consent: true })} style={btn('#be123c')}>{t('更新上限', 'Update caps')}</button>
+                <button type="button" disabled={busy} onClick={() => { if (!armed) { armDelete(`pool-leave-${pl.id}-${m.poolId}`); return; } merchantPoolAction('merchant_leave', pl.id, m.poolId); }} style={btn('transparent', '#991b1b', '1px solid #fecaca')}>{armed ? t('再按一次確認退出', 'Tap again to leave') : t('退出', 'Leave')}</button>
+              </div>
+            </div>
+          );
+        })}
+        {openPools.length > 0 ? (
+          <div style={{ marginTop: '0.5rem', fontSize: '0.85rem', color: '#334155' }}>
+            <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap', alignItems: 'center' }}>
+              <select value={d.poolId} onChange={e => setD({ poolId: e.target.value })} style={{ ...small, width: 'auto', maxWidth: '100%' }}>
+                {openPools.map(p => <option key={p.id} value={p.id}>{p.name}（{p.orgPlaceName}）</option>)}
+              </select>
+              <label style={{ fontSize: '0.78rem', color: '#475569' }}>{t('單筆最高折抵 NT$', 'Max discount per order NT$')} <input type="number" min={1} max={2000} value={d.perOrderMaxNTD} onChange={e => setD({ perOrderMaxNTD: Number(e.target.value) })} style={small} /></label>
+              <label style={{ fontSize: '0.78rem', color: '#475569' }}>{t('每月最高折抵 NT$', 'Max discount per month NT$')} <input type="number" min={1} max={10000} value={d.monthlyMaxNTD} onChange={e => setD({ monthlyMaxNTD: Number(e.target.value) })} style={small} /></label>
+            </div>
+            <label style={{ display: 'flex', gap: '0.5rem', alignItems: 'flex-start', marginTop: '0.5rem', fontSize: '0.8rem', color: '#475569', lineHeight: 1.5 }}>
+              <input type="checkbox" checked={!!d.consent} onChange={e => setD({ consent: e.target.checked })} style={{ marginTop: 3 }} />
+              <span>{t('我同意參與此愛心折抵池：本店自願提供折扣，接受機構以折抵池額度折抵消費（單筆與每月上限如上），餘額由機構直接支付；本店可隨時退出，已產生的折扣券仍予受理。經文雨不經手款項、不收取任何費用。', 'I agree to join this charity pool: the shop voluntarily offers the discount, accepts the organisation’s pool allowance against purchases (within the caps above) and receives the remainder from the organisation directly; the shop may leave at any time and will still honour vouchers already issued. VerseRain handles no money and charges no fee.')}</span>
+            </label>
+            <button type="button" disabled={busy || !d.consent || !d.poolId} onClick={() => merchantPoolAction('merchant_join', pl.id, d.poolId, { perOrderMaxNTD: d.perOrderMaxNTD, monthlyMaxNTD: d.monthlyMaxNTD, consent: true })} style={{ ...btn(d.consent ? '#be123c' : '#e2e8f0', d.consent ? '#fff' : '#94a3b8'), marginTop: '0.4rem' }}>❤️ {t('加入折抵池', 'Join pool')}</button>
+          </div>
+        ) : joinedList.length === 0 ? (
+          <div style={{ color: '#94a3b8', fontSize: '0.82rem', marginTop: 4 }}>{t('目前沒有開放中的愛心折抵池', 'No charity pool is open right now')}</div>
+        ) : null}
+      </div>
+    );
+  };
 
   // Merge the two inboxes (voice encouragement by email, referral notifications
   // by personalCode) into one 🔔 list, newest first, with a combined unread
@@ -25832,7 +26026,7 @@ const deDict = {
                     verserain
                   </div>
                   <div className="app-brand-version" style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', marginTop: '4px', marginLeft: '2px' }}>
-                    v4.0.78
+                    v4.0.79
                   </div>
                 </div>
                 <div ref={langPickerRef} className="app-lang-control" style={{ position: 'relative' }}>
@@ -26475,6 +26669,7 @@ const deDict = {
                       { id: 'feedback', link: `mailto:hungry4grace@gmail.com?subject=${encodeURIComponent('經文雨 意見回饋（VerseRain Feedback）')}`, Icon: Mail, label: t('意見回饋', 'Feedback'), desc: t('聯絡與建議', 'Bugs & Suggestions'), color: '#ec4899' },
                       { id: 'sponsors', Icon: Gift, label: t('贊助獎勵計劃（實驗階段）', 'Sponsored Rewards (pilot)'), desc: t('通過經文、邀請朋友，贏得禮券', 'Pass verses, invite friends, earn vouchers'), color: '#f59e0b' },
                       ...(SHOW_DONATE ? [{ id: 'donate', Icon: Heart, label: t('支持經文雨', 'Support VerseRain'), desc: t('小額支持 App 開發與維運', 'Help fund development & hosting'), color: '#ef4444' }] : []),
+                      { id: 'charity', Icon: Heart, label: t('愛心折抵池', 'Charity discount pool'), desc: t('投入點數，成為教會／機構的折抵額度', 'Turn points into a discount allowance for a church or organisation'), color: '#e11d48' },
                       { id: 'sponsor', Icon: Gift, label: t('贊助經文雨', 'Sponsor VerseRain'), desc: t('企業家與教會如何加入推廣讀經', 'How businesses & churches can join'), color: '#7c3aed' },
                       { id: 'merchant', Icon: Store, label: t('登記商家／教會', 'Register a shop / church'), desc: t('在「誰在玩」地圖上標記，提供點數折扣', 'Get on the map and offer a points discount'), color: '#d97706' },
                       { id: 'verify', Icon: Ticket, label: t('折扣券核銷', 'Verify a coupon'), desc: t('店家輸入代碼確認折扣', 'Shops confirm a customer’s voucher here'), color: '#0d9488' },
@@ -29101,9 +29296,9 @@ const deDict = {
                                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem', marginTop: '0.4rem', maxHeight: 320, overflowY: 'auto' }}>
                                     {vouchersAdmin.slice(0, 100).map(v => { const st = v.computedStatus || v.status; return (
                                       <div key={v.code} style={{ display: 'flex', justifyContent: 'space-between', gap: '0.5rem', flexWrap: 'wrap', background: '#fff', border: '1px solid #e2e8f0', borderRadius: 6, padding: '0.35rem 0.6rem', fontSize: '0.8rem' }}>
-                                        <span><code>{v.code}</code> · {v.placeName} · NT${v.ntd} · {v.playerName} · <b>{st}</b> · {new Date(v.issuedAt).toLocaleString()}</span>
+                                        <span>{v.kind === 'pool' ? '❤️ ' : ''}<code>{v.code}</code> · {v.placeName} · NT${v.ntd} · {v.kind === 'pool' ? v.poolName : v.playerName} · <b>{st}</b> · {new Date(v.issuedAt).toLocaleString()}</span>
                                         <span style={{ display: 'flex', gap: '0.3rem' }}>
-                                          {(st === 'issued' || st === 'used') && <button type="button" onClick={() => { if (window.confirm(t('作廢並退還點數？', 'Void and refund points?'))) voucherAdminAction(v.code, 'void'); }} style={smallBtn('transparent', '#991b1b', '1px solid #fecaca')}>{t('作廢', 'Void')}</button>}
+                                          {(st === 'issued' || st === 'used') && <button type="button" onClick={() => { if (window.confirm(v.kind === 'pool' ? t('作廢並退回折抵額度？', 'Void and return the allowance?') : t('作廢並退還點數？', 'Void and refund points?'))) voucherAdminAction(v.code, 'void'); }} style={smallBtn('transparent', '#991b1b', '1px solid #fecaca')}>{t('作廢', 'Void')}</button>}
                                           {st === 'void' && <button type="button" onClick={() => voucherAdminAction(v.code, 'restore')} style={smallBtn('transparent', '#64748b', '1px solid #cbd5e1')}>{t('恢復', 'Restore')}</button>}
                                         </span>
                                       </div>
@@ -29111,6 +29306,42 @@ const deDict = {
                                   </div>
                                 )}
                               </div>
+                            </div>
+                          );
+                        })()}
+
+                        {/* 愛心折抵池審核 */}
+                        {(() => {
+                          const all = poolsAdmin || [];
+                          const shown = all.filter(p => poolsAdminFilter === 'all' ? true : p.status === poolsAdminFilter);
+                          const counts = { pending: all.filter(p => p.status === 'pending').length, approved: all.filter(p => p.status === 'approved').length, closed: all.filter(p => p.status === 'closed').length, rejected: all.filter(p => p.status === 'rejected').length };
+                          const smallBtn = (bg, fg = '#fff', border = 'none') => ({ background: bg, color: fg, border, borderRadius: '6px', padding: '0.35rem 0.7rem', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 700 });
+                          return (
+                            <div data-testid="admin-pools" style={{ border: '1px solid #fecdd3', background: '#fff1f2', borderRadius: 10, padding: '0.9rem 1rem', marginBottom: '1rem' }}>
+                              <b style={{ color: '#be123c' }}>❤️ {t('愛心折抵池', 'Charity discount pool')}</b>
+                              <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap', margin: '0.6rem 0' }}>
+                                {[['pending', t('待審核', 'Pending')], ['approved', t('進行中', 'Open')], ['closed', t('已關閉', 'Closed')], ['rejected', t('已退回', 'Rejected')], ['all', t('全部', 'All')]].map(([id, lab]) => (
+                                  <button key={id} type="button" onClick={() => setPoolsAdminFilter(id)} style={{ padding: '0.3rem 0.8rem', borderRadius: 20, border: 'none', background: poolsAdminFilter === id ? '#be123c' : '#fecdd3', color: poolsAdminFilter === id ? '#fff' : '#9f1239', fontWeight: 700, cursor: 'pointer', fontSize: '0.8rem' }}>{lab}{id !== 'all' ? ` (${counts[id]})` : ''}</button>
+                                ))}
+                              </div>
+                              {!poolsAdmin ? <div style={{ color: '#94a3b8', fontSize: '0.85rem' }}>{t('載入中…', 'Loading…')}</div> : shown.length === 0 ? <div style={{ color: '#94a3b8', fontSize: '0.85rem' }}>{t('目前沒有項目', 'Nothing here yet')}</div> : (
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                                  {shown.map(p => { const c = p.counters || {}; const b = poolStatusBadge(p.status); return (
+                                    <div key={p.id} style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 8, padding: '0.5rem 0.7rem', fontSize: '0.85rem' }}>
+                                      <div style={{ display: 'flex', justifyContent: 'space-between', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
+                                        <span><b>❤️ {p.name}</b> · ⛪ {p.orgPlaceName} <span style={{ background: b.bg, color: b.fg, borderRadius: 999, padding: '0.05rem 0.5rem', fontSize: '0.74rem', fontWeight: 700 }}>{b.text}</span></span>
+                                        <span style={{ display: 'flex', gap: '0.3rem' }}>
+                                          {(p.status === 'pending' || p.status === 'closed') && <button type="button" onClick={() => poolAdminAction('approve', p.id)} style={smallBtn('#16a34a')}>✅ {t('核准', 'Approve')}</button>}
+                                          {p.status === 'pending' && <button type="button" onClick={() => poolAdminAction('reject', p.id)} style={smallBtn('transparent', '#991b1b', '1px solid #fecaca')}>{t('退回', 'Reject')}</button>}
+                                          {p.status === 'approved' && <button type="button" onClick={() => poolAdminAction('close', p.id)} style={smallBtn('transparent', '#64748b', '1px solid #cbd5e1')}>{t('關閉', 'Close')}</button>}
+                                        </span>
+                                      </div>
+                                      <div style={{ color: '#94a3b8', fontSize: '0.78rem' }}>{p.ownerEmail} · {new Date(p.createdAt).toLocaleDateString()} · {t('已投入 NT${a} · 可用折抵額度 NT${b} · {n} 位參與 · 已折抵 NT${c}', 'NT${a} contributed · NT${b} allowance left · {n} participants · NT${c} used').replace('{a}', String(c.contributedNTD || 0)).replace('{b}', String(c.allowanceNTD || 0)).replace('{n}', String(c.contributors || 0)).replace('{c}', '—')} · 🏪 {Object.keys(p.merchants || {}).length}</div>
+                                      {p.description ? <div style={{ color: '#475569', fontSize: '0.8rem', marginTop: 2 }}>{p.description}</div> : null}
+                                    </div>
+                                  ); })}
+                                </div>
+                              )}
                             </div>
                           );
                         })()}
@@ -29307,6 +29538,12 @@ const deDict = {
                           )}
                         </div>
                       )}
+                    </div>
+
+                    <div style={{ ...card, border: '1px solid #fecdd3', background: '#fff7f8' }}>
+                      <h3 style={h3}>❤️ {t('愛心折抵池', 'Charity discount pool')}</h3>
+                      <div style={{ color: '#475569', fontSize: '0.9rem', lineHeight: 1.6 }}>{t('把點數投入教會或機構的愛心專案，成為他們在合作商家採購時的折抵額度。點數無現金價值，投入後不可撤回。', 'Put points into a church or organisation’s charity project as their discount allowance at participating shops. Points have no cash value and a contribution cannot be reversed.')}</div>
+                      <button type="button" onClick={() => setMainTab('charity')} style={{ marginTop: '0.6rem', background: '#e11d48', color: '#fff', border: 'none', borderRadius: 6, padding: '0.35rem 0.9rem', cursor: 'pointer', fontWeight: 700 }}>❤️ {t('看看有哪些愛心折抵池', 'See the charity pools')}</button>
                     </div>
 
                     <div style={card}>
@@ -29541,6 +29778,7 @@ const deDict = {
                         <div>1️⃣ {t('商家登記名稱、地址、5–20% 的折扣與照片，經審核後出現在「誰在玩」地圖上。', 'A shop registers its name, address, a 5–20% discount and a photo; after review it appears on the map.')}</div>
                         <div>2️⃣ {t('玩家在地圖上點商家，用背經點數產生一次性折扣券（每 1,000 點折抵 NT$1；點數無現金價值，只能在合作商家折抵）。', 'Players tap the shop on the map and turn verse points into a one-time discount coupon (every 1,000 points takes NT$1 off; points have no cash value and only work at partner shops).')}</div>
                         <div>3️⃣ {t('結帳時出示折扣券，店家在核銷頁確認；折扣由商家吸收，這就是商家的贊助。', 'The customer shows the coupon at checkout and the shop confirms it on the verify page; the shop absorbs the discount — that is its sponsorship.')}</div>
+                        <div>4️⃣ {t('商家也可以參與教會／機構的「愛心折抵池」，接受機構用玩家投入的額度折抵採購，上限由商家自訂。', 'Shops can also join a church or organisation’s charity pool and accept its allowance (contributed by players) against purchases, within caps the shop sets.')}</div>
                         <div style={{ color: '#64748b', fontSize: '0.82rem', marginTop: 4 }}>{t('每張券上限 NT$200、每人每月 NT$500、同一商家每天一張、30 分鐘內有效；商家可設每日折抵上限。', 'Caps: NT$200 per voucher, NT$500 per person per month, one per shop per day, valid 30 minutes; shops can set a daily cap.')}</div>
                       </div>
                       <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginTop: '0.7rem' }}>
@@ -29569,6 +29807,261 @@ const deDict = {
                         {t('個人小額支持 App 開發，請到', 'For small personal gifts toward development, see')}{' '}
                         <button type="button" onClick={() => setMainTab('donate')} style={{ background: 'transparent', border: 'none', color: '#3b82f6', cursor: 'pointer', fontWeight: 700, padding: 0, fontSize: '0.82rem' }}>{t('支持經文雨', 'Support VerseRain')} →</button>
                       </div>}
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {mainTab === 'charity' && (() => {
+                const card = { background: '#fff', border: '1px solid #e2e8f0', borderRadius: 12, padding: '1rem 1.2rem', marginBottom: '1rem' };
+                const h3 = { margin: '0 0 0.6rem', color: '#1e293b', fontSize: '1.05rem' };
+                const field = { width: '100%', boxSizing: 'border-box', padding: '0.5rem 0.7rem', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: '0.95rem', background: '#fff' };
+                const label = { display: 'block', color: '#475569', fontSize: '0.82rem', fontWeight: 700, margin: '0.8rem 0 0.25rem' };
+                const pools = charityPools?.pools || [];
+                const mine = charityMine && !charityMine.error ? charityMine : null;
+                const owned = mine?.owned || [];
+                const ownedPlaceIds = new Set(owned.map(p => p.orgPlaceId));
+                const eligibleOrgPlaces = (myPlaces || []).filter(pl => ['church', 'org'].includes(pl.kind) && pl.status === 'approved' && !ownedPlaceIds.has(pl.id));
+                const bar = (value, max) => (
+                  <div style={{ background: '#fee2e2', borderRadius: 999, height: 8, overflow: 'hidden' }}><div style={{ width: `${max > 0 ? Math.min(100, Math.round(value / max * 100)) : 0}%`, background: '#e11d48', height: '100%' }} /></div>
+                );
+                const statsLine = (p) => t('已投入 NT${a} · 可用折抵額度 NT${b} · {n} 位參與 · 已折抵 NT${c}', 'NT${a} contributed · NT${b} allowance left · {n} participants · NT${c} used').replace('{a}', String(p.contributedNTD || 0)).replace('{b}', String(p.allowanceNTD || 0)).replace('{n}', String(p.contributors || 0)).replace('{c}', String(p.usedNTD || 0));
+                const notice = (
+                  <div data-testid="charity-notice" style={{ background: '#fffbeb', border: '1px solid #fde68a', color: '#78350f', borderRadius: 10, padding: '0.7rem 0.9rem', fontSize: '0.82rem', lineHeight: 1.6, marginBottom: '1rem' }}>
+                    ⚠️ {charityNoticeText()}
+                  </div>
+                );
+                return (
+                  <div style={{ backgroundColor: '#fff7f8', borderRadius: '8px', border: '1px solid #fecdd3', padding: '1.5rem', boxShadow: '0 1px 3px rgba(0,0,0,0.05)', maxWidth: 720, margin: '0 auto' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.6rem', marginBottom: '0.8rem' }}>
+                      <h2 style={{ color: '#1e293b', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Heart size={26} color="#e11d48" /> {t('愛心折抵池', 'Charity discount pool')}</h2>
+                      <button type="button" onClick={() => setMainTab('advanced')} style={{ background: 'transparent', border: '1px solid #cbd5e1', color: '#64748b', borderRadius: '6px', padding: '0.35rem 0.8rem', cursor: 'pointer', fontSize: '0.85rem' }}>← {t('返回', 'Back')}</button>
+                    </div>
+                    <p style={{ color: '#475569', lineHeight: 1.7, marginTop: 0 }}>
+                      {t('把你的背經點數投入教會或機構的愛心折抵池。投入的點數會從你的帳號扣除，成為該機構在合作商家消費時的折抵額度（每 1,000 點可折抵 NT$1）。', 'Put your verse points into a church or organisation’s charity pool. The points are deducted from your account and become that organisation’s discount allowance at participating shops (every 1,000 points gives NT$1 of allowance).')}
+                    </p>
+                    {notice}
+
+                    <div style={card}>
+                      <h3 style={h3}>❤️ {t('進行中的愛心折抵池', 'Open charity pools')}</h3>
+                      {!charityPools ? <div style={{ color: '#94a3b8' }}>{t('載入中…', 'Loading…')}</div> : charityPools.error ? (
+                        <div style={{ color: '#b45309', fontSize: '0.9rem' }}>{String(charityPools.error)}</div>
+                      ) : pools.length === 0 ? (
+                        <div style={{ color: '#94a3b8', fontSize: '0.9rem' }}>{t('目前還沒有開放中的愛心折抵池。已上地圖的教會或機構可以在下方建立。', 'No charity pool is open yet. A church or organisation already on the map can create one below.')}</div>
+                      ) : (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
+                          {pools.map(p => { const focus = p.id === charityFocus; return (
+                            <div key={p.id} id={`pool-${p.id}`} data-testid="pool-card" style={{ border: focus ? '2px solid #e11d48' : '1px solid #fecdd3', background: '#fff', borderRadius: 10, padding: '0.8rem 1rem' }}>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'baseline' }}>
+                                <b style={{ color: '#1e293b', fontSize: '1.02rem' }}>❤️ {p.name}</b>
+                                <span style={{ color: '#64748b', fontSize: '0.85rem' }}>⛪ {p.orgPlaceName}</span>
+                              </div>
+                              {p.description ? <div style={{ color: '#475569', fontSize: '0.9rem', lineHeight: 1.6, margin: '0.4rem 0', whiteSpace: 'pre-wrap' }}>{p.description}</div> : null}
+                              <div style={{ margin: '0.5rem 0 0.3rem' }}>{bar(p.allowanceNTD || 0, Math.max(1, p.contributedNTD || 0))}</div>
+                              <div style={{ color: '#334155', fontSize: '0.84rem' }}>{statsLine(p)}</div>
+                              <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap', marginTop: '0.5rem' }}>
+                                {(p.merchants || []).length === 0 ? <span style={{ color: '#94a3b8', fontSize: '0.8rem' }}>{t('尚無合作商家參與', 'No participating shop yet')}</span> : (p.merchants || []).map(m => (
+                                  <span key={m.placeId} style={{ background: '#fff1f2', border: '1px solid #fecdd3', color: '#9f1239', borderRadius: 999, padding: '0.1rem 0.6rem', fontSize: '0.78rem' }}>🏪 {m.placeName} · {t('單筆最高 NT${n}', 'up to NT${n} per order').replace('{n}', String(m.perOrderMaxNTD))}</span>
+                                ))}
+                              </div>
+                              <button type="button" onClick={() => openContribute(p)} style={{ marginTop: '0.7rem', background: '#e11d48', color: '#fff', border: 'none', borderRadius: 8, padding: '0.45rem 1rem', cursor: 'pointer', fontWeight: 800 }}>❤️ {t('投入點數', 'Contribute points')}</button>
+                            </div>
+                          ); })}
+                        </div>
+                      )}
+                    </div>
+
+                    {userEmail && (
+                      <div style={card}>
+                        <h3 style={h3}>📒 {t('我的投入紀錄', 'My contributions')}</h3>
+                        {!charityMine ? <div style={{ color: '#94a3b8', fontSize: '0.9rem' }}>{t('載入中…', 'Loading…')}</div> : charityMine.error ? (
+                          <div style={{ color: '#b45309', fontSize: '0.9rem' }}>{redeemErrorText(charityMine.error)}{charityMine.error === 'session_invalid' && <> <button type="button" onClick={() => setShowLoginModal('login')} style={{ background: '#3b82f6', color: '#fff', border: 'none', borderRadius: 6, padding: '0.2rem 0.7rem', cursor: 'pointer', fontWeight: 700 }}>{t('重新登入', 'Sign in again')}</button></>}</div>
+                        ) : (mine?.contributed || []).length === 0 ? (
+                          <div style={{ color: '#94a3b8', fontSize: '0.9rem' }}>{t('還沒有投入過。', 'No contributions yet.')}</div>
+                        ) : (
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem', maxHeight: 260, overflowY: 'auto' }}>
+                            {(mine?.contributed || []).map(c => (
+                              <div key={c.id} style={{ display: 'flex', justifyContent: 'space-between', gap: '0.5rem', flexWrap: 'wrap', fontSize: '0.86rem', background: '#f8fafc', borderRadius: 6, padding: '0.3rem 0.6rem' }}>
+                                <span style={{ color: '#334155' }}>{new Date(c.at).toLocaleString()} · ❤️ {c.poolName}</span>
+                                <span style={{ color: '#9f1239', fontWeight: 700 }}>{t('{p} 點 → 額度 NT${n}', '{p} pts → NT${n} allowance').replace('{p}', Number(c.points || 0).toLocaleString()).replace('{n}', String(c.ntd || 0))}</span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {owned.length > 0 && owned.map(op => { const b = poolStatusBadge(op.status); return (
+                      <div key={op.id} data-testid="owned-pool" style={{ ...card, border: '1px solid #fecdd3' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
+                          <h3 style={{ ...h3, margin: 0 }}>⛪ {t('我的愛心折抵池', 'My charity pool')}：{op.name}</h3>
+                          <span style={{ background: b.bg, color: b.fg, borderRadius: 999, padding: '0.15rem 0.6rem', fontSize: '0.78rem', fontWeight: 700 }}>{b.text}</span>
+                        </div>
+                        <div style={{ textAlign: 'center', margin: '0.8rem 0' }}>
+                          <div style={{ color: '#64748b', fontSize: '0.8rem' }}>{t('可用折抵額度', 'Discount allowance available')}</div>
+                          <div style={{ fontSize: '2rem', fontWeight: 900, color: '#be123c' }}>NT${op.allowanceNTD || 0}</div>
+                          <div style={{ color: '#334155', fontSize: '0.84rem' }}>{statsLine(op)}</div>
+                        </div>
+                        {op.status === 'pending' && <div style={{ color: '#92400e', background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 8, padding: '0.5rem 0.7rem', fontSize: '0.85rem' }}>{t('已送出，等待審核', 'Submitted, awaiting review')}</div>}
+                        <div style={{ marginTop: '0.6rem' }}>
+                          <b style={{ color: '#334155', fontSize: '0.9rem' }}>🏪 {t('參與的商家', 'Participating shops')}</b>
+                          {(op.merchants || []).length === 0 ? <div style={{ color: '#94a3b8', fontSize: '0.84rem' }}>{t('還沒有商家參與。請邀請商家到「登記商家」頁的「我的登記」勾選參與。', 'No shop has joined yet. Invite shops to tick “Join a charity pool” under their listing on the Register page.')}</div> : (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem', marginTop: '0.3rem' }}>
+                              {(op.merchants || []).map(m => (
+                                <div key={m.placeId} style={{ display: 'flex', justifyContent: 'space-between', gap: '0.5rem', flexWrap: 'wrap', fontSize: '0.85rem', background: '#f8fafc', borderRadius: 6, padding: '0.3rem 0.6rem' }}>
+                                  <span style={{ color: '#334155' }}>🏪 {m.placeName}</span>
+                                  <span style={{ color: '#64748b' }}>{t('單筆最高 NT${n}', 'up to NT${n} per order').replace('{n}', String(m.perOrderMaxNTD))} · {t('每月最高 NT${n}', 'up to NT${n} a month').replace('{n}', String(m.monthlyMaxNTD))} · {t('本月已折抵 NT${n}', 'NT${n} used this month').replace('{n}', String(m.monthUsedNTD || 0))}</span>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                        {op.status === 'approved' && (op.merchants || []).length > 0 && (
+                          <button type="button" onClick={() => setPoolRedeemModal({ pool: op, placeId: op.merchants[0].placeId, bill: '' })} style={{ marginTop: '0.7rem', background: '#f59e0b', color: '#fff', border: 'none', borderRadius: 8, padding: '0.45rem 1rem', cursor: 'pointer', fontWeight: 800 }}>🎟️ {t('產生折扣券', 'Get a discount voucher')}</button>
+                        )}
+                        {(op.contributions || []).length > 0 && (
+                          <div style={{ marginTop: '0.8rem' }}>
+                            <b style={{ color: '#334155', fontSize: '0.9rem' }}>❤️ {t('最近投入', 'Recent contributions')}</b>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', marginTop: '0.3rem', maxHeight: 200, overflowY: 'auto' }}>
+                              {op.contributions.slice(0, 20).map(c => (
+                                <div key={c.id} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.82rem', color: '#334155', background: '#f8fafc', borderRadius: 6, padding: '0.25rem 0.6rem' }}>
+                                  <span>{new Date(c.at).toLocaleDateString()} · {c.who}</span><span style={{ color: '#9f1239', fontWeight: 700 }}>+NT${c.ntd}</span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        {(op.vouchers || []).length > 0 && (
+                          <div style={{ marginTop: '0.8rem' }}>
+                            <b style={{ color: '#334155', fontSize: '0.9rem' }}>🎟️ {t('最近折扣券', 'Recent coupons')}</b>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', marginTop: '0.3rem', maxHeight: 200, overflowY: 'auto' }}>
+                              {op.vouchers.slice(0, 20).map(v => { const vb = voucherStatusBadge(v.status); return (
+                                <div key={v.code} style={{ display: 'flex', justifyContent: 'space-between', gap: '0.5rem', flexWrap: 'wrap', fontSize: '0.82rem', color: '#334155', background: '#f8fafc', borderRadius: 6, padding: '0.25rem 0.6rem' }}>
+                                  <span>{new Date(v.usedAt || v.issuedAt).toLocaleString()} · {v.placeName} · <b style={{ color: '#166534' }}>NT${v.ntd}</b>{v.status === 'issued' && <> · <button type="button" onClick={() => saveActiveVoucher({ ...v, status: 'issued' })} style={{ background: '#f59e0b', color: '#fff', border: 'none', borderRadius: 6, padding: '0.1rem 0.5rem', cursor: 'pointer', fontWeight: 700, fontSize: '0.76rem' }}>{t('顯示折扣券', 'Show coupon')}</button></>}</span>
+                                  <span style={{ background: vb.bg, color: vb.fg, borderRadius: 999, padding: '0.05rem 0.55rem', fontSize: '0.74rem', fontWeight: 700 }}>{vb.text}</span>
+                                </div>
+                              ); })}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    ); })}
+
+                    {userEmail && eligibleOrgPlaces.length > 0 && (
+                      <div style={card} data-testid="pool-create">
+                        <h3 style={h3}>⛪ {t('建立愛心折抵池', 'Create a charity pool')}</h3>
+                        <div style={{ color: '#475569', fontSize: '0.88rem', lineHeight: 1.6 }}>{t('你的教會／機構已在地圖上，可以發起一個愛心專案，接受玩家投入點數，並在合作商家採購時折抵。', 'Your church / organisation is on the map, so it can open a charity project that receives players’ points and uses them as a discount when buying from participating shops.')}</div>
+                        <label style={label}>{t('教會／機構標記', 'Church / organisation marker')}</label>
+                        <select value={poolCreateDraft.orgPlaceId} onChange={e => setPoolCreateDraft(d => ({ ...d, orgPlaceId: e.target.value }))} style={field}>
+                          <option value="">{t('請選擇', 'Choose')}</option>
+                          {eligibleOrgPlaces.map(pl => <option key={pl.id} value={pl.id}>{pl.name}</option>)}
+                        </select>
+                        <label style={label}>{t('專案名稱', 'Project name')}</label>
+                        <input type="text" maxLength={60} value={poolCreateDraft.name} onChange={e => setPoolCreateDraft(d => ({ ...d, name: e.target.value }))} placeholder={t('例如：偏鄉長輩愛筵池', 'e.g. Rural elders’ love-feast pool')} style={field} />
+                        <label style={label}>{t('用途說明', 'What it is for')}</label>
+                        <textarea maxLength={300} rows={3} value={poolCreateDraft.description} onChange={e => setPoolCreateDraft(d => ({ ...d, description: e.target.value }))} placeholder={t('例如：每月為 40 位偏鄉長輩辦一次愛筵，採購便當與麵包。', 'e.g. A monthly love feast for 40 rural elders: lunch boxes and bread.')} style={{ ...field, resize: 'vertical' }} />
+                        <label style={{ display: 'flex', gap: '0.5rem', alignItems: 'flex-start', marginTop: '0.8rem', fontSize: '0.82rem', color: '#475569', lineHeight: 1.5 }}>
+                          <input type="checkbox" checked={poolCreateDraft.agree} onChange={e => setPoolCreateDraft(d => ({ ...d, agree: e.target.checked }))} style={{ marginTop: 3 }} />
+                          <span>{t('我確認本機構了解：折抵額度不可轉讓、不可兌現、不開立捐贈收據，僅供在合作商家折抵消費。', 'I confirm the organisation understands the allowance cannot be transferred or cashed out, no donation receipt is issued, and it is only usable as a discount at participating shops.')}</span>
+                        </label>
+                        <button type="button" disabled={poolCreateBusy || !poolCreateDraft.agree || !poolCreateDraft.orgPlaceId} onClick={createPool} style={{ marginTop: '0.8rem', background: (poolCreateDraft.agree && poolCreateDraft.orgPlaceId) ? '#e11d48' : '#e2e8f0', color: (poolCreateDraft.agree && poolCreateDraft.orgPlaceId) ? '#fff' : '#94a3b8', border: 'none', borderRadius: 8, padding: '0.5rem 1.1rem', cursor: poolCreateBusy ? 'wait' : 'pointer', fontWeight: 800 }}>{poolCreateBusy ? '…' : `❤️ ${t('送出審核', 'Submit for review')}`}</button>
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
+
+              {/* ── 投入視窗：把點數投入愛心折抵池 ── */}
+              {contributeModal && (() => {
+                const pb = pointsBalance; const pool = contributeModal.pool;
+                const field = { width: '100%', boxSizing: 'border-box', padding: '0.6rem 0.8rem', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: '1.1rem', background: '#fff' };
+                const maxNTD = pb && !pb.error ? Math.max(0, Math.min(100, Math.floor((pb.balancePoints || 0) / 1000))) : 100;
+                const ntd = Math.max(1, Math.min(Math.floor(Number(contributeNTD) || 1), Math.max(1, maxNTD)));
+                const points = ntd * 1000;
+                return (
+                  <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 3000, padding: '1rem' }} onClick={(e) => { if (e.target === e.currentTarget && !contributeBusy) setContributeModal(null); }}>
+                    <div data-testid="contribute-modal" style={{ background: '#fff', borderRadius: 14, padding: '1.2rem 1.3rem', width: '100%', maxWidth: 420, boxShadow: '0 20px 60px rgba(0,0,0,0.3)' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.5rem' }}>
+                        <div>
+                          <div style={{ color: '#64748b', fontSize: '0.8rem' }}>❤️ {t('愛心折抵池', 'Charity discount pool')}</div>
+                          <div style={{ fontWeight: 800, fontSize: '1.15rem', color: '#1e293b' }}>{pool.name}</div>
+                          <div style={{ color: '#64748b', fontSize: '0.82rem' }}>⛪ {pool.orgPlaceName}</div>
+                        </div>
+                        <button type="button" onClick={() => setContributeModal(null)} style={{ background: 'transparent', border: 'none', fontSize: '1.3rem', cursor: 'pointer', color: '#94a3b8' }}>✕</button>
+                      </div>
+                      {!pb ? (
+                        <div style={{ color: '#94a3b8', padding: '1rem 0' }}>{pointsBalanceBusy ? t('載入中…', 'Loading…') : ''}</div>
+                      ) : pb.error ? (
+                        <div style={{ color: '#b45309', padding: '0.8rem 0', fontSize: '0.9rem' }}>{redeemErrorText(pb.error)}{pb.error === 'session_invalid' && <> <button type="button" onClick={() => setShowLoginModal('login')} style={{ background: '#3b82f6', color: '#fff', border: 'none', borderRadius: 6, padding: '0.25rem 0.8rem', cursor: 'pointer', fontWeight: 700 }}>{t('重新登入', 'Sign in again')}</button></>}</div>
+                      ) : !pb.eligible ? (
+                        <div style={{ color: '#b45309', padding: '0.8rem 0', fontSize: '0.9rem' }}>{redeemErrorText(['session_invalid', 'not_enough_passed', 'account_too_new', 'no_email'].find(r => (pb.reasons || []).includes(r)) || 'not_eligible')}</div>
+                      ) : maxNTD < 1 ? (
+                        <div style={{ color: '#b45309', padding: '0.8rem 0', fontSize: '0.9rem' }}>{t('可用點數不足（至少 1,000 點才能投入）', 'Not enough available points (at least 1,000 pts needed)')}</div>
+                      ) : (
+                        <div style={{ marginTop: '0.8rem' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem', color: '#334155', marginBottom: '0.6rem' }}>
+                            <span>{t('可用點數', 'Available points')}</span>
+                            <b>{(pb.balancePoints || 0).toLocaleString()} {t('點', 'pts')}</b>
+                          </div>
+                          <label style={{ color: '#64748b', fontSize: '0.82rem' }}>{t('投入的折抵額度（NT$，每 1,000 點 → NT$1）', 'Allowance to contribute (NT$, every 1,000 pts → NT$1)')}</label>
+                          <input type="range" min={1} max={Math.max(1, maxNTD)} step={1} value={ntd} onChange={e => setContributeNTD(Number(e.target.value))} style={{ width: '100%', margin: '0.4rem 0' }} />
+                          <input type="number" inputMode="numeric" min={1} max={Math.max(1, maxNTD)} value={ntd} onChange={e => setContributeNTD(Number(e.target.value))} style={field} />
+                          <div data-testid="contribute-preview" style={{ marginTop: '0.6rem', background: '#fff1f2', borderRadius: 8, padding: '0.6rem 0.8rem', fontWeight: 700, color: '#9f1239' }}>
+                            {t('投入 {p} 點 → 「{pool}」折抵額度 +NT${n}', 'Contribute {p} pts → NT${n} added to “{pool}”').replace('{p}', points.toLocaleString()).replace('{pool}', String(pool.name || '')).replace('{n}', String(ntd))}
+                          </div>
+                          <div style={{ color: '#64748b', fontSize: '0.78rem', marginTop: '0.5rem' }}>{t('每人每個折抵池每天最多投入 NT$100（100,000 點）', 'Up to NT$100 (100,000 pts) per person per pool per day')}</div>
+                          <div style={{ color: '#94a3b8', fontSize: '0.74rem', marginTop: '0.5rem', lineHeight: 1.5 }}>{charityNoticeText()}</div>
+                          <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end', marginTop: '0.9rem' }}>
+                            <button type="button" onClick={() => setContributeModal(null)} style={{ background: '#e2e8f0', color: '#334155', border: 'none', borderRadius: 8, padding: '0.5rem 1rem', cursor: 'pointer', fontWeight: 700 }}>{t('取消', 'Cancel')}</button>
+                            <button type="button" disabled={contributeBusy} onClick={confirmContribute} style={{ background: '#e11d48', color: '#fff', border: 'none', borderRadius: 8, padding: '0.5rem 1.1rem', cursor: contributeBusy ? 'wait' : 'pointer', fontWeight: 800 }}>{contributeBusy ? '…' : `❤️ ${t('確認投入（不可撤回）', 'Confirm (cannot be undone)')}`}</button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {/* ── 機構用池內額度產生折扣券 ── */}
+              {poolRedeemModal && (() => {
+                const m = poolRedeemModal; const pool = m.pool;
+                const field = { width: '100%', boxSizing: 'border-box', padding: '0.6rem 0.8rem', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: '1.1rem', background: '#fff' };
+                const terms = (pool.merchants || []).find(x => x.placeId === m.placeId) || null;
+                const bill = Math.floor(Number(m.bill) || 0);
+                const caps = terms ? [
+                  ['per_order', Number(terms.perOrderMaxNTD) || 0],
+                  ['monthly', Math.max(0, (Number(terms.monthlyMaxNTD) || 0) - (Number(terms.monthUsedNTD) || 0))],
+                  ['allowance', Number(pool.allowanceNTD) || 0],
+                ] : [];
+                let ntd = bill, limitedBy = null;
+                for (const [k, cap] of caps) { if (cap < ntd) { ntd = cap; limitedBy = k; } }
+                ntd = Math.max(0, ntd);
+                const limitText = { per_order: t('受商家單筆上限限制', 'Limited by the shop’s per-order cap'), monthly: t('受商家每月上限限制', 'Limited by the shop’s monthly cap'), allowance: t('受池內可用額度限制', 'Limited by the pool’s allowance') };
+                return (
+                  <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 3000, padding: '1rem' }} onClick={(e) => { if (e.target === e.currentTarget && !poolRedeemBusy) setPoolRedeemModal(null); }}>
+                    <div data-testid="pool-redeem-modal" style={{ background: '#fff', borderRadius: 14, padding: '1.2rem 1.3rem', width: '100%', maxWidth: 420, boxShadow: '0 20px 60px rgba(0,0,0,0.3)' }}>
+                      <div style={{ color: '#64748b', fontSize: '0.8rem' }}>🎟️ {t('用愛心折抵池額度折抵', 'Discount from the charity pool')}</div>
+                      <div style={{ fontWeight: 800, fontSize: '1.15rem', color: '#1e293b' }}>{pool.name}</div>
+                      <div style={{ color: '#334155', fontSize: '0.9rem', margin: '0.4rem 0' }}>{t('可用折抵額度', 'Discount allowance available')}：<b style={{ color: '#be123c' }}>NT${pool.allowanceNTD || 0}</b></div>
+                      <label style={{ color: '#64748b', fontSize: '0.82rem', display: 'block', marginTop: '0.6rem' }}>{t('選擇合作商家', 'Choose a participating shop')}</label>
+                      <select value={m.placeId} onChange={e => setPoolRedeemModal(x => ({ ...x, placeId: e.target.value }))} style={{ ...field, fontSize: '0.95rem' }}>
+                        {(pool.merchants || []).map(x => <option key={x.placeId} value={x.placeId}>{x.placeName}</option>)}
+                      </select>
+                      {terms && <div style={{ color: '#64748b', fontSize: '0.78rem', marginTop: 2 }}>{t('單筆最高 NT${n}', 'up to NT${n} per order').replace('{n}', String(terms.perOrderMaxNTD))} · {t('本月剩餘 NT${n}', 'NT${n} left this month').replace('{n}', String(Math.max(0, (terms.monthlyMaxNTD || 0) - (terms.monthUsedNTD || 0))))}</div>}
+                      <label style={{ color: '#64748b', fontSize: '0.82rem', display: 'block', marginTop: '0.6rem' }}>{t('消費金額（NT$）', 'Bill amount (NT$)')}</label>
+                      <input type="number" inputMode="numeric" min={1} value={m.bill} onChange={e => setPoolRedeemModal(x => ({ ...x, bill: e.target.value }))} placeholder="8000" style={field} autoFocus />
+                      {bill > 0 && (
+                        <div style={{ marginTop: '0.6rem', background: ntd > 0 ? '#f0fdf4' : '#fef2f2', borderRadius: 8, padding: '0.6rem 0.8rem', fontWeight: 700 }}>
+                          <div style={{ fontSize: '1.05rem', color: ntd > 0 ? '#166534' : '#991b1b' }}>{t('折抵 NT${n}（由折抵池扣除）', 'NT${n} off (taken from the pool allowance)').replace('{n}', String(ntd))}</div>
+                          {limitedBy && <div style={{ color: '#64748b', fontSize: '0.78rem', fontWeight: 400 }}>{limitText[limitedBy]}</div>}
+                          <div style={{ color: '#64748b', fontSize: '0.8rem', marginTop: 2, fontWeight: 400 }}>{t('餘額 NT${n} 請由機構直接付給商家', 'Pay the remaining NT${n} to the shop directly').replace('{n}', String(Math.max(0, bill - ntd)))}</div>
+                        </div>
+                      )}
+                      <div style={{ color: '#94a3b8', fontSize: '0.75rem', marginTop: '0.6rem', lineHeight: 1.5 }}>{t('折扣券 30 分鐘內有效、只能用一次；折抵後的餘額請直接付給商家。', 'The voucher is valid 30 minutes and single-use; pay the remainder to the shop directly.')}</div>
+                      <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end', marginTop: '0.9rem' }}>
+                        <button type="button" onClick={() => setPoolRedeemModal(null)} style={{ background: '#e2e8f0', color: '#334155', border: 'none', borderRadius: 8, padding: '0.5rem 1rem', cursor: 'pointer', fontWeight: 700 }}>{t('取消', 'Cancel')}</button>
+                        <button type="button" disabled={poolRedeemBusy || ntd < 1} onClick={poolRedeem} style={{ background: ntd < 1 ? '#e2e8f0' : '#f59e0b', color: ntd < 1 ? '#94a3b8' : '#fff', border: 'none', borderRadius: 8, padding: '0.5rem 1.1rem', cursor: poolRedeemBusy ? 'wait' : 'pointer', fontWeight: 800 }}>{poolRedeemBusy ? '…' : `🎟️ ${t('產生折扣券', 'Get a discount voucher')}`}</button>
+                      </div>
                     </div>
                   </div>
                 );
@@ -29649,7 +30142,9 @@ const deDict = {
                       <div style={{ color: '#92400e', fontWeight: 700, fontSize: '0.85rem' }}>🎟️ {t('經文雨折扣券', 'VerseRain coupon')}</div>
                       <div style={{ fontWeight: 800, fontSize: '1.15rem', color: '#1e293b', marginTop: 4 }}>{v.placeName}</div>
                       <div style={{ fontSize: '2rem', fontWeight: 900, color: '#166534', margin: '0.3rem 0' }}>NT${v.ntd} {t('折抵', 'off')}</div>
-                      <div style={{ color: '#64748b', fontSize: '0.8rem' }}>{t('消費 NT${b} · 折扣 {p}% · 扣 {pts} 點', 'Bill NT${b} · {p}% · {pts} pts').replace('{b}', String(v.billNTD)).replace('{p}', String(v.discountPct)).replace('{pts}', Number(v.points || 0).toLocaleString())}</div>
+                      <div style={{ color: '#64748b', fontSize: '0.8rem' }}>{v.kind === 'pool'
+                        ? `❤️ ${t('愛心折抵池：{pool}', 'Charity pool: {pool}').replace('{pool}', String(v.poolName || ''))} · ${t('消費 NT${b}', 'Bill NT${b}').replace('{b}', String(v.billNTD))}`
+                        : t('消費 NT${b} · 折扣 {p}% · 扣 {pts} 點', 'Bill NT${b} · {p}% · {pts} pts').replace('{b}', String(v.billNTD)).replace('{p}', String(v.discountPct)).replace('{pts}', Number(v.points || 0).toLocaleString())}</div>
                       <div style={{ fontFamily: 'monospace', fontSize: '1.9rem', fontWeight: 800, letterSpacing: 3, color: '#1e293b', margin: '0.8rem 0 0.4rem' }}>{formatVoucherCode(v.code)}</div>
                       <div style={{ display: 'flex', justifyContent: 'center', margin: '0.4rem 0' }}><QRCodeSVG value={`${window.location.origin}/#verify/${v.code}`} size={120} /></div>
                       {statusText ? (
@@ -29662,7 +30157,7 @@ const deDict = {
                         <button type="button" onClick={() => { try { navigator.clipboard.writeText(v.code); setToast(t('已複製代碼', 'Code copied')); setTimeout(() => setToast(null), 2000); } catch { /* ignore */ } }} style={{ background: '#fff', border: '1px solid #cbd5e1', borderRadius: 8, padding: '0.4rem 0.9rem', cursor: 'pointer', color: '#334155' }}>{t('複製代碼', 'Copy code')}</button>
                         <button type="button" onClick={() => saveActiveVoucher(null)} style={{ background: live ? '#e2e8f0' : '#f59e0b', color: live ? '#334155' : '#fff', border: 'none', borderRadius: 8, padding: '0.4rem 0.9rem', cursor: 'pointer', fontWeight: 700 }}>{live ? t('先關閉（稍後可從商家標記再打開）', 'Close for now') : t('關閉', 'Close')}</button>
                       </div>
-                      <button type="button" onClick={() => { saveActiveVoucher(null); setMainTab('sponsors'); }} style={{ marginTop: '0.6rem', background: 'transparent', border: 'none', color: '#3b82f6', cursor: 'pointer', fontSize: '0.82rem', fontWeight: 600 }}>{t('查看我的折抵紀錄', 'See my discounts')} →</button>
+                      <button type="button" onClick={() => { saveActiveVoucher(null); setMainTab(v.kind === 'pool' ? 'charity' : 'sponsors'); }} style={{ marginTop: '0.6rem', background: 'transparent', border: 'none', color: '#3b82f6', cursor: 'pointer', fontSize: '0.82rem', fontWeight: 600 }}>{t('查看我的折抵紀錄', 'See my discounts')} →</button>
                     </div>
                   </div>
                 );
@@ -29703,7 +30198,9 @@ const deDict = {
                           <div style={{ marginTop: '0.6rem', color: '#1e293b' }}>
                             <div style={{ fontWeight: 800, fontSize: '1.05rem' }}>{r.placeName}</div>
                             <div style={{ fontSize: '2rem', fontWeight: 900, color: r.status === 'issued' ? '#166534' : '#64748b' }}>NT${r.ntd} {t('折抵', 'off')}</div>
-                            <div style={{ color: '#64748b', fontSize: '0.85rem' }}>{t('消費 NT${b} · 折扣 {p}%', 'Bill NT${b} · {p}%').replace('{b}', String(r.billNTD)).replace('{p}', String(r.discountPct))} · {t('持有人', 'Holder')} {r.holder || ''}</div>
+                            <div style={{ color: '#64748b', fontSize: '0.85rem' }}>{r.kind === 'pool'
+                              ? <>❤️ {t('愛心折抵池：{pool}', 'Charity pool: {pool}').replace('{pool}', String(r.poolName || ''))} · {t('消費 NT${b}', 'Bill NT${b}').replace('{b}', String(r.billNTD))} · {t('機構', 'Organisation')} {r.holder || ''}</>
+                              : <>{t('消費 NT${b} · 折扣 {p}%', 'Bill NT${b} · {p}%').replace('{b}', String(r.billNTD)).replace('{p}', String(r.discountPct))} · {t('持有人', 'Holder')} {r.holder || ''}</>}</div>
                             {r.status === 'issued' && typeof r.secondsLeft === 'number' && <div style={{ color: '#b45309', fontSize: '0.85rem', marginTop: 2 }}>⏳ {t('剩餘 {t}', '{t} left').replace('{t}', `${Math.floor(r.secondsLeft / 60)}:${String(r.secondsLeft % 60).padStart(2, '0')}`)}</div>}
                             {r.usedAt && <div style={{ color: '#64748b', fontSize: '0.8rem', marginTop: 2 }}>{t('使用時間', 'Used at')} {new Date(r.usedAt).toLocaleString()}</div>}
                           </div>
@@ -29887,6 +30384,7 @@ const deDict = {
                                     </span>
                                   </div>
                                   {pl.referrerCode ? <div style={{ color: '#64748b', fontSize: '0.8rem', marginTop: '0.25rem' }}>🤝 {t('推薦者', 'Referrer')}：{pl.referrerName || pl.referrerCode}</div> : null}
+                                  {pl.kind === 'merchant' && pl.status === 'approved' ? renderMerchantPoolSection(pl) : null}
                                   {canLedger && open && (
                                     <div style={{ marginTop: '0.6rem', paddingTop: '0.6rem', borderTop: '1px dashed #e2e8f0' }}>
                                       {!led || led.loading ? <div style={{ color: '#94a3b8' }}>{t('載入中…', 'Loading…')}</div> : led.error ? (
@@ -29904,7 +30402,7 @@ const deDict = {
                                             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem', maxHeight: 280, overflowY: 'auto' }}>
                                               {(led.vouchers || []).filter(v => ['used', 'issued'].includes(v.computedStatus || v.status)).map(v => { const st = v.computedStatus || v.status; const vb = voucherStatusBadge(st); return (
                                                 <div key={v.code} style={{ display: 'flex', justifyContent: 'space-between', gap: '0.5rem', flexWrap: 'wrap', fontSize: '0.84rem', background: '#f8fafc', borderRadius: 6, padding: '0.3rem 0.6rem' }}>
-                                                  <span style={{ color: '#334155' }}>{new Date(v.usedAt || v.issuedAt).toLocaleString()} · <code>{v.formatted || v.code}</code> · {v.holder} · {t('消費 NT${b}', 'Bill NT${b}').replace('{b}', String(v.billNTD))} · <b style={{ color: '#166534' }}>NT${v.ntd}</b></span>
+                                                  <span style={{ color: '#334155' }}>{new Date(v.usedAt || v.issuedAt).toLocaleString()} · <code>{v.formatted || v.code}</code> · {v.kind === 'pool' ? `❤️ ${v.poolName || v.holder}` : v.holder} · {t('消費 NT${b}', 'Bill NT${b}').replace('{b}', String(v.billNTD))} · <b style={{ color: '#166534' }}>NT${v.ntd}</b></span>
                                                   <span style={{ background: vb.bg, color: vb.fg, borderRadius: 999, padding: '0.05rem 0.55rem', fontSize: '0.74rem', fontWeight: 700 }}>{vb.text}</span>
                                                 </div>
                                               ); })}
@@ -30469,6 +30967,7 @@ const deDict = {
                       playWelcome={playWelcomeFanfare}
                       onEnableAudio={initAudio}
                       onRedeem={openRedeem}
+                      onOpenPool={(poolId) => { setCharityFocus(poolId); setMainTab('charity'); }}
                       onViewGarden={(name) => {
                       handleViewPlayerGarden(name);
                     }} onJoinRoom={(roomId) => {
@@ -32814,6 +33313,41 @@ const deDict = {
                           <div style={{ color: '#334155', fontSize: '0.9rem', lineHeight: 1.45 }}>
                             {t('{place}：{who} 使用 {points} 點，因此你也獲得 {bonus} 點 🎉', '{place}: {who} used {points} pts, so you also earned {bonus} pts 🎉').replace('{place}', String(it.placeName || '')).replace('{who}', String(it.playerName || '')).replace('{points}', Number(it.points || 0).toLocaleString()).replace('{bonus}', Number(it.bonus || 0).toLocaleString())}
                           </div>
+                          <div style={{ color: '#cbd5e1', fontSize: '0.72rem', marginTop: 2 }}>{new Date(it.at).toLocaleString()}</div>
+                        </div>
+                      </div>
+                    );
+                  }
+                  // 愛心折抵池: contributions and pool vouchers (organisation), new pools (admin).
+                  if (['pool_contribution', 'pool_voucher_used', 'pool_approved', 'pool_merchant_joined'].includes(it.kind)) {
+                    const text = it.kind === 'pool_contribution'
+                      ? t('{who} 投入 {points} 點到「{pool}」，折抵額度 +NT${n}', '{who} contributed {points} pts to “{pool}” — NT${n} added to the allowance').replace('{who}', String(it.who || '')).replace('{points}', Number(it.points || 0).toLocaleString()).replace('{pool}', String(it.poolName || '')).replace('{n}', String(it.ntd ?? ''))
+                      : it.kind === 'pool_voucher_used'
+                        ? t('「{pool}」在 {place} 的折扣券已核銷，折抵 NT${n}', 'The “{pool}” coupon at {place} was used — NT${n} off').replace('{pool}', String(it.poolName || '')).replace('{place}', String(it.placeName || '')).replace('{n}', String(it.ntd ?? ''))
+                        : it.kind === 'pool_approved'
+                          ? t('你的愛心折抵池「{name}」已通過審核，現在可以接受投入了 ❤️', 'Your charity pool “{name}” was approved and can now receive contributions ❤️').replace('{name}', String(it.name || ''))
+                          : t('{place} 加入了「{pool}」：單筆最高 NT${a}、每月最高 NT${b}', '{place} joined “{pool}”: up to NT${a} per order, NT${b} a month').replace('{place}', String(it.placeName || '')).replace('{pool}', String(it.poolName || '')).replace('{a}', String(it.perOrderMaxNTD ?? '')).replace('{b}', String(it.monthlyMaxNTD ?? ''));
+                    return (
+                      <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '0.6rem 1.3rem', background: '#fff7f8' }}>
+                        <span style={{ fontSize: '1.2rem', flexShrink: 0 }}>{it.kind === 'pool_voucher_used' ? '🎟️' : it.kind === 'pool_merchant_joined' ? '🏪' : '❤️'}</span>
+                        <div style={{ minWidth: 0 }}>
+                          <div style={{ color: '#334155', fontSize: '0.9rem', lineHeight: 1.45 }}>{text}</div>
+                          <div style={{ color: '#cbd5e1', fontSize: '0.72rem', marginTop: 2 }}>{new Date(it.at).toLocaleString()}</div>
+                        </div>
+                      </div>
+                    );
+                  }
+                  if (it.kind === 'pool_submitted') {
+                    return (
+                      <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '0.6rem 1.3rem', background: '#fff7f8' }}>
+                        <span style={{ fontSize: '1.2rem', flexShrink: 0 }}>❤️</span>
+                        <div style={{ minWidth: 0, flex: 1 }}>
+                          <div style={{ color: '#334155', fontSize: '0.9rem', lineHeight: 1.45 }}>
+                            {t('{who} 為「{org}」建立了愛心折抵池「{name}」，等你審核', '{who} opened the charity pool “{name}” for “{org}” — awaiting your review').replace('{who}', String(it.by || '')).replace('{org}', String(it.orgPlaceName || '')).replace('{name}', String(it.name || ''))}
+                          </div>
+                          {isSuperAdmin && (
+                            <button onClick={() => { setShowEncouragePanel(false); setMainTab('rewards_admin'); }} style={{ marginTop: 6, background: '#be123c', color: '#fff', border: 'none', borderRadius: 8, padding: '0.35rem 0.9rem', fontSize: '0.82rem', fontWeight: 700, cursor: 'pointer' }}>{t('去審核', 'Review it')} →</button>
+                          )}
                           <div style={{ color: '#cbd5e1', fontSize: '0.72rem', marginTop: 2 }}>{new Date(it.at).toLocaleString()}</div>
                         </div>
                       </div>
