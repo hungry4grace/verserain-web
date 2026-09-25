@@ -1091,6 +1091,7 @@ export const he = {
   "愛心折抵池投入紀錄": "הפקדות למאגרי חסד",
   "累計投入 {p} 點 → 折抵額度 NT${n}": "סה\"כ הופקדו {p} נקודות → מסגרת NT${n}",
   "還沒有投入過。到「愛心折抵池」看看有哪些專案。": "עדיין אין הפקדות. ראו במאגרי החסד אילו פרויקטים אפשר לתמוך.",
+  "加 ❤️ = 有愛心折抵池，可投入點數": "+ ❤️ = יש מאגר חסד, אפשר להפקיד כאן",
 };
 
 export const fa = {
@@ -2163,6 +2164,7 @@ export const fa = {
   "愛心折抵池投入紀錄": "سوابق مشارکت در صندوق نیکوکاری",
   "累計投入 {p} 點 → 折抵額度 NT${n}": "در مجموع {p} امتیاز مشارکت → اعتبار NT${n}",
   "還沒有投入過。到「愛心折抵池」看看有哪些專案。": "هنوز مشارکتی نکرده‌اید. در صندوق‌های نیکوکاری ببینید چه پروژه‌هایی هست.",
+  "加 ❤️ = 有愛心折抵池，可投入點數": "+ ❤️ = صندوق نیکوکاری دارد، اینجا مشارکت کنید",
 };
 
 export const ar = {
@@ -3651,6 +3653,7 @@ export const ar = {
   "愛心折抵池投入紀錄": "سجل مساهماتي في صناديق المحبة",
   "累計投入 {p} 點 → 折抵額度 NT${n}": "إجمالي المساهمات {p} نقطة → رصيد NT${n}",
   "還沒有投入過。到「愛心折抵池」看看有哪些專案。": "لا مساهمات بعد. تصفح صناديق المحبة لترى المشاريع المتاحة.",
+  "加 ❤️ = 有愛心折抵池，可投入點數": "+ ❤️ = لديه صندوق محبة، ساهم هنا",
 };
 
 export const ja = {
@@ -4711,6 +4714,7 @@ export const ja = {
   "愛心折抵池投入紀錄": "愛のプールへの投入履歴",
   "累計投入 {p} 點 → 折抵額度 NT${n}": "累計投入 {p}ポイント → 割引枠 NT${n}",
   "還沒有投入過。到「愛心折抵池」看看有哪些專案。": "まだ投入していません。愛のプールでプロジェクトを見てみましょう。",
+  "加 ❤️ = 有愛心折抵池，可投入點數": "+ ❤️ = 愛のプールあり、ここで投入できます",
 };
 
 export const ko = {
@@ -5769,6 +5773,7 @@ export const ko = {
   "愛心折抵池投入紀錄": "사랑 나눔 풀 투입 내역",
   "累計投入 {p} 點 → 折抵額度 NT${n}": "누적 투입 {p}포인트 → 할인 한도 NT${n}",
   "還沒有投入過。到「愛心折抵池」看看有哪些專案。": "아직 투입한 적이 없습니다. 사랑 나눔 풀에서 프로젝트를 살펴보세요.",
+  "加 ❤️ = 有愛心折抵池，可投入點數": "+ ❤️ = 사랑 나눔 풀 있음, 여기서 투입 가능",
 };
 
 export const es = {
@@ -6843,6 +6848,7 @@ export const es = {
   "愛心折抵池投入紀錄": "Aportaciones a fondos solidarios",
   "累計投入 {p} 點 → 折抵額度 NT${n}": "{p} pts aportados en total → NT${n} de saldo",
   "還沒有投入過。到「愛心折抵池」看看有哪些專案。": "Todavía no has aportado. Mira los fondos solidarios para ver qué proyectos apoyar.",
+  "加 ❤️ = 有愛心折抵池，可投入點數": "+ ❤️ = tiene fondo solidario, aporta aquí",
 };
 
 export const tr = {
@@ -7917,6 +7923,7 @@ export const tr = {
   "愛心折抵池投入紀錄": "Yardım havuzu katkılarım",
   "累計投入 {p} 點 → 折抵額度 NT${n}": "Toplam {p} puan katkı → NT${n} bakiye",
   "還沒有投入過。到「愛心折抵池」看看有哪些專案。": "Henüz katkı yok. Desteklenecek projeler için yardım havuzlarına bakın.",
+  "加 ❤️ = 有愛心折抵池，可投入點數": "+ ❤️ = yardım havuzu var, buradan katkı yapın",
 };
 
 export const de = {
@@ -8991,6 +8998,7 @@ export const de = {
   "愛心折抵池投入紀錄": "Beiträge zu Spendenpools",
   "累計投入 {p} 點 → 折抵額度 NT${n}": "Insgesamt {p} Punkte beigetragen → NT${n} Guthaben",
   "還沒有投入過。到「愛心折抵池」看看有哪些專案。": "Noch keine Beiträge. Sieh dir die Spendenpools an, um Projekte zu unterstützen.",
+  "加 ❤️ = 有愛心折抵池，可投入點數": "+ ❤️ = hat einen Spendenpool, hier beitragen",
 };
 
 export const my = {
@@ -10065,6 +10073,7 @@ export const my = {
   "愛心折抵池投入紀錄": "မေတ္တာရန်ပုံငွေ ထည့်ဝင်မှတ်တမ်း",
   "累計投入 {p} 點 → 折抵額度 NT${n}": "စုစုပေါင်း ထည့်ဝင် {p} အမှတ် → အခွင့်အရေး NT${n}",
   "還沒有投入過。到「愛心折抵池」看看有哪些專案。": "ထည့်ဝင်မှု မရှိသေးပါ။ မေတ္တာရန်ပုံငွေများတွင် စီမံကိန်းများကို ကြည့်ပါ။",
+  "加 ❤️ = 有愛心折抵池，可投入點數": "+ ❤️ = မေတ္တာရန်ပုံငွေ ရှိသည်၊ ဤနေရာတွင် ထည့်ဝင်နိုင်သည်",
 };
 
 export const vi = {
@@ -11139,6 +11148,7 @@ export const vi = {
   "愛心折抵池投入紀錄": "Lịch sử góp quỹ yêu thương",
   "累計投入 {p} 點 → 折抵額度 NT${n}": "Tổng cộng đã góp {p} điểm → hạn mức NT${n}",
   "還沒有投入過。到「愛心折抵池」看看有哪些專案。": "Chưa góp lần nào. Xem các quỹ yêu thương để tìm dự án muốn ủng hộ.",
+  "加 ❤️ = 有愛心折抵池，可投入點數": "+ ❤️ = có quỹ yêu thương, góp điểm tại đây",
 };
 
 export const id = {
@@ -12441,6 +12451,7 @@ export const id = {
   "愛心折抵池投入紀錄": "Riwayat kontribusi kolam kasih",
   "累計投入 {p} 點 → 折抵額度 NT${n}": "Total {p} poin disumbangkan → jatah NT${n}",
   "還沒有投入過。到「愛心折抵池」看看有哪些專案。": "Belum ada kontribusi. Lihat kolam kasih untuk proyek yang bisa didukung.",
+  "加 ❤️ = 有愛心折抵池，可投入點數": "+ ❤️ = punya kolam kasih, sumbangkan di sini",
 };
 
 export const ms = {
@@ -13947,6 +13958,7 @@ export const ms = {
   "愛心折抵池投入紀錄": "Rekod sumbangan kolam kasih",
   "累計投入 {p} 點 → 折抵額度 NT${n}": "Jumlah {p} mata disumbang → peruntukan NT${n}",
   "還沒有投入過。到「愛心折抵池」看看有哪些專案。": "Belum ada sumbangan. Lihat kolam kasih untuk projek yang boleh disokong.",
+  "加 ❤️ = 有愛心折抵池，可投入點數": "+ ❤️ = ada kolam kasih, sumbang di sini",
 };
 
 export const zhcn = {
@@ -15373,6 +15385,7 @@ export const zhcn = {
   "愛心折抵池投入紀錄": "爱心折抵池投入记录",
   "累計投入 {p} 點 → 折抵額度 NT${n}": "累计投入 {p} 点 → 折抵额度 NT${n}",
   "還沒有投入過。到「愛心折抵池」看看有哪些專案。": "还没有投入过。到「爱心折抵池」看看有哪些项目。",
+  "加 ❤️ = 有愛心折抵池，可投入點數": "加 ❤️ = 有爱心折抵池，可投入点数",
 };
 
 export const pt = {
@@ -16167,6 +16180,7 @@ export const pt = {
   "愛心折抵池投入紀錄": "Contribuições para fundos solidários",
   "累計投入 {p} 點 → 折抵額度 NT${n}": "{p} pts contribuídos no total → NT${n} de saldo",
   "還沒有投入過。到「愛心折抵池」看看有哪些專案。": "Ainda não contribuíste. Vê os fundos solidários para encontrar projetos a apoiar.",
+  "加 ❤️ = 有愛心折抵池，可投入點數": "+ ❤️ = tem fundo solidário, contribui aqui",
 };
 
 export const fr = {
@@ -16961,6 +16975,7 @@ export const fr = {
   "愛心折抵池投入紀錄": "Contributions aux cagnottes solidaires",
   "累計投入 {p} 點 → 折抵額度 NT${n}": "{p} pts contribués au total → NT${n} d’enveloppe",
   "還沒有投入過。到「愛心折抵池」看看有哪些專案。": "Aucune contribution pour l’instant. Consultez les cagnottes solidaires pour trouver un projet à soutenir.",
+  "加 ❤️ = 有愛心折抵池，可投入點數": "+ ❤️ = cagnotte solidaire, contribuez ici",
 };
 
 export const ru = {
@@ -17755,6 +17770,7 @@ export const ru = {
   "愛心折抵池投入紀錄": "Взносы в фонды добра",
   "累計投入 {p} 點 → 折抵額度 NT${n}": "Всего внесено {p} очков → лимит NT${n}",
   "還沒有投入過。到「愛心折抵池」看看有哪些專案。": "Взносов пока нет. Посмотрите фонды добра, чтобы выбрать проект.",
+  "加 ❤️ = 有愛心折抵池，可投入點數": "+ ❤️ = есть фонд добра, здесь можно внести очки",
 };
 
 export const hi = {
@@ -18549,6 +18565,7 @@ export const hi = {
   "愛心折抵池投入紀錄": "प्रेम पूल योगदान रिकॉर्ड",
   "累計投入 {p} 點 → 折抵額度 NT${n}": "कुल {p} अंक योगदान → NT${n} भत्ता",
   "還沒有投入過。到「愛心折抵池」看看有哪些專案。": "अभी कोई योगदान नहीं। समर्थन के लिए प्रेम पूल में परियोजनाएँ देखें।",
+  "加 ❤️ = 有愛心折抵池，可投入點數": "+ ❤️ = प्रेम पूल है, यहाँ योगदान करें",
 };
 
 // Khmer (Cambodian) — full UI coverage, machine-translated in bulk from the
@@ -19973,6 +19990,7 @@ export const km = {
   "愛心折抵池投入紀錄": "កំណត់ត្រាការរួមចំណែកពូលសេចក្តីស្រឡាញ់",
   "累計投入 {p} 點 → 折抵額度 NT${n}": "សរុបបានរួមចំណែក {p} ពិន្ទុ → ទឹកប្រាក់ NT${n}",
   "還沒有投入過。到「愛心折抵池」看看有哪些專案。": "មិនទាន់មានការរួមចំណែកទេ។ សូមមើលពូលសេចក្តីស្រឡាញ់ដើម្បីរកគម្រោងដែលត្រូវគាំទ្រ។",
+  "加 ❤️ = 有愛心折抵池，可投入點數": "+ ❤️ = មានពូលសេចក្តីស្រឡាញ់ អាចរួមចំណែកនៅទីនេះ",
 };
 
 const I18N_FILLINS = { he, fa, ar, ja, ko, es, tr, de, my, vi, id, ms, zhcn, pt, fr, ru, hi, km };

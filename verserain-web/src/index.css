@@ -1881,3 +1881,12 @@ textarea {
 .garden-list-scroll::-webkit-scrollbar { -webkit-appearance: none; width: 8px; }
 .garden-list-scroll::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 4px; }
 .garden-list-scroll::-webkit-scrollbar-thumb { background: #94a3b8; border-radius: 4px; }
+
+/* 愛心折抵池 halo on a church / org marker (WorldMap2D / WorldMap3D) */
+@keyframes vr-pool-pulse {
+  0% { transform: scale(0.9); opacity: 0.9; }
+  70% { transform: scale(1.35); opacity: 0; }
+  100% { transform: scale(1.35); opacity: 0; }
+}
+.vr-pool-halo { animation: vr-pool-pulse 2.2s ease-out infinite; }
+@media (prefers-reduced-motion: reduce) { .vr-pool-halo { animation: none; opacity: 0.6; } }
