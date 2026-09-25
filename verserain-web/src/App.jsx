@@ -7249,6 +7249,22 @@ export default function App() {
   // The menu scrolls inside its own container (100dvh, overflow auto), so the
   // window's scrollY is always 0; save/restore that container's scrollTop.
   const menuScrollRef = useRef(null);
+  // Scroll an element into view inside the menu scroller ONLY. scrollIntoView
+  // would also scroll #root (index.css: height 100vh, overflow hidden), which
+  // the user cannot scroll back — on phones the page then looks cut off and
+  // stuck. `block: 'center'` centres the element, otherwise it goes near the top.
+  const scrollMenuTo = (el, { block = 'start', offset = 12 } = {}) => {
+    const scroller = menuScrollRef.current;
+    if (!el || !scroller) return;
+    try {
+      const root = document.getElementById('root');
+      if (root && root.scrollTop) root.scrollTop = 0;
+      const er = el.getBoundingClientRect();
+      const sr = scroller.getBoundingClientRect();
+      const lead = block === 'center' ? Math.max(0, (scroller.clientHeight - er.height) / 2) : offset;
+      scroller.scrollTo({ top: Math.max(0, scroller.scrollTop + (er.top - sr.top) - lead), behavior: 'smooth' });
+    } catch { /* ignore */ }
+  };
   const versionBeforeChallenge = useRef(null); // saved version to restore after cross-lang challenge
   const updateGarden = React.useCallback((ref, type, setId, amount = 1) => {
     // 即時脈動:廣播「本玩家剛做了動作」給所有地圖觀看者(在 updater 之外,
@@ -9574,7 +9590,7 @@ export default function App() {
     const next = { ...newPlaceDraft(), id: pl.id, agree: false, editing: { name: pl.name, status: pl.status, referrerCode: pl.referrerCode || '', referrerName: pl.referrerName || '' } };
     for (const f of PLACE_DRAFT_FIELDS) if (pl[f] !== undefined && pl[f] !== null) next[f] = pl[f];
     setMerchantDraft(next); setMerchantPhotoPreview(null); setMerchantSubmitStatus(null);
-    setTimeout(() => { try { merchantFormRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch { /* ignore */ } }, 0);
+    setTimeout(() => scrollMenuTo(merchantFormRef.current), 0);
   };
   const ownerPlaceAction = async (action, pl) => {
     if (!userEmail) { setShowLoginModal('login'); return; }
@@ -9787,8 +9803,7 @@ export default function App() {
   }, [mainTab, userEmail, loadCharityPools, loadCharityMine, loadMyPlaces]);
   useEffect(() => {
     if (mainTab !== 'charity' || !charityFocus || !charityPools) return;
-    const el = document.getElementById(`pool-${charityFocus}`);
-    if (el && typeof el.scrollIntoView === 'function') el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    scrollMenuTo(document.getElementById(`pool-${charityFocus}`), { block: 'center' });
   }, [mainTab, charityFocus, charityPools]);
   const charityNoticeText = () => t('點數無現金價值；投入後不可撤回；本機構不開立捐贈收據；折抵額度僅供在指定合作商家折抵消費，不可轉讓、不可兌現。經文雨不經手任何款項，折抵後的餘額由機構直接支付給商家。', 'Points have no cash value; contributions cannot be reversed; the organisation issues no donation receipt; the allowance can only be used as a discount at the listed shops and cannot be transferred or cashed out. VerseRain never handles money; the organisation pays the remainder to the shop directly.');
   const openContribute = (pool) => {
@@ -26061,7 +26076,7 @@ const deDict = {
                     verserain
                   </div>
                   <div className="app-brand-version" style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', marginTop: '4px', marginLeft: '2px' }}>
-                    v4.0.80
+                    v4.0.81
                   </div>
                 </div>
                 <div ref={langPickerRef} className="app-lang-control" style={{ position: 'relative' }}>
@@ -28802,7 +28817,7 @@ const deDict = {
                           <div style={{ fontSize: '1.7rem', fontWeight: 800, color: '#1d4ed8', lineHeight: 1 }}>{pointsBalance && !pointsBalance.error && Number.isFinite(Number(pointsBalance.earnedPoints)) ? Number(pointsBalance.earnedPoints).toLocaleString() : '—'}</div>
                           <div style={{ fontSize: '0.78rem', color: '#1e3a8a', marginTop: '0.25rem' }} title={t('每節經文只算你的最佳成績', 'Only your best score on each verse counts')}>
                             {t('總積分', 'Total score')}
-                            <button type="button" onClick={(e) => { e.stopPropagation(); setMainTab('manual'); setTimeout(() => { const el = document.getElementById('manual-score'); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 350); }} title={t('九、總積分怎麼算？', '9. How Is My Total Score Calculated?')} aria-label={t('九、總積分怎麼算？', '9. How Is My Total Score Calculated?')} style={{ marginLeft: 4, width: 16, height: 16, borderRadius: '50%', border: '1px solid #93c5fd', background: '#eff6ff', color: '#1d4ed8', fontSize: '0.7rem', fontWeight: 800, lineHeight: '14px', padding: 0, cursor: 'pointer', verticalAlign: 'middle' }}>?</button>
+                            <button type="button" onClick={(e) => { e.stopPropagation(); setMainTab('manual'); setTimeout(() => scrollMenuTo(document.getElementById('manual-score')), 350); }} title={t('九、總積分怎麼算？', '9. How Is My Total Score Calculated?')} aria-label={t('九、總積分怎麼算？', '9. How Is My Total Score Calculated?')} style={{ marginLeft: 4, width: 16, height: 16, borderRadius: '50%', border: '1px solid #93c5fd', background: '#eff6ff', color: '#1d4ed8', fontSize: '0.7rem', fontWeight: 800, lineHeight: '14px', padding: 0, cursor: 'pointer', verticalAlign: 'middle' }}>?</button>
                           </div>
                         </div>
                         <div style={{ textAlign: 'center' }}>
