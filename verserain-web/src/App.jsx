@@ -9696,6 +9696,9 @@ export default function App() {
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mainTab, isSuperAdmin, userEmail, rewardsAdminReload]);
+  // Bumped after an admin approves / hides a marker or a charity pool so the
+  // map (src/WorldMap.jsx) refetches at once instead of at its next 5-minute poll.
+  const [placesVersion, setPlacesVersion] = useState(0);
   const placeAdminAction = async (action, { placeId, patch, place } = {}) => {
     try {
       const res = await fetch('/api/places', { method: 'POST', headers: adminHeaders(), body: JSON.stringify({ action, adminEmail: userEmail, placeId, patch, place }) });
@@ -9703,6 +9706,7 @@ export default function App() {
       if (!res.ok || !d.success) throw new Error(d.error || res.status);
       if (Array.isArray(d.places)) setPlacesAdmin(d.places);
       setPlaceEdit(null);
+      setPlacesVersion(n => n + 1);
       setToast(t('已更新地圖標記', 'Map marker updated'));
     } catch (e) { setToast(t('更新失敗：{error}', 'Update failed: {error}').replace('{error}', String(e?.message || e))); }
     setTimeout(() => setToast(null), 3000);
@@ -9871,6 +9875,7 @@ export default function App() {
       if (!res.ok || !d.success) throw new Error(d.error || String(res.status));
       setToast(t('已更新折抵池', 'Pool updated')); setTimeout(() => setToast(null), 2000);
       setRewardsAdminReload(n => n + 1);
+      setPlacesVersion(n => n + 1);
     } catch (e) { setToast(String(e?.message || e)); setTimeout(() => setToast(null), 3000); }
   };
   const poolStatusBadge = (st) => st === 'approved' ? { text: t('進行中', 'Open'), bg: '#dcfce7', fg: '#166534' } : st === 'pending' ? { text: t('待審核', 'Pending'), bg: '#fef3c7', fg: '#92400e' } : st === 'closed' ? { text: t('已關閉', 'Closed'), bg: '#e2e8f0', fg: '#334155' } : { text: t('已退回', 'Rejected'), bg: '#fee2e2', fg: '#991b1b' };
@@ -30986,7 +30991,7 @@ const deDict = {
                       </div>
                     </div>
                     <React.Suspense fallback={<div style={{ padding: '3rem', textAlign: 'center', color: '#94a3b8' }}>{t('地圖載入中…', 'Loading map…')}</div>}>
-                    <WorldMap t={t} playerName={playerName} userEmail={userEmail}
+                    <WorldMap t={t} playerName={playerName} userEmail={userEmail} placesVersion={placesVersion}
                       fruitMode={fruitMode} fruitTree={fruitTree} fruitLoading={fruitLoading} onToggleFruit={toggleFruitMode} selfLocation={getSelfLocation()}
                       currentMode={mapView}
                       focusLocation={mapFocus}
