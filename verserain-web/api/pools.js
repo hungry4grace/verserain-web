@@ -2,6 +2,8 @@ import { Redis } from '@upstash/redis';
 import { requireAdmin } from './_lib/admins.js';
 import { partyFetch } from './_lib/party.js';
 import { pushNotify } from './_lib/rewards.js';
+import { sendReferralPush } from './_lib/webpush.js';
+import { sendReferralApns } from './_lib/apns.js';
 import { notifyAdmins, poolSubmittedMessage } from './_lib/adminNotify.js';
 import { getPlace, listPlaces } from './_lib/places.js';
 import { clientIp, ipRateLimit, readBalance, publicVoucher, maskName, LEADERBOARD_KEY, taipeiDay } from './_lib/points.js';
@@ -230,9 +232,7 @@ async function adminAction(req, res, redis, body, action, now) {
     pool = applyPoolAdminAction(pool, action, { adminEmail, now });
     if (body.note !== undefined) pool.note = String(body.note || '').slice(0, 200);
     await savePool(redis, pool);
-    if (action === 'approve' && pool.ownerCode) {
-      try { await pushNotify(redis, pool.ownerCode, { kind: 'pool_approved', poolId: pool.id, name: pool.name }); } catch { /* best-effort */ }
-    }
+    if ((action === 'approve' || action === 'reject') && pool.ownerCode) await notifyPoolOwner(redis, pool, action === 'approve' ? 'pool_approved' : 'pool_rejected');
   } else {
     return res.status(400).json({ error: 'action must be create|contribute|merchant_join|merchant_update|merchant_leave|pool_redeem|approve|reject|close' });
   }
@@ -260,6 +260,21 @@ async function verifyLogin(res, body) {
   const identity = (elig && elig.identity) || {};
   if (identity.sessionValid !== true) { res.status(401).json({ error: 'session_invalid' }); return null; }
   return { email, identity, garden: (elig && elig.garden) || {} };
+}
+
+// Tell the organisation the outcome of its review: 🔔 inbox entry + phone
+// push / APNs, all fail-soft (the admin action already stands).
+async function notifyPoolOwner(redis, pool, kind) {
+  const approved = kind === 'pool_approved';
+  const title = approved ? '❤️ 愛心折抵池已通過審核' : '❤️ 愛心折抵池未通過審核';
+  const body = approved ? `「${pool.name}」已上線，現在可以接受玩家投入了` : `「${pool.name}」未通過審核，請聯絡管理員了解原因`;
+  const url = 'https://www.verserain.com/#charity';
+  const tag = `verserain-pool-${pool.id}-${kind}`;
+  await Promise.all([
+    pushNotify(redis, pool.ownerCode, { kind, poolId: pool.id, name: pool.name }).catch(() => {}),
+    sendReferralPush(pool.ownerCode, { title, body, url, tag }).catch(() => {}),
+    sendReferralApns(pool.ownerCode, { title, body, url, collapseId: tag }).catch(() => {}),
+  ]);
 }
 
 async function verifyPoolOwner(res, redis, body) {

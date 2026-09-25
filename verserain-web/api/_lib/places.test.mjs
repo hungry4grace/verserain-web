@@ -108,12 +108,16 @@ test('publicView returns only approved places with public fields', () => {
   const hidden = { ...base, id: 'pl_hidden0001', status: 'hidden' };
   const v = publicView([approved, pending, hidden, null]);
   assert.strictEqual(v.length, 1);
-  assert.deepStrictEqual(Object.keys(v[0]).sort(), ['address', 'dailyPerPerson', 'description', 'discountPct', 'hours', 'id', 'kind', 'lat', 'lng', 'message', 'name', 'phone', 'photoAssetId', 'photoMime', 'poolId', 'website'].sort());
+  assert.deepStrictEqual(Object.keys(v[0]).sort(), ['address', 'dailyPerPerson', 'description', 'discountPct', 'hours', 'id', 'kind', 'lat', 'lng', 'message', 'name', 'phone', 'photoAssetId', 'photoMime', 'poolId', 'poolName', 'website'].sort());
   assert.strictEqual(v[0].dailyPerPerson, 3);
   assert.strictEqual(v[0].poolId, '', 'no pool table → empty poolId');
   const withPool = publicView([approved, pending], { poolByPlace: { pl_approved01: 'cp_abc12345', pl_pending001: 'cp_zzz99999' } });
   assert.strictEqual(withPool.length, 1);
   assert.strictEqual(withPool[0].poolId, 'cp_abc12345', 'an approved org place carries its charity pool id');
+  assert.strictEqual(withPool[0].poolName, '', 'string form has no name');
+  const named = publicView([approved], { poolByPlace: { pl_approved01: { id: 'cp_abc12345', name: '偏鄉長輩愛筵池' } } });
+  assert.strictEqual(named[0].poolId, 'cp_abc12345');
+  assert.strictEqual(named[0].poolName, '偏鄉長輩愛筵池');
   assert.strictEqual(v[0].id, 'pl_approved01');
   assert.strictEqual(v[0].phone, '02-1234');
   assert.ok(!('ownerEmail' in v[0]) && !('ownerCode' in v[0]) && !('note' in v[0]) && !('dailyCapNTD' in v[0]));

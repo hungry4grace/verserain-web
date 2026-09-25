@@ -1085,6 +1085,9 @@ export const he = {
   "{who} 為「{org}」建立了愛心折抵池「{name}」，等你審核": "{who} פתח/ה את מאגר החסד \"{name}\" עבור \"{org}\" — ממתין לאישורך",
   "投入愛心折抵池": "הפקדה למאגר החסד",
   "請選擇": "בחרו",
+  "你的愛心折抵池「{name}」未通過審核，請聯絡管理員了解原因": "מאגר החסד שלכם \"{name}\" לא אושר; פנו למנהל לפרטים",
+  "待審核：{a} 個愛心折抵池、{b} 個地圖標記": "ממתינים לאישור: {a} מאגרי חסד, {b} סמני מפה",
+  "愛心折抵池 = 可投入點數": "לב = מאגר חסד, אפשר להפקיד כאן",
 };
 
 export const fa = {
@@ -2151,6 +2154,9 @@ export const fa = {
   "{who} 為「{org}」建立了愛心折抵池「{name}」，等你審核": "{who} صندوق نیکوکاری «{name}» را برای «{org}» ساخت — در انتظار بررسی شما",
   "投入愛心折抵池": "مشارکت در صندوق نیکوکاری",
   "請選擇": "انتخاب کنید",
+  "你的愛心折抵池「{name}」未通過審核，請聯絡管理員了解原因": "صندوق نیکوکاری شما «{name}» تأیید نشد؛ برای جزئیات با مدیر تماس بگیرید",
+  "待審核：{a} 個愛心折抵池、{b} 個地圖標記": "در انتظار بررسی: {a} صندوق نیکوکاری، {b} نشانگر نقشه",
+  "愛心折抵池 = 可投入點數": "قلب = صندوق نیکوکاری، اینجا می‌توانید مشارکت کنید",
 };
 
 export const ar = {
@@ -3633,6 +3639,9 @@ export const ar = {
   "{who} 為「{org}」建立了愛心折抵池「{name}」，等你審核": "أنشأ {who} صندوق المحبة «{name}» لصالح «{org}» — بانتظار مراجعتك",
   "投入愛心折抵池": "المساهمة في صندوق المحبة",
   "請選擇": "اختر",
+  "你的愛心折抵池「{name}」未通過審核，請聯絡管理員了解原因": "لم تتم الموافقة على صندوق المحبة «{name}»؛ يرجى التواصل مع المشرف للتفاصيل",
+  "待審核：{a} 個愛心折抵池、{b} 個地圖標記": "بانتظار المراجعة: {a} صناديق محبة، {b} علامات على الخريطة",
+  "愛心折抵池 = 可投入點數": "القلب = صندوق محبة، يمكنك المساهمة هنا",
 };
 
 export const ja = {
@@ -4687,6 +4696,9 @@ export const ja = {
   "{who} 為「{org}」建立了愛心折抵池「{name}」，等你審核": "{who}さんが「{org}」のために愛のプール「{name}」を作成しました。審査をお願いします",
   "投入愛心折抵池": "愛のプールに投入",
   "請選擇": "選択してください",
+  "你的愛心折抵池「{name}」未通過審核，請聯絡管理員了解原因": "あなたの愛のプール「{name}」は承認されませんでした。詳しくは管理者にご連絡ください",
+  "待審核：{a} 個愛心折抵池、{b} 個地圖標記": "審査待ち：愛のプール{a}件、地図マーカー{b}件",
+  "愛心折抵池 = 可投入點數": "ハート = 愛のプール、ここで投入できます",
 };
 
 export const ko = {
@@ -5739,6 +5751,9 @@ export const ko = {
   "{who} 為「{org}」建立了愛心折抵池「{name}」，等你審核": "{who}님이 「{org}」를 위해 사랑 나눔 풀 「{name}」을(를) 만들었습니다. 검토해 주세요",
   "投入愛心折抵池": "사랑 나눔 풀에 투입",
   "請選擇": "선택하세요",
+  "你的愛心折抵池「{name}」未通過審核，請聯絡管理員了解原因": "사랑 나눔 풀 「{name}」이(가) 승인되지 않았습니다. 자세한 내용은 관리자에게 문의하세요",
+  "待審核：{a} 個愛心折抵池、{b} 個地圖標記": "검토 대기: 사랑 나눔 풀 {a}개, 지도 마커 {b}개",
+  "愛心折抵池 = 可投入點數": "하트 = 사랑 나눔 풀, 여기서 투입할 수 있어요",
 };
 
 export const es = {
@@ -6807,6 +6822,9 @@ export const es = {
   "{who} 為「{org}」建立了愛心折抵池「{name}」，等你審核": "{who} creó el fondo solidario «{name}» para «{org}»; pendiente de tu revisión",
   "投入愛心折抵池": "Aportar al fondo solidario",
   "請選擇": "Elige",
+  "你的愛心折抵池「{name}」未通過審核，請聯絡管理員了解原因": "Tu fondo solidario «{name}» no fue aprobado; contacta a un administrador para más detalles",
+  "待審核：{a} 個愛心折抵池、{b} 個地圖標記": "Pendientes de revisión: {a} fondos solidarios, {b} marcadores del mapa",
+  "愛心折抵池 = 可投入點數": "corazón = fondo solidario, aporta aquí",
 };
 
 export const tr = {
@@ -7875,6 +7893,9 @@ export const tr = {
   "{who} 為「{org}」建立了愛心折抵池「{name}」，等你審核": "{who}, «{org}» için «{name}» yardım havuzunu açtı — incelemenizi bekliyor",
   "投入愛心折抵池": "Yardım havuzuna katkı yap",
   "請選擇": "Seçin",
+  "你的愛心折抵池「{name}」未通過審核，請聯絡管理員了解原因": "Yardım havuzunuz «{name}» onaylanmadı; ayrıntı için bir yöneticiye ulaşın",
+  "待審核：{a} 個愛心折抵池、{b} 個地圖標記": "İnceleme bekleyen: {a} yardım havuzu, {b} harita işareti",
+  "愛心折抵池 = 可投入點數": "kalp = yardım havuzu, buradan katkı yapın",
 };
 
 export const de = {
@@ -8943,6 +8964,9 @@ export const de = {
   "{who} 為「{org}」建立了愛心折抵池「{name}」，等你審核": "{who} hat den Spendenpool „{name}“ für „{org}“ angelegt — wartet auf deine Prüfung",
   "投入愛心折抵池": "Zum Spendenpool beitragen",
   "請選擇": "Bitte wählen",
+  "你的愛心折抵池「{name}」未通過審核，請聯絡管理員了解原因": "Dein Spendenpool „{name}“ wurde nicht freigegeben; bitte wende dich an einen Admin",
+  "待審核：{a} 個愛心折抵池、{b} 個地圖標記": "Zur Prüfung: {a} Spendenpools, {b} Kartenmarkierungen",
+  "愛心折抵池 = 可投入點數": "Herz = Spendenpool, hier beitragen",
 };
 
 export const my = {
@@ -10011,6 +10035,9 @@ export const my = {
   "{who} 為「{org}」建立了愛心折抵池「{name}」，等你審核": "{who} က “{org}” အတွက် မေတ္တာရန်ပုံငွေ “{name}” ဖန်တီးပြီး — သင့်စိစစ်မှုကို စောင့်နေသည်",
   "投入愛心折抵池": "မေတ္တာရန်ပုံငွေသို့ ထည့်ဝင်ရန်",
   "請選擇": "ရွေးပါ",
+  "你的愛心折抵池「{name}」未通過審核，請聯絡管理員了解原因": "သင့်မေတ္တာရန်ပုံငွေ “{name}” အတည်မပြုပါ။ အသေးစိတ်အတွက် စီမံခန့်ခွဲသူကို ဆက်သွယ်ပါ",
+  "待審核：{a} 個愛心折抵池、{b} 個地圖標記": "စိစစ်ရန် စောင့်ဆိုင်းနေသည် - မေတ္တာရန်ပုံငွေ {a} ခု၊ မြေပုံအမှတ်အသား {b} ခု",
+  "愛心折抵池 = 可投入點數": "နှလုံး = မေတ္တာရန်ပုံငွေ၊ ဤနေရာတွင် ထည့်ဝင်နိုင်သည်",
 };
 
 export const vi = {
@@ -11079,6 +11106,9 @@ export const vi = {
   "{who} 為「{org}」建立了愛心折抵池「{name}」，等你審核": "{who} đã tạo quỹ yêu thương “{name}” cho “{org}” — đang chờ bạn duyệt",
   "投入愛心折抵池": "Góp vào quỹ yêu thương",
   "請選擇": "Chọn",
+  "你的愛心折抵池「{name}」未通過審核，請聯絡管理員了解原因": "Quỹ yêu thương “{name}” của bạn chưa được duyệt; vui lòng liên hệ quản trị viên để biết thêm",
+  "待審核：{a} 個愛心折抵池、{b} 個地圖標記": "Chờ duyệt: {a} quỹ yêu thương, {b} điểm đánh dấu bản đồ",
+  "愛心折抵池 = 可投入點數": "trái tim = quỹ yêu thương, góp điểm tại đây",
 };
 
 export const id = {
@@ -12375,6 +12405,9 @@ export const id = {
   "{place} 加入了「{pool}」：單筆最高 NT${a}、每月最高 NT${b}": "{place} bergabung ke “{pool}”: hingga NT${a} per transaksi, NT${b} per bulan",
   "{who} 為「{org}」建立了愛心折抵池「{name}」，等你審核": "{who} membuat kolam kasih “{name}” untuk “{org}” — menunggu peninjauan Anda",
   "投入愛心折抵池": "Sumbangkan ke kolam kasih",
+  "你的愛心折抵池「{name}」未通過審核，請聯絡管理員了解原因": "Kolam kasih Anda “{name}” tidak disetujui; hubungi admin untuk detailnya",
+  "待審核：{a} 個愛心折抵池、{b} 個地圖標記": "Menunggu peninjauan: {a} kolam kasih, {b} penanda peta",
+  "愛心折抵池 = 可投入點數": "hati = kolam kasih, sumbangkan di sini",
 };
 
 export const ms = {
@@ -13875,6 +13908,9 @@ export const ms = {
   "{who} 為「{org}」建立了愛心折抵池「{name}」，等你審核": "{who} mencipta kolam kasih “{name}” untuk “{org}” — menunggu semakan anda",
   "投入愛心折抵池": "Sumbang ke kolam kasih",
   "請選擇": "Pilih",
+  "你的愛心折抵池「{name}」未通過審核，請聯絡管理員了解原因": "Kolam kasih anda “{name}” tidak diluluskan; sila hubungi pentadbir untuk butiran",
+  "待審核：{a} 個愛心折抵池、{b} 個地圖標記": "Menunggu semakan: {a} kolam kasih, {b} penanda peta",
+  "愛心折抵池 = 可投入點數": "hati = kolam kasih, sumbang di sini",
 };
 
 export const zhcn = {
@@ -15295,6 +15331,9 @@ export const zhcn = {
   "{who} 為「{org}」建立了愛心折抵池「{name}」，等你審核": "{who} 为「{org}」建立了爱心折抵池「{name}」，等你审核",
   "投入愛心折抵池": "投入爱心折抵池",
   "請選擇": "请选择",
+  "你的愛心折抵池「{name}」未通過審核，請聯絡管理員了解原因": "你的爱心折抵池「{name}」未通过审核，请联系管理员了解原因",
+  "待審核：{a} 個愛心折抵池、{b} 個地圖標記": "待审核：{a} 个爱心折抵池、{b} 个地图标记",
+  "愛心折抵池 = 可投入點數": "爱心折抵池 = 可投入点数",
 };
 
 export const pt = {
@@ -16083,6 +16122,9 @@ export const pt = {
   "{who} 為「{org}」建立了愛心折抵池「{name}」，等你審核": "{who} criou o fundo solidário «{name}» para «{org}» — a aguardar a tua revisão",
   "投入愛心折抵池": "Contribuir para o fundo solidário",
   "請選擇": "Escolhe",
+  "你的愛心折抵池「{name}」未通過審核，請聯絡管理員了解原因": "O teu fundo solidário «{name}» não foi aprovado; contacta um administrador para saber mais",
+  "待審核：{a} 個愛心折抵池、{b} 個地圖標記": "A aguardar revisão: {a} fundos solidários, {b} marcadores do mapa",
+  "愛心折抵池 = 可投入點數": "coração = fundo solidário, contribui aqui",
 };
 
 export const fr = {
@@ -16871,6 +16913,9 @@ export const fr = {
   "{who} 為「{org}」建立了愛心折抵池「{name}」，等你審核": "{who} a créé la cagnotte solidaire « {name} » pour « {org} » — en attente de votre validation",
   "投入愛心折抵池": "Contribuer à la cagnotte solidaire",
   "請選擇": "Choisir",
+  "你的愛心折抵池「{name}」未通過審核，請聯絡管理員了解原因": "Votre cagnotte solidaire « {name} » n’a pas été validée ; contactez un administrateur pour en savoir plus",
+  "待審核：{a} 個愛心折抵池、{b} 個地圖標記": "En attente de validation : {a} cagnottes solidaires, {b} marqueurs de carte",
+  "愛心折抵池 = 可投入點數": "cœur = cagnotte solidaire, contribuez ici",
 };
 
 export const ru = {
@@ -17659,6 +17704,9 @@ export const ru = {
   "{who} 為「{org}」建立了愛心折抵池「{name}」，等你審核": "{who} создал(а) фонд добра «{name}» для «{org}» — ждёт вашей проверки",
   "投入愛心折抵池": "Внести в фонд добра",
   "請選擇": "Выберите",
+  "你的愛心折抵池「{name}」未通過審核，請聯絡管理員了解原因": "Ваш фонд добра «{name}» не одобрен; за подробностями обратитесь к администратору",
+  "待審核：{a} 個愛心折抵池、{b} 個地圖標記": "Ожидают проверки: фондов добра — {a}, меток на карте — {b}",
+  "愛心折抵池 = 可投入點數": "сердце = фонд добра, здесь можно внести очки",
 };
 
 export const hi = {
@@ -18447,6 +18495,9 @@ export const hi = {
   "{who} 為「{org}」建立了愛心折抵池「{name}」，等你審核": "{who} ने “{org}” के लिए प्रेम पूल “{name}” बनाया — आपकी समीक्षा की प्रतीक्षा",
   "投入愛心折抵池": "प्रेम पूल में योगदान करें",
   "請選擇": "चुनें",
+  "你的愛心折抵池「{name}」未通過審核，請聯絡管理員了解原因": "आपका प्रेम पूल “{name}” स्वीकृत नहीं हुआ; विवरण के लिए एडमिन से संपर्क करें",
+  "待審核：{a} 個愛心折抵池、{b} 個地圖標記": "समीक्षा हेतु लंबित: {a} प्रेम पूल, {b} मानचित्र मार्कर",
+  "愛心折抵池 = 可投入點數": "दिल = प्रेम पूल, यहाँ योगदान करें",
 };
 
 // Khmer (Cambodian) — full UI coverage, machine-translated in bulk from the
@@ -19865,6 +19916,9 @@ export const km = {
   "{who} 為「{org}」建立了愛心折抵池「{name}」，等你審核": "{who} បានបង្កើតពូលសេចក្តីស្រឡាញ់ “{name}” សម្រាប់ “{org}” — កំពុងរង់ចាំការពិនិត្យរបស់អ្នក",
   "投入愛心折抵池": "រួមចំណែកទៅពូលសេចក្តីស្រឡាញ់",
   "請選擇": "ជ្រើសរើស",
+  "你的愛心折抵池「{name}」未通過審核，請聯絡管理員了解原因": "ពូលសេចក្តីស្រឡាញ់ “{name}” របស់អ្នកមិនត្រូវបានអនុម័តទេ; សូមទាក់ទងអ្នកគ្រប់គ្រងសម្រាប់ព័ត៌មានលម្អិត",
+  "待審核：{a} 個愛心折抵池、{b} 個地圖標記": "រង់ចាំការពិនិត្យ៖ ពូលសេចក្តីស្រឡាញ់ {a} និងសញ្ញាផែនទី {b}",
+  "愛心折抵池 = 可投入點數": "បេះដូង = ពូលសេចក្តីស្រឡាញ់ អាចរួមចំណែកនៅទីនេះ",
 };
 
 const I18N_FILLINS = { he, fa, ar, ja, ko, es, tr, de, my, vi, id, ms, zhcn, pt, fr, ru, hi, km };

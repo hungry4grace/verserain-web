@@ -67,7 +67,10 @@ export default async function handler(req, res) {
         });
         return res.status(200).json({ places: mine });
       }
-      res.setHeader('Cache-Control', 's-maxage=120, stale-while-revalidate=600');
+      // The map polls this every 5 minutes; keep the CDN copy short so a newly
+      // approved marker shows for everyone within a few minutes. ?fresh=… is
+      // the client's own cache-buster right after an admin action.
+      res.setHeader('Cache-Control', q.fresh ? 'no-store' : 's-maxage=60, stale-while-revalidate=120');
       return res.status(200).json({ places: publicView(await listPlaces(redis), { poolByPlace: await approvedPoolsByPlace(redis) }) });
     }
 
@@ -166,12 +169,12 @@ async function verifyOwner(res, redis, body) {
 
 const whoIs = (identity, email) => identity.playerName || email;
 
-// { orgPlaceId → poolId } for the approved charity pools; fails soft so the
+// { orgPlaceId → { id, name } } for the approved charity pools; fails soft so the
 // map never goes blank because of the pools table.
 async function approvedPoolsByPlace(redis) {
   try {
     const out = {};
-    for (const p of await listPools(redis)) if (p.status === 'approved' && p.orgPlaceId) out[p.orgPlaceId] = p.id;
+    for (const p of await listPools(redis)) if (p.status === 'approved' && p.orgPlaceId) out[p.orgPlaceId] = { id: p.id, name: p.name };
     return out;
   } catch { return {}; }
 }
