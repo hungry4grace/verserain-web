@@ -13,7 +13,7 @@ import {
 import {
   POOL_ID_RE, CONTRIB_STEP_POINTS, CONTRIB_DAILY_MAX_POINTS, MERCHANT_PER_ORDER_MAX_NTD, MERCHANT_MONTHLY_MAX_NTD,
   PoolError, newPoolId, normalizePoolSubmission, applyPoolAdminAction, applyMerchantJoin, applyMerchantLeave, computePoolDiscount,
-  listPools, getPool, savePool, findPoolByOrgPlace, poolCounters, poolMerchantMonthUsed, contribute, issuePoolVoucher,
+  listPools, getPool, savePool, findPoolByOrgPlace, openPoolsForPlace, MAX_OPEN_POOLS_PER_PLACE, poolCounters, poolMerchantMonthUsed, contribute, issuePoolVoucher,
   listContributionsForPool, listContributionsForEmail, listVouchersForPool, summarizePoolVouchers,
   publicContribution, publicPool, publicPools, ownerPoolView, contribDayKey, poolStatsKey, poolContributorsKey,
 } from './pools.js';
@@ -376,6 +376,13 @@ test('views hide emails, owner codes and monthly caps; only approved pools are p
   assert.strictEqual(own.merchants[0].monthlyMaxNTD, 5000);
   assert.strictEqual(findPoolByOrgPlace([pool, pending], church.id), pool);
   assert.strictEqual(findPoolByOrgPlace([{ ...pool, status: 'rejected' }], church.id), null, 'a rejected pool does not block a new one');
+  // several activities per marker: pending + approved count, rejected / closed do not
+  const second = approvedPool({ id: 'cp_second00001', name: '課輔班文具池' });
+  const closed = { ...approvedPool({ id: 'cp_closed00001' }), status: 'closed' };
+  const rejected = { ...pending, id: 'cp_rej0000001', status: 'rejected' };
+  assert.deepStrictEqual(openPoolsForPlace([pool, second, pending, closed, rejected], church.id).map((p) => p.id), [pool.id, second.id, pending.id]);
+  assert.strictEqual(openPoolsForPlace([pool], 'pl_other').length, 0, 'other marker → none');
+  assert.strictEqual(MAX_OPEN_POOLS_PER_PLACE, 5);
   assert.strictEqual((await listPools(r))[0].id, pool.id);
   assert.strictEqual((await getPool(r, pool.id)).name, '偏鄉長輩愛筵池');
   assert.strictEqual(await getPool(r, ''), null);

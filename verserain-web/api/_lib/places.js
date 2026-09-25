@@ -252,9 +252,9 @@ export function ownerView(place) {
 // poolByPlace values may be a pool id string or { id, name }.
 function poolRef(map, placeId) {
   const v = map && map[placeId];
-  if (!v) return { id: '', name: '' };
-  if (typeof v === 'string') return { id: v, name: '' };
-  return { id: String(v.id || ''), name: String(v.name || '').slice(0, 60) };
+  if (!v) return { id: '', name: '', count: 0 };
+  if (typeof v === 'string') return { id: v, name: '', count: 1 };
+  return { id: String(v.id || ''), name: String(v.name || '').slice(0, 60), count: Math.max(1, Number(v.count) || 1) };
 }
 export function publicView(places, { poolByPlace = {} } = {}) {
   return (places || [])
@@ -263,6 +263,7 @@ export function publicView(places, { poolByPlace = {} } = {}) {
       id: p.id,
       poolId: poolRef(poolByPlace, p.id).id,
       poolName: poolRef(poolByPlace, p.id).name,
+      poolCount: poolRef(poolByPlace, p.id).count,
       kind: p.kind,
       name: p.name,
       address: p.address,

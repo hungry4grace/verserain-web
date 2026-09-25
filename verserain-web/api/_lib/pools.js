@@ -44,6 +44,7 @@ export const MERCHANT_MONTHLY_MAX_NTD = 10000;                  // memo: NT$5,00
 export const MERCHANT_MONTHLY_DEFAULT_NTD = 5000;
 export const POOL_VOUCHER_TTL_SEC = VOUCHER_TTL_SEC;
 export const MAX_POOL_CREATES_PER_DAY = 2;
+export const MAX_OPEN_POOLS_PER_PLACE = 5;   // pending + approved pools one marker may run at once
 export const CONSENT_VERSION = 'v1';
 
 const CONTRIB_MAX = 500;
@@ -209,6 +210,11 @@ export async function savePool(redis, pool) {
 }
 export function findPoolByOrgPlace(pools, placeId) {
   return (pools || []).find((p) => p && p.orgPlaceId === placeId && p.status !== 'rejected') || null;
+}
+// A church / organisation may run several pools at once (one per project);
+// only the open ones (pending or approved) count against the cap.
+export function openPoolsForPlace(pools, placeId) {
+  return (pools || []).filter((p) => p && p.orgPlaceId === placeId && (p.status === 'pending' || p.status === 'approved'));
 }
 export async function countPoolCreatesToday(redis, email, day) {
   return Math.max(0, toInt(await redis.get(poolSubmitKey(email, day))));
