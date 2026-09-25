@@ -59,6 +59,9 @@ const PLACE_STYLE = {
   merchant: { bg: '#e11d48', border: '#fecdd3', emoji: '🏪' }, // 玫紅：和黃色玩家光點分開
   church:   { bg: '#7c3aed', border: '#ddd6fe', emoji: '⛪' },
   org:      { bg: '#0d9488', border: '#99f6e4', emoji: '🏢' },
+  // A church / org with an open charity pool (愛心折抵池): the heart says
+  // "you can contribute here", whatever the marker's own kind.
+  pool:     { bg: '#e11d48', border: '#fecdd3', emoji: '❤️' },
 };
 const escapeHtml = (v) => String(v ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
@@ -573,7 +576,7 @@ export default function WorldMap2D({ t, playerName, userEmail, onJoinRoom, onVie
     const byId = new Map();
     (places || []).forEach((pl) => {
       if (!pl || !Number.isFinite(Number(pl.lat)) || !Number.isFinite(Number(pl.lng))) return;
-      const st = PLACE_STYLE[pl.kind] || PLACE_STYLE.org;
+      const st = pl.poolId ? PLACE_STYLE.pool : (PLACE_STYLE[pl.kind] || PLACE_STYLE.org);
       const pct = pl.kind === 'merchant' && pl.discountPct ? `<span style="position:absolute;right:-8px;bottom:-6px;background:#fff;color:#be123c;border:1px solid ${st.border};border-radius:999px;font-size:9px;font-weight:800;padding:0 4px;line-height:14px;">-${Number(pl.discountPct)}%</span>` : '';
       const icon = L.divIcon({
         className: 'vr-place-marker',
@@ -582,6 +585,8 @@ export default function WorldMap2D({ t, playerName, userEmail, onJoinRoom, onVie
       });
       const marker = L.marker([Number(pl.lat), Number(pl.lng)], { pane: 'placePane', icon, zIndexOffset: 1000 });
       const kindLabel = pl.kind === 'merchant' ? t('商家', 'Shop') : pl.kind === 'church' ? t('教會', 'Church') : t('機構', 'Organisation');
+      const kindEmoji = (PLACE_STYLE[pl.kind] || PLACE_STYLE.org).emoji;
+      const poolLine = pl.poolId ? `<div style="display:inline-block;background:#fff1f2;color:#9f1239;border:1px solid #fecdd3;border-radius:999px;padding:2px 10px;font-weight:800;font-size:0.85rem;margin-bottom:6px;">❤️ ${escapeHtml(t('愛心折抵池', 'Charity discount pool'))}${pl.poolName ? `：${escapeHtml(pl.poolName)}` : ''}</div>` : '';
       const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${pl.lat},${pl.lng}`)}`;
       const photo = pl.photoAssetId ? `<img class="map-place-photo" data-set="place:${escapeHtml(pl.id)}" data-asset="${escapeHtml(pl.photoAssetId)}" data-mime="${escapeHtml(pl.photoMime || 'image/webp')}" alt="" style="display:none;width:100%;max-height:140px;object-fit:cover;border-radius:8px;margin-bottom:6px;" />` : '';
       const discount = pl.kind === 'merchant' && pl.discountPct ? `<div style="display:inline-block;background:#fef3c7;color:#92400e;border-radius:999px;padding:2px 10px;font-weight:800;font-size:0.85rem;margin-bottom:6px;">🎟️ ${t('點數折抵 {n}%', '{n}% off with points').replace('{n}', String(Number(pl.discountPct)))}</div>` : '';
@@ -589,8 +594,9 @@ export default function WorldMap2D({ t, playerName, userEmail, onJoinRoom, onVie
       const html = `
         <div style="font-family: system-ui, sans-serif; min-width: 180px; max-width: 240px; color:#1e293b;">
           ${photo}
-          <div style="font-size:0.72rem;color:#64748b;margin-bottom:2px;">${st.emoji} ${escapeHtml(kindLabel)}</div>
+          <div style="font-size:0.72rem;color:#64748b;margin-bottom:2px;">${kindEmoji} ${escapeHtml(kindLabel)}</div>
           <div style="font-weight:800;font-size:1.05rem;margin-bottom:4px;">${escapeHtml(pl.name)}</div>
+          ${poolLine}
           ${discount}
           ${text ? `<div style="font-size:0.85rem;color:#334155;line-height:1.5;margin-bottom:6px;white-space:pre-wrap;">${escapeHtml(text)}</div>` : ''}
           <div style="font-size:0.8rem;color:#64748b;margin-bottom:2px;">📍 <a href="${mapsUrl}" target="_blank" rel="noopener noreferrer" style="color:#2563eb;">${escapeHtml(pl.address)}</a></div>
@@ -855,6 +861,12 @@ export default function WorldMap2D({ t, playerName, userEmail, onJoinRoom, onVie
                   </span>
                   <span>{t('教會、機構 = 贊助者', 'church / org = sponsor')}</span>
                 </div>
+                {places.some(pl => pl && pl.poolId) && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginTop: 3 }}>
+                    <span style={{ width: 14, height: 14, borderRadius: '50%', background: '#e11d48', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 9 }}>❤️</span>
+                    <span>{t('愛心折抵池 = 可投入點數', 'heart = charity pool, contribute here')}</span>
+                  </div>
+                )}
               </div>
             )}
             {fruitMode && fruitTree && (

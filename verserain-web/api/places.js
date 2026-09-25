@@ -166,12 +166,12 @@ async function verifyOwner(res, redis, body) {
 
 const whoIs = (identity, email) => identity.playerName || email;
 
-// { orgPlaceId → poolId } for the approved charity pools; fails soft so the
+// { orgPlaceId → { id, name } } for the approved charity pools; fails soft so the
 // map never goes blank because of the pools table.
 async function approvedPoolsByPlace(redis) {
   try {
     const out = {};
-    for (const p of await listPools(redis)) if (p.status === 'approved' && p.orgPlaceId) out[p.orgPlaceId] = p.id;
+    for (const p of await listPools(redis)) if (p.status === 'approved' && p.orgPlaceId) out[p.orgPlaceId] = { id: p.id, name: p.name };
     return out;
   } catch { return {}; }
 }

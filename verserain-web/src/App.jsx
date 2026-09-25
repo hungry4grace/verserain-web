@@ -8885,6 +8885,36 @@ export default function App() {
   // people you invited hitting garden milestones, and cheers you received.
   const [notifyInbox, setNotifyInbox] = useState(null); // { items, lastReadAt } | null
   const [showEncouragePanel, setShowEncouragePanel] = useState(false);
+  // The 🔔 list used to load once per login, so a notice that arrived while
+  // the app stayed open (a pool or place to review, an approval) only showed
+  // after a full reload. Refresh it when the panel opens and every 3 minutes
+  // while the tab is visible.
+  useEffect(() => {
+    if (!showEncouragePanel) return undefined;
+    const id = setTimeout(() => setNotifyInboxReload(n => n + 1), 0);
+    return () => clearTimeout(id);
+  }, [showEncouragePanel]);
+  useEffect(() => {
+    const id = setInterval(() => { if (typeof document === 'undefined' || document.visibilityState === 'visible') setNotifyInboxReload(n => n + 1); }, 180000);
+    return () => clearInterval(id);
+  }, []);
+  // Admins: what is waiting for review, fetched fresh whenever the 🔔 panel
+  // opens — this does not depend on the push configuration.
+  const [adminPending, setAdminPending] = useState(null); // { pools, places } | null
+  useEffect(() => {
+    if (!showEncouragePanel || !isSuperAdmin || !userEmail) return undefined;
+    let cancelled = false;
+    const headers = { 'Content-Type': 'application/json', ...(adminToken ? { 'X-Admin-Token': adminToken } : {}) };
+    Promise.all([
+      fetch(`/api/pools?all=1&adminEmail=${encodeURIComponent(userEmail)}`, { headers }).then(r => r.ok ? r.json() : { pools: [] }).catch(() => ({ pools: [] })),
+      fetch(`/api/places?all=1&adminEmail=${encodeURIComponent(userEmail)}`, { headers }).then(r => r.ok ? r.json() : { places: [] }).catch(() => ({ places: [] })),
+    ]).then(([p, q]) => {
+      if (cancelled) return;
+      setAdminPending({ pools: (p.pools || []).filter(x => x.status === 'pending').length, places: (q.places || []).filter(x => x.status === 'pending').length });
+    });
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showEncouragePanel, isSuperAdmin, userEmail]);
   const [myVoiceOwnerId, setMyVoiceOwnerId] = useState(null);
   // 創作者親聲朗讀 in the verse view modal — when the verse came from a set
   // with a creator recording, the 朗讀 button plays it instead of TTS.
@@ -26026,7 +26056,7 @@ const deDict = {
                     verserain
                   </div>
                   <div className="app-brand-version" style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', marginTop: '4px', marginLeft: '2px' }}>
-                    v4.0.79
+                    v4.0.80
                   </div>
                 </div>
                 <div ref={langPickerRef} className="app-lang-control" style={{ position: 'relative' }}>
@@ -26113,7 +26143,8 @@ const deDict = {
               <div className="app-auth-actions" style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
                 {playerName ? (
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
-                    {combinedInbox.all.length > 0 && (() => {
+                    {/* Admins always get the bell: the panel carries what is waiting for review. */}
+                    {(combinedInbox.all.length > 0 || isSuperAdmin) && (() => {
                       const unread = combinedInbox.unread;
                       return (
                         <button
@@ -33216,6 +33247,12 @@ const deDict = {
                 <button onClick={() => setShowEncouragePanel(false)} style={{ background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer', padding: 0 }}><XCircle size={22} /></button>
               </div>
               <div style={{ flex: '1 1 auto', minHeight: 0, overflowY: 'auto', padding: '0.6rem 0' }}>
+                {isSuperAdmin && adminPending && (adminPending.pools > 0 || adminPending.places > 0) && (
+                  <div data-testid="admin-pending-banner" style={{ margin: '0 0.9rem 0.5rem', background: '#fff1f2', border: '1px solid #fecdd3', borderRadius: 10, padding: '0.6rem 0.8rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                    <span style={{ color: '#9f1239', fontWeight: 700, fontSize: '0.88rem' }}>{t('待審核：{a} 個愛心折抵池、{b} 個地圖標記', 'Awaiting review: {a} charity pools, {b} map markers').replace('{a}', String(adminPending.pools)).replace('{b}', String(adminPending.places))}</span>
+                    <button onClick={() => { setShowEncouragePanel(false); setMainTab('rewards_admin'); }} style={{ background: '#be123c', color: '#fff', border: 'none', borderRadius: 8, padding: '0.3rem 0.8rem', fontSize: '0.82rem', fontWeight: 700, cursor: 'pointer' }}>{t('去審核', 'Review it')} →</button>
+                  </div>
+                )}
                 {combinedInbox.all.length === 0 && (
                   <div style={{ color: '#94a3b8', fontSize: '0.9rem', textAlign: 'center', padding: '1.5rem 1rem' }}>{t('還沒有任何通知。邀請朋友、錄下你的聲音分享給大家吧！', 'No notifications yet — invite friends and share your voice!')}</div>
                 )}
@@ -33319,17 +33356,19 @@ const deDict = {
                     );
                   }
                   // 愛心折抵池: contributions and pool vouchers (organisation), new pools (admin).
-                  if (['pool_contribution', 'pool_voucher_used', 'pool_approved', 'pool_merchant_joined'].includes(it.kind)) {
+                  if (['pool_contribution', 'pool_voucher_used', 'pool_approved', 'pool_rejected', 'pool_merchant_joined'].includes(it.kind)) {
                     const text = it.kind === 'pool_contribution'
                       ? t('{who} 投入 {points} 點到「{pool}」，折抵額度 +NT${n}', '{who} contributed {points} pts to “{pool}” — NT${n} added to the allowance').replace('{who}', String(it.who || '')).replace('{points}', Number(it.points || 0).toLocaleString()).replace('{pool}', String(it.poolName || '')).replace('{n}', String(it.ntd ?? ''))
                       : it.kind === 'pool_voucher_used'
                         ? t('「{pool}」在 {place} 的折扣券已核銷，折抵 NT${n}', 'The “{pool}” coupon at {place} was used — NT${n} off').replace('{pool}', String(it.poolName || '')).replace('{place}', String(it.placeName || '')).replace('{n}', String(it.ntd ?? ''))
                         : it.kind === 'pool_approved'
                           ? t('你的愛心折抵池「{name}」已通過審核，現在可以接受投入了 ❤️', 'Your charity pool “{name}” was approved and can now receive contributions ❤️').replace('{name}', String(it.name || ''))
-                          : t('{place} 加入了「{pool}」：單筆最高 NT${a}、每月最高 NT${b}', '{place} joined “{pool}”: up to NT${a} per order, NT${b} a month').replace('{place}', String(it.placeName || '')).replace('{pool}', String(it.poolName || '')).replace('{a}', String(it.perOrderMaxNTD ?? '')).replace('{b}', String(it.monthlyMaxNTD ?? ''));
+                          : it.kind === 'pool_rejected'
+                            ? t('你的愛心折抵池「{name}」未通過審核，請聯絡管理員了解原因', 'Your charity pool “{name}” was not approved; please contact an admin').replace('{name}', String(it.name || ''))
+                            : t('{place} 加入了「{pool}」：單筆最高 NT${a}、每月最高 NT${b}', '{place} joined “{pool}”: up to NT${a} per order, NT${b} a month').replace('{place}', String(it.placeName || '')).replace('{pool}', String(it.poolName || '')).replace('{a}', String(it.perOrderMaxNTD ?? '')).replace('{b}', String(it.monthlyMaxNTD ?? ''));
                     return (
                       <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '0.6rem 1.3rem', background: '#fff7f8' }}>
-                        <span style={{ fontSize: '1.2rem', flexShrink: 0 }}>{it.kind === 'pool_voucher_used' ? '🎟️' : it.kind === 'pool_merchant_joined' ? '🏪' : '❤️'}</span>
+                        <span style={{ fontSize: '1.2rem', flexShrink: 0 }}>{it.kind === 'pool_voucher_used' ? '🎟️' : it.kind === 'pool_merchant_joined' ? '🏪' : it.kind === 'pool_rejected' ? '⚠️' : '❤️'}</span>
                         <div style={{ minWidth: 0 }}>
                           <div style={{ color: '#334155', fontSize: '0.9rem', lineHeight: 1.45 }}>{text}</div>
                           <div style={{ color: '#cbd5e1', fontSize: '0.72rem', marginTop: 2 }}>{new Date(it.at).toLocaleString()}</div>
