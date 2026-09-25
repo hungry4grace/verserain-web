@@ -3,6 +3,7 @@ import { requireAdmin } from './_lib/admins.js';
 import { partyFetch } from './_lib/party.js';
 import { pushNotify } from './_lib/rewards.js';
 import { notifyAdmins, placeSubmittedMessage, placeResubmittedMessage } from './_lib/adminNotify.js';
+import { listPools } from './_lib/pools.js';
 import {
   listPlaces, getPlace, savePlace, deletePlace, normalizePlaceSubmission, applyAdminAction, publicView,
   countSubmissionsToday, bumpSubmissions, taipeiDay, MAX_SUBMISSIONS_PER_DAY,
@@ -67,7 +68,7 @@ export default async function handler(req, res) {
         return res.status(200).json({ places: mine });
       }
       res.setHeader('Cache-Control', 's-maxage=120, stale-while-revalidate=600');
-      return res.status(200).json({ places: publicView(await listPlaces(redis)) });
+      return res.status(200).json({ places: publicView(await listPlaces(redis), { poolByPlace: await approvedPoolsByPlace(redis) }) });
     }
 
     const body = typeof req.body === 'string' ? safeJson(req.body) : (req.body || {});
@@ -164,6 +165,16 @@ async function verifyOwner(res, redis, body) {
 }
 
 const whoIs = (identity, email) => identity.playerName || email;
+
+// { orgPlaceId → poolId } for the approved charity pools; fails soft so the
+// map never goes blank because of the pools table.
+async function approvedPoolsByPlace(redis) {
+  try {
+    const out = {};
+    for (const p of await listPools(redis)) if (p.status === 'approved' && p.orgPlaceId) out[p.orgPlaceId] = p.id;
+    return out;
+  } catch { return {}; }
+}
 
 // Turn a referral code into { code, name } through PartyKit's account-true
 // lookup, or { error, status } when the code is malformed / unknown / the

@@ -247,12 +247,14 @@ export function ownerView(place) {
 }
 
 // Pure: what the public map may show — approved places only, no owner or
-// admin fields.
-export function publicView(places) {
+// admin fields. poolByPlace maps an org/church place id to its approved
+// charity pool id (api/_lib/pools.js) so the map can offer "contribute".
+export function publicView(places, { poolByPlace = {} } = {}) {
   return (places || [])
     .filter((p) => p && p.status === 'approved')
     .map((p) => ({
       id: p.id,
+      poolId: (poolByPlace && poolByPlace[p.id]) || '',
       kind: p.kind,
       name: p.name,
       address: p.address,

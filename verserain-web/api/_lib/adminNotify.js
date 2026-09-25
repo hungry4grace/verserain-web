@@ -40,6 +40,20 @@ export function placeSubmittedMessage(place, who) {
   };
 }
 
+// A church / organisation opened a charity pool (愛心折抵池) that needs review.
+export function poolSubmittedMessage(pool, who) {
+  const name = String((pool && pool.name) || '').slice(0, 60);
+  const org = String((pool && pool.orgPlaceName) || '').slice(0, 60);
+  const by = String(who || '').slice(0, 40) || '有人';
+  return {
+    record: { kind: 'pool_submitted', poolId: pool.id, name, orgPlaceName: org, by },
+    title: '❤️ 新的愛心折抵池待審核',
+    body: `${by} 為「${org || name}」建立了愛心折抵池「${name}」，請到獎勵管理審核`,
+    url: 'https://www.verserain.com/#rewards_admin',
+    tag: `verserain-pool-${pool.id}`,
+  };
+}
+
 const FIELD_ZH = { kind: '類型', name: '名稱', address: '地址', lat: '位置', lng: '位置', discountPct: '折扣', dailyPerPerson: '每人每天張數' };
 
 // An owner changed something that needs a fresh look (name, address, spot,
