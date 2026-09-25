@@ -3,7 +3,7 @@ import QrScanner from 'qr-scanner';
 import { Camera, XCircle, Image as ImageIcon } from 'lucide-react';
 import { extractVoucherCode } from './lib/voucherCode.js';
 
-// Store-side voucher scanner (兌換券核銷): opens the back camera as soon as it
+// Store-side voucher scanner (折扣券核銷): opens the back camera as soon as it
 // mounts, decodes the voucher QR (#verify/<code>) and hands the 8-character
 // code up through `onCode`. Falls back to picking a QR photo when the camera
 // cannot start (permission denied, in-app browsers without camera access).
@@ -18,8 +18,8 @@ export default function VoucherScanner({ t, onCode, onClose, cameraDisabled = fa
   const doneRef = useRef(false);
   const [error, setError] = useState('');
   const [live, setLive] = useState(false);
-  const heading = title || t('掃描 QR 兌換券', 'Scan the voucher QR');
-  const notMatch = notMatchText || t('這不是兌換券的 QR', 'That is not a voucher QR');
+  const heading = title || t('掃描 QR 折扣券', 'Scan the coupon QR');
+  const notMatch = notMatchText || t('這不是折扣券的 QR', 'That is not a coupon QR');
 
   const stop = () => {
     try { scannerRef.current?.stop(); scannerRef.current?.destroy(); } catch { /* already stopped */ }
@@ -115,7 +115,7 @@ export default function VoucherScanner({ t, onCode, onClose, cameraDisabled = fa
           </div>
         )}
         <p style={{ margin: '0 0 0.8rem', color: '#475569', fontSize: '0.85rem', lineHeight: 1.5 }}>
-          {hint || t('對準顧客兌換券上的 QR，掃到會自動查詢。', 'Point the camera at the QR on the customer’s voucher; it is looked up automatically.')}
+          {hint || t('對準顧客折扣券上的 QR，掃到會自動查詢。', 'Point the camera at the QR on the customer’s coupon; it is looked up automatically.')}
         </p>
         {error && (
           <div role="alert" style={{ background: '#fef2f2', border: '1px solid #fecaca', color: '#991b1b', padding: '0.65rem 0.8rem', borderRadius: '8px', fontSize: '0.85rem', marginBottom: '0.8rem' }}>

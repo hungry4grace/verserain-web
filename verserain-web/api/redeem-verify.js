@@ -125,7 +125,7 @@ async function notifyReferrer(redis, { code, bonus, entry }) {
   const url = 'https://www.verserain.com/?notify=1';
   await Promise.all([
     pushNotify(redis, code, { kind: 'merchant_referral', code: entry.code, placeName: entry.placeName, playerName: entry.playerName, points: entry.points, bonus }).catch(() => {}),
-    sendReferralPush(code, { title: '🏪 推薦獎勵入帳', body, url, tag }).catch(() => {}),
-    sendReferralApns(code, { title: '🏪 推薦獎勵入帳', body, url, collapseId: tag }).catch(() => {}),
+    sendReferralPush(code, { title: '🏪 獲得推薦獎勵點數', body, url, tag }).catch(() => {}),
+    sendReferralApns(code, { title: '🏪 獲得推薦獎勵點數', body, url, collapseId: tag }).catch(() => {}),
   ]);
 }

@@ -593,7 +593,7 @@ export default function WorldMap2D({ t, playerName, userEmail, onJoinRoom, onVie
           ${pl.hours ? `<div style="font-size:0.8rem;color:#64748b;">🕒 ${escapeHtml(pl.hours)}</div>` : ''}
           ${pl.phone ? `<div style="font-size:0.8rem;color:#64748b;">☎️ ${escapeHtml(pl.phone)}</div>` : ''}
           ${pl.website ? `<div style="font-size:0.8rem;"><a href="${escapeHtml(pl.website)}" target="_blank" rel="noopener noreferrer" style="color:#2563eb;">🔗 ${escapeHtml(pl.website.replace(/^https?:\/\//, ''))}</a></div>` : ''}
-          ${pl.kind === 'merchant' ? `<button class="map-redeem-btn" data-place-id="${escapeHtml(pl.id)}" style="margin-top:8px;width:100%;background:#f59e0b;color:#fff;border:none;border-radius:8px;padding:0.45rem 0.8rem;font-weight:800;cursor:pointer;">🎟️ ${escapeHtml(t('產生兌換券', 'Get a voucher'))}</button>` : ''}
+          ${pl.kind === 'merchant' ? `<button class="map-redeem-btn" data-place-id="${escapeHtml(pl.id)}" style="margin-top:8px;width:100%;background:#f59e0b;color:#fff;border:none;border-radius:8px;padding:0.45rem 0.8rem;font-weight:800;cursor:pointer;">🎟️ ${escapeHtml(t('產生折扣券', 'Get a coupon'))}</button>` : ''}
         </div>`;
       marker.bindPopup(L.popup({ maxWidth: 260, className: 'verse-map-popup' }).setContent(html));
       marker.on('click', (ev) => { L.DomEvent.stopPropagation(ev); });

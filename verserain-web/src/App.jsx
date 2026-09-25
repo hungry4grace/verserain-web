@@ -9274,7 +9274,7 @@ export default function App() {
     setTimeout(() => setToast(null), 3000);
   };
 
-  // ── 商家折扣：點數兌換 (points → merchant discount) ──────────────────
+  // ── 商家折扣：點數折抵 (points → merchant discount) ──────────────────
   // Leaderboard scores are never deducted; the server keeps a separate
   // "spent" ledger and issues one-time vouchers (see api/redeem.js).
   const [redeemPlace, setRedeemPlace] = useState(null); // place object from the map popup
@@ -9291,22 +9291,22 @@ export default function App() {
     try { if (v) localStorage.setItem('verserain_active_voucher', JSON.stringify(v)); else localStorage.removeItem('verserain_active_voucher'); } catch { /* ignore */ }
   };
   const redeemErrorText = (code) => ({
-    session_invalid: t('為了安全，請重新登入一次再兌換', 'For security, please sign in again before redeeming'),
-    not_eligible: t('尚未符合兌換資格：需通過 3 節經文且帳號滿 7 天', 'Not eligible yet: pass 3 verses and have an account at least 7 days old'),
-    not_enough_passed: t('尚未符合兌換資格：需先通過 3 節經文', 'Not eligible yet: pass 3 verses first'),
-    account_too_new: t('尚未符合兌換資格：帳號需滿 7 天', 'Not eligible yet: your account must be at least 7 days old'),
-    no_email: t('尚未符合兌換資格：需以 Email 或 LINE／Google 帳號登入', 'Not eligible yet: sign in with an email, LINE or Google account'),
-    place_unavailable: t('此商家目前無法兌換', 'This shop is not available right now'),
+    session_invalid: t('為了安全，請重新登入一次再折抵', 'For security, please sign in again before using points'),
+    not_eligible: t('尚未符合折抵資格：需通過 3 節經文且帳號滿 7 天', 'Not eligible for a discount yet: pass 3 verses and have an account at least 7 days old'),
+    not_enough_passed: t('尚未符合折抵資格：需先通過 3 節經文', 'Not eligible for a discount yet: pass 3 verses first'),
+    account_too_new: t('尚未符合折抵資格：帳號需滿 7 天', 'Not eligible for a discount yet: your account must be at least 7 days old'),
+    no_email: t('尚未符合折抵資格：需以 Email 或 LINE／Google 帳號登入', 'Not eligible for a discount yet: sign in with an email, LINE or Google account'),
+    place_unavailable: t('此商家目前無法折抵', 'This shop is not offering a discount right now'),
     bill_invalid: t('請輸入正確的消費金額', 'Enter a valid bill amount'),
     too_small: t('折抵金額不足 NT$1', 'The discount would be under NT$1'),
-    daily_place_limit: t('今天在這家店的兌換次數已達上限', 'You have reached today\'s voucher limit at this shop'),
-    open_voucher_exists: t('你已有一張未使用的兌換券', 'You already have an unused voucher'),
+    daily_place_limit: t('今天在這家店的折抵次數已達上限', 'You have reached today’s coupon limit at this shop'),
+    open_voucher_exists: t('你已有一張未使用的折扣券', 'You already have an unused coupon'),
     verify_unavailable: t('核算服務暫時無法使用，稍後再試', 'Verification is temporarily unavailable, try again later'),
     rate_limited: t('操作太頻繁，請稍後再試', 'Too many requests, please try again later'),
     login_required: t('請先登入', 'Please sign in first'),
     not_owner: t('這不是你登記的項目', 'This listing is not yours'),
     place_not_found: t('找不到這筆登記，可能已被刪除', 'Listing not found — it may have been deleted'),
-    has_vouchers: t('已發出過兌換券，只能下架不能刪除', 'Vouchers were issued for this place — it can be withdrawn but not deleted'),
+    has_vouchers: t('已發出過折扣券，只能下架不能刪除', 'Coupons were issued for this place — it can be withdrawn but not deleted'),
     referrer_not_found: t('找不到這個推薦碼，請確認推薦者的分享碼', 'Referral code not found — check the code on their Share page'),
     referrer_invalid: t('推薦碼格式不正確，應為 10 個字母/數字。', 'Invalid format. Expected 10 letters/numbers.'),
   })[code] || String(code || 'error');
@@ -9380,7 +9380,7 @@ export default function App() {
   });
   const openRedeem = (place) => {
     if (!place || !place.id) return;
-    if (!userEmail) { setShowLoginModal('login'); setToast(t('請先登入才能兌換折扣', 'Sign in to redeem a discount')); setTimeout(() => setToast(null), 2500); return; }
+    if (!userEmail) { setShowLoginModal('login'); setToast(t('請先登入才能用點數折抵', 'Sign in to use points for a discount')); setTimeout(() => setToast(null), 2500); return; }
     setRedeemPlace(place); setRedeemBill(''); setPointsBalance(null);
     fetchPointsBalance();
   };
@@ -9406,7 +9406,7 @@ export default function App() {
       const res = await fetch('/api/redeem', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: userEmail, sessionKey, placeId: redeemPlace.id, billNTD: redeemPreview.bill }) });
       const d = await res.json().catch(() => ({}));
       if (d.voucher && (d.success || d.error === 'open_voucher_exists')) { saveActiveVoucher({ ...d.voucher, status: d.voucher.status || 'issued' }); if (d.balance) setPointsBalance(d.balance); setRedeemPlace(null); return; }
-      if (d.error === 'daily_place_limit' && d.limit) throw new Error(t('今天在這家店已兌換 {n} 張，達到上限', 'You have already used {n} vouchers at this shop today, the limit').replace('{n}', String(d.limit)));
+      if (d.error === 'daily_place_limit' && d.limit) throw new Error(t('今天在這家店已用 {n} 張，達到上限', 'You have already used {n} coupons at this shop today, the limit').replace('{n}', String(d.limit)));
       throw new Error(redeemErrorText(d.error || res.status));
     } catch (e) {
       setToast(String(e?.message || e)); setTimeout(() => setToast(null), 3500);
@@ -9431,7 +9431,7 @@ export default function App() {
   const voucherSecondsLeft = activeVoucher && activeVoucher.expiresAt ? Math.max(0, Math.floor((Date.parse(activeVoucher.expiresAt) - voucherNow) / 1000)) : 0;
   const formatVoucherCode = (c) => String(c || '').replace(/(.{4})(.{4})/, '$1-$2');
 
-  // ── 兌換券核銷 (store-side verify page) ──────────────────────────────
+  // ── 折扣券核銷 (store-side verify page) ──────────────────────────────
   // The QR deep link is #verify/<code>. The router rewrites the hash to plain
   // #verify on its first sync, so the code is stashed in sessionStorage the
   // moment it is seen and survives that rewrite (and a reload).
@@ -9546,7 +9546,7 @@ export default function App() {
       if (d.error === 'session_invalid' || d.error === 'login_required') { setShowLoginModal('login'); throw new Error(redeemErrorText('session_invalid')); }
       if (!res.ok || !d.success) throw new Error(redeemErrorText(d.error || res.status));
       setToast(action === 'withdraw'
-        ? t('已下架，已從地圖移除；已發出的兌換券仍可核銷。', 'Withdrawn and removed from the map; vouchers already issued can still be used.')
+        ? t('已下架，已從地圖移除；已發出的折扣券仍可核銷。', 'Withdrawn and removed from the map; coupons already issued can still be used.')
         : action === 'relist'
           ? t('已重新送審，通過後會回到地圖上。', 'Re-submitted — it returns to the map once approved.')
           : t('已刪除登記', 'Registration deleted'));
@@ -9643,7 +9643,7 @@ export default function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sessionKey]);
 
-  // ── 管理員：地圖標記審核與兌換券 ────────────────────────────────────
+  // ── 管理員：地圖標記審核與折扣券 ────────────────────────────────────
   const [placesAdmin, setPlacesAdmin] = useState(null);
   const [placesAdminFilter, setPlacesAdminFilter] = useState('pending');
   const [placeEdit, setPlaceEdit] = useState(null); // { ...place, isNew? }
@@ -9673,12 +9673,12 @@ export default function App() {
       const d = await res.json().catch(() => ({}));
       if (!res.ok || !d.success) throw new Error(d.error || res.status);
       setRewardsAdminReload(n => n + 1);
-      setToast(t('已更新兌換券', 'Voucher updated'));
+      setToast(t('已更新折扣券', 'Coupon updated'));
     } catch (e) { setToast(t('更新失敗：{error}', 'Update failed: {error}').replace('{error}', String(e?.message || e))); }
     setTimeout(() => setToast(null), 3000);
   };
 
-  // ── 兌換紀錄 (redemption history) ───────────────────────────────────
+  // ── 折抵紀錄 (redemption history) ───────────────────────────────────
   const [myVouchers, setMyVouchers] = useState(null); // { vouchers, summary } | { error } | null
   const [placeLedger, setPlaceLedger] = useState({}); // placeId → { loading } | { vouchers, summary, place } | { error }
   const [placeLedgerOpen, setPlaceLedgerOpen] = useState({});
@@ -25832,7 +25832,7 @@ const deDict = {
                     verserain
                   </div>
                   <div className="app-brand-version" style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', marginTop: '4px', marginLeft: '2px' }}>
-                    v4.0.77
+                    v4.0.78
                   </div>
                 </div>
                 <div ref={langPickerRef} className="app-lang-control" style={{ position: 'relative' }}>
@@ -26477,7 +26477,7 @@ const deDict = {
                       ...(SHOW_DONATE ? [{ id: 'donate', Icon: Heart, label: t('支持經文雨', 'Support VerseRain'), desc: t('小額支持 App 開發與維運', 'Help fund development & hosting'), color: '#ef4444' }] : []),
                       { id: 'sponsor', Icon: Gift, label: t('贊助經文雨', 'Sponsor VerseRain'), desc: t('企業家與教會如何加入推廣讀經', 'How businesses & churches can join'), color: '#7c3aed' },
                       { id: 'merchant', Icon: Store, label: t('登記商家／教會', 'Register a shop / church'), desc: t('在「誰在玩」地圖上標記，提供點數折扣', 'Get on the map and offer a points discount'), color: '#d97706' },
-                      { id: 'verify', Icon: Ticket, label: t('兌換券核銷', 'Verify a voucher'), desc: t('店家輸入代碼確認折扣', 'Shops confirm a customer’s voucher here'), color: '#0d9488' },
+                      { id: 'verify', Icon: Ticket, label: t('折扣券核銷', 'Verify a coupon'), desc: t('店家輸入代碼確認折扣', 'Shops confirm a customer’s voucher here'), color: '#0d9488' },
                       ...(isSuperAdmin ? [{ id: 'rewards_admin', Icon: Gift, label: t('獎勵管理', 'Reward Admin'), desc: t('待發送的禮券與獎勵', 'Gift cards & rewards to send'), color: '#f59e0b' }] : [])
                     ].map(item => {
                       const Icon = item.Icon;
@@ -28591,7 +28591,7 @@ const deDict = {
                         pointsBalance && !pointsBalance.error && Number.isFinite(Number(pointsBalance.balancePoints)) ? (
                           <div style={{ marginTop: '0.7rem', textAlign: 'center', fontSize: '0.85rem', color: '#1e3a8a' }}>
                             🎟️ {t('可用點數 {a}（已用 {b}）', 'Available points {a} (spent {b})').replace('{a}', Number(pointsBalance.balancePoints || 0).toLocaleString()).replace('{b}', Number(pointsBalance.spentPoints || 0).toLocaleString())}
-                            <span style={{ color: '#64748b' }}> ≈ NT${pointsBalance.balanceNTD || 0}</span>
+                            <span style={{ color: '#64748b' }}> · {t('最多可折抵 NT${n}', 'up to NT${n} off').replace('{n}', String(pointsBalance.balanceNTD || 0))}</span>
                           </div>
                         ) : (!sessionKey || (pointsBalance && pointsBalance.error === 'session_invalid')) ? (
                           <div onClick={() => setShowLoginModal('login')} style={{ marginTop: '0.7rem', textAlign: 'center', fontSize: '0.8rem', color: '#64748b', cursor: 'pointer', textDecoration: 'underline' }}>
@@ -28894,7 +28894,7 @@ const deDict = {
                                 {sliced.map((it, idx) => (
                                   <div key={`${it.code}-${it.kind}-${idx}`} style={{ background: it.kind === 'reversed' ? '#f8fafc' : '#fff', padding: '10px 15px', borderRadius: '8px', borderLeft: `4px solid ${it.kind === 'reversed' ? '#cbd5e1' : '#d97706'}`, boxShadow: '0 1px 2px rgba(0,0,0,0.05)', fontSize: '0.9rem', color: it.kind === 'reversed' ? '#94a3b8' : '#475569', lineHeight: 1.5 }}>
                                     {it.kind === 'reversed'
-                                      ? t('{place}，{date}，兌換券已作廢，收回 {bonus} 點', '{place}, {date}: voucher voided, {bonus} pts reversed').replace('{place}', String(it.placeName || '')).replace('{date}', fmtDate(it.at)).replace('{bonus}', num(it.bonus))
+                                      ? t('{place}，{date}，折扣券已作廢，收回 {bonus} 點', '{place}, {date}: coupon voided, {bonus} pts reversed').replace('{place}', String(it.placeName || '')).replace('{date}', fmtDate(it.at)).replace('{bonus}', num(it.bonus))
                                       : t('{place}，{date}，{who} 使用 {points} 點，因此你也獲得 {bonus} 點', '{place}, {date}: {who} used {points} pts, so you also earned {bonus} pts').replace('{place}', String(it.placeName || '')).replace('{date}', fmtDate(it.at)).replace('{who}', String(it.playerName || '')).replace('{points}', num(it.points)).replace('{bonus}', num(it.bonus))}
                                   </div>
                                 ))}
@@ -29027,7 +29027,7 @@ const deDict = {
                           )}
                         </div>
 
-                        {/* 地圖標記審核（商家／教會／機構）+ 兌換券 */}
+                        {/* 地圖標記審核（商家／教會／機構）+ 折扣券 */}
                         {(() => {
                           const all = placesAdmin || [];
                           const shown = all.filter(pl => placesAdminFilter === 'all' ? true : pl.status === placesAdminFilter);
@@ -29056,7 +29056,7 @@ const deDict = {
                                   <input type="number" step="0.00001" value={ed.lng} onChange={e => setPlaceEdit(d => ({ ...d, lng: Number(e.target.value) }))} placeholder="lng" style={inputStyle} />
                                   {ed.kind === 'merchant' && <input type="number" min={5} max={20} value={ed.discountPct} onChange={e => setPlaceEdit(d => ({ ...d, discountPct: Number(e.target.value) }))} placeholder={t('折扣 %', 'Discount %')} style={inputStyle} />}
                                   <input type="number" min={1} value={ed.dailyCapNTD} onChange={e => setPlaceEdit(d => ({ ...d, dailyCapNTD: Number(e.target.value) }))} placeholder={t('每日折抵上限 NT$', 'Daily cap NT$')} style={inputStyle} />
-                                  {ed.kind === 'merchant' && <input type="number" min={0} max={20} value={ed.dailyPerPerson ?? 3} onChange={e => setPlaceEdit(d => ({ ...d, dailyPerPerson: Number(e.target.value) }))} placeholder={t('每人每天張數（0=不限）', 'Per person per day (0 = unlimited)')} title={t('同一位客人每天可兌換張數（0 = 不限）', 'Vouchers per customer per day (0 = unlimited)')} style={inputStyle} />}
+                                  {ed.kind === 'merchant' && <input type="number" min={0} max={20} value={ed.dailyPerPerson ?? 3} onChange={e => setPlaceEdit(d => ({ ...d, dailyPerPerson: Number(e.target.value) }))} placeholder={t('每人每天張數（0=不限）', 'Per person per day (0 = unlimited)')} title={t('同一位客人每天可使用張數（0 = 不限）', 'Coupons per customer per day (0 = unlimited)')} style={inputStyle} />}
                                   <select value={ed.sponsorId || ''} onChange={e => setPlaceEdit(d => ({ ...d, sponsorId: e.target.value }))} style={inputStyle}><option value="">{t('（不連結贊助紀錄）', '(no sponsor record)')}</option>{(rewardsAdmin?.sponsors || []).map(sp => <option key={sp.id} value={sp.id}>{sp.displayName}</option>)}</select>
                                   <input type="text" value={ed.referrerCode || ''} onChange={e => setPlaceEdit(d => ({ ...d, referrerCode: e.target.value.trim() }))} maxLength={10} placeholder={t('推薦者推薦碼（10 碼，留空 = 無）', 'Referrer code (10 chars, blank = none)')} title={ed.referrerName ? `🤝 ${ed.referrerName}` : ''} autoCapitalize="off" spellCheck={false} style={inputStyle} />
                                   <textarea value={ed.kind === 'merchant' ? ed.description : ed.message} onChange={e => setPlaceEdit(d => ({ ...d, [ed.kind === 'merchant' ? 'description' : 'message']: e.target.value }))} placeholder={ed.kind === 'merchant' ? t('介紹', 'Description') : t('祝福語或簡介', 'Blessing or intro')} rows={2} style={{ ...inputStyle, gridColumn: '1 / -1' }} />
@@ -29096,7 +29096,7 @@ const deDict = {
                                 </div>
                               )}
                               <div style={{ marginTop: '0.9rem', paddingTop: '0.7rem', borderTop: '1px dashed #ddd6fe' }}>
-                                <b style={{ color: '#5b21b6' }}>🎟️ {t('最近兌換券', 'Recent vouchers')}</b>
+                                <b style={{ color: '#5b21b6' }}>🎟️ {t('最近折扣券', 'Recent coupons')}</b>
                                 {!vouchersAdmin ? <div style={{ color: '#94a3b8', fontSize: '0.85rem' }}>{t('載入中…', 'Loading…')}</div> : vouchersAdmin.length === 0 ? <div style={{ color: '#94a3b8', fontSize: '0.85rem' }}>{t('目前沒有項目', 'Nothing here yet')}</div> : (
                                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem', marginTop: '0.4rem', maxHeight: 320, overflowY: 'auto' }}>
                                     {vouchersAdmin.slice(0, 100).map(v => { const st = v.computedStatus || v.status; return (
@@ -29238,6 +29238,9 @@ const deDict = {
                     <p data-testid="sponsors-disclaimer" style={{ color: '#64748b', fontSize: '0.8rem', lineHeight: 1.6, marginTop: '-0.4rem', marginBottom: '1rem' }}>
                       ⚠️ {t('本計劃目前為實驗階段：獎勵內容、達標條件與發放方式可能隨時調整或停止，不構成任何契約或承諾；獎勵由贊助者自願提供，經文雨保留審核、調整與最終解釋的權利。', 'This programme is a pilot: rewards, milestones and fulfilment may change or stop at any time and form no contract or promise; rewards are provided voluntarily by sponsors, and VerseRain reserves the right to review, adjust and make the final decision.')}
                     </p>
+                    <p data-testid="points-disclaimer" style={{ color: '#64748b', fontSize: '0.8rem', lineHeight: 1.6, marginTop: '-0.6rem', marginBottom: '1rem' }}>
+                      {t('點數聲明：點數是遊戲內無償取得的促銷折抵權益，無現金價值、不可兌換現金、不可轉讓或轉售，亦非儲值或電子支付；折扣由商家自行提供，經文雨不經手任何款項。', 'About points: points are a free in-game promotional discount right with no cash value; they cannot be cashed out, transferred or resold, and are not stored value or e-payment. Discounts are offered by the shops themselves; VerseRain never handles money.')}
+                    </p>
 
                     <div style={card}>
                       <h3 style={h3}>📈 {t('我的進度', 'My progress')}</h3>
@@ -29272,9 +29275,9 @@ const deDict = {
                     </div>
 
                     <div style={card}>
-                      <h3 style={h3}>🎟️ {t('我的兌換紀錄', 'My redemptions')}</h3>
+                      <h3 style={h3}>🎟️ {t('我的折抵紀錄', 'My discounts')}</h3>
                       {!userEmail ? (
-                        <div style={{ color: '#94a3b8', fontSize: '0.9rem' }}>{t('登入後可查看兌換紀錄', 'Sign in to see your redemptions')}</div>
+                        <div style={{ color: '#94a3b8', fontSize: '0.9rem' }}>{t('登入後可查看折抵紀錄', 'Sign in to see your discounts')}</div>
                       ) : !myVouchers ? (
                         <div style={{ color: '#94a3b8', fontSize: '0.9rem' }}>{t('載入中…', 'Loading…')}</div>
                       ) : myVouchers.error ? (
@@ -29286,7 +29289,7 @@ const deDict = {
                             <span style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 8, padding: '0.35rem 0.7rem' }}>{t('已使用 {a} 張 · 過期 {b} 張', '{a} used · {b} expired').replace('{a}', String(myVouchers.summary?.used || 0)).replace('{b}', String(myVouchers.summary?.expired || 0))}</span>
                           </div>
                           {(myVouchers.vouchers || []).length === 0 ? (
-                            <div style={{ color: '#94a3b8', fontSize: '0.9rem' }}>{t('還沒有兌換過。到「誰在玩」地圖點商家標記就能產生兌換券。', 'No redemptions yet. Tap a shop marker on the map to get a voucher.')}</div>
+                            <div style={{ color: '#94a3b8', fontSize: '0.9rem' }}>{t('還沒有折抵過。到「誰在玩」地圖點商家標記就能產生折扣券。', 'No discounts yet. Tap a shop marker on the map to get a coupon.')}</div>
                           ) : (
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
                               {(myVouchers.vouchers || []).map(v => { const st = v.computedStatus || v.status; const b = voucherStatusBadge(st); return (
@@ -29296,7 +29299,7 @@ const deDict = {
                                   </div>
                                   <span style={{ display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
                                     <span style={{ background: b.bg, color: b.fg, borderRadius: 999, padding: '0.1rem 0.6rem', fontSize: '0.76rem', fontWeight: 700 }}>{b.text}</span>
-                                    {st === 'issued' && <button type="button" onClick={() => saveActiveVoucher({ ...v, status: 'issued' })} style={{ background: '#f59e0b', color: '#fff', border: 'none', borderRadius: 6, padding: '0.2rem 0.7rem', cursor: 'pointer', fontWeight: 700, fontSize: '0.78rem' }}>{t('顯示兌換券', 'Show voucher')}</button>}
+                                    {st === 'issued' && <button type="button" onClick={() => saveActiveVoucher({ ...v, status: 'issued' })} style={{ background: '#f59e0b', color: '#fff', border: 'none', borderRadius: 6, padding: '0.2rem 0.7rem', cursor: 'pointer', fontWeight: 700, fontSize: '0.78rem' }}>{t('顯示折扣券', 'Show coupon')}</button>}
                                   </span>
                                 </div>
                               ); })}
@@ -29533,11 +29536,11 @@ const deDict = {
                     </div>
 
                     <div style={card}>
-                      <h3 style={h3}>🏪 {t('商家贊助：折扣換點數', 'Shop sponsorship: discounts for points')}</h3>
+                      <h3 style={h3}>🏪 {t('商家贊助：以折扣回饋背經點數', 'Shop sponsorship: a discount for verse points')}</h3>
                       <div style={{ color: '#475569', fontSize: '0.9rem', lineHeight: 1.7 }}>
                         <div>1️⃣ {t('商家登記名稱、地址、5–20% 的折扣與照片，經審核後出現在「誰在玩」地圖上。', 'A shop registers its name, address, a 5–20% discount and a photo; after review it appears on the map.')}</div>
-                        <div>2️⃣ {t('玩家在地圖上點商家，用遊戲點數產生一次性兌換券（1,000 點 = NT$1）。', 'Players tap the shop on the map and turn game points into a one-time voucher (1,000 pts = NT$1).')}</div>
-                        <div>3️⃣ {t('結帳時出示兌換券，店家在核銷頁確認；折扣由商家吸收，這就是商家的贊助。', 'The customer shows the voucher at checkout and the shop confirms it on the verify page; the shop absorbs the discount — that is its sponsorship.')}</div>
+                        <div>2️⃣ {t('玩家在地圖上點商家，用背經點數產生一次性折扣券（每 1,000 點折抵 NT$1；點數無現金價值，只能在合作商家折抵）。', 'Players tap the shop on the map and turn verse points into a one-time discount coupon (every 1,000 points takes NT$1 off; points have no cash value and only work at partner shops).')}</div>
+                        <div>3️⃣ {t('結帳時出示折扣券，店家在核銷頁確認；折扣由商家吸收，這就是商家的贊助。', 'The customer shows the coupon at checkout and the shop confirms it on the verify page; the shop absorbs the discount — that is its sponsorship.')}</div>
                         <div style={{ color: '#64748b', fontSize: '0.82rem', marginTop: 4 }}>{t('每張券上限 NT$200、每人每月 NT$500、同一商家每天一張、30 分鐘內有效；商家可設每日折抵上限。', 'Caps: NT$200 per voucher, NT$500 per person per month, one per shop per day, valid 30 minutes; shops can set a daily cap.')}</div>
                       </div>
                       <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginTop: '0.7rem' }}>
@@ -29571,12 +29574,12 @@ const deDict = {
                 );
               })()}
 
-              {/* ── 兌換視窗：用點數換商家折扣 ── */}
+              {/* ── 折抵視窗：用點數換商家折扣 ── */}
               {redeemPlace && (() => {
                 const pb = pointsBalance;
                 const pv = redeemPreview;
                 const field = { width: '100%', boxSizing: 'border-box', padding: '0.6rem 0.8rem', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: '1.1rem', fontWeight: 700 };
-                const limitText = { voucher_cap: t('單張兌換券上限 NT${n}', 'Per-voucher cap NT${n}').replace('{n}', String(pb?.voucherCapNTD ?? 200)), monthly: t('本月剩餘額度 NT${n}', 'NT${n} left this month').replace('{n}', String(Math.max(0, (pb?.monthlyCapNTD ?? 500) - (pb?.monthlyUsedNTD || 0)))), balance: t('點數只夠折抵這麼多', 'Limited by your points') };
+                const limitText = { voucher_cap: t('單張折扣券上限 NT${n}', 'Per-coupon cap NT${n}').replace('{n}', String(pb?.voucherCapNTD ?? 200)), monthly: t('本月剩餘額度 NT${n}', 'NT${n} left this month').replace('{n}', String(Math.max(0, (pb?.monthlyCapNTD ?? 500) - (pb?.monthlyUsedNTD || 0)))), balance: t('點數只夠折抵這麼多', 'Limited by your points') };
                 return (
                   <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 3000, padding: '1rem' }} onClick={(e) => { if (e.target === e.currentTarget && !redeemBusy) setRedeemPlace(null); }}>
                     <div style={{ background: '#fff', borderRadius: 14, padding: '1.3rem 1.4rem', width: '100%', maxWidth: 420, boxShadow: '0 20px 60px rgba(0,0,0,0.3)' }}>
@@ -29591,8 +29594,8 @@ const deDict = {
                       </div>
                       {activeVoucher && activeVoucher.status === 'issued' && voucherSecondsLeft > 0 ? (
                         <div style={{ marginTop: '0.9rem', background: '#fef3c7', border: '1px solid #fde68a', borderRadius: 10, padding: '0.7rem 0.9rem', color: '#78350f', fontSize: '0.9rem' }}>
-                          {t('你已有一張未使用的兌換券（{place}），請先使用或等它過期。', 'You already have an unused voucher ({place}); use it or let it expire first.').replace('{place}', String(activeVoucher.placeName || ''))}
-                          <div><button type="button" onClick={() => setRedeemPlace(null)} style={{ marginTop: 6, background: '#f59e0b', color: '#fff', border: 'none', borderRadius: 6, padding: '0.35rem 0.9rem', cursor: 'pointer', fontWeight: 700 }}>{t('查看兌換券', 'Show voucher')}</button></div>
+                          {t('你已有一張未使用的折扣券（{place}），請先使用或等它過期。', 'You already have an unused coupon ({place}); use it or let it expire first.').replace('{place}', String(activeVoucher.placeName || ''))}
+                          <div><button type="button" onClick={() => setRedeemPlace(null)} style={{ marginTop: 6, background: '#f59e0b', color: '#fff', border: 'none', borderRadius: 6, padding: '0.35rem 0.9rem', cursor: 'pointer', fontWeight: 700 }}>{t('查看折扣券', 'Show coupon')}</button></div>
                         </div>
                       ) : pointsBalanceBusy || !pb ? (
                         <div style={{ marginTop: '1rem', color: '#94a3b8' }}>{t('核算中…', 'Checking…')}</div>
@@ -29610,7 +29613,7 @@ const deDict = {
                         <div style={{ marginTop: '0.9rem' }}>
                           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem', color: '#334155', marginBottom: 6 }}>
                             <span>{t('可用點數', 'Available points')}</span>
-                            <b>{(pb.balancePoints || 0).toLocaleString()} {t('點', 'pts')} ≈ NT${pb.balanceNTD || 0}</b>
+                            <b>{(pb.balancePoints || 0).toLocaleString()} {t('點', 'pts')} · {t('最多可折抵 NT${n}', 'up to NT${n} off').replace('{n}', String(pb.balanceNTD || 0))}</b>
                           </div>
                           <label style={{ color: '#64748b', fontSize: '0.82rem' }}>{t('消費金額（NT$）', 'Bill amount (NT$)')}</label>
                           <input type="number" inputMode="numeric" min={1} value={redeemBill} onChange={e => setRedeemBill(e.target.value)} placeholder="500" style={field} autoFocus />
@@ -29621,10 +29624,11 @@ const deDict = {
                               <div style={{ color: '#64748b', fontSize: '0.8rem', marginTop: 2 }}>{t('實付約 NT${n}', 'You pay about NT${n}').replace('{n}', String(Math.max(0, pv.bill - pv.ntd)))}</div>
                             </div>
                           )}
-                          <div style={{ color: '#94a3b8', fontSize: '0.75rem', marginTop: '0.6rem', lineHeight: 1.5 }}>{t('1,000 點 = NT$1；以目前名字的累計分數計算。兌換券 30 分鐘內有效、只能用一次，請在結帳時出示。', '1,000 pts = NT$1, based on the score under your current name. The voucher is valid 30 minutes and single-use; show it at checkout.')}</div>
+                          <div style={{ color: '#94a3b8', fontSize: '0.75rem', marginTop: '0.6rem', lineHeight: 1.5 }}>{t('折抵比例：每 1,000 點可折抵 NT$1 的消費折扣（折扣由商家提供；點數無現金價值，不可兌換現金或轉讓）。以目前名字的累計分數計算。折扣券 30 分鐘內有效、只能用一次，請在結帳時出示。', 'Rate: every 1,000 points takes NT$1 off the bill (the discount is the shop’s; points have no cash value and cannot be cashed out or transferred). Based on the score under your current name. The coupon is valid 30 minutes and single-use; show it at checkout.')}</div>
+                          <div data-testid="redeem-points-notice" style={{ color: '#94a3b8', fontSize: '0.72rem', marginTop: '0.35rem', lineHeight: 1.5 }}>{t('點數聲明：點數是遊戲內無償取得的促銷折抵權益，無現金價值、不可兌換現金、不可轉讓或轉售，亦非儲值或電子支付；折扣由商家自行提供，經文雨不經手任何款項。', 'About points: points are a free in-game promotional discount right with no cash value; they cannot be cashed out, transferred or resold, and are not stored value or e-payment. Discounts are offered by the shops themselves; VerseRain never handles money.')}</div>
                           <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.9rem', justifyContent: 'flex-end' }}>
                             <button type="button" onClick={() => setRedeemPlace(null)} style={{ background: 'transparent', border: '1px solid #cbd5e1', color: '#64748b', borderRadius: 8, padding: '0.5rem 1rem', cursor: 'pointer' }}>{t('取消', 'Cancel')}</button>
-                            <button type="button" disabled={redeemBusy || !pv || pv.ntd < 1} onClick={confirmRedeem} style={{ background: (!pv || pv.ntd < 1) ? '#e2e8f0' : '#f59e0b', color: (!pv || pv.ntd < 1) ? '#94a3b8' : '#fff', border: 'none', borderRadius: 8, padding: '0.5rem 1.1rem', cursor: redeemBusy ? 'wait' : 'pointer', fontWeight: 800 }}>{redeemBusy ? '…' : `🎟️ ${t('產生兌換券', 'Get a voucher')}`}</button>
+                            <button type="button" disabled={redeemBusy || !pv || pv.ntd < 1} onClick={confirmRedeem} style={{ background: (!pv || pv.ntd < 1) ? '#e2e8f0' : '#f59e0b', color: (!pv || pv.ntd < 1) ? '#94a3b8' : '#fff', border: 'none', borderRadius: 8, padding: '0.5rem 1.1rem', cursor: redeemBusy ? 'wait' : 'pointer', fontWeight: 800 }}>{redeemBusy ? '…' : `🎟️ ${t('產生折扣券', 'Get a coupon')}`}</button>
                           </div>
                         </div>
                       )}
@@ -29633,7 +29637,7 @@ const deDict = {
                 );
               })()}
 
-              {/* ── 兌換券卡（可跨頁存在，重新整理後仍在） ── */}
+              {/* ── 折扣券卡（可跨頁存在，重新整理後仍在） ── */}
               {activeVoucher && !redeemPlace && (() => {
                 const v = activeVoucher;
                 const live = v.status === 'issued' && voucherSecondsLeft > 0;
@@ -29642,7 +29646,7 @@ const deDict = {
                 return (
                   <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 3000, padding: '1rem' }} onClick={(e) => { if (e.target === e.currentTarget && !live) saveActiveVoucher(null); }}>
                     <div style={{ background: '#fffbeb', border: '2px dashed #f59e0b', borderRadius: 16, padding: '1.3rem 1.4rem', width: '100%', maxWidth: 380, textAlign: 'center', boxShadow: '0 20px 60px rgba(0,0,0,0.35)' }}>
-                      <div style={{ color: '#92400e', fontWeight: 700, fontSize: '0.85rem' }}>🎟️ {t('經文雨兌換券', 'VerseRain voucher')}</div>
+                      <div style={{ color: '#92400e', fontWeight: 700, fontSize: '0.85rem' }}>🎟️ {t('經文雨折扣券', 'VerseRain coupon')}</div>
                       <div style={{ fontWeight: 800, fontSize: '1.15rem', color: '#1e293b', marginTop: 4 }}>{v.placeName}</div>
                       <div style={{ fontSize: '2rem', fontWeight: 900, color: '#166534', margin: '0.3rem 0' }}>NT${v.ntd} {t('折抵', 'off')}</div>
                       <div style={{ color: '#64748b', fontSize: '0.8rem' }}>{t('消費 NT${b} · 折扣 {p}% · 扣 {pts} 點', 'Bill NT${b} · {p}% · {pts} pts').replace('{b}', String(v.billNTD)).replace('{p}', String(v.discountPct)).replace('{pts}', Number(v.points || 0).toLocaleString())}</div>
@@ -29658,7 +29662,7 @@ const deDict = {
                         <button type="button" onClick={() => { try { navigator.clipboard.writeText(v.code); setToast(t('已複製代碼', 'Code copied')); setTimeout(() => setToast(null), 2000); } catch { /* ignore */ } }} style={{ background: '#fff', border: '1px solid #cbd5e1', borderRadius: 8, padding: '0.4rem 0.9rem', cursor: 'pointer', color: '#334155' }}>{t('複製代碼', 'Copy code')}</button>
                         <button type="button" onClick={() => saveActiveVoucher(null)} style={{ background: live ? '#e2e8f0' : '#f59e0b', color: live ? '#334155' : '#fff', border: 'none', borderRadius: 8, padding: '0.4rem 0.9rem', cursor: 'pointer', fontWeight: 700 }}>{live ? t('先關閉（稍後可從商家標記再打開）', 'Close for now') : t('關閉', 'Close')}</button>
                       </div>
-                      <button type="button" onClick={() => { saveActiveVoucher(null); setMainTab('sponsors'); }} style={{ marginTop: '0.6rem', background: 'transparent', border: 'none', color: '#3b82f6', cursor: 'pointer', fontSize: '0.82rem', fontWeight: 600 }}>{t('查看我的兌換紀錄', 'See my redemptions')} →</button>
+                      <button type="button" onClick={() => { saveActiveVoucher(null); setMainTab('sponsors'); }} style={{ marginTop: '0.6rem', background: 'transparent', border: 'none', color: '#3b82f6', cursor: 'pointer', fontSize: '0.82rem', fontWeight: 600 }}>{t('查看我的折抵紀錄', 'See my discounts')} →</button>
                     </div>
                   </div>
                 );
@@ -29670,17 +29674,17 @@ const deDict = {
                 return (
                   <div style={{ backgroundColor: '#ffffff', borderRadius: '8px', border: '1px solid #cbd5e1', padding: '1.5rem', boxShadow: '0 1px 3px rgba(0,0,0,0.05)', maxWidth: 560, margin: '0 auto' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.6rem', marginBottom: '0.8rem' }}>
-                      <h2 style={{ color: '#1e293b', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Ticket size={26} /> {t('兌換券核銷', 'Verify a voucher')}</h2>
+                      <h2 style={{ color: '#1e293b', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Ticket size={26} /> {t('折扣券核銷', 'Verify a coupon')}</h2>
                       <button type="button" onClick={() => setMainTab('advanced')} style={{ background: 'transparent', border: '1px solid #cbd5e1', color: '#64748b', borderRadius: '6px', padding: '0.35rem 0.8rem', cursor: 'pointer', fontSize: '0.85rem' }}>← {t('返回', 'Back')}</button>
                     </div>
-                    <p style={{ color: '#475569', lineHeight: 1.6, marginTop: 0, fontSize: '0.9rem' }}>{t('店家專用：輸入顧客兌換券上的 8 碼代碼（或掃描 QR 自動帶入），確認金額後於結帳時按「確認已使用」。', 'For shops: enter the 8-character code from the customer’s voucher (or scan the QR), check the amount, and press “Confirm used” at checkout.')}</p>
+                    <p style={{ color: '#475569', lineHeight: 1.6, marginTop: 0, fontSize: '0.9rem' }}>{t('店家專用：輸入顧客折扣券上的 8 碼代碼（或掃描 QR 自動帶入），確認金額後於結帳時按「確認已使用」。', 'For shops: enter the 8-character code from the customer’s coupon (or scan the QR), check the amount, and press “Confirm used” at checkout.')}</p>
                     {isInIosNativeApp() && !iosAppSupportsCamera() ? (
                       <div style={{ background: '#fffbeb', border: '1px solid #fde68a', color: '#92400e', padding: '0.7rem 0.9rem', borderRadius: '10px', fontSize: '0.88rem', lineHeight: 1.45, marginBottom: '0.8rem' }}>
                         📱 {t('目前 App 版本不支援掃描，請在 Safari 開 verserain.com 掃描，或在下方手動貼上推薦碼。下次 App 更新後會自動可用。', 'This App version does not support scanning yet. Open verserain.com in Safari to scan, or paste the code below. It will work automatically after the next App update.')}
                       </div>
                     ) : (
                       <button type="button" onClick={() => { setVerifyResult(null); setVerifyScanOpen(true); }} style={{ width: '100%', padding: '0.9rem 1rem', borderRadius: 10, background: '#0d9488', color: '#fff', border: 'none', fontSize: '1.05rem', fontWeight: 800, cursor: 'pointer', marginBottom: '0.8rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
-                        <Camera size={20} /> {t('掃描 QR 兌換券', 'Scan the voucher QR')}
+                        <Camera size={20} /> {t('掃描 QR 折扣券', 'Scan the coupon QR')}
                       </button>
                     )}
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', color: '#94a3b8', fontSize: '0.78rem', margin: '0 0 0.5rem' }}>
@@ -29734,8 +29738,9 @@ const deDict = {
                       <button type="button" onClick={() => setMainTab('advanced')} style={{ background: 'transparent', border: '1px solid #cbd5e1', color: '#64748b', borderRadius: '6px', padding: '0.35rem 0.8rem', cursor: 'pointer', fontSize: '0.85rem' }}>← {t('返回', 'Back')}</button>
                     </div>
                     <p style={{ color: '#475569', lineHeight: 1.7, marginTop: 0 }}>
-                      {t('商家提供 5–20% 折扣，玩家用遊戲點數折抵（1,000 點 = NT$1），折扣由商家自行吸收，經文雨不經手款項。教會與機構可登記為贊助者標記。經管理員審核後就會出現在「誰在玩」地圖上。', 'Shops offer a 5–20% discount that players pay with game points (1,000 pts = NT$1); the shop absorbs the discount and VerseRain never handles money. Churches and organisations can register as sponsor markers. Markers appear on the map after admin review.')}
+                      {t('商家提供 5–20% 折扣，玩家用背經點數折抵（每 1,000 點折抵 NT$1；點數無現金價值、不可兌換現金），折扣由商家自行吸收，經文雨不經手款項。教會與機構可登記為贊助者標記。經管理員審核後就會出現在「誰在玩」地圖上。', 'Shops offer a 5–20% discount that players take with verse points (every 1,000 points takes NT$1 off; points have no cash value and cannot be cashed out); the shop absorbs the discount and VerseRain never handles money. Churches and organisations can register as sponsor markers. Markers appear on the map after admin review.')}
                     </p>
+                    <p data-testid="merchant-points-notice" style={{ color: '#64748b', fontSize: '0.8rem', lineHeight: 1.6, marginTop: '-0.4rem' }}>{t('點數聲明：點數是遊戲內無償取得的促銷折抵權益，無現金價值、不可兌換現金、不可轉讓或轉售，亦非儲值或電子支付；折扣由商家自行提供，經文雨不經手任何款項。', 'About points: points are a free in-game promotional discount right with no cash value; they cannot be cashed out, transferred or resold, and are not stored value or e-payment. Discounts are offered by the shops themselves; VerseRain never handles money.')}</p>
                     {!userEmail ? (
                       <div style={{ textAlign: 'center', padding: '2rem 1rem', background: '#f8fafc', borderRadius: 8, border: '1px solid #e2e8f0' }}>
                         <div style={{ marginBottom: '0.8rem', color: '#64748b' }}><Lock size={48} /></div>
@@ -29786,7 +29791,7 @@ const deDict = {
                             <>
                               <label style={label}>{t('折扣（商家自行吸收）', 'Discount (absorbed by the shop)')}: <b style={{ color: '#92400e' }}>{m.discountPct}%</b></label>
                               <input type="range" min={5} max={20} step={1} value={m.discountPct} onChange={e => setMerchantDraft(d => ({ ...d, discountPct: Number(e.target.value) }))} style={{ width: '100%' }} />
-                              <label style={label}>{t('同一位客人每天可兌換張數（0 = 不限）', 'Vouchers per customer per day (0 = unlimited)')}</label>
+                              <label style={label}>{t('同一位客人每天可使用張數（0 = 不限）', 'Coupons per customer per day (0 = unlimited)')}</label>
                               <input type="number" min={0} max={20} step={1} value={m.dailyPerPerson ?? 3} onChange={e => setMerchantDraft(d => ({ ...d, dailyPerPerson: Math.max(0, Math.min(20, Math.floor(Number(e.target.value) || 0))) }))} style={{ ...field, width: 120 }} />
                               <div style={{ color: '#64748b', fontSize: '0.8rem', marginTop: -4, marginBottom: 8 }}>{t('每張券最多折 NT$200，每位玩家每月最多 NT$500；預設 3 張可避免拆單。', 'Each voucher is capped at NT$200 and each player at NT$500 a month; the default of 3 discourages bill splitting.')}</div>
                               <label style={label}>{t('介紹（≤300 字）', 'Description (≤300 chars)')}</label>
@@ -29825,7 +29830,7 @@ const deDict = {
                                     <button type="button" onClick={() => setMerchantScanOpen(true)} style={{ background: '#0d9488', color: '#fff', border: 'none', borderRadius: 8, padding: '0.5rem 0.8rem', cursor: 'pointer', fontWeight: 700, whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: '0.35rem' }}><Camera size={16} /> {t('掃描推薦者 QR', 'Scan referrer QR')}</button>
                                   )}
                                 </div>
-                                {refCode && !refValid ? <div style={{ color: '#b45309', fontSize: '0.8rem', marginTop: '0.3rem' }}>t('推薦碼格式不正確，應為 10 個字母/數字。', 'Invalid format. Expected 10 letters/numbers.')</div> : null}
+                                {refCode && !refValid ? <div style={{ color: '#b45309', fontSize: '0.8rem', marginTop: '0.3rem' }}>{t('推薦碼格式不正確，應為 10 個字母/數字。', 'Invalid format. Expected 10 letters/numbers.')}</div> : null}
                                 {refName === 'loading' && <div style={{ color: '#94a3b8', fontSize: '0.8rem', marginTop: '0.3rem' }}>{t('載入中…', 'Loading…')}</div>}
                                 {typeof refName === 'string' && refName !== 'loading' && <div data-testid="place-referrer-name" style={{ color: '#166534', fontSize: '0.85rem', marginTop: '0.3rem', fontWeight: 700 }}>✓ {t('推薦者：{name}', 'Referrer: {name}').replace('{name}', refName)}</div>}
                                 {refName === null && <div style={{ color: '#b45309', fontSize: '0.8rem', marginTop: '0.3rem' }}>{t('找不到這個推薦碼', 'Referral code not found')}</div>}
@@ -29894,7 +29899,7 @@ const deDict = {
                                           </div>
                                           <div style={{ color: '#64748b', fontSize: '0.78rem', marginBottom: '0.5rem' }}>{t('折抵金額由商家吸收，即為你的贊助；需要對帳可截圖此區。', 'The discount is absorbed by the shop — that is your sponsorship. Screenshot this section for your records.')}</div>
                                           {(led.vouchers || []).filter(v => ['used', 'issued'].includes(v.computedStatus || v.status)).length === 0 ? (
-                                            <div style={{ color: '#94a3b8', fontSize: '0.86rem' }}>{t('還沒有顧客兌換', 'No customer redemptions yet')}</div>
+                                            <div style={{ color: '#94a3b8', fontSize: '0.86rem' }}>{t('還沒有顧客折抵', 'No customer discounts yet')}</div>
                                           ) : (
                                             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem', maxHeight: 280, overflowY: 'auto' }}>
                                               {(led.vouchers || []).filter(v => ['used', 'issued'].includes(v.computedStatus || v.status)).map(v => { const st = v.computedStatus || v.status; const vb = voucherStatusBadge(st); return (
@@ -30598,14 +30603,15 @@ const deDict = {
                     <p>{t("園子上方的「今日得分」就是今天新增的總積分：新挑戰的經文、今天破紀錄的部分，加上今天收到的推薦獎勵。", "\"Today's score\" at the top of your garden is what your total gained today: new verses, record improvements and referral bonuses received today.")}</p>
                     <h3 style={{ marginTop: '1.5rem', color: '#0f172a' }}>{t("5. 總積分能做什麼？", "5. What can I do with it?")}</h3>
                     <ul style={{ paddingLeft: '1.5rem', marginBottom: '1.5rem' }}>
-                      <li><span dangerouslySetInnerHTML={{ __html: t("到贊助商家消費時可用點數折抵：<strong>1,000 點 = NT$1</strong>。可用點數 = 總積分 − 已用點數；折抵只扣可用點數，總積分不會減少。", "Spend points for a discount at sponsoring shops: <strong>1,000 points = NT$1</strong>. Available points = total score minus points already spent; redeeming lowers your available points, never your total score.") }} /></li>
-                      <li>{t("每張兌換券最多折 NT$200、每人每月最多 NT$500；商家可另外設定每人每天可兌換的張數。", "Each voucher is capped at NT$200 and each player at NT$500 per month; a shop may also set how many vouchers one person can use per day.")}</li>
+                      <li><span dangerouslySetInnerHTML={{ __html: t("到合作商家消費時可用點數折抵：<strong>每 1,000 點可折抵 NT$1 的消費折扣</strong>。點數是遊戲內無償取得的促銷折抵權益：沒有現金價值、不能兌換現金、不能轉讓或轉售，也不是儲值或電子支付。可用點數 = 總積分 − 已用點數；折抵只扣可用點數，總積分不會減少。", "Use points for a discount at partner shops: <strong>every 1,000 points takes NT$1 off the bill</strong>. Points are a free in-game promotional discount right: they have no cash value, cannot be cashed out, transferred or resold, and are not stored value or e-payment. Available points = total score minus points already spent; a discount lowers your available points, never your total score.") }} /></li>
+                      <li>{t("每張折扣券最多折 NT$200、每人每月最多 NT$500；商家可另外設定每人每天可使用的張數。", "Each coupon is capped at NT$200 and each player at NT$500 per month; a shop may also set how many coupons one person can use per day.")}</li>
+                      <li>{t('點數聲明：點數是遊戲內無償取得的促銷折抵權益，無現金價值、不可兌換現金、不可轉讓或轉售，亦非儲值或電子支付；折扣由商家自行提供，經文雨不經手任何款項。', 'About points: points are a free in-game promotional discount right with no cash value; they cannot be cashed out, transferred or resold, and are not stored value or e-payment. Discounts are offered by the shops themselves; VerseRain never handles money.')}</li>
                     </ul>
                     <h3 style={{ marginTop: '1.5rem', color: '#0f172a' }}>{t("6. 和排行榜、園子的差別", "6. How it differs from the leaderboard and the garden")}</h3>
                     <ul style={{ paddingLeft: '1.5rem', marginBottom: '2rem' }}>
                       <li><span dangerouslySetInnerHTML={{ __html: t("排行榜依<strong>暱稱</strong>統計，總積分依<strong>帳號</strong>統計；改過暱稱的話，排行榜上舊名字的分數不會搬過來，但總積分完整保留。", "The leaderboard is tallied by <strong>nickname</strong>, the total score by <strong>account</strong>. If you renamed yourself, old-name leaderboard points stay where they are, but your total score is intact.") }} /></li>
                       <li>{t("連續天數、樹和果子是園子的成長紀錄，不是積分；破紀錄會結果子，但果子不能折抵。", "Streaks, trees and fruit are your garden's growth record, not points; a new record bears fruit, but fruit cannot be redeemed.")}</li>
-                      <li>{t("沒登入只會上排行榜，不會累積到帳號的總積分，也不能兌換折扣；登入後從那一刻開始累積。", "Without signing in you only appear on the leaderboard: nothing is added to an account total and you cannot redeem discounts. Once signed in, it accumulates from that moment.")}</li>
+                      <li>{t("沒登入只會上排行榜，不會累積到帳號的總積分，也不能用點數折抵；登入後從那一刻開始累積。", "Without signing in you only appear on the leaderboard: nothing is added to an account total and you cannot use points for a discount. Once signed in, it accumulates from that moment.")}</li>
                     </ul>
                   </>
                 </div>
@@ -32820,7 +32826,7 @@ const deDict = {
                         <div style={{ minWidth: 0 }}>
                           <div style={{ color: '#334155', fontSize: '0.9rem', lineHeight: 1.45 }}>
                             {it.kind === 'voucher_used'
-                              ? t('你在 {place} 的兌換券已核銷，折抵 NT${n} 🎉', 'Your voucher at {place} was used — NT${n} off 🎉').replace('{place}', String(it.placeName || '')).replace('{n}', String(it.ntd ?? ''))
+                              ? t('你在 {place} 的折扣券已核銷，折抵 NT${n} 🎉', 'Your coupon at {place} was used — NT${n} off 🎉').replace('{place}', String(it.placeName || '')).replace('{n}', String(it.ntd ?? ''))
                               : t('你的地圖標記「{name}」已通過審核，現在出現在「誰在玩」地圖上了 🗺️', 'Your map marker “{name}” was approved and is now on the map 🗺️').replace('{name}', String(it.name || ''))}
                           </div>
                           <div style={{ color: '#cbd5e1', fontSize: '0.72rem', marginTop: 2 }}>{new Date(it.at).toLocaleString()}</div>
