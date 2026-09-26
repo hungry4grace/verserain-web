@@ -74,6 +74,34 @@ export function findGardenKey(gd, ref, keyFn) {
   return null;
 }
 
+// Precomputed canonical-identity -> actual-key map for one gardenData
+// snapshot, so a caller that needs findGardenKey for MANY references against
+// the SAME garden (a contest's verse list, a verse-set's rows) does one pass
+// over the garden instead of rescanning it per reference. Build once per
+// garden (e.g. in a useMemo keyed on gardenData) and reuse with
+// findGardenKeyIndexed below.
+export function buildCanonicalGardenIndex(gd, keyFn) {
+  const index = new Map();
+  for (const [k, v] of Object.entries(gd || {})) {
+    if (k === '_activity' || !v || typeof v !== 'object') continue;
+    const c = canonicalGardenKey(k, keyFn);
+    if (c && !index.has(c)) index.set(c, k); // first (lowest gridIndex isn't guaranteed, but ties are already deduped by tidyGarden)
+  }
+  return index;
+}
+
+// Same result as findGardenKey, but O(1) using an index from
+// buildCanonicalGardenIndex instead of rescanning the whole garden.
+export function findGardenKeyIndexed(index, gd, ref, keyFn) {
+  if (!gd || typeof gd !== 'object' || typeof ref !== 'string') return null;
+  if (ref === '_activity') return null;
+  const own = Object.prototype.hasOwnProperty.call(gd, ref) && gd[ref] && typeof gd[ref] === 'object';
+  if (own) return ref;
+  const want = canonicalGardenKey(ref, keyFn);
+  if (!want) return null;
+  return (index && index.get(want)) || null;
+}
+
 // Fold duplicate trees into one. The earliest planted (lowest gridIndex) key
 // is kept in its cell; stage and fruits take the higher value (max, not sum,
 // so re-applying over a cloud copy that still holds the duplicate cannot

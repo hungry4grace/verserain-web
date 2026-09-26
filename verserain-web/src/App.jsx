@@ -7,7 +7,7 @@ import usePartySocket from 'partysocket/react';
 import PartySocket from 'partysocket';
 import QRCode from 'qrcode';
 import { QRCodeSVG } from 'qrcode.react';
-import { classifyGardenResponse, decideGardenSync, buildFruitAuthorKeys, aggregateFruitResults, tidyGarden, findGardenKey, compactGardenCells, gardenGapCount } from './lib/gardenSync.js';
+import { classifyGardenResponse, decideGardenSync, buildFruitAuthorKeys, aggregateFruitResults, tidyGarden, findGardenKey, findGardenKeyIndexed, buildCanonicalGardenIndex, compactGardenCells, gardenGapCount } from './lib/gardenSync.js';
 import { voiceId, voiceMatchesSavedKey, dedupeVoices, buildVoiceOptions } from './lib/voicePicker.js';
 import { splitVersePhrases } from './lib/phraseSplitter.js';
 import { stripBollsMarkup, stripLeadingVerseNumeral } from './lib/bibleTextMarkup.js';
@@ -6227,6 +6227,10 @@ export default function App() {
     // Fold duplicate trees and give every tree its own cell on the way in.
     try { return tidyGarden(JSON.parse(localStorage.getItem('verseRain_gardenData')) || {}, verseRefKey).garden; } catch { return {}; }
   });
+  // One pass over the garden per gardenData change, so lookups for many
+  // references against it (a contest's whole verse list, a verse-set's rows)
+  // don't each rescan the garden — see findGardenKeyIndexed below.
+  const gardenCanonicalIndex = React.useMemo(() => buildCanonicalGardenIndex(gardenData, verseRefKey), [gardenData]);
 
   const [creatorPoints, setCreatorPoints] = useState(0);
   const [creatorOnlyPoints, setCreatorOnlyPoints] = useState(0);
@@ -7400,7 +7404,7 @@ export default function App() {
   const [verseSortNeedsPractice, setVerseSortNeedsPractice] = useState(false);
   const verseRowsWithGarden = React.useMemo(() => {
     const rows = VERSES_DB.map((v, i) => {
-      const gKey = findGardenKey(gardenData || {}, v.reference, verseRefKey);
+      const gKey = findGardenKeyIndexed(gardenCanonicalIndex, gardenData || {}, v.reference, verseRefKey);
       return { v, i, gEntry: gKey ? gardenData[gKey] : null };
     });
     if (!verseSortNeedsPractice) return rows;
@@ -7411,7 +7415,7 @@ export default function App() {
       if (aPassed !== bPassed) return aPassed ? 1 : -1;
       return aStage - bStage || a.i - b.i;
     });
-  }, [VERSES_DB, gardenData, verseSortNeedsPractice]);
+  }, [VERSES_DB, gardenData, gardenCanonicalIndex, verseSortNeedsPractice]);
 
   useEffect(() => {
     if (activeVerse?.reference === "N/A" && VERSES_DB && VERSES_DB.length > 0 && VERSES_DB[0].reference !== "N/A") {
@@ -9322,7 +9326,7 @@ export default function App() {
     // still count as passed here, or this progress bar undercounts against
     // what the icons show.
     const passed = verses.filter(ref => {
-      const gKey = findGardenKey(gardenData || {}, ref, verseRefKey);
+      const gKey = findGardenKeyIndexed(gardenCanonicalIndex, gardenData || {}, ref, verseRefKey);
       return gKey && (gardenData[gKey].stage || 0) >= 10;
     }).length;
     return { passed, total: verses.length };
@@ -25601,7 +25605,7 @@ const deDict = {
                     verserain
                   </div>
                   <div className="app-brand-version" style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', marginTop: '4px', marginLeft: '2px' }}>
-                    v4.0.95
+                    v4.0.97
                   </div>
                 </div>
                 <div ref={langPickerRef} className="app-lang-control" style={{ position: 'relative' }}>
