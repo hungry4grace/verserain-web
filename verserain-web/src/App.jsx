@@ -9421,7 +9421,26 @@ export default function App() {
   // Every finished game goes through here so the account ledger (總積分)
   // gets the session proof; the leaderboard part is unchanged for guests.
   const scoreSessionWarnedRef = useRef(false);
-  const submitScoreToServer = (payload) => fetch('/api/submit-score', {
+  // 讀經比賽 (reading contest) scoring hooks in right here rather than on the
+  // old "campaign queue finished" screen: most Challenge play is one verse at
+  // a time (from a set's listing, from the garden, mid-queue in a longer
+  // run…), and every single one of those routes through this one function
+  // before reaching the server — it is the one place a finished, scored verse
+  // is guaranteed to pass through, whichever mode got it here. `selectedSetId`
+  // (not `activeCampaignSetId`, which only accessible/voice-mode runs ever
+  // set) tracks the set the challenged verse belongs to in every mode.
+  const submitContestScoreIfMatched = (score) => {
+    if (!userEmail || !sessionKey || !(score > 0) || !selectedSetId) return;
+    const mine = contestMine && !contestMine.error ? contestMine.joined : [];
+    const matches = mine.filter(c => c.accepted && c.setId === selectedSetId && c.status === 'approved');
+    matches.forEach(c => {
+      fetch('/api/contests', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'submit_score', email: userEmail, sessionKey, contestId: c.id, setId: c.setId, score }),
+      }).then(() => loadContestMine()).catch(() => {});
+    });
+  };
+  const submitScoreToServer = (payload) => { submitContestScoreIfMatched(payload.score); return fetch('/api/submit-score', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ ...payload, ...(userEmail && sessionKey ? { email: userEmail, sessionKey } : {}) }),
@@ -9444,7 +9463,7 @@ export default function App() {
       }).catch(() => {});
     }
     return r;
-  });
+  }); };
   const openRedeem = (place) => {
     if (!place || !place.id) return;
     if (!userEmail) { setShowLoginModal('login'); setToast(t('請先登入才能用點數折抵', 'Sign in to use points for a discount')); setTimeout(() => setToast(null), 2500); return; }
@@ -12048,29 +12067,6 @@ export default function App() {
       setActiveCampaignSetId(null);
     }
   }, [gameState, activeCampaignSetId, playerName, campaignResults, playMode, distractionLevel]);
-
-  // Submit to any open 讀經比賽 (reading contest) leaderboard the player has
-  // accepted the challenge for, when this run's set matches the contest's
-  // own set. Independent of the global set leaderboard above: this ADDS to a
-  // running per-contest total rather than keeping only the best run.
-  // Reads `contestMine` from a ref (kept fresh separately, not a dependency
-  // here) so this effect fires exactly once per finished run — the fetch's
-  // own loadContestMine() refresh can't re-trigger it.
-  const contestMineRef = useRef(contestMine);
-  useEffect(() => { contestMineRef.current = contestMine; }, [contestMine]);
-  useEffect(() => {
-    if (gameState !== 'campaign-results' || !activeCampaignSetId || !userEmail) return;
-    const totalScore = campaignResults.reduce((sum, r) => sum + r.score, 0);
-    if (totalScore <= 0) return;
-    const mine = contestMineRef.current;
-    const matches = (mine && !mine.error ? mine.joined : []).filter(c => c.accepted && c.setId === activeCampaignSetId && c.status === 'approved');
-    matches.forEach(c => {
-      fetch('/api/contests', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'submit_score', email: userEmail, sessionKey, contestId: c.id, setId: c.setId, score: totalScore }),
-      }).then(() => loadContestMine()).catch(() => {});
-    });
-  }, [gameState, activeCampaignSetId, campaignResults, userEmail, sessionKey, loadContestMine]);
 
   // Fetch Set Leaderboard Data
   useEffect(() => {
@@ -26269,7 +26265,7 @@ const deDict = {
                     verserain
                   </div>
                   <div className="app-brand-version" style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', marginTop: '4px', marginLeft: '2px' }}>
-                    v4.0.87
+                    v4.0.88
                   </div>
                 </div>
                 <div ref={langPickerRef} className="app-lang-control" style={{ position: 'relative' }}>
