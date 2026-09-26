@@ -17,10 +17,10 @@ import { BIBLE_BOOKS, getBookAbbr, getBookFullName } from './bibleDictionary';
 import I18N_FILLINS from './i18nFillins';
 import { PREMIUM_EMAILS } from './premiumEmails';
 import ChallengeSetupModal, { loadChallengeSetup } from './ChallengeSetupModal';
-import GardenView from './GardenView.jsx';
+import GardenView, { GardenSprite } from './GardenView.jsx';
 import VoucherScanner from './VoucherScanner.jsx';
 import { extractReferralCode, REFERRAL_CODE_RE } from './lib/referralCode.js';
-import { isBlankRef } from './lib/gardenView.js';
+import { isBlankRef, stageBg, stageLabelPair } from './lib/gardenView.js';
 import { GOOGLE_CLIENT_ID, APPLE_CLIENT_ID, APPLE_REDIRECT_URI, LINE_CHANNEL_ID, startLineLogin } from './oauthConfig';
 import { VAPID_PUBLIC_KEY, urlBase64ToUint8Array, isWebPushSupported, isIOSStandalone, isIOSWithoutPWA, hasNativeDailyPush, callNativeDailyPush } from './pushConfig';
 import { setVoiceApi, uploadVerseVoice, uploadSetAsset, compressBackgroundImage, getSetAssetDataUrl, userVoiceApi, uploadUserVerseVoice, voiceOwnerId, voiceCommentApi, uploadVoiceComment } from './setVoiceApi';
@@ -9371,7 +9371,7 @@ export default function App() {
     contest_limit: t('這個標記進行中的讀經比賽已達上限（5 個）', 'This marker already runs the maximum of 5 open reading contests'),
     join_required: t('請先按「我要參加」加入這個讀經比賽', 'Join this reading contest first'),
     challenge_required: t('請先按「接受背經文挑戰」才能上排行榜', 'Accept the memorisation challenge first to join the leaderboard'),
-    set_required: t('請選擇一組主題經文', 'Please choose a topic verse set'),
+    set_required: t('請選擇一組經文', 'Please choose a verse set'),
     verses_required: t('這組經文組目前沒有內容，請換一組', 'This verse set has no verses — pick another one'),
     ends_after_starts: t('結束時間必須晚於開始時間', 'The end date must be after the start date'),
     name_required: t('請輸入活動名稱', 'Please enter a name for the contest'),
@@ -9428,19 +9428,22 @@ export default function App() {
   // before reaching the server — it is the one place a finished, scored verse
   // is guaranteed to pass through, whichever mode got it here. `selectedSetId`
   // (not `activeCampaignSetId`, which only accessible/voice-mode runs ever
-  // set) tracks the set the challenged verse belongs to in every mode.
-  const submitContestScoreIfMatched = (score) => {
-    if (!userEmail || !sessionKey || !(score > 0) || !selectedSetId) return;
+  // set) tracks the set the challenged verse belongs to in every mode. The
+  // server keeps each verse's own best score and sums those, so `verseRef`
+  // must go along with `score` — replaying the same verse only raises the
+  // leaderboard total when it beats that verse's previous best.
+  const submitContestScoreIfMatched = (score, verseRef) => {
+    if (!userEmail || !sessionKey || !(score > 0) || !selectedSetId || !verseRef) return;
     const mine = contestMine && !contestMine.error ? contestMine.joined : [];
     const matches = mine.filter(c => c.accepted && c.setId === selectedSetId && c.status === 'approved');
     matches.forEach(c => {
       fetch('/api/contests', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'submit_score', email: userEmail, sessionKey, contestId: c.id, setId: c.setId, score }),
+        body: JSON.stringify({ action: 'submit_score', email: userEmail, sessionKey, contestId: c.id, setId: c.setId, verseRef, score }),
       }).then(() => loadContestMine()).catch(() => {});
     });
   };
-  const submitScoreToServer = (payload) => { submitContestScoreIfMatched(payload.score); return fetch('/api/submit-score', {
+  const submitScoreToServer = (payload) => { submitContestScoreIfMatched(payload.score, payload.verseRef); return fetch('/api/submit-score', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ ...payload, ...(userEmail && sessionKey ? { email: userEmail, sessionKey } : {}) }),
@@ -9991,7 +9994,7 @@ export default function App() {
     const passed = verses.filter(ref => ((gardenData || {})[ref] || {}).stage >= 10).length;
     return { passed, total: verses.length };
   };
-  const contestNoticeText = () => t('讀完整組經文（每一節都練到「已熟練」）即可申請認證，機構會依公告方式頒發獎勵；經文雨不經手獎勵本身。額外接受「背經文挑戰」的分數，只計算這組經文、活動期間內的挑戰成績，累加進這次活動的排行榜。', 'Finish every verse of the set (each one practised to "mastered") to apply for certified completion — the organisation hands out the reward itself, off the app. If you also accept the memorisation challenge, only Challenge runs on this set during the contest window count, added up on this contest’s own leaderboard.');
+  const contestNoticeText = () => t('讀完整組經文（每一節都練到「已熟練」）即可申請認證，機構會依公告方式頒發獎勵；經文雨不經手獎勵本身。額外接受「背經文挑戰」的話，活動期間內這組經文每一節只算你自己的最高分，加總成為排行榜分數——重複挑戰同一節不會增加總分，除非破了自己的紀錄。', 'Finish every verse of the set (each one practised to "mastered") to apply for certified completion — the organisation hands out the reward itself, off the app. If you also accept the memorisation challenge, only your own best score on each verse of this set during the contest window counts — the leaderboard total is the sum of those bests, so replaying the same verse won’t raise your score unless you beat your own record.');
   const joinContestAction = async (contest) => {
     if (!contest || !contest.id) return;
     if (!userEmail) { setShowLoginModal('login'); setToast(t('請先登入才能參加', 'Sign in to join')); setTimeout(() => setToast(null), 2500); return; }
@@ -10046,7 +10049,7 @@ export default function App() {
   const createContest = async () => {
     const d0 = contestCreateDraft;
     if (!d0.orgPlaceId || !d0.setId || !d0.name.trim() || !d0.startsAt || !d0.endsAt || !d0.agree) { setToast(redeemErrorText('consent_required')); setTimeout(() => setToast(null), 2500); return; }
-    const set = topicVerseSets.find(s => s.id === d0.setId);
+    const set = safeActiveSets.find(s => s.id === d0.setId);
     if (!set) { setToast(redeemErrorText('set_required')); setTimeout(() => setToast(null), 2500); return; }
     setContestCreateBusy(true);
     try {
@@ -26265,7 +26268,7 @@ const deDict = {
                     verserain
                   </div>
                   <div className="app-brand-version" style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', marginTop: '4px', marginLeft: '2px' }}>
-                    v4.0.88
+                    v4.0.91
                   </div>
                 </div>
                 <div ref={langPickerRef} className="app-lang-control" style={{ position: 'relative' }}>
@@ -28817,13 +28820,22 @@ const deDict = {
                             {VERSES_DB.map((v, i) => {
                               const vBest = parseInt(localStorage.getItem(`verseRainBestScore_${v.reference}`)) || 0;
                               const isSelected = selectedVerseRefs.includes(v.reference);
+                              const gEntry = (gardenData || {})[v.reference];
 
                               return (
                                 <tr key={i} style={{ borderBottom: '1px solid #e2e8f0', backgroundColor: isSelected ? '#eff6ff' : (i % 2 === 0 ? '#ffffff' : '#f8fafc'), transition: 'background 0.2s', cursor: 'pointer' }} onClick={() => toggleSelection(v.reference)}>
                                   <td style={{ padding: '0.8rem 1rem', fontWeight: 'bold', color: '#1e293b', fontSize: '0.95rem' }} onClick={(e) => { e.stopPropagation(); setVerseViewModal({ ...v, setId: currentSet?.id }); }}>
-                                    <button style={{ background: 'none', border: 'none', padding: 0, margin: 0, color: '#3b82f6', textDecoration: 'underline', cursor: 'pointer', fontWeight: 'bold', fontSize: 'inherit', fontFamily: 'inherit' }}>
-                                      {formatVerseReferenceForDisplay(v.reference, version)}
-                                    </button>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                                      <span
+                                        title={gEntry ? `${t(...stageLabelPair(gEntry.stage))}${gEntry.fruits ? ` 🍎×${gEntry.fruits}` : ''}` : t('空地', 'Empty')}
+                                        style={{ position: 'relative', width: '28px', height: '28px', flexShrink: 0, borderRadius: '5px', background: gEntry ? stageBg(gEntry.stage) : '#5d4037', border: '1px solid rgba(0,0,0,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                                      >
+                                        {gEntry && <GardenSprite stage={gEntry.stage} fruits={gEntry.fruits} />}
+                                      </span>
+                                      <button style={{ background: 'none', border: 'none', padding: 0, margin: 0, color: '#3b82f6', textDecoration: 'underline', cursor: 'pointer', fontWeight: 'bold', fontSize: 'inherit', fontFamily: 'inherit' }}>
+                                        {formatVerseReferenceForDisplay(v.reference, version)}
+                                      </button>
+                                    </div>
                                   </td>
                                   <td style={{ padding: '0.8rem 1rem', textAlign: 'center' }} onClick={(e) => e.stopPropagation()}>
                                     <button
@@ -30340,7 +30352,7 @@ const deDict = {
                       <button type="button" onClick={() => setMainTab('advanced')} style={{ background: 'transparent', border: '1px solid #cbd5e1', color: '#64748b', borderRadius: '6px', padding: '0.35rem 0.8rem', cursor: 'pointer', fontSize: '0.85rem' }}>← {t('返回', 'Back')}</button>
                     </div>
                     <p style={{ color: '#475569', lineHeight: 1.7, marginTop: 0 }}>
-                      {t('教會或機構選定一組主題經文，公告一段期間的讀經比賽。參加後可以看到自己的讀經進度；讀完整組即可申請認證，機構會另行公告獎勵方式。', 'A church or organisation picks a topic verse set and announces a reading contest for a set period. Join to track your progress — finish the whole set to apply for certified completion, and the organisation announces the reward separately.')}
+                      {t('教會或機構選定一組經文，公告一段期間的讀經比賽。參加後可以看到自己的讀經進度；讀完整組即可申請認證，機構會另行公告獎勵方式。', 'A church or organisation picks a verse set and announces a reading contest for a set period. Join to track your progress — finish the whole set to apply for certified completion, and the organisation announces the reward separately.')}
                     </p>
                     {notice}
 
@@ -30394,7 +30406,7 @@ const deDict = {
                                       )}
                                     </div>
                                     {mineC.accepted && (
-                                      <div style={{ color: '#94a3b8', fontSize: '0.76rem', marginTop: '0.4rem' }}>{t('到「背經文挑戰」選「{s}」這組經文來玩，分數會自動累加到這個活動。', 'Go to Memorise mode and pick “{s}” — your score is added to this contest automatically.').replace('{s}', c.setTitle)}</div>
+                                      <div style={{ color: '#94a3b8', fontSize: '0.76rem', marginTop: '0.4rem' }}>{t('到「背經文挑戰」選「{s}」這組經文來玩，每一節的最高分會自動加總到這個活動的排行榜。', 'Go to Memorise mode and pick “{s}” — your best score on each verse is added to this contest’s leaderboard automatically.').replace('{s}', c.setTitle)}</div>
                                     )}
                                     {contestLeaderboards[c.id] === undefined ? (
                                       <button type="button" onClick={() => loadContestLeaderboard(c.id)} style={{ marginTop: '0.5rem', background: 'transparent', border: 'none', color: '#2563eb', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 700 }}>🏆 {t('看排行榜', 'See the leaderboard')}</button>
@@ -30438,17 +30450,17 @@ const deDict = {
                     {userEmail && eligibleOrgPlaces.length > 0 && (
                       <div style={card} data-testid="contest-create">
                         <h3 style={h3}>⛪ {t('建立讀經比賽', 'Create a reading contest')}</h3>
-                        <div style={{ color: '#475569', fontSize: '0.88rem', lineHeight: 1.6 }}>{t('你的教會／機構已在地圖上，可以選一組主題經文，公告一段期間的讀經比賽。', 'Your church / organisation is on the map, so it can pick a topic verse set and announce a reading contest for a period.')}</div>
+                        <div style={{ color: '#475569', fontSize: '0.88rem', lineHeight: 1.6 }}>{t('你的教會／機構已在地圖上，可以選一組經文，公告一段期間的讀經比賽。', 'Your church / organisation is on the map, so it can pick a verse set and announce a reading contest for a period.')}</div>
                         <label style={label}>{t('教會／機構標記', 'Church / organisation marker')}</label>
                         <select value={contestCreateDraft.orgPlaceId} onChange={e => setContestCreateDraft(d => ({ ...d, orgPlaceId: e.target.value }))} style={field}>
                           <option value="">{t('請選擇', 'Choose')}</option>
                           {eligibleOrgPlaces.map(pl => <option key={pl.id} value={pl.id}>{pl.name}</option>)}
                         </select>
                         <div style={{ color: '#94a3b8', fontSize: '0.78rem', marginTop: 4 }}>{t('同一個教會／機構可以建立多個活動（最多 5 個進行中）。', 'One church / organisation can run several contests (up to 5 open at once).')}</div>
-                        <label style={label}>{t('主題經文組', 'Topic verse set')}</label>
+                        <label style={label}>{t('經文組', 'Verse Set')}</label>
                         <select value={contestCreateDraft.setId} onChange={e => setContestCreateDraft(d => ({ ...d, setId: e.target.value }))} style={field}>
                           <option value="">{t('請選擇', 'Choose')}</option>
-                          {topicVerseSets.map(s => <option key={s.id} value={s.id}>{s.title}（{(s.verses || []).length} {t('節', 'verses')}）</option>)}
+                          {safeActiveSets.map(s => <option key={s.id} value={s.id}>{s.title}（{(s.verses || []).length} {t('節', 'verses')}）</option>)}
                         </select>
                         <label style={label}>{t('活動名稱', 'Contest name')}</label>
                         <input type="text" maxLength={60} value={contestCreateDraft.name} onChange={e => setContestCreateDraft(d => ({ ...d, name: e.target.value }))} placeholder={t('例如：互惠經濟讀經比賽', 'e.g. Mutual Economy reading contest')} style={field} />

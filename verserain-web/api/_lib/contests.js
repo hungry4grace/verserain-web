@@ -3,9 +3,11 @@
 // can track reading progress (完成整組＝花園每一節都到達「已熟練」); the
 // organisation sees who verified completion and rewards them OFFLINE — this
 // module never issues or moves any money-equivalent value. A player who also
-// "accepts the challenge" (接受背經文挑戰) gets a cumulative score on this
-// contest's own leaderboard, earned only from Challenge (背經文) runs on this
-// contest's verse set while the contest is open.
+// "accepts the challenge" (接受背經文挑戰) gets a score on this contest's own
+// leaderboard, earned only from Challenge (背經文) runs on this contest's
+// verse set while the contest is open — the score is the SUM of each verse's
+// own personal best, not a running total of every run, so replaying the same
+// verse cannot inflate the leaderboard.
 //
 // Code calls this a "contest" (never "campaign"): the Challenge game engine
 // elsewhere in this app already uses `campaign*` to mean "the current
@@ -15,7 +17,8 @@
 //   contest:list                          HASH   contestId → JSON contest
 //   contest:join:${contestId}             SET    emails who joined
 //   contest:challenge:${contestId}        SET    emails who accepted the score challenge
-//   contest:score:${contestId}            ZSET   email → cumulative Challenge score
+//   contest:score:${contestId}            ZSET   email → sum of each verse's personal-best Challenge score
+//   contest:verse-best:${contestId}:${email} HASH verseRef → that verse's personal-best score (feeds contest:score)
 //   contest:names:${contestId}            HASH   email → playerName (leaderboard display)
 //   contest:completed:${contestId}        SET    emails verified as having finished the set
 //   contest:completed:${contestId}:${email} STR  JSON { at } — completion timestamp
@@ -36,6 +39,7 @@ const SUBMIT_TTL_SEC = 86400;
 export const contestJoinKey = (contestId) => `contest:join:${contestId}`;
 export const contestChallengeKey = (contestId) => `contest:challenge:${contestId}`;
 export const contestScoreKey = (contestId) => `contest:score:${contestId}`;
+export const contestVerseBestKey = (contestId, email) => `contest:verse-best:${contestId}:${normEmail(email)}`;
 export const contestNamesKey = (contestId) => `contest:names:${contestId}`;
 export const contestCompletedKey = (contestId) => `contest:completed:${contestId}`;
 export const contestCompletedEmailKey = (contestId, email) => `contest:completed:${contestId}:${normEmail(email)}`;
@@ -203,19 +207,31 @@ export async function acceptChallenge(redis, { contest, email, identity, now } =
 
 // ---------- score (背經文挑戰累加分數) ----------
 
-// Only a Challenge run finished on this contest's own set, by someone who
-// accepted the challenge, while the contest is open, counts — and it ADDS to
-// the running total (unlike the global set leaderboard's best-score-wins).
-export async function submitContestScore(redis, { contest, email, identity, setId, score, now } = {}) {
+// Only a Challenge run finished on this contest's own set, on one of its own
+// verses, by someone who accepted the challenge, while the contest is open,
+// counts. The total is the SUM of each verse's personal best score — replaying
+// the same verse only raises the total when it beats that verse's own best,
+// so nobody can inflate their rank by grinding one easy verse over and over.
+export async function submitContestScore(redis, { contest, email, identity, setId, verseRef, score, now } = {}) {
   const em = normEmail(email || (identity && identity.email));
   if (!contest || contest.status !== 'approved') throw new ContestError('contest_unavailable');
   if (!contestIsOpen(contest, now)) throw new ContestError('contest_closed');
   if (String(setId || '') !== contest.setId) throw new ContestError('set_mismatch');
   const accepted = await redis.sismember(contestChallengeKey(contest.id), em);
   if (!accepted) throw new ContestError('challenge_required');
+  const ref = String(verseRef || '').trim();
+  if (!ref || !(contest.verses || []).includes(ref)) throw new ContestError('verse_mismatch');
   const pts = Math.max(0, Math.min(1000000, toInt(score)));
   if (pts <= 0) throw new ContestError('score_invalid');
-  const total = await redis.zincrby(contestScoreKey(contest.id), pts, em);
+  const bestKey = contestVerseBestKey(contest.id, em);
+  const prevBest = Math.max(0, toInt(await redis.hget(bestKey, ref)));
+  let total;
+  if (pts > prevBest) {
+    total = await redis.zincrby(contestScoreKey(contest.id), pts - prevBest, em);
+    await redis.hset(bestKey, { [ref]: pts });
+  } else {
+    total = await redis.zscore(contestScoreKey(contest.id), em);
+  }
   await redis.hset(contestNamesKey(contest.id), { [em]: clip(identity && identity.playerName, 40) || em });
   return { total: Math.max(0, toInt(total)) };
 }

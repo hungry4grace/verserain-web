@@ -149,31 +149,41 @@ test('accept_challenge requires having joined first', async () => {
   assert.strictEqual(await r.sismember(contestChallengeKey(c.id), identity.email), 1);
 });
 
-test('score only counts for the right set, an accepted challenger, while open, and accumulates', async () => {
+test('score only counts for the right set/verse and an accepted challenger, while open — and is the sum of each verse\'s own best, not cumulative', async () => {
   const r = stubRedis();
   const c = approvedContest();
-  await assert.rejects(() => submitContestScore(r, { contest: c, email: identity.email, identity, setId: c.setId, score: 100, now: '2026-10-05T00:00:00Z' }), /challenge_required/);
+  await assert.rejects(() => submitContestScore(r, { contest: c, email: identity.email, identity, setId: c.setId, verseRef: VERSES[0], score: 100, now: '2026-10-05T00:00:00Z' }), /challenge_required/);
   await joinContest(r, { contest: c, email: identity.email, identity, garden, now: '2026-10-05T00:00:00Z' });
   await acceptChallenge(r, { contest: c, email: identity.email, identity, now: '2026-10-05T00:00:00Z' });
-  await assert.rejects(() => submitContestScore(r, { contest: c, email: identity.email, identity, setId: 'some-other-set', score: 100, now: '2026-10-05T00:00:00Z' }), /set_mismatch/);
-  await assert.rejects(() => submitContestScore(r, { contest: c, email: identity.email, identity, setId: c.setId, score: 100, now: '2026-11-01T00:00:00Z' }), /contest_closed/);
-  const first = await submitContestScore(r, { contest: c, email: identity.email, identity, setId: c.setId, score: 300, now: '2026-10-05T00:00:00Z' });
+  await assert.rejects(() => submitContestScore(r, { contest: c, email: identity.email, identity, setId: 'some-other-set', verseRef: VERSES[0], score: 100, now: '2026-10-05T00:00:00Z' }), /set_mismatch/);
+  await assert.rejects(() => submitContestScore(r, { contest: c, email: identity.email, identity, setId: c.setId, verseRef: VERSES[0], score: 100, now: '2026-11-01T00:00:00Z' }), /contest_closed/);
+  await assert.rejects(() => submitContestScore(r, { contest: c, email: identity.email, identity, setId: c.setId, verseRef: '約翰福音 9:9', score: 100, now: '2026-10-05T00:00:00Z' }), /verse_mismatch/, 'a verse outside this contest\'s set cannot be claimed for score');
+
+  const first = await submitContestScore(r, { contest: c, email: identity.email, identity, setId: c.setId, verseRef: VERSES[0], score: 300, now: '2026-10-05T00:00:00Z' });
   assert.strictEqual(first.total, 300);
-  const second = await submitContestScore(r, { contest: c, email: identity.email, identity, setId: c.setId, score: 150, now: '2026-10-06T00:00:00Z' });
-  assert.strictEqual(second.total, 450, 'scores accumulate, they are not best-of');
+
+  const replayLower = await submitContestScore(r, { contest: c, email: identity.email, identity, setId: c.setId, verseRef: VERSES[0], score: 150, now: '2026-10-06T00:00:00Z' });
+  assert.strictEqual(replayLower.total, 300, 'replaying the same verse with a lower score does not raise the total');
+
+  const replayHigher = await submitContestScore(r, { contest: c, email: identity.email, identity, setId: c.setId, verseRef: VERSES[0], score: 400, now: '2026-10-06T00:00:00Z' });
+  assert.strictEqual(replayHigher.total, 400, 'beating your own best on that verse raises the total by the improvement only');
+
+  const secondVerse = await submitContestScore(r, { contest: c, email: identity.email, identity, setId: c.setId, verseRef: VERSES[1], score: 200, now: '2026-10-06T00:00:00Z' });
+  assert.strictEqual(secondVerse.total, 600, 'a different verse\'s own best adds on top of the first');
+
   const { rank, score } = await contestRank(r, c.id, identity.email);
   assert.strictEqual(rank, 1);
-  assert.strictEqual(score, 450);
+  assert.strictEqual(score, 600);
 });
 
-test('leaderboard only lists challengers, ranked by cumulative score', async () => {
+test('leaderboard only lists challengers, ranked by the sum of each verse\'s own best score', async () => {
   const r = stubRedis();
   const c = approvedContest();
   const bob = { ...identity, email: 'b@x.com', playerName: 'Bob' };
   for (const [who, score] of [[identity, 200], [bob, 500]]) {
     await joinContest(r, { contest: c, email: who.email, identity: who, garden, now: '2026-10-05T00:00:00Z' });
     await acceptChallenge(r, { contest: c, email: who.email, identity: who, now: '2026-10-05T00:00:00Z' });
-    await submitContestScore(r, { contest: c, email: who.email, identity: who, setId: c.setId, score, now: '2026-10-05T00:00:00Z' });
+    await submitContestScore(r, { contest: c, email: who.email, identity: who, setId: c.setId, verseRef: VERSES[0], score, now: '2026-10-05T00:00:00Z' });
   }
   const board = await contestLeaderboard(r, c.id);
   assert.strictEqual(board.length, 2);
