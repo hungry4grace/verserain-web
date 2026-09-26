@@ -1,5 +1,5 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
-import { Apple, Sprout, TreePine, ChevronLeft, ChevronRight, LayoutGrid, List, Search, X, Play, Smartphone } from 'lucide-react';
+import { Apple, Sprout, TreePine, ChevronLeft, ChevronRight, LayoutGrid, List, Search, X, Play, Smartphone, Check } from 'lucide-react';
 import {
   CELLS_PER_FIELD, APPLE_POSITIONS, buildFields, clampFieldIndex, fieldOfRef, fieldOfGridIndex,
   findGardenCell, filterGardenEntries, sortGardenEntries, stageLabelPair, stageBg, timeOfDayTheme, swipeDirection, isBlankRef,
@@ -28,13 +28,31 @@ const treeImg = (src, alt, shadow) => (
   <img src={src} alt={alt} draggable={false} style={{ width: '150%', height: '150%', flexShrink: 0, objectFit: 'contain', transform: 'translateY(-15%)', filter: `drop-shadow(${shadow})`, pointerEvents: 'none' }} />
 );
 
+// A green checkmark badge for a verse that has reached 已熟練 (stage ≥ 10,
+// the threshold used everywhere else in the app — 通過經文, contest
+// completion, …). Without it, stage 7-9 ("快完成了") and a passed verse that
+// never earned a fruit render as the exact same bare tree image, so there was
+// no visual way to tell "almost there" from "actually done".
+const PassedBadge = () => (
+  <span style={{ position: 'absolute', bottom: '4%', right: '6%', width: '34%', height: '34%', borderRadius: '50%', background: '#16a34a', border: '2px solid #fff', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 1px 3px rgba(0,0,0,0.4)', zIndex: 2, pointerEvents: 'none' }}>
+    <Check style={{ width: '70%', height: '70%' }} color="#fff" strokeWidth={3.5} />
+  </span>
+);
+
 // A tree at a given growth stage; up to nine apples once it bears fruit.
 // Everything is sized relative to the cell so it scales with the field.
 export function GardenSprite({ stage, fruits }) {
   if (stage <= 0) return null;
   if (stage <= 3) return treeImg('/assets/garden/tree-seedling.png', 'seedling', '0 10px 10px rgba(0,0,0,0.2)');
   if (stage <= 6) return treeImg('/assets/garden/tree-sapling.png', 'sapling', '0 15px 15px rgba(0,0,0,0.2)');
-  if (stage <= 9 || !(fruits > 0)) return treeImg('/assets/garden/tree-mature.png', 'mature tree', '0 20px 20px rgba(0,0,0,0.3)');
+  if (stage <= 9 || !(fruits > 0)) {
+    return (
+      <div style={{ position: 'relative', width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        {treeImg('/assets/garden/tree-mature.png', 'mature tree', '0 20px 20px rgba(0,0,0,0.3)')}
+        {stage >= 10 && <PassedBadge />}
+      </div>
+    );
+  }
   const apples = Math.min(fruits, 9);
   return (
     <div style={{ position: 'relative', width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
