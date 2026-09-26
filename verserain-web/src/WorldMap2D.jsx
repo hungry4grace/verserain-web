@@ -52,7 +52,15 @@ function buildPulseHtml(action) {
 }
 
 const LAND_GEOJSON_URL = 'https://cdn.jsdelivr.net/gh/johan/world.geo.json@master/countries.geo.json';
-const LABEL_TILE_URL = 'https://{s}.basemaps.cartocdn.com/rastertiles/dark_only_labels/{z}/{x}/{y}{r}.png';
+// CARTO started requiring an API key on every basemaps.cartocdn.com tile
+// request on 2026-09-23 (previously free/keyless). Set VITE_CARTO_API_KEY in
+// Vercel; without it the tiles still load but CARTO watermarks them
+// "API KEY REQUIRED". Get a free key (Referer-restricted to the site's
+// domain, which also covers the iOS WebView wrapper) at
+// https://carto.com/basemaps/apikey/.
+const CARTO_KEY = (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_CARTO_API_KEY) || '';
+const cartoUrl = (path) => `https://{s}.basemaps.cartocdn.com/${path}${CARTO_KEY ? `?key=${CARTO_KEY}` : ''}`;
+const LABEL_TILE_URL = cartoUrl('rastertiles/dark_only_labels/{z}/{x}/{y}{r}.png');
 
 // Map places (merchants / churches / organisations) — icon per kind.
 const PLACE_STYLE = {
@@ -260,7 +268,7 @@ export default function WorldMap2D({ t, playerName, userEmail, onJoinRoom, onVie
               }).addTo(map);
             })
             .catch(() => {
-              L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager_nolabels/{z}/{x}/{y}{r}.png', {
+              L.tileLayer(cartoUrl('rastertiles/voyager_nolabels/{z}/{x}/{y}{r}.png'), {
                 className: 'verse-map-fallback-tiles',
                 attribution: '© OpenStreetMap contributors © CARTO',
                 subdomains: 'abcd',
