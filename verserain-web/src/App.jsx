@@ -26269,7 +26269,7 @@ const deDict = {
                     verserain
                   </div>
                   <div className="app-brand-version" style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', marginTop: '4px', marginLeft: '2px' }}>
-                    v4.0.86
+                    v4.0.87
                   </div>
                 </div>
                 <div ref={langPickerRef} className="app-lang-control" style={{ position: 'relative' }}>
@@ -30377,8 +30377,11 @@ const deDict = {
                                   <button type="button" disabled={busy} onClick={() => joinContestAction(c)} style={{ marginTop: '0.7rem', background: '#2563eb', color: '#fff', border: 'none', borderRadius: 8, padding: '0.45rem 1rem', cursor: busy ? 'wait' : 'pointer', fontWeight: 800 }}>{busy ? '…' : `📖 ${t('我要參加', 'I want to join')}`}</button>
                                 ) : (
                                   <div style={{ marginTop: '0.6rem' }}>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.82rem', color: '#334155', marginBottom: '0.25rem' }}>
-                                      <span>{t('我的讀經進度', 'My reading progress')}</span>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.5rem', fontSize: '0.82rem', color: '#334155', marginBottom: '0.25rem', flexWrap: 'wrap' }}>
+                                      <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                                        {t('我的讀經進度', 'My reading progress')}
+                                        <button type="button" onClick={() => { setSelectedSetId(c.setId); setMainTab('versesets'); }} style={{ background: '#eff6ff', border: '1px solid #bfdbfe', color: '#1d4ed8', borderRadius: 999, padding: '0.15rem 0.6rem', fontSize: '0.76rem', fontWeight: 700, cursor: 'pointer' }}>📖 {t('前往閱讀', 'Go read')}</button>
+                                      </span>
                                       <b>{localProgress.passed} / {localProgress.total}</b>
                                     </div>
                                     {bar(localProgress.passed, localProgress.total)}
