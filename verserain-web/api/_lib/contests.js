@@ -24,6 +24,13 @@
 //   contest:completed:${contestId}:${email} STR  JSON { at } — completion timestamp
 //   contest:submit:${email}:${day}        INT    contests created today (TTL 1 day)
 import { normEmail, taipeiDay, eligibility, maskName } from './points.js';
+// Same reference-normalization the client uses for garden lookups (a verse
+// planted under one spelling, e.g. simplified vs. traditional book names,
+// must still be recognized under any other) — without it, score submission
+// and completion checks below would silently reject a verse that was really
+// there, just spelled differently in the player's garden.
+import { verseRefKey } from '../../src/lib/verseRef.js';
+import { findGardenKey } from '../../src/lib/gardenSync.js';
 
 export const CONTESTS_KEY = 'contest:list';
 export const CONTEST_ID_RE = /^rc_[a-z0-9]{8,20}$/;
@@ -220,15 +227,21 @@ export async function submitContestScore(redis, { contest, email, identity, setI
   const accepted = await redis.sismember(contestChallengeKey(contest.id), em);
   if (!accepted) throw new ContestError('challenge_required');
   const ref = String(verseRef || '').trim();
-  if (!ref || !(contest.verses || []).includes(ref)) throw new ContestError('verse_mismatch');
+  // Normalized key: the same verse played under a differently-formatted
+  // spelling than the contest's own snapshotted reference (e.g. a language
+  // switch mid-contest) must still match, and must accumulate under the
+  // SAME "personal best" bucket rather than fragmenting into two.
+  const refKey = ref && verseRefKey(ref);
+  const contestVerseKeys = (contest.verses || []).map(v => verseRefKey(v));
+  if (!refKey || !contestVerseKeys.includes(refKey)) throw new ContestError('verse_mismatch');
   const pts = Math.max(0, Math.min(1000000, toInt(score)));
   if (pts <= 0) throw new ContestError('score_invalid');
   const bestKey = contestVerseBestKey(contest.id, em);
-  const prevBest = Math.max(0, toInt(await redis.hget(bestKey, ref)));
+  const prevBest = Math.max(0, toInt(await redis.hget(bestKey, refKey)));
   let total;
   if (pts > prevBest) {
     total = await redis.zincrby(contestScoreKey(contest.id), pts - prevBest, em);
-    await redis.hset(bestKey, { [ref]: pts });
+    await redis.hset(bestKey, { [refKey]: pts });
   } else {
     total = await redis.zscore(contestScoreKey(contest.id), em);
   }
@@ -260,13 +273,21 @@ export async function contestRank(redis, contestId, email) {
 
 // Every verse ref the contest lists must be at garden stage ≥ 10 ("已熟練") in
 // the player's REAL garden data (fetched server-side from PartyKit — never
-// trust a client's own claim of completion).
+// trust a client's own claim of completion). The garden entry can be planted
+// under a differently-formatted spelling of the same reference than the
+// contest's own snapshotted one (e.g. simplified vs. traditional book name,
+// or a different Bible version) — findGardenKey resolves that the same way
+// the client's own garden-status icons and updateGarden() do, so a verse the
+// player genuinely mastered isn't wrongly counted as missing.
 export function checkContestCompletion(contest, gardenData) {
   const g = gardenData || {};
   const verses = (contest && contest.verses) || [];
   if (!verses.length) return { complete: false, passed: 0, total: 0 };
   let passed = 0;
-  for (const ref of verses) if (((g[ref] || {}).stage || 0) >= 10) passed += 1;
+  for (const ref of verses) {
+    const gKey = findGardenKey(g, ref, verseRefKey);
+    if (gKey && (g[gKey].stage || 0) >= 10) passed += 1;
+  }
   return { complete: passed >= verses.length, passed, total: verses.length };
 }
 
