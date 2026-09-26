@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { expandSameChapterRefs } from './lib/expandSameChapterRefs.js';
-import { Play, Pause, RotateCcw, Heart, Zap, Trophy, Crown, Star, Home, XCircle, Headphones, Music, VolumeX, Search, Share2, Dices, Mic, MicOff, Users, CloudRain, Info, Edit, TreePine, Gamepad2, Map, Settings, Library, Volume2, Shuffle, Swords, ShoppingBasket, Apple, Mail, Lock, Sprout, Leaf, Hourglass, Frown, X, Camera, Square, Copy, ArrowRightLeft, MessageCircle, Languages, ChevronUp, ChevronDown, Check, Gift, Store, Ticket, MapPin } from 'lucide-react';
+import { Play, Pause, RotateCcw, Heart, Zap, Trophy, Crown, Star, Home, XCircle, Headphones, Music, VolumeX, Search, Share2, Dices, Mic, MicOff, Users, CloudRain, Info, Edit, TreePine, Gamepad2, Map, Settings, Library, Volume2, Shuffle, Swords, ShoppingBasket, Apple, Mail, Lock, Sprout, Leaf, Hourglass, Frown, X, Camera, Square, Copy, ArrowRightLeft, MessageCircle, Languages, ChevronUp, ChevronDown, Check, Gift, Store, Ticket, MapPin, BookOpen } from 'lucide-react';
 import { CATALOG as VOUCHER_CATALOG, DEFAULT_VALUE as VOUCHER_DEFAULTS } from '../api/_lib/rewardCatalog.js';
 import confetti from 'canvas-confetti';
 import usePartySocket from 'partysocket/react';
@@ -717,7 +717,7 @@ function buildPublicShareUrl(path = '/', params = {}) {
 // push one history entry per step; popstate applies the hash back to state.
 // Only the query string carries share links (?listenSet= …) — those are
 // consumed and scrubbed as before, and every scrub must keep the hash.
-const ROUTE_TABS = ['lobby', 'versesets', 'custom_verses', 'multiplayer', 'daily_verse', 'advanced', 'garden', 'search', 'map', 'manual', 'about', 'accessible', 'bilingual_rain', 'leaderboard', 'rewards_admin', 'sponsors', 'donate', 'sponsor', 'merchant', 'verify', 'charity'];
+const ROUTE_TABS = ['lobby', 'versesets', 'custom_verses', 'multiplayer', 'daily_verse', 'advanced', 'garden', 'search', 'map', 'manual', 'about', 'accessible', 'bilingual_rain', 'leaderboard', 'rewards_admin', 'sponsors', 'donate', 'sponsor', 'merchant', 'verify', 'charity', 'contests'];
 // 支持開發（Donate）頁的收款資訊。這是對開發者個人的贈與，不是公益勸募，
 // 也開不了捐贈收據 — 獎勵資金池另走教會／非營利代收（見 sponsor 頁）。
 // 空字串 → 頁面顯示「即將公布」。
@@ -8916,7 +8916,7 @@ export default function App() {
   }, []);
   // Admins: what is waiting for review, fetched fresh whenever the 🔔 panel
   // opens — this does not depend on the push configuration.
-  const [adminPending, setAdminPending] = useState(null); // { pools, places } | null
+  const [adminPending, setAdminPending] = useState(null); // { pools, places, contests } | null
   useEffect(() => {
     if (!showEncouragePanel || !isSuperAdmin || !userEmail) return undefined;
     let cancelled = false;
@@ -8924,9 +8924,10 @@ export default function App() {
     Promise.all([
       fetch(`/api/pools?all=1&adminEmail=${encodeURIComponent(userEmail)}`, { headers }).then(r => r.ok ? r.json() : { pools: [] }).catch(() => ({ pools: [] })),
       fetch(`/api/places?all=1&adminEmail=${encodeURIComponent(userEmail)}`, { headers }).then(r => r.ok ? r.json() : { places: [] }).catch(() => ({ places: [] })),
-    ]).then(([p, q]) => {
+      fetch(`/api/contests?all=1&adminEmail=${encodeURIComponent(userEmail)}`, { headers }).then(r => r.ok ? r.json() : { contests: [] }).catch(() => ({ contests: [] })),
+    ]).then(([p, q, c]) => {
       if (cancelled) return;
-      setAdminPending({ pools: (p.pools || []).filter(x => x.status === 'pending').length, places: (q.places || []).filter(x => x.status === 'pending').length });
+      setAdminPending({ pools: (p.pools || []).filter(x => x.status === 'pending').length, places: (q.places || []).filter(x => x.status === 'pending').length, contests: (c.contests || []).filter(x => x.status === 'pending').length });
     });
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -9365,6 +9366,15 @@ export default function App() {
     has_vouchers: t('已發出過折扣券，只能下架不能刪除', 'Coupons were issued for this place — it can be withdrawn but not deleted'),
     referrer_not_found: t('找不到這個推薦碼，請確認推薦者的分享碼', 'Referral code not found — check the code on their Share page'),
     referrer_invalid: t('推薦碼格式不正確，應為 10 個字母/數字。', 'Invalid format. Expected 10 letters/numbers.'),
+    contest_unavailable: t('這個讀經比賽目前未開放', 'This reading contest is not open right now'),
+    contest_closed: t('這個讀經比賽已經結束', 'This reading contest has ended'),
+    contest_limit: t('這個標記進行中的讀經比賽已達上限（5 個）', 'This marker already runs the maximum of 5 open reading contests'),
+    join_required: t('請先按「我要參加」加入這個讀經比賽', 'Join this reading contest first'),
+    challenge_required: t('請先按「接受背經文挑戰」才能上排行榜', 'Accept the memorisation challenge first to join the leaderboard'),
+    set_required: t('請選擇一組主題經文', 'Please choose a topic verse set'),
+    verses_required: t('這組經文組目前沒有內容，請換一組', 'This verse set has no verses — pick another one'),
+    ends_after_starts: t('結束時間必須晚於開始時間', 'The end date must be after the start date'),
+    name_required: t('請輸入活動名稱', 'Please enter a name for the contest'),
   })[code] || String(code || 'error');
   const fetchPointsBalance = async () => {
     if (!userEmail) return null;
@@ -9711,6 +9721,7 @@ export default function App() {
     fetch(`/api/places?all=1&adminEmail=${encodeURIComponent(userEmail)}`, { headers: adminHeaders() }).then(r => r.json()).then(d => { if (!cancelled) setPlacesAdmin(Array.isArray(d.places) ? d.places : []); }).catch(() => { if (!cancelled) setPlacesAdmin([]); });
     fetch(`/api/redeem-verify?all=1&adminEmail=${encodeURIComponent(userEmail)}`, { headers: adminHeaders() }).then(r => r.json()).then(d => { if (!cancelled) setVouchersAdmin(Array.isArray(d.vouchers) ? d.vouchers : []); }).catch(() => { if (!cancelled) setVouchersAdmin([]); });
     fetch(`/api/pools?all=1&adminEmail=${encodeURIComponent(userEmail)}`, { headers: adminHeaders() }).then(r => r.json()).then(d => { if (!cancelled) setPoolsAdmin(Array.isArray(d.pools) ? d.pools : []); }).catch(() => { if (!cancelled) setPoolsAdmin([]); });
+    fetch(`/api/contests?all=1&adminEmail=${encodeURIComponent(userEmail)}`, { headers: adminHeaders() }).then(r => r.json()).then(d => { if (!cancelled) setContestsAdmin(Array.isArray(d.contests) ? d.contests : []); }).catch(() => { if (!cancelled) setContestsAdmin([]); });
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mainTab, isSuperAdmin, userEmail, rewardsAdminReload]);
@@ -9905,6 +9916,154 @@ export default function App() {
     } catch (e) { setToast(String(e?.message || e)); setTimeout(() => setToast(null), 3000); }
   };
   const poolStatusBadge = (st) => st === 'approved' ? { text: t('進行中', 'Open'), bg: '#dcfce7', fg: '#166534' } : st === 'pending' ? { text: t('待審核', 'Pending'), bg: '#fef3c7', fg: '#92400e' } : st === 'closed' ? { text: t('已關閉', 'Closed'), bg: '#e2e8f0', fg: '#334155' } : { text: t('已退回', 'Rejected'), bg: '#fee2e2', fg: '#991b1b' };
+
+  // ── 讀經比賽 (Bible reading contests) ──────────────────────────────────────
+  // Code says "contest", never "campaign" — the Challenge engine already uses
+  // campaign*/activeCampaignSetId for "the current Challenge play queue",
+  // an unrelated concept. Reading progress is judged from the player's own
+  // garden (stage ≥ 10 per verse, same threshold as 通過經文 elsewhere); the
+  // score leaderboard only counts Challenge runs on the contest's own set,
+  // and only once a player has separately "accepted the challenge".
+  const [contests, setContests] = useState(null); // { contests } | { error } | null
+  const [contestMine, setContestMine] = useState(null); // { owned, joined } | { error } | null
+  const [contestFocus, setContestFocus] = useState(''); // contest id opened from the map
+  const [contestsAdmin, setContestsAdmin] = useState(null);
+  const [contestsAdminFilter, setContestsAdminFilter] = useState('pending');
+  const [contestCreateDraft, setContestCreateDraft] = useState({ orgPlaceId: '', setId: '', name: '', description: '', rewardDescription: '', startsAt: '', endsAt: '', agree: false });
+  const [contestCreateBusy, setContestCreateBusy] = useState(false);
+  const [contestActionBusy, setContestActionBusy] = useState(''); // contestId currently busy
+  const [contestLeaderboards, setContestLeaderboards] = useState({}); // contestId → [{who,score}]
+  const loadContests = React.useCallback(async (fresh = false) => {
+    try {
+      const r = fresh ? await fetch(`/api/contests?fresh=${Date.now()}`, { cache: 'no-store' }) : await fetch('/api/contests');
+      const d = await r.json().catch(() => ({}));
+      setContests(r.ok ? { contests: Array.isArray(d.contests) ? d.contests : [] } : { error: d.error || String(r.status) });
+    } catch (e) { setContests({ error: String(e?.message || e) }); }
+  }, []);
+  const loadContestMine = React.useCallback(async () => {
+    if (!userEmail) { setContestMine(null); return; }
+    try {
+      const r = await fetch(`/api/contests?mine=1&email=${encodeURIComponent(userEmail)}&sessionKey=${encodeURIComponent(sessionKey)}`);
+      const d = await r.json().catch(() => ({}));
+      setContestMine(r.ok ? { owned: d.owned || [], joined: d.joined || [] } : { error: d.error || String(r.status) });
+    } catch (e) { setContestMine({ error: String(e?.message || e) }); }
+  }, [userEmail, sessionKey]);
+  const loadContestLeaderboard = async (contestId) => {
+    try {
+      const r = await fetch(`/api/contests?leaderboard=1&contestId=${encodeURIComponent(contestId)}`);
+      const d = await r.json().catch(() => ({}));
+      setContestLeaderboards(o => ({ ...o, [contestId]: Array.isArray(d.leaderboard) ? d.leaderboard : [] }));
+    } catch { /* leaderboard is a nice-to-have */ }
+  };
+  useEffect(() => {
+    if (mainTab === 'contests') { loadContests(); if (userEmail) { loadContestMine(); loadMyPlaces(); } }
+    else if (mainTab === 'garden' && userEmail) loadContestMine();
+  }, [mainTab, userEmail, loadContests, loadContestMine, loadMyPlaces]);
+  useEffect(() => {
+    if (mainTab !== 'contests' || !contestFocus || !contests) return;
+    scrollMenuTo(document.getElementById(`contest-${contestFocus}`), { block: 'center' });
+  }, [mainTab, contestFocus, contests]);
+  // Verses of `contest` this player has already reached "已熟練" (stage ≥ 10)
+  // on, straight from the local garden — no round trip needed just to show a
+  // progress bar; the server independently re-checks before it ever marks a
+  // completion, so nothing here has to be trusted.
+  const contestProgress = (contest) => {
+    const verses = (contest && contest.verses) || [];
+    const passed = verses.filter(ref => ((gardenData || {})[ref] || {}).stage >= 10).length;
+    return { passed, total: verses.length };
+  };
+  const contestNoticeText = () => t('讀完整組經文（每一節都練到「已熟練」）即可申請認證，機構會依公告方式頒發獎勵；經文雨不經手獎勵本身。額外接受「背經文挑戰」的分數，只計算這組經文、活動期間內的挑戰成績，累加進這次活動的排行榜。', 'Finish every verse of the set (each one practised to "mastered") to apply for certified completion — the organisation hands out the reward itself, off the app. If you also accept the memorisation challenge, only Challenge runs on this set during the contest window count, added up on this contest’s own leaderboard.');
+  const joinContestAction = async (contest) => {
+    if (!contest || !contest.id) return;
+    if (!userEmail) { setShowLoginModal('login'); setToast(t('請先登入才能參加', 'Sign in to join')); setTimeout(() => setToast(null), 2500); return; }
+    setContestActionBusy(contest.id);
+    try {
+      const res = await fetch('/api/contests', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'join', email: userEmail, sessionKey, contestId: contest.id }) });
+      const d = await res.json().catch(() => ({}));
+      if (d.error === 'session_invalid' || d.error === 'login_required') { setShowLoginModal('login'); throw new Error(redeemErrorText('session_invalid')); }
+      if (!res.ok || !d.success) throw new Error(redeemErrorText(d.error || res.status));
+      setToast(t('已加入「{name}」📖', 'Joined “{name}” 📖').replace('{name}', String(contest.name || '')));
+      setTimeout(() => setToast(null), 2500);
+      loadContestMine(); loadContests(true);
+    } catch (e) {
+      setToast(String(e?.message || e)); setTimeout(() => setToast(null), 3500);
+    } finally {
+      setContestActionBusy('');
+    }
+  };
+  const acceptContestChallengeAction = async (contest) => {
+    if (!contest || !contest.id) return;
+    setContestActionBusy(contest.id);
+    try {
+      const res = await fetch('/api/contests', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'accept_challenge', email: userEmail, sessionKey, contestId: contest.id }) });
+      const d = await res.json().catch(() => ({}));
+      if (!res.ok || !d.success) throw new Error(redeemErrorText(d.error || res.status));
+      setToast(t('已接受背經文挑戰，開始玩「背經文」拿分數吧！', 'Challenge accepted — play Memorise mode to start scoring!'));
+      setTimeout(() => setToast(null), 3000);
+      loadContestMine();
+    } catch (e) {
+      setToast(String(e?.message || e)); setTimeout(() => setToast(null), 3500);
+    } finally {
+      setContestActionBusy('');
+    }
+  };
+  const claimContestCompletionAction = async (contest) => {
+    if (!contest || !contest.id) return;
+    setContestActionBusy(contest.id);
+    try {
+      const res = await fetch('/api/contests', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'claim_completion', email: userEmail, sessionKey, contestId: contest.id }) });
+      const d = await res.json().catch(() => ({}));
+      if (!res.ok || !d.success) throw new Error(redeemErrorText(d.error || res.status));
+      if (!d.completed) { setToast(t('還沒讀完整組（{p}/{n} 節），再加油！', 'Not finished yet ({p}/{n} verses) — keep going!').replace('{p}', String(d.passed || 0)).replace('{n}', String(d.total || 0))); setTimeout(() => setToast(null), 3000); return; }
+      setToast(t('🎉 已認證完成「{name}」，機構會另行通知獎勵方式', '🎉 Completion of “{name}” verified — the organisation will follow up on the reward').replace('{name}', String(contest.name || '')));
+      setTimeout(() => setToast(null), 4000);
+      loadContestMine();
+    } catch (e) {
+      setToast(String(e?.message || e)); setTimeout(() => setToast(null), 3500);
+    } finally {
+      setContestActionBusy('');
+    }
+  };
+  const createContest = async () => {
+    const d0 = contestCreateDraft;
+    if (!d0.orgPlaceId || !d0.setId || !d0.name.trim() || !d0.startsAt || !d0.endsAt || !d0.agree) { setToast(redeemErrorText('consent_required')); setTimeout(() => setToast(null), 2500); return; }
+    const set = topicVerseSets.find(s => s.id === d0.setId);
+    if (!set) { setToast(redeemErrorText('set_required')); setTimeout(() => setToast(null), 2500); return; }
+    setContestCreateBusy(true);
+    try {
+      const res = await fetch('/api/contests', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'create', email: userEmail, sessionKey,
+          contest: {
+            orgPlaceId: d0.orgPlaceId, name: d0.name, description: d0.description, rewardDescription: d0.rewardDescription,
+            setId: set.id, setTitle: set.title, setLang: version || '', verses: (set.verses || []).map(v => v.reference),
+            startsAt: new Date(d0.startsAt).toISOString(), endsAt: new Date(d0.endsAt + 'T23:59:59').toISOString(),
+            seriesId: d0.seriesId || '', agree: true,
+          },
+        }),
+      });
+      const d = await res.json().catch(() => ({}));
+      if (!res.ok || !d.success) throw new Error(redeemErrorText(d.error || res.status));
+      setContestCreateDraft({ orgPlaceId: '', setId: '', name: '', description: '', rewardDescription: '', startsAt: '', endsAt: '', agree: false });
+      setToast(t('已送出，等待審核', 'Submitted, awaiting review')); setTimeout(() => setToast(null), 2500);
+      loadContestMine();
+    } catch (e) {
+      setToast(String(e?.message || e)); setTimeout(() => setToast(null), 3500);
+    } finally {
+      setContestCreateBusy(false);
+    }
+  };
+  const contestAdminAction = async (action, contestId) => {
+    try {
+      const res = await fetch('/api/contests', { method: 'POST', headers: adminHeaders(), body: JSON.stringify({ action, adminEmail: userEmail, contestId }) });
+      const d = await res.json().catch(() => ({}));
+      if (!res.ok || !d.success) throw new Error(d.error || String(res.status));
+      setToast(t('已更新讀經比賽', 'Contest updated')); setTimeout(() => setToast(null), 2000);
+      setRewardsAdminReload(n => n + 1);
+      setPlacesVersion(n => n + 1);
+    } catch (e) { setToast(String(e?.message || e)); setTimeout(() => setToast(null), 3000); }
+  };
   // 「我的登記」 card of an approved shop: join / update / leave a pool.
   const renderMerchantPoolSection = (pl) => {
     const joinedList = (charityMine && !charityMine.error ? charityMine.merchantOf : []).filter(m => m.placeId === pl.id);
@@ -11889,6 +12048,29 @@ export default function App() {
       setActiveCampaignSetId(null);
     }
   }, [gameState, activeCampaignSetId, playerName, campaignResults, playMode, distractionLevel]);
+
+  // Submit to any open 讀經比賽 (reading contest) leaderboard the player has
+  // accepted the challenge for, when this run's set matches the contest's
+  // own set. Independent of the global set leaderboard above: this ADDS to a
+  // running per-contest total rather than keeping only the best run.
+  // Reads `contestMine` from a ref (kept fresh separately, not a dependency
+  // here) so this effect fires exactly once per finished run — the fetch's
+  // own loadContestMine() refresh can't re-trigger it.
+  const contestMineRef = useRef(contestMine);
+  useEffect(() => { contestMineRef.current = contestMine; }, [contestMine]);
+  useEffect(() => {
+    if (gameState !== 'campaign-results' || !activeCampaignSetId || !userEmail) return;
+    const totalScore = campaignResults.reduce((sum, r) => sum + r.score, 0);
+    if (totalScore <= 0) return;
+    const mine = contestMineRef.current;
+    const matches = (mine && !mine.error ? mine.joined : []).filter(c => c.accepted && c.setId === activeCampaignSetId && c.status === 'approved');
+    matches.forEach(c => {
+      fetch('/api/contests', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'submit_score', email: userEmail, sessionKey, contestId: c.id, setId: c.setId, score: totalScore }),
+      }).then(() => loadContestMine()).catch(() => {});
+    });
+  }, [gameState, activeCampaignSetId, campaignResults, userEmail, sessionKey, loadContestMine]);
 
   // Fetch Set Leaderboard Data
   useEffect(() => {
@@ -26087,7 +26269,7 @@ const deDict = {
                     verserain
                   </div>
                   <div className="app-brand-version" style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', marginTop: '4px', marginLeft: '2px' }}>
-                    v4.0.84
+                    v4.0.85
                   </div>
                 </div>
                 <div ref={langPickerRef} className="app-lang-control" style={{ position: 'relative' }}>
@@ -26732,6 +26914,7 @@ const deDict = {
                       { id: 'sponsors', Icon: Gift, label: t('贊助獎勵計劃（實驗階段）', 'Sponsored Rewards (pilot)'), desc: t('通過經文、邀請朋友，贏得禮券', 'Pass verses, invite friends, earn vouchers'), color: '#f59e0b' },
                       ...(SHOW_DONATE ? [{ id: 'donate', Icon: Heart, label: t('支持經文雨', 'Support VerseRain'), desc: t('小額支持 App 開發與維運', 'Help fund development & hosting'), color: '#ef4444' }] : []),
                       { id: 'charity', Icon: Heart, label: t('愛心折抵池', 'Charity discount pool'), desc: t('投入點數，成為教會／機構的折抵額度', 'Turn points into a discount allowance for a church or organisation'), color: '#e11d48' },
+                      { id: 'contests', Icon: BookOpen, label: t('讀經比賽', 'Reading contest'), desc: t('教會／機構舉辦的讀經比賽，讀完拿認證，還能挑戰排行榜', 'Church / organisation reading contests — finish for certified completion, or challenge the leaderboard'), color: '#2563eb' },
                       { id: 'sponsor', Icon: Gift, label: t('贊助經文雨', 'Sponsor VerseRain'), desc: t('企業家與教會如何加入推廣讀經', 'How businesses & churches can join'), color: '#7c3aed' },
                       { id: 'merchant', Icon: Store, label: t('登記商家／教會', 'Register a shop / church'), desc: t('在「誰在玩」地圖上標記，提供點數折扣', 'Get on the map and offer a points discount'), color: '#d97706' },
                       { id: 'verify', Icon: Ticket, label: t('折扣券核銷', 'Verify a coupon'), desc: t('店家輸入代碼確認折扣', 'Shops confirm a customer’s voucher here'), color: '#0d9488' },
@@ -29207,6 +29390,30 @@ const deDict = {
                         );
                       })()}
 
+                      {/* 讀經比賽：我參加的活動進度與排行榜名次 */}
+                      {userEmail && contestMine && !contestMine.error && (contestMine.joined || []).length > 0 && (
+                        <div style={{ marginTop: '1.5rem' }} data-testid="garden-contests">
+                          <h4 style={{ margin: '0 0 0.6rem', color: '#1e293b', display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                            <BookOpen size={18} color="#2563eb" /> {t('讀經比賽', 'Reading contests')}
+                          </h4>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                            {contestMine.joined.map(c => {
+                              const p = contestProgress(c);
+                              return (
+                                <div key={c.id} style={{ background: '#fff', padding: '10px 15px', borderRadius: '8px', borderLeft: '4px solid #2563eb', fontSize: '0.88rem', color: '#334155' }}>
+                                  <div style={{ display: 'flex', justifyContent: 'space-between', gap: '0.5rem', flexWrap: 'wrap' }}>
+                                    <span>📖 {c.name}</span>
+                                    <span style={{ color: '#1e40af', fontWeight: 700 }}>{p.passed} / {p.total} {t('節', 'verses')}{c.completedByMe ? ' ✅' : ''}</span>
+                                  </div>
+                                  {c.accepted && <div style={{ color: '#64748b', fontSize: '0.8rem', marginTop: 2 }}>⚔️ {t('分數 {s}（第 {r} 名）', 'Score {s} (rank #{r})').replace('{s}', String(c.myScore || 0)).replace('{r}', c.myRank ? String(c.myRank) : '—')}</div>}
+                                </div>
+                              );
+                            })}
+                          </div>
+                          <button type="button" onClick={() => setMainTab('contests')} style={{ marginTop: '0.6rem', background: 'transparent', border: '1px solid #bfdbfe', color: '#1d4ed8', borderRadius: 6, padding: '0.3rem 0.8rem', cursor: 'pointer', fontWeight: 700, fontSize: '0.82rem' }}>📖 {t('看看有哪些讀經比賽', 'See the reading contests')}</button>
+                        </div>
+                      )}
+
                     </div>
                   </div>
 
@@ -29439,6 +29646,42 @@ const deDict = {
                                       </div>
                                       <div style={{ color: '#94a3b8', fontSize: '0.78rem' }}>{p.ownerEmail} · {new Date(p.createdAt).toLocaleDateString()} · {t('已投入 NT${a} · 可用折抵額度 NT${b} · {n} 位參與 · 已折抵 NT${c}', 'NT${a} contributed · NT${b} allowance left · {n} participants · NT${c} used').replace('{a}', String(c.contributedNTD || 0)).replace('{b}', String(c.allowanceNTD || 0)).replace('{n}', String(c.contributors || 0)).replace('{c}', '—')} · 🏪 {Object.keys(p.merchants || {}).length}</div>
                                       {p.description ? <div style={{ color: '#475569', fontSize: '0.8rem', marginTop: 2 }}>{p.description}</div> : null}
+                                    </div>
+                                  ); })}
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })()}
+
+                        {/* 讀經比賽審核 */}
+                        {(() => {
+                          const all = contestsAdmin || [];
+                          const shown = all.filter(c => contestsAdminFilter === 'all' ? true : c.status === contestsAdminFilter);
+                          const counts = { pending: all.filter(c => c.status === 'pending').length, approved: all.filter(c => c.status === 'approved').length, closed: all.filter(c => c.status === 'closed').length, rejected: all.filter(c => c.status === 'rejected').length };
+                          const smallBtn = (bg, fg = '#fff', border = 'none') => ({ background: bg, color: fg, border, borderRadius: '6px', padding: '0.35rem 0.7rem', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 700 });
+                          return (
+                            <div data-testid="admin-contests" style={{ border: '1px solid #bfdbfe', background: '#eff6ff', borderRadius: 10, padding: '0.9rem 1rem', marginBottom: '1rem' }}>
+                              <b style={{ color: '#1e40af' }}>📖 {t('讀經比賽', 'Reading contest')}</b>
+                              <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap', margin: '0.6rem 0' }}>
+                                {[['pending', t('待審核', 'Pending')], ['approved', t('進行中', 'Open')], ['closed', t('已關閉', 'Closed')], ['rejected', t('已退回', 'Rejected')], ['all', t('全部', 'All')]].map(([id, lab]) => (
+                                  <button key={id} type="button" onClick={() => setContestsAdminFilter(id)} style={{ padding: '0.3rem 0.8rem', borderRadius: 20, border: 'none', background: contestsAdminFilter === id ? '#1d4ed8' : '#bfdbfe', color: contestsAdminFilter === id ? '#fff' : '#1e40af', fontWeight: 700, cursor: 'pointer', fontSize: '0.8rem' }}>{lab}{id !== 'all' ? ` (${counts[id]})` : ''}</button>
+                                ))}
+                              </div>
+                              {!contestsAdmin ? <div style={{ color: '#94a3b8', fontSize: '0.85rem' }}>{t('載入中…', 'Loading…')}</div> : shown.length === 0 ? <div style={{ color: '#94a3b8', fontSize: '0.85rem' }}>{t('目前沒有項目', 'Nothing here yet')}</div> : (
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                                  {shown.map(c => { const cc = c.counters || {}; const b = poolStatusBadge(c.status); return (
+                                    <div key={c.id} style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 8, padding: '0.5rem 0.7rem', fontSize: '0.85rem' }}>
+                                      <div style={{ display: 'flex', justifyContent: 'space-between', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
+                                        <span><b>📖 {c.name}</b> · ⛪ {c.orgPlaceName} <span style={{ background: b.bg, color: b.fg, borderRadius: 999, padding: '0.05rem 0.5rem', fontSize: '0.74rem', fontWeight: 700 }}>{b.text}</span></span>
+                                        <span style={{ display: 'flex', gap: '0.3rem' }}>
+                                          {(c.status === 'pending' || c.status === 'closed') && <button type="button" onClick={() => contestAdminAction('approve', c.id)} style={smallBtn('#16a34a')}>✅ {t('核准', 'Approve')}</button>}
+                                          {c.status === 'pending' && <button type="button" onClick={() => contestAdminAction('reject', c.id)} style={smallBtn('transparent', '#991b1b', '1px solid #fecaca')}>{t('退回', 'Reject')}</button>}
+                                          {c.status === 'approved' && <button type="button" onClick={() => contestAdminAction('close', c.id)} style={smallBtn('transparent', '#64748b', '1px solid #cbd5e1')}>{t('關閉', 'Close')}</button>}
+                                        </span>
+                                      </div>
+                                      <div style={{ color: '#94a3b8', fontSize: '0.78rem' }}>{c.ownerEmail} · {c.setTitle} · {new Date(c.startsAt).toLocaleDateString()}–{new Date(c.endsAt).toLocaleDateString()} · {t('{n} 人參加 · {a} 人挑戰 · {m} 人完成', '{n} joined · {a} challengers · {m} completed').replace('{n}', String(cc.joined || 0)).replace('{a}', String(cc.accepted || 0)).replace('{m}', String(cc.completed || 0))}</div>
+                                      {c.description ? <div style={{ color: '#475569', fontSize: '0.8rem', marginTop: 2 }}>{c.description}</div> : null}
                                     </div>
                                   ); })}
                                 </div>
@@ -30068,6 +30311,167 @@ const deDict = {
                           <span>{t('我確認本機構了解：折抵額度不可轉讓、不可兌現、不開立捐贈收據，僅供在合作商家折抵消費。', 'I confirm the organisation understands the allowance cannot be transferred or cashed out, no donation receipt is issued, and it is only usable as a discount at participating shops.')}</span>
                         </label>
                         <button type="button" disabled={poolCreateBusy || !poolCreateDraft.agree || !poolCreateDraft.orgPlaceId} onClick={createPool} style={{ marginTop: '0.8rem', background: (poolCreateDraft.agree && poolCreateDraft.orgPlaceId) ? '#e11d48' : '#e2e8f0', color: (poolCreateDraft.agree && poolCreateDraft.orgPlaceId) ? '#fff' : '#94a3b8', border: 'none', borderRadius: 8, padding: '0.5rem 1.1rem', cursor: poolCreateBusy ? 'wait' : 'pointer', fontWeight: 800 }}>{poolCreateBusy ? '…' : `❤️ ${t('送出審核', 'Submit for review')}`}</button>
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
+
+              {mainTab === 'contests' && (() => {
+                const card = { background: '#fff', border: '1px solid #e2e8f0', borderRadius: 12, padding: '1rem 1.2rem', marginBottom: '1rem' };
+                const h3 = { margin: '0 0 0.6rem', color: '#1e293b', fontSize: '1.05rem' };
+                const field = { width: '100%', boxSizing: 'border-box', padding: '0.5rem 0.7rem', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: '0.95rem', background: '#fff' };
+                const label = { display: 'block', color: '#475569', fontSize: '0.82rem', fontWeight: 700, margin: '0.8rem 0 0.25rem' };
+                const list = contests?.contests || [];
+                const mineByI = contestMine && !contestMine.error ? contestMine : null;
+                const joinedById = new globalThis.Map((mineByI?.joined || []).map(c => [c.id, c])); // `Map` here is the lucide-react icon, not the global constructor
+                const owned = mineByI?.owned || [];
+                const eligibleOrgPlaces = (myPlaces || []).filter(pl => ['church', 'org'].includes(pl.kind) && pl.status === 'approved');
+                const focusOrg = (list.find(c => c.id === contestFocus) || {}).orgPlaceId || '';
+                const bar = (value, max) => (
+                  <div style={{ background: '#dbeafe', borderRadius: 999, height: 8, overflow: 'hidden' }}><div style={{ width: `${max > 0 ? Math.min(100, Math.round(value / max * 100)) : 0}%`, background: '#2563eb', height: '100%' }} /></div>
+                );
+                const fmtDate = (s) => { try { return new Date(s).toLocaleDateString(); } catch { return s; } };
+                const notice = (
+                  <div data-testid="contest-notice" style={{ background: '#eff6ff', border: '1px solid #bfdbfe', color: '#1e3a8a', borderRadius: 10, padding: '0.7rem 0.9rem', fontSize: '0.82rem', lineHeight: 1.6, marginBottom: '1rem' }}>
+                    ℹ️ {contestNoticeText()}
+                  </div>
+                );
+                return (
+                  <div style={{ backgroundColor: '#f5f8ff', borderRadius: '8px', border: '1px solid #bfdbfe', padding: '1.5rem', boxShadow: '0 1px 3px rgba(0,0,0,0.05)', maxWidth: 720, margin: '0 auto' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.6rem', marginBottom: '0.8rem' }}>
+                      <h2 style={{ color: '#1e293b', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}><BookOpen size={26} color="#2563eb" /> {t('讀經比賽', 'Reading contest')}</h2>
+                      <button type="button" onClick={() => setMainTab('advanced')} style={{ background: 'transparent', border: '1px solid #cbd5e1', color: '#64748b', borderRadius: '6px', padding: '0.35rem 0.8rem', cursor: 'pointer', fontSize: '0.85rem' }}>← {t('返回', 'Back')}</button>
+                    </div>
+                    <p style={{ color: '#475569', lineHeight: 1.7, marginTop: 0 }}>
+                      {t('教會或機構選定一組主題經文，公告一段期間的讀經比賽。參加後可以看到自己的讀經進度；讀完整組即可申請認證，機構會另行公告獎勵方式。', 'A church or organisation picks a topic verse set and announces a reading contest for a set period. Join to track your progress — finish the whole set to apply for certified completion, and the organisation announces the reward separately.')}
+                    </p>
+                    {notice}
+
+                    <div style={card}>
+                      <h3 style={h3}>📖 {t('進行中的讀經比賽', 'Open reading contests')}</h3>
+                      {!contests ? <div style={{ color: '#94a3b8' }}>{t('載入中…', 'Loading…')}</div> : contests.error ? (
+                        <div style={{ color: '#b45309', fontSize: '0.9rem' }}>{String(contests.error)}</div>
+                      ) : list.length === 0 ? (
+                        <div style={{ color: '#94a3b8', fontSize: '0.9rem' }}>{t('目前還沒有開放中的讀經比賽。已上地圖的教會或機構可以在下方建立。', 'No reading contest is open yet. A church or organisation already on the map can create one below.')}</div>
+                      ) : (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
+                          {list.map(c => {
+                            const focus = c.id === contestFocus || (!!focusOrg && c.orgPlaceId === focusOrg);
+                            const mineC = joinedById.get(c.id);
+                            const localProgress = contestProgress(c);
+                            const busy = contestActionBusy === c.id;
+                            return (
+                              <div key={c.id} id={`contest-${c.id}`} data-testid="contest-card" style={{ border: focus ? '2px solid #2563eb' : '1px solid #bfdbfe', background: '#fff', borderRadius: 10, padding: '0.8rem 1rem' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'baseline' }}>
+                                  <b style={{ color: '#1e293b', fontSize: '1.02rem' }}>📖 {c.name}</b>
+                                  <span style={{ color: '#64748b', fontSize: '0.85rem' }}>⛪ {c.orgPlaceName}</span>
+                                </div>
+                                <div style={{ color: '#64748b', fontSize: '0.82rem', margin: '0.2rem 0' }}>{t('經文組：{s}', 'Verse set: {s}').replace('{s}', c.setTitle)} · {fmtDate(c.startsAt)} – {fmtDate(c.endsAt)}</div>
+                                {c.description ? <div style={{ color: '#475569', fontSize: '0.9rem', lineHeight: 1.6, margin: '0.4rem 0', whiteSpace: 'pre-wrap' }}>{c.description}</div> : null}
+                                {c.rewardDescription ? <div style={{ color: '#166534', fontSize: '0.85rem', margin: '0.3rem 0' }}>🎁 {c.rewardDescription}</div> : null}
+                                <div style={{ color: '#334155', fontSize: '0.84rem' }}>{t('{n} 人參加 · {m} 人已完成', '{n} joined · {m} completed').replace('{n}', String(c.joined || 0)).replace('{m}', String(c.completed || 0))}</div>
+                                {!userEmail ? (
+                                  <button type="button" onClick={() => joinContestAction(c)} style={{ marginTop: '0.7rem', background: '#2563eb', color: '#fff', border: 'none', borderRadius: 8, padding: '0.45rem 1rem', cursor: 'pointer', fontWeight: 800 }}>📖 {t('我要參加', 'I want to join')}</button>
+                                ) : !mineC ? (
+                                  <button type="button" disabled={busy} onClick={() => joinContestAction(c)} style={{ marginTop: '0.7rem', background: '#2563eb', color: '#fff', border: 'none', borderRadius: 8, padding: '0.45rem 1rem', cursor: busy ? 'wait' : 'pointer', fontWeight: 800 }}>{busy ? '…' : `📖 ${t('我要參加', 'I want to join')}`}</button>
+                                ) : (
+                                  <div style={{ marginTop: '0.6rem' }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.82rem', color: '#334155', marginBottom: '0.25rem' }}>
+                                      <span>{t('我的讀經進度', 'My reading progress')}</span>
+                                      <b>{localProgress.passed} / {localProgress.total}</b>
+                                    </div>
+                                    {bar(localProgress.passed, localProgress.total)}
+                                    <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginTop: '0.6rem' }}>
+                                      {mineC.completedByMe ? (
+                                        <span style={{ background: '#dcfce7', color: '#166534', borderRadius: 999, padding: '0.25rem 0.8rem', fontSize: '0.82rem', fontWeight: 700 }}>✅ {t('已認證完成', 'Completion verified')}</span>
+                                      ) : localProgress.total > 0 && localProgress.passed >= localProgress.total ? (
+                                        <button type="button" disabled={busy} onClick={() => claimContestCompletionAction(c)} style={{ background: '#16a34a', color: '#fff', border: 'none', borderRadius: 8, padding: '0.4rem 0.9rem', cursor: busy ? 'wait' : 'pointer', fontWeight: 800, fontSize: '0.85rem' }}>{busy ? '…' : `✅ ${t('完成，申請認證', 'Finished — apply for completion')}`}</button>
+                                      ) : null}
+                                      {!mineC.accepted ? (
+                                        <button type="button" disabled={busy} onClick={() => acceptContestChallengeAction(c)} style={{ background: 'transparent', border: '1px solid #2563eb', color: '#2563eb', borderRadius: 8, padding: '0.4rem 0.9rem', cursor: busy ? 'wait' : 'pointer', fontWeight: 700, fontSize: '0.85rem' }}>{busy ? '…' : `⚔️ ${t('接受背經文挑戰', 'Accept the memorisation challenge')}`}</button>
+                                      ) : (
+                                        <span style={{ background: '#eff6ff', color: '#1e40af', borderRadius: 999, padding: '0.25rem 0.8rem', fontSize: '0.82rem', fontWeight: 700 }}>⚔️ {t('目前分數 {s}（第 {r} 名）', 'Score {s} (rank #{r})').replace('{s}', String(mineC.myScore || 0)).replace('{r}', mineC.myRank ? String(mineC.myRank) : '—')}</span>
+                                      )}
+                                    </div>
+                                    {mineC.accepted && (
+                                      <div style={{ color: '#94a3b8', fontSize: '0.76rem', marginTop: '0.4rem' }}>{t('到「背經文挑戰」選「{s}」這組經文來玩，分數會自動累加到這個活動。', 'Go to Memorise mode and pick “{s}” — your score is added to this contest automatically.').replace('{s}', c.setTitle)}</div>
+                                    )}
+                                    {contestLeaderboards[c.id] === undefined ? (
+                                      <button type="button" onClick={() => loadContestLeaderboard(c.id)} style={{ marginTop: '0.5rem', background: 'transparent', border: 'none', color: '#2563eb', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 700 }}>🏆 {t('看排行榜', 'See the leaderboard')}</button>
+                                    ) : (
+                                      <div style={{ marginTop: '0.5rem' }}>
+                                        <b style={{ color: '#334155', fontSize: '0.85rem' }}>🏆 {t('排行榜', 'Leaderboard')}</b>
+                                        {contestLeaderboards[c.id].length === 0 ? (
+                                          <div style={{ color: '#94a3b8', fontSize: '0.8rem' }}>{t('還沒有人接受挑戰。', 'No one has accepted the challenge yet.')}</div>
+                                        ) : (
+                                          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem', marginTop: '0.3rem' }}>
+                                            {contestLeaderboards[c.id].map((row, i) => (
+                                              <div key={i} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.82rem', color: '#334155', background: '#f8fafc', borderRadius: 6, padding: '0.2rem 0.6rem' }}>
+                                                <span>#{i + 1} {row.who}</span><span style={{ fontWeight: 700 }}>{row.score.toLocaleString()}</span>
+                                              </div>
+                                            ))}
+                                          </div>
+                                        )}
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+
+                    {owned.length > 0 && owned.map(oc => { const b = poolStatusBadge(oc.status); return (
+                      <div key={oc.id} data-testid="owned-contest" style={{ ...card, border: '1px solid #bfdbfe' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
+                          <h3 style={{ ...h3, margin: 0 }}>⛪ {t('我的讀經比賽', 'My reading contest')}：{oc.name}</h3>
+                          <span style={{ background: b.bg, color: b.fg, borderRadius: 999, padding: '0.15rem 0.6rem', fontSize: '0.78rem', fontWeight: 700 }}>{b.text}</span>
+                        </div>
+                        <div style={{ color: '#334155', fontSize: '0.84rem', margin: '0.4rem 0' }}>{t('{n} 人參加 · {a} 人接受挑戰 · {m} 人已完成', '{n} joined · {a} accepted the challenge · {m} completed').replace('{n}', String(oc.joined || 0)).replace('{a}', String(oc.accepted || 0)).replace('{m}', String(oc.completed || 0))}</div>
+                        {oc.status === 'pending' && <div style={{ color: '#92400e', background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 8, padding: '0.5rem 0.7rem', fontSize: '0.85rem' }}>{t('已送出，等待審核', 'Submitted, awaiting review')}</div>}
+                        <button type="button" onClick={() => setContestCreateDraft(d => ({ ...d, orgPlaceId: oc.orgPlaceId, setId: oc.setId, name: oc.name, seriesId: oc.seriesId }))} style={{ marginTop: '0.6rem', background: 'transparent', border: '1px solid #2563eb', color: '#2563eb', borderRadius: 8, padding: '0.35rem 0.9rem', cursor: 'pointer', fontWeight: 700, fontSize: '0.82rem' }}>🔁 {t('再開一輪（沿用同系列）', 'Start another round (same series)')}</button>
+                      </div>
+                    ); })}
+
+                    {userEmail && eligibleOrgPlaces.length > 0 && (
+                      <div style={card} data-testid="contest-create">
+                        <h3 style={h3}>⛪ {t('建立讀經比賽', 'Create a reading contest')}</h3>
+                        <div style={{ color: '#475569', fontSize: '0.88rem', lineHeight: 1.6 }}>{t('你的教會／機構已在地圖上，可以選一組主題經文，公告一段期間的讀經比賽。', 'Your church / organisation is on the map, so it can pick a topic verse set and announce a reading contest for a period.')}</div>
+                        <label style={label}>{t('教會／機構標記', 'Church / organisation marker')}</label>
+                        <select value={contestCreateDraft.orgPlaceId} onChange={e => setContestCreateDraft(d => ({ ...d, orgPlaceId: e.target.value }))} style={field}>
+                          <option value="">{t('請選擇', 'Choose')}</option>
+                          {eligibleOrgPlaces.map(pl => <option key={pl.id} value={pl.id}>{pl.name}</option>)}
+                        </select>
+                        <div style={{ color: '#94a3b8', fontSize: '0.78rem', marginTop: 4 }}>{t('同一個教會／機構可以建立多個活動（最多 5 個進行中）。', 'One church / organisation can run several contests (up to 5 open at once).')}</div>
+                        <label style={label}>{t('主題經文組', 'Topic verse set')}</label>
+                        <select value={contestCreateDraft.setId} onChange={e => setContestCreateDraft(d => ({ ...d, setId: e.target.value }))} style={field}>
+                          <option value="">{t('請選擇', 'Choose')}</option>
+                          {topicVerseSets.map(s => <option key={s.id} value={s.id}>{s.title}（{(s.verses || []).length} {t('節', 'verses')}）</option>)}
+                        </select>
+                        <label style={label}>{t('活動名稱', 'Contest name')}</label>
+                        <input type="text" maxLength={60} value={contestCreateDraft.name} onChange={e => setContestCreateDraft(d => ({ ...d, name: e.target.value }))} placeholder={t('例如：互惠經濟讀經比賽', 'e.g. Mutual Economy reading contest')} style={field} />
+                        <label style={label}>{t('活動說明', 'Description')}</label>
+                        <textarea maxLength={300} rows={3} value={contestCreateDraft.description} onChange={e => setContestCreateDraft(d => ({ ...d, description: e.target.value }))} placeholder={t('例如：讀完整組經文即完成，公告時間內截止。', 'e.g. Finish the whole set before the deadline.')} style={{ ...field, resize: 'vertical' }} />
+                        <label style={label}>{t('獎勵說明（由機構自行發放）', 'Reward (given by the organisation itself)')}</label>
+                        <textarea maxLength={300} rows={2} value={contestCreateDraft.rewardDescription} onChange={e => setContestCreateDraft(d => ({ ...d, rewardDescription: e.target.value }))} placeholder={t('例如：完成者致贈紀念品一份', 'e.g. A keepsake for everyone who finishes')} style={{ ...field, resize: 'vertical' }} />
+                        <div style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap' }}>
+                          <div style={{ flex: 1, minWidth: 140 }}>
+                            <label style={label}>{t('開始日期', 'Start date')}</label>
+                            <input type="date" value={contestCreateDraft.startsAt} onChange={e => setContestCreateDraft(d => ({ ...d, startsAt: e.target.value }))} style={field} />
+                          </div>
+                          <div style={{ flex: 1, minWidth: 140 }}>
+                            <label style={label}>{t('結束日期', 'End date')}</label>
+                            <input type="date" value={contestCreateDraft.endsAt} onChange={e => setContestCreateDraft(d => ({ ...d, endsAt: e.target.value }))} style={field} />
+                          </div>
+                        </div>
+                        <label style={{ display: 'flex', gap: '0.5rem', alignItems: 'flex-start', marginTop: '0.8rem', fontSize: '0.82rem', color: '#475569', lineHeight: 1.5 }}>
+                          <input type="checkbox" checked={contestCreateDraft.agree} onChange={e => setContestCreateDraft(d => ({ ...d, agree: e.target.checked }))} style={{ marginTop: 3 }} />
+                          <span>{t('我確認本機構了解：獎勵由機構自行發放，經文雨僅記錄完成名單，不經手任何獎勵或款項。', 'I confirm the organisation understands it hands out the reward itself — VerseRain only records who completed and never handles the reward or any money.')}</span>
+                        </label>
+                        <button type="button" disabled={contestCreateBusy || !contestCreateDraft.agree || !contestCreateDraft.orgPlaceId || !contestCreateDraft.setId} onClick={createContest} style={{ marginTop: '0.8rem', background: (contestCreateDraft.agree && contestCreateDraft.orgPlaceId && contestCreateDraft.setId) ? '#2563eb' : '#e2e8f0', color: (contestCreateDraft.agree && contestCreateDraft.orgPlaceId && contestCreateDraft.setId) ? '#fff' : '#94a3b8', border: 'none', borderRadius: 8, padding: '0.5rem 1.1rem', cursor: contestCreateBusy ? 'wait' : 'pointer', fontWeight: 800 }}>{contestCreateBusy ? '…' : `📖 ${t('送出審核', 'Submit for review')}`}</button>
                       </div>
                     )}
                   </div>
@@ -31072,6 +31476,7 @@ const deDict = {
                       onEnableAudio={initAudio}
                       onRedeem={openRedeem}
                       onOpenPool={(poolId) => { setCharityFocus(poolId); setMainTab('charity'); }}
+                      onOpenContest={(contestId) => { setContestFocus(contestId); setMainTab('contests'); }}
                       onViewGarden={(name) => {
                       handleViewPlayerGarden(name);
                     }} onJoinRoom={(roomId) => {
@@ -33320,9 +33725,9 @@ const deDict = {
                 <button onClick={() => setShowEncouragePanel(false)} style={{ background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer', padding: 0 }}><XCircle size={22} /></button>
               </div>
               <div style={{ flex: '1 1 auto', minHeight: 0, overflowY: 'auto', padding: '0.6rem 0' }}>
-                {isSuperAdmin && adminPending && (adminPending.pools > 0 || adminPending.places > 0) && (
+                {isSuperAdmin && adminPending && (adminPending.pools > 0 || adminPending.places > 0 || adminPending.contests > 0) && (
                   <div data-testid="admin-pending-banner" style={{ margin: '0 0.9rem 0.5rem', background: '#fff1f2', border: '1px solid #fecdd3', borderRadius: 10, padding: '0.6rem 0.8rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
-                    <span style={{ color: '#9f1239', fontWeight: 700, fontSize: '0.88rem' }}>{t('待審核：{a} 個愛心折抵池、{b} 個地圖標記', 'Awaiting review: {a} charity pools, {b} map markers').replace('{a}', String(adminPending.pools)).replace('{b}', String(adminPending.places))}</span>
+                    <span style={{ color: '#9f1239', fontWeight: 700, fontSize: '0.88rem' }}>{t('待審核：{a} 個愛心折抵池、{b} 個地圖標記、{c} 個讀經比賽', 'Awaiting review: {a} charity pools, {b} map markers, {c} reading contests').replace('{a}', String(adminPending.pools)).replace('{b}', String(adminPending.places)).replace('{c}', String(adminPending.contests || 0))}</span>
                     <button onClick={() => { setShowEncouragePanel(false); setMainTab('rewards_admin'); }} style={{ background: '#be123c', color: '#fff', border: 'none', borderRadius: 8, padding: '0.3rem 0.8rem', fontSize: '0.82rem', fontWeight: 700, cursor: 'pointer' }}>{t('去審核', 'Review it')} →</button>
                   </div>
                 )}
@@ -33459,6 +33864,41 @@ const deDict = {
                           </div>
                           {isSuperAdmin && (
                             <button onClick={() => { setShowEncouragePanel(false); setMainTab('rewards_admin'); }} style={{ marginTop: 6, background: '#be123c', color: '#fff', border: 'none', borderRadius: 8, padding: '0.35rem 0.9rem', fontSize: '0.82rem', fontWeight: 700, cursor: 'pointer' }}>{t('去審核', 'Review it')} →</button>
+                          )}
+                          <div style={{ color: '#cbd5e1', fontSize: '0.72rem', marginTop: 2 }}>{new Date(it.at).toLocaleString()}</div>
+                        </div>
+                      </div>
+                    );
+                  }
+                  // 讀經比賽: someone joined or completed (organisation), review outcome (organisation).
+                  if (['contest_joined', 'contest_completed', 'contest_approved', 'contest_rejected'].includes(it.kind)) {
+                    const text = it.kind === 'contest_joined'
+                      ? t('{who} 加入了「{name}」讀經比賽', '{who} joined the reading contest “{name}”').replace('{who}', String(it.who || '')).replace('{name}', String(it.name || ''))
+                      : it.kind === 'contest_completed'
+                        ? t('🎉 {who} 完成了「{name}」讀經比賽，記得安排獎勵！', '🎉 {who} finished “{name}” — remember to arrange the reward!').replace('{who}', String(it.who || '')).replace('{name}', String(it.name || ''))
+                        : it.kind === 'contest_approved'
+                          ? t('你的讀經比賽「{name}」已通過審核，現在可以邀請大家參加了 📖', 'Your reading contest “{name}” was approved and can now take participants 📖').replace('{name}', String(it.name || ''))
+                          : t('你的讀經比賽「{name}」未通過審核，請聯絡管理員了解原因', 'Your reading contest “{name}” was not approved; please contact an admin').replace('{name}', String(it.name || ''));
+                    return (
+                      <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '0.6rem 1.3rem', background: '#eff6ff' }}>
+                        <span style={{ fontSize: '1.2rem', flexShrink: 0 }}>{it.kind === 'contest_completed' ? '🎉' : it.kind === 'contest_rejected' ? '⚠️' : '📖'}</span>
+                        <div style={{ minWidth: 0 }}>
+                          <div style={{ color: '#334155', fontSize: '0.9rem', lineHeight: 1.45 }}>{text}</div>
+                          <div style={{ color: '#cbd5e1', fontSize: '0.72rem', marginTop: 2 }}>{new Date(it.at).toLocaleString()}</div>
+                        </div>
+                      </div>
+                    );
+                  }
+                  if (it.kind === 'contest_submitted') {
+                    return (
+                      <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '0.6rem 1.3rem', background: '#eff6ff' }}>
+                        <span style={{ fontSize: '1.2rem', flexShrink: 0 }}>📖</span>
+                        <div style={{ minWidth: 0, flex: 1 }}>
+                          <div style={{ color: '#334155', fontSize: '0.9rem', lineHeight: 1.45 }}>
+                            {t('{who} 為「{org}」建立了讀經比賽「{name}」，等你審核', '{who} opened the reading contest “{name}” for “{org}” — awaiting your review').replace('{who}', String(it.by || '')).replace('{org}', String(it.orgPlaceName || '')).replace('{name}', String(it.name || ''))}
+                          </div>
+                          {isSuperAdmin && (
+                            <button onClick={() => { setShowEncouragePanel(false); setMainTab('rewards_admin'); }} style={{ marginTop: 6, background: '#1d4ed8', color: '#fff', border: 'none', borderRadius: 8, padding: '0.35rem 0.9rem', fontSize: '0.82rem', fontWeight: 700, cursor: 'pointer' }}>{t('去審核', 'Review it')} →</button>
                           )}
                           <div style={{ color: '#cbd5e1', fontSize: '0.72rem', marginTop: 2 }}>{new Date(it.at).toLocaleString()}</div>
                         </div>

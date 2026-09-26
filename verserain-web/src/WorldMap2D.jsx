@@ -65,11 +65,17 @@ const PLACE_STYLE = {
 // church is still recognisable and the heart reads as "contribute here".
 const POOL_BADGE = '<span class="vr-pool-badge" style="position:absolute;right:-10px;top:-8px;width:18px;height:18px;border-radius:50%;background:#fff;border:1.5px solid #fecdd3;box-shadow:0 1px 4px rgba(0,0,0,0.35);display:flex;align-items:center;justify-content:center;font-size:11px;line-height:1;">❤️</span>';
 const POOL_HALO = '<span class="vr-pool-halo" style="position:absolute;inset:-6px;border-radius:50%;border:2px solid rgba(225,29,72,0.7);pointer-events:none;"></span>';
+// A church / org running a Bible reading contest (讀經比賽) gets a 📖 badge at
+// its LEFT shoulder (the ❤️ pool badge already owns the right one) plus its
+// own blue halo, drawn one ring further out (inset:-9px vs the pool's -6px)
+// so both stay visible as concentric rings when a marker has both.
+const CONTEST_BADGE = '<span class="vr-contest-badge" style="position:absolute;left:-10px;top:-8px;width:18px;height:18px;border-radius:50%;background:#fff;border:1.5px solid #bfdbfe;box-shadow:0 1px 4px rgba(0,0,0,0.35);display:flex;align-items:center;justify-content:center;font-size:11px;line-height:1;">📖</span>';
+const CONTEST_HALO = '<span class="vr-contest-halo" style="position:absolute;inset:-9px;border-radius:50%;border:2px solid rgba(37,99,235,0.7);pointer-events:none;"></span>';
 const escapeHtml = (v) => String(v ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
 const TEAMS_HOST = 'https://verserain-party.hungry4grace.partykit.dev/parties/main/global-auth-db';
 
-export default function WorldMap2D({ t, playerName, userEmail, onJoinRoom, onViewGarden, onToggleMode, currentMode, focusLocation, playTone, playWelcome, onEnableAudio, fruitMode = false, fruitTree = null, fruitLoading = false, onToggleFruit, selfLocation = null, places = [], placesMode = false, onTogglePlaces, onRedeem, onOpenPool }) {
+export default function WorldMap2D({ t, playerName, userEmail, onJoinRoom, onViewGarden, onToggleMode, currentMode, focusLocation, playTone, playWelcome, onEnableAudio, fruitMode = false, fruitTree = null, fruitLoading = false, onToggleFruit, selfLocation = null, places = [], placesMode = false, onTogglePlaces, onRedeem, onOpenPool, onOpenContest }) {
   // 我的果子: name → 1 (I invited them) | 2 (they were invited by someone I invited)
   const fruitLevel = useMemo(() => {
     const m = new Map();
@@ -200,11 +206,13 @@ export default function WorldMap2D({ t, playerName, userEmail, onJoinRoom, onVie
   const placesRef = useRef(places);
   const onRedeemRef = useRef(onRedeem);
   const onOpenPoolRef = useRef(onOpenPool);
+  const onOpenContestRef = useRef(onOpenContest);
   const openedPlaceRef = useRef(null);
   const [mapReady, setMapReady] = useState(false);
   useEffect(() => { placesRef.current = places; }, [places]);
   useEffect(() => { onRedeemRef.current = onRedeem; }, [onRedeem]);
   useEffect(() => { onOpenPoolRef.current = onOpenPool; }, [onOpenPool]);
+  useEffect(() => { onOpenContestRef.current = onOpenContest; }, [onOpenContest]);
 
   // Init Leaflet map and markers
   const initialFlyDone = useRef(false);
@@ -459,6 +467,8 @@ export default function WorldMap2D({ t, playerName, userEmail, onJoinRoom, onVie
               if (redeemBtn) redeemBtn.onclick = () => { const id = redeemBtn.getAttribute('data-place-id'); onRedeemRef.current?.((placesRef.current || []).find(pl => pl.id === id) || { id }); };
               const poolBtn = node.querySelector('.map-pool-btn');
               if (poolBtn) poolBtn.onclick = () => { onOpenPoolRef.current?.(poolBtn.getAttribute('data-pool-id')); };
+              const contestBtn = node.querySelector('.map-contest-btn');
+              if (contestBtn) contestBtn.onclick = () => { onOpenContestRef.current?.(contestBtn.getAttribute('data-contest-id')); };
               const img = node.querySelector('.map-place-photo');
               if (img && img.getAttribute('data-asset') && !img.getAttribute('src')) {
                 getSetAssetDataUrl(img.getAttribute('data-set'), img.getAttribute('data-asset'), img.getAttribute('data-mime') || 'image/webp')
@@ -580,15 +590,17 @@ export default function WorldMap2D({ t, playerName, userEmail, onJoinRoom, onVie
       if (!pl || !Number.isFinite(Number(pl.lat)) || !Number.isFinite(Number(pl.lng))) return;
       const st = PLACE_STYLE[pl.kind] || PLACE_STYLE.org;
       const pool = pl.poolId ? POOL_HALO + POOL_BADGE : '';
+      const contest = pl.contestId ? CONTEST_HALO + CONTEST_BADGE : '';
       const pct = pl.kind === 'merchant' && pl.discountPct ? `<span style="position:absolute;right:-8px;bottom:-6px;background:#fff;color:#be123c;border:1px solid ${st.border};border-radius:999px;font-size:9px;font-weight:800;padding:0 4px;line-height:14px;">-${Number(pl.discountPct)}%</span>` : '';
       const icon = L.divIcon({
         className: 'vr-place-marker',
-        html: `<div style="position:relative;width:30px;height:30px;border-radius:${pl.kind === 'church' ? '50%' : '9px'};background:${st.bg};border:2px solid #fff;box-shadow:0 0 0 2px ${st.border}55, 0 3px 10px rgba(0,0,0,0.45);display:flex;align-items:center;justify-content:center;font-size:16px;cursor:pointer;">${st.emoji}${pct}${pool}</div>`,
+        html: `<div style="position:relative;width:30px;height:30px;border-radius:${pl.kind === 'church' ? '50%' : '9px'};background:${st.bg};border:2px solid #fff;box-shadow:0 0 0 2px ${st.border}55, 0 3px 10px rgba(0,0,0,0.45);display:flex;align-items:center;justify-content:center;font-size:16px;cursor:pointer;">${st.emoji}${pct}${pool}${contest}</div>`,
         iconSize: [30, 30], iconAnchor: [15, 15], popupAnchor: [0, -14],
       });
       const marker = L.marker([Number(pl.lat), Number(pl.lng)], { pane: 'placePane', icon, zIndexOffset: 1000 });
       const kindLabel = pl.kind === 'merchant' ? t('商家', 'Shop') : pl.kind === 'church' ? t('教會', 'Church') : t('機構', 'Organisation');
       const poolLine = pl.poolId ? `<div style="display:inline-block;background:#fff1f2;color:#9f1239;border:1px solid #fecdd3;border-radius:999px;padding:2px 10px;font-weight:800;font-size:0.85rem;margin-bottom:6px;">❤️ ${Number(pl.poolCount) > 1 ? escapeHtml(t('{n} 個愛心折抵池', '{n} charity pools').replace('{n}', String(pl.poolCount))) : escapeHtml(t('愛心折抵池', 'Charity discount pool'))}${pl.poolName ? `：${escapeHtml(pl.poolName)}${Number(pl.poolCount) > 1 ? '…' : ''}` : ''}</div>` : '';
+      const contestLine = pl.contestId ? `<div style="display:inline-block;background:#eff6ff;color:#1e40af;border:1px solid #bfdbfe;border-radius:999px;padding:2px 10px;font-weight:800;font-size:0.85rem;margin-bottom:6px;margin-left:4px;">📖 ${Number(pl.contestCount) > 1 ? escapeHtml(t('{n} 個讀經比賽', '{n} reading contests').replace('{n}', String(pl.contestCount))) : escapeHtml(t('讀經比賽', 'Reading contest'))}${pl.contestName ? `：${escapeHtml(pl.contestName)}${Number(pl.contestCount) > 1 ? '…' : ''}` : ''}</div>` : '';
       const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${pl.lat},${pl.lng}`)}`;
       const photo = pl.photoAssetId ? `<img class="map-place-photo" data-set="place:${escapeHtml(pl.id)}" data-asset="${escapeHtml(pl.photoAssetId)}" data-mime="${escapeHtml(pl.photoMime || 'image/webp')}" alt="" style="display:none;width:100%;max-height:140px;object-fit:cover;border-radius:8px;margin-bottom:6px;" />` : '';
       const discount = pl.kind === 'merchant' && pl.discountPct ? `<div style="display:inline-block;background:#fef3c7;color:#92400e;border-radius:999px;padding:2px 10px;font-weight:800;font-size:0.85rem;margin-bottom:6px;">🎟️ ${t('點數折抵 {n}%', '{n}% off with points').replace('{n}', String(Number(pl.discountPct)))}</div>` : '';
@@ -598,7 +610,7 @@ export default function WorldMap2D({ t, playerName, userEmail, onJoinRoom, onVie
           ${photo}
           <div style="font-size:0.72rem;color:#64748b;margin-bottom:2px;">${st.emoji} ${escapeHtml(kindLabel)}</div>
           <div style="font-weight:800;font-size:1.05rem;margin-bottom:4px;">${escapeHtml(pl.name)}</div>
-          ${poolLine}
+          ${poolLine}${contestLine}
           ${discount}
           ${text ? `<div style="font-size:0.85rem;color:#334155;line-height:1.5;margin-bottom:6px;white-space:pre-wrap;">${escapeHtml(text)}</div>` : ''}
           <div style="font-size:0.8rem;color:#64748b;margin-bottom:2px;">📍 <a href="${mapsUrl}" target="_blank" rel="noopener noreferrer" style="color:#2563eb;">${escapeHtml(pl.address)}</a></div>
@@ -607,6 +619,7 @@ export default function WorldMap2D({ t, playerName, userEmail, onJoinRoom, onVie
           ${pl.website ? `<div style="font-size:0.8rem;"><a href="${escapeHtml(pl.website)}" target="_blank" rel="noopener noreferrer" style="color:#2563eb;">🔗 ${escapeHtml(pl.website.replace(/^https?:\/\//, ''))}</a></div>` : ''}
           ${pl.kind === 'merchant' ? `<button class="map-redeem-btn" data-place-id="${escapeHtml(pl.id)}" style="margin-top:8px;width:100%;background:#f59e0b;color:#fff;border:none;border-radius:8px;padding:0.45rem 0.8rem;font-weight:800;cursor:pointer;">🎟️ ${escapeHtml(t('產生折扣券', 'Get a coupon'))}</button>` : ''}
           ${pl.poolId ? `<button class="map-pool-btn" data-pool-id="${escapeHtml(pl.poolId)}" style="margin-top:8px;width:100%;background:#e11d48;color:#fff;border:none;border-radius:8px;padding:0.45rem 0.8rem;font-weight:800;cursor:pointer;">❤️ ${escapeHtml(Number(pl.poolCount) > 1 ? t('看看這裡的愛心折抵池', 'See the charity pools here') : t('投入愛心折抵池', 'Contribute to the charity pool'))}</button>` : ''}
+          ${pl.contestId ? `<button class="map-contest-btn" data-contest-id="${escapeHtml(pl.contestId)}" style="margin-top:8px;width:100%;background:#2563eb;color:#fff;border:none;border-radius:8px;padding:0.45rem 0.8rem;font-weight:800;cursor:pointer;">📖 ${escapeHtml(Number(pl.contestCount) > 1 ? t('看看這裡的讀經比賽', 'See the reading contests here') : t('參加讀經比賽', 'Join the reading contest'))}</button>` : ''}
         </div>`;
       marker.bindPopup(L.popup({ maxWidth: 260, className: 'verse-map-popup' }).setContent(html));
       marker.on('click', (ev) => { L.DomEvent.stopPropagation(ev); });
@@ -867,6 +880,12 @@ export default function WorldMap2D({ t, playerName, userEmail, onJoinRoom, onVie
                   <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginTop: 3 }}>
                     <span style={{ position: 'relative', width: 14, height: 14, marginRight: 4, borderRadius: '50%', background: '#7c3aed', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 9 }}>⛪<span style={{ position: 'absolute', right: -6, top: -5, width: 10, height: 10, borderRadius: '50%', background: '#fff', border: '1px solid #fecdd3', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 6 }}>❤️</span></span>
                     <span>{t('加 ❤️ = 有愛心折抵池，可投入點數', '+ ❤️ = has a charity pool, contribute here')}</span>
+                  </div>
+                )}
+                {places.some(pl => pl && pl.contestId) && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginTop: 3 }}>
+                    <span style={{ position: 'relative', width: 14, height: 14, marginRight: 4, borderRadius: '50%', background: '#7c3aed', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 9 }}>⛪<span style={{ position: 'absolute', left: -6, top: -5, width: 10, height: 10, borderRadius: '50%', background: '#fff', border: '1px solid #bfdbfe', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 6 }}>📖</span></span>
+                    <span>{t('加 📖 = 有讀經比賽，可以參加', '+ 📖 = has a reading contest, join here')}</span>
                   </div>
                 )}
               </div>

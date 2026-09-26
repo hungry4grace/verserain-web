@@ -54,6 +54,20 @@ export function poolSubmittedMessage(pool, who) {
   };
 }
 
+// A church / organisation opened a Bible reading contest (讀經比賽) that needs review.
+export function contestSubmittedMessage(contest, who) {
+  const name = String((contest && contest.name) || '').slice(0, 60);
+  const org = String((contest && contest.orgPlaceName) || '').slice(0, 60);
+  const by = String(who || '').slice(0, 40) || '有人';
+  return {
+    record: { kind: 'contest_submitted', contestId: contest.id, name, orgPlaceName: org, by },
+    title: '📖 新的讀經比賽待審核',
+    body: `${by} 為「${org || name}」建立了讀經比賽「${name}」，請到獎勵管理審核`,
+    url: 'https://www.verserain.com/#rewards_admin',
+    tag: `verserain-contest-${contest.id}`,
+  };
+}
+
 const FIELD_ZH = { kind: '類型', name: '名稱', address: '地址', lat: '位置', lng: '位置', discountPct: '折扣', dailyPerPerson: '每人每天張數' };
 
 // An owner changed something that needs a fresh look (name, address, spot,

@@ -1890,3 +1890,12 @@ textarea {
 }
 .vr-pool-halo { animation: vr-pool-pulse 2.2s ease-out infinite; }
 @media (prefers-reduced-motion: reduce) { .vr-pool-halo { animation: none; opacity: 0.6; } }
+
+/* 讀經比賽 halo on a church / org marker (WorldMap2D / WorldMap3D) */
+@keyframes vr-contest-pulse {
+  0% { transform: scale(0.9); opacity: 0.9; }
+  70% { transform: scale(1.35); opacity: 0; }
+  100% { transform: scale(1.35); opacity: 0; }
+}
+.vr-contest-halo { animation: vr-contest-pulse 2.2s ease-out infinite; }
+@media (prefers-reduced-motion: reduce) { .vr-contest-halo { animation: none; opacity: 0.6; } }
