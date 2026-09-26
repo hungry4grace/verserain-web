@@ -17,10 +17,10 @@ import { BIBLE_BOOKS, getBookAbbr, getBookFullName } from './bibleDictionary';
 import I18N_FILLINS from './i18nFillins';
 import { PREMIUM_EMAILS } from './premiumEmails';
 import ChallengeSetupModal, { loadChallengeSetup } from './ChallengeSetupModal';
-import GardenView from './GardenView.jsx';
+import GardenView, { GardenSprite } from './GardenView.jsx';
 import VoucherScanner from './VoucherScanner.jsx';
 import { extractReferralCode, REFERRAL_CODE_RE } from './lib/referralCode.js';
-import { isBlankRef } from './lib/gardenView.js';
+import { isBlankRef, stageBg, stageLabelPair } from './lib/gardenView.js';
 import { GOOGLE_CLIENT_ID, APPLE_CLIENT_ID, APPLE_REDIRECT_URI, LINE_CHANNEL_ID, startLineLogin } from './oauthConfig';
 import { VAPID_PUBLIC_KEY, urlBase64ToUint8Array, isWebPushSupported, isIOSStandalone, isIOSWithoutPWA, hasNativeDailyPush, callNativeDailyPush } from './pushConfig';
 import { setVoiceApi, uploadVerseVoice, uploadSetAsset, compressBackgroundImage, getSetAssetDataUrl, userVoiceApi, uploadUserVerseVoice, voiceOwnerId, voiceCommentApi, uploadVoiceComment } from './setVoiceApi';
@@ -26268,7 +26268,7 @@ const deDict = {
                     verserain
                   </div>
                   <div className="app-brand-version" style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', marginTop: '4px', marginLeft: '2px' }}>
-                    v4.0.90
+                    v4.0.91
                   </div>
                 </div>
                 <div ref={langPickerRef} className="app-lang-control" style={{ position: 'relative' }}>
@@ -28820,13 +28820,22 @@ const deDict = {
                             {VERSES_DB.map((v, i) => {
                               const vBest = parseInt(localStorage.getItem(`verseRainBestScore_${v.reference}`)) || 0;
                               const isSelected = selectedVerseRefs.includes(v.reference);
+                              const gEntry = (gardenData || {})[v.reference];
 
                               return (
                                 <tr key={i} style={{ borderBottom: '1px solid #e2e8f0', backgroundColor: isSelected ? '#eff6ff' : (i % 2 === 0 ? '#ffffff' : '#f8fafc'), transition: 'background 0.2s', cursor: 'pointer' }} onClick={() => toggleSelection(v.reference)}>
                                   <td style={{ padding: '0.8rem 1rem', fontWeight: 'bold', color: '#1e293b', fontSize: '0.95rem' }} onClick={(e) => { e.stopPropagation(); setVerseViewModal({ ...v, setId: currentSet?.id }); }}>
-                                    <button style={{ background: 'none', border: 'none', padding: 0, margin: 0, color: '#3b82f6', textDecoration: 'underline', cursor: 'pointer', fontWeight: 'bold', fontSize: 'inherit', fontFamily: 'inherit' }}>
-                                      {formatVerseReferenceForDisplay(v.reference, version)}
-                                    </button>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                                      <span
+                                        title={gEntry ? `${t(...stageLabelPair(gEntry.stage))}${gEntry.fruits ? ` 🍎×${gEntry.fruits}` : ''}` : t('空地', 'Empty')}
+                                        style={{ position: 'relative', width: '28px', height: '28px', flexShrink: 0, borderRadius: '5px', background: gEntry ? stageBg(gEntry.stage) : '#5d4037', border: '1px solid rgba(0,0,0,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                                      >
+                                        {gEntry && <GardenSprite stage={gEntry.stage} fruits={gEntry.fruits} />}
+                                      </span>
+                                      <button style={{ background: 'none', border: 'none', padding: 0, margin: 0, color: '#3b82f6', textDecoration: 'underline', cursor: 'pointer', fontWeight: 'bold', fontSize: 'inherit', fontFamily: 'inherit' }}>
+                                        {formatVerseReferenceForDisplay(v.reference, version)}
+                                      </button>
+                                    </div>
                                   </td>
                                   <td style={{ padding: '0.8rem 1rem', textAlign: 'center' }} onClick={(e) => e.stopPropagation()}>
                                     <button
