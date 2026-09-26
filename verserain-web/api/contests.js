@@ -26,7 +26,7 @@ import {
 //   POST { action:'create', email, sessionKey, contest:{ orgPlaceId, name, setId, setTitle, verses, startsAt, endsAt, ... } }
 //   POST { action:'join', email, sessionKey, contestId }
 //   POST { action:'accept_challenge', email, sessionKey, contestId }
-//   POST { action:'submit_score', email, sessionKey, contestId, setId, score }
+//   POST { action:'submit_score', email, sessionKey, contestId, setId, verseRef, score }
 //   POST { action:'claim_completion', email, sessionKey, contestId }   → server verifies via PartyKit garden data
 //   POST { action:'approve'|'reject'|'close', adminEmail, contestId }
 //   POST { action:'create', adminEmail, contest:{...} }   admin → approved at once
@@ -35,7 +35,7 @@ const ERROR_STATUS = {
   not_eligible: 403, not_owner: 403,
   contest_unavailable: 404, not_found: 404, org_place_invalid: 400,
   name_required: 400, set_required: 400, verses_required: 400, ends_after_starts: 400,
-  invalid_state: 400, join_required: 400, challenge_required: 400, set_mismatch: 400, score_invalid: 400,
+  invalid_state: 400, join_required: 400, challenge_required: 400, set_mismatch: 400, verse_mismatch: 400, score_invalid: 400,
   contest_limit: 409, contest_closed: 409,
   rate_limited: 429, daily_limit: 429,
 };
@@ -159,7 +159,7 @@ async function submitScoreAction(req, res, redis, body, now) {
   const { email, identity } = login;
   const contest = await getContest(redis, String(body.contestId || '').trim());
   if (!contest) throw new ContestError('contest_unavailable');
-  const { total } = await submitContestScore(redis, { contest, email, identity, setId: body.setId, score: body.score, now });
+  const { total } = await submitContestScore(redis, { contest, email, identity, setId: body.setId, verseRef: body.verseRef, score: body.score, now });
   return res.status(200).json({ success: true, total });
 }
 

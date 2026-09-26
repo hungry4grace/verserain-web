@@ -9428,19 +9428,22 @@ export default function App() {
   // before reaching the server — it is the one place a finished, scored verse
   // is guaranteed to pass through, whichever mode got it here. `selectedSetId`
   // (not `activeCampaignSetId`, which only accessible/voice-mode runs ever
-  // set) tracks the set the challenged verse belongs to in every mode.
-  const submitContestScoreIfMatched = (score) => {
-    if (!userEmail || !sessionKey || !(score > 0) || !selectedSetId) return;
+  // set) tracks the set the challenged verse belongs to in every mode. The
+  // server keeps each verse's own best score and sums those, so `verseRef`
+  // must go along with `score` — replaying the same verse only raises the
+  // leaderboard total when it beats that verse's previous best.
+  const submitContestScoreIfMatched = (score, verseRef) => {
+    if (!userEmail || !sessionKey || !(score > 0) || !selectedSetId || !verseRef) return;
     const mine = contestMine && !contestMine.error ? contestMine.joined : [];
     const matches = mine.filter(c => c.accepted && c.setId === selectedSetId && c.status === 'approved');
     matches.forEach(c => {
       fetch('/api/contests', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'submit_score', email: userEmail, sessionKey, contestId: c.id, setId: c.setId, score }),
+        body: JSON.stringify({ action: 'submit_score', email: userEmail, sessionKey, contestId: c.id, setId: c.setId, verseRef, score }),
       }).then(() => loadContestMine()).catch(() => {});
     });
   };
-  const submitScoreToServer = (payload) => { submitContestScoreIfMatched(payload.score); return fetch('/api/submit-score', {
+  const submitScoreToServer = (payload) => { submitContestScoreIfMatched(payload.score, payload.verseRef); return fetch('/api/submit-score', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ ...payload, ...(userEmail && sessionKey ? { email: userEmail, sessionKey } : {}) }),
@@ -9991,7 +9994,7 @@ export default function App() {
     const passed = verses.filter(ref => ((gardenData || {})[ref] || {}).stage >= 10).length;
     return { passed, total: verses.length };
   };
-  const contestNoticeText = () => t('讀完整組經文（每一節都練到「已熟練」）即可申請認證，機構會依公告方式頒發獎勵；經文雨不經手獎勵本身。額外接受「背經文挑戰」的分數，只計算這組經文、活動期間內的挑戰成績，累加進這次活動的排行榜。', 'Finish every verse of the set (each one practised to "mastered") to apply for certified completion — the organisation hands out the reward itself, off the app. If you also accept the memorisation challenge, only Challenge runs on this set during the contest window count, added up on this contest’s own leaderboard.');
+  const contestNoticeText = () => t('讀完整組經文（每一節都練到「已熟練」）即可申請認證，機構會依公告方式頒發獎勵；經文雨不經手獎勵本身。額外接受「背經文挑戰」的話，活動期間內這組經文每一節只算你自己的最高分，加總成為排行榜分數——重複挑戰同一節不會增加總分，除非破了自己的紀錄。', 'Finish every verse of the set (each one practised to "mastered") to apply for certified completion — the organisation hands out the reward itself, off the app. If you also accept the memorisation challenge, only your own best score on each verse of this set during the contest window counts — the leaderboard total is the sum of those bests, so replaying the same verse won’t raise your score unless you beat your own record.');
   const joinContestAction = async (contest) => {
     if (!contest || !contest.id) return;
     if (!userEmail) { setShowLoginModal('login'); setToast(t('請先登入才能參加', 'Sign in to join')); setTimeout(() => setToast(null), 2500); return; }
@@ -26265,7 +26268,7 @@ const deDict = {
                     verserain
                   </div>
                   <div className="app-brand-version" style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', marginTop: '4px', marginLeft: '2px' }}>
-                    v4.0.89
+                    v4.0.90
                   </div>
                 </div>
                 <div ref={langPickerRef} className="app-lang-control" style={{ position: 'relative' }}>
@@ -30394,7 +30397,7 @@ const deDict = {
                                       )}
                                     </div>
                                     {mineC.accepted && (
-                                      <div style={{ color: '#94a3b8', fontSize: '0.76rem', marginTop: '0.4rem' }}>{t('到「背經文挑戰」選「{s}」這組經文來玩，分數會自動累加到這個活動。', 'Go to Memorise mode and pick “{s}” — your score is added to this contest automatically.').replace('{s}', c.setTitle)}</div>
+                                      <div style={{ color: '#94a3b8', fontSize: '0.76rem', marginTop: '0.4rem' }}>{t('到「背經文挑戰」選「{s}」這組經文來玩，每一節的最高分會自動加總到這個活動的排行榜。', 'Go to Memorise mode and pick “{s}” — your best score on each verse is added to this contest’s leaderboard automatically.').replace('{s}', c.setTitle)}</div>
                                     )}
                                     {contestLeaderboards[c.id] === undefined ? (
                                       <button type="button" onClick={() => loadContestLeaderboard(c.id)} style={{ marginTop: '0.5rem', background: 'transparent', border: 'none', color: '#2563eb', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 700 }}>🏆 {t('看排行榜', 'See the leaderboard')}</button>
