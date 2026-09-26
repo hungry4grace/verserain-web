@@ -8086,6 +8086,24 @@ export default function App() {
 
   const [activeVerse, setActiveVerse] = useState(VERSES_DB[0] || { reference: "N/A", text: "" });
   const [selectedVerseRefs, setSelectedVerseRefs] = useState([VERSES_DB[0]?.reference || "N/A"]);
+  // Verse list table: default is the set's own order; "未通過優先" resorts so
+  // not-yet-mastered verses (lowest garden stage first, i.e. most needing
+  // practice) come before anything already 已熟練 (stage ≥ 10).
+  const [verseSortNeedsPractice, setVerseSortNeedsPractice] = useState(false);
+  const verseRowsWithGarden = React.useMemo(() => {
+    const rows = VERSES_DB.map((v, i) => {
+      const gKey = findGardenKey(gardenData || {}, v.reference, verseRefKey);
+      return { v, i, gEntry: gKey ? gardenData[gKey] : null };
+    });
+    if (!verseSortNeedsPractice) return rows;
+    return [...rows].sort((a, b) => {
+      const aStage = a.gEntry?.stage || 0;
+      const bStage = b.gEntry?.stage || 0;
+      const aPassed = aStage >= 10, bPassed = bStage >= 10;
+      if (aPassed !== bPassed) return aPassed ? 1 : -1;
+      return aStage - bStage || a.i - b.i;
+    });
+  }, [VERSES_DB, gardenData, verseSortNeedsPractice]);
 
   useEffect(() => {
     if (activeVerse?.reference === "N/A" && VERSES_DB && VERSES_DB.length > 0 && VERSES_DB[0].reference !== "N/A") {
@@ -9991,7 +10009,14 @@ export default function App() {
   // completion, so nothing here has to be trusted.
   const contestProgress = (contest) => {
     const verses = (contest && contest.verses) || [];
-    const passed = verses.filter(ref => ((gardenData || {})[ref] || {}).stage >= 10).length;
+    // Same normalized lookup as the verse-set page's status icons — a verse
+    // planted under a differently-formatted spelling of the reference must
+    // still count as passed here, or this progress bar undercounts against
+    // what the icons show.
+    const passed = verses.filter(ref => {
+      const gKey = findGardenKey(gardenData || {}, ref, verseRefKey);
+      return gKey && (gardenData[gKey].stage || 0) >= 10;
+    }).length;
     return { passed, total: verses.length };
   };
   const contestNoticeText = () => t('讀完整組經文（每一節都練到「已熟練」）即可申請認證，機構會依公告方式頒發獎勵；經文雨不經手獎勵本身。額外接受「背經文挑戰」的話，活動期間內這組經文每一節只算你自己的最高分，加總成為排行榜分數——重複挑戰同一節不會增加總分，除非破了自己的紀錄。', 'Finish every verse of the set (each one practised to "mastered") to apply for certified completion — the organisation hands out the reward itself, off the app. If you also accept the memorisation challenge, only your own best score on each verse of this set during the contest window counts — the leaderboard total is the sum of those bests, so replaying the same verse won’t raise your score unless you beat your own record.');
@@ -26268,7 +26293,7 @@ const deDict = {
                     verserain
                   </div>
                   <div className="app-brand-version" style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', marginTop: '4px', marginLeft: '2px' }}>
-                    v4.0.93
+                    v4.0.94
                   </div>
                 </div>
                 <div ref={langPickerRef} className="app-lang-control" style={{ position: 'relative' }}>
@@ -28808,6 +28833,15 @@ const deDict = {
                             <div style={{ color: '#334155', fontSize: '1rem', lineHeight: '1.6' }} dangerouslySetInnerHTML={{ __html: currentSet.description }} className="ql-editor-content" />
                           </div>
                         )}
+                        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '0.5rem' }}>
+                          <button
+                            type="button"
+                            onClick={() => setVerseSortNeedsPractice(s => !s)}
+                            style={{ background: verseSortNeedsPractice ? '#dbeafe' : '#fff', border: '1px solid #93c5fd', color: '#1d4ed8', borderRadius: 999, padding: '0.3rem 0.8rem', fontSize: '0.82rem', fontWeight: 700, cursor: 'pointer' }}
+                          >
+                            {verseSortNeedsPractice ? `✓ ${t('未通過優先', 'Needs practice first')}` : t('未通過優先排序', 'Sort: needs practice first')}
+                          </button>
+                        </div>
                         <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
                           <thead>
                             <tr style={{ backgroundColor: '#f8fafc', color: '#475569', fontSize: '0.9rem' }}>
@@ -28817,19 +28851,12 @@ const deDict = {
                             </tr>
                           </thead>
                           <tbody>
-                            {VERSES_DB.map((v, i) => {
+                            {verseRowsWithGarden.map(({ v, i, gEntry }, rowPos) => {
                               const vBest = parseInt(localStorage.getItem(`verseRainBestScore_${v.reference}`)) || 0;
                               const isSelected = selectedVerseRefs.includes(v.reference);
-                              // A verse can be planted under a differently-formatted spelling of the
-                              // same reference (e.g. played first from another set or language) — look
-                              // it up the same way updateGarden() decides whether to grow an existing
-                              // tree, not by exact key match, or an already-played verse would wrongly
-                              // show as empty soil here.
-                              const gKey = findGardenKey(gardenData || {}, v.reference, verseRefKey);
-                              const gEntry = gKey ? gardenData[gKey] : null;
 
                               return (
-                                <tr key={i} style={{ borderBottom: '1px solid #e2e8f0', backgroundColor: isSelected ? '#eff6ff' : (i % 2 === 0 ? '#ffffff' : '#f8fafc'), transition: 'background 0.2s', cursor: 'pointer' }} onClick={() => toggleSelection(v.reference)}>
+                                <tr key={i} style={{ borderBottom: '1px solid #e2e8f0', backgroundColor: isSelected ? '#eff6ff' : (rowPos % 2 === 0 ? '#ffffff' : '#f8fafc'), transition: 'background 0.2s', cursor: 'pointer' }} onClick={() => toggleSelection(v.reference)}>
                                   <td style={{ padding: '0.8rem 1rem', fontWeight: 'bold', color: '#1e293b', fontSize: '0.95rem' }} onClick={(e) => { e.stopPropagation(); setVerseViewModal({ ...v, setId: currentSet?.id }); }}>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
                                       <span
