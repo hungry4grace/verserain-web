@@ -176,6 +176,27 @@ test('score only counts for the right set/verse and an accepted challenger, whil
   assert.strictEqual(score, 600);
 });
 
+test('submitContestScore recognizes a verseRef spelled differently than the contest\'s own reference, and shares the same best-score bucket', async () => {
+  const r = stubRedis();
+  const c = approvedContest();
+  await joinContest(r, { contest: c, email: identity.email, identity, garden, now: '2026-10-05T00:00:00Z' });
+  await acceptChallenge(r, { contest: c, email: identity.email, identity, now: '2026-10-05T00:00:00Z' });
+
+  // VERSES[0] is '約翰福音 1:1' (traditional); submit under the simplified
+  // spelling instead — must be accepted, not rejected as verse_mismatch.
+  const first = await submitContestScore(r, { contest: c, email: identity.email, identity, setId: c.setId, verseRef: '约翰福音 1:1', score: 300, now: '2026-10-05T00:00:00Z' });
+  assert.strictEqual(first.total, 300);
+
+  // Replaying under the ORIGINAL (traditional) spelling with a lower score
+  // must land in the SAME best-score bucket as the simplified submission
+  // above, not a separate one — otherwise the two spellings could double count.
+  const replayOtherSpelling = await submitContestScore(r, { contest: c, email: identity.email, identity, setId: c.setId, verseRef: VERSES[0], score: 150, now: '2026-10-06T00:00:00Z' });
+  assert.strictEqual(replayOtherSpelling.total, 300, 'a lower score under a different spelling of the same verse must not add to the total');
+
+  const beatOwnRecord = await submitContestScore(r, { contest: c, email: identity.email, identity, setId: c.setId, verseRef: VERSES[0], score: 500, now: '2026-10-06T00:00:00Z' });
+  assert.strictEqual(beatOwnRecord.total, 500, 'beating the shared best (however it was spelled) raises the total by the improvement only');
+});
+
 test('leaderboard only lists challengers, ranked by the sum of each verse\'s own best score', async () => {
   const r = stubRedis();
   const c = approvedContest();
@@ -203,6 +224,20 @@ test('checkContestCompletion needs every verse at garden stage ≥ 10', () => {
   const r2 = checkContestCompletion(c, full);
   assert.strictEqual(r2.complete, true);
   assert.strictEqual(r2.passed, 3);
+});
+
+test('checkContestCompletion recognizes a verse planted under a differently-formatted spelling', () => {
+  const c = approvedContest();
+  // VERSES[0] is '約翰福音 1:1' (traditional); the garden has it planted under
+  // the simplified spelling instead — same verse, different literal string.
+  const mixed = {
+    '约翰福音 1:1': { stage: 10 },
+    [VERSES[1]]: { stage: 10 },
+    [VERSES[2]]: { stage: 10 },
+  };
+  const r = checkContestCompletion(c, mixed);
+  assert.strictEqual(r.complete, true, 'a verse planted under another spelling must still count as passed');
+  assert.strictEqual(r.passed, 3);
 });
 
 test('markCompleted requires having joined and is idempotent', async () => {
