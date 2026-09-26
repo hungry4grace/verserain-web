@@ -30,7 +30,7 @@ import { normEmail, taipeiDay, eligibility, maskName } from './points.js';
 // and completion checks below would silently reject a verse that was really
 // there, just spelled differently in the player's garden.
 import { verseRefKey } from '../../src/lib/verseRef.js';
-import { findGardenKey } from '../../src/lib/gardenSync.js';
+import { findGardenKeyIndexed, buildCanonicalGardenIndex } from '../../src/lib/gardenSync.js';
 
 export const CONTESTS_KEY = 'contest:list';
 export const CONTEST_ID_RE = /^rc_[a-z0-9]{8,20}$/;
@@ -276,16 +276,20 @@ export async function contestRank(redis, contestId, email) {
 // trust a client's own claim of completion). The garden entry can be planted
 // under a differently-formatted spelling of the same reference than the
 // contest's own snapshotted one (e.g. simplified vs. traditional book name,
-// or a different Bible version) — findGardenKey resolves that the same way
-// the client's own garden-status icons and updateGarden() do, so a verse the
+// or a different Bible version) — findGardenKeyIndexed resolves that the same
+// way the client's own garden-status icons and updateGarden() do, so a verse the
 // player genuinely mastered isn't wrongly counted as missing.
 export function checkContestCompletion(contest, gardenData) {
   const g = gardenData || {};
   const verses = (contest && contest.verses) || [];
   if (!verses.length) return { complete: false, passed: 0, total: 0 };
+  // One pass over the garden, then O(1) per verse — a rescan per verse here
+  // would be O(verses * gardenSize), which adds up for a player with a big
+  // garden checking a long contest.
+  const index = buildCanonicalGardenIndex(g, verseRefKey);
   let passed = 0;
   for (const ref of verses) {
-    const gKey = findGardenKey(g, ref, verseRefKey);
+    const gKey = findGardenKeyIndexed(index, g, ref, verseRefKey);
     if (gKey && (g[gKey].stage || 0) >= 10) passed += 1;
   }
   return { complete: passed >= verses.length, passed, total: verses.length };

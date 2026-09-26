@@ -3,7 +3,8 @@ import assert from 'node:assert';
 import {
   mergeGardens, stampTodayLogin, classifyGardenResponse,
   decideGardenSync, buildFruitAuthorKeys, aggregateFruitResults,
-  canonicalGardenKey, findGardenKey, dedupeGarden, repackGardenCells, compactGardenCells, gardenGapCount, tidyGarden,
+  canonicalGardenKey, findGardenKey, findGardenKeyIndexed, buildCanonicalGardenIndex,
+  dedupeGarden, repackGardenCells, compactGardenCells, gardenGapCount, tidyGarden,
   isTestFixtureRef, dropTestFixtures, dropBlankKeysMissingFrom, dropTombstoned,
 } from './gardenSync.js';
 
@@ -152,6 +153,17 @@ await test('findGardenKey: exact key, then same verse under another spelling, el
   assert.strictEqual(findGardenKey(gd, 'Matthew 9:14', keyFn), null);
   assert.strictEqual(findGardenKey(gd, '_activity', keyFn), null, 'never resolves to the activity map');
   assert.strictEqual(findGardenKey(gd, '  ', keyFn), null);
+});
+
+await test('findGardenKeyIndexed: same results as findGardenKey, via a prebuilt index', () => {
+  const gd = { 'Isaiah 55:10-11': { gridIndex: 3, stage: 1 }, '마태복음 9:13': { gridIndex: 20, stage: 2 }, _activity: {} };
+  const index = buildCanonicalGardenIndex(gd, keyFn);
+  assert.strictEqual(findGardenKeyIndexed(index, gd, 'Isaiah 55:10-11', keyFn), 'Isaiah 55:10-11');
+  assert.strictEqual(findGardenKeyIndexed(index, gd, '以賽亞書 55:10–11', keyFn), 'Isaiah 55:10-11');
+  assert.strictEqual(findGardenKeyIndexed(index, gd, '馬太福音 9:13', keyFn), '마태복음 9:13');
+  assert.strictEqual(findGardenKeyIndexed(index, gd, 'Matthew 9:14', keyFn), null);
+  assert.strictEqual(findGardenKeyIndexed(index, gd, '_activity', keyFn), null, 'never resolves to the activity map');
+  assert.strictEqual(findGardenKeyIndexed(index, gd, '  ', keyFn), null);
 });
 
 console.log('\none tree per cell (格子編號重複):');
