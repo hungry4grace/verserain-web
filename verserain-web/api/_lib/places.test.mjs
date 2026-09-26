@@ -108,7 +108,7 @@ test('publicView returns only approved places with public fields', () => {
   const hidden = { ...base, id: 'pl_hidden0001', status: 'hidden' };
   const v = publicView([approved, pending, hidden, null]);
   assert.strictEqual(v.length, 1);
-  assert.deepStrictEqual(Object.keys(v[0]).sort(), ['address', 'dailyPerPerson', 'description', 'discountPct', 'hours', 'id', 'kind', 'lat', 'lng', 'message', 'name', 'phone', 'photoAssetId', 'photoMime', 'poolCount', 'poolId', 'poolName', 'website'].sort());
+  assert.deepStrictEqual(Object.keys(v[0]).sort(), ['address', 'contestCount', 'contestId', 'contestName', 'dailyPerPerson', 'description', 'discountPct', 'hours', 'id', 'kind', 'lat', 'lng', 'message', 'name', 'phone', 'photoAssetId', 'photoMime', 'poolCount', 'poolId', 'poolName', 'website'].sort());
   assert.strictEqual(v[0].dailyPerPerson, 3);
   assert.strictEqual(v[0].poolId, '', 'no pool table → empty poolId');
   const withPool = publicView([approved, pending], { poolByPlace: { pl_approved01: 'cp_abc12345', pl_pending001: 'cp_zzz99999' } });
@@ -122,6 +122,12 @@ test('publicView returns only approved places with public fields', () => {
   assert.strictEqual(v[0].poolCount, 0, 'no pool → 0');
   const many = publicView([approved], { poolByPlace: { pl_approved01: { id: 'cp_abc12345', name: '愛筵', count: 3 } } });
   assert.strictEqual(many[0].poolCount, 3, 'a marker may run several pools');
+  assert.strictEqual(v[0].contestId, '', 'no contest table → empty contestId');
+  assert.strictEqual(v[0].contestCount, 0);
+  const withContest = publicView([approved], { contestByPlace: { pl_approved01: { id: 'rc_abc12345', name: '互惠經濟讀經比賽', count: 2 } } });
+  assert.strictEqual(withContest[0].contestId, 'rc_abc12345');
+  assert.strictEqual(withContest[0].contestName, '互惠經濟讀經比賽');
+  assert.strictEqual(withContest[0].contestCount, 2, 'a marker may run several contests');
   assert.strictEqual(v[0].id, 'pl_approved01');
   assert.strictEqual(v[0].phone, '02-1234');
   assert.ok(!('ownerEmail' in v[0]) && !('ownerCode' in v[0]) && !('note' in v[0]) && !('dailyCapNTD' in v[0]));

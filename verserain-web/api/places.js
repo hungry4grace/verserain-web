@@ -4,6 +4,7 @@ import { partyFetch } from './_lib/party.js';
 import { pushNotify } from './_lib/rewards.js';
 import { notifyAdmins, placeSubmittedMessage, placeResubmittedMessage } from './_lib/adminNotify.js';
 import { listPools } from './_lib/pools.js';
+import { listContests, contestIsOpen } from './_lib/contests.js';
 import {
   listPlaces, getPlace, savePlace, deletePlace, normalizePlaceSubmission, applyAdminAction, publicView,
   countSubmissionsToday, bumpSubmissions, taipeiDay, MAX_SUBMISSIONS_PER_DAY,
@@ -71,7 +72,8 @@ export default async function handler(req, res) {
       // approved marker shows for everyone within a few minutes. ?fresh=… is
       // the client's own cache-buster right after an admin action.
       res.setHeader('Cache-Control', q.fresh ? 'no-store' : 's-maxage=60, stale-while-revalidate=120');
-      return res.status(200).json({ places: publicView(await listPlaces(redis), { poolByPlace: await approvedPoolsByPlace(redis) }) });
+      const now = new Date();
+      return res.status(200).json({ places: publicView(await listPlaces(redis), { poolByPlace: await approvedPoolsByPlace(redis), contestByPlace: await approvedContestsByPlace(redis, now) }) });
     }
 
     const body = typeof req.body === 'string' ? safeJson(req.body) : (req.body || {});
@@ -180,6 +182,20 @@ async function approvedPoolsByPlace(redis) {
       if (p.status !== 'approved' || !p.orgPlaceId) continue;
       if (!out[p.orgPlaceId]) out[p.orgPlaceId] = { id: p.id, name: p.name, count: 0 };
       out[p.orgPlaceId].count += 1;
+    }
+    return out;
+  } catch { return {}; }
+}
+
+// { orgPlaceId → { id, name, count } } for the approved AND currently-open
+// (within its date range) Bible reading contests; fails soft.
+async function approvedContestsByPlace(redis, now) {
+  try {
+    const out = {};
+    for (const c of await listContests(redis)) {
+      if (!c.orgPlaceId || !contestIsOpen(c, now)) continue;
+      if (!out[c.orgPlaceId]) out[c.orgPlaceId] = { id: c.id, name: c.name, count: 0 };
+      out[c.orgPlaceId].count += 1;
     }
     return out;
   } catch { return {}; }

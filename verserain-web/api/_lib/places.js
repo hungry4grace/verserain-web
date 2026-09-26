@@ -256,7 +256,14 @@ function poolRef(map, placeId) {
   if (typeof v === 'string') return { id: v, name: '', count: 1 };
   return { id: String(v.id || ''), name: String(v.name || '').slice(0, 60), count: Math.max(1, Number(v.count) || 1) };
 }
-export function publicView(places, { poolByPlace = {} } = {}) {
+// Same shape as poolRef, for the approved+open Bible reading contests
+// (api/_lib/contests.js) a church/org place is running.
+function contestRef(map, placeId) {
+  const v = map && map[placeId];
+  if (!v) return { id: '', name: '', count: 0 };
+  return { id: String(v.id || ''), name: String(v.name || '').slice(0, 60), count: Math.max(1, Number(v.count) || 1) };
+}
+export function publicView(places, { poolByPlace = {}, contestByPlace = {} } = {}) {
   return (places || [])
     .filter((p) => p && p.status === 'approved')
     .map((p) => ({
@@ -264,6 +271,9 @@ export function publicView(places, { poolByPlace = {} } = {}) {
       poolId: poolRef(poolByPlace, p.id).id,
       poolName: poolRef(poolByPlace, p.id).name,
       poolCount: poolRef(poolByPlace, p.id).count,
+      contestId: contestRef(contestByPlace, p.id).id,
+      contestName: contestRef(contestByPlace, p.id).name,
+      contestCount: contestRef(contestByPlace, p.id).count,
       kind: p.kind,
       name: p.name,
       address: p.address,

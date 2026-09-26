@@ -331,7 +331,7 @@ export default function WorldMap3D({ t, playerName, onJoinRoom, onToggleMode, cu
 
   // 商家／教會／機構:不進叢集;點一下就切到 2D 並打開該標記的 popup。
   const PLACE_3D = { merchant: { bg: '#e11d48', emoji: '🏪' }, church: { bg: '#7c3aed', emoji: '⛪' }, org: { bg: '#0d9488', emoji: '🏢' } };
-  const placeElems = useMemo(() => (placesMode ? (places || []).filter(pl => pl && Number.isFinite(Number(pl.lat)) && Number.isFinite(Number(pl.lng))).map(pl => ({ isPlace: true, id: pl.id, kind: pl.kind, name: pl.name, discountPct: pl.discountPct, poolId: pl.poolId || '', poolName: pl.poolName || '', lat: Number(pl.lat), lng: Number(pl.lng) })) : []), [places, placesMode]);
+  const placeElems = useMemo(() => (placesMode ? (places || []).filter(pl => pl && Number.isFinite(Number(pl.lat)) && Number.isFinite(Number(pl.lng))).map(pl => ({ isPlace: true, id: pl.id, kind: pl.kind, name: pl.name, discountPct: pl.discountPct, poolId: pl.poolId || '', poolName: pl.poolName || '', contestId: pl.contestId || '', contestName: pl.contestName || '', lat: Number(pl.lat), lng: Number(pl.lng) })) : []), [places, placesMode]);
 
   const htmlElement = (d) => {
     const el = document.createElement('div');
@@ -339,8 +339,9 @@ export default function WorldMap3D({ t, playerName, onJoinRoom, onToggleMode, cu
     if (d.isPlace) {
       const st = PLACE_3D[d.kind] || PLACE_3D.org;
       const pool = d.poolId ? '<span class="vr-pool-halo" style="position:absolute;inset:-5px;border-radius:50%;border:2px solid rgba(225,29,72,0.7);pointer-events:none;"></span><span class="vr-pool-badge" style="position:absolute;right:-8px;top:-7px;width:15px;height:15px;border-radius:50%;background:#fff;border:1.5px solid #fecdd3;display:flex;align-items:center;justify-content:center;font-size:9px;line-height:1;">❤️</span>' : '';
-      el.innerHTML = `<div style="position:relative;width:26px;height:26px;border-radius:${d.kind === 'church' ? '50%' : '8px'};background:${st.bg};border:2px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;font-size:14px;cursor:pointer;pointer-events:auto;transition:transform 0.2s;" onmouseover="this.style.transform='scale(1.2)'" onmouseout="this.style.transform='scale(1)'">${st.emoji}${pool}</div>`;
-      el.title = `${d.name}${d.kind === 'merchant' && d.discountPct ? ` · -${d.discountPct}%` : ''}${d.poolId ? ` · ❤️ ${d.poolName || t('愛心折抵池', 'Charity discount pool')}` : ''}`;
+      const contest = d.contestId ? '<span class="vr-contest-halo" style="position:absolute;inset:-8px;border-radius:50%;border:2px solid rgba(37,99,235,0.7);pointer-events:none;"></span><span class="vr-contest-badge" style="position:absolute;left:-8px;top:-7px;width:15px;height:15px;border-radius:50%;background:#fff;border:1.5px solid #bfdbfe;display:flex;align-items:center;justify-content:center;font-size:9px;line-height:1;">📖</span>' : '';
+      el.innerHTML = `<div style="position:relative;width:26px;height:26px;border-radius:${d.kind === 'church' ? '50%' : '8px'};background:${st.bg};border:2px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;font-size:14px;cursor:pointer;pointer-events:auto;transition:transform 0.2s;" onmouseover="this.style.transform='scale(1.2)'" onmouseout="this.style.transform='scale(1)'">${st.emoji}${pool}${contest}</div>`;
+      el.title = `${d.name}${d.kind === 'merchant' && d.discountPct ? ` · -${d.discountPct}%` : ''}${d.poolId ? ` · ❤️ ${d.poolName || t('愛心折抵池', 'Charity discount pool')}` : ''}${d.contestId ? ` · 📖 ${d.contestName || t('讀經比賽', 'Reading contest')}` : ''}`;
       el.onclick = () => {
         if (globeEl.current && onToggleMode) {
           globeEl.current.controls().autoRotate = false;
