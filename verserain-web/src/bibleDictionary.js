@@ -66,7 +66,10 @@ export const BIBLE_BOOKS = [
   { id: 63, testament: 'NT', names: ["約翰二書", "約二", "2 John", "2 Jn"], ja: "Ⅱヨハ", ko: "요이", es: "2Jn", de: "2Jo", tr: "2Yu", fa: "۲یوح", he: "יוחב", my: "၂ယော" , ar: "2يو", vi: "2 Giăng" , idn: "2 Yohanes", msy: "2 Yohanes", pt: "2 João", fr: "2 Jean", ru: "2 Иоанна", hi: "2 यूहन्ना", km: "យ៉ូហាន ទី ២", cn: ["约翰二书", "约二"] },
   { id: 64, testament: 'NT', names: ["約翰三書", "約三", "3 John", "3 Jn"], ja: "Ⅲヨハ", ko: "요삼", es: "3Jn", de: "3Jo", tr: "3Yu", fa: "۳یوح", he: "יוחג", my: "၃ယော" , ar: "3يو", vi: "3 Giăng" , idn: "3 Yohanes", msy: "3 Yohanes", pt: "3 João", fr: "3 Jean", ru: "3 Иоанна", hi: "3 यूहन्ना", km: "យ៉ូហាន ទី ៣", cn: ["约翰三书", "约三"] },
   { id: 65, testament: 'NT', names: ["猶大書", "猶", "Jude", "Jude"], ja: "ユダ", ko: "유", es: "Jud", de: "Jud", tr: "Yah", fa: "یهو", he: "יהו", my: "ယုဒ" , ar: "يهو", vi: "Giu" , idn: "Yudas", msy: "Yudas", pt: "Judas", fr: "Jude", ru: "Иуды", hi: "यहूदा", km: "យូដាស", cn: ["犹大书", "犹"] },
-  { id: 66, testament: 'NT', names: ["啟示錄", "啟", "Revelation", "Rev"], ja: "黙", ko: "계", es: "Ap", de: "Offb", tr: "Esi", fa: "مکا", he: "התג", my: "ဗျာ" , ar: "رؤ", vi: "Khải" , idn: "Wahyu", msy: "Wahyu", pt: "Apocalipse", fr: "Apocalypse", ru: "Откровение", hi: "प्रकाशितवाक्य", km: "វិវរណៈ", cn: ["启示录", "启"] }
+  // "啓" (U+5553) is a common variant spelling of "啟" (U+555F) — same word,
+  // different codepoint — kept at the end of `names` so it's still matched
+  // without disturbing the positional indices (names[0..3]) other code reads.
+  { id: 66, testament: 'NT', names: ["啟示錄", "啟", "Revelation", "Rev", "啓示錄", "啓"], ja: "黙", ko: "계", es: "Ap", de: "Offb", tr: "Esi", fa: "مکا", he: "התג", my: "ဗျာ" , ar: "رؤ", vi: "Khải" , idn: "Wahyu", msy: "Wahyu", pt: "Apocalipse", fr: "Apocalypse", ru: "Откровение", hi: "प्रकाशितवाक्य", km: "វិវរណៈ", cn: ["启示录", "启"] }
 ];
 
 // Get the display abbreviation for a book based on language version
