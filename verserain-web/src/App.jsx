@@ -9371,7 +9371,7 @@ export default function App() {
     contest_limit: t('這個標記進行中的讀經比賽已達上限（5 個）', 'This marker already runs the maximum of 5 open reading contests'),
     join_required: t('請先按「我要參加」加入這個讀經比賽', 'Join this reading contest first'),
     challenge_required: t('請先按「接受背經文挑戰」才能上排行榜', 'Accept the memorisation challenge first to join the leaderboard'),
-    set_required: t('請選擇一組主題經文', 'Please choose a topic verse set'),
+    set_required: t('請選擇一組經文', 'Please choose a verse set'),
     verses_required: t('這組經文組目前沒有內容，請換一組', 'This verse set has no verses — pick another one'),
     ends_after_starts: t('結束時間必須晚於開始時間', 'The end date must be after the start date'),
     name_required: t('請輸入活動名稱', 'Please enter a name for the contest'),
@@ -10046,7 +10046,7 @@ export default function App() {
   const createContest = async () => {
     const d0 = contestCreateDraft;
     if (!d0.orgPlaceId || !d0.setId || !d0.name.trim() || !d0.startsAt || !d0.endsAt || !d0.agree) { setToast(redeemErrorText('consent_required')); setTimeout(() => setToast(null), 2500); return; }
-    const set = topicVerseSets.find(s => s.id === d0.setId);
+    const set = safeActiveSets.find(s => s.id === d0.setId);
     if (!set) { setToast(redeemErrorText('set_required')); setTimeout(() => setToast(null), 2500); return; }
     setContestCreateBusy(true);
     try {
@@ -26265,7 +26265,7 @@ const deDict = {
                     verserain
                   </div>
                   <div className="app-brand-version" style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', marginTop: '4px', marginLeft: '2px' }}>
-                    v4.0.88
+                    v4.0.89
                   </div>
                 </div>
                 <div ref={langPickerRef} className="app-lang-control" style={{ position: 'relative' }}>
@@ -30340,7 +30340,7 @@ const deDict = {
                       <button type="button" onClick={() => setMainTab('advanced')} style={{ background: 'transparent', border: '1px solid #cbd5e1', color: '#64748b', borderRadius: '6px', padding: '0.35rem 0.8rem', cursor: 'pointer', fontSize: '0.85rem' }}>← {t('返回', 'Back')}</button>
                     </div>
                     <p style={{ color: '#475569', lineHeight: 1.7, marginTop: 0 }}>
-                      {t('教會或機構選定一組主題經文，公告一段期間的讀經比賽。參加後可以看到自己的讀經進度；讀完整組即可申請認證，機構會另行公告獎勵方式。', 'A church or organisation picks a topic verse set and announces a reading contest for a set period. Join to track your progress — finish the whole set to apply for certified completion, and the organisation announces the reward separately.')}
+                      {t('教會或機構選定一組經文，公告一段期間的讀經比賽。參加後可以看到自己的讀經進度；讀完整組即可申請認證，機構會另行公告獎勵方式。', 'A church or organisation picks a verse set and announces a reading contest for a set period. Join to track your progress — finish the whole set to apply for certified completion, and the organisation announces the reward separately.')}
                     </p>
                     {notice}
 
@@ -30438,17 +30438,17 @@ const deDict = {
                     {userEmail && eligibleOrgPlaces.length > 0 && (
                       <div style={card} data-testid="contest-create">
                         <h3 style={h3}>⛪ {t('建立讀經比賽', 'Create a reading contest')}</h3>
-                        <div style={{ color: '#475569', fontSize: '0.88rem', lineHeight: 1.6 }}>{t('你的教會／機構已在地圖上，可以選一組主題經文，公告一段期間的讀經比賽。', 'Your church / organisation is on the map, so it can pick a topic verse set and announce a reading contest for a period.')}</div>
+                        <div style={{ color: '#475569', fontSize: '0.88rem', lineHeight: 1.6 }}>{t('你的教會／機構已在地圖上，可以選一組經文，公告一段期間的讀經比賽。', 'Your church / organisation is on the map, so it can pick a verse set and announce a reading contest for a period.')}</div>
                         <label style={label}>{t('教會／機構標記', 'Church / organisation marker')}</label>
                         <select value={contestCreateDraft.orgPlaceId} onChange={e => setContestCreateDraft(d => ({ ...d, orgPlaceId: e.target.value }))} style={field}>
                           <option value="">{t('請選擇', 'Choose')}</option>
                           {eligibleOrgPlaces.map(pl => <option key={pl.id} value={pl.id}>{pl.name}</option>)}
                         </select>
                         <div style={{ color: '#94a3b8', fontSize: '0.78rem', marginTop: 4 }}>{t('同一個教會／機構可以建立多個活動（最多 5 個進行中）。', 'One church / organisation can run several contests (up to 5 open at once).')}</div>
-                        <label style={label}>{t('主題經文組', 'Topic verse set')}</label>
+                        <label style={label}>{t('經文組', 'Verse Set')}</label>
                         <select value={contestCreateDraft.setId} onChange={e => setContestCreateDraft(d => ({ ...d, setId: e.target.value }))} style={field}>
                           <option value="">{t('請選擇', 'Choose')}</option>
-                          {topicVerseSets.map(s => <option key={s.id} value={s.id}>{s.title}（{(s.verses || []).length} {t('節', 'verses')}）</option>)}
+                          {safeActiveSets.map(s => <option key={s.id} value={s.id}>{s.title}（{(s.verses || []).length} {t('節', 'verses')}）</option>)}
                         </select>
                         <label style={label}>{t('活動名稱', 'Contest name')}</label>
                         <input type="text" maxLength={60} value={contestCreateDraft.name} onChange={e => setContestCreateDraft(d => ({ ...d, name: e.target.value }))} placeholder={t('例如：互惠經濟讀經比賽', 'e.g. Mutual Economy reading contest')} style={field} />
