@@ -785,7 +785,7 @@ export default function WorldMap2D({ t, playerName, userEmail, onJoinRoom, onVie
           ) : null;
         })()}
 
-        <div style={{ marginLeft: 'auto', display: 'flex', gap: '10px' }}>
+        <div style={{ marginLeft: 'auto', display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
           <button
             title={soundOn ? t('關閉聲音', 'Mute') : t('開啟交響音效', 'Play the symphony')}
             onClick={() => {
@@ -816,6 +816,24 @@ export default function WorldMap2D({ t, playerName, userEmail, onJoinRoom, onVie
               style={{ background: placesMode ? '#d97706' : '#fef3c7', color: placesMode ? '#fff' : '#92400e', border: 'none', padding: '0.3rem 0.8rem', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.8rem' }}
             >
               🏪 {t('商家', 'Shops')}{places.length ? ` (${places.length})` : ''}
+            </button>
+          )}
+          {onOpenPool && (
+            <button
+              title={t('看看有哪些愛心折抵池', 'See the charity pools')}
+              onClick={() => onOpenPool('')}
+              style={{ background: '#fecdd3', color: '#9f1239', border: 'none', padding: '0.3rem 0.8rem', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.8rem' }}
+            >
+              ❤️ {t('愛心折抵池', 'Charity discount pool')}
+            </button>
+          )}
+          {onOpenContest && (
+            <button
+              title={t('看看有哪些讀經比賽', 'See the reading contests')}
+              onClick={() => onOpenContest('')}
+              style={{ background: '#bfdbfe', color: '#1e40af', border: 'none', padding: '0.3rem 0.8rem', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.8rem' }}
+            >
+              📖 {t('讀經比賽', 'Reading contest')}
             </button>
           )}
           <button
@@ -853,65 +871,6 @@ export default function WorldMap2D({ t, playerName, userEmail, onJoinRoom, onVie
             </div>
           )}
           <div className="verse-map-frame" ref={mapRef} style={{ height: '520px', width: '100%', background: '#051936' }} />
-          {/* 圖例:大小=塊地數 · 亮度=近7天活躍 */}
-          <div style={{ position: 'absolute', top: '14px', right: '14px', zIndex: 1000, background: 'rgba(4,16,31,0.82)', border: '1px solid #14324f', borderRadius: '10px', padding: '9px 11px', color: '#e2e8f0', fontSize: '0.7rem', lineHeight: 1.5, pointerEvents: 'none', backdropFilter: 'blur(2px)', maxWidth: '190px' }}>
-            <div style={{ fontWeight: 700, marginBottom: '5px', color: '#f8fafc' }}>{t('地上的光點', 'Lights on Earth')}</div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 4 }}>
-              <span style={{ display: 'inline-flex', alignItems: 'flex-end', gap: 4 }}>
-                <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#fbbf24', boxShadow: '0 0 8px rgba(251,191,36,0.8)' }} />
-                <span style={{ width: 14, height: 14, borderRadius: '50%', background: '#fbbf24', boxShadow: '0 0 10px rgba(251,191,36,0.8)' }} />
-              </span>
-              <span>{t('大小 = 塊地數', 'size = plots')}</span>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3 }}>
-                <span style={{ width: 11, height: 11, borderRadius: '50%', background: '#7c5230', boxShadow: '0 0 5px rgba(150,100,60,0.45)' }} />
-                <span style={{ width: 11, height: 11, borderRadius: '50%', background: '#fbbf24', boxShadow: '0 0 9px rgba(251,191,36,0.85)' }} />
-                <span style={{ width: 11, height: 11, borderRadius: '50%', background: '#ffffff', boxShadow: '0 0 6px #fff, 0 0 12px rgba(191,219,254,1)' }} />
-              </span>
-              <span>{t('亮度 = 近7天活躍', 'glow = 7-day activity')}</span>
-            </div>
-            {placesMode && places.length > 0 && (
-              <div style={{ marginTop: 6, paddingTop: 6, borderTop: '1px solid #14324f' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 3 }}>
-                  <span style={{ width: 14, height: 14, borderRadius: 4, background: '#e11d48', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 9 }}>🏪</span>
-                  <span>{t('商家 = 點數折抵', 'shop = points discount')}</span>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
-                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3 }}>
-                    <span style={{ width: 14, height: 14, borderRadius: '50%', background: '#7c3aed', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 9 }}>⛪</span>
-                    <span style={{ width: 14, height: 14, borderRadius: 4, background: '#0d9488', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 9 }}>🏢</span>
-                  </span>
-                  <span>{t('教會、機構 = 贊助者', 'church / org = sponsor')}</span>
-                </div>
-                {places.some(pl => pl && pl.poolId) && (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginTop: 3 }}>
-                    <span style={{ position: 'relative', width: 14, height: 14, marginRight: 4, borderRadius: '50%', background: '#7c3aed', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 9 }}>⛪<span style={{ position: 'absolute', right: -6, top: -5, width: 10, height: 10, borderRadius: '50%', background: '#fff', border: '1px solid #fecdd3', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 6 }}>❤️</span></span>
-                    <span>{t('加 ❤️ = 有愛心折抵池，可投入點數', '+ ❤️ = has a charity pool, contribute here')}</span>
-                  </div>
-                )}
-                {places.some(pl => pl && pl.contestId) && (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginTop: 3 }}>
-                    <span style={{ position: 'relative', width: 14, height: 14, marginRight: 4, borderRadius: '50%', background: '#7c3aed', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 9 }}>⛪<span style={{ position: 'absolute', left: -6, top: -5, width: 10, height: 10, borderRadius: '50%', background: '#fff', border: '1px solid #bfdbfe', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 6 }}>📖</span></span>
-                    <span>{t('加 📖 = 有讀經比賽，可以參加', '+ 📖 = has a reading contest, join here')}</span>
-                  </div>
-                )}
-              </div>
-            )}
-            {fruitMode && fruitTree && (
-              <div style={{ marginTop: 6, paddingTop: 6, borderTop: '1px solid #14324f' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 3 }}>
-                  <span style={{ width: 22, height: 0, borderTop: '2.5px solid #fbbf24' }} />
-                  <span>{t('金線 = 我推薦的人', 'gold = people I invited')}</span>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 3 }}>
-                  <span style={{ width: 22, height: 0, borderTop: '1.5px dashed #fde68a' }} />
-                  <span>{t('虛線 = 他們推薦的人', 'dashed = people they invited')}</span>
-                </div>
-                <div style={{ color: '#fcd34d', fontWeight: 700 }}>{t('第一層 {a} · 第二層 {b}', 'level 1: {a} · level 2: {b}').replace('{a}', String((fruitTree.level1 || []).length)).replace('{b}', String((fruitTree.level2 || []).length))}</div>
-              </div>
-            )}
-          </div>
           {fruitMode && fruitTree && (fruitTree.level1 || []).length + (fruitTree.level2 || []).length === 0 && (
             <div style={{ position: 'absolute', bottom: '18px', left: '50%', transform: 'translateX(-50%)', zIndex: 1000, background: 'rgba(4,16,31,0.85)', color: '#fde68a', padding: '6px 14px', borderRadius: '20px', fontSize: '0.85rem', pointerEvents: 'none', whiteSpace: 'nowrap' }}>
               🍎 {t('還沒有果子——把邀請連結分享給朋友吧', 'No fruit yet — share your invite link with a friend')}
@@ -927,6 +886,72 @@ export default function WorldMap2D({ t, playerName, userEmail, onJoinRoom, onVie
               {t('還沒有玩家資料，完成一局遊戲後你的位置就會出現！', 'No players yet — complete a game to appear on the map!')}
             </div>
           )}
+        </div>
+      )}
+
+      {/* 圖例:在地圖下方,不擋住地圖畫面 */}
+      {!loading && (
+        <div style={{ background: '#04101f', borderTop: '1px solid #14324f', padding: '9px 14px 11px', color: '#cbd5e1', fontSize: '0.72rem', lineHeight: 1.5 }}>
+          <div style={{ fontWeight: 700, marginBottom: '6px', color: '#f8fafc' }}>{t('地上的光點', 'Lights on Earth')}</div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', columnGap: 18, rowGap: 5 }}>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 7 }}>
+              <span style={{ display: 'inline-flex', alignItems: 'flex-end', gap: 4 }}>
+                <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#fbbf24', boxShadow: '0 0 8px rgba(251,191,36,0.8)' }} />
+                <span style={{ width: 14, height: 14, borderRadius: '50%', background: '#fbbf24', boxShadow: '0 0 10px rgba(251,191,36,0.8)' }} />
+              </span>
+              {t('大小 = 塊地數', 'size = plots')}
+            </span>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 7 }}>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3 }}>
+                <span style={{ width: 11, height: 11, borderRadius: '50%', background: '#7c5230', boxShadow: '0 0 5px rgba(150,100,60,0.45)' }} />
+                <span style={{ width: 11, height: 11, borderRadius: '50%', background: '#fbbf24', boxShadow: '0 0 9px rgba(251,191,36,0.85)' }} />
+                <span style={{ width: 11, height: 11, borderRadius: '50%', background: '#ffffff', boxShadow: '0 0 6px #fff, 0 0 12px rgba(191,219,254,1)' }} />
+              </span>
+              {t('亮度 = 近7天活躍', 'glow = 7-day activity')}
+            </span>
+            {placesMode && places.length > 0 && (
+              <>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 7 }}>
+                  <span style={{ width: 14, height: 14, borderRadius: 4, background: '#e11d48', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 9 }}>🏪</span>
+                  {t('商家 = 點數折抵', 'shop = points discount')}
+                </span>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 7 }}>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3 }}>
+                    <span style={{ width: 14, height: 14, borderRadius: '50%', background: '#7c3aed', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 9 }}>⛪</span>
+                    <span style={{ width: 14, height: 14, borderRadius: 4, background: '#0d9488', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 9 }}>🏢</span>
+                  </span>
+                  {t('教會、機構 = 贊助者', 'church / org = sponsor')}
+                </span>
+                {places.some(pl => pl && pl.poolId) && (
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 7 }}>
+                    <span style={{ position: 'relative', width: 14, height: 14, marginRight: 4, borderRadius: '50%', background: '#7c3aed', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 9 }}>⛪<span style={{ position: 'absolute', right: -6, top: -5, width: 10, height: 10, borderRadius: '50%', background: '#fff', border: '1px solid #fecdd3', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 6 }}>❤️</span></span>
+                    {t('加 ❤️ = 有愛心折抵池，可投入點數', '+ ❤️ = has a charity pool, contribute here')}
+                  </span>
+                )}
+                {places.some(pl => pl && pl.contestId) && (
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 7 }}>
+                    <span style={{ position: 'relative', width: 14, height: 14, marginRight: 4, borderRadius: '50%', background: '#7c3aed', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 9 }}>⛪<span style={{ position: 'absolute', left: -6, top: -5, width: 10, height: 10, borderRadius: '50%', background: '#fff', border: '1px solid #bfdbfe', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 6 }}>📖</span></span>
+                    {t('加 📖 = 有讀經比賽，可以參加', '+ 📖 = has a reading contest, join here')}
+                  </span>
+                )}
+              </>
+            )}
+            {fruitMode && fruitTree && (
+              <>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 7 }}>
+                  <span style={{ width: 20, height: 0, borderTop: '2.5px solid #fbbf24' }} />
+                  {t('金線 = 我推薦的人', 'gold = people I invited')}
+                </span>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 7 }}>
+                  <span style={{ width: 20, height: 0, borderTop: '1.5px dashed #fde68a' }} />
+                  {t('虛線 = 他們推薦的人', 'dashed = people they invited')}
+                </span>
+                <span style={{ color: '#fcd34d', fontWeight: 700 }}>
+                  {t('第一層 {a} · 第二層 {b}', 'level 1: {a} · level 2: {b}').replace('{a}', String((fruitTree.level1 || []).length)).replace('{b}', String((fruitTree.level2 || []).length))}
+                </span>
+              </>
+            )}
+          </div>
         </div>
       )}
 
