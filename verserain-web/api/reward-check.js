@@ -1,6 +1,6 @@
 import { Redis } from '@upstash/redis';
 import { partyFetch, PartyError } from './_lib/party.js';
-import { grantMilestones, VERSES_PER_REWARD, INVITES_PER_REWARD, QUALIFIED_PASSES } from './_lib/rewards.js';
+import { grantMilestones, REWARD_MINTING_ENDED, VERSES_PER_REWARD, INVITES_PER_REWARD, QUALIFIED_PASSES } from './_lib/rewards.js';
 
 // Server-verified reward check (贊助獎勵). The client never tells us how many
 // verses it passed — we ask the PartyKit garden store, which holds the synced
@@ -20,6 +20,8 @@ export default async function handler(req, res) {
 
   if (req.method === 'OPTIONS') { res.status(200).end(); return; }
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+  // Programme ended — answer older app builds without minting or asking PartyKit.
+  if (REWARD_MINTING_ENDED) return res.status(200).json({ success: true, ended: true, created: [] });
 
   const body = typeof req.body === 'string' ? safeJson(req.body) : (req.body || {});
   const email = String(body.email || '').trim().toLowerCase();

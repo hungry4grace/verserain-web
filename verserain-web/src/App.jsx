@@ -6353,8 +6353,8 @@ export default function App() {
     // Trees + champ counts.
     const treesPlanted = verseEntries.length;
     const champVerses = verseEntries.filter(([, v]) => (v?.fruits || 0) > 0).length;
-    // Passed (大樹, stage 10) — a local hint only; sponsored rewards use the
-    // server's count (see runRewardCheck).
+    // Passed (大樹, stage 10) — a local count; anything that pays out
+    // (contest completion) re-checks the server's copy of the garden.
     const passedVerses = verseEntries.filter(([, v]) => (v?.stage || 0) >= 10).length;
 
     // Streaks: walk back from today, counting consecutive days with activity.
@@ -6426,50 +6426,7 @@ export default function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [personalProgress?.treesPlanted, personalCode, playerName, userEmail]);
 
-  // ── 贊助獎勵 (sponsored rewards) ───────────────────────────────────────
-  // Progress toward the sponsored rewards, as the SERVER counts it. The local
-  // garden's passed count is only a hint: /api/reward-check asks the PartyKit
-  // garden store, mints anything earned (once per person), and returns the
-  // numbers the progress bars show. Logged-in players only.
-  const [rewardProgress, setRewardProgress] = useState(null); // last /api/reward-check result | null
-  const [rewardProgressBusy, setRewardProgressBusy] = useState(false);
   const [notifyInboxReload, setNotifyInboxReload] = useState(0);
-  const runRewardCheck = React.useCallback(async (kind = 'both') => {
-    if (!userEmail || !personalCode) return null;
-    setRewardProgressBusy(true);
-    try {
-      let prev = [];
-      try { prev = JSON.parse(localStorage.getItem('verserain_prev_personal_codes') || '[]'); } catch { prev = []; }
-      const res = await fetch('/api/reward-check', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ code: personalCode, codes: Array.isArray(prev) ? prev.slice(0, 4) : [], email: userEmail, playerName: playerName || '', kind }),
-      });
-      const d = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(d.error || String(res.status));
-      setRewardProgress(d);
-      if (Array.isArray(d.created) && d.created.length) setNotifyInboxReload(n => n + 1);
-      return d;
-    } catch (e) {
-      setRewardProgress(prev => ({ ...(prev || {}), error: String(e?.message || e) }));
-      return null;
-    } finally {
-      setRewardProgressBusy(false);
-    }
-  }, [userEmail, personalCode, playerName]);
-  // When the local garden crosses a 100-passed boundary, ask the server once.
-  // A short delay lets the garden sync land before the server is asked.
-  useEffect(() => {
-    if (!userEmail || !personalCode) return undefined;
-    const reached = Math.floor((personalProgress?.passedVerses || 0) / 100) * 100;
-    if (reached < 100) return undefined;
-    let last = 0;
-    try { last = Number(localStorage.getItem('verserain_reward_check_verses') || 0); } catch { last = 0; }
-    if (reached <= last) return undefined;
-    try { localStorage.setItem('verserain_reward_check_verses', String(reached)); } catch { /* ignore */ }
-    const id = setTimeout(() => { runRewardCheck('verses'); }, 4000);
-    return () => clearTimeout(id);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [personalProgress?.passedVerses, userEmail, personalCode]);
 
   // Creating custom verse sets is open to ANY signed-in user — the publish
   // endpoint is owner-protected on the server, so no premium check is needed.
@@ -8564,10 +8521,6 @@ export default function App() {
     fetch(`/api/sponsors${myChurchCode ? `?church=${encodeURIComponent(myChurchCode)}` : ''}`).then(r => r.json()).then(d => { if (!cancelled) setSponsorsInfo(d || {}); }).catch(() => { if (!cancelled) setSponsorsInfo({}); });
     return () => { cancelled = true; };
   }, [mainTab, sponsorsInfo, myChurchCode]);
-  useEffect(() => {
-    if (mainTab === 'sponsors' && userEmail && personalCode && !rewardProgress && !rewardProgressBusy) runRewardCheck('both');
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mainTab, userEmail, personalCode]);
 
   // Admin: the reward ledger + sponsor pool, loaded when the 獎勵管理 page
   // opens. Money-backed routes need the ADMIN_TOKEN header on top of the
@@ -25605,7 +25558,7 @@ const deDict = {
                     verserain
                   </div>
                   <div className="app-brand-version" style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', marginTop: '4px', marginLeft: '2px' }}>
-                    v4.0.99
+                    v4.0.100
                   </div>
                 </div>
                 <div ref={langPickerRef} className="app-lang-control" style={{ position: 'relative' }}>
@@ -26247,7 +26200,7 @@ const deDict = {
                       { id: 'morningPush', Icon: Mail, label: pushStatus === 'subscribed' ? t('已開啟每日經文推播', 'Daily Verse Push: On') : t('開啟每日經文推播', 'Daily Verse Push'), desc: t('每天上午 7 點手機推播今日經文', 'Get today\'s verse pushed at 7am'), color: '#10b981' },
                       { id: 'about', Icon: Info, label: t('關於我們', 'About'), desc: t('VerseRain 開發資訊', 'Info & Credits'), color: '#14b8a6' },
                       { id: 'feedback', link: `mailto:hungry4grace@gmail.com?subject=${encodeURIComponent('經文雨 意見回饋（VerseRain Feedback）')}`, Icon: Mail, label: t('意見回饋', 'Feedback'), desc: t('聯絡與建議', 'Bugs & Suggestions'), color: '#ec4899' },
-                      { id: 'sponsors', Icon: Gift, label: t('贊助獎勵計劃（實驗階段）', 'Sponsored Rewards (pilot)'), desc: t('通過經文、邀請朋友，贏得禮券', 'Pass verses, invite friends, earn vouchers'), color: '#f59e0b' },
+                      { id: 'sponsors', Icon: Gift, label: t('贊助者與我的折抵', 'Sponsors & my discounts'), desc: t('感謝贊助者、查看我的折抵紀錄', 'Thank our sponsors, see your discounts'), color: '#f59e0b' },
                       ...(SHOW_DONATE ? [{ id: 'donate', Icon: Heart, label: t('支持經文雨', 'Support VerseRain'), desc: t('小額支持 App 開發與維運', 'Help fund development & hosting'), color: '#ef4444' }] : []),
                       { id: 'charity', Icon: Heart, label: t('愛心折抵池', 'Charity discount pool'), desc: t('投入點數，成為教會／機構的折抵額度', 'Turn points into a discount allowance for a church or organisation'), color: '#e11d48' },
                       { id: 'contests', Icon: BookOpen, label: t('讀經比賽', 'Reading contest'), desc: t('教會／機構舉辦的讀經比賽，讀完拿認證，還能挑戰排行榜', 'Church / organisation reading contests — finish for certified completion, or challenge the leaderboard'), color: '#2563eb' },
@@ -28389,8 +28342,8 @@ const deDict = {
                           </div>
                         ) : null
                       )}
-                      <div onClick={() => setMainTab('sponsors')} style={{ marginTop: '0.8rem', textAlign: 'center', fontSize: '0.82rem', color: '#92400e', background: '#fef3c7', border: '1px solid #fde68a', borderRadius: 8, padding: '0.4rem 0.6rem', cursor: 'pointer' }}>
-                        🎁 {t('再通過 {n} 節經文，就能獲得贊助獎勵', 'Pass {n} more verses to earn a sponsored reward').replace('{n}', String(rewardProgress?.nextVerses ?? (100 - ((personalProgress.passedVerses || 0) % 100))))}
+                      <div onClick={() => setMainTab('charity')} style={{ marginTop: '0.8rem', textAlign: 'center', fontSize: '0.82rem', color: '#9f1239', background: '#fff1f2', border: '1px solid #fecdd3', borderRadius: 8, padding: '0.4rem 0.6rem', cursor: 'pointer' }}>
+                        ❤️ {t('看看有哪些愛心折抵池', 'See the charity pools')}
                       </div>
                     </div>
                   </div>
@@ -29134,70 +29087,22 @@ const deDict = {
 
               {mainTab === 'sponsors' && (() => {
                 const info = sponsorsInfo;
-                const byCur = (info && info.pool && info.pool.byCurrency) || {};
-                const wallAll = (info && info.sponsors) || [];
-                const wall = wallAll.filter(sp => sp.scope !== 'church');
-                const churchWall = wallAll.filter(sp => sp.scope === 'church');
-                const remainingOf = (sp) => (info && info.pool && info.pool.bySponsor && info.pool.bySponsor[sp.id]) ? info.pool.bySponsor[sp.id].remaining : null;
-                const per = rewardProgress?.versesPerReward || 100;
-                const perInv = rewardProgress?.invitesPerReward || 10;
-                const passed = rewardProgress?.passedVerses ?? (personalProgress?.passedVerses || 0);
-                const qualified = rewardProgress?.qualifiedReferrals || 0;
-                const needPasses = rewardProgress?.qualifiedPasses || 3;
-                const bar = (value, total, color) => (
-                  <div style={{ background: '#e2e8f0', borderRadius: 999, height: 10, overflow: 'hidden', margin: '0.35rem 0' }}>
-                    <div style={{ width: `${Math.min(100, Math.round(((value % total) / total) * 100))}%`, background: color, height: '100%', transition: 'width .4s' }} />
-                  </div>
-                );
+                const wall = (info && info.sponsors) || [];
                 const card = { background: '#fff', border: '1px solid #e2e8f0', borderRadius: 12, padding: '1rem 1.2rem', marginBottom: '1rem' };
                 const h3 = { margin: '0 0 0.6rem', color: '#1e293b', fontSize: '1.05rem' };
                 return (
                   <div style={{ backgroundColor: '#fffdf7', borderRadius: '8px', border: '1px solid #fde68a', padding: '1.5rem', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.6rem', marginBottom: '0.8rem' }}>
-                      <h2 style={{ color: '#1e293b', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Gift size={26} /> {t('贊助獎勵計劃（實驗階段）', 'Sponsored Rewards (pilot)')}</h2>
+                      <h2 style={{ color: '#1e293b', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Gift size={26} /> {t('贊助者與我的折抵', 'Sponsors & my discounts')}</h2>
                       <button type="button" onClick={() => setMainTab('advanced')} style={{ background: 'transparent', border: '1px solid #cbd5e1', color: '#64748b', borderRadius: '6px', padding: '0.35rem 0.8rem', cursor: 'pointer', fontSize: '0.85rem' }}>← {t('返回', 'Back')}</button>
                     </div>
-                    <p style={{ color: '#475569', lineHeight: 1.7, marginTop: 0 }}>
-                      {t('企業家與教會贊助的禮券，獎勵認真讀經、背經、並邀請朋友一起來的人。達標由伺服器核算，管理員審核後把電子禮券寄給你。', 'Vouchers funded by entrepreneurs and churches, for those who read, memorise, and bring friends along. Milestones are verified server-side; an admin reviews and sends your e-voucher.')}
-                    </p>
-                    <p data-testid="sponsors-disclaimer" style={{ color: '#64748b', fontSize: '0.8rem', lineHeight: 1.6, marginTop: '-0.4rem', marginBottom: '1rem' }}>
-                      ⚠️ {t('本計劃目前為實驗階段：獎勵內容、達標條件與發放方式可能隨時調整或停止，不構成任何契約或承諾；獎勵由贊助者自願提供，經文雨保留審核、調整與最終解釋的權利。', 'This programme is a pilot: rewards, milestones and fulfilment may change or stop at any time and form no contract or promise; rewards are provided voluntarily by sponsors, and VerseRain reserves the right to review, adjust and make the final decision.')}
-                    </p>
-                    <p data-testid="points-disclaimer" style={{ color: '#64748b', fontSize: '0.8rem', lineHeight: 1.6, marginTop: '-0.6rem', marginBottom: '1rem' }}>
+                    <div data-testid="voucher-programme-ended" style={{ background: '#fff7ed', border: '1px solid #fed7aa', borderRadius: 10, padding: '0.8rem 1rem', marginBottom: '1rem', color: '#7c2d12', fontSize: '0.9rem', lineHeight: 1.7 }}>
+                      {t('原本「通過經文換禮券」的贊助獎勵計劃已經結束，不再產生新的獎勵；已經達標、還在等待寄送的禮券，仍會照常審核寄出。贊助改為透過合法的勸募團體支持愛心方案，由大家用讀經點數一起解鎖。', 'The old “pass verses for a voucher” programme has ended and no new rewards are created; vouchers already earned and awaiting delivery will still be reviewed and sent. Sponsorship now supports charity projects through licensed charities, unlocked together with everyone’s reading points.')}{' '}
+                      <button type="button" onClick={() => setMainTab('sponsor')} style={{ background: '#c2410c', color: '#fff', border: 'none', borderRadius: 6, padding: '0.25rem 0.8rem', cursor: 'pointer', fontWeight: 700, fontSize: '0.82rem' }}>{t('了解贊助方案', 'Sponsorship options')} →</button>
+                    </div>
+                    <p data-testid="points-disclaimer" style={{ color: '#64748b', fontSize: '0.8rem', lineHeight: 1.6, marginTop: 0, marginBottom: '1rem' }}>
                       {t('點數聲明：點數是遊戲內無償取得的促銷折抵權益，無現金價值、不可兌換現金、不可轉讓或轉售，亦非儲值或電子支付；折扣由商家自行提供，經文雨不經手任何款項。', 'About points: points are a free in-game promotional discount right with no cash value; they cannot be cashed out, transferred or resold, and are not stored value or e-payment. Discounts are offered by the shops themselves; VerseRain never handles money.')}
                     </p>
-
-                    <div style={card}>
-                      <h3 style={h3}>📈 {t('我的進度', 'My progress')}</h3>
-                      {!userEmail ? (
-                        <div style={{ color: '#64748b', fontSize: '0.9rem' }}>
-                          {t('登入後才能累計並領取獎勵。', 'Sign in to accumulate and claim rewards.')}{' '}
-                          <button type="button" onClick={() => setShowLoginModal('login')} style={{ background: '#3b82f6', color: '#fff', border: 'none', borderRadius: 6, padding: '0.3rem 0.9rem', cursor: 'pointer', fontWeight: 600 }}>{t('登入', 'Sign in')}</button>
-                        </div>
-                      ) : (
-                        <div>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem', color: '#334155' }}>
-                            <span>🏞️ {t('通過經文', 'Verses passed')}</span>
-                            <b>{passed % per} / {per}</b>
-                          </div>
-                          {bar(passed, per, '#10b981')}
-                          <div style={{ color: '#64748b', fontSize: '0.82rem' }}>{t('再通過 {n} 節就能獲得下一份獎勵（累計已通過 {total} 節）', 'Pass {n} more for the next reward ({total} passed so far)').replace('{n}', String(per - (passed % per))).replace('{total}', String(passed))}</div>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem', color: '#334155', marginTop: '0.9rem' }}>
-                            <span>🤝 {t('合格推薦', 'Qualified referrals')}</span>
-                            <b>{qualified % perInv} / {perInv}</b>
-                          </div>
-                          {bar(qualified, perInv, '#3b82f6')}
-                          <div style={{ color: '#64748b', fontSize: '0.82rem' }}>{t('再邀請 {n} 位朋友（各通過 {p} 節）就能獲得下一份獎勵（累計 {total} 位合格）', '{n} more friends (each passing {p} verses) for the next reward ({total} qualified so far)').replace('{n}', String(perInv - (qualified % perInv))).replace('{p}', String(needPasses)).replace('{total}', String(qualified))}</div>
-                          <div style={{ display: 'flex', gap: '0.6rem', alignItems: 'center', flexWrap: 'wrap', marginTop: '0.8rem' }}>
-                            <button type="button" disabled={rewardProgressBusy} onClick={() => runRewardCheck('both')} style={{ background: rewardProgressBusy ? '#e2e8f0' : '#f59e0b', color: rewardProgressBusy ? '#94a3b8' : '#fff', border: 'none', borderRadius: 6, padding: '0.35rem 0.9rem', cursor: rewardProgressBusy ? 'wait' : 'pointer', fontWeight: 600, fontSize: '0.85rem' }}>{rewardProgressBusy ? t('核算中…', 'Checking…') : t('重新核算', 'Re-check')}</button>
-                            {rewardProgress?.checkedAt && <span style={{ color: '#94a3b8', fontSize: '0.78rem' }}>{t('伺服器核算時間', 'Verified at')} {new Date(rewardProgress.checkedAt).toLocaleString()}{rewardProgress.throttled ? ` · ${t('10 分鐘內只核算一次', 'once per 10 minutes')}` : ''}</span>}
-                            {rewardProgress?.error && <span style={{ color: '#ef4444', fontSize: '0.78rem' }}>{rewardProgress.error === 'verify_unavailable' ? t('核算服務暫時無法使用，稍後再試', 'Verification is temporarily unavailable, try again later') : rewardProgress.error}</span>}
-                            {!rewardProgress && !rewardProgressBusy && <span style={{ color: '#94a3b8', fontSize: '0.78rem' }}>{t('（以上為本機估計，按「重新核算」取得伺服器數字）', '(local estimate — press Re-check for the server count)')}</span>}
-                            {rewardProgress && (personalProgress?.passedVerses || 0) > passed && <span style={{ color: '#b45309', fontSize: '0.78rem' }}>{t('本機園子已通過 {n} 節，雲端同步後再核算就會更新', 'Your device shows {n} passed; it will update once the cloud sync catches up').replace('{n}', String(personalProgress?.passedVerses || 0))}</span>}
-                          </div>
-                        </div>
-                      )}
-                    </div>
 
                     <div style={card}>
                       <h3 style={h3}>🎟️ {t('我的折抵紀錄', 'My discounts')}</h3>
@@ -29241,32 +29146,7 @@ const deDict = {
                     </div>
 
                     <div style={card}>
-                      <h3 style={h3}>🎁 {t('獎勵內容', 'Rewards')}</h3>
-                      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.9rem', color: '#334155' }}>
-                        <tbody>
-                          <tr style={{ borderBottom: '1px solid #f1f5f9' }}><td style={{ padding: '0.4rem 0' }}>🏞️ {t('每通過 {n} 節經文', 'Every {n} verses passed').replace('{n}', String(per))}</td><td style={{ textAlign: 'right', fontWeight: 700 }}>{fmtMoney(VOUCHER_DEFAULTS.verses.TWD, 'TWD')} / {fmtMoney(VOUCHER_DEFAULTS.verses.USD, 'USD')}</td></tr>
-                          <tr style={{ borderBottom: '1px solid #f1f5f9' }}><td style={{ padding: '0.4rem 0' }}>🤝 {t('每邀請 {n} 位朋友，各通過 {p} 節', 'Every {n} friends invited, each passing {p} verses').replace('{n}', String(perInv)).replace('{p}', String(needPasses))}</td><td style={{ textAlign: 'right', fontWeight: 700 }}>{fmtMoney(VOUCHER_DEFAULTS.invites.TWD, 'TWD')} / {fmtMoney(VOUCHER_DEFAULTS.invites.USD, 'USD')}</td></tr>
-                        </tbody>
-                      </table>
-                      <div style={{ color: '#64748b', fontSize: '0.85rem', marginTop: '0.6rem', lineHeight: 1.6 }}>
-                        <div><b>{t('台灣', 'Taiwan')}：</b>{(VOUCHER_CATALOG.tw || []).map(vc => vc.label).join('、')}</div>
-                        <div><b>{t('海外', 'Overseas')}：</b>{(VOUCHER_CATALOG.intl || []).map(vc => vc.label).join('、')}</div>
-                        <div style={{ marginTop: 4 }}>{t('領取時可選地區與偏好的禮券；每帳號每個里程碑一份。', 'Choose your region and preferred voucher when claiming; one per milestone per account.')}</div>
-                      </div>
-                    </div>
-
-                    <div style={card}>
                       <h3 style={h3}>💛 {t('感謝贊助者', 'Thank you, sponsors')}</h3>
-                      {Object.keys(byCur).length > 0 && (
-                        <div style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap', marginBottom: '0.8rem' }}>
-                          {Object.entries(byCur).map(([cur, st]) => (
-                            <div key={cur} style={{ background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 8, padding: '0.5rem 0.8rem', fontSize: '0.85rem', color: '#334155' }}>
-                              {t('累計贊助', 'Raised')} <b>{fmtMoney(st.raised, cur)}</b> · {t('已發出 {n} 份', '{n} sent').replace('{n}', String(st.sentCount))} · {t('剩餘', 'Remaining')} <b style={{ color: st.remaining > 0 ? '#166534' : '#991b1b' }}>{fmtMoney(st.remaining, cur)}</b>
-                              {st.remaining <= 0 ? <div style={{ color: '#991b1b', fontSize: '0.8rem' }}>{t('本期額度已用完，下一期開放', 'This round is fully allocated — next round soon')}</div> : null}
-                            </div>
-                          ))}
-                        </div>
-                      )}
                       {info === null ? (
                         <div style={{ color: '#94a3b8', fontSize: '0.85rem' }}>{t('載入中…', 'Loading…')}</div>
                       ) : wall.length === 0 ? (
@@ -29276,6 +29156,7 @@ const deDict = {
                           {wall.map(sp => (
                             <div key={sp.id} style={{ borderLeft: '3px solid #f59e0b', paddingLeft: '0.7rem', fontSize: '0.9rem', color: '#334155' }}>
                               <b>{sp.anonymous || !sp.displayName ? t('匿名贊助者', 'Anonymous sponsor') : sp.displayName}</b>
+                              {sp.scope === 'church' && sp.churchName ? <span style={{ color: '#5b21b6' }}> · ⛪ {sp.churchName}</span> : null}
                               {sp.amount ? <span style={{ color: '#64748b' }}> · {fmtMoney(sp.amount, sp.currency)}</span> : null}
                               {sp.receivedAt ? <span style={{ color: '#94a3b8', fontSize: '0.8rem' }}> · {sp.receivedAt}</span> : null}
                               {sp.message ? <div style={{ color: '#475569', fontSize: '0.85rem' }}>「{sp.message}」</div> : null}
@@ -29283,37 +29164,11 @@ const deDict = {
                           ))}
                         </div>
                       )}
-                      {(churchWall.length > 0 || myChurchCode) && (
-                        <div style={{ marginTop: '1rem', paddingTop: '0.8rem', borderTop: '1px dashed #e2e8f0' }}>
-                          <div style={{ fontWeight: 700, color: '#5b21b6', marginBottom: '0.4rem' }}>⛪ {t('教會限定池', 'Church-only pools')}</div>
-                          <div style={{ color: '#64748b', fontSize: '0.82rem', marginBottom: '0.5rem' }}>{t('有些教會只獎勵自己的會友。向你的教會索取代碼並填入，達標時就能從該池領取。', 'Some churches reward only their own members. Ask your church for its code and enter it here to draw from that pool.')}</div>
-                          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: '0.6rem' }}>
-                            <input type="text" defaultValue={myChurchCode} id="church-code-input" placeholder={t('教會代碼', 'Church code')} maxLength={20} style={{ padding: '0.35rem 0.6rem', borderRadius: 6, border: '1px solid #cbd5e1', fontSize: '0.85rem', textTransform: 'uppercase' }} />
-                            <button type="button" onClick={() => saveChurchCode(document.getElementById('church-code-input')?.value)} style={{ background: '#7c3aed', color: '#fff', border: 'none', borderRadius: 6, padding: '0.35rem 0.9rem', cursor: 'pointer', fontWeight: 600, fontSize: '0.85rem' }}>{t('儲存代碼', 'Save code')}</button>
-                            {myChurchCode && <span style={{ color: '#64748b', fontSize: '0.82rem', alignSelf: 'center' }}>{t('目前代碼', 'Current code')}: <b>{myChurchCode}</b></span>}
-                          </div>
-                          {churchWall.length === 0 ? (
-                            <div style={{ color: '#94a3b8', fontSize: '0.85rem' }}>{t('目前沒有教會限定池。', 'No church-only pools at the moment.')}</div>
-                          ) : (
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                              {churchWall.map(sp => (
-                                <div key={sp.id} style={{ borderLeft: `3px solid ${sp.mine ? '#7c3aed' : '#c4b5fd'}`, paddingLeft: '0.7rem', fontSize: '0.9rem', color: '#334155', background: sp.mine ? '#f5f3ff' : 'transparent', borderRadius: 6, padding: '0.3rem 0.7rem' }}>
-                                  <b>{sp.churchName}</b>{sp.mine ? <span style={{ color: '#5b21b6', fontWeight: 700 }}> · {t('你的教會', 'your church')}</span> : null}
-                                  <span style={{ color: '#64748b' }}> · {t('僅限會友', 'members only')}</span>
-                                  {sp.amount ? <span style={{ color: '#64748b' }}> · {fmtMoney(sp.amount, sp.currency)}</span> : null}
-                                  {sp.mine && remainingOf(sp) !== null ? <span style={{ color: '#166534' }}> · {t('剩餘', 'Remaining')} {fmtMoney(remainingOf(sp), sp.currency)}</span> : null}
-                                  {sp.message ? <div style={{ color: '#475569', fontSize: '0.85rem' }}>「{sp.message}」</div> : null}
-                                </div>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                      )}
                       <div style={{ marginTop: '0.9rem', padding: '0.7rem 0.9rem', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 8, fontSize: '0.88rem', color: '#166534', lineHeight: 1.6 }}>
-                        {t('想成為贊助者？贊助金由教會／非營利機構代收並開立收據，經文雨只做媒合與核發；報告只有統計數字，不會提供玩家個資。', 'Want to sponsor? Gifts are received and receipted by a church / non-profit; VerseRain only matches and fulfils. Reports contain statistics only — never player data.')}{' '}
+                        {t('想成為贊助者？捐款直接交給合作的合法勸募團體，由它開立收據；經文雨只記錄點數和通知。報告只有統計數字，不會提供玩家個資。', 'Want to sponsor? Gifts go straight to a licensed partner charity, which issues the receipt; VerseRain only records points and sends notices. Reports contain statistics only — never player data.')}{' '}
                         <span style={{ display: 'inline-flex', gap: '0.5rem', flexWrap: 'wrap', marginTop: 6 }}>
                           <button type="button" onClick={() => setMainTab('sponsor')} style={{ background: '#166534', color: '#fff', border: 'none', borderRadius: 6, padding: '0.3rem 0.9rem', cursor: 'pointer', fontWeight: 700, fontSize: '0.85rem' }}>{t('了解贊助方案', 'Sponsorship options')} →</button>
-                          <a href={`mailto:hungry4grace@gmail.com?subject=${encodeURIComponent('經文雨 贊助獎勵計劃（VerseRain Sponsorship）')}`} style={{ color: '#166534', fontWeight: 700, alignSelf: 'center' }}>{t('聯絡我們', 'Contact us')} →</a>
+                          <a href={`mailto:hungry4grace@gmail.com?subject=${encodeURIComponent('經文雨 愛心方案贊助（VerseRain Charity Projects）')}`} style={{ color: '#166534', fontWeight: 700, alignSelf: 'center' }}>{t('聯絡我們', 'Contact us')} →</a>
                         </span>
                       </div>
                     </div>
@@ -29321,9 +29176,6 @@ const deDict = {
                     <div style={{ ...card, marginBottom: 0 }}>
                       <h3 style={h3}>📜 {t('條款', 'Terms')}</h3>
                       <ul style={{ margin: 0, paddingLeft: '1.2rem', color: '#475569', fontSize: '0.85rem', lineHeight: 1.8 }}>
-                        <li>{t('需登入帳號；達標以伺服器核算的園子為準，客戶端數字僅供參考。', 'A signed-in account is required; milestones are verified from the server-side garden, the local count is only indicative.')}</li>
-                        <li>{t('每帳號每個里程碑一份獎勵；同一人多個帳號不重複發放。', 'One reward per milestone per account; one person with several accounts is paid once.')}</li>
-                        <li>{t('合格推薦 = 被邀請的朋友登入帳號並通過 {p} 節經文。', 'A qualified referral = an invited friend who signed in and passed {p} verses.').replace('{p}', String(needPasses))}</li>
                         <li>{t('人工審核後 7 個工作天內寄出；使用 LINE／Apple 隱藏信箱的帳號請提供可收信的 Email。', 'Sent within 7 working days after manual review; accounts using a hidden LINE / Apple email must provide a reachable one.')}</li>
                         <li>{t('額度以贊助池為限；主辦方保留審核、調整與終止本計劃的權利。', 'Limited by the sponsor pool; the organiser may review, adjust or end the programme.')}</li>
                       </ul>
@@ -29361,7 +29213,7 @@ const deDict = {
                     </p>
                     <div style={{ background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 10, padding: '0.8rem 1rem', marginBottom: '1rem', color: '#78350f', fontSize: '0.9rem', lineHeight: 1.7 }}>
                       <b>{t('請先了解：', 'Please note:')}</b>{' '}
-                      {t('這是對開發者個人的支持（贈與），不是公益勸募，因此無法開立捐贈收據、不能抵稅。若你是教會或企業，想資助讀經獎勵並需要收據，請走「贊助經文雨」方案，由教會／非營利機構代收。', 'This is a personal gift to the developer, not a charitable appeal, so no donation receipt or tax deduction can be issued. Churches and businesses that want to fund reading rewards and need a receipt should use the “Sponsor VerseRain” programme, where a church / non-profit receives the gift.')}{' '}
+                      {t('這是對開發者個人的支持（贈與），不是公益勸募，因此無法開立捐贈收據、不能抵稅。若你是教會或企業，想為愛心方案捐款並需要收據，請走「贊助經文雨」方案：捐款直接交給合作的合法勸募團體，由它開立收據。', 'This is a personal gift to the developer, not a charitable appeal, so no donation receipt or tax deduction can be issued. Churches and businesses that want to give to charity projects and need a receipt should use the “Sponsor VerseRain” programme: gifts go straight to a licensed partner charity, which issues the receipt.')}{' '}
                       <button type="button" onClick={() => setMainTab('sponsor')} style={{ background: '#7c3aed', color: '#fff', border: 'none', borderRadius: 6, padding: '0.25rem 0.8rem', cursor: 'pointer', fontWeight: 700, fontSize: '0.82rem' }}>{t('贊助經文雨', 'Sponsor VerseRain')} →</button>
                     </div>
 
@@ -29408,11 +29260,6 @@ const deDict = {
                     <div><b style={{ color: '#1e293b' }}>{title}</b><div style={{ color: '#475569', fontSize: '0.9rem', lineHeight: 1.6 }}>{body}</div></div>
                   </div>
                 );
-                const tiers = [
-                  { name: t('種子', 'Seed'), amount: 'NT$5,000+', perks: t('感謝牆列名（可匿名）、可附一句祝福經文', 'Name on the thank-you wall (or anonymous), one verse of blessing') },
-                  { name: t('灌溉', 'Water'), amount: 'NT$20,000+', perks: t('以上 + 季度成效報告（發出份數、帶動多少人通過多少節）', 'Above + a quarterly impact report (vouchers sent, people and verses moved)') },
-                  { name: t('豐收', 'Harvest'), amount: 'NT$50,000+', perks: t('以上 + 可指定用途，或限定只獎勵自家教會會友', 'Above + earmark the gift, or restrict it to your own congregation') },
-                ];
                 return (
                   <div style={{ backgroundColor: '#fbf8ff', borderRadius: '8px', border: '1px solid #ddd6fe', padding: '1.5rem', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.6rem', marginBottom: '0.8rem' }}>
@@ -29420,49 +29267,35 @@ const deDict = {
                       <button type="button" onClick={() => setMainTab('advanced')} style={{ background: 'transparent', border: '1px solid #cbd5e1', color: '#64748b', borderRadius: '6px', padding: '0.35rem 0.8rem', cursor: 'pointer', fontSize: '0.85rem' }}>← {t('返回', 'Back')}</button>
                     </div>
                     <p style={{ color: '#475569', lineHeight: 1.7, marginTop: 0 }}>
-                      {t('一起推廣讀經與背經。你的贊助會變成電子禮券，獎勵真正通過經文、並邀請朋友一起來的人，幫助更多人養成每天讀神話語的習慣。', 'Help spread Bible reading and memorisation. Your gift becomes e-vouchers that reward people who genuinely pass verses and bring friends along, helping more people build a daily habit in God’s Word.')}
+                      {t('一起推廣讀經與背經。你的捐款不再變成玩家的禮券，而是交給合法的合作勸募團體，用在具體的愛心方案上（例如長者聚餐）；大家讀經累積的點數，會一起「解鎖」這份愛心。', 'Help spread Bible reading and memorisation. Your gift no longer becomes vouchers for players: it goes to a licensed partner charity for a concrete project (such as a meal for the elderly), and the points everyone earns by reading Scripture together “unlock” it.')}
                     </p>
+                    <div data-testid="partner-talks-notice" style={{ background: '#fff7ed', border: '1px solid #fed7aa', borderRadius: 10, padding: '0.7rem 1rem', marginBottom: '1rem', color: '#7c2d12', fontSize: '0.88rem', lineHeight: 1.7 }}>
+                      {t('新方案正在與合法勸募團體洽談合作，第一批方案確定後會公布在「愛心折抵池」頁。原本「通過經文換禮券」的獎勵已經停止。', 'We are in talks with licensed charities; the first projects will be announced on the charity pool page. The old “pass verses for a voucher” rewards have ended.')}
+                    </div>
 
                     <div style={card}>
                       <h3 style={h3}>🔁 {t('怎麼運作', 'How it works')}</h3>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
-                        {step(1, t('贊助金由教會／非營利機構代收', 'A church / non-profit receives the gift'), t('由代收單位開立收據，經文雨本身不經手款項。', 'The receiving body issues the receipt; VerseRain never handles the money.'))}
-                        {step(2, t('記入 App 的贊助池並公開', 'Recorded in the app’s sponsor pool, publicly'), t('管理員登記金額與你的祝福語，累計贊助、已發出與剩餘額度即時公開。', 'An admin records the amount and your blessing; totals raised, sent and remaining are shown live.'))}
-                        {step(3, t('玩家達標，禮券從你的池發出', 'Players hit milestones, vouchers go out from your pool'), t('達標由伺服器核算，管理員審核後寄出電子禮券並從贊助池扣款。', 'Milestones are verified server-side; an admin reviews, sends the e-voucher, and debits the pool.'))}
+                        {step(1, t('教會／機構提出愛心方案', 'A church or organisation proposes a project'), t('受助單位向合作的合法勸募團體提出具體方案，例如長者聚餐需要 10 萬元；核准後才會出現在經文雨上。', 'The beneficiary proposes a concrete project to a licensed partner charity — for example NT$100,000 for a meal for the elderly; it appears in VerseRain only once approved.'))}
+                        {step(2, t('企業或個人捐款給合作勸募團體', 'Businesses and individuals give to the partner charity'), t('捐款直接交給合作勸募團體、指定用在這個方案，由它開立收據；可以具名或匿名。經文雨不經手任何款項。', 'Gifts go straight to the partner charity, earmarked for the project, and it issues the receipt; givers may be named or anonymous. VerseRain never handles money.'))}
+                        {step(3, t('大家投入經文點數，一起解鎖', 'Everyone puts in verse points to unlock it'), t('玩家把讀經得到的點數投入方案，達到門檻就解鎖。點數無現金價值，玩家自己不會拿到任何金錢或禮品。', 'Players put the points they earn from reading into the project; reaching the target unlocks it. Points have no cash value and players receive no money or gifts themselves.'))}
+                        {step(4, t('達標後由合作勸募團體撥款', 'Once unlocked, the partner charity releases the funds'), t('經文雨把達標結果通知合作勸募團體，由它依原定用途撥款給受助單位，並在 App 公開「已撥款」。', 'VerseRain notifies the partner charity, which releases the funds to the beneficiary for the stated purpose; the app then shows it as released.'))}
                       </div>
                     </div>
 
                     <div style={card}>
-                      <h3 style={h3}>🎁 {t('目前的獎勵', 'Current rewards')}</h3>
+                      <h3 style={h3}>🌱 {t('為什麼這樣設計', 'Why this design')}</h3>
+                      <ul style={{ margin: 0, paddingLeft: '1.2rem', color: '#475569', fontSize: '0.9rem', lineHeight: 1.8 }}>
+                        <li>{t('玩家的點數不再只是為自己累積折扣，而是真正拿來做有意義的事。', 'Players’ points stop being just discounts for themselves and go toward something meaningful.')}</li>
+                        <li>{t('不只企業家做好事，每一位讀經的人都一起貢獻；企業的捐款也間接鼓勵大家讀聖經。', 'It is not only business owners doing good — everyone who reads contributes, and the businesses’ gifts in turn encourage people to read the Bible.')}</li>
+                        <li>{t('經文雨不參與金錢往來，只負責記錄點數和通知；勸募、收據與撥款都由合法的勸募團體負責。', 'VerseRain takes no part in money: it only records points and sends notices; fundraising, receipts and payouts are handled by a licensed charity.')}</li>
+                      </ul>
+                    </div>
+
+                    <div style={card}>
+                      <h3 style={h3}>⛪ {t('教會／機構怎麼提出方案', 'How a church or organisation proposes a project')}</h3>
                       <div style={{ color: '#475569', fontSize: '0.9rem', lineHeight: 1.7 }}>
-                        <div>🏞️ {t('每通過 {n} 節經文', 'Every {n} verses passed').replace('{n}', '100')} → {fmtMoney(VOUCHER_DEFAULTS.verses.TWD, 'TWD')} / {fmtMoney(VOUCHER_DEFAULTS.verses.USD, 'USD')}</div>
-                        <div>🤝 {t('每邀請 {n} 位朋友，各通過 {p} 節', 'Every {n} friends invited, each passing {p} verses').replace('{n}', '10').replace('{p}', '3')} → {fmtMoney(VOUCHER_DEFAULTS.invites.TWD, 'TWD')} / {fmtMoney(VOUCHER_DEFAULTS.invites.USD, 'USD')}</div>
-                        <div style={{ color: '#64748b', fontSize: '0.82rem', marginTop: 4 }}>{t('禮券以 LINE POINTS、7-ELEVEN、星巴克、書房禮券為主，海外用 Amazon eGift；每份約 NT$300。', 'Vouchers are mainly LINE POINTS, 7-ELEVEN, Starbucks and Christian bookshop vouchers; Amazon eGift overseas; about NT$300 each.')}</div>
-                      </div>
-                    </div>
-
-                    <div style={card}>
-                      <h3 style={h3}>🌱 {t('贊助方案', 'Sponsorship tiers')}</h3>
-                      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.9rem', color: '#334155' }}>
-                        <tbody>
-                          {tiers.map(tier => (
-                            <tr key={tier.name} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                              <td style={{ padding: '0.5rem 0', fontWeight: 700, whiteSpace: 'nowrap', verticalAlign: 'top' }}>{tier.name}</td>
-                              <td style={{ padding: '0.5rem 0.6rem', whiteSpace: 'nowrap', verticalAlign: 'top', color: '#5b21b6', fontWeight: 700 }}>{tier.amount}</td>
-                              <td style={{ padding: '0.5rem 0', verticalAlign: 'top', color: '#475569' }}>{tier.perks}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                      <div style={{ color: '#64748b', fontSize: '0.82rem', marginTop: '0.6rem', lineHeight: 1.6 }}>
-                        {t('回饋只有致謝與統計，不含廣告曝光；感謝牆只列名字與祝福語，不放商標或連結。', 'Perks are thanks and statistics only, never advertising; the wall shows names and blessings, no logos or links.')}
-                      </div>
-                    </div>
-
-                    <div style={card}>
-                      <h3 style={h3}>⛪ {t('教會限定池', 'Church-only pools')}</h3>
-                      <div style={{ color: '#475569', fontSize: '0.9rem', lineHeight: 1.7 }}>
-                        {t('教會可以選擇只獎勵自己的會友：我們給教會一個代碼，會友在 App 填入後，達標時就從該教會的池領取。一個人一次只會從一個池領一份獎勵，不會重複。', 'A church may reward only its own members: we give the church a code, members enter it in the app, and their rewards are paid from that church’s pool. One person receives one reward per milestone from one pool, never twice.')}
+                        {t('請以已立案的社福單位名義，向合作勸募團體提出方案（純宗教活動通常不在補助範圍內）；核准後會出現在「愛心折抵池」和地圖上。', 'Propose the project to the partner charity under a registered social-welfare body (purely religious activities are usually not eligible); once approved it appears on the charity pool page and the map.')}
                       </div>
                     </div>
 
@@ -29484,18 +29317,19 @@ const deDict = {
                     <div style={card}>
                       <h3 style={h3}>🔍 {t('透明與隱私', 'Transparency & privacy')}</h3>
                       <ul style={{ margin: 0, paddingLeft: '1.2rem', color: '#475569', fontSize: '0.9rem', lineHeight: 1.8 }}>
-                        <li>{t('每個贊助池的累計、已發出與剩餘額度都在 App 內公開。', 'Each pool’s total, sent and remaining amounts are public inside the app.')}</li>
+                        <li>{t('每個方案的點數進度、捐款（可匿名）與撥款狀態都在 App 內公開。', 'Each project’s points progress, gifts (anonymous if preferred) and payout status are public in the app.')}</li>
                         <li>{t('成效報告只有統計數字，不會提供任何玩家個資。', 'Impact reports contain statistics only — never any player data.')}</li>
-                        <li>{t('禮券序號不會存在系統裡，由管理員親自寄出。', 'Voucher codes are never stored in the system; an admin sends them personally.')}</li>
+                        <li>{t('捐款人的收據資料由合作勸募團體保管，經文雨不保存。', 'Donors’ receipt details stay with the partner charity; VerseRain does not keep them.')}</li>
                       </ul>
                     </div>
 
                     <div style={{ padding: '0.9rem 1rem', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 10, color: '#166534', fontSize: '0.9rem', lineHeight: 1.7 }}>
                       <b>{t('想加入？', 'Want to join?')}</b>{' '}
-                      {t('寫信告訴我們你的名稱、希望贊助的金額與用途（開放或限定會友），我們會回覆代收與收據的細節。', 'Email us your name, the amount you have in mind, and whether it is open or for your own members; we will reply with the receiving and receipt details.')}
+                      {t('企業或個人想捐款、教會或機構想提出方案，都歡迎寫信給我們，我們會協助轉介合作的勸募團體。', 'Businesses and individuals who want to give, and churches or organisations with a project, are welcome to email us; we will connect you with a partner charity.')}
                       <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginTop: '0.6rem' }}>
-                        <a href={`mailto:hungry4grace@gmail.com?subject=${encodeURIComponent('經文雨 贊助獎勵計劃（VerseRain Sponsorship）')}`} style={{ background: '#166534', color: '#fff', borderRadius: 6, padding: '0.35rem 0.9rem', fontWeight: 700, textDecoration: 'none', fontSize: '0.85rem' }}>{t('聯絡我們', 'Contact us')} →</a>
-                        <button type="button" onClick={() => setMainTab('sponsors')} style={{ background: 'transparent', color: '#166534', border: '1px solid #86efac', borderRadius: 6, padding: '0.35rem 0.9rem', cursor: 'pointer', fontWeight: 700, fontSize: '0.85rem' }}>{t('查看贊助獎勵計劃現況', 'See the programme status')}</button>
+                        <a href={`mailto:hungry4grace@gmail.com?subject=${encodeURIComponent('經文雨 愛心方案贊助（VerseRain Charity Projects）')}`} style={{ background: '#166534', color: '#fff', borderRadius: 6, padding: '0.35rem 0.9rem', fontWeight: 700, textDecoration: 'none', fontSize: '0.85rem' }}>{t('聯絡我們', 'Contact us')} →</a>
+                        <button type="button" onClick={() => setMainTab('charity')} style={{ background: 'transparent', color: '#166534', border: '1px solid #86efac', borderRadius: 6, padding: '0.35rem 0.9rem', cursor: 'pointer', fontWeight: 700, fontSize: '0.85rem' }}>{t('看看有哪些愛心折抵池', 'See the charity pools')}</button>
+                        <button type="button" onClick={() => setMainTab('sponsors')} style={{ background: 'transparent', color: '#166534', border: '1px solid #86efac', borderRadius: 6, padding: '0.35rem 0.9rem', cursor: 'pointer', fontWeight: 700, fontSize: '0.85rem' }}>{t('感謝贊助者', 'Thank you, sponsors')}</button>
                       </div>
                       {SHOW_DONATE && <div style={{ color: '#64748b', fontSize: '0.82rem', marginTop: '0.6rem' }}>
                         {t('個人小額支持 App 開發，請到', 'For small personal gifts toward development, see')}{' '}
