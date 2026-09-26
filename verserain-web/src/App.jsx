@@ -26268,7 +26268,7 @@ const deDict = {
                     verserain
                   </div>
                   <div className="app-brand-version" style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', marginTop: '4px', marginLeft: '2px' }}>
-                    v4.0.91
+                    v4.0.92
                   </div>
                 </div>
                 <div ref={langPickerRef} className="app-lang-control" style={{ position: 'relative' }}>
@@ -28820,7 +28820,13 @@ const deDict = {
                             {VERSES_DB.map((v, i) => {
                               const vBest = parseInt(localStorage.getItem(`verseRainBestScore_${v.reference}`)) || 0;
                               const isSelected = selectedVerseRefs.includes(v.reference);
-                              const gEntry = (gardenData || {})[v.reference];
+                              // A verse can be planted under a differently-formatted spelling of the
+                              // same reference (e.g. played first from another set or language) — look
+                              // it up the same way updateGarden() decides whether to grow an existing
+                              // tree, not by exact key match, or an already-played verse would wrongly
+                              // show as empty soil here.
+                              const gKey = findGardenKey(gardenData || {}, v.reference, verseRefKey);
+                              const gEntry = gKey ? gardenData[gKey] : null;
 
                               return (
                                 <tr key={i} style={{ borderBottom: '1px solid #e2e8f0', backgroundColor: isSelected ? '#eff6ff' : (i % 2 === 0 ? '#ffffff' : '#f8fafc'), transition: 'background 0.2s', cursor: 'pointer' }} onClick={() => toggleSelection(v.reference)}>
