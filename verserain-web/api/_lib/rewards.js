@@ -21,6 +21,10 @@ import { sendReferralApns } from './apns.js';
 // each record is what the admin reviews before sending anything.
 
 export const LEDGER_KEY = 'rewards:ledger';
+// The gift-card programme has ended: sponsorship now goes to licensed partner
+// charities and is unlocked by points (see the 贊助經文雨 page). No new rewards
+// are minted; rewards already in the ledger are still fulfilled by an admin.
+export const REWARD_MINTING_ENDED = true;
 export const VERSES_PER_REWARD = 100;
 export const INVITES_PER_REWARD = 10;
 // A referee counts toward the inviter's reward once they have genuinely passed
