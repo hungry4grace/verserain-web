@@ -25605,7 +25605,7 @@ const deDict = {
                     verserain
                   </div>
                   <div className="app-brand-version" style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', marginTop: '4px', marginLeft: '2px' }}>
-                    v4.0.97
+                    v4.0.98
                   </div>
                 </div>
                 <div ref={langPickerRef} className="app-lang-control" style={{ position: 'relative' }}>
@@ -26963,12 +26963,9 @@ const deDict = {
                                 <div key={set.id} style={{ border: '1px solid #cbd5e1', borderRadius: '8px', padding: '1.5rem', position: 'relative' }}>
                                   <div style={{ position: 'absolute', top: '1rem', right: '1rem', display: 'flex', flexDirection: 'column', gap: '0.5rem', alignItems: 'flex-end' }}>
                                     <button type="button" onClick={() => {
-                                      // Play straight from the list — same flow as the set page's 播放
-                                      // button (opens the 隨機/按序 chooser), no need to open 瀏覽 first.
-                                      initAudio();
-                                      if (!set?.verses?.length) return;
-                                      setPlayOrderChooser(set);
-                                    }} title={t("連續播放這個經文組（隨機或按序）", "Continuously play this verse set (shuffled or in order)")} style={{ background: '#8b5cf6', border: '1px solid #7c3aed', padding: '0.4rem 0.8rem', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', color: 'white', display: 'flex', alignItems: 'center', gap: '4px' }}><Headphones size={14} fill="white" /> {t("播放", "Play")}</button>
+                                      setSelectedSetId(set.id);
+                                      setMainTab('versesets');
+                                    }} style={{ background: '#3b82f6', border: '1px solid #2563eb', padding: '0.4rem 0.8rem', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', color: 'white', display: 'flex', alignItems: 'center', gap: '4px' }}><BookOpen size={14} /> {t("查看", "Open")}</button>
                                     <button type="button" onClick={() => setEditingCustomSet({ ...set, verses: set.verses?.map(parseVerseRef) || [] })} style={{ background: '#10b981', border: 'none', padding: '0.4rem 0.8rem', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', color: 'white', display: 'flex', alignItems: 'center', gap: '4px' }}><Edit size={14} /> {t("編輯", "Edit")}</button>
                                     <button type="button" onClick={() => {
                                       if (!set?.verses?.length) return;
@@ -30930,7 +30927,6 @@ const deDict = {
                       <li><span dangerouslySetInnerHTML={{ __html: t("<strong>⏱️ 播放時間：</strong>可設定播放幾分鐘後自動停止，或無限循環播放——睡前、靈修時段都好用。", "<strong>⏱️ Duration:</strong> Set playback to stop after a number of minutes, or loop forever — handy at bedtime or during devotions.") }} /></li>
                       <li><span dangerouslySetInnerHTML={{ __html: t("<strong>🔠 字體大小：</strong>同一個視窗裡可以調整聆聽畫面的字級，長輩或投影使用時把字放大更清楚。", "<strong>🔠 Font size:</strong> Adjust the text size of the listen screen in the same dialog — bigger for seniors or projection.") }} /></li>
                       <li><span dangerouslySetInnerHTML={{ __html: t("<strong>⭐ 我的最愛：</strong>聆聽時點播放器上的星星，或在「我的專屬題庫」的卡片上點星星，就能把經文組加入我的最愛。清單可用「我的最愛」排序，而且會跟著帳號同步到每一台裝置；從大廳「話語甘霖」進入後，也能直接挑「我的最愛」來聽。", "<strong>⭐ Favorites:</strong> Tap the star on the player, or on a card in \"My Custom Sets\", to add a verse set to your favorites. Sort the list by \"Favorites\", and they sync with your account across all devices. Entering from the lobby's \"Verse Rain\" card, you can pick \"Favorites\" to listen right away.") }} /></li>
-                      <li><span dangerouslySetInnerHTML={{ __html: t("<strong>▶️ 一鍵播放：</strong>「我的專屬題庫」每張卡片都多了「播放」鍵，不必先進入經文組就能開始連續聆聽（可選隨機或按序）。", "<strong>▶️ One-tap Play:</strong> Every card in \"My Custom Sets\" now has a \"Play\" button — start continuous listening (random or in order) without opening the set first.") }} /></li>
                       <li><span dangerouslySetInnerHTML={{ __html: t("<strong>🔄 雙語對調：</strong>讀經頁的「朗讀第二語言」按鈕會暫時把主／次語言互換，改用第二語言落字並朗讀，原語言退到下方小字；離開後自動還原，練習外語聽讀很方便。", "<strong>🔄 Swap languages:</strong> The reader's \"Read the second language\" button temporarily swaps your primary and secondary languages — the verse falls and is read aloud in the second language while the original shows below in small text. It reverts when you leave; great for practicing a foreign language.") }} /></li>
                       <li><span dangerouslySetInnerHTML={{ __html: t("<strong>⚡ 邊聽邊挑戰：</strong>聆聽中按 ⚡ 立刻挑戰這一節；結束後按「返回朗讀」會回到同一節並暫停等你，按播放或 ‹ › 就能接著聽下一節。", "<strong>⚡ Challenge while listening:</strong> Tap ⚡ while listening to challenge the current verse. When it ends, \"Back to reading\" returns you to the same verse, paused; press Play or ‹ › to continue.") }} /></li>
                     </ul>
