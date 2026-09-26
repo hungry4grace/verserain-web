@@ -1157,6 +1157,7 @@ export const he = {
   "看看這裡的讀經比賽": "ראו את תחרויות הקריאה כאן",
   "參加讀經比賽": "הצטרפו לתחרות הקריאה",
   "加 📖 = 有讀經比賽，可以參加": "+ 📖 = יש תחרות קריאה, הצטרפו כאן",
+  "前往閱讀": "עברו לקריאה",
 };
 
 export const fa = {
@@ -2295,6 +2296,7 @@ export const fa = {
   "看看這裡的讀經比賽": "مسابقات قرائت اینجا را ببینید",
   "參加讀經比賽": "پیوستن به مسابقهٔ قرائت",
   "加 📖 = 有讀經比賽，可以參加": "+ 📖 = مسابقهٔ قرائت دارد، اینجا بپیوندید",
+  "前往閱讀": "برو به خواندن",
 };
 
 export const ar = {
@@ -3849,6 +3851,7 @@ export const ar = {
   "看看這裡的讀經比賽": "شاهد مسابقات القراءة هنا",
   "參加讀經比賽": "انضم إلى مسابقة القراءة",
   "加 📖 = 有讀經比賽，可以參加": "+ 📖 = توجد مسابقة قراءة، انضم هنا",
+  "前往閱讀": "اذهب للقراءة",
 };
 
 export const ja = {
@@ -4975,6 +4978,7 @@ export const ja = {
   "看看這裡的讀經比賽": "ここの聖句コンテストを見る",
   "參加讀經比賽": "聖句コンテストに参加する",
   "加 📖 = 有讀經比賽，可以參加": "＋📖＝聖句コンテスト開催中、ここから参加できます",
+  "前往閱讀": "読みに行く",
 };
 
 export const ko = {
@@ -6099,6 +6103,7 @@ export const ko = {
   "看看這裡的讀經比賽": "여기의 성경 읽기 대회 보기",
   "參加讀經比賽": "성경 읽기 대회 참가하기",
   "加 📖 = 有讀經比賽，可以參加": "＋📖＝성경 읽기 대회가 있어요, 여기서 참가하세요",
+  "前往閱讀": "읽으러 가기",
 };
 
 export const es = {
@@ -7239,6 +7244,7 @@ export const es = {
   "看看這裡的讀經比賽": "Ver los concursos de lectura de aquí",
   "參加讀經比賽": "Unirse al concurso de lectura",
   "加 📖 = 有讀經比賽，可以參加": "+ 📖 = hay un concurso de lectura, únete aquí",
+  "前往閱讀": "Ir a leer",
 };
 
 export const tr = {
@@ -8379,6 +8385,7 @@ export const tr = {
   "看看這裡的讀經比賽": "Buradaki okuma yarışmalarını gör",
   "參加讀經比賽": "Okuma yarışmasına katıl",
   "加 📖 = 有讀經比賽，可以參加": "+ 📖 = okuma yarışması var, buradan katıl",
+  "前往閱讀": "Okumaya git",
 };
 
 export const de = {
@@ -9519,6 +9526,7 @@ export const de = {
   "看看這裡的讀經比賽": "Lesewettbewerbe hier ansehen",
   "參加讀經比賽": "Am Lesewettbewerb teilnehmen",
   "加 📖 = 有讀經比賽，可以參加": "+ 📖 = hat einen Lesewettbewerb, hier beitreten",
+  "前往閱讀": "Zum Lesen",
 };
 
 export const my = {
@@ -10659,6 +10667,7 @@ export const my = {
   "看看這裡的讀經比賽": "ဒီနေရာက ကျမ်းစာဖတ်ပြိုင်ပွဲများကို ကြည့်ရန်",
   "參加讀經比賽": "ကျမ်းစာဖတ်ပြိုင်ပွဲထဲ ဝင်ရောက်ရန်",
   "加 📖 = 有讀經比賽，可以參加": "+ 📖 = ကျမ်းစာဖတ်ပြိုင်ပွဲ ရှိသည်၊ ဒီနေရာက ဝင်ပါ",
+  "前往閱讀": "ဖတ်ရှုရန် သွားမည်",
 };
 
 export const vi = {
@@ -11799,6 +11808,7 @@ export const vi = {
   "看看這裡的讀經比賽": "Xem các cuộc thi đọc Kinh Thánh ở đây",
   "參加讀經比賽": "Tham gia cuộc thi đọc Kinh Thánh",
   "加 📖 = 有讀經比賽，可以參加": "+ 📖 = có cuộc thi đọc Kinh Thánh, tham gia tại đây",
+  "前往閱讀": "Đi đọc",
 };
 
 export const id = {
@@ -13167,6 +13177,7 @@ export const id = {
   "看看這裡的讀經比賽": "Lihat kontes membaca di sini",
   "參加讀經比賽": "Ikut kontes membaca",
   "加 📖 = 有讀經比賽，可以參加": "+ 📖 = ada kontes membaca, gabung di sini",
+  "前往閱讀": "Pergi membaca",
 };
 
 export const ms = {
@@ -14739,6 +14750,7 @@ export const ms = {
   "看看這裡的讀經比賽": "Lihat pertandingan pembacaan di sini",
   "參加讀經比賽": "Sertai pertandingan pembacaan",
   "加 📖 = 有讀經比賽，可以參加": "+ 📖 = ada pertandingan pembacaan, sertai di sini",
+  "前往閱讀": "Pergi membaca",
 };
 
 export const zhcn = {
@@ -16231,6 +16243,7 @@ export const zhcn = {
   "看看這裡的讀經比賽": "看看这里的读经比赛",
   "參加讀經比賽": "参加读经比赛",
   "加 📖 = 有讀經比賽，可以參加": "加 📖 = 有读经比赛，可以参加",
+  "前往閱讀": "前往阅读",
 };
 
 export const pt = {
@@ -17091,6 +17104,7 @@ export const pt = {
   "看看這裡的讀經比賽": "Ver os concursos de leitura daqui",
   "參加讀經比賽": "Participar do concurso de leitura",
   "加 📖 = 有讀經比賽，可以參加": "+ 📖 = há um concurso de leitura, participe aqui",
+  "前往閱讀": "Ir ler",
 };
 
 export const fr = {
@@ -17951,6 +17965,7 @@ export const fr = {
   "看看這裡的讀經比賽": "Voir les concours de lecture ici",
   "參加讀經比賽": "Rejoindre le concours de lecture",
   "加 📖 = 有讀經比賽，可以參加": "+ 📖 = un concours de lecture est en cours, rejoignez-le ici",
+  "前往閱讀": "Aller lire",
 };
 
 export const ru = {
@@ -18811,6 +18826,7 @@ export const ru = {
   "看看這裡的讀經比賽": "Смотреть конкурсы чтения здесь",
   "參加讀經比賽": "Присоединиться к конкурсу чтения",
   "加 📖 = 有讀經比賽，可以參加": "+ 📖 = есть конкурс чтения, присоединяйтесь здесь",
+  "前往閱讀": "Перейти к чтению",
 };
 
 export const hi = {
@@ -19671,6 +19687,7 @@ export const hi = {
   "看看這裡的讀經比賽": "यहां की पठन प्रतियोगिताएं देखें",
   "參加讀經比賽": "पठन प्रतियोगिता में शामिल हों",
   "加 📖 = 有讀經比賽，可以參加": "+ 📖 = पठन प्रतियोगिता है, यहां शामिल हों",
+  "前往閱讀": "पढ़ने जाएं",
 };
 
 // Khmer (Cambodian) — full UI coverage, machine-translated in bulk from the
@@ -21161,6 +21178,7 @@ export const km = {
   "看看這裡的讀經比賽": "មើលការប្រកួតអានព្រះគម្ពីរនៅទីនេះ",
   "參加讀經比賽": "ចូលរួមការប្រកួតអានព្រះគម្ពីរ",
   "加 📖 = 有讀經比賽，可以參加": "+ 📖 = មានការប្រកួតអានព្រះគម្ពីរ ចូលរួមនៅទីនេះ",
+  "前往閱讀": "ទៅអាន",
 };
 
 const I18N_FILLINS = { he, fa, ar, ja, ko, es, tr, de, my, vi, id, ms, zhcn, pt, fr, ru, hi, km };
