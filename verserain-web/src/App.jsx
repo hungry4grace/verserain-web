@@ -4058,6 +4058,7 @@ function VerseSetContinuousRainPlayer({
           onCancel={() => setVoiceRecTarget(null)}
           onDone={() => setVoiceRecTarget(null)}
           showShareToggle
+          zIndex={3000}
         />
       )}
 
@@ -25558,7 +25559,7 @@ const deDict = {
                     verserain
                   </div>
                   <div className="app-brand-version" style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', marginTop: '4px', marginLeft: '2px' }}>
-                    v4.0.100
+                    v4.0.101
                   </div>
                 </div>
                 <div ref={langPickerRef} className="app-lang-control" style={{ position: 'relative' }}>
