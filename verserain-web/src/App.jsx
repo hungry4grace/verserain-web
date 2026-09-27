@@ -25559,7 +25559,7 @@ const deDict = {
                     verserain
                   </div>
                   <div className="app-brand-version" style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', marginTop: '4px', marginLeft: '2px' }}>
-                    v4.0.101
+                    v4.0.102
                   </div>
                 </div>
                 <div ref={langPickerRef} className="app-lang-control" style={{ position: 'relative' }}>
@@ -29098,7 +29098,7 @@ const deDict = {
                       <button type="button" onClick={() => setMainTab('advanced')} style={{ background: 'transparent', border: '1px solid #cbd5e1', color: '#64748b', borderRadius: '6px', padding: '0.35rem 0.8rem', cursor: 'pointer', fontSize: '0.85rem' }}>← {t('返回', 'Back')}</button>
                     </div>
                     <div data-testid="voucher-programme-ended" style={{ background: '#fff7ed', border: '1px solid #fed7aa', borderRadius: 10, padding: '0.8rem 1rem', marginBottom: '1rem', color: '#7c2d12', fontSize: '0.9rem', lineHeight: 1.7 }}>
-                      {t('原本「通過經文換禮券」的贊助獎勵計劃已經結束，不再產生新的獎勵；已經達標、還在等待寄送的禮券，仍會照常審核寄出。贊助改為透過合法的勸募團體支持愛心方案，由大家用讀經點數一起解鎖。', 'The old “pass verses for a voucher” programme has ended and no new rewards are created; vouchers already earned and awaiting delivery will still be reviewed and sent. Sponsorship now supports charity projects through licensed charities, unlocked together with everyone’s reading points.')}{' '}
+                      {t('原本「通過經文換禮券」的贊助獎勵計劃已經結束，不再產生新的獎勵；已經達標、還在等待寄送的禮券，仍會照常審核寄出。贊助改為把捐款交給合法的勸募團體、依原計畫使用；大家讀經達標時，再由合作企業另外加碼。', 'The old “pass verses for a voucher” programme has ended and no new rewards are created; vouchers already earned and awaiting delivery will still be reviewed and sent. Sponsorship now means giving to a licensed charity, used as that charity planned; when readers reach a shared goal, a partner business adds an extra gift.')}{' '}
                       <button type="button" onClick={() => setMainTab('sponsor')} style={{ background: '#c2410c', color: '#fff', border: 'none', borderRadius: 6, padding: '0.25rem 0.8rem', cursor: 'pointer', fontWeight: 700, fontSize: '0.82rem' }}>{t('了解贊助方案', 'Sponsorship options')} →</button>
                     </div>
                     <p data-testid="points-disclaimer" style={{ color: '#64748b', fontSize: '0.8rem', lineHeight: 1.6, marginTop: 0, marginBottom: '1rem' }}>
@@ -29268,7 +29268,7 @@ const deDict = {
                       <button type="button" onClick={() => setMainTab('advanced')} style={{ background: 'transparent', border: '1px solid #cbd5e1', color: '#64748b', borderRadius: '6px', padding: '0.35rem 0.8rem', cursor: 'pointer', fontSize: '0.85rem' }}>← {t('返回', 'Back')}</button>
                     </div>
                     <p style={{ color: '#475569', lineHeight: 1.7, marginTop: 0 }}>
-                      {t('一起推廣讀經與背經。你的捐款不再變成玩家的禮券，而是交給合法的合作勸募團體，用在具體的愛心方案上（例如長者聚餐）；大家讀經累積的點數，會一起「解鎖」這份愛心。', 'Help spread Bible reading and memorisation. Your gift no longer becomes vouchers for players: it goes to a licensed partner charity for a concrete project (such as a meal for the elderly), and the points everyone earns by reading Scripture together “unlock” it.')}
+                      {t('一起推廣讀經與背經。你的捐款不再變成玩家的禮券，而是交給合法的合作勸募團體，依它原定的計畫用在公益方案上（例如長者聚餐），不必等任何讀經條件；大家讀經累積點數、一起達到門檻時，再由合作企業另外加碼。', 'Help spread Bible reading and memorisation. Your gift no longer becomes vouchers for players: it goes to a licensed partner charity and is used for its planned project (such as a meal for the elderly) without waiting on any reading goal. When everyone’s reading points reach a shared target, a partner business adds an extra gift.')}
                     </p>
                     <div data-testid="partner-talks-notice" style={{ background: '#fff7ed', border: '1px solid #fed7aa', borderRadius: 10, padding: '0.7rem 1rem', marginBottom: '1rem', color: '#7c2d12', fontSize: '0.88rem', lineHeight: 1.7 }}>
                       {t('新方案正在與合法勸募團體洽談合作，第一批方案確定後會公布在「愛心折抵池」頁。原本「通過經文換禮券」的獎勵已經停止。', 'We are in talks with licensed charities; the first projects will be announced on the charity pool page. The old “pass verses for a voucher” rewards have ended.')}
@@ -29277,10 +29277,10 @@ const deDict = {
                     <div style={card}>
                       <h3 style={h3}>🔁 {t('怎麼運作', 'How it works')}</h3>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
-                        {step(1, t('教會／機構提出愛心方案', 'A church or organisation proposes a project'), t('受助單位向合作的合法勸募團體提出具體方案，例如長者聚餐需要 10 萬元；核准後才會出現在經文雨上。', 'The beneficiary proposes a concrete project to a licensed partner charity — for example NT$100,000 for a meal for the elderly; it appears in VerseRain only once approved.'))}
-                        {step(2, t('企業或個人捐款給合作勸募團體', 'Businesses and individuals give to the partner charity'), t('捐款直接交給合作勸募團體、指定用在這個方案，由它開立收據；可以具名或匿名。經文雨不經手任何款項。', 'Gifts go straight to the partner charity, earmarked for the project, and it issues the receipt; givers may be named or anonymous. VerseRain never handles money.'))}
-                        {step(3, t('大家投入經文點數，一起解鎖', 'Everyone puts in verse points to unlock it'), t('玩家把讀經得到的點數投入方案，達到門檻就解鎖。點數無現金價值，玩家自己不會拿到任何金錢或禮品。', 'Players put the points they earn from reading into the project; reaching the target unlocks it. Points have no cash value and players receive no money or gifts themselves.'))}
-                        {step(4, t('達標後由合作勸募團體撥款', 'Once unlocked, the partner charity releases the funds'), t('經文雨把達標結果通知合作勸募團體，由它依原定用途撥款給受助單位，並在 App 公開「已撥款」。', 'VerseRain notifies the partner charity, which releases the funds to the beneficiary for the stated purpose; the app then shows it as released.'))}
+                        {step(1, t('合作機構選出既有公益方案', 'The partner charity picks one of its existing projects'), t('由合法的合作勸募團體，從它已經審核、正在執行的方案中選出一個（例如社區長者共餐），經它確認後才會出現在經文雨上。', 'A licensed partner charity chooses a project it has already approved and is running (for example community meals for the elderly); it appears in VerseRain only after the charity confirms.'))}
+                        {step(2, t('企業或個人捐款，依原計畫使用', 'Gifts are used as planned'), t('捐款直接交給合作勸募團體，由它開立收據，並依原定計畫與期程使用，不等待任何讀經條件；可以具名或匿名。經文雨不收款。', 'Gifts go straight to the partner charity, which issues the receipt and uses them on its original plan and schedule, without waiting on any reading goal; givers may be named or anonymous. VerseRain collects no money.'))}
+                        {step(3, t('大家讀經投點，達到門檻', 'Everyone reads and puts in points'), t('玩家把讀經得到的點數投入活動；公益投點另外記錄，不換算成金額。玩家自己不會拿到任何金錢或禮品。', 'Players put the points they earn from reading into the campaign; these are recorded separately and never converted into money. Players receive no money or gifts themselves.'))}
+                        {step(4, t('企業加碼，經機構確認後公布', 'A business adds a gift, published once the charity confirms'), t('達標後，合作企業依書面約定把加碼款交給合作勸募團體，用於同一方案；機構確認收款與撥款後，App 才公布結果。', 'When the target is reached, the partner business gives its extra gift to the charity for the same project under a written agreement; the app shows the result only after the charity confirms receipt and payout.'))}
                       </div>
                     </div>
 
@@ -29289,14 +29289,14 @@ const deDict = {
                       <ul style={{ margin: 0, paddingLeft: '1.2rem', color: '#475569', fontSize: '0.9rem', lineHeight: 1.8 }}>
                         <li>{t('玩家的點數不再只是為自己累積折扣，而是真正拿來做有意義的事。', 'Players’ points stop being just discounts for themselves and go toward something meaningful.')}</li>
                         <li>{t('不只企業家做好事，每一位讀經的人都一起貢獻；企業的捐款也間接鼓勵大家讀聖經。', 'It is not only business owners doing good — everyone who reads contributes, and the businesses’ gifts in turn encourage people to read the Bible.')}</li>
-                        <li>{t('經文雨不參與金錢往來，只負責記錄點數和通知；勸募、收據與撥款都由合法的勸募團體負責。', 'VerseRain takes no part in money: it only records points and sends notices; fundraising, receipts and payouts are handled by a licensed charity.')}</li>
+                        <li>{t('經文雨不收款、不代收代付、不儲值、不兌現；勸募、收據與撥款都由合法的勸募團體負責。', 'VerseRain collects no money, pays nothing out on anyone’s behalf, holds no stored value and redeems nothing for cash; fundraising, receipts and payouts are handled by a licensed charity.')}</li>
                       </ul>
                     </div>
 
                     <div style={card}>
-                      <h3 style={h3}>⛪ {t('教會／機構怎麼提出方案', 'How a church or organisation proposes a project')}</h3>
+                      <h3 style={h3}>🤝 {t('受助對象與方案', 'Who is helped, and which projects')}</h3>
                       <div style={{ color: '#475569', fontSize: '0.9rem', lineHeight: 1.7 }}>
-                        {t('請以已立案的社福單位名義，向合作勸募團體提出方案（純宗教活動通常不在補助範圍內）；核准後會出現在「愛心折抵池」和地圖上。', 'Propose the project to the partner charity under a registered social-welfare body (purely religious activities are usually not eligible); once approved it appears on the charity pool page and the map.')}
+                        {t('由合作勸募團體依它的審核程序決定；受助資格與信仰、讀經或是否使用 App 無關。教會或機構有需要，請直接向合作勸募團體申請。', 'The partner charity decides through its own review; eligibility has nothing to do with faith, Bible reading or using the app. Churches or organisations in need should apply to the partner charity directly.')}
                       </div>
                     </div>
 
@@ -29318,15 +29318,15 @@ const deDict = {
                     <div style={card}>
                       <h3 style={h3}>🔍 {t('透明與隱私', 'Transparency & privacy')}</h3>
                       <ul style={{ margin: 0, paddingLeft: '1.2rem', color: '#475569', fontSize: '0.9rem', lineHeight: 1.8 }}>
-                        <li>{t('每個方案的點數進度、捐款（可匿名）與撥款狀態都在 App 內公開。', 'Each project’s points progress, gifts (anonymous if preferred) and payout status are public in the app.')}</li>
-                        <li>{t('成效報告只有統計數字，不會提供任何玩家個資。', 'Impact reports contain statistics only — never any player data.')}</li>
+                        <li>{t('點數進度隨時公開；達標結果與撥款狀態，經合作勸募團體確認後才公布。', 'Points progress is always public; whether the target was met and funds were paid out is shown only after the partner charity confirms it.')}</li>
+                        <li>{t('對機構與企業只提供彙總統計，不提供個人的讀經紀錄或所屬教會。', 'Charities and businesses get aggregate statistics only — never anyone’s reading record or church.')}</li>
                         <li>{t('捐款人的收據資料由合作勸募團體保管，經文雨不保存。', 'Donors’ receipt details stay with the partner charity; VerseRain does not keep them.')}</li>
                       </ul>
                     </div>
 
                     <div style={{ padding: '0.9rem 1rem', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 10, color: '#166534', fontSize: '0.9rem', lineHeight: 1.7 }}>
                       <b>{t('想加入？', 'Want to join?')}</b>{' '}
-                      {t('企業或個人想捐款、教會或機構想提出方案，都歡迎寫信給我們，我們會協助轉介合作的勸募團體。', 'Businesses and individuals who want to give, and churches or organisations with a project, are welcome to email us; we will connect you with a partner charity.')}
+                      {t('企業願意提供捐款或加碼，歡迎寫信給我們，我們會協助聯繫合作勸募團體；有需要的教會或機構，請直接向合作勸募團體申請。', 'Businesses willing to give or offer a matching gift are welcome to email us and we will put you in touch with a partner charity; churches or organisations in need should apply to the partner charity directly.')}
                       <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginTop: '0.6rem' }}>
                         <a href={`mailto:hungry4grace@gmail.com?subject=${encodeURIComponent('經文雨 愛心方案贊助（VerseRain Charity Projects）')}`} style={{ background: '#166534', color: '#fff', borderRadius: 6, padding: '0.35rem 0.9rem', fontWeight: 700, textDecoration: 'none', fontSize: '0.85rem' }}>{t('聯絡我們', 'Contact us')} →</a>
                         <button type="button" onClick={() => setMainTab('charity')} style={{ background: 'transparent', color: '#166534', border: '1px solid #86efac', borderRadius: 6, padding: '0.35rem 0.9rem', cursor: 'pointer', fontWeight: 700, fontSize: '0.85rem' }}>{t('看看有哪些愛心折抵池', 'See the charity pools')}</button>
