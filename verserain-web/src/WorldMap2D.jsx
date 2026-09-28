@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { loadLeafletAndCluster } from './leafletLoader';
+import { spreadPoints } from './lib/placeSpread';
 import { getSetAssetDataUrl } from './setVoiceApi';
 
 // Same deterministic room color as in App.jsx
@@ -211,6 +212,7 @@ export default function WorldMap2D({ t, playerName, userEmail, onJoinRoom, onVie
   // Places layer: separate from the player markers so it is neither clustered
   // nor rebuilt every 30 s; refs keep the big marker effect's deps unchanged.
   const placeMarkersRef = useRef(null);
+  const placeLinksRef = useRef(null); // leader lines from spread-out icons to their real spot
   const placesRef = useRef(places);
   const onRedeemRef = useRef(onRedeem);
   const onOpenPoolRef = useRef(onOpenPool);
@@ -590,10 +592,14 @@ export default function WorldMap2D({ t, playerName, userEmail, onJoinRoom, onVie
     if (!mapReady || !map || !L) return;
     if (!map.getPane('placePane')) { map.createPane('placePane'); map.getPane('placePane').style.zIndex = 610; }
     if (!placeMarkersRef.current) placeMarkersRef.current = L.layerGroup().addTo(map);
+    if (!placeLinksRef.current) placeLinksRef.current = L.layerGroup().addTo(map);
     const layer = placeMarkersRef.current;
+    const links = placeLinksRef.current;
     layer.clearLayers();
+    links.clearLayers();
     if (!placesMode) return;
     const byId = new Map();
+    const entries = []; // { marker, trueLatLng }
     (places || []).forEach((pl) => {
       if (!pl || !Number.isFinite(Number(pl.lat)) || !Number.isFinite(Number(pl.lng))) return;
       const st = PLACE_STYLE[pl.kind] || PLACE_STYLE.org;
@@ -605,7 +611,8 @@ export default function WorldMap2D({ t, playerName, userEmail, onJoinRoom, onVie
         html: `<div style="position:relative;width:30px;height:30px;border-radius:${pl.kind === 'church' ? '50%' : '9px'};background:${st.bg};border:2px solid #fff;box-shadow:0 0 0 2px ${st.border}55, 0 3px 10px rgba(0,0,0,0.45);display:flex;align-items:center;justify-content:center;font-size:16px;cursor:pointer;">${st.emoji}${pct}${pool}${contest}</div>`,
         iconSize: [30, 30], iconAnchor: [15, 15], popupAnchor: [0, -14],
       });
-      const marker = L.marker([Number(pl.lat), Number(pl.lng)], { pane: 'placePane', icon, zIndexOffset: 1000 });
+      const trueLatLng = L.latLng(Number(pl.lat), Number(pl.lng));
+      const marker = L.marker(trueLatLng, { pane: 'placePane', icon, zIndexOffset: 1000 });
       const kindLabel = pl.kind === 'merchant' ? t('商家', 'Shop') : pl.kind === 'church' ? t('教會', 'Church') : t('機構', 'Organisation');
       const poolLine = pl.poolId ? `<div style="display:inline-block;background:#fff1f2;color:#9f1239;border:1px solid #fecdd3;border-radius:999px;padding:2px 10px;font-weight:800;font-size:0.85rem;margin-bottom:6px;">❤️ ${Number(pl.poolCount) > 1 ? escapeHtml(t('{n} 個愛心折抵池', '{n} charity pools').replace('{n}', String(pl.poolCount))) : escapeHtml(t('愛心折抵池', 'Charity discount pool'))}${pl.poolName ? `：${escapeHtml(pl.poolName)}${Number(pl.poolCount) > 1 ? '…' : ''}` : ''}</div>` : '';
       const contestLine = pl.contestId ? `<div style="display:inline-block;background:#eff6ff;color:#1e40af;border:1px solid #bfdbfe;border-radius:999px;padding:2px 10px;font-weight:800;font-size:0.85rem;margin-bottom:6px;margin-left:4px;">📖 ${Number(pl.contestCount) > 1 ? escapeHtml(t('{n} 個讀經比賽', '{n} reading contests').replace('{n}', String(pl.contestCount))) : escapeHtml(t('讀經比賽', 'Reading contest'))}${pl.contestName ? `：${escapeHtml(pl.contestName)}${Number(pl.contestCount) > 1 ? '…' : ''}` : ''}</div>` : '';
@@ -633,7 +640,29 @@ export default function WorldMap2D({ t, playerName, userEmail, onJoinRoom, onVie
       marker.on('click', (ev) => { L.DomEvent.stopPropagation(ev); });
       marker.addTo(layer);
       byId.set(pl.id, marker);
+      entries.push({ marker, trueLatLng });
     });
+    // Places at (nearly) the same spot — e.g. two addresses geocoded to one
+    // point — would stack forever, even at max zoom. Re-spread them on screen
+    // after every zoom and draw a thin line back to the real location.
+    const layoutPlaces = () => {
+      links.clearLayers();
+      const pts = entries.map(e => map.latLngToLayerPoint(e.trueLatLng));
+      const { positions, groups } = spreadPoints(pts);
+      entries.forEach((e, i) => {
+        const pos = positions[i];
+        e.marker.setLatLng(pos.moved ? map.layerPointToLatLng(L.point(pos.x, pos.y)) : e.trueLatLng);
+      });
+      groups.forEach((g) => {
+        const centre = map.layerPointToLatLng(L.point(g.x, g.y));
+        g.members.forEach((i) => {
+          L.polyline([centre, entries[i].marker.getLatLng()], { color: '#ffffff', weight: 1.5, opacity: 0.7, interactive: false }).addTo(links);
+        });
+        L.circleMarker(centre, { radius: 3, color: '#ffffff', weight: 1, fillColor: '#ffffff', fillOpacity: 0.9, interactive: false }).addTo(links);
+      });
+    };
+    layoutPlaces();
+    map.on('zoomend', layoutPlaces);
     // Arrived from the 3D globe with a place selected: open it once.
     const want = focusLocation && focusLocation.placeId;
     if (want && byId.has(want) && openedPlaceRef.current !== want) {
@@ -641,6 +670,7 @@ export default function WorldMap2D({ t, playerName, userEmail, onJoinRoom, onVie
       const m = byId.get(want);
       setTimeout(() => { try { map.setView(m.getLatLng(), Math.max(map.getZoom(), 14), { animate: false }); m.openPopup(); } catch { /* noop */ } }, 150);
     }
+    return () => { map.off('zoomend', layoutPlaces); };
   }, [mapReady, places, placesMode, focusLocation, t]);
 
   // 即時脈動:訂閱 window 事件,從對應玩家的點盪出光波(imperative,不觸發 React
