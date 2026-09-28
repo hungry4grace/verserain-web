@@ -8173,7 +8173,7 @@ export default function App() {
       fetch(`/api/contests?all=1&adminEmail=${encodeURIComponent(userEmail)}`, { headers }).then(r => r.ok ? r.json() : { contests: [] }).catch(() => ({ contests: [] })),
     ]).then(([p, q, c]) => {
       if (cancelled) return;
-      setAdminPending({ pools: (p.pools || []).filter(x => x.status === 'pending').length, places: (q.places || []).filter(x => x.status === 'pending').length, contests: (c.contests || []).filter(x => x.status === 'pending').length });
+      setAdminPending({ pools: (p.pools || []).filter(x => x.status === 'pending' || x.cashAppeal?.status === 'pending').length, places: (q.places || []).filter(x => x.status === 'pending').length, contests: (c.contests || []).filter(x => x.status === 'pending').length });
     });
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -8596,6 +8596,15 @@ export default function App() {
     pool_limit: t('這個標記進行中的愛心行動已達上限（5 個）', 'This marker already runs the maximum of 5 open Love in Action projects'),
     org_place_invalid: t('只有已上地圖的教會／機構可以建立愛心行動', 'Only a church or organisation already on the map can create a pool'),
     consent_required: t('請先勾選同意條款', 'Please tick the terms first'),
+    cash_org_required: t('請填寫收款機構的全名', 'Enter the organisation’s full legal name'),
+    cash_org_type_invalid: t('請選擇機構類型', 'Choose the organisation type'),
+    cash_permit_required: t('請填寫勸募許可字號', 'Enter the fundraising permit number'),
+    cash_permit_url_invalid: t('查證連結需以 https:// 開頭', 'The verification link must start with https://'),
+    cash_bank_required: t('請填寫銀行名稱', 'Enter the bank name'),
+    cash_account_name_mismatch: t('帳戶戶名必須和機構全名相同', 'The account name must match the organisation’s full legal name'),
+    cash_account_invalid: t('帳號只能是數字（可含 -），長度 8–20 碼', 'The account number must be 8–20 digits (dashes allowed)'),
+    cash_goal_invalid: t('經費目標請填正整數（新台幣）', 'Enter the funding goal as a whole number (NT$)'),
+    cash_deadline_invalid: t('請選擇截止日', 'Choose an end date'),
     caps_invalid: t('上限需為整數：單筆 1–2,000、每月 1–10,000', 'Caps must be whole numbers: 1–2,000 per order and 1–10,000 per month'),
     bill_invalid: t('請輸入正確的消費金額', 'Enter a valid bill amount'),
     too_small: t('折抵金額不足 NT$1', 'The discount would be under NT$1'),
@@ -9101,6 +9110,9 @@ export default function App() {
   const [poolJoinBusy, setPoolJoinBusy] = useState('');
   const [poolsAdmin, setPoolsAdmin] = useState(null);
   const [poolsAdminFilter, setPoolsAdminFilter] = useState('pending');
+  // 現金捐款: the owner's edit form per pool (poolId → draft) and the busy pool id.
+  const [cashDraft, setCashDraft] = useState({});
+  const [cashBusy, setCashBusy] = useState('');
   // fresh=true bypasses the CDN copy of the public list (s-maxage) right after
   // this client changed a pool, so the card shows the new numbers at once.
   const loadCharityPools = React.useCallback(async (fresh = false) => {
@@ -9211,9 +9223,41 @@ export default function App() {
       setPoolCreateBusy(false);
     }
   };
-  const poolAdminAction = async (action, poolId) => {
+  // 現金捐款 (cash appeal): only an organisation holding a fundraising permit
+  // may publish where to give money; an admin checks the permit and that the
+  // account is in the organisation's name before anyone else can see it.
+  const CASH_FIELDS = ['orgLegalName', 'orgType', 'permitNo', 'permitUrl', 'bankName', 'bankBranch', 'accountName', 'accountNo', 'goalNTD', 'purpose', 'deadline', 'transferNote'];
+  const startCashEdit = (pool) => {
+    const c = pool.cashAppeal || {};
+    const d = { agree: false };
+    CASH_FIELDS.forEach(k => { d[k] = c[k] !== undefined && c[k] !== null ? String(c[k]) : ''; });
+    if (!d.orgType) d.orgType = 'foundation';
+    if (!d.transferNote) d.transferNote = String(pool.name || '').slice(0, 60);
+    setCashDraft(o => ({ ...o, [pool.id]: d }));
+  };
+  const saveCashAppeal = async (poolId, remove = false) => {
+    const d = cashDraft[poolId];
+    if (!remove && (!d || !d.agree)) { setToast(redeemErrorText('consent_required')); setTimeout(() => setToast(null), 2500); return; }
+    setCashBusy(poolId);
     try {
-      const res = await fetch('/api/pools', { method: 'POST', headers: adminHeaders(), body: JSON.stringify({ action, adminEmail: userEmail, poolId }) });
+      const cashAppeal = remove ? null : { ...Object.fromEntries(CASH_FIELDS.map(k => [k, String(d[k] || '').trim()])), goalNTD: Math.floor(Number(d.goalNTD) || 0) };
+      const res = await fetch('/api/pools', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'cash_update', email: userEmail, sessionKey, poolId, agree: !remove, cashAppeal }) });
+      const r = await res.json().catch(() => ({}));
+      if (r.error === 'session_invalid' || r.error === 'login_required') { setShowLoginModal('login'); throw new Error(redeemErrorText('session_invalid')); }
+      if (!res.ok || !r.success) throw new Error(redeemErrorText(r.error || res.status));
+      setCashDraft(o => { const n = { ...o }; delete n[poolId]; return n; });
+      setToast(remove ? t('已停止公開現金捐款資訊', 'Cash donation details removed') : (r.pool?.cashAppeal?.status === 'verified' ? t('已更新', 'Updated') : t('已送出，等待審核', 'Submitted, awaiting review')));
+      setTimeout(() => setToast(null), 2500);
+      loadCharityMine(); loadCharityPools(true);
+    } catch (e) {
+      setToast(String(e?.message || e)); setTimeout(() => setToast(null), 3500);
+    } finally {
+      setCashBusy('');
+    }
+  };
+  const poolAdminAction = async (action, poolId, extra = {}) => {
+    try {
+      const res = await fetch('/api/pools', { method: 'POST', headers: adminHeaders(), body: JSON.stringify({ action, adminEmail: userEmail, poolId, ...extra }) });
       const d = await res.json().catch(() => ({}));
       if (!res.ok || !d.success) throw new Error(d.error || String(res.status));
       setToast(t('已更新愛心行動', 'Pool updated')); setTimeout(() => setToast(null), 2000);
@@ -9221,6 +9265,8 @@ export default function App() {
       setPlacesVersion(n => n + 1);
     } catch (e) { setToast(String(e?.message || e)); setTimeout(() => setToast(null), 3000); }
   };
+  const cashStatusBadge = (st) => st === 'verified' ? { text: t('已公開', 'Published'), bg: '#dcfce7', fg: '#166534' } : st === 'rejected' ? { text: t('未通過', 'Not approved'), bg: '#fee2e2', fg: '#991b1b' } : { text: t('審核中', 'Under review'), bg: '#fef3c7', fg: '#92400e' };
+  const cashOrgTypeLabel = (k) => ({ foundation: t('財團法人', 'Foundation'), association: t('公益社團法人', 'Public-interest association'), school: t('公立學校', 'Public school'), agency: t('行政法人', 'Administrative agency') })[k] || String(k || '');
   const poolStatusBadge = (st) => st === 'approved' ? { text: t('進行中', 'Open'), bg: '#dcfce7', fg: '#166534' } : st === 'pending' ? { text: t('待審核', 'Pending'), bg: '#fef3c7', fg: '#92400e' } : st === 'closed' ? { text: t('已關閉', 'Closed'), bg: '#e2e8f0', fg: '#334155' } : { text: t('已退回', 'Rejected'), bg: '#fee2e2', fg: '#991b1b' };
 
   // ── 讀經比賽 (Bible reading contests) ──────────────────────────────────────
@@ -25559,7 +25605,7 @@ const deDict = {
                     verserain
                   </div>
                   <div className="app-brand-version" style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', marginTop: '4px', marginLeft: '2px' }}>
-                    v4.0.105
+                    v4.0.106
                   </div>
                 </div>
                 <div ref={langPickerRef} className="app-lang-control" style={{ position: 'relative' }}>
@@ -28973,8 +29019,9 @@ const deDict = {
                         {/* 愛心行動審核 */}
                         {(() => {
                           const all = poolsAdmin || [];
-                          const shown = all.filter(p => poolsAdminFilter === 'all' ? true : p.status === poolsAdminFilter);
-                          const counts = { pending: all.filter(p => p.status === 'pending').length, approved: all.filter(p => p.status === 'approved').length, closed: all.filter(p => p.status === 'closed').length, rejected: all.filter(p => p.status === 'rejected').length };
+                          const cashPending = (p) => p.cashAppeal?.status === 'pending';
+                          const shown = all.filter(p => poolsAdminFilter === 'all' ? true : poolsAdminFilter === 'pending' ? (p.status === 'pending' || cashPending(p)) : p.status === poolsAdminFilter);
+                          const counts = { pending: all.filter(p => p.status === 'pending' || cashPending(p)).length, approved: all.filter(p => p.status === 'approved').length, closed: all.filter(p => p.status === 'closed').length, rejected: all.filter(p => p.status === 'rejected').length };
                           const smallBtn = (bg, fg = '#fff', border = 'none') => ({ background: bg, color: fg, border, borderRadius: '6px', padding: '0.35rem 0.7rem', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 700 });
                           return (
                             <div data-testid="admin-pools" style={{ border: '1px solid #fecdd3', background: '#fff1f2', borderRadius: 10, padding: '0.9rem 1rem', marginBottom: '1rem' }}>
@@ -28998,6 +29045,22 @@ const deDict = {
                                       </div>
                                       <div style={{ color: '#94a3b8', fontSize: '0.78rem' }}>{p.ownerEmail} · {new Date(p.createdAt).toLocaleDateString()} · {t('已投入 NT${a} · 可用折抵額度 NT${b} · {n} 位參與 · 已折抵 NT${c}', 'NT${a} contributed · NT${b} allowance left · {n} participants · NT${c} used').replace('{a}', String(c.contributedNTD || 0)).replace('{b}', String(c.allowanceNTD || 0)).replace('{n}', String(c.contributors || 0)).replace('{c}', '—')} · 🏪 {Object.keys(p.merchants || {}).length}</div>
                                       {p.description ? <div style={{ color: '#475569', fontSize: '0.8rem', marginTop: 2 }}>{p.description}</div> : null}
+                                      {p.cashAppeal ? (() => { const ca = p.cashAppeal; const cb = cashStatusBadge(ca.status); return (
+                                        <div data-testid="admin-pool-cash" style={{ marginTop: '0.45rem', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 8, padding: '0.5rem 0.65rem', color: '#14532d', lineHeight: 1.6 }}>
+                                          <div style={{ display: 'flex', justifyContent: 'space-between', gap: '0.4rem', flexWrap: 'wrap', alignItems: 'center' }}>
+                                            <b>💵 {t('現金捐款資訊', 'Cash donation details')} <span style={{ background: cb.bg, color: cb.fg, borderRadius: 999, padding: '0.05rem 0.5rem', fontSize: '0.74rem', fontWeight: 700 }}>{cb.text}</span></b>
+                                            <span style={{ display: 'flex', gap: '0.3rem' }}>
+                                              {ca.status !== 'verified' && <button type="button" onClick={() => poolAdminAction('cash_verify', p.id)} style={smallBtn('#16a34a')}>✅ {t('查證無誤，公開', 'Verified — publish')}</button>}
+                                              {ca.status !== 'rejected' && <button type="button" onClick={() => { const note = window.prompt(t('退回原因（會讓發起人看到）', 'Reason (shown to the organiser)'), ''); if (note !== null) poolAdminAction('cash_reject', p.id, { note }); }} style={smallBtn('transparent', '#991b1b', '1px solid #fecaca')}>{t('退回', 'Reject')}</button>}
+                                            </span>
+                                          </div>
+                                          <div>{ca.orgLegalName} · {cashOrgTypeLabel(ca.orgType)} · {t('勸募許可字號', 'Fundraising permit')}：<b>{ca.permitNo}</b>{ca.permitUrl ? <> · <a href={ca.permitUrl} target="_blank" rel="noopener noreferrer">{t('查證連結', 'Verification link')}</a></> : null}</div>
+                                          <div>{ca.bankName} {ca.bankBranch} · {t('戶名', 'Account name')}：{ca.accountName} · {t('帳號', 'Account no.')}：<span style={{ fontFamily: 'monospace' }}>{ca.accountNo}</span></div>
+                                          <div>{t('經費目標 NT${n}', 'Funding goal NT${n}').replace('{n}', Number(ca.goalNTD || 0).toLocaleString())} · {t('截止日 {d}', 'Ends {d}').replace('{d}', String(ca.deadline || ''))}{ca.purpose ? ` · ${ca.purpose}` : ''}</div>
+                                          {ca.reviewNote ? <div style={{ color: '#991b1b' }}>{t('退回原因：{r}', 'Reason: {r}').replace('{r}', ca.reviewNote)}</div> : null}
+                                          <div style={{ color: '#166534', fontSize: '0.76rem', marginTop: 2 }}>{t('公開前請確認：① 許可字號在衛福部公益勸募系統查得到；② 許可的活動名稱與期間與此相符；③ 戶名與機構全名相同；④ 用途合理。', 'Before publishing check: ① the permit number exists in the MOHW charity fundraising system; ② the permitted campaign and period match; ③ the account name equals the organisation’s legal name; ④ the purpose is reasonable.')}</div>
+                                        </div>
+                                      ); })() : null}
                                     </div>
                                   ); })}
                                 </div>
@@ -29442,6 +29505,27 @@ const deDict = {
                                   <span key={m.placeId} style={{ background: '#fff1f2', border: '1px solid #fecdd3', color: '#9f1239', borderRadius: 999, padding: '0.1rem 0.6rem', fontSize: '0.78rem' }}>🏪 {m.placeName} · {t('單筆最高 NT${n}', 'up to NT${n} per order').replace('{n}', String(m.perOrderMaxNTD))}</span>
                                 ))}
                               </div>
+                              {p.cashAppeal ? (() => { const ca = p.cashAppeal; return (
+                                <div data-testid="pool-cash" style={{ marginTop: '0.7rem', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 8, padding: '0.6rem 0.8rem', fontSize: '0.86rem', color: '#14532d', lineHeight: 1.65 }}>
+                                  <b>💵 {t('也可以直接捐款給機構', 'You can also give money directly to the organisation')}</b>
+                                  {ca.ended ? <div style={{ color: '#b45309', fontWeight: 700 }}>{t('這次募款已經截止', 'This appeal has ended')}</div> : null}
+                                  <div>{t('經費目標 NT${n}', 'Funding goal NT${n}').replace('{n}', Number(ca.goalNTD || 0).toLocaleString())}{ca.purpose ? ` · ${ca.purpose}` : ''}</div>
+                                  <div>{t('截止日 {d}', 'Ends {d}').replace('{d}', String(ca.deadline || ''))}</div>
+                                  <div>{t('收款機構', 'Recipient')}：{ca.orgLegalName}（{cashOrgTypeLabel(ca.orgType)}）</div>
+                                  <div>{t('勸募許可字號', 'Fundraising permit')}：{ca.permitNo}{ca.permitUrl ? <> · <a href={ca.permitUrl} target="_blank" rel="noopener noreferrer" style={{ color: '#15803d' }}>{t('查證', 'Verify')}</a></> : null}</div>
+                                  {!ca.ended && (
+                                    <>
+                                      <div>{t('銀行', 'Bank')}：{ca.bankName}{ca.bankBranch ? ` ${ca.bankBranch}` : ''}</div>
+                                      <div>{t('戶名', 'Account name')}：{ca.accountName}</div>
+                                      <div>{t('帳號', 'Account no.')}：<b style={{ fontFamily: 'monospace', fontSize: '0.95rem' }}>{ca.accountNo}</b>{' '}
+                                        <button type="button" data-testid="pool-cash-copy" onClick={() => { try { navigator.clipboard.writeText(ca.accountNo).then(() => { setToast(t('已複製帳號', 'Account number copied')); setTimeout(() => setToast(null), 2000); }).catch(() => {}); } catch { /* ignore */ } }} style={{ background: '#fff', border: '1px solid #86efac', color: '#166534', borderRadius: 6, padding: '0.05rem 0.5rem', cursor: 'pointer', fontSize: '0.78rem', fontWeight: 700 }}>{t('複製帳號', 'Copy')}</button>
+                                      </div>
+                                      {ca.transferNote ? <div>{t('匯款時請註明：{note}', 'Please add this note to your transfer: {note}').replace('{note}', ca.transferNote)}</div> : null}
+                                    </>
+                                  )}
+                                  <div style={{ color: '#166534', fontSize: '0.76rem', marginTop: '0.2rem' }}>{t('款項直接匯給機構，由機構開立收據，並依勸募許可的使用計畫使用；經文雨不經手任何款項，也無法查核到帳情形。讀經點數是另一個參與目標，和捐款金額沒有換算關係。', 'Money goes straight to the organisation, which issues the receipt and uses it under its fundraising permit; VerseRain never handles the money and cannot confirm receipt. Reading points are a separate way to take part and are not converted into money.')}</div>
+                                </div>
+                              ); })() : null}
                               <button type="button" onClick={() => openContribute(p)} style={{ marginTop: '0.7rem', background: '#e11d48', color: '#fff', border: 'none', borderRadius: 8, padding: '0.45rem 1rem', cursor: 'pointer', fontWeight: 800 }}>❤️ {t('投入點數', 'Contribute points')}</button>
                             </div>
                           ); })}
@@ -29481,6 +29565,58 @@ const deDict = {
                           <div style={{ color: '#334155', fontSize: '0.84rem' }}>{statsLine(op)}</div>
                         </div>
                         {op.status === 'pending' && <div style={{ color: '#92400e', background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 8, padding: '0.5rem 0.7rem', fontSize: '0.85rem' }}>{t('已送出，等待審核', 'Submitted, awaiting review')}</div>}
+                        {['pending', 'approved'].includes(op.status) && (() => { const ca = op.cashAppeal; const d = cashDraft[op.id]; const cb = ca ? cashStatusBadge(ca.status) : null; const setD = (k, v) => setCashDraft(o => ({ ...o, [op.id]: { ...o[op.id], [k]: v } })); const inp = (k, lab, props = {}) => (
+                            <div key={k}><label style={label}>{lab}</label><input value={d[k] || ''} onChange={e => setD(k, e.target.value)} style={field} {...props} /></div>
+                          ); return (
+                          <div data-testid="owned-pool-cash" style={{ marginTop: '0.8rem', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 8, padding: '0.6rem 0.8rem' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', gap: '0.4rem', flexWrap: 'wrap', alignItems: 'center' }}>
+                              <b style={{ color: '#14532d', fontSize: '0.9rem' }}>💵 {t('接受現金捐款（選填）', 'Accept money donations (optional)')}</b>
+                              {cb ? <span style={{ background: cb.bg, color: cb.fg, borderRadius: 999, padding: '0.1rem 0.55rem', fontSize: '0.76rem', fontWeight: 700 }}>{cb.text}</span> : null}
+                            </div>
+                            <div style={{ color: '#166534', fontSize: '0.82rem', lineHeight: 1.6, marginTop: '0.25rem' }}>{t('只有取得「勸募許可」的財團法人、公益社團法人、公立學校或行政法人可以填寫；經文雨確認許可字號與帳戶戶名後才會公開。未立案的教會請以所屬財團法人的名義申請，或只收點數。修改許可或帳戶資料後需要重新審核。', 'Only a foundation, public-interest association, public school or administrative agency holding a fundraising permit may fill this in; VerseRain publishes it after checking the permit number and the account name. An unregistered church should apply under the name of the foundation it belongs to, or accept points only. Changing the permit or account details sends it back for review.')}</div>
+                            {ca && ca.status === 'rejected' && ca.reviewNote ? <div style={{ color: '#991b1b', fontSize: '0.82rem', marginTop: '0.25rem' }}>{t('退回原因：{r}', 'Reason: {r}').replace('{r}', ca.reviewNote)}</div> : null}
+                            {ca && !d ? (
+                              <div style={{ fontSize: '0.84rem', color: '#14532d', marginTop: '0.35rem', lineHeight: 1.6 }}>
+                                {ca.orgLegalName} · {t('勸募許可字號', 'Fundraising permit')}：{ca.permitNo}<br />
+                                {ca.bankName} {ca.bankBranch} · {ca.accountName} · <span style={{ fontFamily: 'monospace' }}>{ca.accountNo}</span><br />
+                                {t('經費目標 NT${n}', 'Funding goal NT${n}').replace('{n}', Number(ca.goalNTD || 0).toLocaleString())} · {t('截止日 {d}', 'Ends {d}').replace('{d}', String(ca.deadline || ''))}
+                              </div>
+                            ) : null}
+                            {!d ? (
+                              <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap', marginTop: '0.45rem' }}>
+                                <button type="button" onClick={() => startCashEdit(op)} style={{ background: '#16a34a', color: '#fff', border: 'none', borderRadius: 6, padding: '0.35rem 0.8rem', cursor: 'pointer', fontWeight: 700, fontSize: '0.84rem' }}>{ca ? t('修改捐款資訊', 'Edit donation details') : t('填寫捐款資訊', 'Add donation details')}</button>
+                                {ca ? <button type="button" disabled={cashBusy === op.id} onClick={() => { if (window.confirm(t('確定要停止公開現金捐款資訊嗎？', 'Stop showing the cash donation details?'))) saveCashAppeal(op.id, true); }} style={{ background: 'transparent', color: '#991b1b', border: '1px solid #fecaca', borderRadius: 6, padding: '0.35rem 0.8rem', cursor: 'pointer', fontSize: '0.84rem' }}>{t('停止公開', 'Remove')}</button> : null}
+                              </div>
+                            ) : (
+                              <div style={{ marginTop: '0.4rem' }}>
+                                {inp('orgLegalName', t('收款機構全名（需與勸募許可相同）', 'Organisation’s full legal name (as on the permit)'), { maxLength: 80 })}
+                                <label style={label}>{t('機構類型', 'Organisation type')}</label>
+                                <select value={d.orgType || 'foundation'} onChange={e => setD('orgType', e.target.value)} style={field}>
+                                  {['foundation', 'association', 'school', 'agency'].map(k => <option key={k} value={k}>{cashOrgTypeLabel(k)}</option>)}
+                                </select>
+                                {inp('permitNo', t('勸募許可字號', 'Fundraising permit number'), { maxLength: 80 })}
+                                {inp('permitUrl', t('許可查證連結（選填，https://）', 'Permit verification link (optional, https://)'), { maxLength: 300, inputMode: 'url' })}
+                                {inp('bankName', t('銀行', 'Bank'), { maxLength: 40 })}
+                                {inp('bankBranch', t('分行（選填）', 'Branch (optional)'), { maxLength: 40 })}
+                                {inp('accountName', t('戶名（需與機構全名相同）', 'Account name (must match the legal name)'), { maxLength: 80 })}
+                                {inp('accountNo', t('帳號', 'Account number'), { maxLength: 24, inputMode: 'numeric' })}
+                                {inp('goalNTD', t('經費目標（新台幣）', 'Funding goal (NT$)'), { type: 'number', min: 1, inputMode: 'numeric' })}
+                                <label style={label}>{t('用途', 'Purpose')}</label>
+                                <textarea value={d.purpose || ''} onChange={e => setD('purpose', e.target.value)} maxLength={300} rows={2} style={{ ...field, resize: 'vertical' }} />
+                                {inp('deadline', t('截止日', 'End date'), { type: 'date' })}
+                                {inp('transferNote', t('請捐款人在匯款時註明', 'Note donors should add to their transfer'), { maxLength: 60 })}
+                                <label style={{ display: 'flex', gap: '0.45rem', alignItems: 'flex-start', marginTop: '0.6rem', fontSize: '0.82rem', color: '#14532d', lineHeight: 1.55 }}>
+                                  <input type="checkbox" checked={!!d.agree} onChange={e => setD('agree', e.target.checked)} style={{ marginTop: 3 }} />
+                                  <span>{t('我確認本機構已取得這次活動的勸募許可，帳戶為本機構所有；捐款由本機構收取、開立收據，並依許可的使用計畫使用及公開徵信。經文雨不經手款項。', 'I confirm the organisation holds a fundraising permit for this appeal and owns this account; donations are received, receipted, used and reported by the organisation under the permit. VerseRain never handles the money.')}</span>
+                                </label>
+                                <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap', marginTop: '0.6rem' }}>
+                                  <button type="button" disabled={cashBusy === op.id || !d.agree} onClick={() => saveCashAppeal(op.id)} style={{ background: d.agree ? '#16a34a' : '#94a3b8', color: '#fff', border: 'none', borderRadius: 6, padding: '0.4rem 0.9rem', cursor: d.agree ? 'pointer' : 'not-allowed', fontWeight: 700, fontSize: '0.85rem' }}>{cashBusy === op.id ? t('送出中…', 'Sending…') : t('送出審核', 'Submit for review')}</button>
+                                  <button type="button" onClick={() => setCashDraft(o => { const n = { ...o }; delete n[op.id]; return n; })} style={{ background: 'transparent', color: '#64748b', border: '1px solid #cbd5e1', borderRadius: 6, padding: '0.4rem 0.9rem', cursor: 'pointer', fontSize: '0.85rem' }}>{t('取消', 'Cancel')}</button>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        ); })()}
                         <div style={{ marginTop: '0.6rem' }}>
                           <b style={{ color: '#334155', fontSize: '0.9rem' }}>🏪 {t('參與的商家', 'Participating shops')}</b>
                           {(op.merchants || []).length === 0 ? <div style={{ color: '#94a3b8', fontSize: '0.84rem' }}>{t('還沒有商家參與。請邀請商家到「登記商家」頁的「我的登記」勾選參與。', 'No shop has joined yet. Invite shops to tick “Join a Love in Action project” under their listing on the Register page.')}</div> : (
@@ -29528,6 +29664,7 @@ const deDict = {
                     {userEmail && eligibleOrgPlaces.length > 0 && (
                       <div style={card} data-testid="pool-create">
                         <h3 style={h3}>⛪ {t('建立愛心行動', 'Create a Love in Action project')}</h3>
+                        <div style={{ color: '#166534', fontSize: '0.82rem', lineHeight: 1.6, marginBottom: '0.3rem' }}>💵 {t('建立後，已取得勸募許可的機構可以在「我的愛心行動」加上現金捐款資訊（經文雨審核後公開）。', 'Once created, an organisation holding a fundraising permit can add cash donation details under “My Love in Action project” (published after VerseRain reviews them).')}</div>
                         <div style={{ color: '#475569', fontSize: '0.88rem', lineHeight: 1.6 }}>{t('你的教會／機構已在地圖上，可以發起一個愛心專案，接受玩家投入點數，並在合作商家採購時折抵。', 'Your church / organisation is on the map, so it can open a charity project that receives players’ points and uses them as a discount when buying from participating shops.')}</div>
                         <label style={label}>{t('教會／機構標記', 'Church / organisation marker')}</label>
                         <select value={poolCreateDraft.orgPlaceId} onChange={e => setPoolCreateDraft(d => ({ ...d, orgPlaceId: e.target.value }))} style={field}>
@@ -33103,7 +33240,9 @@ const deDict = {
                         <span style={{ fontSize: '1.2rem', flexShrink: 0 }}>❤️</span>
                         <div style={{ minWidth: 0, flex: 1 }}>
                           <div style={{ color: '#334155', fontSize: '0.9rem', lineHeight: 1.45 }}>
-                            {t('{who} 為「{org}」建立了愛心行動「{name}」，等你審核', '{who} opened the Love in Action project “{name}” for “{org}” — awaiting your review').replace('{who}', String(it.by || '')).replace('{org}', String(it.orgPlaceName || '')).replace('{name}', String(it.name || ''))}
+                            {(it.cash
+                              ? t('{who} 為愛心行動「{name}」送出現金捐款資訊（{org}），請確認勸募許可與帳戶戶名', '{who} submitted cash donation details for “{name}” ({org}) — check the permit and account name')
+                              : t('{who} 為「{org}」建立了愛心行動「{name}」，等你審核', '{who} opened the Love in Action project “{name}” for “{org}” — awaiting your review')).replace('{who}', String(it.by || '')).replace('{org}', String(it.orgPlaceName || '')).replace('{name}', String(it.name || ''))}
                           </div>
                           {isSuperAdmin && (
                             <button onClick={() => { setShowEncouragePanel(false); setMainTab('rewards_admin'); }} style={{ marginTop: 6, background: '#be123c', color: '#fff', border: 'none', borderRadius: 8, padding: '0.35rem 0.9rem', fontSize: '0.82rem', fontWeight: 700, cursor: 'pointer' }}>{t('去審核', 'Review it')} →</button>

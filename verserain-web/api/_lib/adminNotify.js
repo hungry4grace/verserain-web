@@ -54,6 +54,21 @@ export function poolSubmittedMessage(pool, who) {
   };
 }
 
+// A Love in Action project asks to publish cash-donation details (現金捐款),
+// which an admin must check (permit, account in the organisation's name).
+export function poolCashSubmittedMessage(pool, who) {
+  const name = String((pool && pool.name) || '').slice(0, 60);
+  const org = String((pool && pool.cashAppeal && pool.cashAppeal.orgLegalName) || (pool && pool.orgPlaceName) || '').slice(0, 80);
+  const by = String(who || '').slice(0, 40) || '有人';
+  return {
+    record: { kind: 'pool_submitted', cash: true, poolId: pool.id, name, orgPlaceName: org, by },
+    title: '💵 愛心行動的現金捐款資訊待審核',
+    body: `${by} 為愛心行動「${name}」送出現金捐款資訊（${org}），請確認勸募許可與帳戶戶名`,
+    url: 'https://www.verserain.com/#rewards_admin',
+    tag: `verserain-pool-cash-${pool.id}`,
+  };
+}
+
 // A church / organisation opened a Bible reading contest (讀經比賽) that needs review.
 export function contestSubmittedMessage(contest, who) {
   const name = String((contest && contest.name) || '').slice(0, 60);

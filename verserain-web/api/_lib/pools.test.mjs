@@ -363,7 +363,8 @@ test('views hide emails, owner codes and monthly caps; only approved pools are p
   await fund(r, pool, 20);
   const counters = await poolCounters(r, pool.id);
   const pub = publicPool(pool, counters, { usedNTD: 3 });
-  assert.deepStrictEqual(Object.keys(pub).sort(), ['allowanceNTD', 'approvedAt', 'contributedNTD', 'contributedPoints', 'contributions', 'contributors', 'createdAt', 'description', 'id', 'merchants', 'name', 'orgPlaceId', 'orgPlaceName', 'status', 'usedNTD'].sort());
+  assert.deepStrictEqual(Object.keys(pub).sort(), ['allowanceNTD', 'approvedAt', 'cashAppeal', 'contributedNTD', 'contributedPoints', 'contributions', 'contributors', 'createdAt', 'description', 'id', 'merchants', 'name', 'orgPlaceId', 'orgPlaceName', 'status', 'usedNTD'].sort());
+  assert.strictEqual(pub.cashAppeal, null, 'no cash details unless an admin verified them');
   assert.deepStrictEqual(pub.merchants, [{ placeId: shop.id, placeName: '主愛便當', perOrderMaxNTD: 500 }], 'no monthly cap in public');
   assert.strictEqual(pub.allowanceNTD, 20);
   assert.strictEqual(pub.contributors, 1);
@@ -391,4 +392,65 @@ test('views hide emails, owner codes and monthly caps; only approved pools are p
   assert.ok(!JSON.stringify(list).includes('@x.com'), 'no email anywhere in the public list');
   assert.ok(!JSON.stringify(list).includes('ORGCODE001'));
   assert.strictEqual(VOUCHERS_KEY, 'redeem:vouchers');
+});
+
+// ---------- 現金捐款 (cash appeal) ----------
+import { normalizeCashAppeal, applyCashAdminAction, publicCashAppeal } from './pools.js';
+
+const CASH = {
+  orgLegalName: '財團法人台灣浸信會聯會', orgType: 'foundation', permitNo: '衛部救字第1130000000號',
+  permitUrl: 'https://example.gov.tw/permit', bankName: '台灣銀行', bankBranch: '馬公分行',
+  accountName: '財團法人 台灣浸信會聯會', accountNo: '123-456-78901', goalNTD: 10000,
+  purpose: '長者愛宴食材', deadline: '2026-12-31', transferNote: '旺得福長者愛宴',
+};
+
+test('cash appeal: valid input is pending until an admin verifies it', () => {
+  const c = normalizeCashAppeal(CASH, { now: '2026-09-28T00:00:00Z' });
+  assert.strictEqual(c.status, 'pending');
+  assert.strictEqual(c.goalNTD, 10000);
+  assert.strictEqual(c.accountNo, '123-456-78901');
+});
+
+test('cash appeal: permit, account name and account number are checked', () => {
+  const bad = (patch, code) => assert.throws(() => normalizeCashAppeal({ ...CASH, ...patch }), (e) => e instanceof PoolError && e.code === code);
+  bad({ permitNo: '' }, 'cash_permit_required');
+  bad({ accountName: '王小明' }, 'cash_account_name_mismatch');
+  bad({ accountNo: '12-34' }, 'cash_account_invalid');
+  bad({ accountNo: '1234567890abc' }, 'cash_account_invalid');
+  bad({ orgType: 'church' }, 'cash_org_type_invalid');
+  bad({ goalNTD: 0 }, 'cash_goal_invalid');
+  bad({ goalNTD: 12.5 }, 'cash_goal_invalid');
+  bad({ deadline: '2026/12/31' }, 'cash_deadline_invalid');
+  bad({ permitUrl: 'http://insecure.example' }, 'cash_permit_url_invalid');
+  bad({ bankName: '' }, 'cash_bank_required');
+});
+
+test('cash appeal: verification survives cosmetic edits but not a new account', () => {
+  const pool = { id: 'cp_test12345', cashAppeal: normalizeCashAppeal(CASH, { now: '2026-09-28T00:00:00Z' }) };
+  const verified = applyCashAdminAction(pool, 'cash_verify', { adminEmail: 'Admin@X.com', now: '2026-09-29T00:00:00Z' });
+  assert.strictEqual(verified.cashAppeal.status, 'verified');
+  assert.strictEqual(verified.cashAppeal.verifiedBy, 'admin@x.com');
+  const cosmetic = normalizeCashAppeal({ ...CASH, purpose: '長者愛宴食材與交通' }, { existing: verified.cashAppeal });
+  assert.strictEqual(cosmetic.status, 'verified');
+  const moved = normalizeCashAppeal({ ...CASH, accountNo: '999-888-77766' }, { existing: verified.cashAppeal });
+  assert.strictEqual(moved.status, 'pending');
+  const rejected = applyCashAdminAction(pool, 'cash_reject', { adminEmail: 'a@x.com', note: '許可字號查無資料' });
+  assert.strictEqual(rejected.cashAppeal.status, 'rejected');
+  assert.strictEqual(rejected.cashAppeal.reviewNote, '許可字號查無資料');
+  assert.throws(() => applyCashAdminAction({ id: 'x' }, 'cash_verify', {}), (e) => e.code === 'not_found');
+});
+
+test('cash appeal: the public view carries only verified details', () => {
+  const pending = normalizeCashAppeal(CASH, { now: '2026-09-28T00:00:00Z' });
+  const base = { id: 'cp_test12345', name: 'x', status: 'approved', orgPlaceId: 'p1', merchants: {} };
+  assert.strictEqual(publicPool({ ...base, cashAppeal: pending }).cashAppeal, null);
+  const verified = { ...pending, status: 'verified', verifiedBy: 'a@x.com', reviewNote: 'internal' };
+  const pub = publicPool({ ...base, cashAppeal: verified }).cashAppeal;
+  assert.strictEqual(pub.accountNo, '123-456-78901');
+  assert.strictEqual(pub.verifiedBy, undefined);
+  assert.strictEqual(pub.reviewNote, undefined);
+  assert.strictEqual(publicCashAppeal(verified, '2027-01-02T00:00:00Z').ended, true);
+  assert.strictEqual(publicCashAppeal(verified, '2026-10-01T00:00:00Z').ended, false);
+  // the owner still sees the pending details and their status
+  assert.strictEqual(ownerPoolView({ ...base, cashAppeal: pending }).cashAppeal.status, 'pending');
 });
