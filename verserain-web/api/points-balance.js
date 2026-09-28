@@ -1,6 +1,7 @@
 import { Redis } from '@upstash/redis';
 import { partyFetch, PartyError } from './_lib/party.js';
 import { readBalance, LEADERBOARD_KEY } from './_lib/points.js';
+import { readDailySummary } from './_lib/dailyPoints.js';
 
 // Points balance (積分折抵餘額).
 //   GET ?email=&sessionKey=
@@ -43,9 +44,14 @@ export default async function handler(req, res) {
     const redis = new Redis({ url: redisUrl, token: redisToken });
     const score = identity.playerName ? await redis.zscore(LEADERBOARD_KEY, identity.playerName) : null;
     const earnedPoints = score === null || score === undefined ? 0 : Math.max(0, Math.floor(Number(score) || 0));
-    const balance = await readBalance(redis, { email, identity, garden, now: new Date(), earnedPoints });
+    const now = new Date();
+    const balance = await readBalance(redis, { email, identity, garden, now, earnedPoints });
+    // 今日得分 breakdown for the garden's "?" panel; never blocks the balance.
+    let today = null;
+    try { today = await readDailySummary(redis, { email, now, todayPoints: balance.todayPoints }); } catch { today = null; }
     res.status(200).json({
       ...balance,
+      today,
       passedVerses: garden.passedVerses || 0,
       accountAgeDays: identity.accountAgeDays ?? null,
       playerName: identity.playerName || '',

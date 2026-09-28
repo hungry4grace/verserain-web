@@ -25,6 +25,7 @@ function stubRedis() {
     async hset(k, obj) { const m = h(k); for (const [f, v] of Object.entries(obj)) m.set(f, v); return 1; },
     async hget(k, f) { return h(k).get(f) ?? null; },
     async hgetall(k) { return Object.fromEntries(h(k)); },
+    async hincrby(k, f, d) { const m = h(k); const n = Number(m.get(f) || 0) + Number(d); m.set(f, String(n)); return n; },
     async hdel(k, f) { return h(k).delete(f) ? 1 : 0; },
     async lpush(k, v) { const l = lists.get(k) || []; l.unshift(v); lists.set(k, l); return l.length; },
     async ltrim(k, a, b) { const l = lists.get(k) || []; lists.set(k, l.slice(a, b + 1)); return 'OK'; },

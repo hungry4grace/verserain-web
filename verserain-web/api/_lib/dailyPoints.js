@@ -16,7 +16,7 @@
 //   checkin:day:${email}:${day}     STR    latch: today's check-in was paid (TTL 3 days)
 //   checkin:streak:${email}         HASH   { last: YYYY-MM-DD, n: streak, grace: banked grace days }
 //   listen:day:${email}:${day}      SET    verse keys credited today (TTL 3 days)
-import { creditBonus, taipeiDay } from './points.js';
+import { creditBonus, taipeiDay, dailySourceKey } from './points.js';
 
 export const CHECKIN_BASE = 1000;
 export const CHECKIN_STEP = 100;
@@ -78,7 +78,7 @@ export async function recordCheckin(redis, { email, now } = {}) {
   const { n, grace, graceUsed } = nextStreak(prev, day);
   await redis.hset(checkinStreakKey(em), { last: day, n: String(n), grace: String(grace) });
   const amount = checkinAmount(n);
-  const r = await creditBonus(redis, { email: em, points: amount, now });
+  const r = await creditBonus(redis, { email: em, points: amount, now, source: 'checkin' });
   return { amount, streak: n, grace, graceUsed, earnedPoints: r.earnedPoints };
 }
 
@@ -104,6 +104,43 @@ export async function recordListen(redis, { email, ref, now } = {}) {
     await redis.srem(setKey, key);
     return { capped: true, count: LISTEN_DAILY_MAX };
   }
-  const r = await creditBonus(redis, { email: em, points: LISTEN_POINTS, now });
+  const r = await creditBonus(redis, { email: em, points: LISTEN_POINTS, now, source: 'listen' });
   return { credited: LISTEN_POINTS, count, earnedPoints: r.earnedPoints };
+}
+
+// 今日得分 breakdown for the garden's "?" panel: points per source today,
+// the check-in state (paid today, or what the next one would pay) and
+// today's listening count. `todayPoints` is the day's total; whatever the
+// sources do not explain (gains from before the breakdown existed) is `other`.
+export const DAILY_SOURCES = ['challenge', 'checkin', 'listen', 'referral', 'shopReferral'];
+export async function readDailySummary(redis, { email, now, todayPoints } = {}) {
+  const em = norm(email);
+  const day = taipeiDay(now || new Date());
+  const [src, prevRaw, listenCount, paid] = await Promise.all([
+    redis.hgetall(dailySourceKey(em, day)),
+    redis.hgetall(checkinStreakKey(em)),
+    redis.scard(listenDayKey(em, day)),
+    redis.get(checkinDayKey(em, day)),
+  ]);
+  const breakdown = {};
+  let known = 0;
+  for (const k of DAILY_SOURCES) { const v = toInt(src && src[k]); breakdown[k] = v; known += v; }
+  breakdown.other = Math.max(0, toInt(todayPoints) - known);
+  const prev = prevRaw || {};
+  let checkin;
+  if (paid) {
+    const n = Math.max(1, toInt(prev.n));
+    checkin = { done: true, streak: n, amount: checkinAmount(n), grace: Math.max(0, toInt(prev.grace)) };
+  } else {
+    const next = nextStreak(prev, day);
+    checkin = { done: false, streak: next.n, amount: checkinAmount(next.n), graceUsed: next.graceUsed, grace: Math.max(0, toInt(prev.grace)) };
+  }
+  return {
+    day,
+    breakdown,
+    checkin,
+    listen: { count: Math.min(LISTEN_DAILY_MAX, toInt(listenCount)), max: LISTEN_DAILY_MAX, points: LISTEN_POINTS },
+    graceEvery: GRACE_EVERY,
+    graceMax: GRACE_MAX,
+  };
 }

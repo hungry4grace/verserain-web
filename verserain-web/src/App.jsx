@@ -8568,6 +8568,7 @@ export default function App() {
   // "spent" ledger and issues one-time vouchers (see api/redeem.js).
   const [redeemPlace, setRedeemPlace] = useState(null); // place object from the map popup
   const [pointsBalance, setPointsBalance] = useState(null);
+  const [showTodayInfo, setShowTodayInfo] = useState(false); // 今日得分 "?" breakdown in 我的園子
   const [pointsBalanceBusy, setPointsBalanceBusy] = useState(false);
   const [redeemBill, setRedeemBill] = useState('');
   const [redeemBusy, setRedeemBusy] = useState(false);
@@ -25558,7 +25559,7 @@ const deDict = {
                     verserain
                   </div>
                   <div className="app-brand-version" style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', marginTop: '4px', marginLeft: '2px' }}>
-                    v4.0.104
+                    v4.0.105
                   </div>
                 </div>
                 <div ref={langPickerRef} className="app-lang-control" style={{ position: 'relative' }}>
@@ -28289,7 +28290,55 @@ const deDict = {
                           : (pointsBalance && !pointsBalance.error && Number.isFinite(Number(pointsBalance.todayPoints))
                             ? t('今日得分 {n} 分', '{n} points scored today').replace('{n}', Number(pointsBalance.todayPoints).toLocaleString())
                             : t('歡迎回來', 'Welcome back'))}
+                        {pointsBalance && !pointsBalance.error && Number.isFinite(Number(pointsBalance.todayPoints)) && (
+                          <button type="button" data-testid="today-points-help" onClick={() => setShowTodayInfo(v => !v)} aria-expanded={showTodayInfo} title={t('今天的分數怎麼算？', 'How were today’s points earned?')} aria-label={t('今天的分數怎麼算？', 'How were today’s points earned?')} style={{ marginLeft: 6, width: 20, height: 20, borderRadius: '50%', border: '1px solid #6ee7b7', background: showTodayInfo ? '#047857' : '#fff', color: showTodayInfo ? '#fff' : '#047857', fontSize: '0.78rem', fontWeight: 800, lineHeight: '18px', padding: 0, cursor: 'pointer', verticalAlign: 'middle' }}>?</button>
+                        )}
                       </div>
+                      {showTodayInfo && pointsBalance && !pointsBalance.error && (() => {
+                        const td = pointsBalance.today;
+                        const b = (td && td.breakdown) || {};
+                        const ck = td && td.checkin;
+                        const ls = td && td.listen;
+                        const fmt = (n) => { const v = Number(n) || 0; return v > 0 ? `+${v.toLocaleString()}` : v.toLocaleString(); };
+                        const row = (key, label, detail, pts) => (
+                          <div key={key} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.75rem', padding: '0.4rem 0', borderBottom: '1px dashed #a7f3d0' }}>
+                            <div>
+                              <div style={{ fontWeight: 700, color: '#064e3b' }}>{label}</div>
+                              {detail ? <div style={{ fontSize: '0.78rem', color: '#047857', lineHeight: 1.5 }}>{detail}</div> : null}
+                            </div>
+                            <div style={{ fontWeight: 800, color: Number(pts) > 0 ? '#047857' : '#94a3b8', whiteSpace: 'nowrap' }}>{fmt(pts)}</div>
+                          </div>
+                        );
+                        const checkinDetail = !ck ? null : ck.done
+                          ? t('連續登入第 {n} 天', 'Day {n} in a row').replace('{n}', String(ck.streak))
+                          : (ck.graceUsed > 0
+                            ? t('今天聽完或挑戰完一節經文，可得 +{x}（會用掉 {k} 天恩典日，連續第 {n} 天）', 'Listen to or challenge one verse today for +{x} (uses {k} grace day(s), day {n} in a row)').replace('{k}', String(ck.graceUsed))
+                            : t('今天聽完或挑戰完一節經文，可得 +{x}（連續第 {n} 天）', 'Listen to or challenge one verse today for +{x} (day {n} in a row)')).replace('{x}', Number(ck.amount).toLocaleString()).replace('{n}', String(ck.streak));
+                        return (
+                          <div data-testid="today-points-breakdown" style={{ background: '#fff', border: '1px solid #a7f3d0', borderRadius: 10, padding: '0.75rem 0.9rem', margin: '-0.4rem 0 1rem', fontSize: '0.88rem', textAlign: 'left' }}>
+                            <div style={{ fontWeight: 800, color: '#065f46', marginBottom: '0.2rem' }}>{t('今天的分數怎麼來的', 'Where today’s points came from')}</div>
+                            {!td ? (
+                              <div style={{ color: '#64748b' }}>{t('明細暫時無法取得，請稍後再試。', 'The breakdown is not available right now; please try again later.')}</div>
+                            ) : (
+                              <>
+                                {row('challenge', t('挑戰經文', 'Challenges'), t('新挑戰的經文，以及破紀錄多出來的部分', 'New verses, plus whatever beat your own record'), b.challenge)}
+                                {row('checkin', t('每日登入', 'Daily check-in'), checkinDetail, b.checkin)}
+                                {row('listen', t('聆聽經文', 'Listening'), ls ? t('今天 {c}/{m} 節，每節 +{p}', '{c}/{m} verses today, +{p} each').replace('{c}', String(ls.count)).replace('{m}', String(ls.max)).replace('{p}', String(ls.points)) : null, b.listen)}
+                                {b.referral ? row('referral', t('邀請朋友', 'Invited friends'), t('朋友第一次通過經文，每位 +5000', '+5000 when a friend clears their first verse'), b.referral) : null}
+                                {b.shopReferral ? row('shopReferral', t('商家推薦獎勵', 'Shop referral bonus'), t('有人在你推薦的商家折抵點數', 'Someone redeemed points at a shop you introduced'), b.shopReferral) : null}
+                                {b.other ? row('other', t('其他', 'Other'), t('例如這份明細上線之前拿到的分數', 'For example, points earned before this breakdown existed'), b.other) : null}
+                                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.45rem 0 0.2rem', fontWeight: 800, color: '#065f46' }}>
+                                  <span>{t('合計', 'Total')}</span>
+                                  <span>{fmt(pointsBalance.todayPoints)}</span>
+                                </div>
+                                {ck ? <div style={{ marginTop: '0.35rem', fontSize: '0.8rem', color: '#047857', lineHeight: 1.6 }}>🕊️ {t('恩典日：{g} 張（每連續 7 天送一張，最多 2 張；漏掉一天會自動補上）', 'Grace days: {g} (one for every 7 days in a row, up to 2; a missed day is covered automatically)').replace('{g}', String(ck.grace || 0))}</div> : null}
+                                <div style={{ marginTop: '0.25rem', fontSize: '0.78rem', color: '#64748b', lineHeight: 1.6 }}>{t('下方 🔥 是園子的連續天數（依手機時間）；登入分數依連續登入天數（台灣時間）計算。', 'The 🔥 below is your garden streak (device time); check-in points follow the check-in streak (Taiwan time).')}</div>
+                                <button type="button" onClick={() => { setMainTab('manual'); setTimeout(() => scrollMenuTo(document.getElementById('manual-score')), 350); }} style={{ marginTop: '0.4rem', background: 'transparent', border: 'none', padding: 0, color: '#2563eb', fontWeight: 700, cursor: 'pointer', fontSize: '0.82rem' }}>{t('完整規則', 'Full rules')} →</button>
+                              </>
+                            )}
+                          </div>
+                        );
+                      })()}
                       <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'center', gap: '0.5rem' }}>
                         <span style={{ fontSize: '2.6rem', filter: personalProgress.currentStreak > 0 ? 'none' : 'grayscale(1) opacity(0.4)' }}>🔥</span>
                         <span style={{ fontSize: '3rem', fontWeight: 800, color: '#047857', lineHeight: 1 }}>{personalProgress.currentStreak}</span>
