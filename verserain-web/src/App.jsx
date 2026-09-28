@@ -3389,7 +3389,7 @@ function VerseSetContinuousRainPlayer({
       if (cancelled || runRef.current !== runId) return;
       setActivePhrase(currentPhrases.length);
       setIsSettled(true);
-      onListenLoggedRef.current?.();
+      onListenLoggedRef.current?.(currentVerse);
       const durationLimit = playDurationMinutesRef.current;
       if (durationLimit && Date.now() - playbackStartedAtRef.current >= durationLimit * 60 * 1000) {
         bgmRef.current?.pause();
@@ -8704,11 +8704,52 @@ export default function App() {
         } else if (err === 'verify_unavailable') {
           setToast(t('分數已上排行榜；總積分暫時無法更新，稍後會再試', 'Score posted; your total score could not be updated right now'));
           setTimeout(() => setToast(null), 4000);
+        } else if (d && d.points && d.points.checkin) {
+          showCheckinToast(d.points.checkin);
         }
       }).catch(() => {});
     }
     return r;
   }); };
+  // 每日登入: the day's first listened or challenged verse pays the streak
+  // bonus (api/_lib/dailyPoints.js); the server says which day of the streak.
+  const showCheckinToast = (ck) => {
+    if (!ck || !(ck.amount > 0)) return;
+    const msg = ck.graceUsed > 0
+      ? t('🕊️ 用了 {k} 天恩典日，連續登入第 {n} 天 +{x} 分', '🕊️ Used {k} grace day(s): day {n} in a row, +{x} points').replace('{k}', String(ck.graceUsed))
+      : t('📅 連續登入第 {n} 天 +{x} 分', '📅 Day {n} in a row: +{x} points');
+    setToast(msg.replace('{n}', String(ck.streak)).replace('{x}', String(ck.amount)));
+    setTimeout(() => setToast(null), 4000);
+  };
+  // 聆聽經文: +100 for a verse listened to the end, once per verse per Taipei
+  // day, 20 a day (api/listen-credit.js). Guests earn nothing, as with scores.
+  const listenCreditRef = useRef({ day: '', sent: new Set(), capped: false });
+  const creditListen = (verse) => {
+    if (!userEmail || !sessionKey || !verse || !verse.reference) return;
+    const ref = String(verseRefKey(verse.reference) || '').replace(/\s+/g, '').slice(0, 40);
+    if (!ref) return;
+    const day = new Date(Date.now() + 8 * 3600 * 1000).toISOString().slice(0, 10);
+    const memo = listenCreditRef.current;
+    if (memo.day !== day) { memo.day = day; memo.sent = new Set(); memo.capped = false; }
+    if (memo.capped || memo.sent.has(ref)) return;
+    memo.sent.add(ref);
+    fetch('/api/listen-credit', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: userEmail, sessionKey, ref }),
+    }).then(r => r.json().catch(() => ({}))).then((d) => {
+      if (!d || !d.success || !d.listen) { if (!d || !d.success) memo.sent.delete(ref); return; }
+      pointsBalanceAtRef.current = 0; // 我的園子 refetches the total on the next visit
+      if (d.checkin) { showCheckinToast(d.checkin); return; }
+      if (d.listen.capped) {
+        memo.capped = true;
+        setToast(t('今天的聆聽分數已經滿 {n} 節了，明天再來！', 'You have earned listening points for {n} verses today. Come back tomorrow!').replace('{n}', String(d.dailyMax || 20)));
+        setTimeout(() => setToast(null), 3500);
+      } else if (d.listen.credited) {
+        setToast(t('🎧 聆聽 +{x} 分（今天 {c}/{n} 節）', '🎧 Listening +{x} points ({c}/{n} verses today)').replace('{x}', String(d.listen.credited)).replace('{c}', String(d.listen.count)).replace('{n}', String(d.dailyMax || 20)));
+        setTimeout(() => setToast(null), 2500);
+      }
+    }).catch(() => { memo.sent.delete(ref); });
+  };
   const openRedeem = (place) => {
     if (!place || !place.id) return;
     if (!userEmail) { setShowLoginModal('login'); setToast(t('請先登入才能用點數折抵', 'Sign in to use points for a discount')); setTimeout(() => setToast(null), 2500); return; }
@@ -25410,7 +25451,7 @@ const deDict = {
                 fontSizeLevel: continuousRainSet.fontSizeLevel || DEFAULT_PLAY_FONT_CHOICE
               });
             }}
-            onListenLogged={() => updateGarden('activity_only', 'listen')}
+            onListenLogged={(v) => { updateGarden('activity_only', 'listen'); creditListen(v); }}
             onChallengeVerse={challengeVerseFromReader}
             onShareVerse={(verse, shareOpts) => {
               if (!verse || !continuousRainSet?.id) return;
@@ -25517,7 +25558,7 @@ const deDict = {
                     verserain
                   </div>
                   <div className="app-brand-version" style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', marginTop: '4px', marginLeft: '2px' }}>
-                    v4.0.103
+                    v4.0.104
                   </div>
                 </div>
                 <div ref={langPickerRef} className="app-lang-control" style={{ position: 'relative' }}>
@@ -25968,7 +26009,7 @@ const deDict = {
                         startVerse: pickRandomVerse(set.verses || [])
                       });
                     }}
-                    onListenLogged={() => updateGarden('activity_only', 'listen')}
+                    onListenLogged={(v) => { updateGarden('activity_only', 'listen'); creditListen(v); }}
                     onOpenVoiceComments={openVoiceCommentsFromPlayer}
                     onVoiceRecorded={() => setVoiceRefreshTick(x => x + 1)}
                     onChallengeVerse={challengeVerseFromReader}
@@ -26066,7 +26107,7 @@ const deDict = {
                         startVerse: pickRandomVerse(set.verses || [])
                       });
                     }}
-                    onListenLogged={() => updateGarden('activity_only', 'listen')}
+                    onListenLogged={(v) => { updateGarden('activity_only', 'listen'); creditListen(v); }}
                     onOpenVoiceComments={openVoiceCommentsFromPlayer}
                     onVoiceRecorded={() => setVoiceRefreshTick(x => x + 1)}
                     onChallengeVerse={challengeVerseFromReader}
@@ -30740,7 +30781,7 @@ const deDict = {
                     </ul>
                     <ManualVideo src="/manual/map.mp4" poster="/manual/map.jpg" caption={t("教學影片：點「誰在玩」看全球玩家分佈 → 按「3D 地球」→ 拖曳轉動地球。", "Tutorial: open \"Who's Playing\" to see players worldwide → press \"3D Globe\" → drag to spin the globe.")} />
                     <h2 id="manual-score" style={{ borderBottom: '2px solid #e2e8f0', paddingBottom: '0.5rem', marginTop: '2rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Trophy size={22} /> {t("九、總積分怎麼算？", "9. How Is My Total Score Calculated?")}</h2>
-                    <p>{t("總積分跟著你的帳號走，登入後每一次挑戰都會累積；改暱稱不會影響總積分。", "Your total score belongs to your account: every challenge counts once you are signed in, and changing your nickname never affects it.")}</p>
+                    <p>{t("總積分跟著你的帳號走，登入後每一次挑戰、聆聽和每天回來讀經都會累積；改暱稱不會影響總積分。", "Your total score belongs to your account: once you are signed in, every challenge, every verse you listen to and every day you come back to read counts, and changing your nickname never affects it.")}</p>
                     <h3 style={{ marginTop: '1.5rem', color: '#0f172a' }}>{t("1. 每節經文，只算你最好的一次", "1. Each verse counts your best run only")}</h3>
                     <ul style={{ paddingLeft: '1.5rem', marginBottom: '1.5rem' }}>
                       <li><span dangerouslySetInnerHTML={{ __html: t("<strong>第一次挑戰</strong>一節經文：這一局得幾分，總積分就加幾分。", "<strong>First challenge</strong> of a verse: whatever you score is added in full.") }} /></li>
@@ -30751,18 +30792,27 @@ const deDict = {
                     <p>{t("個人 PK 房間的成績跟單人挑戰一樣計入；團隊賽是課堂當場的比賽，不計入總積分。", "Solo PK rooms count just like single-player challenges; team battles are live classroom events and do not count.")}</p>
                     <h3 style={{ marginTop: '1.5rem', color: '#0f172a' }}>{t("3. 邀請朋友", "3. Inviting friends")}</h3>
                     <p><span dangerouslySetInnerHTML={{ __html: t("朋友用你的推薦碼加入並第一次通過一節經文，你得到 <strong>+5000</strong> 積分，每位朋友一次。", "When a friend joins with your referral code and clears their first verse, you get <strong>+5000</strong> points, once per friend.") }} /></p>
-                    <h3 style={{ marginTop: '1.5rem', color: '#0f172a' }}>{t("4. 今日得分", "4. Today's score")}</h3>
-                    <p>{t("園子上方的「今日得分」就是今天新增的總積分：新挑戰的經文、今天破紀錄的部分，加上今天收到的推薦獎勵。", "\"Today's score\" at the top of your garden is what your total gained today: new verses, record improvements and referral bonuses received today.")}</p>
-                    <h3 style={{ marginTop: '1.5rem', color: '#0f172a' }}>{t("5. 總積分能做什麼？", "5. What can I do with it?")}</h3>
+                    <h3 style={{ marginTop: '1.5rem', color: '#0f172a' }}>{t("4. 每日登入", "4. Daily check-in")}</h3>
+                    <ul style={{ paddingLeft: '1.5rem', marginBottom: '1.5rem' }}>
+                      <li><span dangerouslySetInnerHTML={{ __html: t("當天<strong>聽完或挑戰完一節經文</strong>，就算這天有登入，會送出這天的登入分數（只打開 App 不算）。", "Listen to or challenge <strong>one verse to the end</strong> on a given day and that day counts as checked in; the check-in points are added then (just opening the app does not count).") }} /></li>
+                      <li><span dangerouslySetInnerHTML={{ __html: t("連續登入的分數是 <strong>1000、1100、1200…最高 2000</strong>，連續第 12 天再從 1000 開始，11 天一輪。", "Consecutive days earn <strong>1000, 1100, 1200 … up to 2000</strong>; day 12 starts again at 1000, an 11-day cycle.") }} /></li>
+                      <li><span dangerouslySetInnerHTML={{ __html: t("每連續 7 天送一張<strong>「恩典日」</strong>（最多存 2 張）。漏掉的日子會自動用恩典日補上，連續天數不中斷（補上的那天沒有分數）；恩典日不夠補時，才從 1000 重來。", "Every 7 days in a row earns a <strong>grace day</strong> (up to 2 saved). A missed day is covered by a grace day automatically, so your streak continues (the covered day itself earns nothing); only when you run out of grace days does it start again at 1000.") }} /></li>
+                      <li>{t("依台灣時間（UTC+8）午夜換日。", "Days change at midnight Taiwan time (UTC+8).")}</li>
+                    </ul>
+                    <h3 style={{ marginTop: '1.5rem', color: '#0f172a' }}>{t("5. 聆聽經文", "5. Listening")}</h3>
+                    <p><span dangerouslySetInnerHTML={{ __html: t("在聆聽頁把一節經文<strong>聽完</strong>，總積分 <strong>+100</strong>。同一節一天只算一次，一天最多 20 節（2000 分）。", "Listen to a verse <strong>to the end</strong> in the listening player and your total gets <strong>+100</strong>. Each verse counts once a day, up to 20 verses (2000 points) a day.") }} /></p>
+                    <h3 style={{ marginTop: '1.5rem', color: '#0f172a' }}>{t("6. 今日得分", "6. Today's score")}</h3>
+                    <p>{t("園子上方的「今日得分」就是今天新增的總積分：新挑戰的經文、今天破紀錄的部分、每日登入和聆聽的分數，加上今天收到的推薦獎勵。", "\"Today's score\" at the top of your garden is what your total gained today: new verses, record improvements, check-in and listening points, and referral bonuses received today.")}</p>
+                    <h3 style={{ marginTop: '1.5rem', color: '#0f172a' }}>{t("7. 總積分能做什麼？", "7. What can I do with it?")}</h3>
                     <ul style={{ paddingLeft: '1.5rem', marginBottom: '1.5rem' }}>
                       <li><span dangerouslySetInnerHTML={{ __html: t("點數可以在合作商家換取小額的消費折扣，也可以投入教會或機構的「愛心行動」。折扣由商家自願提供，<strong>實際能折多少，以產生折扣券時畫面上顯示的為準</strong>。點數是遊戲內無償取得的促銷權益：沒有現金價值、不能兌換現金、不能轉讓或轉售，也不是儲值或電子支付。可用點數 = 總積分 − 已用點數；折抵只扣可用點數，總積分不會減少。", "You can use points for a small discount at partner shops, or put them into a church or organisation’s “Love in Action” project. Discounts are offered voluntarily by the shops; <strong>the exact amount is shown on screen when you create a coupon</strong>. Points are a free in-game promotional benefit: they have no cash value, cannot be cashed out, transferred or resold, and are not stored value or e-payment. Available points = total score minus points already spent; a discount lowers your available points, never your total score.") }} /></li>
                       <li>{t("每張折扣券最多折 NT$200、每人每月最多 NT$500；商家可另外設定每人每天可使用的張數。", "Each coupon is capped at NT$200 and each player at NT$500 per month; a shop may also set how many coupons one person can use per day.")}</li>
                       <li>{t('點數聲明：點數是遊戲內無償取得的促銷折抵權益，無現金價值、不可兌換現金、不可轉讓或轉售，亦非儲值或電子支付；折扣由商家自行提供，經文雨不經手任何款項。', 'About points: points are a free in-game promotional discount right with no cash value; they cannot be cashed out, transferred or resold, and are not stored value or e-payment. Discounts are offered by the shops themselves; VerseRain never handles money.')}</li>
                     </ul>
-                    <h3 style={{ marginTop: '1.5rem', color: '#0f172a' }}>{t("6. 和排行榜、園子的差別", "6. How it differs from the leaderboard and the garden")}</h3>
+                    <h3 style={{ marginTop: '1.5rem', color: '#0f172a' }}>{t("8. 和排行榜、園子的差別", "8. How it differs from the leaderboard and the garden")}</h3>
                     <ul style={{ paddingLeft: '1.5rem', marginBottom: '2rem' }}>
                       <li><span dangerouslySetInnerHTML={{ __html: t("排行榜依<strong>暱稱</strong>統計，總積分依<strong>帳號</strong>統計；改過暱稱的話，排行榜上舊名字的分數不會搬過來，但總積分完整保留。", "The leaderboard is tallied by <strong>nickname</strong>, the total score by <strong>account</strong>. If you renamed yourself, old-name leaderboard points stay where they are, but your total score is intact.") }} /></li>
-                      <li>{t("連續天數、樹和果子是園子的成長紀錄，不是積分；破紀錄會結果子，但果子不能折抵。", "Streaks, trees and fruit are your garden's growth record, not points; a new record bears fruit, but fruit cannot be redeemed.")}</li>
+                      <li>{t("園子上的連續天數、樹和果子是成長紀錄，不是積分；每日登入分數另外依連續登入天數（台灣時間）計算。破紀錄會結果子，但果子不能折抵。", "The streak, trees and fruit in your garden are its growth record, not points; check-in points follow their own streak (Taiwan time). A new record bears fruit, but fruit cannot be redeemed.")}</li>
                       <li>{t("沒登入只會上排行榜，不會累積到帳號的總積分，也不能用點數折抵；登入後從那一刻開始累積。", "Without signing in you only appear on the leaderboard: nothing is added to an account total and you cannot use points for a discount. Once signed in, it accumulates from that moment.")}</li>
                     </ul>
                   </>

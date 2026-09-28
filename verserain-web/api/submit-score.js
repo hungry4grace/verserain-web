@@ -1,6 +1,7 @@
 import { Redis } from '@upstash/redis';
 import { partyFetch } from './_lib/party.js';
 import { recordScore } from './_lib/points.js';
+import { recordCheckin } from './_lib/dailyPoints.js';
 
 // Leaderboards stay keyed by playerName (guests included). When the caller
 // also sends { email, sessionKey } and PartyKit confirms the session, the
@@ -18,8 +19,15 @@ async function creditAccount(redis, { email, sessionKey, playerName, verseRef, s
     return { error: 'verify_unavailable' };
   }
   if (!check || !check.valid) return { error: 'session_invalid' };
-  const r = await recordScore(redis, { email: em, playerName: check.playerName || playerName, verseRef, score, now: new Date(), fallbackBest });
-  return { delta: r.delta, earnedPoints: r.earnedPoints, todayPoints: r.todayPoints };
+  const now = new Date();
+  const r = await recordScore(redis, { email: em, playerName: check.playerName || playerName, verseRef, score, now, fallbackBest });
+  // 每日登入: the day's first finished challenge (or listened verse) pays the
+  // streak bonus — see api/_lib/dailyPoints.js.
+  let checkin = null;
+  if (Number(score) > 0) {
+    try { checkin = await recordCheckin(redis, { email: em, now }); } catch { checkin = null; }
+  }
+  return { delta: r.delta, earnedPoints: checkin ? checkin.earnedPoints : r.earnedPoints, todayPoints: r.todayPoints + (checkin ? checkin.amount : 0), checkin };
 }
 
 export default async function handler(req, res) {
