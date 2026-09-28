@@ -31,15 +31,7 @@ function build3DPulseHtml(action) {
   return { html, life: dur + (cfg.rings - 1) * 180 + 200 };
 }
 
-export default function WorldMap3D({ t, playerName, onJoinRoom, onToggleMode, currentMode, focusLocation, playTone, playWelcome, onEnableAudio, fruitMode = false, fruitTree = null, fruitLoading = false, onToggleFruit, selfLocation = null, places = [], placesMode = false, onTogglePlaces }) {
-  const fruitLevel = useMemo(() => {
-    const m = new Map();
-    if (fruitTree) {
-      (fruitTree.level1 || []).forEach(n => m.set(n, 1));
-      (fruitTree.level2 || []).forEach(x => { if (x?.name && !m.has(x.name)) m.set(x.name, 2); });
-    }
-    return m;
-  }, [fruitTree]);
+export default function WorldMap3D({ t, playerName, onJoinRoom, onToggleMode, currentMode, focusLocation, playTone, playWelcome, onEnableAudio, places = [], placesMode = false, onTogglePlaces }) {
   const globeEl = useRef(null);
   const containerRef = useRef(null);
   const [players, setPlayers] = useState([]);
@@ -244,14 +236,6 @@ export default function WorldMap3D({ t, playerName, onJoinRoom, onToggleMode, cu
              borderColor = '#334155';
           }
         }
-        // 我的果子:金環高亮,其他人暗化。
-        if (fruitMode && fruitTree) {
-          const lvl = fruitLevel.get(p.name) || 0;
-          if (lvl === 1) { bgColor = '#fde68a'; borderColor = '#f59e0b'; glowStyle = 'box-shadow: 0 0 0 3px rgba(245,158,11,0.9), 0 0 18px #fbbf24;'; opacity = 1; filter = 'none'; }
-          else if (lvl === 2) { bgColor = '#fef3c7'; borderColor = '#fbbf24'; glowStyle = 'box-shadow: 0 0 0 2px rgba(251,191,36,0.7), 0 0 12px rgba(251,191,36,0.8);'; opacity = 0.95; filter = 'none'; }
-          else if (!isCurrentUser) { bgColor = '#475569'; borderColor = '#334155'; opacity = 0.25; filter = 'grayscale(100%)'; glowStyle = 'none'; }
-        }
-
         return {
           isCluster: false,
           lat: p.lat,
@@ -309,25 +293,7 @@ export default function WorldMap3D({ t, playerName, onJoinRoom, onToggleMode, cu
         glowStyle
       };
     });
-  }, [players, playerName, selectedRoom, altitude, fruitMode, fruitTree, fruitLevel]);
-
-  // 我的果子弧線:我 → level1(金)、level1 → level2(淡黃)。
-  const fruitArcs = useMemo(() => {
-    if (!fruitMode || !fruitTree) return [];
-    const byName = new Map();
-    players.forEach(p => { if (p && p.name && p.lat != null && p.lng != null && !isNaN(p.lat) && !isNaN(p.lng)) byName.set(p.name, [p.lat, p.lng]); });
-    const me = byName.get(playerName) || (selfLocation && Number.isFinite(selfLocation.lat) ? [selfLocation.lat, selfLocation.lng] : null);
-    const arcs = [];
-    (fruitTree.level1 || []).forEach(n => { const to = byName.get(n); if (me && to) arcs.push({ startLat: me[0], startLng: me[1], endLat: to[0], endLng: to[1], color: '#fbbf24', lvl: 1 }); });
-    (fruitTree.level2 || []).forEach(x => { const to = byName.get(x?.name); const from = (x?.parent && byName.get(x.parent)) || me; if (from && to) arcs.push({ startLat: from[0], startLng: from[1], endLat: to[0], endLng: to[1], color: 'rgba(253,230,138,0.65)', lvl: 2 }); });
-    return arcs;
-  }, [fruitMode, fruitTree, players, playerName, selfLocation]);
-  useEffect(() => {
-    if (!fruitMode || !globeEl.current) return;
-    const me = players.find(p => p.name === playerName);
-    const at = me ? { lat: me.lat, lng: me.lng } : (selfLocation || null);
-    if (at) { try { globeEl.current.controls().autoRotate = false; globeEl.current.pointOfView({ lat: at.lat, lng: at.lng, altitude: 1.6 }, 1200); } catch { /* noop */ } }
-  }, [fruitMode, fruitTree, loading]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [players, playerName, selectedRoom, altitude]);
 
   // 商家／教會／機構:不進叢集;點一下就切到 2D 並打開該標記的 popup。
   const PLACE_3D = { merchant: { bg: '#e11d48', emoji: '🏪' }, church: { bg: '#7c3aed', emoji: '⛪' }, org: { bg: '#0d9488', emoji: '🏢' } };
@@ -341,7 +307,7 @@ export default function WorldMap3D({ t, playerName, onJoinRoom, onToggleMode, cu
       const pool = d.poolId ? '<span class="vr-pool-halo" style="position:absolute;inset:-5px;border-radius:50%;border:2px solid rgba(225,29,72,0.7);pointer-events:none;"></span><span class="vr-pool-badge" style="position:absolute;right:-8px;top:-7px;width:15px;height:15px;border-radius:50%;background:#fff;border:1.5px solid #fecdd3;display:flex;align-items:center;justify-content:center;font-size:9px;line-height:1;">❤️</span>' : '';
       const contest = d.contestId ? '<span class="vr-contest-halo" style="position:absolute;inset:-8px;border-radius:50%;border:2px solid rgba(37,99,235,0.7);pointer-events:none;"></span><span class="vr-contest-badge" style="position:absolute;left:-8px;top:-7px;width:15px;height:15px;border-radius:50%;background:#fff;border:1.5px solid #bfdbfe;display:flex;align-items:center;justify-content:center;font-size:9px;line-height:1;">📖</span>' : '';
       el.innerHTML = `<div style="position:relative;width:26px;height:26px;border-radius:${d.kind === 'church' ? '50%' : '8px'};background:${st.bg};border:2px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;font-size:14px;cursor:pointer;pointer-events:auto;transition:transform 0.2s;" onmouseover="this.style.transform='scale(1.2)'" onmouseout="this.style.transform='scale(1)'">${st.emoji}${pool}${contest}</div>`;
-      el.title = `${d.name}${d.kind === 'merchant' && d.discountPct ? ` · -${d.discountPct}%` : ''}${d.poolId ? ` · ❤️ ${d.poolName || t('愛心折抵池', 'Charity discount pool')}` : ''}${d.contestId ? ` · 📖 ${d.contestName || t('讀經比賽', 'Reading contest')}` : ''}`;
+      el.title = `${d.name}${d.kind === 'merchant' && d.discountPct ? ` · -${d.discountPct}%` : ''}${d.poolId ? ` · ❤️ ${d.poolName || t('愛心行動', 'Love in Action')}` : ''}${d.contestId ? ` · 📖 ${d.contestName || t('讀經比賽', 'Reading contest')}` : ''}`;
       el.onclick = () => {
         if (globeEl.current && onToggleMode) {
           globeEl.current.controls().autoRotate = false;
@@ -520,15 +486,6 @@ export default function WorldMap3D({ t, playerName, onJoinRoom, onToggleMode, cu
           >
             {soundOn ? '🔊' : '🔈'} {t('聲音', 'Sound')}
           </button>
-          {playerName && onToggleFruit && (
-            <button
-              title={t('看看你推薦的人在哪裡', 'See where the people you invited are')}
-              onClick={() => onToggleFruit()}
-              style={{ background: fruitMode ? '#f59e0b' : '#fef3c7', color: fruitMode ? '#fff' : '#92400e', border: 'none', padding: '0.3rem 0.8rem', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.8rem' }}
-            >
-              🍎 {t('我的果子', 'My Fruit')}{fruitLoading ? ' …' : (fruitMode && fruitTree ? ` (${(fruitTree.level1 || []).length + (fruitTree.level2 || []).length})` : '')}
-            </button>
-          )}
           {onTogglePlaces && (
             <button
               title={t('顯示贊助的商家、教會與機構', 'Show sponsoring shops, churches and organisations')}
@@ -585,17 +542,6 @@ export default function WorldMap3D({ t, playerName, onJoinRoom, onToggleMode, cu
               onZoom={({ altitude: newAltitude }) => setAltitude(newAltitude)}
               htmlAltitude={0.05}
               htmlTransitionDuration={100}
-              arcsData={fruitArcs}
-              arcStartLat="startLat"
-              arcStartLng="startLng"
-              arcEndLat="endLat"
-              arcEndLng="endLng"
-              arcColor="color"
-              arcStroke={(d) => (d.lvl === 1 ? 0.6 : 0.3)}
-              arcAltitudeAutoScale={0.3}
-              arcDashLength={0.4}
-              arcDashGap={0.2}
-              arcDashAnimateTime={2000}
             />
             {/* 即時脈動漣漪疊層(投影 lat/lng → 螢幕像素) */}
             <div ref={pulseOverlayRef} style={{ position: 'absolute', inset: 0, overflow: 'hidden', pointerEvents: 'none', zIndex: 5 }} />

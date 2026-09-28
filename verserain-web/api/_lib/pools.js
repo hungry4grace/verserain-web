@@ -1,4 +1,4 @@
-// Charity discount pools (愛心折抵池) — a church or organisation on the map
+// Charity discount pools (愛心行動) — a church or organisation on the map
 // opens a pool; players "contribute" (投入) their own points, which BURNS the
 // points from the player's spent ledger and grows the pool's discount
 // allowance in NTD; the organisation then draws discount vouchers from that

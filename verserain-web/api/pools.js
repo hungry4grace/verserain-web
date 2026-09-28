@@ -14,7 +14,7 @@ import {
   publicPool, publicPools, ownerPoolView, publicContribution, countPoolCreatesToday, bumpPoolCreates, MAX_POOL_CREATES_PER_DAY,
 } from './_lib/pools.js';
 
-// Charity discount pools (愛心折抵池). See api/_lib/pools.js for what the
+// Charity discount pools (愛心行動). See api/_lib/pools.js for what the
 // design deliberately leaves out (no transfers, no refunds, no cash-out).
 //   GET                                   public → { pools } (approved, public view; cached 60 s)
 //   GET ?mine=1&email=&sessionKey=        → { owned, contributed, merchantOf }
@@ -267,7 +267,7 @@ async function verifyLogin(res, body) {
 // push / APNs, all fail-soft (the admin action already stands).
 async function notifyPoolOwner(redis, pool, kind) {
   const approved = kind === 'pool_approved';
-  const title = approved ? '❤️ 愛心折抵池已通過審核' : '❤️ 愛心折抵池未通過審核';
+  const title = approved ? '❤️ 愛心行動已通過審核' : '❤️ 愛心行動未通過審核';
   const body = approved ? `「${pool.name}」已上線，現在可以接受玩家投入了` : `「${pool.name}」未通過審核，請聯絡管理員了解原因`;
   const url = 'https://www.verserain.com/#charity';
   const tag = `verserain-pool-${pool.id}-${kind}`;

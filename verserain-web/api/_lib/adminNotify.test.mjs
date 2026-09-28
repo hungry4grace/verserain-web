@@ -79,7 +79,7 @@ test('placeResubmittedMessage: same inbox kind (renders as-is), names the change
 test('poolSubmittedMessage: inbox record + push text name the organisation and the pool', () => {
   const m = poolSubmittedMessage({ id: 'cp_abc12345', name: '偏鄉長輩愛筵池', orgPlaceName: '恩典教會' }, '瑞爸');
   assert.deepStrictEqual(m.record, { kind: 'pool_submitted', poolId: 'cp_abc12345', name: '偏鄉長輩愛筵池', orgPlaceName: '恩典教會', by: '瑞爸' });
-  assert.match(m.title, /愛心折抵池/);
+  assert.match(m.title, /愛心行動/);
   assert.match(m.body, /瑞爸.*恩典教會.*偏鄉長輩愛筵池/);
   assert.strictEqual(m.tag, 'verserain-pool-cp_abc12345');
   assert.doesNotMatch(m.title + m.body, /捐|募/, 'no donation wording');

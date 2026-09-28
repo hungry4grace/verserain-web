@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { loadLeafletAndCluster } from './leafletLoader';
+import { spreadPoints } from './lib/placeSpread';
 import { getSetAssetDataUrl } from './setVoiceApi';
 
 // Same deterministic room color as in App.jsx
@@ -68,7 +69,7 @@ const PLACE_STYLE = {
   church:   { bg: '#7c3aed', border: '#ddd6fe', emoji: '⛪' },
   org:      { bg: '#0d9488', border: '#99f6e4', emoji: '🏢' },
 };
-// A church / org with an open charity pool (愛心折抵池) keeps its own icon
+// A church / org with an open Love in Action project (愛心行動) keeps its own icon
 // and gets a ❤️ badge at its right shoulder plus a pulsing rose halo, so the
 // church is still recognisable and the heart reads as "contribute here".
 const POOL_BADGE = '<span class="vr-pool-badge" style="position:absolute;right:-10px;top:-8px;width:18px;height:18px;border-radius:50%;background:#fff;border:1.5px solid #fecdd3;box-shadow:0 1px 4px rgba(0,0,0,0.35);display:flex;align-items:center;justify-content:center;font-size:11px;line-height:1;">❤️</span>';
@@ -83,18 +84,7 @@ const escapeHtml = (v) => String(v ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&a
 
 const TEAMS_HOST = 'https://verserain-party.hungry4grace.partykit.dev/parties/main/global-auth-db';
 
-export default function WorldMap2D({ t, playerName, userEmail, onJoinRoom, onViewGarden, onToggleMode, currentMode, focusLocation, playTone, playWelcome, onEnableAudio, fruitMode = false, fruitTree = null, fruitLoading = false, onToggleFruit, selfLocation = null, places = [], placesMode = false, onTogglePlaces, onRedeem, onOpenPool, onOpenContest }) {
-  // 我的果子: name → 1 (I invited them) | 2 (they were invited by someone I invited)
-  const fruitLevel = useMemo(() => {
-    const m = new Map();
-    if (fruitTree) {
-      (fruitTree.level1 || []).forEach(n => m.set(n, 1));
-      (fruitTree.level2 || []).forEach(x => { if (x?.name && !m.has(x.name)) m.set(x.name, 2); });
-    }
-    return m;
-  }, [fruitTree]);
-  const fruitLinesRef = useRef(null);
-  const fruitMarkersRef = useRef(null);
+export default function WorldMap2D({ t, playerName, userEmail, onJoinRoom, onViewGarden, onToggleMode, currentMode, focusLocation, playTone, playWelcome, onEnableAudio, places = [], placesMode = false, onTogglePlaces, onRedeem, onOpenPool, onOpenContest }) {
   const mapRef = useRef(null);
   const leafletMapRef = useRef(null);
   const markersByNameRef = useRef({}); // name → Leaflet marker,供即時脈動查座標
@@ -211,6 +201,7 @@ export default function WorldMap2D({ t, playerName, userEmail, onJoinRoom, onVie
   // Places layer: separate from the player markers so it is neither clustered
   // nor rebuilt every 30 s; refs keep the big marker effect's deps unchanged.
   const placeMarkersRef = useRef(null);
+  const placeLinksRef = useRef(null); // leader lines from spread-out icons to their real spot
   const placesRef = useRef(places);
   const onRedeemRef = useRef(onRedeem);
   const onOpenPoolRef = useRef(onOpenPool);
@@ -312,8 +303,6 @@ export default function WorldMap2D({ t, playerName, userEmail, onJoinRoom, onVie
 
         // Clear existing markers for this update
         markersGroupRef.current.clearLayers();
-        if (!fruitMarkersRef.current) fruitMarkersRef.current = L.layerGroup().addTo(leafletMapRef.current);
-        fruitMarkersRef.current.clearLayers();
         markersByNameRef.current = {}; // 重建 name→marker 對照(供即時脈動)
 
         const playerMarkers = [];
@@ -366,26 +355,8 @@ export default function WorldMap2D({ t, playerName, userEmail, onJoinRoom, onVie
             }
           }
 
-          // 我的果子:我推薦的人金環、他們推薦的人細金環,其他人暗化。
-          const fruitLvl = fruitMode && fruitTree ? (fruitLevel.get(p.name) || 0) : 0;
-          if (fruitMode && fruitTree) {
-            if (fruitLvl === 1) {
-              bgColor = '#fde68a';
-              glowStyle = 'border: 2px solid #f59e0b; box-shadow: 0 0 0 4px rgba(245,158,11,0.9), 0 0 22px #fbbf24;';
-              opacity = 1; filter = 'none';
-            } else if (fruitLvl === 2) {
-              bgColor = '#fef3c7';
-              glowStyle = 'border: 1.5px solid #fbbf24; box-shadow: 0 0 0 2px rgba(251,191,36,0.7), 0 0 14px rgba(251,191,36,0.8);';
-              opacity = 0.95; filter = 'none';
-            } else if (!isCurrentUser) {
-              bgColor = '#0f2d3b'; opacity = 0.18; filter = 'grayscale(100%)'; glowStyle = 'none';
-            }
-          }
-
-          // 大小 = 塊地數(封頂);高亮情境仍確保最小可視尺寸。
+          // 大小 = 塊地數(封頂)。
           let size = sizeForSquares(stats.squares);
-          if (fruitLvl === 1) size = Math.max(size, 14);
-          if (fruitLvl === 2) size = Math.max(size, 11);
 
           if (isCurrentUser) {
             bgColor = '#fde047'; // Yellow
@@ -448,9 +419,7 @@ export default function WorldMap2D({ t, playerName, userEmail, onJoinRoom, onVie
 
           marker.bindPopup(popup);
 
-          // 果子(與我自己)不進叢集,線的端點才不會被泡泡吃掉。
-          if (fruitMode && fruitTree && (fruitLvl || isCurrentUser) && fruitMarkersRef.current) marker.addTo(fruitMarkersRef.current);
-          else marker.addTo(markersGroupRef.current);
+          marker.addTo(markersGroupRef.current);
           playerMarkers.push({ p, marker });
           markersByNameRef.current[p.name] = marker;
         });
@@ -546,41 +515,7 @@ export default function WorldMap2D({ t, playerName, userEmail, onJoinRoom, onVie
     return () => {
       // Don't remove the map instance on unmount/re-render to preserve view
     };
-  }, [loading, players, statsByName, playerName, selectedRoom, selectedTeam, myTeams, fruitMode, fruitTree, fruitLevel]);
-
-  // 我的果子:以我為中心的輻射線。level1 金實線、level2 淡虛線(從推薦他的人出發,
-  // 找不到就從我出發)。獨立 layerGroup,不受標記重建影響。
-  useEffect(() => {
-    const map = leafletMapRef.current;
-    const L = window.L;
-    if (!map || !L) return;
-    if (!map.getPane('fruitPane')) { map.createPane('fruitPane'); map.getPane('fruitPane').style.zIndex = 400; }
-    if (!fruitLinesRef.current) fruitLinesRef.current = L.layerGroup().addTo(map);
-    const layer = fruitLinesRef.current;
-    layer.clearLayers();
-    if (!fruitMode || !fruitTree) return;
-    const byName = new Map();
-    players.forEach(p => { if (p && p.name && p.lat != null && p.lng != null && !isNaN(p.lat) && !isNaN(p.lng)) byName.set(p.name, [p.lat, p.lng]); });
-    const me = byName.get(playerName) || (selfLocation && Number.isFinite(selfLocation.lat) ? [selfLocation.lat, selfLocation.lng] : null);
-    const pts = [];
-    if (me) pts.push(me);
-    (fruitTree.level1 || []).forEach(n => {
-      const to = byName.get(n); if (!to) return;
-      pts.push(to);
-      if (me) L.polyline([me, to], { pane: 'fruitPane', color: '#fbbf24', weight: 2.5, opacity: 0.9 }).addTo(layer);
-    });
-    (fruitTree.level2 || []).forEach(x => {
-      const to = byName.get(x?.name); if (!to) return;
-      const from = (x.parent && byName.get(x.parent)) || me;
-      pts.push(to);
-      if (from) L.polyline([from, to], { pane: 'fruitPane', color: '#fde68a', weight: 1.5, opacity: 0.55, dashArray: '4 6' }).addTo(layer);
-    });
-    if (pts.length >= 2) {
-      try { map.fitBounds(L.latLngBounds(pts).pad(0.25), { animate: true, maxZoom: 6 }); } catch { /* noop */ }
-    } else if (me) {
-      map.setView(me, Math.max(map.getZoom(), 4), { animate: true });
-    }
-  }, [fruitMode, fruitTree, players, playerName, selfLocation, loading]);
+  }, [loading, players, statsByName, playerName, selectedRoom, selectedTeam, myTeams]);
 
   // 商家／教會／機構標記:獨立圖層與 pane(在玩家點之上、popup 之下),
   // 不進叢集;圖片只在 popup 打開時才抓(見 popupopen)。
@@ -590,10 +525,14 @@ export default function WorldMap2D({ t, playerName, userEmail, onJoinRoom, onVie
     if (!mapReady || !map || !L) return;
     if (!map.getPane('placePane')) { map.createPane('placePane'); map.getPane('placePane').style.zIndex = 610; }
     if (!placeMarkersRef.current) placeMarkersRef.current = L.layerGroup().addTo(map);
+    if (!placeLinksRef.current) placeLinksRef.current = L.layerGroup().addTo(map);
     const layer = placeMarkersRef.current;
+    const links = placeLinksRef.current;
     layer.clearLayers();
+    links.clearLayers();
     if (!placesMode) return;
     const byId = new Map();
+    const entries = []; // { marker, trueLatLng }
     (places || []).forEach((pl) => {
       if (!pl || !Number.isFinite(Number(pl.lat)) || !Number.isFinite(Number(pl.lng))) return;
       const st = PLACE_STYLE[pl.kind] || PLACE_STYLE.org;
@@ -605,9 +544,10 @@ export default function WorldMap2D({ t, playerName, userEmail, onJoinRoom, onVie
         html: `<div style="position:relative;width:30px;height:30px;border-radius:${pl.kind === 'church' ? '50%' : '9px'};background:${st.bg};border:2px solid #fff;box-shadow:0 0 0 2px ${st.border}55, 0 3px 10px rgba(0,0,0,0.45);display:flex;align-items:center;justify-content:center;font-size:16px;cursor:pointer;">${st.emoji}${pct}${pool}${contest}</div>`,
         iconSize: [30, 30], iconAnchor: [15, 15], popupAnchor: [0, -14],
       });
-      const marker = L.marker([Number(pl.lat), Number(pl.lng)], { pane: 'placePane', icon, zIndexOffset: 1000 });
+      const trueLatLng = L.latLng(Number(pl.lat), Number(pl.lng));
+      const marker = L.marker(trueLatLng, { pane: 'placePane', icon, zIndexOffset: 1000 });
       const kindLabel = pl.kind === 'merchant' ? t('商家', 'Shop') : pl.kind === 'church' ? t('教會', 'Church') : t('機構', 'Organisation');
-      const poolLine = pl.poolId ? `<div style="display:inline-block;background:#fff1f2;color:#9f1239;border:1px solid #fecdd3;border-radius:999px;padding:2px 10px;font-weight:800;font-size:0.85rem;margin-bottom:6px;">❤️ ${Number(pl.poolCount) > 1 ? escapeHtml(t('{n} 個愛心折抵池', '{n} charity pools').replace('{n}', String(pl.poolCount))) : escapeHtml(t('愛心折抵池', 'Charity discount pool'))}${pl.poolName ? `：${escapeHtml(pl.poolName)}${Number(pl.poolCount) > 1 ? '…' : ''}` : ''}</div>` : '';
+      const poolLine = pl.poolId ? `<div style="display:inline-block;background:#fff1f2;color:#9f1239;border:1px solid #fecdd3;border-radius:999px;padding:2px 10px;font-weight:800;font-size:0.85rem;margin-bottom:6px;">❤️ ${Number(pl.poolCount) > 1 ? escapeHtml(t('{n} 個愛心行動', '{n} Love in Action projects').replace('{n}', String(pl.poolCount))) : escapeHtml(t('愛心行動', 'Love in Action'))}${pl.poolName ? `：${escapeHtml(pl.poolName)}${Number(pl.poolCount) > 1 ? '…' : ''}` : ''}</div>` : '';
       const contestLine = pl.contestId ? `<div style="display:inline-block;background:#eff6ff;color:#1e40af;border:1px solid #bfdbfe;border-radius:999px;padding:2px 10px;font-weight:800;font-size:0.85rem;margin-bottom:6px;margin-left:4px;">📖 ${Number(pl.contestCount) > 1 ? escapeHtml(t('{n} 個讀經比賽', '{n} reading contests').replace('{n}', String(pl.contestCount))) : escapeHtml(t('讀經比賽', 'Reading contest'))}${pl.contestName ? `：${escapeHtml(pl.contestName)}${Number(pl.contestCount) > 1 ? '…' : ''}` : ''}</div>` : '';
       const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${pl.lat},${pl.lng}`)}`;
       const photo = pl.photoAssetId ? `<img class="map-place-photo" data-set="place:${escapeHtml(pl.id)}" data-asset="${escapeHtml(pl.photoAssetId)}" data-mime="${escapeHtml(pl.photoMime || 'image/webp')}" alt="" style="display:none;width:100%;max-height:140px;object-fit:cover;border-radius:8px;margin-bottom:6px;" />` : '';
@@ -626,14 +566,36 @@ export default function WorldMap2D({ t, playerName, userEmail, onJoinRoom, onVie
           ${pl.phone ? `<div style="font-size:0.8rem;color:#64748b;">☎️ ${escapeHtml(pl.phone)}</div>` : ''}
           ${pl.website ? `<div style="font-size:0.8rem;"><a href="${escapeHtml(pl.website)}" target="_blank" rel="noopener noreferrer" style="color:#2563eb;">🔗 ${escapeHtml(pl.website.replace(/^https?:\/\//, ''))}</a></div>` : ''}
           ${pl.kind === 'merchant' ? `<button class="map-redeem-btn" data-place-id="${escapeHtml(pl.id)}" style="margin-top:8px;width:100%;background:#f59e0b;color:#fff;border:none;border-radius:8px;padding:0.45rem 0.8rem;font-weight:800;cursor:pointer;">🎟️ ${escapeHtml(t('產生折扣券', 'Get a coupon'))}</button>` : ''}
-          ${pl.poolId ? `<button class="map-pool-btn" data-pool-id="${escapeHtml(pl.poolId)}" style="margin-top:8px;width:100%;background:#e11d48;color:#fff;border:none;border-radius:8px;padding:0.45rem 0.8rem;font-weight:800;cursor:pointer;">❤️ ${escapeHtml(Number(pl.poolCount) > 1 ? t('看看這裡的愛心折抵池', 'See the charity pools here') : t('投入愛心折抵池', 'Contribute to the charity pool'))}</button>` : ''}
+          ${pl.poolId ? `<button class="map-pool-btn" data-pool-id="${escapeHtml(pl.poolId)}" style="margin-top:8px;width:100%;background:#e11d48;color:#fff;border:none;border-radius:8px;padding:0.45rem 0.8rem;font-weight:800;cursor:pointer;">❤️ ${escapeHtml(Number(pl.poolCount) > 1 ? t('看看這裡的愛心行動', 'See the Love in Action projects here') : t('投入愛心行動', 'Contribute to the Love in Action project'))}</button>` : ''}
           ${pl.contestId ? `<button class="map-contest-btn" data-contest-id="${escapeHtml(pl.contestId)}" style="margin-top:8px;width:100%;background:#2563eb;color:#fff;border:none;border-radius:8px;padding:0.45rem 0.8rem;font-weight:800;cursor:pointer;">📖 ${escapeHtml(Number(pl.contestCount) > 1 ? t('看看這裡的讀經比賽', 'See the reading contests here') : t('參加讀經比賽', 'Join the reading contest'))}</button>` : ''}
         </div>`;
       marker.bindPopup(L.popup({ maxWidth: 260, className: 'verse-map-popup' }).setContent(html));
       marker.on('click', (ev) => { L.DomEvent.stopPropagation(ev); });
       marker.addTo(layer);
       byId.set(pl.id, marker);
+      entries.push({ marker, trueLatLng });
     });
+    // Places at (nearly) the same spot — e.g. two addresses geocoded to one
+    // point — would stack forever, even at max zoom. Re-spread them on screen
+    // after every zoom and draw a thin line back to the real location.
+    const layoutPlaces = () => {
+      links.clearLayers();
+      const pts = entries.map(e => map.latLngToLayerPoint(e.trueLatLng));
+      const { positions, groups } = spreadPoints(pts);
+      entries.forEach((e, i) => {
+        const pos = positions[i];
+        e.marker.setLatLng(pos.moved ? map.layerPointToLatLng(L.point(pos.x, pos.y)) : e.trueLatLng);
+      });
+      groups.forEach((g) => {
+        const centre = map.layerPointToLatLng(L.point(g.x, g.y));
+        g.members.forEach((i) => {
+          L.polyline([centre, entries[i].marker.getLatLng()], { color: '#ffffff', weight: 1.5, opacity: 0.7, interactive: false }).addTo(links);
+        });
+        L.circleMarker(centre, { radius: 3, color: '#ffffff', weight: 1, fillColor: '#ffffff', fillOpacity: 0.9, interactive: false }).addTo(links);
+      });
+    };
+    layoutPlaces();
+    map.on('zoomend', layoutPlaces);
     // Arrived from the 3D globe with a place selected: open it once.
     const want = focusLocation && focusLocation.placeId;
     if (want && byId.has(want) && openedPlaceRef.current !== want) {
@@ -641,6 +603,7 @@ export default function WorldMap2D({ t, playerName, userEmail, onJoinRoom, onVie
       const m = byId.get(want);
       setTimeout(() => { try { map.setView(m.getLatLng(), Math.max(map.getZoom(), 14), { animate: false }); m.openPopup(); } catch { /* noop */ } }, 150);
     }
+    return () => { map.off('zoomend', layoutPlaces); };
   }, [mapReady, places, placesMode, focusLocation, t]);
 
   // 即時脈動:訂閱 window 事件,從對應玩家的點盪出光波(imperative,不觸發 React
@@ -800,15 +763,6 @@ export default function WorldMap2D({ t, playerName, userEmail, onJoinRoom, onVie
           >
             {soundOn ? '🔊' : '🔈'} {t('聲音', 'Sound')}
           </button>
-          {playerName && onToggleFruit && (
-            <button
-              title={t('看看你推薦的人在哪裡', 'See where the people you invited are')}
-              onClick={() => onToggleFruit()}
-              style={{ background: fruitMode ? '#f59e0b' : '#fef3c7', color: fruitMode ? '#fff' : '#92400e', border: 'none', padding: '0.3rem 0.8rem', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.8rem' }}
-            >
-              🍎 {t('我的果子', 'My Fruit')}{fruitLoading ? ' …' : (fruitMode && fruitTree ? ` (${(fruitTree.level1 || []).length + (fruitTree.level2 || []).length})` : '')}
-            </button>
-          )}
           {onTogglePlaces && (
             <button
               title={t('顯示贊助的商家、教會與機構', 'Show sponsoring shops, churches and organisations')}
@@ -820,11 +774,11 @@ export default function WorldMap2D({ t, playerName, userEmail, onJoinRoom, onVie
           )}
           {onOpenPool && (
             <button
-              title={t('看看有哪些愛心折抵池', 'See the charity pools')}
+              title={t('看看有哪些愛心行動', 'See the Love in Action projects')}
               onClick={() => onOpenPool('')}
               style={{ background: '#fecdd3', color: '#9f1239', border: 'none', padding: '0.3rem 0.8rem', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.8rem' }}
             >
-              ❤️ {t('愛心折抵池', 'Charity discount pool')}
+              ❤️ {t('愛心行動', 'Love in Action')}
             </button>
           )}
           {onOpenContest && (
@@ -871,16 +825,6 @@ export default function WorldMap2D({ t, playerName, userEmail, onJoinRoom, onVie
             </div>
           )}
           <div className="verse-map-frame" ref={mapRef} style={{ height: '520px', width: '100%', background: '#051936' }} />
-          {fruitMode && fruitTree && (fruitTree.level1 || []).length + (fruitTree.level2 || []).length === 0 && (
-            <div style={{ position: 'absolute', bottom: '18px', left: '50%', transform: 'translateX(-50%)', zIndex: 1000, background: 'rgba(4,16,31,0.85)', color: '#fde68a', padding: '6px 14px', borderRadius: '20px', fontSize: '0.85rem', pointerEvents: 'none', whiteSpace: 'nowrap' }}>
-              🍎 {t('還沒有果子——把邀請連結分享給朋友吧', 'No fruit yet — share your invite link with a friend')}
-            </div>
-          )}
-          {fruitMode && fruitTree && (fruitTree.level1 || []).length + (fruitTree.level2 || []).length > 0 && !players.some(p => p.name === playerName) && !selfLocation && (
-            <div style={{ position: 'absolute', bottom: '18px', left: '50%', transform: 'translateX(-50%)', zIndex: 1000, background: 'rgba(4,16,31,0.85)', color: '#fde68a', padding: '6px 14px', borderRadius: '20px', fontSize: '0.85rem', pointerEvents: 'none', whiteSpace: 'nowrap' }}>
-              {t('找不到你的位置，只標出果子', 'Your location is unknown; fruit highlighted only')}
-            </div>
-          )}
           {players.length === 0 && !error && (
             <div style={{ position: 'relative', top: '-260px', textAlign: 'center', color: '#94a3b8', pointerEvents: 'none', fontSize: '1rem' }}>
               {t('還沒有玩家資料，完成一局遊戲後你的位置就會出現！', 'No players yet — complete a game to appear on the map!')}
@@ -925,7 +869,7 @@ export default function WorldMap2D({ t, playerName, userEmail, onJoinRoom, onVie
                 {places.some(pl => pl && pl.poolId) && (
                   <span style={{ display: 'inline-flex', alignItems: 'center', gap: 7 }}>
                     <span style={{ position: 'relative', width: 14, height: 14, marginRight: 4, borderRadius: '50%', background: '#7c3aed', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 9 }}>⛪<span style={{ position: 'absolute', right: -6, top: -5, width: 10, height: 10, borderRadius: '50%', background: '#fff', border: '1px solid #fecdd3', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 6 }}>❤️</span></span>
-                    {t('加 ❤️ = 有愛心折抵池，可投入點數', '+ ❤️ = has a charity pool, contribute here')}
+                    {t('加 ❤️ = 有愛心行動，可投入點數', '+ ❤️ = has a Love in Action project, contribute here')}
                   </span>
                 )}
                 {places.some(pl => pl && pl.contestId) && (
@@ -934,21 +878,6 @@ export default function WorldMap2D({ t, playerName, userEmail, onJoinRoom, onVie
                     {t('加 📖 = 有讀經比賽，可以參加', '+ 📖 = has a reading contest, join here')}
                   </span>
                 )}
-              </>
-            )}
-            {fruitMode && fruitTree && (
-              <>
-                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 7 }}>
-                  <span style={{ width: 20, height: 0, borderTop: '2.5px solid #fbbf24' }} />
-                  {t('金線 = 我推薦的人', 'gold = people I invited')}
-                </span>
-                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 7 }}>
-                  <span style={{ width: 20, height: 0, borderTop: '1.5px dashed #fde68a' }} />
-                  {t('虛線 = 他們推薦的人', 'dashed = people they invited')}
-                </span>
-                <span style={{ color: '#fcd34d', fontWeight: 700 }}>
-                  {t('第一層 {a} · 第二層 {b}', 'level 1: {a} · level 2: {b}').replace('{a}', String((fruitTree.level1 || []).length)).replace('{b}', String((fruitTree.level2 || []).length))}
-                </span>
               </>
             )}
           </div>
