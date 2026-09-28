@@ -132,6 +132,88 @@ export function applyPoolAdminAction(pool, action, { adminEmail, now } = {}) {
   return p;
 }
 
+// ---------- 現金捐款 (cash appeal) ----------
+// A pool may also publish where to give money directly to the organisation —
+// only an organisation that may fundraise from the public (財團法人, 公益社團
+// 法人, 公立學校, 行政法人) and holds a fundraising permit (勸募許可) for this
+// appeal. VerseRain never touches the money: it only shows the details, and
+// only after an admin has checked the permit and that the account is in the
+// organisation's own name. Changing the permit or the account sends it back
+// for review. Money and points are two separate goals — never converted.
+export const CASH_ORG_TYPES = ['foundation', 'association', 'school', 'agency'];
+export const CASH_STATUSES = ['pending', 'verified', 'rejected'];
+export const CASH_GOAL_MAX_NTD = 100000000;
+const CASH_SENSITIVE = ['orgLegalName', 'orgType', 'permitNo', 'bankName', 'bankBranch', 'accountName', 'accountNo'];
+const squash = (v) => String(v ?? '').replace(/\s+/g, '');
+
+export function normalizeCashAppeal(input, { now, existing } = {}) {
+  const src = input || {};
+  const t = toDate(now).toISOString();
+  const orgLegalName = clip(src.orgLegalName, 80);
+  if (!orgLegalName) throw new PoolError('cash_org_required');
+  const orgType = String(src.orgType || '');
+  if (!CASH_ORG_TYPES.includes(orgType)) throw new PoolError('cash_org_type_invalid');
+  const permitNo = clip(src.permitNo, 80);
+  if (!permitNo) throw new PoolError('cash_permit_required');
+  let permitUrl = clip(src.permitUrl, 300);
+  if (permitUrl && !/^https:\/\/[^\s]+$/i.test(permitUrl)) throw new PoolError('cash_permit_url_invalid');
+  const bankName = clip(src.bankName, 40);
+  const bankBranch = clip(src.bankBranch, 40);
+  if (!bankName) throw new PoolError('cash_bank_required');
+  const accountName = clip(src.accountName, 80);
+  if (!accountName || squash(accountName) !== squash(orgLegalName)) throw new PoolError('cash_account_name_mismatch');
+  const accountNo = String(src.accountNo ?? '').trim();
+  const digits = accountNo.replace(/-/g, '');
+  if (!/^[0-9-]+$/.test(accountNo) || digits.length < 8 || digits.length > 20) throw new PoolError('cash_account_invalid');
+  const goalNTD = Number(src.goalNTD);
+  if (!Number.isInteger(goalNTD) || goalNTD < 1 || goalNTD > CASH_GOAL_MAX_NTD) throw new PoolError('cash_goal_invalid');
+  const deadline = String(src.deadline || '').trim();
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(deadline) || Number.isNaN(Date.parse(`${deadline}T00:00:00Z`))) throw new PoolError('cash_deadline_invalid');
+  const next = {
+    orgLegalName, orgType, permitNo, permitUrl, bankName, bankBranch, accountName, accountNo, goalNTD, deadline,
+    purpose: clip(src.purpose, 300),
+    transferNote: clip(src.transferNote, 60),
+  };
+  const prev = existing || null;
+  const unchanged = prev && CASH_SENSITIVE.every((k) => String(prev[k] ?? '') === String(next[k] ?? ''));
+  const keep = unchanged && prev.status === 'verified';
+  return {
+    ...next,
+    status: keep ? 'verified' : 'pending',
+    submittedAt: t,
+    verifiedAt: keep ? prev.verifiedAt || null : null,
+    verifiedBy: keep ? prev.verifiedBy || '' : '',
+    reviewNote: keep ? prev.reviewNote || '' : '',
+  };
+}
+
+export function applyCashAdminAction(pool, action, { adminEmail, now, note } = {}) {
+  if (!pool || !pool.cashAppeal) throw new PoolError('not_found');
+  const t = toDate(now).toISOString();
+  const c = { ...pool.cashAppeal };
+  if (action === 'cash_verify') {
+    c.status = 'verified'; c.verifiedAt = t; c.verifiedBy = normEmail(adminEmail);
+  } else if (action === 'cash_reject') {
+    c.status = 'rejected'; c.verifiedAt = null; c.verifiedBy = '';
+  } else {
+    throw new PoolError('invalid_state');
+  }
+  if (note !== undefined) c.reviewNote = clip(note, 200);
+  return { ...pool, cashAppeal: c, updatedAt: t };
+}
+
+// What the public card shows: verified details only, never the review trail.
+export function publicCashAppeal(c, now) {
+  if (!c || c.status !== 'verified') return null;
+  const today = toDate(now).toISOString().slice(0, 10);
+  return {
+    orgLegalName: c.orgLegalName, orgType: c.orgType, permitNo: c.permitNo, permitUrl: c.permitUrl || '',
+    bankName: c.bankName, bankBranch: c.bankBranch || '', accountName: c.accountName, accountNo: c.accountNo,
+    goalNTD: toInt(c.goalNTD), purpose: c.purpose || '', deadline: c.deadline, transferNote: c.transferNote || '',
+    ended: !!c.deadline && c.deadline < today,
+  };
+}
+
 function capInt(v, max) {
   const n = Number(v);
   return Number.isInteger(n) && n >= 1 && n <= max ? n : null;
@@ -441,6 +523,7 @@ export function publicPool(pool, counters = {}, summary = {}) {
     contributors: toInt(counters.contributors),
     usedNTD: toInt(summary.usedNTD),
     merchants: Object.values(pool.merchants || {}).map((m) => ({ placeId: m.placeId, placeName: m.placeName, perOrderMaxNTD: toInt(m.perOrderMaxNTD) })),
+    cashAppeal: publicCashAppeal(pool.cashAppeal),
     createdAt: pool.createdAt,
     approvedAt: pool.approvedAt || null,
   };
@@ -452,5 +535,5 @@ export function publicPools(pools, countersById = {}, summariesById = {}) {
 export function ownerPoolView(pool, counters = {}, summary = {}) {
   if (!pool) return null;
   const { note, ...rest } = pool; // eslint-disable-line no-unused-vars
-  return { ...publicPool(pool, counters, summary), ...rest, merchants: Object.values(pool.merchants || {}) };
+  return { ...publicPool(pool, counters, summary), ...rest, merchants: Object.values(pool.merchants || {}), cashAppeal: pool.cashAppeal || null };
 }

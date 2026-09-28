@@ -4,7 +4,7 @@ import { partyFetch } from './_lib/party.js';
 import { pushNotify } from './_lib/rewards.js';
 import { sendReferralPush } from './_lib/webpush.js';
 import { sendReferralApns } from './_lib/apns.js';
-import { notifyAdmins, poolSubmittedMessage } from './_lib/adminNotify.js';
+import { notifyAdmins, poolSubmittedMessage, poolCashSubmittedMessage } from './_lib/adminNotify.js';
 import { getPlace, listPlaces } from './_lib/places.js';
 import { clientIp, ipRateLimit, readBalance, publicVoucher, maskName, LEADERBOARD_KEY, taipeiDay } from './_lib/points.js';
 import {
@@ -12,6 +12,7 @@ import {
   applyMerchantJoin, applyMerchantLeave, contribute, issuePoolVoucher, poolCounters, poolMerchantMonthUsed,
   listContributionsForPool, listContributionsForEmail, listVouchersForPool, summarizePoolVouchers,
   publicPool, publicPools, ownerPoolView, publicContribution, countPoolCreatesToday, bumpPoolCreates, MAX_POOL_CREATES_PER_DAY,
+  normalizeCashAppeal, applyCashAdminAction,
 } from './_lib/pools.js';
 
 // Charity discount pools (愛心行動). See api/_lib/pools.js for what the
@@ -27,7 +28,10 @@ import {
 //   POST { action:'merchant_leave', email, sessionKey, poolId, placeId }
 //   POST { action:'pool_redeem', email, sessionKey, poolId, placeId, billNTD }
 //                                         pool owner → { success, voucher }
+//   POST { action:'cash_update', email, sessionKey, poolId, agree, cashAppeal:{…} | null }
+//                                         pool owner → cash-donation details (現金捐款), pending until an admin checks them
 //   POST { action:'approve'|'reject'|'close', adminEmail, poolId }
+//   POST { action:'cash_verify'|'cash_reject', adminEmail, poolId, note? }
 //   POST { action:'create', adminEmail, pool:{ orgPlaceId, name, description } }   admin → approved at once
 const ERROR_STATUS = {
   login_required: 400, session_invalid: 401, verify_unavailable: 503,
@@ -37,6 +41,8 @@ const ERROR_STATUS = {
   org_place_invalid: 400, invalid_state: 400, insufficient_balance: 400, name_required: 400,
   merchant_not_in_pool: 409, pool_exists: 409, pool_limit: 409, open_voucher_exists: 409,
   daily_cap: 429, daily_limit: 429, rate_limited: 429,
+  cash_org_required: 400, cash_org_type_invalid: 400, cash_permit_required: 400, cash_permit_url_invalid: 400,
+  cash_bank_required: 400, cash_account_name_mismatch: 400, cash_account_invalid: 400, cash_goal_invalid: 400, cash_deadline_invalid: 400,
 };
 
 export default async function handler(req, res) {
@@ -65,6 +71,7 @@ export default async function handler(req, res) {
       if (action === 'pool_redeem') return await poolRedeem(req, res, redis, body, now);
       if (action === 'merchant_join' || action === 'merchant_update' || action === 'merchant_leave') return await merchantAction(req, res, redis, body, action, now);
       if (action === 'create' && !body.adminEmail) return await createByOwner(req, res, redis, body, now);
+      if (action === 'cash_update') return await cashUpdateByOwner(req, res, redis, body, now);
       return await adminAction(req, res, redis, body, action, now);
     } catch (e) {
       if (e instanceof PoolError) {
@@ -208,6 +215,33 @@ async function createByOwner(req, res, redis, body, now) {
   return res.status(200).json({ success: true, pool: ownerPoolView(pool) });
 }
 
+// The pool's owner adds, edits or removes the cash-donation details. They stay
+// hidden from the public until an admin verifies them; editing the permit or
+// the account puts them back into review (normalizeCashAppeal).
+async function cashUpdateByOwner(req, res, redis, body, now) {
+  const ip = clientIp(req);
+  if (!(await ipRateLimit(redis, `charity:cash:ip:${ip}`, 10, 60))) return res.status(429).json({ error: 'rate_limited' });
+  const login = await verifyLogin(res, body);
+  if (!login) return undefined;
+  const { email, identity } = login;
+  const pool = await getPool(redis, String(body.poolId || '').trim());
+  if (!pool) throw new PoolError('not_found');
+  if (String(pool.ownerEmail || '').toLowerCase() !== email) throw new PoolError('not_owner');
+  if (!['pending', 'approved'].includes(pool.status)) throw new PoolError('invalid_state');
+  if (body.cashAppeal === null) {
+    delete pool.cashAppeal;
+  } else {
+    if (body.agree !== true) throw new PoolError('consent_required');
+    pool.cashAppeal = { ...normalizeCashAppeal(body.cashAppeal, { now, existing: pool.cashAppeal }), agreedAt: now.toISOString() };
+  }
+  pool.updatedAt = now.toISOString();
+  await savePool(redis, pool);
+  if (pool.cashAppeal && pool.cashAppeal.status === 'pending') {
+    try { await notifyAdmins(redis, poolCashSubmittedMessage(pool, identity.playerName || email)); } catch { /* best-effort */ }
+  }
+  return res.status(200).json({ success: true, pool: ownerPoolView(pool) });
+}
+
 async function adminAction(req, res, redis, body, action, now) {
   const adminEmail = String(body.adminEmail || '').trim().toLowerCase();
   const denied = requireAdmin(req, adminEmail);
@@ -234,8 +268,13 @@ async function adminAction(req, res, redis, body, action, now) {
     if (body.note !== undefined) pool.note = String(body.note || '').slice(0, 200);
     await savePool(redis, pool);
     if ((action === 'approve' || action === 'reject') && pool.ownerCode) await notifyPoolOwner(redis, pool, action === 'approve' ? 'pool_approved' : 'pool_rejected');
+  } else if (action === 'cash_verify' || action === 'cash_reject') {
+    pool = await getPool(redis, String(body.poolId || '').trim());
+    if (!pool) throw new PoolError('not_found');
+    pool = applyCashAdminAction(pool, action, { adminEmail, now, note: body.note });
+    await savePool(redis, pool);
   } else {
-    return res.status(400).json({ error: 'action must be create|contribute|merchant_join|merchant_update|merchant_leave|pool_redeem|approve|reject|close' });
+    return res.status(400).json({ error: 'action must be create|contribute|merchant_join|merchant_update|merchant_leave|pool_redeem|cash_update|approve|reject|close|cash_verify|cash_reject' });
   }
   const pools = await listPools(redis);
   const out = [];
