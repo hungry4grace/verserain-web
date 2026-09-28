@@ -3275,7 +3275,11 @@ export default class Server {
   onClose(conn) {
     console.log(`[PARTY] Player left: ${conn.id}`);
     if (this.state.players[conn.id]) {
-      this.state.players[conn.id].connected = false;
+      // The shared lobby never needs a departed player back (lobby sockets
+      // carry no playerKey), and keeping them made every lobby broadcast grow
+      // without bound. Game rooms keep the entry for reconnects.
+      if (this.room.id === 'global-lobby') delete this.state.players[conn.id];
+      else this.state.players[conn.id].connected = false;
     }
     // A playing host is in both players and host — mark host disconnected regardless.
     if (this.state.host === conn.id && this.state.matchType === 'team') {

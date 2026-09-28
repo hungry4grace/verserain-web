@@ -348,6 +348,11 @@ textarea {
 }
 
 
+/* Behind the opaque menu nobody sees the rain; don't animate it there. */
+.rain-system.rain-idle {
+  display: none;
+}
+
 /* Performance Mode overrides */
 .performance-mode .rain-system {
   display: none !important;

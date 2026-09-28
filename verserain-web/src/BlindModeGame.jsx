@@ -286,7 +286,11 @@ export default function BlindModeGame({
             try {
                 const AudioContext = window.AudioContext || window.webkitAudioContext;
                 if (AudioContext) {
-                    const ctx = new AudioContext();
+                    // Reuse the dong context: a new AudioContext per verse was
+                    // never closed, and each one keeps an audio thread running.
+                    if (!window.__sharedDongCtx) window.__sharedDongCtx = new AudioContext();
+                    const ctx = window.__sharedDongCtx;
+                    if (ctx.state === 'suspended') ctx.resume();
                     const notes = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6 (C Major Arpeggio)
                     
                     notes.forEach((freq, i) => {
@@ -760,7 +764,7 @@ export default function BlindModeGame({
                     <div style={{ padding: '0.2rem 0.6rem', background: 'rgba(0,0,0,0.5)', borderRadius: '6px', display: 'flex', alignItems: 'center', gap: '0.4rem', border: '1px solid rgba(255,255,255,0.1)' }}>
                         <div style={{ fontSize: '0.7rem', color: '#94a3b8' }}>T</div>
                         <div style={{ fontSize: '0.95rem', color: timeLeft <= 1000 ? '#f87171' : '#cbd5e1', fontFamily: 'monospace' }}>
-                            {String(Math.floor(timeLeft / 100)).padStart(2, '0')}.{String(timeLeft % 100).padStart(2, '0')}
+                            {String(Math.floor(timeLeft / 100)).padStart(2, '0')}.{Math.floor((timeLeft % 100) / 10)}
                         </div>
                     </div>
                 </div>
