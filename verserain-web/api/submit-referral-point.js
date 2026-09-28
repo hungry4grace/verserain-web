@@ -75,7 +75,7 @@ export default async function handler(req, res) {
     if (type === 'referred' && scoreAmount > 0) {
       try {
         const owner = await partyFetch('/code-owner', { code: author });
-        if (owner && owner.email) credited = await creditBonus(redis, { email: owner.email, points: scoreAmount, now: new Date() });
+        if (owner && owner.email) credited = await creditBonus(redis, { email: owner.email, points: scoreAmount, now: new Date(), source: 'referral' });
       } catch { credited = null; }
     }
     res.status(200).json({ success: true, credited });

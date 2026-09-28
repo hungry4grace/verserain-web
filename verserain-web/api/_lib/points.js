@@ -81,7 +81,15 @@ export const seededKey = (email) => `points:seeded:${normEmail(email)}`;
 // Bonus points (e.g. the inviter's +5000 when a referee first clears a
 // verse) are not in the name-keyed leaderboard, so the seed must add them.
 export const bonusKey = (email) => `points:bonus:${normEmail(email)}`;
+// Where today's points came from (今日得分 breakdown): HASH source → points,
+// sources: challenge | checkin | listen | referral | shopReferral | other.
+export const dailySourceKey = (email, day) => `points:dailysrc:${normEmail(email)}:${day}`;
 const DAILY_EARNED_TTL_SEC = 3 * 86400;
+async function addDailySource(redis, em, day, source, pts) {
+  const key = dailySourceKey(em, day);
+  await redis.hincrby(key, String(source || 'other'), pts);
+  await redis.expire(key, DAILY_EARNED_TTL_SEC);
+}
 
 function parse(s) {
   try { return typeof s === 'string' ? JSON.parse(s) : s; } catch { return null; }
@@ -354,14 +362,16 @@ export async function recordScore(redis, { email, playerName, verseRef, score, n
     await redis.incrby(earnedKey(em), delta);
     await redis.incrby(dailyEarnedKey(em, day), delta);
     await redis.expire(dailyEarnedKey(em, day), DAILY_EARNED_TTL_SEC);
+    await addDailySource(redis, em, day, 'challenge', delta);
   }
   const [earnedRaw, todayRaw] = await Promise.all([redis.get(earnedKey(em)), redis.get(dailyEarnedKey(em, day))]);
   return { delta, earnedPoints: Math.max(0, toInt(earnedRaw)), todayPoints: Math.max(0, toInt(todayRaw)), best: Math.max(prevBest, sc) };
 }
 
-// Add a flat bonus to the account (referral rewards). Counted in today's
-// score too, and remembered separately so a later seed does not drop it.
-export async function creditBonus(redis, { email, points, now } = {}) {
+// Add a flat bonus to the account (referral rewards, daily check-in,
+// listening). Counted in today's score too — under `source` in the
+// breakdown — and remembered separately so a later seed does not drop it.
+export async function creditBonus(redis, { email, points, now, source = 'other' } = {}) {
   const em = normEmail(email);
   const pts = Math.max(0, Math.floor(Number(points) || 0));
   if (!em || pts <= 0) return { delta: 0, earnedPoints: 0 };
@@ -372,6 +382,7 @@ export async function creditBonus(redis, { email, points, now } = {}) {
     redis.incrby(dailyEarnedKey(em, day), pts),
   ]);
   await redis.expire(dailyEarnedKey(em, day), DAILY_EARNED_TTL_SEC);
+  await addDailySource(redis, em, day, source, pts);
   return { delta: pts, earnedPoints: Math.max(0, toInt(earned)) };
 }
 
@@ -391,7 +402,7 @@ export function referralBonusFor(points) {
 
 // Mirror of creditBonus for claw-backs. earned never drops below zero; the
 // bonus / daily counters may (readers clamp them).
-export async function debitBonus(redis, { email, points, now } = {}) {
+export async function debitBonus(redis, { email, points, now, source = 'other' } = {}) {
   const em = normEmail(email);
   const pts = Math.max(0, Math.floor(Number(points) || 0));
   if (!em || pts <= 0) return { delta: 0, earnedPoints: 0 };
@@ -402,6 +413,7 @@ export async function debitBonus(redis, { email, points, now } = {}) {
     redis.decrby(dailyEarnedKey(em, day), pts),
   ]);
   if (toInt(earned) < 0) await redis.set(earnedKey(em), '0');
+  await addDailySource(redis, em, day, source, -pts);
   return { delta: -pts, earnedPoints: Math.max(0, toInt(earned)) };
 }
 
@@ -426,7 +438,7 @@ export async function settleReferralBonus(redis, { voucher: v, place, resolveEma
   const at = toDate(now).toISOString();
   if (direction === 'reverse') {
     if (!snap || snap.status !== 'paid') return { reversed: false, reason: snap ? 'not_paid' : 'no_bonus' };
-    await debitBonus(redis, { email: snap.email, points: snap.points, now });
+    await debitBonus(redis, { email: snap.email, points: snap.points, now, source: 'shopReferral' });
     v.referralBonus = { ...snap, status: 'reversed', reversedAt: at };
     await saveVoucher(redis, v);
     const entry = refBonusEntry(v, snap, 'reversed', at);
@@ -444,7 +456,7 @@ export async function settleReferralBonus(redis, { voucher: v, place, resolveEma
   }
   const bonus = snap ? toInt(snap.points) : referralBonusFor(v.points);
   if (bonus < 1) return { paid: false, reason: 'too_small' };
-  await creditBonus(redis, { email, points: bonus, now });
+  await creditBonus(redis, { email, points: bonus, now, source: 'shopReferral' });
   v.referralBonus = { code, email, points: bonus, paidAt: at, status: 'paid' };
   await saveVoucher(redis, v);
   const entry = refBonusEntry(v, v.referralBonus, 'earned', at);

@@ -4,10 +4,10 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  checkinAmount, daysBetween, nextStreak, recordCheckin, recordListen, cleanListenRef,
+  checkinAmount, daysBetween, nextStreak, recordCheckin, recordListen, cleanListenRef, readDailySummary,
   LISTEN_DAILY_MAX, checkinStreakKey,
 } from './dailyPoints.js';
-import { earnedKey, dailyEarnedKey } from './points.js';
+import { earnedKey, dailyEarnedKey, dailySourceKey, recordScore, creditBonus, debitBonus } from './points.js';
 
 function stubRedis() {
   const strings = new Map();
@@ -22,8 +22,12 @@ function stubRedis() {
       strings.set(k, String(v)); return 'OK';
     },
     async incrby(k, n) { const v = num(k) + Number(n); strings.set(k, String(v)); return v; },
+    async decrby(k, n) { const v = num(k) - Number(n); strings.set(k, String(v)); return v; },
     async expire() { return 1; },
     async hgetall(k) { return hashes.has(k) ? Object.fromEntries(hashes.get(k)) : null; },
+    async hincrby(k, f, d) { if (!hashes.has(k)) hashes.set(k, new Map()); const m = hashes.get(k); const n = Number(m.get(f) || 0) + Number(d); m.set(f, String(n)); return n; },
+    async hget(k, f) { return hashes.has(k) ? (hashes.get(k).get(f) ?? null) : null; },
+    async zscore() { return null; },
     async hset(k, obj) { if (!hashes.has(k)) hashes.set(k, new Map()); for (const [f, v] of Object.entries(obj)) hashes.get(k).set(f, v); return 1; },
     async sadd(k, m) { if (!sets.has(k)) sets.set(k, new Set()); const s = sets.get(k); if (s.has(m)) return 0; s.add(m); return 1; },
     async scard(k) { return sets.has(k) ? sets.get(k).size : 0; },
@@ -126,4 +130,50 @@ test('recordListen rejects bad refs', async () => {
   assert.equal(cleanListenRef('x'.repeat(41)), '');
   assert.deepEqual(await recordListen(r, { email: EMAIL, ref: '' }), { error: 'bad_request' });
   assert.deepEqual(await recordListen(r, { email: '', ref: '1|1:1' }), { error: 'bad_request' });
+});
+
+test('today\'s points are recorded by source', async () => {
+  const r = stubRedis();
+  const now = at('2026-09-01');
+  const em = 'player@example.com';
+  await recordScore(r, { email: EMAIL, playerName: 'P', verseRef: '43|3:16', score: 800, now, fallbackBest: 0 });
+  await recordCheckin(r, { email: EMAIL, now });
+  await recordListen(r, { email: EMAIL, ref: '43|3:16', now });
+  await recordListen(r, { email: EMAIL, ref: '19|23:1', now });
+  await creditBonus(r, { email: EMAIL, points: 5000, now, source: 'referral' });
+  await creditBonus(r, { email: EMAIL, points: 25, now, source: 'shopReferral' });
+  await debitBonus(r, { email: EMAIL, points: 10, now, source: 'shopReferral' });
+  const src = await r.hgetall(dailySourceKey(em, '2026-09-01'));
+  assert.deepEqual(src, { challenge: '800', checkin: '1000', listen: '200', referral: '5000', shopReferral: '15' });
+  assert.equal(await r.get(dailyEarnedKey(em, '2026-09-01')), '7015');
+});
+
+test('readDailySummary: breakdown, check-in preview and listening count', async () => {
+  const r = stubRedis();
+  const em = 'player@example.com';
+  // yesterday checked in (streak 3), nothing yet today
+  await r.hset(checkinStreakKey(em), { last: '2026-09-01', n: '3', grace: '0' });
+  // 300 points from before the breakdown existed
+  await r.set(dailyEarnedKey(em, '2026-09-02'), '300');
+  let s = await readDailySummary(r, { email: EMAIL, now: at('2026-09-02'), todayPoints: 300 });
+  assert.equal(s.checkin.done, false);
+  assert.equal(s.checkin.streak, 4);
+  assert.equal(s.checkin.amount, 1300);
+  assert.equal(s.breakdown.other, 300);
+  assert.equal(s.listen.count, 0);
+  // listen once: pays the listen and the check-in
+  await recordListen(r, { email: EMAIL, ref: '1|1:1', now: at('2026-09-02') });
+  await recordCheckin(r, { email: EMAIL, now: at('2026-09-02') });
+  s = await readDailySummary(r, { email: EMAIL, now: at('2026-09-02'), todayPoints: 300 + 100 + 1300 });
+  assert.equal(s.checkin.done, true);
+  assert.equal(s.checkin.streak, 4);
+  assert.equal(s.checkin.amount, 1300);
+  assert.deepEqual(s.breakdown, { challenge: 0, checkin: 1300, listen: 100, referral: 0, shopReferral: 0, other: 300 });
+  assert.equal(s.listen.count, 1);
+  // a gap too long for grace previews a restart at day 1
+  const r2 = stubRedis();
+  await r2.hset(checkinStreakKey(em), { last: '2026-08-20', n: '9', grace: '1' });
+  const s2 = await readDailySummary(r2, { email: EMAIL, now: at('2026-09-02'), todayPoints: 0 });
+  assert.equal(s2.checkin.streak, 1);
+  assert.equal(s2.checkin.amount, 1000);
 });
