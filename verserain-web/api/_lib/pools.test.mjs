@@ -1,5 +1,5 @@
 // node --test api/_lib/*.test.mjs
-// Charity discount pools (愛心折抵池) against an in-memory Upstash stub. The
+// Charity discount pools (愛心行動) against an in-memory Upstash stub. The
 // compliance memo's rules are asserted here: a contribution burns the
 // player's points (no wallet, no refund), the allowance only ever becomes a
 // merchant-verified voucher, and refunds go back to the pool, never a person.

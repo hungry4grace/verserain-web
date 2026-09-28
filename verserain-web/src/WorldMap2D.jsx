@@ -69,7 +69,7 @@ const PLACE_STYLE = {
   church:   { bg: '#7c3aed', border: '#ddd6fe', emoji: '⛪' },
   org:      { bg: '#0d9488', border: '#99f6e4', emoji: '🏢' },
 };
-// A church / org with an open charity pool (愛心折抵池) keeps its own icon
+// A church / org with an open Love in Action project (愛心行動) keeps its own icon
 // and gets a ❤️ badge at its right shoulder plus a pulsing rose halo, so the
 // church is still recognisable and the heart reads as "contribute here".
 const POOL_BADGE = '<span class="vr-pool-badge" style="position:absolute;right:-10px;top:-8px;width:18px;height:18px;border-radius:50%;background:#fff;border:1.5px solid #fecdd3;box-shadow:0 1px 4px rgba(0,0,0,0.35);display:flex;align-items:center;justify-content:center;font-size:11px;line-height:1;">❤️</span>';
@@ -614,7 +614,7 @@ export default function WorldMap2D({ t, playerName, userEmail, onJoinRoom, onVie
       const trueLatLng = L.latLng(Number(pl.lat), Number(pl.lng));
       const marker = L.marker(trueLatLng, { pane: 'placePane', icon, zIndexOffset: 1000 });
       const kindLabel = pl.kind === 'merchant' ? t('商家', 'Shop') : pl.kind === 'church' ? t('教會', 'Church') : t('機構', 'Organisation');
-      const poolLine = pl.poolId ? `<div style="display:inline-block;background:#fff1f2;color:#9f1239;border:1px solid #fecdd3;border-radius:999px;padding:2px 10px;font-weight:800;font-size:0.85rem;margin-bottom:6px;">❤️ ${Number(pl.poolCount) > 1 ? escapeHtml(t('{n} 個愛心折抵池', '{n} charity pools').replace('{n}', String(pl.poolCount))) : escapeHtml(t('愛心折抵池', 'Charity discount pool'))}${pl.poolName ? `：${escapeHtml(pl.poolName)}${Number(pl.poolCount) > 1 ? '…' : ''}` : ''}</div>` : '';
+      const poolLine = pl.poolId ? `<div style="display:inline-block;background:#fff1f2;color:#9f1239;border:1px solid #fecdd3;border-radius:999px;padding:2px 10px;font-weight:800;font-size:0.85rem;margin-bottom:6px;">❤️ ${Number(pl.poolCount) > 1 ? escapeHtml(t('{n} 個愛心行動', '{n} Love in Action projects').replace('{n}', String(pl.poolCount))) : escapeHtml(t('愛心行動', 'Love in Action'))}${pl.poolName ? `：${escapeHtml(pl.poolName)}${Number(pl.poolCount) > 1 ? '…' : ''}` : ''}</div>` : '';
       const contestLine = pl.contestId ? `<div style="display:inline-block;background:#eff6ff;color:#1e40af;border:1px solid #bfdbfe;border-radius:999px;padding:2px 10px;font-weight:800;font-size:0.85rem;margin-bottom:6px;margin-left:4px;">📖 ${Number(pl.contestCount) > 1 ? escapeHtml(t('{n} 個讀經比賽', '{n} reading contests').replace('{n}', String(pl.contestCount))) : escapeHtml(t('讀經比賽', 'Reading contest'))}${pl.contestName ? `：${escapeHtml(pl.contestName)}${Number(pl.contestCount) > 1 ? '…' : ''}` : ''}</div>` : '';
       const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${pl.lat},${pl.lng}`)}`;
       const photo = pl.photoAssetId ? `<img class="map-place-photo" data-set="place:${escapeHtml(pl.id)}" data-asset="${escapeHtml(pl.photoAssetId)}" data-mime="${escapeHtml(pl.photoMime || 'image/webp')}" alt="" style="display:none;width:100%;max-height:140px;object-fit:cover;border-radius:8px;margin-bottom:6px;" />` : '';
@@ -633,7 +633,7 @@ export default function WorldMap2D({ t, playerName, userEmail, onJoinRoom, onVie
           ${pl.phone ? `<div style="font-size:0.8rem;color:#64748b;">☎️ ${escapeHtml(pl.phone)}</div>` : ''}
           ${pl.website ? `<div style="font-size:0.8rem;"><a href="${escapeHtml(pl.website)}" target="_blank" rel="noopener noreferrer" style="color:#2563eb;">🔗 ${escapeHtml(pl.website.replace(/^https?:\/\//, ''))}</a></div>` : ''}
           ${pl.kind === 'merchant' ? `<button class="map-redeem-btn" data-place-id="${escapeHtml(pl.id)}" style="margin-top:8px;width:100%;background:#f59e0b;color:#fff;border:none;border-radius:8px;padding:0.45rem 0.8rem;font-weight:800;cursor:pointer;">🎟️ ${escapeHtml(t('產生折扣券', 'Get a coupon'))}</button>` : ''}
-          ${pl.poolId ? `<button class="map-pool-btn" data-pool-id="${escapeHtml(pl.poolId)}" style="margin-top:8px;width:100%;background:#e11d48;color:#fff;border:none;border-radius:8px;padding:0.45rem 0.8rem;font-weight:800;cursor:pointer;">❤️ ${escapeHtml(Number(pl.poolCount) > 1 ? t('看看這裡的愛心折抵池', 'See the charity pools here') : t('投入愛心折抵池', 'Contribute to the charity pool'))}</button>` : ''}
+          ${pl.poolId ? `<button class="map-pool-btn" data-pool-id="${escapeHtml(pl.poolId)}" style="margin-top:8px;width:100%;background:#e11d48;color:#fff;border:none;border-radius:8px;padding:0.45rem 0.8rem;font-weight:800;cursor:pointer;">❤️ ${escapeHtml(Number(pl.poolCount) > 1 ? t('看看這裡的愛心行動', 'See the Love in Action projects here') : t('投入愛心行動', 'Contribute to the Love in Action project'))}</button>` : ''}
           ${pl.contestId ? `<button class="map-contest-btn" data-contest-id="${escapeHtml(pl.contestId)}" style="margin-top:8px;width:100%;background:#2563eb;color:#fff;border:none;border-radius:8px;padding:0.45rem 0.8rem;font-weight:800;cursor:pointer;">📖 ${escapeHtml(Number(pl.contestCount) > 1 ? t('看看這裡的讀經比賽', 'See the reading contests here') : t('參加讀經比賽', 'Join the reading contest'))}</button>` : ''}
         </div>`;
       marker.bindPopup(L.popup({ maxWidth: 260, className: 'verse-map-popup' }).setContent(html));
@@ -850,11 +850,11 @@ export default function WorldMap2D({ t, playerName, userEmail, onJoinRoom, onVie
           )}
           {onOpenPool && (
             <button
-              title={t('看看有哪些愛心折抵池', 'See the charity pools')}
+              title={t('看看有哪些愛心行動', 'See the Love in Action projects')}
               onClick={() => onOpenPool('')}
               style={{ background: '#fecdd3', color: '#9f1239', border: 'none', padding: '0.3rem 0.8rem', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.8rem' }}
             >
-              ❤️ {t('愛心折抵池', 'Charity discount pool')}
+              ❤️ {t('愛心行動', 'Love in Action')}
             </button>
           )}
           {onOpenContest && (
@@ -955,7 +955,7 @@ export default function WorldMap2D({ t, playerName, userEmail, onJoinRoom, onVie
                 {places.some(pl => pl && pl.poolId) && (
                   <span style={{ display: 'inline-flex', alignItems: 'center', gap: 7 }}>
                     <span style={{ position: 'relative', width: 14, height: 14, marginRight: 4, borderRadius: '50%', background: '#7c3aed', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 9 }}>⛪<span style={{ position: 'absolute', right: -6, top: -5, width: 10, height: 10, borderRadius: '50%', background: '#fff', border: '1px solid #fecdd3', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 6 }}>❤️</span></span>
-                    {t('加 ❤️ = 有愛心折抵池，可投入點數', '+ ❤️ = has a charity pool, contribute here')}
+                    {t('加 ❤️ = 有愛心行動，可投入點數', '+ ❤️ = has a Love in Action project, contribute here')}
                   </span>
                 )}
                 {places.some(pl => pl && pl.contestId) && (
