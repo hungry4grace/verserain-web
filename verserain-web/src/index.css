@@ -1998,3 +1998,8 @@ textarea {
    a phone width without scrolling sideways. */
 html.elder-mode .versesets-table-card th,
 html.elder-mode .versesets-table-card td { padding-left: 0.35rem !important; padding-right: 0.35rem !important; }
+
+/* User guide search (ManualSearch): hidden sections and highlighted matches */
+.manual-hide { display: none !important; }
+::highlight(manual-search) { background-color: #fde68a; color: inherit; }
+.manual-search-input::-webkit-search-cancel-button { display: none; }
