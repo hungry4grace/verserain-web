@@ -25757,7 +25757,7 @@ export default function App() {
                     verserain
                   </div>
                   <div className="app-brand-version" style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', marginTop: '4px', marginLeft: '2px' }}>
-                    v4.0.116
+                    v4.0.117
                   </div>
                 </div>
                 <div ref={langPickerRef} className="app-lang-control" style={{ position: 'relative' }}>
@@ -26046,32 +26046,32 @@ export default function App() {
                   {(() => null)()}
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gridAutoRows: isNarrowEditor ? '1fr' : 'auto', gap: isNarrowEditor ? '0.5rem' : '1.5rem', minHeight: isNarrowEditor ? 'calc(100dvh - 335px)' : undefined, width: '100%' }}>
                     {/* Daily VerseRain */}
-                    <div className="primary-button" onClick={() => { setOpenDailyPickerOnEnter(true); setMainTab('daily_verse'); }} style={{ background: 'linear-gradient(135deg, #818cf8, #6366f1 55%, #4338ca)', borderRadius: '16px', padding: isNarrowEditor ? '0.3rem 0.6rem' : '2.5rem 2rem', cursor: 'pointer', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', color: 'white', textAlign: 'center', boxShadow: '0 10px 28px rgba(79, 70, 229, 0.35)' }}>
+                    <button type="button" className="primary-button lobby-tile" onClick={() => { setOpenDailyPickerOnEnter(true); setMainTab('daily_verse'); }} style={{ border: 'none', width: '100%', font: 'inherit', background: 'linear-gradient(135deg, #818cf8, #6366f1 55%, #4338ca)', borderRadius: '16px', padding: isNarrowEditor ? '0.3rem 0.6rem' : '2.5rem 2rem', cursor: 'pointer', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', color: 'white', textAlign: 'center', boxShadow: '0 10px 28px rgba(79, 70, 229, 0.35)' }}>
                       <CloudRain size={isNarrowEditor ? 46 : 72} style={{ marginBottom: isNarrowEditor ? '0.15rem' : '1rem' }} />
                       <h2 style={{ fontSize: isNarrowEditor ? '1.9rem' : '2rem', margin: 0, marginBottom: isNarrowEditor ? '0.15rem' : '0.5rem', textShadow: '0 2px 4px rgba(0,0,0,0.2)' }}>{t("話語甘霖", "Verse Rain")}</h2>
                       <p style={{ ...tileCaptionStyle(0.95) }}>{splitCaption(t("每日一句神的話，心意更新而變化。", "A verse a day to renew your mind."))}</p>
-                    </div>
+                    </button>
 
                     {/* My Garden */}
-                    <div className="primary-button" onClick={() => setMainTab('garden')} style={{ background: 'linear-gradient(135deg, #34d399, #10b981)', borderRadius: '16px', padding: isNarrowEditor ? '0.3rem 0.6rem' : '2.5rem 2rem', cursor: 'pointer', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', color: 'white', textAlign: 'center' }}>
+                    <button type="button" className="primary-button lobby-tile" onClick={() => setMainTab('garden')} style={{ border: 'none', width: '100%', font: 'inherit', background: 'linear-gradient(135deg, #34d399, #10b981)', borderRadius: '16px', padding: isNarrowEditor ? '0.3rem 0.6rem' : '2.5rem 2rem', cursor: 'pointer', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', color: 'white', textAlign: 'center' }}>
                       <TreePine size={isNarrowEditor ? 46 : 72} style={{ marginBottom: isNarrowEditor ? '0.15rem' : '1rem' }} />
                       <h2 style={{ fontSize: isNarrowEditor ? '1.9rem' : '2rem', margin: 0, marginBottom: isNarrowEditor ? '0.15rem' : '0.5rem', textShadow: '0 2px 4px rgba(0,0,0,0.2)' }}>{t("我的園子", "My Garden")}</h2>
                       <p style={{ ...tileCaptionStyle() }}>{splitCaption(t("主話如霖澆我田，歲歲結果到豐年。", "View your living scripture trees."))}</p>
-                    </div>
+                    </button>
 
                     {/* Scripture Library */}
-                    <div className="primary-button" onClick={() => setMainTab('versesets')} style={{ background: 'linear-gradient(135deg, #60a5fa, #3b82f6)', borderRadius: '16px', padding: isNarrowEditor ? '0.3rem 0.6rem' : '2.5rem 2rem', cursor: 'pointer', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', color: 'white', textAlign: 'center' }}>
+                    <button type="button" className="primary-button lobby-tile" onClick={() => setMainTab('versesets')} style={{ border: 'none', width: '100%', font: 'inherit', background: 'linear-gradient(135deg, #60a5fa, #3b82f6)', borderRadius: '16px', padding: isNarrowEditor ? '0.3rem 0.6rem' : '2.5rem 2rem', cursor: 'pointer', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', color: 'white', textAlign: 'center' }}>
                       <Library size={isNarrowEditor ? 46 : 72} style={{ marginBottom: isNarrowEditor ? '0.15rem' : '1rem' }} />
                       <h2 style={{ fontSize: isNarrowEditor ? '1.9rem' : '2rem', margin: 0, marginBottom: isNarrowEditor ? '0.15rem' : '0.5rem', textShadow: '0 2px 4px rgba(0,0,0,0.2)' }}>{t("經文題庫", "Scripture Sets")}</h2>
                       <p style={{ ...tileCaptionStyle() }}>{splitCaption(t("經題萬卷勤溫故，句句生光照此程。", "Browse global verse sets and choose scriptures to practice."))}</p>
-                    </div>
+                    </button>
 
                     {/* Multiplayer Game */}
-                    <div className="primary-button" onClick={() => setMainTab('multiplayer')} style={{ background: 'linear-gradient(135deg, #f472b6, #ec4899)', borderRadius: '16px', padding: isNarrowEditor ? '0.3rem 0.6rem' : '2.5rem 2rem', cursor: 'pointer', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', color: 'white', textAlign: 'center' }}>
+                    <button type="button" className="primary-button lobby-tile" onClick={() => setMainTab('multiplayer')} style={{ border: 'none', width: '100%', font: 'inherit', background: 'linear-gradient(135deg, #f472b6, #ec4899)', borderRadius: '16px', padding: isNarrowEditor ? '0.3rem 0.6rem' : '2.5rem 2rem', cursor: 'pointer', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', color: 'white', textAlign: 'center' }}>
                       <Gamepad2 size={isNarrowEditor ? 46 : 72} style={{ marginBottom: isNarrowEditor ? '0.15rem' : '1rem' }} />
                       <h2 style={{ fontSize: isNarrowEditor ? '1.9rem' : '2rem', margin: 0, marginBottom: isNarrowEditor ? '0.15rem' : '0.5rem', textShadow: '0 2px 4px rgba(0,0,0,0.2)' }}>{t("多人遊戲", "Multiplayer")}</h2>
                       <p style={{ ...tileCaptionStyle() }}>{splitCaption(t("同心走過天路程，並肩玩出主榮耀。", "Play together with friends in real time."))}</p>
-                    </div>
+                    </button>
                   </div>
                 </div>
               )}
@@ -28354,7 +28354,7 @@ export default function App() {
                                     </button>
                                   </td>
                                   <td style={{ padding: '0.8rem 1rem', textAlign: 'center' }} onClick={(e) => e.stopPropagation()}>
-                                    <div style={{ display: 'flex', flexDirection: 'row', gap: '0.4rem', justifyContent: 'center' }}>
+                                    <div style={{ display: 'flex', flexDirection: 'row', flexWrap: 'wrap', gap: '0.4rem', justifyContent: 'center', alignItems: 'center' }}>
                                       <button
                                         onClick={(e) => {
                                           e.stopPropagation();
@@ -28365,11 +28365,12 @@ export default function App() {
                                               ? t('播放這節經文({name}親聲朗讀)', 'Play this verse (read by {name})').replace('{name}', String(currentSetVoices[v.reference].recordedBy || t('創作者', 'the creator')))
                                               : t('這節有人聲錄音', 'This verse has a voice recording'))
                                           : t("播放這節經文", "Play this verse")}
-                                        style={{ position: 'relative', backgroundColor: '#8b5cf6', color: 'white', border: 'none', borderRadius: '6px', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'transform 0.1s' }}
+                                        style={{ position: 'relative', backgroundColor: '#8b5cf6', color: 'white', border: 'none', borderRadius: '6px', minWidth: '44px', height: '44px', padding: '0 0.35rem', display: 'flex', flexDirection: 'column', gap: '1px', fontSize: '0.7rem', fontWeight: 700, lineHeight: 1.1, alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'transform 0.1s' }}
                                         onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.1)'}
                                         onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
                                       >
                                         <Headphones size={14} fill="white" />
+                                        <span>{t('聆聽', 'Listen')}</span>
                                         {(currentSetVoices[v.reference] || currentSetVoiceRefs.has(v.reference)) && (
                                           <span style={{ position: 'absolute', top: '-7px', right: '-7px', fontSize: '0.8rem', filter: 'drop-shadow(0 1px 1px rgba(0,0,0,0.35))' }} aria-label={t('有人聲錄音', 'Voice recording available')}>⭐</span>
                                         )}
@@ -28421,11 +28422,12 @@ export default function App() {
                                           });
                                         }}
                                         title={t("挑戰這節經文", "Challenge this verse")}
-                                        style={{ backgroundColor: '#10b981', color: 'white', border: 'none', borderRadius: '6px', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'transform 0.1s' }}
+                                        style={{ backgroundColor: '#10b981', color: 'white', border: 'none', borderRadius: '6px', minWidth: '44px', height: '44px', padding: '0 0.35rem', display: 'flex', flexDirection: 'column', gap: '1px', fontSize: '0.7rem', fontWeight: 700, lineHeight: 1.1, alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'transform 0.1s' }}
                                         onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.1)'}
                                         onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
                                       >
                                         <Zap size={14} fill="white" />
+                                        <span>{t('挑戰', 'Challenge')}</span>
                                       </button>
                                       <button
                                         onClick={(e) => {
@@ -30658,11 +30660,12 @@ export default function App() {
                                       fetch("https://verserain-party.hungry4grace.partykit.dev/parties/main/global-auth-db/custom-sets/view", { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: set.id, adminEmail: userEmail, adminName: playerName }) }).catch(e => e);
                                       setViewCounts(prev => ({ ...prev, [set.id]: (prev[set.id] || 0) + 1 }));
                                     }}
-                                    style={{ backgroundColor: '#10b981', color: 'white', border: 'none', borderRadius: '6px', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'transform 0.1s' }}
+                                    style={{ backgroundColor: '#10b981', color: 'white', border: 'none', borderRadius: '6px', minWidth: '44px', height: '44px', padding: '0 0.35rem', display: 'flex', flexDirection: 'column', gap: '1px', fontSize: '0.7rem', fontWeight: 700, lineHeight: 1.1, alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'transform 0.1s' }}
                                     onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.1)'}
                                     onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
                                   >
                                     <Zap size={14} fill="white" />
+                                    <span>{t('開啟', 'Open')}</span>
                                   </button>
                                 </td>
                               </tr>
@@ -30754,11 +30757,12 @@ export default function App() {
                                         setToast(t('本機找不到此經文', 'Verse not found locally'));
                                       }
                                     }}
-                                    style={{ backgroundColor: '#10b981', color: 'white', border: 'none', borderRadius: '6px', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'transform 0.1s' }}
+                                    style={{ backgroundColor: '#10b981', color: 'white', border: 'none', borderRadius: '6px', minWidth: '44px', height: '44px', padding: '0 0.35rem', display: 'flex', flexDirection: 'column', gap: '1px', fontSize: '0.7rem', fontWeight: 700, lineHeight: 1.1, alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'transform 0.1s' }}
                                     onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.1)'}
                                     onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
                                   >
                                     <Zap size={14} fill="white" />
+                                    <span>{t('挑戰', 'Challenge')}</span>
                                   </button>
                                 </td>
                               </tr>
@@ -30957,9 +30961,10 @@ export default function App() {
                                                 setTimeout(() => startGame(false, v), 50);
                                               }}
                                               title={t("遊玩這篇經文", "Play this verse")}
-                                              style={{ backgroundColor: '#10b981', color: 'white', border: 'none', borderRadius: '50%', width: '32px', height: '32px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}
+                                              style={{ backgroundColor: '#10b981', color: 'white', border: 'none', borderRadius: '10px', minWidth: '44px', height: '44px', padding: '0 0.35rem', display: 'inline-flex', flexDirection: 'column', gap: '1px', fontSize: '0.7rem', fontWeight: 700, lineHeight: 1.1, alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}
                                             >
                                               <Play size={16} fill="white" />
+                                              <span>{t('挑戰', 'Challenge')}</span>
                                             </button>
                                           </div>
                                         </td>
@@ -31944,6 +31949,31 @@ export default function App() {
                     </div>
                   </div>
 
+                  {/* 看我的樹: the verse just played grows a tree — show it (the garden
+                      focuses that tree via gardenFocus set in startGame). */}
+                  {campaignQueue === null && (
+                    <button
+                      type="button"
+                      data-testid="result-see-tree"
+                      onClick={() => {
+                        readerReturnRef.current = null;
+                        quitGame();
+                        setMainTab('garden');
+                      }}
+                      className="play-btn"
+                      style={{
+                        width: '100%', maxWidth: '350px', margin: 'clamp(0.6rem, 2vh, 1rem) auto 0',
+                        background: '#16a34a', color: 'white', border: 'none', minHeight: '48px',
+                        padding: 'clamp(0.6rem, 1.5vh, 0.9rem)',
+                        fontSize: 'clamp(0.95rem, 2vh, 1.1rem)', fontWeight: 'bold',
+                        borderRadius: '12px', cursor: 'pointer',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        gap: '0.45rem', boxShadow: '0 0 15px rgba(22, 163, 74, 0.45)'
+                      }}
+                    >
+                      <TreePine size={20} /> {t('看我的樹', 'See my tree')}
+                    </button>
+                  )}
                   {/* Home and Play Again buttons placed HERE — always visible above the leaderboard */}
                   {campaignQueue === null && (
                     <div style={{ display: 'flex', gap: '1rem', width: '100%', maxWidth: '350px', margin: 'clamp(0.6rem, 2vh, 1rem) auto' }}>

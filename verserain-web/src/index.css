@@ -348,6 +348,11 @@ textarea {
   box-shadow: 0 0px 0px rgba(0,0,0,0);
 }
 
+.lobby-tile:focus-visible {
+  outline: 3px solid #fbbf24;
+  outline-offset: 3px;
+}
+
 .primary-button {
   transition: transform 0.15s, box-shadow 0.15s;
 }
