@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { expandSameChapterRefs } from './lib/expandSameChapterRefs.js';
 import { toSpeechText } from './lib/speechText.js';
 import { Play, Pause, RotateCcw, Lightbulb, Heart, Zap, Trophy, Crown, Star, Home, XCircle, Headphones, Music, VolumeX, Search, Share2, Dices, Mic, MicOff, Users, CloudRain, Info, Edit, TreePine, Gamepad2, Map, Settings, Library, Volume2, Shuffle, Swords, ShoppingBasket, Apple, Mail, Lock, Sprout, Leaf, Hourglass, Frown, X, Camera, Square, Copy, ArrowRightLeft, MessageCircle, Languages, ChevronUp, ChevronDown, Check, Gift, Store, Ticket, MapPin, BookOpen, Plus, Save, Trash2, UserRound } from 'lucide-react';
-import { UiHost, Button, IconButton, toast, confirmDialog, alertDialog } from './ui';
+import { UiHost, Button, IconButton, ListRow, ListGroup, toast, confirmDialog, alertDialog } from './ui';
 import BottomNav from './BottomNav.jsx';
 import { navTabOf } from './navTabs.js';
 import TodayPage from './TodayPage.jsx';
@@ -25758,7 +25758,7 @@ export default function App() {
                     verserain
                   </div>
                   <div className="app-brand-version" style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', marginTop: '4px', marginLeft: '2px' }}>
-                    v4.0.128
+                    v4.0.129
                   </div>
                 </div>
                 <div ref={langPickerRef} className="app-lang-control" style={{ position: 'relative' }}>
@@ -26345,52 +26345,71 @@ export default function App() {
                 )
               )}
 
-              {mainTab === 'advanced' && (
-                <div style={{ paddingBottom: '3rem' }}>
-                  <h2 style={{ color: '#1e293b', marginBottom: '1.5rem', borderBottom: '2px solid #e2e8f0', paddingBottom: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <UserRound size={30} /> {t('我的', 'Me')}
-                  </h2>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1rem', width: '100%' }}>
-                    {[
-                      { id: 'morningPush', Icon: Mail, label: pushStatus === 'subscribed' ? t('已開啟每日經文推播', 'Daily Verse Push: On') : t('開啟每日經文推播', 'Daily Verse Push'), desc: t('每天上午 7 點手機推播今日經文', 'Get today\'s verse pushed at 7am'), color: '#10b981' },
-                      { id: 'manual', Icon: Library, label: t('使用說明', 'User guide'), desc: t('怎麼玩、怎麼算分、常見問題', 'How to play, scoring and FAQ'), color: '#2563eb' },
-                      { id: 'bilingual_rain', Icon: Languages, label: t('雙語經文雨 Beta', 'Bilingual VerseRain Beta'), desc: t('同時聽兩種語言的經文', 'Listen to verses in two languages'), color: '#0ea5e9' },
-                      { id: 'accessible', Icon: Headphones, label: t('無障礙模式', 'Accessible mode'), desc: t('為視障朋友預備的簡化版，只靠聽和按鍵', 'A simplified version for blind and low-vision friends'), color: '#475569' },
-                      { id: 'about', Icon: Info, label: t('關於我們', 'About'), desc: t('VerseRain 開發資訊', 'Info & Credits'), color: '#14b8a6' },
-                      { id: 'feedback', link: `mailto:hungry4grace@gmail.com?subject=${encodeURIComponent('經文雨 意見回饋（VerseRain Feedback）')}`, Icon: Mail, label: t('意見回饋', 'Feedback'), desc: t('聯絡與建議', 'Bugs & Suggestions'), color: '#ec4899' },
-                      { id: 'sponsors', Icon: Gift, label: t('贊助者與我的折抵', 'Sponsors & my discounts'), desc: t('感謝贊助者、查看我的折抵紀錄', 'Thank our sponsors, see your discounts'), color: '#f59e0b' },
-                      ...(SHOW_DONATE ? [{ id: 'donate', Icon: Heart, label: t('支持經文雨', 'Support VerseRain'), desc: t('小額支持 App 開發與維運', 'Help fund development & hosting'), color: '#ef4444' }] : []),
-                      { id: 'charity', Icon: Heart, label: t('愛心行動', 'Love in Action'), desc: t('投入點數，成為教會／機構的折抵額度', 'Turn points into a discount allowance for a church or organisation'), color: '#e11d48' },
-                      { id: 'contests', Icon: BookOpen, label: t('讀經比賽', 'Reading contest'), desc: t('教會／機構舉辦的讀經比賽，讀完拿認證，還能挑戰排行榜', 'Church / organisation reading contests — finish for certified completion, or challenge the leaderboard'), color: '#2563eb' },
-                      { id: 'sponsor', Icon: Gift, label: t('贊助經文雨', 'Sponsor VerseRain'), desc: t('企業家與教會如何加入推廣讀經', 'How businesses & churches can join'), color: '#7c3aed' },
-                      { id: 'merchant', Icon: Store, label: t('登記商家／教會', 'Register a shop / church'), desc: t('在「誰在玩」地圖上標記，提供點數折扣', 'Get on the map and offer a points discount'), color: '#d97706' },
-                      { id: 'verify', Icon: Ticket, label: t('折扣券核銷', 'Verify a coupon'), desc: t('店家輸入代碼確認折扣', 'Shops confirm a customer’s voucher here'), color: '#0d9488' },
-                      ...(isSuperAdmin ? [{ id: 'rewards_admin', Icon: Gift, label: t('獎勵管理', 'Reward Admin'), desc: t('待發送的禮券與獎勵', 'Gift cards & rewards to send'), color: '#f59e0b' }] : [])
-                    ].map(item => {
-                      const Icon = item.Icon;
-                      return (
-                      <div key={item.id} className="block-tile" onClick={() => {
-                        if (item.id === 'morningPush') {
-                          setShowPushModal(true);
-                          return;
-                        }
-                        if (item.link) { window.open(item.link, '_blank'); return; }
-                        setMainTab(item.id);
-                        if (item.id === 'leaderboard') fetchGlobalLeaderboard();
-                      }} style={{ background: 'white', borderRadius: '12px', padding: '1.5rem', border: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', gap: '1rem', cursor: 'pointer' }}>
-                        <div style={{ color: item.color, width: '2.75rem', height: '2.75rem', display: 'grid', placeItems: 'center', flexShrink: 0 }}>
-                          <Icon size={40} strokeWidth={2.2} />
-                        </div>
-                        <div>
-                          <h3 style={{ margin: 0, color: '#1e293b', fontSize: '1.2rem', marginBottom: '0.2rem' }}>{item.label}</h3>
-                          <p style={{ margin: 0, color: '#64748b', fontSize: '0.95rem' }}>{item.desc}</p>
-                        </div>
-                      </div>
-                    )})}
-                  </div>
+              {mainTab === 'advanced' && (() => {
+                const go = (id) => { setMainTab(id); const el = menuScrollRef.current; if (el) el.scrollTop = 0; };
+                const unread = combinedInbox.unread;
+                const row = (key, Icon, color, title, desc, onClick, badge = null) => (
+                  <ListRow key={key} testId={`me-${key}`} icon={<Icon size={24} />} iconColor={color} title={title} desc={desc} onClick={onClick} badge={badge} />
+                );
+                return (
+                  <div data-testid="me-page" style={{ maxWidth: 640, margin: '0 auto', padding: 'var(--space-4)', display: 'flex', flexDirection: 'column', gap: 'var(--space-5)', color: 'var(--color-text)' }}>
+                    <h1 style={{ margin: 0, fontSize: 'var(--fs-display)', display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}><UserRound size={28} /> {t('我的', 'Me')}</h1>
 
-                </div>
-              )}
+                    {/* Account */}
+                    <section data-testid="me-account" style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)', padding: 'var(--space-4) var(--space-5)', display: 'flex', alignItems: 'center', gap: 'var(--space-3)', flexWrap: 'wrap' }}>
+                      {userEmail ? (
+                        <>
+                          <div style={{ flex: '1 1 12rem', minWidth: 0 }}>
+                            <div style={{ fontWeight: 800, fontSize: 'var(--fs-heading)', overflowWrap: 'anywhere' }}>{playerName}{isPremium && <Crown size={16} style={{ color: '#fbbf24', marginLeft: 4 }} />}</div>
+                            <div style={{ color: 'var(--color-text-2)', fontSize: 'var(--fs-small)', overflowWrap: 'anywhere' }}>{userEmail}</div>
+                          </div>
+                          <Button variant="secondary" size="sm" onClick={() => go('garden')} icon={<TreePine size={18} />}>{t('我的園子', 'My Garden')}</Button>
+                        </>
+                      ) : (
+                        <>
+                          <div style={{ flex: '1 1 12rem', minWidth: 0 }}>
+                            <div style={{ fontWeight: 800, fontSize: 'var(--fs-heading)' }}>{playerName ? t('訪客：{name}', 'Guest: {name}').replace('{name}', String(playerName)) : t('還沒登入', 'Not logged in')}</div>
+                            <div style={{ color: 'var(--color-text-2)', fontSize: 'var(--fs-small)' }}>{t('登入後，成績和園子才會存進你的帳號。', 'Log in so your scores and garden are saved to your account.')}</div>
+                          </div>
+                          <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
+                            <Button variant="secondary" size="sm" onClick={() => setShowLoginModal('login')}>{t('登入', 'Log In')}</Button>
+                            <Button size="sm" onClick={() => setShowLoginModal('signup')}>{t('申請帳號', 'Sign Up')}</Button>
+                          </div>
+                        </>
+                      )}
+                    </section>
+
+                    <ListGroup title={t('我的帳號', 'My account')} testId="me-group-account">
+                      {userEmail && row('inbox', Mail, '#2563eb', t('通知與鼓勵', 'Notifications'), t('收到的鼓勵、提醒和獎勵', 'Encouragement, reminders and rewards'), () => setShowEncouragePanel(true), unread > 0 ? <span className="ui-badge">{unread > 99 ? '99+' : unread}</span> : null)}
+                      {row('invite', Users, '#10b981', t('推薦朋友', 'Invite friends'), t('分享你的推薦連結，朋友第一次過關雙方都得獎勵', 'Share your link — you both get a reward on their first clear'), () => { setMainTab('garden'); setTimeout(() => scrollMenuTo(document.getElementById('garden-invite')), 350); })}
+                      {row('sponsors', Gift, '#f59e0b', t('贊助者與我的折抵', 'Sponsors & my discounts'), t('感謝贊助者、查看我的折抵紀錄', 'Thank our sponsors, see your discounts'), () => go('sponsors'))}
+                      {row('morningPush', CloudRain, '#0ea5e9', pushStatus === 'subscribed' ? t('已開啟每日經文推播', 'Daily Verse Push: On') : t('開啟每日經文推播', 'Daily Verse Push'), t('每天上午 7 點手機推播今日經文', 'Get today\'s verse pushed at 7am'), () => setShowPushModal(true))}
+                    </ListGroup>
+
+                    <ListGroup title={t('愛心與合作', 'Giving & partners')} testId="me-group-partners">
+                      {row('charity', Heart, '#e11d48', t('愛心行動', 'Love in Action'), t('投入點數，成為教會／機構的折抵額度', 'Turn points into a discount allowance for a church or organisation'), () => go('charity'))}
+                      {row('sponsor', Gift, '#7c3aed', t('贊助經文雨', 'Sponsor VerseRain'), t('企業家與教會如何加入推廣讀經', 'How businesses & churches can join'), () => go('sponsor'))}
+                      {SHOW_DONATE && row('donate', Heart, '#ef4444', t('支持經文雨', 'Support VerseRain'), t('小額支持 App 開發與維運', 'Help fund development & hosting'), () => go('donate'))}
+                      {row('merchant', Store, '#d97706', t('登記商家／教會', 'Register a shop / church'), t('在「誰在玩」地圖上標記，提供點數折扣', 'Get on the map and offer a points discount'), () => go('merchant'))}
+                      {row('verify', Ticket, '#0d9488', t('折扣券核銷', 'Verify a coupon'), t('店家輸入代碼確認折扣', 'Shops confirm a customer’s voucher here'), () => go('verify'))}
+                    </ListGroup>
+
+                    <ListGroup title={t('學習與說明', 'Learn & help')} testId="me-group-help">
+                      {row('manual', Library, '#2563eb', t('使用說明', 'User guide'), t('怎麼玩、怎麼算分、常見問題', 'How to play, scoring and FAQ'), () => go('manual'))}
+                      {row('bilingual_rain', Languages, '#0ea5e9', t('雙語經文雨 Beta', 'Bilingual VerseRain Beta'), t('同時聽兩種語言的經文', 'Listen to verses in two languages'), () => go('bilingual_rain'))}
+                      {row('accessible', Headphones, '#475569', t('無障礙模式', 'Accessible mode'), t('為視障朋友預備的簡化版，只靠聽和按鍵', 'A simplified version for blind and low-vision friends'), () => go('accessible'))}
+                      {row('about', Info, '#14b8a6', t('關於我們', 'About'), t('VerseRain 開發資訊', 'Info & Credits'), () => go('about'))}
+                      {row('feedback', MessageCircle, '#ec4899', t('意見回饋', 'Feedback'), t('聯絡與建議', 'Bugs & Suggestions'), () => window.open(`mailto:hungry4grace@gmail.com?subject=${encodeURIComponent('經文雨 意見回饋（VerseRain Feedback）')}`, '_blank'))}
+                    </ListGroup>
+
+                    {isSuperAdmin && (
+                      <ListGroup title={t('管理', 'Admin')} testId="me-group-admin">
+                        {row('rewards_admin', Gift, '#f59e0b', t('獎勵管理', 'Reward Admin'), t('待發送的禮券與獎勵', 'Gift cards & rewards to send'), () => go('rewards_admin'))}
+                      </ListGroup>
+                    )}
+                  </div>
+                );
+              })()}
 
               {mainTab === 'custom_verses' && (
                 <div style={{ backgroundColor: '#ffffff', borderRadius: '8px', border: '1px solid #cbd5e1', padding: '2rem', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
@@ -28578,7 +28597,7 @@ export default function App() {
                     )}
 
                     {/* Invite Block — available to everyone, including brand-new (Lv.1) players */}
-                    <div style={{ marginTop: '2rem', padding: '1.5rem', background: '#f8fafc', borderRadius: '12px', border: '1px solid #e2e8f0', textAlign: 'left', position: 'relative', overflow: 'hidden' }}>
+                    <div id="garden-invite" style={{ marginTop: '2rem', padding: '1.5rem', background: '#f8fafc', borderRadius: '12px', border: '1px solid #e2e8f0', textAlign: 'left', position: 'relative', overflow: 'hidden' }}>
                       <h4 style={{ margin: 0, color: '#10b981', fontSize: '1.3rem', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
                         <Mail size={24} /> {t("邀請朋友一起玩", "Invite Friends to Play")}
                       </h4>
