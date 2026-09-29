@@ -20023,6 +20023,18 @@ export default function App() {
   const canCreateCustomSets = !!userEmail;
   const isAdmin = ['samhsiung@gmail.com', 'davidhwang1125@gmail.com', 'hsiungsam@gmail.com', 'hungry4grace@gmail.com', 'verserain.admin@gmail.com'].includes(userEmail.toLowerCase());
   const isSuperAdmin = ['samhsiung@gmail.com', 'davidhwang1125@gmail.com', 'hsiungsam@gmail.com', 'hungry4grace@gmail.com'].includes(userEmail.toLowerCase());
+  // Who may edit a published set: admins (the server accepts their email for
+  // any set and keeps the original author), or its owner. Unattributed /
+  // "Anonymous" sets are left to admins, since the server would refuse
+  // anyone else's update.
+  const canEditSet = (s) => {
+    if (!s) return false;
+    if (isAdmin) return true;
+    const email = String(userEmail || '').trim().toLowerCase();
+    if (email && s.ownerEmail && String(s.ownerEmail).trim().toLowerCase() === email) return true;
+    if (!s.authorName || s.authorName === 'Anonymous') return false;
+    return isMySet(s, playerName, userEmail);
+  };
   const [showLevelInfo, setShowLevelInfo] = useState(false);
   const [showFruitInfo, setShowFruitInfo] = useState(false);
   const [levelCounts, setLevelCounts] = useState(null);
@@ -25691,7 +25703,7 @@ export default function App() {
                     verserain
                   </div>
                   <div className="app-brand-version" style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', marginTop: '4px', marginLeft: '2px' }}>
-                    v4.0.111
+                    v4.0.112
                   </div>
                 </div>
                 <div ref={langPickerRef} className="app-lang-control" style={{ position: 'relative' }}>
@@ -26954,6 +26966,10 @@ export default function App() {
                               if (editingCustomSet.id) {
                                 if (customVerseSets.some(s => s.id === setObj.id)) {
                                   updatedSets = customVerseSets.map(s => s.id === setObj.id ? setObj : s);
+                                } else if (setObj.isPublished && !isMySet(editingCustomSet, playerName, userEmail)) {
+                                  // An admin editing someone else's published set: update
+                                  // the published copy only, don't add it to my own sets.
+                                  updatedSets = customVerseSets;
                                 } else {
                                   updatedSets = [setObj, ...customVerseSets];
                                 }
@@ -26961,8 +26977,10 @@ export default function App() {
                                 updatedSets = [setObj, ...customVerseSets];
                               }
 
-                              setCustomVerseSets(updatedSets);
-                              localStorage.setItem('verseRain_custom_sets', JSON.stringify(updatedSets));
+                              if (updatedSets !== customVerseSets) {
+                                setCustomVerseSets(updatedSets);
+                                localStorage.setItem('verseRain_custom_sets', JSON.stringify(updatedSets));
+                              }
 
                               // Handle publishing sync
                               if (setObj.isPublished) {
@@ -28124,7 +28142,7 @@ export default function App() {
                               <Users size={16} /> {t("邀人PK", "Invite")}
                             </button>
 
-                            {(playerName === currentSet?.authorName || playerName === 'hungry@G') && (
+                            {canEditSet(currentSet) && (
                               <button
                                 onClick={() => {
                                   setEditingCustomSet({ ...currentSet, isPublished: true, verses: currentSet.verses?.map(parseVerseRef) || [] });
