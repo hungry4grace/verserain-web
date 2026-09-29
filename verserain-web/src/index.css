@@ -29,6 +29,18 @@
   --color-surface: #ffffff;
   --color-surface-2: #f8fafc;
   --color-scrim: rgba(15, 23, 42, 0.55);
+  /* Text and controls laid over a picture (今日 → 今天的經文). The veil is
+     72% dark under every line of text: white on it stays above 8:1 even
+     over a pure-white picture. */
+  --color-on-image: #ffffff;
+  --color-on-image-2: rgba(255, 255, 255, 0.86);
+  --color-on-image-accent: #fde68a;
+  --color-image-veil: rgba(8, 12, 24, 0.72);
+  --color-image-veil-soft: rgba(8, 12, 24, 0.38);
+  --color-image-veil-clear: rgba(8, 12, 24, 0);
+  --color-on-image-glass: rgba(255, 255, 255, 0.16);
+  --color-on-image-line: rgba(255, 255, 255, 0.42);
+  --font-verse: Georgia, 'Noto Serif TC', 'Songti TC', 'Source Han Serif TC', 'Noto Serif CJK TC', 'PMingLiU', serif;
 
   --fs-display: 1.75rem;  /* 28px */
   --fs-title: 1.375rem;   /* 22px */
@@ -2013,3 +2025,32 @@ html.elder-mode .versesets-table-card td { padding-left: 0.35rem !important; pad
   padding: 0 var(--space-1); color: var(--color-primary-strong); font-weight: 600;
   font-size: var(--fs-body); cursor: pointer; font-family: inherit;
 }
+
+/* ── 今日 → 今天的經文 (src/TodayPage.jsx): the day's illustration with rain ── */
+.today-hero {
+  position: relative; isolation: isolate; overflow: hidden;
+  border-radius: var(--radius-md); color: var(--color-on-image);
+  background-color: var(--color-text); background-size: cover; background-position: center;
+  box-shadow: var(--shadow-raised);
+}
+.today-hero::before {
+  content: ""; position: absolute; inset: 0; z-index: -1;
+  background: linear-gradient(180deg, var(--color-image-veil-clear) 0%, var(--color-image-veil-soft) 14%, var(--color-image-veil) 34%, var(--color-image-veil) 100%);
+}
+.today-hero__body { padding: 104px var(--space-5) var(--space-5); display: flex; flex-direction: column; gap: var(--space-2); }
+.today-hero__label { margin: 0; font-size: var(--fs-small); font-weight: 700; letter-spacing: 0.04em; color: var(--color-on-image-2); }
+.today-hero__verse { margin: 0; font-family: var(--font-verse); font-size: var(--fs-title); font-weight: 700; line-height: 1.6; overflow-wrap: anywhere; }
+.today-hero__ref { font-weight: 700; color: var(--color-on-image-accent); }
+.today-hero .ui-btn--primary { background: var(--color-on-image); color: var(--color-primary-strong); }
+.today-hero .ui-btn--primary:hover:not(:disabled) { background: var(--color-primary-soft); }
+.today-hero .ui-btn--secondary { background: var(--color-on-image-glass); color: var(--color-on-image); border-color: var(--color-on-image-line); }
+.today-hero .ui-btn--secondary:hover:not(:disabled) { background: var(--color-on-image-line); border-color: var(--color-on-image); }
+.today-hero__rain { position: absolute; inset: 0; z-index: -1; overflow: hidden; pointer-events: none; }
+.today-hero__rain span {
+  position: absolute; border-radius: 999px;
+  background: linear-gradient(180deg, var(--color-image-veil-clear), var(--color-on-image-2));
+  animation: today-hero-rain linear infinite;
+}
+@keyframes today-hero-rain { to { transform: translate3d(var(--drift, 0), 720px, 0); } }
+.performance-mode .today-hero__rain { display: none; }
+@media (prefers-reduced-motion: reduce) { .today-hero__rain { display: none; } }

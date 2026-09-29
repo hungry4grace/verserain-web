@@ -1,21 +1,25 @@
 // TodayPage — the 今日 tab (UI/UX 第 2 階段). Opening the app lands here and
 // shows one thing to do today instead of four equal tiles:
-//   1. today's verse, with 聆聽 / 挑戰這節
+//   1. today's verse on the day's illustration, with 聆聽 / 挑戰這節
 //   2. 繼續上次 — the verse set last listened to, if any
 //   3. a next step that fits the player (log in → first tree → the garden)
 //   4. 話語甘霖 — the daily player with its picker (每日經文 / 我的最愛 / 主題)
 import { Headphones, Zap, CloudRain, Play, TreePine, LogIn } from 'lucide-react';
 import { Button } from './ui';
+import { DAILY_RAIN_DROPS } from './player/rainConstants.js';
 
 const card = {
   background: 'var(--color-surface)', border: '1px solid var(--color-border)',
   borderRadius: 'var(--radius-md)', padding: 'var(--space-4) var(--space-5)',
 };
 const label = { margin: 0, fontSize: 'var(--fs-small)', fontWeight: 700, color: 'var(--color-text-2)' };
+// The nearer, bigger drops from the rain player, fewer and fainter (the CSS
+// stops them in 長輩／省電 mode and for reduced motion).
+const HERO_DROPS = DAILY_RAIN_DROPS.filter((d) => d.depth > 1).slice(0, 22);
 
 export default function TodayPage({
   t, dateLocale, streak = 0,
-  verse, verseLoading, onListen, onChallenge, onOpenRain,
+  verse, verseLoading, bgUrls = [], onListen, onChallenge, onOpenRain,
   lastListen, onContinue,
   loggedIn, treesPlanted = 0, onLogin, onGarden,
 }) {
@@ -34,22 +38,35 @@ export default function TodayPage({
         )}
       </div>
 
-      <section data-testid="today-verse" style={{ ...card, borderColor: 'var(--color-primary-soft)', boxShadow: '0 4px 16px rgba(37, 99, 235, 0.08)' }}>
-        <p style={label}>{t('今天的經文', "Today's verse")}</p>
-        {verse ? (
-          <>
-            <blockquote style={{ margin: 'var(--space-3) 0 var(--space-2)', fontSize: 'var(--fs-title)', lineHeight: 1.55, fontWeight: 600 }}>
-              {verse.text}
-            </blockquote>
-            <div style={{ color: 'var(--color-primary-strong)', fontWeight: 700 }}>{verse.reference}</div>
-            <div style={{ display: 'flex', gap: 'var(--space-2)', flexWrap: 'wrap', marginTop: 'var(--space-4)' }}>
-              <Button icon={<Headphones size={20} />} onClick={onListen}>{t('聆聽', 'Listen')}</Button>
-              <Button variant="secondary" icon={<Zap size={20} />} onClick={onChallenge}>{t('挑戰這節', 'Challenge this verse')}</Button>
-            </div>
-          </>
-        ) : (
-          <p style={{ margin: 'var(--space-3) 0 0', color: 'var(--color-text-2)' }}>{verseLoading ? t('載入中…', 'Loading…') : t('今天的經文還沒準備好', "Today's verse isn't ready yet")}</p>
-        )}
+      {/* 今天的經文: the day's illustration (the same one the daily player shows)
+          behind a dark veil, so white text keeps ≥ 4.5:1 on any picture. The
+          second URL is the generated gradient, underneath in case the first
+          fails to load. */}
+      <section
+        data-testid="today-verse"
+        className="today-hero"
+        style={{ backgroundImage: bgUrls.map((u) => `url("${u}")`).join(', ') || undefined }}
+      >
+        <div className="today-hero__rain" aria-hidden="true">
+          {HERO_DROPS.map((d, i) => (
+            <span key={i} style={{ left: d.left, top: d.top, height: d.length, width: d.width, opacity: d.opacity, animationDuration: d.duration, animationDelay: d.delay, '--drift': d.drift }} />
+          ))}
+        </div>
+        <div className="today-hero__body">
+          <p className="today-hero__label">{t('今天的經文', "Today's verse")}</p>
+          {verse ? (
+            <>
+              <blockquote className="today-hero__verse">{verse.text}</blockquote>
+              <div className="today-hero__ref">{verse.reference}</div>
+              <div style={{ display: 'flex', gap: 'var(--space-2)', flexWrap: 'wrap', marginTop: 'var(--space-2)' }}>
+                <Button icon={<Headphones size={20} />} onClick={onListen}>{t('聆聽', 'Listen')}</Button>
+                <Button variant="secondary" icon={<Zap size={20} />} onClick={onChallenge}>{t('挑戰這節', 'Challenge this verse')}</Button>
+              </div>
+            </>
+          ) : (
+            <p style={{ margin: 0 }}>{verseLoading ? t('載入中…', 'Loading…') : t('今天的經文還沒準備好', "Today's verse isn't ready yet")}</p>
+          )}
+        </div>
       </section>
 
       {lastListen && (
