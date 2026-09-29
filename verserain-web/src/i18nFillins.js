@@ -1342,6 +1342,15 @@ export const he = {
   "「{title}」會被刪除，其他人也看不到了。這無法復原。": "„{title}” יימחק ואף אחד אחר לא יראה אותו. אי אפשר לבטל זאת.",
   "已儲存「{title}」": "„{title}” נשמר",
   "你的專屬推廣連結": "קישור ההזמנה האישי שלך",
+  "取代目前的草稿？": "להחליף את הטיוטה?",
+  "你正在填寫的登記資料會被「{name}」取代。": "הפרטים שמולאו בטופס יוחלפו בפרטי “{name}”.",
+  "取代": "החלפה",
+  "退出「{pool}」？": "לעזוב את “{pool}”?",
+  "之後顧客就不能在這家店用這個愛心行動折抵。": "מעכשיו לקוחות לא יוכלו לממש את מיזם אהבה במעשים זה בחנות הזו.",
+  "下架「{name}」？": "להסיר את “{name}” מהמפה?",
+  "會從地圖上移除；已發出的折扣券仍可核銷，之後可以重新上架。": "הרישום יוסר מהמפה; שוברים שכבר הונפקו עדיין ניתנים למימוש, ואפשר לפרסם אותו מחדש בהמשך.",
+  "刪除「{name}」的登記？": "למחוק את הרישום של “{name}”?",
+  "這筆登記會被刪除，無法復原。": "הרישום יימחק. אי אפשר לבטל פעולה זו.",
 };
 
 export const fa = {
@@ -2665,6 +2674,15 @@ export const fa = {
   "「{title}」會被刪除，其他人也看不到了。這無法復原。": "«{title}» حذف می‌شود و دیگران هم دیگر آن را نمی‌بینند. این کار برگشت‌پذیر نیست.",
   "已儲存「{title}」": "«{title}» ذخیره شد",
   "你的專屬推廣連結": "پیوند دعوت اختصاصی شما",
+  "取代目前的草稿？": "پیش‌نویس فعلی جایگزین شود؟",
+  "你正在填寫的登記資料會被「{name}」取代。": "اطلاعات ثبتی که در حال پر کردنش هستی با «{name}» جایگزین می‌شود.",
+  "取代": "جایگزینی",
+  "退出「{pool}」？": "از «{pool}» خارج می‌شوی؟",
+  "之後顧客就不能在這家店用這個愛心行動折抵。": "از این پس مشتریان نمی‌توانند در این فروشگاه از این طرح «محبت در عمل» تخفیف بگیرند.",
+  "下架「{name}」？": "«{name}» از نقشه حذف شود؟",
+  "會從地圖上移除；已發出的折扣券仍可核銷，之後可以重新上架。": "از نقشه برداشته می‌شود؛ کوپن‌های صادرشده هنوز قابل استفاده‌اند و بعداً می‌توانی دوباره منتشرش کنی.",
+  "刪除「{name}」的登記？": "ثبت «{name}» حذف شود؟",
+  "這筆登記會被刪除，無法復原。": "این ثبت حذف می‌شود و قابل بازگشت نیست.",
 };
 
 export const ar = {
@@ -4404,6 +4422,15 @@ export const ar = {
   "「{title}」會被刪除，其他人也看不到了。這無法復原。": "سيتم حذف «{title}» ولن يراها أحد بعد الآن. لا يمكن التراجع عن ذلك.",
   "已儲存「{title}」": "تم حفظ «{title}»",
   "你的專屬推廣連結": "رابط الدعوة الخاص بك",
+  "取代目前的草稿？": "استبدال المسودة الحالية؟",
+  "你正在填寫的登記資料會被「{name}」取代。": "سيتم استبدال بيانات التسجيل التي تملؤها ببيانات «{name}».",
+  "取代": "استبدال",
+  "退出「{pool}」？": "مغادرة «{pool}»؟",
+  "之後顧客就不能在這家店用這個愛心行動折抵。": "لن يتمكن العملاء بعد ذلك من استخدام مشروع «المحبة بالعمل» هذا للحصول على خصم في هذا المتجر.",
+  "下架「{name}」？": "إزالة «{name}» من الخريطة؟",
+  "會從地圖上移除；已發出的折扣券仍可核銷，之後可以重新上架。": "ستتم إزالته من الخريطة؛ القسائم الصادرة لا تزال قابلة للاستخدام، ويمكنك إعادة نشره لاحقًا.",
+  "刪除「{name}」的登記？": "حذف تسجيل «{name}»؟",
+  "這筆登記會被刪除，無法復原。": "سيتم حذف هذا التسجيل، ولا يمكن التراجع عن ذلك.",
 };
 
 export const ja = {
@@ -5715,6 +5742,15 @@ export const ja = {
   "「{title}」會被刪除，其他人也看不到了。這無法復原。": "「{title}」は削除され、他の人にも表示されなくなります。元に戻せません。",
   "已儲存「{title}」": "「{title}」を保存しました",
   "你的專屬推廣連結": "あなた専用の招待リンク",
+  "取代目前的草稿？": "現在の下書きを置き換えますか？",
+  "你正在填寫的登記資料會被「{name}」取代。": "入力中の登録内容が「{name}」で置き換えられます。",
+  "取代": "置き換える",
+  "退出「{pool}」？": "「{pool}」から退出しますか？",
+  "之後顧客就不能在這家店用這個愛心行動折抵。": "今後、お客様はこの店舗でこの「愛の行動」を割引に使えなくなります。",
+  "下架「{name}」？": "「{name}」の掲載を停止しますか？",
+  "會從地圖上移除；已發出的折扣券仍可核銷，之後可以重新上架。": "地図から外れます。発行済みのクーポンは引き続き使え、あとで再掲載できます。",
+  "刪除「{name}」的登記？": "「{name}」の登録を削除しますか？",
+  "這筆登記會被刪除，無法復原。": "この登録は削除され、元に戻せません。",
 };
 
 export const ko = {
@@ -7024,6 +7060,15 @@ export const ko = {
   "「{title}」會被刪除，其他人也看不到了。這無法復原。": "「{title}」이(가) 삭제되며 다른 사람에게도 더 이상 보이지 않습니다. 되돌릴 수 없습니다.",
   "已儲存「{title}」": "「{title}」을(를) 저장했습니다",
   "你的專屬推廣連結": "나만의 초대 링크",
+  "取代目前的草稿？": "작성 중인 초안을 바꿀까요?",
+  "你正在填寫的登記資料會被「{name}」取代。": "작성 중인 등록 정보가 「{name}」(으)로 바뀝니다.",
+  "取代": "바꾸기",
+  "退出「{pool}」？": "「{pool}」에서 나갈까요?",
+  "之後顧客就不能在這家店用這個愛心行動折抵。": "이후 고객은 이 가게에서 이 「사랑의 실천」으로 할인받을 수 없습니다.",
+  "下架「{name}」？": "「{name}」을(를) 내릴까요?",
+  "會從地圖上移除；已發出的折扣券仍可核銷，之後可以重新上架。": "지도에서 제거됩니다. 이미 발급된 쿠폰은 계속 사용할 수 있으며, 나중에 다시 올릴 수 있습니다.",
+  "刪除「{name}」的登記？": "「{name}」 등록을 삭제할까요?",
+  "這筆登記會被刪除，無法復原。": "이 등록은 삭제되며 되돌릴 수 없습니다.",
 };
 
 export const es = {
@@ -8349,6 +8394,15 @@ export const es = {
   "「{title}」會被刪除，其他人也看不到了。這無法復原。": "«{title}» se eliminará y nadie más podrá verlo. No se puede deshacer.",
   "已儲存「{title}」": "Se guardó «{title}»",
   "你的專屬推廣連結": "Tu enlace de invitación",
+  "取代目前的草稿？": "¿Reemplazar tu borrador?",
+  "你正在填寫的登記資料會被「{name}」取代。": "El formulario que estás rellenando se reemplazará por «{name}».",
+  "取代": "Reemplazar",
+  "退出「{pool}」？": "¿Salir de «{pool}»?",
+  "之後顧客就不能在這家店用這個愛心行動折抵。": "Los clientes ya no podrán usar este proyecto Amor en acción como descuento en este comercio.",
+  "下架「{name}」？": "¿Retirar «{name}»?",
+  "會從地圖上移除；已發出的折扣券仍可核銷，之後可以重新上架。": "Se quitará del mapa; los cupones ya emitidos siguen siendo válidos y podrás volver a publicarlo más tarde.",
+  "刪除「{name}」的登記？": "¿Eliminar el registro «{name}»?",
+  "這筆登記會被刪除，無法復原。": "Este registro se eliminará. No se puede deshacer.",
 };
 
 export const tr = {
@@ -9674,6 +9728,15 @@ export const tr = {
   "「{title}」會被刪除，其他人也看不到了。這無法復原。": "“{title}” silinecek ve başkaları da artık göremeyecek. Bu işlem geri alınamaz.",
   "已儲存「{title}」": "“{title}” kaydedildi",
   "你的專屬推廣連結": "Kişisel davet bağlantın",
+  "取代目前的草稿？": "Taslağın değiştirilsin mi?",
+  "你正在填寫的登記資料會被「{name}」取代。": "Doldurmakta olduğun kayıt bilgileri “{name}” ile değiştirilecek.",
+  "取代": "Değiştir",
+  "退出「{pool}」？": "“{pool}” projesinden ayrılmak istiyor musun?",
+  "之後顧客就不能在這家店用這個愛心行動折抵。": "Müşteriler artık bu işletmede bu Eyleme dönüşen sevgi projesini indirim için kullanamayacak.",
+  "下架「{name}」？": "“{name}” yayından kaldırılsın mı?",
+  "會從地圖上移除；已發出的折扣券仍可核銷，之後可以重新上架。": "Haritadan çıkarılır; verilmiş kuponlar kullanılmaya devam edebilir ve daha sonra yeniden yayınlayabilirsin.",
+  "刪除「{name}」的登記？": "“{name}” kaydı silinsin mi?",
+  "這筆登記會被刪除，無法復原。": "Bu kayıt silinecek. Bu işlem geri alınamaz.",
 };
 
 export const de = {
@@ -10999,6 +11062,15 @@ export const de = {
   "「{title}」會被刪除，其他人也看不到了。這無法復原。": "„{title}“ wird gelöscht und ist für niemanden mehr sichtbar. Das kann nicht rückgängig gemacht werden.",
   "已儲存「{title}」": "„{title}“ gespeichert",
   "你的專屬推廣連結": "Dein persönlicher Einladungslink",
+  "取代目前的草稿？": "Entwurf ersetzen?",
+  "你正在填寫的登記資料會被「{name}」取代。": "Das Formular, das du gerade ausfüllst, wird durch „{name}“ ersetzt.",
+  "取代": "Ersetzen",
+  "退出「{pool}」？": "„{pool}“ verlassen?",
+  "之後顧客就不能在這家店用這個愛心行動折抵。": "Kunden können dieses „Liebe in Aktion“-Projekt dann in diesem Laden nicht mehr für Rabatte nutzen.",
+  "下架「{name}」？": "„{name}“ von der Karte nehmen?",
+  "會從地圖上移除；已發出的折扣券仍可核銷，之後可以重新上架。": "Der Eintrag verschwindet von der Karte; bereits ausgegebene Gutscheine bleiben einlösbar, und du kannst ihn später wieder veröffentlichen.",
+  "刪除「{name}」的登記？": "Eintrag „{name}“ löschen?",
+  "這筆登記會被刪除，無法復原。": "Dieser Eintrag wird gelöscht. Das kann nicht rückgängig gemacht werden.",
 };
 
 export const my = {
@@ -12324,6 +12396,15 @@ export const my = {
   "「{title}」會被刪除，其他人也看不到了。這無法復原。": "「{title}」ကို ဖျက်ပါမည်၊ အခြားသူများလည်း မမြင်ရတော့ပါ။ ပြန်ပြင်၍ မရပါ။",
   "已儲存「{title}」": "「{title}」ကို သိမ်းဆည်းပြီးပါပြီ",
   "你的專屬推廣連結": "သင့်ကိုယ်ပိုင် ဖိတ်ကြားလင့်ခ်",
+  "取代目前的草稿？": "လက်ရှိ မူကြမ်းကို အစားထိုးမလား?",
+  "你正在填寫的登記資料會被「{name}」取代。": "သင်ဖြည့်နေသော မှတ်ပုံတင်အချက်အလက်များကို “{name}” ဖြင့် အစားထိုးပါမည်။",
+  "取代": "အစားထိုးရန်",
+  "退出「{pool}」？": "“{pool}” မှ ထွက်မလား?",
+  "之後顧客就不能在這家店用這個愛心行動折抵。": "ထို့နောက် ဖောက်သည်များသည် ဤဆိုင်တွင် ဤလက်တွေ့မေတ္တာ စီမံကိန်းဖြင့် လျှော့စျေး မရယူနိုင်တော့ပါ။",
+  "下架「{name}」？": "“{name}” ကို မြေပုံမှ ဖြုတ်မလား?",
+  "會從地圖上移除；已發出的折扣券仍可核銷，之後可以重新上架。": "မြေပုံမှ ဖယ်ရှားပါမည်။ ထုတ်ပြီးသော ကူပွန်များ ဆက်သုံးနိုင်ပြီး နောက်မှ ပြန်တင်နိုင်ပါသည်။",
+  "刪除「{name}」的登記？": "“{name}” ၏ မှတ်ပုံတင်ကို ဖျက်မလား?",
+  "這筆登記會被刪除，無法復原。": "ဤမှတ်ပုံတင်ကို ဖျက်ပါမည်။ ပြန်ယူ၍ မရပါ။",
 };
 
 export const vi = {
@@ -13649,6 +13730,15 @@ export const vi = {
   "「{title}」會被刪除，其他人也看不到了。這無法復原。": "«{title}» sẽ bị xóa và người khác cũng không thấy nữa. Không thể hoàn tác.",
   "已儲存「{title}」": "Đã lưu «{title}»",
   "你的專屬推廣連結": "Liên kết mời của bạn",
+  "取代目前的草稿？": "Thay thế bản nháp hiện tại?",
+  "你正在填寫的登記資料會被「{name}」取代。": "Thông tin đăng ký bạn đang điền sẽ bị thay bằng “{name}”.",
+  "取代": "Thay thế",
+  "退出「{pool}」？": "Rời “{pool}”?",
+  "之後顧客就不能在這家店用這個愛心行動折抵。": "Sau đó khách hàng sẽ không thể dùng dự án Yêu thương bằng hành động này để được giảm giá tại cửa hàng này nữa.",
+  "下架「{name}」？": "Gỡ “{name}” khỏi bản đồ?",
+  "會從地圖上移除；已發出的折扣券仍可核銷，之後可以重新上架。": "Mục này sẽ bị gỡ khỏi bản đồ; phiếu đã phát vẫn dùng được, và bạn có thể đăng lại sau.",
+  "刪除「{name}」的登記？": "Xóa đăng ký “{name}”?",
+  "這筆登記會被刪除，無法復原。": "Đăng ký này sẽ bị xóa và không thể khôi phục.",
 };
 
 export const id = {
@@ -15202,6 +15292,15 @@ export const id = {
   "「{title}」會被刪除，其他人也看不到了。這無法復原。": "“{title}” akan dihapus dan tidak terlihat lagi oleh orang lain. Tindakan ini tidak bisa dibatalkan.",
   "已儲存「{title}」": "“{title}” tersimpan",
   "你的專屬推廣連結": "Tautan undangan pribadimu",
+  "取代目前的草稿？": "Ganti draf saat ini?",
+  "你正在填寫的登記資料會被「{name}」取代。": "Data pendaftaran yang sedang kamu isi akan diganti dengan “{name}”.",
+  "取代": "Ganti",
+  "退出「{pool}」？": "Keluar dari “{pool}”?",
+  "之後顧客就不能在這家店用這個愛心行動折抵。": "Setelah itu pelanggan tidak bisa lagi memakai proyek Kasih dalam Tindakan ini untuk potongan harga di toko ini.",
+  "下架「{name}」？": "Turunkan “{name}” dari peta?",
+  "會從地圖上移除；已發出的折扣券仍可核銷，之後可以重新上架。": "Akan dihapus dari peta; voucher yang sudah terbit tetap bisa dipakai, dan kamu bisa menayangkannya lagi nanti.",
+  "刪除「{name}」的登記？": "Hapus pendaftaran “{name}”?",
+  "這筆登記會被刪除，無法復原。": "Pendaftaran ini akan dihapus dan tidak bisa dibatalkan.",
 };
 
 export const ms = {
@@ -16959,6 +17058,15 @@ export const ms = {
   "「{title}」會被刪除，其他人也看不到了。這無法復原。": "“{title}” akan dipadam dan tidak lagi kelihatan kepada orang lain. Tindakan ini tidak boleh dibuat asal.",
   "已儲存「{title}」": "“{title}” disimpan",
   "你的專屬推廣連結": "Pautan jemputan peribadi anda",
+  "取代目前的草稿？": "Gantikan draf semasa?",
+  "你正在填寫的登記資料會被「{name}」取代。": "Maklumat pendaftaran yang sedang anda isi akan digantikan dengan “{name}”.",
+  "取代": "Gantikan",
+  "退出「{pool}」？": "Keluar daripada “{pool}”?",
+  "之後顧客就不能在這家店用這個愛心行動折抵。": "Selepas ini pelanggan tidak lagi boleh menggunakan projek Kasih dalam Tindakan ini untuk potongan harga di kedai ini.",
+  "下架「{name}」？": "Turunkan “{name}” dari peta?",
+  "會從地圖上移除；已發出的折扣券仍可核銷，之後可以重新上架。": "Akan dialih keluar dari peta; baucar yang telah dikeluarkan masih boleh digunakan, dan anda boleh menerbitkannya semula kemudian.",
+  "刪除「{name}」的登記？": "Padam pendaftaran “{name}”?",
+  "這筆登記會被刪除，無法復原。": "Pendaftaran ini akan dipadam dan tidak boleh dipulihkan.",
 };
 
 export const zhcn = {
@@ -18635,6 +18743,15 @@ export const zhcn = {
   "「{title}」會被刪除，其他人也看不到了。這無法復原。": "「{title}」会被删除，其他人也看不到了。这无法复原。",
   "已儲存「{title}」": "已保存「{title}」",
   "你的專屬推廣連結": "你的专属推广链接",
+  "取代目前的草稿？": "取代当前的草稿？",
+  "你正在填寫的登記資料會被「{name}」取代。": "你正在填写的登记资料会被「{name}」取代。",
+  "取代": "取代",
+  "退出「{pool}」？": "退出「{pool}」？",
+  "之後顧客就不能在這家店用這個愛心行動折抵。": "之后顾客就不能在这家店用这个爱心行动折抵。",
+  "下架「{name}」？": "下架「{name}」？",
+  "會從地圖上移除；已發出的折扣券仍可核銷，之後可以重新上架。": "会从地图上移除；已发出的折扣券仍可核销，之后可以重新上架。",
+  "刪除「{name}」的登記？": "删除「{name}」的登记？",
+  "這筆登記會被刪除，無法復原。": "这笔登记会被删除，无法恢复。",
 };
 
 export const pt = {
@@ -19682,6 +19799,15 @@ export const pt = {
   "「{title}」會被刪除，其他人也看不到了。這無法復原。": "“{title}” será excluído e ninguém mais poderá vê-lo. Isso não pode ser desfeito.",
   "已儲存「{title}」": "“{title}” salvo",
   "你的專屬推廣連結": "Seu link de convite",
+  "取代目前的草稿？": "Substituir seu rascunho?",
+  "你正在填寫的登記資料會被「{name}」取代。": "O cadastro que você está preenchendo será substituído por “{name}”.",
+  "取代": "Substituir",
+  "退出「{pool}」？": "Sair de “{pool}”?",
+  "之後顧客就不能在這家店用這個愛心行動折抵。": "Os clientes não poderão mais usar este projeto “Amor em ação” como desconto nesta loja.",
+  "下架「{name}」？": "Retirar “{name}” do mapa?",
+  "會從地圖上移除；已發出的折扣券仍可核銷，之後可以重新上架。": "Ele sai do mapa; os vouchers já emitidos continuam válidos, e você pode voltar a publicá-lo depois.",
+  "刪除「{name}」的登記？": "Excluir o cadastro “{name}”?",
+  "這筆登記會被刪除，無法復原。": "Este cadastro será excluído. Não é possível desfazer.",
 };
 
 export const fr = {
@@ -20729,6 +20855,15 @@ export const fr = {
   "「{title}」會被刪除，其他人也看不到了。這無法復原。": "« {title} » sera supprimé et plus personne ne pourra le voir. Action irréversible.",
   "已儲存「{title}」": "« {title} » enregistré",
   "你的專屬推廣連結": "Ton lien d’invitation personnel",
+  "取代目前的草稿？": "Remplacer ton brouillon ?",
+  "你正在填寫的登記資料會被「{name}」取代。": "Le formulaire que tu remplis sera remplacé par « {name} ».",
+  "取代": "Remplacer",
+  "退出「{pool}」？": "Quitter « {pool} » ?",
+  "之後顧客就不能在這家店用這個愛心行動折抵。": "Les clients ne pourront plus utiliser ce projet « L’amour en actes » comme réduction dans ce commerce.",
+  "下架「{name}」？": "Retirer « {name} » de la carte ?",
+  "會從地圖上移除；已發出的折扣券仍可核銷，之後可以重新上架。": "L’inscription disparaît de la carte ; les bons déjà émis restent utilisables, et tu pourras la republier plus tard.",
+  "刪除「{name}」的登記？": "Supprimer l’inscription « {name} » ?",
+  "這筆登記會被刪除，無法復原。": "Cette inscription sera supprimée. Cette action est irréversible.",
 };
 
 export const ru = {
@@ -21776,6 +21911,15 @@ export const ru = {
   "「{title}」會被刪除，其他人也看不到了。這無法復原。": "«{title}» будет удалён и больше никто его не увидит. Это нельзя отменить.",
   "已儲存「{title}」": "«{title}» сохранён",
   "你的專屬推廣連結": "Твоя личная ссылка-приглашение",
+  "取代目前的草稿？": "Заменить черновик?",
+  "你正在填寫的登記資料會被「{name}」取代。": "Данные, которые ты сейчас заполняешь, будут заменены на «{name}».",
+  "取代": "Заменить",
+  "退出「{pool}」？": "Выйти из «{pool}»?",
+  "之後顧客就不能在這家店用這個愛心行動折抵。": "Покупатели больше не смогут использовать этот проект «Любовь в действии» для скидки в этом магазине.",
+  "下架「{name}」？": "Снять «{name}» с карты?",
+  "會從地圖上移除；已發出的折扣券仍可核銷，之後可以重新上架。": "Запись исчезнет с карты; уже выданные купоны остаются действительными, а позже её можно опубликовать снова.",
+  "刪除「{name}」的登記？": "Удалить запись «{name}»?",
+  "這筆登記會被刪除，無法復原。": "Эта запись будет удалена. Отменить это нельзя.",
 };
 
 export const hi = {
@@ -22823,6 +22967,15 @@ export const hi = {
   "「{title}」會被刪除，其他人也看不到了。這無法復原。": "“{title}” हटा दिया जाएगा और कोई और भी इसे नहीं देख पाएगा। इसे वापस नहीं किया जा सकता।",
   "已儲存「{title}」": "“{title}” सहेजा गया",
   "你的專屬推廣連結": "आपका निजी आमंत्रण लिंक",
+  "取代目前的草稿？": "मौजूदा ड्राफ़्ट बदलें?",
+  "你正在填寫的登記資料會被「{name}」取代。": "तुम जो पंजीकरण फ़ॉर्म भर रहे हो, उसकी जगह “{name}” आ जाएगा।",
+  "取代": "बदलें",
+  "退出「{pool}」？": "“{pool}” से बाहर निकलें?",
+  "之後顧客就不能在這家店用這個愛心行動折抵。": "इसके बाद ग्राहक इस दुकान पर इस “कर्म में प्रेम” परियोजना से छूट नहीं ले पाएँगे।",
+  "下架「{name}」？": "“{name}” को नक्शे से हटाएँ?",
+  "會從地圖上移除；已發出的折扣券仍可核銷，之後可以重新上架。": "यह नक्शे से हट जाएगा; पहले जारी कूपन अभी भी उपयोग किए जा सकते हैं, और तुम इसे बाद में फिर से प्रकाशित कर सकते हो।",
+  "刪除「{name}」的登記？": "“{name}” का पंजीकरण मिटाएँ?",
+  "這筆登記會被刪除，無法復原。": "यह पंजीकरण मिटा दिया जाएगा। इसे वापस नहीं लाया जा सकता।",
 };
 
 // Khmer (Cambodian) — full UI coverage, machine-translated in bulk from the
@@ -24498,6 +24651,15 @@ export const km = {
   "「{title}」會被刪除，其他人也看不到了。這無法復原。": "「{title}」នឹងត្រូវលុប ហើយអ្នកដទៃក៏មើលមិនឃើញទៀតដែរ។ មិនអាចត្រឡប់វិញបានទេ។",
   "已儲存「{title}」": "បានរក្សាទុក「{title}」",
   "你的專屬推廣連結": "តំណអញ្ជើញផ្ទាល់ខ្លួនរបស់អ្នក",
+  "取代目前的草稿？": "ជំនួសសេចក្តីព្រាងបច្ចុប្បន្នឬ?",
+  "你正在填寫的登記資料會被「{name}」取代。": "ព័ត៌មានចុះឈ្មោះដែលអ្នកកំពុងបំពេញនឹងត្រូវជំនួសដោយ «{name}»។",
+  "取代": "ជំនួស",
+  "退出「{pool}」？": "ចាកចេញពី «{pool}» ឬ?",
+  "之後顧客就不能在這家店用這個愛心行動折抵。": "បន្ទាប់ពីនេះ អតិថិជននឹងមិនអាចប្រើគម្រោង «សេចក្តីស្រឡាញ់ជាការប្រព្រឹត្ត» នេះដើម្បីទទួលការបញ្ចុះតម្លៃនៅហាងនេះទៀតទេ។",
+  "下架「{name}」？": "ដក «{name}» ចេញពីផែនទីឬ?",
+  "會從地圖上移除；已發出的折扣券仍可核銷，之後可以重新上架。": "វានឹងត្រូវដកចេញពីផែនទី ប័ណ្ណដែលបានចេញរួចនៅតែប្រើបាន ហើយអ្នកអាចបង្ហោះឡើងវិញពេលក្រោយ។",
+  "刪除「{name}」的登記？": "លុបការចុះឈ្មោះ «{name}» ឬ?",
+  "這筆登記會被刪除，無法復原。": "ការចុះឈ្មោះនេះនឹងត្រូវលុប ហើយមិនអាចស្ដារវិញបានទេ។",
 };
 
 const I18N_FILLINS = { he, fa, ar, ja, ko, es, tr, de, my, vi, id, ms, zhcn, pt, fr, ru, hi, km };

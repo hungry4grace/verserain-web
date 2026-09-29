@@ -43,6 +43,17 @@ const ReactQuill = React.lazy(() => import('./LazyQuill'));
 // (Admin 編輯 / Admin 刪除 / 複製) — low value for now. Flip to true to restore.
 const SHOW_SET_LIST_ROW_ACTIONS = false;
 
+// One compact action-button style for the dense admin / merchant / charity
+// lists (it used to be copied 6 times with slightly different numbers).
+// Colours stay per call; size, radius and tap height come from the tokens.
+const compactBtn = (bg, fg = '#fff', border = 'none', busy = false) => ({
+  background: bg, color: fg, border,
+  display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 4,
+  minHeight: 'var(--tap-min)', padding: '0 var(--space-3)', borderRadius: 'var(--radius-sm)',
+  fontSize: 'var(--fs-small)', fontWeight: 700, lineHeight: 1.2, whiteSpace: 'nowrap',
+  cursor: busy ? 'wait' : 'pointer',
+});
+
 // Loose verses (random / daily / search / shared single verse) have no
 // originating set to file a personal recording under. They all share this one
 // reserved per-user bucket — a private "single-verse collection" keyed by
@@ -22559,11 +22570,14 @@ export default function App() {
   // Load a stored place into the form. Same id → the submit becomes an
   // owner_update; `editing` rides along in the persisted draft so a reload or
   // re-login mid-edit keeps the banner and the update semantics.
-  const startEditPlace = (pl) => {
+  const startEditPlace = async (pl) => {
     const d = merchantDraft;
     const dirty = !d.editing && ((d.name || '').trim() || (d.address || '').trim());
-    if (dirty && deleteArmedId !== `place-edit-${pl.id}`) { armDelete(`place-edit-${pl.id}`); return; }
-    setDeleteArmedId(null);
+    if (dirty && !(await confirmDialog({
+      title: t('取代目前的草稿？', 'Replace your draft?'),
+      message: t('你正在填寫的登記資料會被「{name}」取代。', 'The form you are filling in will be replaced by “{name}”.').replace('{name}', pl.name || ''),
+      confirmLabel: t('取代', 'Replace'),
+    }))) return;
     const next = { ...newPlaceDraft(), id: pl.id, agree: false, editing: { name: pl.name, status: pl.status, referrerCode: pl.referrerCode || '', referrerName: pl.referrerName || '' } };
     for (const f of PLACE_DRAFT_FIELDS) if (pl[f] !== undefined && pl[f] !== null) next[f] = pl[f];
     setMerchantDraft(next); setMerchantPhotoPreview(null); setMerchantSubmitStatus(null);
@@ -23074,7 +23088,7 @@ export default function App() {
     const setD = (patch) => setPoolJoinDraft(o => ({ ...o, [key]: { ...d, ...patch } }));
     const busy = poolJoinBusy === pl.id;
     const small = { width: 110, padding: '0.35rem 0.5rem', borderRadius: 6, border: '1px solid #cbd5e1', fontSize: '0.85rem', background: '#fff' };
-    const btn = (bg, fg = '#fff', border = 'none') => ({ background: bg, color: fg, border, borderRadius: 6, padding: '0.3rem 0.75rem', cursor: busy ? 'wait' : 'pointer', fontWeight: 700, fontSize: '0.8rem' });
+    const btn = (bg, fg = '#fff', border = 'none') => compactBtn(bg, fg, border, busy);
     return (
       <div data-testid={`merchant-pool-${pl.id}`} style={{ marginTop: '0.6rem', paddingTop: '0.6rem', borderTop: '1px dashed #fecdd3' }}>
         <b style={{ color: '#be123c', fontSize: '0.9rem' }}>❤️ {t('參與愛心行動', 'Join a Love in Action project')}</b>
@@ -23082,7 +23096,6 @@ export default function App() {
           const ek = `edit-${pl.id}-${m.poolId}`;
           const ed = poolJoinDraft[ek] || { perOrderMaxNTD: m.perOrderMaxNTD, monthlyMaxNTD: m.monthlyMaxNTD };
           const setE = (patch) => setPoolJoinDraft(o => ({ ...o, [ek]: { ...ed, ...patch } }));
-          const armed = deleteArmedId === `pool-leave-${pl.id}-${m.poolId}`;
           return (
             <div key={m.poolId} style={{ background: '#fff1f2', borderRadius: 8, padding: '0.5rem 0.7rem', marginTop: '0.4rem', fontSize: '0.85rem', color: '#334155' }}>
               <div><b>{m.poolName}</b> <span style={{ color: '#64748b' }}>· ⛪ {m.orgPlaceName}</span> {m.poolStatus !== 'approved' && <span style={{ color: '#94a3b8' }}>({poolStatusBadge(m.poolStatus).text})</span>}</div>
@@ -23091,7 +23104,7 @@ export default function App() {
                 <label style={{ fontSize: '0.78rem', color: '#475569' }}>{t('單筆最高折抵 NT$', 'Max discount per order NT$')} <input type="number" min={1} max={2000} value={ed.perOrderMaxNTD} onChange={e => setE({ perOrderMaxNTD: Number(e.target.value) })} style={small} /></label>
                 <label style={{ fontSize: '0.78rem', color: '#475569' }}>{t('每月最高折抵 NT$', 'Max discount per month NT$')} <input type="number" min={1} max={10000} value={ed.monthlyMaxNTD} onChange={e => setE({ monthlyMaxNTD: Number(e.target.value) })} style={small} /></label>
                 <button type="button" disabled={busy} onClick={() => merchantPoolAction('merchant_update', pl.id, m.poolId, { perOrderMaxNTD: ed.perOrderMaxNTD, monthlyMaxNTD: ed.monthlyMaxNTD, consent: true })} style={btn('#be123c')}>{t('更新上限', 'Update caps')}</button>
-                <button type="button" disabled={busy} onClick={() => { if (!armed) { armDelete(`pool-leave-${pl.id}-${m.poolId}`); return; } merchantPoolAction('merchant_leave', pl.id, m.poolId); }} style={btn('transparent', '#991b1b', '1px solid #fecaca')}>{armed ? t('再按一次確認退出', 'Tap again to leave') : t('退出', 'Leave')}</button>
+                <button type="button" disabled={busy} onClick={async () => { if (await confirmDialog({ title: t('退出「{pool}」？', 'Leave “{pool}”?').replace('{pool}', m.poolName || ''), message: t('之後顧客就不能在這家店用這個愛心行動折抵。', 'Customers will no longer be able to use this Love in Action pool at this shop.'), confirmLabel: t('退出', 'Leave'), danger: true })) merchantPoolAction('merchant_leave', pl.id, m.poolId); }} style={btn('transparent', '#991b1b', '1px solid #fecaca')}>{t('退出', 'Leave')}</button>
               </div>
             </div>
           );
@@ -25743,7 +25756,7 @@ export default function App() {
                     verserain
                   </div>
                   <div className="app-brand-version" style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', marginTop: '4px', marginLeft: '2px' }}>
-                    v4.0.125
+                    v4.0.126
                   </div>
                 </div>
                 <div ref={langPickerRef} className="app-lang-control" style={{ position: 'relative' }}>
@@ -28933,7 +28946,7 @@ export default function App() {
                       referee_cluster: t('多位推薦人同日註冊', 'Several referees signed up the same day'),
                     })[f] || f;
                     const inputStyle = { padding: '0.4rem 0.6rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.85rem', background: '#fff' };
-                    const smallBtn = (bg, fg = '#fff', border = 'none') => ({ background: bg, color: fg, border, borderRadius: '6px', padding: '0.4rem 0.8rem', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 600 });
+                    const smallBtn = compactBtn;
                     const todayIso = new Date().toLocaleDateString('en-CA');
                     return (
                       <div>
@@ -29019,7 +29032,7 @@ export default function App() {
                           const shown = all.filter(pl => placesAdminFilter === 'all' ? true : pl.status === placesAdminFilter);
                           const counts = { withdrawn: all.filter(p => p.status === 'withdrawn').length, pending: all.filter(p => p.status === 'pending').length, approved: all.filter(p => p.status === 'approved').length, hidden: all.filter(p => p.status === 'hidden').length, rejected: all.filter(p => p.status === 'rejected').length };
                           const inputStyle = { padding: '0.4rem 0.6rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.85rem', background: '#fff' };
-                          const smallBtn = (bg, fg = '#fff', border = 'none') => ({ background: bg, color: fg, border, borderRadius: '6px', padding: '0.35rem 0.7rem', cursor: 'pointer', fontSize: '0.82rem', fontWeight: 600 });
+                          const smallBtn = compactBtn;
                           const kindLabel = (k) => k === 'merchant' ? `🏪 ${t('商家', 'Shop')}` : k === 'church' ? `⛪ ${t('教會', 'Church')}` : `🏢 ${t('機構', 'Organisation')}`;
                           const ed = placeEdit;
                           return (
@@ -29107,7 +29120,7 @@ export default function App() {
                           const cashPending = (p) => p.cashAppeal?.status === 'pending';
                           const shown = all.filter(p => poolsAdminFilter === 'all' ? true : poolsAdminFilter === 'pending' ? (p.status === 'pending' || cashPending(p)) : p.status === poolsAdminFilter);
                           const counts = { pending: all.filter(p => p.status === 'pending' || cashPending(p)).length, approved: all.filter(p => p.status === 'approved').length, closed: all.filter(p => p.status === 'closed').length, rejected: all.filter(p => p.status === 'rejected').length };
-                          const smallBtn = (bg, fg = '#fff', border = 'none') => ({ background: bg, color: fg, border, borderRadius: '6px', padding: '0.35rem 0.7rem', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 700 });
+                          const smallBtn = compactBtn;
                           return (
                             <div data-testid="admin-pools" style={{ border: '1px solid #fecdd3', background: '#fff1f2', borderRadius: 10, padding: '0.9rem 1rem', marginBottom: '1rem' }}>
                               <b style={{ color: '#be123c' }}>❤️ {t('愛心行動', 'Love in Action')}</b>
@@ -29159,7 +29172,7 @@ export default function App() {
                           const all = contestsAdmin || [];
                           const shown = all.filter(c => contestsAdminFilter === 'all' ? true : c.status === contestsAdminFilter);
                           const counts = { pending: all.filter(c => c.status === 'pending').length, approved: all.filter(c => c.status === 'approved').length, closed: all.filter(c => c.status === 'closed').length, rejected: all.filter(c => c.status === 'rejected').length };
-                          const smallBtn = (bg, fg = '#fff', border = 'none') => ({ background: bg, color: fg, border, borderRadius: '6px', padding: '0.35rem 0.7rem', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 700 });
+                          const smallBtn = compactBtn;
                           return (
                             <div data-testid="admin-contests" style={{ border: '1px solid #bfdbfe', background: '#eff6ff', borderRadius: 10, padding: '0.9rem 1rem', marginBottom: '1rem' }}>
                               <b style={{ color: '#1e40af' }}>📖 {t('讀經比賽', 'Reading contest')}</b>
@@ -30324,24 +30337,24 @@ export default function App() {
                           <h3 style={{ margin: '0 0 0.6rem', color: '#1e293b', fontSize: '1.05rem' }}>📋 {t('我的登記', 'My submissions')}</h3>
                           {!myPlaces ? <div style={{ color: '#94a3b8' }}>{t('載入中…', 'Loading…')}</div> : myPlaces.length === 0 ? <div style={{ color: '#94a3b8', fontSize: '0.9rem' }}>{t('尚未登記', 'Nothing submitted yet')}</div> : (
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                              {myPlaces.map(pl => { const b = statusBadge(pl.status); const led = placeLedger[pl.id]; const open = !!placeLedgerOpen[pl.id]; const canLedger = ['approved', 'withdrawn', 'hidden'].includes(pl.status) && pl.kind === 'merchant'; const busy = myPlaceBusyId === pl.id || merchantBusy; const ownerBtn = (bg, fg, border) => ({ background: bg, color: fg, border, borderRadius: 6, padding: '0.2rem 0.7rem', cursor: busy ? 'wait' : 'pointer', fontSize: '0.78rem', fontWeight: 700, whiteSpace: 'nowrap' }); return (
+                              {myPlaces.map(pl => { const b = statusBadge(pl.status); const led = placeLedger[pl.id]; const open = !!placeLedgerOpen[pl.id]; const canLedger = ['approved', 'withdrawn', 'hidden'].includes(pl.status) && pl.kind === 'merchant'; const busy = myPlaceBusyId === pl.id || merchantBusy; const ownerBtn = (bg, fg, border) => compactBtn(bg, fg, border, busy); return (
                                 <div key={pl.id} style={{ border: '1px solid #e2e8f0', borderRadius: 8, padding: '0.5rem 0.8rem', fontSize: '0.9rem' }}>
                                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
                                     <div style={{ color: '#1e293b' }}><b>{pl.name}</b> <span style={{ color: '#64748b' }}>· {pl.kind === 'merchant' ? `-${pl.discountPct}%` : (pl.kind === 'church' ? t('教會', 'Church') : t('機構', 'Organisation'))} · {pl.address}</span></div>
                                     <span style={{ display: 'flex', gap: '0.4rem', alignItems: 'center', flexWrap: 'wrap' }}>
                                       <button type="button" disabled={busy} onClick={() => startEditPlace(pl)} style={ownerBtn('transparent', '#334155', '1px solid #cbd5e1')}>
-                                        ✏️ {deleteArmedId === `place-edit-${pl.id}` ? t('再按一次會取代目前草稿', 'Tap again to replace the current draft') : t('編輯', 'Edit')}
+                                        ✏️ {t('編輯', 'Edit')}
                                       </button>
                                       {pl.status === 'withdrawn' ? (
                                         <button type="button" disabled={busy} onClick={() => ownerPlaceAction('relist', pl)} style={ownerBtn('#0d9488', '#fff', 'none')}>🔁 {t('重新上架', 'Re-list')}</button>
                                       ) : ['pending', 'approved', 'hidden'].includes(pl.status) && (
-                                        <button type="button" disabled={busy} onClick={() => { if (deleteArmedId !== `place-withdraw-${pl.id}`) { armDelete(`place-withdraw-${pl.id}`); return; } ownerPlaceAction('withdraw', pl); }} style={ownerBtn(deleteArmedId === `place-withdraw-${pl.id}` ? '#475569' : 'transparent', deleteArmedId === `place-withdraw-${pl.id}` ? '#fff' : '#475569', '1px solid #cbd5e1')}>
-                                          ⏸ {deleteArmedId === `place-withdraw-${pl.id}` ? t('再按一次確認下架', 'Tap again to withdraw') : t('下架', 'Withdraw')}
+                                        <button type="button" disabled={busy} onClick={async () => { if (await confirmDialog({ title: t('下架「{name}」？', 'Withdraw “{name}”?').replace('{name}', pl.name || ''), message: t('會從地圖上移除；已發出的折扣券仍可核銷，之後可以重新上架。', 'It leaves the map; coupons already issued can still be used, and you can re-list it later.'), confirmLabel: t('下架', 'Withdraw') })) ownerPlaceAction('withdraw', pl); }} style={ownerBtn('transparent', '#475569', '1px solid #cbd5e1')}>
+                                          ⏸ {t('下架', 'Withdraw')}
                                         </button>
                                       )}
                                       {!(pl.stats && Number(pl.stats.issued) > 0) && (
-                                        <button type="button" disabled={busy} onClick={() => { if (deleteArmedId !== `place-delete-${pl.id}`) { armDelete(`place-delete-${pl.id}`); return; } ownerPlaceAction('owner_delete', pl); }} style={ownerBtn(deleteArmedId === `place-delete-${pl.id}` ? '#b91c1c' : 'transparent', deleteArmedId === `place-delete-${pl.id}` ? '#fff' : '#b91c1c', '1px solid #fecaca')}>
-                                          🗑 {deleteArmedId === `place-delete-${pl.id}` ? t('再按一次確認刪除', 'Tap again to confirm') : t('刪除', 'Delete')}
+                                        <button type="button" disabled={busy} onClick={async () => { if (await confirmDialog({ title: t('刪除「{name}」的登記？', 'Delete the listing “{name}”?').replace('{name}', pl.name || ''), message: t('這筆登記會被刪除，無法復原。', 'This listing will be deleted. This can’t be undone.'), confirmLabel: t('刪除', 'Delete'), danger: true })) ownerPlaceAction('owner_delete', pl); }} style={ownerBtn('transparent', '#b91c1c', '1px solid #fecaca')}>
+                                          🗑 {t('刪除', 'Delete')}
                                         </button>
                                       )}
                                       {canLedger && <button type="button" onClick={() => togglePlaceLedger(pl.id)} style={{ background: open ? '#d97706' : '#fef3c7', color: open ? '#fff' : '#92400e', border: 'none', borderRadius: 6, padding: '0.2rem 0.7rem', cursor: 'pointer', fontWeight: 700, fontSize: '0.78rem' }}>📒 {t('收到的點數', 'Points received')}{pl.stats ? ` (${pl.stats.used || 0})` : ''}</button>}
