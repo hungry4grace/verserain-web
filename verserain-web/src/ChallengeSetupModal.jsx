@@ -58,6 +58,28 @@ export default function ChallengeSetupModal({ t, subtitle, value, onChange, onSt
     fontSize: '0.88rem', fontWeight: 600, cursor: 'pointer', textAlign: 'left',
   });
 
+  // Difficulty 0–3 = how many decoy blocks appear (distractionLevel in App.jsx):
+  // square grid 2×2 → 3×3 with 0–3 decoys, rain mode decoys more often. Voice
+  // mode has no decoys, so there it only changes the score bonus (×1.0–×1.3).
+  const difficultyName = (d) => [t('入門', 'Easy'), t('一般', 'Normal'), t('進階', 'Hard'), t('挑戰', 'Expert')][d] || String(d);
+  const difficultyDesc = (mode, d) => {
+    if (mode === 'voice_solo') return t('語音模式沒有干擾字，難度只影響分數加成。', 'Voice mode has no decoys; difficulty only changes the score bonus.');
+    if (mode === 'rain_solo') {
+      return [
+        t('只掉下正確的句子。', 'Only the right phrases fall.'),
+        t('偶爾會掉下一個干擾句。', 'A decoy phrase falls now and then.'),
+        t('干擾句比較常出現。', 'Decoy phrases fall more often.'),
+        t('干擾句最多，一次可能兩個。', 'The most decoys, sometimes two at once.'),
+      ][d];
+    }
+    return [
+      t('4 格，沒有干擾字。', '4 tiles, no decoys.'),
+      t('4 格，其中 1 格是干擾字。', '4 tiles, one of them a decoy.'),
+      t('9 格，其中 2 格是干擾字。', '9 tiles, two of them decoys.'),
+      t('9 格，其中 3 格是干擾字。', '9 tiles, three of them decoys.'),
+    ][d];
+  };
+
   return (
     <div
       style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 3000, padding: '1rem' }}
@@ -85,17 +107,21 @@ export default function ChallengeSetupModal({ t, subtitle, value, onChange, onSt
         </div>
 
         <div style={{ fontSize: '0.78rem', fontWeight: 700, color: '#94a3b8', letterSpacing: '0.05em', marginBottom: '0.4rem' }}>{t('難度', 'Difficulty')}</div>
-        <div style={{ display: 'flex', gap: '0.45rem', marginBottom: isVoice ? '1rem' : '1.2rem' }}>
+        <div style={{ display: 'flex', gap: '0.45rem', marginBottom: '0.45rem' }}>
           {[0, 1, 2, 3].map((d) => {
             const active = value.difficulty === d;
             return (
-              <button key={d} type="button" onClick={() => set({ difficulty: d })}
-                style={{ flex: 1, padding: '0.5rem 0', borderRadius: 10, border: active ? '2px solid #16a34a' : '1px solid #e2e8f0', background: active ? '#f0fdf4' : '#f8fafc', color: active ? '#15803d' : '#334155', fontSize: '0.95rem', fontWeight: 700, cursor: 'pointer' }}>
-                {d}
+              <button key={d} type="button" aria-pressed={active} data-testid={`challenge-difficulty-${d}`} onClick={() => set({ difficulty: d })}
+                style={{ flex: 1, minHeight: 44, padding: '0.4rem 0', borderRadius: 10, border: active ? '2px solid #16a34a' : '1px solid #e2e8f0', background: active ? '#f0fdf4' : '#f8fafc', color: active ? '#15803d' : '#334155', fontSize: '0.92rem', fontWeight: 700, cursor: 'pointer' }}>
+                {difficultyName(d)}
               </button>
             );
           })}
         </div>
+        <p data-testid="challenge-difficulty-desc" style={{ margin: isVoice ? '0 0 1rem' : '0 0 1.2rem', color: '#475569', fontSize: '0.85rem', lineHeight: 1.5 }}>
+          {difficultyDesc(value.mode, value.difficulty)}
+          {value.difficulty > 0 && <span style={{ color: '#15803d', fontWeight: 700 }}> · {t('分數 ×{n}', 'Score ×{n}').replace('{n}', (1 + value.difficulty * 0.1).toFixed(1))}</span>}
+        </p>
 
         {isVoice && (
           <button type="button" onClick={() => set({ noReadback: !value.noReadback })}
