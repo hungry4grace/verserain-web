@@ -32,6 +32,7 @@ export const LEGACY_FILES = [
   'src/pages/GardenPage.jsx',
   'src/pages/LeaderboardPage.jsx',
   'src/pages/SearchPage.jsx',
+  'src/pages/VerseSetsPage.jsx',
 ]
 
 const HEX = '/(^|[\\s(,:])#([0-9a-fA-F]{3,4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})\\b/'
