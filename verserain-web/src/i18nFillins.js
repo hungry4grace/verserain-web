@@ -1396,6 +1396,18 @@ export const he = {
   "關": "כבוי",
   "長輩模式": "מצב טקסט גדול",
   "字放大、按鈕變大、畫面比較安靜、朗讀慢一點。": "טקסט וכפתורים גדולים יותר, מסך רגוע יותר והקראה איטית יותר.",
+  "歡迎來到經文雨": "ברוכים הבאים ל-VerseRain",
+  "先確認你要用的語言和聖經譯本。": "קודם כול, בדקו את השפה ואת תרגום המקרא.",
+  "大字模式（長輩模式）": "מצב טקסט גדול",
+  "字和按鈕都放大，朗讀慢一點": "טקסט וכפתורים גדולים יותר, הקראה איטית יותר",
+  "聽一節經文": "האזינו לפסוק",
+  "再聽一次": "האזינו שוב",
+  "挑戰一次": "נסו אתגר",
+  "照順序點出這節經文的句子。完成後，你的園子會長出第一棵樹 🌱": "הקישו על חלקי הפסוק לפי הסדר. בסיום, העץ הראשון יצמח בגן שלכם 🌱",
+  "先逛逛": "הציצו קודם",
+  "略過": "דלג",
+  "第 {n} 步，共 3 步": "שלב {n} מתוך 3",
+  "登入後，你的樹和點數會保存在所有裝置。": "התחברו כדי לשמור את העצים והנקודות שלכם בכל המכשירים.",
 };
 
 export const fa = {
@@ -2773,6 +2785,18 @@ export const fa = {
   "關": "خاموش",
   "長輩模式": "حالت متن درشت",
   "字放大、按鈕變大、畫面比較安靜、朗讀慢一點。": "متن و دکمه‌ها بزرگ‌تر، صفحه آرام‌تر و خواندن کمی آهسته‌تر.",
+  "歡迎來到經文雨": "به VerseRain خوش آمدید",
+  "先確認你要用的語言和聖經譯本。": "اول زبان و ترجمهٔ کتاب مقدس خود را بررسی کنید.",
+  "大字模式（長輩模式）": "حالت متن درشت",
+  "字和按鈕都放大，朗讀慢一點": "متن و دکمه‌های بزرگ‌تر، خواندن آهسته‌تر",
+  "聽一節經文": "شنیدن یک آیه",
+  "再聽一次": "دوباره شنیدن",
+  "挑戰一次": "یک چالش را امتحان کنید",
+  "照順序點出這節經文的句子。完成後，你的園子會長出第一棵樹 🌱": "عبارت‌های این آیه را به ترتیب لمس کنید. وقتی تمام شد، اولین درخت باغ شما سبز می‌شود 🌱",
+  "先逛逛": "اول نگاهی بیندازید",
+  "略過": "رد کردن",
+  "第 {n} 步，共 3 步": "مرحلهٔ {n} از 3",
+  "登入後，你的樹和點數會保存在所有裝置。": "وارد شوید تا درخت‌ها و امتیازهایتان در همهٔ دستگاه‌ها ذخیره شود.",
 };
 
 export const ar = {
@@ -4567,6 +4591,18 @@ export const ar = {
   "設定": "الإعدادات",
   "長輩模式": "وضع الخط الكبير",
   "字放大、按鈕變大、畫面比較安靜、朗讀慢一點。": "نص وأزرار أكبر، وشاشة أهدأ، وقراءة أبطأ قليلًا.",
+  "歡迎來到經文雨": "مرحبًا بك في VerseRain",
+  "先確認你要用的語言和聖經譯本。": "أولًا، تأكّد من لغتك وترجمة الكتاب المقدس.",
+  "大字模式（長輩模式）": "وضع الخط الكبير",
+  "字和按鈕都放大，朗讀慢一點": "نص وأزرار أكبر، وقراءة أبطأ",
+  "聽一節經文": "استمع إلى آية",
+  "再聽一次": "استمع مرة أخرى",
+  "挑戰一次": "جرّب تحديًا",
+  "照順序點出這節經文的句子。完成後，你的園子會長出第一棵樹 🌱": "اضغط على مقاطع هذه الآية بالترتيب. عندما تنتهي، تنمو أول شجرة في حديقتك 🌱",
+  "先逛逛": "تجوّل أولًا",
+  "略過": "تخطي",
+  "第 {n} 步，共 3 步": "الخطوة {n} من 3",
+  "登入後，你的樹和點數會保存在所有裝置。": "سجّل الدخول لتُحفظ أشجارك ونقاطك على كل أجهزتك.",
 };
 
 export const ja = {
@@ -5932,6 +5968,18 @@ export const ja = {
   "關": "オフ",
   "長輩模式": "大きな文字モード",
   "字放大、按鈕變大、畫面比較安靜、朗讀慢一點。": "文字とボタンが大きくなり、画面が落ち着き、読み上げが少しゆっくりになります。",
+  "歡迎來到經文雨": "VerseRainへようこそ",
+  "先確認你要用的語言和聖經譯本。": "まず、使う言語と聖書の翻訳を確認しましょう。",
+  "大字模式（長輩模式）": "大きな文字モード",
+  "字和按鈕都放大，朗讀慢一點": "文字とボタンを大きく、読み上げをゆっくりに",
+  "聽一節經文": "聖句を聞く",
+  "再聽一次": "もう一度聞く",
+  "挑戰一次": "チャレンジしてみる",
+  "照順序點出這節經文的句子。完成後，你的園子會長出第一棵樹 🌱": "この聖句のフレーズを順番にタップしましょう。できたら、あなたの園に最初の木が育ちます 🌱",
+  "先逛逛": "まず見てみる",
+  "略過": "スキップ",
+  "第 {n} 步，共 3 步": "ステップ {n}/3",
+  "登入後，你的樹和點數會保存在所有裝置。": "ログインすると、木とポイントがすべての端末に保存されます。",
 };
 
 export const ko = {
@@ -7295,6 +7343,18 @@ export const ko = {
   "關": "꺼짐",
   "長輩模式": "큰 글씨 모드",
   "字放大、按鈕變大、畫面比較安靜、朗讀慢一點。": "글자와 버튼이 커지고, 화면이 차분해지며, 읽어 주는 속도가 조금 느려집니다.",
+  "歡迎來到經文雨": "VerseRain에 오신 것을 환영해요",
+  "先確認你要用的語言和聖經譯本。": "먼저 사용할 언어와 성경 번역본을 확인하세요.",
+  "大字模式（長輩模式）": "큰 글씨 모드",
+  "字和按鈕都放大，朗讀慢一點": "글자와 버튼은 크게, 읽기는 천천히",
+  "聽一節經文": "말씀 한 구절 듣기",
+  "再聽一次": "다시 듣기",
+  "挑戰一次": "도전해 보기",
+  "照順序點出這節經文的句子。完成後，你的園子會長出第一棵樹 🌱": "이 구절의 문구를 순서대로 눌러 보세요. 다 하면 정원에 첫 나무가 자라요 🌱",
+  "先逛逛": "먼저 둘러보기",
+  "略過": "건너뛰기",
+  "第 {n} 步，共 3 步": "{n}/3단계",
+  "登入後，你的樹和點數會保存在所有裝置。": "로그인하면 나무와 포인트가 모든 기기에 저장돼요.",
 };
 
 export const es = {
@@ -8674,6 +8734,18 @@ export const es = {
   "關": "No",
   "長輩模式": "Modo de letra grande",
   "字放大、按鈕變大、畫面比較安靜、朗讀慢一點。": "Texto y botones más grandes, pantalla más tranquila y lectura un poco más lenta.",
+  "歡迎來到經文雨": "Te damos la bienvenida a VerseRain",
+  "先確認你要用的語言和聖經譯本。": "Primero, revisa tu idioma y tu versión de la Biblia.",
+  "大字模式（長輩模式）": "Modo de letra grande",
+  "字和按鈕都放大，朗讀慢一點": "Letras y botones más grandes, lectura más lenta",
+  "聽一節經文": "Escucha un versículo",
+  "再聽一次": "Escuchar otra vez",
+  "挑戰一次": "Prueba un desafío",
+  "照順序點出這節經文的句子。完成後，你的園子會長出第一棵樹 🌱": "Toca las frases de este versículo en orden. Al terminar, tu jardín tendrá su primer árbol 🌱",
+  "先逛逛": "Explorar primero",
+  "略過": "Saltar",
+  "第 {n} 步，共 3 步": "Paso {n} de 3",
+  "登入後，你的樹和點數會保存在所有裝置。": "Inicia sesión para guardar tus árboles y tus puntos en todos tus dispositivos.",
 };
 
 export const tr = {
@@ -10053,6 +10125,18 @@ export const tr = {
   "關": "Kapalı",
   "長輩模式": "Büyük yazı modu",
   "字放大、按鈕變大、畫面比較安靜、朗讀慢一點。": "Daha büyük yazı ve düğmeler, daha sakin ekran ve biraz daha yavaş okuma.",
+  "歡迎來到經文雨": "VerseRain'e hoş geldin",
+  "先確認你要用的語言和聖經譯本。": "Önce dilini ve Kutsal Kitap çevirini kontrol et.",
+  "大字模式（長輩模式）": "Büyük yazı modu",
+  "字和按鈕都放大，朗讀慢一點": "Daha büyük yazı ve düğmeler, daha yavaş okuma",
+  "聽一節經文": "Bir ayet dinle",
+  "再聽一次": "Tekrar dinle",
+  "挑戰一次": "Bir meydan okuma dene",
+  "照順序點出這節經文的句子。完成後，你的園子會長出第一棵樹 🌱": "Bu ayetin parçalarına sırayla dokun. Bitirince bahçende ilk ağacın büyür 🌱",
+  "先逛逛": "Önce bir göz at",
+  "略過": "Atla",
+  "第 {n} 步，共 3 步": "Adım {n}/3",
+  "登入後，你的樹和點數會保存在所有裝置。": "Giriş yap, ağaçların ve puanların tüm cihazlarında saklansın.",
 };
 
 export const de = {
@@ -11432,6 +11516,18 @@ export const de = {
   "關": "Aus",
   "長輩模式": "Große Schrift",
   "字放大、按鈕變大、畫面比較安靜、朗讀慢一點。": "Größere Schrift und Tasten, ein ruhigerer Bildschirm und etwas langsameres Vorlesen.",
+  "歡迎來到經文雨": "Willkommen bei VerseRain",
+  "先確認你要用的語言和聖經譯本。": "Prüfe zuerst deine Sprache und Bibelübersetzung.",
+  "大字模式（長輩模式）": "Große Schrift",
+  "字和按鈕都放大，朗讀慢一點": "Größere Schrift und Tasten, langsameres Vorlesen",
+  "聽一節經文": "Einen Vers anhören",
+  "再聽一次": "Noch einmal anhören",
+  "挑戰一次": "Eine Herausforderung ausprobieren",
+  "照順序點出這節經文的句子。完成後，你的園子會長出第一棵樹 🌱": "Tippe die Teile dieses Verses der Reihe nach an. Danach wächst in deinem Garten der erste Baum 🌱",
+  "先逛逛": "Erst mal umschauen",
+  "略過": "Überspringen",
+  "第 {n} 步，共 3 步": "Schritt {n} von 3",
+  "登入後，你的樹和點數會保存在所有裝置。": "Melde dich an, damit deine Bäume und Punkte auf all deinen Geräten gespeichert bleiben.",
 };
 
 export const my = {
@@ -12811,6 +12907,18 @@ export const my = {
   "關": "ပိတ်",
   "長輩模式": "စာလုံးကြီးမုဒ်",
   "字放大、按鈕變大、畫面比較安靜、朗讀慢一點。": "စာလုံးနှင့် ခလုတ်များ ကြီးလာပြီး မျက်နှာပြင် ငြိမ်သက်ကာ ဖတ်ပြသည့်အမြန်နှုန်း အနည်းငယ် နှေးလာမည်။",
+  "歡迎來到經文雨": "VerseRain သို့ ကြိုဆိုပါသည်",
+  "先確認你要用的語言和聖經譯本。": "ဦးစွာ သင်အသုံးပြုမည့် ဘာသာစကားနှင့် သမ္မာကျမ်းစာ ဘာသာပြန်ကို စစ်ဆေးပါ။",
+  "大字模式（長輩模式）": "စာလုံးကြီးမုဒ်",
+  "字和按鈕都放大，朗讀慢一點": "စာလုံးနှင့် ခလုတ်များ ပိုကြီး၊ ဖတ်ပြခြင်း ပိုနှေး",
+  "聽一節經文": "ကျမ်းချက်တစ်ချက် နားထောင်ပါ",
+  "再聽一次": "ထပ်နားထောင်မည်",
+  "挑戰一次": "စိန်ခေါ်မှုတစ်ခု စမ်းကြည့်ပါ",
+  "照順序點出這節經文的句子。完成後，你的園子會長出第一棵樹 🌱": "ဤကျမ်းချက်၏ စကားစုများကို အစဉ်လိုက် နှိပ်ပါ။ ပြီးသွားလျှင် သင့်ဥယျာဉ်တွင် ပထမဆုံးသစ်ပင် ပေါက်လာပါမည် 🌱",
+  "先逛逛": "အရင် လှည့်ကြည့်မည်",
+  "略過": "ကျော်မည်",
+  "第 {n} 步，共 3 步": "အဆင့် {n} / 3",
+  "登入後，你的樹和點數會保存在所有裝置。": "ဝင်ရောက်ပါက သင့်သစ်ပင်များနှင့် အမှတ်များကို စက်အားလုံးတွင် သိမ်းဆည်းထားပါမည်။",
 };
 
 export const vi = {
@@ -14190,6 +14298,18 @@ export const vi = {
   "關": "Tắt",
   "長輩模式": "Chế độ chữ lớn",
   "字放大、按鈕變大、畫面比較安靜、朗讀慢一點。": "Chữ và nút to hơn, màn hình yên tĩnh hơn và đọc chậm hơn một chút.",
+  "歡迎來到經文雨": "Chào mừng bạn đến với VerseRain",
+  "先確認你要用的語言和聖經譯本。": "Trước tiên, hãy kiểm tra ngôn ngữ và bản dịch Kinh Thánh của bạn.",
+  "大字模式（長輩模式）": "Chế độ chữ lớn",
+  "字和按鈕都放大，朗讀慢一點": "Chữ và nút to hơn, đọc chậm hơn",
+  "聽一節經文": "Nghe một câu Kinh Thánh",
+  "再聽一次": "Nghe lại",
+  "挑戰一次": "Thử một thử thách",
+  "照順序點出這節經文的句子。完成後，你的園子會長出第一棵樹 🌱": "Chạm vào các cụm từ của câu này theo đúng thứ tự. Khi xong, khu vườn của bạn sẽ mọc cây đầu tiên 🌱",
+  "先逛逛": "Xem qua trước",
+  "略過": "Bỏ qua",
+  "第 {n} 步，共 3 步": "Bước {n}/3",
+  "登入後，你的樹和點數會保存在所有裝置。": "Đăng nhập để lưu cây và điểm của bạn trên mọi thiết bị.",
 };
 
 export const id = {
@@ -15797,6 +15917,18 @@ export const id = {
   "關": "Nonaktif",
   "長輩模式": "Mode huruf besar",
   "字放大、按鈕變大、畫面比較安靜、朗讀慢一點。": "Huruf dan tombol lebih besar, layar lebih tenang, dan pembacaan sedikit lebih lambat.",
+  "歡迎來到經文雨": "Selamat datang di VerseRain",
+  "先確認你要用的語言和聖經譯本。": "Pertama, periksa bahasa dan versi Alkitabmu.",
+  "大字模式（長輩模式）": "Mode huruf besar",
+  "字和按鈕都放大，朗讀慢一點": "Huruf dan tombol lebih besar, bacaan lebih lambat",
+  "聽一節經文": "Dengarkan satu ayat",
+  "再聽一次": "Dengarkan lagi",
+  "挑戰一次": "Coba satu tantangan",
+  "照順序點出這節經文的句子。完成後，你的園子會長出第一棵樹 🌱": "Ketuk frasa ayat ini sesuai urutan. Setelah selesai, pohon pertama akan tumbuh di tamanmu 🌱",
+  "先逛逛": "Lihat-lihat dulu",
+  "略過": "Lewati",
+  "第 {n} 步，共 3 步": "Langkah {n} dari 3",
+  "登入後，你的樹和點數會保存在所有裝置。": "Masuk agar pohon dan poinmu tersimpan di semua perangkatmu.",
 };
 
 export const ms = {
@@ -17608,6 +17740,18 @@ export const ms = {
   "關": "Mati",
   "長輩模式": "Mod huruf besar",
   "字放大、按鈕變大、畫面比較安靜、朗讀慢一點。": "Huruf dan butang lebih besar, skrin lebih tenang dan bacaan lebih perlahan sedikit.",
+  "歡迎來到經文雨": "Selamat datang ke VerseRain",
+  "先確認你要用的語言和聖經譯本。": "Mula-mula, semak bahasa dan versi Alkitab anda.",
+  "大字模式（長輩模式）": "Mod huruf besar",
+  "字和按鈕都放大，朗讀慢一點": "Huruf dan butang lebih besar, bacaan lebih perlahan",
+  "聽一節經文": "Dengar satu ayat",
+  "再聽一次": "Dengar lagi",
+  "挑戰一次": "Cuba satu cabaran",
+  "照順序點出這節經文的句子。完成後，你的園子會長出第一棵樹 🌱": "Ketik frasa ayat ini mengikut urutan. Setelah selesai, pokok pertama akan tumbuh di taman anda 🌱",
+  "先逛逛": "Lihat-lihat dahulu",
+  "略過": "Langkau",
+  "第 {n} 步，共 3 步": "Langkah {n} daripada 3",
+  "登入後，你的樹和點數會保存在所有裝置。": "Log masuk untuk menyimpan pokok dan mata anda di semua peranti anda.",
 };
 
 export const zhcn = {
@@ -19338,6 +19482,18 @@ export const zhcn = {
   "關": "关",
   "長輩模式": "长辈模式",
   "字放大、按鈕變大、畫面比較安靜、朗讀慢一點。": "字放大、按钮变大、画面比较安静、朗读慢一点。",
+  "歡迎來到經文雨": "欢迎来到经文雨",
+  "先確認你要用的語言和聖經譯本。": "先确认你要用的语言和圣经译本。",
+  "大字模式（長輩模式）": "大字模式（长辈模式）",
+  "字和按鈕都放大，朗讀慢一點": "字和按钮都放大，朗读慢一点",
+  "聽一節經文": "听一节经文",
+  "再聽一次": "再听一次",
+  "挑戰一次": "挑战一次",
+  "照順序點出這節經文的句子。完成後，你的園子會長出第一棵樹 🌱": "照顺序点出这节经文的句子。完成后，你的园子会长出第一棵树 🌱",
+  "先逛逛": "先逛逛",
+  "略過": "略过",
+  "第 {n} 步，共 3 步": "第 {n} 步，共 3 步",
+  "登入後，你的樹和點數會保存在所有裝置。": "登入后，你的树和点数会保存在所有设备。",
 };
 
 export const pt = {
@@ -20440,6 +20596,18 @@ export const pt = {
   "關": "Não",
   "長輩模式": "Modo de letra grande",
   "字放大、按鈕變大、畫面比較安靜、朗讀慢一點。": "Texto e botões maiores, tela mais tranquila e leitura um pouco mais lenta.",
+  "歡迎來到經文雨": "Boas-vindas ao VerseRain",
+  "先確認你要用的語言和聖經譯本。": "Primeiro, confira seu idioma e sua versão da Bíblia.",
+  "大字模式（長輩模式）": "Modo de letra grande",
+  "字和按鈕都放大，朗讀慢一點": "Letras e botões maiores, leitura mais lenta",
+  "聽一節經文": "Ouça um versículo",
+  "再聽一次": "Ouvir de novo",
+  "挑戰一次": "Experimente um desafio",
+  "照順序點出這節經文的句子。完成後，你的園子會長出第一棵樹 🌱": "Toque nos trechos deste versículo na ordem certa. Ao terminar, seu jardim ganha a primeira árvore 🌱",
+  "先逛逛": "Explorar primeiro",
+  "略過": "Pular",
+  "第 {n} 步，共 3 步": "Passo {n} de 3",
+  "登入後，你的樹和點數會保存在所有裝置。": "Entre para salvar suas árvores e seus pontos em todos os seus dispositivos.",
 };
 
 export const fr = {
@@ -21542,6 +21710,18 @@ export const fr = {
   "關": "Non",
   "長輩模式": "Mode grands caractères",
   "字放大、按鈕變大、畫面比較安靜、朗讀慢一點。": "Texte et boutons plus grands, écran plus calme et lecture un peu plus lente.",
+  "歡迎來到經文雨": "Bienvenue sur VerseRain",
+  "先確認你要用的語言和聖經譯本。": "Vérifie d’abord ta langue et ta version de la Bible.",
+  "大字模式（長輩模式）": "Mode grands caractères",
+  "字和按鈕都放大，朗讀慢一點": "Texte et boutons plus grands, lecture plus lente",
+  "聽一節經文": "Écoute un verset",
+  "再聽一次": "Réécouter",
+  "挑戰一次": "Essaie un défi",
+  "照順序點出這節經文的句子。完成後，你的園子會長出第一棵樹 🌱": "Touche les morceaux de ce verset dans l’ordre. Une fois fini, ton jardin fera pousser son premier arbre 🌱",
+  "先逛逛": "Explorer d’abord",
+  "略過": "Passer",
+  "第 {n} 步，共 3 步": "Étape {n} sur 3",
+  "登入後，你的樹和點數會保存在所有裝置。": "Connecte-toi pour garder tes arbres et tes points sur tous tes appareils.",
 };
 
 export const ru = {
@@ -22644,6 +22824,18 @@ export const ru = {
   "關": "Выкл",
   "長輩模式": "Крупный шрифт",
   "字放大、按鈕變大、畫面比較安靜、朗讀慢一點。": "Крупнее текст и кнопки, спокойнее экран и чуть медленнее чтение вслух.",
+  "歡迎來到經文雨": "Добро пожаловать в VerseRain",
+  "先確認你要用的語言和聖經譯本。": "Сначала проверь язык и перевод Библии.",
+  "大字模式（長輩模式）": "Крупный шрифт",
+  "字和按鈕都放大，朗讀慢一點": "Крупнее текст и кнопки, чтение медленнее",
+  "聽一節經文": "Послушай стих",
+  "再聽一次": "Послушать ещё раз",
+  "挑戰一次": "Пройди испытание",
+  "照順序點出這節經文的句子。完成後，你的園子會長出第一棵樹 🌱": "Нажимай на части этого стиха по порядку. Когда закончишь, в твоём саду вырастет первое дерево 🌱",
+  "先逛逛": "Сначала осмотреться",
+  "略過": "Пропустить",
+  "第 {n} 步，共 3 步": "Шаг {n} из 3",
+  "登入後，你的樹和點數會保存在所有裝置。": "Войди, чтобы твои деревья и очки сохранились на всех устройствах.",
 };
 
 export const hi = {
@@ -23746,6 +23938,18 @@ export const hi = {
   "關": "बंद",
   "長輩模式": "बड़े अक्षर मोड",
   "字放大、按鈕變大、畫面比較安靜、朗讀慢一點。": "बड़े अक्षर और बटन, शांत स्क्रीन और थोड़ा धीमा पढ़ना।",
+  "歡迎來到經文雨": "VerseRain में आपका स्वागत है",
+  "先確認你要用的語言和聖經譯本。": "पहले अपनी भाषा और बाइबल अनुवाद जाँच लें।",
+  "大字模式（長輩模式）": "बड़े अक्षर मोड",
+  "字和按鈕都放大，朗讀慢一點": "अक्षर और बटन बड़े, पढ़ना थोड़ा धीमा",
+  "聽一節經文": "एक वचन सुनें",
+  "再聽一次": "फिर से सुनें",
+  "挑戰一次": "एक चुनौती आज़माएँ",
+  "照順序點出這節經文的句子。完成後，你的園子會長出第一棵樹 🌱": "इस वचन के वाक्यांशों को क्रम से टैप करें। पूरा होने पर आपके बगीचे में पहला पेड़ उगेगा 🌱",
+  "先逛逛": "पहले घूमकर देखें",
+  "略過": "छोड़ें",
+  "第 {n} 步，共 3 步": "चरण {n} / 3",
+  "登入後，你的樹和點數會保存在所有裝置。": "लॉगिन करें ताकि आपके पेड़ और पॉइंट सभी डिवाइस पर सहेजे रहें।",
 };
 
 // Khmer (Cambodian) — full UI coverage, machine-translated in bulk from the
@@ -25478,6 +25682,18 @@ export const km = {
   "設定": "ការកំណត់",
   "長輩模式": "របៀបអក្សរធំ",
   "字放大、按鈕變大、畫面比較安靜、朗讀慢一點。": "អក្សរ និងប៊ូតុងធំជាងមុន អេក្រង់ស្ងប់ជាងមុន ហើយការអានយឺតបន្តិច។",
+  "歡迎來到經文雨": "សូមស្វាគមន៍មកកាន់ភ្លៀងខគម្ពីរ",
+  "先確認你要用的語言和聖經譯本。": "ជាដំបូង សូមពិនិត្យភាសា និងកំណែព្រះគម្ពីររបស់អ្នក។",
+  "大字模式（長輩模式）": "របៀបអក្សរធំ",
+  "字和按鈕都放大，朗讀慢一點": "អក្សរ និងប៊ូតុងធំជាងមុន អានយឺតជាងមុន",
+  "聽一節經文": "ស្តាប់ខគម្ពីរមួយ",
+  "再聽一次": "ស្តាប់ម្តងទៀត",
+  "挑戰一次": "សាកល្បងបញ្ចោទម្តង",
+  "照順序點出這節經文的句子。完成後，你的園子會長出第一棵樹 🌱": "ចុចឃ្លានៃខគម្ពីរនេះតាមលំដាប់។ ពេលបញ្ចប់ សួនច្បាររបស់អ្នកនឹងដុះដើមឈើដំបូង 🌱",
+  "先逛逛": "មើលលេងសិន",
+  "略過": "រំលង",
+  "第 {n} 步，共 3 步": "ជំហានទី {n} នៃ 3",
+  "登入後，你的樹和點數會保存在所有裝置。": "ចូល ដើម្បីរក្សាទុកដើមឈើ និងពិន្ទុរបស់អ្នកនៅលើឧបករណ៍ទាំងអស់។",
 };
 
 const I18N_FILLINS = { he, fa, ar, ja, ko, es, tr, de, my, vi, id, ms, zhcn, pt, fr, ru, hi, km };

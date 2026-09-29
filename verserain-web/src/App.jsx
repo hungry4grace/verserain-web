@@ -7,6 +7,7 @@ import BottomNav from './BottomNav.jsx';
 import { navTabOf } from './navTabs.js';
 import TodayPage from './TodayPage.jsx';
 import SettingsPage from './SettingsPage.jsx';
+import Onboarding from './Onboarding.jsx';
 import { CATALOG as VOUCHER_CATALOG, DEFAULT_VALUE as VOUCHER_DEFAULTS } from '../api/_lib/rewardCatalog.js';
 import confetti from 'canvas-confetti';
 import usePartySocket from 'partysocket/react';
@@ -766,6 +767,20 @@ const INITIAL_VERIFY_CODE = (() => {
     return code || sessionStorage.getItem('verserain_verify_code') || '';
   } catch { return ''; }
 })();
+// First run: nothing saved yet and no deep link (shared set, challenge, room…)
+// → show the three-step onboarding. Read at module load, before App writes its
+// first settings. Anyone who already used the app is marked done silently.
+const FIRST_RUN = (() => {
+  try {
+    if (localStorage.getItem('verserain_onboarded')) return false;
+    const used = localStorage.getItem('verseRain_version') || localStorage.getItem('verserain_player_name') || localStorage.getItem('verserain_player_email');
+    if (used) { localStorage.setItem('verserain_onboarded', '1'); return false; }
+    const deepHash = window.location.hash && !/^#\/?(lobby)?$/.test(window.location.hash);
+    const extraParams = [...new URLSearchParams(window.location.search).keys()].filter(k => !['ref', 'lang', 'iosApp'].includes(k));
+    return !deepHash && extraParams.length === 0;
+  } catch { return false; }
+})();
+
 function parseRoute(hash) {
   const seg = String(hash || '').replace(/^#\/?/, '').split('/').filter(Boolean);
   const tab = ROUTE_TABS.includes(seg[0]) ? seg[0] : 'lobby';
@@ -18899,6 +18914,11 @@ export default function App() {
   // app before asking for anything), never after an explicit refusal, and
   // "remind me later" snoozes it for 7 days.
   const [showPushPrompt, setShowPushPrompt] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(FIRST_RUN);
+  const finishOnboarding = () => {
+    try { localStorage.setItem('verserain_onboarded', '1'); } catch { /* best effort */ }
+    setShowOnboarding(false);
+  };
   // Deep-link auto-start gate: holds { run } when a ?startSet deep link is
   // ready to launch but the page hasn't seen a user gesture yet (Chrome
   // blocks speechSynthesis until then). One tap unlocks audio + launches.
@@ -25787,7 +25807,7 @@ export default function App() {
                     verserain
                   </div>
                   <div className="app-brand-version" style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', marginTop: '4px', marginLeft: '2px' }}>
-                    v4.0.132
+                    v4.0.133
                   </div>
                 </div>
                 <div ref={langPickerRef} className="app-lang-control" style={{ position: 'relative' }}>
@@ -31877,6 +31897,12 @@ export default function App() {
                         setMainTab('garden');
                       }}>{t('看我的樹', 'See my tree')}</Button>
                   )}
+                  {campaignQueue === null && !userEmail && (
+                    <div data-testid="result-signup" style={{ width: '100%', maxWidth: '350px', margin: 'clamp(0.6rem, 2vh, 1rem) auto 0', padding: 'var(--space-3) var(--space-4)', borderRadius: 'var(--radius-md)', background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', color: '#e2e8f0', display: 'flex', alignItems: 'center', gap: 'var(--space-3)', flexWrap: 'wrap' }}>
+                      <span style={{ flex: '1 1 10rem', lineHeight: 1.5 }}>{t('登入後，你的樹和點數會保存在所有裝置。', 'Log in to keep your trees and points on all your devices.')}</span>
+                      <Button variant="secondary" size="sm" onClick={() => setShowLoginModal('signup')}>{t('申請帳號', 'Sign Up')}</Button>
+                    </div>
+                  )}
                   {/* Home and Play Again buttons placed HERE — always visible above the leaderboard */}
                   {campaignQueue === null && (
                     <div style={{ display: 'flex', gap: '1rem', width: '100%', maxWidth: '350px', margin: 'clamp(0.6rem, 2vh, 1rem) auto' }}>
@@ -32751,7 +32777,7 @@ export default function App() {
           </div>
           );
         })()}
-        {showPushPrompt && !deepLinkStartGate && (
+        {showPushPrompt && !deepLinkStartGate && !showOnboarding && gameState === 'menu' && (
           <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.6)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1100, padding: '1rem' }} onClick={(e) => { if (e.target === e.currentTarget) snoozePushPrompt(); }}>
             <div style={{ background: '#fff', borderRadius: '14px', padding: '1.8rem 1.6rem', width: '100%', maxWidth: '420px', boxShadow: '0 20px 40px rgba(0,0,0,0.18)', textAlign: 'center' }}>
               <div style={{ fontSize: '2.4rem', marginBottom: '0.6rem' }}>🌧️</div>
@@ -33500,6 +33526,29 @@ export default function App() {
           <div style={{ position: 'fixed', top: 0, left: 0, right: 0, backgroundColor: '#f59e0b', color: '#1e293b', padding: '6px 16px', textAlign: 'center', zIndex: 10000, fontSize: '0.85rem', fontWeight: 600 }}>
             {t('重新連線中…', 'Reconnecting…')}
           </div>
+        )}
+
+        {showOnboarding && gameState === 'menu' && (
+          <Onboarding
+            t={t}
+            versions={BIBLE_LANGUAGE_OPTIONS}
+            version={version}
+            onVersion={(v) => handleVersionChange(v)}
+            elderMode={elderMode}
+            onElderMode={setElderMode}
+            verse={displayedDailyVerse}
+            onListen={(v) => { if (v?.text) speakText(v.text, 1.0, getVoiceLangForVersion(version)); }}
+            onChallenge={(v) => {
+              if (!v) return;
+              stopSpeechIfActive();
+              finishOnboarding();
+              // The easiest game, no mode / difficulty questions first.
+              playModeRef.current = 'square_solo';
+              distractionLevelRef.current = 0;
+              challengeVerseFromReader(v, { mode: 'square_solo', difficulty: 0 });
+            }}
+            onFinish={() => { stopSpeechIfActive(); finishOnboarding(); }}
+          />
         )}
 
         {/* Toasts and confirm dialogs (src/ui) */}
