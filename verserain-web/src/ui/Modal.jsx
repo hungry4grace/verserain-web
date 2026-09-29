@@ -1,6 +1,7 @@
 // Modal — the shared dialog frame: title on the left, close on the top right,
-// closes on the scrim, on Esc and on the ✕. Rendered into <body> so no parent
-// overflow or z-index can clip it.
+// closes on the scrim, on Esc and on the ✕. Portalled to the app's root
+// wrapper ([data-ui-root], which carries lang / dir / the per-language font
+// stack) so no parent overflow or z-index can clip it; <body> as a fallback.
 import { useEffect, useId, useLayoutEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
@@ -52,6 +53,6 @@ export default function Modal({ open, title, onClose, closeLabel = 'Close', foot
         {footer && <div className="ui-modal__footer">{footer}</div>}
       </div>
     </div>,
-    document.body,
+    document.querySelector('[data-ui-root]') || document.body,
   );
 }
