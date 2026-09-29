@@ -1338,6 +1338,9 @@ export const he = {
   "分享連結": "קישור לשיתוף",
   "確定": "אישור",
   "知道了": "הבנתי",
+  "刪除經文組？": "למחוק את אוסף הפסוקים?",
+  "「{title}」會被刪除，其他人也看不到了。這無法復原。": "„{title}” יימחק ואף אחד אחר לא יראה אותו. אי אפשר לבטל זאת.",
+  "已儲存「{title}」": "„{title}” נשמר",
 };
 
 export const fa = {
@@ -2657,6 +2660,9 @@ export const fa = {
   "分享連結": "پیوند اشتراک‌گذاری",
   "確定": "تأیید",
   "知道了": "متوجه شدم",
+  "刪除經文組？": "این مجموعه آیات حذف شود؟",
+  "「{title}」會被刪除，其他人也看不到了。這無法復原。": "«{title}» حذف می‌شود و دیگران هم دیگر آن را نمی‌بینند. این کار برگشت‌پذیر نیست.",
+  "已儲存「{title}」": "«{title}» ذخیره شد",
 };
 
 export const ar = {
@@ -4392,6 +4398,9 @@ export const ar = {
   "分享連結": "رابط المشاركة",
   "確定": "موافق",
   "知道了": "فهمت",
+  "刪除經文組？": "حذف مجموعة الآيات؟",
+  "「{title}」會被刪除，其他人也看不到了。這無法復原。": "سيتم حذف «{title}» ولن يراها أحد بعد الآن. لا يمكن التراجع عن ذلك.",
+  "已儲存「{title}」": "تم حفظ «{title}»",
 };
 
 export const ja = {
@@ -5699,6 +5708,9 @@ export const ja = {
   "分享連結": "共有リンク",
   "確定": "OK",
   "知道了": "わかりました",
+  "刪除經文組？": "聖句セットを削除しますか？",
+  "「{title}」會被刪除，其他人也看不到了。這無法復原。": "「{title}」は削除され、他の人にも表示されなくなります。元に戻せません。",
+  "已儲存「{title}」": "「{title}」を保存しました",
 };
 
 export const ko = {
@@ -7004,6 +7016,9 @@ export const ko = {
   "分享連結": "공유 링크",
   "確定": "확인",
   "知道了": "알겠습니다",
+  "刪除經文組？": "구절 세트를 삭제할까요?",
+  "「{title}」會被刪除，其他人也看不到了。這無法復原。": "「{title}」이(가) 삭제되며 다른 사람에게도 더 이상 보이지 않습니다. 되돌릴 수 없습니다.",
+  "已儲存「{title}」": "「{title}」을(를) 저장했습니다",
 };
 
 export const es = {
@@ -8325,6 +8340,9 @@ export const es = {
   "分享連結": "Enlace para compartir",
   "確定": "Aceptar",
   "知道了": "Entendido",
+  "刪除經文組？": "¿Eliminar este conjunto?",
+  "「{title}」會被刪除，其他人也看不到了。這無法復原。": "«{title}» se eliminará y nadie más podrá verlo. No se puede deshacer.",
+  "已儲存「{title}」": "Se guardó «{title}»",
 };
 
 export const tr = {
@@ -9646,6 +9664,9 @@ export const tr = {
   "分享連結": "Paylaşım bağlantısı",
   "確定": "Tamam",
   "知道了": "Anladım",
+  "刪除經文組？": "Bu ayet seti silinsin mi?",
+  "「{title}」會被刪除，其他人也看不到了。這無法復原。": "“{title}” silinecek ve başkaları da artık göremeyecek. Bu işlem geri alınamaz.",
+  "已儲存「{title}」": "“{title}” kaydedildi",
 };
 
 export const de = {
@@ -10967,6 +10988,9 @@ export const de = {
   "分享連結": "Link zum Teilen",
   "確定": "OK",
   "知道了": "Verstanden",
+  "刪除經文組？": "Diese Verssammlung löschen?",
+  "「{title}」會被刪除，其他人也看不到了。這無法復原。": "„{title}“ wird gelöscht und ist für niemanden mehr sichtbar. Das kann nicht rückgängig gemacht werden.",
+  "已儲存「{title}」": "„{title}“ gespeichert",
 };
 
 export const my = {
@@ -12288,6 +12312,9 @@ export const my = {
   "分享連結": "မျှဝေရန် လင့်ခ်",
   "確定": "အိုကေ",
   "知道了": "နားလည်ပါပြီ",
+  "刪除經文組？": "ဤကျမ်းချက်စုကို ဖျက်မလား။",
+  "「{title}」會被刪除，其他人也看不到了。這無法復原。": "「{title}」ကို ဖျက်ပါမည်၊ အခြားသူများလည်း မမြင်ရတော့ပါ။ ပြန်ပြင်၍ မရပါ။",
+  "已儲存「{title}」": "「{title}」ကို သိမ်းဆည်းပြီးပါပြီ",
 };
 
 export const vi = {
@@ -13609,6 +13636,9 @@ export const vi = {
   "分享連結": "Liên kết chia sẻ",
   "確定": "OK",
   "知道了": "Đã hiểu",
+  "刪除經文組？": "Xóa bộ câu Kinh Thánh này?",
+  "「{title}」會被刪除，其他人也看不到了。這無法復原。": "«{title}» sẽ bị xóa và người khác cũng không thấy nữa. Không thể hoàn tác.",
+  "已儲存「{title}」": "Đã lưu «{title}»",
 };
 
 export const id = {
@@ -15158,6 +15188,9 @@ export const id = {
   "分享連結": "Tautan berbagi",
   "確定": "OK",
   "知道了": "Mengerti",
+  "刪除經文組？": "Hapus set ayat ini?",
+  "「{title}」會被刪除，其他人也看不到了。這無法復原。": "“{title}” akan dihapus dan tidak terlihat lagi oleh orang lain. Tindakan ini tidak bisa dibatalkan.",
+  "已儲存「{title}」": "“{title}” tersimpan",
 };
 
 export const ms = {
@@ -16911,6 +16944,9 @@ export const ms = {
   "分享連結": "Pautan kongsi",
   "確定": "OK",
   "知道了": "Faham",
+  "刪除經文組？": "Padam set ayat ini?",
+  "「{title}」會被刪除，其他人也看不到了。這無法復原。": "“{title}” akan dipadam dan tidak lagi kelihatan kepada orang lain. Tindakan ini tidak boleh dibuat asal.",
+  "已儲存「{title}」": "“{title}” disimpan",
 };
 
 export const zhcn = {
@@ -18583,6 +18619,9 @@ export const zhcn = {
   "分享連結": "分享链接",
   "確定": "确定",
   "知道了": "知道了",
+  "刪除經文組？": "删除经文组？",
+  "「{title}」會被刪除，其他人也看不到了。這無法復原。": "「{title}」会被删除，其他人也看不到了。这无法复原。",
+  "已儲存「{title}」": "已保存「{title}」",
 };
 
 export const pt = {
@@ -19626,6 +19665,9 @@ export const pt = {
   "分享連結": "Link para compartilhar",
   "確定": "OK",
   "知道了": "Entendi",
+  "刪除經文組？": "Excluir este conjunto?",
+  "「{title}」會被刪除，其他人也看不到了。這無法復原。": "“{title}” será excluído e ninguém mais poderá vê-lo. Isso não pode ser desfeito.",
+  "已儲存「{title}」": "“{title}” salvo",
 };
 
 export const fr = {
@@ -20669,6 +20711,9 @@ export const fr = {
   "分享連結": "Lien de partage",
   "確定": "OK",
   "知道了": "Compris",
+  "刪除經文組？": "Supprimer cet ensemble ?",
+  "「{title}」會被刪除，其他人也看不到了。這無法復原。": "« {title} » sera supprimé et plus personne ne pourra le voir. Action irréversible.",
+  "已儲存「{title}」": "« {title} » enregistré",
 };
 
 export const ru = {
@@ -21712,6 +21757,9 @@ export const ru = {
   "分享連結": "Ссылка для отправки",
   "確定": "ОК",
   "知道了": "Понятно",
+  "刪除經文組？": "Удалить этот набор стихов?",
+  "「{title}」會被刪除，其他人也看不到了。這無法復原。": "«{title}» будет удалён и больше никто его не увидит. Это нельзя отменить.",
+  "已儲存「{title}」": "«{title}» сохранён",
 };
 
 export const hi = {
@@ -22755,6 +22803,9 @@ export const hi = {
   "分享連結": "साझा करने का लिंक",
   "確定": "ठीक है",
   "知道了": "समझ लिया",
+  "刪除經文組？": "यह वचन समूह हटाएँ?",
+  "「{title}」會被刪除，其他人也看不到了。這無法復原。": "“{title}” हटा दिया जाएगा और कोई और भी इसे नहीं देख पाएगा। इसे वापस नहीं किया जा सकता।",
+  "已儲存「{title}」": "“{title}” सहेजा गया",
 };
 
 // Khmer (Cambodian) — full UI coverage, machine-translated in bulk from the
@@ -24426,6 +24477,9 @@ export const km = {
   "分享連結": "តំណចែករំលែក",
   "確定": "យល់ព្រម",
   "知道了": "យល់ហើយ",
+  "刪除經文組？": "លុបសំណុំខគម្ពីរនេះ?",
+  "「{title}」會被刪除，其他人也看不到了。這無法復原。": "「{title}」នឹងត្រូវលុប ហើយអ្នកដទៃក៏មើលមិនឃើញទៀតដែរ។ មិនអាចត្រឡប់វិញបានទេ។",
+  "已儲存「{title}」": "បានរក្សាទុក「{title}」",
 };
 
 const I18N_FILLINS = { he, fa, ar, ja, ko, es, tr, de, my, vi, id, ms, zhcn, pt, fr, ru, hi, km };
