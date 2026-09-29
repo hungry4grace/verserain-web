@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { expandSameChapterRefs } from './lib/expandSameChapterRefs.js';
 import { toSpeechText } from './lib/speechText.js';
-import { Play, Pause, RotateCcw, Lightbulb, Heart, Zap, Trophy, Crown, Star, Home, XCircle, Headphones, Music, VolumeX, Search, Share2, Dices, Mic, MicOff, Users, CloudRain, Info, Edit, TreePine, Gamepad2, Map, Settings, Library, Volume2, Shuffle, Swords, ShoppingBasket, Apple, Mail, Lock, Sprout, Leaf, Hourglass, Frown, X, Camera, Square, Copy, ArrowRightLeft, MessageCircle, Languages, ChevronUp, ChevronDown, Check, Gift, Store, Ticket, MapPin, BookOpen } from 'lucide-react';
-import { UiHost, toast, confirmDialog, alertDialog } from './ui';
+import { Play, Pause, RotateCcw, Lightbulb, Heart, Zap, Trophy, Crown, Star, Home, XCircle, Headphones, Music, VolumeX, Search, Share2, Dices, Mic, MicOff, Users, CloudRain, Info, Edit, TreePine, Gamepad2, Map, Settings, Library, Volume2, Shuffle, Swords, ShoppingBasket, Apple, Mail, Lock, Sprout, Leaf, Hourglass, Frown, X, Camera, Square, Copy, ArrowRightLeft, MessageCircle, Languages, ChevronUp, ChevronDown, Check, Gift, Store, Ticket, MapPin, BookOpen, Plus, Save, Trash2 } from 'lucide-react';
+import { UiHost, Button, IconButton, toast, confirmDialog, alertDialog } from './ui';
 import { CATALOG as VOUCHER_CATALOG, DEFAULT_VALUE as VOUCHER_DEFAULTS } from '../api/_lib/rewardCatalog.js';
 import confetti from 'canvas-confetti';
 import usePartySocket from 'partysocket/react';
@@ -25742,7 +25742,7 @@ export default function App() {
                     verserain
                   </div>
                   <div className="app-brand-version" style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', marginTop: '4px', marginLeft: '2px' }}>
-                    v4.0.121
+                    v4.0.122
                   </div>
                 </div>
                 <div ref={langPickerRef} className="app-lang-control" style={{ position: 'relative' }}>
@@ -26438,9 +26438,9 @@ export default function App() {
                       <p style={{ color: '#64748b', marginBottom: '2rem', maxWidth: '400px', margin: '0 auto 2rem', lineHeight: '1.6' }}>
                         {t("登入你的帳號後，就能自由建立、編輯並分享自己的經文組。", "Once you sign in, you can freely create, edit, and share your own verse sets.")}
                       </p>
-                      <button type="button" onClick={() => setShowLoginModal('login')} style={{ background: '#3b82f6', color: 'white', border: 'none', padding: '0.8rem 2rem', borderRadius: '8px', fontWeight: 'bold', fontSize: '1.1rem', cursor: 'pointer', boxShadow: '0 4px 6px rgba(59, 130, 246, 0.25)' }}>
+                      <Button size="lg" onClick={() => setShowLoginModal('login')}>
                         {t("登入", "Log In")}
-                      </button>
+                      </Button>
                     </div>
                   ) : (
                     <div>
@@ -26448,7 +26448,7 @@ export default function App() {
                         <div>
                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
                             <h3 style={{ margin: 0, color: '#3b82f6' }}>{editingCustomSet.id ? t("編輯經文組", "Edit Set") : t("新增經文組", "New Set")}</h3>
-                            <button type="button" onClick={() => setEditingCustomSet(null)} style={{ background: 'transparent', border: 'none', color: '#64748b', cursor: 'pointer', fontWeight: 'bold', display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }}><X size={16} /> {t("取消", "Cancel")}</button>
+                            <Button variant="text" size="sm" icon={<X size={18} />} onClick={() => setEditingCustomSet(null)}>{t("取消", "Cancel")}</Button>
                           </div>
 
                           <div style={{ marginBottom: '1rem' }}>
@@ -26943,12 +26943,12 @@ export default function App() {
                                   )}
                                   <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.6rem', marginTop: '1rem', alignItems: 'center' }}>
                                     {bulkImportState.busy && <span style={{ color: '#64748b', fontSize: '0.85rem' }}>{t('抓取中… {progress}', 'Fetching… {progress}').replace('{progress}', String(bulkImportState.progress))}</span>}
-                                    <button type="button" disabled={bulkImportState.busy} onClick={() => setBulkImportState(null)} style={{ background: '#f1f5f9', color: '#64748b', border: '1px solid #cbd5e1', padding: '0.55rem 1.1rem', borderRadius: 8, cursor: 'pointer', fontWeight: 'bold' }}>
+                                    <Button variant="secondary" disabled={bulkImportState.busy} onClick={() => setBulkImportState(null)}>
                                       {t('取消', 'Cancel')}
-                                    </button>
-                                    <button type="button" disabled={bulkImportState.busy || !bulkImportState.text.trim()} onClick={runBulkImport} style={{ background: '#3b82f6', color: '#fff', border: 'none', padding: '0.55rem 1.4rem', borderRadius: 8, cursor: 'pointer', fontWeight: 'bold' }}>
+                                    </Button>
+                                    <Button loading={bulkImportState.busy} disabled={!bulkImportState.text.trim()} onClick={runBulkImport}>
                                       {bulkImportState.busy ? t('匯入中…', 'Importing…') : t('匯入', 'Import')}
-                                    </button>
+                                    </Button>
                                   </div>
                                 </div>
                               </div>
@@ -26962,33 +26962,38 @@ export default function App() {
 
                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem', marginTop: '2rem' }}>
                             {editingCustomSet.id ? (
-                              <button type="button" onClick={() => {
-                                // Two-tap confirm — window.confirm is dead inside the iOS App.
-                                if (deleteArmedId !== editingCustomSet.id) { armDelete(editingCustomSet.id); return; }
-                                setDeleteArmedId(null);
+                              <Button variant="danger" icon={<Trash2 size={18} />} onClick={async () => {
+                                const doomed = editingCustomSet;
+                                const ok = await confirmDialog({
+                                  title: t('刪除經文組？', 'Delete this set?'),
+                                  message: t('「{title}」會被刪除，其他人也看不到了。這無法復原。', '“{title}” will be deleted and no one else will see it. This can’t be undone.').replace('{title}', doomed.title || t('未命名經文組', 'Untitled set')),
+                                  confirmLabel: t('刪除', 'Delete'),
+                                  danger: true,
+                                });
+                                if (!ok) return;
 
                                 // Remove from local custom sets + localStorage
-                                const updatedSets = customVerseSets.filter(s => s.id !== editingCustomSet.id);
+                                const updatedSets = customVerseSets.filter(s => s.id !== doomed.id);
                                 setCustomVerseSets(updatedSets);
                                 localStorage.setItem('verseRain_custom_sets', JSON.stringify(updatedSets));
 
                                 // If published, also remove from PartyKit
-                                if (publishedVerseSets.some(p => p.id === editingCustomSet.id)) {
+                                if (publishedVerseSets.some(p => p.id === doomed.id)) {
                                   fetch("https://verserain-party.hungry4grace.partykit.dev/parties/main/global-auth-db/custom-sets", {
                                     method: "DELETE",
                                     headers: { "Content-Type": "application/json" },
-                                    body: JSON.stringify({ id: editingCustomSet.id, adminEmail: userEmail, adminName: playerName })
+                                    body: JSON.stringify({ id: doomed.id, adminEmail: userEmail, adminName: playerName })
                                   }).catch(e => console.error("Delete-from-published failed", e));
-                                  setPublishedVerseSets(prev => prev.filter(p => p.id !== editingCustomSet.id));
+                                  setPublishedVerseSets(prev => prev.filter(p => p.id !== doomed.id));
                                 }
 
                                 toast.success(t('經文組已刪除', 'Set deleted'));
                                 setEditingCustomSet(null);
-                              }} style={{ background: deleteArmedId === editingCustomSet.id ? '#b91c1c' : '#ef4444', color: 'white', border: deleteArmedId === editingCustomSet.id ? '2px solid #fecaca' : 'none', padding: '0.8rem 1.5rem', borderRadius: '6px', fontWeight: 'bold', fontSize: '1rem', cursor: 'pointer' }}>
-                                {deleteArmedId === editingCustomSet.id ? t('再按一次確認刪除', 'Tap again to confirm') : t("刪除經文組", "Delete Set")}
-                              </button>
+                              }} data-testid="set-editor-delete">
+                                {t("刪除經文組", "Delete Set")}
+                              </Button>
                             ) : <span />}
-                            <button type="button" onClick={() => {
+                            <Button size="lg" icon={<Save size={20} />} data-testid="set-editor-save" onClick={() => {
                               if (!editingCustomSet.title) return toast.error(t("請填寫標題", "Please fill in title"));
                               if (editingCustomSet.verses.length === 0) return toast.error(t("請至少新增一節經文", "Please add at least one verse"));
 
@@ -27068,18 +27073,19 @@ export default function App() {
                               }
 
                               setEditingCustomSet(null);
-                            }} style={{ background: '#10b981', color: 'white', border: 'none', padding: '0.8rem 2rem', borderRadius: '6px', fontWeight: 'bold', fontSize: '1.1rem', cursor: 'pointer' }}>
+                              toast.success(t('已儲存「{title}」', 'Saved “{title}”').replace('{title}', setObj.title));
+                            }}>
                               {t("儲存經文組", "Save Set")}
-                            </button>
+                            </Button>
                           </div>
                         </div>
                       ) : (
                         <div>
-                          <button type="button" onClick={() => {
+                          <Button icon={<Plus size={20} />} style={{ marginBottom: 'var(--space-5)' }} onClick={() => {
                             setEditingCustomSet({ title: '', description: '', verses: [{ version: 'CUV', reference: '', text: '' }] });
-                          }} style={{ background: '#3b82f6', color: 'white', border: 'none', padding: '0.8rem 1.5rem', borderRadius: '6px', fontWeight: 'bold', marginBottom: '1.5rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                            <span>+</span> {t("建立新經文組", "Create New Set")}
-                          </button>
+                          }}>
+                            {t("建立新經文組", "Create New Set")}
+                          </Button>
 
                           {customVerseSets.length === 0 ? (
                             <div style={{ textAlign: 'center', padding: '3rem 1rem', color: '#94a3b8', border: '2px dashed #e2e8f0', borderRadius: '8px' }}>
@@ -27107,19 +27113,8 @@ export default function App() {
                               </div>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                               {pageSets.map(set => (
-                                <div key={set.id} style={{ border: '1px solid #cbd5e1', borderRadius: '8px', padding: '1.5rem', position: 'relative' }}>
-                                  <div style={{ position: 'absolute', top: '1rem', right: '1rem', display: 'flex', flexDirection: 'column', gap: '0.5rem', alignItems: 'flex-end' }}>
-                                    <button type="button" onClick={() => {
-                                      setSelectedSetId(set.id);
-                                      setMainTab('versesets');
-                                    }} style={{ background: '#3b82f6', border: '1px solid #2563eb', padding: '0.4rem 0.8rem', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', color: 'white', display: 'flex', alignItems: 'center', gap: '4px' }}><BookOpen size={14} /> {t("查看", "Open")}</button>
-                                    <button type="button" onClick={() => setEditingCustomSet({ ...set, verses: set.verses?.map(parseVerseRef) || [] })} style={{ background: '#10b981', border: 'none', padding: '0.4rem 0.8rem', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', color: 'white', display: 'flex', alignItems: 'center', gap: '4px' }}><Edit size={14} /> {t("編輯", "Edit")}</button>
-                                    <button type="button" onClick={() => {
-                                      if (!set?.verses?.length) return;
-                                      setTranslateModal({ set, target: '', phase: 'pick' });
-                                    }} title={t("把整組經文翻譯到另一種語言的經文組", "Translate this whole set into another language's library")} style={{ background: '#e0f2fe', border: '1px solid #7dd3fc', padding: '0.4rem 0.8rem', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', color: '#0369a1', display: 'flex', alignItems: 'center', gap: '4px' }}><Languages size={14} /> {t("翻譯", "Translate")}</button>
-                                  </div>
-                                  <h3 style={{ margin: '0 0 0.5rem 0', color: '#1e293b', paddingRight: '120px' }}>{set.title}</h3>
+                                <div key={set.id} data-testid="my-set-card" style={{ border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)', padding: 'var(--space-4) var(--space-5)', background: 'var(--color-surface)' }}>
+                                  <h3 style={{ margin: '0 0 var(--space-2) 0', color: 'var(--color-text)', fontSize: 'var(--fs-heading)' }}>{set.title}</h3>
                                   {/* Clamp long rich-text intros to ~3 lines so the list stays scannable.
                                       line-clamp handles plain text; maxHeight backstops embedded headings/
                                       images whose line boxes line-clamp can't count. Full intro still shows
@@ -27129,7 +27124,15 @@ export default function App() {
                                     style={{ color: '#64748b', fontSize: '0.9rem', marginBottom: '1rem', display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden', maxHeight: '4.4em' }}
                                     dangerouslySetInnerHTML={{ __html: set.description }}
                                   />
-                                  <div style={{ color: '#3b82f6', fontSize: '0.85rem', fontWeight: 'bold' }}>{set.verses?.length || 0} {t("節經文", "verses")}</div>
+                                  <div style={{ color: 'var(--color-primary-strong)', fontSize: 'var(--fs-small)', fontWeight: 'bold' }}>{set.verses?.length || 0} {t("節經文", "verses")}</div>
+                                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--space-2)', marginTop: 'var(--space-3)' }}>
+                                    <Button size="sm" icon={<BookOpen size={18} />} onClick={() => {
+                                      setSelectedSetId(set.id);
+                                      setMainTab('versesets');
+                                    }}>{t("查看", "Open")}</Button>
+                                    <Button size="sm" variant="secondary" icon={<Edit size={18} />} onClick={() => setEditingCustomSet({ ...set, verses: set.verses?.map(parseVerseRef) || [] })}>{t("編輯", "Edit")}</Button>
+                                    <Button size="sm" variant="text" icon={<Languages size={18} />} disabled={!set?.verses?.length} onClick={() => setTranslateModal({ set, target: '', phase: 'pick' })} title={t("把整組經文翻譯到另一種語言的經文組", "Translate this whole set into another language's library")}>{t("翻譯", "Translate")}</Button>
+                                  </div>
                                 </div>
                               ))}
                             </div>
@@ -27919,11 +27922,9 @@ export default function App() {
                                           setMainTab('custom_verses');
                                         }} style={{ background: '#f1f5f9', border: '1px solid #cbd5e1', padding: '0.2rem 0.5rem', borderRadius: '4px', cursor: 'pointer', fontSize: '0.8rem', color: '#475569' }}>Admin {t('編輯', 'Edit')}</button>
                                         {isSuperAdmin && (
-                                          <button onClick={(e) => {
+                                          <button onClick={async (e) => {
                                             e.stopPropagation();
-                                            // Two-tap confirm — window.confirm is dead inside the iOS App.
-                                            if (deleteArmedId !== `admin-${set.id}`) { armDelete(`admin-${set.id}`); return; }
-                                            setDeleteArmedId(null);
+                                            if (!(await confirmDialog({ title: t('刪除經文組？', 'Delete this set?'), message: t('「{title}」會被刪除，其他人也看不到了。這無法復原。', '“{title}” will be deleted and no one else will see it. This can’t be undone.').replace('{title}', set.title || t('未命名經文組', 'Untitled set')), confirmLabel: t('刪除', 'Delete'), danger: true }))) return;
                                             const publishedExists = publishedVerseSets.some(p => p.id === set.id);
                                             if (!publishedExists) {
                                               const nextHidden = Array.from(new Set([...(hiddenOfficialSetIds || []), set.id]));
@@ -27948,7 +27949,7 @@ export default function App() {
                                                 console.error(err);
                                                 toast.error(t("刪除失敗，請重新登入後再試。", "Delete failed. Please log in again and try once more."));
                                               });
-                                          }} style={{ background: deleteArmedId === `admin-${set.id}` ? '#b91c1c' : '#fee2e2', border: '1px solid #fca5a5', color: deleteArmedId === `admin-${set.id}` ? 'white' : '#ef4444', padding: '0.2rem 0.5rem', borderRadius: '4px', cursor: 'pointer', fontSize: '0.8rem' }}>{deleteArmedId === `admin-${set.id}` ? t('確認刪除？', 'Confirm?') : `Admin ${t('刪除', 'Delete')}`}</button>
+                                          }} style={{ background: '#fee2e2', border: '1px solid #fca5a5', color: '#ef4444', padding: '0.2rem 0.5rem', borderRadius: '4px', cursor: 'pointer', fontSize: '0.8rem' }}>{`Admin ${t('刪除', 'Delete')}`}</button>
                                         )}
                                       </span>
                                     )}
@@ -28053,107 +28054,51 @@ export default function App() {
                       </>
                     ) : (
                       <>
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem', borderBottom: '1px solid #e2e8f0', backgroundColor: '#f8fafc', flexWrap: 'wrap', gap: '1rem' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flex: '1 1 360px', minWidth: 0 }}>
-                            <button
-                              onClick={() => setSelectedSetId(null)}
-                              style={{ background: 'linear-gradient(135deg, #3b82f6, #2563eb)', border: 'none', padding: '0 1.15rem', height: '44px', borderRadius: '10px', cursor: 'pointer', fontWeight: 'bold', color: '#ffffff', fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '7px', flexShrink: 0, boxShadow: '0 4px 12px rgba(37,99,235,0.3)', transition: 'transform 0.1s' }}
-                              onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
-                              onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
-                            >
-                              <Home size={18} color="white" /> {t("返回目錄", "Back to Menu")}
-                            </button>
-                            <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: '1rem', flex: 1, minWidth: 0 }}>
-                              <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
-                                <span style={{ fontSize: '0.8rem', color: '#64748b', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{t("目前選擇", "Current Set")}</span>
-                                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.45rem', minWidth: 0 }}>
-                                  <button
-                                    type="button"
-                                    onClick={(e) => {
+                        <div data-testid="set-detail-header" style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)', padding: 'var(--space-4)', borderBottom: '1px solid var(--color-border)', backgroundColor: 'var(--color-surface-2)' }}>
+                          <div>
+                            <Button variant="secondary" size="sm" icon={<Home size={18} />} onClick={() => setSelectedSetId(null)}>{t("返回目錄", "Back to Menu")}</Button>
+                          </div>
+                          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 'var(--space-2)', minWidth: 0 }}>
+                            <IconButton
+                              label={favoriteVerseSetIdSet.has(currentSet?.id) ? t('從我的最愛移除', 'Remove from favorites') : (userEmail ? t('加入我的最愛', 'Add to favorites') : t('登入後可加入我的最愛', 'Log in to save favorites'))}
+                              aria-pressed={favoriteVerseSetIdSet.has(currentSet?.id)}
+                              onClick={(e) => {
                                       e.stopPropagation();
                                       toggleFavoriteVerseSet(currentSet);
                                     }}
-                                    title={favoriteVerseSetIdSet.has(currentSet?.id) ? t('從我的最愛移除', 'Remove from favorites') : (userEmail ? t('加入我的最愛', 'Add to favorites') : t('登入後可加入我的最愛', 'Log in to save favorites'))}
-                                    aria-label={favoriteVerseSetIdSet.has(currentSet?.id) ? t('從我的最愛移除', 'Remove from favorites') : t('加入我的最愛', 'Add to favorites')}
-                                    style={{ width: '30px', height: '30px', borderRadius: '8px', border: favoriteVerseSetIdSet.has(currentSet?.id) ? '1px solid #facc15' : '1px solid #cbd5e1', background: favoriteVerseSetIdSet.has(currentSet?.id) ? '#fef3c7' : '#ffffff', color: favoriteVerseSetIdSet.has(currentSet?.id) ? '#ca8a04' : '#94a3b8', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', padding: 0, flex: '0 0 auto' }}
-                                  >
-                                    <Star size={17} fill={favoriteVerseSetIdSet.has(currentSet?.id) ? 'currentColor' : 'none'} />
-                                  </button>
-                                  <span style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#1e293b', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{currentSet?.title}</span>
-                                </span>
-                              </div>
-                              <div style={{ marginLeft: 'auto', textAlign: 'right', color: '#64748b', fontSize: '0.85rem', fontWeight: 'bold', flexShrink: 0, maxWidth: '360px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                <div>
-                                  <span style={{ color: '#94a3b8', marginRight: '0.35rem' }}>{t("作者", "Author")}</span>
-                                  <button
-                                    type="button"
-                                    onClick={() => setAuthorSetsModal({ authorName: currentSetAuthorName })}
-                                    style={{ background: 'none', border: 'none', padding: 0, color: '#337ab7', fontSize: 'inherit', fontWeight: 'inherit', cursor: 'pointer', textDecoration: 'none' }}
-                                    onMouseOver={(e) => { e.currentTarget.style.color = '#1d4ed8'; e.currentTarget.style.textDecoration = 'underline'; }}
-                                    onMouseOut={(e) => { e.currentTarget.style.color = '#337ab7'; e.currentTarget.style.textDecoration = 'none'; }}
-                                    title={t("查看這位作者的經文組", "View this author's verse sets")}
-                                  >
-                                    {currentSetAuthorName === '匿名玩家' ? t('匿名玩家', 'Anonymous') : currentSetAuthorName === 'Verserain 官方' ? t('Verserain 官方', 'Official') : currentSetAuthorName}
-                                  </button>
-                                </div>
+                              style={{ color: favoriteVerseSetIdSet.has(currentSet?.id) ? 'var(--color-warning)' : 'var(--color-text-2)', marginTop: '-6px' }}
+                            >
+                              <Star size={24} fill={favoriteVerseSetIdSet.has(currentSet?.id) ? 'currentColor' : 'none'} />
+                            </IconButton>
+                            <div style={{ minWidth: 0, flex: 1 }}>
+                              <h2 style={{ margin: 0, fontSize: 'var(--fs-title)', lineHeight: 1.3, color: 'var(--color-text)', overflowWrap: 'anywhere' }}>{currentSet?.title}</h2>
+                              <div style={{ marginTop: 'var(--space-1)', color: 'var(--color-text-2)', fontSize: 'var(--fs-small)' }}>
+                                {t("作者", "Author")}{' '}
+                                <button
+                                  type="button"
+                                  onClick={() => setAuthorSetsModal({ authorName: currentSetAuthorName })}
+                                  style={{ background: 'none', border: 'none', padding: 0, color: 'var(--color-primary-strong)', fontSize: 'inherit', fontWeight: 700, cursor: 'pointer', textDecoration: 'underline', textUnderlineOffset: '2px' }}
+                                  title={t("查看這位作者的經文組", "View this author's verse sets")}
+                                >
+                                  {currentSetAuthorName === '匿名玩家' ? t('匿名玩家', 'Anonymous') : currentSetAuthorName === 'Verserain 官方' ? t('Verserain 官方', 'Official') : currentSetAuthorName}
+                                </button>
                                 {currentSetLastEditorName && (
-                                  <div style={{ marginTop: '0.18rem', color: '#94a3b8', fontSize: '0.78rem', fontWeight: 'bold' }}>
-                                    {t("最後編輯", "Last edited by")} <span style={{ color: '#64748b' }}>{currentSetLastEditorName}</span>
-                                  </div>
+                                  <span> · {t("最後編輯", "Last edited by")} {currentSetLastEditorName}</span>
                                 )}
                               </div>
                             </div>
                           </div>
 
                           {/* Top Level Action Bar */}
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
-
-                            <button
-                              onClick={() => {
-                                // Push the set to /share-set BEFORE handing the
-                                // URL out — otherwise recipients in fresh
-                                // contexts (Skool in-app webview, new device,
-                                // logged-out) hit the viewSet fallback chain
-                                // and the /share-set GET 404s, leaving them
-                                // staring at the home page. Pushing first means
-                                // the fallback can always resolve the id.
-                                pushSetForSharing(currentSet);
-                                // Share the sequential-listen experience: the
-                                // recipient hears the WHOLE set in order
-                                // (creator recordings included) via the /lc card.
-                                pushSetForSharing(currentSet, true);
-                                const link = buildPublicShareUrl('/lc', {
-                ref: personalCode,
-                                  set: currentSet.id,
-                                  order: 'seq',
-                                  version,
-                                });
-                                setQrShareModal({ url: link, reference: currentSet.title });
-                              }}
-                              title={t("分享聆聽連結(按序播放全部經文)", "Share listening link (all verses in order)")}
-                              style={{ backgroundColor: '#ffffff', color: '#64748b', border: '1px solid #cbd5e1', borderRadius: '6px', width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'all 0.1s' }}
-                              onMouseOver={(e) => { e.currentTarget.style.backgroundColor = '#f1f5f9'; e.currentTarget.style.color = '#3b82f6'; e.currentTarget.style.borderColor = '#3b82f6'; }}
-                              onMouseOut={(e) => { e.currentTarget.style.backgroundColor = '#ffffff'; e.currentTarget.style.color = '#64748b'; e.currentTarget.style.borderColor = '#cbd5e1'; }}
-                            >
-                              <Share2 size={16} />
-                            </button>
-
-                            <button
-                              onClick={() => {
+                          <div data-testid="set-detail-actions" style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', flexWrap: 'wrap' }}>
+                            <Button size="sm" icon={<Headphones size={18} />} title={t("連續播放這個經文組（隨機或按序）", "Continuously play this verse set (shuffled or in order)")} onClick={() => {
                                 initAudio();
                                 if (!currentSet?.verses?.length) return;
                                 setPlayOrderChooser(currentSet);
-                              }}
-                              title={t("連續播放這個經文組（隨機或按序）", "Continuously play this verse set (shuffled or in order)")}
-                              style={{ backgroundColor: '#8b5cf6', color: 'white', border: 'none', borderRadius: '6px', padding: '0 0.8rem', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'transform 0.1s', fontWeight: 'bold', gap: '5px' }}
-                              onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
-                              onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
-                            >
-                              <Headphones size={16} fill="white" /> {t("全部聆聽", "Listen to all")}
-                            </button>
-
-                            <button
-                              onClick={() => {
+                              }}>
+                              {t("全部聆聽", "Listen to all")}
+                            </Button>
+                            <Button size="sm" variant="secondary" icon={<Users size={18} />} title={t("開房間邀請連線遊玩", "Invite players for the whole set")} onClick={() => {
                                 initAudio();
                                 if (!currentSet?.verses?.length) return;
                                 const pm = playMode.endsWith('_solo') ? playMode : playMode === 'square' ? 'square_solo' : playMode === 'rain' ? 'rain_solo' : 'voice_solo';
@@ -28174,42 +28119,46 @@ export default function App() {
                                 setMultiplayerRoomMode('individual');
                                 setMultiplayerRoomRole('player');
                                 setMultiplayerRoomId(newRoom);
-                              }}
-                              title={t("開房間邀請連線遊玩", "Invite players for the whole set")}
-                              style={{ backgroundColor: '#6366f1', color: 'white', border: 'none', borderRadius: '6px', padding: '0 0.8rem', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'transform 0.1s', fontWeight: 'bold', gap: '5px' }}
-                              onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
-                              onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
-                            >
-                              <Users size={16} /> {t("邀人對戰", "Invite to a duel")}
-                            </button>
-
-                            {canEditSet(currentSet) && (
-                              <button
-                                onClick={() => {
-                                  setEditingCustomSet({ ...currentSet, isPublished: true, verses: currentSet.verses?.map(parseVerseRef) || [] });
-                                  setMainTab('custom_verses');
-                                }}
-                                title={t("編輯這個經文組", "Edit this verse set")}
-                                style={{ backgroundColor: '#10b981', color: 'white', border: 'none', borderRadius: '6px', padding: '0 0.8rem', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'transform 0.1s', fontWeight: 'bold', gap: '5px' }}
-                                onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
-                                onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
-                              >
-                                <Edit size={16} color="white" /> {t("編輯", "Edit")}
-                              </button>
-                            )}
-
-                            <button
-                              onClick={() => {
+                              }}>
+                              {t("邀人對戰", "Invite to a duel")}
+                            </Button>
+                            <Button size="sm" variant="secondary" icon={<Languages size={18} />} title={t("把整組經文翻譯到另一種語言的經文組", "Translate this whole set into another language's library")} onClick={() => {
                                 if (!currentSet?.verses?.length) return;
                                 setTranslateModal({ set: currentSet, target: '', phase: 'pick' });
-                              }}
-                              title={t("把整組經文翻譯到另一種語言的經文組", "Translate this whole set into another language's library")}
-                              style={{ backgroundColor: '#0ea5e9', color: 'white', border: 'none', borderRadius: '6px', padding: '0 0.8rem', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'transform 0.1s', fontWeight: 'bold', gap: '5px' }}
-                              onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
-                              onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
-                            >
-                              <Languages size={16} /> {t("翻譯", "Translate")}
-                            </button>
+                              }}>
+                              {t("翻譯", "Translate")}
+                            </Button>
+                            {canEditSet(currentSet) && (
+                              <Button size="sm" variant="text" icon={<Edit size={18} />} title={t("編輯這個經文組", "Edit this verse set")} onClick={() => {
+                                  setEditingCustomSet({ ...currentSet, isPublished: true, verses: currentSet.verses?.map(parseVerseRef) || [] });
+                                  setMainTab('custom_verses');
+                                }}>
+                                {t("編輯", "Edit")}
+                              </Button>
+                            )}
+                            <IconButton label={t("分享聆聽連結(按序播放全部經文)", "Share listening link (all verses in order)")} onClick={() => {
+                                // Push the set to /share-set BEFORE handing the
+                                // URL out — otherwise recipients in fresh
+                                // contexts (Skool in-app webview, new device,
+                                // logged-out) hit the viewSet fallback chain
+                                // and the /share-set GET 404s, leaving them
+                                // staring at the home page. Pushing first means
+                                // the fallback can always resolve the id.
+                                pushSetForSharing(currentSet);
+                                // Share the sequential-listen experience: the
+                                // recipient hears the WHOLE set in order
+                                // (creator recordings included) via the /lc card.
+                                pushSetForSharing(currentSet, true);
+                                const link = buildPublicShareUrl('/lc', {
+                ref: personalCode,
+                                  set: currentSet.id,
+                                  order: 'seq',
+                                  version,
+                                });
+                                setQrShareModal({ url: link, reference: currentSet.title });
+                              }}>
+                              <Share2 size={20} />
+                            </IconButton>
                           </div>
                         </div>
                         {currentSet?.description && (

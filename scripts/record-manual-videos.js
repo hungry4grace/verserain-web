@@ -205,7 +205,7 @@ flows.playMode = async (browser) => {
   const { ctx, page } = await newCtx(browser, 'play-mode');
   await open(page);
   await gotoSet(page);
-  await clickText(page, '播放', { pause: 1500 });
+  await clickText(page, '全部聆聽', { pause: 1500 });
   await shot(page, '1-chooser');
   await clickText(page, '20分', { pause: 800 });
   await clickText(page, '大', { pause: 800 });
