@@ -25537,6 +25537,7 @@ export default function App() {
   return (
     <>
       <div
+        data-ui-root
         lang={documentLang}
         dir={isActiveLanguage('fa') || isActiveLanguage('ar') || isActiveLanguage('he') ? 'rtl' : 'ltr'}
         style={{
@@ -25742,7 +25743,7 @@ export default function App() {
                     verserain
                   </div>
                   <div className="app-brand-version" style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', marginTop: '4px', marginLeft: '2px' }}>
-                    v4.0.122
+                    v4.0.123
                   </div>
                 </div>
                 <div ref={langPickerRef} className="app-lang-control" style={{ position: 'relative' }}>
@@ -31768,60 +31769,19 @@ export default function App() {
                   </div>
                 </div>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', justifyContent: 'center' }}>
-                  <button
-                    onClick={() => startGame()}
-                    className="play-btn"
-                    style={{
-                      flex: '1 1 200px', maxWidth: '400px', background: '#3b82f6', color: 'white', border: 'none', padding: 'clamp(0.8rem, 2vh, 1.2rem)',
-                      fontSize: 'clamp(1.1rem, 2.5vh, 1.3rem)', fontWeight: 'bold', borderRadius: '12px', cursor: 'pointer',
-                      display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '0.75rem',
-                      boxShadow: '0 0 15px rgba(59, 130, 246, 0.5)', transition: 'all 0.2s', flexShrink: 0
-                    }}
-                  >
-                    <RotateCcw size={24} /> {t("再玩一次", "Play Again")}
-                  </button>
+                  <Button size="lg" icon={<RotateCcw size={22} />} style={{ flex: '1 1 200px', maxWidth: '400px' }} onClick={() => startGame()}>{t("再玩一次", "Play Again")}</Button>
                   {campaignQueue !== null ? (
                     campaignQueue.length > 0 ? (
-                      <button
-                        onClick={() => {
+                      <Button size="lg" variant="secondary" style={{ flex: '1 1 200px', maxWidth: '400px' }} onClick={() => {
                           setActiveVerse(campaignQueue[0]);
                           setCampaignQueue(campaignQueue.slice(1));
                           setTimeout(() => startGame(false, campaignQueue[0]), 50);
-                        }}
-                        className="play-btn"
-                        style={{
-                          flex: '1 1 200px', maxWidth: '400px', background: '#64748b', color: 'white', border: 'none', padding: 'clamp(0.8rem, 2vh, 1.2rem)',
-                          fontSize: 'clamp(1.1rem, 2.5vh, 1.3rem)', fontWeight: 'bold', borderRadius: '12px', cursor: 'pointer',
-                          display: 'inline-flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s'
-                        }}
-                      >
-                        {t("跳過", "Skip")}
-                      </button>
+                        }}>{t("跳過", "Skip")}</Button>
                     ) : (
-                      <button
-                        onClick={() => setGameState('campaign-results')}
-                        className="play-btn"
-                        style={{
-                          flex: '1 1 200px', maxWidth: '400px', background: '#8b5cf6', color: 'white', border: 'none', padding: 'clamp(0.8rem, 2vh, 1.2rem)',
-                          fontSize: 'clamp(1.1rem, 2.5vh, 1.3rem)', fontWeight: 'bold', borderRadius: '12px', cursor: 'pointer',
-                          display: 'inline-flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s'
-                        }}
-                      >
-                        {t("查看成績", "View Results")}
-                      </button>
+                      <Button size="lg" variant="secondary" style={{ flex: '1 1 200px', maxWidth: '400px' }} onClick={() => setGameState('campaign-results')}>{t("查看成績", "View Results")}</Button>
                     )
                   ) : (
-                    <button
-                      onClick={() => quitGame()}
-                      className="play-btn"
-                      style={{
-                        flex: '1 1 200px', maxWidth: '400px', background: '#475569', color: 'white', border: 'none', padding: 'clamp(0.8rem, 2vh, 1.2rem)',
-                        fontSize: 'clamp(1.1rem, 2.5vh, 1.3rem)', fontWeight: 'bold', borderRadius: '12px', cursor: 'pointer',
-                        display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', transition: 'all 0.2s'
-                      }}
-                    >
-                      <Home size={20} /> {t("離開", "Exit")}
-                    </button>
+                    <Button size="lg" variant="secondary" icon={<Home size={20} />} style={{ flex: '1 1 200px', maxWidth: '400px' }} onClick={() => quitGame()}>{t("離開", "Exit")}</Button>
                   )}
                 </div>
               </div>
@@ -31892,33 +31852,16 @@ export default function App() {
                   {/* 看我的樹: the verse just played grows a tree — show it (the garden
                       focuses that tree via gardenFocus set in startGame). */}
                   {campaignQueue === null && (
-                    <button
-                      type="button"
-                      data-testid="result-see-tree"
-                      onClick={() => {
+                    <Button size="lg" block data-testid="result-see-tree" icon={<TreePine size={22} />} style={{ maxWidth: '350px', margin: 'clamp(0.6rem, 2vh, 1rem) auto 0' }} onClick={() => {
                         readerReturnRef.current = null;
                         quitGame();
                         setMainTab('garden');
-                      }}
-                      className="play-btn"
-                      style={{
-                        width: '100%', maxWidth: '350px', margin: 'clamp(0.6rem, 2vh, 1rem) auto 0',
-                        background: '#16a34a', color: 'white', border: 'none', minHeight: '48px',
-                        padding: 'clamp(0.6rem, 1.5vh, 0.9rem)',
-                        fontSize: 'clamp(0.95rem, 2vh, 1.1rem)', fontWeight: 'bold',
-                        borderRadius: '12px', cursor: 'pointer',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        gap: '0.45rem', boxShadow: '0 0 15px rgba(22, 163, 74, 0.45)'
-                      }}
-                    >
-                      <TreePine size={20} /> {t('看我的樹', 'See my tree')}
-                    </button>
+                      }}>{t('看我的樹', 'See my tree')}</Button>
                   )}
                   {/* Home and Play Again buttons placed HERE — always visible above the leaderboard */}
                   {campaignQueue === null && (
                     <div style={{ display: 'flex', gap: '1rem', width: '100%', maxWidth: '350px', margin: 'clamp(0.6rem, 2vh, 1rem) auto' }}>
-                      <button
-                        onClick={() => {
+                      <Button variant="secondary" style={{ flex: 1 }} icon={readerReturnRef.current ? <Headphones size={18} /> : <Home size={18} />} onClick={() => {
                           // If the challenge came from a reading, drop the player
                           // back into it (so they can ‹ › to the next verse and
                           // ⚡ again) instead of the lobby.
@@ -31927,67 +31870,22 @@ export default function App() {
                           setGameState('menu');
                           setCampaignQueue(null);
                           if (back) setContinuousRainSet(back);
-                        }}
-                        className="play-btn"
-                        style={{
-                          flex: 1,
-                          background: 'rgba(255,255,255,0.1)', color: 'white', border: '1px solid rgba(255,255,255,0.2)',
-                          padding: 'clamp(0.6rem, 1.5vh, 0.9rem)',
-                          fontSize: 'clamp(0.9rem, 2vh, 1.05rem)', fontWeight: 'bold',
-                          borderRadius: '12px', cursor: 'pointer',
-                          display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                          gap: '0.4rem', transition: 'all 0.2s'
-                        }}
-                      >
-                        {readerReturnRef.current
-                          ? (<><Headphones size={18} /> {t("返回朗讀", "Back to reading")}</>)
-                          : (<><Home size={18} /> {t("回到主頁", "Home")}</>)}
-                      </button>
-                      <button
-                        onClick={() => startGame()}
-                        className="play-btn"
-                        style={{
-                          flex: 1,
-                          background: '#3b82f6', color: 'white', border: 'none',
-                          padding: 'clamp(0.6rem, 1.5vh, 0.9rem)',
-                          fontSize: 'clamp(0.9rem, 2vh, 1.05rem)', fontWeight: 'bold',
-                          borderRadius: '12px', cursor: 'pointer',
-                          display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                          gap: '0.4rem', boxShadow: '0 0 15px rgba(59, 130, 246, 0.5)', transition: 'all 0.2s'
-                        }}
-                      >
-                        <RotateCcw size={18} /> {t("再玩一次", "Play Again")}
-                      </button>
+                        }}>
+                        {readerReturnRef.current ? t("返回朗讀", "Back to reading") : t("回到主頁", "Home")}
+                      </Button>
+                      <Button variant="secondary" style={{ flex: 1 }} icon={<RotateCcw size={18} />} onClick={() => startGame()}>{t("再玩一次", "Play Again")}</Button>
                     </div>
                   )}
 
                   {campaignQueue !== null ? (
                     campaignQueue.length > 0 ? (
-                      <button
-                        onClick={() => {
+                      <Button size="lg" block style={{ maxWidth: '300px', margin: '0 auto 1rem auto' }} onClick={() => {
                           setActiveVerse(campaignQueue[0]);
                           setCampaignQueue(campaignQueue.slice(1));
                           setTimeout(() => startGame(false, campaignQueue[0]), 50);
-                        }}
-                        className="play-btn"
-                        style={{
-                          width: '100%', maxWidth: '300px', background: '#3b82f6', color: 'white', border: 'none', padding: 'clamp(0.8rem, 2vh, 1rem)',
-                          fontSize: 'clamp(1.1rem, 2.5vh, 1.2rem)', fontWeight: 'bold', borderRadius: '12px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', boxShadow: '0 0 15px rgba(59, 130, 246, 0.5)', transition: 'all 0.2s', margin: '0 auto 1rem auto'
-                        }}
-                      >
-                        {t("下一回合", "Next Round")}
-                      </button>
+                        }}>{t("下一回合", "Next Round")}</Button>
                     ) : (
-                      <button
-                        onClick={() => setGameState('campaign-results')}
-                        className="play-btn"
-                        style={{
-                          width: '100%', maxWidth: '300px', background: '#8b5cf6', color: 'white', border: 'none', padding: 'clamp(0.8rem, 2vh, 1rem)',
-                          fontSize: 'clamp(1.1rem, 2.5vh, 1.2rem)', fontWeight: 'bold', borderRadius: '12px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', boxShadow: '0 0 15px rgba(139, 92, 246, 0.5)', transition: 'all 0.2s', margin: '0 auto 1rem auto'
-                        }}
-                      >
-                        {t("查看最終成績", "View Final Results")}
-                      </button>
+                      <Button size="lg" block style={{ maxWidth: '300px', margin: '0 auto 1rem auto' }} onClick={() => setGameState('campaign-results')}>{t("查看最終成績", "View Final Results")}</Button>
                     )
                   ) : null}
 

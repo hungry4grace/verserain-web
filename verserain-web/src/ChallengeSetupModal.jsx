@@ -7,6 +7,8 @@
 // surface drifted — different option labels, different difficulty wording.
 // One component, opened by every challenge button, fixes both.
 //
+// Built on the shared Modal / Button (src/ui) — Esc, the scrim and ✕ cancel.
+//
 // Props:
 //   t        — i18n helper (zh, en) => string
 //   subtitle — what is being challenged (a formatted verse reference, a set
@@ -15,6 +17,9 @@
 //   onChange — (next) => void
 //   onStart  — (value) => void. Persistence already happened.
 //   onCancel — () => void
+
+import { Zap } from 'lucide-react';
+import { Button, Modal } from './ui';
 
 const MODE_KEY = 'verserain_reader_challenge_mode';
 const DIFF_KEY = 'verserain_reader_challenge_diff';
@@ -51,13 +56,6 @@ export default function ChallengeSetupModal({ t, subtitle, value, onChange, onSt
   const set = (patch) => onChange({ ...value, ...patch });
   const isVoice = value.mode === 'voice_solo';
 
-  const toggle = (on, activeColor, activeBg, activeText) => ({
-    display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '0.55rem 0.7rem',
-    borderRadius: 10, border: on ? `2px solid ${activeColor}` : '1px solid #e2e8f0',
-    background: on ? activeBg : '#f8fafc', color: on ? activeText : '#64748b',
-    fontSize: '0.88rem', fontWeight: 600, cursor: 'pointer', textAlign: 'left',
-  });
-
   // Difficulty 0–3 = how many decoy blocks appear (distractionLevel in App.jsx):
   // square grid 2×2 → 3×3 with 0–3 decoys, rain mode decoys more often. Voice
   // mode has no decoys, so there it only changes the score bonus (×1.0–×1.3).
@@ -79,73 +77,64 @@ export default function ChallengeSetupModal({ t, subtitle, value, onChange, onSt
       t('9 格，其中 3 格是干擾字。', '9 tiles, three of them decoys.'),
     ][d];
   };
+  const sectionLabel = { fontSize: 'var(--fs-small)', fontWeight: 700, color: 'var(--color-text-2)', margin: '0 0 var(--space-2)' };
 
   return (
-    <div
-      style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 3000, padding: '1rem' }}
-      onClick={(e) => { if (e.target === e.currentTarget) onCancel(); }}
+    <Modal
+      open
+      title={`⚡ ${t('挑戰', 'Challenge')}`}
+      closeLabel={t('關閉', 'Close')}
+      onClose={onCancel}
+      testId="challenge-setup"
+      footer={
+        <>
+          <Button variant="text" onClick={onCancel}>{t('取消', 'Cancel')}</Button>
+          <Button size="lg" icon={<Zap size={20} />} onClick={() => { saveChallengeSetup(value); onStart(value); }}>
+            {t('開始挑戰', 'Start Challenge')}
+          </Button>
+        </>
+      }
     >
-      <div style={{ background: '#fff', borderRadius: 14, padding: '1.4rem 1.3rem', width: '100%', maxWidth: 340, maxHeight: '90dvh', overflowY: 'auto', boxShadow: '0 20px 40px rgba(0,0,0,0.3)' }}>
-        <h3 style={{ margin: '0 0 0.3rem', color: '#1e293b', display: 'flex', alignItems: 'center', gap: 8 }}>⚡ {t('挑戰', 'Challenge')}</h3>
-        {subtitle && <p style={{ margin: '0 0 1rem', color: '#64748b', fontSize: '0.82rem' }}>{subtitle}</p>}
+      {subtitle && <p style={{ margin: '0 0 var(--space-4)', color: 'var(--color-text-2)', fontSize: 'var(--fs-small)' }}>{subtitle}</p>}
 
-        <div style={{ fontSize: '0.78rem', fontWeight: 700, color: '#94a3b8', letterSpacing: '0.05em', marginBottom: '0.4rem' }}>{t('遊戲模式', 'Game Mode')}</div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem', marginBottom: '1rem' }}>
-          {[
-            { value: 'square_solo', icon: '🔢', label: t('九宮格', 'Square') },
-            { value: 'rain_solo', icon: '🌧️', label: t('經文雨', 'Verse Rain') },
-            { value: 'voice_solo', icon: '🎤', label: t('語音模式', 'Voice Mode') },
-          ].map((opt) => {
-            const active = value.mode === opt.value;
-            return (
-              <button key={opt.value} type="button" onClick={() => set({ mode: opt.value })}
-                style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '0.6rem 0.85rem', borderRadius: 10, border: active ? '2px solid #16a34a' : '1px solid #e2e8f0', background: active ? '#f0fdf4' : '#f8fafc', color: active ? '#15803d' : '#334155', fontSize: '0.92rem', fontWeight: 600, cursor: 'pointer', textAlign: 'left' }}>
-                <span>{opt.icon}</span><span style={{ flex: 1 }}>{opt.label}</span>
-              </button>
-            );
-          })}
-        </div>
+      <h3 style={sectionLabel}>{t('遊戲模式', 'Game Mode')}</h3>
+      <div role="group" aria-label={t('遊戲模式', 'Game Mode')} style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)', marginBottom: 'var(--space-4)' }}>
+        {[
+          { value: 'square_solo', icon: '🔢', label: t('九宮格', 'Square') },
+          { value: 'rain_solo', icon: '🌧️', label: t('經文雨', 'Verse Rain') },
+          { value: 'voice_solo', icon: '🎤', label: t('語音模式', 'Voice Mode') },
+        ].map((opt) => (
+          <button key={opt.value} type="button" className="ui-choice" aria-pressed={value.mode === opt.value} onClick={() => set({ mode: opt.value })}>
+            <span aria-hidden="true">{opt.icon}</span><span style={{ flex: 1 }}>{opt.label}</span>
+          </button>
+        ))}
+      </div>
 
-        <div style={{ fontSize: '0.78rem', fontWeight: 700, color: '#94a3b8', letterSpacing: '0.05em', marginBottom: '0.4rem' }}>{t('難度', 'Difficulty')}</div>
-        <div style={{ display: 'flex', gap: '0.45rem', marginBottom: '0.45rem' }}>
-          {[0, 1, 2, 3].map((d) => {
-            const active = value.difficulty === d;
-            return (
-              <button key={d} type="button" aria-pressed={active} data-testid={`challenge-difficulty-${d}`} onClick={() => set({ difficulty: d })}
-                style={{ flex: 1, minHeight: 44, padding: '0.4rem 0', borderRadius: 10, border: active ? '2px solid #16a34a' : '1px solid #e2e8f0', background: active ? '#f0fdf4' : '#f8fafc', color: active ? '#15803d' : '#334155', fontSize: '0.92rem', fontWeight: 700, cursor: 'pointer' }}>
-                {difficultyName(d)}
-              </button>
-            );
-          })}
-        </div>
-        <p data-testid="challenge-difficulty-desc" style={{ margin: isVoice ? '0 0 1rem' : '0 0 1.2rem', color: '#475569', fontSize: '0.85rem', lineHeight: 1.5 }}>
-          {difficultyDesc(value.mode, value.difficulty)}
-          {value.difficulty > 0 && <span style={{ color: '#15803d', fontWeight: 700 }}> · {t('分數 ×{n}', 'Score ×{n}').replace('{n}', (1 + value.difficulty * 0.1).toFixed(1))}</span>}
-        </p>
+      <h3 style={sectionLabel}>{t('難度', 'Difficulty')}</h3>
+      <div role="group" aria-label={t('難度', 'Difficulty')} style={{ display: 'flex', gap: 'var(--space-2)', marginBottom: 'var(--space-2)' }}>
+        {[0, 1, 2, 3].map((d) => (
+          <button key={d} type="button" className="ui-choice ui-choice--center" aria-pressed={value.difficulty === d} data-testid={`challenge-difficulty-${d}`} onClick={() => set({ difficulty: d })}>
+            {difficultyName(d)}
+          </button>
+        ))}
+      </div>
+      <p data-testid="challenge-difficulty-desc" style={{ margin: isVoice ? '0 0 var(--space-4)' : 0, color: 'var(--color-text-2)', fontSize: 'var(--fs-small)', lineHeight: 1.5 }}>
+        {difficultyDesc(value.mode, value.difficulty)}
+        {value.difficulty > 0 && <span style={{ color: 'var(--color-success)', fontWeight: 700 }}> · {t('分數 ×{n}', 'Score ×{n}').replace('{n}', (1 + value.difficulty * 0.1).toFixed(1))}</span>}
+      </p>
 
-        {isVoice && (
-          <button type="button" onClick={() => set({ noReadback: !value.noReadback })}
-            style={{ ...toggle(value.noReadback, '#16a34a', '#f0fdf4', '#15803d'), marginBottom: '0.5rem' }}>
-            <span>{value.noReadback ? '☑' : '☐'}</span>
+      {isVoice && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
+          <button type="button" className="ui-choice" aria-pressed={!!value.noReadback} onClick={() => set({ noReadback: !value.noReadback })}>
+            <span aria-hidden="true">{value.noReadback ? '☑' : '☐'}</span>
             <span style={{ flex: 1 }}>⏩ {t('不要複誦我背過的經文(比較順暢)', 'Do not repeat what I just recited (faster flow)')}</span>
           </button>
-        )}
-        {isVoice && (
-          <button type="button" onClick={() => set({ debug: !value.debug })}
-            style={{ ...toggle(value.debug, '#6366f1', '#eef2ff', '#4338ca'), marginBottom: '1.2rem' }}>
-            <span>{value.debug ? '☑' : '☐'}</span>
+          <button type="button" className="ui-choice" aria-pressed={!!value.debug} onClick={() => set({ debug: !value.debug })}>
+            <span aria-hidden="true">{value.debug ? '☑' : '☐'}</span>
             <span style={{ flex: 1 }}>🔍 {t('顯示除錯資訊(期待 vs 聽見)', 'Show debug (expects vs heard)')}</span>
           </button>
-        )}
-
-        <button type="button"
-          onClick={() => { saveChallengeSetup(value); onStart(value); }}
-          style={{ width: '100%', padding: '0.75rem', borderRadius: 12, border: 'none', background: 'linear-gradient(135deg, #22c55e, #16a34a)', color: '#fff', fontSize: '1rem', fontWeight: 700, cursor: 'pointer', boxShadow: '0 6px 16px rgba(22,163,74,0.35)' }}
-        >
-          ⚡ {t('開始挑戰', 'Start Challenge')}
-        </button>
-        <button type="button" onClick={onCancel} style={{ marginTop: '0.7rem', width: '100%', background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer', fontSize: '0.9rem' }}>{t('取消', 'Cancel')}</button>
-      </div>
-    </div>
+        </div>
+      )}
+    </Modal>
   );
 }
