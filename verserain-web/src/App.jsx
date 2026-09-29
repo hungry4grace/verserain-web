@@ -8,6 +8,7 @@ import { navTabOf } from './navTabs.js';
 import TodayPage from './TodayPage.jsx';
 import SettingsPage from './SettingsPage.jsx';
 import Onboarding from './Onboarding.jsx';
+import ManualSearch from './ManualSearch.jsx';
 import { CATALOG as VOUCHER_CATALOG, DEFAULT_VALUE as VOUCHER_DEFAULTS } from '../api/_lib/rewardCatalog.js';
 import confetti from 'canvas-confetti';
 import usePartySocket from 'partysocket/react';
@@ -9600,7 +9601,7 @@ const deDict = {
     '快手': '早い労働者',
     '意見回饋': 'フィードバック',
     '愛心': '愛',
-    '我的經文組': '私専用の質問バンク',
+    '我的經文組': 'マイ聖句セット',
     '打開 Debug': 'デバッグを開く',
     '打開效能模式': 'パフォーマンスモードをオンにする',
     '打開視障經文雨': '視覚障害者のためのテキストの雨を開く',
@@ -20167,6 +20168,7 @@ export default function App() {
   // The menu scrolls inside its own container (100dvh, overflow auto), so the
   // window's scrollY is always 0; save/restore that container's scrollTop.
   const menuScrollRef = useRef(null);
+  const manualBodyRef = useRef(null);
   // Scroll an element into view inside the menu scroller ONLY. scrollIntoView
   // would also scroll #root (index.css: height 100vh, overflow hidden), which
   // the user cannot scroll back — on phones the page then looks cut off and
@@ -25864,7 +25866,7 @@ export default function App() {
                     verserain
                   </div>
                   <div className="app-brand-version" style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', marginTop: '4px', marginLeft: '2px' }}>
-                    v4.0.134
+                    v4.0.135
                   </div>
                 </div>
                 <div ref={langPickerRef} className="app-lang-control" style={{ position: 'relative' }}>
@@ -31108,13 +31110,16 @@ export default function App() {
                       <span dangerouslySetInnerHTML={{ __html: t("歡迎進入 <strong>VerseRain 經文雨</strong>！這是一個結合聆聽、挑戰與學習的互動背經平台。<br />在這裡您可以挑戰全球經文組、建立個人專屬的經文組，也能用自己的聲音把經文分享給朋友！", "Welcome to <strong>VerseRain</strong>! An interactive Scripture-memory platform that combines listening, challenge and learning.<br />Here you can challenge global verse sets, build your own library, and share verses in your own voice with friends!") }} />
                     </p>
 
+                    <ManualSearch t={t} bodyRef={manualBodyRef} lang={uiLang} onJump={(el) => el && scrollMenuTo(el)} />
+                    <div ref={manualBodyRef}>
+
                     <h2 style={{ borderBottom: '2px solid #e2e8f0', paddingBottom: '0.5rem', marginTop: '2rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Play size={22} /> {t("一、如何開始遊玩？", "1. How to Play?")}</h2>
                     <p>{t("只需簡單三步，您就能進入背經的挑戰中！", "Just three simple steps to start your scripture memorization challenge!")}</p>
 
-                    <h3 style={{ marginTop: '1.5rem', color: '#0f172a' }}>{t("1. 從大廳進入「經文組」", "1. Open \"Scripture Sets\" from the lobby")}</h3>
-                    <p><span dangerouslySetInnerHTML={{ __html: t("在大廳點 <strong>「經文組」</strong> 卡片，就會看到系統與玩家建立的所有公開經文組，可依最新、標題或最受歡迎排序。", "Tap the <strong>\"Scripture Sets\"</strong> card in the lobby to see every public verse set created by the system and by players. Sort by newest, title, or most popular.") }} /></p>
+                    <h3 style={{ marginTop: '1.5rem', color: '#0f172a' }}>{t("1. 點下方的「經文組」分頁", "1. Open the \"Sets\" tab at the bottom")}</h3>
+                    <p><span dangerouslySetInnerHTML={{ __html: t("點畫面下方的 <strong>「經文組」</strong> 分頁，就會看到系統與玩家建立的所有公開經文組，可依最新、標題或最受歡迎排序。", "Tap the <strong>\"Sets\"</strong> tab at the bottom of the screen to see every public verse set created by the system and by players. Sort by newest, title, or most popular.") }} /></p>
                     <h3 style={{ marginTop: '1.5rem', color: '#0f172a' }}>{t("2. 選擇想要挑戰的經文組", "2. Select a Verse Set")}</h3>
-                    <p><span dangerouslySetInnerHTML={{ __html: t("點選列表中的標題（例如：<strong>約翰福音 核心經文</strong>），進入經文組頁面，裡面列出每一節經文，右側有「播放」「排行榜」「挑戰」「分享」等按鈕。", "Tap a title in the list (e.g. <strong>Gospel of John Core Verses</strong>) to open the set page, which lists every verse with Play, Leaderboard, Challenge, and Share buttons.") }} /></p>
+                    <p><span dangerouslySetInnerHTML={{ __html: t("點選列表中的標題（例如：<strong>約翰福音 核心經文</strong>），進入經文組頁面。每一節經文右側有「聆聽」和「挑戰」按鈕；上方的「全部聆聽」會從第一節連續播放。", "Tap a title in the list (e.g. <strong>Gospel of John Core Verses</strong>) to open the set page. Each verse has Listen and Challenge buttons; \"Listen to all\" at the top plays the set from the first verse.") }} /></p>
                     <h3 style={{ marginTop: '1.5rem', color: '#0f172a' }}>{t("3. 開始挑戰", "3. Start the Challenge")}</h3>
                     <p><span dangerouslySetInnerHTML={{ __html: t("點該節右側的綠色 <strong>⚡ 挑戰</strong> 鍵，選擇遊戲模式（九宮格／經文雨／語音模式）與難度，按「開始挑戰」——三秒後經文雨就傾盆而下！依正確順序點擊落下的方塊，越快完成、時間加成越高。", "Tap the green <strong>⚡ Challenge</strong> button next to a verse, choose the game mode (Square / Verse Rain / Voice Mode) and difficulty, then press \"Start Challenge\" — three seconds later the verse rain pours down! Tap the falling blocks in the right order; the faster you finish, the bigger the time bonus.") }} /></p>
                     <ManualVideo src="/manual/start-game.mp4" poster="/manual/start-game.jpg" caption={t("教學影片：從大廳進入經文組 → 選經文組 → ⚡ 挑戰 → 選模式 → 依序點擊方塊，完成一次挑戰。", "Tutorial: lobby → Scripture Sets → pick a set → ⚡ Challenge → choose a mode → tap the blocks in order to finish a challenge.")} />
@@ -31122,7 +31127,7 @@ export default function App() {
                     <h2 style={{ borderBottom: '2px solid #e2e8f0', paddingBottom: '0.5rem', marginTop: '2rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Edit size={24} /> {t("二、如何自建專屬「經文組」？", "2. How to Build Your Own \"Verse Set\"")}</h2>
                     <p>{t("只要登入帳號，任何人都可以打造自己的主日學、小組或個人靈修專屬經文組，建好就能聆聽、挑戰、分享。", "Any signed-in user can build a verse set for Sunday school, a small group or personal devotion, then listen to it, challenge it and share it.")}</p>
                     <ol style={{ paddingLeft: '1.5rem', marginBottom: '2rem' }}>
-                      <li><span dangerouslySetInnerHTML={{ __html: t("先<strong>登入</strong>，再從大廳點 <strong>「經文組」</strong>，進入上方的 <strong>「我的經文組」</strong>。", "<strong>Sign in</strong>, open <strong>\"Scripture Sets\"</strong> from the lobby, then go to <strong>\"My Custom Sets\"</strong> at the top.") }} /></li>
+                      <li><span dangerouslySetInnerHTML={{ __html: t("先<strong>登入</strong>，再點下方的 <strong>「經文組」</strong> 分頁，進入上方的 <strong>「我的經文組」</strong>。", "<strong>Sign in</strong>, open the <strong>\"Sets\"</strong> tab at the bottom, then go to <strong>\"My Custom Sets\"</strong> at the top.") }} /></li>
                       <li><span dangerouslySetInnerHTML={{ __html: t("點 <strong>「＋ 建立新經文組」</strong>，填上標題與簡介；也可以挑一張背景圖片、選背景音樂或上傳自己的音樂。", "Tap <strong>\"+ Create New Set\"</strong>, give it a title and a description; you can also pick a background image and background music (or upload your own).") }} /></li>
                       <li><span dangerouslySetInnerHTML={{ __html: t("在經文列表選好書卷、輸入 <strong>章:節</strong>（如 <code>3:16</code> 或 <code>6:9-13</code>），按 <strong>Enter 或 Tab</strong>，系統就會自動抓取完整經文。", "In the verse list pick the book, type the <strong>chapter:verse</strong> (e.g. <code>3:16</code> or <code>6:9-13</code>) and press <strong>Enter or Tab</strong> — the full text is fetched for you.") }} /></li>
                       <li><span dangerouslySetInnerHTML={{ __html: t("經文很多？用 <strong>「輸入出處批次匯入」</strong>，一次貼上多個出處（每行一個或用逗號分隔）。逗號後面的純節數會接在同一章：<code>約翰福音 1:1, 4</code> 就是 1:1 與 1:4。", "Many verses? Use <strong>\"Import by references\"</strong> and paste several references at once (one per line or comma-separated). A bare verse number after a comma stays in the same chapter: <code>John 1:1, 4</code> means 1:1 and 1:4.") }} /></li>
@@ -31146,7 +31151,7 @@ export default function App() {
                     <h2 style={{ borderBottom: '2px solid #e2e8f0', paddingBottom: '0.5rem', marginTop: '2rem' }}>{t("⚔️ 四、多人即時連線對戰", "⚔️ 4. Multiplayer Real-time Battle")}</h2>
                     <p>{t("背經文不再是一個人孤單的事！", "Memorizing scripture is no longer a solitary task!")}</p>
                     <ul style={{ paddingLeft: '1.5rem', marginBottom: '2rem' }}>
-                      <li><span dangerouslySetInnerHTML={{ __html: t("點擊上方的 <strong>「多人遊戲」</strong> 創建專屬房間，邀請小組成員或家人一起加入。", "Tap <strong>\"Multiplayer\"</strong> at the top to create a private room and invite your group members or family to join.") }} /></li>
+                      <li><span dangerouslySetInnerHTML={{ __html: t("點下方的 <strong>「一起玩」</strong> 分頁創建專屬房間，邀請小組成員或家人一起加入。", "Open the <strong>\"Play\"</strong> tab at the bottom to create a private room and invite your group members or family to join.") }} /></li>
                       <li><span dangerouslySetInnerHTML={{ __html: t("房主可以從全域經文組中挑選 <strong>「比賽經文」</strong>，並選擇比賽方式：獨立九宮格、雨滴瀑布或語音模式。", "The host picks the <strong>\"Competition Verses\"</strong> from the global verse bank and chooses how to play: Solo Square, Verse Rain, or Voice Mode.") }} /></li>
                       <li><span dangerouslySetInnerHTML={{ __html: t("<strong>🌍 各自用自己的語言參賽（新）：</strong>在個人賽／邀人對戰 模式中，每位玩家都用自己選的聖經版本比賽——主持人用中文，朋友可以用英文 ESV 或韓文，同一節經文各自看到自己的語言。計分以節數與分數為準，與語言無關，完全公平。團隊競賽因為大家共用同一個盤面，維持主持人的語言。", "<strong>🌍 Everyone plays in their own language (new):</strong> In Solo / PK rooms each player competes in the Bible version they chose — the host in Chinese, a friend in English ESV or Korean — and everyone sees the same verse in their own language. Scoring is by verse count and points, independent of language, so it stays fair. Team battles share one board and therefore keep the host's language.") }} /></li>
                       <li><span dangerouslySetInnerHTML={{ __html: t("所有人同時開始挑戰，並能在遊戲結束後看到即時的成績排行榜，非常適合主日學活動與小組破冰！", "Everyone starts the challenge simultaneously and can see real-time leaderboards after the game ends. Perfect for Sunday school activities and group icebreakers!") }} /></li>
@@ -31186,7 +31191,7 @@ export default function App() {
                     </ul>
                     <ManualVideo src="/manual/translate.mp4" poster="/manual/translate.jpg" caption={t("教學影片：在經文組頁按「翻譯」→ 選 Bahasa Melayu → 系統翻譯標題並抓取馬來文譯本 → 預覽 16 節全部成功 → 「加入並編輯」。", "Tutorial: press \"Translate\" on a set page → choose Bahasa Melayu → the title is translated and the Malay Bible text fetched → preview shows all 16 verses → \"Add & Edit\".")} />
                     <h2 style={{ borderBottom: '2px solid #e2e8f0', paddingBottom: '0.5rem', marginTop: '2rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Map size={22} /> {t("八、全球玩家地圖（2D／3D）", "8. Global Player Map (2D / 3D)")}</h2>
-                    <p><span dangerouslySetInnerHTML={{ __html: t("點上方的 <strong>「誰在玩」</strong> 頁籤，看看世界各地的經文雨玩家都在哪裡。", "Tap the <strong>\"Who's Playing\"</strong> tab at the top to see where VerseRain players are around the world.") }} /></p>
+                    <p><span dangerouslySetInnerHTML={{ __html: t("在下方的 <strong>「一起玩」</strong> 分頁點 <strong>「誰在玩」</strong>，看看世界各地的經文雨玩家都在哪裡。", "In the <strong>\"Play\"</strong> tab at the bottom, tap <strong>\"Who's Playing\"</strong> to see where VerseRain players are around the world.") }} /></p>
                     <ul style={{ paddingLeft: '1.5rem', marginBottom: '2rem' }}>
                       <li><span dangerouslySetInnerHTML={{ __html: t("點擊標記可以查看該玩家的成績；地圖上若有進行中的多人遊戲房間，<strong>雙擊房間就能直接加入戰局</strong>！", "Click a marker to see that player's scores; if a multiplayer room is open on the map, <strong>double-click it to jump straight into the battle</strong>!") }} /></li>
                       <li><span dangerouslySetInnerHTML={{ __html: t("右上角可在 <strong>「2D 地圖」</strong> 與 <strong>「3D 地球」</strong> 之間切換，轉動地球，看看全球背經的即時脈動。", "Switch between <strong>\"2D Map\"</strong> and <strong>\"3D Globe\"</strong> at the top right, spin the globe, and watch scripture memorization pulse around the world in real time.") }} /></li>
@@ -31203,7 +31208,7 @@ export default function App() {
                     <h3 style={{ marginTop: '1.5rem', color: '#0f172a' }}>{t("2. 多人遊戲", "2. Multiplayer")}</h3>
                     <p>{t("個人 PK 房間的成績跟單人挑戰一樣計入；團隊賽是課堂當場的比賽，不計入累積點數。", "Solo PK rooms count just like single-player challenges; team battles are live classroom events and do not count.")}</p>
                     <h3 style={{ marginTop: '1.5rem', color: '#0f172a' }}>{t("3. 邀請朋友", "3. Inviting friends")}</h3>
-                    <p><span dangerouslySetInnerHTML={{ __html: t("朋友用你的推薦碼加入並第一次通過一節經文，你得到 <strong>+5000</strong> 積分，每位朋友一次。", "When a friend joins with your referral code and clears their first verse, you get <strong>+5000</strong> points, once per friend.") }} /></p>
+                    <p><span dangerouslySetInnerHTML={{ __html: t("朋友用你的推薦碼加入並第一次通過一節經文，你的累積點數 <strong>+5000</strong>，每位朋友一次。", "When a friend joins with your referral code and clears their first verse, your total points go up by <strong>+5000</strong>, once per friend.") }} /></p>
                     <h3 style={{ marginTop: '1.5rem', color: '#0f172a' }}>{t("4. 每日登入", "4. Daily check-in")}</h3>
                     <ul style={{ paddingLeft: '1.5rem', marginBottom: '1.5rem' }}>
                       <li><span dangerouslySetInnerHTML={{ __html: t("當天<strong>聽完或挑戰完一節經文</strong>，就算這天有登入，會送出這天的登入分數（只打開 App 不算）。", "Listen to or challenge <strong>one verse to the end</strong> on a given day and that day counts as checked in; the check-in points are added then (just opening the app does not count).") }} /></li>
@@ -31227,6 +31232,7 @@ export default function App() {
                       <li>{t("園子上的連續天數、樹和果子是成長紀錄，不是積分；每日登入分數另外依連續登入天數（台灣時間）計算。破紀錄會結果子，但果子不能折抵。", "The streak, trees and fruit in your garden are its growth record, not points; check-in points follow their own streak (Taiwan time). A new record bears fruit, but fruit cannot be redeemed.")}</li>
                       <li>{t("沒登入只會上排行榜，不會計入帳號的累積點數，也不能用點數折抵；登入後從那一刻開始累積。", "Without signing in you only appear on the leaderboard: nothing is added to an account total and you cannot use points for a discount. Once signed in, it accumulates from that moment.")}</li>
                     </ul>
+                    </div>
                   </>
                 </div>
               )}

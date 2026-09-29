@@ -1414,6 +1414,19 @@ export const he = {
   "驗證失敗": "האימות נכשל",
   "連線失敗": "החיבור נכשל",
   "請輸入 Email 與密碼": "נא להזין אימייל וסיסמה",
+  "1. 點下方的「經文組」分頁": "1. פתחו את הלשונית «אוסף פסוקים» למטה",
+  "點畫面下方的 <strong>「經文組」</strong> 分頁，就會看到系統與玩家建立的所有公開經文組，可依最新、標題或最受歡迎排序。": "הקישו על הלשונית <strong>«אוסף פסוקים»</strong> בתחתית המסך כדי לראות את כל הסטים הציבוריים שנוצרו על ידי המערכת והשחקנים. אפשר למיין לפי החדשים ביותר, כותרת או הפופולריים ביותר.",
+  "點選列表中的標題（例如：<strong>約翰福音 核心經文</strong>），進入經文組頁面。每一節經文右側有「聆聽」和「挑戰」按鈕；上方的「全部聆聽」會從第一節連續播放。": "הקישו על כותרת ברשימה (למשל <strong>פסוקי מפתח מיוחנן</strong>) כדי לפתוח את דף הסט. ליד כל פסוק יש כפתורי «האזנה» ו«אתגר»; «האזן להכול» למעלה מנגן את הסט ברצף מהפסוק הראשון.",
+  "先<strong>登入</strong>，再點下方的 <strong>「經文組」</strong> 分頁，進入上方的 <strong>「我的經文組」</strong>。": "<strong>התחברו</strong>, פתחו את הלשונית <strong>«אוסף פסוקים»</strong> למטה והיכנסו ל-<strong>«אוספי הפסוקים שלי»</strong> למעלה.",
+  "點下方的 <strong>「一起玩」</strong> 分頁創建專屬房間，邀請小組成員或家人一起加入。": "פתחו את הלשונית <strong>«משחק משותף»</strong> למטה כדי ליצור חדר פרטי ולהזמין את הקבוצה או המשפחה.",
+  "在下方的 <strong>「一起玩」</strong> 分頁點 <strong>「誰在玩」</strong>，看看世界各地的經文雨玩家都在哪裡。": "בלשונית <strong>«משחק משותף»</strong> למטה הקישו על <strong>«מי משחק»</strong> כדי לראות היכן נמצאים שחקני VerseRain ברחבי העולם.",
+  "朋友用你的推薦碼加入並第一次通過一節經文，你的累積點數 <strong>+5000</strong>，每位朋友一次。": "כשחבר מצטרף עם קוד ההמלצה שלכם ועובר פסוק ראשון, מתווספות <strong>+5000</strong> לסך הנקודות שלכם, פעם אחת לכל חבר.",
+  "搜尋使用說明": "חיפוש במדריך",
+  "搜尋，例如：點數、錄音、翻譯": "חיפוש, למשל: נקודות, הקלטה, תרגום",
+  "清除": "ניקוי",
+  "找到 {n} 段相關說明": "סעיפים שנמצאו: {n}",
+  "找不到「{q}」，換個字試試。": "לא נמצא דבר עבור «{q}». נסו מילה אחרת.",
+  "目錄": "תוכן עניינים",
 };
 
 export const fa = {
@@ -2809,6 +2822,19 @@ export const fa = {
   "驗證失敗": "تأیید ناموفق بود",
   "連線失敗": "اتصال ناموفق بود",
   "請輸入 Email 與密碼": "لطفاً ایمیل و رمز عبور را وارد کنید",
+  "1. 點下方的「經文組」分頁": "۱. برگهٔ «مجموعه آیات» را در پایین باز کنید",
+  "點畫面下方的 <strong>「經文組」</strong> 分頁，就會看到系統與玩家建立的所有公開經文組，可依最新、標題或最受歡迎排序。": "روی برگهٔ <strong>«مجموعه آیات»</strong> در پایین صفحه بزنید تا همهٔ مجموعه‌های عمومی ساخته‌شده توسط سیستم و بازیکنان را ببینید. می‌توانید بر اساس جدیدترین، عنوان یا محبوب‌ترین مرتب کنید.",
+  "點選列表中的標題（例如：<strong>約翰福音 核心經文</strong>），進入經文組頁面。每一節經文右側有「聆聽」和「挑戰」按鈕；上方的「全部聆聽」會從第一節連續播放。": "روی یک عنوان در فهرست بزنید (مثلاً <strong>آیات کلیدی یوحنا</strong>) تا صفحهٔ مجموعه باز شود. کنار هر آیه دکمه‌های «گوش کن» و «چالش» هست؛ «گوش دادن به همه» در بالا، مجموعه را از آیهٔ اول پشت سر هم پخش می‌کند.",
+  "先<strong>登入</strong>，再點下方的 <strong>「經文組」</strong> 分頁，進入上方的 <strong>「我的經文組」</strong>。": "ابتدا <strong>وارد حساب شوید</strong>، برگهٔ <strong>«مجموعه آیات»</strong> را در پایین باز کنید و به <strong>«مجموعه آیات من»</strong> در بالا بروید.",
+  "點下方的 <strong>「一起玩」</strong> 分頁創建專屬房間，邀請小組成員或家人一起加入。": "برگهٔ <strong>«بازی با هم»</strong> را در پایین باز کنید تا اتاقی خصوصی بسازید و گروه یا خانواده‌تان را دعوت کنید.",
+  "在下方的 <strong>「一起玩」</strong> 分頁點 <strong>「誰在玩」</strong>，看看世界各地的經文雨玩家都在哪裡。": "در برگهٔ <strong>«بازی با هم»</strong> در پایین، روی <strong>«چه کسی بازی می‌کند»</strong> بزنید تا ببینید بازیکنان VerseRain در سراسر جهان کجا هستند.",
+  "朋友用你的推薦碼加入並第一次通過一節經文，你的累積點數 <strong>+5000</strong>，每位朋友一次。": "وقتی دوستی با کد معرف شما عضو شود و اولین آیه‌اش را رد کند، <strong>+5000</strong> به مجموع امتیازات شما اضافه می‌شود، برای هر دوست یک بار.",
+  "搜尋使用說明": "جستجو در راهنما",
+  "搜尋，例如：點數、錄音、翻譯": "جستجو، مثلاً: امتیاز، ضبط، ترجمه",
+  "清除": "پاک کردن",
+  "找到 {n} 段相關說明": "بخش‌های یافت‌شده: {n}",
+  "找不到「{q}」，換個字試試。": "چیزی برای «{q}» پیدا نشد. واژهٔ دیگری را امتحان کنید.",
+  "目錄": "فهرست مطالب",
 };
 
 export const ar = {
@@ -4621,6 +4647,19 @@ export const ar = {
   "驗證失敗": "فشل التحقق",
   "連線失敗": "فشل الاتصال",
   "請輸入 Email 與密碼": "يرجى إدخال البريد الإلكتروني وكلمة المرور",
+  "1. 點下方的「經文組」分頁": "١. افتح تبويب «مجموعات الآيات» في الأسفل",
+  "點畫面下方的 <strong>「經文組」</strong> 分頁，就會看到系統與玩家建立的所有公開經文組，可依最新、標題或最受歡迎排序。": "اضغط تبويب <strong>«مجموعات الآيات»</strong> أسفل الشاشة لترى كل مجموعات الآيات العامة التي أنشأها النظام واللاعبون. يمكنك الترتيب حسب الأحدث أو العنوان أو الأكثر شعبية.",
+  "點選列表中的標題（例如：<strong>約翰福音 核心經文</strong>），進入經文組頁面。每一節經文右側有「聆聽」和「挑戰」按鈕；上方的「全部聆聽」會從第一節連續播放。": "اضغط عنوانًا في القائمة (مثلًا <strong>آيات يوحنا الأساسية</strong>) لفتح صفحة المجموعة. بجانب كل آية زرّا «استمع» و«تحدٍّ»، وزر «استمع للكل» في الأعلى يشغّل المجموعة متتابعةً من الآية الأولى.",
+  "先<strong>登入</strong>，再點下方的 <strong>「經文組」</strong> 分頁，進入上方的 <strong>「我的經文組」</strong>。": "<strong>سجّل الدخول</strong>، ثم افتح تبويب <strong>«مجموعات الآيات»</strong> في الأسفل وادخل إلى <strong>«مجموعاتي المخصصة»</strong> في الأعلى.",
+  "點下方的 <strong>「一起玩」</strong> 分頁創建專屬房間，邀請小組成員或家人一起加入。": "افتح تبويب <strong>«العب معًا»</strong> في الأسفل لإنشاء غرفة خاصة ودعوة مجموعتك أو عائلتك.",
+  "在下方的 <strong>「一起玩」</strong> 分頁點 <strong>「誰在玩」</strong>，看看世界各地的經文雨玩家都在哪裡。": "في تبويب <strong>«العب معًا»</strong> في الأسفل، اضغط <strong>«من يلعب»</strong> لترى أين يوجد لاعبو VerseRain حول العالم.",
+  "朋友用你的推薦碼加入並第一次通過一節經文，你的累積點數 <strong>+5000</strong>，每位朋友一次。": "عندما ينضم صديق برمز الإحالة الخاص بك ويجتاز أول آية له، يُضاف <strong>+5000</strong> إلى إجمالي نقاطك، مرة واحدة لكل صديق.",
+  "搜尋使用說明": "ابحث في الدليل",
+  "搜尋，例如：點數、錄音、翻譯": "ابحث، مثلًا: نقاط، تسجيل، ترجمة",
+  "清除": "مسح",
+  "找到 {n} 段相關說明": "الأقسام التي وُجدت: {n}",
+  "找不到「{q}」，換個字試試。": "لا نتائج لـ «{q}». جرّب كلمة أخرى.",
+  "目錄": "المحتويات",
 };
 
 export const ja = {
@@ -6004,6 +6043,19 @@ export const ja = {
   "驗證失敗": "認証に失敗しました",
   "連線失敗": "接続に失敗しました",
   "請輸入 Email 與密碼": "メールアドレスとパスワードを入力してください",
+  "1. 點下方的「經文組」分頁": "1. 下の「聖句セット」タブを開く",
+  "點畫面下方的 <strong>「經文組」</strong> 分頁，就會看到系統與玩家建立的所有公開經文組，可依最新、標題或最受歡迎排序。": "画面下の <strong>「聖句セット」</strong> タブをタップすると、システムやプレイヤーが作成した公開聖句セットがすべて表示されます。新着・タイトル・人気順で並べ替えできます。",
+  "點選列表中的標題（例如：<strong>約翰福音 核心經文</strong>），進入經文組頁面。每一節經文右側有「聆聽」和「挑戰」按鈕；上方的「全部聆聽」會從第一節連續播放。": "一覧のタイトル（例：<strong>ヨハネの福音書 中心聖句</strong>）をタップするとセットのページが開きます。各節の右側に「聞く」と「チャレンジ」のボタンがあり、上部の「すべて聞く」で最初の節から続けて再生できます。",
+  "先<strong>登入</strong>，再點下方的 <strong>「經文組」</strong> 分頁，進入上方的 <strong>「我的經文組」</strong>。": "まず<strong>ログイン</strong>し、下の <strong>「聖句セット」</strong> タブを開いて、上部の <strong>「マイ聖句セット」</strong> に入ります。",
+  "點下方的 <strong>「一起玩」</strong> 分頁創建專屬房間，邀請小組成員或家人一起加入。": "下の <strong>「一緒に遊ぶ」</strong> タブで専用ルームを作り、グループのメンバーや家族を招待しましょう。",
+  "在下方的 <strong>「一起玩」</strong> 分頁點 <strong>「誰在玩」</strong>，看看世界各地的經文雨玩家都在哪裡。": "下の <strong>「一緒に遊ぶ」</strong> タブで <strong>「誰がプレイ中」</strong> をタップすると、世界中の VerseRain プレイヤーがどこにいるか見られます。",
+  "朋友用你的推薦碼加入並第一次通過一節經文，你的累積點數 <strong>+5000</strong>，每位朋友一次。": "友だちがあなたの紹介コードで参加し、初めて聖句をクリアすると、あなたの合計ポイントに <strong>+5000</strong> が加算されます（友だち1人につき1回）。",
+  "搜尋使用說明": "マニュアルを検索",
+  "搜尋，例如：點數、錄音、翻譯": "検索（例：ポイント、録音、翻訳）",
+  "清除": "クリア",
+  "找到 {n} 段相關說明": "該当セクション：{n} 件",
+  "找不到「{q}」，換個字試試。": "「{q}」は見つかりませんでした。別の言葉で試してください。",
+  "目錄": "目次",
 };
 
 export const ko = {
@@ -7385,6 +7437,19 @@ export const ko = {
   "驗證失敗": "인증에 실패했습니다",
   "連線失敗": "연결에 실패했습니다",
   "請輸入 Email 與密碼": "이메일과 비밀번호를 입력하세요",
+  "1. 點下方的「經文組」分頁": "1. 하단의 「구절 세트」 탭 열기",
+  "點畫面下方的 <strong>「經文組」</strong> 分頁，就會看到系統與玩家建立的所有公開經文組，可依最新、標題或最受歡迎排序。": "화면 하단의 <strong>「구절 세트」</strong> 탭을 누르면 시스템과 플레이어가 만든 모든 공개 구절 세트가 보입니다. 최신순·제목순·인기순으로 정렬할 수 있습니다.",
+  "點選列表中的標題（例如：<strong>約翰福音 核心經文</strong>），進入經文組頁面。每一節經文右側有「聆聽」和「挑戰」按鈕；上方的「全部聆聽」會從第一節連續播放。": "목록의 제목(예: <strong>요한복음 핵심 구절</strong>)을 누르면 세트 페이지가 열립니다. 각 구절 오른쪽에 「듣기」와 「도전」 버튼이 있고, 상단의 「모두 듣기」를 누르면 첫 구절부터 이어서 재생됩니다.",
+  "先<strong>登入</strong>，再點下方的 <strong>「經文組」</strong> 分頁，進入上方的 <strong>「我的經文組」</strong>。": "먼저 <strong>로그인</strong>한 뒤 하단의 <strong>「구절 세트」</strong> 탭을 열고 상단의 <strong>「내 구절 세트」</strong>로 들어갑니다.",
+  "點下方的 <strong>「一起玩」</strong> 分頁創建專屬房間，邀請小組成員或家人一起加入。": "하단의 <strong>「함께 놀기」</strong> 탭에서 전용 방을 만들고 소그룹 멤버나 가족을 초대하세요.",
+  "在下方的 <strong>「一起玩」</strong> 分頁點 <strong>「誰在玩」</strong>，看看世界各地的經文雨玩家都在哪裡。": "하단의 <strong>「함께 놀기」</strong> 탭에서 <strong>「누가 플레이 중」</strong>을 누르면 전 세계 VerseRain 플레이어가 어디에 있는지 볼 수 있습니다.",
+  "朋友用你的推薦碼加入並第一次通過一節經文，你的累積點數 <strong>+5000</strong>，每位朋友一次。": "친구가 내 추천 코드로 가입하고 첫 구절을 통과하면 내 총점에 <strong>+5000</strong>이 더해집니다. 친구 한 명당 한 번입니다.",
+  "搜尋使用說明": "사용 설명서 검색",
+  "搜尋，例如：點數、錄音、翻譯": "검색 (예: 점수, 녹음, 번역)",
+  "清除": "지우기",
+  "找到 {n} 段相關說明": "찾은 섹션: {n}개",
+  "找不到「{q}」，換個字試試。": "「{q}」에 대한 결과가 없습니다. 다른 단어로 찾아 보세요.",
+  "目錄": "목차",
 };
 
 export const es = {
@@ -8782,6 +8847,19 @@ export const es = {
   "驗證失敗": "La verificación falló",
   "連線失敗": "Error de conexión",
   "請輸入 Email 與密碼": "Introduce tu correo y contraseña",
+  "1. 點下方的「經文組」分頁": "1. Abre la pestaña «Conjunto de versículos», abajo",
+  "點畫面下方的 <strong>「經文組」</strong> 分頁，就會看到系統與玩家建立的所有公開經文組，可依最新、標題或最受歡迎排序。": "Toca la pestaña <strong>«Conjunto de versículos»</strong> en la parte inferior de la pantalla para ver todos los conjuntos públicos creados por el sistema y por los jugadores. Ordénalos por más recientes, título o más populares.",
+  "點選列表中的標題（例如：<strong>約翰福音 核心經文</strong>），進入經文組頁面。每一節經文右側有「聆聽」和「挑戰」按鈕；上方的「全部聆聽」會從第一節連續播放。": "Toca un título de la lista (por ejemplo, <strong>Versículos clave de Juan</strong>) para abrir la página del conjunto. Cada versículo tiene los botones «Escuchar» y «Desafío»; «Escuchar todo», arriba, reproduce el conjunto seguido desde el primer versículo.",
+  "先<strong>登入</strong>，再點下方的 <strong>「經文組」</strong> 分頁，進入上方的 <strong>「我的經文組」</strong>。": "<strong>Inicia sesión</strong>, abre la pestaña <strong>«Conjunto de versículos»</strong>, abajo, y entra en <strong>«Mis conjuntos»</strong>, arriba.",
+  "點下方的 <strong>「一起玩」</strong> 分頁創建專屬房間，邀請小組成員或家人一起加入。": "Abre la pestaña <strong>«Jugar juntos»</strong>, abajo, para crear una sala privada e invitar a tu grupo o a tu familia.",
+  "在下方的 <strong>「一起玩」</strong> 分頁點 <strong>「誰在玩」</strong>，看看世界各地的經文雨玩家都在哪裡。": "En la pestaña <strong>«Jugar juntos»</strong>, abajo, toca <strong>«¿Quién juega?»</strong> para ver dónde están los jugadores de VerseRain en todo el mundo.",
+  "朋友用你的推薦碼加入並第一次通過一節經文，你的累積點數 <strong>+5000</strong>，每位朋友一次。": "Cuando un amigo se une con tu código de referido y supera su primer versículo, tus puntos totales suben <strong>+5000</strong>, una vez por amigo.",
+  "搜尋使用說明": "Buscar en el manual",
+  "搜尋，例如：點數、錄音、翻譯": "Buscar, p. ej.: puntos, grabación, traducir",
+  "清除": "Borrar",
+  "找到 {n} 段相關說明": "Secciones encontradas: {n}",
+  "找不到「{q}」，換個字試試。": "No hay resultados para «{q}». Prueba con otra palabra.",
+  "目錄": "Contenido",
 };
 
 export const tr = {
@@ -10179,6 +10257,19 @@ export const tr = {
   "驗證失敗": "Doğrulama başarısız",
   "連線失敗": "Bağlantı başarısız",
   "請輸入 Email 與密碼": "Lütfen e-posta ve şifreni gir",
+  "1. 點下方的「經文組」分頁": "1. Alttaki «Ayet Seti» sekmesini açın",
+  "點畫面下方的 <strong>「經文組」</strong> 分頁，就會看到系統與玩家建立的所有公開經文組，可依最新、標題或最受歡迎排序。": "Ekranın altındaki <strong>«Ayet Seti»</strong> sekmesine dokunun; sistem ve oyuncular tarafından oluşturulan tüm herkese açık ayet setlerini görürsünüz. En yeni, başlık veya en popüler sıralamasını seçebilirsiniz.",
+  "點選列表中的標題（例如：<strong>約翰福音 核心經文</strong>），進入經文組頁面。每一節經文右側有「聆聽」和「挑戰」按鈕；上方的「全部聆聽」會從第一節連續播放。": "Listeden bir başlığa dokunun (örneğin <strong>Yuhanna Temel Ayetler</strong>); set sayfası açılır. Her ayetin yanında «Dinle» ve «Meydan Oku» düğmeleri vardır; üstteki «Tümünü dinle» seti ilk ayetten başlayarak art arda çalar.",
+  "先<strong>登入</strong>，再點下方的 <strong>「經文組」</strong> 分頁，進入上方的 <strong>「我的經文組」</strong>。": "<strong>Giriş yapın</strong>, alttaki <strong>«Ayet Seti»</strong> sekmesini açın ve üstteki <strong>«Ayet Setlerim»</strong>e girin.",
+  "點下方的 <strong>「一起玩」</strong> 分頁創建專屬房間，邀請小組成員或家人一起加入。": "Özel bir oda oluşturmak ve grubunuzu ya da ailenizi davet etmek için alttaki <strong>«Birlikte oyna»</strong> sekmesini açın.",
+  "在下方的 <strong>「一起玩」</strong> 分頁點 <strong>「誰在玩」</strong>，看看世界各地的經文雨玩家都在哪裡。": "Alttaki <strong>«Birlikte oyna»</strong> sekmesinde <strong>«Kim Oynuyor»</strong>a dokunarak VerseRain oyuncularının dünyanın neresinde olduğunu görün.",
+  "朋友用你的推薦碼加入並第一次通過一節經文，你的累積點數 <strong>+5000</strong>，每位朋友一次。": "Bir arkadaşın senin davet kodunla katılıp ilk ayetini geçtiğinde toplam puanın <strong>+5000</strong> artar; her arkadaş için bir kez.",
+  "搜尋使用說明": "Kılavuzda ara",
+  "搜尋，例如：點數、錄音、翻譯": "Ara, ör. puan, kayıt, çevir",
+  "清除": "Temizle",
+  "找到 {n} 段相關說明": "Bulunan bölüm: {n}",
+  "找不到「{q}」，換個字試試。": "«{q}» için sonuç yok. Başka bir kelime deneyin.",
+  "目錄": "İçindekiler",
 };
 
 export const de = {
@@ -11576,6 +11667,19 @@ export const de = {
   "驗證失敗": "Bestätigung fehlgeschlagen",
   "連線失敗": "Verbindung fehlgeschlagen",
   "請輸入 Email 與密碼": "Bitte gib E-Mail und Passwort ein",
+  "1. 點下方的「經文組」分頁": "1. Unten den Tab „Verssammlung“ öffnen",
+  "點畫面下方的 <strong>「經文組」</strong> 分頁，就會看到系統與玩家建立的所有公開經文組，可依最新、標題或最受歡迎排序。": "Tippe unten auf dem Bildschirm auf den Tab <strong>„Verssammlung“</strong>. Dort siehst du alle öffentlichen Vers-Sets vom System und von anderen Spielern – sortierbar nach Neueste, Titel oder Beliebteste.",
+  "點選列表中的標題（例如：<strong>約翰福音 核心經文</strong>），進入經文組頁面。每一節經文右側有「聆聽」和「挑戰」按鈕；上方的「全部聆聽」會從第一節連續播放。": "Tippe auf einen Titel in der Liste (z. B. <strong>Kernverse des Johannesevangeliums</strong>), um die Set-Seite zu öffnen. Jeder Vers hat die Buttons „Hören“ und „Herausforderung“; „Alle anhören“ oben spielt das Set ab dem ersten Vers am Stück ab.",
+  "先<strong>登入</strong>，再點下方的 <strong>「經文組」</strong> 分頁，進入上方的 <strong>「我的經文組」</strong>。": "<strong>Melde dich an</strong>, öffne unten den Tab <strong>„Verssammlung“</strong> und gehe oben zu <strong>„Meine Verssammlungen“</strong>.",
+  "點下方的 <strong>「一起玩」</strong> 分頁創建專屬房間，邀請小組成員或家人一起加入。": "Öffne unten den Tab <strong>„Zusammen spielen“</strong>, um einen privaten Raum zu erstellen und Gruppe oder Familie einzuladen.",
+  "在下方的 <strong>「一起玩」</strong> 分頁點 <strong>「誰在玩」</strong>，看看世界各地的經文雨玩家都在哪裡。": "Tippe unten im Tab <strong>„Zusammen spielen“</strong> auf <strong>„Wer spielt?“</strong>, um zu sehen, wo VerseRain-Spieler auf der ganzen Welt sind.",
+  "朋友用你的推薦碼加入並第一次通過一節經文，你的累積點數 <strong>+5000</strong>，每位朋友一次。": "Wenn ein Freund mit deinem Empfehlungscode beitritt und seinen ersten Vers schafft, steigt deine Gesamtpunktzahl um <strong>+5000</strong> – einmal pro Freund.",
+  "搜尋使用說明": "Handbuch durchsuchen",
+  "搜尋，例如：點數、錄音、翻譯": "Suche, z. B. Punkte, Aufnahme, Übersetzen",
+  "清除": "Löschen",
+  "找到 {n} 段相關說明": "Gefundene Abschnitte: {n}",
+  "找不到「{q}」，換個字試試。": "Nichts gefunden für „{q}“. Versuch ein anderes Wort.",
+  "目錄": "Inhalt",
 };
 
 export const my = {
@@ -12973,6 +13077,19 @@ export const my = {
   "驗證失敗": "အတည်ပြုခြင်း မအောင်မြင်ပါ",
   "連線失敗": "ချိတ်ဆက်မှု မအောင်မြင်ပါ",
   "請輸入 Email 與密碼": "အီးမေးလ်နှင့် စကားဝှက် ထည့်ပါ",
+  "1. 點下方的「經文組」分頁": "၁။ အောက်ခြေရှိ «ကျမ်းချက်စု» တက်ဘ်ကို ဖွင့်ပါ",
+  "點畫面下方的 <strong>「經文組」</strong> 分頁，就會看到系統與玩家建立的所有公開經文組，可依最新、標題或最受歡迎排序。": "မျက်နှာပြင်အောက်ခြေရှိ <strong>«ကျမ်းချက်စု»</strong> တက်ဘ်ကို နှိပ်ပါက စနစ်နှင့် ကစားသူများ ဖန်တီးထားသော အများသုံး ကျမ်းချက်အစုအားလုံးကို မြင်ရမည်။ အသစ်ဆုံး၊ ခေါင်းစဉ် သို့မဟုတ် လူကြိုက်အများဆုံးဖြင့် စီနိုင်သည်။",
+  "點選列表中的標題（例如：<strong>約翰福音 核心經文</strong>），進入經文組頁面。每一節經文右側有「聆聽」和「挑戰」按鈕；上方的「全部聆聽」會從第一節連續播放。": "စာရင်းထဲမှ ခေါင်းစဉ်တစ်ခု (ဥပမာ <strong>ယောဟန် အဓိကကျမ်းချက်များ</strong>) ကို နှိပ်ပါက အစုစာမျက်နှာ ပွင့်လာမည်။ ကျမ်းချက်တစ်ခုစီ၏ ညာဘက်တွင် «နားထောင်ပါ» နှင့် «စိန်ခေါ်မှု» ခလုတ်များ ရှိပြီး၊ အပေါ်ရှိ «အားလုံးနားထောင်ပါ» သည် ပထမကျမ်းချက်မှစ၍ ဆက်တိုက် ဖွင့်ပေးသည်။",
+  "先<strong>登入</strong>，再點下方的 <strong>「經文組」</strong> 分頁，進入上方的 <strong>「我的經文組」</strong>。": "ဦးစွာ <strong>အကောင့်ဝင်</strong>ပြီး အောက်ခြေရှိ <strong>«ကျမ်းချက်စု»</strong> တက်ဘ်ကို ဖွင့်ကာ အပေါ်ရှိ <strong>«ကျွန်ုပ်၏ ကျမ်းချက်စုများ»</strong> သို့ ဝင်ပါ။",
+  "點下方的 <strong>「一起玩」</strong> 分頁創建專屬房間，邀請小組成員或家人一起加入。": "အောက်ခြေရှိ <strong>«အတူကစား»</strong> တက်ဘ်ကို ဖွင့်၍ သီးသန့်အခန်း ဖန်တီးပြီး အုပ်စုဝင်များ သို့မဟုတ် မိသားစုကို ဖိတ်ခေါ်ပါ။",
+  "在下方的 <strong>「一起玩」</strong> 分頁點 <strong>「誰在玩」</strong>，看看世界各地的經文雨玩家都在哪裡。": "အောက်ခြေရှိ <strong>«အတူကစား»</strong> တက်ဘ်တွင် <strong>«ဘယ်သူတွေကစားနေလဲ»</strong> ကို နှိပ်၍ ကမ္ဘာတစ်ဝှမ်းရှိ VerseRain ကစားသူများ မည်သည့်နေရာတွင် ရှိသည်ကို ကြည့်ပါ။",
+  "朋友用你的推薦碼加入並第一次通過一節經文，你的累積點數 <strong>+5000</strong>，每位朋友一次。": "သူငယ်ချင်းက သင့်ညွှန်းကုဒ်ဖြင့် ဝင်ရောက်ပြီး ပထမဆုံးကျမ်းချက်ကို အောင်မြင်လျှင် သင့်စုစုပေါင်းအမှတ်များ <strong>+5000</strong> တိုးမည်။ သူငယ်ချင်းတစ်ဦးလျှင် တစ်ကြိမ်သာ။",
+  "搜尋使用說明": "လက်စွဲတွင် ရှာရန်",
+  "搜尋，例如：點數、錄音、翻譯": "ရှာရန်၊ ဥပမာ- အမှတ်၊ အသံဖမ်း၊ ဘာသာပြန်",
+  "清除": "ရှင်းရန်",
+  "找到 {n} 段相關說明": "တွေ့ရှိသည့်အပိုင်း- {n}",
+  "找不到「{q}」，換個字試試。": "«{q}» ကို မတွေ့ပါ။ အခြားစကားလုံးဖြင့် ရှာကြည့်ပါ။",
+  "目錄": "မာတိကာ",
 };
 
 export const vi = {
@@ -14370,6 +14487,19 @@ export const vi = {
   "驗證失敗": "Xác minh thất bại",
   "連線失敗": "Kết nối thất bại",
   "請輸入 Email 與密碼": "Vui lòng nhập email và mật khẩu",
+  "1. 點下方的「經文組」分頁": "1. Mở thẻ «Bộ câu Kinh Thánh» ở phía dưới",
+  "點畫面下方的 <strong>「經文組」</strong> 分頁，就會看到系統與玩家建立的所有公開經文組，可依最新、標題或最受歡迎排序。": "Nhấn thẻ <strong>«Bộ câu Kinh Thánh»</strong> ở cuối màn hình để xem tất cả các bộ công khai do hệ thống và người chơi tạo. Có thể sắp xếp theo mới nhất, tiêu đề hoặc phổ biến nhất.",
+  "點選列表中的標題（例如：<strong>約翰福音 核心經文</strong>），進入經文組頁面。每一節經文右側有「聆聽」和「挑戰」按鈕；上方的「全部聆聽」會從第一節連續播放。": "Nhấn vào một tiêu đề trong danh sách (ví dụ <strong>Giăng – câu cốt lõi</strong>) để mở trang bộ câu. Mỗi câu có nút «Nghe» và «Thử thách»; nút «Nghe tất cả» ở phía trên sẽ phát liên tục từ câu đầu tiên.",
+  "先<strong>登入</strong>，再點下方的 <strong>「經文組」</strong> 分頁，進入上方的 <strong>「我的經文組」</strong>。": "<strong>Đăng nhập</strong>, mở thẻ <strong>«Bộ câu Kinh Thánh»</strong> ở phía dưới và vào <strong>«Bộ câu Kinh Thánh của tôi»</strong> ở phía trên.",
+  "點下方的 <strong>「一起玩」</strong> 分頁創建專屬房間，邀請小組成員或家人一起加入。": "Mở thẻ <strong>«Chơi cùng»</strong> ở phía dưới để tạo phòng riêng và mời nhóm hoặc gia đình cùng tham gia.",
+  "在下方的 <strong>「一起玩」</strong> 分頁點 <strong>「誰在玩」</strong>，看看世界各地的經文雨玩家都在哪裡。": "Trong thẻ <strong>«Chơi cùng»</strong> ở phía dưới, nhấn <strong>«Ai đang chơi»</strong> để xem người chơi VerseRain khắp thế giới đang ở đâu.",
+  "朋友用你的推薦碼加入並第一次通過一節經文，你的累積點數 <strong>+5000</strong>，每位朋友一次。": "Khi bạn bè tham gia bằng mã giới thiệu của bạn và vượt qua câu đầu tiên, tổng điểm của bạn được cộng <strong>+5000</strong>, mỗi người bạn một lần.",
+  "搜尋使用說明": "Tìm trong hướng dẫn",
+  "搜尋，例如：點數、錄音、翻譯": "Tìm, ví dụ: điểm, ghi âm, dịch",
+  "清除": "Xóa",
+  "找到 {n} 段相關說明": "Số mục tìm thấy: {n}",
+  "找不到「{q}」，換個字試試。": "Không tìm thấy «{q}». Hãy thử từ khác.",
+  "目錄": "Mục lục",
 };
 
 export const id = {
@@ -15995,6 +16125,19 @@ export const id = {
   "驗證失敗": "Verifikasi gagal",
   "連線失敗": "Koneksi gagal",
   "請輸入 Email 與密碼": "Masukkan email dan kata sandi",
+  "1. 點下方的「經文組」分頁": "1. Buka tab «Set Ayat» di bawah",
+  "點畫面下方的 <strong>「經文組」</strong> 分頁，就會看到系統與玩家建立的所有公開經文組，可依最新、標題或最受歡迎排序。": "Ketuk tab <strong>«Set Ayat»</strong> di bagian bawah layar untuk melihat semua set ayat publik yang dibuat sistem dan pemain. Urutkan berdasarkan terbaru, judul, atau terpopuler.",
+  "點選列表中的標題（例如：<strong>約翰福音 核心經文</strong>），進入經文組頁面。每一節經文右側有「聆聽」和「挑戰」按鈕；上方的「全部聆聽」會從第一節連續播放。": "Ketuk sebuah judul di daftar (misalnya <strong>Ayat Inti Yohanes</strong>) untuk membuka halaman set. Setiap ayat punya tombol «Dengarkan» dan «Tantang»; «Dengarkan Semua» di bagian atas memutar set berurutan mulai dari ayat pertama.",
+  "先<strong>登入</strong>，再點下方的 <strong>「經文組」</strong> 分頁，進入上方的 <strong>「我的經文組」</strong>。": "<strong>Masuk</strong> terlebih dahulu, buka tab <strong>«Set Ayat»</strong> di bawah, lalu masuk ke <strong>«Set Saya»</strong> di bagian atas.",
+  "點下方的 <strong>「一起玩」</strong> 分頁創建專屬房間，邀請小組成員或家人一起加入。": "Buka tab <strong>«Main bersama»</strong> di bawah untuk membuat ruang pribadi dan mengundang kelompok atau keluarga Anda.",
+  "在下方的 <strong>「一起玩」</strong> 分頁點 <strong>「誰在玩」</strong>，看看世界各地的經文雨玩家都在哪裡。": "Di tab <strong>«Main bersama»</strong> di bawah, ketuk <strong>«Siapa yang Main»</strong> untuk melihat di mana saja pemain VerseRain di seluruh dunia.",
+  "朋友用你的推薦碼加入並第一次通過一節經文，你的累積點數 <strong>+5000</strong>，每位朋友一次。": "Saat teman bergabung dengan kode referensimu dan lulus ayat pertamanya, skor totalmu bertambah <strong>+5000</strong>, satu kali per teman.",
+  "搜尋使用說明": "Cari di panduan",
+  "搜尋，例如：點數、錄音、翻譯": "Cari, mis. poin, rekaman, terjemahkan",
+  "清除": "Hapus",
+  "找到 {n} 段相關說明": "Bagian ditemukan: {n}",
+  "找不到「{q}」，換個字試試。": "«{q}» tidak ditemukan. Coba kata lain.",
+  "目錄": "Daftar isi",
 };
 
 export const ms = {
@@ -17824,6 +17967,19 @@ export const ms = {
   "驗證失敗": "Pengesahan gagal",
   "連線失敗": "Sambungan gagal",
   "請輸入 Email 與密碼": "Sila masukkan e-mel dan kata laluan",
+  "1. 點下方的「經文組」分頁": "1. Buka tab «Set Ayat» di bawah",
+  "點畫面下方的 <strong>「經文組」</strong> 分頁，就會看到系統與玩家建立的所有公開經文組，可依最新、標題或最受歡迎排序。": "Ketik tab <strong>«Set Ayat»</strong> di bahagian bawah skrin untuk melihat semua set ayat awam yang dicipta oleh sistem dan pemain. Susun mengikut terbaru, tajuk atau paling popular.",
+  "點選列表中的標題（例如：<strong>約翰福音 核心經文</strong>），進入經文組頁面。每一節經文右側有「聆聽」和「挑戰」按鈕；上方的「全部聆聽」會從第一節連續播放。": "Ketik satu tajuk dalam senarai (contohnya <strong>Ayat Teras Yohanes</strong>) untuk membuka halaman set. Setiap ayat ada butang «Dengar» dan «Cabar»; «Dengar Semua» di bahagian atas memainkan set berturut-turut dari ayat pertama.",
+  "先<strong>登入</strong>，再點下方的 <strong>「經文組」</strong> 分頁，進入上方的 <strong>「我的經文組」</strong>。": "<strong>Log masuk</strong> dahulu, buka tab <strong>«Set Ayat»</strong> di bawah dan masuk ke <strong>«Set Tersuai Saya»</strong> di bahagian atas.",
+  "點下方的 <strong>「一起玩」</strong> 分頁創建專屬房間，邀請小組成員或家人一起加入。": "Buka tab <strong>«Main bersama»</strong> di bawah untuk mencipta bilik peribadi dan menjemput kumpulan atau keluarga anda.",
+  "在下方的 <strong>「一起玩」</strong> 分頁點 <strong>「誰在玩」</strong>，看看世界各地的經文雨玩家都在哪裡。": "Dalam tab <strong>«Main bersama»</strong> di bawah, ketik <strong>«Siapa Bermain»</strong> untuk melihat di mana pemain VerseRain di seluruh dunia.",
+  "朋友用你的推薦碼加入並第一次通過一節經文，你的累積點數 <strong>+5000</strong>，每位朋友一次。": "Apabila rakan menyertai dengan kod rujukan anda dan lulus ayat pertamanya, jumlah markah anda bertambah <strong>+5000</strong>, sekali bagi setiap rakan.",
+  "搜尋使用說明": "Cari dalam panduan",
+  "搜尋，例如：點數、錄音、翻譯": "Cari, cth. mata, rakaman, terjemah",
+  "清除": "Kosongkan",
+  "找到 {n} 段相關說明": "Bahagian ditemui: {n}",
+  "找不到「{q}」，換個字試試。": "«{q}» tidak ditemui. Cuba perkataan lain.",
+  "目錄": "Kandungan",
 };
 
 export const zhcn = {
@@ -19572,6 +19728,19 @@ export const zhcn = {
   "驗證失敗": "验证失败",
   "連線失敗": "连接失败",
   "請輸入 Email 與密碼": "请输入 Email 和密码",
+  "1. 點下方的「經文組」分頁": "1. 点下方的「经文组」分页",
+  "點畫面下方的 <strong>「經文組」</strong> 分頁，就會看到系統與玩家建立的所有公開經文組，可依最新、標題或最受歡迎排序。": "点画面下方的 <strong>「经文组」</strong> 分页，就会看到系统与玩家建立的所有公开经文组，可依最新、标题或最受欢迎排序。",
+  "點選列表中的標題（例如：<strong>約翰福音 核心經文</strong>），進入經文組頁面。每一節經文右側有「聆聽」和「挑戰」按鈕；上方的「全部聆聽」會從第一節連續播放。": "点选列表中的标题（例如：<strong>约翰福音 核心经文</strong>），进入经文组页面。每一节经文右侧有「聆听」和「挑战」按钮；上方的「全部聆听」会从第一节连续播放。",
+  "先<strong>登入</strong>，再點下方的 <strong>「經文組」</strong> 分頁，進入上方的 <strong>「我的經文組」</strong>。": "先<strong>登录</strong>，再点下方的 <strong>「经文组」</strong> 分页，进入上方的 <strong>「我的经文组」</strong>。",
+  "點下方的 <strong>「一起玩」</strong> 分頁創建專屬房間，邀請小組成員或家人一起加入。": "点下方的 <strong>「一起玩」</strong> 分页创建专属房间，邀请小组成员或家人一起加入。",
+  "在下方的 <strong>「一起玩」</strong> 分頁點 <strong>「誰在玩」</strong>，看看世界各地的經文雨玩家都在哪裡。": "在下方的 <strong>「一起玩」</strong> 分页点 <strong>「谁在玩」</strong>，看看世界各地的经文雨玩家都在哪里。",
+  "朋友用你的推薦碼加入並第一次通過一節經文，你的累積點數 <strong>+5000</strong>，每位朋友一次。": "朋友用你的推荐码加入并第一次通过一节经文，你的累积点数 <strong>+5000</strong>，每位朋友一次。",
+  "搜尋使用說明": "搜寻使用说明",
+  "搜尋，例如：點數、錄音、翻譯": "搜寻，例如：点数、录音、翻译",
+  "清除": "清除",
+  "找到 {n} 段相關說明": "找到 {n} 段相关说明",
+  "找不到「{q}」，換個字試試。": "找不到「{q}」，换个字试试。",
+  "目錄": "目录",
 };
 
 export const pt = {
@@ -20692,6 +20861,19 @@ export const pt = {
   "驗證失敗": "Falha na verificação",
   "連線失敗": "Falha na conexão",
   "請輸入 Email 與密碼": "Digite seu e-mail e senha",
+  "1. 點下方的「經文組」分頁": "1. Abra a aba «Conjuntos de versículos», embaixo",
+  "點畫面下方的 <strong>「經文組」</strong> 分頁，就會看到系統與玩家建立的所有公開經文組，可依最新、標題或最受歡迎排序。": "Toque na aba <strong>«Conjuntos de versículos»</strong> na parte de baixo da tela para ver todos os conjuntos públicos criados pelo sistema e pelos jogadores. Ordene por mais recentes, título ou mais populares.",
+  "點選列表中的標題（例如：<strong>約翰福音 核心經文</strong>），進入經文組頁面。每一節經文右側有「聆聽」和「挑戰」按鈕；上方的「全部聆聽」會從第一節連續播放。": "Toque em um título da lista (por exemplo, <strong>Versículos centrais de João</strong>) para abrir a página do conjunto. Cada versículo tem os botões «Ouvir» e «Desafio»; «Ouvir tudo», no topo, reproduz o conjunto em sequência a partir do primeiro versículo.",
+  "先<strong>登入</strong>，再點下方的 <strong>「經文組」</strong> 分頁，進入上方的 <strong>「我的經文組」</strong>。": "<strong>Faça login</strong>, abra a aba <strong>«Conjuntos de versículos»</strong>, embaixo, e entre em <strong>«Meus conjuntos exclusivos»</strong>, no topo.",
+  "點下方的 <strong>「一起玩」</strong> 分頁創建專屬房間，邀請小組成員或家人一起加入。": "Abra a aba <strong>«Jogar juntos»</strong>, embaixo, para criar uma sala privada e convidar o seu grupo ou a família.",
+  "在下方的 <strong>「一起玩」</strong> 分頁點 <strong>「誰在玩」</strong>，看看世界各地的經文雨玩家都在哪裡。": "Na aba <strong>«Jogar juntos»</strong>, embaixo, toque em <strong>«Quem está jogando»</strong> para ver onde estão os jogadores do VerseRain pelo mundo.",
+  "朋友用你的推薦碼加入並第一次通過一節經文，你的累積點數 <strong>+5000</strong>，每位朋友一次。": "Quando um amigo entra com o seu código de indicação e completa o primeiro versículo, seus pontos totais aumentam <strong>+5000</strong>, uma vez por amigo.",
+  "搜尋使用說明": "Pesquisar no manual",
+  "搜尋，例如：點數、錄音、翻譯": "Pesquisar, ex.: pontos, gravação, traduzir",
+  "清除": "Limpar",
+  "找到 {n} 段相關說明": "Seções encontradas: {n}",
+  "找不到「{q}」，換個字試試。": "Nada encontrado para «{q}». Tente outra palavra.",
+  "目錄": "Sumário",
 };
 
 export const fr = {
@@ -21812,6 +21994,19 @@ export const fr = {
   "驗證失敗": "La vérification a échoué",
   "連線失敗": "Échec de la connexion",
   "請輸入 Email 與密碼": "Saisis ton e-mail et ton mot de passe",
+  "1. 點下方的「經文組」分頁": "1. Ouvrez l’onglet « Ensembles de versets » en bas",
+  "點畫面下方的 <strong>「經文組」</strong> 分頁，就會看到系統與玩家建立的所有公開經文組，可依最新、標題或最受歡迎排序。": "Touchez l’onglet <strong>« Ensembles de versets »</strong> en bas de l’écran pour voir tous les ensembles publics créés par le système et par les joueurs. Triez par plus récents, titre ou plus populaires.",
+  "點選列表中的標題（例如：<strong>約翰福音 核心經文</strong>），進入經文組頁面。每一節經文右側有「聆聽」和「挑戰」按鈕；上方的「全部聆聽」會從第一節連續播放。": "Touchez un titre de la liste (par exemple <strong>Versets clés de Jean</strong>) pour ouvrir la page de l’ensemble. Chaque verset a les boutons « Écouter » et « Défi » ; « Tout écouter », en haut, lit l’ensemble d’affilée à partir du premier verset.",
+  "先<strong>登入</strong>，再點下方的 <strong>「經文組」</strong> 分頁，進入上方的 <strong>「我的經文組」</strong>。": "<strong>Connectez-vous</strong>, ouvrez l’onglet <strong>« Ensembles de versets »</strong> en bas, puis allez dans <strong>« Mes ensembles exclusifs »</strong> en haut.",
+  "點下方的 <strong>「一起玩」</strong> 分頁創建專屬房間，邀請小組成員或家人一起加入。": "Ouvrez l’onglet <strong>« Jouer ensemble »</strong> en bas pour créer un salon privé et inviter votre groupe ou votre famille.",
+  "在下方的 <strong>「一起玩」</strong> 分頁點 <strong>「誰在玩」</strong>，看看世界各地的經文雨玩家都在哪裡。": "Dans l’onglet <strong>« Jouer ensemble »</strong> en bas, touchez <strong>« Qui joue ? »</strong> pour voir où se trouvent les joueurs VerseRain dans le monde.",
+  "朋友用你的推薦碼加入並第一次通過一節經文，你的累積點數 <strong>+5000</strong>，每位朋友一次。": "Quand un ami rejoint avec votre code de parrainage et réussit son premier verset, vos points totaux augmentent de <strong>+5000</strong>, une fois par ami.",
+  "搜尋使用說明": "Rechercher dans le mode d’emploi",
+  "搜尋，例如：點數、錄音、翻譯": "Rechercher, ex. points, enregistrement, traduire",
+  "清除": "Effacer",
+  "找到 {n} 段相關說明": "Sections trouvées : {n}",
+  "找不到「{q}」，換個字試試。": "Aucun résultat pour « {q} ». Essayez un autre mot.",
+  "目錄": "Sommaire",
 };
 
 export const ru = {
@@ -22932,6 +23127,19 @@ export const ru = {
   "驗證失敗": "Не удалось подтвердить",
   "連線失敗": "Ошибка соединения",
   "請輸入 Email 與密碼": "Введите e-mail и пароль",
+  "1. 點下方的「經文組」分頁": "1. Откройте вкладку «Наборы стихов» внизу",
+  "點畫面下方的 <strong>「經文組」</strong> 分頁，就會看到系統與玩家建立的所有公開經文組，可依最新、標題或最受歡迎排序。": "Нажмите вкладку <strong>«Наборы стихов»</strong> внизу экрана — вы увидите все публичные наборы, созданные системой и игроками. Их можно сортировать по новизне, названию или популярности.",
+  "點選列表中的標題（例如：<strong>約翰福音 核心經文</strong>），進入經文組頁面。每一節經文右側有「聆聽」和「挑戰」按鈕；上方的「全部聆聽」會從第一節連續播放。": "Нажмите на название в списке (например, <strong>Ключевые стихи Евангелия от Иоанна</strong>), чтобы открыть страницу набора. У каждого стиха есть кнопки «Слушать» и «Испытание»; кнопка «Слушать все» вверху воспроизводит набор подряд, начиная с первого стиха.",
+  "先<strong>登入</strong>，再點下方的 <strong>「經文組」</strong> 分頁，進入上方的 <strong>「我的經文組」</strong>。": "<strong>Войдите</strong>, откройте вкладку <strong>«Наборы стихов»</strong> внизу и перейдите вверху в <strong>«Мои личные наборы»</strong>.",
+  "點下方的 <strong>「一起玩」</strong> 分頁創建專屬房間，邀請小組成員或家人一起加入。": "Откройте вкладку <strong>«Играть вместе»</strong> внизу, чтобы создать приватную комнату и пригласить группу или семью.",
+  "在下方的 <strong>「一起玩」</strong> 分頁點 <strong>「誰在玩」</strong>，看看世界各地的經文雨玩家都在哪裡。": "На вкладке <strong>«Играть вместе»</strong> внизу нажмите <strong>«Кто играет»</strong>, чтобы увидеть, где по всему миру находятся игроки VerseRain.",
+  "朋友用你的推薦碼加入並第一次通過一節經文，你的累積點數 <strong>+5000</strong>，每位朋友一次。": "Когда друг присоединяется по вашему реферальному коду и впервые проходит стих, к вашему общему счёту добавляется <strong>+5000</strong> — один раз за каждого друга.",
+  "搜尋使用說明": "Поиск по инструкции",
+  "搜尋，例如：點數、錄音、翻譯": "Поиск, напр.: очки, запись, перевод",
+  "清除": "Очистить",
+  "找到 {n} 段相關說明": "Найдено разделов: {n}",
+  "找不到「{q}」，換個字試試。": "По запросу «{q}» ничего не найдено. Попробуйте другое слово.",
+  "目錄": "Содержание",
 };
 
 export const hi = {
@@ -24052,6 +24260,19 @@ export const hi = {
   "驗證失敗": "सत्यापन विफल",
   "連線失敗": "कनेक्शन विफल",
   "請輸入 Email 與密碼": "कृपया ईमेल और पासवर्ड दर्ज करें",
+  "1. 點下方的「經文組」分頁": "1. नीचे «वचन समूह» टैब खोलें",
+  "點畫面下方的 <strong>「經文組」</strong> 分頁，就會看到系統與玩家建立的所有公開經文組，可依最新、標題或最受歡迎排序。": "स्क्रीन के नीचे <strong>«वचन समूह»</strong> टैब दबाएँ; आपको सिस्टम और खिलाड़ियों द्वारा बनाए सभी सार्वजनिक वचन समूह दिखेंगे। नवीनतम, शीर्षक या लोकप्रियता के अनुसार क्रमबद्ध करें।",
+  "點選列表中的標題（例如：<strong>約翰福音 核心經文</strong>），進入經文組頁面。每一節經文右側有「聆聽」和「挑戰」按鈕；上方的「全部聆聽」會從第一節連續播放。": "सूची में किसी शीर्षक (जैसे <strong>यूहन्ना के मुख्य वचन</strong>) पर दबाएँ; समूह का पेज खुलेगा। हर वचन के साथ «सुनें» और «चुनौती» बटन होते हैं; ऊपर का «सब सुनें» पहले वचन से लगातार चलाता है।",
+  "先<strong>登入</strong>，再點下方的 <strong>「經文組」</strong> 分頁，進入上方的 <strong>「我的經文組」</strong>。": "पहले <strong>लॉग इन</strong> करें, नीचे <strong>«वचन समूह»</strong> टैब खोलें और ऊपर <strong>«मेरे निजी समूह»</strong> में जाएँ।",
+  "點下方的 <strong>「一起玩」</strong> 分頁創建專屬房間，邀請小組成員或家人一起加入。": "नीचे <strong>«साथ खेलें»</strong> टैब खोलकर निजी कमरा बनाएँ और अपने समूह या परिवार को आमंत्रित करें।",
+  "在下方的 <strong>「一起玩」</strong> 分頁點 <strong>「誰在玩」</strong>，看看世界各地的經文雨玩家都在哪裡。": "नीचे <strong>«साथ खेलें»</strong> टैब में <strong>«कौन खेल रहा है»</strong> दबाकर देखें कि दुनिया भर में VerseRain के खिलाड़ी कहाँ हैं।",
+  "朋友用你的推薦碼加入並第一次通過一節經文，你的累積點數 <strong>+5000</strong>，每位朋友一次。": "जब कोई दोस्त आपके रेफ़रल कोड से जुड़कर पहली बार कोई वचन पूरा करता है, तो आपके कुल अंक <strong>+5000</strong> बढ़ जाते हैं, हर दोस्त के लिए एक बार।",
+  "搜尋使用說明": "निर्देशों में खोजें",
+  "搜尋，例如：點數、錄音、翻譯": "खोजें, जैसे: अंक, रिकॉर्डिंग, अनुवाद",
+  "清除": "साफ़ करें",
+  "找到 {n} 段相關說明": "मिले अनुभाग: {n}",
+  "找不到「{q}」，換個字試試。": "«{q}» नहीं मिला। कोई दूसरा शब्द आज़माएँ।",
+  "目錄": "विषय-सूची",
 };
 
 // Khmer (Cambodian) — full UI coverage, machine-translated in bulk from the
@@ -25802,6 +26023,19 @@ export const km = {
   "驗證失敗": "ការផ្ទៀងផ្ទាត់បរាជ័យ",
   "連線失敗": "ការតភ្ជាប់បរាជ័យ",
   "請輸入 Email 與密碼": "សូមបញ្ចូលអ៊ីមែល និងពាក្យសម្ងាត់",
+  "1. 點下方的「經文組」分頁": "១. ចុចផ្ទាំង「សំណុំខគម្ពីរ」ខាងក្រោម",
+  "點畫面下方的 <strong>「經文組」</strong> 分頁，就會看到系統與玩家建立的所有公開經文組，可依最新、標題或最受歡迎排序。": "ចុចផ្ទាំង <strong>「សំណុំខគម្ពីរ」</strong> នៅខាងក្រោមអេក្រង់ អ្នកនឹងឃើញសំណុំខគម្ពីរសាធារណៈទាំងអស់ដែលបង្កើតដោយប្រព័ន្ធនិងអ្នកលេង អាចរៀបតាមថ្មីបំផុត ចំណងជើង ឬពេញនិយមបំផុត។",
+  "點選列表中的標題（例如：<strong>約翰福音 核心經文</strong>），進入經文組頁面。每一節經文右側有「聆聽」和「挑戰」按鈕；上方的「全部聆聽」會從第一節連續播放。": "ចុចចំណងជើងក្នុងបញ្ជី(ឧទាហរណ៍៖ <strong>ខគម្ពីរស្នូលកណ្ឌយ៉ូហាន</strong>) ដើម្បីចូលទំព័រសំណុំខគម្ពីរ។ ខនីមួយៗមានប៊ូតុង「ស្តាប់」និង「បញ្ចោទ」នៅខាងស្តាំ ហើយ「ស្តាប់ទាំងអស់」ខាងលើនឹងចាក់បន្តគ្នាចាប់ពីខទីមួយ។",
+  "先<strong>登入</strong>，再點下方的 <strong>「經文組」</strong> 分頁，進入上方的 <strong>「我的經文組」</strong>。": "<strong>ចូល</strong>សិន រួចចុចផ្ទាំង <strong>「សំណុំខគម្ពីរ」</strong> ខាងក្រោម ចូល <strong>「សំណុំផ្ទាល់ខ្លួនរបស់ខ្ញុំ」</strong> ខាងលើ។",
+  "點下方的 <strong>「一起玩」</strong> 分頁創建專屬房間，邀請小組成員或家人一起加入。": "ចុចផ្ទាំង <strong>「លេងជាមួយគ្នា」</strong> ខាងក្រោមដើម្បីបង្កើតបន្ទប់ផ្ទាល់ខ្លួន អញ្ជើញសមាជិកក្រុមឬក្រុមគ្រួសារចូលរួម។",
+  "在下方的 <strong>「一起玩」</strong> 分頁點 <strong>「誰在玩」</strong>，看看世界各地的經文雨玩家都在哪裡。": "នៅផ្ទាំង <strong>「លេងជាមួយគ្នា」</strong> ខាងក្រោម ចុច <strong>「អ្នកណាកំពុងលេង」</strong> ដើម្បីមើលអ្នកលេង VerseRain នៅទីណាខ្លះលើពិភពលោក។",
+  "朋友用你的推薦碼加入並第一次通過一節經文，你的累積點數 <strong>+5000</strong>，每位朋友一次。": "ពេលមិត្តភក្តិចូលរួមដោយប្រើកូដណែនាំរបស់អ្នក ហើយឆ្លងខគម្ពីរដំបូងបាន ពិន្ទុសរុបរបស់អ្នកកើនឡើង <strong>+5000</strong> ម្ដងសម្រាប់មិត្តម្នាក់។",
+  "搜尋使用說明": "ស្វែងរកក្នុងសៀវភៅណែនាំ",
+  "搜尋，例如：點數、錄音、翻譯": "ស្វែងរក ឧ. ពិន្ទុ ថតសំឡេង បកប្រែ",
+  "清除": "សម្អាត",
+  "找到 {n} 段相關說明": "ផ្នែកដែលរកឃើញ៖ {n}",
+  "找不到「{q}」，換個字試試。": "រកមិនឃើញ「{q}」ទេ សូមសាកពាក្យផ្សេង។",
+  "目錄": "មាតិកា",
 };
 
 const I18N_FILLINS = { he, fa, ar, ja, ko, es, tr, de, my, vi, id, ms, zhcn, pt, fr, ru, hi, km };
