@@ -1,13 +1,13 @@
 #!/usr/bin/env node
 // npm run check:i18n
 //
-// Every user-facing string in App.jsx goes through t(zh, en). When a language's
+// Every user-facing string in src/ goes through t(zh, en). When a language's
 // dictionary lacks the key, t() silently falls back — to the English gloss for
 // most languages, and to Traditional Chinese for ja/ko/cuvs. That fallback is
 // invisible in code review, which is how a Hebrew user came to read
 // "Cloud Family" and "Multiplayer" on an otherwise-Hebrew lobby.
 //
-// This script parses App.jsx, collects every t() key and every dictionary key
+// This script parses src/, collects every t() key and every dictionary key
 // (literal dicts + Object.assign patches + the generated i18nFillins tables),
 // and exits non-zero if any language is missing a key. Run it before release.
 //
@@ -16,7 +16,7 @@
 //   npm run check:i18n -- --json # machine-readable, for tooling
 //
 // When it fails: add the missing strings to src/i18nFillins.js (per language),
-// or to the hand-written dictionaries in App.jsx.
+// or to the hand-written dictionaries in src/uiDicts.js.
 
 import { readFileSync, readdirSync } from 'node:fs';
 import { fileURLToPath, pathToFileURL } from 'node:url';
@@ -26,9 +26,9 @@ import acornJsx from 'acorn-jsx';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const SRC = resolve(ROOT, 'src');
-const APP = resolve(SRC, 'App.jsx');
+const DICTS = resolve(SRC, 'uiDicts.js');
 
-// The dictionaries live in App.jsx, but `t` is passed as a prop into
+// The dictionaries live in uiDicts.js, but `t` is passed as a prop into
 // TeamsModal, BlindModeGame, VerseVoiceRecorder, SetPicker … — their keys hit
 // the same dictionaries, so every source file has to be scanned for t() calls.
 function sourceFiles(dir) {
@@ -88,8 +88,8 @@ const usedIn = new Map();
 // must be rewritten as a static key + {placeholder} + .replace().
 const dynamicKeys = [];
 
-// Dictionaries: App.jsx only.
-visit(parse(APP), (node) => {
+// Dictionaries: uiDicts.js only.
+visit(parse(DICTS), (node) => {
   // const xDict = { … }
   if (
     node.type === 'VariableDeclarator' &&
@@ -155,7 +155,7 @@ for (const file of sourceFiles(SRC)) {
 const placeholders = (s) => (String(s).match(/\{[a-zA-Z]+\}/g) ?? []).sort().join(',');
 const brokenPlaceholders = [];
 
-// The generated backfill tables, merged the same way App.jsx merges them.
+// The generated backfill tables, merged the same way getUiDicts() merges them.
 const fillins = (await import(pathToFileURL(resolve(ROOT, 'src/i18nFillins.js')).href)).default;
 for (const [lang, entries] of Object.entries(fillins)) {
   record(lang === 'zhcn' ? 'zhcnDict' : `${lang}Dict`, Object.keys(entries));
