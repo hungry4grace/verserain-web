@@ -1,5 +1,5 @@
 // Moved out of App.jsx unchanged (UI/UX 第 4 階段).
-import { ArrowRightLeft, ArrowUpDown, CloudRain, MessageCircle, Mic, Pause, Play, Share2, Star, X, XCircle, Zap } from 'lucide-react';
+import { ArrowRightLeft, ArrowUpDown, CloudRain, GripHorizontal, MessageCircle, Mic, Pause, Play, Share2, Star, X, XCircle, Zap } from 'lucide-react';
 import { BIBLE_LANGUAGE_OPTIONS, DEFAULT_PLAY_FONT_CHOICE, DEFAULT_PLAY_INK_CHOICE, PLAY_INK_OPTIONS, areLikelyParallelVerseSets, fetchBibleVerseFromAPI, fetchVerseFromBolls, fetchVerseFromGetBible, fetchVerseFromTaibible, findMatchingVerse, getCachedBibleVerse, getDailyVerseImageUrls, getEnglishReferenceFromKey, getSecondaryPhrasesForIndex, getStableNumber, getVoiceLangForVersion, isTextLikelyForVersion, pickRandomVerse, setCachedBibleVerse } from '../lib/bible.js';
 import ChallengeSetupModal, { loadChallengeSetup } from '../ChallengeSetupModal';
 import { DAILY_RAIN_DROPS, RAIN_FONT_LEVELS } from './rainConstants';
@@ -16,6 +16,9 @@ import { formatVerseReferenceForDisplay, formatVerseReferenceForSpeech, stripTop
 import { getSetAssetDataUrl, setVoiceApi, uploadUserVerseVoice, userVoiceApi, voiceOwnerId } from '../setVoiceApi';
 import { normalizeVerseReferenceKey } from '../lib/verseRef.js';
 import { splitVersePhrases } from '../lib/phraseSplitter.js';
+
+// Where the YouTube music player was last dragged to (see ytPos below).
+const YT_DOCK_POS_KEY = 'verserain_yt_dock_pos';
 
 // How long playback waits for the "which verses have a recording" lists before
 // giving up and reading with TTS.
@@ -815,6 +818,82 @@ export function VerseSetContinuousRainPlayer({
   const [ytState, setYtState] = useState(null);
   const [ytSide, setYtSide] = useState('top');
   const [ytClosed, setYtClosed] = useState(false);
+  // Dragged by its title bar to anywhere on screen; ytPos null = docked in a
+  // corner. The spot is kept per device as a fraction of the free space, so it
+  // survives a rotation or a resized window.
+  const ytDockRef = useRef(null);
+  const ytDragRef = useRef(null);
+  const ytFracRef = useRef(null);
+  const [ytPos, setYtPos] = useState(null);
+  const [ytDragging, setYtDragging] = useState(false);
+  const ytDockRoom = () => {
+    const el = ytDockRef.current;
+    return {
+      maxX: Math.max(0, window.innerWidth - (el?.offsetWidth || 220)),
+      maxY: Math.max(0, window.innerHeight - (el?.offsetHeight || 250)),
+    };
+  };
+  const ytClampPos = (x, y) => {
+    const { maxX, maxY } = ytDockRoom();
+    const SNAP = 16; // this close to an edge → flush against it
+    let nx = Math.min(maxX, Math.max(0, x));
+    let ny = Math.min(maxY, Math.max(0, y));
+    if (nx < SNAP) nx = 0; else if (maxX - nx < SNAP) nx = maxX;
+    if (ny < SNAP) ny = 0; else if (maxY - ny < SNAP) ny = maxY;
+    return { x: nx, y: ny };
+  };
+  const ytPosFromFrac = (f) => {
+    const { maxX, maxY } = ytDockRoom();
+    return ytClampPos(f.fx * maxX, f.fy * maxY);
+  };
+  React.useLayoutEffect(() => {
+    if (!ytBgmId || ytClosed) return undefined;
+    try {
+      const f = JSON.parse(localStorage.getItem(YT_DOCK_POS_KEY) || 'null');
+      if (f && Number.isFinite(f.fx) && Number.isFinite(f.fy)) { ytFracRef.current = f; setYtPos(ytPosFromFrac(f)); }
+    } catch { /* no storage — stay in the corner */ }
+    const onResize = () => { if (ytFracRef.current) setYtPos(ytPosFromFrac(ytFracRef.current)); };
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ytBgmId, ytClosed]);
+  const onYtBarPointerDown = (e) => {
+    if (e.button > 0 || e.target.closest('button')) return;
+    const el = ytDockRef.current;
+    if (!el) return;
+    const r = el.getBoundingClientRect();
+    ytDragRef.current = { id: e.pointerId, dx: e.clientX - r.left, dy: e.clientY - r.top };
+    try { e.currentTarget.setPointerCapture(e.pointerId); } catch { /* noop */ }
+    setYtDragging(true);
+    e.preventDefault();
+  };
+  const onYtBarPointerMove = (e) => {
+    const d = ytDragRef.current;
+    if (!d || d.id !== e.pointerId) return;
+    setYtPos(ytClampPos(e.clientX - d.dx, e.clientY - d.dy));
+  };
+  const onYtBarPointerEnd = (e) => {
+    const d = ytDragRef.current;
+    if (!d || d.id !== e.pointerId) return;
+    ytDragRef.current = null;
+    setYtDragging(false);
+    const el = ytDockRef.current;
+    if (!el || !ytPos) return;
+    const { maxX, maxY } = ytDockRoom();
+    const r = el.getBoundingClientRect();
+    const f = { fx: maxX ? r.left / maxX : 0, fy: maxY ? r.top / maxY : 0 };
+    ytFracRef.current = f;
+    try { localStorage.setItem(YT_DOCK_POS_KEY, JSON.stringify(f)); } catch { /* noop */ }
+  };
+  const ytBackToCorner = () => {
+    if (ytPos) {
+      setYtPos(null);
+      ytFracRef.current = null;
+      try { localStorage.removeItem(YT_DOCK_POS_KEY); } catch { /* noop */ }
+    } else {
+      setYtSide(s => (s === 'top' ? 'bottom' : 'top'));
+    }
+  };
   const runRef = useRef(0);
   const topicPickerRef = useRef(null);
   const verseSetIdRef = useRef(verseSet?.id);
@@ -1881,10 +1960,24 @@ export function VerseSetContinuousRainPlayer({
         </span>
       </div>
       {ytBgmId && !ytClosed && (
-        <div className={`yt-bgm-dock is-${ytSide}`} data-testid="yt-bgm-dock">
-          <div className="yt-bgm-dock__bar">
+        <div
+          ref={ytDockRef}
+          className={`yt-bgm-dock ${ytPos ? 'is-free' : `is-${ytSide}`}${ytDragging ? ' is-dragging' : ''}`}
+          style={ytPos ? { left: ytPos.x, top: ytPos.y, right: 'auto', bottom: 'auto' } : undefined}
+          data-testid="yt-bgm-dock"
+        >
+          <div
+            className="yt-bgm-dock__bar"
+            data-testid="yt-bgm-bar"
+            title={t('按住這一列可拖曳移動', 'Hold this bar to drag it anywhere')}
+            onPointerDown={onYtBarPointerDown}
+            onPointerMove={onYtBarPointerMove}
+            onPointerUp={onYtBarPointerEnd}
+            onPointerCancel={onYtBarPointerEnd}
+          >
+            <GripHorizontal size={16} aria-hidden="true" className="yt-bgm-dock__grip" />
             <span className="yt-bgm-dock__title">🎵 {t('YouTube 音樂', 'YouTube music')}</span>
-            <button type="button" className="yt-bgm-dock__btn" onClick={() => setYtSide(s => (s === 'top' ? 'bottom' : 'top'))} aria-label={t('移到另一邊', 'Move to the other side')} title={t('移到另一邊', 'Move to the other side')}>
+            <button type="button" className="yt-bgm-dock__btn" data-testid="yt-bgm-move" onClick={ytBackToCorner} aria-label={t('移到另一邊', 'Move to the other side')} title={t('移到另一邊', 'Move to the other side')}>
               <ArrowUpDown size={16} />
             </button>
             <button

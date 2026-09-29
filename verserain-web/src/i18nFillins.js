@@ -1443,6 +1443,7 @@ export const he = {
   "移到另一邊": "העבר לצד השני",
   "關閉背景音樂": "כבו את המוזיקה",
   "點一下影片開始播放音樂": "הקישו על הסרטון כדי להתחיל את המוזיקה",
+  "按住這一列可拖曳移動": "החזיקו את הפס הזה כדי לגרור לכל מקום",
 };
 
 export const fa = {
@@ -2867,6 +2868,7 @@ export const fa = {
   "移到另一邊": "انتقال به سمت دیگر",
   "關閉背景音樂": "خاموش کردن موسیقی",
   "點一下影片開始播放音樂": "برای شروع موسیقی روی ویدیو ضربه بزنید",
+  "按住這一列可拖曳移動": "این نوار را نگه دارید و به هر جا بکشید",
 };
 
 export const ar = {
@@ -4708,6 +4710,7 @@ export const ar = {
   "移到另一邊": "انقل إلى الجانب الآخر",
   "關閉背景音樂": "إيقاف الموسيقى",
   "點一下影片開始播放音樂": "اضغط على الفيديو لبدء الموسيقى",
+  "按住這一列可拖曳移動": "اضغط مطولًا على هذا الشريط لسحبه إلى أي مكان",
 };
 
 export const ja = {
@@ -6120,6 +6123,7 @@ export const ja = {
   "移到另一邊": "反対側へ移動",
   "關閉背景音樂": "BGM をオフ",
   "點一下影片開始播放音樂": "動画をタップして音楽を再生",
+  "按住這一列可拖曳移動": "このバーを押さえたままドラッグして移動",
 };
 
 export const ko = {
@@ -7530,6 +7534,7 @@ export const ko = {
   "移到另一邊": "반대쪽으로 이동",
   "關閉背景音樂": "배경 음악 끄기",
   "點一下影片開始播放音樂": "영상을 탭하면 음악이 시작됩니다",
+  "按住這一列可拖曳移動": "이 막대를 누른 채 끌어서 이동",
 };
 
 export const es = {
@@ -8956,6 +8961,7 @@ export const es = {
   "移到另一邊": "Mover al otro lado",
   "關閉背景音樂": "Apagar la música",
   "點一下影片開始播放音樂": "Toca el video para iniciar la música",
+  "按住這一列可拖曳移動": "Mantén pulsada esta barra para moverla",
 };
 
 export const tr = {
@@ -10382,6 +10388,7 @@ export const tr = {
   "移到另一邊": "Diğer tarafa taşı",
   "關閉背景音樂": "Müziği kapat",
   "點一下影片開始播放音樂": "Müziği başlatmak için videoya dokunun",
+  "按住這一列可拖曳移動": "Taşımak için bu çubuğu basılı tutup sürükleyin",
 };
 
 export const de = {
@@ -11808,6 +11815,7 @@ export const de = {
   "移到另一邊": "Auf die andere Seite",
   "關閉背景音樂": "Musik ausschalten",
   "點一下影片開始播放音樂": "Tippe auf das Video, um die Musik zu starten",
+  "按住這一列可拖曳移動": "Leiste gedrückt halten und an eine beliebige Stelle ziehen",
 };
 
 export const my = {
@@ -13234,6 +13242,7 @@ export const my = {
   "移到另一邊": "အခြားဘက်သို့ ရွှေ့ရန်",
   "關閉背景音樂": "နောက်ခံဂီတ ပိတ်ရန်",
   "點一下影片開始播放音樂": "ဂီတစတင်ရန် ဗီဒီယိုကို နှိပ်ပါ",
+  "按住這一列可拖曳移動": "ဤဘားကို ဖိထားပြီး နေရာမည်သည့်နေရာသို့မဆို ဆွဲရွှေ့ပါ",
 };
 
 export const vi = {
@@ -14660,6 +14669,7 @@ export const vi = {
   "移到另一邊": "Chuyển sang bên kia",
   "關閉背景音樂": "Tắt nhạc nền",
   "點一下影片開始播放音樂": "Chạm vào video để bắt đầu nhạc",
+  "按住這一列可拖曳移動": "Giữ thanh này để kéo đi bất cứ đâu",
 };
 
 export const id = {
@@ -16314,6 +16324,7 @@ export const id = {
   "移到另一邊": "Pindah ke sisi lain",
   "關閉背景音樂": "Matikan musik",
   "點一下影片開始播放音樂": "Ketuk video untuk memulai musik",
+  "按住這一列可拖曳移動": "Tahan bilah ini untuk menyeretnya ke mana saja",
 };
 
 export const ms = {
@@ -18172,6 +18183,7 @@ export const ms = {
   "移到另一邊": "Alih ke sebelah lain",
   "關閉背景音樂": "Matikan muzik",
   "點一下影片開始播放音樂": "Ketik video untuk memulakan muzik",
+  "按住這一列可拖曳移動": "Tahan bar ini untuk menyeretnya ke mana-mana",
 };
 
 export const zhcn = {
@@ -19949,6 +19961,7 @@ export const zhcn = {
   "移到另一邊": "移到另一边",
   "關閉背景音樂": "关闭背景音乐",
   "點一下影片開始播放音樂": "点一下视频开始播放音乐",
+  "按住這一列可拖曳移動": "按住这一栏可拖动移动",
 };
 
 export const pt = {
@@ -21099,6 +21112,7 @@ export const pt = {
   "移到另一邊": "Mover para o outro lado",
   "關閉背景音樂": "Desligar a música",
   "點一下影片開始播放音樂": "Toque no vídeo para iniciar a música",
+  "按住這一列可拖曳移動": "Segure esta barra para arrastá-la para qualquer lugar",
 };
 
 export const fr = {
@@ -22249,6 +22263,7 @@ export const fr = {
   "移到另一邊": "Déplacer de l’autre côté",
   "關閉背景音樂": "Couper la musique",
   "點一下影片開始播放音樂": "Touchez la vidéo pour lancer la musique",
+  "按住這一列可拖曳移動": "Maintenez cette barre pour la déplacer n’importe où",
 };
 
 export const ru = {
@@ -23399,6 +23414,7 @@ export const ru = {
   "移到另一邊": "Переместить на другую сторону",
   "關閉背景音樂": "Выключить музыку",
   "點一下影片開始播放音樂": "Нажмите на видео, чтобы включить музыку",
+  "按住這一列可拖曳移動": "Удерживайте эту полосу, чтобы перетащить окно куда угодно",
 };
 
 export const hi = {
@@ -24549,6 +24565,7 @@ export const hi = {
   "移到另一邊": "दूसरी तरफ़ ले जाएँ",
   "關閉背景音樂": "संगीत बंद करें",
   "點一下影片開始播放音樂": "संगीत शुरू करने के लिए वीडियो पर टैप करें",
+  "按住這一列可拖曳移動": "इस पट्टी को दबाकर कहीं भी खींचें",
 };
 
 // Khmer (Cambodian) — full UI coverage, machine-translated in bulk from the
@@ -26330,6 +26347,7 @@ export const km = {
   "移到另一邊": "ផ្លាស់ទីទៅម្ខាងទៀត",
   "關閉背景音樂": "បិទតន្ត្រី",
   "點一下影片開始播放音樂": "ចុចលើវីដេអូដើម្បីចាប់ផ្ដើមតន្ត្រី",
+  "按住這一列可拖曳移動": "ចុចឱ្យជាប់លើរបារនេះ ដើម្បីអូសទៅកន្លែងណាក៏បាន",
 };
 
 const I18N_FILLINS = { he, fa, ar, ja, ko, es, tr, de, my, vi, id, ms, zhcn, pt, fr, ru, hi, km };
