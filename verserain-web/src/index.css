@@ -158,6 +158,19 @@ textarea {
   animation: flashSuccess 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards !important;
 }
 
+/* 提示 (hint): the next correct block glows gold for a moment. */
+@keyframes hintPulse {
+  0%, 100% { box-shadow: 0 0 0 3px #fbbf24, 0 0 18px rgba(251, 191, 36, 0.85); }
+  50% { box-shadow: 0 0 0 5px #fde68a, 0 0 32px rgba(251, 191, 36, 1); }
+}
+.hint-glow {
+  outline: 3px solid #fbbf24 !important;
+  animation: hintPulse 0.75s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .hint-glow { animation: none; box-shadow: 0 0 0 4px #fbbf24, 0 0 24px rgba(251, 191, 36, 0.9); }
+}
+
 /* Parallax Rain Effect with Wind Sway */
 .rain-system {
   position: absolute;
@@ -700,12 +713,13 @@ textarea {
   }
 
   .game-exit-button {
-    width: 42px !important;
+    min-width: 42px;
     height: 42px !important;
-    padding: 0 !important;
+    padding: 0 0.55rem !important;
   }
 
-  .game-demo-button {
+  .game-demo-button,
+  .game-hint-button {
     height: 42px !important;
     padding: 0.35rem 0.6rem !important;
   }
@@ -794,12 +808,13 @@ textarea {
   }
 
   .game-exit-button,
-  .game-demo-button {
+  .game-demo-button,
+  .game-hint-button {
     height: 34px !important;
   }
 
   .game-exit-button {
-    width: 36px !important;
+    min-width: 36px;
   }
 
   .game-timer-chip {
