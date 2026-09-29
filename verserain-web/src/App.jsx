@@ -21768,6 +21768,63 @@ export default function App() {
     }
   }, []);
 
+  // E-mail sign-in: /login and /verify-email both return the full user object
+  // plus a session key, so a fresh sign-up is logged in the moment the code is
+  // verified. keepLocation: the verify reply has no city/country yet, so keep
+  // whatever this device already chose.
+  const applyPasswordLogin = (data, email, { keepLocation = false } = {}) => {
+    const prevEmail = localStorage.getItem('verserain_player_email');
+    if (prevEmail && prevEmail !== data.user.email) {
+      localStorage.removeItem('verseRain_gardenData');
+      setGardenData({});
+    }
+    const isPrem = data.user.isPremium || PREMIUM_EMAILS.includes((data.user.email || '').toLowerCase());
+    setPlayerName(data.user.name || email.split('@')[0]);
+    setUserEmail(data.user.email);
+    setIsPremium(isPrem);
+    localStorage.setItem('verserain_player_name', data.user.name || email.split('@')[0]);
+    localStorage.setItem('verserain_player_email', data.user.email);
+    localStorage.setItem('verserain_is_premium', isPrem ? 'true' : 'false');
+    // Email/password account → clear any stale OAuth marker so
+    // the profile editor shows the password fields for them.
+    localStorage.removeItem('verserain_auth_provider');
+    if (data.sessionKey) { try { localStorage.setItem('verserain_session_key', data.sessionKey); } catch { /* ignore */ } setSessionKey(data.sessionKey); }
+    if (data.user.personalCode) adoptAccountPersonalCode(data.user.personalCode, !data.deviceCodeTaken);
+
+    if (data.user.city) localStorage.setItem('verserain_custom_city', data.user.city);
+    else if (!keepLocation) localStorage.removeItem('verserain_custom_city');
+
+    if (data.user.country) localStorage.setItem('verserain_custom_country', data.user.country);
+    else if (!keepLocation) localStorage.removeItem('verserain_custom_country');
+
+    // Cross-device referral restore — same logic as OAuth path.
+    // Server's invitedBy wins over stale local cache until claimed.
+    if (!localStorage.getItem('verserain_invite_claimed')) {
+      const ownCode = localStorage.getItem('verserain_personal_code');
+      if (data.user.invitedBy && data.user.invitedBy !== ownCode) {
+        localStorage.setItem('verserain_inviter', data.user.invitedBy);
+      }
+    }
+
+    // Force a submit to update map immediately with correct location
+    if (geoRef.current) {
+      fetch('/api/submit-location', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: data.user.name || email.split('@')[0],
+          score: 0,
+          lat: parseFloat(geoRef.current.latitude),
+          lng: parseFloat(geoRef.current.longitude),
+          country: data.user.country || geoRef.current.country_name || geoRef.current.country || '',
+          city: data.user.city || geoRef.current.city || '',
+          verseRef: '',
+          roomId: multiplayerRoomRef.current || null
+        })
+      }).catch(() => {});
+    }
+  };
+
   // LINE OAuth redirect return — startLineLogin() sent the user to LINE, and
   // LINE redirected back to <origin>/?code=...&state=line_.... Exchange the
   // code via the PartyKit backend, then scrub the OAuth params from the URL so
@@ -25807,7 +25864,7 @@ export default function App() {
                     verserain
                   </div>
                   <div className="app-brand-version" style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', marginTop: '4px', marginLeft: '2px' }}>
-                    v4.0.133
+                    v4.0.134
                   </div>
                 </div>
                 <div ref={langPickerRef} className="app-lang-control" style={{ position: 'relative' }}>
@@ -32211,9 +32268,15 @@ export default function App() {
                     <div style={{ fontSize: '0.9rem', color: '#64748b', textAlign: 'center' }}>
                       {t("驗證碼已寄至 ", "Code sent to ")} <strong style={{ color: '#1e293b' }}>{verifyEmail}</strong>
                     </div>
+                    <div style={{ fontSize: '0.85rem', color: '#64748b', textAlign: 'center', marginTop: '-0.5rem' }}>
+                      {t("沒收到信？請看看垃圾郵件匣。", "No email? Check your spam folder.")}
+                    </div>
                     <input
+                      key="modalCodeInput"
                       id="modalCodeInput"
                       type="text"
+                      inputMode="numeric"
+                      autoComplete="one-time-code"
                       placeholder={t("6位數驗證碼", "6-digit Code")}
                       maxLength={6}
                       style={{ padding: '0.8rem', borderRadius: '6px', border: '1px solid #cbd5e1', background: '#f8fafc', color: '#1e293b', fontSize: '1.2rem', outline: 'none', textAlign: 'center', letterSpacing: '4px', fontWeight: 'bold' }}
@@ -32278,7 +32341,7 @@ export default function App() {
                   if (showLoginModal === 'verify') {
                     const codeInput = document.getElementById('modalCodeInput');
                     const code = codeInput ? codeInput.value.trim() : '';
-                    if (!code) { setAuthError("請輸入驗證碼 (Verification code required)"); return; }
+                    if (!code) { setAuthError(t("請輸入驗證碼", "Please enter the verification code")); return; }
 
                     setAuthLoading(true);
                     setAuthError("");
@@ -32290,13 +32353,21 @@ export default function App() {
                       });
                       const data = await res.json();
                       if (res.ok && data.success) {
-                        toast.success(t("驗證成功！請重新登入。", "Verification successful! Please log in."));
-                        setShowLoginModal('login');
+                        // The server signs the new account in right away — no
+                        // second login with the same e-mail and password.
+                        if (data.user) {
+                          applyPasswordLogin(data, verifyEmail, { keepLocation: true });
+                          setShowLoginModal(null);
+                          toast.success(t("驗證成功，已經登入了！", "Verified — you're logged in!"));
+                        } else {
+                          toast.success(t("驗證成功！請重新登入。", "Verification successful! Please log in."));
+                          setShowLoginModal('login');
+                        }
                       } else {
-                        setAuthError(data.error || "驗證失敗 (Verification Error)");
+                        setAuthError(data.error || t("驗證失敗", "Verification failed"));
                       }
                     } catch (err) {
-                      setAuthError("連線失敗 (Connection Error)");
+                      setAuthError(t("連線失敗", "Connection failed"));
                     } finally {
                       setAuthLoading(false);
                     }
@@ -32312,7 +32383,7 @@ export default function App() {
                   const nameStr = nameInput ? nameInput.value.trim() : '';
 
                   if (!email || !password) {
-                    setAuthError("請輸入 Email 與 密碼 (Email & Password required)");
+                    setAuthError(t("請輸入 Email 與密碼", "Please enter your email and password"));
                     return;
                   }
 
@@ -32347,58 +32418,7 @@ export default function App() {
                           "Registration successful! Please check your email for the verification code."
                         ));
                       } else {
-                        // Login: server returns the full user object
-                        const prevEmail = localStorage.getItem('verserain_player_email');
-                        if (prevEmail && prevEmail !== data.user.email) {
-                          localStorage.removeItem('verseRain_gardenData');
-                          setGardenData({});
-                        }
-                        const isPrem = data.user.isPremium || PREMIUM_EMAILS.includes((data.user.email || '').toLowerCase());
-                        setPlayerName(data.user.name || email.split('@')[0]);
-                        setUserEmail(data.user.email);
-                        setIsPremium(isPrem);
-                        localStorage.setItem('verserain_player_name', data.user.name || email.split('@')[0]);
-                        localStorage.setItem('verserain_player_email', data.user.email);
-                        localStorage.setItem('verserain_is_premium', isPrem ? 'true' : 'false');
-                        // Email/password account → clear any stale OAuth marker so
-                        // the profile editor shows the password fields for them.
-                        localStorage.removeItem('verserain_auth_provider');
-                        if (data.sessionKey) { try { localStorage.setItem('verserain_session_key', data.sessionKey); } catch { /* ignore */ } setSessionKey(data.sessionKey); }
-                        if (data.user.personalCode) adoptAccountPersonalCode(data.user.personalCode, !data.deviceCodeTaken);
-
-                        if (data.user.city) localStorage.setItem('verserain_custom_city', data.user.city);
-                        else localStorage.removeItem('verserain_custom_city');
-
-                        if (data.user.country) localStorage.setItem('verserain_custom_country', data.user.country);
-                        else localStorage.removeItem('verserain_custom_country');
-
-                        // Cross-device referral restore — same logic as OAuth path.
-                        // Server's invitedBy wins over stale local cache until claimed.
-                        if (!localStorage.getItem('verserain_invite_claimed')) {
-                          const ownCode = localStorage.getItem('verserain_personal_code');
-                          if (data.user.invitedBy && data.user.invitedBy !== ownCode) {
-                            localStorage.setItem('verserain_inviter', data.user.invitedBy);
-                          }
-                        }
-                        
-                        // Force a submit to update map immediately with correct location
-                        if (geoRef.current) {
-                          fetch('/api/submit-location', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({
-                              name: data.user.name || email.split('@')[0],
-                              score: 0,
-                              lat: parseFloat(geoRef.current.latitude),
-                              lng: parseFloat(geoRef.current.longitude),
-                              country: data.user.country || geoRef.current.country_name || geoRef.current.country || '',
-                              city: data.user.city || geoRef.current.city || '',
-                              verseRef: '',
-                              roomId: multiplayerRoomRef.current || null
-                            })
-                          }).catch(() => {});
-                        }
-                        
+                        applyPasswordLogin(data, email);
                         setShowLoginModal(null);
                       }
                     } else {
@@ -32407,10 +32427,10 @@ export default function App() {
                         setShowLoginModal('verify');
                         toast.error(t("請先驗證您的電子郵件", "Please verify your email first"));
                       }
-                      setAuthError(data.error || "連線失敗 (Connection Error)");
+                      setAuthError(data.error || t("連線失敗", "Connection failed"));
                     }
                   } catch (err) {
-                    setAuthError("無法連線到伺服器 (Server unreachable)");
+                    setAuthError(t("無法連線到伺服器", "Can't reach the server"));
                   } finally {
                     setAuthLoading(false);
                   }

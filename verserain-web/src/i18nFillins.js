@@ -1408,6 +1408,12 @@ export const he = {
   "略過": "דלג",
   "第 {n} 步，共 3 步": "שלב {n} מתוך 3",
   "登入後，你的樹和點數會保存在所有裝置。": "התחברו כדי לשמור את העצים והנקודות שלכם בכל המכשירים.",
+  "沒收到信？請看看垃圾郵件匣。": "לא הגיע מייל? בדקו בתיקיית הספאם.",
+  "請輸入驗證碼": "נא להזין את קוד האימות",
+  "驗證成功，已經登入了！": "האימות הצליח, נכנסתם לחשבון!",
+  "驗證失敗": "האימות נכשל",
+  "連線失敗": "החיבור נכשל",
+  "請輸入 Email 與密碼": "נא להזין אימייל וסיסמה",
 };
 
 export const fa = {
@@ -2797,6 +2803,12 @@ export const fa = {
   "略過": "رد کردن",
   "第 {n} 步，共 3 步": "مرحلهٔ {n} از 3",
   "登入後，你的樹和點數會保存在所有裝置。": "وارد شوید تا درخت‌ها و امتیازهایتان در همهٔ دستگاه‌ها ذخیره شود.",
+  "沒收到信？請看看垃圾郵件匣。": "ایمیلی دریافت نکردید؟ پوشه هرزنامه را بررسی کنید.",
+  "請輸入驗證碼": "لطفاً کد تأیید را وارد کنید",
+  "驗證成功，已經登入了！": "تأیید شد، وارد حساب شدید!",
+  "驗證失敗": "تأیید ناموفق بود",
+  "連線失敗": "اتصال ناموفق بود",
+  "請輸入 Email 與密碼": "لطفاً ایمیل و رمز عبور را وارد کنید",
 };
 
 export const ar = {
@@ -4603,6 +4615,12 @@ export const ar = {
   "略過": "تخطي",
   "第 {n} 步，共 3 步": "الخطوة {n} من 3",
   "登入後，你的樹和點數會保存在所有裝置。": "سجّل الدخول لتُحفظ أشجارك ونقاطك على كل أجهزتك.",
+  "沒收到信？請看看垃圾郵件匣。": "لم تصلك رسالة؟ تحقّق من مجلد البريد العشوائي.",
+  "請輸入驗證碼": "يرجى إدخال رمز التحقق",
+  "驗證成功，已經登入了！": "تم التحقق، وقد سجّلت الدخول!",
+  "驗證失敗": "فشل التحقق",
+  "連線失敗": "فشل الاتصال",
+  "請輸入 Email 與密碼": "يرجى إدخال البريد الإلكتروني وكلمة المرور",
 };
 
 export const ja = {
@@ -5980,6 +5998,12 @@ export const ja = {
   "略過": "スキップ",
   "第 {n} 步，共 3 步": "ステップ {n}/3",
   "登入後，你的樹和點數會保存在所有裝置。": "ログインすると、木とポイントがすべての端末に保存されます。",
+  "沒收到信？請看看垃圾郵件匣。": "メールが届かない場合は、迷惑メールフォルダをご確認ください。",
+  "請輸入驗證碼": "認証コードを入力してください",
+  "驗證成功，已經登入了！": "認証が完了し、ログインしました！",
+  "驗證失敗": "認証に失敗しました",
+  "連線失敗": "接続に失敗しました",
+  "請輸入 Email 與密碼": "メールアドレスとパスワードを入力してください",
 };
 
 export const ko = {
@@ -7355,6 +7379,12 @@ export const ko = {
   "略過": "건너뛰기",
   "第 {n} 步，共 3 步": "{n}/3단계",
   "登入後，你的樹和點數會保存在所有裝置。": "로그인하면 나무와 포인트가 모든 기기에 저장돼요.",
+  "沒收到信？請看看垃圾郵件匣。": "메일을 받지 못했나요? 스팸함을 확인해 보세요.",
+  "請輸入驗證碼": "인증 코드를 입력하세요",
+  "驗證成功，已經登入了！": "인증 완료, 로그인되었습니다!",
+  "驗證失敗": "인증에 실패했습니다",
+  "連線失敗": "연결에 실패했습니다",
+  "請輸入 Email 與密碼": "이메일과 비밀번호를 입력하세요",
 };
 
 export const es = {
@@ -8746,6 +8776,12 @@ export const es = {
   "略過": "Saltar",
   "第 {n} 步，共 3 步": "Paso {n} de 3",
   "登入後，你的樹和點數會保存在所有裝置。": "Inicia sesión para guardar tus árboles y tus puntos en todos tus dispositivos.",
+  "沒收到信？請看看垃圾郵件匣。": "¿No te llegó el correo? Revisa la carpeta de spam.",
+  "請輸入驗證碼": "Introduce el código de verificación",
+  "驗證成功，已經登入了！": "¡Verificado! Ya iniciaste sesión.",
+  "驗證失敗": "La verificación falló",
+  "連線失敗": "Error de conexión",
+  "請輸入 Email 與密碼": "Introduce tu correo y contraseña",
 };
 
 export const tr = {
@@ -10137,6 +10173,12 @@ export const tr = {
   "略過": "Atla",
   "第 {n} 步，共 3 步": "Adım {n}/3",
   "登入後，你的樹和點數會保存在所有裝置。": "Giriş yap, ağaçların ve puanların tüm cihazlarında saklansın.",
+  "沒收到信？請看看垃圾郵件匣。": "E-posta gelmedi mi? Spam klasörünü kontrol et.",
+  "請輸入驗證碼": "Lütfen doğrulama kodunu gir",
+  "驗證成功，已經登入了！": "Doğrulandı, giriş yaptın!",
+  "驗證失敗": "Doğrulama başarısız",
+  "連線失敗": "Bağlantı başarısız",
+  "請輸入 Email 與密碼": "Lütfen e-posta ve şifreni gir",
 };
 
 export const de = {
@@ -11528,6 +11570,12 @@ export const de = {
   "略過": "Überspringen",
   "第 {n} 步，共 3 步": "Schritt {n} von 3",
   "登入後，你的樹和點數會保存在所有裝置。": "Melde dich an, damit deine Bäume und Punkte auf all deinen Geräten gespeichert bleiben.",
+  "沒收到信？請看看垃圾郵件匣。": "Keine E-Mail erhalten? Sieh im Spam-Ordner nach.",
+  "請輸入驗證碼": "Bitte gib den Bestätigungscode ein",
+  "驗證成功，已經登入了！": "Bestätigt – du bist angemeldet!",
+  "驗證失敗": "Bestätigung fehlgeschlagen",
+  "連線失敗": "Verbindung fehlgeschlagen",
+  "請輸入 Email 與密碼": "Bitte gib E-Mail und Passwort ein",
 };
 
 export const my = {
@@ -12919,6 +12967,12 @@ export const my = {
   "略過": "ကျော်မည်",
   "第 {n} 步，共 3 步": "အဆင့် {n} / 3",
   "登入後，你的樹和點數會保存在所有裝置。": "ဝင်ရောက်ပါက သင့်သစ်ပင်များနှင့် အမှတ်များကို စက်အားလုံးတွင် သိမ်းဆည်းထားပါမည်။",
+  "沒收到信？請看看垃圾郵件匣。": "အီးမေးလ် မရရှိပါသလား။ Spam ဖိုင်တွဲကို စစ်ကြည့်ပါ။",
+  "請輸入驗證碼": "အတည်ပြုကုဒ် ထည့်ပါ",
+  "驗證成功，已經登入了！": "အတည်ပြုပြီး ဝင်ရောက်ပြီးပါပြီ!",
+  "驗證失敗": "အတည်ပြုခြင်း မအောင်မြင်ပါ",
+  "連線失敗": "ချိတ်ဆက်မှု မအောင်မြင်ပါ",
+  "請輸入 Email 與密碼": "အီးမေးလ်နှင့် စကားဝှက် ထည့်ပါ",
 };
 
 export const vi = {
@@ -14310,6 +14364,12 @@ export const vi = {
   "略過": "Bỏ qua",
   "第 {n} 步，共 3 步": "Bước {n}/3",
   "登入後，你的樹和點數會保存在所有裝置。": "Đăng nhập để lưu cây và điểm của bạn trên mọi thiết bị.",
+  "沒收到信？請看看垃圾郵件匣。": "Không nhận được email? Hãy xem thư mục thư rác.",
+  "請輸入驗證碼": "Vui lòng nhập mã xác minh",
+  "驗證成功，已經登入了！": "Đã xác minh, bạn đã đăng nhập!",
+  "驗證失敗": "Xác minh thất bại",
+  "連線失敗": "Kết nối thất bại",
+  "請輸入 Email 與密碼": "Vui lòng nhập email và mật khẩu",
 };
 
 export const id = {
@@ -15929,6 +15989,12 @@ export const id = {
   "略過": "Lewati",
   "第 {n} 步，共 3 步": "Langkah {n} dari 3",
   "登入後，你的樹和點數會保存在所有裝置。": "Masuk agar pohon dan poinmu tersimpan di semua perangkatmu.",
+  "沒收到信？請看看垃圾郵件匣。": "Tidak menerima email? Periksa folder spam.",
+  "請輸入驗證碼": "Masukkan kode verifikasi",
+  "驗證成功，已經登入了！": "Terverifikasi, kamu sudah masuk!",
+  "驗證失敗": "Verifikasi gagal",
+  "連線失敗": "Koneksi gagal",
+  "請輸入 Email 與密碼": "Masukkan email dan kata sandi",
 };
 
 export const ms = {
@@ -17752,6 +17818,12 @@ export const ms = {
   "略過": "Langkau",
   "第 {n} 步，共 3 步": "Langkah {n} daripada 3",
   "登入後，你的樹和點數會保存在所有裝置。": "Log masuk untuk menyimpan pokok dan mata anda di semua peranti anda.",
+  "沒收到信？請看看垃圾郵件匣。": "Tidak menerima e-mel? Semak folder spam.",
+  "請輸入驗證碼": "Sila masukkan kod pengesahan",
+  "驗證成功，已經登入了！": "Disahkan, anda sudah log masuk!",
+  "驗證失敗": "Pengesahan gagal",
+  "連線失敗": "Sambungan gagal",
+  "請輸入 Email 與密碼": "Sila masukkan e-mel dan kata laluan",
 };
 
 export const zhcn = {
@@ -19494,6 +19566,12 @@ export const zhcn = {
   "略過": "略过",
   "第 {n} 步，共 3 步": "第 {n} 步，共 3 步",
   "登入後，你的樹和點數會保存在所有裝置。": "登入后，你的树和点数会保存在所有设备。",
+  "沒收到信？請看看垃圾郵件匣。": "没收到信？请看看垃圾邮件箱。",
+  "請輸入驗證碼": "请输入验证码",
+  "驗證成功，已經登入了！": "验证成功，已经登录了！",
+  "驗證失敗": "验证失败",
+  "連線失敗": "连接失败",
+  "請輸入 Email 與密碼": "请输入 Email 和密码",
 };
 
 export const pt = {
@@ -20608,6 +20686,12 @@ export const pt = {
   "略過": "Pular",
   "第 {n} 步，共 3 步": "Passo {n} de 3",
   "登入後，你的樹和點數會保存在所有裝置。": "Entre para salvar suas árvores e seus pontos em todos os seus dispositivos.",
+  "沒收到信？請看看垃圾郵件匣。": "Não recebeu o e-mail? Veja a pasta de spam.",
+  "請輸入驗證碼": "Digite o código de verificação",
+  "驗證成功，已經登入了！": "Verificado! Você já está conectado.",
+  "驗證失敗": "Falha na verificação",
+  "連線失敗": "Falha na conexão",
+  "請輸入 Email 與密碼": "Digite seu e-mail e senha",
 };
 
 export const fr = {
@@ -21722,6 +21806,12 @@ export const fr = {
   "略過": "Passer",
   "第 {n} 步，共 3 步": "Étape {n} sur 3",
   "登入後，你的樹和點數會保存在所有裝置。": "Connecte-toi pour garder tes arbres et tes points sur tous tes appareils.",
+  "沒收到信？請看看垃圾郵件匣。": "Pas reçu d’e-mail ? Regarde dans les spams.",
+  "請輸入驗證碼": "Saisis le code de vérification",
+  "驗證成功，已經登入了！": "Vérifié, tu es connecté !",
+  "驗證失敗": "La vérification a échoué",
+  "連線失敗": "Échec de la connexion",
+  "請輸入 Email 與密碼": "Saisis ton e-mail et ton mot de passe",
 };
 
 export const ru = {
@@ -22836,6 +22926,12 @@ export const ru = {
   "略過": "Пропустить",
   "第 {n} 步，共 3 步": "Шаг {n} из 3",
   "登入後，你的樹和點數會保存在所有裝置。": "Войди, чтобы твои деревья и очки сохранились на всех устройствах.",
+  "沒收到信？請看看垃圾郵件匣。": "Не пришло письмо? Проверьте папку «Спам».",
+  "請輸入驗證碼": "Введите код подтверждения",
+  "驗證成功，已經登入了！": "Подтверждено, вы вошли в аккаунт!",
+  "驗證失敗": "Не удалось подтвердить",
+  "連線失敗": "Ошибка соединения",
+  "請輸入 Email 與密碼": "Введите e-mail и пароль",
 };
 
 export const hi = {
@@ -23950,6 +24046,12 @@ export const hi = {
   "略過": "छोड़ें",
   "第 {n} 步，共 3 步": "चरण {n} / 3",
   "登入後，你的樹和點數會保存在所有裝置。": "लॉगिन करें ताकि आपके पेड़ और पॉइंट सभी डिवाइस पर सहेजे रहें।",
+  "沒收到信？請看看垃圾郵件匣。": "ईमेल नहीं मिला? कृपया स्पैम फ़ोल्डर देखें।",
+  "請輸入驗證碼": "कृपया सत्यापन कोड दर्ज करें",
+  "驗證成功，已經登入了！": "सत्यापित हो गया, आप लॉग इन हैं!",
+  "驗證失敗": "सत्यापन विफल",
+  "連線失敗": "कनेक्शन विफल",
+  "請輸入 Email 與密碼": "कृपया ईमेल और पासवर्ड दर्ज करें",
 };
 
 // Khmer (Cambodian) — full UI coverage, machine-translated in bulk from the
@@ -25694,6 +25796,12 @@ export const km = {
   "略過": "រំលង",
   "第 {n} 步，共 3 步": "ជំហានទី {n} នៃ 3",
   "登入後，你的樹和點數會保存在所有裝置。": "ចូល ដើម្បីរក្សាទុកដើមឈើ និងពិន្ទុរបស់អ្នកនៅលើឧបករណ៍ទាំងអស់។",
+  "沒收到信？請看看垃圾郵件匣。": "មិនបានទទួលអ៊ីមែល? សូមពិនិត្យថត Spam។",
+  "請輸入驗證碼": "សូមបញ្ចូលលេខកូដផ្ទៀងផ្ទាត់",
+  "驗證成功，已經登入了！": "ផ្ទៀងផ្ទាត់រួច អ្នកបានចូលហើយ!",
+  "驗證失敗": "ការផ្ទៀងផ្ទាត់បរាជ័យ",
+  "連線失敗": "ការតភ្ជាប់បរាជ័យ",
+  "請輸入 Email 與密碼": "សូមបញ្ចូលអ៊ីមែល និងពាក្យសម្ងាត់",
 };
 
 const I18N_FILLINS = { he, fa, ar, ja, ko, es, tr, de, my, vi, id, ms, zhcn, pt, fr, ru, hi, km };
