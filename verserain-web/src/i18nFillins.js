@@ -1307,6 +1307,11 @@ export const he = {
   "提醒他": "שליחת תזכורת",
   "邀你來玩一節經文，種下第一棵樹！": "מזמין/ה אותך לשחק בפסוק אחד ולשתול את העץ הראשון שלך!",
   "找不到 {name} 的裝置，他登入 App 後才能收到提醒": "לא נמצא מכשיר של {name} — יש להתחבר לאפליקציה כדי לקבל את התזכורת",
+  "再按一次離開": "הקישו שוב כדי לצאת",
+  "亮出下一個正確的格子（分數不變，連擊會中斷）": "מאיר את המשבצת הנכונה הבאה (הניקוד נשמר, הרצף מתאפס)",
+  "提示": "רמז",
+  "剩": "זמן",
+  "下一句：": "הבא:",
 };
 
 export const fa = {
@@ -2595,6 +2600,11 @@ export const fa = {
   "提醒他": "یادآوری کن",
   "邀你來玩一節經文，種下第一棵樹！": "تو را دعوت کرده یک آیه بازی کنی و اولین درختت را بکاری!",
   "找不到 {name} 的裝置，他登入 App 後才能收到提醒": "دستگاه {name} پیدا نشد — برای دریافت یادآوری ابتدا باید وارد برنامه شود",
+  "再按一次離開": "برای خروج دوباره بزنید",
+  "亮出下一個正確的格子（分數不變，連擊會中斷）": "خانهٔ درست بعدی را روشن می‌کند (امتیاز حفظ می‌شود، زنجیره قطع می‌شود)",
+  "提示": "راهنما",
+  "剩": "زمان",
+  "下一句：": "بعدی:",
 };
 
 export const ar = {
@@ -4299,6 +4309,11 @@ export const ar = {
   "提醒他": "إرسال تذكير",
   "邀你來玩一節經文，種下第一棵樹！": "يدعوك لتلعب آية وتزرع أول شجرة في حديقتك!",
   "找不到 {name} 的裝置，他登入 App 後才能收到提醒": "تعذّر العثور على جهاز {name} — يجب تسجيل الدخول إلى التطبيق أولًا لتلقي التذكير",
+  "再按一次離開": "اضغط مرة أخرى للخروج",
+  "亮出下一個正確的格子（分數不變，連擊會中斷）": "يُضيء المربع الصحيح التالي (تبقى النقاط، وتنقطع السلسلة)",
+  "提示": "تلميح",
+  "剩": "الوقت",
+  "下一句：": "التالي:",
 };
 
 export const ja = {
@@ -5575,6 +5590,11 @@ export const ja = {
   "提醒他": "リマインドする",
   "邀你來玩一節經文，種下第一棵樹！": "があなたを招待しています：聖句を1節プレイして、最初の木を植えよう！",
   "找不到 {name} 的裝置，他登入 App 後才能收到提醒": "{name} さんの端末が見つかりません。アプリにログインするとリマインドが届きます",
+  "再按一次離開": "もう一度タップで終了",
+  "亮出下一個正確的格子（分數不變，連擊會中斷）": "次の正しいマスを光らせます（スコアはそのまま、コンボは途切れます）",
+  "提示": "ヒント",
+  "剩": "残り",
+  "下一句：": "次：",
 };
 
 export const ko = {
@@ -6849,6 +6869,11 @@ export const ko = {
   "提醒他": "알림 보내기",
   "邀你來玩一節經文，種下第一棵樹！": "님이 말씀 한 구절을 플레이하고 첫 나무를 심어 보자고 초대했어요!",
   "找不到 {name} 的裝置，他登入 App 後才能收到提醒": "{name}님의 기기를 찾을 수 없어요. 앱에 로그인해야 알림을 받을 수 있어요",
+  "再按一次離開": "한 번 더 누르면 나가기",
+  "亮出下一個正確的格子（分數不變，連擊會中斷）": "다음 정답 칸을 잠깐 보여줘요 (점수 유지, 콤보는 끊겨요)",
+  "提示": "힌트",
+  "剩": "남은 시간",
+  "下一句：": "다음:",
 };
 
 export const es = {
@@ -8139,6 +8164,11 @@ export const es = {
   "提醒他": "Recordarle",
   "邀你來玩一節經文，種下第一棵樹！": "te invita a jugar un versículo y a plantar tu primer árbol.",
   "找不到 {name} 的裝置，他登入 App 後才能收到提醒": "No encontramos el dispositivo de {name}; tendrá que iniciar sesión en la app para recibir el recordatorio",
+  "再按一次離開": "Toca otra vez para salir",
+  "亮出下一個正確的格子（分數不變，連擊會中斷）": "Ilumina la siguiente casilla correcta (se conserva la puntuación, se reinicia el combo)",
+  "提示": "Pista",
+  "剩": "Tiempo",
+  "下一句：": "Siguiente:",
 };
 
 export const tr = {
@@ -9429,6 +9459,11 @@ export const tr = {
   "提醒他": "Hatırlat",
   "邀你來玩一節經文，種下第一棵樹！": "seni bir ayet oynamaya ve ilk ağacını dikmeye davet ediyor!",
   "找不到 {name} 的裝置，他登入 App 後才能收到提醒": "{name} adlı kişinin cihazı bulunamadı — hatırlatmayı almak için önce uygulamaya giriş yapması gerekiyor",
+  "再按一次離開": "Çıkmak için tekrar dokun",
+  "亮出下一個正確的格子（分數不變，連擊會中斷）": "Sıradaki doğru kutuyu gösterir (puan korunur, kombo sıfırlanır)",
+  "提示": "İpucu",
+  "剩": "Süre",
+  "下一句：": "Sıradaki:",
 };
 
 export const de = {
@@ -10719,6 +10754,11 @@ export const de = {
   "提醒他": "Erinnern",
   "邀你來玩一節經文，種下第一棵樹！": "lädt dich ein, einen Vers zu spielen und deinen ersten Baum zu pflanzen!",
   "找不到 {name} 的裝置，他登入 App 後才能收到提醒": "Kein Gerät von {name} gefunden – die Erinnerung kommt erst nach der Anmeldung in der App an",
+  "再按一次離開": "Zum Beenden erneut tippen",
+  "亮出下一個正確的格子（分數不變，連擊會中斷）": "Zeigt das nächste richtige Feld (Punkte bleiben, Combo wird zurückgesetzt)",
+  "提示": "Tipp",
+  "剩": "Zeit",
+  "下一句：": "Nächste:",
 };
 
 export const my = {
@@ -12009,6 +12049,11 @@ export const my = {
   "提醒他": "သတိပေးရန်",
   "邀你來玩一節經文，種下第一棵樹！": "က ကျမ်းချက်တစ်ပိုဒ် ကစားပြီး ပထမဆုံးသစ်ပင် စိုက်ဖို့ သင့်ကို ဖိတ်ခေါ်နေပါတယ်!",
   "找不到 {name} 的裝置，他登入 App 後才能收到提醒": "{name} ၏ စက်ကို ရှာမတွေ့ပါ — အက်ပ်သို့ လော့ဂ်အင်ဝင်ပြီးမှ သတိပေးချက်ကို ရရှိပါမည်",
+  "再按一次離開": "ထွက်ရန် ထပ်နှိပ်ပါ",
+  "亮出下一個正確的格子（分數不變，連擊會中斷）": "နောက်ထပ်မှန်ကန်သည့်အကွက်ကို ခဏပြပါမည် (အမှတ်မပျက်ပါ၊ combo ပြတ်ပါမည်)",
+  "提示": "အရိပ်အမြွက်",
+  "剩": "ကျန်ချိန်",
+  "下一句：": "နောက်တစ်ခု:",
 };
 
 export const vi = {
@@ -13299,6 +13344,11 @@ export const vi = {
   "提醒他": "Nhắc bạn ấy",
   "邀你來玩一節經文，種下第一棵樹！": "mời bạn chơi một câu Kinh Thánh và trồng cây đầu tiên!",
   "找不到 {name} 的裝置，他登入 App 後才能收到提醒": "Không tìm thấy thiết bị của {name} — cần đăng nhập vào ứng dụng mới nhận được lời nhắc",
+  "再按一次離開": "Chạm lần nữa để thoát",
+  "亮出下一個正確的格子（分數不變，連擊會中斷）": "Làm sáng ô đúng tiếp theo (giữ nguyên điểm, chuỗi combo bị ngắt)",
+  "提示": "Gợi ý",
+  "剩": "Còn",
+  "下一句：": "Tiếp theo:",
 };
 
 export const id = {
@@ -14817,6 +14867,11 @@ export const id = {
   "提醒他": "Ingatkan",
   "邀你來玩一節經文，種下第一棵樹！": "mengajakmu memainkan satu ayat dan menanam pohon pertamamu!",
   "找不到 {name} 的裝置，他登入 App 後才能收到提醒": "Perangkat {name} tidak ditemukan — perlu masuk ke aplikasi dulu untuk menerima pengingat",
+  "再按一次離開": "Ketuk lagi untuk keluar",
+  "亮出下一個正確的格子（分數不變，連擊會中斷）": "Menyorot kotak benar berikutnya (skor tetap, kombo terputus)",
+  "提示": "Petunjuk",
+  "剩": "Sisa",
+  "下一句：": "Berikutnya:",
 };
 
 export const ms = {
@@ -16539,6 +16594,11 @@ export const ms = {
   "提醒他": "Ingatkan",
   "邀你來玩一節經文，種下第一棵樹！": "menjemput anda bermain satu ayat dan menanam pokok pertama anda!",
   "找不到 {name} 的裝置，他登入 App 後才能收到提醒": "Peranti {name} tidak dijumpai — perlu log masuk ke aplikasi dahulu untuk menerima peringatan",
+  "再按一次離開": "Ketik sekali lagi untuk keluar",
+  "亮出下一個正確的格子（分數不變，連擊會中斷）": "Menyerlahkan petak betul seterusnya (markah kekal, kombo terputus)",
+  "提示": "Petunjuk",
+  "剩": "Baki",
+  "下一句：": "Seterusnya:",
 };
 
 export const zhcn = {
@@ -18181,6 +18241,11 @@ export const zhcn = {
   "提醒他": "提醒TA",
   "邀你來玩一節經文，種下第一棵樹！": "邀你来玩一节经文，种下第一棵树！",
   "找不到 {name} 的裝置，他登入 App 後才能收到提醒": "找不到 {name} 的设备，对方登录 App 后才能收到提醒",
+  "再按一次離開": "再按一次离开",
+  "亮出下一個正確的格子（分數不變，連擊會中斷）": "亮出下一个正确的格子（分数不变，连击会中断）",
+  "提示": "提示",
+  "剩": "剩",
+  "下一句：": "下一句：",
 };
 
 export const pt = {
@@ -19192,6 +19257,11 @@ export const pt = {
   "提醒他": "Lembrar",
   "邀你來玩一節經文，種下第一棵樹！": "convidou você para jogar um versículo e plantar sua primeira árvore!",
   "找不到 {name} 的裝置，他登入 App 後才能收到提醒": "Não encontramos o dispositivo de {name} — é preciso entrar no app para receber o lembrete",
+  "再按一次離開": "Toque de novo para sair",
+  "亮出下一個正確的格子（分數不變，連擊會中斷）": "Destaca a próxima casa certa (a pontuação continua, o combo é zerado)",
+  "提示": "Dica",
+  "剩": "Tempo",
+  "下一句：": "Próxima:",
 };
 
 export const fr = {
@@ -20203,6 +20273,11 @@ export const fr = {
   "提醒他": "Relancer",
   "邀你來玩一節經文，種下第一棵樹！": "t'invite à jouer un verset et à planter ton premier arbre !",
   "找不到 {name} 的裝置，他登入 App 後才能收到提醒": "Appareil de {name} introuvable — il faut d’abord se connecter à l’app pour recevoir le rappel",
+  "再按一次離開": "Touchez encore pour quitter",
+  "亮出下一個正確的格子（分數不變，連擊會中斷）": "Met en lumière la prochaine case correcte (le score est conservé, le combo repart à zéro)",
+  "提示": "Indice",
+  "剩": "Temps",
+  "下一句：": "Suivant :",
 };
 
 export const ru = {
@@ -21214,6 +21289,11 @@ export const ru = {
   "提醒他": "Напомнить",
   "邀你來玩一節經文，種下第一棵樹！": "приглашает тебя сыграть стих и посадить первое дерево!",
   "找不到 {name} 的裝置，他登入 App 後才能收到提醒": "Не удалось найти устройство {name} — напоминание придёт после входа в приложение",
+  "再按一次離開": "Нажмите ещё раз, чтобы выйти",
+  "亮出下一個正確的格子（分數不變，連擊會中斷）": "Подсвечивает следующую верную клетку (счёт сохраняется, комбо сбрасывается)",
+  "提示": "Подсказка",
+  "剩": "Время",
+  "下一句：": "Далее:",
 };
 
 export const hi = {
@@ -22225,6 +22305,11 @@ export const hi = {
   "提醒他": "याद दिलाएँ",
   "邀你來玩一節經文，種下第一棵樹！": "ने आपको एक वचन खेलकर अपना पहला पेड़ लगाने के लिए आमंत्रित किया है!",
   "找不到 {name} 的裝置，他登入 App 後才能收到提醒": "{name} का डिवाइस नहीं मिला — रिमाइंडर पाने के लिए पहले ऐप में लॉग इन करना होगा",
+  "再按一次離開": "बाहर निकलने के लिए फिर से टैप करें",
+  "亮出下一個正確的格子（分數不變，連擊會中斷）": "अगला सही खाना चमकाता है (स्कोर बना रहता है, कॉम्बो टूट जाता है)",
+  "提示": "संकेत",
+  "剩": "समय",
+  "下一句：": "अगला:",
 };
 
 // Khmer (Cambodian) — full UI coverage, machine-translated in bulk from the
@@ -23866,6 +23951,11 @@ export const km = {
   "提醒他": "រំលឹកគាត់",
   "邀你來玩一節經文，種下第一棵樹！": "អញ្ជើញអ្នកមកលេងខគម្ពីរមួយខ ហើយដាំដើមឈើដំបូងរបស់អ្នក!",
   "找不到 {name} 的裝置，他登入 App 後才能收到提醒": "រកមិនឃើញឧបករណ៍របស់ {name} ទេ — ត្រូវចូលកម្មវិធីជាមុនសិន ទើបទទួលបានការរំលឹក",
+  "再按一次離開": "ចុចម្ដងទៀតដើម្បីចាកចេញ",
+  "亮出下一個正確的格子（分數不變，連擊會中斷）": "បំភ្លឺប្រអប់ត្រឹមត្រូវបន្ទាប់ (ពិន្ទុនៅដដែល ខុមបូត្រូវកាត់)",
+  "提示": "ជំនួយ",
+  "剩": "នៅសល់",
+  "下一句：": "បន្ទាប់៖",
 };
 
 const I18N_FILLINS = { he, fa, ar, ja, ko, es, tr, de, my, vi, id, ms, zhcn, pt, fr, ru, hi, km };

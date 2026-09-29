@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { expandSameChapterRefs } from './lib/expandSameChapterRefs.js';
 import { toSpeechText } from './lib/speechText.js';
-import { Play, Pause, RotateCcw, Heart, Zap, Trophy, Crown, Star, Home, XCircle, Headphones, Music, VolumeX, Search, Share2, Dices, Mic, MicOff, Users, CloudRain, Info, Edit, TreePine, Gamepad2, Map, Settings, Library, Volume2, Shuffle, Swords, ShoppingBasket, Apple, Mail, Lock, Sprout, Leaf, Hourglass, Frown, X, Camera, Square, Copy, ArrowRightLeft, MessageCircle, Languages, ChevronUp, ChevronDown, Check, Gift, Store, Ticket, MapPin, BookOpen } from 'lucide-react';
+import { Play, Pause, RotateCcw, Lightbulb, Heart, Zap, Trophy, Crown, Star, Home, XCircle, Headphones, Music, VolumeX, Search, Share2, Dices, Mic, MicOff, Users, CloudRain, Info, Edit, TreePine, Gamepad2, Map, Settings, Library, Volume2, Shuffle, Swords, ShoppingBasket, Apple, Mail, Lock, Sprout, Leaf, Hourglass, Frown, X, Camera, Square, Copy, ArrowRightLeft, MessageCircle, Languages, ChevronUp, ChevronDown, Check, Gift, Store, Ticket, MapPin, BookOpen } from 'lucide-react';
 import { CATALOG as VOUCHER_CATALOG, DEFAULT_VALUE as VOUCHER_DEFAULTS } from '../api/_lib/rewardCatalog.js';
 import confetti from 'canvas-confetti';
 import usePartySocket from 'partysocket/react';
@@ -19443,6 +19443,9 @@ export default function App() {
   // JS-panel implementation in shipped builds), so「刪除題庫」looked dead.
   // First tap arms the button, second tap within 5s deletes.
   const [deleteArmedId, setDeleteArmedId] = useState(null);
+  // 提示 (in-game hint): the seqIndex of the block to light up, cleared after 1.5 s.
+  const [hintSeq, setHintSeq] = useState(null);
+  const hintTimerRef = useRef(null);
   const deleteArmTimerRef = useRef(null);
   const armDelete = (id) => {
     setDeleteArmedId(id);
@@ -25754,7 +25757,7 @@ export default function App() {
                     verserain
                   </div>
                   <div className="app-brand-version" style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', marginTop: '4px', marginLeft: '2px' }}>
-                    v4.0.115
+                    v4.0.116
                   </div>
                 </div>
                 <div ref={langPickerRef} className="app-lang-control" style={{ position: 'relative' }}>
@@ -31254,7 +31257,7 @@ export default function App() {
               });
             }}
             onFail={() => {
-              setGameState('menu');
+              quitGame();
             }}
             health={health}
             timeLeft={timeLeft}
@@ -31295,41 +31298,47 @@ export default function App() {
             onClick={handleGlobalClick}
             style={{ position: 'absolute', width: '100vw', height: '100dvh', top: 0, left: 0, overflow: 'hidden' }}
           >
+            {deleteArmedId === 'game-exit' && (
+              <div role="status" style={{ position: 'absolute', top: 'calc(env(safe-area-inset-top, 0px) + 98px)', left: '12px', zIndex: 40, background: '#dc2626', color: '#fff', padding: '0.4rem 0.75rem', borderRadius: '8px', fontSize: '0.9rem', fontWeight: 'bold', whiteSpace: 'nowrap', boxShadow: '0 4px 12px rgba(0,0,0,0.35)', pointerEvents: 'none' }}>
+                {t('再按一次離開', 'Tap again to exit')}
+              </div>
+            )}
             <div className="game-hud" style={{ position: 'absolute', top: 0, left: 0, right: 0, padding: '0.5rem 1rem', display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) auto minmax(0, 1fr)', gap: '0.75rem', alignItems: 'start', zIndex: 10, pointerEvents: 'none' }}>
               <div className="game-hud-row game-hud-left" style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', alignItems: 'center', pointerEvents: 'auto', minWidth: 0 }}>
+                {/* Exit asks once ("tap again") so a stray tap doesn't end the round. */}
                 <button
                   className="hud-glass game-hud-chip game-exit-button"
+                  data-testid="game-exit"
+                  aria-label={t('離開', 'Exit')}
                   onClick={(e) => {
                     e.stopPropagation();
-                    if (timerRef.current) clearInterval(timerRef.current);
-                    if ('speechSynthesis' in window) window.speechSynthesis.cancel();
-                    setGameState('menu');
+                    if (deleteArmedId !== 'game-exit') { armDelete('game-exit'); return; }
+                    setDeleteArmedId(null);
+                    quitGame();
                   }}
-                  style={{ padding: '0.75rem', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#f87171' }}
+                  style={{ position: 'relative', zIndex: deleteArmedId === 'game-exit' ? 30 : undefined, padding: '0.5rem 0.7rem', minHeight: '44px', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.3rem', color: deleteArmedId === 'game-exit' ? '#fff' : '#f87171', background: deleteArmedId === 'game-exit' ? '#dc2626' : undefined, fontWeight: 'bold', fontSize: '0.85rem', whiteSpace: 'nowrap' }}
                 >
-                  <XCircle size={22} />
+                  <XCircle size={20} />
+                  <span>{t('離開', 'Exit')}</span>
                 </button>
+                {/* 提示: lights up the next correct block for a moment. It breaks the
+                    combo but keeps the score (the old 示範 auto-play zeroed it). */}
                 {!isAutoPlay && !multiplayerRoomId && (
                   <button
-                    className="hud-glass game-hud-chip game-demo-button"
+                    className="hud-glass game-hud-chip game-hint-button"
+                    data-testid="game-hint"
                     onClick={(e) => {
                       e.stopPropagation();
-                      // Stop the countdown timer
-                      if (timerRef.current) clearInterval(timerRef.current);
-                      // Cancel any ongoing speech
-                      if ('speechSynthesis' in window) window.speechSynthesis.cancel();
-                      // Reset score for this round
-                      setScore(0);
                       setCombo(0);
-                      // Activate autoplay from current position
-                      setIsAutoPlay(true);
-                      isAutoPlayRef.current = true;
+                      setHintSeq(currentSeqIndex);
+                      clearTimeout(hintTimerRef.current);
+                      hintTimerRef.current = setTimeout(() => setHintSeq(null), 1500);
                     }}
-                    title={t('電腦自動完成（分數歸零）', 'Auto-complete (score resets to 0)')}
-                    style={{ padding: '0.5rem 0.8rem', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.3rem', color: '#4ade80', fontWeight: 'bold', fontSize: '0.85rem' }}
+                    title={t('亮出下一個正確的格子（分數不變，連擊會中斷）', 'Highlight the next correct block (score kept, combo resets)')}
+                    style={{ padding: '0.5rem 0.7rem', minHeight: '44px', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.3rem', color: '#fbbf24', fontWeight: 'bold', fontSize: '0.85rem', whiteSpace: 'nowrap' }}
                   >
-                    <Play size={16} fill="#4ade80" />
-                    <span style={{ fontSize: '0.8rem' }}>{t('示範', 'Play')}</span>
+                    <Lightbulb size={16} />
+                    <span>{t('提示', 'Hint')}</span>
                   </button>
                 )}
 
@@ -31384,7 +31393,7 @@ export default function App() {
               <div className="game-hud-row game-hud-right" style={{ justifySelf: 'end', display: 'flex', alignItems: 'center', gap: '0.75rem', pointerEvents: 'auto' }}>
                 {!isAutoPlay && (
                   <div className="hud-glass game-hud-chip game-timer-chip" style={{ padding: '0.45rem 0.85rem', display: 'flex', alignItems: 'center', gap: '0.55rem', minHeight: '42px' }}>
-                    <div style={{ fontSize: '0.85rem', color: '#94a3b8', fontWeight: 'bold' }}>T</div>
+                    <div style={{ fontSize: '0.85rem', color: '#cbd5e1', fontWeight: 'bold' }}>{t('剩', 'Time')}</div>
                     <div style={{ fontSize: 'clamp(1.25rem, 2vw, 1.7rem)', color: timeLeft <= 1000 ? '#f87171' : '#cbd5e1', fontFamily: 'monospace', fontWeight: 'bold', lineHeight: 1 }}>
                       {String(Math.floor(timeLeft / 100)).padStart(2, '0')}.{Math.floor((timeLeft % 100) / 10)}
                     </div>
@@ -31407,7 +31416,7 @@ export default function App() {
                       ))}
                       {currentSeqIndex < activePhrases.length && (
                         <span id="stack-cursor" style={{ display: 'inline-block', color: '#94a3b8', fontWeight: 'bold', padding: '0 0.4rem', border: '2px dashed rgba(251, 191, 36, 0.4)', borderRadius: '6px', margin: '0 0.2rem', background: 'rgba(251, 191, 36, 0.05)', transition: 'all 0.3s' }}>
-                          Next: {maskPhraseForPreview(activePhrases[currentSeqIndex])}
+                          {t('下一句：', 'Next:')} {maskPhraseForPreview(activePhrases[currentSeqIndex])}
                         </span>
                       )}
                     </div>
@@ -31445,6 +31454,7 @@ export default function App() {
                     let appliedClasses = 'falling-block-inner square-block-tile';
                     if (block.error) appliedClasses += ' error-shake';
                     if (block.correct && (!block.claimedBy || block.claimedBy === myClientId)) appliedClasses += ' success-flash';
+                    if (hintSeq !== null && block.seqIndex === hintSeq && !block.correct) appliedClasses += ' hint-glow';
 
                     let blockStyle = { cursor: 'pointer', padding: 'clamp(0.6rem, 2.2vmin, 2rem)', fontSize: squareBlockFontSize, display: 'flex', alignItems: 'center', justifyContent: 'center', wordBreak: 'break-word', overflowWrap: 'anywhere', hyphens: 'auto', textAlign: 'center', visibility: block.hidden ? 'hidden' : 'visible', borderRadius: 'clamp(16px, 2.2vmin, 30px)' };
 
@@ -31467,6 +31477,7 @@ export default function App() {
                   let appliedClasses = 'falling-block-inner';
                   if (block.error) appliedClasses += ' error-shake';
                   if (block.correct) appliedClasses += ' success-flash';
+                  if (hintSeq !== null && block.seqIndex === hintSeq && !block.correct) appliedClasses += ' hint-glow';
 
                   return (
                     <div
@@ -31856,7 +31867,7 @@ export default function App() {
                     )
                   ) : (
                     <button
-                      onClick={() => setGameState('menu')}
+                      onClick={() => quitGame()}
                       className="play-btn"
                       style={{
                         flex: '1 1 200px', maxWidth: '400px', background: '#475569', color: 'white', border: 'none', padding: 'clamp(0.8rem, 2vh, 1.2rem)',
@@ -31864,7 +31875,7 @@ export default function App() {
                         display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', transition: 'all 0.2s'
                       }}
                     >
-                      <Home size={20} /> {t("跳過", "Give Up")}
+                      <Home size={20} /> {t("離開", "Exit")}
                     </button>
                   )}
                 </div>
