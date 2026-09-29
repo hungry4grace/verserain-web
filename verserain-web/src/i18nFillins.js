@@ -1351,6 +1351,15 @@ export const he = {
   "會從地圖上移除；已發出的折扣券仍可核銷，之後可以重新上架。": "הרישום יוסר מהמפה; שוברים שכבר הונפקו עדיין ניתנים למימוש, ואפשר לפרסם אותו מחדש בהמשך.",
   "刪除「{name}」的登記？": "למחוק את הרישום של “{name}”?",
   "這筆登記會被刪除，無法復原。": "הרישום יימחק. אי אפשר לבטל פעולה זו.",
+  "我的": "שלי",
+  "怎麼玩、怎麼算分、常見問題": "איך משחקים, איך מחושב הניקוד ושאלות נפוצות",
+  "同時聽兩種語言的經文": "האזנה לפסוקים בשתי שפות",
+  "無障礙模式": "מצב נגישות",
+  "為視障朋友預備的簡化版，只靠聽和按鍵": "גרסה פשוטה לעיוורים ולקויי ראייה – רק האזנה ומקשים",
+  "今日": "היום",
+  "園子": "הגן",
+  "一起玩": "משחק משותף",
+  "主要分頁": "לשוניות ראשיות",
 };
 
 export const fa = {
@@ -2683,6 +2692,15 @@ export const fa = {
   "會從地圖上移除；已發出的折扣券仍可核銷，之後可以重新上架。": "از نقشه برداشته می‌شود؛ کوپن‌های صادرشده هنوز قابل استفاده‌اند و بعداً می‌توانی دوباره منتشرش کنی.",
   "刪除「{name}」的登記？": "ثبت «{name}» حذف شود؟",
   "這筆登記會被刪除，無法復原。": "این ثبت حذف می‌شود و قابل بازگشت نیست.",
+  "我的": "من",
+  "怎麼玩、怎麼算分、常見問題": "روش بازی، نحوهٔ امتیازدهی و پرسش‌های رایج",
+  "同時聽兩種語言的經文": "شنیدن آیات به دو زبان",
+  "無障礙模式": "حالت دسترس‌پذیر",
+  "為視障朋友預備的簡化版，只靠聽和按鍵": "نسخه‌ای ساده برای دوستان نابینا و کم‌بینا؛ فقط با شنیدن و کلیدها",
+  "今日": "امروز",
+  "園子": "باغ",
+  "一起玩": "بازی با هم",
+  "主要分頁": "زبانه‌های اصلی",
 };
 
 export const ar = {
@@ -4431,6 +4449,15 @@ export const ar = {
   "會從地圖上移除；已發出的折扣券仍可核銷，之後可以重新上架。": "ستتم إزالته من الخريطة؛ القسائم الصادرة لا تزال قابلة للاستخدام، ويمكنك إعادة نشره لاحقًا.",
   "刪除「{name}」的登記？": "حذف تسجيل «{name}»؟",
   "這筆登記會被刪除，無法復原。": "سيتم حذف هذا التسجيل، ولا يمكن التراجع عن ذلك.",
+  "我的": "حسابي",
+  "怎麼玩、怎麼算分、常見問題": "طريقة اللعب واحتساب النقاط والأسئلة الشائعة",
+  "同時聽兩種語言的經文": "استمع إلى الآيات بلغتين",
+  "無障礙模式": "وضع إمكانية الوصول",
+  "為視障朋友預備的簡化版，只靠聽和按鍵": "نسخة مبسطة للمكفوفين وضعاف البصر، بالاستماع والمفاتيح فقط",
+  "今日": "اليوم",
+  "園子": "الحديقة",
+  "一起玩": "العب معًا",
+  "主要分頁": "التبويبات الرئيسية",
 };
 
 export const ja = {
@@ -5751,6 +5778,15 @@ export const ja = {
   "會從地圖上移除；已發出的折扣券仍可核銷，之後可以重新上架。": "地図から外れます。発行済みのクーポンは引き続き使え、あとで再掲載できます。",
   "刪除「{name}」的登記？": "「{name}」の登録を削除しますか？",
   "這筆登記會被刪除，無法復原。": "この登録は削除され、元に戻せません。",
+  "我的": "マイページ",
+  "怎麼玩、怎麼算分、常見問題": "遊び方・点数の計算・よくある質問",
+  "同時聽兩種語言的經文": "2つの言語で聖句を聞く",
+  "無障礙模式": "アクセシブルモード",
+  "為視障朋友預備的簡化版，只靠聽和按鍵": "視覚障害のある方のための簡易版。音声とキー操作だけで使えます",
+  "今日": "今日",
+  "園子": "園",
+  "一起玩": "一緒に遊ぶ",
+  "主要分頁": "メインタブ",
 };
 
 export const ko = {
@@ -6129,7 +6165,7 @@ export const ko = {
   "輕觸下方按鈕開始聆聽。": "아래 버튼을 눌러 듣기를 시작하세요.",
   "開始聆聽": "듣기 시작",
   "停止播放": "중지",
-  "經文組": "말씀 세트",
+  "經文組": "구절 세트",
   // ── 操作手冊 (manual) ──
   "歡迎進入 <strong>VerseRain 經文雨</strong>！這是一個結合聆聽、挑戰與學習的互動背經平台。<br />在這裡您可以挑戰全球經文組、建立個人專屬的經文組，也能用自己的聲音把經文分享給朋友！": "<strong>VerseRain 경문우</strong>에 오신 것을 환영합니다! 듣기·도전·학습을 하나로 묶은 인터랙티브 성경 암송 플랫폼입니다.<br />전 세계의 구절 세트에 도전하고, 나만의 세트를 만들고, 내 목소리로 친구에게 말씀을 전할 수 있습니다!",
   "1. 從大廳進入「經文組」": "1. 로비에서 「구절 라이브러리」로",
@@ -7069,6 +7105,15 @@ export const ko = {
   "會從地圖上移除；已發出的折扣券仍可核銷，之後可以重新上架。": "지도에서 제거됩니다. 이미 발급된 쿠폰은 계속 사용할 수 있으며, 나중에 다시 올릴 수 있습니다.",
   "刪除「{name}」的登記？": "「{name}」 등록을 삭제할까요?",
   "這筆登記會被刪除，無法復原。": "이 등록은 삭제되며 되돌릴 수 없습니다.",
+  "我的": "내 정보",
+  "怎麼玩、怎麼算分、常見問題": "게임 방법·점수 계산·자주 묻는 질문",
+  "同時聽兩種語言的經文": "두 언어로 말씀 듣기",
+  "無障礙模式": "접근성 모드",
+  "為視障朋友預備的簡化版，只靠聽和按鍵": "시각장애인을 위한 간단한 버전, 듣기와 키 조작만으로 사용",
+  "今日": "오늘",
+  "園子": "정원",
+  "一起玩": "함께 놀기",
+  "主要分頁": "주요 탭",
 };
 
 export const es = {
@@ -8403,6 +8448,15 @@ export const es = {
   "會從地圖上移除；已發出的折扣券仍可核銷，之後可以重新上架。": "Se quitará del mapa; los cupones ya emitidos siguen siendo válidos y podrás volver a publicarlo más tarde.",
   "刪除「{name}」的登記？": "¿Eliminar el registro «{name}»?",
   "這筆登記會被刪除，無法復原。": "Este registro se eliminará. No se puede deshacer.",
+  "我的": "Perfil",
+  "怎麼玩、怎麼算分、常見問題": "Cómo jugar, puntuación y preguntas frecuentes",
+  "同時聽兩種語言的經文": "Escucha versículos en dos idiomas",
+  "無障礙模式": "Modo accesible",
+  "為視障朋友預備的簡化版，只靠聽和按鍵": "Versión sencilla para personas ciegas o con baja visión: solo audio y teclas",
+  "今日": "Hoy",
+  "園子": "Jardín",
+  "一起玩": "Jugar juntos",
+  "主要分頁": "Pestañas principales",
 };
 
 export const tr = {
@@ -9737,6 +9791,15 @@ export const tr = {
   "會從地圖上移除；已發出的折扣券仍可核銷，之後可以重新上架。": "Haritadan çıkarılır; verilmiş kuponlar kullanılmaya devam edebilir ve daha sonra yeniden yayınlayabilirsin.",
   "刪除「{name}」的登記？": "“{name}” kaydı silinsin mi?",
   "這筆登記會被刪除，無法復原。": "Bu kayıt silinecek. Bu işlem geri alınamaz.",
+  "我的": "Profil",
+  "怎麼玩、怎麼算分、常見問題": "Nasıl oynanır, puanlama ve SSS",
+  "同時聽兩種語言的經文": "Ayetleri iki dilde dinle",
+  "無障礙模式": "Erişilebilir mod",
+  "為視障朋友預備的簡化版，只靠聽和按鍵": "Görme engelli dostlar için sade sürüm: yalnızca dinleme ve tuşlar",
+  "今日": "Bugün",
+  "園子": "Bahçe",
+  "一起玩": "Birlikte oyna",
+  "主要分頁": "Ana sekmeler",
 };
 
 export const de = {
@@ -11071,6 +11134,15 @@ export const de = {
   "會從地圖上移除；已發出的折扣券仍可核銷，之後可以重新上架。": "Der Eintrag verschwindet von der Karte; bereits ausgegebene Gutscheine bleiben einlösbar, und du kannst ihn später wieder veröffentlichen.",
   "刪除「{name}」的登記？": "Eintrag „{name}“ löschen?",
   "這筆登記會被刪除，無法復原。": "Dieser Eintrag wird gelöscht. Das kann nicht rückgängig gemacht werden.",
+  "我的": "Profil",
+  "怎麼玩、怎麼算分、常見問題": "Spielanleitung, Punkte und FAQ",
+  "同時聽兩種語言的經文": "Verse in zwei Sprachen hören",
+  "無障礙模式": "Barrierefreier Modus",
+  "為視障朋友預備的簡化版，只靠聽和按鍵": "Vereinfachte Version für blinde und sehbehinderte Menschen – nur Hören und Tasten",
+  "今日": "Heute",
+  "園子": "Garten",
+  "一起玩": "Zusammen spielen",
+  "主要分頁": "Hauptnavigation",
 };
 
 export const my = {
@@ -12405,6 +12477,15 @@ export const my = {
   "會從地圖上移除；已發出的折扣券仍可核銷，之後可以重新上架。": "မြေပုံမှ ဖယ်ရှားပါမည်။ ထုတ်ပြီးသော ကူပွန်များ ဆက်သုံးနိုင်ပြီး နောက်မှ ပြန်တင်နိုင်ပါသည်။",
   "刪除「{name}」的登記？": "“{name}” ၏ မှတ်ပုံတင်ကို ဖျက်မလား?",
   "這筆登記會被刪除，無法復原。": "ဤမှတ်ပုံတင်ကို ဖျက်ပါမည်။ ပြန်ယူ၍ မရပါ။",
+  "我的": "ကျွန်ုပ်",
+  "怎麼玩、怎麼算分、常見問題": "ကစားနည်း၊ အမှတ်တွက်ပုံနှင့် မေးလေ့ရှိသောမေးခွန်းများ",
+  "同時聽兩種語言的經文": "ကျမ်းချက်များကို ဘာသာစကားနှစ်မျိုးဖြင့် နားထောင်ပါ",
+  "無障礙模式": "အသုံးပြုရလွယ်ကူသောမုဒ်",
+  "為視障朋友預備的簡化版，只靠聽和按鍵": "မျက်မမြင်နှင့် အမြင်အားနည်းသူများအတွက် ရိုးရှင်းသောဗားရှင်း၊ နားထောင်ခြင်းနှင့် ခလုတ်များဖြင့်သာ",
+  "今日": "ယနေ့",
+  "園子": "ဥယျာဉ်",
+  "一起玩": "အတူကစား",
+  "主要分頁": "အဓိကတက်ဘ်များ",
 };
 
 export const vi = {
@@ -13739,6 +13820,15 @@ export const vi = {
   "會從地圖上移除；已發出的折扣券仍可核銷，之後可以重新上架。": "Mục này sẽ bị gỡ khỏi bản đồ; phiếu đã phát vẫn dùng được, và bạn có thể đăng lại sau.",
   "刪除「{name}」的登記？": "Xóa đăng ký “{name}”?",
   "這筆登記會被刪除，無法復原。": "Đăng ký này sẽ bị xóa và không thể khôi phục.",
+  "我的": "Của tôi",
+  "怎麼玩、怎麼算分、常見問題": "Cách chơi, cách tính điểm và câu hỏi thường gặp",
+  "同時聽兩種語言的經文": "Nghe Kinh Thánh bằng hai ngôn ngữ",
+  "無障礙模式": "Chế độ trợ năng",
+  "為視障朋友預備的簡化版，只靠聽和按鍵": "Phiên bản đơn giản cho người khiếm thị, chỉ cần nghe và bấm phím",
+  "今日": "Hôm nay",
+  "園子": "Khu vườn",
+  "一起玩": "Chơi cùng",
+  "主要分頁": "Thẻ chính",
 };
 
 export const id = {
@@ -15301,6 +15391,15 @@ export const id = {
   "會從地圖上移除；已發出的折扣券仍可核銷，之後可以重新上架。": "Akan dihapus dari peta; voucher yang sudah terbit tetap bisa dipakai, dan kamu bisa menayangkannya lagi nanti.",
   "刪除「{name}」的登記？": "Hapus pendaftaran “{name}”?",
   "這筆登記會被刪除，無法復原。": "Pendaftaran ini akan dihapus dan tidak bisa dibatalkan.",
+  "我的": "Profil",
+  "怎麼玩、怎麼算分、常見問題": "Cara bermain, penilaian, dan FAQ",
+  "同時聽兩種語言的經文": "Dengarkan ayat dalam dua bahasa",
+  "無障礙模式": "Mode aksesibel",
+  "為視障朋友預備的簡化版，只靠聽和按鍵": "Versi sederhana untuk teman tunanetra dan low vision, cukup dengar dan tombol",
+  "今日": "Hari ini",
+  "園子": "Taman",
+  "一起玩": "Main bersama",
+  "主要分頁": "Tab utama",
 };
 
 export const ms = {
@@ -17067,6 +17166,15 @@ export const ms = {
   "會從地圖上移除；已發出的折扣券仍可核銷，之後可以重新上架。": "Akan dialih keluar dari peta; baucar yang telah dikeluarkan masih boleh digunakan, dan anda boleh menerbitkannya semula kemudian.",
   "刪除「{name}」的登記？": "Padam pendaftaran “{name}”?",
   "這筆登記會被刪除，無法復原。": "Pendaftaran ini akan dipadam dan tidak boleh dipulihkan.",
+  "我的": "Profil",
+  "怎麼玩、怎麼算分、常見問題": "Cara bermain, pengiraan mata dan Soalan Lazim",
+  "同時聽兩種語言的經文": "Dengar ayat dalam dua bahasa",
+  "無障礙模式": "Mod mudah akses",
+  "為視障朋友預備的簡化版，只靠聽和按鍵": "Versi ringkas untuk rakan cacat penglihatan, hanya dengar dan kekunci",
+  "今日": "Hari ini",
+  "園子": "Taman",
+  "一起玩": "Main bersama",
+  "主要分頁": "Tab utama",
 };
 
 export const zhcn = {
@@ -18752,6 +18860,15 @@ export const zhcn = {
   "會從地圖上移除；已發出的折扣券仍可核銷，之後可以重新上架。": "会从地图上移除；已发出的折扣券仍可核销，之后可以重新上架。",
   "刪除「{name}」的登記？": "删除「{name}」的登记？",
   "這筆登記會被刪除，無法復原。": "这笔登记会被删除，无法恢复。",
+  "我的": "我的",
+  "怎麼玩、怎麼算分、常見問題": "怎么玩、怎么算分、常见问题",
+  "同時聽兩種語言的經文": "同时听两种语言的经文",
+  "無障礙模式": "无障碍模式",
+  "為視障朋友預備的簡化版，只靠聽和按鍵": "为视障朋友预备的简化版，只靠听和按键",
+  "今日": "今日",
+  "園子": "园子",
+  "一起玩": "一起玩",
+  "主要分頁": "主要分页",
 };
 
 export const pt = {
@@ -19808,6 +19925,15 @@ export const pt = {
   "會從地圖上移除；已發出的折扣券仍可核銷，之後可以重新上架。": "Ele sai do mapa; os vouchers já emitidos continuam válidos, e você pode voltar a publicá-lo depois.",
   "刪除「{name}」的登記？": "Excluir o cadastro “{name}”?",
   "這筆登記會被刪除，無法復原。": "Este cadastro será excluído. Não é possível desfazer.",
+  "我的": "Perfil",
+  "怎麼玩、怎麼算分、常見問題": "Como jogar, pontuação e perguntas frequentes",
+  "同時聽兩種語言的經文": "Ouça versículos em dois idiomas",
+  "無障礙模式": "Modo acessível",
+  "為視障朋友預備的簡化版，只靠聽和按鍵": "Versão simples para pessoas cegas ou com baixa visão: só ouvir e usar teclas",
+  "今日": "Hoje",
+  "園子": "Jardim",
+  "一起玩": "Jogar juntos",
+  "主要分頁": "Abas principais",
 };
 
 export const fr = {
@@ -20864,6 +20990,15 @@ export const fr = {
   "會從地圖上移除；已發出的折扣券仍可核銷，之後可以重新上架。": "L’inscription disparaît de la carte ; les bons déjà émis restent utilisables, et tu pourras la republier plus tard.",
   "刪除「{name}」的登記？": "Supprimer l’inscription « {name} » ?",
   "這筆登記會被刪除，無法復原。": "Cette inscription sera supprimée. Cette action est irréversible.",
+  "我的": "Profil",
+  "怎麼玩、怎麼算分、常見問題": "Comment jouer, points et FAQ",
+  "同時聽兩種語言的經文": "Écouter les versets en deux langues",
+  "無障礙模式": "Mode accessible",
+  "為視障朋友預備的簡化版，只靠聽和按鍵": "Version simplifiée pour les personnes aveugles ou malvoyantes : écoute et touches uniquement",
+  "今日": "Aujourd’hui",
+  "園子": "Jardin",
+  "一起玩": "Jouer ensemble",
+  "主要分頁": "Onglets principaux",
 };
 
 export const ru = {
@@ -21920,6 +22055,15 @@ export const ru = {
   "會從地圖上移除；已發出的折扣券仍可核銷，之後可以重新上架。": "Запись исчезнет с карты; уже выданные купоны остаются действительными, а позже её можно опубликовать снова.",
   "刪除「{name}」的登記？": "Удалить запись «{name}»?",
   "這筆登記會被刪除，無法復原。": "Эта запись будет удалена. Отменить это нельзя.",
+  "我的": "Профиль",
+  "怎麼玩、怎麼算分、常見問題": "Как играть, подсчёт очков и частые вопросы",
+  "同時聽兩種語言的經文": "Слушать стихи на двух языках",
+  "無障礙模式": "Режим доступности",
+  "為視障朋友預備的簡化版，只靠聽和按鍵": "Упрощённая версия для незрячих и слабовидящих — только слух и клавиши",
+  "今日": "Сегодня",
+  "園子": "Сад",
+  "一起玩": "Играть вместе",
+  "主要分頁": "Основные вкладки",
 };
 
 export const hi = {
@@ -22976,6 +23120,15 @@ export const hi = {
   "會從地圖上移除；已發出的折扣券仍可核銷，之後可以重新上架。": "यह नक्शे से हट जाएगा; पहले जारी कूपन अभी भी उपयोग किए जा सकते हैं, और तुम इसे बाद में फिर से प्रकाशित कर सकते हो।",
   "刪除「{name}」的登記？": "“{name}” का पंजीकरण मिटाएँ?",
   "這筆登記會被刪除，無法復原。": "यह पंजीकरण मिटा दिया जाएगा। इसे वापस नहीं लाया जा सकता।",
+  "我的": "मेरा",
+  "怎麼玩、怎麼算分、常見問題": "कैसे खेलें, अंक कैसे गिनें और आम सवाल",
+  "同時聽兩種語言的經文": "दो भाषाओं में वचन सुनें",
+  "無障礙模式": "सुलभ मोड",
+  "為視障朋友預備的簡化版，只靠聽和按鍵": "दृष्टिबाधित मित्रों के लिए सरल संस्करण, सिर्फ़ सुनकर और बटन से",
+  "今日": "आज",
+  "園子": "बगीचा",
+  "一起玩": "साथ खेलें",
+  "主要分頁": "मुख्य टैब",
 };
 
 // Khmer (Cambodian) — full UI coverage, machine-translated in bulk from the
@@ -24660,6 +24813,16 @@ export const km = {
   "會從地圖上移除；已發出的折扣券仍可核銷，之後可以重新上架。": "វានឹងត្រូវដកចេញពីផែនទី ប័ណ្ណដែលបានចេញរួចនៅតែប្រើបាន ហើយអ្នកអាចបង្ហោះឡើងវិញពេលក្រោយ។",
   "刪除「{name}」的登記？": "លុបការចុះឈ្មោះ «{name}» ឬ?",
   "這筆登記會被刪除，無法復原。": "ការចុះឈ្មោះនេះនឹងត្រូវលុប ហើយមិនអាចស្ដារវិញបានទេ។",
+  "我的": "របស់ខ្ញុំ",
+  "怎麼玩、怎麼算分、常見問題": "របៀបលេង ការគិតពិន្ទុ និងសំណួរញឹកញាប់",
+  "同時聽兩種語言的經文": "ស្តាប់ខគម្ពីរជាពីរភាសា",
+  "無障礙模式": "របៀបងាយស្រួលប្រើ",
+  "為視障朋友預備的簡化版，只靠聽和按鍵": "កំណែសាមញ្ញសម្រាប់មិត្តពិការភ្នែក ប្រើតែការស្តាប់ និងប៊ូតុង",
+  "今日": "ថ្ងៃនេះ",
+  "園子": "សួនច្បារ",
+  "一起玩": "លេងជាមួយគ្នា",
+  "主要分頁": "ផ្ទាំងសំខាន់ៗ",
+  "使用說明": "សៀវភៅណែនាំ",
 };
 
 const I18N_FILLINS = { he, fa, ar, ja, ko, es, tr, de, my, vi, id, ms, zhcn, pt, fr, ru, hi, km };
