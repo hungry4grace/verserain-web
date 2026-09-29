@@ -25743,7 +25743,7 @@ export default function App() {
                     verserain
                   </div>
                   <div className="app-brand-version" style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', marginTop: '4px', marginLeft: '2px' }}>
-                    v4.0.123
+                    v4.0.124
                   </div>
                 </div>
                 <div ref={langPickerRef} className="app-lang-control" style={{ position: 'relative' }}>
@@ -28408,13 +28408,9 @@ export default function App() {
                 <div style={{ backgroundColor: '#ffffff', borderRadius: '8px', border: '1px solid #cbd5e1', padding: '1.5rem', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', flexWrap: 'wrap', marginBottom: '0.5rem' }}>
                     <h2 style={{ color: '#1e293b', margin: 0, display: 'flex', alignItems: 'center', gap: '10px' }}><TreePine size={28} color="#10b981" /> {t("我的園子", "My Garden")}</h2>
-                    <button
-                      type="button"
-                      onClick={() => setMainTab('custom_verses')}
-                      style={{ background: '#fffbeb', border: '1px solid #fcd34d', color: '#b45309', padding: '0.45rem 1rem', borderRadius: '20px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.9rem', display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}
-                    >
-                      <Crown size={16} /> {t('我的經文組', 'My Custom Sets')} →
-                    </button>
+                    <Button variant="secondary" size="sm" icon={<Crown size={18} />} onClick={() => setMainTab('custom_verses')}>
+                      {t('我的經文組', 'My Custom Sets')} →
+                    </Button>
                   </div>
                   <p style={{ color: '#64748b', fontSize: '0.9rem', marginBottom: '1rem' }}>
                     {t("每挑戰一節新經文，就會在空地上長出嫩芽。持續練習讓它長大！通過經文變成大樹，創新高則結出果子。", "Each new verse you challenge sprouts a seedling. Keep practicing to grow it! Clearing a verse makes it a full tree; new high scores bear fruit.")}
@@ -28546,9 +28542,9 @@ export default function App() {
 
                   {gardenGaps > 0 && (
                     <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '0.5rem' }}>
-                      <button type="button" onClick={compactMyGarden} title={t('把樹往前排，填掉被刪除的空格；順序不變', 'Move trees forward to close deleted cells; order is kept')} style={{ background: '#fff', border: '1px solid #cbd5e1', color: '#334155', borderRadius: 8, padding: '0.35rem 0.8rem', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 700 }}>
+                      <Button variant="secondary" size="sm" onClick={compactMyGarden} title={t('把樹往前排，填掉被刪除的空格；順序不變', 'Move trees forward to close deleted cells; order is kept')}>
                         🧹 {t('整理園子（{n} 個空格）', 'Tidy garden ({n} empty cells)').replace('{n}', String(gardenGaps))}
-                      </button>
+                      </Button>
                     </div>
                   )}
                   <GardenView
@@ -28640,26 +28636,22 @@ export default function App() {
                             <input
                               readOnly
                               value={buildPublicShareUrl('/', { ref: personalCode })}
-                              style={{ flex: 1, minWidth: '220px', padding: '0.8rem', borderRadius: '8px', border: '1px solid #cbd5e1', backgroundColor: '#fff', color: '#334155', fontSize: '0.95rem' }}
+                              aria-label={t('你的專屬推廣連結', 'Your invite link')}
+                              onFocus={(e) => e.target.select()}
+                              style={{ flex: '1 1 100%', minWidth: 0, width: '100%', padding: '0.8rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)', backgroundColor: '#fff', color: 'var(--color-text)', fontSize: 'var(--fs-body)' }}
                             />
-                            <button
-                              onClick={() => {
-                                navigator.clipboard.writeText(buildPublicShareUrl('/', { ref: personalCode }));
-                                toast.success(t("邀請連結已複製！快發給好朋友吧！", "Invite link copied! Share it with friends!"));
-                              }}
-                              style={{ background: '#3b82f6', color: 'white', border: 'none', padding: '0 1.5rem', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', transition: 'background 0.2s', minHeight: '44px' }}
-                              onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#2563eb'}
-                              onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#3b82f6'}
-                            >
+                            <Button icon={<Copy size={18} />} onClick={() => {
+                              const link = buildPublicShareUrl('/', { ref: personalCode });
+                              Promise.resolve(navigator.clipboard?.writeText(link))
+                                .then(() => toast.success(t("邀請連結已複製！快發給好朋友吧！", "Invite link copied! Share it with friends!")))
+                                .catch(() => alertDialog({ title: t('分享連結', 'Share link'), message: link }));
+                            }}>
                               {t("複製", "Copy")}
-                            </button>
+                            </Button>
                             {typeof QRCodeSVG !== 'undefined' && (
-                              <button
-                                onClick={() => setQrShareModal({ url: buildPublicShareUrl('/', { ref: personalCode }), reference: 'VerseRain 遊戲邀請' })}
-                                style={{ background: '#10b981', color: 'white', border: 'none', padding: '0 1.5rem', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', transition: 'background 0.2s', minHeight: '44px' }}
-                              >
+                              <Button variant="secondary" onClick={() => setQrShareModal({ url: buildPublicShareUrl('/', { ref: personalCode }), reference: 'VerseRain 遊戲邀請' })}>
                                 {t("QR 碼", "QR Code")}
-                              </button>
+                              </Button>
                             )}
                           </div>
                         </>
@@ -28708,9 +28700,9 @@ export default function App() {
                         return (
                           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '1.25rem' }}>
                             {older.length > 0 && (
-                              <button type="button" onClick={() => setShowOldInviters(v => !v)} style={{ alignSelf: 'flex-start', background: 'transparent', border: 'none', color: '#64748b', fontSize: '0.78rem', cursor: 'pointer', padding: 0 }}>
+                              <Button variant="text" size="sm" style={{ alignSelf: 'flex-start' }} aria-expanded={showOldInviters} onClick={() => setShowOldInviters(v => !v)}>
                                 {showOldInviters ? '▾' : '▸'} {t('舊身分的推薦紀錄 {n} 筆', '{n} records from earlier names / devices').replace('{n}', String(older.length))}
-                              </button>
+                              </Button>
                             )}
                             {inviters.map(inv => (
                               <div key={inv.player} style={{ background: '#fff', padding: '10px 15px', borderRadius: '8px', borderLeft: '4px solid #3b82f6', boxShadow: '0 1px 2px rgba(0,0,0,0.05)', fontSize: '0.9rem', color: '#475569', display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>

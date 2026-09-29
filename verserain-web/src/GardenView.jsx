@@ -1,5 +1,6 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
 import { Apple, Sprout, TreePine, ChevronLeft, ChevronRight, LayoutGrid, List, Search, X, Play, Smartphone, Check } from 'lucide-react';
+import { Button, IconButton } from './ui';
 import {
   CELLS_PER_FIELD, APPLE_POSITIONS, buildFields, clampFieldIndex, fieldOfRef, fieldOfGridIndex,
   findGardenCell, filterGardenEntries, sortGardenEntries, stageLabelPair, stageBg, timeOfDayTheme, swipeDirection, isBlankRef,
@@ -94,7 +95,7 @@ export function GardenVerseCard({ card, t, version, isNarrow, onClose, onChallen
           animation: 'flashSuccess 0.3s ease-out',
         }}
       >
-        <button type="button" onClick={onClose} aria-label={t('關閉', 'Close')} style={{ position: 'absolute', top: '10px', right: '15px', background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer', fontSize: '1.4rem', fontWeight: 'bold' }}><X size={22} /></button>
+        <IconButton label={t('關閉', 'Close')} onClick={onClose} style={{ position: 'absolute', top: '4px', right: '4px' }}><X size={22} /></IconButton>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.8rem', flexWrap: 'wrap' }}>
           <div style={{ width: '60px', height: '60px', position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <div style={{ width: '100%', height: '100%', position: 'absolute', bottom: 0, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
@@ -313,9 +314,9 @@ export default function GardenView({
             />
           </div>
           {viewMode === 'field' && (
-            <button type="submit" disabled={!query.trim()} style={{ padding: '7px 12px', borderRadius: '8px', border: 'none', background: query.trim() ? '#0f766e' : '#cbd5e1', color: '#fff', fontWeight: 'bold', cursor: query.trim() ? 'pointer' : 'default', fontSize: '0.85rem', whiteSpace: 'nowrap' }}>
+            <Button type="submit" size="sm" disabled={!query.trim()}>
               {t('跳到', 'Go')}
-            </button>
+            </Button>
           )}
         </form>
         {searchMiss && viewMode === 'field' && (
@@ -431,9 +432,9 @@ export default function GardenView({
                 </button>
               ))}
               {listRows.length > listLimit && (
-                <button type="button" onClick={() => setListLimit((n) => n + LIST_PAGE)} style={{ padding: '8px', borderRadius: '8px', border: '1px solid #cbd5e1', background: '#f8fafc', color: '#334155', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.85rem' }}>
+                <Button variant="secondary" size="sm" block onClick={() => setListLimit((n) => n + LIST_PAGE)}>
                   {t('顯示更多', 'Show more')} ({listRows.length - listLimit})
-                </button>
+                </Button>
               )}
             </div>
           )}

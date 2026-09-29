@@ -1341,6 +1341,7 @@ export const he = {
   "刪除經文組？": "למחוק את אוסף הפסוקים?",
   "「{title}」會被刪除，其他人也看不到了。這無法復原。": "„{title}” יימחק ואף אחד אחר לא יראה אותו. אי אפשר לבטל זאת.",
   "已儲存「{title}」": "„{title}” נשמר",
+  "你的專屬推廣連結": "קישור ההזמנה האישי שלך",
 };
 
 export const fa = {
@@ -2663,6 +2664,7 @@ export const fa = {
   "刪除經文組？": "این مجموعه آیات حذف شود؟",
   "「{title}」會被刪除，其他人也看不到了。這無法復原。": "«{title}» حذف می‌شود و دیگران هم دیگر آن را نمی‌بینند. این کار برگشت‌پذیر نیست.",
   "已儲存「{title}」": "«{title}» ذخیره شد",
+  "你的專屬推廣連結": "پیوند دعوت اختصاصی شما",
 };
 
 export const ar = {
@@ -4401,6 +4403,7 @@ export const ar = {
   "刪除經文組？": "حذف مجموعة الآيات؟",
   "「{title}」會被刪除，其他人也看不到了。這無法復原。": "سيتم حذف «{title}» ولن يراها أحد بعد الآن. لا يمكن التراجع عن ذلك.",
   "已儲存「{title}」": "تم حفظ «{title}»",
+  "你的專屬推廣連結": "رابط الدعوة الخاص بك",
 };
 
 export const ja = {
@@ -5711,6 +5714,7 @@ export const ja = {
   "刪除經文組？": "聖句セットを削除しますか？",
   "「{title}」會被刪除，其他人也看不到了。這無法復原。": "「{title}」は削除され、他の人にも表示されなくなります。元に戻せません。",
   "已儲存「{title}」": "「{title}」を保存しました",
+  "你的專屬推廣連結": "あなた専用の招待リンク",
 };
 
 export const ko = {
@@ -7019,6 +7023,7 @@ export const ko = {
   "刪除經文組？": "구절 세트를 삭제할까요?",
   "「{title}」會被刪除，其他人也看不到了。這無法復原。": "「{title}」이(가) 삭제되며 다른 사람에게도 더 이상 보이지 않습니다. 되돌릴 수 없습니다.",
   "已儲存「{title}」": "「{title}」을(를) 저장했습니다",
+  "你的專屬推廣連結": "나만의 초대 링크",
 };
 
 export const es = {
@@ -8343,6 +8348,7 @@ export const es = {
   "刪除經文組？": "¿Eliminar este conjunto?",
   "「{title}」會被刪除，其他人也看不到了。這無法復原。": "«{title}» se eliminará y nadie más podrá verlo. No se puede deshacer.",
   "已儲存「{title}」": "Se guardó «{title}»",
+  "你的專屬推廣連結": "Tu enlace de invitación",
 };
 
 export const tr = {
@@ -9667,6 +9673,7 @@ export const tr = {
   "刪除經文組？": "Bu ayet seti silinsin mi?",
   "「{title}」會被刪除，其他人也看不到了。這無法復原。": "“{title}” silinecek ve başkaları da artık göremeyecek. Bu işlem geri alınamaz.",
   "已儲存「{title}」": "“{title}” kaydedildi",
+  "你的專屬推廣連結": "Kişisel davet bağlantın",
 };
 
 export const de = {
@@ -10991,6 +10998,7 @@ export const de = {
   "刪除經文組？": "Diese Verssammlung löschen?",
   "「{title}」會被刪除，其他人也看不到了。這無法復原。": "„{title}“ wird gelöscht und ist für niemanden mehr sichtbar. Das kann nicht rückgängig gemacht werden.",
   "已儲存「{title}」": "„{title}“ gespeichert",
+  "你的專屬推廣連結": "Dein persönlicher Einladungslink",
 };
 
 export const my = {
@@ -12315,6 +12323,7 @@ export const my = {
   "刪除經文組？": "ဤကျမ်းချက်စုကို ဖျက်မလား။",
   "「{title}」會被刪除，其他人也看不到了。這無法復原。": "「{title}」ကို ဖျက်ပါမည်၊ အခြားသူများလည်း မမြင်ရတော့ပါ။ ပြန်ပြင်၍ မရပါ။",
   "已儲存「{title}」": "「{title}」ကို သိမ်းဆည်းပြီးပါပြီ",
+  "你的專屬推廣連結": "သင့်ကိုယ်ပိုင် ဖိတ်ကြားလင့်ခ်",
 };
 
 export const vi = {
@@ -13639,6 +13648,7 @@ export const vi = {
   "刪除經文組？": "Xóa bộ câu Kinh Thánh này?",
   "「{title}」會被刪除，其他人也看不到了。這無法復原。": "«{title}» sẽ bị xóa và người khác cũng không thấy nữa. Không thể hoàn tác.",
   "已儲存「{title}」": "Đã lưu «{title}»",
+  "你的專屬推廣連結": "Liên kết mời của bạn",
 };
 
 export const id = {
@@ -15191,6 +15201,7 @@ export const id = {
   "刪除經文組？": "Hapus set ayat ini?",
   "「{title}」會被刪除，其他人也看不到了。這無法復原。": "“{title}” akan dihapus dan tidak terlihat lagi oleh orang lain. Tindakan ini tidak bisa dibatalkan.",
   "已儲存「{title}」": "“{title}” tersimpan",
+  "你的專屬推廣連結": "Tautan undangan pribadimu",
 };
 
 export const ms = {
@@ -16947,6 +16958,7 @@ export const ms = {
   "刪除經文組？": "Padam set ayat ini?",
   "「{title}」會被刪除，其他人也看不到了。這無法復原。": "“{title}” akan dipadam dan tidak lagi kelihatan kepada orang lain. Tindakan ini tidak boleh dibuat asal.",
   "已儲存「{title}」": "“{title}” disimpan",
+  "你的專屬推廣連結": "Pautan jemputan peribadi anda",
 };
 
 export const zhcn = {
@@ -18622,6 +18634,7 @@ export const zhcn = {
   "刪除經文組？": "删除经文组？",
   "「{title}」會被刪除，其他人也看不到了。這無法復原。": "「{title}」会被删除，其他人也看不到了。这无法复原。",
   "已儲存「{title}」": "已保存「{title}」",
+  "你的專屬推廣連結": "你的专属推广链接",
 };
 
 export const pt = {
@@ -19668,6 +19681,7 @@ export const pt = {
   "刪除經文組？": "Excluir este conjunto?",
   "「{title}」會被刪除，其他人也看不到了。這無法復原。": "“{title}” será excluído e ninguém mais poderá vê-lo. Isso não pode ser desfeito.",
   "已儲存「{title}」": "“{title}” salvo",
+  "你的專屬推廣連結": "Seu link de convite",
 };
 
 export const fr = {
@@ -20714,6 +20728,7 @@ export const fr = {
   "刪除經文組？": "Supprimer cet ensemble ?",
   "「{title}」會被刪除，其他人也看不到了。這無法復原。": "« {title} » sera supprimé et plus personne ne pourra le voir. Action irréversible.",
   "已儲存「{title}」": "« {title} » enregistré",
+  "你的專屬推廣連結": "Ton lien d’invitation personnel",
 };
 
 export const ru = {
@@ -21760,6 +21775,7 @@ export const ru = {
   "刪除經文組？": "Удалить этот набор стихов?",
   "「{title}」會被刪除，其他人也看不到了。這無法復原。": "«{title}» будет удалён и больше никто его не увидит. Это нельзя отменить.",
   "已儲存「{title}」": "«{title}» сохранён",
+  "你的專屬推廣連結": "Твоя личная ссылка-приглашение",
 };
 
 export const hi = {
@@ -22806,6 +22822,7 @@ export const hi = {
   "刪除經文組？": "यह वचन समूह हटाएँ?",
   "「{title}」會被刪除，其他人也看不到了。這無法復原。": "“{title}” हटा दिया जाएगा और कोई और भी इसे नहीं देख पाएगा। इसे वापस नहीं किया जा सकता।",
   "已儲存「{title}」": "“{title}” सहेजा गया",
+  "你的專屬推廣連結": "आपका निजी आमंत्रण लिंक",
 };
 
 // Khmer (Cambodian) — full UI coverage, machine-translated in bulk from the
@@ -24480,6 +24497,7 @@ export const km = {
   "刪除經文組？": "លុបសំណុំខគម្ពីរនេះ?",
   "「{title}」會被刪除，其他人也看不到了。這無法復原。": "「{title}」នឹងត្រូវលុប ហើយអ្នកដទៃក៏មើលមិនឃើញទៀតដែរ។ មិនអាចត្រឡប់វិញបានទេ។",
   "已儲存「{title}」": "បានរក្សាទុក「{title}」",
+  "你的專屬推廣連結": "តំណអញ្ជើញផ្ទាល់ខ្លួនរបស់អ្នក",
 };
 
 const I18N_FILLINS = { he, fa, ar, ja, ko, es, tr, de, my, vi, id, ms, zhcn, pt, fr, ru, hi, km };
