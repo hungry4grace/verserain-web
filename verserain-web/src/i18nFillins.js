@@ -20200,6 +20200,7 @@ export const pt = {
   "分享你的推薦連結，朋友第一次過關雙方都得獎勵": "Compartilhe seu link de indicação — quando seu amigo passar no primeiro versículo, vocês dois ganham uma recompensa",
   "愛心與合作": "Doações e parceiros",
   "學習與說明": "Aprendizado e guia",
+  "管理": "Administração",
 };
 
 export const fr = {
@@ -21284,6 +21285,7 @@ export const fr = {
   "分享你的推薦連結，朋友第一次過關雙方都得獎勵": "Partage ton lien de parrainage — quand ton ami réussit son premier verset, vous gagnez tous les deux une récompense",
   "愛心與合作": "Dons et partenaires",
   "學習與說明": "Apprentissage et guide",
+  "管理": "Administration",
 };
 
 export const ru = {
@@ -22368,6 +22370,7 @@ export const ru = {
   "分享你的推薦連結，朋友第一次過關雙方都得獎勵": "Поделись своей реферальной ссылкой — когда друг пройдёт свой первый стих, вы оба получите награду",
   "愛心與合作": "Пожертвования и партнёры",
   "學習與說明": "Обучение и инструкции",
+  "管理": "Администрирование",
 };
 
 export const hi = {
@@ -23452,6 +23455,7 @@ export const hi = {
   "分享你的推薦連結，朋友第一次過關雙方都得獎勵": "अपना रेफ़रल लिंक साझा करें — मित्र के पहली आयत पार करने पर आप दोनों को इनाम मिलेगा",
   "愛心與合作": "दान और साझेदार",
   "學習與說明": "सीखना और गाइड",
+  "管理": "प्रबंधन",
 };
 
 // Khmer (Cambodian) — full UI coverage, machine-translated in bulk from the
@@ -25165,6 +25169,7 @@ export const km = {
   "分享你的推薦連結，朋友第一次過關雙方都得獎勵": "ចែករំលែកតំណណែនាំរបស់អ្នក — ពេលមិត្តភក្តិជាប់ជាលើកដំបូង អ្នកទាំងពីរនឹងទទួលបានរង្វាន់",
   "愛心與合作": "សេចក្តីស្រឡាញ់ និងដៃគូ",
   "學習與說明": "ការសិក្សា និងការណែនាំ",
+  "管理": "ការគ្រប់គ្រង",
 };
 
 const I18N_FILLINS = { he, fa, ar, ja, ko, es, tr, de, my, vi, id, ms, zhcn, pt, fr, ru, hi, km };
