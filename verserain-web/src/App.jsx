@@ -1,8 +1,10 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { expandSameChapterRefs } from './lib/expandSameChapterRefs.js';
 import { toSpeechText } from './lib/speechText.js';
-import { Play, Pause, RotateCcw, Lightbulb, Heart, Zap, Trophy, Crown, Star, Home, XCircle, Headphones, Music, VolumeX, Search, Share2, Dices, Mic, MicOff, Users, CloudRain, Info, Edit, TreePine, Gamepad2, Map, Settings, Library, Volume2, Shuffle, Swords, ShoppingBasket, Apple, Mail, Lock, Sprout, Leaf, Hourglass, Frown, X, Camera, Square, Copy, ArrowRightLeft, MessageCircle, Languages, ChevronUp, ChevronDown, Check, Gift, Store, Ticket, MapPin, BookOpen, Plus, Save, Trash2 } from 'lucide-react';
+import { Play, Pause, RotateCcw, Lightbulb, Heart, Zap, Trophy, Crown, Star, Home, XCircle, Headphones, Music, VolumeX, Search, Share2, Dices, Mic, MicOff, Users, CloudRain, Info, Edit, TreePine, Gamepad2, Map, Settings, Library, Volume2, Shuffle, Swords, ShoppingBasket, Apple, Mail, Lock, Sprout, Leaf, Hourglass, Frown, X, Camera, Square, Copy, ArrowRightLeft, MessageCircle, Languages, ChevronUp, ChevronDown, Check, Gift, Store, Ticket, MapPin, BookOpen, Plus, Save, Trash2, UserRound } from 'lucide-react';
 import { UiHost, Button, IconButton, toast, confirmDialog, alertDialog } from './ui';
+import BottomNav from './BottomNav.jsx';
+import { navTabOf } from './navTabs.js';
 import { CATALOG as VOUCHER_CATALOG, DEFAULT_VALUE as VOUCHER_DEFAULTS } from '../api/_lib/rewardCatalog.js';
 import confetti from 'canvas-confetti';
 import usePartySocket from 'partysocket/react';
@@ -6016,7 +6018,7 @@ function getUiDicts() {
     '歷史': 'כל הזמנים',
 
     // Verse Sets / Custom Sets
-    '經文組': 'סט פסוקים',
+    '經文組': 'אוסף פסוקים',
     '解鎖經文組': 'פתיחת סט',
     '此經文組的介面語言': 'שפת ממשק לסט זה',
     '尚未發現經文組': 'לא נמצא סט פסוקים',
@@ -6671,7 +6673,7 @@ function getUiDicts() {
     '匯入': "インポート",
     '匯入中…': "インポート中…",
     '朗讀這節': "この聖句を音読",
-    '經文組': '経文セット',
+    '經文組': '聖句セット',
     '👑 我的經文組': '👑 マイ聖句セット',
     '多人連線': 'マルチプレイヤー',
     '排行榜': 'ランキング',
@@ -7891,7 +7893,7 @@ const viDict = {
     "你的名字:": "Tên của bạn:",
     "登入 / 修改": "Đăng nhập / Sửa",
     "登出": "Đăng xuất",
-    "經文組": "Bộ Kinh Thánh",
+    "經文組": "Bộ câu Kinh Thánh",
     "隨機挑戰所選題數": "Thử thách ngẫu nhiên",
     "隨機播放所選數量的經文圖卡與語音": "Phát ngẫu nhiên số câu Kinh Thánh và âm thanh đã chọn",
     "邀請朋友一起玩": "Mời bạn bè cùng chơi",
@@ -8057,7 +8059,7 @@ const myDict = {
     "你的名字:": "သင်၏နာမည်:",
     "登入 / 修改": "ဝင်ရောက် / ပြင်ဆင်",
     "登出": "ထွက်မည်",
-    "經文組": "ကျမ်းချက်အစု",
+    "經文組": "ကျမ်းချက်စု",
     "隨機挑戰所選題數": "ကျပန်းစိန်ခေါ်မှု",
     "隨機播放所選數量的經文圖卡與語音": "ရွေးချယ်ထားသောကျမ်းပိုဒ်အရေအတွက်ကိုအသံဖြင့်ကျပန်းဖွင့်မည်",
     "邀請朋友一起玩": "သူငယ်ချင်းများကို ဖိတ်ခေါ်ရန်",
@@ -8785,7 +8787,7 @@ const esDict = {
     "你的名字:": "Tu nombre:",
     "登入 / 修改": "Iniciar / Modificar",
     "登出": "Cerrar sesión",
-    "經文組": "Conjunto de Versículos",
+    "經文組": "Conjunto de versículos",
     "隨機挑戰所選題數": "Desafío aleatorio",
     "隨機播放所選數量的經文圖卡與語音": "Reproducción aleatoria de los versículos seleccionados con audio",
     "邀請朋友一起玩": "Invitar amigos",
@@ -9169,7 +9171,7 @@ const deDict = {
     "你的名字:": "Dein Name:",
     "登入 / 修改": "Anmelden / Ändern",
     "登出": "Abmelden",
-    "經文組": "Vers-Set",
+    "經文組": "Verssammlung",
     "隨機挑戰所選題數": "Zufällige Herausforderung",
     "隨機播放所選數量的經文圖卡與語音": "Zufällige Wiedergabe der ausgewählten Anzahl von Versen mit Audio",
     "邀請朋友一起玩": "Freunde einladen",
@@ -9783,7 +9785,7 @@ const deDict = {
     '結果子 (創新高!)': '実を結ぶ（新たな最高値！）',
     '經文列表': '聖句リスト',
     '經文組通關紀錄': '聖典グループのクリアランス記録',
-    '經文組': '聖書の質問バンク',
+    '經文組': '聖句セット',
     '編輯': '編集',
     '編輯這個經文組': 'この聖典グループを編集する',
     '總分': '合計スコア',
@@ -10003,7 +10005,7 @@ const deDict = {
     '等待比賽結束，結果會用隊伍平均分排名。': '게임이 끝날 때까지 기다리면 팀의 평균 점수를 사용하여 결과 순위가 결정됩니다.',
     '經文列表': '성경 목록',
     '經文組通關紀錄': '성경 그룹 정리 기록',
-    '經文組': '성경 문제 은행',
+    '經文組': '구절 세트',
     '編輯這個經文組': '이 성경 그룹 편집',
     '總分': '총점',
     '累積點數': '총점',
@@ -10191,7 +10193,7 @@ const deDict = {
     '節經文': 'câu thơ',
     '系統預設語音': 'Giọng nói mặc định của hệ thống',
     '經文': 'Kinh Thánh',
-    '經文組': 'nhóm thánh thư',
+    '經文組': 'Bộ câu Kinh Thánh',
     '經文組分享': 'Nhóm chia sẻ kinh thánh',
     '經文雨': 'mưa kinh thánh',
     '線上排行榜能激勵會眾、青年團契和小組成員一起參與遊玩、共同精進！': 'Bảng xếp hạng trực tuyến có thể khuyến khích các hội thánh, nhóm thanh niên và thành viên nhóm tham gia vui chơi và cùng nhau tiến bộ!',
@@ -10731,7 +10733,7 @@ const deDict = {
     '節經文': 'အခန်းငယ်များ',
     '系統預設語音': 'စနစ်၏ မူရင်းအသံ',
     '經文': 'ကျမ်းဂန်',
-    '經文組': 'ကျမ်းစာအုပ်စု',
+    '經文組': 'ကျမ်းချက်စု',
     '經文組分享': 'ကျမ်းဂန်အဖွဲ့ခွဲဝေခြင်း။',
     '經文雨': 'ကျမ်းချက်မိုး',
     '線上排行榜能激勵會眾、青年團契和小組成員一起參與遊玩、共同精進！': 'အွန်လိုင်းခေါင်းဆောင်ဘုတ်များသည် အသင်းတော်များ၊ လူငယ်အုပ်စုများနှင့် အဖွဲ့၀င်များကို ပျော်ရွှင်စွာပါဝင်ပြီး အတူတကွတိုးတက်စေရန် အားပေးနိုင်ပါသည်။',
@@ -11265,7 +11267,7 @@ const deDict = {
     '節經文': 'versos',
     '系統預設語音': 'Voz predeterminada del sistema',
     '經文': 'Sagrada Escritura',
-    '經文組': 'grupo de escrituras',
+    '經文組': 'Conjunto de versículos',
     '經文組分享': 'Compartir las Escrituras en grupo',
     '經文雨': 'lluvia de escrituras',
     '縮小字體': 'Reducir el tamaño de fuente',
@@ -11758,7 +11760,7 @@ const deDict = {
     '節經文': 'ayetler',
     '系統預設語音': 'Sistem varsayılan sesi',
     '經文': 'Kutsal Yazı',
-    '經文組': 'kutsal yazı grubu',
+    '經文組': 'Ayet Seti',
     '經文組分享': 'Kutsal yazı grubu paylaşımı',
     '經文雨': 'kutsal yağmur',
     '縮小字體': 'Yazı tipi boyutunu küçült',
@@ -12251,7 +12253,7 @@ const deDict = {
     '節經文': 'Verse',
     '系統預設語音': 'Standardstimme des Systems',
     '經文': 'Schrift',
-    '經文組': 'Schriftgruppe',
+    '經文組': 'Verssammlung',
     '經文組分享': 'Austausch der heiligen Schriften in der Gruppe',
     '經文雨': 'Schriftregen',
     '縮小字體': 'Schriftgröße reduzieren',
@@ -20156,6 +20158,15 @@ export default function App() {
   // would also scroll #root (index.css: height 100vh, overflow hidden), which
   // the user cannot scroll back — on phones the page then looks cut off and
   // stuck. `block: 'center'` centres the element, otherwise it goes near the top.
+  // Bottom-bar tabs → the page each one opens. Tapping the tab you are on
+  // goes back to its top level (e.g. the set list from inside a set).
+  const selectNavTab = (tab) => {
+    const target = { today: 'lobby', sets: 'versesets', garden: 'garden', play: 'multiplayer', me: 'advanced' }[tab] || 'lobby';
+    if (tab === 'sets') setSelectedSetId(null);
+    setMainTab(target);
+    const el = menuScrollRef.current;
+    if (el) el.scrollTop = 0;
+  };
   const scrollMenuTo = (el, { block = 'start', offset = 12 } = {}) => {
     const scroller = menuScrollRef.current;
     if (!el || !scroller) return;
@@ -25551,6 +25562,7 @@ export default function App() {
     <>
       <div
         data-ui-root
+        data-bottom-nav={gameState === 'menu' ? '' : undefined}
         lang={documentLang}
         dir={isActiveLanguage('fa') || isActiveLanguage('ar') || isActiveLanguage('he') ? 'rtl' : 'ltr'}
         style={{
@@ -25746,7 +25758,8 @@ export default function App() {
         )}
 
         {gameState === 'menu' && (
-          <div ref={menuScrollRef} style={{ position: 'relative', width: '100vw', height: '100dvh', overflowY: 'auto', WebkitOverflowScrolling: 'touch', backgroundColor: '#f4f6f8', zIndex: 10, fontFamily: 'var(--app-font-family)' }}>
+          <div ref={menuScrollRef} style={{ position: 'relative', width: '100vw', height: '100dvh', overflowY: 'auto', WebkitOverflowScrolling: 'touch', backgroundColor: '#f4f6f8', zIndex: 10, fontFamily: 'var(--app-font-family)', paddingBottom: 'calc(var(--bottom-nav-h) + env(safe-area-inset-bottom, 0px))' }}>
+            <BottomNav t={t} active={navTabOf(mainTab)} onSelect={selectNavTab} />
 
             {/* Header */}
             <div className="landscape-compact-header app-shell-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#ffffff', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
@@ -25756,7 +25769,7 @@ export default function App() {
                     verserain
                   </div>
                   <div className="app-brand-version" style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', marginTop: '4px', marginLeft: '2px' }}>
-                    v4.0.126
+                    v4.0.127
                   </div>
                 </div>
                 <div ref={langPickerRef} className="app-lang-control" style={{ position: 'relative' }}>
@@ -25992,38 +26005,6 @@ export default function App() {
             </div>
 
             {/* Navigation Bar */}
-            <div className="landscape-compact-nav" style={{ display: 'flex', backgroundColor: '#e2e8f0', color: '#334155', overflowX: 'auto', borderBottom: '2px solid #cbd5e1', gap: '0.8rem', alignItems: 'center' }}>
-              {/* On the lobby the big cards ARE these destinations, so hide the
-                  duplicate pills there; other views keep them for navigation.
-                  Order: Home · Guide · Who's Playing · Garden · Multiplayer | Search · Advanced */}
-              {mainTab !== 'lobby' && (
-              <div className="block-tile" onClick={() => setMainTab('lobby')} style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', padding: '0.5rem 1.2rem', cursor: 'pointer', backgroundColor: mainTab === 'lobby' ? '#3b82f6' : 'white', color: mainTab === 'lobby' ? 'white' : '#475569', borderRadius: '20px', fontWeight: 'bold', whiteSpace: 'nowrap', transition: 'all 0.2s' }}>
-                <Home size={18} /> {t('大廳', 'Home')}
-              </div>
-              )}
-              <div className="block-tile" onClick={() => setMainTab('manual')} style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', padding: '0.5rem 1.2rem', cursor: 'pointer', backgroundColor: mainTab === 'manual' ? '#f59e0b' : 'white', color: mainTab === 'manual' ? 'white' : '#475569', borderRadius: '20px', fontWeight: 'bold', whiteSpace: 'nowrap', transition: 'all 0.2s' }}>
-                <Library size={18} /> {t('說明', 'Guide')}
-              </div>
-              <div className="block-tile" onClick={() => setMainTab('map')} style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', padding: '0.5rem 1.2rem', cursor: 'pointer', backgroundColor: mainTab === 'map' ? '#0ea5e9' : 'white', color: mainTab === 'map' ? 'white' : '#475569', borderRadius: '20px', fontWeight: 'bold', whiteSpace: 'nowrap', transition: 'all 0.2s' }}>
-                <Users size={18} /> {t('誰在玩', "Who's Playing")}
-              </div>
-              {mainTab !== 'lobby' && (<>
-              <div className="block-tile" onClick={() => setMainTab('garden')} style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', padding: '0.5rem 1.2rem', cursor: 'pointer', backgroundColor: mainTab === 'garden' ? '#10b981' : 'white', color: mainTab === 'garden' ? 'white' : '#475569', borderRadius: '20px', fontWeight: 'bold', whiteSpace: 'nowrap', transition: 'all 0.2s' }}>
-                <TreePine size={18} /> {t('我的園子', 'My Garden')}
-              </div>
-              <div className="block-tile" onClick={() => setMainTab('multiplayer')} style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', padding: '0.5rem 1.2rem', cursor: 'pointer', backgroundColor: mainTab === 'multiplayer' ? '#ec4899' : 'white', color: mainTab === 'multiplayer' ? 'white' : '#475569', borderRadius: '20px', fontWeight: 'bold', whiteSpace: 'nowrap', transition: 'all 0.2s' }}>
-                <Gamepad2 size={18} /> {t('多人遊戲', 'Multiplayer')}
-              </div>
-              </>)}
-              <div style={{ flex: 1, minWidth: '20px' }}></div>
-              <div className="block-tile" onClick={() => setMainTab('search')} style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', padding: '0.5rem 1.2rem', cursor: 'pointer', backgroundColor: mainTab === 'search' ? '#8b5cf6' : 'white', color: mainTab === 'search' ? 'white' : '#475569', borderRadius: '20px', fontWeight: 'bold', whiteSpace: 'nowrap', transition: 'all 0.2s' }}>
-                <Search size={18} /> {t('搜尋', 'Search')}
-              </div>
-              <div className="block-tile" onClick={() => setMainTab('advanced')} style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', padding: '0.5rem 1.2rem', cursor: 'pointer', backgroundColor: mainTab === 'advanced' ? '#475569' : 'white', color: mainTab === 'advanced' ? 'white' : '#64748b', borderRadius: '20px', fontWeight: 'bold', whiteSpace: 'nowrap', transition: 'all 0.2s' }}>
-                <Settings size={18} /> {t('進階功能', 'Advanced')}
-              </div>
-            </div>
-
             {/* Main Content Area */}
             <div className="landscape-compact-content" style={{ maxWidth: '1000px', margin: '0 auto' }}>
 
@@ -26384,11 +26365,14 @@ export default function App() {
               {mainTab === 'advanced' && (
                 <div style={{ paddingBottom: '3rem' }}>
                   <h2 style={{ color: '#1e293b', marginBottom: '1.5rem', borderBottom: '2px solid #e2e8f0', paddingBottom: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <Settings size={30} /> {t("進階設定與學習", "Advanced Settings & Learning")}
+                    <UserRound size={30} /> {t('我的', 'Me')}
                   </h2>
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1rem', width: '100%' }}>
                     {[
                       { id: 'morningPush', Icon: Mail, label: pushStatus === 'subscribed' ? t('已開啟每日經文推播', 'Daily Verse Push: On') : t('開啟每日經文推播', 'Daily Verse Push'), desc: t('每天上午 7 點手機推播今日經文', 'Get today\'s verse pushed at 7am'), color: '#10b981' },
+                      { id: 'manual', Icon: Library, label: t('使用說明', 'User guide'), desc: t('怎麼玩、怎麼算分、常見問題', 'How to play, scoring and FAQ'), color: '#2563eb' },
+                      { id: 'bilingual_rain', Icon: Languages, label: t('雙語經文雨 Beta', 'Bilingual VerseRain Beta'), desc: t('同時聽兩種語言的經文', 'Listen to verses in two languages'), color: '#0ea5e9' },
+                      { id: 'accessible', Icon: Headphones, label: t('無障礙模式', 'Accessible mode'), desc: t('為視障朋友預備的簡化版，只靠聽和按鍵', 'A simplified version for blind and low-vision friends'), color: '#475569' },
                       { id: 'about', Icon: Info, label: t('關於我們', 'About'), desc: t('VerseRain 開發資訊', 'Info & Credits'), color: '#14b8a6' },
                       { id: 'feedback', link: `mailto:hungry4grace@gmail.com?subject=${encodeURIComponent('經文雨 意見回饋（VerseRain Feedback）')}`, Icon: Mail, label: t('意見回饋', 'Feedback'), desc: t('聯絡與建議', 'Bugs & Suggestions'), color: '#ec4899' },
                       { id: 'sponsors', Icon: Gift, label: t('贊助者與我的折抵', 'Sponsors & my discounts'), desc: t('感謝贊助者、查看我的折抵紀錄', 'Thank our sponsors, see your discounts'), color: '#f59e0b' },
@@ -27165,6 +27149,13 @@ export default function App() {
 
               {mainTab === 'multiplayer' && (
                 <div style={{ backgroundColor: '#ffffff', borderRadius: '8px', border: '1px solid #cbd5e1', padding: '2rem', boxShadow: '0 1px 3px rgba(0,0,0,0.05)', textAlign: 'center' }}>
+                  {!multiplayerRoomId && (
+                    <div data-testid="play-links" style={{ display: 'flex', gap: 'var(--space-2)', flexWrap: 'wrap', justifyContent: 'center', marginBottom: 'var(--space-5)' }}>
+                      <Button variant="secondary" size="sm" icon={<MapPin size={18} />} onClick={() => setMainTab('map')}>{t('誰在玩', "Who's Playing")}</Button>
+                      <Button variant="secondary" size="sm" icon={<Trophy size={18} />} onClick={() => { setMainTab('leaderboard'); fetchGlobalLeaderboard(); }}>{t('排行榜', 'Leaderboard')}</Button>
+                      <Button variant="secondary" size="sm" icon={<BookOpen size={18} />} onClick={() => setMainTab('contests')}>{t('讀經比賽', 'Reading contest')}</Button>
+                    </div>
+                  )}
                   <h2 style={{ marginTop: 0, marginBottom: '1.5rem', fontFamily: 'var(--app-font-family)', color: '#8b5cf6' }}>{(multiplayerState?.matchType === 'individual' || multiplayerRoomMode === 'individual') ? t("邀人對戰", "Invite to a duel") : t("多人遊戲", "Multiplayer")}</h2>
 
                   {!playerName ? (
@@ -27820,18 +27811,22 @@ export default function App() {
                     {selectedSetId === null ? (
                       <>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem', padding: '1rem', borderBottom: '1px solid #e2e8f0', flexWrap: 'wrap' }}>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setEditingCustomSet(null);
-                              setMainTab('custom_verses');
-                            }}
-                            style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.65rem 1rem', borderRadius: '8px', border: '1px solid #c4b5fd', background: canCreateCustomSets ? 'linear-gradient(135deg, #8b5cf6, #7c3aed)' : '#f8fafc', color: canCreateCustomSets ? '#ffffff' : '#475569', fontWeight: 'bold', cursor: 'pointer', boxShadow: canCreateCustomSets ? '0 4px 10px rgba(124, 58, 237, 0.22)' : 'none' }}
-                            title={canCreateCustomSets ? t('建立自訂經文組', 'Create custom sets') : t('登入後即可建立自訂經文組', 'Sign in to create custom verse sets')}
-                          >
-                            {canCreateCustomSets ? <Crown size={18} /> : <Lock size={18} />}
-                            {t('我的經文組', 'My Custom Sets')}
-                          </button>
+                          <div style={{ display: 'flex', gap: 'var(--space-2)', flexWrap: 'wrap' }}>
+                            <Button
+                              variant="secondary"
+                              icon={canCreateCustomSets ? <Crown size={18} /> : <Lock size={18} />}
+                              onClick={() => {
+                                setEditingCustomSet(null);
+                                setMainTab('custom_verses');
+                              }}
+                              title={canCreateCustomSets ? t('建立自訂經文組', 'Create custom sets') : t('登入後即可建立自訂經文組', 'Sign in to create custom verse sets')}
+                            >
+                              {t('我的經文組', 'My Custom Sets')}
+                            </Button>
+                            <Button variant="secondary" icon={<Search size={18} />} data-testid="sets-search" onClick={() => setMainTab('search')}>
+                              {t('搜尋', 'Search')}
+                            </Button>
+                          </div>
                           <select
                             value={versesetsSort}
                             onChange={(e) => { setVersesetsSort(e.target.value); setVersesetsPage(1); }}

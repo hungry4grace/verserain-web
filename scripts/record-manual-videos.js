@@ -166,7 +166,9 @@ flows.startGame = async (browser) => {
 flows.map = async (browser) => {
   const { ctx, page } = await newCtx(browser, 'map');
   await open(page);
-  await clickText(page, '地圖', { pause: 6000 });
+  // Bottom bar → 一起玩 → 誰在玩 (the map).
+  await clickText(page, '一起玩', { pause: 1200 });
+  await clickText(page, '誰在玩', { pause: 6000 });
   await shot(page, '1-2d');
   await clickText(page, '3D 地球', { exact: false, pause: 7000 });
   await shot(page, '2-3d');
