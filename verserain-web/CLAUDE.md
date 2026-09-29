@@ -32,4 +32,5 @@ not go there:
 - Before sending a PR, run `npm run lint:clean` (must be 0 problems) and
   `npm run check:i18n`. The file list lives in `CLEAN_FILES` in
   `eslint.config.js`; `LEGACY_FILES` are pages moved out of App.jsx that still
-  use the old styles — drop a file from that list once it is converted.
+  use the old styles (lint:clean skips them) — drop a file from that list once
+  it is converted.

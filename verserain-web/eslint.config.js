@@ -29,6 +29,9 @@ export const LEGACY_FILES = [
   'src/pages/SponsorPage.jsx',
   'src/pages/SponsorsPage.jsx',
   'src/pages/VerifyPage.jsx',
+  'src/pages/GardenPage.jsx',
+  'src/pages/LeaderboardPage.jsx',
+  'src/pages/SearchPage.jsx',
 ]
 
 const HEX = '/(^|[\\s(,:])#([0-9a-fA-F]{3,4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})\\b/'
