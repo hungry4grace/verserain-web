@@ -1,5 +1,5 @@
 // Moved out of App.jsx unchanged (UI/UX 第 4 階段).
-import { ArrowRightLeft, CloudRain, MessageCircle, Mic, Pause, Play, Share2, Star, X, XCircle, Zap } from 'lucide-react';
+import { ArrowRightLeft, ArrowUpDown, CloudRain, MessageCircle, Mic, Pause, Play, Share2, Star, X, XCircle, Zap } from 'lucide-react';
 import { BIBLE_LANGUAGE_OPTIONS, DEFAULT_PLAY_FONT_CHOICE, DEFAULT_PLAY_INK_CHOICE, PLAY_INK_OPTIONS, areLikelyParallelVerseSets, fetchBibleVerseFromAPI, fetchVerseFromBolls, fetchVerseFromGetBible, fetchVerseFromTaibible, findMatchingVerse, getCachedBibleVerse, getDailyVerseImageUrls, getEnglishReferenceFromKey, getSecondaryPhrasesForIndex, getStableNumber, getVoiceLangForVersion, isTextLikelyForVersion, pickRandomVerse, setCachedBibleVerse } from '../lib/bible.js';
 import ChallengeSetupModal, { loadChallengeSetup } from '../ChallengeSetupModal';
 import { DAILY_RAIN_DROPS, RAIN_FONT_LEVELS } from './rainConstants';
@@ -813,7 +813,7 @@ export function VerseSetContinuousRainPlayer({
   const ytBgmId = youtubeBgmId(verseSet?.bgMusic);
   const ytHostRef = useRef(null);
   const [ytState, setYtState] = useState(null);
-  const [ytSide, setYtSide] = useState('right');
+  const [ytSide, setYtSide] = useState('top');
   const [ytClosed, setYtClosed] = useState(false);
   const runRef = useRef(0);
   const topicPickerRef = useRef(null);
@@ -1884,8 +1884,8 @@ export function VerseSetContinuousRainPlayer({
         <div className={`yt-bgm-dock is-${ytSide}`} data-testid="yt-bgm-dock">
           <div className="yt-bgm-dock__bar">
             <span className="yt-bgm-dock__title">🎵 {t('YouTube 音樂', 'YouTube music')}</span>
-            <button type="button" className="yt-bgm-dock__btn" onClick={() => setYtSide(s => (s === 'right' ? 'left' : 'right'))} aria-label={t('移到另一邊', 'Move to the other side')} title={t('移到另一邊', 'Move to the other side')}>
-              <ArrowRightLeft size={16} />
+            <button type="button" className="yt-bgm-dock__btn" onClick={() => setYtSide(s => (s === 'top' ? 'bottom' : 'top'))} aria-label={t('移到另一邊', 'Move to the other side')} title={t('移到另一邊', 'Move to the other side')}>
+              <ArrowUpDown size={16} />
             </button>
             <button
               type="button"
