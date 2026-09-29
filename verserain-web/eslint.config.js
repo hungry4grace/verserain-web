@@ -43,6 +43,13 @@ export const LEGACY_FILES = [
   'src/pages/CharityPage.jsx',
   'src/pages/ContestsPage.jsx',
   'src/pages/MerchantPage.jsx',
+  'src/game/VoicePlayScreen.jsx',
+  'src/game/RainPlayScreen.jsx',
+  'src/game/WaitingScreen.jsx',
+  'src/game/MultiplayerResultsScreen.jsx',
+  'src/game/IntermissionScreen.jsx',
+  'src/game/GameOverScreen.jsx',
+  'src/game/CampaignResultsScreen.jsx',
 ]
 
 const HEX = '/(^|[\\s(,:])#([0-9a-fA-F]{3,4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})\\b/'
