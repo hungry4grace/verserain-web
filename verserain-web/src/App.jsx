@@ -165,6 +165,11 @@ export default function App() {
     };
   }, []);
 
+  // The 今日 buttons (聆聽 / 話語甘霖 / 繼續) are already a tap, so the audio and
+  // speech unlock can happen right here and the player skips its 「開始朗讀」
+  // gate. The gate stays for anyone who lands on #daily_verse from a link.
+  const unlockSpeechFromTap = () => { initAudio(); setSpeechReady(true); };
+
   const VERSES_CUV = loadedLangs['cuv']?.verses || [];
   const VERSES_KJV = loadedLangs['kjv']?.verses || [];
   const VERSES_ESV = loadedLangs['esv']?.verses || [];
@@ -7227,7 +7232,7 @@ export default function App() {
                     verserain
                   </div>
                   <div className="app-brand-version" style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', marginTop: '4px', marginLeft: '2px' }}>
-                    v4.0.148
+                    v4.0.149
                   </div>
                 </div>
                 <div ref={langPickerRef} className="app-lang-control" style={{ position: 'relative' }}>
@@ -7477,7 +7482,7 @@ export default function App() {
                     verse={dailyVerseDate === today ? displayedDailyVerse : null}
                     verseLoading={isDailyVerseLoading || dailyVerseDate !== today}
                     bgUrls={getDailyVerseImageUrls(dailyVerseDate === today ? displayedDailyVerse : null, today, version)}
-                    onListen={() => { setOpenDailyPickerOnEnter(false); if (dailyVerseDate !== today) changeDailyVerseDate(today); setMainTab('daily_verse'); }}
+                    onListen={() => { unlockSpeechFromTap(); setOpenDailyPickerOnEnter(false); if (dailyVerseDate !== today) changeDailyVerseDate(today); setMainTab('daily_verse'); }}
                     onChallenge={() => {
                       const v = displayedDailyVerse;
                       if (!v) return;
@@ -7486,9 +7491,10 @@ export default function App() {
                         run: () => challengeVerseFromReader(v),
                       });
                     }}
-                    onOpenRain={() => { setOpenDailyPickerOnEnter(true); setMainTab('daily_verse'); }}
+                    onOpenRain={() => { unlockSpeechFromTap(); setOpenDailyPickerOnEnter(true); setMainTab('daily_verse'); }}
                     lastListen={resumeSet ? { title: resumeSet.title || lastListen.title, ref: lastListen.ref } : null}
                     onContinue={() => {
+                      unlockSpeechFromTap();
                       const vs = resumeSet.verses;
                       const i = vs.findIndex(v => v.reference === lastListen.ref);
                       setSelectedSetId(resumeSet.id);
