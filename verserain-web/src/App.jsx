@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { expandSameChapterRefs } from './lib/expandSameChapterRefs.js';
+import { toSpeechText } from './lib/speechText.js';
 import { Play, Pause, RotateCcw, Heart, Zap, Trophy, Crown, Star, Home, XCircle, Headphones, Music, VolumeX, Search, Share2, Dices, Mic, MicOff, Users, CloudRain, Info, Edit, TreePine, Gamepad2, Map, Settings, Library, Volume2, Shuffle, Swords, ShoppingBasket, Apple, Mail, Lock, Sprout, Leaf, Hourglass, Frown, X, Camera, Square, Copy, ArrowRightLeft, MessageCircle, Languages, ChevronUp, ChevronDown, Check, Gift, Store, Ticket, MapPin, BookOpen } from 'lucide-react';
 import { CATALOG as VOUCHER_CATALOG, DEFAULT_VALUE as VOUCHER_DEFAULTS } from '../api/_lib/rewardCatalog.js';
 import confetti from 'canvas-confetti';
@@ -1103,7 +1104,7 @@ function retryWithDefaultVoice(stuckUtterance, text, rate, lang) {
   stuckUtterance.onend = null;
   stuckUtterance.onerror = null;
   window.speechSynthesis.cancel();
-  const retry = new SpeechSynthesisUtterance(text);
+  const retry = new SpeechSynthesisUtterance(toSpeechText(text, lang));
   retry.lang = lang;
   retry.rate = rate;
   retry.volume = 1;
@@ -1147,7 +1148,7 @@ function speakTextTimed(text, rate = 1.0, lang = 'zh-TW', voiceOverride = null) 
     }
 
     await ensureSpeechVoices();
-    const utterance = new SpeechSynthesisUtterance(text);
+    const utterance = new SpeechSynthesisUtterance(toSpeechText(text, lang));
     utterance.lang = lang;
     utterance.rate = rate;
     utterance.volume = 1;
@@ -1223,7 +1224,7 @@ function speakText(text, rate = 1.0, lang = 'zh-TW') {
       await ensureSpeechVoices();
       stopSpeechIfActive();
 
-      const utterance = new SpeechSynthesisUtterance(text);
+      const utterance = new SpeechSynthesisUtterance(toSpeechText(text, lang));
       utterance.lang = lang;
       utterance.rate = rate;
 
@@ -25659,7 +25660,7 @@ export default function App() {
                     verserain
                   </div>
                   <div className="app-brand-version" style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', marginTop: '4px', marginLeft: '2px' }}>
-                    v4.0.108
+                    v4.0.109
                   </div>
                 </div>
                 <div ref={langPickerRef} className="app-lang-control" style={{ position: 'relative' }}>
@@ -28175,7 +28176,7 @@ export default function App() {
                                   let i = 0;
                                   const speakNext = () => {
                                     if (i >= chunks.length) { setDescTtsState('idle'); return; }
-                                    const u = new SpeechSynthesisUtterance(chunks[i++]);
+                                    const u = new SpeechSynthesisUtterance(toSpeechText(chunks[i++], lang));
                                     u.lang = lang;
                                     u.rate = 1.0;
                                     try { const v = pickSpeechVoice(lang); if (v) u.voice = v; } catch {}

@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { createT, resolveUiLang, SPEECH_LANG } from './i18n';
+import { toSpeechText } from './lib/speechText.js';
 
 // Fallback when the resolved UI language has no BCP-47 tag we know about.
 const DEFAULT_SPEECH_LANG = 'zh-TW';
@@ -34,7 +35,7 @@ function speak(text, lang = DEFAULT_SPEECH_LANG, rate = 0.92) {
       return;
     }
     window.speechSynthesis.cancel();
-    const utterance = new SpeechSynthesisUtterance(text);
+    const utterance = new SpeechSynthesisUtterance(toSpeechText(text, lang));
     utterance.lang = lang;
     utterance.rate = rate;
 
