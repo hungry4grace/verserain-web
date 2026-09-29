@@ -11,7 +11,7 @@
 // 注意：
 // - dev server 沒有 Vercel /api/*（地圖、翻譯），腳本會把 /api 轉到 verserain.com。
 // - 地圖與多人請對 production 錄：dev 的 React StrictMode 會讓 socket 重連，開房者不再是 host。
-// - 開房者要先在「多人遊戲」設好暱稱再按「邀人PK」，否則 socket 重連、host 錯位。
+// - 開房者要先在「多人遊戲」設好暱稱再按「邀人對戰」，否則 socket 重連、host 錯位。
 // Playwright tutorial recorder for VerseRain manual videos.
 // usage: node rec.js <flow> [<flow>...]
 const { chromium } = require('playwright');
@@ -128,7 +128,7 @@ async function pickVersion(page, label) {
 const flows = {};
 
 async function gotoSet(page, title = '約翰福音 核心經文') {
-  await clickLoc(page, page.locator('h2', { hasText: '經文題庫' }).first(), { pause: 1400 });
+  await clickLoc(page, page.locator('h2', { hasText: /^經文組$/ }).first(), { pause: 1400 });
   await clickText(page, title, { pause: 1600 });
 }
 
@@ -245,7 +245,7 @@ flows.translate = async (browser) => {
   await ctx.close();
 };
 
-// Two players, two languages, side by side (邀人PK = individual match).
+// Two players, two languages, side by side (邀人對戰 = individual match).
 flows.multiplayer = async (browser) => {
   const H = 760, W = 900;
   const host = await newCtx(browser, 'mp-host', { w: W, h: H });
@@ -255,7 +255,7 @@ flows.multiplayer = async (browser) => {
   // guest switches to English ESV first
   await pickVersion(gp, 'English - ESV');
   await shot(gp, '0-esv');
-  // host: nickname first (so the room socket is created once), then set detail → 邀人PK
+  // host: nickname first (so the room socket is created once), then set detail → 邀人對戰
   await clickLoc(hp, hp.locator('h2', { hasText: '多人遊戲' }).first(), { pause: 1500 });
   if (await hp.getByPlaceholder('你的暱稱').isVisible().catch(() => false)) {
     await typeSlow(hp, hp.getByPlaceholder('你的暱稱'), '小明');

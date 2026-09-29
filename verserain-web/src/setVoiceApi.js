@@ -1,4 +1,4 @@
-// 題庫創作者親聲朗讀 — client API for per-verse creator recordings on
+// 經文組創作者親聲朗讀 — client API for per-verse creator recordings on
 // custom verse sets. Keyed by (setId, reference): the same verse in two
 // different sets carries two independent recordings. One recording per
 // (set, verse); re-recording replaces (server enforces same-email).

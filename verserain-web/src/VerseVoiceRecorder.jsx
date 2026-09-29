@@ -358,7 +358,7 @@ export default function VerseVoiceRecorder({ t, reference, verseText, onUpload, 
           {reference && <div style={{ fontWeight: 600, marginBottom: 4, color: '#3b82f6', fontSize: '1.05rem' }}>{reference}</div>}
           {verseText ? t('「{verse}」', '“{verse}”').replace('{verse}', verseText) : ''}
           <div style={{ color: '#64748b', fontSize: '0.78rem', marginTop: 6 }}>
-            {t('照著唸就好。聽這個題庫的人會聽到你的聲音,而不是電腦語音 🎙️', 'Just read it aloud. Listeners will hear your voice instead of the computer voice 🎙️')}
+            {t('照著唸就好。聽這個經文組的人會聽到你的聲音,而不是電腦語音 🎙️', 'Just read it aloud. Listeners will hear your voice instead of the computer voice 🎙️')}
           </div>
         </div>
         <div style={{ color: '#64748b', fontSize: '0.85rem', marginBottom: '0.8rem' }}>
