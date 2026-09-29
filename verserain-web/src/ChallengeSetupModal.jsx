@@ -61,7 +61,7 @@ export default function ChallengeSetupModal({ t, subtitle, value, onChange, onSt
   // Difficulty 0–3 = how many decoy blocks appear (distractionLevel in App.jsx):
   // square grid 2×2 → 3×3 with 0–3 decoys, rain mode decoys more often. Voice
   // mode has no decoys, so there it only changes the score bonus (×1.0–×1.3).
-  const difficultyName = (d) => [t('入門', 'Easy'), t('一般', 'Normal'), t('進階', 'Hard'), t('挑戰', 'Expert')][d] || String(d);
+  const difficultyName = (d) => [t('入門', 'Easy'), t('一般', 'Normal'), t('進階', 'Hard'), t('高手', 'Expert')][d] || String(d);
   const difficultyDesc = (mode, d) => {
     if (mode === 'voice_solo') return t('語音模式沒有干擾字，難度只影響分數加成。', 'Voice mode has no decoys; difficulty only changes the score bonus.');
     if (mode === 'rain_solo') {
