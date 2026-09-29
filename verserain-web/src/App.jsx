@@ -31,7 +31,7 @@ import { VAPID_PUBLIC_KEY, urlBase64ToUint8Array, isWebPushSupported, isIOSStand
 import { setVoiceApi, uploadSetAsset, compressBackgroundImage, getSetAssetDataUrl, userVoiceApi, voiceOwnerId, voiceCommentApi, uploadVoiceComment } from './setVoiceApi';
 import VerseVoiceRecorder from './VerseVoiceRecorder';
 import { APP_TITLE_BY_LANG, FIRST_RUN, INITIAL_VERIFY_CODE, setShareUiLang, SUPPORTED_UI_LANGS, buildPublicShareUrl, initialBibleVersion, parseRoute, pathWithSharedLang, postTouch, routeFromState, uiLangForVersion } from './lib/routes.js';
-import { AUTO_PLAY_REFERENCE_PAUSE_MS, AUTO_PLAY_VERSE_PAUSE_MS, BIBLE_LANGUAGE_OPTIONS, DEFAULT_PLAY_DURATION_CHOICE, DEFAULT_PLAY_FONT_CHOICE, DEFAULT_PLAY_INK_CHOICE, PLAY_DURATION_OPTIONS, PLAY_FONT_OPTIONS, PLAY_INK_OPTIONS, dropLegacyBibleCaches, fetchBibleVerseFromAPI, fetchEditorVerseText, fetchVerseFromBolls, fetchVerseFromGetBible, fetchVerseFromTaibible, findMatchingVerse, formatLocalDate, getCachedBibleVerse, getDailyVerseIndex, getDailyVerseRemoteVersion, getEnglishReferenceFromKey, getVoiceLangForVersion, isEnglishBibleVersion, normalizeVerseInput, parseScriptureKey, pickRandomVerse, readPlayInkChoice, setCachedBibleVerse } from './lib/bible.js';
+import { AUTO_PLAY_REFERENCE_PAUSE_MS, AUTO_PLAY_VERSE_PAUSE_MS, BIBLE_LANGUAGE_OPTIONS, DEFAULT_PLAY_DURATION_CHOICE, DEFAULT_PLAY_FONT_CHOICE, DEFAULT_PLAY_INK_CHOICE, PLAY_DURATION_OPTIONS, PLAY_FONT_OPTIONS, PLAY_INK_OPTIONS, dropLegacyBibleCaches, fetchBibleVerseFromAPI, fetchEditorVerseText, fetchVerseFromBolls, fetchVerseFromGetBible, fetchVerseFromTaibible, findMatchingVerse, formatLocalDate, getCachedBibleVerse, getDailyVerseIndex, getDailyVerseRemoteVersion, getEnglishReferenceFromKey, getVoiceLangForVersion, isEnglishBibleVersion, normalizeVerseInput, parseScriptureKey, pickRandomVerse, readPlayInkChoice, setCachedBibleVerse, getDailyVerseImageUrls } from './lib/bible.js';
 import { GARDEN_LOOKUP_LANGS, TOPIC_PREFIX_REGEX, extractVerseSetTopic, fetchGardenVerseOnline, findVerseByRef, formatVerseReferenceForDisplay, formatVerseReferenceForSpeech, getFirstTopicChar, localizeOfficialTopicSetTitle, parseVerseRef, titleSortKey, topicStrokeCollator } from './lib/verseDisplay.js';
 import { PARTY_HOST, fetchRetry, isMySet, isOwnedByCurrentUser, rememberPreviousName } from './lib/partyApi.js';
 import { PRESET_BGM, initAudio, pickPresetBgmFile, playBong, playFireworksSound, playTada, playThunder, presetBgmFor, startLoopingBgm } from './lib/audio.js';
@@ -7227,7 +7227,7 @@ export default function App() {
                     verserain
                   </div>
                   <div className="app-brand-version" style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', marginTop: '4px', marginLeft: '2px' }}>
-                    v4.0.147
+                    v4.0.148
                   </div>
                 </div>
                 <div ref={langPickerRef} className="app-lang-control" style={{ position: 'relative' }}>
@@ -7476,6 +7476,7 @@ export default function App() {
                     streak={personalProgress.currentStreak}
                     verse={dailyVerseDate === today ? displayedDailyVerse : null}
                     verseLoading={isDailyVerseLoading || dailyVerseDate !== today}
+                    bgUrls={getDailyVerseImageUrls(dailyVerseDate === today ? displayedDailyVerse : null, today, version)}
                     onListen={() => { setOpenDailyPickerOnEnter(false); if (dailyVerseDate !== today) changeDailyVerseDate(today); setMainTab('daily_verse'); }}
                     onChallenge={() => {
                       const v = displayedDailyVerse;
