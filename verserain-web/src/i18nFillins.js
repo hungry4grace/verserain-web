@@ -1360,6 +1360,17 @@ export const he = {
   "園子": "הגן",
   "一起玩": "משחק משותף",
   "主要分頁": "לשוניות ראשיות",
+  "今天的經文": "הפסוק של היום",
+  "挑戰這節": "אתגרו את הפסוק",
+  "今天的經文還沒準備好": "הפסוק של היום עוד לא מוכן",
+  "繼續上次": "המשך מהפעם הקודמת",
+  "上次聽到 {ref}": "בפעם הקודמת: {ref}",
+  "下一步": "הצעד הבא",
+  "登入後，成績和園子才會存進你的帳號。": "התחברו כדי שהניקוד והגן יישמרו בחשבון שלכם.",
+  "挑戰今天這節經文，就會在園子種下第一棵樹 🌱": "אתגרו את הפסוק של היום כדי לשתול את העץ הראשון בגן 🌱",
+  "你的園子有 {n} 棵樹，去看看它們長得怎樣。": "בגן שלכם יש {n} עצים — בואו לראות איך הם גדלים.",
+  "看園子": "צפייה בגן",
+  "每日經文、我的最愛、主題經文，連續播放": "פסוק יומי, מועדפים ופסוקים לפי נושא, ברצף",
 };
 
 export const fa = {
@@ -2701,6 +2712,17 @@ export const fa = {
   "園子": "باغ",
   "一起玩": "بازی با هم",
   "主要分頁": "زبانه‌های اصلی",
+  "今天的經文": "آیهٔ امروز",
+  "挑戰這節": "چالش این آیه",
+  "今天的經文還沒準備好": "آیهٔ امروز هنوز آماده نیست",
+  "繼續上次": "ادامهٔ دفعهٔ قبل",
+  "上次聽到 {ref}": "دفعهٔ قبل: {ref}",
+  "下一步": "قدم بعدی",
+  "登入後，成績和園子才會存進你的帳號。": "وارد شوید تا امتیازها و باغ شما در حسابتان ذخیره شود.",
+  "挑戰今天這節經文，就會在園子種下第一棵樹 🌱": "آیهٔ امروز را به چالش بکشید تا نخستین درخت را در باغ بکارید 🌱",
+  "你的園子有 {n} 棵樹，去看看它們長得怎樣。": "باغ شما {n} درخت دارد — بروید ببینید چطور رشد می‌کنند.",
+  "看園子": "دیدن باغ",
+  "每日經文、我的最愛、主題經文，連續播放": "آیهٔ روزانه، علاقه‌مندی‌ها و آیات موضوعی، پشت سر هم",
 };
 
 export const ar = {
@@ -4458,6 +4480,17 @@ export const ar = {
   "園子": "الحديقة",
   "一起玩": "العب معًا",
   "主要分頁": "التبويبات الرئيسية",
+  "今天的經文": "آية اليوم",
+  "挑戰這節": "تحدَّ هذه الآية",
+  "今天的經文還沒準備好": "آية اليوم ليست جاهزة بعد",
+  "繼續上次": "تابع من حيث توقفت",
+  "上次聽到 {ref}": "آخر استماع: {ref}",
+  "下一步": "الخطوة التالية",
+  "登入後，成績和園子才會存進你的帳號。": "سجّل الدخول لتُحفظ نتائجك وحديقتك في حسابك.",
+  "挑戰今天這節經文，就會在園子種下第一棵樹 🌱": "تحدَّ آية اليوم لتزرع أول شجرة في حديقتك 🌱",
+  "你的園子有 {n} 棵樹，去看看它們長得怎樣。": "عدد الأشجار في حديقتك: {n} — اذهب وشاهد كيف تنمو.",
+  "看園子": "عرض الحديقة",
+  "每日經文、我的最愛、主題經文，連續播放": "الآية اليومية والمفضلة والآيات حسب الموضوع، على التوالي",
 };
 
 export const ja = {
@@ -5787,6 +5820,17 @@ export const ja = {
   "園子": "園",
   "一起玩": "一緒に遊ぶ",
   "主要分頁": "メインタブ",
+  "今天的經文": "今日の聖句",
+  "挑戰這節": "この聖句にチャレンジ",
+  "今天的經文還沒準備好": "今日の聖句はまだ準備中です",
+  "繼續上次": "前回の続き",
+  "上次聽到 {ref}": "前回：{ref}",
+  "下一步": "次のステップ",
+  "登入後，成績和園子才會存進你的帳號。": "ログインすると、スコアと庭があなたのアカウントに保存されます。",
+  "挑戰今天這節經文，就會在園子種下第一棵樹 🌱": "今日の聖句にチャレンジして、庭に最初の木を植えよう 🌱",
+  "你的園子有 {n} 棵樹，去看看它們長得怎樣。": "庭には {n} 本の木があります。育ち具合を見に行きましょう。",
+  "看園子": "庭を見る",
+  "每日經文、我的最愛、主題經文，連續播放": "毎日の聖句・お気に入り・テーマ別の聖句を連続再生",
 };
 
 export const ko = {
@@ -7114,6 +7158,17 @@ export const ko = {
   "園子": "정원",
   "一起玩": "함께 놀기",
   "主要分頁": "주요 탭",
+  "今天的經文": "오늘의 말씀",
+  "挑戰這節": "이 말씀 도전",
+  "今天的經文還沒準備好": "오늘의 말씀이 아직 준비되지 않았어요",
+  "繼續上次": "이어서 듣기",
+  "上次聽到 {ref}": "지난번: {ref}",
+  "下一步": "다음 단계",
+  "登入後，成績和園子才會存進你的帳號。": "로그인해야 점수와 정원이 계정에 저장돼요.",
+  "挑戰今天這節經文，就會在園子種下第一棵樹 🌱": "오늘의 말씀에 도전하면 정원에 첫 나무가 심어져요 🌱",
+  "你的園子有 {n} 棵樹，去看看它們長得怎樣。": "정원에 나무가 {n}그루 있어요. 얼마나 자랐는지 보러 가요.",
+  "看園子": "정원 보기",
+  "每日經文、我的最愛、主題經文，連續播放": "매일 구절, 즐겨찾기, 주제별 말씀을 연속 재생",
 };
 
 export const es = {
@@ -8457,6 +8512,17 @@ export const es = {
   "園子": "Jardín",
   "一起玩": "Jugar juntos",
   "主要分頁": "Pestañas principales",
+  "今天的經文": "Versículo de hoy",
+  "挑戰這節": "Desafía este versículo",
+  "今天的經文還沒準備好": "El versículo de hoy aún no está listo",
+  "繼續上次": "Continúa donde lo dejaste",
+  "上次聽到 {ref}": "Última vez: {ref}",
+  "下一步": "Siguiente paso",
+  "登入後，成績和園子才會存進你的帳號。": "Inicia sesión para guardar tus puntuaciones y tu jardín en tu cuenta.",
+  "挑戰今天這節經文，就會在園子種下第一棵樹 🌱": "Desafía el versículo de hoy para plantar tu primer árbol en el jardín 🌱",
+  "你的園子有 {n} 棵樹，去看看它們長得怎樣。": "Tu jardín tiene {n} árboles: ve a ver cómo crecen.",
+  "看園子": "Ver jardín",
+  "每日經文、我的最愛、主題經文，連續播放": "Versículo diario, favoritos y versículos por tema, uno tras otro",
 };
 
 export const tr = {
@@ -9800,6 +9866,17 @@ export const tr = {
   "園子": "Bahçe",
   "一起玩": "Birlikte oyna",
   "主要分頁": "Ana sekmeler",
+  "今天的經文": "Bugünün ayeti",
+  "挑戰這節": "Bu ayete meydan oku",
+  "今天的經文還沒準備好": "Bugünün ayeti henüz hazır değil",
+  "繼續上次": "Kaldığın yerden devam et",
+  "上次聽到 {ref}": "Son dinlenen: {ref}",
+  "下一步": "Sonraki adım",
+  "登入後，成績和園子才會存進你的帳號。": "Giriş yap, puanların ve bahçen hesabına kaydedilsin.",
+  "挑戰今天這節經文，就會在園子種下第一棵樹 🌱": "Bugünün ayetine meydan oku, bahçene ilk ağacını dik 🌱",
+  "你的園子有 {n} 棵樹，去看看它們長得怎樣。": "Bahçende {n} ağaç var — nasıl büyüdüklerine bir bak.",
+  "看園子": "Bahçeyi gör",
+  "每日經文、我的最愛、主題經文，連續播放": "Günlük ayet, Favoriler ve Konu ayetleri art arda çalınır",
 };
 
 export const de = {
@@ -11143,6 +11220,17 @@ export const de = {
   "園子": "Garten",
   "一起玩": "Zusammen spielen",
   "主要分頁": "Hauptnavigation",
+  "今天的經文": "Heutiger Vers",
+  "挑戰這節": "Diesen Vers herausfordern",
+  "今天的經文還沒準備好": "Der heutige Vers ist noch nicht bereit",
+  "繼續上次": "Weitermachen, wo du warst",
+  "上次聽到 {ref}": "Zuletzt: {ref}",
+  "下一步": "Nächster Schritt",
+  "登入後，成績和園子才會存進你的帳號。": "Melde dich an, damit deine Punkte und dein Garten in deinem Konto gespeichert werden.",
+  "挑戰今天這節經文，就會在園子種下第一棵樹 🌱": "Nimm die Herausforderung des heutigen Verses an und pflanze deinen ersten Baum im Garten 🌱",
+  "你的園子有 {n} 棵樹，去看看它們長得怎樣。": "Dein Garten hat {n} Bäume – schau nach, wie sie wachsen.",
+  "看園子": "Garten ansehen",
+  "每日經文、我的最愛、主題經文，連續播放": "Tagesverse, Favoriten und Themenverse nacheinander abgespielt",
 };
 
 export const my = {
@@ -12486,6 +12574,17 @@ export const my = {
   "園子": "ဥယျာဉ်",
   "一起玩": "အတူကစား",
   "主要分頁": "အဓိကတက်ဘ်များ",
+  "今天的經文": "ယနေ့ကျမ်းချက်",
+  "挑戰這節": "ဒီကျမ်းချက်ကို စိန်ခေါ်ပါ",
+  "今天的經文還沒準備好": "ယနေ့ကျမ်းချက် မပြင်ဆင်ရသေးပါ",
+  "繼續上次": "ယခင်နေရာမှ ဆက်နားထောင်ရန်",
+  "上次聽到 {ref}": "နောက်ဆုံးနားထောင်ခဲ့သည် - {ref}",
+  "下一步": "နောက်တစ်ဆင့်",
+  "登入後，成績和園子才會存進你的帳號。": "ရမှတ်များနှင့် ဥယျာဉ်ကို သင့်အကောင့်တွင် သိမ်းဆည်းရန် ဝင်ရောက်ပါ။",
+  "挑戰今天這節經文，就會在園子種下第一棵樹 🌱": "ယနေ့ကျမ်းချက်ကို စိန်ခေါ်ပြီး ဥယျာဉ်တွင် ပထမဆုံးသစ်ပင်ကို စိုက်ပါ 🌱",
+  "你的園子有 {n} 棵樹，去看看它們長得怎樣。": "သင့်ဥယျာဉ်တွင် သစ်ပင် {n} ပင် ရှိသည် — ၎င်းတို့ မည်သို့ကြီးထွားနေသည်ကို သွားကြည့်ပါ။",
+  "看園子": "ဥယျာဉ် ကြည့်ရန်",
+  "每日經文、我的最愛、主題經文，連續播放": "နေ့စဉ်ကျမ်းချက်၊ အကြိုက်ဆုံးနှင့် ခေါင်းစဉ်အလိုက် ကျမ်းချက်များကို ဆက်တိုက်ဖွင့်သည်",
 };
 
 export const vi = {
@@ -13829,6 +13928,17 @@ export const vi = {
   "園子": "Khu vườn",
   "一起玩": "Chơi cùng",
   "主要分頁": "Thẻ chính",
+  "今天的經文": "Câu Kinh Thánh hôm nay",
+  "挑戰這節": "Thử thách câu này",
+  "今天的經文還沒準備好": "Câu Kinh Thánh hôm nay chưa sẵn sàng",
+  "繼續上次": "Tiếp tục lần trước",
+  "上次聽到 {ref}": "Lần trước: {ref}",
+  "下一步": "Bước tiếp theo",
+  "登入後，成績和園子才會存進你的帳號。": "Đăng nhập để lưu điểm và khu vườn vào tài khoản của bạn.",
+  "挑戰今天這節經文，就會在園子種下第一棵樹 🌱": "Thử thách câu Kinh Thánh hôm nay để trồng cây đầu tiên trong vườn 🌱",
+  "你的園子有 {n} 棵樹，去看看它們長得怎樣。": "Vườn của bạn có {n} cây — hãy đi xem chúng lớn thế nào.",
+  "看園子": "Xem vườn",
+  "每日經文、我的最愛、主題經文，連續播放": "Câu Kinh Thánh mỗi ngày, Yêu thích và Câu theo chủ đề, phát liên tục",
 };
 
 export const id = {
@@ -15400,6 +15510,17 @@ export const id = {
   "園子": "Taman",
   "一起玩": "Main bersama",
   "主要分頁": "Tab utama",
+  "今天的經文": "Ayat hari ini",
+  "挑戰這節": "Tantang ayat ini",
+  "今天的經文還沒準備好": "Ayat hari ini belum siap",
+  "繼續上次": "Lanjutkan yang terakhir",
+  "上次聽到 {ref}": "Terakhir: {ref}",
+  "下一步": "Langkah berikutnya",
+  "登入後，成績和園子才會存進你的帳號。": "Masuk agar skor dan tamanmu tersimpan di akunmu.",
+  "挑戰今天這節經文，就會在園子種下第一棵樹 🌱": "Tantang ayat hari ini untuk menanam pohon pertama di tamanmu 🌱",
+  "你的園子有 {n} 棵樹，去看看它們長得怎樣。": "Tamanmu punya {n} pohon — lihat bagaimana mereka tumbuh.",
+  "看園子": "Lihat taman",
+  "每日經文、我的最愛、主題經文，連續播放": "Ayat harian, favorit, dan ayat bertema, diputar berurutan",
 };
 
 export const ms = {
@@ -17175,6 +17296,17 @@ export const ms = {
   "園子": "Taman",
   "一起玩": "Main bersama",
   "主要分頁": "Tab utama",
+  "今天的經文": "Ayat hari ini",
+  "挑戰這節": "Cabar ayat ini",
+  "今天的經文還沒準備好": "Ayat hari ini belum sedia",
+  "繼續上次": "Sambung sesi lepas",
+  "上次聽到 {ref}": "Terakhir: {ref}",
+  "下一步": "Langkah seterusnya",
+  "登入後，成績和園子才會存進你的帳號。": "Log masuk supaya skor dan taman anda disimpan dalam akaun anda.",
+  "挑戰今天這節經文，就會在園子種下第一棵樹 🌱": "Cabar ayat hari ini untuk menanam pokok pertama di taman anda 🌱",
+  "你的園子有 {n} 棵樹，去看看它們長得怎樣。": "Taman anda ada {n} pokok — pergi lihat bagaimana ia membesar.",
+  "看園子": "Lihat taman",
+  "每日經文、我的最愛、主題經文，連續播放": "Ayat harian, kegemaran dan ayat bertema, dimainkan berturut-turut",
 };
 
 export const zhcn = {
@@ -18869,6 +19001,17 @@ export const zhcn = {
   "園子": "园子",
   "一起玩": "一起玩",
   "主要分頁": "主要分页",
+  "今天的經文": "今天的经文",
+  "挑戰這節": "挑战这节",
+  "今天的經文還沒準備好": "今天的经文还没准备好",
+  "繼續上次": "继续上次",
+  "上次聽到 {ref}": "上次听到 {ref}",
+  "下一步": "下一步",
+  "登入後，成績和園子才會存進你的帳號。": "登入后，成绩和园子才会存进你的帐号。",
+  "挑戰今天這節經文，就會在園子種下第一棵樹 🌱": "挑战今天这节经文，就会在园子种下第一棵树 🌱",
+  "你的園子有 {n} 棵樹，去看看它們長得怎樣。": "你的园子有 {n} 棵树，去看看它们长得怎样。",
+  "看園子": "看园子",
+  "每日經文、我的最愛、主題經文，連續播放": "每日经文、我的最爱、主题经文，连续播放",
 };
 
 export const pt = {
@@ -19934,6 +20077,17 @@ export const pt = {
   "園子": "Jardim",
   "一起玩": "Jogar juntos",
   "主要分頁": "Abas principais",
+  "今天的經文": "Versículo de hoje",
+  "挑戰這節": "Desafie este versículo",
+  "今天的經文還沒準備好": "O versículo de hoje ainda não está pronto",
+  "繼續上次": "Continue de onde parou",
+  "上次聽到 {ref}": "Última vez: {ref}",
+  "下一步": "Próximo passo",
+  "登入後，成績和園子才會存進你的帳號。": "Entre para salvar sua pontuação e seu jardim na sua conta.",
+  "挑戰今天這節經文，就會在園子種下第一棵樹 🌱": "Desafie o versículo de hoje para plantar sua primeira árvore no jardim 🌱",
+  "你的園子有 {n} 棵樹，去看看它們長得怎樣。": "Seu jardim tem {n} árvores — vá ver como elas estão crescendo.",
+  "看園子": "Ver jardim",
+  "每日經文、我的最愛、主題經文，連續播放": "Versículo diário, favoritos e versículos por tema, em sequência",
 };
 
 export const fr = {
@@ -20999,6 +21153,17 @@ export const fr = {
   "園子": "Jardin",
   "一起玩": "Jouer ensemble",
   "主要分頁": "Onglets principaux",
+  "今天的經文": "Verset du jour",
+  "挑戰這節": "Défie ce verset",
+  "今天的經文還沒準備好": "Le verset du jour n’est pas encore prêt",
+  "繼續上次": "Reprendre là où tu en étais",
+  "上次聽到 {ref}": "Dernière écoute : {ref}",
+  "下一步": "Étape suivante",
+  "登入後，成績和園子才會存進你的帳號。": "Connecte-toi pour enregistrer tes scores et ton jardin sur ton compte.",
+  "挑戰今天這節經文，就會在園子種下第一棵樹 🌱": "Relève le défi du verset du jour pour planter ton premier arbre dans le jardin 🌱",
+  "你的園子有 {n} 棵樹，去看看它們長得怎樣。": "Ton jardin compte {n} arbres — va voir comment ils poussent.",
+  "看園子": "Voir le jardin",
+  "每日經文、我的最愛、主題經文，連續播放": "Verset du jour, favoris et versets par thème, à la suite",
 };
 
 export const ru = {
@@ -22064,6 +22229,17 @@ export const ru = {
   "園子": "Сад",
   "一起玩": "Играть вместе",
   "主要分頁": "Основные вкладки",
+  "今天的經文": "Стих дня",
+  "挑戰這節": "Принять вызов",
+  "今天的經文還沒準備好": "Стих дня ещё не готов",
+  "繼續上次": "Продолжить с того места",
+  "上次聽到 {ref}": "В прошлый раз: {ref}",
+  "下一步": "Следующий шаг",
+  "登入後，成績和園子才會存進你的帳號。": "Войди, чтобы твои очки и сад сохранились в аккаунте.",
+  "挑戰今天這節經文，就會在園子種下第一棵樹 🌱": "Прими вызов стиха дня, чтобы посадить первое дерево в саду 🌱",
+  "你的園子有 {n} 棵樹，去看看它們長得怎樣。": "Деревьев в твоём саду: {n} — посмотри, как они растут.",
+  "看園子": "Смотреть сад",
+  "每日經文、我的最愛、主題經文，連續播放": "Стих дня, избранное и стихи по темам — подряд",
 };
 
 export const hi = {
@@ -23129,6 +23305,17 @@ export const hi = {
   "園子": "बगीचा",
   "一起玩": "साथ खेलें",
   "主要分頁": "मुख्य टैब",
+  "今天的經文": "आज का पद",
+  "挑戰這節": "चुनौती लें",
+  "今天的經文還沒準備好": "आज का पद अभी तैयार नहीं है",
+  "繼續上次": "जहाँ छोड़ा था वहीं से",
+  "上次聽到 {ref}": "पिछली बार: {ref}",
+  "下一步": "अगला कदम",
+  "登入後，成績和園子才會存進你的帳號。": "लॉगिन करें ताकि आपके स्कोर और बगीचा आपके खाते में सहेजे जाएँ।",
+  "挑戰今天這節經文，就會在園子種下第一棵樹 🌱": "आज के पद की चुनौती लें और अपने बगीचे में पहला पेड़ लगाएँ 🌱",
+  "你的園子有 {n} 棵樹，去看看它們長得怎樣。": "आपके बगीचे में {n} पेड़ हैं — जाकर देखें कि वे कैसे बढ़ रहे हैं।",
+  "看園子": "बगीचा देखें",
+  "每日經文、我的最愛、主題經文，連續播放": "दैनिक पद, पसंदीदा और विषय के पद, एक के बाद एक",
 };
 
 // Khmer (Cambodian) — full UI coverage, machine-translated in bulk from the
@@ -24823,6 +25010,17 @@ export const km = {
   "一起玩": "លេងជាមួយគ្នា",
   "主要分頁": "ផ្ទាំងសំខាន់ៗ",
   "使用說明": "សៀវភៅណែនាំ",
+  "今天的經文": "ខគម្ពីរថ្ងៃនេះ",
+  "挑戰這節": "បញ្ចោទខនេះ",
+  "今天的經文還沒準備好": "ខគម្ពីរថ្ងៃនេះមិនទាន់រួចរាល់ទេ",
+  "繼續上次": "បន្តពីលើកមុន",
+  "上次聽到 {ref}": "លើកមុន៖ {ref}",
+  "下一步": "ជំហានបន្ទាប់",
+  "登入後，成績和園子才會存進你的帳號。": "ចូលដើម្បីរក្សាទុកពិន្ទុ និងសួនច្បាររបស់អ្នកក្នុងគណនីរបស់អ្នក។",
+  "挑戰今天這節經文，就會在園子種下第一棵樹 🌱": "បញ្ចោទខគម្ពីរថ្ងៃនេះ ដើម្បីដាំដើមឈើដំបូងក្នុងសួនច្បារ 🌱",
+  "你的園子有 {n} 棵樹，去看看它們長得怎樣。": "សួនច្បាររបស់អ្នកមានដើមឈើ {n} ដើម — ទៅមើលថាវាលូតលាស់យ៉ាងណា។",
+  "看園子": "មើលសួន",
+  "每日經文、我的最愛、主題經文，連續播放": "ខគម្ពីរប្រចាំថ្ងៃ សំណព្វរបស់ខ្ញុំ និងខគម្ពីរតាមប្រធានបទ ចាក់បន្តគ្នា",
 };
 
 const I18N_FILLINS = { he, fa, ar, ja, ko, es, tr, de, my, vi, id, ms, zhcn, pt, fr, ru, hi, km };

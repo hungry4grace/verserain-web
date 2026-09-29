@@ -5,6 +5,7 @@ import { Play, Pause, RotateCcw, Lightbulb, Heart, Zap, Trophy, Crown, Star, Hom
 import { UiHost, Button, IconButton, toast, confirmDialog, alertDialog } from './ui';
 import BottomNav from './BottomNav.jsx';
 import { navTabOf } from './navTabs.js';
+import TodayPage from './TodayPage.jsx';
 import { CATALOG as VOUCHER_CATALOG, DEFAULT_VALUE as VOUCHER_DEFAULTS } from '../api/_lib/rewardCatalog.js';
 import confetti from 'canvas-confetti';
 import usePartySocket from 'partysocket/react';
@@ -146,28 +147,6 @@ let audioCtx = null;
 const ROOM_COLORS = ['#ef4444', '#f97316', '#eab308', '#22c55e', '#14b8a6', '#0ea5e9', '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16'];
 const ROOM_CODE_CHARS = 'ABCDEFGHJKMNPQRSTUVWXYZ';
 const PUBLIC_APP_ORIGIN = 'https://www.verserain.com';
-
-// Split a lobby tile caption into two balanced lines on the first natural
-// break. Without this, the auto-wrap leaves the final 「化。/年。/歡。」
-// character orphaned on its own line. We look for full-width 「，、」
-// (Chinese / Japanese / Korean) or " — " (English em-dash); if none
-// exists the text stays one line and word-wrap takes over.
-function splitCaption(text) {
-  if (typeof text !== 'string' || text.length < 8) return text;
-  const candidates = ['，', '、', '—', ' - '];
-  for (const sep of candidates) {
-    const idx = text.indexOf(sep);
-    if (idx > 0 && idx < text.length - 1) {
-      // Keep the separator on the first line where natural (commas, dashes),
-      // moving only the part AFTER it to a new line.
-      return text.slice(0, idx + sep.length) + '\n' + text.slice(idx + sep.length).trim();
-    }
-  }
-  return text;
-}
-const tileCaptionStyle = (opacity = 0.9) => ({
-  fontSize: '1rem', margin: 0, opacity, whiteSpace: 'pre-line', lineHeight: 1.5,
-});
 
 // Detect whether the page is running inside the VerseRain iOS WKWebView.
 // We use three signals: a URL query marker the native app sets, the presence
@@ -20616,6 +20595,16 @@ export default function App() {
   // Set when the lobby 話語甘霖 card is tapped, so the daily player auto-opens
   // its 每日經文 / 我的最愛 / 主題經文 picker on entry. Cleared once consumed.
   const [openDailyPickerOnEnter, setOpenDailyPickerOnEnter] = useState(false);
+  // The verse set last listened to in the set player, for 今日 → 繼續上次.
+  const [lastListen, setLastListen] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('verserain_last_listen') || 'null'); } catch { return null; }
+  });
+  const rememberLastListen = (set, verse) => {
+    if (!set?.id || !verse?.reference || String(set.id).startsWith('daily-')) return;
+    const next = { setId: set.id, title: set.title || '', ref: verse.reference, at: Date.now() };
+    setLastListen(next);
+    try { localStorage.setItem('verserain_last_listen', JSON.stringify(next)); } catch { /* best effort */ }
+  };
   // vo= from a listenDaily share link — the sender's personal-voice owner id,
   // passed through to the daily player so recipients hear the sender's
   // recording instead of TTS. Cleared when leaving the daily player.
@@ -25661,7 +25650,7 @@ export default function App() {
                 inkColor: continuousRainSet.inkColor || selectedPlayInk.value
               });
             }}
-            onListenLogged={(v) => { updateGarden('activity_only', 'listen'); creditListen(v); }}
+            onListenLogged={(v) => { updateGarden('activity_only', 'listen'); creditListen(v); rememberLastListen(continuousRainSet, v); }}
             onChallengeVerse={challengeVerseFromReader}
             onShareVerse={(verse, shareOpts) => {
               if (!verse || !continuousRainSet?.id) return;
@@ -25769,7 +25758,7 @@ export default function App() {
                     verserain
                   </div>
                   <div className="app-brand-version" style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', marginTop: '4px', marginLeft: '2px' }}>
-                    v4.0.127
+                    v4.0.128
                   </div>
                 </div>
                 <div ref={langPickerRef} className="app-lang-control" style={{ position: 'relative' }}>
@@ -26008,46 +25997,40 @@ export default function App() {
             {/* Main Content Area */}
             <div className="landscape-compact-content" style={{ maxWidth: '1000px', margin: '0 auto' }}>
 
-              {mainTab === 'lobby' && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem', alignItems: 'center', marginTop: '1rem', paddingBottom: '3rem' }}>
-                  {/* Lobby tile captions split into two balanced lines so
-                      the closing 「化。/年。/歡。…」 character doesn't get
-                      orphaned on its own line. Looks for natural break
-                      points (Chinese/Japanese/Korean comma, em-dash) and
-                      injects a newline; combined with whiteSpace:pre-line
-                      on the <p> the text renders as two clean rows. */}
-                  {(() => null)()}
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gridAutoRows: isNarrowEditor ? '1fr' : 'auto', gap: isNarrowEditor ? '0.5rem' : '1.5rem', minHeight: isNarrowEditor ? 'calc(100dvh - 335px)' : undefined, width: '100%' }}>
-                    {/* Daily VerseRain */}
-                    <button type="button" className="primary-button lobby-tile" onClick={() => { setOpenDailyPickerOnEnter(true); setMainTab('daily_verse'); }} style={{ border: 'none', width: '100%', font: 'inherit', background: 'linear-gradient(135deg, #818cf8, #6366f1 55%, #4338ca)', borderRadius: '16px', padding: isNarrowEditor ? '0.3rem 0.6rem' : '2.5rem 2rem', cursor: 'pointer', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', color: 'white', textAlign: 'center', boxShadow: '0 10px 28px rgba(79, 70, 229, 0.35)' }}>
-                      <CloudRain size={isNarrowEditor ? 46 : 72} style={{ marginBottom: isNarrowEditor ? '0.15rem' : '1rem' }} />
-                      <h2 style={{ fontSize: isNarrowEditor ? '1.9rem' : '2rem', margin: 0, marginBottom: isNarrowEditor ? '0.15rem' : '0.5rem', textShadow: '0 2px 4px rgba(0,0,0,0.2)' }}>{t("話語甘霖", "Verse Rain")}</h2>
-                      <p style={{ ...tileCaptionStyle(0.95) }}>{splitCaption(t("每日一句神的話，心意更新而變化。", "A verse a day to renew your mind."))}</p>
-                    </button>
-
-                    {/* My Garden */}
-                    <button type="button" className="primary-button lobby-tile" onClick={() => setMainTab('garden')} style={{ border: 'none', width: '100%', font: 'inherit', background: 'linear-gradient(135deg, #34d399, #10b981)', borderRadius: '16px', padding: isNarrowEditor ? '0.3rem 0.6rem' : '2.5rem 2rem', cursor: 'pointer', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', color: 'white', textAlign: 'center' }}>
-                      <TreePine size={isNarrowEditor ? 46 : 72} style={{ marginBottom: isNarrowEditor ? '0.15rem' : '1rem' }} />
-                      <h2 style={{ fontSize: isNarrowEditor ? '1.9rem' : '2rem', margin: 0, marginBottom: isNarrowEditor ? '0.15rem' : '0.5rem', textShadow: '0 2px 4px rgba(0,0,0,0.2)' }}>{t("我的園子", "My Garden")}</h2>
-                      <p style={{ ...tileCaptionStyle() }}>{splitCaption(t("主話如霖澆我田，歲歲結果到豐年。", "View your living scripture trees."))}</p>
-                    </button>
-
-                    {/* Scripture Library */}
-                    <button type="button" className="primary-button lobby-tile" onClick={() => setMainTab('versesets')} style={{ border: 'none', width: '100%', font: 'inherit', background: 'linear-gradient(135deg, #60a5fa, #3b82f6)', borderRadius: '16px', padding: isNarrowEditor ? '0.3rem 0.6rem' : '2.5rem 2rem', cursor: 'pointer', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', color: 'white', textAlign: 'center' }}>
-                      <Library size={isNarrowEditor ? 46 : 72} style={{ marginBottom: isNarrowEditor ? '0.15rem' : '1rem' }} />
-                      <h2 style={{ fontSize: isNarrowEditor ? '1.9rem' : '2rem', margin: 0, marginBottom: isNarrowEditor ? '0.15rem' : '0.5rem', textShadow: '0 2px 4px rgba(0,0,0,0.2)' }}>{t("經文組", "Scripture Sets")}</h2>
-                      <p style={{ ...tileCaptionStyle() }}>{splitCaption(t("經題萬卷勤溫故，句句生光照此程。", "Browse global verse sets and choose scriptures to practice."))}</p>
-                    </button>
-
-                    {/* Multiplayer Game */}
-                    <button type="button" className="primary-button lobby-tile" onClick={() => setMainTab('multiplayer')} style={{ border: 'none', width: '100%', font: 'inherit', background: 'linear-gradient(135deg, #f472b6, #ec4899)', borderRadius: '16px', padding: isNarrowEditor ? '0.3rem 0.6rem' : '2.5rem 2rem', cursor: 'pointer', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', color: 'white', textAlign: 'center' }}>
-                      <Gamepad2 size={isNarrowEditor ? 46 : 72} style={{ marginBottom: isNarrowEditor ? '0.15rem' : '1rem' }} />
-                      <h2 style={{ fontSize: isNarrowEditor ? '1.9rem' : '2rem', margin: 0, marginBottom: isNarrowEditor ? '0.15rem' : '0.5rem', textShadow: '0 2px 4px rgba(0,0,0,0.2)' }}>{t("多人遊戲", "Multiplayer")}</h2>
-                      <p style={{ ...tileCaptionStyle() }}>{splitCaption(t("同心走過天路程，並肩玩出主榮耀。", "Play together with friends in real time."))}</p>
-                    </button>
-                  </div>
-                </div>
-              )}
+              {mainTab === 'lobby' && (() => {
+                const today = formatLocalDate(new Date());
+                const resumeSet = lastListen && [...safeActiveSets, ...(publishedVerseSets || []), ...(customVerseSets || [])].find(x => x.id === lastListen.setId && x.verses?.length);
+                return (
+                  <TodayPage
+                    t={t}
+                    dateLocale={documentLang}
+                    streak={personalProgress.currentStreak}
+                    verse={dailyVerseDate === today ? displayedDailyVerse : null}
+                    verseLoading={isDailyVerseLoading || dailyVerseDate !== today}
+                    onListen={() => { setOpenDailyPickerOnEnter(false); if (dailyVerseDate !== today) changeDailyVerseDate(today); setMainTab('daily_verse'); }}
+                    onChallenge={() => {
+                      const v = displayedDailyVerse;
+                      if (!v) return;
+                      openChallengeSetup({
+                        subtitle: formatVerseReferenceForDisplay(v.reference, version),
+                        run: () => challengeVerseFromReader(v),
+                      });
+                    }}
+                    onOpenRain={() => { setOpenDailyPickerOnEnter(true); setMainTab('daily_verse'); }}
+                    lastListen={resumeSet ? { title: resumeSet.title || lastListen.title, ref: lastListen.ref } : null}
+                    onContinue={() => {
+                      const vs = resumeSet.verses;
+                      const i = vs.findIndex(v => v.reference === lastListen.ref);
+                      setSelectedSetId(resumeSet.id);
+                      setContinuousRainSet({ ...resumeSet, startVerse: vs[(i + 1) % vs.length] || vs[0] });
+                    }}
+                    loggedIn={!!userEmail}
+                    treesPlanted={personalProgress.treesPlanted}
+                    onLogin={() => setShowLoginModal('login')}
+                    onGarden={() => setMainTab('garden')}
+                  />
+                );
+              })()}
 
               {mainTab === 'accessible' && (
                 <AccessibleBlindHome

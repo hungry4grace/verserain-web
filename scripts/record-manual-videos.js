@@ -128,7 +128,7 @@ async function pickVersion(page, label) {
 const flows = {};
 
 async function gotoSet(page, title = '約翰福音 核心經文') {
-  await clickLoc(page, page.locator('h2', { hasText: /^經文組$/ }).first(), { pause: 1400 });
+  await clickLoc(page, page.locator('.app-bottom-nav__tab[data-tab="sets"]'), { pause: 1400 });
   await clickText(page, title, { pause: 1600 });
 }
 
@@ -258,7 +258,7 @@ flows.multiplayer = async (browser) => {
   await pickVersion(gp, 'English - ESV');
   await shot(gp, '0-esv');
   // host: nickname first (so the room socket is created once), then set detail → 邀人對戰
-  await clickLoc(hp, hp.locator('h2', { hasText: '多人遊戲' }).first(), { pause: 1500 });
+  await clickLoc(hp, hp.locator('.app-bottom-nav__tab[data-tab="play"]'), { pause: 1500 });
   if (await hp.getByPlaceholder('你的暱稱').isVisible().catch(() => false)) {
     await typeSlow(hp, hp.getByPlaceholder('你的暱稱'), '小明');
     await clickText(hp, '出發！', { pause: 1500 });
@@ -282,7 +282,7 @@ flows.multiplayer = async (browser) => {
   console.log('room code', code);
   if (!code) { await shot(hp, 'x-nocode'); await host.ctx.close(); await guest.ctx.close(); return; }
   // guest joins (English UI)
-  await clickLoc(gp, gp.locator('h2', { hasText: /Multiplayer/ }).first(), { pause: 1500 });
+  await clickLoc(gp, gp.locator('.app-bottom-nav__tab[data-tab="play"]'), { pause: 1500 });
   await shot(gp, '1-name');
   if (await gp.getByPlaceholder(/Your nickname/).isVisible().catch(() => false)) {
     await typeSlow(gp, gp.getByPlaceholder(/Your nickname/), 'Amy');
