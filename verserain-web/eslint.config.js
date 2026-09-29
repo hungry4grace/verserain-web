@@ -35,6 +35,14 @@ export const LEGACY_FILES = [
   'src/pages/VerseSetsPage.jsx',
   'src/pages/CustomVersesPage.jsx',
   'src/pages/MultiplayerPage.jsx',
+  'src/pages/AdvancedPage.jsx',
+  'src/pages/AccessiblePage.jsx',
+  'src/pages/DailyVersePage.jsx',
+  'src/pages/BilingualRainPage.jsx',
+  'src/pages/RewardsAdminPage.jsx',
+  'src/pages/CharityPage.jsx',
+  'src/pages/ContestsPage.jsx',
+  'src/pages/MerchantPage.jsx',
 ]
 
 const HEX = '/(^|[\\s(,:])#([0-9a-fA-F]{3,4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})\\b/'
