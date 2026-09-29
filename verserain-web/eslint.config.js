@@ -14,6 +14,7 @@ export const CLEAN_FILES = [
   'src/SettingsPage.jsx',
   'src/Onboarding.jsx',
   'src/ManualSearch.jsx',
+  'src/YouTubeBgmField.jsx',
   'src/BottomNav.jsx',
   'src/navTabs.js',
 ]

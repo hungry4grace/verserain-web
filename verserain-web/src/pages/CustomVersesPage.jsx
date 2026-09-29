@@ -6,6 +6,7 @@ import { PRESET_BGM, PRESET_BGM_RANDOM, bgmGainToSlider, bgmSliderToGain, isPres
 import React from 'react';
 import { SET_BACKGROUND_THEMES } from '../setBackgrounds';
 import VerseVoiceRecorder from '../VerseVoiceRecorder';
+import YouTubeBgmField from '../YouTubeBgmField';
 import { bakeBeautifiedBlob } from '../voiceBeautify';
 import { fetchEditorVerseText, getVoiceLangForVersion, normalizeVerseInput } from '../lib/bible.js';
 import { formatVerseReferenceForDisplay, parseVerseRef } from '../lib/verseDisplay.js';
@@ -188,7 +189,20 @@ export default function CustomVersesPage({ t, bgFileInputRef, bgUploadBusy, book
                     {musicUploadBusy ? `⏳ ${t('上傳中…', 'Uploading…')}` : (String(editingCustomSet.bgMusic || '').startsWith('custom:') ? `🎶 ${t('自訂音樂 ✓(點擊更換)', 'Custom ✓ (replace)')}` : `⬆️ ${t('上傳 MP3(≤5MB)', 'Upload MP3 (≤5MB)')}`)}
                   </button>
                   <input ref={musicFileInputRef} type="file" accept="audio/*" style={{ display: 'none' }} onChange={e => { handleMusicUpload(e.target.files?.[0]); e.target.value = ''; }} />
+                  <button type="button" data-testid="bgm-youtube"
+                    onClick={() => { if (!String(editingCustomSet.bgMusic || '').startsWith('youtube:')) setEditingCustomSet(prev => ({ ...prev, bgMusic: 'youtube:' })); }}
+                    style={{ padding: '0.5rem 1rem', borderRadius: 20, border: `2px solid ${String(editingCustomSet.bgMusic || '').startsWith('youtube:') ? '#3b82f6' : '#cbd5e1'}`, background: String(editingCustomSet.bgMusic || '').startsWith('youtube:') ? '#eff6ff' : '#f8fafc', color: '#334155', cursor: 'pointer', fontWeight: 600 }}>
+                    ▶️ {t('YouTube 音樂', 'YouTube music')}
+                  </button>
                 </div>
+                {String(editingCustomSet.bgMusic || '').startsWith('youtube:') && (
+                  <YouTubeBgmField
+                    t={t}
+                    value={editingCustomSet.bgMusic}
+                    volume={editingCustomSet.bgMusicVolume ?? 0.18}
+                    onChange={(bgMusic) => setEditingCustomSet(prev => ({ ...prev, bgMusic }))}
+                  />
+                )}
                 {presetMenuOpen && isPresetBgm(editingCustomSet.bgMusic) && (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', marginTop: '0.6rem', maxWidth: 420 }}>
                     {[PRESET_BGM_RANDOM, ...PRESET_BGM].map(p => {
@@ -206,7 +220,7 @@ export default function CustomVersesPage({ t, bgFileInputRef, bgUploadBusy, book
                 )}
                 {editingCustomSet.bgMusic !== 'none' && (
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', flexWrap: 'wrap', marginTop: '0.7rem' }}>
-                    {(
+                    {!String(editingCustomSet.bgMusic || '').startsWith('youtube:') && (
                       <button
                         type="button"
                         disabled={!editorMusicUrl}

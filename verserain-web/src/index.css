@@ -2054,3 +2054,119 @@ html.elder-mode .versesets-table-card td { padding-left: 0.35rem !important; pad
 @keyframes today-hero-rain { to { transform: translate3d(var(--drift, 0), 720px, 0); } }
 .performance-mode .today-hero__rain { display: none; }
 @media (prefers-reduced-motion: reduce) { .today-hero__rain { display: none; } }
+
+/* YouTube 背景音樂小播放器 — YouTube 規定影片要看得到（至少 200×200），
+   所以停在角落，可移到另一邊或關掉。見 src/lib/youtube.js。 */
+.yt-bgm-dock {
+  position: fixed;
+  bottom: calc(max(0.9rem, env(safe-area-inset-bottom)) + 110px);
+  z-index: 2607;
+  width: 220px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 6px;
+  border-radius: var(--radius-md);
+  background: var(--color-image-veil);
+  border: 1px solid var(--color-on-image-line);
+  box-shadow: var(--shadow-raised);
+  color: var(--color-on-image);
+}
+.yt-bgm-dock.is-right { right: max(0.75rem, env(safe-area-inset-right)); }
+.yt-bgm-dock.is-left { left: max(0.75rem, env(safe-area-inset-left)); }
+.yt-bgm-dock__bar {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+.yt-bgm-dock__title {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--fs-small);
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding-inline-start: 4px;
+}
+.yt-bgm-dock__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-pill);
+  background: var(--color-on-image-glass);
+  color: var(--color-on-image);
+  cursor: pointer;
+}
+.yt-bgm-dock__btn:hover { background: var(--color-on-image-line); }
+.yt-bgm-dock__player,
+.yt-bgm-frame,
+.yt-bgm-frame iframe {
+  display: block;
+  width: 208px;
+  height: 200px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  background: #000;
+}
+.yt-bgm-dock__note {
+  margin: 0;
+  font-size: 0.8rem;
+  line-height: 1.35;
+  color: var(--color-on-image-accent);
+}
+.yt-bgm-dock__note.is-delayed { animation: yt-bgm-note-in 0.3s ease 1.8s both; }
+@keyframes yt-bgm-note-in { from { opacity: 0; } to { opacity: 1; } }
+
+/* 編輯器裡的 YouTube 預覽 */
+.yt-bgm-preview .yt-bgm-frame,
+.yt-bgm-preview .yt-bgm-frame iframe {
+  width: min(100%, 360px);
+  height: 203px;
+  border-radius: var(--radius-md);
+}
+.yt-bgm-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-top: 0.7rem;
+  max-width: 480px;
+}
+.yt-bgm-field__row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+.yt-bgm-field__input {
+  flex: 1 1 220px;
+  min-width: 0;
+  min-height: var(--tap-min);
+  padding: 0 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-size: var(--fs-body);
+  box-sizing: border-box;
+}
+.yt-bgm-field__link {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  color: var(--color-text-2);
+  font-size: var(--fs-small);
+}
+.yt-bgm-field__hint,
+.yt-bgm-field__error {
+  margin: 0;
+  font-size: var(--fs-small);
+  line-height: 1.45;
+  color: var(--color-text-2);
+}
+.yt-bgm-field__error { color: var(--color-danger); font-weight: 600; }
