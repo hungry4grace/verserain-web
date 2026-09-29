@@ -2003,3 +2003,13 @@ html.elder-mode .versesets-table-card td { padding-left: 0.35rem !important; pad
 .manual-hide { display: none !important; }
 ::highlight(manual-search) { background-color: #fde68a; color: inherit; }
 .manual-search-input::-webkit-search-cancel-button { display: none; }
+.manual-search-clear {
+  position: absolute; inset-inline-end: 4px; top: 50%; transform: translateY(-50%);
+  width: 40px; height: 40px; border: none; background: transparent; color: var(--color-text-2);
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+}
+.manual-toc-link {
+  width: 100%; min-height: 40px; text-align: start; background: transparent; border: none;
+  padding: 0 var(--space-1); color: var(--color-primary-strong); font-weight: 600;
+  font-size: var(--fs-body); cursor: pointer; font-family: inherit;
+}

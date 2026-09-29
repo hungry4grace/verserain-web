@@ -134,6 +134,13 @@
 }
 .ui-choice--center[aria-pressed="true"] { padding: calc(var(--space-2) - 1px) 0; }
 .ui-choice:focus-visible { outline: 3px solid var(--color-primary); outline-offset: 2px; }
+/* A whole card that is one choice (e.g. 今日 → 話語甘霖). Same box as a card,
+   and it keeps its border on hover like the other cards. */
+.ui-choice.ui-choice--card {
+  background: var(--color-surface); border: 1px solid var(--color-border);
+  border-radius: var(--radius-md); padding: var(--space-4) var(--space-5);
+  gap: var(--space-3); width: 100%;
+}
 
 /* ── Bottom navigation (src/BottomNav.jsx) ── */
 .app-bottom-nav {
