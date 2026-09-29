@@ -91,7 +91,7 @@ h. **`t()` dispatch** (around line 11750): add `if (uiLang === '<code>') return 
 
 i. **`t()`'s "活動" early-return** (around line 11735): add `if (uiLang === '<code>') return '<localTranslation>';`.
 
-j. **`<code>Dict`** literal: insert above `const esDict` or wherever the existing dicts live. Even an empty object is fine — entries fall through to English. Translate at least the homepage hero + 4 tiles (`每日經文`, `每日一句神的話，心意更新而變化。`, `我的園子`, `主話如霖澆我田，歲歲結果到豐年。`, `經文題庫`, `經題萬卷勤溫故，句句生光照此程。`, `團隊競賽`, `同心競走天路程，並肩得勝主名榮。`, `每天一句神的話，心意更新而變化`) and the auth buttons (`登入`, `申請帳號`, `Continue with Google`).
+j. **`<code>Dict`** literal: the dictionaries live in `src/uiDicts.js` (`getUiDicts()`), not App.jsx. Insert the literal above `const esDict`, add it to `DICT_BY_LANG` at the end of `getUiDicts()`, and add `<code>Dict` to the `const { … } = getUiDicts();` destructure in App.jsx. Even an empty object is fine — entries fall through to English. Translate at least the homepage hero + 4 tiles (`每日經文`, `每日一句神的話，心意更新而變化。`, `我的園子`, `主話如霖澆我田，歲歲結果到豐年。`, `經文題庫`, `經題萬卷勤溫故，句句生光照此程。`, `團隊競賽`, `同心競走天路程，並肩得勝主名榮。`, `每天一句神的話，心意更新而變化`) and the auth buttons (`登入`, `申請帳號`, `Continue with Google`).
 
 ### 5. Patch `verseLoader.js`
 
@@ -136,7 +136,7 @@ Bump the `v3.9.X` literal in `src/App.jsx` (search for `app-brand-version`). Thi
 ### 10. Commit + push
 
 ```bash
-git add verserain-web/src/App.jsx verserain-web/src/bibleDictionary.js verserain-web/src/verseLoader.js verserain-web/src/verses_<code>.js
+git add verserain-web/src/App.jsx verserain-web/src/uiDicts.js verserain-web/src/bibleDictionary.js verserain-web/src/verseLoader.js verserain-web/src/verses_<code>.js
 git commit -m "feat: 加入<language>支援 + Topic 經文組..."
 git push origin main
 ```
@@ -166,7 +166,8 @@ Summarize:
 
 Indonesian (`id`) was the most recently added language; mirror its diff for guidance:
 - `src/bibleDictionary.js` — `idn:` field on each book.
-- `src/App.jsx` — `idDict`, plus all the call-site patches.
+- `src/uiDicts.js` — `idDict`.
+- `src/App.jsx` — all the call-site patches.
 - `src/verseLoader.js` — `case 'id'`.
 - `src/verses_id.js` — empty starter.
 - `src/convert_topic_kjv_to_id.mjs` — Topic conversion driver.
