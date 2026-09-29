@@ -8,7 +8,6 @@ import { navTabOf } from './navTabs.js';
 import TodayPage from './TodayPage.jsx';
 import SettingsPage from './SettingsPage.jsx';
 import Onboarding from './Onboarding.jsx';
-import ManualSearch from './ManualSearch.jsx';
 import { CATALOG as VOUCHER_CATALOG, DEFAULT_VALUE as VOUCHER_DEFAULTS } from '../api/_lib/rewardCatalog.js';
 import confetti from 'canvas-confetti';
 import usePartySocket from 'partysocket/react';
@@ -37,11 +36,11 @@ import { GOOGLE_CLIENT_ID, APPLE_CLIENT_ID, APPLE_REDIRECT_URI, LINE_CHANNEL_ID 
 import { VAPID_PUBLIC_KEY, urlBase64ToUint8Array, isWebPushSupported, isIOSStandalone, isIOSWithoutPWA, hasNativeDailyPush, callNativeDailyPush } from './pushConfig';
 import { setVoiceApi, uploadVerseVoice, uploadSetAsset, compressBackgroundImage, getSetAssetDataUrl, userVoiceApi, voiceOwnerId, voiceCommentApi, uploadVoiceComment } from './setVoiceApi';
 import VerseVoiceRecorder from './VerseVoiceRecorder';
-import { APP_TITLE_BY_LANG, DONATE_INFO, FIRST_RUN, INITIAL_VERIFY_CODE, setShareUiLang, SHOW_DONATE, SUPPORTED_UI_LANGS, buildPublicShareUrl, initialBibleVersion, parseRoute, pathWithSharedLang, postTouch, routeFromState, uiLangForVersion } from './lib/routes.js';
+import { APP_TITLE_BY_LANG, FIRST_RUN, INITIAL_VERIFY_CODE, setShareUiLang, SHOW_DONATE, SUPPORTED_UI_LANGS, buildPublicShareUrl, initialBibleVersion, parseRoute, pathWithSharedLang, postTouch, routeFromState, uiLangForVersion } from './lib/routes.js';
 import { AUTO_PLAY_REFERENCE_PAUSE_MS, AUTO_PLAY_VERSE_PAUSE_MS, BIBLE_LANGUAGE_OPTIONS, DEFAULT_PLAY_DURATION_CHOICE, DEFAULT_PLAY_FONT_CHOICE, DEFAULT_PLAY_INK_CHOICE, PLAY_DURATION_OPTIONS, PLAY_FONT_OPTIONS, PLAY_INK_OPTIONS, addDays, dropLegacyBibleCaches, fetchBibleVerseFromAPI, fetchEditorVerseText, fetchVerseFromBolls, fetchVerseFromGetBible, fetchVerseFromTaibible, findMatchingVerse, formatLocalDate, getCachedBibleVerse, getDailyVerseIndex, getDailyVerseRemoteVersion, getEnglishReferenceFromKey, getVoiceLangForVersion, isEnglishBibleVersion, maskPhraseForPreview, normalizeVerseInput, parseScriptureKey, parseSetChapterRange, pickRandomVerse, readPlayInkChoice, setCachedBibleVerse } from './lib/bible.js';
 import { GARDEN_LOOKUP_LANGS, TOPIC_PREFIX_REGEX, extractVerseSetTopic, fetchGardenVerseOnline, findVerseByRef, formatVerseReferenceForDisplay, formatVerseReferenceForSpeech, getFirstTopicChar, humanizeChineseReferencesForSpeech, localizeOfficialTopicSetTitle, parseVerseRef, titleSortKey, topicStrokeCollator } from './lib/verseDisplay.js';
 import { PARTY_HOST, fetchRetry, isMySet, isOwnedByCurrentUser, rememberPreviousName } from './lib/partyApi.js';
-import { PRESET_BGM, PRESET_BGM_RANDOM, bgmGainToSlider, bgmSliderToGain, initAudio, isPresetBgm, pickPresetBgmFile, playBong, playFireworksSound, playPulseTone, playTada, playThunder, playWelcomeFanfare, presetBgmFor, startLoopingBgm } from './lib/audio.js';
+import { PRESET_BGM, PRESET_BGM_RANDOM, bgmGainToSlider, bgmSliderToGain, initAudio, isPresetBgm, pickPresetBgmFile, playBong, playFireworksSound, playTada, playThunder, presetBgmFor, startLoopingBgm } from './lib/audio.js';
 import { SKOOL_LEVELS, TEAM_OPTIONS, canStartTeamMatch, createRoomCode, getRoomColor, getSkoolLevel, getTeamById, getTeamResultsFromState, sanitizeRoomCode } from './lib/rooms.js';
 import { pickSpeechVoice, setSpeechRateScale, speakText, stopSpeechIfActive } from './lib/speech.js';
 import { AccessibleBlindHome } from './AccessibleBlindHome.jsx';
@@ -49,18 +48,23 @@ import { ActivityHeatmap } from './garden/ActivityHeatmap.jsx';
 import { BindInviterModal } from './invite/BindInviterModal.jsx';
 import { DAILY_RAIN_DROPS } from './player/rainConstants.js';
 import { InviterCard } from './invite/InviterCard.jsx';
-import { ManualVideo } from './ManualVideo.jsx';
 import { OAuthButtons } from './auth/OAuthButtons.jsx';
 import { PERSONAL_LOOSE_SET_ID } from './lib/sets.js';
 import { VerseSetContinuousRainPlayer } from './player/VerseSetContinuousRainPlayer.jsx';
 import { iosAppSupportsCamera, isInIosNativeApp } from './lib/platform.js';
+import AboutPage from './pages/AboutPage.jsx';
+import SponsorPage from './pages/SponsorPage.jsx';
+import DonatePage from './pages/DonatePage.jsx';
+import ManualPage from './pages/ManualPage.jsx';
+import MapPage from './pages/MapPage.jsx';
+import VerifyPage from './pages/VerifyPage.jsx';
+import SponsorsPage from './pages/SponsorsPage.jsx';
 
 // Lazy-load heavy, feature-specific chunks so they stay OUT of the initial bundle
 // and download only when the feature is opened (behind a <Suspense>):
-//   • WorldMap → the 3D globe (three / react-globe.gl), only on the Map tab
+//   • WorldMap → the 3D globe (three / react-globe.gl), only on the Map tab (pages/MapPage.jsx)
 //   • BlindModeGame → recitation matching (pinyin-pro / opencc-js), only in blind mode
 //   • ReactQuill → the rich-text editor (react-quill-new + its CSS), only when editing a set
-const WorldMap = React.lazy(() => import('./WorldMap'));
 const PlacePinMap = React.lazy(() => import('./PlacePinMap'));
 const BlindModeGame = React.lazy(() => import('./BlindModeGame'));
 const ReactQuill = React.lazy(() => import('./LazyQuill'));
@@ -7273,7 +7277,7 @@ export default function App() {
                     verserain
                   </div>
                   <div className="app-brand-version" style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', marginTop: '4px', marginLeft: '2px' }}>
-                    v4.0.138
+                    v4.0.139
                   </div>
                 </div>
                 <div ref={langPickerRef} className="app-lang-control" style={{ position: 'relative' }}>
@@ -10830,259 +10834,11 @@ export default function App() {
                 </div>
               )}
 
-              {mainTab === 'sponsors' && (() => {
-                const info = sponsorsInfo;
-                const wall = (info && info.sponsors) || [];
-                const card = { background: '#fff', border: '1px solid #e2e8f0', borderRadius: 12, padding: '1rem 1.2rem', marginBottom: '1rem' };
-                const h3 = { margin: '0 0 0.6rem', color: '#1e293b', fontSize: '1.05rem' };
-                return (
-                  <div style={{ backgroundColor: '#fffdf7', borderRadius: '8px', border: '1px solid #fde68a', padding: '1.5rem', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.6rem', marginBottom: '0.8rem' }}>
-                      <h2 style={{ color: '#1e293b', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Gift size={26} /> {t('贊助者與我的折抵', 'Sponsors & my discounts')}</h2>
-                      <button type="button" onClick={() => setMainTab('advanced')} style={{ background: 'transparent', border: '1px solid #cbd5e1', color: '#64748b', borderRadius: '6px', padding: '0.35rem 0.8rem', cursor: 'pointer', fontSize: '0.85rem' }}>← {t('返回', 'Back')}</button>
-                    </div>
-                    <div data-testid="voucher-programme-ended" style={{ background: '#fff7ed', border: '1px solid #fed7aa', borderRadius: 10, padding: '0.8rem 1rem', marginBottom: '1rem', color: '#7c2d12', fontSize: '0.9rem', lineHeight: 1.7 }}>
-                      {t('原本「通過經文換禮券」的贊助獎勵計劃已經結束，不再產生新的獎勵；已經達標、還在等待寄送的禮券，仍會照常審核寄出。贊助改為把捐款交給合法的勸募團體、依原計畫使用；大家讀經達標時，再由合作企業另外加碼。', 'The old “pass verses for a voucher” programme has ended and no new rewards are created; vouchers already earned and awaiting delivery will still be reviewed and sent. Sponsorship now means giving to a licensed charity, used as that charity planned; when readers reach a shared goal, a partner business adds an extra gift.')}{' '}
-                      <button type="button" onClick={() => setMainTab('sponsor')} style={{ background: '#c2410c', color: '#fff', border: 'none', borderRadius: 6, padding: '0.25rem 0.8rem', cursor: 'pointer', fontWeight: 700, fontSize: '0.82rem' }}>{t('了解贊助方案', 'Sponsorship options')} →</button>
-                    </div>
-                    <p data-testid="points-disclaimer" style={{ color: '#64748b', fontSize: '0.8rem', lineHeight: 1.6, marginTop: 0, marginBottom: '1rem' }}>
-                      {t('點數聲明：點數是遊戲內無償取得的促銷折抵權益，無現金價值、不可兌換現金、不可轉讓或轉售，亦非儲值或電子支付；折扣由商家自行提供，經文雨不經手任何款項。', 'About points: points are a free in-game promotional discount right with no cash value; they cannot be cashed out, transferred or resold, and are not stored value or e-payment. Discounts are offered by the shops themselves; VerseRain never handles money.')}
-                    </p>
+              {mainTab === 'sponsors' && <SponsorsPage t={t} fmtMoney={fmtMoney} myVouchers={myVouchers} redeemErrorText={redeemErrorText} saveActiveVoucher={saveActiveVoucher} setMainTab={setMainTab} setShowLoginModal={setShowLoginModal} sponsorsInfo={sponsorsInfo} userEmail={userEmail} voucherStatusBadge={voucherStatusBadge} />}
 
-                    <div style={card}>
-                      <h3 style={h3}>🎟️ {t('我的折抵紀錄', 'My discounts')}</h3>
-                      {!userEmail ? (
-                        <div style={{ color: '#94a3b8', fontSize: '0.9rem' }}>{t('登入後可查看折抵紀錄', 'Sign in to see your discounts')}</div>
-                      ) : !myVouchers ? (
-                        <div style={{ color: '#94a3b8', fontSize: '0.9rem' }}>{t('載入中…', 'Loading…')}</div>
-                      ) : myVouchers.error ? (
-                        <div style={{ color: '#b45309', fontSize: '0.9rem' }}>{redeemErrorText(myVouchers.error)}{myVouchers.error === 'session_invalid' && <> <button type="button" onClick={() => setShowLoginModal('login')} style={{ background: '#3b82f6', color: '#fff', border: 'none', borderRadius: 6, padding: '0.25rem 0.8rem', cursor: 'pointer', fontWeight: 700 }}>{t('重新登入', 'Sign in again')}</button></>}</div>
-                      ) : (
-                        <div>
-                          <div style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap', marginBottom: '0.6rem', fontSize: '0.88rem', color: '#334155' }}>
-                            <span style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 8, padding: '0.35rem 0.7rem' }}>{t('已折抵', 'Saved')} <b style={{ color: '#166534' }}>NT${myVouchers.summary?.usedNTD || 0}</b> · {t('用了 {n} 點', '{n} pts spent').replace('{n}', Number(myVouchers.summary?.usedPoints || 0).toLocaleString())}</span>
-                            <span style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 8, padding: '0.35rem 0.7rem' }}>{t('已使用 {a} 張 · 過期 {b} 張', '{a} used · {b} expired').replace('{a}', String(myVouchers.summary?.used || 0)).replace('{b}', String(myVouchers.summary?.expired || 0))}</span>
-                          </div>
-                          {(myVouchers.vouchers || []).length === 0 ? (
-                            <div style={{ color: '#94a3b8', fontSize: '0.9rem' }}>{t('還沒有折抵過。到「誰在玩」地圖點商家標記就能產生折扣券。', 'No discounts yet. Tap a shop marker on the map to get a coupon.')}</div>
-                          ) : (
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-                              {(myVouchers.vouchers || []).map(v => { const st = v.computedStatus || v.status; const b = voucherStatusBadge(st); return (
-                                <div key={v.code} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap', border: '1px solid #e2e8f0', borderRadius: 8, padding: '0.45rem 0.7rem', fontSize: '0.88rem', background: st === 'issued' ? '#fffbeb' : '#fff' }}>
-                                  <div style={{ minWidth: 0 }}>
-                                    <b style={{ color: '#1e293b' }}>{v.placeName}</b> <span style={{ color: '#166534', fontWeight: 700 }}>NT${v.ntd}</span> <span style={{ color: '#64748b' }}>· {t('消費 NT${b} · 折扣 {p}%', 'Bill NT${b} · {p}%').replace('{b}', String(v.billNTD)).replace('{p}', String(v.discountPct))} · {new Date(v.usedAt || v.issuedAt).toLocaleString()}</span>
-                                  </div>
-                                  <span style={{ display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
-                                    <span style={{ background: b.bg, color: b.fg, borderRadius: 999, padding: '0.1rem 0.6rem', fontSize: '0.76rem', fontWeight: 700 }}>{b.text}</span>
-                                    {st === 'issued' && <button type="button" onClick={() => saveActiveVoucher({ ...v, status: 'issued' })} style={{ background: '#f59e0b', color: '#fff', border: 'none', borderRadius: 6, padding: '0.2rem 0.7rem', cursor: 'pointer', fontWeight: 700, fontSize: '0.78rem' }}>{t('顯示折扣券', 'Show coupon')}</button>}
-                                  </span>
-                                </div>
-                              ); })}
-                            </div>
-                          )}
-                        </div>
-                      )}
-                    </div>
+              {mainTab === 'donate' && <DonatePage t={t} setMainTab={setMainTab} setToast={setToast} />}
 
-                    <div style={{ ...card, border: '1px solid #fecdd3', background: '#fff7f8' }}>
-                      <h3 style={h3}>❤️ {t('愛心行動', 'Love in Action')}</h3>
-                      <div style={{ color: '#475569', fontSize: '0.9rem', lineHeight: 1.6 }}>{t('把點數投入教會或機構的愛心專案，成為他們在合作商家採購時的折抵額度。點數無現金價值，投入後不可撤回。', 'Put points into a church or organisation’s charity project as their discount allowance at participating shops. Points have no cash value and a contribution cannot be reversed.')}</div>
-                      <button type="button" onClick={() => setMainTab('charity')} style={{ marginTop: '0.6rem', background: '#e11d48', color: '#fff', border: 'none', borderRadius: 6, padding: '0.35rem 0.9rem', cursor: 'pointer', fontWeight: 700 }}>❤️ {t('看看有哪些愛心行動', 'See the Love in Action projects')}</button>
-                    </div>
-
-                    <div style={card}>
-                      <h3 style={h3}>💛 {t('感謝贊助者', 'Thank you, sponsors')}</h3>
-                      {info === null ? (
-                        <div style={{ color: '#94a3b8', fontSize: '0.85rem' }}>{t('載入中…', 'Loading…')}</div>
-                      ) : wall.length === 0 ? (
-                        <div style={{ color: '#94a3b8', fontSize: '0.85rem' }}>{t('第一位贊助者的位置還空著。', 'The first sponsor’s spot is still open.')}</div>
-                      ) : (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                          {wall.map(sp => (
-                            <div key={sp.id} style={{ borderLeft: '3px solid #f59e0b', paddingLeft: '0.7rem', fontSize: '0.9rem', color: '#334155' }}>
-                              <b>{sp.anonymous || !sp.displayName ? t('匿名贊助者', 'Anonymous sponsor') : sp.displayName}</b>
-                              {sp.scope === 'church' && sp.churchName ? <span style={{ color: '#5b21b6' }}> · ⛪ {sp.churchName}</span> : null}
-                              {sp.amount ? <span style={{ color: '#64748b' }}> · {fmtMoney(sp.amount, sp.currency)}</span> : null}
-                              {sp.receivedAt ? <span style={{ color: '#94a3b8', fontSize: '0.8rem' }}> · {sp.receivedAt}</span> : null}
-                              {sp.message ? <div style={{ color: '#475569', fontSize: '0.85rem' }}>「{sp.message}」</div> : null}
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                      <div style={{ marginTop: '0.9rem', padding: '0.7rem 0.9rem', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 8, fontSize: '0.88rem', color: '#166534', lineHeight: 1.6 }}>
-                        {t('想成為贊助者？捐款直接交給合作的合法勸募團體，由它開立收據；經文雨只記錄點數和通知。報告只有統計數字，不會提供玩家個資。', 'Want to sponsor? Gifts go straight to a licensed partner charity, which issues the receipt; VerseRain only records points and sends notices. Reports contain statistics only — never player data.')}{' '}
-                        <span style={{ display: 'inline-flex', gap: '0.5rem', flexWrap: 'wrap', marginTop: 6 }}>
-                          <button type="button" onClick={() => setMainTab('sponsor')} style={{ background: '#166534', color: '#fff', border: 'none', borderRadius: 6, padding: '0.3rem 0.9rem', cursor: 'pointer', fontWeight: 700, fontSize: '0.85rem' }}>{t('了解贊助方案', 'Sponsorship options')} →</button>
-                          <a href={`mailto:hungry4grace@gmail.com?subject=${encodeURIComponent('經文雨 愛心方案贊助（VerseRain Charity Projects）')}`} style={{ color: '#166534', fontWeight: 700, alignSelf: 'center' }}>{t('聯絡我們', 'Contact us')} →</a>
-                        </span>
-                      </div>
-                    </div>
-
-                    <div style={{ ...card, marginBottom: 0 }}>
-                      <h3 style={h3}>📜 {t('條款', 'Terms')}</h3>
-                      <ul style={{ margin: 0, paddingLeft: '1.2rem', color: '#475569', fontSize: '0.85rem', lineHeight: 1.8 }}>
-                        <li>{t('人工審核後 7 個工作天內寄出；使用 LINE／Apple 隱藏信箱的帳號請提供可收信的 Email。', 'Sent within 7 working days after manual review; accounts using a hidden LINE / Apple email must provide a reachable one.')}</li>
-                        <li>{t('額度以贊助池為限；主辦方保留審核、調整與終止本計劃的權利。', 'Limited by the sponsor pool; the organiser may review, adjust or end the programme.')}</li>
-                      </ul>
-                    </div>
-                  </div>
-                );
-              })()}
-
-              {mainTab === 'donate' && (() => {
-                const info = DONATE_INFO;
-                const soon = t('即將公布', 'Coming soon');
-                const card = { background: '#fff', border: '1px solid #e2e8f0', borderRadius: 12, padding: '1rem 1.2rem', marginBottom: '1rem' };
-                const h3 = { margin: '0 0 0.6rem', color: '#1e293b', fontSize: '1.05rem' };
-                const copy = async (label, value) => {
-                  try { await navigator.clipboard.writeText(value); toast.success(t('已複製{what}', 'Copied {what}').replace('{what}', label)); } catch { setToast(value); }
-                };
-                const row = (label, value) => (
-                  <div key={label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.6rem', padding: '0.45rem 0', borderBottom: '1px solid #f1f5f9', fontSize: '0.92rem' }}>
-                    <span style={{ color: '#64748b' }}>{label}</span>
-                    <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                      <b style={{ color: value ? '#1e293b' : '#94a3b8', fontFamily: value ? 'monospace' : 'inherit', fontWeight: value ? 700 : 500 }}>{value || soon}</b>
-                      {value && <button type="button" onClick={() => copy(label, value)} style={{ background: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: 6, padding: '0.15rem 0.55rem', cursor: 'pointer', fontSize: '0.78rem', color: '#334155' }}>{t('複製', 'Copy')}</button>}
-                    </span>
-                  </div>
-                );
-                return (
-                  <div style={{ backgroundColor: '#ffffff', borderRadius: '8px', border: '1px solid #cbd5e1', padding: '1.5rem', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.6rem', marginBottom: '0.8rem' }}>
-                      <h2 style={{ color: '#1e293b', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Heart size={26} /> {t('支持經文雨', 'Support VerseRain')}</h2>
-                      <button type="button" onClick={() => setMainTab('advanced')} style={{ background: 'transparent', border: '1px solid #cbd5e1', color: '#64748b', borderRadius: '6px', padding: '0.35rem 0.8rem', cursor: 'pointer', fontSize: '0.85rem' }}>← {t('返回', 'Back')}</button>
-                    </div>
-                    <p style={{ color: '#475569', lineHeight: 1.7, marginTop: 0 }}>
-                      {t('經文雨免費、沒有廣告，也不販售任何資料。你的支持會用在伺服器、語音朗讀、多語翻譯與持續開發，讓更多人能免費讀經、背經。', 'VerseRain is free, ad-free, and sells no data. Your support pays for servers, voice narration, translations, and ongoing development so more people can read and memorise Scripture for free.')}
-                    </p>
-                    <div style={{ background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 10, padding: '0.8rem 1rem', marginBottom: '1rem', color: '#78350f', fontSize: '0.9rem', lineHeight: 1.7 }}>
-                      <b>{t('請先了解：', 'Please note:')}</b>{' '}
-                      {t('這是對開發者個人的支持（贈與），不是公益勸募，因此無法開立捐贈收據、不能抵稅。若你是教會或企業，想為愛心方案捐款並需要收據，請走「贊助經文雨」方案：捐款直接交給合作的合法勸募團體，由它開立收據。', 'This is a personal gift to the developer, not a charitable appeal, so no donation receipt or tax deduction can be issued. Churches and businesses that want to give to charity projects and need a receipt should use the “Sponsor VerseRain” programme: gifts go straight to a licensed partner charity, which issues the receipt.')}{' '}
-                      <button type="button" onClick={() => setMainTab('sponsor')} style={{ background: '#7c3aed', color: '#fff', border: 'none', borderRadius: 6, padding: '0.25rem 0.8rem', cursor: 'pointer', fontWeight: 700, fontSize: '0.82rem' }}>{t('贊助經文雨', 'Sponsor VerseRain')} →</button>
-                    </div>
-
-                    <div style={card}>
-                      <h3 style={h3}>🏦 {t('台灣銀行匯款', 'Bank transfer (Taiwan)')}</h3>
-                      {row(t('銀行', 'Bank'), info.bankName)}
-                      {row(t('銀行代碼', 'Bank code'), info.bankCode)}
-                      {row(t('帳號', 'Account'), info.account)}
-                      {row(t('戶名', 'Account holder'), info.holder)}
-                      <div style={{ color: '#64748b', fontSize: '0.82rem', marginTop: '0.6rem' }}>
-                        {t('匯款後歡迎寄信告訴我，我會回信致謝。', 'After transferring, feel free to email me — I will write back to say thank you.')}{' '}
-                        <a href={`mailto:${info.contactEmail}?subject=${encodeURIComponent('經文雨 支持（VerseRain Support）')}`} style={{ color: '#3b82f6', fontWeight: 600 }}>{info.contactEmail}</a>
-                      </div>
-                    </div>
-
-                    <div style={card}>
-                      <h3 style={h3}>🌏 {t('海外朋友：PayPal', 'Overseas: PayPal')}</h3>
-                      {info.paypalMe ? (
-                        <a href={info.paypalMe} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-block', background: '#0070ba', color: '#fff', borderRadius: 8, padding: '0.5rem 1.1rem', fontWeight: 700, textDecoration: 'none' }}>PayPal.me →</a>
-                      ) : (
-                        <span style={{ color: '#94a3b8' }}>{soon}</span>
-                      )}
-                      <div style={{ color: '#64748b', fontSize: '0.82rem', marginTop: '0.6rem' }}>{t('台灣的 PayPal 帳戶只能收境外付款，台灣朋友請用上方匯款。', 'A Taiwan PayPal account can only receive payments from abroad; friends in Taiwan please use the bank transfer above.')}</div>
-                    </div>
-
-                    <div style={{ ...card, opacity: 0.7 }}>
-                      <h3 style={h3}>💳 {t('線上刷卡／LINE Pay', 'Card / LINE Pay')}</h3>
-                      <span style={{ background: '#e2e8f0', color: '#64748b', borderRadius: 999, padding: '0.2rem 0.8rem', fontSize: '0.82rem', fontWeight: 600 }}>{t('即將開放', 'Coming later')}</span>
-                    </div>
-
-                    <div style={{ color: '#94a3b8', fontSize: '0.8rem', lineHeight: 1.6 }}>
-                      {t('支持者的資料不會提供給任何第三方；只有在你同意時，才會把你的名字列入感謝名單。', 'Supporter details are never shared with third parties; your name appears on the thank-you list only with your consent.')}
-                    </div>
-                  </div>
-                );
-              })()}
-
-              {mainTab === 'sponsor' && (() => {
-                const card = { background: '#fff', border: '1px solid #e2e8f0', borderRadius: 12, padding: '1rem 1.2rem', marginBottom: '1rem' };
-                const h3 = { margin: '0 0 0.6rem', color: '#1e293b', fontSize: '1.05rem' };
-                const step = (n, title, body) => (
-                  <div key={n} style={{ display: 'flex', gap: '0.8rem', alignItems: 'flex-start' }}>
-                    <div style={{ flexShrink: 0, width: 28, height: 28, borderRadius: '50%', background: '#7c3aed', color: '#fff', display: 'grid', placeItems: 'center', fontWeight: 700, fontSize: '0.9rem' }}>{n}</div>
-                    <div><b style={{ color: '#1e293b' }}>{title}</b><div style={{ color: '#475569', fontSize: '0.9rem', lineHeight: 1.6 }}>{body}</div></div>
-                  </div>
-                );
-                return (
-                  <div style={{ backgroundColor: '#fbf8ff', borderRadius: '8px', border: '1px solid #ddd6fe', padding: '1.5rem', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.6rem', marginBottom: '0.8rem' }}>
-                      <h2 style={{ color: '#1e293b', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Gift size={26} /> {t('贊助經文雨', 'Sponsor VerseRain')}</h2>
-                      <button type="button" onClick={() => setMainTab('advanced')} style={{ background: 'transparent', border: '1px solid #cbd5e1', color: '#64748b', borderRadius: '6px', padding: '0.35rem 0.8rem', cursor: 'pointer', fontSize: '0.85rem' }}>← {t('返回', 'Back')}</button>
-                    </div>
-                    <p style={{ color: '#475569', lineHeight: 1.7, marginTop: 0 }}>
-                      {t('一起推廣讀經與背經。你的捐款不再變成玩家的禮券，而是交給合法的合作勸募團體，依它原定的計畫用在公益方案上（例如長者聚餐），不必等任何讀經條件；大家讀經累積點數、一起達到門檻時，再由合作企業另外加碼。', 'Help spread Bible reading and memorisation. Your gift no longer becomes vouchers for players: it goes to a licensed partner charity and is used for its planned project (such as a meal for the elderly) without waiting on any reading goal. When everyone’s reading points reach a shared target, a partner business adds an extra gift.')}
-                    </p>
-                    <div data-testid="partner-talks-notice" style={{ background: '#fff7ed', border: '1px solid #fed7aa', borderRadius: 10, padding: '0.7rem 1rem', marginBottom: '1rem', color: '#7c2d12', fontSize: '0.88rem', lineHeight: 1.7 }}>
-                      {t('新方案正在與合法勸募團體洽談合作，第一批方案確定後會公布在「愛心行動」頁。原本「通過經文換禮券」的獎勵已經停止。', 'We are in talks with licensed charities; the first projects will be announced on the Love in Action project page. The old “pass verses for a voucher” rewards have ended.')}
-                    </div>
-
-                    <div style={card}>
-                      <h3 style={h3}>🔁 {t('怎麼運作', 'How it works')}</h3>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
-                        {step(1, t('合作機構選出既有公益方案', 'The partner charity picks one of its existing projects'), t('由合法的合作勸募團體，從它已經審核、正在執行的方案中選出一個（例如社區長者共餐），經它確認後才會出現在經文雨上。', 'A licensed partner charity chooses a project it has already approved and is running (for example community meals for the elderly); it appears in VerseRain only after the charity confirms.'))}
-                        {step(2, t('企業或個人捐款，依原計畫使用', 'Gifts are used as planned'), t('捐款直接交給合作勸募團體，由它開立收據，並依原定計畫與期程使用，不等待任何讀經條件；可以具名或匿名。經文雨不收款。', 'Gifts go straight to the partner charity, which issues the receipt and uses them on its original plan and schedule, without waiting on any reading goal; givers may be named or anonymous. VerseRain collects no money.'))}
-                        {step(3, t('大家讀經投點，達到門檻', 'Everyone reads and puts in points'), t('玩家把讀經得到的點數投入活動；公益投點另外記錄，不換算成金額。玩家自己不會拿到任何金錢或禮品。', 'Players put the points they earn from reading into the campaign; these are recorded separately and never converted into money. Players receive no money or gifts themselves.'))}
-                        {step(4, t('企業加碼，經機構確認後公布', 'A business adds a gift, published once the charity confirms'), t('達標後，合作企業依書面約定把加碼款交給合作勸募團體，用於同一方案；機構確認收款與撥款後，App 才公布結果。', 'When the target is reached, the partner business gives its extra gift to the charity for the same project under a written agreement; the app shows the result only after the charity confirms receipt and payout.'))}
-                      </div>
-                    </div>
-
-                    <div style={card}>
-                      <h3 style={h3}>🌱 {t('為什麼這樣設計', 'Why this design')}</h3>
-                      <ul style={{ margin: 0, paddingLeft: '1.2rem', color: '#475569', fontSize: '0.9rem', lineHeight: 1.8 }}>
-                        <li>{t('玩家的點數不再只是為自己累積折扣，而是真正拿來做有意義的事。', 'Players’ points stop being just discounts for themselves and go toward something meaningful.')}</li>
-                        <li>{t('不只企業家做好事，每一位讀經的人都一起貢獻；企業的捐款也間接鼓勵大家讀聖經。', 'It is not only business owners doing good — everyone who reads contributes, and the businesses’ gifts in turn encourage people to read the Bible.')}</li>
-                        <li>{t('經文雨不收款、不代收代付、不儲值、不兌現；勸募、收據與撥款都由合法的勸募團體負責。', 'VerseRain collects no money, pays nothing out on anyone’s behalf, holds no stored value and redeems nothing for cash; fundraising, receipts and payouts are handled by a licensed charity.')}</li>
-                      </ul>
-                    </div>
-
-                    <div style={card}>
-                      <h3 style={h3}>🤝 {t('受助對象與方案', 'Who is helped, and which projects')}</h3>
-                      <div style={{ color: '#475569', fontSize: '0.9rem', lineHeight: 1.7 }}>
-                        {t('由合作勸募團體依它的審核程序決定；受助資格與信仰、讀經或是否使用 App 無關。教會或機構有需要，請直接向合作勸募團體申請。', 'The partner charity decides through its own review; eligibility has nothing to do with faith, Bible reading or using the app. Churches or organisations in need should apply to the partner charity directly.')}
-                      </div>
-                    </div>
-
-                    <div style={card}>
-                      <h3 style={h3}>🏪 {t('商家贊助：以折扣回饋背經點數', 'Shop sponsorship: a discount for verse points')}</h3>
-                      <div style={{ color: '#475569', fontSize: '0.9rem', lineHeight: 1.7 }}>
-                        <div>1️⃣ {t('商家登記名稱、地址、5–20% 的折扣與照片，經審核後出現在「誰在玩」地圖上。', 'A shop registers its name, address, a 5–20% discount and a photo; after review it appears on the map.')}</div>
-                        <div>2️⃣ {t('玩家在地圖上點商家，用背經點數產生一次性折扣券（每 1,000 點折抵 NT$1；點數無現金價值，只能在合作商家折抵）。', 'Players tap the shop on the map and turn verse points into a one-time discount coupon (every 1,000 points takes NT$1 off; points have no cash value and only work at partner shops).')}</div>
-                        <div>3️⃣ {t('結帳時出示折扣券，店家在核銷頁確認；折扣由商家吸收，這就是商家的贊助。', 'The customer shows the coupon at checkout and the shop confirms it on the verify page; the shop absorbs the discount — that is its sponsorship.')}</div>
-                        <div>4️⃣ {t('商家也可以參與教會／機構的「愛心行動」，接受機構用玩家投入的額度折抵採購，上限由商家自訂。', 'Shops can also join a church or organisation’s Love in Action project and accept its allowance (contributed by players) against purchases, within caps the shop sets.')}</div>
-                        <div style={{ color: '#64748b', fontSize: '0.82rem', marginTop: 4 }}>{t('每張券上限 NT$200、每人每月 NT$500、同一商家每天一張、30 分鐘內有效；商家可設每日折抵上限。', 'Caps: NT$200 per voucher, NT$500 per person per month, one per shop per day, valid 30 minutes; shops can set a daily cap.')}</div>
-                      </div>
-                      <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginTop: '0.7rem' }}>
-                        <button type="button" onClick={() => setMainTab('merchant')} style={{ background: '#d97706', color: '#fff', border: 'none', borderRadius: 6, padding: '0.35rem 0.9rem', cursor: 'pointer', fontWeight: 700, fontSize: '0.85rem' }}>🏪 {t('登記商家／教會', 'Register a shop / church')}</button>
-                        <button type="button" onClick={() => setMainTab('verify')} style={{ background: 'transparent', color: '#0d9488', border: '1px solid #99f6e4', borderRadius: 6, padding: '0.35rem 0.9rem', cursor: 'pointer', fontWeight: 700, fontSize: '0.85rem' }}>🎟️ {t('店家核銷頁', 'Shop verify page')}</button>
-                      </div>
-                    </div>
-
-                    <div style={card}>
-                      <h3 style={h3}>🔍 {t('透明與隱私', 'Transparency & privacy')}</h3>
-                      <ul style={{ margin: 0, paddingLeft: '1.2rem', color: '#475569', fontSize: '0.9rem', lineHeight: 1.8 }}>
-                        <li>{t('點數進度隨時公開；達標結果與撥款狀態，經合作勸募團體確認後才公布。', 'Points progress is always public; whether the target was met and funds were paid out is shown only after the partner charity confirms it.')}</li>
-                        <li>{t('對機構與企業只提供彙總統計，不提供個人的讀經紀錄或所屬教會。', 'Charities and businesses get aggregate statistics only — never anyone’s reading record or church.')}</li>
-                        <li>{t('捐款人的收據資料由合作勸募團體保管，經文雨不保存。', 'Donors’ receipt details stay with the partner charity; VerseRain does not keep them.')}</li>
-                      </ul>
-                    </div>
-
-                    <div style={{ padding: '0.9rem 1rem', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 10, color: '#166534', fontSize: '0.9rem', lineHeight: 1.7 }}>
-                      <b>{t('想加入？', 'Want to join?')}</b>{' '}
-                      {t('企業願意提供捐款或加碼，歡迎寫信給我們，我們會協助聯繫合作勸募團體；有需要的教會或機構，請直接向合作勸募團體申請。', 'Businesses willing to give or offer a matching gift are welcome to email us and we will put you in touch with a partner charity; churches or organisations in need should apply to the partner charity directly.')}
-                      <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginTop: '0.6rem' }}>
-                        <a href={`mailto:hungry4grace@gmail.com?subject=${encodeURIComponent('經文雨 愛心方案贊助（VerseRain Charity Projects）')}`} style={{ background: '#166534', color: '#fff', borderRadius: 6, padding: '0.35rem 0.9rem', fontWeight: 700, textDecoration: 'none', fontSize: '0.85rem' }}>{t('聯絡我們', 'Contact us')} →</a>
-                        <button type="button" onClick={() => setMainTab('charity')} style={{ background: 'transparent', color: '#166534', border: '1px solid #86efac', borderRadius: 6, padding: '0.35rem 0.9rem', cursor: 'pointer', fontWeight: 700, fontSize: '0.85rem' }}>{t('看看有哪些愛心行動', 'See the Love in Action projects')}</button>
-                        <button type="button" onClick={() => setMainTab('sponsors')} style={{ background: 'transparent', color: '#166534', border: '1px solid #86efac', borderRadius: 6, padding: '0.35rem 0.9rem', cursor: 'pointer', fontWeight: 700, fontSize: '0.85rem' }}>{t('感謝贊助者', 'Thank you, sponsors')}</button>
-                      </div>
-                      {SHOW_DONATE && <div style={{ color: '#64748b', fontSize: '0.82rem', marginTop: '0.6rem' }}>
-                        {t('個人小額支持 App 開發，請到', 'For small personal gifts toward development, see')}{' '}
-                        <button type="button" onClick={() => setMainTab('donate')} style={{ background: 'transparent', border: 'none', color: '#3b82f6', cursor: 'pointer', fontWeight: 700, padding: 0, fontSize: '0.82rem' }}>{t('支持經文雨', 'Support VerseRain')} →</button>
-                      </div>}
-                    </div>
-                  </div>
-                );
-              })()}
+              {mainTab === 'sponsor' && <SponsorPage t={t} setMainTab={setMainTab} />}
 
               {mainTab === 'charity' && (() => {
                 const card = { background: '#fff', border: '1px solid #e2e8f0', borderRadius: 12, padding: '1rem 1.2rem', marginBottom: '1rem' };
@@ -11676,64 +11432,7 @@ export default function App() {
                 );
               })()}
 
-              {mainTab === 'verify' && (() => {
-                const r = verifyResult;
-                const badge = (st) => st === 'issued' ? { text: t('有效', 'Valid'), bg: '#dcfce7', fg: '#166534' } : st === 'used' ? { text: t('已使用', 'Used'), bg: '#e2e8f0', fg: '#334155' } : st === 'expired' ? { text: t('已過期', 'Expired'), bg: '#fee2e2', fg: '#991b1b' } : st === 'void' ? { text: t('已作廢', 'Voided'), bg: '#fee2e2', fg: '#991b1b' } : { text: t('找不到這張券', 'Not found'), bg: '#fee2e2', fg: '#991b1b' };
-                return (
-                  <div style={{ backgroundColor: '#ffffff', borderRadius: '8px', border: '1px solid #cbd5e1', padding: '1.5rem', boxShadow: '0 1px 3px rgba(0,0,0,0.05)', maxWidth: 560, margin: '0 auto' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.6rem', marginBottom: '0.8rem' }}>
-                      <h2 style={{ color: '#1e293b', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Ticket size={26} /> {t('折扣券核銷', 'Verify a coupon')}</h2>
-                      <button type="button" onClick={() => setMainTab('advanced')} style={{ background: 'transparent', border: '1px solid #cbd5e1', color: '#64748b', borderRadius: '6px', padding: '0.35rem 0.8rem', cursor: 'pointer', fontSize: '0.85rem' }}>← {t('返回', 'Back')}</button>
-                    </div>
-                    <p style={{ color: '#475569', lineHeight: 1.6, marginTop: 0, fontSize: '0.9rem' }}>{t('店家專用：輸入顧客折扣券上的 8 碼代碼（或掃描 QR 自動帶入），確認金額後於結帳時按「確認已使用」。', 'For shops: enter the 8-character code from the customer’s coupon (or scan the QR), check the amount, and press “Confirm used” at checkout.')}</p>
-                    {isInIosNativeApp() && !iosAppSupportsCamera() ? (
-                      <div style={{ background: '#fffbeb', border: '1px solid #fde68a', color: '#92400e', padding: '0.7rem 0.9rem', borderRadius: '10px', fontSize: '0.88rem', lineHeight: 1.45, marginBottom: '0.8rem' }}>
-                        📱 {t('目前 App 版本不支援掃描，請在 Safari 開 verserain.com 掃描，或在下方手動貼上推薦碼。下次 App 更新後會自動可用。', 'This App version does not support scanning yet. Open verserain.com in Safari to scan, or paste the code below. It will work automatically after the next App update.')}
-                      </div>
-                    ) : (
-                      <button type="button" onClick={() => { setVerifyResult(null); setVerifyScanOpen(true); }} style={{ width: '100%', padding: '0.9rem 1rem', borderRadius: 10, background: '#0d9488', color: '#fff', border: 'none', fontSize: '1.05rem', fontWeight: 800, cursor: 'pointer', marginBottom: '0.8rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
-                        <Camera size={20} /> {t('掃描 QR 折扣券', 'Scan the coupon QR')}
-                      </button>
-                    )}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', color: '#94a3b8', fontSize: '0.78rem', margin: '0 0 0.5rem' }}>
-                      <div style={{ flex: 1, height: '1px', background: '#e2e8f0' }} />
-                      <span>{t('或手動輸入', 'or paste')}</span>
-                      <div style={{ flex: 1, height: '1px', background: '#e2e8f0' }} />
-                    </div>
-                    <div style={{ display: 'flex', gap: '0.5rem' }}>
-                      <input type="text" value={verifyCodeInput} onChange={e => { setVerifyCodeInput(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 8)); setVerifyResult(null); }} onKeyDown={e => { if (e.key === 'Enter') lookupVoucher(); }} placeholder="ABCDEFGH" maxLength={9} style={{ flex: 1, padding: '0.6rem 0.8rem', borderRadius: 8, border: '1px solid #cbd5e1', fontFamily: 'monospace', fontSize: '1.3rem', letterSpacing: 3, textTransform: 'uppercase' }} />
-                      <button type="button" disabled={verifyBusy || verifyCodeInput.length !== 8} onClick={() => lookupVoucher()} style={{ background: verifyCodeInput.length === 8 ? '#0d9488' : '#e2e8f0', color: verifyCodeInput.length === 8 ? '#fff' : '#94a3b8', border: 'none', borderRadius: 8, padding: '0.6rem 1rem', cursor: 'pointer', fontWeight: 800 }}>{verifyBusy ? '…' : t('查詢', 'Look up')}</button>
-                    </div>
-                    {r && (() => { const b = badge(r.status); return (
-                      <div style={{ marginTop: '1rem', border: `1px solid ${r.status === 'issued' ? '#86efac' : '#e2e8f0'}`, borderRadius: 12, padding: '1rem', background: r.status === 'issued' ? '#f0fdf4' : '#f8fafc' }}>
-                        <span style={{ background: b.bg, color: b.fg, borderRadius: 999, padding: '0.2rem 0.8rem', fontWeight: 800 }}>{b.text}</span>
-                        {r.placeName && (
-                          <div style={{ marginTop: '0.6rem', color: '#1e293b' }}>
-                            <div style={{ fontWeight: 800, fontSize: '1.05rem' }}>{r.placeName}</div>
-                            <div style={{ fontSize: '2rem', fontWeight: 900, color: r.status === 'issued' ? '#166534' : '#64748b' }}>NT${r.ntd} {t('折抵', 'off')}</div>
-                            <div style={{ color: '#64748b', fontSize: '0.85rem' }}>{r.kind === 'pool'
-                              ? <>❤️ {t('愛心行動：{pool}', 'Love in Action: {pool}').replace('{pool}', String(r.poolName || ''))} · {t('消費 NT${b}', 'Bill NT${b}').replace('{b}', String(r.billNTD))} · {t('機構', 'Organisation')} {r.holder || ''}</>
-                              : <>{t('消費 NT${b} · 折扣 {p}%', 'Bill NT${b} · {p}%').replace('{b}', String(r.billNTD)).replace('{p}', String(r.discountPct))} · {t('持有人', 'Holder')} {r.holder || ''}</>}</div>
-                            {r.status === 'issued' && typeof r.secondsLeft === 'number' && <div style={{ color: '#b45309', fontSize: '0.85rem', marginTop: 2 }}>⏳ {t('剩餘 {t}', '{t} left').replace('{t}', `${Math.floor(r.secondsLeft / 60)}:${String(r.secondsLeft % 60).padStart(2, '0')}`)}</div>}
-                            {r.usedAt && <div style={{ color: '#64748b', fontSize: '0.8rem', marginTop: 2 }}>{t('使用時間', 'Used at')} {new Date(r.usedAt).toLocaleString()}</div>}
-                          </div>
-                        )}
-                        {r.status === 'issued' && (
-                          <button type="button" disabled={verifyBusy} onClick={useVoucher} style={{ marginTop: '0.9rem', width: '100%', background: '#166534', color: '#fff', border: 'none', borderRadius: 10, padding: '0.7rem 1rem', cursor: 'pointer', fontWeight: 800, fontSize: '1rem' }}>✅ {t('確認已使用（結帳時按）', 'Confirm used (press at checkout)')}</button>
-                        )}
-                      </div>
-                    ); })()}
-                    {verifyScanOpen && (
-                      <VoucherScanner
-                        t={t}
-                        onClose={() => setVerifyScanOpen(false)}
-                        onCode={(code) => { setVerifyScanOpen(false); setVerifyCodeInput(code); setVerifyResult(null); lookupVoucher(code); }}
-                      />
-                    )}
-                    <div style={{ color: '#94a3b8', fontSize: '0.8rem', marginTop: '1rem', lineHeight: 1.6 }}>{t('店家請把這一頁加入書籤：verserain.com/#verify。核銷後顧客的 App 會自動顯示「已使用」。', 'Shops: bookmark verserain.com/#verify. After confirming, the customer’s app shows the voucher as used.')}</div>
-                  </div>
-                );
-              })()}
+              {mainTab === 'verify' && <VerifyPage t={t} lookupVoucher={lookupVoucher} setMainTab={setMainTab} setVerifyCodeInput={setVerifyCodeInput} setVerifyResult={setVerifyResult} setVerifyScanOpen={setVerifyScanOpen} useVoucher={useVoucher} verifyBusy={verifyBusy} verifyCodeInput={verifyCodeInput} verifyResult={verifyResult} verifyScanOpen={verifyScanOpen} />}
 
               {mainTab === 'merchant' && (() => {
                 const m = merchantDraft;
@@ -12459,224 +12158,11 @@ export default function App() {
                 </div>
               )}
 
-              {mainTab === 'map' && (() => {
-                // Lazy-load Leaflet only when map tab is opened
-                return (
-                  <div style={{ backgroundColor: '#ffffff', borderRadius: '8px', border: '1px solid #cbd5e1', overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
-                    <div style={{ padding: '1.5rem 2rem 1rem', borderBottom: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                      <Map size={24} />
-                      <div>
-                        <h2 style={{ margin: 0, color: '#1e293b', fontSize: '1.2rem' }}>{t('誰在玩：全球玩家地圖', "Who's Playing: Global Player Map")} <button type="button" onClick={() => setMainTab('merchant')} style={{ marginLeft: 8, background: '#fef3c7', color: '#92400e', border: '1px solid #fde68a', borderRadius: 999, padding: '0.15rem 0.7rem', cursor: 'pointer', fontSize: '0.75rem', fontWeight: 700, verticalAlign: 'middle' }}>🏪 {t('登記商家／教會', 'Register a shop / church')}</button></h2>
-                        <p style={{ margin: '2px 0 0', color: '#64748b', fontSize: '0.85rem' }}>{t('點擊標記查看玩家成績，雙擊遊戲房間加入戰局！', 'Click a marker to see scores, double click a room to join!')}</p>
-                      </div>
-                    </div>
-                    <React.Suspense fallback={<div style={{ padding: '3rem', textAlign: 'center', color: '#94a3b8' }}>{t('地圖載入中…', 'Loading map…')}</div>}>
-                    <WorldMap t={t} playerName={playerName} userEmail={userEmail} placesVersion={placesVersion}
-                      currentMode={mapView}
-                      focusLocation={mapFocus}
-                      onToggleMode={(coord) => {
-                        setMapView(v => (v === '2d' ? '3d' : '2d'));
-                        if (coord && typeof coord.lat === 'number') setMapFocus(coord);
-                      }}
-                      playTone={playPulseTone}
-                      playWelcome={playWelcomeFanfare}
-                      onEnableAudio={initAudio}
-                      onRedeem={openRedeem}
-                      onOpenPool={(poolId) => { setCharityFocus(poolId); setMainTab('charity'); }}
-                      onOpenContest={(contestId) => { setContestFocus(contestId); setMainTab('contests'); }}
-                      onViewGarden={(name) => {
-                      handleViewPlayerGarden(name);
-                    }} onJoinRoom={(roomId) => {
-                      setMainTab('multiplayer');
-                      setJoinRoomError(null);
-                      isGuestJoinRef.current = true;
-                      setMultiplayerRoomMode(null);
-                      setMultiplayerRoomRole('player');
-                      setMultiplayerRoomId(roomId);
-                      if (joinRoomTimeoutRef.current) clearTimeout(joinRoomTimeoutRef.current);
-                      joinRoomTimeoutRef.current = setTimeout(() => {
-                        if (isGuestJoinRef.current) {
-                          setJoinRoomError(roomId);
-                          setMultiplayerRoomMode(null);
-                          setMultiplayerRoomRole('player');
-                          setMultiplayerRoomId(null);
-                          isGuestJoinRef.current = false;
-                        }
-                      }, 5000);
-                    }} />
-                    </React.Suspense>
-                  </div>
-                );
-              })()}
+              {mainTab === 'map' && <MapPage t={t} handleViewPlayerGarden={handleViewPlayerGarden} isGuestJoinRef={isGuestJoinRef} joinRoomTimeoutRef={joinRoomTimeoutRef} mapFocus={mapFocus} mapView={mapView} openRedeem={openRedeem} placesVersion={placesVersion} playerName={playerName} setCharityFocus={setCharityFocus} setContestFocus={setContestFocus} setJoinRoomError={setJoinRoomError} setMainTab={setMainTab} setMapFocus={setMapFocus} setMapView={setMapView} setMultiplayerRoomId={setMultiplayerRoomId} setMultiplayerRoomMode={setMultiplayerRoomMode} setMultiplayerRoomRole={setMultiplayerRoomRole} userEmail={userEmail} />}
 
-                            {mainTab === 'manual' && (
-                <div style={{ padding: '2rem', maxWidth: '800px', margin: '0 auto', color: '#1e293b', lineHeight: '1.8' }}>
-                  <>
-                    <h1 style={{ color: '#3b82f6', marginBottom: '1.5rem', textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}><CloudRain size={32} /> {t("VerseRain 經文雨 操作手冊", "VerseRain User Manual")}</h1>
-                    <p style={{ textAlign: 'center', fontSize: '1.1rem', marginBottom: '3rem' }}>
-                      <span dangerouslySetInnerHTML={{ __html: t("歡迎進入 <strong>VerseRain 經文雨</strong>！這是一個結合聆聽、挑戰與學習的互動背經平台。<br />在這裡您可以挑戰全球經文組、建立個人專屬的經文組，也能用自己的聲音把經文分享給朋友！", "Welcome to <strong>VerseRain</strong>! An interactive Scripture-memory platform that combines listening, challenge and learning.<br />Here you can challenge global verse sets, build your own library, and share verses in your own voice with friends!") }} />
-                    </p>
+                            {mainTab === 'manual' && <ManualPage t={t} manualBodyRef={manualBodyRef} scrollMenuTo={scrollMenuTo} uiLang={uiLang} />}
 
-                    <ManualSearch t={t} bodyRef={manualBodyRef} lang={uiLang} onJump={(el) => el && scrollMenuTo(el)} />
-                    <div ref={manualBodyRef}>
-
-                    <h2 style={{ borderBottom: '2px solid #e2e8f0', paddingBottom: '0.5rem', marginTop: '2rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Play size={22} /> {t("一、如何開始遊玩？", "1. How to Play?")}</h2>
-                    <p>{t("只需簡單三步，您就能進入背經的挑戰中！", "Just three simple steps to start your scripture memorization challenge!")}</p>
-
-                    <h3 style={{ marginTop: '1.5rem', color: '#0f172a' }}>{t("1. 點下方的「經文組」分頁", "1. Open the \"Sets\" tab at the bottom")}</h3>
-                    <p><span dangerouslySetInnerHTML={{ __html: t("點畫面下方的 <strong>「經文組」</strong> 分頁，就會看到系統與玩家建立的所有公開經文組，可依最新、標題或最受歡迎排序。", "Tap the <strong>\"Sets\"</strong> tab at the bottom of the screen to see every public verse set created by the system and by players. Sort by newest, title, or most popular.") }} /></p>
-                    <h3 style={{ marginTop: '1.5rem', color: '#0f172a' }}>{t("2. 選擇想要挑戰的經文組", "2. Select a Verse Set")}</h3>
-                    <p><span dangerouslySetInnerHTML={{ __html: t("點選列表中的標題（例如：<strong>約翰福音 核心經文</strong>），進入經文組頁面。每一節經文右側有「聆聽」和「挑戰」按鈕；上方的「全部聆聽」會從第一節連續播放。", "Tap a title in the list (e.g. <strong>Gospel of John Core Verses</strong>) to open the set page. Each verse has Listen and Challenge buttons; \"Listen to all\" at the top plays the set from the first verse.") }} /></p>
-                    <h3 style={{ marginTop: '1.5rem', color: '#0f172a' }}>{t("3. 開始挑戰", "3. Start the Challenge")}</h3>
-                    <p><span dangerouslySetInnerHTML={{ __html: t("點該節右側的綠色 <strong>⚡ 挑戰</strong> 鍵，選擇遊戲模式（九宮格／經文雨／語音模式）與難度，按「開始挑戰」——三秒後經文雨就傾盆而下！依正確順序點擊落下的方塊，越快完成、時間加成越高。", "Tap the green <strong>⚡ Challenge</strong> button next to a verse, choose the game mode (Square / Verse Rain / Voice Mode) and difficulty, then press \"Start Challenge\" — three seconds later the verse rain pours down! Tap the falling blocks in the right order; the faster you finish, the bigger the time bonus.") }} /></p>
-                    <ManualVideo src="/manual/start-game.mp4" poster="/manual/start-game.jpg" caption={t("教學影片：從大廳進入經文組 → 選經文組 → ⚡ 挑戰 → 選模式 → 依序點擊方塊，完成一次挑戰。", "Tutorial: lobby → Scripture Sets → pick a set → ⚡ Challenge → choose a mode → tap the blocks in order to finish a challenge.")} />
-
-                    <h2 style={{ borderBottom: '2px solid #e2e8f0', paddingBottom: '0.5rem', marginTop: '2rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Edit size={24} /> {t("二、如何自建專屬「經文組」？", "2. How to Build Your Own \"Verse Set\"")}</h2>
-                    <p>{t("只要登入帳號，任何人都可以打造自己的主日學、小組或個人靈修專屬經文組，建好就能聆聽、挑戰、分享。", "Any signed-in user can build a verse set for Sunday school, a small group or personal devotion, then listen to it, challenge it and share it.")}</p>
-                    <ol style={{ paddingLeft: '1.5rem', marginBottom: '2rem' }}>
-                      <li><span dangerouslySetInnerHTML={{ __html: t("先<strong>登入</strong>，再點下方的 <strong>「經文組」</strong> 分頁，進入上方的 <strong>「我的經文組」</strong>。", "<strong>Sign in</strong>, open the <strong>\"Sets\"</strong> tab at the bottom, then go to <strong>\"My Custom Sets\"</strong> at the top.") }} /></li>
-                      <li><span dangerouslySetInnerHTML={{ __html: t("點 <strong>「＋ 建立新經文組」</strong>，填上標題與簡介；也可以挑一張背景圖片、選背景音樂或上傳自己的音樂。", "Tap <strong>\"+ Create New Set\"</strong>, give it a title and a description; you can also pick a background image and background music (or upload your own).") }} /></li>
-                      <li><span dangerouslySetInnerHTML={{ __html: t("在經文列表選好書卷、輸入 <strong>章:節</strong>（如 <code>3:16</code> 或 <code>6:9-13</code>），按 <strong>Enter 或 Tab</strong>，系統就會自動抓取完整經文。", "In the verse list pick the book, type the <strong>chapter:verse</strong> (e.g. <code>3:16</code> or <code>6:9-13</code>) and press <strong>Enter or Tab</strong> — the full text is fetched for you.") }} /></li>
-                      <li><span dangerouslySetInnerHTML={{ __html: t("經文很多？用 <strong>「輸入出處批次匯入」</strong>，一次貼上多個出處（每行一個或用逗號分隔）。逗號後面的純節數會接在同一章：<code>約翰福音 1:1, 4</code> 就是 1:1 與 1:4。", "Many verses? Use <strong>\"Import by references\"</strong> and paste several references at once (one per line or comma-separated). A bare verse number after a comma stays in the same chapter: <code>John 1:1, 4</code> means 1:1 and 1:4.") }} /></li>
-                      <li><span dangerouslySetInnerHTML={{ __html: t("每一節旁邊都有 🎙️ 麥克風，可以順手錄下自己的親聲朗讀。", "Each verse row has a 🎙️ mic so you can record your own reading right there.") }} /></li>
-                      <li><span dangerouslySetInnerHTML={{ __html: t("確認無誤後點 <strong>「儲存經文組」</strong>。這份經文組就會出現在「經文組」，大家都可以聆聽與挑戰。", "When everything looks right, tap <strong>\"Save Set\"</strong>. The set appears in \"Scripture Sets\" for everyone to listen to and challenge.") }} /></li>
-                    </ol>
-                    <div style={{ backgroundColor: '#f0fdf4', borderLeft: '4px solid #22c55e', padding: '1rem', borderRadius: '4px', marginBottom: '3rem' }}>
-                      <span dangerouslySetInnerHTML={{ __html: t("<strong>提示：</strong>經文抓取串接了各語言的聖經資料庫（和合本、ESV、KJV…），能大幅省去打字與校稿的時間；建好的經文組還能用「翻譯」一鍵在地化到其他語言（見第七章）。", "<strong>Tip:</strong> Verse fetching is wired to Bible databases in every supported language (CUV, ESV, KJV…), which saves a lot of typing and proofreading; a finished set can also be localized to another language with one tap via \"Translate\" (see section 7).") }} />
-                    </div>
-
-                    <h2 style={{ borderBottom: '2px solid #e2e8f0', paddingBottom: '0.5rem', marginTop: '2rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Mic size={22} /> {t("三、全新語音模式 (Voice Mode)", "3. New Voice Mode")}</h2>
-                    <p><span dangerouslySetInnerHTML={{ __html: t("除了點擊方塊，您現在可以直接<strong>用「唸」的來背經文！</strong>", "Besides clicking blocks, you can now recite verses directly <strong>using your voice!</strong>") }} /></p>
-                    <ul style={{ paddingLeft: '1.5rem', marginBottom: '2rem' }}>
-                      <li><span dangerouslySetInnerHTML={{ __html: t("<strong>智慧模糊辨識：</strong> 系統內建強大的中文拼音模糊比對。就算有台灣國語、捲舌平舌音不分，只要發音相近就能過關！", "<strong>Smart Fuzzy Recognition:</strong> The system features powerful fuzzy pinyin matching. Even with accents or imprecise pronunciation, similar sounds will pass!") }} /></li>
-                      <li><span dangerouslySetInnerHTML={{ __html: t("<strong>貼心提示系統：</strong> 如果卡詞了，系統會在 3 秒後自動給予局部提示，幫助您順利接下去。", "<strong>Helpful Hint System:</strong> If you get stuck, the system will automatically provide a partial hint after 3 seconds to help you continue.") }} /></li>
-                      <li><span dangerouslySetInnerHTML={{ __html: t("<strong>分數加成獎勵：</strong> 為了鼓勵大家開口宣告神的話語，在語音模式中，您的<strong>「剩餘時間加成」權重會大幅提升 50%</strong>！", "<strong>Score Bonus:</strong> To encourage proclaiming God's word out loud, your <strong>\"Remaining Time Bonus\" weight is increased by 50%</strong> in Voice Mode!") }} /></li>
-                      <li><span dangerouslySetInnerHTML={{ __html: t("<strong>預備倒數：</strong>宣告經文出處後，畫面會出現「預備…3…2…1…開始！」的大字倒數，讓你清楚知道什麼時候輪到自己開口。", "<strong>Ready countdown:</strong> After the reference is announced, a big \"Ready… 3… 2… 1… Go!\" countdown shows on screen so you know exactly when it's your turn to speak.") }} /></li>
-                      <li><span dangerouslySetInnerHTML={{ __html: t("<strong>挑戰前先設定：</strong>按下「挑戰」會先跳出設定視窗，讓你選擇遊戲模式（九宮格／經文雨／語音模式）與難度。語音模式可勾選「不要複誦我背過的經文」，節奏更順暢。", "<strong>Set up before you play:</strong> Tapping \"Challenge\" opens a setup dialog where you pick the game mode (Square / Verse Rain / Voice Mode) and difficulty. In Voice Mode you can tick \"Do not repeat what I just recited\" for a faster flow.") }} /></li>
-                    </ul>
-
-                    <h2 style={{ borderBottom: '2px solid #e2e8f0', paddingBottom: '0.5rem', marginTop: '2rem' }}>{t("⚔️ 四、多人即時連線對戰", "⚔️ 4. Multiplayer Real-time Battle")}</h2>
-                    <p>{t("背經文不再是一個人孤單的事！", "Memorizing scripture is no longer a solitary task!")}</p>
-                    <ul style={{ paddingLeft: '1.5rem', marginBottom: '2rem' }}>
-                      <li><span dangerouslySetInnerHTML={{ __html: t("點下方的 <strong>「一起玩」</strong> 分頁創建專屬房間，邀請小組成員或家人一起加入。", "Open the <strong>\"Play\"</strong> tab at the bottom to create a private room and invite your group members or family to join.") }} /></li>
-                      <li><span dangerouslySetInnerHTML={{ __html: t("房主可以從全域經文組中挑選 <strong>「比賽經文」</strong>，並選擇比賽方式：獨立九宮格、雨滴瀑布或語音模式。", "The host picks the <strong>\"Competition Verses\"</strong> from the global verse bank and chooses how to play: Solo Square, Verse Rain, or Voice Mode.") }} /></li>
-                      <li><span dangerouslySetInnerHTML={{ __html: t("<strong>🌍 各自用自己的語言參賽（新）：</strong>在個人賽／邀人對戰 模式中，每位玩家都用自己選的聖經版本比賽——主持人用中文，朋友可以用英文 ESV 或韓文，同一節經文各自看到自己的語言。計分以節數與分數為準，與語言無關，完全公平。團隊競賽因為大家共用同一個盤面，維持主持人的語言。", "<strong>🌍 Everyone plays in their own language (new):</strong> In Solo / PK rooms each player competes in the Bible version they chose — the host in Chinese, a friend in English ESV or Korean — and everyone sees the same verse in their own language. Scoring is by verse count and points, independent of language, so it stays fair. Team battles share one board and therefore keep the host's language.") }} /></li>
-                      <li><span dangerouslySetInnerHTML={{ __html: t("所有人同時開始挑戰，並能在遊戲結束後看到即時的成績排行榜，非常適合主日學活動與小組破冰！", "Everyone starts the challenge simultaneously and can see real-time leaderboards after the game ends. Perfect for Sunday school activities and group icebreakers!") }} /></li>
-                    </ul>
-                    <ManualVideo src="/manual/multiplayer.mp4" poster="/manual/multiplayer.jpg" caption={t("教學影片：左邊是主持人（繁體中文）在經文組頁按「邀人對戰」開房；右邊是朋友把版本切成 English - ESV 後輸入代碼加入。比賽開始後，同一節經文各自看到自己的語言。", "Tutorial: on the left the host (Traditional Chinese) opens a room with \"Invite PK\" from the set page; on the right a friend switches to English - ESV and joins with the code. Once the match starts, each sees the same verse in their own language.")} />
-
-                    <h2 style={{ borderBottom: '2px solid #e2e8f0', paddingBottom: '0.5rem', marginTop: '2rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Mic size={22} /> {t("五、親聲朗讀 — 用你自己的聲音讀經", "5. Read Aloud in Your Own Voice")}</h2>
-                    <p><span dangerouslySetInnerHTML={{ __html: t("在<strong>聆聽經文組</strong>時，你可以錄下自己的聲音來讀某一節。之後再聽這一節，聽到的就是你自己的聲音，而不是電腦語音；還能把它分享給朋友，讓他們也聽見你的親聲。", "While <strong>listening to a verse set</strong>, you can record your own voice reading a verse. Next time you play that verse you'll hear yourself instead of the computer voice — and you can share it so friends hear your voice too.") }} /></p>
-                    <ul style={{ paddingLeft: '1.5rem', marginBottom: '2rem' }}>
-                      <li><span dangerouslySetInnerHTML={{ __html: t("<strong>錄下你的親聲：</strong>（需先登入）聆聽畫面下方那排按鈕中有一顆 🎙️ 麥克風鍵，點它、照著經文唸一遍、儲存即可。", "<strong>Record your voice:</strong> (login required) In the row of buttons at the bottom of the listen screen, tap the 🎙️ mic, read the verse aloud, and save.") }} /></li>
-                      <li><span dangerouslySetInnerHTML={{ __html: t("<strong>不只作者，人人都能錄：</strong>任何登入的玩家都可以為一節經文錄下自己的聲音並公開分享。打開播放器的「播放方式」→「聲音來源」，就能在 自動／電腦語音／無聲音／作者錄音／其他貢獻者的聲音 之間切換，聽聽弟兄姊妹怎麼讀這一節。", "<strong>Not just the author — anyone can record:</strong> Any signed-in player can record a verse in their own voice and share it publicly. Open the player's \"Play Mode\" → \"Voice\" to switch between Auto / Computer voice / No voice / Author / other contributors' voices and hear how brothers and sisters read the verse.") }} /></li>
-                      <li><span dangerouslySetInnerHTML={{ __html: t("<strong>播放優先順序：</strong>「自動」會優先播你自己的親聲，其次是最新公開的人聲，再來是經文組作者的親聲，最後才是電腦語音（TTS）。只要有人錄過，就不會聽到機器音。", "<strong>Playback priority:</strong> \"Auto\" plays your own voice first, then the newest public recording, then the set author's voice, and only then the computer voice (TTS). As long as someone has recorded, you never hear a robot.") }} /></li>
-                      <li><span dangerouslySetInnerHTML={{ __html: t("<strong>分享你正在聽的聲音：</strong>點 🔗 分享鍵，連結會帶著「你現在正在聽的那個聲音」——不論是你自己、作者或其他貢獻者的親聲，朋友打開連結聽到的就是同一個聲音。若錄音還在上傳，分享鍵會先等上傳完成再產生連結，確保對方一定聽得到。", "<strong>Share the voice you're listening to:</strong> Tap the 🔗 share button and the link carries whichever voice you're hearing right now — yours, the author's, or another contributor's — so your friend hears exactly the same voice. If a recording is still uploading, the button waits for it to finish before creating the link.") }} /></li>
-                      <li><span dangerouslySetInnerHTML={{ __html: t("<strong>暫停 / 繼續：</strong>播放親聲錄音時按暫停會停在原處，再按繼續會<strong>從原處接著播</strong>，不會從頭重讀。", "<strong>Pause / Resume:</strong> When a voice recording is playing, Pause holds the position and Resume <strong>continues from where it stopped</strong> instead of restarting.") }} /></li>
-                      <li><span dangerouslySetInnerHTML={{ __html: t("<strong>刪除：</strong>經文出處下方若顯示「🎙️ 這節有你的親聲」，點旁邊的「刪除 ✕」即可移除你的錄音，之後會回到作者的親聲或電腦語音。", "<strong>Delete:</strong> If \"🎙️ Your voice on this verse\" shows under the reference, tap \"Delete ✕\" next to it to remove your recording; playback then falls back to the author's or computer voice.") }} /></li>
-                    </ul>
-                    <div style={{ backgroundColor: '#eff6ff', borderLeft: '4px solid #3b82f6', padding: '1rem', borderRadius: '4px', marginBottom: '3rem' }}>
-                      <span dangerouslySetInnerHTML={{ __html: t("<strong>小提示：</strong>聆聽畫面上方中間、顯示日期或主題名稱的按鈕，下面寫著 <strong>【更多的主題經文】</strong> —— 點一下就能展開更多主題經文組，快速切換聆聽不同主題。", "<strong>Tip:</strong> The button at the top-center of the listen screen (showing the date or topic name) has <strong>[More topic verses]</strong> underneath — tap it to open more topic verse sets and switch quickly.") }} />
-                    </div>
-                    <h2 style={{ borderBottom: '2px solid #e2e8f0', paddingBottom: '0.5rem', marginTop: '2rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Headphones size={22} /> {t("六、播放方式、我的最愛與更多聆聽小工具", "6. Play Mode, Favorites & More Listening Tools")}</h2>
-                    <p><span dangerouslySetInnerHTML={{ __html: t("聆聽畫面的 <strong>「播放方式」</strong> 視窗和幾顆新按鈕，讓連續聆聽更貼近你的習慣：", "The listen screen's <strong>\"Play Mode\"</strong> dialog and a few new buttons make continuous listening fit your routine:") }} /></p>
-                    <ul style={{ paddingLeft: '1.5rem', marginBottom: '2rem' }}>
-                      <li><span dangerouslySetInnerHTML={{ __html: t("<strong>⏱️ 播放時間：</strong>可設定播放幾分鐘後自動停止，或無限循環播放——睡前、靈修時段都好用。", "<strong>⏱️ Duration:</strong> Set playback to stop after a number of minutes, or loop forever — handy at bedtime or during devotions.") }} /></li>
-                      <li><span dangerouslySetInnerHTML={{ __html: t("<strong>🔠 字體大小：</strong>同一個視窗裡可以調整聆聽畫面的字級，長輩或投影使用時把字放大更清楚。", "<strong>🔠 Font size:</strong> Adjust the text size of the listen screen in the same dialog — bigger for seniors or projection.") }} /></li>
-                      <li><span dangerouslySetInnerHTML={{ __html: t("<strong>⭐ 我的最愛：</strong>聆聽時點播放器上的星星，或在「我的經文組」的卡片上點星星，就能把經文組加入我的最愛。清單可用「我的最愛」排序，而且會跟著帳號同步到每一台裝置；從大廳「話語甘霖」進入後，也能直接挑「我的最愛」來聽。", "<strong>⭐ Favorites:</strong> Tap the star on the player, or on a card in \"My Custom Sets\", to add a verse set to your favorites. Sort the list by \"Favorites\", and they sync with your account across all devices. Entering from the lobby's \"Verse Rain\" card, you can pick \"Favorites\" to listen right away.") }} /></li>
-                      <li><span dangerouslySetInnerHTML={{ __html: t("<strong>🔄 雙語對調：</strong>讀經頁的「朗讀第二語言」按鈕會暫時把主／次語言互換，改用第二語言落字並朗讀，原語言退到下方小字；離開後自動還原，練習外語聽讀很方便。", "<strong>🔄 Swap languages:</strong> The reader's \"Read the second language\" button temporarily swaps your primary and secondary languages — the verse falls and is read aloud in the second language while the original shows below in small text. It reverts when you leave; great for practicing a foreign language.") }} /></li>
-                      <li><span dangerouslySetInnerHTML={{ __html: t("<strong>⚡ 邊聽邊挑戰：</strong>聆聽中按 ⚡ 立刻挑戰這一節；結束後按「返回朗讀」會回到同一節並暫停等你，按播放或 ‹ › 就能接著聽下一節。", "<strong>⚡ Challenge while listening:</strong> Tap ⚡ while listening to challenge the current verse. When it ends, \"Back to reading\" returns you to the same verse, paused; press Play or ‹ › to continue.") }} /></li>
-                    </ul>
-                    <ManualVideo src="/manual/play-mode.mp4" poster="/manual/play-mode.jpg" caption={t("教學影片：在經文組頁按「播放」→ 播放方式視窗設定播放時間、字體大小、聲音來源 → 選「按序」開始連續聆聽。", "Tutorial: press \"Play\" on a set page → set duration, font size and voice source in the Play Mode dialog → choose \"In Order\" to start continuous listening.")} />
-                    <ManualVideo src="/manual/listen.mp4" poster="/manual/listen.jpg" caption={t("教學影片：大廳「話語甘霖」→ 選「每日經文」或主題經文 → 按「朗讀」做雙語對調（改用第二語言朗讀）→ 按「切換聲音」選電腦語音、無聲音或親聲。", "Tutorial: lobby \"Verse Rain\" → pick \"Daily Verse\" or a topic → press \"Read\" to swap languages (read in the second language) → \"Switch voice\" to choose computer voice, no voice, or a recorded voice.")} />
-                    <h2 style={{ borderBottom: '2px solid #e2e8f0', paddingBottom: '0.5rem', marginTop: '2rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Languages size={22} /> {t("七、經文組一鍵「翻譯」到其他語言", "7. Translate a Verse Set into Other Languages in One Click")}</h2>
-                    <p><span dangerouslySetInnerHTML={{ __html: t("辛苦建好的經文組，想給說別種語言的弟兄姊妹用？現在不必重打一次。", "Built a great verse set and want to share it with brothers and sisters who speak another language? No need to retype it.") }} /></p>
-                    <ul style={{ paddingLeft: '1.5rem', marginBottom: '2rem' }}>
-                      <li><span dangerouslySetInnerHTML={{ __html: t("在經文組詳情頁點 <strong>「翻譯」</strong>，選擇目標語言。系統會自動翻譯標題、把每節出處換成該語言的書名，並抓取<strong>該語言官方譯本的真實經文</strong>（不是機器翻譯的經文）。", "On a verse set's page tap <strong>\"Translate\"</strong> and pick a target language. The title is translated, each reference is converted to that language's book name, and the <strong>real text from that language's official Bible translation</strong> is fetched (not machine-translated scripture).") }} /></li>
-                      <li><span dangerouslySetInnerHTML={{ __html: t("預覽畫面可以修改標題、逐節查看成功／失敗並重試；確認後點 <strong>「加入並編輯」</strong>，經文組就會發佈到該語言的經文組，並自動切換過去讓你補上簡介。", "In the preview you can edit the title, see each verse's success/failure and retry; then tap <strong>\"Add & Edit\"</strong> to publish it into that language's library, and the app switches over so you can add a description.") }} /></li>
-                      <li><span dangerouslySetInnerHTML={{ __html: t("VerseRain 現已支援 20 多種聖經版本與介面語言：繁／簡中文、台語、英文（KJV／ESV／NIV）、日文、韓文、西班牙文、葡萄牙文、法文、德文、俄文、印地文、阿拉伯文、波斯文、希伯來文、土耳其文、緬甸文、越南文、印尼文與馬來文——切換左上角的「版本」即可。", "VerseRain now supports 20+ Bible versions and interface languages: Traditional/Simplified Chinese, Taiwanese, English (KJV/ESV/NIV), Japanese, Korean, Spanish, Portuguese, French, German, Russian, Hindi, Arabic, Persian, Hebrew, Turkish, Burmese, Vietnamese, Indonesian and Malay — just switch \"Version\" at the top left.") }} /></li>
-                    </ul>
-                    <ManualVideo src="/manual/translate.mp4" poster="/manual/translate.jpg" caption={t("教學影片：在經文組頁按「翻譯」→ 選 Bahasa Melayu → 系統翻譯標題並抓取馬來文譯本 → 預覽 16 節全部成功 → 「加入並編輯」。", "Tutorial: press \"Translate\" on a set page → choose Bahasa Melayu → the title is translated and the Malay Bible text fetched → preview shows all 16 verses → \"Add & Edit\".")} />
-                    <h2 style={{ borderBottom: '2px solid #e2e8f0', paddingBottom: '0.5rem', marginTop: '2rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Map size={22} /> {t("八、全球玩家地圖（2D／3D）", "8. Global Player Map (2D / 3D)")}</h2>
-                    <p><span dangerouslySetInnerHTML={{ __html: t("在下方的 <strong>「一起玩」</strong> 分頁點 <strong>「誰在玩」</strong>，看看世界各地的經文雨玩家都在哪裡。", "In the <strong>\"Play\"</strong> tab at the bottom, tap <strong>\"Who's Playing\"</strong> to see where VerseRain players are around the world.") }} /></p>
-                    <ul style={{ paddingLeft: '1.5rem', marginBottom: '2rem' }}>
-                      <li><span dangerouslySetInnerHTML={{ __html: t("點擊標記可以查看該玩家的成績；地圖上若有進行中的多人遊戲房間，<strong>雙擊房間就能直接加入戰局</strong>！", "Click a marker to see that player's scores; if a multiplayer room is open on the map, <strong>double-click it to jump straight into the battle</strong>!") }} /></li>
-                      <li><span dangerouslySetInnerHTML={{ __html: t("右上角可在 <strong>「2D 地圖」</strong> 與 <strong>「3D 地球」</strong> 之間切換，轉動地球，看看全球背經的即時脈動。", "Switch between <strong>\"2D Map\"</strong> and <strong>\"3D Globe\"</strong> at the top right, spin the globe, and watch scripture memorization pulse around the world in real time.") }} /></li>
-                    </ul>
-                    <ManualVideo src="/manual/map.mp4" poster="/manual/map.jpg" caption={t("教學影片：點「誰在玩」看全球玩家分佈 → 按「3D 地球」→ 拖曳轉動地球。", "Tutorial: open \"Who's Playing\" to see players worldwide → press \"3D Globe\" → drag to spin the globe.")} />
-                    <h2 id="manual-score" style={{ borderBottom: '2px solid #e2e8f0', paddingBottom: '0.5rem', marginTop: '2rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Trophy size={22} /> {t("九、累積點數怎麼算？", "9. How Is My Total Score Calculated?")}</h2>
-                    <p>{t("累積點數跟著你的帳號走，登入後每一次挑戰、聆聽和每天回來讀經都會累積；改暱稱不會影響累積點數。", "Your total score belongs to your account: once you are signed in, every challenge, every verse you listen to and every day you come back to read counts, and changing your nickname never affects it.")}</p>
-                    <h3 style={{ marginTop: '1.5rem', color: '#0f172a' }}>{t("1. 每節經文，只算你最好的一次", "1. Each verse counts your best run only")}</h3>
-                    <ul style={{ paddingLeft: '1.5rem', marginBottom: '1.5rem' }}>
-                      <li><span dangerouslySetInnerHTML={{ __html: t("<strong>第一次挑戰</strong>一節經文：這一局得幾分，累積點數就加幾分。", "<strong>First challenge</strong> of a verse: whatever you score is added in full.") }} /></li>
-                      <li><span dangerouslySetInnerHTML={{ __html: t("<strong>再挑戰同一節</strong>：只有超過你自己紀錄的部分會加進來。例如紀錄 800 分、這次 950 分，累積點數 +150；沒破紀錄就不加也不減。", "<strong>Replaying the same verse</strong>: only the part above your own record is added. Record 800, this run 950: +150. No new record means no change.") }} /></li>
-                      <li><span dangerouslySetInnerHTML={{ __html: t("<strong>挑戰失敗</strong>（生命耗盡）不計分。想讓累積點數長得快，就去挑戰還沒玩過的經文，或把舊經文的紀錄推高。", "<strong>A failed run</strong> (out of lives) does not count. To grow fast, challenge verses you have not played yet, or push your old records higher.") }} /></li>
-                    </ul>
-                    <h3 style={{ marginTop: '1.5rem', color: '#0f172a' }}>{t("2. 多人遊戲", "2. Multiplayer")}</h3>
-                    <p>{t("個人 PK 房間的成績跟單人挑戰一樣計入；團隊賽是課堂當場的比賽，不計入累積點數。", "Solo PK rooms count just like single-player challenges; team battles are live classroom events and do not count.")}</p>
-                    <h3 style={{ marginTop: '1.5rem', color: '#0f172a' }}>{t("3. 邀請朋友", "3. Inviting friends")}</h3>
-                    <p><span dangerouslySetInnerHTML={{ __html: t("朋友用你的推薦碼加入並第一次通過一節經文，你的累積點數 <strong>+5000</strong>，每位朋友一次。", "When a friend joins with your referral code and clears their first verse, your total points go up by <strong>+5000</strong>, once per friend.") }} /></p>
-                    <h3 style={{ marginTop: '1.5rem', color: '#0f172a' }}>{t("4. 每日登入", "4. Daily check-in")}</h3>
-                    <ul style={{ paddingLeft: '1.5rem', marginBottom: '1.5rem' }}>
-                      <li><span dangerouslySetInnerHTML={{ __html: t("當天<strong>聽完或挑戰完一節經文</strong>，就算這天有登入，會送出這天的登入分數（只打開 App 不算）。", "Listen to or challenge <strong>one verse to the end</strong> on a given day and that day counts as checked in; the check-in points are added then (just opening the app does not count).") }} /></li>
-                      <li><span dangerouslySetInnerHTML={{ __html: t("連續登入的分數是 <strong>1000、1100、1200…最高 2000</strong>，連續第 12 天再從 1000 開始，11 天一輪。", "Consecutive days earn <strong>1000, 1100, 1200 … up to 2000</strong>; day 12 starts again at 1000, an 11-day cycle.") }} /></li>
-                      <li><span dangerouslySetInnerHTML={{ __html: t("每連續 7 天送一張<strong>「恩典日」</strong>（最多存 2 張）。漏掉的日子會自動用恩典日補上，連續天數不中斷（補上的那天沒有分數）；恩典日不夠補時，才從 1000 重來。", "Every 7 days in a row earns a <strong>grace day</strong> (up to 2 saved). A missed day is covered by a grace day automatically, so your streak continues (the covered day itself earns nothing); only when you run out of grace days does it start again at 1000.") }} /></li>
-                      <li>{t("依台灣時間（UTC+8）午夜換日。", "Days change at midnight Taiwan time (UTC+8).")}</li>
-                    </ul>
-                    <h3 style={{ marginTop: '1.5rem', color: '#0f172a' }}>{t("5. 聆聽經文", "5. Listening")}</h3>
-                    <p><span dangerouslySetInnerHTML={{ __html: t("在聆聽頁把一節經文<strong>聽完</strong>，累積點數 <strong>+100</strong>。同一節一天只算一次，一天最多 20 節（2000 分）。", "Listen to a verse <strong>to the end</strong> in the listening player and your total gets <strong>+100</strong>. Each verse counts once a day, up to 20 verses (2000 points) a day.") }} /></p>
-                    <h3 style={{ marginTop: '1.5rem', color: '#0f172a' }}>{t("6. 今日得分", "6. Today's score")}</h3>
-                    <p>{t("園子上方的「今日得分」就是今天新增的累積點數：新挑戰的經文、今天破紀錄的部分、每日登入和聆聽的分數，加上今天收到的推薦獎勵。", "\"Today's score\" at the top of your garden is what your total gained today: new verses, record improvements, check-in and listening points, and referral bonuses received today.")}</p>
-                    <h3 style={{ marginTop: '1.5rem', color: '#0f172a' }}>{t("7. 累積點數能做什麼？", "7. What can I do with it?")}</h3>
-                    <ul style={{ paddingLeft: '1.5rem', marginBottom: '1.5rem' }}>
-                      <li><span dangerouslySetInnerHTML={{ __html: t("點數可以在合作商家換取小額的消費折扣，也可以投入教會或機構的「愛心行動」。折扣由商家自願提供，<strong>實際能折多少，以產生折扣券時畫面上顯示的為準</strong>。點數是遊戲內無償取得的促銷權益：沒有現金價值、不能兌換現金、不能轉讓或轉售，也不是儲值或電子支付。可用點數 = 累積點數 − 已用點數；折抵只扣可用點數，累積點數不會減少。", "You can use points for a small discount at partner shops, or put them into a church or organisation’s “Love in Action” project. Discounts are offered voluntarily by the shops; <strong>the exact amount is shown on screen when you create a coupon</strong>. Points are a free in-game promotional benefit: they have no cash value, cannot be cashed out, transferred or resold, and are not stored value or e-payment. Available points = total score minus points already spent; a discount lowers your available points, never your total score.") }} /></li>
-                      <li>{t("每張折扣券最多折 NT$200、每人每月最多 NT$500；商家可另外設定每人每天可使用的張數。", "Each coupon is capped at NT$200 and each player at NT$500 per month; a shop may also set how many coupons one person can use per day.")}</li>
-                      <li>{t('點數聲明：點數是遊戲內無償取得的促銷折抵權益，無現金價值、不可兌換現金、不可轉讓或轉售，亦非儲值或電子支付；折扣由商家自行提供，經文雨不經手任何款項。', 'About points: points are a free in-game promotional discount right with no cash value; they cannot be cashed out, transferred or resold, and are not stored value or e-payment. Discounts are offered by the shops themselves; VerseRain never handles money.')}</li>
-                    </ul>
-                    <h3 style={{ marginTop: '1.5rem', color: '#0f172a' }}>{t("8. 和排行榜、園子的差別", "8. How it differs from the leaderboard and the garden")}</h3>
-                    <ul style={{ paddingLeft: '1.5rem', marginBottom: '2rem' }}>
-                      <li><span dangerouslySetInnerHTML={{ __html: t("排行榜依<strong>暱稱</strong>統計，累積點數依<strong>帳號</strong>統計；改過暱稱的話，排行榜上舊名字的分數不會搬過來，但累積點數完整保留。", "The leaderboard is tallied by <strong>nickname</strong>, the total score by <strong>account</strong>. If you renamed yourself, old-name leaderboard points stay where they are, but your total score is intact.") }} /></li>
-                      <li>{t("園子上的連續天數、樹和果子是成長紀錄，不是積分；每日登入分數另外依連續登入天數（台灣時間）計算。破紀錄會結果子，但果子不能折抵。", "The streak, trees and fruit in your garden are its growth record, not points; check-in points follow their own streak (Taiwan time). A new record bears fruit, but fruit cannot be redeemed.")}</li>
-                      <li>{t("沒登入只會上排行榜，不會計入帳號的累積點數，也不能用點數折抵；登入後從那一刻開始累積。", "Without signing in you only appear on the leaderboard: nothing is added to an account total and you cannot use points for a discount. Once signed in, it accumulates from that moment.")}</li>
-                    </ul>
-                    </div>
-                  </>
-                </div>
-              )}
-
-              {mainTab === 'about' && (
-                <div style={{ backgroundColor: '#ffffff', borderRadius: '8px', border: '1px solid #cbd5e1', padding: '2rem', boxShadow: '0 1px 3px rgba(0,0,0,0.05)', color: '#334155', lineHeight: '1.6' }}>
-                  <h2 style={{ marginTop: 0, marginBottom: '1.5rem', borderBottom: '2px solid #e2e8f0', paddingBottom: '0.5rem', fontFamily: 'var(--app-font-family)', color: '#3b82f6' }}>
-                    {t('Verse Rain 讓背記經文變得生動有趣！', 'VerseRain makes scripture memorization fun!')}
-                  </h2>
-
-                  <p style={{ marginBottom: '1rem' }}>
-                    {t('一間華人教會使用 VerseRain 應用程式為會眾舉辦了「聖經背誦比賽」。家庭和小組中的所有年齡層都能參與。他們架設了四台投影機，讓四個隊伍能同時在相同的經文組上進行挑戰模式的比賽。', 'A Chinese church used the VerseRain app to host a "Bible Memorization Contest" for its congregation. All ages in families and small groups participated. They set up four projectors, allowing four teams to compete simultaneously in Challenge Mode using the same verse sets.')}
-                  </p>
-                  <iframe width="560" height="315" src="//www.youtube.com/embed/2tFxeesKISk" frameBorder="0" allowFullScreen=""></iframe>
-
-                  <p style={{ marginBottom: '1.5rem', marginTop: '1.5rem' }}>
-                    {t('一位四歲的男孩和三歲的妹妹急切地想展示他們能用中文背誦「主禱文」來遊玩 VerseRain。他們都是在美國出生的，卻能夠用中文閱讀並遊玩這款遊戲。', 'A four-year-old boy and his three-year-old sister eagerly showed off how they could recite the "Lord\'s Prayer" in Chinese by playing VerseRain. Born in the US, they are able to read Chinese and play this game.')}
-                  </p>
-                  <iframe width="560" height="315" src="//www.youtube.com/embed/Tty82Gn1gvQ" frameBorder="0" allowFullScreen=""></iframe>
-
-                  <p style={{ marginBottom: '1.5rem', marginTop: '1.5rem' }}>
-                    {t('聖經經文的單字會從天而降，玩家只要按照正確的順序點擊經文就能獲得分數。經文被點擊時，會用語音朗讀出來，從視覺和語音的聽覺兩方面來加強您的記憶。', 'Words of bible verses fall from the sky, and you score points by clicking the verse in the correct order. The verse is spoken out loud when clicked to reinforce your memory audibly and spelling visually.')}
-                  </p>
-
-                  <ul style={{ paddingLeft: '1.5rem', marginBottom: '1.5rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                    <li>{t('學習多種語言的聖經經文！', 'Learn bible verses in multiple languages!')}</li>
-                    <li>{t('點擊單字時會有文字轉語音的朗讀功能，來加深您對經文背誦的印象。', 'Text to Speech verbal reading as you click the words to impress your memory on verse recitation.')}</li>
-                    <li>{t('透過 verserain，能支援近乎無限多的經文、經文組以及多種聖經譯本可以使用。', 'Through verserain, it supports virtually unlimited number of verses, verse sets, and multiple bible versions.')}</li>
-                    <li>{t('提供多種挑戰難度，無論是小孩還是成人都非常適合來挑戰自己的極限。', 'Multiple difficulty levels offered to be played by kids to adults.')}</li>
-                    <li>{t('挑戰模式有助於加強記憶同一個經文組中的多段相關經文。', 'Challenge mode helps to strengthen the memory of multiple related verses in the same verse set.')}</li>
-                    <li>{t('線上排行榜能激勵會眾、青年團契和小組成員一起參與遊玩、共同精進！', 'Online Leaderboard to motivate congregation, youth fellowships and small group members to participate and improve together!')}</li>
-                    <li><span dangerouslySetInnerHTML={{ __html: t("<strong>全新語音模式：</strong> 結合最先進的拼音模糊辨識技術，您可以直接開口背誦！即使發音不夠標準也能智慧通關，用語音大聲宣告神的話語，還能獲得額外的 50% 分數加成。", "<strong>New Voice Mode:</strong> Combining state-of-the-art fuzzy pinyin recognition, you can recite directly with your voice! Even with non-standard pronunciation, you can intelligently pass the level. Proclaim God's word loudly and gain an extra 50% score bonus.") }} /></li>
-                    <li><span dangerouslySetInnerHTML={{ __html: t("<strong>多人即時連線對戰：</strong> 支援創建專屬房間，讓全家大小或小組成員在各自的手機上，同步挑戰同一組經文，享受刺激的即時競技樂趣！", "<strong>Multiplayer Real-time Battle:</strong> Support creating private rooms, allowing family or group members to simultaneously challenge the same verses on their phones, enjoying the thrill of real-time competition!") }} /></li>
-                  </ul>
-
-                </div>
-              )}
+              {mainTab === 'about' && <AboutPage t={t} />}
 
             </div>
           </div>
