@@ -1430,7 +1430,10 @@ textarea {
   inset: 0;
   z-index: 2600;
   display: grid;
-  padding: max(0.75rem, env(safe-area-inset-top)) max(0.75rem, env(safe-area-inset-right)) max(0.75rem, env(safe-area-inset-bottom)) max(0.75rem, env(safe-area-inset-left));
+  /* Full bleed: the picture runs under the notch and the home indicator (no
+     black bars on a landscape iPhone); the safe-area insets go on the content
+     and the fixed buttons instead. */
+  padding: 0;
   background: #020617;
 }
 
@@ -1440,10 +1443,11 @@ textarea {
 
 .continuous-rain-scene,
 .continuous-rain-content {
-  min-height: calc(100dvh - max(1.5rem, env(safe-area-inset-top) + env(safe-area-inset-bottom)));
+  min-height: 100dvh;
 }
 
 .continuous-rain-scene {
+  border: 0;
   border-radius: 0;
 }
 
@@ -1454,7 +1458,11 @@ textarea {
   gap: clamp(0.65rem, 1.55vh, 1.1rem);
   /* 下方留白縮到很小:句子容器(flex:1)才會延伸到動作列之下,分頁能填到動作列上方、
      不浪費空間。動作列/字級鈕是絕對定位浮在底部,不需靠此 padding 讓位。 */
-  padding: clamp(2rem, 5.6vh, 4.2rem) clamp(1rem, 4vw, 3rem) clamp(1.5rem, 3vh, 2.5rem);
+  padding:
+    calc(clamp(2rem, 5.6vh, 4.2rem) + env(safe-area-inset-top))
+    calc(clamp(1rem, 4vw, 3rem) + env(safe-area-inset-right))
+    calc(clamp(1.5rem, 3vh, 2.5rem) + env(safe-area-inset-bottom))
+    calc(clamp(1rem, 4vw, 3rem) + env(safe-area-inset-left));
   overflow: hidden;
 }
 
@@ -1637,8 +1645,8 @@ textarea {
    per page. Font size is untouched (kept equal to portrait). */
 @media (orientation: landscape) and (max-height: 540px) {
   .continuous-rain-content {
-    padding-top: clamp(0.55rem, 2.4vh, 1.3rem);
-    padding-bottom: 3.1rem;
+    padding-top: calc(clamp(0.55rem, 2.4vh, 1.3rem) + env(safe-area-inset-top));
+    padding-bottom: calc(3.1rem + env(safe-area-inset-bottom));
     gap: clamp(0.3rem, 1vh, 0.6rem);
   }
 
