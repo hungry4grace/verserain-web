@@ -376,7 +376,7 @@ const MULTILANG_FULL_BOOK_ID_NORM = Object.fromEntries(
 // "요한1서" (digit) instead of "요한일서" (Sino-Korean numeral 일/이/삼).
 // normalizeBookKey can't collapse 일↔1 without a deeper numeral table, so
 // we list both forms explicitly.
-const KOREAN_NUMERIC_VARIANTS = {
+export const KOREAN_NUMERIC_VARIANTS = {
   '사무엘1서':9,'사무엘2서':10,'열왕기1':11,'열왕기2':12,
   '역대1':13,'역대2':14,'고린도1서':46,'고린도2서':47,
   '데살로니가1서':52,'데살로니가2서':53,
