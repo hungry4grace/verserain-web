@@ -202,3 +202,29 @@
   background: var(--color-danger); color: #fff; font-size: var(--fs-tiny); font-weight: 800;
   display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;
 }
+
+/* ── SearchPicker (src/ui/SearchPicker.jsx) ── */
+.ui-search-picker { position: relative; }
+.ui-search-picker__field { position: relative; }
+.ui-search-picker__icon { position: absolute; inset-inline-start: 12px; top: 50%; transform: translateY(-50%); color: var(--color-text-2); pointer-events: none; }
+.ui-search-picker__field input {
+  width: 100%; box-sizing: border-box; min-height: var(--tap-min); padding: 0 var(--space-3) 0 40px;
+  border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-surface);
+  color: var(--color-text); font-family: var(--control-font-family); font-size: var(--fs-body);
+}
+.ui-search-picker__field input:focus { outline: none; border-color: var(--color-primary); box-shadow: 0 0 0 3px var(--color-primary-soft); }
+.ui-search-picker__list {
+  position: absolute; z-index: 5; left: 0; right: 0; top: calc(100% + 4px);
+  max-height: min(60vh, 360px); overflow-y: auto; margin: 0; padding: var(--space-1) 0; list-style: none;
+  background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-md); box-shadow: var(--shadow-raised);
+}
+.ui-search-picker__option { display: flex; flex-direction: column; gap: 2px; padding: var(--space-2) var(--space-3); cursor: pointer; }
+.ui-search-picker__option[aria-selected="true"] { background: var(--color-primary-soft); }
+.ui-search-picker__empty { padding: var(--space-2) var(--space-3); color: var(--color-text-2); font-size: var(--fs-small); }
+.ui-search-picker__label { color: var(--color-text); font-weight: 600; overflow-wrap: anywhere; }
+.ui-search-picker__hint { color: var(--color-text-2); font-size: var(--fs-small); }
+.ui-search-picker__picked {
+  display: flex; align-items: center; gap: var(--space-3); padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-primary); border-radius: var(--radius-md); background: var(--color-primary-soft);
+}
+.ui-search-picker__text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }

@@ -1430,6 +1430,9 @@ export const he = {
   "全球玩家地圖：看看誰正在背經，雙擊房間直接加入": "מפת שחקנים עולמית: ראו מי משנן עכשיו, הקישו פעמיים על חדר כדי להצטרף",
   "看看大家的成績": "צפו בתוצאות של כולם",
   "參加或舉辦讀經比賽": "השתתפו בתחרות קריאה או ארגנו אחת",
+  "輸入經文組名稱或作者搜尋": "חיפוש לפי שם הסט או היוצר",
+  "找不到符合的經文組": "לא נמצאו סטים תואמים",
+  "還有 {n} 組，請輸入更多字縮小範圍": "עוד {n} — הקלידו עוד כדי לצמצם",
 };
 
 export const fa = {
@@ -2841,6 +2844,9 @@ export const fa = {
   "全球玩家地圖：看看誰正在背經，雙擊房間直接加入": "نقشهٔ جهانی بازیکنان: ببینید چه کسی الان در حال حفظ آیات است؛ برای پیوستن روی اتاق دو بار ضربه بزنید",
   "看看大家的成績": "امتیازهای همه را ببینید",
   "參加或舉辦讀經比賽": "در مسابقهٔ کتاب‌خوانی شرکت کنید یا آن را برگزار کنید",
+  "輸入經文組名稱或作者搜尋": "جستجو بر اساس نام مجموعه یا سازنده",
+  "找不到符合的經文組": "هیچ مجموعهٔ آیهٔ منطبقی پیدا نشد",
+  "還有 {n} 組，請輸入更多字縮小範圍": "{n} مورد دیگر — برای محدود کردن بیشتر تایپ کنید",
 };
 
 export const ar = {
@@ -4669,6 +4675,9 @@ export const ar = {
   "全球玩家地圖：看看誰正在背經，雙擊房間直接加入": "خريطة اللاعبين حول العالم: شاهد من يحفظ الآن، وانقر مرتين على غرفة للانضمام",
   "看看大家的成績": "شاهد نتائج الجميع",
   "參加或舉辦讀經比賽": "شارك في مسابقة قراءة أو نظّم واحدة",
+  "輸入經文組名稱或作者搜尋": "ابحث باسم المجموعة أو المؤلف",
+  "找不到符合的經文組": "لا توجد مجموعات آيات مطابقة",
+  "還有 {n} 組，請輸入更多字縮小範圍": "{n} أخرى — اكتب المزيد لتضييق النتائج",
 };
 
 export const ja = {
@@ -6068,6 +6077,9 @@ export const ja = {
   "全球玩家地圖：看看誰正在背經，雙擊房間直接加入": "世界のプレイヤーマップ：今どこで暗唱しているか見られます。ルームをダブルタップで参加",
   "看看大家的成績": "みんなの成績を見る",
   "參加或舉辦讀經比賽": "聖書朗読コンテストに参加・開催する",
+  "輸入經文組名稱或作者搜尋": "セット名または作成者で検索",
+  "找不到符合的經文組": "一致する聖句セットが見つかりません",
+  "還有 {n} 組，請輸入更多字縮小範圍": "ほかに {n} 件 — さらに入力して絞り込んでください",
 };
 
 export const ko = {
@@ -7465,6 +7477,9 @@ export const ko = {
   "全球玩家地圖：看看誰正在背經，雙擊房間直接加入": "전 세계 플레이어 지도: 지금 누가 암송 중인지 보고, 방을 두 번 탭하면 바로 참여",
   "看看大家的成績": "모두의 성적 보기",
   "參加或舉辦讀經比賽": "성경 읽기 대회에 참가하거나 열기",
+  "輸入經文組名稱或作者搜尋": "세트 이름이나 작성자로 검색",
+  "找不到符合的經文組": "일치하는 구절 세트가 없습니다",
+  "還有 {n} 組，請輸入更多字縮小範圍": "{n}개 더 있음 — 더 입력해서 범위를 좁히세요",
 };
 
 export const es = {
@@ -8878,6 +8893,9 @@ export const es = {
   "全球玩家地圖：看看誰正在背經，雙擊房間直接加入": "Mapa mundial de jugadores: mira quién está memorizando ahora; toca dos veces una sala para unirte",
   "看看大家的成績": "Mira los resultados de todos",
   "參加或舉辦讀經比賽": "Participa en un concurso de lectura o organiza uno",
+  "輸入經文組名稱或作者搜尋": "Busca por nombre del conjunto o autor",
+  "找不到符合的經文組": "No hay conjuntos de versículos que coincidan",
+  "還有 {n} 組，請輸入更多字縮小範圍": "{n} más — escribe más para acotar",
 };
 
 export const tr = {
@@ -10291,6 +10309,9 @@ export const tr = {
   "全球玩家地圖：看看誰正在背經，雙擊房間直接加入": "Dünya oyuncu haritası: şu an kimin ezberlediğini gör, katılmak için bir odaya çift dokun",
   "看看大家的成績": "Herkesin skorlarını gör",
   "參加或舉辦讀經比賽": "Okuma yarışmasına katıl ya da düzenle",
+  "輸入經文組名稱或作者搜尋": "Set adı veya yazara göre ara",
+  "找不到符合的經文組": "Eşleşen ayet seti bulunamadı",
+  "還有 {n} 組，請輸入更多字縮小範圍": "{n} tane daha — daraltmak için daha fazla yazın",
 };
 
 export const de = {
@@ -11704,6 +11725,9 @@ export const de = {
   "全球玩家地圖：看看誰正在背經，雙擊房間直接加入": "Weltkarte der Spieler: sieh, wer gerade auswendig lernt – tippe doppelt auf einen Raum, um beizutreten",
   "看看大家的成績": "Sieh dir die Ergebnisse aller an",
   "參加或舉辦讀經比賽": "Nimm an einem Lesewettbewerb teil oder richte einen aus",
+  "輸入經文組名稱或作者搜尋": "Nach Set-Name oder Autor suchen",
+  "找不到符合的經文組": "Keine passenden Versgruppen",
+  "還有 {n} 組，請輸入更多字縮小範圍": "{n} weitere – tippe mehr, um einzugrenzen",
 };
 
 export const my = {
@@ -13117,6 +13141,9 @@ export const my = {
   "全球玩家地圖：看看誰正在背經，雙擊房間直接加入": "ကမ္ဘာ့ကစားသမားမြေပုံ - ယခု မည်သူ အလွတ်ကျက်နေသည်ကို ကြည့်ပါ၊ အခန်းကို နှစ်ချက်နှိပ်၍ ဝင်ပါ",
   "看看大家的成績": "လူတိုင်း၏ ရမှတ်များကို ကြည့်ပါ",
   "參加或舉辦讀經比賽": "ကျမ်းစာဖတ်ပြိုင်ပွဲတွင် ပါဝင်ပါ သို့မဟုတ် ကျင်းပပါ",
+  "輸入經文組名稱或作者搜尋": "အစုအမည် သို့မဟုတ် ရေးသူဖြင့် ရှာပါ",
+  "找不到符合的經文組": "ကိုက်ညီသော ကျမ်းချက်အစု မတွေ့ပါ",
+  "還有 {n} 組，請輸入更多字縮小範圍": "နောက်ထပ် {n} ခု ရှိသည် — ကျဉ်းစေရန် ထပ်ရိုက်ပါ",
 };
 
 export const vi = {
@@ -14530,6 +14557,9 @@ export const vi = {
   "全球玩家地圖：看看誰正在背經，雙擊房間直接加入": "Bản đồ người chơi toàn cầu: xem ai đang học thuộc lòng, chạm hai lần vào phòng để tham gia",
   "看看大家的成績": "Xem điểm của mọi người",
   "參加或舉辦讀經比賽": "Tham gia hoặc tổ chức cuộc thi đọc Kinh Thánh",
+  "輸入經文組名稱或作者搜尋": "Tìm theo tên bộ hoặc tác giả",
+  "找不到符合的經文組": "Không tìm thấy bộ câu Kinh Thánh phù hợp",
+  "還有 {n} 組，請輸入更多字縮小範圍": "Còn {n} bộ — gõ thêm để thu hẹp",
 };
 
 export const id = {
@@ -16171,6 +16201,9 @@ export const id = {
   "全球玩家地圖：看看誰正在背經，雙擊房間直接加入": "Peta pemain dunia: lihat siapa yang sedang menghafal, ketuk dua kali sebuah ruang untuk bergabung",
   "看看大家的成績": "Lihat skor semua orang",
   "參加或舉辦讀經比賽": "Ikuti atau adakan lomba membaca Alkitab",
+  "輸入經文組名稱或作者搜尋": "Cari berdasarkan nama set atau penulis",
+  "找不到符合的經文組": "Tidak ada set ayat yang cocok",
+  "還有 {n} 組，請輸入更多字縮小範圍": "{n} lagi — ketik lebih banyak untuk mempersempit",
 };
 
 export const ms = {
@@ -18016,6 +18049,9 @@ export const ms = {
   "全球玩家地圖：看看誰正在背經，雙擊房間直接加入": "Peta pemain sedunia: lihat siapa yang sedang menghafal, ketik dua kali pada bilik untuk menyertai",
   "看看大家的成績": "Lihat skor semua orang",
   "參加或舉辦讀經比賽": "Sertai atau anjurkan pertandingan membaca Alkitab",
+  "輸入經文組名稱或作者搜尋": "Cari mengikut nama set atau pengarang",
+  "找不到符合的經文組": "Tiada set ayat yang sepadan",
+  "還有 {n} 組，請輸入更多字縮小範圍": "{n} lagi — taip lagi untuk mengecilkan carian",
 };
 
 export const zhcn = {
@@ -19780,6 +19816,9 @@ export const zhcn = {
   "全球玩家地圖：看看誰正在背經，雙擊房間直接加入": "全球玩家地图：看看谁正在背经，双击房间直接加入",
   "看看大家的成績": "看看大家的成绩",
   "參加或舉辦讀經比賽": "参加或举办读经比赛",
+  "輸入經文組名稱或作者搜尋": "输入经文组名称或作者搜索",
+  "找不到符合的經文組": "找不到符合的经文组",
+  "還有 {n} 組，請輸入更多字縮小範圍": "还有 {n} 组，请输入更多字缩小范围",
 };
 
 export const pt = {
@@ -20916,6 +20955,10 @@ export const pt = {
   "全球玩家地圖：看看誰正在背經，雙擊房間直接加入": "Mapa mundial de jogadores: veja quem está memorizando agora; toque duas vezes numa sala para entrar",
   "看看大家的成績": "Veja os resultados de todos",
   "參加或舉辦讀經比賽": "Participe ou organize um concurso de leitura",
+  "輸入經文組名稱或作者搜尋": "Pesquise pelo nome do conjunto ou autor",
+  "找不到符合的經文組": "Nenhum conjunto de versículos encontrado",
+  "還有 {n} 組，請輸入更多字縮小範圍": "Mais {n} — digite mais para filtrar",
+  "更換": "Trocar",
 };
 
 export const fr = {
@@ -22052,6 +22095,10 @@ export const fr = {
   "全球玩家地圖：看看誰正在背經，雙擊房間直接加入": "Carte mondiale des joueurs : vois qui mémorise en ce moment, touche deux fois un salon pour le rejoindre",
   "看看大家的成績": "Voir les scores de tous",
   "參加或舉辦讀經比賽": "Participer à un concours de lecture ou en organiser un",
+  "輸入經文組名稱或作者搜尋": "Rechercher par nom de série ou auteur",
+  "找不到符合的經文組": "Aucune série de versets correspondante",
+  "還有 {n} 組，請輸入更多字縮小範圍": "{n} de plus — tapez davantage pour affiner",
+  "更換": "Changer",
 };
 
 export const ru = {
@@ -23188,6 +23235,10 @@ export const ru = {
   "全球玩家地圖：看看誰正在背經，雙擊房間直接加入": "Карта игроков по всему миру: смотрите, кто сейчас учит стихи; дважды нажмите на комнату, чтобы присоединиться",
   "看看大家的成績": "Посмотреть результаты всех",
   "參加或舉辦讀經比賽": "Участвуйте в конкурсе чтения или проведите свой",
+  "輸入經文組名稱或作者搜尋": "Поиск по названию набора или автору",
+  "找不到符合的經文組": "Подходящих наборов стихов не найдено",
+  "還有 {n} 組，請輸入更多字縮小範圍": "Ещё {n} — введите больше, чтобы сузить поиск",
+  "更換": "Сменить",
 };
 
 export const hi = {
@@ -24324,6 +24375,10 @@ export const hi = {
   "全球玩家地圖：看看誰正在背經，雙擊房間直接加入": "विश्व खिलाड़ी मानचित्र: देखें अभी कौन वचन याद कर रहा है, शामिल होने के लिए किसी रूम पर दो बार टैप करें",
   "看看大家的成績": "सबके स्कोर देखें",
   "參加或舉辦讀經比賽": "पठन प्रतियोगिता में भाग लें या आयोजित करें",
+  "輸入經文組名稱或作者搜尋": "सेट के नाम या लेखक से खोजें",
+  "找不到符合的經文組": "कोई मेल खाता पद-सेट नहीं मिला",
+  "還有 {n} 組，請輸入更多字縮小範圍": "{n} और — सीमित करने के लिए और टाइप करें",
+  "更換": "बदलें",
 };
 
 // Khmer (Cambodian) — full UI coverage, machine-translated in bulk from the
@@ -26091,6 +26146,10 @@ export const km = {
   "看看大家的成績": "មើលពិន្ទុរបស់អ្នកទាំងអស់គ្នា",
   "參加或舉辦讀經比賽": "ចូលរួម ឬរៀបចំការប្រកួតអានព្រះគម្ពីរ",
   "地圖": "ផែនទី",
+  "輸入經文組名稱或作者搜尋": "ស្វែងរកតាមឈ្មោះឈុត ឬអ្នកនិពន្ធ",
+  "找不到符合的經文組": "រកមិនឃើញឈុតខគម្ពីរដែលត្រូវគ្នា",
+  "還有 {n} 組，請輸入更多字縮小範圍": "នៅសល់ {n} ទៀត — វាយបន្ថែមដើម្បីបង្រួម",
+  "更換": "ប្ដូរ",
 };
 
 const I18N_FILLINS = { he, fa, ar, ja, ko, es, tr, de, my, vi, id, ms, zhcn, pt, fr, ru, hi, km };

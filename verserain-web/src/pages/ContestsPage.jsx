@@ -1,5 +1,6 @@
 // The 讀經比賽 (contests) tab — moved out of App.jsx unchanged (UI/UX 第 4 階段).
 import { BookOpen } from 'lucide-react';
+import { SearchPicker } from '../ui';
 
 export default function ContestsPage({ t, acceptContestChallengeAction, claimContestCompletionAction, contestActionBusy, contestCreateBusy, contestCreateDraft, contestFocus, contestLeaderboards, contestMine, contestNoticeText, contestProgress, contests, createContest, joinContestAction, loadContestLeaderboard, myPlaces, poolStatusBadge, safeActiveSets, setContestCreateDraft, setMainTab, setSelectedSetId, userEmail }) {
   const card = { background: '#fff', border: '1px solid #e2e8f0', borderRadius: 12, padding: '1rem 1.2rem', marginBottom: '1rem' };
@@ -134,10 +135,13 @@ export default function ContestsPage({ t, acceptContestChallengeAction, claimCon
           </select>
           <div style={{ color: '#94a3b8', fontSize: '0.78rem', marginTop: 4 }}>{t('同一個教會／機構可以建立多個活動（最多 5 個進行中）。', 'One church / organisation can run several contests (up to 5 open at once).')}</div>
           <label style={label}>{t('經文組', 'Verse Set')}</label>
-          <select value={contestCreateDraft.setId} onChange={e => setContestCreateDraft(d => ({ ...d, setId: e.target.value }))} style={field}>
-            <option value="">{t('請選擇', 'Choose')}</option>
-            {safeActiveSets.map(s => <option key={s.id} value={s.id}>{s.title}（{(s.verses || []).length} {t('節', 'verses')}）</option>)}
-          </select>
+          <SearchPicker
+            testId="contest-set-picker"
+            items={safeActiveSets.map(s => ({ value: s.id, label: s.title, hint: [`${(s.verses || []).length} ${t('節', 'verses')}`, s.authorName].filter(Boolean).join(' · ') }))}
+            value={contestCreateDraft.setId}
+            onChange={(id) => setContestCreateDraft(d => ({ ...d, setId: id }))}
+            labels={{ placeholder: t('輸入經文組名稱或作者搜尋', 'Search by set name or author'), empty: t('找不到符合的經文組', 'No matching verse sets'), change: t('更換', 'Change'), more: t('還有 {n} 組，請輸入更多字縮小範圍', '{n} more — type more to narrow it down') }}
+          />
           <label style={label}>{t('活動名稱', 'Contest name')}</label>
           <input type="text" maxLength={60} value={contestCreateDraft.name} onChange={e => setContestCreateDraft(d => ({ ...d, name: e.target.value }))} placeholder={t('例如：互惠經濟讀經比賽', 'e.g. Mutual Economy reading contest')} style={field} />
           <label style={label}>{t('活動說明', 'Description')}</label>
