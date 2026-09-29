@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { expandSameChapterRefs } from './lib/expandSameChapterRefs.js';
 import { toSpeechText } from './lib/speechText.js';
 import { Play, Pause, RotateCcw, Lightbulb, Heart, Zap, Trophy, Crown, Star, Home, XCircle, Headphones, Music, VolumeX, Search, Share2, Dices, Mic, MicOff, Users, CloudRain, Info, Edit, TreePine, Gamepad2, Map, Settings, Library, Volume2, Shuffle, Swords, ShoppingBasket, Apple, Mail, Lock, Sprout, Leaf, Hourglass, Frown, X, Camera, Square, Copy, ArrowRightLeft, MessageCircle, Languages, ChevronUp, ChevronDown, Check, Gift, Store, Ticket, MapPin, BookOpen, Plus, Save, Trash2, UserRound } from 'lucide-react';
-import { UiHost, Button, IconButton, ListRow, ListGroup, toast, confirmDialog, alertDialog } from './ui';
+import { UiHost, Button, IconButton, ListRow, ListGroup, useBackToClose, toast, confirmDialog, alertDialog } from './ui';
 import BottomNav from './BottomNav.jsx';
 import { navTabOf } from './navTabs.js';
 import TodayPage from './TodayPage.jsx';
@@ -24406,6 +24406,18 @@ export default function App() {
     setMultiplayerRoomId(null);
     setMultiplayerState(null);
   };
+  // The phone's Back closes these hand-made overlays too (src/ui Modal does it
+  // for itself).
+  useBackToClose(!!showLoginModal, () => setShowLoginModal(false));
+  useBackToClose(!!qrShareModal, () => setQrShareModal(null));
+  useBackToClose(showFruitInfo, () => setShowFruitInfo(false));
+  useBackToClose(showLevelInfo, () => setShowLevelInfo(false));
+  useBackToClose(!!translateModal, () => setTranslateModal(null));
+  useBackToClose(!!playOrderChooser, () => setPlayOrderChooser(null));
+  useBackToClose(showPushModal, () => setShowPushModal(false));
+  useBackToClose(!!authorSetsModal, () => setAuthorSetsModal(null));
+  useBackToClose(showEncouragePanel, () => setShowEncouragePanel(false));
+  useBackToClose(showBindInviterModal, () => setShowBindInviterModal(false));
   const routeStateRef = useRef({});
   routeStateRef.current = { mainTab, selectedSetId, editing: !!editingCustomSet, listening: !!continuousRainSet, playing: gameState !== 'menu', roomId: multiplayerRoomId };
   const applyingHistoryRef = useRef(false);
@@ -25762,7 +25774,7 @@ export default function App() {
                     verserain
                   </div>
                   <div className="app-brand-version" style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', marginTop: '4px', marginLeft: '2px' }}>
-                    v4.0.130
+                    v4.0.131
                   </div>
                 </div>
                 <div ref={langPickerRef} className="app-lang-control" style={{ position: 'relative' }}>

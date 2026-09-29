@@ -1,17 +1,21 @@
 // Modal — the shared dialog frame: title on the left, close on the top right,
-// closes on the scrim, on Esc and on the ✕. Portalled to the app's root
+// closes on the scrim, on Esc, on the ✕ and on the phone's Back. Portalled to the app's root
 // wrapper ([data-ui-root], which carries lang / dir / the per-language font
 // stack) so no parent overflow or z-index can clip it; <body> as a fallback.
 import { useEffect, useId, useLayoutEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 import IconButton from './IconButton.jsx';
+import useBackToClose from './useBackToClose.js';
 
 export default function Modal({ open, title, onClose, closeLabel = 'Close', footer = null, children, role = 'dialog', dismissible = true, className = '', testId }) {
   const titleId = useId();
   const boxRef = useRef(null);
   const onCloseRef = useRef(onClose);
   useLayoutEffect(() => { onCloseRef.current = onClose; });
+
+  // The phone's Back closes the dialog.
+  useBackToClose(open && dismissible, () => onCloseRef.current?.());
 
   useEffect(() => {
     if (!open) return undefined;
