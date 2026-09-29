@@ -160,8 +160,14 @@
   cursor: pointer; -webkit-tap-highlight-color: transparent; padding: var(--space-1) 2px;
 }
 .app-bottom-nav__tab > span {
-  max-width: 100%; overflow: hidden; text-align: center; overflow-wrap: anywhere;
+  max-width: 100%; overflow: hidden; text-align: center;
+  /* Six tabs are ~60px wide on a phone: wrap between words (and keep CJK
+     words together), hyphenate a long single word, never split mid-letter. */
+  word-break: keep-all; overflow-wrap: break-word; hyphens: auto; letter-spacing: -0.01em;
   display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+}
+@media (max-width: 420px) {
+  .app-bottom-nav__tab { font-size: 11px; padding-inline: 1px; }
 }
 .app-bottom-nav__tab[aria-current="page"] { color: var(--color-primary-strong); font-weight: 800; }
 .app-bottom-nav__tab:focus-visible { outline: 3px solid var(--color-primary); outline-offset: -3px; border-radius: var(--radius-sm); }

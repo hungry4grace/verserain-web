@@ -1542,7 +1542,7 @@ export default function App() {
   // Bottom-bar tabs → the page each one opens. Tapping the tab you are on
   // goes back to its top level (e.g. the set list from inside a set).
   const selectNavTab = (tab) => {
-    const target = { today: 'lobby', sets: 'versesets', garden: 'garden', play: 'multiplayer', me: 'advanced' }[tab] || 'lobby';
+    const target = { today: 'lobby', sets: 'versesets', garden: 'garden', play: 'multiplayer', map: 'map', me: 'advanced' }[tab] || 'lobby';
     if (tab === 'sets') setSelectedSetId(null);
     setMainTab(target);
     const el = menuScrollRef.current;
@@ -7232,7 +7232,7 @@ export default function App() {
                     verserain
                   </div>
                   <div className="app-brand-version" style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', marginTop: '4px', marginLeft: '2px' }}>
-                    v4.0.149
+                    v4.0.150
                   </div>
                 </div>
                 <div ref={langPickerRef} className="app-lang-control" style={{ position: 'relative' }}>

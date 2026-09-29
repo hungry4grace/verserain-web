@@ -1,6 +1,6 @@
 // The 一起玩 (multiplayer) tab — moved out of App.jsx unchanged (UI/UX 第 4 階段).
 import { BookOpen, CloudRain, Crown, Dices, Headphones, Heart, Info, Library, MapPin, Search, Star, Trophy, Users, X, XCircle, Zap } from 'lucide-react';
-import { Button } from '../ui';
+import { Button, ListGroup, ListRow } from '../ui';
 import { QRCodeSVG } from 'qrcode.react';
 import { TEAM_OPTIONS, canStartTeamMatch, createRoomCode, getRoomColor, getTeamById, sanitizeRoomCode } from '../lib/rooms.js';
 import { buildPublicShareUrl } from '../lib/routes.js';
@@ -10,10 +10,12 @@ export default function MultiplayerPage({ t, activeVerseSets, customVerseSets, f
   return (
     <div style={{ backgroundColor: '#ffffff', borderRadius: '8px', border: '1px solid #cbd5e1', padding: '2rem', boxShadow: '0 1px 3px rgba(0,0,0,0.05)', textAlign: 'center' }}>
       {!multiplayerRoomId && (
-        <div data-testid="play-links" style={{ display: 'flex', gap: 'var(--space-2)', flexWrap: 'wrap', justifyContent: 'center', marginBottom: 'var(--space-5)' }}>
-          <Button variant="secondary" size="sm" icon={<MapPin size={18} />} onClick={() => setMainTab('map')}>{t('誰在玩', "Who's Playing")}</Button>
-          <Button variant="secondary" size="sm" icon={<Trophy size={18} />} onClick={() => { setMainTab('leaderboard'); fetchGlobalLeaderboard(); }}>{t('排行榜', 'Leaderboard')}</Button>
-          <Button variant="secondary" size="sm" icon={<BookOpen size={18} />} onClick={() => setMainTab('contests')}>{t('讀經比賽', 'Reading contest')}</Button>
+        <div data-testid="play-links" style={{ textAlign: 'left', marginBottom: 'var(--space-5)' }}>
+          <ListGroup>
+            <ListRow testId="play-map" icon={<MapPin size={24} />} iconColor="#0ea5e9" title={t('誰在玩', "Who's Playing")} desc={t('全球玩家地圖：看看誰正在背經，雙擊房間直接加入', 'Global player map: see who is memorising now, double-tap a room to join')} onClick={() => setMainTab('map')} />
+            <ListRow testId="play-leaderboard" icon={<Trophy size={24} />} iconColor="#f59e0b" title={t('排行榜', 'Leaderboard')} desc={t('看看大家的成績', "See everyone's scores")} onClick={() => { setMainTab('leaderboard'); fetchGlobalLeaderboard(); }} />
+            <ListRow testId="play-contests" icon={<BookOpen size={24} />} iconColor="#16a34a" title={t('讀經比賽', 'Reading contest')} desc={t('參加或舉辦讀經比賽', 'Join or host a reading contest')} onClick={() => setMainTab('contests')} />
+          </ListGroup>
         </div>
       )}
       <h2 style={{ marginTop: 0, marginBottom: '1.5rem', fontFamily: 'var(--app-font-family)', color: '#8b5cf6' }}>{(multiplayerState?.matchType === 'individual' || multiplayerRoomMode === 'individual') ? t("邀人對戰", "Invite to a duel") : t("多人遊戲", "Multiplayer")}</h2>

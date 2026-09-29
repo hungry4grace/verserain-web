@@ -1,9 +1,9 @@
-// BottomNav — the fixed five-tab bar (UI/UX 第 2 階段). Every screen of the
+// BottomNav — the fixed tab bar (UI/UX 第 2 階段). Every screen of the
 // app belongs to exactly one tab, so the bar never changes shape:
-//   今日 · 經文組 · 園子 · 一起玩 · 我的
+//   今日 · 經文組 · 園子 · 一起玩 · 地圖 · 我的
 // Old routes (#lobby, #versesets, #map…) keep working — each one simply
 // lights up the tab it lives under (navTabs.js).
-import { Sun, Library, TreePine, Users, UserRound } from 'lucide-react';
+import { Sun, Library, TreePine, Users, Map, UserRound } from 'lucide-react';
 
 export default function BottomNav({ t, active, onSelect }) {
   const items = [
@@ -11,6 +11,7 @@ export default function BottomNav({ t, active, onSelect }) {
     { id: 'sets', Icon: Library, label: t('經文組', 'Sets') },
     { id: 'garden', Icon: TreePine, label: t('園子', 'Garden') },
     { id: 'play', Icon: Users, label: t('一起玩', 'Play') },
+    { id: 'map', Icon: Map, label: t('地圖', 'Map') },
     { id: 'me', Icon: UserRound, label: t('我的', 'Me') },
   ];
   return (

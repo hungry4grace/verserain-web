@@ -1427,6 +1427,9 @@ export const he = {
   "找到 {n} 段相關說明": "סעיפים שנמצאו: {n}",
   "找不到「{q}」，換個字試試。": "לא נמצא דבר עבור «{q}». נסו מילה אחרת.",
   "目錄": "תוכן עניינים",
+  "全球玩家地圖：看看誰正在背經，雙擊房間直接加入": "מפת שחקנים עולמית: ראו מי משנן עכשיו, הקישו פעמיים על חדר כדי להצטרף",
+  "看看大家的成績": "צפו בתוצאות של כולם",
+  "參加或舉辦讀經比賽": "השתתפו בתחרות קריאה או ארגנו אחת",
 };
 
 export const fa = {
@@ -2835,6 +2838,9 @@ export const fa = {
   "找到 {n} 段相關說明": "بخش‌های یافت‌شده: {n}",
   "找不到「{q}」，換個字試試。": "چیزی برای «{q}» پیدا نشد. واژهٔ دیگری را امتحان کنید.",
   "目錄": "فهرست مطالب",
+  "全球玩家地圖：看看誰正在背經，雙擊房間直接加入": "نقشهٔ جهانی بازیکنان: ببینید چه کسی الان در حال حفظ آیات است؛ برای پیوستن روی اتاق دو بار ضربه بزنید",
+  "看看大家的成績": "امتیازهای همه را ببینید",
+  "參加或舉辦讀經比賽": "در مسابقهٔ کتاب‌خوانی شرکت کنید یا آن را برگزار کنید",
 };
 
 export const ar = {
@@ -4660,6 +4666,9 @@ export const ar = {
   "找到 {n} 段相關說明": "الأقسام التي وُجدت: {n}",
   "找不到「{q}」，換個字試試。": "لا نتائج لـ «{q}». جرّب كلمة أخرى.",
   "目錄": "المحتويات",
+  "全球玩家地圖：看看誰正在背經，雙擊房間直接加入": "خريطة اللاعبين حول العالم: شاهد من يحفظ الآن، وانقر مرتين على غرفة للانضمام",
+  "看看大家的成績": "شاهد نتائج الجميع",
+  "參加或舉辦讀經比賽": "شارك في مسابقة قراءة أو نظّم واحدة",
 };
 
 export const ja = {
@@ -6056,6 +6065,9 @@ export const ja = {
   "找到 {n} 段相關說明": "該当セクション：{n} 件",
   "找不到「{q}」，換個字試試。": "「{q}」は見つかりませんでした。別の言葉で試してください。",
   "目錄": "目次",
+  "全球玩家地圖：看看誰正在背經，雙擊房間直接加入": "世界のプレイヤーマップ：今どこで暗唱しているか見られます。ルームをダブルタップで参加",
+  "看看大家的成績": "みんなの成績を見る",
+  "參加或舉辦讀經比賽": "聖書朗読コンテストに参加・開催する",
 };
 
 export const ko = {
@@ -7450,6 +7462,9 @@ export const ko = {
   "找到 {n} 段相關說明": "찾은 섹션: {n}개",
   "找不到「{q}」，換個字試試。": "「{q}」에 대한 결과가 없습니다. 다른 단어로 찾아 보세요.",
   "目錄": "목차",
+  "全球玩家地圖：看看誰正在背經，雙擊房間直接加入": "전 세계 플레이어 지도: 지금 누가 암송 중인지 보고, 방을 두 번 탭하면 바로 참여",
+  "看看大家的成績": "모두의 성적 보기",
+  "參加或舉辦讀經比賽": "성경 읽기 대회에 참가하거나 열기",
 };
 
 export const es = {
@@ -8860,6 +8875,9 @@ export const es = {
   "找到 {n} 段相關說明": "Secciones encontradas: {n}",
   "找不到「{q}」，換個字試試。": "No hay resultados para «{q}». Prueba con otra palabra.",
   "目錄": "Contenido",
+  "全球玩家地圖：看看誰正在背經，雙擊房間直接加入": "Mapa mundial de jugadores: mira quién está memorizando ahora; toca dos veces una sala para unirte",
+  "看看大家的成績": "Mira los resultados de todos",
+  "參加或舉辦讀經比賽": "Participa en un concurso de lectura o organiza uno",
 };
 
 export const tr = {
@@ -10270,6 +10288,9 @@ export const tr = {
   "找到 {n} 段相關說明": "Bulunan bölüm: {n}",
   "找不到「{q}」，換個字試試。": "«{q}» için sonuç yok. Başka bir kelime deneyin.",
   "目錄": "İçindekiler",
+  "全球玩家地圖：看看誰正在背經，雙擊房間直接加入": "Dünya oyuncu haritası: şu an kimin ezberlediğini gör, katılmak için bir odaya çift dokun",
+  "看看大家的成績": "Herkesin skorlarını gör",
+  "參加或舉辦讀經比賽": "Okuma yarışmasına katıl ya da düzenle",
 };
 
 export const de = {
@@ -11680,6 +11701,9 @@ export const de = {
   "找到 {n} 段相關說明": "Gefundene Abschnitte: {n}",
   "找不到「{q}」，換個字試試。": "Nichts gefunden für „{q}“. Versuch ein anderes Wort.",
   "目錄": "Inhalt",
+  "全球玩家地圖：看看誰正在背經，雙擊房間直接加入": "Weltkarte der Spieler: sieh, wer gerade auswendig lernt – tippe doppelt auf einen Raum, um beizutreten",
+  "看看大家的成績": "Sieh dir die Ergebnisse aller an",
+  "參加或舉辦讀經比賽": "Nimm an einem Lesewettbewerb teil oder richte einen aus",
 };
 
 export const my = {
@@ -13090,6 +13114,9 @@ export const my = {
   "找到 {n} 段相關說明": "တွေ့ရှိသည့်အပိုင်း- {n}",
   "找不到「{q}」，換個字試試。": "«{q}» ကို မတွေ့ပါ။ အခြားစကားလုံးဖြင့် ရှာကြည့်ပါ။",
   "目錄": "မာတိကာ",
+  "全球玩家地圖：看看誰正在背經，雙擊房間直接加入": "ကမ္ဘာ့ကစားသမားမြေပုံ - ယခု မည်သူ အလွတ်ကျက်နေသည်ကို ကြည့်ပါ၊ အခန်းကို နှစ်ချက်နှိပ်၍ ဝင်ပါ",
+  "看看大家的成績": "လူတိုင်း၏ ရမှတ်များကို ကြည့်ပါ",
+  "參加或舉辦讀經比賽": "ကျမ်းစာဖတ်ပြိုင်ပွဲတွင် ပါဝင်ပါ သို့မဟုတ် ကျင်းပပါ",
 };
 
 export const vi = {
@@ -14500,6 +14527,9 @@ export const vi = {
   "找到 {n} 段相關說明": "Số mục tìm thấy: {n}",
   "找不到「{q}」，換個字試試。": "Không tìm thấy «{q}». Hãy thử từ khác.",
   "目錄": "Mục lục",
+  "全球玩家地圖：看看誰正在背經，雙擊房間直接加入": "Bản đồ người chơi toàn cầu: xem ai đang học thuộc lòng, chạm hai lần vào phòng để tham gia",
+  "看看大家的成績": "Xem điểm của mọi người",
+  "參加或舉辦讀經比賽": "Tham gia hoặc tổ chức cuộc thi đọc Kinh Thánh",
 };
 
 export const id = {
@@ -16138,6 +16168,9 @@ export const id = {
   "找到 {n} 段相關說明": "Bagian ditemukan: {n}",
   "找不到「{q}」，換個字試試。": "«{q}» tidak ditemukan. Coba kata lain.",
   "目錄": "Daftar isi",
+  "全球玩家地圖：看看誰正在背經，雙擊房間直接加入": "Peta pemain dunia: lihat siapa yang sedang menghafal, ketuk dua kali sebuah ruang untuk bergabung",
+  "看看大家的成績": "Lihat skor semua orang",
+  "參加或舉辦讀經比賽": "Ikuti atau adakan lomba membaca Alkitab",
 };
 
 export const ms = {
@@ -17980,6 +18013,9 @@ export const ms = {
   "找到 {n} 段相關說明": "Bahagian ditemui: {n}",
   "找不到「{q}」，換個字試試。": "«{q}» tidak ditemui. Cuba perkataan lain.",
   "目錄": "Kandungan",
+  "全球玩家地圖：看看誰正在背經，雙擊房間直接加入": "Peta pemain sedunia: lihat siapa yang sedang menghafal, ketik dua kali pada bilik untuk menyertai",
+  "看看大家的成績": "Lihat skor semua orang",
+  "參加或舉辦讀經比賽": "Sertai atau anjurkan pertandingan membaca Alkitab",
 };
 
 export const zhcn = {
@@ -19741,6 +19777,9 @@ export const zhcn = {
   "找到 {n} 段相關說明": "找到 {n} 段相关说明",
   "找不到「{q}」，換個字試試。": "找不到「{q}」，换个字试试。",
   "目錄": "目录",
+  "全球玩家地圖：看看誰正在背經，雙擊房間直接加入": "全球玩家地图：看看谁正在背经，双击房间直接加入",
+  "看看大家的成績": "看看大家的成绩",
+  "參加或舉辦讀經比賽": "参加或举办读经比赛",
 };
 
 export const pt = {
@@ -20874,6 +20913,9 @@ export const pt = {
   "找到 {n} 段相關說明": "Seções encontradas: {n}",
   "找不到「{q}」，換個字試試。": "Nada encontrado para «{q}». Tente outra palavra.",
   "目錄": "Sumário",
+  "全球玩家地圖：看看誰正在背經，雙擊房間直接加入": "Mapa mundial de jogadores: veja quem está memorizando agora; toque duas vezes numa sala para entrar",
+  "看看大家的成績": "Veja os resultados de todos",
+  "參加或舉辦讀經比賽": "Participe ou organize um concurso de leitura",
 };
 
 export const fr = {
@@ -22007,6 +22049,9 @@ export const fr = {
   "找到 {n} 段相關說明": "Sections trouvées : {n}",
   "找不到「{q}」，換個字試試。": "Aucun résultat pour « {q} ». Essayez un autre mot.",
   "目錄": "Sommaire",
+  "全球玩家地圖：看看誰正在背經，雙擊房間直接加入": "Carte mondiale des joueurs : vois qui mémorise en ce moment, touche deux fois un salon pour le rejoindre",
+  "看看大家的成績": "Voir les scores de tous",
+  "參加或舉辦讀經比賽": "Participer à un concours de lecture ou en organiser un",
 };
 
 export const ru = {
@@ -23140,6 +23185,9 @@ export const ru = {
   "找到 {n} 段相關說明": "Найдено разделов: {n}",
   "找不到「{q}」，換個字試試。": "По запросу «{q}» ничего не найдено. Попробуйте другое слово.",
   "目錄": "Содержание",
+  "全球玩家地圖：看看誰正在背經，雙擊房間直接加入": "Карта игроков по всему миру: смотрите, кто сейчас учит стихи; дважды нажмите на комнату, чтобы присоединиться",
+  "看看大家的成績": "Посмотреть результаты всех",
+  "參加或舉辦讀經比賽": "Участвуйте в конкурсе чтения или проведите свой",
 };
 
 export const hi = {
@@ -24273,6 +24321,9 @@ export const hi = {
   "找到 {n} 段相關說明": "मिले अनुभाग: {n}",
   "找不到「{q}」，換個字試試。": "«{q}» नहीं मिला। कोई दूसरा शब्द आज़माएँ।",
   "目錄": "विषय-सूची",
+  "全球玩家地圖：看看誰正在背經，雙擊房間直接加入": "विश्व खिलाड़ी मानचित्र: देखें अभी कौन वचन याद कर रहा है, शामिल होने के लिए किसी रूम पर दो बार टैप करें",
+  "看看大家的成績": "सबके स्कोर देखें",
+  "參加或舉辦讀經比賽": "पठन प्रतियोगिता में भाग लें या आयोजित करें",
 };
 
 // Khmer (Cambodian) — full UI coverage, machine-translated in bulk from the
@@ -26036,6 +26087,10 @@ export const km = {
   "找到 {n} 段相關說明": "ផ្នែកដែលរកឃើញ៖ {n}",
   "找不到「{q}」，換個字試試。": "រកមិនឃើញ「{q}」ទេ សូមសាកពាក្យផ្សេង។",
   "目錄": "មាតិកា",
+  "全球玩家地圖：看看誰正在背經，雙擊房間直接加入": "ផែនទីអ្នកលេងទូទាំងពិភពលោក៖ មើលថាអ្នកណាកំពុងទន្ទេញ ចុចពីរដងលើបន្ទប់ដើម្បីចូលរួម",
+  "看看大家的成績": "មើលពិន្ទុរបស់អ្នកទាំងអស់គ្នា",
+  "參加或舉辦讀經比賽": "ចូលរួម ឬរៀបចំការប្រកួតអានព្រះគម្ពីរ",
+  "地圖": "ផែនទី",
 };
 
 const I18N_FILLINS = { he, fa, ar, ja, ko, es, tr, de, my, vi, id, ms, zhcn, pt, fr, ru, hi, km };
