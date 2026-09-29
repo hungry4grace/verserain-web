@@ -1947,3 +1947,8 @@ textarea {
 }
 .vr-contest-halo { animation: vr-contest-pulse 2.2s ease-out infinite; }
 @media (prefers-reduced-motion: reduce) { .vr-contest-halo { animation: none; opacity: 0.6; } }
+
+/* Guest nickname next to 登入: no room for it beside the wordmark on phones. */
+@media (max-width: 520px) {
+  .app-guest-name { display: none; }
+}
