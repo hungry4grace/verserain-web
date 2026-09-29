@@ -2092,11 +2092,20 @@ html.elder-mode .versesets-table-card td { padding-left: 0.35rem !important; pad
   border-right: 0;
   border-radius: var(--radius-md) 0 0 var(--radius-md);
 }
+.yt-bgm-dock.is-free { border-radius: var(--radius-md); }
 .yt-bgm-dock__bar {
   display: flex;
   align-items: center;
   gap: 2px;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
 }
+.yt-bgm-dock.is-dragging .yt-bgm-dock__bar { cursor: grabbing; }
+/* The video is a cross-origin iframe: let the pointer pass over it mid-drag. */
+.yt-bgm-dock.is-dragging iframe { pointer-events: none; }
+.yt-bgm-dock__grip { flex: none; opacity: 0.7; margin-inline-start: 2px; }
 .yt-bgm-dock__title {
   flex: 1;
   min-width: 0;
