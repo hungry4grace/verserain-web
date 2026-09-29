@@ -6,6 +6,7 @@ import { UiHost, Button, IconButton, ListRow, ListGroup, toast, confirmDialog, a
 import BottomNav from './BottomNav.jsx';
 import { navTabOf } from './navTabs.js';
 import TodayPage from './TodayPage.jsx';
+import SettingsPage from './SettingsPage.jsx';
 import { CATALOG as VOUCHER_CATALOG, DEFAULT_VALUE as VOUCHER_DEFAULTS } from '../api/_lib/rewardCatalog.js';
 import confetti from 'canvas-confetti';
 import usePartySocket from 'partysocket/react';
@@ -746,7 +747,7 @@ function buildPublicShareUrl(path = '/', params = {}) {
 // push one history entry per step; popstate applies the hash back to state.
 // Only the query string carries share links (?listenSet= …) — those are
 // consumed and scrubbed as before, and every scrub must keep the hash.
-const ROUTE_TABS = ['lobby', 'versesets', 'custom_verses', 'multiplayer', 'daily_verse', 'advanced', 'garden', 'search', 'map', 'manual', 'about', 'accessible', 'bilingual_rain', 'leaderboard', 'rewards_admin', 'sponsors', 'donate', 'sponsor', 'merchant', 'verify', 'charity', 'contests'];
+const ROUTE_TABS = ['lobby', 'versesets', 'custom_verses', 'multiplayer', 'daily_verse', 'advanced', 'garden', 'search', 'map', 'manual', 'about', 'accessible', 'bilingual_rain', 'leaderboard', 'rewards_admin', 'sponsors', 'donate', 'sponsor', 'merchant', 'verify', 'charity', 'contests', 'settings'];
 // 支持開發（Donate）頁的收款資訊。這是對開發者個人的贈與，不是公益勸募，
 // 也開不了捐贈收據 — 獎勵資金池另走教會／非營利代收（見 sponsor 頁）。
 // 空字串 → 頁面顯示「即將公布」。
@@ -21053,10 +21054,13 @@ export default function App() {
     };
   }, [autoplayBlocked]);
 
-  const handleVersionChange = async (newVer) => {
+  // opts.keepUiLang: 設定 page — the Bible version changes on its own, the
+  // app language stays what the person picked there.
+  const handleVersionChange = async (newVer, opts = {}) => {
     setVersion(newVer);
     // Auto-sync UI language immediately so mobile users get instant feedback.
-    if (newVer === 'fa') setUiLangPersisted('fa');
+    if (opts.keepUiLang) { /* keep */ }
+    else if (newVer === 'fa') setUiLangPersisted('fa');
     else if (newVer === 'ar') setUiLangPersisted('ar');
     else if (newVer === 'he') setUiLangPersisted('he');
     else if (newVer === 'kjv' || newVer === 'esv' || newVer === 'niv') setUiLangPersisted('en');
@@ -25758,7 +25762,7 @@ export default function App() {
                     verserain
                   </div>
                   <div className="app-brand-version" style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', marginTop: '4px', marginLeft: '2px' }}>
-                    v4.0.129
+                    v4.0.130
                   </div>
                 </div>
                 <div ref={langPickerRef} className="app-lang-control" style={{ position: 'relative' }}>
@@ -26345,6 +26349,26 @@ export default function App() {
                 )
               )}
 
+              {mainTab === 'settings' && (
+                <SettingsPage
+                  t={t}
+                  uiLangs={SUPPORTED_UI_LANGS}
+                  uiLang={uiLang}
+                  onUiLang={setUiLangPersisted}
+                  versions={BIBLE_LANGUAGE_OPTIONS}
+                  version={version}
+                  onVersion={(v) => handleVersionChange(v, { keepUiLang: true })}
+                  voiceOptions={voiceOptionsForVersion}
+                  voiceId={selectedVoiceOptionId}
+                  onVoice={saveVoiceForVersion}
+                  pushOn={pushStatus === 'subscribed'}
+                  onPush={() => setShowPushModal(true)}
+                  performanceMode={performanceMode}
+                  onPerformanceMode={(on) => { setPerformanceMode(on); try { localStorage.setItem('verseRainPerformanceMode', on ? 'true' : 'false'); } catch { /* best effort */ } }}
+                  onAccessible={() => setMainTab('accessible')}
+                />
+              )}
+
               {mainTab === 'advanced' && (() => {
                 const go = (id) => { setMainTab(id); const el = menuScrollRef.current; if (el) el.scrollTop = 0; };
                 const unread = combinedInbox.unread;
@@ -26380,6 +26404,7 @@ export default function App() {
                     </section>
 
                     <ListGroup title={t('我的帳號', 'My account')} testId="me-group-account">
+                      {row('settings', Settings, '#475569', t('設定', 'Settings'), t('語言、聖經譯本、語音、通知、省電', 'Language, Bible version, voice, notifications, battery'), () => go('settings'))}
                       {userEmail && row('inbox', Mail, '#2563eb', t('通知與鼓勵', 'Notifications'), t('收到的鼓勵、提醒和獎勵', 'Encouragement, reminders and rewards'), () => setShowEncouragePanel(true), unread > 0 ? <span className="ui-badge">{unread > 99 ? '99+' : unread}</span> : null)}
                       {row('invite', Users, '#10b981', t('推薦朋友', 'Invite friends'), t('分享你的推薦連結，朋友第一次過關雙方都得獎勵', 'Share your link — you both get a reward on their first clear'), () => { setMainTab('garden'); setTimeout(() => scrollMenuTo(document.getElementById('garden-invite')), 350); })}
                       {row('sponsors', Gift, '#f59e0b', t('贊助者與我的折抵', 'Sponsors & my discounts'), t('感謝贊助者、查看我的折抵紀錄', 'Thank our sponsors, see your discounts'), () => go('sponsors'))}
