@@ -637,26 +637,6 @@ textarea {
     z-index: 2;
   }
 
-  .app-login-link,
-  .app-signup-link {
-    min-height: 44px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    touch-action: manipulation;
-  }
-
-  .app-login-link {
-    padding: 0.35rem 0.2rem !important;
-    font-size: 1rem !important;
-  }
-
-  .app-signup-link {
-    padding: 0.45rem 0.65rem !important;
-    border-radius: 8px !important;
-    font-size: 0.95rem !important;
-  }
-
   .landscape-compact-nav {
     padding: 0.7rem max(0.85rem, env(safe-area-inset-right)) 0.75rem max(0.85rem, env(safe-area-inset-left)) !important;
     gap: 0.7rem !important;

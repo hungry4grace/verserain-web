@@ -25743,7 +25743,7 @@ export default function App() {
                     verserain
                   </div>
                   <div className="app-brand-version" style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', marginTop: '4px', marginLeft: '2px' }}>
-                    v4.0.124
+                    v4.0.125
                   </div>
                 </div>
                 <div ref={langPickerRef} className="app-lang-control" style={{ position: 'relative' }}>
@@ -25836,7 +25836,9 @@ export default function App() {
                     {(combinedInbox.all.length > 0 || isSuperAdmin) && (() => {
                       const unread = combinedInbox.unread;
                       return (
-                        <button
+                        <IconButton
+                          label={t('我收到的鼓勵', 'Encouragement I received')}
+                          style={{ position: 'relative' }}
                           onClick={() => {
                             setShowEncouragePanel(v => !v);
                             if (unread > 0) {
@@ -25847,12 +25849,10 @@ export default function App() {
                               setNotifyInbox(prev => prev ? { ...prev, lastReadAt: nowIso } : prev);
                             }
                           }}
-                          title={t('我收到的鼓勵', 'Encouragement I received')}
-                          style={{ position: 'relative', background: 'transparent', border: 'none', cursor: 'pointer', padding: '0.2rem', display: 'flex', alignItems: 'center' }}
                         >
-                          <span style={{ fontSize: '1.25rem' }}>🔔</span>
-                          {unread > 0 && <span style={{ position: 'absolute', top: -2, right: -2, minWidth: 16, height: 16, padding: '0 4px', borderRadius: 999, background: '#ef4444', color: '#fff', fontSize: '0.65rem', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{unread}</span>}
-                        </button>
+                          <span style={{ fontSize: '1.25rem' }} aria-hidden="true">🔔</span>
+                          {unread > 0 && <span style={{ position: 'absolute', top: 2, right: 2, minWidth: 16, height: 16, padding: '0 4px', borderRadius: 999, background: 'var(--color-danger)', color: '#fff', fontSize: '0.65rem', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{unread > 99 ? '99+' : unread}</span>}
+                        </IconButton>
                       );
                     })()}
                     {editingPlayerName !== null ? (() => {
@@ -25947,18 +25947,8 @@ export default function App() {
                               style={{ width: '110px', padding: '0.3rem 0.5rem', borderRadius: '4px', border: '1px solid #3b82f6', fontSize: '0.95rem' }}
                             />
                           )}
-                          <button
-                            onClick={savePlayerName}
-                            disabled={savingPlayerName}
-                            title={t('儲存', 'Save')}
-                            style={{ background: '#3b82f6', color: 'white', border: 'none', borderRadius: '4px', padding: '0.3rem 0.5rem', cursor: savingPlayerName ? 'default' : 'pointer', opacity: savingPlayerName ? 0.6 : 1, display: 'inline-flex', alignItems: 'center' }}
-                          ><Check size={16} /></button>
-                          <button
-                            onClick={cancelEdit}
-                            disabled={savingPlayerName}
-                            title={t('取消', 'Cancel')}
-                            style={{ background: 'transparent', color: '#64748b', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '0.3rem 0.5rem', cursor: 'pointer', display: 'inline-flex', alignItems: 'center' }}
-                          ><X size={16} /></button>
+                          <IconButton label={t('儲存', 'Save')} disabled={savingPlayerName} onClick={savePlayerName} style={{ color: 'var(--color-primary-strong)' }}><Check size={20} /></IconButton>
+                          <IconButton label={t('取消', 'Cancel')} disabled={savingPlayerName} onClick={cancelEdit}><X size={20} /></IconButton>
                         </div>
                         {editingPlayerNameError && (
                           <span style={{ color: '#ef4444', fontSize: '0.75rem', fontWeight: 'bold' }}>{editingPlayerNameError}</span>
@@ -25969,14 +25959,10 @@ export default function App() {
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', padding: '0.3rem 0.6rem' }}>
                         <span style={{ color: '#1e293b', fontWeight: 'bold', fontSize: '0.95rem' }}>{playerName}</span>
                         {isPremium && <Crown size={14} style={{ color: '#fbbf24' }} />}
-                        <button
-                          onClick={() => setEditingPlayerName(playerName)}
-                          title={t('改暱稱', 'Edit display name')}
-                          style={{ background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer', padding: '0.1rem', display: 'inline-flex', alignItems: 'center' }}
-                        ><Edit size={14} /></button>
+                        <IconButton label={t('改暱稱', 'Edit display name')} onClick={() => setEditingPlayerName(playerName)}><Edit size={18} /></IconButton>
                       </div>
                     )}
-                    <button onClick={() => { setPlayerName(''); setIsPremium(false); setUserEmail(''); setFavoriteVerseSetIds([]); setEditingPlayerName(null); localStorage.removeItem('verserain_player_name'); localStorage.removeItem('verserain_is_premium'); localStorage.removeItem('verserain_player_email'); localStorage.removeItem('verserain_auth_provider'); localStorage.removeItem('verserain_session_key'); setSessionKey(''); localStorage.removeItem('verseRain_gardenData'); setGardenData({}); localStorage.removeItem('verseRain_custom_sets'); localStorage.removeItem('verseRain_custom_sets_owner'); lastPushedPrivateSetsRef.current = ''; setCustomVerseSets([]); }} style={{ background: 'transparent', border: '1px solid #cbd5e1', color: '#64748b', cursor: 'pointer', borderRadius: '4px', padding: '0.3rem 0.6rem', fontSize: '0.85rem' }}>{t("登出", "Logout")}</button>
+                    <Button variant="secondary" size="sm" onClick={() => { setPlayerName(''); setIsPremium(false); setUserEmail(''); setFavoriteVerseSetIds([]); setEditingPlayerName(null); localStorage.removeItem('verserain_player_name'); localStorage.removeItem('verserain_is_premium'); localStorage.removeItem('verserain_player_email'); localStorage.removeItem('verserain_auth_provider'); localStorage.removeItem('verserain_session_key'); setSessionKey(''); localStorage.removeItem('verseRain_gardenData'); setGardenData({}); localStorage.removeItem('verseRain_custom_sets'); localStorage.removeItem('verseRain_custom_sets_owner'); lastPushedPrivateSetsRef.current = ''; setCustomVerseSets([]); }}>{t("登出", "Logout")}</Button>
                   </div>
                 ) : (
                   <>
@@ -25985,8 +25971,8 @@ export default function App() {
                         {t('訪客：{name}', 'Guest: {name}').replace('{name}', String(playerName))}
                       </span>
                     )}
-                    <a className="app-login-link" href="#" onClick={(e) => { e.preventDefault(); setShowLoginModal('login'); }} style={{ color: '#0056b3', textDecoration: 'none', fontWeight: 'bold', fontSize: '0.95rem' }}>{t("登入", "Login")}</a>
-                    <a className="app-signup-link" href="#" onClick={(e) => { e.preventDefault(); setShowLoginModal('signup'); }} style={{ background: '#3b82f6', color: 'white', padding: '0.3rem 0.8rem', borderRadius: '4px', textDecoration: 'none', fontWeight: 'bold', fontSize: '0.95rem' }}>{t("申請帳號", "Sign Up")}</a>
+                    <Button variant="text" size="sm" onClick={() => setShowLoginModal('login')}>{t("登入", "Login")}</Button>
+                    <Button size="sm" onClick={() => setShowLoginModal('signup')}>{t("申請帳號", "Sign Up")}</Button>
                   </>
                 )}
               </div>
@@ -27199,13 +27185,13 @@ export default function App() {
                         <input id="guestNameInput" type="text" placeholder={t("你的暱稱", "Your nickname")} style={{ width: '100%', padding: '1rem', borderRadius: '12px', border: '2px solid #cbd5e1', fontSize: '1.2rem', fontWeight: 'bold', boxSizing: 'border-box' }} onKeyDown={(e) => {
                           if (e.key === 'Enter') document.getElementById('guestNameBtn')?.click();
                         }} />
-                        <button id="guestNameBtn" onClick={() => {
+                        <Button id="guestNameBtn" size="lg" block onClick={() => {
                           const val = document.getElementById('guestNameInput').value.trim();
                           if (val) {
                             setPlayerName(val);
                             localStorage.setItem('verserain_player_name', val);
                           }
-                        }} className="primary-button" style={{ width: '100%', background: '#3b82f6', color: 'white', border: 'none', padding: '1rem', borderRadius: '12px', fontWeight: 'bold', cursor: 'pointer', fontSize: '1.2rem' }}>{t("出發！", "Go!")}</button>
+                        }}>{t("出發！", "Go!")}</Button>
                       </div>
                     </div>
                   ) : !multiplayerRoomId ? (
@@ -27252,17 +27238,14 @@ export default function App() {
                         </span>
                       </label>
 
-                      <button
-                        onClick={() => {
+                      <Button size="lg" block style={{ maxWidth: '300px' }} onClick={() => {
                           const newRoom = createRoomCode();
                           setMultiplayerRoomMode('team');
                           setMultiplayerRoomRole('host');
                           setMultiplayerRoomId(newRoom);
-                        }}
-                        style={{ background: '#3b82f6', color: 'white', border: 'none', padding: '1rem 2rem', borderRadius: '8px', fontSize: '1.1rem', fontWeight: 'bold', cursor: 'pointer', transition: 'background 0.2s', width: '100%', maxWidth: '300px' }}
-                      >
+                        }}>
                         {t("建立房間 (Host Game)", "Create Room")}
-                      </button>
+                      </Button>
 
                       <div style={{ display: 'flex', alignItems: 'center', width: '100%', maxWidth: '300px' }}>
                         <div style={{ flex: 1, height: '1px', backgroundColor: '#e2e8f0' }}></div>
@@ -27282,9 +27265,7 @@ export default function App() {
                           onChange={(e) => e.target.value = sanitizeRoomCode(e.target.value)}
                           onKeyDown={(e) => { if (e.key === 'Enter') document.getElementById('joinRoomBtn')?.click(); }}
                         />
-                        <button
-                          id="joinRoomBtn"
-                          onClick={() => {
+                        <Button id="joinRoomBtn" variant="secondary" onClick={() => {
                             const code = sanitizeRoomCode(document.getElementById('joinRoomInput')?.value);
                             if (code && code.length === 4) {
                               const roomCode = code.substring(0, 4);
@@ -27305,11 +27286,9 @@ export default function App() {
                                 }
                               }, 5000);
                             }
-                          }}
-                          style={{ background: '#10b981', color: 'white', border: 'none', padding: '0 1.5rem', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer' }}
-                        >
+                          }}>
                           {t("加入", "Join")}
-                        </button>
+                        </Button>
                       </div>
 
                       {joinRoomError && (
@@ -27418,39 +27397,28 @@ export default function App() {
                       )}
 
                       <div style={{ display: 'flex', gap: '1rem', margin: '0.5rem 0 1.5rem 0', justifyContent: 'center' }}>
-                        <button
-                          onClick={() => {
+                        <Button variant="secondary" onClick={() => {
                             if (socketRef.current) socketRef.current.close();
                             setMultiplayerRoomMode(null);
                             setMultiplayerRoomRole('player');
                             setMultiplayerRoomId(null);
                             setMultiplayerState(null);
-                          }}
-                          style={{ background: '#f1f5f9', color: '#64748b', border: '1px solid #cbd5e1', padding: '0.8rem 1.5rem', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer' }}
-                        >
+                          }}>
                           {t("離開", "Leave")}
-                        </button>
+                        </Button>
 
                         {multiplayerState.host === myClientId ? (
-                          <button
-                            onClick={() => {
+                          <Button size="lg" disabled={multiplayerState.matchType === 'team' && (!canStartTeamMatch(multiplayerState) || (multiplayerState.players[myClientId] && !multiplayerState.players[myClientId].teamId))} onClick={() => {
                               if (socketRef.current) socketRef.current.send(JSON.stringify({ type: 'HOST_START_GAME' }));
-                            }}
-                            disabled={multiplayerState.matchType === 'team' && (!canStartTeamMatch(multiplayerState) || (multiplayerState.players[myClientId] && !multiplayerState.players[myClientId].teamId))}
-                            style={{ background: '#ec4899', color: 'white', border: 'none', padding: '0.8rem 2rem', borderRadius: '6px', fontSize: '1.1rem', fontWeight: 'bold', cursor: (multiplayerState.matchType === 'team' && (!canStartTeamMatch(multiplayerState) || (multiplayerState.players[myClientId] && !multiplayerState.players[myClientId].teamId))) ? 'not-allowed' : 'pointer', opacity: (multiplayerState.matchType === 'team' && (!canStartTeamMatch(multiplayerState) || (multiplayerState.players[myClientId] && !multiplayerState.players[myClientId].teamId))) ? 0.55 : 1, transition: 'all 0.2s', boxShadow: '0 4px 6px -1px rgba(236, 72, 153, 0.5)' }}
-                          >
+                            }}>
                             {t("比賽開始", "Start Game")}
-                          </button>
+                          </Button>
                         ) : (
-                          <button
-                            onClick={() => {
+                          <Button size="lg" disabled={multiplayerState.players[myClientId]?.isReady || (multiplayerState.matchType === 'team' && !multiplayerState.players[myClientId]?.teamId)} onClick={() => {
                               if (socketRef.current) socketRef.current.send(JSON.stringify({ type: 'PLAYER_READY' }));
-                            }}
-                            disabled={multiplayerState.players[myClientId]?.isReady || (multiplayerState.matchType === 'team' && !multiplayerState.players[myClientId]?.teamId)}
-                            style={{ background: multiplayerState.players[myClientId]?.isReady ? '#10b981' : '#3b82f6', color: 'white', border: 'none', padding: '0.8rem 2rem', borderRadius: '6px', fontSize: '1.1rem', fontWeight: 'bold', cursor: multiplayerState.players[myClientId]?.isReady || (multiplayerState.matchType === 'team' && !multiplayerState.players[myClientId]?.teamId) ? 'default' : 'pointer', opacity: multiplayerState.matchType === 'team' && !multiplayerState.players[myClientId]?.teamId ? 0.55 : 1, transition: 'all 0.2s', boxShadow: multiplayerState.players[myClientId]?.isReady ? 'none' : '0 4px 6px -1px rgba(59, 130, 246, 0.5)' }}
-                          >
+                            }}>
                             {multiplayerState.players[myClientId]?.isReady ? t("✔️ 已準備", "✔️ Ready") : t("我準備好了", "I am ready")}
-                          </button>
+                          </Button>
                         )}
                       </div>
 
@@ -27726,18 +27694,15 @@ export default function App() {
                       </div>
 
                       <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
-                        <button
-                          onClick={() => {
+                        <Button variant="secondary" size="lg" onClick={() => {
                             if (socketRef.current) socketRef.current.close();
                             setMultiplayerRoomMode(null);
                             setMultiplayerRoomRole('player');
                             setMultiplayerRoomId(null);
                             setMultiplayerState(null);
-                          }}
-                          style={{ background: '#f1f5f9', color: '#64748b', border: '1px solid #cbd5e1', padding: '1.6rem 3rem', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer', fontSize: '1.4rem' }}
-                        >
+                          }}>
                           {t("離開房間", "Leave Room")}
-                        </button>
+                        </Button>
 
                         {multiplayerState?.host === myClientId && (
                           <button
