@@ -1371,6 +1371,14 @@ export const he = {
   "你的園子有 {n} 棵樹，去看看它們長得怎樣。": "בגן שלכם יש {n} עצים — בואו לראות איך הם גדלים.",
   "看園子": "צפייה בגן",
   "每日經文、我的最愛、主題經文，連續播放": "פסוק יומי, מועדפים ופסוקים לפי נושא, ברצף",
+  "還沒登入": "עדיין לא התחברת",
+  "我的帳號": "החשבון שלי",
+  "通知與鼓勵": "התראות ועידוד",
+  "收到的鼓勵、提醒和獎勵": "עידוד, תזכורות ופרסים שקיבלת",
+  "推薦朋友": "הפניית חברים",
+  "分享你的推薦連結，朋友第一次過關雙方都得獎勵": "שתפו את קישור ההפניה שלכם — כשחבר עובר פסוק לראשונה, שניכם מקבלים פרס",
+  "愛心與合作": "נתינה ושותפים",
+  "學習與說明": "למידה ומדריך",
 };
 
 export const fa = {
@@ -2723,6 +2731,14 @@ export const fa = {
   "你的園子有 {n} 棵樹，去看看它們長得怎樣。": "باغ شما {n} درخت دارد — بروید ببینید چطور رشد می‌کنند.",
   "看園子": "دیدن باغ",
   "每日經文、我的最愛、主題經文，連續播放": "آیهٔ روزانه، علاقه‌مندی‌ها و آیات موضوعی، پشت سر هم",
+  "還沒登入": "وارد نشده‌اید",
+  "我的帳號": "حساب کاربری من",
+  "通知與鼓勵": "اعلان‌ها و تشویق",
+  "收到的鼓勵、提醒和獎勵": "تشویق‌ها، یادآوری‌ها و پاداش‌های دریافتی",
+  "推薦朋友": "معرفی دوستان",
+  "分享你的推薦連結，朋友第一次過關雙方都得獎勵": "لینک معرفی خود را به اشتراک بگذارید — وقتی دوستتان اولین آیه‌اش را رد کند، هر دو پاداش می‌گیرید",
+  "愛心與合作": "نیکوکاری و همکاران",
+  "學習與說明": "یادگیری و راهنما",
 };
 
 export const ar = {
@@ -4491,6 +4507,14 @@ export const ar = {
   "你的園子有 {n} 棵樹，去看看它們長得怎樣。": "عدد الأشجار في حديقتك: {n} — اذهب وشاهد كيف تنمو.",
   "看園子": "عرض الحديقة",
   "每日經文、我的最愛、主題經文，連續播放": "الآية اليومية والمفضلة والآيات حسب الموضوع، على التوالي",
+  "還沒登入": "لم تسجّل الدخول بعد",
+  "我的帳號": "حسابي",
+  "通知與鼓勵": "الإشعارات والتشجيع",
+  "收到的鼓勵、提醒和獎勵": "التشجيع والتذكيرات والمكافآت التي وصلتك",
+  "推薦朋友": "إحالة الأصدقاء",
+  "分享你的推薦連結，朋友第一次過關雙方都得獎勵": "شارك رابط الإحالة — عندما يجتاز صديقك أول آية له تحصلان كلاكما على مكافأة",
+  "愛心與合作": "العطاء والشركاء",
+  "學習與說明": "التعلّم والدليل",
 };
 
 export const ja = {
@@ -5831,6 +5855,14 @@ export const ja = {
   "你的園子有 {n} 棵樹，去看看它們長得怎樣。": "庭には {n} 本の木があります。育ち具合を見に行きましょう。",
   "看園子": "庭を見る",
   "每日經文、我的最愛、主題經文，連續播放": "毎日の聖句・お気に入り・テーマ別の聖句を連続再生",
+  "還沒登入": "ログインしていません",
+  "我的帳號": "マイアカウント",
+  "通知與鼓勵": "通知と応援",
+  "收到的鼓勵、提醒和獎勵": "届いた応援・リマインダー・報酬",
+  "推薦朋友": "友だちを紹介",
+  "分享你的推薦連結，朋友第一次過關雙方都得獎勵": "紹介リンクをシェアしよう。友だちが初めてクリアすると、2人とも報酬がもらえます",
+  "愛心與合作": "寄付とパートナー",
+  "學習與說明": "学習とガイド",
 };
 
 export const ko = {
@@ -7169,6 +7201,14 @@ export const ko = {
   "你的園子有 {n} 棵樹，去看看它們長得怎樣。": "정원에 나무가 {n}그루 있어요. 얼마나 자랐는지 보러 가요.",
   "看園子": "정원 보기",
   "每日經文、我的最愛、主題經文，連續播放": "매일 구절, 즐겨찾기, 주제별 말씀을 연속 재생",
+  "還沒登入": "로그인하지 않음",
+  "我的帳號": "내 계정",
+  "通知與鼓勵": "알림과 응원",
+  "收到的鼓勵、提醒和獎勵": "받은 응원·리마인더·보상",
+  "推薦朋友": "친구 추천",
+  "分享你的推薦連結，朋友第一次過關雙方都得獎勵": "추천 링크를 공유하세요. 친구가 처음 통과하면 둘 다 보상을 받아요",
+  "愛心與合作": "나눔과 파트너",
+  "學習與說明": "학습과 안내",
 };
 
 export const es = {
@@ -8523,6 +8563,14 @@ export const es = {
   "你的園子有 {n} 棵樹，去看看它們長得怎樣。": "Tu jardín tiene {n} árboles: ve a ver cómo crecen.",
   "看園子": "Ver jardín",
   "每日經文、我的最愛、主題經文，連續播放": "Versículo diario, favoritos y versículos por tema, uno tras otro",
+  "還沒登入": "Sin iniciar sesión",
+  "我的帳號": "Mi cuenta",
+  "通知與鼓勵": "Notificaciones y ánimos",
+  "收到的鼓勵、提醒和獎勵": "Ánimos, recordatorios y recompensas recibidos",
+  "推薦朋友": "Invitar amigos",
+  "分享你的推薦連結，朋友第一次過關雙方都得獎勵": "Comparte tu enlace de referido: cuando tu amigo supere su primer versículo, ambos recibirán una recompensa",
+  "愛心與合作": "Donaciones y socios",
+  "學習與說明": "Aprendizaje y guía",
 };
 
 export const tr = {
@@ -9877,6 +9925,14 @@ export const tr = {
   "你的園子有 {n} 棵樹，去看看它們長得怎樣。": "Bahçende {n} ağaç var — nasıl büyüdüklerine bir bak.",
   "看園子": "Bahçeyi gör",
   "每日經文、我的最愛、主題經文，連續播放": "Günlük ayet, Favoriler ve Konu ayetleri art arda çalınır",
+  "還沒登入": "Giriş yapılmadı",
+  "我的帳號": "Hesabım",
+  "通知與鼓勵": "Bildirimler ve teşvikler",
+  "收到的鼓勵、提醒和獎勵": "Aldığın teşvikler, hatırlatmalar ve ödüller",
+  "推薦朋友": "Arkadaş davet et",
+  "分享你的推薦連結，朋友第一次過關雙方都得獎勵": "Tavsiye bağlantını paylaş — arkadaşın ilk ayetini geçince ikiniz de ödül alırsınız",
+  "愛心與合作": "Bağış ve ortaklar",
+  "學習與說明": "Öğrenme ve kılavuz",
 };
 
 export const de = {
@@ -11231,6 +11287,14 @@ export const de = {
   "你的園子有 {n} 棵樹，去看看它們長得怎樣。": "Dein Garten hat {n} Bäume – schau nach, wie sie wachsen.",
   "看園子": "Garten ansehen",
   "每日經文、我的最愛、主題經文，連續播放": "Tagesverse, Favoriten und Themenverse nacheinander abgespielt",
+  "還沒登入": "Nicht angemeldet",
+  "我的帳號": "Mein Konto",
+  "通知與鼓勵": "Benachrichtigungen & Ermutigung",
+  "收到的鼓勵、提醒和獎勵": "Erhaltene Ermutigungen, Erinnerungen und Belohnungen",
+  "推薦朋友": "Freunde einladen",
+  "分享你的推薦連結，朋友第一次過關雙方都得獎勵": "Teile deinen Empfehlungslink – schafft ein Freund seinen ersten Vers, bekommt ihr beide eine Belohnung",
+  "愛心與合作": "Spenden & Partner",
+  "學習與說明": "Lernen & Anleitung",
 };
 
 export const my = {
@@ -12585,6 +12649,14 @@ export const my = {
   "你的園子有 {n} 棵樹，去看看它們長得怎樣。": "သင့်ဥယျာဉ်တွင် သစ်ပင် {n} ပင် ရှိသည် — ၎င်းတို့ မည်သို့ကြီးထွားနေသည်ကို သွားကြည့်ပါ။",
   "看園子": "ဥယျာဉ် ကြည့်ရန်",
   "每日經文、我的最愛、主題經文，連續播放": "နေ့စဉ်ကျမ်းချက်၊ အကြိုက်ဆုံးနှင့် ခေါင်းစဉ်အလိုက် ကျမ်းချက်များကို ဆက်တိုက်ဖွင့်သည်",
+  "還沒登入": "အကောင့်မဝင်ရသေးပါ",
+  "我的帳號": "ကျွန်ုပ်၏ အကောင့်",
+  "通知與鼓勵": "အသိပေးချက်နှင့် အားပေးမှု",
+  "收到的鼓勵、提醒和獎勵": "ရရှိသော အားပေးမှု၊ သတိပေးချက်နှင့် ဆုလာဘ်များ",
+  "推薦朋友": "သူငယ်ချင်း ညွှန်းဆိုရန်",
+  "分享你的推薦連結，朋友第一次過關雙方都得獎勵": "သင့်ညွှန်းလင့်ခ်ကို မျှဝေပါ — သူငယ်ချင်းက ပထမဆုံး ကျမ်းချက်ကို အောင်မြင်လျှင် နှစ်ဦးစလုံး ဆုလာဘ်ရပါမည်",
+  "愛心與合作": "လှူဒါန်းမှုနှင့် မိတ်ဖက်များ",
+  "學習與說明": "လေ့လာမှုနှင့် လမ်းညွှန်",
 };
 
 export const vi = {
@@ -13939,6 +14011,14 @@ export const vi = {
   "你的園子有 {n} 棵樹，去看看它們長得怎樣。": "Vườn của bạn có {n} cây — hãy đi xem chúng lớn thế nào.",
   "看園子": "Xem vườn",
   "每日經文、我的最愛、主題經文，連續播放": "Câu Kinh Thánh mỗi ngày, Yêu thích và Câu theo chủ đề, phát liên tục",
+  "還沒登入": "Chưa đăng nhập",
+  "我的帳號": "Tài khoản của tôi",
+  "通知與鼓勵": "Thông báo & cổ vũ",
+  "收到的鼓勵、提醒和獎勵": "Lời cổ vũ, nhắc nhở và phần thưởng đã nhận",
+  "推薦朋友": "Giới thiệu bạn bè",
+  "分享你的推薦連結，朋友第一次過關雙方都得獎勵": "Chia sẻ liên kết giới thiệu của bạn — khi bạn bè vượt qua câu đầu tiên, cả hai đều nhận thưởng",
+  "愛心與合作": "Quyên góp & đối tác",
+  "學習與說明": "Học tập & hướng dẫn",
 };
 
 export const id = {
@@ -15521,6 +15601,14 @@ export const id = {
   "你的園子有 {n} 棵樹，去看看它們長得怎樣。": "Tamanmu punya {n} pohon — lihat bagaimana mereka tumbuh.",
   "看園子": "Lihat taman",
   "每日經文、我的最愛、主題經文，連續播放": "Ayat harian, favorit, dan ayat bertema, diputar berurutan",
+  "還沒登入": "Belum masuk",
+  "我的帳號": "Akun saya",
+  "通知與鼓勵": "Notifikasi & semangat",
+  "收到的鼓勵、提醒和獎勵": "Semangat, pengingat, dan hadiah yang kamu terima",
+  "推薦朋友": "Undang teman",
+  "分享你的推薦連結，朋友第一次過關雙方都得獎勵": "Bagikan tautan rujukanmu — saat temanmu tuntas pertama kali, kalian berdua dapat hadiah",
+  "愛心與合作": "Kasih & mitra",
+  "學習與說明": "Belajar & panduan",
 };
 
 export const ms = {
@@ -17307,6 +17395,14 @@ export const ms = {
   "你的園子有 {n} 棵樹，去看看它們長得怎樣。": "Taman anda ada {n} pokok — pergi lihat bagaimana ia membesar.",
   "看園子": "Lihat taman",
   "每日經文、我的最愛、主題經文，連續播放": "Ayat harian, kegemaran dan ayat bertema, dimainkan berturut-turut",
+  "還沒登入": "Belum log masuk",
+  "我的帳號": "Akaun saya",
+  "通知與鼓勵": "Pemberitahuan & semangat",
+  "收到的鼓勵、提醒和獎勵": "Semangat, peringatan dan ganjaran yang anda terima",
+  "推薦朋友": "Jemput rakan",
+  "分享你的推薦連結，朋友第一次過關雙方都得獎勵": "Kongsi pautan rujukan anda — apabila rakan melepasi ayat pertamanya, anda berdua dapat ganjaran",
+  "愛心與合作": "Kasih & rakan kongsi",
+  "學習與說明": "Pembelajaran & panduan",
 };
 
 export const zhcn = {
@@ -19012,6 +19108,14 @@ export const zhcn = {
   "你的園子有 {n} 棵樹，去看看它們長得怎樣。": "你的园子有 {n} 棵树，去看看它们长得怎样。",
   "看園子": "看园子",
   "每日經文、我的最愛、主題經文，連續播放": "每日经文、我的最爱、主题经文，连续播放",
+  "還沒登入": "还没登入",
+  "我的帳號": "我的帐号",
+  "通知與鼓勵": "通知与鼓励",
+  "收到的鼓勵、提醒和獎勵": "收到的鼓励、提醒和奖励",
+  "推薦朋友": "推荐朋友",
+  "分享你的推薦連結，朋友第一次過關雙方都得獎勵": "分享你的推荐连结，朋友第一次过关双方都得奖励",
+  "愛心與合作": "爱心与合作",
+  "學習與說明": "学习与说明",
 };
 
 export const pt = {
@@ -20088,6 +20192,15 @@ export const pt = {
   "你的園子有 {n} 棵樹，去看看它們長得怎樣。": "Seu jardim tem {n} árvores — vá ver como elas estão crescendo.",
   "看園子": "Ver jardim",
   "每日經文、我的最愛、主題經文，連續播放": "Versículo diário, favoritos e versículos por tema, em sequência",
+  "還沒登入": "Não conectado",
+  "我的帳號": "Minha conta",
+  "通知與鼓勵": "Notificações e incentivos",
+  "收到的鼓勵、提醒和獎勵": "Incentivos, lembretes e recompensas recebidos",
+  "推薦朋友": "Indicar amigos",
+  "分享你的推薦連結，朋友第一次過關雙方都得獎勵": "Compartilhe seu link de indicação — quando seu amigo passar no primeiro versículo, vocês dois ganham uma recompensa",
+  "愛心與合作": "Doações e parceiros",
+  "學習與說明": "Aprendizado e guia",
+  "管理": "Administração",
 };
 
 export const fr = {
@@ -21164,6 +21277,15 @@ export const fr = {
   "你的園子有 {n} 棵樹，去看看它們長得怎樣。": "Ton jardin compte {n} arbres — va voir comment ils poussent.",
   "看園子": "Voir le jardin",
   "每日經文、我的最愛、主題經文，連續播放": "Verset du jour, favoris et versets par thème, à la suite",
+  "還沒登入": "Non connecté",
+  "我的帳號": "Mon compte",
+  "通知與鼓勵": "Notifications et encouragements",
+  "收到的鼓勵、提醒和獎勵": "Encouragements, rappels et récompenses reçus",
+  "推薦朋友": "Parrainer des amis",
+  "分享你的推薦連結，朋友第一次過關雙方都得獎勵": "Partage ton lien de parrainage — quand ton ami réussit son premier verset, vous gagnez tous les deux une récompense",
+  "愛心與合作": "Dons et partenaires",
+  "學習與說明": "Apprentissage et guide",
+  "管理": "Administration",
 };
 
 export const ru = {
@@ -22240,6 +22362,15 @@ export const ru = {
   "你的園子有 {n} 棵樹，去看看它們長得怎樣。": "Деревьев в твоём саду: {n} — посмотри, как они растут.",
   "看園子": "Смотреть сад",
   "每日經文、我的最愛、主題經文，連續播放": "Стих дня, избранное и стихи по темам — подряд",
+  "還沒登入": "Вход не выполнен",
+  "我的帳號": "Мой аккаунт",
+  "通知與鼓勵": "Уведомления и поддержка",
+  "收到的鼓勵、提醒和獎勵": "Полученные слова поддержки, напоминания и награды",
+  "推薦朋友": "Пригласить друзей",
+  "分享你的推薦連結，朋友第一次過關雙方都得獎勵": "Поделись своей реферальной ссылкой — когда друг пройдёт свой первый стих, вы оба получите награду",
+  "愛心與合作": "Пожертвования и партнёры",
+  "學習與說明": "Обучение и инструкции",
+  "管理": "Администрирование",
 };
 
 export const hi = {
@@ -23316,6 +23447,15 @@ export const hi = {
   "你的園子有 {n} 棵樹，去看看它們長得怎樣。": "आपके बगीचे में {n} पेड़ हैं — जाकर देखें कि वे कैसे बढ़ रहे हैं।",
   "看園子": "बगीचा देखें",
   "每日經文、我的最愛、主題經文，連續播放": "दैनिक पद, पसंदीदा और विषय के पद, एक के बाद एक",
+  "還沒登入": "साइन इन नहीं किया",
+  "我的帳號": "मेरा खाता",
+  "通知與鼓勵": "सूचनाएँ और प्रोत्साहन",
+  "收到的鼓勵、提醒和獎勵": "मिले हुए प्रोत्साहन, रिमाइंडर और इनाम",
+  "推薦朋友": "मित्रों को रेफ़र करें",
+  "分享你的推薦連結，朋友第一次過關雙方都得獎勵": "अपना रेफ़रल लिंक साझा करें — मित्र के पहली आयत पार करने पर आप दोनों को इनाम मिलेगा",
+  "愛心與合作": "दान और साझेदार",
+  "學習與說明": "सीखना और गाइड",
+  "管理": "प्रबंधन",
 };
 
 // Khmer (Cambodian) — full UI coverage, machine-translated in bulk from the
@@ -25021,6 +25161,15 @@ export const km = {
   "你的園子有 {n} 棵樹，去看看它們長得怎樣。": "សួនច្បាររបស់អ្នកមានដើមឈើ {n} ដើម — ទៅមើលថាវាលូតលាស់យ៉ាងណា។",
   "看園子": "មើលសួន",
   "每日經文、我的最愛、主題經文，連續播放": "ខគម្ពីរប្រចាំថ្ងៃ សំណព្វរបស់ខ្ញុំ និងខគម្ពីរតាមប្រធានបទ ចាក់បន្តគ្នា",
+  "還沒登入": "មិនទាន់ចូល",
+  "我的帳號": "គណនីរបស់ខ្ញុំ",
+  "通知與鼓勵": "ការជូនដំណឹង និងការលើកទឹកចិត្ត",
+  "收到的鼓勵、提醒和獎勵": "ការលើកទឹកចិត្ត ការរំលឹក និងរង្វាន់ដែលទទួលបាន",
+  "推薦朋友": "ណែនាំមិត្តភក្តិ",
+  "分享你的推薦連結，朋友第一次過關雙方都得獎勵": "ចែករំលែកតំណណែនាំរបស់អ្នក — ពេលមិត្តភក្តិជាប់ជាលើកដំបូង អ្នកទាំងពីរនឹងទទួលបានរង្វាន់",
+  "愛心與合作": "សេចក្តីស្រឡាញ់ និងដៃគូ",
+  "學習與說明": "ការសិក្សា និងការណែនាំ",
+  "管理": "ការគ្រប់គ្រង",
 };
 
 const I18N_FILLINS = { he, fa, ar, ja, ko, es, tr, de, my, vi, id, ms, zhcn, pt, fr, ru, hi, km };
