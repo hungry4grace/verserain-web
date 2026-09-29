@@ -19833,6 +19833,7 @@ export default function App() {
   const [myReferees, setMyReferees] = useState(null);
   const [refereeGardenStats, setRefereeGardenStats] = useState(null);
   const [refereesPage, setRefereesPage] = useState(1);
+  const [pendingRefereesPage, setPendingRefereesPage] = useState(1);
   const [creatorHistoryPage, setCreatorHistoryPage] = useState(1);
   const HISTORY_PAGE_SIZE = 5;
 
@@ -19904,6 +19905,7 @@ export default function App() {
       setMyReferees(null);
       setRefereeGardenStats(null);
       setRefereesPage(1);
+      setPendingRefereesPage(1);
       const refereesQuery = new URLSearchParams({ authors: authorKeys.join(',') });
       if (email) refereesQuery.set('email', email);
       linkStep
@@ -25703,7 +25705,7 @@ export default function App() {
                     verserain
                   </div>
                   <div className="app-brand-version" style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', marginTop: '4px', marginLeft: '2px' }}>
-                    v4.0.112
+                    v4.0.113
                   </div>
                 </div>
                 <div ref={langPickerRef} className="app-lang-control" style={{ position: 'relative' }}>
@@ -28750,6 +28752,9 @@ export default function App() {
                           const page = Math.max(1, Math.min(refereesPage, totalPages));
                           const sliced = activeReferees.slice((page - 1) * HISTORY_PAGE_SIZE, page * HISTORY_PAGE_SIZE);
                           const statsLoading = refereeGardenStats === null;
+                          const pendingPages = Math.ceil(pendingReferees.length / HISTORY_PAGE_SIZE);
+                          const pendingPage = Math.max(1, Math.min(pendingRefereesPage, pendingPages));
+                          const pendingSliced = pendingReferees.slice((pendingPage - 1) * HISTORY_PAGE_SIZE, pendingPage * HISTORY_PAGE_SIZE);
                           return (
                             <>
                               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -28793,7 +28798,7 @@ export default function App() {
                                     <span style={{ background: '#f1f5f9', color: '#64748b', borderRadius: '10px', padding: '1px 8px', fontSize: '0.75rem' }}>{pendingReferees.length}</span>
                                   </div>
                                   <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                                    {pendingReferees.map((r) => (
+                                    {pendingSliced.map((r) => (
                                       <div key={r.name} style={{ background: '#f8fafc', padding: '8px 15px', borderRadius: '8px', borderLeft: '4px solid #cbd5e1', fontSize: '0.88rem', color: '#64748b', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', flexWrap: 'wrap' }}>
                                         <div style={{ flex: 1, minWidth: '160px' }}>
                                           <button type="button" onClick={() => handleViewPlayerGarden(r.name)} title={t('查看園子', 'View garden')} style={{ background: 'none', border: 'none', padding: 0, color: '#475569', fontWeight: 'bold', cursor: 'pointer', fontSize: '0.95rem' }}>{r.name}</button>
@@ -28807,6 +28812,15 @@ export default function App() {
                                       </div>
                                     ))}
                                   </div>
+                                {pendingPages > 1 && (
+                                  <div style={{ display: 'flex', justifyContent: 'center', gap: '6px', marginTop: '10px' }}>
+                                    <button onClick={() => setPendingRefereesPage(p => Math.max(1, p - 1))} disabled={pendingPage <= 1} style={{ padding: '4px 10px', borderRadius: '6px', border: '1px solid #cbd5e1', background: pendingPage <= 1 ? '#f1f5f9' : '#fff', color: pendingPage <= 1 ? '#94a3b8' : '#334155', cursor: pendingPage <= 1 ? 'default' : 'pointer', fontWeight: 'bold' }}>‹</button>
+                                    {Array.from({ length: pendingPages }, (_, idx) => (
+                                      <button key={idx} onClick={() => setPendingRefereesPage(idx + 1)} style={{ padding: '4px 10px', borderRadius: '6px', border: 'none', background: pendingPage === idx + 1 ? '#0f766e' : '#f1f5f9', color: pendingPage === idx + 1 ? '#fff' : '#334155', cursor: 'pointer', fontWeight: 'bold' }}>{idx + 1}</button>
+                                    ))}
+                                    <button onClick={() => setPendingRefereesPage(p => Math.min(pendingPages, p + 1))} disabled={pendingPage >= pendingPages} style={{ padding: '4px 10px', borderRadius: '6px', border: '1px solid #cbd5e1', background: pendingPage >= pendingPages ? '#f1f5f9' : '#fff', color: pendingPage >= pendingPages ? '#94a3b8' : '#334155', cursor: pendingPage >= pendingPages ? 'default' : 'pointer', fontWeight: 'bold' }}>›</button>
+                                  </div>
+                                )}
                                   <div style={{ fontSize: '0.75rem', color: '#94a3b8', marginTop: '6px' }}>{t('朋友第一次通過一節經文後，就會升到上面的名單，你也會拿到推薦獎勵。', 'Once a friend clears their first verse they move up to the list above and you receive the referral reward.')}</div>
                                 </div>
                               )}
