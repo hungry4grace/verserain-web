@@ -22,6 +22,11 @@
 // source plus its English gloss.
 
 export const he = {
+  "字體顏色": "צבע הגופן",
+  "白": "לבן",
+  "黃": "צהוב",
+  "黑": "שחור",
+  "藍": "כחול",
   "正在載入朗讀…": "טוען את ההקראה…",
   "重設密碼的連結已寄到您的信箱，30 分鐘內有效。": "קישור לאיפוס הסיסמה נשלח לדוא\"ל שלך. הוא תקף ל-30 דקות.",
   "重設失敗": "האיפוס נכשל",
@@ -1295,6 +1300,11 @@ export const he = {
 };
 
 export const fa = {
+  "字體顏色": "رنگ قلم",
+  "白": "سفید",
+  "黃": "زرد",
+  "黑": "سیاه",
+  "藍": "آبی",
   "正在載入朗讀…": "در حال بارگذاری قرائت…",
   "重設密碼的連結已寄到您的信箱，30 分鐘內有效。": "پیوند بازنشانی رمز عبور به ایمیل شما ارسال شد و تا ۳۰ دقیقه معتبر است.",
   "重設失敗": "بازنشانی ناموفق بود",
@@ -2568,6 +2578,11 @@ export const fa = {
 };
 
 export const ar = {
+  "字體顏色": "لون الخط",
+  "白": "أبيض",
+  "黃": "أصفر",
+  "黑": "أسود",
+  "藍": "أزرق",
   "正在載入朗讀…": "جارٍ تحميل التلاوة…",
   "重設密碼的連結已寄到您的信箱，30 分鐘內有效。": "تم إرسال رابط إعادة تعيين كلمة المرور إلى بريدك الإلكتروني، وهو صالح لمدة 30 دقيقة.",
   "重設失敗": "فشلت إعادة التعيين",
@@ -4257,6 +4272,11 @@ export const ar = {
 };
 
 export const ja = {
+  "字體顏色": "文字の色",
+  "白": "白",
+  "黃": "黄",
+  "黑": "黒",
+  "藍": "青",
   "正在載入朗讀…": "朗読を読み込み中…",
   "重設密碼的連結已寄到您的信箱，30 分鐘內有效。": "パスワード再設定用のリンクをメールで送信しました。30分間有効です。",
   "重設失敗": "リセットに失敗しました",
@@ -5518,6 +5538,11 @@ export const ja = {
 };
 
 export const ko = {
+  "字體顏色": "글자 색",
+  "白": "흰색",
+  "黃": "노랑",
+  "黑": "검정",
+  "藍": "파랑",
   "正在載入朗讀…": "낭독을 불러오는 중…",
   "重設密碼的連結已寄到您的信箱，30 分鐘內有效。": "비밀번호 재설정 링크를 이메일로 보냈습니다. 30분 동안 유효합니다.",
   "重設失敗": "재설정에 실패했습니다",
@@ -6777,6 +6802,11 @@ export const ko = {
 };
 
 export const es = {
+  "字體顏色": "Color de letra",
+  "白": "Blanco",
+  "黃": "Amarillo",
+  "黑": "Negro",
+  "藍": "Azul",
   "正在載入朗讀…": "Cargando la lectura…",
   "重設密碼的連結已寄到您的信箱，30 分鐘內有效。": "Te hemos enviado un enlace para restablecer la contraseña. Es válido durante 30 minutos.",
   "重設失敗": "No se pudo restablecer",
@@ -8052,6 +8082,11 @@ export const es = {
 };
 
 export const tr = {
+  "字體顏色": "Yazı rengi",
+  "白": "Beyaz",
+  "黃": "Sarı",
+  "黑": "Siyah",
+  "藍": "Mavi",
   "正在載入朗讀…": "Okuma yükleniyor…",
   "重設密碼的連結已寄到您的信箱，30 分鐘內有效。": "Şifre sıfırlama bağlantısı e-postana gönderildi. 30 dakika geçerlidir.",
   "重設失敗": "Sıfırlama başarısız",
@@ -9327,6 +9362,11 @@ export const tr = {
 };
 
 export const de = {
+  "字體顏色": "Schriftfarbe",
+  "白": "Weiß",
+  "黃": "Gelb",
+  "黑": "Schwarz",
+  "藍": "Blau",
   "正在載入朗讀…": "Lesung wird geladen…",
   "重設密碼的連結已寄到您的信箱，30 分鐘內有效。": "Wir haben dir einen Link zum Zurücksetzen des Passworts geschickt. Er ist 30 Minuten gültig.",
   "重設失敗": "Zurücksetzen fehlgeschlagen",
@@ -10602,6 +10642,11 @@ export const de = {
 };
 
 export const my = {
+  "字體顏色": "စာလုံးအရောင်",
+  "白": "အဖြူ",
+  "黃": "အဝါ",
+  "黑": "အမည်း",
+  "藍": "အပြာ",
   "正在載入朗讀…": "ဖတ်ကြားချက်ကို ဖွင့်နေသည်…",
   "重設密碼的連結已寄到您的信箱，30 分鐘內有效。": "စကားဝှက် ပြန်သတ်မှတ်ရန် လင့်ခ်ကို သင့် email သို့ ပို့ပြီးပါပြီ။ ၃၀ မိနစ် သက်တမ်းရှိသည်။",
   "重設失敗": "ပြန်လည်သတ်မှတ်မှု မအောင်မြင်ပါ",
@@ -11877,6 +11922,11 @@ export const my = {
 };
 
 export const vi = {
+  "字體顏色": "Màu chữ",
+  "白": "Trắng",
+  "黃": "Vàng",
+  "黑": "Đen",
+  "藍": "Xanh dương",
   "正在載入朗讀…": "Đang tải phần đọc…",
   "重設密碼的連結已寄到您的信箱，30 分鐘內有效。": "Liên kết đặt lại mật khẩu đã được gửi tới email của bạn, có hiệu lực trong 30 phút.",
   "重設失敗": "Đặt lại thất bại",
@@ -13152,6 +13202,11 @@ export const vi = {
 };
 
 export const id = {
+  "字體顏色": "Warna huruf",
+  "白": "Putih",
+  "黃": "Kuning",
+  "黑": "Hitam",
+  "藍": "Biru",
   "正在載入朗讀…": "Memuat bacaan…",
   "重設密碼的連結已寄到您的信箱，30 分鐘內有效。": "Tautan atur ulang kata sandi telah dikirim ke email Anda, berlaku 30 menit.",
   "重設失敗": "Gagal mengatur ulang",
@@ -14655,6 +14710,11 @@ export const id = {
 };
 
 export const ms = {
+  "字體顏色": "Warna fon",
+  "白": "Putih",
+  "黃": "Kuning",
+  "黑": "Hitam",
+  "藍": "Biru",
   "正在載入朗讀…": "Memuatkan bacaan…",
   "重設密碼的連結已寄到您的信箱，30 分鐘內有效。": "Pautan tetapan semula kata laluan telah dihantar ke e-mel anda, sah selama 30 minit.",
   "重設失敗": "Tetapan semula gagal",
@@ -16362,6 +16422,11 @@ export const ms = {
 };
 
 export const zhcn = {
+  "字體顏色": "字体颜色",
+  "白": "白",
+  "黃": "黄",
+  "黑": "黑",
+  "藍": "蓝",
   "正在載入朗讀…": "正在载入朗读…",
   "重設密碼的連結已寄到您的信箱，30 分鐘內有效。": "重设密码的链接已寄到您的信箱，30 分钟内有效。",
   "重設失敗": "重设失败",
@@ -17989,6 +18054,11 @@ export const zhcn = {
 };
 
 export const pt = {
+  "字體顏色": "Cor da letra",
+  "白": "Branco",
+  "黃": "Amarelo",
+  "黑": "Preto",
+  "藍": "Azul",
   // ── 操作手冊 (manual) ──
   "歡迎進入 <strong>VerseRain 經文雨</strong>！這是一個結合聆聽、挑戰與學習的互動背經平台。<br />在這裡您可以挑戰全球經文組、建立個人專屬的題庫，也能用自己的聲音把經文分享給朋友！": "Bem-vindo ao <strong>VerseRain</strong>! Uma plataforma interativa de memorização das Escrituras que combina escuta, desafio e aprendizagem.<br />Aqui você pode desafiar conjuntos de versículos do mundo todo, criar sua própria biblioteca e compartilhar versículos com os amigos usando a sua própria voz!",
   "1. 從大廳進入「經文題庫」": "1. Abra a «Biblioteca de versículos» a partir do salão",
@@ -18985,6 +19055,11 @@ export const pt = {
 };
 
 export const fr = {
+  "字體顏色": "Couleur du texte",
+  "白": "Blanc",
+  "黃": "Jaune",
+  "黑": "Noir",
+  "藍": "Bleu",
   // ── 操作手冊 (manual) ──
   "歡迎進入 <strong>VerseRain 經文雨</strong>！這是一個結合聆聽、挑戰與學習的互動背經平台。<br />在這裡您可以挑戰全球經文組、建立個人專屬的題庫，也能用自己的聲音把經文分享給朋友！": "Bienvenue sur <strong>VerseRain</strong> ! Une plateforme interactive de mémorisation des Écritures qui allie écoute, défi et apprentissage.<br />Vous pouvez y relever des ensembles de versets du monde entier, constituer votre propre bibliothèque et partager des versets avec vos amis avec votre propre voix !",
   "1. 從大廳進入「經文題庫」": "1. Ouvrez la « Bibliothèque de versets » depuis le salon",
@@ -19981,6 +20056,11 @@ export const fr = {
 };
 
 export const ru = {
+  "字體顏色": "Цвет текста",
+  "白": "Белый",
+  "黃": "Жёлтый",
+  "黑": "Чёрный",
+  "藍": "Синий",
   // ── 操作手冊 (manual) ──
   "歡迎進入 <strong>VerseRain 經文雨</strong>！這是一個結合聆聽、挑戰與學習的互動背經平台。<br />在這裡您可以挑戰全球經文組、建立個人專屬的題庫，也能用自己的聲音把經文分享給朋友！": "Добро пожаловать в <strong>VerseRain</strong>! Это интерактивная платформа для заучивания Писания, объединяющая слушание, испытания и обучение.<br />Здесь можно проходить наборы стихов со всего мира, собирать собственную библиотеку и делиться стихами с друзьями своим голосом!",
   "1. 從大廳進入「經文題庫」": "1. Из холла в «Библиотеку стихов»",
@@ -20977,6 +21057,11 @@ export const ru = {
 };
 
 export const hi = {
+  "字體顏色": "फ़ॉन्ट रंग",
+  "白": "सफ़ेद",
+  "黃": "पीला",
+  "黑": "काला",
+  "藍": "नीला",
   // ── 操作手冊 (manual) ──
   "歡迎進入 <strong>VerseRain 經文雨</strong>！這是一個結合聆聽、挑戰與學習的互動背經平台。<br />在這裡您可以挑戰全球經文組、建立個人專屬的題庫，也能用自己的聲音把經文分享給朋友！": "<strong>VerseRain</strong> में आपका स्वागत है! यह सुनने, चुनौती और सीखने को जोड़ने वाला एक इंटरैक्टिव वचन-कंठस्थ मंच है।<br />यहाँ आप दुनिया भर के वचन समूहों को चुनौती दे सकते हैं, अपनी लाइब्रेरी बना सकते हैं और अपनी ही आवाज़ में वचन दोस्तों के साथ साझा कर सकते हैं!",
   "1. 從大廳進入「經文題庫」": "1. लॉबी से «वचन लाइब्रेरी» में जाएँ",
@@ -21976,6 +22061,11 @@ export const hi = {
 // Traditional Chinese source plus its English gloss. Native-speaker review is
 // recommended before treating this as production-quality Khmer.
 export const km = {
+  "字體顏色": "ពណ៌អក្សរ",
+  "白": "ស",
+  "黃": "លឿង",
+  "黑": "ខ្មៅ",
+  "藍": "ខៀវ",
   "每日經文": "ខគម្ពីរប្រចាំថ្ងៃ",
   "我的園子": "សួនច្បារខ្ញុំ",
   "🌳 我的園子": "🌳 សួនច្បារខ្ញុំ",

@@ -1341,6 +1341,24 @@ const PLAY_FONT_OPTIONS = [
   { value: 'small', label: '小', enLabel: 'Small' }
 ];
 const DEFAULT_PLAY_FONT_CHOICE = 'normal';
+// 播放字體顏色 — a light background (white sand, bright sky) makes the default
+// white verse text unreadable, so the listener can pick a dark ink instead.
+// Applied as .rain-ink-<value> on the player shell (see index.css).
+const PLAY_INK_OPTIONS = [
+  { value: 'white', label: '白', enLabel: 'White', swatch: '#ffffff' },
+  { value: 'yellow', label: '黃', enLabel: 'Yellow', swatch: '#fde047' },
+  { value: 'black', label: '黑', enLabel: 'Black', swatch: '#0f172a' },
+  { value: 'blue', label: '藍', enLabel: 'Blue', swatch: '#1e3a8a' }
+];
+const DEFAULT_PLAY_INK_CHOICE = 'white';
+function readPlayInkChoice() {
+  try {
+    const v = localStorage.getItem('verseRainPlayInk');
+    return PLAY_INK_OPTIONS.some(o => o.value === v) ? v : DEFAULT_PLAY_INK_CHOICE;
+  } catch {
+    return DEFAULT_PLAY_INK_CHOICE;
+  }
+}
 
 // --- Bible verse cross-language lookup utilities ---
 function getEnglishReferenceFromKey(normalizedKey) {
@@ -2124,7 +2142,7 @@ function DailyVerseRainExperience({ verse, version, t, onRead, onChallenge, onSh
   }
 
   return (
-    <div className={`daily-verse-rain-shell rain-font-${fontSizeLevel}`}>
+    <div className={`daily-verse-rain-shell rain-font-${fontSizeLevel} rain-ink-${readPlayInkChoice()}`}>
       <div
         className="daily-verse-rain-scene"
         key={`${verse.reference}-${playKey}`}
@@ -2236,6 +2254,7 @@ function VerseSetContinuousRainPlayer({
   onListenLogged,
   playDurationMinutes = null,
   initialFontSizeLevel = DEFAULT_PLAY_FONT_CHOICE,
+  initialInkColor = DEFAULT_PLAY_INK_CHOICE,
   playOnce = false,
   onComplete,
   label,
@@ -3580,7 +3599,7 @@ function VerseSetContinuousRainPlayer({
 
   return (
     <div className="continuous-rain-overlay">
-      <div className={`daily-verse-rain-shell continuous-rain-shell rain-font-${fontSizeLevel}`}>
+      <div className={`daily-verse-rain-shell continuous-rain-shell rain-font-${fontSizeLevel} rain-ink-${PLAY_INK_OPTIONS.some(o => o.value === initialInkColor) ? initialInkColor : DEFAULT_PLAY_INK_CHOICE}`}>
         <div
           className="daily-verse-rain-scene continuous-rain-scene"
           key={`${currentVerse.reference}-${playKey}`}
@@ -23221,6 +23240,15 @@ export default function App() {
       // Ignore storage failures; playback can still use the in-memory choice.
     }
   }, [selectedPlayFont.value]);
+  const [playInkChoice, setPlayInkChoice] = useState(readPlayInkChoice);
+  const selectedPlayInk = PLAY_INK_OPTIONS.find(option => option.value === playInkChoice) || PLAY_INK_OPTIONS[0];
+  useEffect(() => {
+    try {
+      localStorage.setItem('verseRainPlayInk', selectedPlayInk.value);
+    } catch {
+      // Ignore storage failures; playback can still use the in-memory choice.
+    }
+  }, [selectedPlayInk.value]);
   // Play-time voice source: null = auto (my voice › author › TTS). Otherwise
   // { type:'tts'|'owner'|'personal', ownerId?, label }. Chosen in the 播放方式
   // modal; threaded onto continuousRainSet as sharedVoiceOwner/forceTTS/
@@ -23262,6 +23290,7 @@ export default function App() {
       playOrder: order, // 'random' | 'sequential' — both loop forever
       playDurationMinutes: selectedPlayDuration.minutes,
       fontSizeLevel: selectedPlayFont.value,
+      inkColor: selectedPlayInk.value,
       startVerse: order === 'sequential' ? set.verses[0] : undefined,
       voiceSetId: set.voiceSetId || null,
       background: set.background || '',
@@ -25525,6 +25554,7 @@ export default function App() {
             startPaused={continuousRainSet.startPaused || false}
             playDurationMinutes={continuousRainSet.playDurationMinutes ?? null}
             initialFontSizeLevel={continuousRainSet.fontSizeLevel || DEFAULT_PLAY_FONT_CHOICE}
+            initialInkColor={continuousRainSet.inkColor || selectedPlayInk.value}
             version={version}
             t={t}
             userEmail={userEmail}
@@ -25550,7 +25580,8 @@ export default function App() {
                 ...set,
                 startVerse: pickRandomVerse(set.verses || []),
                 playDurationMinutes: continuousRainSet.playDurationMinutes ?? null,
-                fontSizeLevel: continuousRainSet.fontSizeLevel || DEFAULT_PLAY_FONT_CHOICE
+                fontSizeLevel: continuousRainSet.fontSizeLevel || DEFAULT_PLAY_FONT_CHOICE,
+                inkColor: continuousRainSet.inkColor || selectedPlayInk.value
               });
             }}
             onListenLogged={(v) => { updateGarden('activity_only', 'listen'); creditListen(v); }}
@@ -25660,7 +25691,7 @@ export default function App() {
                     verserain
                   </div>
                   <div className="app-brand-version" style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', marginTop: '4px', marginLeft: '2px' }}>
-                    v4.0.110
+                    v4.0.111
                   </div>
                 </div>
                 <div ref={langPickerRef} className="app-lang-control" style={{ position: 'relative' }}>
@@ -32517,6 +32548,41 @@ export default function App() {
                           whiteSpace: 'nowrap'
                         }}
                       >
+                        {t(option.label, option.enLabel)}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+              <div style={{ margin: '0 0 1.1rem', textAlign: 'left' }}>
+                <div style={{ fontSize: '0.8rem', color: '#64748b', marginBottom: '0.5rem', fontWeight: 600 }}>
+                  🎨 {t('字體顏色', 'Font color')}
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: '0.45rem' }}>
+                  {PLAY_INK_OPTIONS.map(option => {
+                    const active = option.value === selectedPlayInk.value;
+                    return (
+                      <button
+                        key={option.value}
+                        type="button"
+                        onClick={() => setPlayInkChoice(option.value)}
+                        style={{
+                          padding: '0.52rem 0.35rem',
+                          borderRadius: '999px',
+                          border: active ? '2px solid #2563eb' : '1px solid #cbd5e1',
+                          background: active ? '#eff6ff' : '#fff',
+                          color: active ? '#1d4ed8' : '#475569',
+                          fontWeight: active ? 800 : 600,
+                          fontSize: '0.82rem',
+                          cursor: 'pointer',
+                          whiteSpace: 'nowrap',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: '0.35rem'
+                        }}
+                      >
+                        <span aria-hidden="true" style={{ width: 14, height: 14, borderRadius: '50%', background: option.swatch, border: '1px solid #94a3b8', flex: '0 0 auto' }} />
                         {t(option.label, option.enLabel)}
                       </button>
                     );

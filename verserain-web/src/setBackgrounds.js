@@ -4,12 +4,18 @@
 // scripts/generate-set-backgrounds.mjs; any of them can be replaced later
 // with an AI-generated JPG/PNG by updating `url` here.
 
+// Offered in the editor (David, 2026-09-29: keep only these five). The
+// themes below in LEGACY_SET_BACKGROUND_THEMES are no longer offered but sets
+// that already picked one must keep rendering it, so lookups search both.
 export const SET_BACKGROUND_THEMES = [
   { id: 'children', zh: '兒童', en: 'Children' },
   { id: 'elderly', zh: '長者', en: 'Elderly' },
   { id: 'family', zh: '家庭', en: 'Family' },
   { id: 'cross', zh: '十字架', en: 'Cross' },
   { id: 'nature', zh: '自然・創造', en: 'Nature' },
+].map(themeEntry => ({ ...themeEntry, url: `/set-backgrounds/${themeEntry.id}.svg` }));
+
+export const LEGACY_SET_BACKGROUND_THEMES = [
   { id: 'healing', zh: '醫治', en: 'Healing' },
   { id: 'peace', zh: '平安', en: 'Peace' },
   { id: 'worship', zh: '敬拜・讚美', en: 'Worship' },
@@ -24,7 +30,7 @@ export const SET_BACKGROUND_THEMES = [
 // poster shown until the clip is ready / when video is unavailable
 // (performance mode, reduced motion, load error). Files live in
 // public/backgrounds/; keep clips ≤ ~2MB (720p/540p H.264, no audio).
-SET_BACKGROUND_THEMES.push(
+LEGACY_SET_BACKGROUND_THEMES.push(
   { id: 'waves', zh: '海浪（影片）', en: 'Waves (video)', url: '/backgrounds/waves-poster.jpg', video: '/backgrounds/waves.mp4' },
   { id: 'fall', zh: '瀑布（影片）', en: 'Waterfall (video)', url: '/backgrounds/fall-poster.jpg', video: '/backgrounds/fall.mp4' },
   // id must differ from the static 'worship' theme above.
@@ -32,13 +38,15 @@ SET_BACKGROUND_THEMES.push(
   { id: 'jiuzhaigou', zh: '九寨溝（影片）', en: 'Jiuzhaigou (video)', url: '/backgrounds/jiuzhaigou-poster.jpg', video: '/backgrounds/jiuzhaigou.mp4' },
 );
 
+const ALL_SET_BACKGROUND_THEMES = [...SET_BACKGROUND_THEMES, ...LEGACY_SET_BACKGROUND_THEMES];
+
 // 'preset:<id>' → URL, or null when unset/unknown (caller falls back to
 // the default rotating AI backgrounds).
 export function getSetBackgroundUrl(background) {
   const raw = String(background || '');
   if (!raw.startsWith('preset:')) return null;
   const id = raw.slice('preset:'.length);
-  const found = SET_BACKGROUND_THEMES.find(themeEntry => themeEntry.id === id);
+  const found = ALL_SET_BACKGROUND_THEMES.find(themeEntry => themeEntry.id === id);
   return found ? found.url : null;
 }
 
@@ -48,6 +56,6 @@ export function getSetBackgroundVideoUrl(background) {
   const raw = String(background || '');
   if (!raw.startsWith('preset:')) return null;
   const id = raw.slice('preset:'.length);
-  const found = SET_BACKGROUND_THEMES.find(themeEntry => themeEntry.id === id);
+  const found = ALL_SET_BACKGROUND_THEMES.find(themeEntry => themeEntry.id === id);
   return found?.video || null;
 }

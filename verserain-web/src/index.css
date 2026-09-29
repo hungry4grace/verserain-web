@@ -1018,6 +1018,29 @@ textarea {
 .daily-verse-rain-shell.rain-font-large { font-size: 20px; }
 .daily-verse-rain-shell.rain-font-xlarge { font-size: 24px; }
 
+/* 播放字體顏色 (.rain-ink-*) — chosen in the 播放方式 dialog. White is the
+   original look; the dark inks swap the black drop shadow for a white halo so
+   they stay readable over dark video, and the heading follows the phrases. */
+.daily-verse-rain-shell.rain-ink-yellow .daily-verse-rain-phrases span,
+.daily-verse-rain-shell.rain-ink-yellow .continuous-rain-heading h2 { color: #fde047; }
+.daily-verse-rain-shell.rain-ink-yellow .daily-verse-rain-phrases span.is-active { color: #fef9c3; }
+
+.daily-verse-rain-shell.rain-ink-black .daily-verse-rain-phrases span,
+.daily-verse-rain-shell.rain-ink-black .continuous-rain-heading h2,
+.daily-verse-rain-shell.rain-ink-blue .daily-verse-rain-phrases span,
+.daily-verse-rain-shell.rain-ink-blue .continuous-rain-heading h2 {
+  text-shadow: 0 0 2px rgba(255, 255, 255, 0.95), 0.06em 0.08em 2px rgba(255, 255, 255, 0.95), 0.14em 0.18em 12px rgba(255, 255, 255, 0.7);
+}
+.daily-verse-rain-shell.rain-ink-black .daily-verse-rain-phrases span,
+.daily-verse-rain-shell.rain-ink-black .continuous-rain-heading h2 { color: #0f172a; }
+.daily-verse-rain-shell.rain-ink-black .daily-verse-rain-phrases span.is-active { color: #000; text-shadow: 0 0 2px rgba(255, 255, 255, 0.95), 0.06em 0.08em 2px rgba(255, 255, 255, 0.95), 0.14em 0.18em 12px rgba(255, 255, 255, 0.7), 0 0 26px rgba(250, 204, 21, 0.85); }
+.daily-verse-rain-shell.rain-ink-blue .daily-verse-rain-phrases span,
+.daily-verse-rain-shell.rain-ink-blue .continuous-rain-heading h2 { color: #1e3a8a; }
+.daily-verse-rain-shell.rain-ink-blue .daily-verse-rain-phrases span.is-active { color: #172554; text-shadow: 0 0 2px rgba(255, 255, 255, 0.95), 0.06em 0.08em 2px rgba(255, 255, 255, 0.95), 0.14em 0.18em 12px rgba(255, 255, 255, 0.7), 0 0 26px rgba(250, 204, 21, 0.85); }
+/* The second-language line keeps its own tint on the dark inks, but needs the white halo too. */
+.daily-verse-rain-shell.rain-ink-black .continuous-rain-phrases.has-secondary span small,
+.daily-verse-rain-shell.rain-ink-blue .continuous-rain-phrases.has-secondary span small { color: #334155; text-shadow: 0 0 2px rgba(255, 255, 255, 0.95), 0.06em 0.08em 2px rgba(255, 255, 255, 0.9); }
+
 .daily-verse-rain-empty {
   min-height: 280px;
   place-items: center;
