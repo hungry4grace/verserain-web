@@ -1,0 +1,118 @@
+/* Shared components (src/ui/). Colours, sizes and layers come from the
+   design tokens in index.css; nothing here hard-codes a hex value. */
+
+/* ── Button ─────────────────────────────────────────────── */
+.ui-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  min-height: var(--tap-min);
+  padding: 0 var(--space-4);
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  font-family: var(--control-font-family);
+  font-size: var(--fs-body);
+  font-weight: 700;
+  line-height: 1.2;
+  text-align: center;
+  cursor: pointer;
+  transition: background-color 0.15s, border-color 0.15s, color 0.15s, transform 0.1s;
+  -webkit-tap-highlight-color: transparent;
+}
+.ui-btn:active:not(:disabled) { transform: scale(0.97); }
+.ui-btn:focus-visible { outline: 3px solid var(--color-primary); outline-offset: 2px; }
+.ui-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.ui-btn--lg { min-height: 52px; padding: 0 var(--space-5); font-size: var(--fs-heading); }
+.ui-btn--sm { padding: 0 var(--space-3); font-size: var(--fs-small); }
+.ui-btn--block { display: flex; width: 100%; }
+
+.ui-btn--primary { background: var(--color-primary); color: #fff; }
+.ui-btn--primary:hover:not(:disabled) { background: var(--color-primary-strong); }
+.ui-btn--secondary { background: var(--color-surface); color: var(--color-primary-strong); border-color: var(--color-border); }
+.ui-btn--secondary:hover:not(:disabled) { background: var(--color-primary-soft); border-color: var(--color-primary); }
+.ui-btn--text { background: transparent; color: var(--color-primary-strong); }
+.ui-btn--text:hover:not(:disabled) { background: var(--color-primary-soft); }
+.ui-btn--danger { background: var(--color-danger); color: #fff; }
+.ui-btn--danger:hover:not(:disabled) { background: var(--color-danger-strong); }
+.ui-btn--danger:focus-visible { outline-color: var(--color-danger); }
+
+.ui-btn__icon { display: inline-flex; flex-shrink: 0; }
+.ui-spinner {
+  width: 1em; height: 1em; flex-shrink: 0;
+  border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%;
+  animation: ui-spin 0.7s linear infinite;
+}
+@keyframes ui-spin { to { transform: rotate(360deg); } }
+
+/* ── IconButton ─────────────────────────────────────────── */
+.ui-icon-btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: var(--tap-min); height: var(--tap-min); flex-shrink: 0;
+  padding: 0; border: none; border-radius: var(--radius-pill);
+  background: transparent; color: var(--color-text-2);
+  cursor: pointer; -webkit-tap-highlight-color: transparent;
+}
+.ui-icon-btn:hover:not(:disabled) { background: var(--color-surface-2); color: var(--color-text); }
+.ui-icon-btn:focus-visible { outline: 3px solid var(--color-primary); outline-offset: 1px; }
+.ui-icon-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* ── Modal ──────────────────────────────────────────────── */
+.ui-modal-scrim {
+  position: fixed; inset: 0; z-index: var(--z-modal);
+  display: flex; align-items: center; justify-content: center;
+  padding: var(--space-4);
+  background: var(--color-scrim);
+  animation: ui-fade-in 0.15s ease-out;
+}
+.ui-modal {
+  width: 100%; max-width: 440px; max-height: calc(100dvh - 2 * var(--space-4));
+  display: flex; flex-direction: column;
+  background: var(--color-surface); color: var(--color-text);
+  border-radius: var(--radius-md); box-shadow: var(--shadow-raised);
+  overflow: hidden;
+  animation: ui-pop-in 0.18s ease-out;
+}
+.ui-modal:focus { outline: none; }
+.ui-modal__header {
+  display: flex; align-items: center; justify-content: space-between; gap: var(--space-2);
+  padding: var(--space-3) var(--space-2) var(--space-3) var(--space-5);
+  border-bottom: 1px solid var(--color-border);
+}
+.ui-modal__title { margin: 0; font-size: var(--fs-heading); font-weight: 800; line-height: 1.3; color: var(--color-text); }
+.ui-modal__body { padding: var(--space-5); overflow-y: auto; font-size: var(--fs-body); line-height: 1.6; color: var(--color-text-2); }
+.ui-modal__footer {
+  display: flex; flex-wrap: wrap-reverse; justify-content: flex-end; gap: var(--space-2);
+  padding: var(--space-3) var(--space-5) var(--space-5);
+}
+.ui-modal__footer > .ui-btn { flex: 1 1 8rem; }
+@keyframes ui-fade-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes ui-pop-in { from { opacity: 0; transform: translateY(8px) scale(0.98); } to { opacity: 1; transform: none; } }
+
+/* ── Toast ──────────────────────────────────────────────── */
+.ui-toast {
+  position: fixed; left: 50%; bottom: calc(env(safe-area-inset-bottom, 0px) + 2rem);
+  z-index: var(--z-toast);
+  transform: translateX(-50%);
+  display: flex; align-items: center; gap: var(--space-2);
+  width: max-content; max-width: min(92vw, 520px);
+  padding: var(--space-3) var(--space-5);
+  border-radius: var(--radius-pill);
+  box-shadow: var(--shadow-raised);
+  color: #fff; font-weight: 700; font-size: var(--fs-body); line-height: 1.4;
+  animation: fadeInUp 0.3s ease-out;
+}
+.ui-toast--info { background: var(--color-text); }
+.ui-toast--success { background: var(--color-success); }
+.ui-toast--error { background: var(--color-danger-strong); }
+.ui-toast__icon { display: inline-flex; flex-shrink: 0; }
+.ui-toast__close {
+  margin: calc(-1 * var(--space-2)) calc(-1 * var(--space-3)) calc(-1 * var(--space-2)) 0;
+  color: inherit; opacity: 0.85;
+}
+.ui-toast__close:hover:not(:disabled) { background: rgba(255, 255, 255, 0.15); color: inherit; }
+
+@media (prefers-reduced-motion: reduce) {
+  .ui-modal-scrim, .ui-modal, .ui-toast { animation: none; }
+  .ui-spinner { animation-duration: 2s; }
+}

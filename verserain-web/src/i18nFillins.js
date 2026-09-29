@@ -1334,6 +1334,10 @@ export const he = {
   "{name}，歡迎來到你的園子！挑戰第一節經文，就會種下第一棵樹。": "{name}, ברוכים הבאים לגן שלכם! התמודדו עם הפסוק הראשון, והעץ הראשון יינטע.",
   "歡迎來到你的園子！挑戰第一節經文，就會種下第一棵樹。": "ברוכים הבאים לגן שלכם! התמודדו עם הפסוק הראשון, והעץ הראשון יינטע.",
   "這只是排行榜暱稱；登入後，成績和園子才會存進你的帳號。": "זה רק כינוי לטבלת המובילים; לאחר ההתחברות, התוצאות והגן יישמרו בחשבון שלכם.",
+  "確認核銷": "אישור מימוש",
+  "分享連結": "קישור לשיתוף",
+  "確定": "אישור",
+  "知道了": "הבנתי",
 };
 
 export const fa = {
@@ -2649,6 +2653,10 @@ export const fa = {
   "{name}，歡迎來到你的園子！挑戰第一節經文，就會種下第一棵樹。": "{name}، به باغ خود خوش آمدید! چالش اولین آیه را انجام دهید تا اولین درخت کاشته شود.",
   "歡迎來到你的園子！挑戰第一節經文，就會種下第一棵樹。": "به باغ خود خوش آمدید! چالش اولین آیه را انجام دهید تا اولین درخت کاشته شود.",
   "這只是排行榜暱稱；登入後，成績和園子才會存進你的帳號。": "این فقط یک نام مستعار برای جدول امتیازات است؛ پس از ورود، امتیازها و باغ شما در حسابتان ذخیره می‌شوند.",
+  "確認核銷": "تأیید استفاده",
+  "分享連結": "پیوند اشتراک‌گذاری",
+  "確定": "تأیید",
+  "知道了": "متوجه شدم",
 };
 
 export const ar = {
@@ -4380,6 +4388,10 @@ export const ar = {
   "{name}，歡迎來到你的園子！挑戰第一節經文，就會種下第一棵樹。": "{name}، مرحبًا بك في حديقتك! تحدَّ الآية الأولى لتزرع أول شجرة.",
   "歡迎來到你的園子！挑戰第一節經文，就會種下第一棵樹。": "مرحبًا بك في حديقتك! تحدَّ الآية الأولى لتزرع أول شجرة.",
   "這只是排行榜暱稱；登入後，成績和園子才會存進你的帳號。": "هذا مجرد اسم مستعار في لوحة الصدارة؛ بعد تسجيل الدخول فقط تُحفظ نتائجك وحديقتك في حسابك.",
+  "確認核銷": "تأكيد الاستخدام",
+  "分享連結": "رابط المشاركة",
+  "確定": "موافق",
+  "知道了": "فهمت",
 };
 
 export const ja = {
@@ -5683,6 +5695,10 @@ export const ja = {
   "{name}，歡迎來到你的園子！挑戰第一節經文，就會種下第一棵樹。": "{name}さん、あなたの園へようこそ！最初の聖句にチャレンジすると、最初の木が植えられます。",
   "歡迎來到你的園子！挑戰第一節經文，就會種下第一棵樹。": "あなたの園へようこそ！最初の聖句にチャレンジすると、最初の木が植えられます。",
   "這只是排行榜暱稱；登入後，成績和園子才會存進你的帳號。": "これはランキング用のニックネームです。ログインすると、成績と園があなたのアカウントに保存されます。",
+  "確認核銷": "使用を確定",
+  "分享連結": "共有リンク",
+  "確定": "OK",
+  "知道了": "わかりました",
 };
 
 export const ko = {
@@ -6984,6 +7000,10 @@ export const ko = {
   "{name}，歡迎來到你的園子！挑戰第一節經文，就會種下第一棵樹。": "{name}님, 정원에 오신 것을 환영합니다! 첫 구절에 도전하면 첫 나무가 심어집니다.",
   "歡迎來到你的園子！挑戰第一節經文，就會種下第一棵樹。": "나의 정원에 오신 것을 환영합니다! 첫 구절에 도전하면 첫 나무가 심어집니다.",
   "這只是排行榜暱稱；登入後，成績和園子才會存進你的帳號。": "이것은 리더보드용 닉네임일 뿐입니다. 로그인해야 기록과 정원이 계정에 저장됩니다.",
+  "確認核銷": "사용 확정",
+  "分享連結": "공유 링크",
+  "確定": "확인",
+  "知道了": "알겠습니다",
 };
 
 export const es = {
@@ -8301,6 +8321,10 @@ export const es = {
   "{name}，歡迎來到你的園子！挑戰第一節經文，就會種下第一棵樹。": "{name}, ¡bienvenido a tu jardín! Completa tu primer versículo para plantar tu primer árbol.",
   "歡迎來到你的園子！挑戰第一節經文，就會種下第一棵樹。": "¡Bienvenido a tu jardín! Completa tu primer versículo para plantar tu primer árbol.",
   "這只是排行榜暱稱；登入後，成績和園子才會存進你的帳號。": "Esto es solo un apodo para la clasificación; inicia sesión para guardar tus puntuaciones y tu jardín en tu cuenta.",
+  "確認核銷": "Confirmar canje",
+  "分享連結": "Enlace para compartir",
+  "確定": "Aceptar",
+  "知道了": "Entendido",
 };
 
 export const tr = {
@@ -9618,6 +9642,10 @@ export const tr = {
   "{name}，歡迎來到你的園子！挑戰第一節經文，就會種下第一棵樹。": "{name}, bahçene hoş geldin! İlk ayetini tamamla, ilk ağacını dik.",
   "歡迎來到你的園子！挑戰第一節經文，就會種下第一棵樹。": "Bahçene hoş geldin! İlk ayetini tamamla, ilk ağacını dik.",
   "這只是排行榜暱稱；登入後，成績和園子才會存進你的帳號。": "Bu sadece sıralama listesi için bir takma ad; puanların ve bahçen ancak giriş yaptıktan sonra hesabına kaydedilir.",
+  "確認核銷": "Kullanımı onayla",
+  "分享連結": "Paylaşım bağlantısı",
+  "確定": "Tamam",
+  "知道了": "Anladım",
 };
 
 export const de = {
@@ -10935,6 +10963,10 @@ export const de = {
   "{name}，歡迎來到你的園子！挑戰第一節經文，就會種下第一棵樹。": "{name}, willkommen in deinem Garten! Meistere deinen ersten Vers, um deinen ersten Baum zu pflanzen.",
   "歡迎來到你的園子！挑戰第一節經文，就會種下第一棵樹。": "Willkommen in deinem Garten! Meistere deinen ersten Vers, um deinen ersten Baum zu pflanzen.",
   "這只是排行榜暱稱；登入後，成績和園子才會存進你的帳號。": "Das ist nur ein Name für die Rangliste – logge dich ein, damit deine Ergebnisse und dein Garten in deinem Konto gespeichert werden.",
+  "確認核銷": "Einlösung bestätigen",
+  "分享連結": "Link zum Teilen",
+  "確定": "OK",
+  "知道了": "Verstanden",
 };
 
 export const my = {
@@ -12252,6 +12284,10 @@ export const my = {
   "{name}，歡迎來到你的園子！挑戰第一節經文，就會種下第一棵樹。": "{name}၊ သင့်ဥယျာဉ်သို့ ကြိုဆိုပါသည်! ပထမဆုံး ကျမ်းချက်ကို စိန်ခေါ်ပြီး ပထမဆုံး အပင်ကို စိုက်လိုက်ပါ။",
   "歡迎來到你的園子！挑戰第一節經文，就會種下第一棵樹。": "သင့်ဥယျာဉ်သို့ ကြိုဆိုပါသည်! ပထမဆုံး ကျမ်းချက်ကို စိန်ခေါ်ပြီး ပထမဆုံး အပင်ကို စိုက်လိုက်ပါ။",
   "這只是排行榜暱稱；登入後，成績和園子才會存進你的帳號。": "ဤအမည်သည် အဆင့်စာရင်းအတွက် အမည်ပြောင်သာ ဖြစ်သည်။ လော့ဂ်အင်ဝင်မှသာ ရမှတ်များနှင့် ဥယျာဉ်ကို သင့်အကောင့်တွင် သိမ်းဆည်းပါမည်။",
+  "確認核銷": "အသုံးပြုမှု အတည်ပြုပါ",
+  "分享連結": "မျှဝေရန် လင့်ခ်",
+  "確定": "အိုကေ",
+  "知道了": "နားလည်ပါပြီ",
 };
 
 export const vi = {
@@ -13569,6 +13605,10 @@ export const vi = {
   "{name}，歡迎來到你的園子！挑戰第一節經文，就會種下第一棵樹。": "{name}, chào mừng đến khu vườn của bạn! Hãy thử thách câu Kinh Thánh đầu tiên để trồng cây đầu tiên.",
   "歡迎來到你的園子！挑戰第一節經文，就會種下第一棵樹。": "Chào mừng đến khu vườn của bạn! Hãy thử thách câu Kinh Thánh đầu tiên để trồng cây đầu tiên.",
   "這只是排行榜暱稱；登入後，成績和園子才會存進你的帳號。": "Đây chỉ là biệt danh trên bảng xếp hạng; hãy đăng nhập để lưu điểm và khu vườn vào tài khoản của bạn.",
+  "確認核銷": "Xác nhận sử dụng",
+  "分享連結": "Liên kết chia sẻ",
+  "確定": "OK",
+  "知道了": "Đã hiểu",
 };
 
 export const id = {
@@ -15114,6 +15154,10 @@ export const id = {
   "{name}，歡迎來到你的園子！挑戰第一節經文，就會種下第一棵樹。": "{name}, selamat datang di tamanmu! Tantang ayat pertama untuk menanam pohon pertamamu.",
   "歡迎來到你的園子！挑戰第一節經文，就會種下第一棵樹。": "Selamat datang di tamanmu! Tantang ayat pertama untuk menanam pohon pertamamu.",
   "這只是排行榜暱稱；登入後，成績和園子才會存進你的帳號。": "Ini hanya nama panggilan di papan peringkat; setelah masuk, skor dan tamanmu baru tersimpan ke akunmu.",
+  "確認核銷": "Konfirmasi penukaran",
+  "分享連結": "Tautan berbagi",
+  "確定": "OK",
+  "知道了": "Mengerti",
 };
 
 export const ms = {
@@ -16863,6 +16907,10 @@ export const ms = {
   "{name}，歡迎來到你的園子！挑戰第一節經文，就會種下第一棵樹。": "{name}, selamat datang ke taman anda! Cabar ayat pertama untuk menanam pokok pertama anda.",
   "歡迎來到你的園子！挑戰第一節經文，就會種下第一棵樹。": "Selamat datang ke taman anda! Cabar ayat pertama untuk menanam pokok pertama anda.",
   "這只是排行榜暱稱；登入後，成績和園子才會存進你的帳號。": "Ini hanya nama samaran untuk papan pendahulu; selepas log masuk, markah dan taman anda akan disimpan ke akaun anda.",
+  "確認核銷": "Sahkan penebusan",
+  "分享連結": "Pautan kongsi",
+  "確定": "OK",
+  "知道了": "Faham",
 };
 
 export const zhcn = {
@@ -18531,6 +18579,10 @@ export const zhcn = {
   "{name}，歡迎來到你的園子！挑戰第一節經文，就會種下第一棵樹。": "{name}，欢迎来到你的园子！挑战第一节经文，就会种下第一棵树。",
   "歡迎來到你的園子！挑戰第一節經文，就會種下第一棵樹。": "欢迎来到你的园子！挑战第一节经文，就会种下第一棵树。",
   "這只是排行榜暱稱；登入後，成績和園子才會存進你的帳號。": "这只是排行榜昵称；登录后，成绩和园子才会存进你的账号。",
+  "確認核銷": "确认核销",
+  "分享連結": "分享链接",
+  "確定": "确定",
+  "知道了": "知道了",
 };
 
 export const pt = {
@@ -19570,6 +19622,10 @@ export const pt = {
   "{name}，歡迎來到你的園子！挑戰第一節經文，就會種下第一棵樹。": "{name}, bem-vindo ao seu jardim! Complete seu primeiro versículo para plantar sua primeira árvore.",
   "歡迎來到你的園子！挑戰第一節經文，就會種下第一棵樹。": "Bem-vindo ao seu jardim! Complete seu primeiro versículo para plantar sua primeira árvore.",
   "這只是排行榜暱稱；登入後，成績和園子才會存進你的帳號。": "Este é apenas um apelido para a classificação; entre para salvar suas pontuações e seu jardim na sua conta.",
+  "確認核銷": "Confirmar resgate",
+  "分享連結": "Link para compartilhar",
+  "確定": "OK",
+  "知道了": "Entendi",
 };
 
 export const fr = {
@@ -20609,6 +20665,10 @@ export const fr = {
   "{name}，歡迎來到你的園子！挑戰第一節經文，就會種下第一棵樹。": "{name}, bienvenue dans ton jardin ! Réussis ton premier verset pour planter ton premier arbre.",
   "歡迎來到你的園子！挑戰第一節經文，就會種下第一棵樹。": "Bienvenue dans ton jardin ! Réussis ton premier verset pour planter ton premier arbre.",
   "這只是排行榜暱稱；登入後，成績和園子才會存進你的帳號。": "Ce n’est qu’un pseudo pour le classement ; connecte-toi pour enregistrer tes scores et ton jardin dans ton compte.",
+  "確認核銷": "Confirmer l’utilisation",
+  "分享連結": "Lien de partage",
+  "確定": "OK",
+  "知道了": "Compris",
 };
 
 export const ru = {
@@ -21648,6 +21708,10 @@ export const ru = {
   "{name}，歡迎來到你的園子！挑戰第一節經文，就會種下第一棵樹。": "{name}, добро пожаловать в твой сад! Пройди первый стих — и посадишь первое дерево.",
   "歡迎來到你的園子！挑戰第一節經文，就會種下第一棵樹。": "Добро пожаловать в твой сад! Пройди первый стих — и посадишь первое дерево.",
   "這只是排行榜暱稱；登入後，成績和園子才會存進你的帳號。": "Это лишь имя для рейтинга; войди, чтобы сохранить результаты и сад в своём аккаунте.",
+  "確認核銷": "Подтвердить погашение",
+  "分享連結": "Ссылка для отправки",
+  "確定": "ОК",
+  "知道了": "Понятно",
 };
 
 export const hi = {
@@ -22687,6 +22751,10 @@ export const hi = {
   "{name}，歡迎來到你的園子！挑戰第一節經文，就會種下第一棵樹。": "{name}, अपने बगीचे में आपका स्वागत है! पहले वचन की चुनौती पूरी करें, और आपका पहला पेड़ लग जाएगा।",
   "歡迎來到你的園子！挑戰第一節經文，就會種下第一棵樹。": "अपने बगीचे में आपका स्वागत है! पहले वचन की चुनौती पूरी करें, और आपका पहला पेड़ लग जाएगा।",
   "這只是排行榜暱稱；登入後，成績和園子才會存進你的帳號。": "यह केवल लीडरबोर्ड का उपनाम है; लॉगिन करने के बाद ही आपके स्कोर और बगीचा आपके खाते में सेव होंगे।",
+  "確認核銷": "उपयोग की पुष्टि करें",
+  "分享連結": "साझा करने का लिंक",
+  "確定": "ठीक है",
+  "知道了": "समझ लिया",
 };
 
 // Khmer (Cambodian) — full UI coverage, machine-translated in bulk from the
@@ -24354,6 +24422,10 @@ export const km = {
   "{name}，歡迎來到你的園子！挑戰第一節經文，就會種下第一棵樹。": "{name} សូមស្វាគមន៍មកកាន់សួនច្បាររបស់អ្នក! ជាប់ខគម្ពីរទីមួយ ដើម្បីដាំដើមឈើដំបូងរបស់អ្នក។",
   "歡迎來到你的園子！挑戰第一節經文，就會種下第一棵樹。": "សូមស្វាគមន៍មកកាន់សួនច្បាររបស់អ្នក! ជាប់ខគម្ពីរទីមួយ ដើម្បីដាំដើមឈើដំបូងរបស់អ្នក។",
   "這只是排行榜暱稱；登入後，成績和園子才會存進你的帳號。": "នេះគ្រាន់តែជាឈ្មោះហៅក្រៅនៅលើតារាងចំណាត់ថ្នាក់ប៉ុណ្ណោះ; ចូលគណនី ដើម្បីរក្សាទុកពិន្ទុ និងសួនច្បារក្នុងគណនីរបស់អ្នក។",
+  "確認核銷": "បញ្ជាក់ការប្រើប្រាស់",
+  "分享連結": "តំណចែករំលែក",
+  "確定": "យល់ព្រម",
+  "知道了": "យល់ហើយ",
 };
 
 const I18N_FILLINS = { he, fa, ar, ja, ko, es, tr, de, my, vi, id, ms, zhcn, pt, fr, ru, hi, km };

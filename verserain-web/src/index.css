@@ -8,6 +8,53 @@
   --app-font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Noto Sans', 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Yu Gothic', YuGothic, 'Noto Sans JP', 'Apple SD Gothic Neo', 'Noto Sans KR', 'Noto Sans Myanmar', 'Noto Sans Hebrew', 'Vazirmatn', 'PingFang SC', 'PingFang TC', 'Hiragino Sans GB', 'Noto Sans SC', 'Noto Sans TC', 'Microsoft YaHei', 'Segoe UI', 'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji', sans-serif;
   --control-font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Noto Sans', 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Yu Gothic', YuGothic, 'Noto Sans JP', 'Apple SD Gothic Neo', 'Noto Sans KR', 'Noto Sans Myanmar', 'Noto Sans Hebrew', 'Vazirmatn', 'PingFang SC', 'PingFang TC', 'Hiragino Sans GB', 'Noto Sans SC', 'Noto Sans TC', 'Microsoft YaHei', 'Segoe UI', 'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji', sans-serif;
   --game-safe-top: max(env(safe-area-inset-top), 44px);
+
+  /* Design tokens (UI/UX 第 1 階段). New UI uses these instead of hex codes;
+     src/ui/ components are built on them. Text on every *-strong / solid
+     role colour below keeps a 4.5:1 contrast with white. */
+  --color-primary: #2563eb;
+  --color-primary-strong: #1d4ed8;
+  --color-primary-soft: #eff6ff;
+  --color-success: #15803d;
+  --color-success-strong: #166534;
+  --color-success-soft: #f0fdf4;
+  --color-danger: #dc2626;
+  --color-danger-strong: #b91c1c;
+  --color-danger-soft: #fef2f2;
+  --color-warning: #b45309;
+  --color-warning-soft: #fffbeb;
+  --color-text: #1e293b;
+  --color-text-2: #475569;
+  --color-border: #e2e8f0;
+  --color-surface: #ffffff;
+  --color-surface-2: #f8fafc;
+  --color-scrim: rgba(15, 23, 42, 0.55);
+
+  --fs-display: 1.75rem;  /* 28px */
+  --fs-title: 1.375rem;   /* 22px */
+  --fs-heading: 1.125rem; /* 18px */
+  --fs-body: 1rem;        /* 16px */
+  --fs-small: 0.875rem;   /* 14px */
+  --fs-tiny: 0.75rem;     /* 12px */
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+
+  --radius-sm: 6px;
+  --radius-md: 12px;
+  --radius-pill: 999px;
+
+  --shadow-raised: 0 10px 30px rgba(15, 23, 42, 0.25);
+  --tap-min: 44px;
+
+  /* Three layers only: page content, dialogs, toasts. Above every legacy
+     hand-made overlay (they top out around 10000). */
+  --z-modal: 20000;
+  --z-toast: 30000;
 }
 
 * {
