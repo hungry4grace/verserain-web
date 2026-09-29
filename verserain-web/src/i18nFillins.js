@@ -1297,6 +1297,19 @@ export const he = {
   "我確認本機構已取得這次活動的勸募許可，帳戶為本機構所有；捐款由本機構收取、開立收據，並依許可的使用計畫使用及公開徵信。經文雨不經手款項。": "אני מאשר/ת שלארגון יש היתר התרמה לפעילות זו ושהחשבון שייך לארגון; התרומות מתקבלות על ידי הארגון, שמנפיק עליהן קבלות, משתמש בהן לפי תוכנית השימוש שבהיתר ומדווח עליהן בפומבי. VerseRain אינה מטפלת בכסף.",
   "建立後，已取得勸募許可的機構可以在「我的愛心行動」加上現金捐款資訊（經文雨審核後公開）。": "לאחר היצירה, ארגון המחזיק בהיתר התרמה יכול להוסיף פרטי תרומה במזומן תחת \"מיזם אהבה במעשים שלי\" (יפורסמו לאחר בדיקה של VerseRain).",
   "{who} 為愛心行動「{name}」送出現金捐款資訊（{org}），請確認勸募許可與帳戶戶名": "{who} שלח/ה פרטי תרומה במזומן עבור מיזם אהבה במעשים \"{name}\" ({org}) — יש לבדוק את היתר ההתרמה ואת שם בעל החשבון",
+  "{name}，今天的經文在經文雨等你 🌧️ 花 1 分鐘聽一節、玩一局，就能在園子種下第一棵樹！": "{name}, הפסוק של היום מחכה לך ב-VerseRain 🌧️ רק דקה להאזין לפסוק ולשחק סיבוב אחד – והעץ הראשון יישתל בגן שלך!",
+  "已複製提醒訊息，貼到 LINE 或簡訊傳給他吧": "הודעת התזכורת הועתקה – אפשר להדביק אותה ב-LINE או ב-SMS ולשלוח",
+  "已提醒 {name} 👍": "נשלחה תזכורת ל-{name} 👍",
+  "找不到 {name} 的裝置，請改用「分享提醒」傳給他": "לא נמצא מכשיר של {name} – אפשר לשלוח דרך “שיתוף תזכורת” במקום",
+  "3 天內已經提醒過 {name} 了": "כבר נשלחה תזכורת ל-{name} ב-3 הימים האחרונים",
+  "今天的提醒次數已用完，明天再試": "התזכורות להיום נגמרו – אפשר לנסות שוב מחר",
+  "{name} 已經開始玩了 🎉": "{name} כבר בתוך המשחק 🎉",
+  "請重新登入後再試": "יש להתחבר מחדש ולנסות שוב",
+  "提醒失敗，請稍後再試": "שליחת התזכורת נכשלה, אפשר לנסות שוב מאוחר יותר",
+  "分享提醒": "שיתוף תזכורת",
+  "已提醒 ✓": "תזכורת נשלחה ✓",
+  "提醒他": "שליחת תזכורת",
+  "邀你來玩一節經文，種下第一棵樹！": "מזמין/ה אותך לשחק בפסוק אחד ולשתול את העץ הראשון שלך!",
 };
 
 export const fa = {
@@ -2575,6 +2588,19 @@ export const fa = {
   "我確認本機構已取得這次活動的勸募許可，帳戶為本機構所有；捐款由本機構收取、開立收據，並依許可的使用計畫使用及公開徵信。經文雨不經手款項。": "تأیید می‌کنم که این مؤسسه برای این فعالیت مجوز جمع‌آوری کمک‌های مردمی دارد و این حساب متعلق به مؤسسه است؛ کمک‌ها را مؤسسه دریافت می‌کند، برایشان رسید صادر می‌کند، طبق برنامهٔ مصرفِ مجوز به کار می‌برد و گزارش آن را منتشر می‌کند. VerseRain هیچ وجهی را جابه‌جا نمی‌کند.",
   "建立後，已取得勸募許可的機構可以在「我的愛心行動」加上現金捐款資訊（經文雨審核後公開）。": "پس از ایجاد، مؤسسه‌ای که مجوز جمع‌آوری کمک‌های مردمی دارد می‌تواند در «محبت در عمل من» اطلاعات کمک نقدی را اضافه کند (پس از بررسی VerseRain منتشر می‌شود).",
   "{who} 為愛心行動「{name}」送出現金捐款資訊（{org}），請確認勸募許可與帳戶戶名": "{who} اطلاعات کمک نقدی را برای «{name}» از طرح محبت در عمل ({org}) ارسال کرد؛ لطفاً مجوز و نام صاحب حساب را بررسی کنید",
+  "{name}，今天的經文在經文雨等你 🌧️ 花 1 分鐘聽一節、玩一局，就能在園子種下第一棵樹！": "{name}، آیهٔ امروز در VerseRain منتظر توست 🌧️ فقط ۱ دقیقه وقت بگذار، یک آیه گوش کن و یک دور بازی کن تا اولین درخت باغت را بکاری!",
+  "已複製提醒訊息，貼到 LINE 或簡訊傳給他吧": "پیام یادآوری کپی شد؛ آن را در LINE یا پیامک بچسبان و برایش بفرست",
+  "已提醒 {name} 👍": "به {name} یادآوری شد 👍",
+  "找不到 {name} 的裝置，請改用「分享提醒」傳給他": "دستگاه {name} پیدا نشد؛ لطفاً از «اشتراک‌گذاری یادآوری» برای فرستادن استفاده کن",
+  "3 天內已經提醒過 {name} 了": "در ۳ روز گذشته به {name} یادآوری کرده‌ای",
+  "今天的提醒次數已用完，明天再試": "یادآوری‌های امروزت تمام شد؛ فردا دوباره امتحان کن",
+  "{name} 已經開始玩了 🎉": "{name} بازی را شروع کرده است 🎉",
+  "請重新登入後再試": "لطفاً دوباره وارد شو و امتحان کن",
+  "提醒失敗，請稍後再試": "ارسال یادآوری ناموفق بود؛ لطفاً بعداً دوباره امتحان کن",
+  "分享提醒": "اشتراک‌گذاری یادآوری",
+  "已提醒 ✓": "یادآوری شد ✓",
+  "提醒他": "یادآوری کن",
+  "邀你來玩一節經文，種下第一棵樹！": "تو را دعوت کرده یک آیه بازی کنی و اولین درختت را بکاری!",
 };
 
 export const ar = {
@@ -4269,6 +4295,19 @@ export const ar = {
   "我確認本機構已取得這次活動的勸募許可，帳戶為本機構所有；捐款由本機構收取、開立收據，並依許可的使用計畫使用及公開徵信。經文雨不經手款項。": "أؤكد أن الجهة حاصلة على تصريح جمع التبرعات لهذا النشاط وأن الحساب مملوك لها؛ وأن الجهة تستلم التبرعات وتُصدر إيصالاتها وتستخدمها وفق خطة الاستخدام المصرّح بها وتُفصح عنها علنًا. لا يتعامل VerseRain مع الأموال.",
   "建立後，已取得勸募許可的機構可以在「我的愛心行動」加上現金捐款資訊（經文雨審核後公開）。": "بعد الإنشاء، يمكن للجهة الحاصلة على تصريح جمع التبرعات إضافة بيانات التبرع النقدي من «المحبة بالعمل الخاصة بي» (تُنشر بعد مراجعة VerseRain).",
   "{who} 為愛心行動「{name}」送出現金捐款資訊（{org}），請確認勸募許可與帳戶戶名": "أرسل {who} بيانات التبرع النقدي لمشروع المحبة بالعمل «{name}» ({org}) — يُرجى التحقق من التصريح واسم صاحب الحساب",
+  "{name}，今天的經文在經文雨等你 🌧️ 花 1 分鐘聽一節、玩一局，就能在園子種下第一棵樹！": "{name}، آية اليوم تنتظرك على VerseRain 🌧️ خصّص دقيقة واحدة لتستمع إلى آية وتلعب جولة، وازرع أول شجرة في حديقتك!",
+  "已複製提醒訊息，貼到 LINE 或簡訊傳給他吧": "تم نسخ رسالة التذكير، الصقها في LINE أو في رسالة نصية وأرسلها",
+  "已提醒 {name} 👍": "تم تذكير {name} 👍",
+  "找不到 {name} 的裝置，請改用「分享提醒」傳給他": "تعذّر العثور على جهاز {name}، استخدم «مشاركة التذكير» بدلًا من ذلك",
+  "3 天內已經提醒過 {name} 了": "لقد ذكّرت {name} بالفعل خلال آخر 3 أيام",
+  "今天的提醒次數已用完，明天再試": "استنفدت تذكيرات اليوم، حاول مجددًا غدًا",
+  "{name} 已經開始玩了 🎉": "{name} داخل اللعبة بالفعل 🎉",
+  "請重新登入後再試": "يرجى تسجيل الدخول مجددًا ثم المحاولة",
+  "提醒失敗，請稍後再試": "تعذّر إرسال التذكير، يرجى المحاولة لاحقًا",
+  "分享提醒": "مشاركة التذكير",
+  "已提醒 ✓": "تم التذكير ✓",
+  "提醒他": "إرسال تذكير",
+  "邀你來玩一節經文，種下第一棵樹！": "يدعوك لتلعب آية وتزرع أول شجرة في حديقتك!",
 };
 
 export const ja = {
@@ -5535,6 +5574,19 @@ export const ja = {
   "我確認本機構已取得這次活動的勸募許可，帳戶為本機構所有；捐款由本機構收取、開立收據，並依許可的使用計畫使用及公開徵信。經文雨不經手款項。": "本団体がこの活動の募金許可を取得しており、この口座が本団体の所有であることを確認します。寄付金は本団体が受け取り、領収書を発行し、許可された使用計画に沿って使用・収支公開します。VerseRain は金銭を扱いません。",
   "建立後，已取得勸募許可的機構可以在「我的愛心行動」加上現金捐款資訊（經文雨審核後公開）。": "作成後、募金許可を取得した団体は「私の愛の行動」で現金寄付情報を追加できます（VerseRain の審査後に公開）。",
   "{who} 為愛心行動「{name}」送出現金捐款資訊（{org}），請確認勸募許可與帳戶戶名": "{who} が愛の行動「{name}」の現金寄付情報を送信しました（{org}）。募金許可と口座名義を確認してください",
+  "{name}，今天的經文在經文雨等你 🌧️ 花 1 分鐘聽一節、玩一局，就能在園子種下第一棵樹！": "{name}さん、今日の聖句がVerseRainで待っています 🌧️ 1分で1節聴いて1回プレイすれば、ガーデンに最初の木を植えられます！",
+  "已複製提醒訊息，貼到 LINE 或簡訊傳給他吧": "リマインドメッセージをコピーしました。LINEやSMSに貼り付けて送ってあげましょう",
+  "已提醒 {name} 👍": "{name}さんにリマインドしました 👍",
+  "找不到 {name} 的裝置，請改用「分享提醒」傳給他": "{name}さんの端末が見つかりません。「リマインドを共有」から送ってください",
+  "3 天內已經提醒過 {name} 了": "{name}さんには3日以内にリマインド済みです",
+  "今天的提醒次數已用完，明天再試": "今日のリマインド回数を使い切りました。また明日お試しください",
+  "{name} 已經開始玩了 🎉": "{name}さんはもうプレイを始めています 🎉",
+  "請重新登入後再試": "もう一度ログインしてからお試しください",
+  "提醒失敗，請稍後再試": "リマインドに失敗しました。しばらくしてからもう一度お試しください",
+  "分享提醒": "リマインドを共有",
+  "已提醒 ✓": "リマインド済み ✓",
+  "提醒他": "リマインドする",
+  "邀你來玩一節經文，種下第一棵樹！": "があなたを招待しています：聖句を1節プレイして、最初の木を植えよう！",
 };
 
 export const ko = {
@@ -6799,6 +6851,19 @@ export const ko = {
   "我確認本機構已取得這次活動的勸募許可，帳戶為本機構所有；捐款由本機構收取、開立收據，並依許可的使用計畫使用及公開徵信。經文雨不經手款項。": "본 기관은 이번 활동에 대한 모금 허가를 받았으며 이 계좌가 본 기관 소유임을 확인합니다. 기부금은 본 기관이 수령하여 영수증을 발행하고, 허가된 사용 계획에 따라 사용하며 공개 보고합니다. VerseRain은 금전을 취급하지 않습니다.",
   "建立後，已取得勸募許可的機構可以在「我的愛心行動」加上現金捐款資訊（經文雨審核後公開）。": "생성 후 모금 허가를 받은 기관은 「내 사랑의 실천」에서 현금 기부 정보를 추가할 수 있습니다(VerseRain 심사 후 공개).",
   "{who} 為愛心行動「{name}」送出現金捐款資訊（{org}），請確認勸募許可與帳戶戶名": "{who}님이 사랑의 실천 「{name}」의 현금 기부 정보를 제출했습니다({org}). 모금 허가와 예금주명을 확인하세요",
+  "{name}，今天的經文在經文雨等你 🌧️ 花 1 分鐘聽一節、玩一局，就能在園子種下第一棵樹！": "{name}님, 오늘의 말씀이 VerseRain에서 기다리고 있어요 🌧️ 1분만 내서 한 구절 듣고 한 판 플레이하면 정원에 첫 번째 나무를 심을 수 있어요!",
+  "已複製提醒訊息，貼到 LINE 或簡訊傳給他吧": "알림 메시지를 복사했어요. LINE이나 문자에 붙여넣어 보내 주세요",
+  "已提醒 {name} 👍": "{name}님에게 알림을 보냈어요 👍",
+  "找不到 {name} 的裝置，請改用「分享提醒」傳給他": "{name}님의 기기를 찾을 수 없어요. '알림 공유'로 대신 보내 주세요",
+  "3 天內已經提醒過 {name} 了": "3일 이내에 이미 {name}님에게 알림을 보냈어요",
+  "今天的提醒次數已用完，明天再試": "오늘 보낼 수 있는 알림을 모두 사용했어요. 내일 다시 시도해 주세요",
+  "{name} 已經開始玩了 🎉": "{name}님은 이미 플레이를 시작했어요 🎉",
+  "請重新登入後再試": "다시 로그인한 후 시도해 주세요",
+  "提醒失敗，請稍後再試": "알림을 보내지 못했어요. 잠시 후 다시 시도해 주세요",
+  "分享提醒": "알림 공유",
+  "已提醒 ✓": "알림 완료 ✓",
+  "提醒他": "알림 보내기",
+  "邀你來玩一節經文，種下第一棵樹！": "님이 말씀 한 구절을 플레이하고 첫 나무를 심어 보자고 초대했어요!",
 };
 
 export const es = {
@@ -8079,6 +8144,19 @@ export const es = {
   "我確認本機構已取得這次活動的勸募許可，帳戶為本機構所有；捐款由本機構收取、開立收據，並依許可的使用計畫使用及公開徵信。經文雨不經手款項。": "Confirmo que esta organización tiene permiso de recaudación para esta campaña y que la cuenta le pertenece; la organización recibe los donativos, emite los recibos, los usa según el plan autorizado y rinde cuentas públicamente. VerseRain no maneja el dinero.",
   "建立後，已取得勸募許可的機構可以在「我的愛心行動」加上現金捐款資訊（經文雨審核後公開）。": "Una vez creado, una organización con permiso de recaudación puede añadir información para donativos en efectivo en «Mi proyecto Amor en acción» (se publica tras la revisión de VerseRain).",
   "{who} 為愛心行動「{name}」送出現金捐款資訊（{org}），請確認勸募許可與帳戶戶名": "{who} envió información para donativos en efectivo del proyecto Amor en acción «{name}» ({org}); verifica el permiso y el titular de la cuenta",
+  "{name}，今天的經文在經文雨等你 🌧️ 花 1 分鐘聽一節、玩一局，就能在園子種下第一棵樹！": "{name}, el versículo de hoy te espera en VerseRain 🌧️ ¡Dedica 1 minuto a escuchar un versículo y jugar una ronda, y planta el primer árbol en tu jardín!",
+  "已複製提醒訊息，貼到 LINE 或簡訊傳給他吧": "Recordatorio copiado; pégalo en LINE o en un SMS para enviárselo",
+  "已提醒 {name} 👍": "Recordatorio enviado a {name} 👍",
+  "找不到 {name} 的裝置，請改用「分享提醒」傳給他": "No encontramos el dispositivo de {name}; usa «Compartir recordatorio» para enviárselo",
+  "3 天內已經提醒過 {name} 了": "Ya le recordaste a {name} en los últimos 3 días",
+  "今天的提醒次數已用完，明天再試": "Ya usaste los recordatorios de hoy; inténtalo de nuevo mañana",
+  "{name} 已經開始玩了 🎉": "¡{name} ya empezó a jugar! 🎉",
+  "請重新登入後再試": "Vuelve a iniciar sesión e inténtalo de nuevo",
+  "提醒失敗，請稍後再試": "No se pudo enviar el recordatorio; inténtalo más tarde",
+  "分享提醒": "Compartir recordatorio",
+  "已提醒 ✓": "Enviado ✓",
+  "提醒他": "Recordarle",
+  "邀你來玩一節經文，種下第一棵樹！": "te invita a jugar un versículo y a plantar tu primer árbol.",
 };
 
 export const tr = {
@@ -9359,6 +9437,19 @@ export const tr = {
   "我確認本機構已取得這次活動的勸募許可，帳戶為本機構所有；捐款由本機構收取、開立收據，並依許可的使用計畫使用及公開徵信。經文雨不經手款項。": "Bu kuruluşun bu kampanya için bağış toplama iznine sahip olduğunu ve hesabın kuruluşa ait olduğunu onaylıyorum; bağışları kuruluş alır, makbuzunu düzenler, izinli kullanım planına göre kullanır ve kamuya açık şekilde raporlar. VerseRain paraya aracılık etmez.",
   "建立後，已取得勸募許可的機構可以在「我的愛心行動」加上現金捐款資訊（經文雨審核後公開）。": "Oluşturulduktan sonra, bağış toplama iznine sahip bir kuruluş “Eyleme dönüşen sevgi projem” bölümüne nakit bağış bilgileri ekleyebilir (VerseRain incelemesinden sonra yayınlanır).",
   "{who} 為愛心行動「{name}」送出現金捐款資訊（{org}），請確認勸募許可與帳戶戶名": "{who}, “{name}” Eyleme dönüşen sevgi projesi için nakit bağış bilgisi gönderdi ({org}); lütfen bağış toplama iznini ve hesap sahibi adını kontrol edin",
+  "{name}，今天的經文在經文雨等你 🌧️ 花 1 分鐘聽一節、玩一局，就能在園子種下第一棵樹！": "{name}, bugünün ayeti seni VerseRain'de bekliyor 🌧️ 1 dakikanı ayır, bir ayet dinle, bir tur oyna ve bahçene ilk ağacını dik!",
+  "已複製提醒訊息，貼到 LINE 或簡訊傳給他吧": "Hatırlatma mesajı kopyalandı; LINE'a veya SMS'e yapıştırıp gönderebilirsin",
+  "已提醒 {name} 👍": "Hatırlatma gönderildi: {name} 👍",
+  "找不到 {name} 的裝置，請改用「分享提醒」傳給他": "{name} için cihaz bulunamadı; bunun yerine “Hatırlatmayı paylaş” seçeneğini kullan",
+  "3 天內已經提醒過 {name} 了": "Son 3 gün içinde {name} için zaten hatırlatma gönderdin",
+  "今天的提醒次數已用完，明天再試": "Bugünkü hatırlatma hakkını doldurdun, yarın tekrar dene",
+  "{name} 已經開始玩了 🎉": "{name} oynamaya başladı bile 🎉",
+  "請重新登入後再試": "Lütfen tekrar giriş yapıp yeniden dene",
+  "提醒失敗，請稍後再試": "Hatırlatma gönderilemedi, lütfen daha sonra tekrar dene",
+  "分享提醒": "Hatırlatmayı paylaş",
+  "已提醒 ✓": "Hatırlatıldı ✓",
+  "提醒他": "Hatırlat",
+  "邀你來玩一節經文，種下第一棵樹！": "seni bir ayet oynamaya ve ilk ağacını dikmeye davet ediyor!",
 };
 
 export const de = {
@@ -10639,6 +10730,19 @@ export const de = {
   "我確認本機構已取得這次活動的勸募許可，帳戶為本機構所有；捐款由本機構收取、開立收據，並依許可的使用計畫使用及公開徵信。經文雨不經手款項。": "Ich bestätige, dass unsere Organisation für diese Aktion eine Spendensammlungsgenehmigung besitzt und Inhaberin dieses Kontos ist; Spenden werden von der Organisation entgegengenommen, quittiert, gemäß dem genehmigten Verwendungsplan eingesetzt und öffentlich nachgewiesen. VerseRain nimmt kein Geld entgegen.",
   "建立後，已取得勸募許可的機構可以在「我的愛心行動」加上現金捐款資訊（經文雨審核後公開）。": "Nach dem Erstellen kann eine Organisation mit Spendensammlungsgenehmigung unter „Mein ‚Liebe in Aktion‘-Projekt“ Angaben für Geldspenden hinzufügen (Veröffentlichung nach Prüfung durch VerseRain).",
   "{who} 為愛心行動「{name}」送出現金捐款資訊（{org}），請確認勸募許可與帳戶戶名": "{who} hat Angaben für Geldspenden zum „Liebe in Aktion“-Projekt „{name}“ ({org}) eingereicht – bitte Spendensammlungsgenehmigung und Kontoinhaber prüfen",
+  "{name}，今天的經文在經文雨等你 🌧️ 花 1 分鐘聽一節、玩一局，就能在園子種下第一棵樹！": "{name}, der Vers des Tages wartet auf VerseRain auf dich 🌧️ Nimm dir 1 Minute, hör einen Vers, spiel eine Runde – und pflanze den ersten Baum in deinem Garten!",
+  "已複製提醒訊息，貼到 LINE 或簡訊傳給他吧": "Erinnerung kopiert – füge sie in LINE oder eine SMS ein und schick sie ab",
+  "已提醒 {name} 👍": "{name} wurde erinnert 👍",
+  "找不到 {name} 的裝置，請改用「分享提醒」傳給他": "Kein Gerät von {name} gefunden – nutze stattdessen „Erinnerung teilen“",
+  "3 天內已經提醒過 {name} 了": "Du hast {name} in den letzten 3 Tagen schon erinnert",
+  "今天的提醒次數已用完，明天再試": "Du hast heute alle Erinnerungen verbraucht – versuch es morgen wieder",
+  "{name} 已經開始玩了 🎉": "{name} spielt schon mit 🎉",
+  "請重新登入後再試": "Bitte melde dich erneut an und versuch es noch einmal",
+  "提醒失敗，請稍後再試": "Erinnerung fehlgeschlagen, bitte versuch es später noch einmal",
+  "分享提醒": "Erinnerung teilen",
+  "已提醒 ✓": "Erinnert ✓",
+  "提醒他": "Erinnern",
+  "邀你來玩一節經文，種下第一棵樹！": "lädt dich ein, einen Vers zu spielen und deinen ersten Baum zu pflanzen!",
 };
 
 export const my = {
@@ -11919,6 +12023,19 @@ export const my = {
   "我確認本機構已取得這次活動的勸募許可，帳戶為本機構所有；捐款由本機構收取、開立收據，並依許可的使用計畫使用及公開徵信。經文雨不經手款項。": "ဤအဖွဲ့အစည်းသည် ဤလှုပ်ရှားမှုအတွက် အလှူခံခွင့်ပြုမိန့် ရရှိထားပြီး ဤငွေစာရင်းသည် အဖွဲ့အစည်းပိုင် ဖြစ်ကြောင်း အတည်ပြုပါသည်။ အလှူငွေများကို အဖွဲ့အစည်းက လက်ခံ၍ ပြေစာထုတ်ပေးပြီး ခွင့်ပြုထားသော အသုံးပြုမှုအစီအစဉ်အတိုင်း သုံးစွဲကာ လူသိရှင်ကြား စာရင်းထုတ်ပြန်ပါမည်။ VerseRain သည် ငွေကို ကိုင်တွယ်ခြင်း မရှိပါ။",
   "建立後，已取得勸募許可的機構可以在「我的愛心行動」加上現金捐款資訊（經文雨審核後公開）。": "ဖန်တီးပြီးနောက် အလှူခံခွင့်ပြုမိန့်ရှိသော အဖွဲ့အစည်းသည် “ကျွန်ုပ်၏ လက်တွေ့မေတ္တာ စီမံကိန်း” တွင် ငွေသားအလှူ အချက်အလက် ထည့်နိုင်ပါသည် (VerseRain စစ်ဆေးပြီးမှ ထုတ်ပြပါမည်)။",
   "{who} 為愛心行動「{name}」送出現金捐款資訊（{org}），請確認勸募許可與帳戶戶名": "{who} က လက်တွေ့မေတ္တာ စီမံကိန်း “{name}” အတွက် ငွေသားအလှူ အချက်အလက် ပေးပို့ထားပါသည် ({org})၊ အလှူခံခွင့်ပြုမိန့်နှင့် ငွေစာရင်းအမည်ကို စစ်ဆေးပါ",
+  "{name}，今天的經文在經文雨等你 🌧️ 花 1 分鐘聽一節、玩一局，就能在園子種下第一棵樹！": "{name} ရေ၊ ဒီနေ့ကျမ်းချက်က VerseRain မှာ စောင့်နေပါတယ် 🌧️ ၁ မိနစ်လောက် အချိန်ပေးပြီး ကျမ်းချက်တစ်ပိုဒ် နားထောင်၊ တစ်ပွဲကစားလိုက်ရင် သင့်ဥယျာဉ်မှာ ပထမဆုံးသစ်ပင်ကို စိုက်နိုင်ပါပြီ!",
+  "已複製提醒訊息，貼到 LINE 或簡訊傳給他吧": "သတိပေးစာကို ကူးယူပြီးပါပြီ၊ LINE သို့မဟုတ် SMS မှာ ကူးထည့်ပြီး ပို့ပေးလိုက်ပါ",
+  "已提醒 {name} 👍": "{name} ကို သတိပေးပြီးပါပြီ 👍",
+  "找不到 {name} 的裝置，請改用「分享提醒」傳給他": "{name} ၏ စက်ကို ရှာမတွေ့ပါ၊ “သတိပေးချက် မျှဝေရန်” ကို အသုံးပြု၍ ပို့ပေးပါ",
+  "3 天內已經提醒過 {name} 了": "{name} ကို ၃ ရက်အတွင်း သတိပေးပြီးသားပါ",
+  "今天的提醒次數已用完，明天再試": "ဒီနေ့ သတိပေးနိုင်သည့် အကြိမ်ရေ ကုန်သွားပါပြီ၊ မနက်ဖြန် ထပ်ကြိုးစားပါ",
+  "{name} 已經開始玩了 🎉": "{name} စတင်ကစားနေပါပြီ 🎉",
+  "請重新登入後再試": "အကောင့်ထဲ ပြန်ဝင်ပြီး ထပ်ကြိုးစားပါ",
+  "提醒失敗，請稍後再試": "သတိပေး၍ မရပါ၊ နောက်မှ ထပ်ကြိုးစားပါ",
+  "分享提醒": "သတိပေးချက် မျှဝေရန်",
+  "已提醒 ✓": "သတိပေးပြီး ✓",
+  "提醒他": "သတိပေးရန်",
+  "邀你來玩一節經文，種下第一棵樹！": "က ကျမ်းချက်တစ်ပိုဒ် ကစားပြီး ပထမဆုံးသစ်ပင် စိုက်ဖို့ သင့်ကို ဖိတ်ခေါ်နေပါတယ်!",
 };
 
 export const vi = {
@@ -13199,6 +13316,19 @@ export const vi = {
   "我確認本機構已取得這次活動的勸募許可，帳戶為本機構所有；捐款由本機構收取、開立收據，並依許可的使用計畫使用及公開徵信。經文雨不經手款項。": "Tôi xác nhận tổ chức đã có giấy phép quyên góp cho hoạt động này và tài khoản thuộc sở hữu của tổ chức; tiền quyên góp do tổ chức nhận, cấp biên nhận, sử dụng theo kế hoạch được cấp phép và công khai minh bạch. VerseRain không giữ tiền.",
   "建立後，已取得勸募許可的機構可以在「我的愛心行動」加上現金捐款資訊（經文雨審核後公開）。": "Sau khi tạo, tổ chức đã có giấy phép quyên góp có thể thêm thông tin quyên góp tiền mặt trong “Dự án Yêu thương bằng hành động của tôi” (công khai sau khi VerseRain duyệt).",
   "{who} 為愛心行動「{name}」送出現金捐款資訊（{org}），請確認勸募許可與帳戶戶名": "{who} đã gửi thông tin quyên góp tiền mặt cho dự án Yêu thương bằng hành động “{name}” ({org}), vui lòng kiểm tra giấy phép quyên góp và tên chủ tài khoản",
+  "{name}，今天的經文在經文雨等你 🌧️ 花 1 分鐘聽一節、玩一局，就能在園子種下第一棵樹！": "{name} ơi, câu Kinh Thánh hôm nay đang chờ bạn trên VerseRain 🌧️ Chỉ cần 1 phút nghe một câu, chơi một ván là bạn đã trồng được cây đầu tiên trong khu vườn của mình!",
+  "已複製提醒訊息，貼到 LINE 或簡訊傳給他吧": "Đã sao chép lời nhắc, hãy dán vào LINE hoặc tin nhắn SMS để gửi cho bạn ấy nhé",
+  "已提醒 {name} 👍": "Đã nhắc {name} 👍",
+  "找不到 {name} 的裝置，請改用「分享提醒」傳給他": "Không tìm thấy thiết bị của {name}, hãy dùng “Chia sẻ lời nhắc” để gửi thay nhé",
+  "3 天內已經提醒過 {name} 了": "Bạn đã nhắc {name} trong 3 ngày qua rồi",
+  "今天的提醒次數已用完，明天再試": "Bạn đã dùng hết lượt nhắc hôm nay, hãy thử lại vào ngày mai",
+  "{name} 已經開始玩了 🎉": "{name} đã bắt đầu chơi rồi 🎉",
+  "請重新登入後再試": "Vui lòng đăng nhập lại rồi thử lại",
+  "提醒失敗，請稍後再試": "Không gửi được lời nhắc, vui lòng thử lại sau",
+  "分享提醒": "Chia sẻ lời nhắc",
+  "已提醒 ✓": "Đã nhắc ✓",
+  "提醒他": "Nhắc bạn ấy",
+  "邀你來玩一節經文，種下第一棵樹！": "mời bạn chơi một câu Kinh Thánh và trồng cây đầu tiên!",
 };
 
 export const id = {
@@ -14707,6 +14837,19 @@ export const id = {
   "我確認本機構已取得這次活動的勸募許可，帳戶為本機構所有；捐款由本機構收取、開立收據，並依許可的使用計畫使用及公開徵信。經文雨不經手款項。": "Saya menyatakan bahwa lembaga ini memiliki izin penggalangan dana untuk kegiatan ini dan rekening ini milik lembaga; donasi diterima, diberi tanda terima, digunakan sesuai rencana yang diizinkan, dan dilaporkan secara terbuka oleh lembaga. VerseRain tidak menangani dana.",
   "建立後，已取得勸募許可的機構可以在「我的愛心行動」加上現金捐款資訊（經文雨審核後公開）。": "Setelah dibuat, lembaga yang memiliki izin penggalangan dana dapat menambahkan info donasi tunai di “Proyek Kasih dalam Tindakan saya” (diterbitkan setelah ditinjau VerseRain).",
   "{who} 為愛心行動「{name}」送出現金捐款資訊（{org}），請確認勸募許可與帳戶戶名": "{who} mengirim info donasi tunai untuk proyek Kasih dalam Tindakan “{name}” ({org}); periksa izin penggalangan dana dan nama pemilik rekening",
+  "{name}，今天的經文在經文雨等你 🌧️ 花 1 分鐘聽一節、玩一局，就能在園子種下第一棵樹！": "{name}, ayat hari ini menunggumu di VerseRain 🌧️ Luangkan 1 menit untuk mendengarkan satu ayat dan main satu ronde, lalu tanam pohon pertama di kebunmu!",
+  "已複製提醒訊息，貼到 LINE 或簡訊傳給他吧": "Pesan pengingat disalin, tempel di LINE atau SMS lalu kirimkan kepadanya",
+  "已提醒 {name} 👍": "{name} sudah diingatkan 👍",
+  "找不到 {name} 的裝置，請改用「分享提醒」傳給他": "Perangkat {name} tidak ditemukan, gunakan “Bagikan pengingat” untuk mengirimkannya",
+  "3 天內已經提醒過 {name} 了": "Kamu sudah mengingatkan {name} dalam 3 hari terakhir",
+  "今天的提醒次數已用完，明天再試": "Jatah pengingat hari ini sudah habis, coba lagi besok",
+  "{name} 已經開始玩了 🎉": "{name} sudah mulai bermain 🎉",
+  "請重新登入後再試": "Silakan masuk kembali lalu coba lagi",
+  "提醒失敗，請稍後再試": "Gagal mengirim pengingat, coba lagi nanti",
+  "分享提醒": "Bagikan pengingat",
+  "已提醒 ✓": "Sudah diingatkan ✓",
+  "提醒他": "Ingatkan",
+  "邀你來玩一節經文，種下第一棵樹！": "mengajakmu memainkan satu ayat dan menanam pohon pertamamu!",
 };
 
 export const ms = {
@@ -16419,6 +16562,19 @@ export const ms = {
   "我確認本機構已取得這次活動的勸募許可，帳戶為本機構所有；捐款由本機構收取、開立收據，並依許可的使用計畫使用及公開徵信。經文雨不經手款項。": "Saya mengesahkan bahawa organisasi ini telah memperoleh permit kutipan derma untuk aktiviti ini dan akaun ini milik organisasi ini; derma diterima oleh organisasi ini, yang mengeluarkan resit, menggunakannya mengikut pelan penggunaan yang dibenarkan dan melaporkannya secara terbuka. VerseRain tidak mengendalikan sebarang wang.",
   "建立後，已取得勸募許可的機構可以在「我的愛心行動」加上現金捐款資訊（經文雨審核後公開）。": "Selepas dicipta, organisasi yang memegang permit kutipan derma boleh menambah maklumat derma tunai di “Projek Kasih dalam Tindakan saya” (diterbitkan selepas disemak oleh VerseRain).",
   "{who} 為愛心行動「{name}」送出現金捐款資訊（{org}），請確認勸募許可與帳戶戶名": "{who} telah menghantar maklumat derma tunai untuk projek Kasih dalam Tindakan “{name}” ({org}); sila semak permit kutipan derma dan nama akaun",
+  "{name}，今天的經文在經文雨等你 🌧️ 花 1 分鐘聽一節、玩一局，就能在園子種下第一棵樹！": "{name}, ayat hari ini sedang menanti anda di VerseRain 🌧️ Luangkan 1 minit untuk mendengar satu ayat dan bermain satu pusingan, dan tanam pokok pertama di taman anda!",
+  "已複製提醒訊息，貼到 LINE 或簡訊傳給他吧": "Mesej peringatan telah disalin, tampal di LINE atau SMS dan hantar kepadanya",
+  "已提醒 {name} 👍": "{name} telah diingatkan 👍",
+  "找不到 {name} 的裝置，請改用「分享提醒」傳給他": "Peranti {name} tidak ditemui, sila gunakan “Kongsi peringatan” untuk menghantarnya",
+  "3 天內已經提醒過 {name} 了": "Anda sudah mengingatkan {name} dalam 3 hari lepas",
+  "今天的提醒次數已用完，明天再試": "Had peringatan hari ini sudah habis, cuba lagi esok",
+  "{name} 已經開始玩了 🎉": "{name} sudah mula bermain 🎉",
+  "請重新登入後再試": "Sila log masuk semula dan cuba lagi",
+  "提醒失敗，請稍後再試": "Gagal menghantar peringatan, sila cuba lagi nanti",
+  "分享提醒": "Kongsi peringatan",
+  "已提醒 ✓": "Sudah diingatkan ✓",
+  "提醒他": "Ingatkan",
+  "邀你來玩一節經文，種下第一棵樹！": "menjemput anda bermain satu ayat dan menanam pokok pertama anda!",
 };
 
 export const zhcn = {
@@ -18051,6 +18207,19 @@ export const zhcn = {
   "我確認本機構已取得這次活動的勸募許可，帳戶為本機構所有；捐款由本機構收取、開立收據，並依許可的使用計畫使用及公開徵信。經文雨不經手款項。": "我确认本机构已取得本次活动的劝募许可，账户为本机构所有；捐款由本机构收取、开具收据，并按许可的使用计划使用及公开征信。经文雨不经手款项。",
   "建立後，已取得勸募許可的機構可以在「我的愛心行動」加上現金捐款資訊（經文雨審核後公開）。": "创建后，已取得劝募许可的机构可以在“我的爱心行动”中添加现金捐款信息（经文雨审核后公开）。",
   "{who} 為愛心行動「{name}」送出現金捐款資訊（{org}），請確認勸募許可與帳戶戶名": "{who} 为爱心行动“{name}”提交了现金捐款信息（{org}），请确认劝募许可与账户户名",
+  "{name}，今天的經文在經文雨等你 🌧️ 花 1 分鐘聽一節、玩一局，就能在園子種下第一棵樹！": "{name}，今天的经文在经文雨等你 🌧️ 花 1 分钟听一节、玩一局，就能在园子里种下第一棵树！",
+  "已複製提醒訊息，貼到 LINE 或簡訊傳給他吧": "已复制提醒消息，粘贴到 LINE 或短信发给对方吧",
+  "已提醒 {name} 👍": "已提醒 {name} 👍",
+  "找不到 {name} 的裝置，請改用「分享提醒」傳給他": "找不到 {name} 的设备，请改用“分享提醒”发给对方",
+  "3 天內已經提醒過 {name} 了": "3 天内已经提醒过 {name} 了",
+  "今天的提醒次數已用完，明天再試": "今天的提醒次数已用完，明天再试吧",
+  "{name} 已經開始玩了 🎉": "{name} 已经开始玩了 🎉",
+  "請重新登入後再試": "请重新登录后再试",
+  "提醒失敗，請稍後再試": "提醒失败，请稍后再试",
+  "分享提醒": "分享提醒",
+  "已提醒 ✓": "已提醒 ✓",
+  "提醒他": "提醒TA",
+  "邀你來玩一節經文，種下第一棵樹！": "邀你来玩一节经文，种下第一棵树！",
 };
 
 export const pt = {
@@ -19052,6 +19221,19 @@ export const pt = {
   "送出中…": "Enviando…",
   "建立後，已取得勸募許可的機構可以在「我的愛心行動」加上現金捐款資訊（經文雨審核後公開）。": "Depois de criado, organizações com autorização para arrecadar doações podem adicionar informações de doação em dinheiro em “Meu projeto ‘Amor em ação’” (publicadas após análise do VerseRain).",
   "{who} 為愛心行動「{name}」送出現金捐款資訊（{org}），請確認勸募許可與帳戶戶名": "{who} enviou informações de doação em dinheiro para o projeto “{name}” do Amor em ação ({org}); verifique a autorização de arrecadação e o titular da conta",
+  "{name}，今天的經文在經文雨等你 🌧️ 花 1 分鐘聽一節、玩一局，就能在園子種下第一棵樹！": "{name}, o versículo de hoje está te esperando no VerseRain 🌧️ Tire 1 minuto para ouvir um versículo, jogar uma rodada e plantar a primeira árvore no seu jardim!",
+  "已複製提醒訊息，貼到 LINE 或簡訊傳給他吧": "Lembrete copiado! Cole no LINE ou em uma mensagem de texto e envie",
+  "已提醒 {name} 👍": "Lembrete enviado para {name} 👍",
+  "找不到 {name} 的裝置，請改用「分享提醒」傳給他": "Não encontramos o dispositivo de {name}. Use “Compartilhar lembrete” para enviar",
+  "3 天內已經提醒過 {name} 了": "Você já lembrou {name} nos últimos 3 dias",
+  "今天的提醒次數已用完，明天再試": "Você já usou os lembretes de hoje. Tente de novo amanhã",
+  "{name} 已經開始玩了 🎉": "{name} já começou a jogar 🎉",
+  "請重新登入後再試": "Faça login novamente e tente de novo",
+  "提醒失敗，請稍後再試": "Não foi possível enviar o lembrete. Tente novamente mais tarde",
+  "分享提醒": "Compartilhar lembrete",
+  "已提醒 ✓": "Enviado ✓",
+  "提醒他": "Lembrar",
+  "邀你來玩一節經文，種下第一棵樹！": "convidou você para jogar um versículo e plantar sua primeira árvore!",
 };
 
 export const fr = {
@@ -20053,6 +20235,19 @@ export const fr = {
   "送出中…": "Envoi…",
   "建立後，已取得勸募許可的機構可以在「我的愛心行動」加上現金捐款資訊（經文雨審核後公開）。": "Une fois le projet créé, les organismes titulaires d’une autorisation de collecte peuvent ajouter des informations pour les dons en argent dans « Mon projet “L’amour en actes” » (publiées après vérification par VerseRain).",
   "{who} 為愛心行動「{name}」送出現金捐款資訊（{org}），請確認勸募許可與帳戶戶名": "{who} a soumis des informations pour les dons en argent pour le projet « L’amour en actes » intitulé « {name} » ({org}) ; vérifiez l’autorisation de collecte et le titulaire du compte",
+  "{name}，今天的經文在經文雨等你 🌧️ 花 1 分鐘聽一節、玩一局，就能在園子種下第一棵樹！": "{name}, le verset du jour t'attend sur VerseRain 🌧️ Prends 1 minute pour écouter un verset et jouer une partie : tu planteras le premier arbre de ton jardin !",
+  "已複製提醒訊息，貼到 LINE 或簡訊傳給他吧": "Rappel copié ! Colle-le dans LINE ou dans un SMS pour l'envoyer",
+  "已提醒 {name} 👍": "Rappel envoyé à {name} 👍",
+  "找不到 {name} 的裝置，請改用「分享提醒」傳給他": "Appareil de {name} introuvable. Utilise plutôt « Partager le rappel »",
+  "3 天內已經提醒過 {name} 了": "Tu as déjà relancé {name} ces 3 derniers jours",
+  "今天的提醒次數已用完，明天再試": "Tu as utilisé tous tes rappels du jour. Réessaie demain",
+  "{name} 已經開始玩了 🎉": "{name} a déjà commencé à jouer 🎉",
+  "請重新登入後再試": "Reconnecte-toi puis réessaie",
+  "提醒失敗，請稍後再試": "Échec de l'envoi du rappel, réessaie plus tard",
+  "分享提醒": "Partager le rappel",
+  "已提醒 ✓": "Rappel envoyé ✓",
+  "提醒他": "Relancer",
+  "邀你來玩一節經文，種下第一棵樹！": "t'invite à jouer un verset et à planter ton premier arbre !",
 };
 
 export const ru = {
@@ -21054,6 +21249,19 @@ export const ru = {
   "送出中…": "Отправка…",
   "建立後，已取得勸募許可的機構可以在「我的愛心行動」加上現金捐款資訊（經文雨審核後公開）。": "После создания организации с разрешением на сбор пожертвований могут добавить реквизиты для денежных пожертвований в разделе «Мой проект „Любовь в действии“» (публикуются после проверки VerseRain).",
   "{who} 為愛心行動「{name}」送出現金捐款資訊（{org}），請確認勸募許可與帳戶戶名": "{who} отправил(а) реквизиты для денежных пожертвований в проект «Любовь в действии» «{name}» ({org}); проверьте разрешение на сбор и владельца счёта",
+  "{name}，今天的經文在經文雨等你 🌧️ 花 1 分鐘聽一節、玩一局，就能在園子種下第一棵樹！": "{name}, сегодняшний стих ждёт тебя в VerseRain 🌧️ Потрать 1 минуту: послушай стих, сыграй один раунд — и посади первое дерево в своём саду!",
+  "已複製提醒訊息，貼到 LINE 或簡訊傳給他吧": "Напоминание скопировано — вставь его в LINE или SMS и отправь",
+  "已提醒 {name} 👍": "Напоминание отправлено: {name} 👍",
+  "找不到 {name} 的裝置，請改用「分享提醒」傳給他": "Не удалось найти устройство {name} — отправь через «Поделиться напоминанием»",
+  "3 天內已經提醒過 {name} 了": "Напоминание для {name} уже отправлялось в последние 3 дня",
+  "今天的提醒次數已用完，明天再試": "Лимит напоминаний на сегодня исчерпан — попробуй завтра",
+  "{name} 已經開始玩了 🎉": "{name} уже в игре 🎉",
+  "請重新登入後再試": "Войди снова и попробуй ещё раз",
+  "提醒失敗，請稍後再試": "Не удалось отправить напоминание, попробуй позже",
+  "分享提醒": "Поделиться напоминанием",
+  "已提醒 ✓": "Отправлено ✓",
+  "提醒他": "Напомнить",
+  "邀你來玩一節經文，種下第一棵樹！": "приглашает тебя сыграть стих и посадить первое дерево!",
 };
 
 export const hi = {
@@ -22055,6 +22263,19 @@ export const hi = {
   "送出中…": "भेजा जा रहा है…",
   "建立後，已取得勸募許可的機構可以在「我的愛心行動」加上現金捐款資訊（經文雨審核後公開）。": "बनाने के बाद, धन-संग्रह परमिट रखने वाली संस्थाएँ “मेरी ‘कर्म में प्रेम’ परियोजना” में नकद दान की जानकारी जोड़ सकती हैं (VerseRain की समीक्षा के बाद प्रकाशित)।",
   "{who} 為愛心行動「{name}」送出現金捐款資訊（{org}），請確認勸募許可與帳戶戶名": "{who} ने “कर्म में प्रेम” परियोजना “{name}” ({org}) के लिए नकद दान की जानकारी भेजी है; कृपया धन-संग्रह परमिट और खाताधारक का नाम जाँचें",
+  "{name}，今天的經文在經文雨等你 🌧️ 花 1 分鐘聽一節、玩一局，就能在園子種下第一棵樹！": "{name}, आज का वचन VerseRain पर आपका इंतज़ार कर रहा है 🌧️ बस 1 मिनट निकालकर एक वचन सुनें, एक राउंड खेलें और अपने बगीचे में पहला पेड़ लगाएँ!",
+  "已複製提醒訊息，貼到 LINE 或簡訊傳給他吧": "रिमाइंडर संदेश कॉपी हो गया, इसे LINE या SMS में पेस्ट करके भेजें",
+  "已提醒 {name} 👍": "{name} को याद दिला दिया 👍",
+  "找不到 {name} 的裝置，請改用「分享提醒」傳給他": "{name} का डिवाइस नहीं मिला, कृपया “रिमाइंडर शेयर करें” से भेजें",
+  "3 天內已經提醒過 {name} 了": "{name} को पिछले 3 दिनों में पहले ही रिमाइंडर भेजा जा चुका है",
+  "今天的提醒次數已用完，明天再試": "आज के रिमाइंडर खत्म हो गए, कल फिर कोशिश करें",
+  "{name} 已經開始玩了 🎉": "{name} ने खेलना शुरू कर दिया है 🎉",
+  "請重新登入後再試": "कृपया फिर से लॉग इन करके दोबारा कोशिश करें",
+  "提醒失敗，請稍後再試": "रिमाइंडर नहीं भेजा जा सका, कृपया बाद में फिर कोशिश करें",
+  "分享提醒": "रिमाइंडर शेयर करें",
+  "已提醒 ✓": "याद दिलाया ✓",
+  "提醒他": "याद दिलाएँ",
+  "邀你來玩一節經文，種下第一棵樹！": "ने आपको एक वचन खेलकर अपना पहला पेड़ लगाने के लिए आमंत्रित किया है!",
 };
 
 // Khmer (Cambodian) — full UI coverage, machine-translated in bulk from the
@@ -23686,6 +23907,19 @@ export const km = {
   "送出中…": "កំពុងផ្ញើ…",
   "建立後，已取得勸募許可的機構可以在「我的愛心行動」加上現金捐款資訊（經文雨審核後公開）。": "បន្ទាប់ពីបង្កើតរួច អង្គការដែលមានលិខិតអនុញ្ញាតរៃអង្គាសប្រាក់ អាចបន្ថែមព័ត៌មានបរិច្ចាគជាសាច់ប្រាក់នៅក្នុង “គម្រោង «សេចក្តីស្រឡាញ់ជាការប្រព្រឹត្ត» របស់ខ្ញុំ” (បង្ហាញជាសាធារណៈបន្ទាប់ពី VerseRain ពិនិត្យរួច)។",
   "{who} 為愛心行動「{name}」送出現金捐款資訊（{org}），請確認勸募許可與帳戶戶名": "{who} បានដាក់ស្នើព័ត៌មានបរិច្ចាគជាសាច់ប្រាក់សម្រាប់គម្រោង «សេចក្តីស្រឡាញ់ជាការប្រព្រឹត្ត» “{name}” ({org}) សូមពិនិត្យលិខិតអនុញ្ញាតរៃអង្គាសប្រាក់ និងឈ្មោះគណនី",
+  "{name}，今天的經文在經文雨等你 🌧️ 花 1 分鐘聽一節、玩一局，就能在園子種下第一棵樹！": "{name} ខគម្ពីរថ្ងៃនេះកំពុងរង់ចាំអ្នកនៅ VerseRain 🌧️ ចំណាយពេលតែ 1 នាទី ស្ដាប់មួយខ និងលេងមួយជុំ ហើយដាំដើមឈើដំបូងក្នុងសួនរបស់អ្នក!",
+  "已複製提醒訊息，貼到 LINE 或簡訊傳給他吧": "បានចម្លងសាររំលឹកហើយ សូមបិទភ្ជាប់ក្នុង LINE ឬ SMS ដើម្បីផ្ញើទៅគាត់",
+  "已提醒 {name} 👍": "បានរំលឹក {name} ហើយ 👍",
+  "找不到 {name} 的裝置，請改用「分享提醒」傳給他": "រកមិនឃើញឧបករណ៍របស់ {name} ទេ សូមប្រើ «ចែករំលែកការរំលឹក» ជំនួសវិញ",
+  "3 天內已經提醒過 {name} 了": "អ្នកបានរំលឹក {name} រួចហើយក្នុងរយៈពេល 3 ថ្ងៃចុងក្រោយ",
+  "今天的提醒次數已用完，明天再試": "ចំនួនការរំលឹកថ្ងៃនេះបានអស់ហើយ សូមព្យាយាមម្ដងទៀតនៅថ្ងៃស្អែក",
+  "{name} 已經開始玩了 🎉": "{name} បានចាប់ផ្ដើមលេងហើយ 🎉",
+  "請重新登入後再試": "សូមចូលគណនីម្ដងទៀត រួចព្យាយាមម្ដងទៀត",
+  "提醒失敗，請稍後再試": "ការរំលឹកបរាជ័យ សូមព្យាយាមម្ដងទៀតពេលក្រោយ",
+  "分享提醒": "ចែករំលែកការរំលឹក",
+  "已提醒 ✓": "បានរំលឹក ✓",
+  "提醒他": "រំលឹកគាត់",
+  "邀你來玩一節經文，種下第一棵樹！": "អញ្ជើញអ្នកមកលេងខគម្ពីរមួយខ ហើយដាំដើមឈើដំបូងរបស់អ្នក!",
 };
 
 const I18N_FILLINS = { he, fa, ar, ja, ko, es, tr, de, my, vi, id, ms, zhcn, pt, fr, ru, hi, km };
