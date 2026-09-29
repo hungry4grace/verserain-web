@@ -85,7 +85,7 @@ export function GardenVerseCard({ card, t, version, isNarrow, onClose, onChallen
         aria-label={refLabel(card.ref, t)}
         onClick={(e) => e.stopPropagation()}
         style={{
-          width: '100%', maxWidth: isNarrow ? '100%' : '400px', padding: '1.5rem',
+          width: '100%', maxWidth: isNarrow ? '100%' : '480px', padding: '1.5rem',
           paddingBottom: isNarrow ? 'calc(1.5rem + env(safe-area-inset-bottom))' : '1.5rem',
           background: 'linear-gradient(135deg, #f0fdf4, #ecfdf5)', border: '3px solid #86efac',
           borderBottom: isNarrow ? 'none' : '3px solid #86efac',
@@ -101,8 +101,8 @@ export function GardenVerseCard({ card, t, version, isNarrow, onClose, onChallen
               <GardenSprite stage={card.stage} fruits={card.fruits} />
             </div>
           </div>
-          <span style={{ fontWeight: 'bold', color: isBlankRef(card.ref) ? '#94a3b8' : '#166534', fontSize: '1.2rem' }}>{refLabel(card.ref, t)}</span>
-          <span style={{ fontSize: '0.85rem', color: '#166534', background: '#b2f5ea', padding: '3px 10px', borderRadius: '12px', fontWeight: 'bold' }}>{t(...stageLabelPair(card.stage))}</span>
+          <span style={{ fontWeight: 'bold', color: isBlankRef(card.ref) ? '#94a3b8' : '#166534', fontSize: '1.4rem' }}>{refLabel(card.ref, t)}</span>
+          <span style={{ fontSize: '0.95rem', color: '#166534', background: '#b2f5ea', padding: '3px 10px', borderRadius: '12px', fontWeight: 'bold' }}>{t(...stageLabelPair(card.stage))}</span>
           {crossLang && (
             <span style={{ fontSize: '0.75rem', color: '#1d4ed8', background: '#dbeafe', padding: '2px 8px', borderRadius: '10px', fontWeight: 'bold' }}>
               {LANG_BADGE[card.detectedLang] || '中文 🇹🇼'}
@@ -114,7 +114,9 @@ export function GardenVerseCard({ card, t, version, isNarrow, onClose, onChallen
             {t('這節經文在經文集裡沒有填出處，所以園子只記得它的內容。', 'This verse was saved without a reference in its verse set, so the garden only knows its text.')}
           </p>
         )}
-        <p style={{ color: '#334155', lineHeight: '1.6', fontSize: '1rem', margin: '1rem 0 0.8rem', fontStyle: 'italic', maxHeight: '30vh', overflowY: 'auto' }}>
+        {/* Large, upright text: CJK has no true italic, and a slanted glyph is
+            harder to read at this size. */}
+        <p style={{ color: '#1e293b', lineHeight: '1.75', fontSize: '1.3rem', margin: '1rem 0 0.8rem', maxHeight: '40vh', overflowY: 'auto' }}>
           {card.loading ? t('載入中…', 'Loading…') : `"${card.text || t('(經文內容未找到)', '(Verse text not found)')}"`}
         </p>
         {crossLang && (
