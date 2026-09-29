@@ -669,6 +669,41 @@ function ManualVideo({ src, poster, caption }) {
 
 const SUPPORTED_UI_LANGS = ['zh', 'cuvs', 'en', 'fa', 'ar', 'he', 'ja', 'ko', 'es', 'tr', 'de', 'my', 'vi', 'id', 'ms', 'pt', 'fr', 'ru', 'hi', 'km'];
 
+// First-visit language. A saved Bible version always wins; a share link's
+// ?lang= keeps the old default (和合本). Otherwise a brand-new visitor starts
+// in the phone's language instead of always 繁體中文 · 和合本. Nothing is
+// stored here — the version effect in App persists whatever was chosen.
+const DEVICE_VERSION_CODES = ['fa', 'ar', 'he', 'ja', 'ko', 'es', 'tr', 'de', 'pt', 'fr', 'ru', 'hi', 'my', 'vi', 'id', 'ms', 'km'];
+function detectDeviceBibleVersion() {
+  let langs = [];
+  try { langs = (navigator.languages && navigator.languages.length ? navigator.languages : [navigator.language]).filter(Boolean); } catch { /* no navigator */ }
+  for (const raw of langs) {
+    const l = String(raw).toLowerCase();
+    if (l.startsWith('zh')) return (/hans|-cn|-sg|-my/.test(l) && !/hant|-tw|-hk|-mo/.test(l)) ? 'cuvs' : 'cuv';
+    if (l.startsWith('en')) return 'kjv';
+    const base = l.split('-')[0];
+    if (DEVICE_VERSION_CODES.includes(base)) return base;
+  }
+  return 'cuv';
+}
+function initialBibleVersion() {
+  try {
+    const saved = localStorage.getItem('verseRain_version');
+    if (saved) return saved;
+  } catch { /* storage off */ }
+  try {
+    if (new URLSearchParams(window.location.search).get('lang')) return 'cuv';
+  } catch { /* no window.location */ }
+  return detectDeviceBibleVersion();
+}
+// UI language that goes with a Bible version (same mapping as handleVersionChange).
+function uiLangForVersion(v) {
+  if (v === 'kjv' || v === 'esv' || v === 'niv') return 'en';
+  if (v === 'cuvs') return 'cuvs';
+  if (SUPPORTED_UI_LANGS.includes(v) && v !== 'zh') return v;
+  return 'zh';
+}
+
 // Document title per UI language — index.html ships the zh title, so without
 // this the browser tab stays Chinese for everyone (including recipients of a
 // share link opened in an in-app browser, where the tab title is prominent).
@@ -1026,7 +1061,7 @@ function pickSpeechVoice(lang) {
   const byVersionRaw = localStorage.getItem('verseRain_voiceByVersion');
   let byVersion = {};
   try { byVersion = byVersionRaw ? JSON.parse(byVersionRaw) : {}; } catch (e) { byVersion = {}; }
-  const activeVersion = localStorage.getItem('verseRain_version') || 'cuv';
+  const activeVersion = initialBibleVersion();
   const savedVoiceKey = byVersion?.[activeVersion] || localStorage.getItem('verseRain_voiceName');
   if (savedVoiceKey) {
     // Match by stable voice identity (voiceURI). The picker now saves a
@@ -18721,7 +18756,7 @@ export default function App() {
     return !!window.__speechUnlocked;
   });
 
-  const [version, setVersion] = useState(() => localStorage.getItem('verseRain_version') || 'cuv');
+  const [version, setVersion] = useState(() => initialBibleVersion());
   const [bilingualSecondaryVersion, setBilingualSecondaryVersion] = useState(() => localStorage.getItem('verseRain_bilingualSecondaryVersion') || 'kjv');
   useEffect(() => {
     localStorage.setItem('verseRain_version', version);
@@ -19169,12 +19204,16 @@ export default function App() {
     } catch { /* no window.location in non-browser contexts */ }
     const stored = localStorage.getItem('verseRain_uiLang');
     if (stored) return stored;
-    // Backwards-compatible: derive from Bible version on first load
-    const bv = localStorage.getItem('verseRain_version') || 'cuv';
-    if (bv === 'kjv' || bv === 'esv') return 'en';
-    if (bv === 'ja') return 'ja';
-    if (bv === 'ko') return 'ko';
-    return 'zh';
+    // No saved UI language. Returning players keep the old rule (derived from
+    // their saved Bible version); a first visit follows the phone's language.
+    const savedVersion = localStorage.getItem('verseRain_version');
+    if (savedVersion) {
+      if (savedVersion === 'kjv' || savedVersion === 'esv') return 'en';
+      if (savedVersion === 'ja') return 'ja';
+      if (savedVersion === 'ko') return 'ko';
+      return 'zh';
+    }
+    return uiLangForVersion(initialBibleVersion());
   });
   const setUiLangPersisted = (lang) => {
     localStorage.setItem('verseRain_uiLang', lang);
@@ -19982,6 +20021,8 @@ export default function App() {
 
     return { todayCount, currentStreak, longestStreak, treesPlanted, champVerses, passedVerses, totalActivities };
   }, [gardenData, todayDateStr]);
+  // No tree yet: greet a newcomer with what to do instead of "welcome back".
+  const isFirstGardenVisit = personalProgress.treesPlanted === 0;
   const skoolLevel = React.useMemo(() => getSkoolLevel(totalFruits), [totalFruits]);
 
   // ── 推薦里程碑 (referral milestone) ────────────────────────────────────────
@@ -23187,7 +23228,7 @@ export default function App() {
   const [selectedVoiceName, setSelectedVoiceName] = useState(() => {
     try {
       const byVersion = JSON.parse(localStorage.getItem('verseRain_voiceByVersion') || '{}');
-      const v = localStorage.getItem('verseRain_version') || 'cuv';
+      const v = initialBibleVersion();
       return byVersion?.[v] || localStorage.getItem('verseRain_voiceName') || '';
     } catch (e) {
       return localStorage.getItem('verseRain_voiceName') || '';
@@ -25757,7 +25798,7 @@ export default function App() {
                     verserain
                   </div>
                   <div className="app-brand-version" style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', marginTop: '4px', marginLeft: '2px' }}>
-                    v4.0.117
+                    v4.0.118
                   </div>
                 </div>
                 <div ref={langPickerRef} className="app-lang-control" style={{ position: 'relative' }}>
@@ -25842,7 +25883,9 @@ export default function App() {
                 </select>
               </div>
               <div className="app-auth-actions" style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-                {playerName ? (
+                {/* Logged in = has an account email (LINE logins get a stand-in one).
+                    A guest who only typed a leaderboard nickname still sees 登入. */}
+                {userEmail ? (
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
                     {/* Admins always get the bell: the panel carries what is waiting for review. */}
                     {(combinedInbox.all.length > 0 || isSuperAdmin) && (() => {
@@ -25992,6 +26035,11 @@ export default function App() {
                   </div>
                 ) : (
                   <>
+                    {playerName && (
+                      <span data-testid="guest-name" className="app-guest-name" title={t('訪客的成績不會存進帳號，登入後才會保存', 'Guest scores are not saved to an account until you log in')} style={{ color: '#64748b', fontSize: '0.85rem', maxWidth: '9rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {t('訪客：{name}', 'Guest: {name}').replace('{name}', String(playerName))}
+                      </span>
+                    )}
                     <a className="app-login-link" href="#" onClick={(e) => { e.preventDefault(); setShowLoginModal('login'); }} style={{ color: '#0056b3', textDecoration: 'none', fontWeight: 'bold', fontSize: '0.95rem' }}>{t("登入", "Login")}</a>
                     <a className="app-signup-link" href="#" onClick={(e) => { e.preventDefault(); setShowLoginModal('signup'); }} style={{ background: '#3b82f6', color: 'white', padding: '0.3rem 0.8rem', borderRadius: '4px', textDecoration: 'none', fontWeight: 'bold', fontSize: '0.95rem' }}>{t("申請帳號", "Sign Up")}</a>
                   </>
@@ -28492,10 +28540,14 @@ export default function App() {
                         {playerName
                           ? (pointsBalance && !pointsBalance.error && Number.isFinite(Number(pointsBalance.todayPoints))
                             ? t('{name}，今日得分 {n} 分', '{name}, {n} points scored today').replace('{name}', String(playerName)).replace('{n}', Number(pointsBalance.todayPoints).toLocaleString())
-                            : t('{name}，歡迎回來', '{name}, welcome back').replace('{name}', String(playerName)))
+                            : (isFirstGardenVisit
+                              ? t('{name}，歡迎來到你的園子！挑戰第一節經文，就會種下第一棵樹。', '{name}, welcome to your garden! Clear your first verse to plant your first tree.').replace('{name}', String(playerName))
+                              : t('{name}，歡迎回來', '{name}, welcome back').replace('{name}', String(playerName))))
                           : (pointsBalance && !pointsBalance.error && Number.isFinite(Number(pointsBalance.todayPoints))
                             ? t('今日得分 {n} 分', '{n} points scored today').replace('{n}', Number(pointsBalance.todayPoints).toLocaleString())
-                            : t('歡迎回來', 'Welcome back'))}
+                            : (isFirstGardenVisit
+                              ? t('歡迎來到你的園子！挑戰第一節經文，就會種下第一棵樹。', 'Welcome to your garden! Clear your first verse to plant your first tree.')
+                              : t('歡迎回來', 'Welcome back')))}
                         {pointsBalance && !pointsBalance.error && Number.isFinite(Number(pointsBalance.todayPoints)) && (
                           <button type="button" data-testid="today-points-help" onClick={() => setShowTodayInfo(v => !v)} aria-expanded={showTodayInfo} title={t('今天的分數怎麼算？', 'How were today’s points earned?')} aria-label={t('今天的分數怎麼算？', 'How were today’s points earned?')} style={{ marginLeft: 6, width: 20, height: 20, borderRadius: '50%', border: '1px solid #6ee7b7', background: showTodayInfo ? '#047857' : '#fff', color: showTodayInfo ? '#fff' : '#047857', fontSize: '0.78rem', fontWeight: 800, lineHeight: '18px', padding: 0, cursor: 'pointer', verticalAlign: 'middle' }}>?</button>
                         )}
@@ -28603,6 +28655,31 @@ export default function App() {
                     </div>
                   </div>
 
+                  {gardenGaps > 0 && (
+                    <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '0.5rem' }}>
+                      <button type="button" onClick={compactMyGarden} title={t('把樹往前排，填掉被刪除的空格；順序不變', 'Move trees forward to close deleted cells; order is kept')} style={{ background: '#fff', border: '1px solid #cbd5e1', color: '#334155', borderRadius: 8, padding: '0.35rem 0.8rem', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 700 }}>
+                        🧹 {t('整理園子（{n} 個空格）', 'Tidy garden ({n} empty cells)').replace('{n}', String(gardenGaps))}
+                      </button>
+                    </div>
+                  )}
+                  <GardenView
+                    idPrefix="garden"
+                    variant="own"
+                    gardenData={gardenData}
+                    t={t}
+                    version={version}
+                    refKey={verseRefKey}
+                    resolveVerse={resolveGardenVerse}
+                    onChallenge={challengeGardenVerse}
+                    isNarrow={isNarrowEditor}
+                    bleed={isNarrowEditor ? '1rem' : 0}
+                    focusRef={gardenFocus?.ref}
+                    focusNonce={gardenFocus?.nonce}
+                    onFocusConsumed={clearGardenFocus}
+                  />
+
+                  {/* The field comes first; harvest, level and invite details follow it. */}
+                  <div style={{ marginTop: '1.75rem' }} />
                   {/* My Referrer card — shows who invited me, or a CTA to bind */}
                   <InviterCard
                     inviterCode={myInviterCode}
@@ -28701,29 +28778,6 @@ export default function App() {
                       )}
                     </div>
                   </div>
-
-                  {gardenGaps > 0 && (
-                    <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '0.5rem' }}>
-                      <button type="button" onClick={compactMyGarden} title={t('把樹往前排，填掉被刪除的空格；順序不變', 'Move trees forward to close deleted cells; order is kept')} style={{ background: '#fff', border: '1px solid #cbd5e1', color: '#334155', borderRadius: 8, padding: '0.35rem 0.8rem', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 700 }}>
-                        🧹 {t('整理園子（{n} 個空格）', 'Tidy garden ({n} empty cells)').replace('{n}', String(gardenGaps))}
-                      </button>
-                    </div>
-                  )}
-                  <GardenView
-                    idPrefix="garden"
-                    variant="own"
-                    gardenData={gardenData}
-                    t={t}
-                    version={version}
-                    refKey={verseRefKey}
-                    resolveVerse={resolveGardenVerse}
-                    onChallenge={challengeGardenVerse}
-                    isNarrow={isNarrowEditor}
-                    bleed={isNarrowEditor ? '1rem' : 0}
-                    focusRef={gardenFocus?.ref}
-                    focusNonce={gardenFocus?.nonce}
-                    onFocusConsumed={clearGardenFocus}
-                  />
 
                   <ActivityHeatmap t={t} activityMap={gardenData?._activity || {}} />
 
@@ -32106,6 +32160,10 @@ export default function App() {
                             >
                               {t("送出", "Submit")}
                             </button>
+                          </div>
+                          <div style={{ marginTop: '0.5rem', fontSize: '0.82rem', color: '#cbd5e1', textAlign: 'left' }}>
+                            {t('這只是排行榜暱稱；登入後，成績和園子才會存進你的帳號。', 'This is just a leaderboard nickname — log in to save your scores and garden to an account.')}{' '}
+                            <a href="#" onClick={(e) => { e.preventDefault(); setShowLoginModal('login'); }} style={{ color: '#93c5fd', fontWeight: 'bold' }}>{t('登入', 'Log in')}</a>
                           </div>
                         </div>
                       ) : (
