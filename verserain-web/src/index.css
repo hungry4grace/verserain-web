@@ -2064,10 +2064,11 @@ html.elder-mode .versesets-table-card td { padding-left: 0.35rem !important; pad
 @media (prefers-reduced-motion: reduce) { .today-hero__rain { display: none; } }
 
 /* YouTube 背景音樂小播放器 — YouTube 規定影片要看得到（至少 200×200），
-   所以貼在右上角；可移到右下（播放鈕上方）或關掉。見 src/lib/youtube.js。 */
+   所以貼在右上角；可移到右下（播放鈕上方）或關掉。見 src/lib/youtube.js。
+   右邊刻意貼齊螢幕邊緣、不避開 safe-area（iPhone 橫放時才不會留一段空隙）。 */
 .yt-bgm-dock {
   position: fixed;
-  right: env(safe-area-inset-right, 0px);
+  right: 0;
   z-index: 2607;
   width: 220px;
   display: flex;
