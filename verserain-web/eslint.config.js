@@ -50,6 +50,22 @@ export const LEGACY_FILES = [
   'src/game/IntermissionScreen.jsx',
   'src/game/GameOverScreen.jsx',
   'src/game/CampaignResultsScreen.jsx',
+  'src/modals/VerseLeaderboardModal.jsx',
+  'src/modals/ResetPasswordModal.jsx',
+  'src/modals/LoginModal.jsx',
+  'src/modals/PlayOrderModal.jsx',
+  'src/modals/TranslateModal.jsx',
+  'src/modals/PushModal.jsx',
+  'src/modals/QrShareModal.jsx',
+  'src/modals/VerseViewModal.jsx',
+  'src/modals/VerseVoicePickerModal.jsx',
+  'src/modals/VoiceCommentPanel.jsx',
+  'src/modals/InboxPanel.jsx',
+  'src/modals/FruitInfoModal.jsx',
+  'src/modals/LevelInfoModal.jsx',
+  'src/modals/PlayerGardenModal.jsx',
+  'src/modals/AuthorSetsModal.jsx',
+  'src/modals/SetLeaderboardModal.jsx',
 ]
 
 const HEX = '/(^|[\\s(,:])#([0-9a-fA-F]{3,4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})\\b/'
