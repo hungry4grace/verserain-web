@@ -1,7 +1,7 @@
 {
   "name": "verserain-web",
   "private": true,
-  "version": "4.0.120",
+  "version": "4.0.121",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -14,6 +14,7 @@
     "test:party": "node --test src/party/*.test.mjs",
     "test:api": "node --test api/_lib/*.test.mjs",
     "test:lib": "node --test src/lib/*.test.mjs",
+    "test:ui": "node --test src/ui/*.test.mjs",
     "deploy:party": "partykit deploy"
   },
   "dependencies": {

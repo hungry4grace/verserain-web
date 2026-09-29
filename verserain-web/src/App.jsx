@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { expandSameChapterRefs } from './lib/expandSameChapterRefs.js';
 import { toSpeechText } from './lib/speechText.js';
 import { Play, Pause, RotateCcw, Lightbulb, Heart, Zap, Trophy, Crown, Star, Home, XCircle, Headphones, Music, VolumeX, Search, Share2, Dices, Mic, MicOff, Users, CloudRain, Info, Edit, TreePine, Gamepad2, Map, Settings, Library, Volume2, Shuffle, Swords, ShoppingBasket, Apple, Mail, Lock, Sprout, Leaf, Hourglass, Frown, X, Camera, Square, Copy, ArrowRightLeft, MessageCircle, Languages, ChevronUp, ChevronDown, Check, Gift, Store, Ticket, MapPin, BookOpen } from 'lucide-react';
+import { UiHost, toast, confirmDialog, alertDialog } from './ui';
 import { CATALOG as VOUCHER_CATALOG, DEFAULT_VALUE as VOUCHER_DEFAULTS } from '../api/_lib/rewardCatalog.js';
 import confetti from 'canvas-confetti';
 import usePartySocket from 'partysocket/react';
@@ -207,7 +208,7 @@ function iosAppSupportsCamera() {
 //   • tap "📷 掃 QR" → camera preview → auto-detect QR → auto-fill.
 // Either way the final save flow is identical (extract ref, validate,
 // persist locally + push to PartyKit).
-function BindInviterModal({ t, personalCode, userEmail, setMyInviterCode, setToast, onClose }) {
+function BindInviterModal({ t, personalCode, userEmail, setMyInviterCode, onClose }) {
   const videoRef = useRef(null);
   const scannerRef = useRef(null);
   const [scanning, setScanning] = useState(false);
@@ -239,11 +240,11 @@ function BindInviterModal({ t, personalCode, userEmail, setMyInviterCode, setToa
 
   const persistAndClose = async (code) => {
     if (!/^[A-HJ-NP-Za-km-z2-9]{10}$/.test(code)) {
-      alert(t('推薦碼格式不正確，應為 10 個字母/數字。', 'Invalid format. Expected 10 letters/numbers.'));
+      toast.error(t('推薦碼格式不正確，應為 10 個字母/數字。', 'Invalid format. Expected 10 letters/numbers.'));
       return;
     }
     if (code === personalCode) {
-      alert(t('不能填自己的推薦碼。', "You can't use your own code."));
+      toast.error(t('不能填自己的推薦碼。', "You can't use your own code."));
       return;
     }
     localStorage.setItem('verserain_inviter', code);
@@ -257,8 +258,7 @@ function BindInviterModal({ t, personalCode, userEmail, setMyInviterCode, setToa
       }).catch(() => {});
     }
     onClose();
-    setToast(t('已綁定推薦人，下次過關會自動補上點數。', 'Referrer bound. Your next verse clear will credit both sides.'));
-    setTimeout(() => setToast(null), 4000);
+    toast.success(t('已綁定推薦人，下次過關會自動補上點數。', 'Referrer bound. Your next verse clear will credit both sides.'));
   };
 
   const startScan = async () => {
@@ -531,10 +531,10 @@ function OAuthButtons({ onGoogleCredential, onAppleCredential, disabled, t }) {
     if (inIosApp) {
       // iOS app without the native bridge yet (i.e. running an older build).
       // Inform the user the app needs to be updated.
-      alert(t(
+      alertDialog({ message: t(
         '此版本 App 尚不支援 Google 登入。請更新 App，或先用下方 email / 密碼登入。',
         'This app version does not yet support Google sign-in. Please update the app, or use email / password below.'
-      ));
+      ) });
       return;
     }
     if (!googleClientRef.current) return;
@@ -549,10 +549,10 @@ function OAuthButtons({ onGoogleCredential, onAppleCredential, disabled, t }) {
       return;
     }
     if (inIosApp) {
-      alert(t(
+      alertDialog({ message: t(
         '此版本 App 尚不支援 Apple 登入。請更新 App，或先用下方 email / 密碼登入。',
         'This app version does not yet support Apple sign-in. Please update the app, or use email / password below.'
-      ));
+      ) });
       return;
     }
     if (!window.AppleID?.auth) return;
@@ -19442,8 +19442,7 @@ export default function App() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ playerName, userEmail, sets: ownedForPush }),
     }).catch(() => {
-      setToast(t('雲端同步失敗，稍後再試', 'Cloud sync failed, will retry later'));
-      setTimeout(() => setToast(null), 3000);
+      toast.error(t('雲端同步失敗，稍後再試', 'Cloud sync failed, will retry later'));
     });
   }, [customVerseSets, playerName, userEmail]);
   const [hiddenOfficialSetIds, setHiddenOfficialSetIds] = useState(() => {
@@ -19574,8 +19573,7 @@ export default function App() {
     const updated = [copy, ...customVerseSets];
     setCustomVerseSets(updated);
     try { localStorage.setItem('verseRain_custom_sets', JSON.stringify(updated)); } catch { /* storage full — cloud sync still has it */ }
-    setToast(t('已複製，這份經文組現在是你的了 ✓', 'Copied — this set is yours now ✓'));
-    setTimeout(() => setToast(null), 3000);
+    toast.success(t('已複製，這份經文組現在是你的了 ✓', 'Copied — this set is yours now ✓'));
     setEditingCustomSet({ ...copy, verses: copy.verses.map(parseVerseRef) });
     setMainTab('custom_verses');
   };
@@ -19588,11 +19586,9 @@ export default function App() {
       const setId = ensureEditingSetId();
       const assetId = await uploadSetAsset({ email: userEmail || '', setId, blob, kind: 'image' });
       setEditingCustomSet(prev => ({ ...prev, id: setId, background: `custom:${assetId}`, backgroundMime: blob.type }));
-      setToast(t('背景圖片已上傳 ✓', 'Background image uploaded ✓'));
-      setTimeout(() => setToast(null), 3000);
+      toast.success(t('背景圖片已上傳 ✓', 'Background image uploaded ✓'));
     } catch (e) {
-      setToast(t('上傳失敗:{error}', 'Upload failed: {error}').replace('{error}', String(e.message || e)));
-      setTimeout(() => setToast(null), 5000);
+      toast.error(t('上傳失敗:{error}', 'Upload failed: {error}').replace('{error}', String(e.message || e)));
     }
     setBgUploadBusy(false);
   };
@@ -19600,8 +19596,7 @@ export default function App() {
   const handleMusicUpload = async (file) => {
     if (!file || !editingCustomSet) return;
     if (file.size > 5 * 1024 * 1024) {
-      setToast(t('音樂檔請小於 5MB', 'Music file must be under 5MB'));
-      setTimeout(() => setToast(null), 5000);
+      toast.error(t('音樂檔請小於 5MB', 'Music file must be under 5MB'));
       return;
     }
     setMusicUploadBusy(true);
@@ -19609,11 +19604,9 @@ export default function App() {
       const setId = ensureEditingSetId();
       const assetId = await uploadSetAsset({ email: userEmail || '', setId, blob: file, kind: 'music' });
       setEditingCustomSet(prev => ({ ...prev, id: setId, bgMusic: `custom:${assetId}`, bgMusicMime: file.type || 'audio/mpeg' }));
-      setToast(t('背景音樂已上傳 ✓', 'Background music uploaded ✓'));
-      setTimeout(() => setToast(null), 3000);
+      toast.success(t('背景音樂已上傳 ✓', 'Background music uploaded ✓'));
     } catch (e) {
-      setToast(t('上傳失敗:{error}', 'Upload failed: {error}').replace('{error}', String(e.message || e)));
-      setTimeout(() => setToast(null), 5000);
+      toast.error(t('上傳失敗:{error}', 'Upload failed: {error}').replace('{error}', String(e.message || e)));
     }
     setMusicUploadBusy(false);
   };
@@ -19721,8 +19714,7 @@ export default function App() {
       setBulkImportState(s => (s ? { ...s, busy: false, failed } : s));
     } else {
       setBulkImportState(null);
-      setToast(t('已匯入 {n} 節經文 ✓', `Imported {n} verse${imported.length === 1 ? '' : 's'} ✓`).replace('{n}', String(imported.length)));
-      setTimeout(() => setToast(null), 3500);
+      toast.success(t('已匯入 {n} 節經文 ✓', `Imported {n} verse${imported.length === 1 ? '' : 's'} ✓`).replace('{n}', String(imported.length)));
     }
   };
 
@@ -20243,8 +20235,7 @@ export default function App() {
     if (pn) {
       fetchRetry(`${PARTY_HOST}/save-garden`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ playerName: pn, gardenData: garden }) }).catch(() => { });
     }
-    setToast(t('已整理園子，填補了 {n} 個空格', 'Garden tidied: {n} empty cells closed').replace('{n}', String(moved)));
-    setTimeout(() => setToast(null), 3000);
+    toast.success(t('已整理園子，填補了 {n} 個空格', 'Garden tidied: {n} empty cells closed').replace('{n}', String(moved)));
   };
 
   React.useEffect(() => {
@@ -20517,14 +20508,12 @@ export default function App() {
     }).then(async (res) => {
       if (res.ok) return;
       const d = await res.json().catch(() => ({}));
-      setToast(t('發布失敗:{error}。其他人將看不到這個經文組。', "Publish failed: {error}. Others won't see this set.").replace('{error}', String(d.error || res.status)));
-      setTimeout(() => setToast(null), 6000);
+      toast.error(t('發布失敗:{error}。其他人將看不到這個經文組。', "Publish failed: {error}. Others won't see this set.").replace('{error}', String(d.error || res.status)));
       setPublishedVerseSets(prev => prev.filter(p => p.id !== setObj.id));
     }).catch(e => console.error('Publish translated set failed', e));
     setPublishedVerseSets(prev => prev.some(p => p.id === setObj.id) ? prev.map(p => p.id === setObj.id ? setObj : p) : [setObj, ...prev]);
     const langLabel = (BIBLE_LANGUAGE_OPTIONS.find(o => o.value === target) || {}).label || target;
-    setToast(t('已加入「{lang}」經文組，可在此編輯或補上簡介', 'Added to the {lang} library — edit it or add a description here').replace('{lang}', langLabel));
-    setTimeout(() => setToast(null), 5000);
+    toast.success(t('已加入「{lang}」經文組，可在此編輯或補上簡介', 'Added to the {lang} library — edit it or add a description here').replace('{lang}', langLabel));
     // Per the requested flow: switch the app to the new language and drop the
     // user straight into that set's editor so they can refine it / write the 簡介.
     setTranslateModal(null);
@@ -20777,8 +20766,7 @@ export default function App() {
   }, [userEmail, playerName]);
 
   const handleFavoriteSaveError = React.useCallback(() => {
-      setToast(t('我的最愛同步失敗，稍後再試', 'Favorites sync failed, please try again later'));
-      setTimeout(() => setToast(null), 3000);
+      toast.error(t('我的最愛同步失敗，稍後再試', 'Favorites sync failed, please try again later'));
   }, []);
 
   useEffect(() => {
@@ -20797,8 +20785,7 @@ export default function App() {
       .catch(() => {
         if (!cancelled) {
           setFavoriteVerseSetIds([]);
-          setToast(t('無法載入我的最愛', 'Could not load favorites'));
-          setTimeout(() => setToast(null), 3000);
+          toast.error(t('無法載入我的最愛', 'Could not load favorites'));
         }
       });
     return () => { cancelled = true; };
@@ -22048,8 +22035,7 @@ export default function App() {
       ...prev,
       items: prev.items.map(it => (it.at === item.at && it.refereeCode === item.refereeCode) ? { ...it, cheered: true } : it),
     } : prev);
-    setToast(t('已送出鼓勵 👍', 'Cheer sent 👍'));
-    setTimeout(() => setToast(null), 2500);
+    toast.success(t('已送出鼓勵 👍', 'Cheer sent 👍'));
   };
 
   // ── 提醒朋友來玩 (我推薦的朋友 → 已加入，還沒開始) ─────────────────────────
@@ -22057,7 +22043,7 @@ export default function App() {
   // once per friend every 3 days.
   const nudgeReferee = async (name) => {
     if (!userEmail || !sessionKey) { setShowLoginModal('login'); return; }
-    const showToast = (msg) => { setToast(msg); setTimeout(() => setToast(null), 4000); };
+    const showToast = (msg) => { setToast(msg); };
     const markUntil = (until) => setNudgedUntil(prev => {
       const next = { ...prev, [name]: until };
       try { localStorage.setItem('verserain_nudged_until', JSON.stringify(next)); } catch { /* storage off */ }
@@ -22124,7 +22110,7 @@ export default function App() {
     if (!id) return;
     const f = claimFormFor(id);
     const email = String(f.email || '').trim();
-    if (!email) { setToast(t('請輸入要收獎勵的 Email', 'Enter the email to send the reward to')); setTimeout(() => setToast(null), 2500); return; }
+    if (!email) { toast.error(t('請輸入要收獎勵的 Email', 'Enter the email to send the reward to')); return; }
     try {
       const res = await fetch('/api/reward-claim', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -22135,11 +22121,10 @@ export default function App() {
       if ((f.church || '') !== myChurchCode) saveChurchCode(f.church);
       setClaimedRewards(prev => new Set(prev).add(id));
       try { localStorage.setItem(`verserain_reward_claimed_${id}`, '1'); } catch { /* ignore */ }
-      setToast(t('已登記！獎勵會寄到 {email}', 'Registered! Your reward will go to {email}').replace('{email}', email));
+      toast.success(t('已登記！獎勵會寄到 {email}', 'Registered! Your reward will go to {email}').replace('{email}', email));
     } catch (e) {
-      setToast(t('領取失敗：{error}', 'Claim failed: {error}').replace('{error}', String(e?.message || e)));
+      toast.error(t('領取失敗：{error}', 'Claim failed: {error}').replace('{error}', String(e?.message || e)));
     }
-    setTimeout(() => setToast(null), 3500);
   };
   const voucherLabel = (region, id) => ((VOUCHER_CATALOG[region] || []).find(v => v.id === id) || {}).label || id || '';
   const fmtMoney = (n, cur) => `${cur === 'USD' ? 'US$' : 'NT$'}${Number(n || 0).toLocaleString()}`;
@@ -22214,11 +22199,10 @@ export default function App() {
       if (!res.ok || !d.success) throw new Error(d.error === 'insufficient_pool' ? t('贊助池餘額不足', 'Sponsor pool balance too low') : d.error === 'church_mismatch' ? t('此池僅限該教會會友，玩家的教會代碼不符', 'This pool is for that church’s members only; the player’s church code does not match') : (d.error || res.status));
       setRewardsAdmin(prev => prev ? { ...prev, rewards: prev.rewards.map(r => r.id === d.reward.id ? d.reward : r) } : prev);
       setRewardsAdminReload(n => n + 1);
-      setToast(action === 'sent' ? t('已標記為寄出，並通知對方 🎁', 'Marked as sent — recipient notified 🎁') : action === 'reject' ? t('已標記為無效', 'Marked as invalid') : t('已改回待處理', 'Moved back to pending'));
+      toast.success(action === 'sent' ? t('已標記為寄出，並通知對方 🎁', 'Marked as sent — recipient notified 🎁') : action === 'reject' ? t('已標記為無效', 'Marked as invalid') : t('已改回待處理', 'Moved back to pending'));
     } catch (e) {
-      setToast(t('更新失敗：{error}', 'Update failed: {error}').replace('{error}', String(e?.message || e)));
+      toast.error(t('更新失敗：{error}', 'Update failed: {error}').replace('{error}', String(e?.message || e)));
     }
-    setTimeout(() => setToast(null), 3000);
   };
   const saveSponsorRecord = async (sponsor, action = 'upsert') => {
     try {
@@ -22228,11 +22212,10 @@ export default function App() {
       setRewardsAdmin(prev => prev ? { ...prev, sponsors: d.sponsors || prev.sponsors, pool: d.pool || prev.pool } : prev);
       setSponsorDraft(null);
       setSponsorsInfo(null);
-      setToast(t('贊助紀錄已儲存', 'Sponsor record saved'));
+      toast.success(t('贊助紀錄已儲存', 'Sponsor record saved'));
     } catch (e) {
-      setToast(t('更新失敗：{error}', 'Update failed: {error}').replace('{error}', String(e?.message || e)));
+      toast.error(t('更新失敗：{error}', 'Update failed: {error}').replace('{error}', String(e?.message || e)));
     }
-    setTimeout(() => setToast(null), 3000);
   };
 
   // ── 商家折扣：點數折抵 (points → merchant discount) ──────────────────
@@ -22381,11 +22364,9 @@ export default function App() {
         const err = d && d.points && d.points.error;
         if (err === 'session_invalid' && !scoreSessionWarnedRef.current) {
           scoreSessionWarnedRef.current = true;
-          setToast(t('分數已上排行榜，但要重新登入一次才會計入累積點數', 'Score posted to the leaderboard, but sign in again for it to count toward your total points'));
-          setTimeout(() => setToast(null), 5000);
+          toast.info(t('分數已上排行榜，但要重新登入一次才會計入累積點數', 'Score posted to the leaderboard, but sign in again for it to count toward your total points'));
         } else if (err === 'verify_unavailable') {
-          setToast(t('分數已上排行榜；累積點數暫時無法更新，稍後會再試', 'Score posted; your total points could not be updated right now'));
-          setTimeout(() => setToast(null), 4000);
+          toast.error(t('分數已上排行榜；累積點數暫時無法更新，稍後會再試', 'Score posted; your total points could not be updated right now'));
         } else if (d && d.points && d.points.checkin) {
           showCheckinToast(d.points.checkin);
         }
@@ -22400,8 +22381,7 @@ export default function App() {
     const msg = ck.graceUsed > 0
       ? t('🕊️ 用了 {k} 天恩典日，連續登入第 {n} 天 +{x} 分', '🕊️ Used {k} grace day(s): day {n} in a row, +{x} points').replace('{k}', String(ck.graceUsed))
       : t('📅 連續登入第 {n} 天 +{x} 分', '📅 Day {n} in a row: +{x} points');
-    setToast(msg.replace('{n}', String(ck.streak)).replace('{x}', String(ck.amount)));
-    setTimeout(() => setToast(null), 4000);
+    toast.success(msg.replace('{n}', String(ck.streak)).replace('{x}', String(ck.amount)));
   };
   // 聆聽經文: +100 for a verse listened to the end, once per verse per Taipei
   // day, 20 a day (api/listen-credit.js). Guests earn nothing, as with scores.
@@ -22424,17 +22404,15 @@ export default function App() {
       if (d.checkin) { showCheckinToast(d.checkin); return; }
       if (d.listen.capped) {
         memo.capped = true;
-        setToast(t('今天的聆聽分數已經滿 {n} 節了，明天再來！', 'You have earned listening points for {n} verses today. Come back tomorrow!').replace('{n}', String(d.dailyMax || 20)));
-        setTimeout(() => setToast(null), 3500);
+        toast.info(t('今天的聆聽分數已經滿 {n} 節了，明天再來！', 'You have earned listening points for {n} verses today. Come back tomorrow!').replace('{n}', String(d.dailyMax || 20)));
       } else if (d.listen.credited) {
-        setToast(t('🎧 聆聽 +{x} 分（今天 {c}/{n} 節）', '🎧 Listening +{x} points ({c}/{n} verses today)').replace('{x}', String(d.listen.credited)).replace('{c}', String(d.listen.count)).replace('{n}', String(d.dailyMax || 20)));
-        setTimeout(() => setToast(null), 2500);
+        toast.info(t('🎧 聆聽 +{x} 分（今天 {c}/{n} 節）', '🎧 Listening +{x} points ({c}/{n} verses today)').replace('{x}', String(d.listen.credited)).replace('{c}', String(d.listen.count)).replace('{n}', String(d.dailyMax || 20)));
       }
     }).catch(() => { memo.sent.delete(ref); });
   };
   const openRedeem = (place) => {
     if (!place || !place.id) return;
-    if (!userEmail) { setShowLoginModal('login'); setToast(t('請先登入才能用點數折抵', 'Sign in to use points for a discount')); setTimeout(() => setToast(null), 2500); return; }
+    if (!userEmail) { setShowLoginModal('login'); toast.error(t('請先登入才能用點數折抵', 'Sign in to use points for a discount')); return; }
     setRedeemPlace(place); setRedeemBill(''); setPointsBalance(null);
     fetchPointsBalance();
   };
@@ -22463,7 +22441,7 @@ export default function App() {
       if (d.error === 'daily_place_limit' && d.limit) throw new Error(t('今天在這家店已用 {n} 張，達到上限', 'You have already used {n} coupons at this shop today, the limit').replace('{n}', String(d.limit)));
       throw new Error(redeemErrorText(d.error || res.status));
     } catch (e) {
-      setToast(String(e?.message || e)); setTimeout(() => setToast(null), 3500);
+      toast.error(String(e?.message || e));
     } finally {
       setRedeemBusy(false);
     }
@@ -22506,16 +22484,16 @@ export default function App() {
   };
   const useVoucher = async () => {
     if (!verifyResult || verifyResult.status !== 'issued') return;
-    if (!window.confirm(t('確認顧客已結帳並給了折扣？此動作無法復原。', 'Confirm the customer has paid with the discount applied? This cannot be undone.'))) return;
+    if (!(await confirmDialog({ message: t('確認顧客已結帳並給了折扣？此動作無法復原。', 'Confirm the customer has paid with the discount applied? This cannot be undone.'), confirmLabel: t('確認核銷', 'Redeem') }))) return;
     setVerifyBusy(true);
     try {
       const r = await fetch('/api/redeem-verify', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code: verifyResult.code, action: 'use' }) });
       const d = await r.json().catch(() => ({}));
       if (!r.ok || !d.success) throw new Error(d.error === 'already_used' ? t('這張券已經用過了', 'This voucher was already used') : d.error === 'expired' ? t('這張券已過期', 'This voucher has expired') : String(d.error || r.status));
       setVerifyResult({ ...verifyResult, ...(d.voucher || {}), status: 'used' });
-      setToast(t('已核銷 ✓', 'Marked as used ✓'));
-    } catch (e) { setToast(String(e?.message || e)); }
-    finally { setVerifyBusy(false); setTimeout(() => setToast(null), 3000); }
+      toast.success(t('已核銷 ✓', 'Marked as used ✓'));
+    } catch (e) { toast.error(String(e?.message || e)); }
+    finally { setVerifyBusy(false); }
   };
   useEffect(() => {
     if (mainTab === 'verify' && verifyCodeInput.length === 8 && !verifyResult) lookupVoucher(verifyCodeInput);
@@ -22599,15 +22577,15 @@ export default function App() {
       const d = await res.json().catch(() => ({}));
       if (d.error === 'session_invalid' || d.error === 'login_required') { setShowLoginModal('login'); throw new Error(redeemErrorText('session_invalid')); }
       if (!res.ok || !d.success) throw new Error(redeemErrorText(d.error || res.status));
-      setToast(action === 'withdraw'
+      toast.success(action === 'withdraw'
         ? t('已下架，已從地圖移除；已發出的折扣券仍可核銷。', 'Withdrawn and removed from the map; coupons already issued can still be used.')
         : action === 'relist'
           ? t('已重新送審，通過後會回到地圖上。', 'Re-submitted — it returns to the map once approved.')
           : t('已刪除登記', 'Registration deleted'));
       if (merchantDraft.editing && merchantDraft.id === pl.id) cancelEditPlace();
       loadMyPlaces();
-    } catch (e) { setToast(String(e?.message || e)); }
-    finally { setMyPlaceBusyId(null); setDeleteArmedId(null); setTimeout(() => setToast(null), 4000); }
+    } catch (e) { toast.error(String(e?.message || e)); }
+    finally { setMyPlaceBusyId(null); setDeleteArmedId(null); }
   };
   const geocodeMerchant = async () => {
     const q = String(merchantDraft.address || '').trim();
@@ -22617,15 +22595,15 @@ export default function App() {
       const r = await fetch(`/api/geocode?q=${encodeURIComponent(q)}&lang=${encodeURIComponent(uiLang === 'en' ? 'en' : 'zh-TW')}`);
       const d = await r.json().catch(() => ({}));
       if (r.ok && Number.isFinite(d.lat)) { setMerchantDraft(m => ({ ...m, lat: d.lat, lng: d.lng })); setToast(d.approximate ? t('只定位到街道，請把大頭針拖到正確位置', 'Located the street only — drag the pin to the exact spot') : t('已定位，可在地圖上拖曳大頭針微調', 'Located — drag the pin to fine-tune')); }
-      else { setMerchantDraft(m => ({ ...m, lat: m.lat ?? 23.7, lng: m.lng ?? 121.0 })); setToast(t('找不到這個地址，請在地圖上點選或拖曳大頭針', 'Address not found — click or drag the pin on the map')); }
-    } catch { setToast(t('定位失敗，請稍後再試', 'Geocoding failed, try again later')); }
-    finally { setMerchantGeoBusy(false); setTimeout(() => setToast(null), 3000); }
+      else { setMerchantDraft(m => ({ ...m, lat: m.lat ?? 23.7, lng: m.lng ?? 121.0 })); toast.error(t('找不到這個地址，請在地圖上點選或拖曳大頭針', 'Address not found — click or drag the pin on the map')); }
+    } catch { toast.error(t('定位失敗，請稍後再試', 'Geocoding failed, try again later')); }
+    finally { setMerchantGeoBusy(false); }
   };
   const useMyLocationForMerchant = () => {
     if (!navigator.geolocation) return;
     navigator.geolocation.getCurrentPosition(
       (pos) => setMerchantDraft(m => ({ ...m, lat: Number(pos.coords.latitude.toFixed(5)), lng: Number(pos.coords.longitude.toFixed(5)) })),
-      () => { setToast(t('無法取得目前位置', 'Could not get your location')); setTimeout(() => setToast(null), 2500); },
+      () => { toast.error(t('無法取得目前位置', 'Could not get your location')); },
       { enableHighAccuracy: true, timeout: 8000 }
     );
   };
@@ -22638,18 +22616,17 @@ export default function App() {
       setMerchantDraft(m => ({ ...m, photoAssetId: assetId, photoMime: blob.type || 'image/webp' }));
       setMerchantPhotoPreview(URL.createObjectURL(blob));
     } catch (e) {
-      setToast(String(e?.message || e).includes('session') ? redeemErrorText('session_invalid') : t('照片上傳失敗：{error}', 'Photo upload failed: {error}').replace('{error}', String(e?.message || e)));
-      setTimeout(() => setToast(null), 3500);
+      toast.error(String(e?.message || e).includes('session') ? redeemErrorText('session_invalid') : t('照片上傳失敗：{error}', 'Photo upload failed: {error}').replace('{error}', String(e?.message || e)));
     } finally { setMerchantPhotoBusy(false); }
   };
   const submitMerchant = async () => {
     const m = merchantDraft;
     setMerchantSubmitStatus(null);
-    if (!m.name.trim() || !m.address.trim()) { setToast(t('請填寫名稱與地址', 'Name and address are required')); setTimeout(() => setToast(null), 2500); return; }
-    if (!Number.isFinite(m.lat) || !Number.isFinite(m.lng)) { setToast(t('請先按「定位」或在地圖上點選位置', 'Locate the address or pick the spot on the map first')); setTimeout(() => setToast(null), 2500); return; }
-    if (!m.agree) { setToast(t('請勾選同意條款', 'Please tick the agreement'), 2500); setTimeout(() => setToast(null), 2500); return; }
+    if (!m.name.trim() || !m.address.trim()) { toast.error(t('請填寫名稱與地址', 'Name and address are required')); return; }
+    if (!Number.isFinite(m.lat) || !Number.isFinite(m.lng)) { toast.error(t('請先按「定位」或在地圖上點選位置', 'Locate the address or pick the spot on the map first')); return; }
+    if (!m.agree) { toast.error(t('請勾選同意條款', 'Please tick the agreement'), 2500); return; }
     const referrerCode = String(m.referrerCode || '').trim();
-    if (!m.editing && referrerCode && !REFERRAL_CODE_RE.test(referrerCode)) { setToast(t('推薦碼格式不正確，應為 10 個字母/數字。', 'Invalid format. Expected 10 letters/numbers.')); setTimeout(() => setToast(null), 2500); return; }
+    if (!m.editing && referrerCode && !REFERRAL_CODE_RE.test(referrerCode)) { toast.error(t('推薦碼格式不正確，應為 10 個字母/數字。', 'Invalid format. Expected 10 letters/numbers.')); return; }
     // No valid login on this device (signed in before sessionKeys existed,
     // or the key was rotated out by logins elsewhere): get one first, then
     // the effect below sends this same form the moment the key arrives.
@@ -22676,15 +22653,15 @@ export default function App() {
           ? t('已儲存。主要資料有變更，已重新送審，審核通過前暫時不在地圖上。', 'Saved. Key details changed, so it is back in review and off the map until approved.')
           : t('已儲存修改，地圖上的資料已更新。', 'Changes saved — the map is updated.');
       setMerchantSubmitStatus({ type: 'ok', text: okText });
-      setToast(editing ? okText : t('已送出，管理員審核後就會出現在地圖上 🎉', 'Submitted — it will appear on the map once approved 🎉'));
+      toast.success(editing ? okText : t('已送出，管理員審核後就會出現在地圖上 🎉', 'Submitted — it will appear on the map once approved 🎉'));
       setMerchantDraft(newPlaceDraft()); setMerchantPhotoPreview(null); loadMyPlaces();
       try { localStorage.removeItem('verserain_merchant_draft'); } catch { /* ignore */ }
     } catch (e) {
       const text = String(e?.message || e);
       setMerchantSubmitStatus({ type: 'error', text: t('送出失敗：{error}', 'Submit failed: {error}').replace('{error}', text) });
-      setToast(text);
+      toast.error(text);
     }
-    finally { setMerchantBusy(false); setTimeout(() => setToast(null), 3500); }
+    finally { setMerchantBusy(false); }
   };
   // A fresh sessionKey after a blocked submit → send the kept form now
   // (within 10 minutes of the block, so a login next week doesn't fire it).
@@ -22723,9 +22700,8 @@ export default function App() {
       if (Array.isArray(d.places)) setPlacesAdmin(d.places);
       setPlaceEdit(null);
       setPlacesVersion(n => n + 1);
-      setToast(t('已更新地圖標記', 'Map marker updated'));
-    } catch (e) { setToast(t('更新失敗：{error}', 'Update failed: {error}').replace('{error}', String(e?.message || e))); }
-    setTimeout(() => setToast(null), 3000);
+      toast.success(t('已更新地圖標記', 'Map marker updated'));
+    } catch (e) { toast.error(t('更新失敗：{error}', 'Update failed: {error}').replace('{error}', String(e?.message || e))); }
   };
   const voucherAdminAction = async (code, action) => {
     try {
@@ -22733,9 +22709,8 @@ export default function App() {
       const d = await res.json().catch(() => ({}));
       if (!res.ok || !d.success) throw new Error(d.error || res.status);
       setRewardsAdminReload(n => n + 1);
-      setToast(t('已更新折扣券', 'Coupon updated'));
-    } catch (e) { setToast(t('更新失敗：{error}', 'Update failed: {error}').replace('{error}', String(e?.message || e))); }
-    setTimeout(() => setToast(null), 3000);
+      toast.success(t('已更新折扣券', 'Coupon updated'));
+    } catch (e) { toast.error(t('更新失敗：{error}', 'Update failed: {error}').replace('{error}', String(e?.message || e))); }
   };
 
   // ── 折抵紀錄 (redemption history) ───────────────────────────────────
@@ -22814,7 +22789,7 @@ export default function App() {
   const charityNoticeText = () => t('點數無現金價值；投入後不可撤回；本機構不開立捐贈收據；折抵額度僅供在指定合作商家折抵消費，不可轉讓、不可兌現。經文雨不經手任何款項，折抵後的餘額由機構直接支付給商家。', 'Points have no cash value; contributions cannot be reversed; the organisation issues no donation receipt; the allowance can only be used as a discount at the listed shops and cannot be transferred or cashed out. VerseRain never handles money; the organisation pays the remainder to the shop directly.');
   const openContribute = (pool) => {
     if (!pool || !pool.id) return;
-    if (!userEmail) { setShowLoginModal('login'); setToast(t('請先登入才能投入點數', 'Sign in to contribute points')); setTimeout(() => setToast(null), 2500); return; }
+    if (!userEmail) { setShowLoginModal('login'); toast.error(t('請先登入才能投入點數', 'Sign in to contribute points')); return; }
     setContributeModal({ pool }); setContributeNTD('10'); setPointsBalance(null);
     fetchPointsBalance();
   };
@@ -22835,11 +22810,10 @@ export default function App() {
       // the response carries no voucher summary, so keep the card's usedNTD.
       if (d.pool?.id) setCharityPools(cp => (cp?.pools ? { pools: cp.pools.map(p => (p.id === d.pool.id ? { ...p, ...d.pool, usedNTD: p.usedNTD } : p)) } : cp));
       setContributeModal(null);
-      setToast(t('已投入 {p} 點，「{pool}」折抵額度 +NT${n} ❤️', 'Contributed {p} pts — NT${n} added to “{pool}” ❤️').replace('{p}', points.toLocaleString()).replace('{pool}', String(contributeModal.pool.name || '')).replace('{n}', String(d.contribution?.ntd ?? points / 1000)));
-      setTimeout(() => setToast(null), 3500);
+      toast.success(t('已投入 {p} 點，「{pool}」折抵額度 +NT${n} ❤️', 'Contributed {p} pts — NT${n} added to “{pool}” ❤️').replace('{p}', points.toLocaleString()).replace('{pool}', String(contributeModal.pool.name || '')).replace('{n}', String(d.contribution?.ntd ?? points / 1000)));
       loadCharityPools(true); loadCharityMine();
     } catch (e) {
-      setToast(String(e?.message || e)); setTimeout(() => setToast(null), 3500);
+      toast.error(String(e?.message || e));
     } finally {
       setContributeBusy(false);
     }
@@ -22848,7 +22822,7 @@ export default function App() {
     const m = poolRedeemModal;
     if (!m || !m.pool || !m.placeId) return;
     const bill = Math.floor(Number(m.bill) || 0);
-    if (bill < 1) { setToast(redeemErrorText('bill_invalid')); setTimeout(() => setToast(null), 2500); return; }
+    if (bill < 1) { toast.error(redeemErrorText('bill_invalid')); return; }
     setPoolRedeemBusy(true);
     try {
       const res = await fetch('/api/pools', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'pool_redeem', email: userEmail, sessionKey, poolId: m.pool.id, placeId: m.placeId, billNTD: bill }) });
@@ -22857,7 +22831,7 @@ export default function App() {
       if (d.error === 'too_small' && d.limitedBy === 'monthly') throw new Error(t('這家商家本月的折抵額度已用完', 'This shop’s monthly allowance is used up'));
       throw new Error(redeemErrorText(d.error || res.status));
     } catch (e) {
-      setToast(String(e?.message || e)); setTimeout(() => setToast(null), 3500);
+      toast.error(String(e?.message || e));
     } finally {
       setPoolRedeemBusy(false);
     }
@@ -22868,29 +22842,28 @@ export default function App() {
       const res = await fetch('/api/pools', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action, email: userEmail, sessionKey, poolId, placeId, ...caps }) });
       const d = await res.json().catch(() => ({}));
       if (!res.ok || !d.success) throw new Error(redeemErrorText(d.error || res.status));
-      setToast(action === 'merchant_leave' ? t('已退出愛心行動', 'Left the Love in Action project') : t('已更新愛心行動的參與設定', 'Love in Action participation saved'));
-      setTimeout(() => setToast(null), 2500);
+      toast.success(action === 'merchant_leave' ? t('已退出愛心行動', 'Left the Love in Action project') : t('已更新愛心行動的參與設定', 'Love in Action participation saved'));
       setPoolJoinDraft(o => { const n = { ...o }; delete n[placeId]; return n; });
       loadCharityMine(); loadCharityPools(true);
     } catch (e) {
-      setToast(String(e?.message || e)); setTimeout(() => setToast(null), 3500);
+      toast.error(String(e?.message || e));
     } finally {
       setPoolJoinBusy('');
     }
   };
   const createPool = async () => {
     const d0 = poolCreateDraft;
-    if (!d0.orgPlaceId || !d0.agree) { setToast(redeemErrorText('consent_required')); setTimeout(() => setToast(null), 2500); return; }
+    if (!d0.orgPlaceId || !d0.agree) { toast.error(redeemErrorText('consent_required')); return; }
     setPoolCreateBusy(true);
     try {
       const res = await fetch('/api/pools', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'create', email: userEmail, sessionKey, pool: { orgPlaceId: d0.orgPlaceId, name: d0.name, description: d0.description, agree: true } }) });
       const d = await res.json().catch(() => ({}));
       if (!res.ok || !d.success) throw new Error(redeemErrorText(d.error || res.status));
       setPoolCreateDraft({ orgPlaceId: '', name: '', description: '', agree: false });
-      setToast(t('已送出，等待審核', 'Submitted, awaiting review')); setTimeout(() => setToast(null), 2500);
+      toast.success(t('已送出，等待審核', 'Submitted, awaiting review'));
       loadCharityMine();
     } catch (e) {
-      setToast(String(e?.message || e)); setTimeout(() => setToast(null), 3500);
+      toast.error(String(e?.message || e));
     } finally {
       setPoolCreateBusy(false);
     }
@@ -22909,7 +22882,7 @@ export default function App() {
   };
   const saveCashAppeal = async (poolId, remove = false) => {
     const d = cashDraft[poolId];
-    if (!remove && (!d || !d.agree)) { setToast(redeemErrorText('consent_required')); setTimeout(() => setToast(null), 2500); return; }
+    if (!remove && (!d || !d.agree)) { toast.error(redeemErrorText('consent_required')); return; }
     setCashBusy(poolId);
     try {
       const cashAppeal = remove ? null : { ...Object.fromEntries(CASH_FIELDS.map(k => [k, String(d[k] || '').trim()])), goalNTD: Math.floor(Number(d.goalNTD) || 0) };
@@ -22918,11 +22891,10 @@ export default function App() {
       if (r.error === 'session_invalid' || r.error === 'login_required') { setShowLoginModal('login'); throw new Error(redeemErrorText('session_invalid')); }
       if (!res.ok || !r.success) throw new Error(redeemErrorText(r.error || res.status));
       setCashDraft(o => { const n = { ...o }; delete n[poolId]; return n; });
-      setToast(remove ? t('已停止公開現金捐款資訊', 'Cash donation details removed') : (r.pool?.cashAppeal?.status === 'verified' ? t('已更新', 'Updated') : t('已送出，等待審核', 'Submitted, awaiting review')));
-      setTimeout(() => setToast(null), 2500);
+      toast.success(remove ? t('已停止公開現金捐款資訊', 'Cash donation details removed') : (r.pool?.cashAppeal?.status === 'verified' ? t('已更新', 'Updated') : t('已送出，等待審核', 'Submitted, awaiting review')));
       loadCharityMine(); loadCharityPools(true);
     } catch (e) {
-      setToast(String(e?.message || e)); setTimeout(() => setToast(null), 3500);
+      toast.error(String(e?.message || e));
     } finally {
       setCashBusy('');
     }
@@ -22932,10 +22904,10 @@ export default function App() {
       const res = await fetch('/api/pools', { method: 'POST', headers: adminHeaders(), body: JSON.stringify({ action, adminEmail: userEmail, poolId, ...extra }) });
       const d = await res.json().catch(() => ({}));
       if (!res.ok || !d.success) throw new Error(d.error || String(res.status));
-      setToast(t('已更新愛心行動', 'Pool updated')); setTimeout(() => setToast(null), 2000);
+      toast.success(t('已更新愛心行動', 'Pool updated'));
       setRewardsAdminReload(n => n + 1);
       setPlacesVersion(n => n + 1);
-    } catch (e) { setToast(String(e?.message || e)); setTimeout(() => setToast(null), 3000); }
+    } catch (e) { toast.error(String(e?.message || e)); }
   };
   const cashStatusBadge = (st) => st === 'verified' ? { text: t('已公開', 'Published'), bg: '#dcfce7', fg: '#166534' } : st === 'rejected' ? { text: t('未通過', 'Not approved'), bg: '#fee2e2', fg: '#991b1b' } : { text: t('審核中', 'Under review'), bg: '#fef3c7', fg: '#92400e' };
   const cashOrgTypeLabel = (k) => ({ foundation: t('財團法人', 'Foundation'), association: t('公益社團法人', 'Public-interest association'), school: t('公立學校', 'Public school'), agency: t('行政法人', 'Administrative agency') })[k] || String(k || '');
@@ -23006,18 +22978,17 @@ export default function App() {
   const contestNoticeText = () => t('讀完整組經文（每一節都練到「已熟練」）即可申請認證，機構會依公告方式頒發獎勵；經文雨不經手獎勵本身。額外接受「背經文挑戰」的話，活動期間內這組經文每一節只算你自己的最高分，加總成為排行榜分數——重複挑戰同一節不會增加總分，除非破了自己的紀錄。', 'Finish every verse of the set (each one practised to "mastered") to apply for certified completion — the organisation hands out the reward itself, off the app. If you also accept the memorisation challenge, only your own best score on each verse of this set during the contest window counts — the leaderboard total is the sum of those bests, so replaying the same verse won’t raise your score unless you beat your own record.');
   const joinContestAction = async (contest) => {
     if (!contest || !contest.id) return;
-    if (!userEmail) { setShowLoginModal('login'); setToast(t('請先登入才能參加', 'Sign in to join')); setTimeout(() => setToast(null), 2500); return; }
+    if (!userEmail) { setShowLoginModal('login'); toast.error(t('請先登入才能參加', 'Sign in to join')); return; }
     setContestActionBusy(contest.id);
     try {
       const res = await fetch('/api/contests', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'join', email: userEmail, sessionKey, contestId: contest.id }) });
       const d = await res.json().catch(() => ({}));
       if (d.error === 'session_invalid' || d.error === 'login_required') { setShowLoginModal('login'); throw new Error(redeemErrorText('session_invalid')); }
       if (!res.ok || !d.success) throw new Error(redeemErrorText(d.error || res.status));
-      setToast(t('已加入「{name}」📖', 'Joined “{name}” 📖').replace('{name}', String(contest.name || '')));
-      setTimeout(() => setToast(null), 2500);
+      toast.success(t('已加入「{name}」📖', 'Joined “{name}” 📖').replace('{name}', String(contest.name || '')));
       loadContestMine(); loadContests(true);
     } catch (e) {
-      setToast(String(e?.message || e)); setTimeout(() => setToast(null), 3500);
+      toast.error(String(e?.message || e));
     } finally {
       setContestActionBusy('');
     }
@@ -23029,11 +23000,10 @@ export default function App() {
       const res = await fetch('/api/contests', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'accept_challenge', email: userEmail, sessionKey, contestId: contest.id }) });
       const d = await res.json().catch(() => ({}));
       if (!res.ok || !d.success) throw new Error(redeemErrorText(d.error || res.status));
-      setToast(t('已接受背經文挑戰，開始玩「背經文」拿分數吧！', 'Challenge accepted — play Memorise mode to start scoring!'));
-      setTimeout(() => setToast(null), 3000);
+      toast.success(t('已接受背經文挑戰，開始玩「背經文」拿分數吧！', 'Challenge accepted — play Memorise mode to start scoring!'));
       loadContestMine();
     } catch (e) {
-      setToast(String(e?.message || e)); setTimeout(() => setToast(null), 3500);
+      toast.error(String(e?.message || e));
     } finally {
       setContestActionBusy('');
     }
@@ -23045,21 +23015,20 @@ export default function App() {
       const res = await fetch('/api/contests', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'claim_completion', email: userEmail, sessionKey, contestId: contest.id }) });
       const d = await res.json().catch(() => ({}));
       if (!res.ok || !d.success) throw new Error(redeemErrorText(d.error || res.status));
-      if (!d.completed) { setToast(t('還沒讀完整組（{p}/{n} 節），再加油！', 'Not finished yet ({p}/{n} verses) — keep going!').replace('{p}', String(d.passed || 0)).replace('{n}', String(d.total || 0))); setTimeout(() => setToast(null), 3000); return; }
-      setToast(t('🎉 已認證完成「{name}」，機構會另行通知獎勵方式', '🎉 Completion of “{name}” verified — the organisation will follow up on the reward').replace('{name}', String(contest.name || '')));
-      setTimeout(() => setToast(null), 4000);
+      if (!d.completed) { toast.info(t('還沒讀完整組（{p}/{n} 節），再加油！', 'Not finished yet ({p}/{n} verses) — keep going!').replace('{p}', String(d.passed || 0)).replace('{n}', String(d.total || 0))); return; }
+      toast.success(t('🎉 已認證完成「{name}」，機構會另行通知獎勵方式', '🎉 Completion of “{name}” verified — the organisation will follow up on the reward').replace('{name}', String(contest.name || '')));
       loadContestMine();
     } catch (e) {
-      setToast(String(e?.message || e)); setTimeout(() => setToast(null), 3500);
+      toast.error(String(e?.message || e));
     } finally {
       setContestActionBusy('');
     }
   };
   const createContest = async () => {
     const d0 = contestCreateDraft;
-    if (!d0.orgPlaceId || !d0.setId || !d0.name.trim() || !d0.startsAt || !d0.endsAt || !d0.agree) { setToast(redeemErrorText('consent_required')); setTimeout(() => setToast(null), 2500); return; }
+    if (!d0.orgPlaceId || !d0.setId || !d0.name.trim() || !d0.startsAt || !d0.endsAt || !d0.agree) { toast.error(redeemErrorText('consent_required')); return; }
     const set = safeActiveSets.find(s => s.id === d0.setId);
-    if (!set) { setToast(redeemErrorText('set_required')); setTimeout(() => setToast(null), 2500); return; }
+    if (!set) { toast.error(redeemErrorText('set_required')); return; }
     setContestCreateBusy(true);
     try {
       const res = await fetch('/api/contests', {
@@ -23077,10 +23046,10 @@ export default function App() {
       const d = await res.json().catch(() => ({}));
       if (!res.ok || !d.success) throw new Error(redeemErrorText(d.error || res.status));
       setContestCreateDraft({ orgPlaceId: '', setId: '', name: '', description: '', rewardDescription: '', startsAt: '', endsAt: '', agree: false });
-      setToast(t('已送出，等待審核', 'Submitted, awaiting review')); setTimeout(() => setToast(null), 2500);
+      toast.success(t('已送出，等待審核', 'Submitted, awaiting review'));
       loadContestMine();
     } catch (e) {
-      setToast(String(e?.message || e)); setTimeout(() => setToast(null), 3500);
+      toast.error(String(e?.message || e));
     } finally {
       setContestCreateBusy(false);
     }
@@ -23090,10 +23059,10 @@ export default function App() {
       const res = await fetch('/api/contests', { method: 'POST', headers: adminHeaders(), body: JSON.stringify({ action, adminEmail: userEmail, contestId }) });
       const d = await res.json().catch(() => ({}));
       if (!res.ok || !d.success) throw new Error(d.error || String(res.status));
-      setToast(t('已更新讀經比賽', 'Contest updated')); setTimeout(() => setToast(null), 2000);
+      toast.success(t('已更新讀經比賽', 'Contest updated'));
       setRewardsAdminReload(n => n + 1);
       setPlacesVersion(n => n + 1);
-    } catch (e) { setToast(String(e?.message || e)); setTimeout(() => setToast(null), 3000); }
+    } catch (e) { toast.error(String(e?.message || e)); }
   };
   // 「我的登記」 card of an approved shop: join / update / leave a pool.
   const renderMerchantPoolSection = (pl) => {
@@ -23173,7 +23142,9 @@ export default function App() {
     return () => { cancelled = true; };
   }, [verseVoicePicker]);
 
-  const [toast, setToast] = useState(null);
+  // Legacy name kept for the many call sites: setToast(msg) shows a toast,
+  // setToast(null) hides it. New code calls toast.success / toast.error.
+  const setToast = toast;
   const [isOnline, setIsOnline] = useState(() => typeof navigator !== 'undefined' ? navigator.onLine : true);
   useEffect(() => {
     const goOnline = () => setIsOnline(true);
@@ -23235,8 +23206,7 @@ export default function App() {
       }
       localStorage.setItem('verseRain_voiceByVersion', JSON.stringify(byVersion));
       setSelectedVoiceName(voiceName || '');
-      setToast(t('語音已更新！', 'Voice updated!'));
-      setTimeout(() => setToast(null), 1000);
+      toast.success(t('語音已更新！', 'Voice updated!'));
     } catch (e) {}
   };
   useEffect(() => {
@@ -24195,8 +24165,7 @@ export default function App() {
                 text = await fetchVerseFromBolls(normalizedKey, targetVersion);
               }
               if (!text) {
-                setToast(t('找不到此經文，請確認經文出處', 'Verse not found, please check the reference'));
-                setTimeout(() => setToast(null), 3000);
+                toast.error(t('找不到此經文，請確認經文出處', 'Verse not found, please check the reference'));
                 window.history.replaceState({}, document.title, pathWithSharedLang());
                 return;
               }
@@ -24538,8 +24507,7 @@ export default function App() {
     setQrShareModal({ url, reference });
     try {
       await navigator.clipboard?.writeText(url);
-      setToast(t('讀經連結已複製！', 'Reading link copied!'));
-      setTimeout(() => setToast(null), 3000);
+      toast.success(t('讀經連結已複製！', 'Reading link copied!'));
     } catch {
       // QR modal remains available when clipboard permission is unavailable.
     }
@@ -24904,8 +24872,7 @@ export default function App() {
           }).catch(e => e);
 
           localStorage.setItem('verserain_invite_claimed', 'true');
-          setToast(t('成功透過 {inviter} 的邀請首次過關！雙方各獲 1 顆果子，推薦者額外獲得 5000 點！', "First clear through {inviter}'s invite! You each get 1 fruit, and your inviter gets 5,000 bonus points!").replace('{inviter}', inviter));
-          setTimeout(() => setToast(null), 4000);
+          toast.success(t('成功透過 {inviter} 的邀請首次過關！雙方各獲 1 顆果子，推薦者額外獲得 5000 點！', "First clear through {inviter}'s invite! You each get 1 fruit, and your inviter gets 5,000 bonus points!").replace('{inviter}', inviter));
         }
       }
 
@@ -25775,7 +25742,7 @@ export default function App() {
                     verserain
                   </div>
                   <div className="app-brand-version" style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', marginTop: '4px', marginLeft: '2px' }}>
-                    v4.0.120
+                    v4.0.121
                   </div>
                 </div>
                 <div ref={langPickerRef} className="app-lang-control" style={{ position: 'relative' }}>
@@ -26742,7 +26709,7 @@ export default function App() {
                                     if (e.key === 'Enter' || e.key === 'Tab') {
                                       if (e.key === 'Enter') e.preventDefault();
                                       const bookInfo = BIBLE_BOOKS.find(b => b.id === v.book);
-                                      if (!bookInfo) return alert(t("請先選擇書卷", "Please select a book first"));
+                                      if (!bookInfo) return toast.error(t("請先選擇書卷", "Please select a book first"));
                                       await autoFetchVerse(bookInfo, v.verseInput || '', idx);
                                     }
                                   }} placeholder={t("章:節 (如 3:16)", "Ch:Vs (e.g. 3:16)")}
@@ -26921,11 +26888,10 @@ export default function App() {
                                       // different account) is NOT a transient failure — re-recording
                                       // will keep failing. Say the real reason instead of "re-record".
                                       const locked = /original recorder/i.test(String(e?.message || ''));
-                                      setToast(locked
+                                      toast.error(locked
                                         ? t('這節之前是用別的帳號錄的,無法覆蓋。請先刪掉這一行再重加,或用原本的帳號登入。',
                                              'This verse was recorded under a different account and can’t be overwritten. Remove and re-add this row, or sign in with the original account.')
                                         : t('錄音處理失敗,請重錄這節', 'Recording failed — please re-record this verse'));
-                                      setTimeout(() => setToast(null), locked ? 7000 : 4000);
                                     }
                                   })();
                                   editorUploadJobRef.current[ref] = job;
@@ -27016,16 +26982,15 @@ export default function App() {
                                   setPublishedVerseSets(prev => prev.filter(p => p.id !== editingCustomSet.id));
                                 }
 
-                                setToast(t('經文組已刪除', 'Set deleted'));
-                                setTimeout(() => setToast(null), 3000);
+                                toast.success(t('經文組已刪除', 'Set deleted'));
                                 setEditingCustomSet(null);
                               }} style={{ background: deleteArmedId === editingCustomSet.id ? '#b91c1c' : '#ef4444', color: 'white', border: deleteArmedId === editingCustomSet.id ? '2px solid #fecaca' : 'none', padding: '0.8rem 1.5rem', borderRadius: '6px', fontWeight: 'bold', fontSize: '1rem', cursor: 'pointer' }}>
                                 {deleteArmedId === editingCustomSet.id ? t('再按一次確認刪除', 'Tap again to confirm') : t("刪除經文組", "Delete Set")}
                               </button>
                             ) : <span />}
                             <button type="button" onClick={() => {
-                              if (!editingCustomSet.title) return alert(t("請填寫標題", "Please fill in title"));
-                              if (editingCustomSet.verses.length === 0) return alert(t("請至少新增一節經文", "Please add at least one verse"));
+                              if (!editingCustomSet.title) return toast.error(t("請填寫標題", "Please fill in title"));
+                              if (editingCustomSet.verses.length === 0) return toast.error(t("請至少新增一節經文", "Please add at least one verse"));
 
                               const setObj = {
                                 ...editingCustomSet,
@@ -27083,8 +27048,7 @@ export default function App() {
                                   // creators think their set was published
                                   // when nobody else could see it.
                                   const d = await res.json().catch(() => ({}));
-                                  setToast(t('發布失敗:{error}。其他人將看不到這個經文組。', "Publish failed: {error}. Others won't see this set.").replace('{error}', String(d.error || res.status)));
-                                  setTimeout(() => setToast(null), 6000);
+                                  toast.error(t('發布失敗:{error}。其他人將看不到這個經文組。', "Publish failed: {error}. Others won't see this set.").replace('{error}', String(d.error || res.status)));
                                   setPublishedVerseSets(prev => prev.filter(p => p.id !== setObj.id));
                                 }).catch(e => console.error("Publish failed", e));
 
@@ -27978,13 +27942,11 @@ export default function App() {
                                                   throw new Error(msg || `HTTP ${res.status}`);
                                                 }
                                                 setPublishedVerseSets(prev => prev.filter(p => p.id !== set.id));
-                                                setToast(t('經文組已刪除', 'Set deleted'));
-                                                setTimeout(() => setToast(null), 3000);
+                                                toast.success(t('經文組已刪除', 'Set deleted'));
                                               })
                                               .catch((err) => {
                                                 console.error(err);
-                                                setToast(t("刪除失敗，請重新登入後再試。", "Delete failed. Please log in again and try once more."));
-                                                setTimeout(() => setToast(null), 4000);
+                                                toast.error(t("刪除失敗，請重新登入後再試。", "Delete failed. Please log in again and try once more."));
                                               });
                                           }} style={{ background: deleteArmedId === `admin-${set.id}` ? '#b91c1c' : '#fee2e2', border: '1px solid #fca5a5', color: deleteArmedId === `admin-${set.id}` ? 'white' : '#ef4444', padding: '0.2rem 0.5rem', borderRadius: '4px', cursor: 'pointer', fontSize: '0.8rem' }}>{deleteArmedId === `admin-${set.id}` ? t('確認刪除？', 'Confirm?') : `Admin ${t('刪除', 'Delete')}`}</button>
                                         )}
@@ -28733,8 +28695,7 @@ export default function App() {
                             <button
                               onClick={() => {
                                 navigator.clipboard.writeText(buildPublicShareUrl('/', { ref: personalCode }));
-                                setToast(t("邀請連結已複製！快發給好朋友吧！", "Invite link copied! Share it with friends!"));
-                                setTimeout(() => setToast(null), 3500);
+                                toast.success(t("邀請連結已複製！快發給好朋友吧！", "Invite link copied! Share it with friends!"));
                               }}
                               style={{ background: '#3b82f6', color: 'white', border: 'none', padding: '0 1.5rem', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', transition: 'background 0.2s', minHeight: '44px' }}
                               onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#2563eb'}
@@ -29207,7 +29168,7 @@ export default function App() {
                                         {pl.status === 'hidden' && <button type="button" onClick={() => placeAdminAction('unhide', { placeId: pl.id })} style={smallBtn('transparent', '#64748b', '1px solid #cbd5e1')}>{t('恢復', 'Restore')}</button>}
                                         {pl.status === 'pending' && <button type="button" onClick={() => placeAdminAction('reject', { placeId: pl.id })} style={smallBtn('transparent', '#991b1b', '1px solid #fecaca')}>{t('退回', 'Reject')}</button>}
                                         <button type="button" onClick={() => setPlaceEdit({ ...pl })} style={smallBtn('transparent', '#334155', '1px solid #cbd5e1')}>{t('編輯', 'Edit')}</button>
-                                        {['rejected', 'hidden', 'withdrawn'].includes(pl.status) && <button type="button" onClick={() => { if (window.confirm(t('確定刪除？', 'Delete?'))) placeAdminAction('delete', { placeId: pl.id }); }} style={smallBtn('transparent', '#991b1b', '1px solid #fecaca')}>{t('刪除', 'Delete')}</button>}
+                                        {['rejected', 'hidden', 'withdrawn'].includes(pl.status) && <button type="button" onClick={async () => { if (await confirmDialog({ message: t('確定刪除？', 'Delete?'), confirmLabel: t('刪除', 'Delete'), danger: true })) placeAdminAction('delete', { placeId: pl.id }); }} style={smallBtn('transparent', '#991b1b', '1px solid #fecaca')}>{t('刪除', 'Delete')}</button>}
                                       </div>
                                     </div>
                                   ))}
@@ -29221,7 +29182,7 @@ export default function App() {
                                       <div key={v.code} style={{ display: 'flex', justifyContent: 'space-between', gap: '0.5rem', flexWrap: 'wrap', background: '#fff', border: '1px solid #e2e8f0', borderRadius: 6, padding: '0.35rem 0.6rem', fontSize: '0.8rem' }}>
                                         <span>{v.kind === 'pool' ? '❤️ ' : ''}<code>{v.code}</code> · {v.placeName} · NT${v.ntd} · {v.kind === 'pool' ? v.poolName : v.playerName} · <b>{st}</b> · {new Date(v.issuedAt).toLocaleString()}</span>
                                         <span style={{ display: 'flex', gap: '0.3rem' }}>
-                                          {(st === 'issued' || st === 'used') && <button type="button" onClick={() => { if (window.confirm(v.kind === 'pool' ? t('作廢並退回折抵額度？', 'Void and return the allowance?') : t('作廢並退還點數？', 'Void and refund points?'))) voucherAdminAction(v.code, 'void'); }} style={smallBtn('transparent', '#991b1b', '1px solid #fecaca')}>{t('作廢', 'Void')}</button>}
+                                          {(st === 'issued' || st === 'used') && <button type="button" onClick={async () => { if (await confirmDialog({ message: v.kind === 'pool' ? t('作廢並退回折抵額度？', 'Void and return the allowance?') : t('作廢並退還點數？', 'Void and refund points?'), confirmLabel: t('作廢', 'Void'), danger: true })) voucherAdminAction(v.code, 'void'); }} style={smallBtn('transparent', '#991b1b', '1px solid #fecaca')}>{t('作廢', 'Void')}</button>}
                                           {st === 'void' && <button type="button" onClick={() => voucherAdminAction(v.code, 'restore')} style={smallBtn('transparent', '#64748b', '1px solid #cbd5e1')}>{t('恢復', 'Restore')}</button>}
                                         </span>
                                       </div>
@@ -29519,8 +29480,7 @@ export default function App() {
                 const card = { background: '#fff', border: '1px solid #e2e8f0', borderRadius: 12, padding: '1rem 1.2rem', marginBottom: '1rem' };
                 const h3 = { margin: '0 0 0.6rem', color: '#1e293b', fontSize: '1.05rem' };
                 const copy = async (label, value) => {
-                  try { await navigator.clipboard.writeText(value); setToast(t('已複製{what}', 'Copied {what}').replace('{what}', label)); } catch { setToast(value); }
-                  setTimeout(() => setToast(null), 2000);
+                  try { await navigator.clipboard.writeText(value); toast.success(t('已複製{what}', 'Copied {what}').replace('{what}', label)); } catch { setToast(value); }
                 };
                 const row = (label, value) => (
                   <div key={label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.6rem', padding: '0.45rem 0', borderBottom: '1px solid #f1f5f9', fontSize: '0.92rem' }}>
@@ -29735,7 +29695,7 @@ export default function App() {
                                       <div>{t('銀行', 'Bank')}：{ca.bankName}{ca.bankBranch ? ` ${ca.bankBranch}` : ''}</div>
                                       <div>{t('戶名', 'Account name')}：{ca.accountName}</div>
                                       <div>{t('帳號', 'Account no.')}：<b style={{ fontFamily: 'monospace', fontSize: '0.95rem' }}>{ca.accountNo}</b>{' '}
-                                        <button type="button" data-testid="pool-cash-copy" onClick={() => { try { navigator.clipboard.writeText(ca.accountNo).then(() => { setToast(t('已複製帳號', 'Account number copied')); setTimeout(() => setToast(null), 2000); }).catch(() => {}); } catch { /* ignore */ } }} style={{ background: '#fff', border: '1px solid #86efac', color: '#166534', borderRadius: 6, padding: '0.05rem 0.5rem', cursor: 'pointer', fontSize: '0.78rem', fontWeight: 700 }}>{t('複製帳號', 'Copy')}</button>
+                                        <button type="button" data-testid="pool-cash-copy" onClick={() => { try { navigator.clipboard.writeText(ca.accountNo).then(() => { toast.success(t('已複製帳號', 'Account number copied')); }).catch(() => {}); } catch { /* ignore */ } }} style={{ background: '#fff', border: '1px solid #86efac', color: '#166534', borderRadius: 6, padding: '0.05rem 0.5rem', cursor: 'pointer', fontSize: '0.78rem', fontWeight: 700 }}>{t('複製帳號', 'Copy')}</button>
                                       </div>
                                       {ca.transferNote ? <div>{t('匯款時請註明：{note}', 'Please add this note to your transfer: {note}').replace('{note}', ca.transferNote)}</div> : null}
                                     </>
@@ -29802,7 +29762,7 @@ export default function App() {
                             {!d ? (
                               <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap', marginTop: '0.45rem' }}>
                                 <button type="button" onClick={() => startCashEdit(op)} style={{ background: '#16a34a', color: '#fff', border: 'none', borderRadius: 6, padding: '0.35rem 0.8rem', cursor: 'pointer', fontWeight: 700, fontSize: '0.84rem' }}>{ca ? t('修改捐款資訊', 'Edit donation details') : t('填寫捐款資訊', 'Add donation details')}</button>
-                                {ca ? <button type="button" disabled={cashBusy === op.id} onClick={() => { if (window.confirm(t('確定要停止公開現金捐款資訊嗎？', 'Stop showing the cash donation details?'))) saveCashAppeal(op.id, true); }} style={{ background: 'transparent', color: '#991b1b', border: '1px solid #fecaca', borderRadius: 6, padding: '0.35rem 0.8rem', cursor: 'pointer', fontSize: '0.84rem' }}>{t('停止公開', 'Remove')}</button> : null}
+                                {ca ? <button type="button" disabled={cashBusy === op.id} onClick={async () => { if (await confirmDialog({ message: t('確定要停止公開現金捐款資訊嗎？', 'Stop showing the cash donation details?'), confirmLabel: t('停止公開', 'Remove'), danger: true })) saveCashAppeal(op.id, true); }} style={{ background: 'transparent', color: '#991b1b', border: '1px solid #fecaca', borderRadius: 6, padding: '0.35rem 0.8rem', cursor: 'pointer', fontSize: '0.84rem' }}>{t('停止公開', 'Remove')}</button> : null}
                               </div>
                             ) : (
                               <div style={{ marginTop: '0.4rem' }}>
@@ -30252,7 +30212,7 @@ export default function App() {
                       )}
                       <div style={{ color: '#64748b', fontSize: '0.8rem', lineHeight: 1.5 }}>{t('請店員掃描 QR，或到 verserain.com/#verify 輸入代碼核銷。', 'Ask staff to scan the QR, or enter the code at verserain.com/#verify.')}</div>
                       <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center', marginTop: '0.8rem', flexWrap: 'wrap' }}>
-                        <button type="button" onClick={() => { try { navigator.clipboard.writeText(v.code); setToast(t('已複製代碼', 'Code copied')); setTimeout(() => setToast(null), 2000); } catch { /* ignore */ } }} style={{ background: '#fff', border: '1px solid #cbd5e1', borderRadius: 8, padding: '0.4rem 0.9rem', cursor: 'pointer', color: '#334155' }}>{t('複製代碼', 'Copy code')}</button>
+                        <button type="button" onClick={() => { try { navigator.clipboard.writeText(v.code); toast.success(t('已複製代碼', 'Code copied')); } catch { /* ignore */ } }} style={{ background: '#fff', border: '1px solid #cbd5e1', borderRadius: 8, padding: '0.4rem 0.9rem', cursor: 'pointer', color: '#334155' }}>{t('複製代碼', 'Copy code')}</button>
                         <button type="button" onClick={() => saveActiveVoucher(null)} style={{ background: live ? '#e2e8f0' : '#f59e0b', color: live ? '#334155' : '#fff', border: 'none', borderRadius: 8, padding: '0.4rem 0.9rem', cursor: 'pointer', fontWeight: 700 }}>{live ? t('先關閉（稍後可從商家標記再打開）', 'Close for now') : t('關閉', 'Close')}</button>
                       </div>
                       <button type="button" onClick={() => { saveActiveVoucher(null); setMainTab(v.kind === 'pool' ? 'charity' : 'sponsors'); }} style={{ marginTop: '0.6rem', background: 'transparent', border: 'none', color: '#3b82f6', cursor: 'pointer', fontSize: '0.82rem', fontWeight: 600 }}>{t('查看我的折抵紀錄', 'See my discounts')} →</button>
@@ -30785,7 +30745,7 @@ export default function App() {
                                         setActiveVerse(targetVerse);
                                         setTimeout(() => startGame(false, targetVerse), 200);
                                       } else {
-                                        setToast(t('本機找不到此經文', 'Verse not found locally'));
+                                        toast.error(t('本機找不到此經文', 'Verse not found locally'));
                                       }
                                     }}
                                     style={{ backgroundColor: '#10b981', color: 'white', border: 'none', borderRadius: '6px', minWidth: '44px', height: '44px', padding: '0 0.35rem', display: 'flex', flexDirection: 'column', gap: '1px', fontSize: '0.7rem', fontWeight: 700, lineHeight: 1.1, alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'transform 0.1s' }}
@@ -32305,7 +32265,7 @@ export default function App() {
                     const data = await res.json();
                     if (data.success) {
                       setResetToken(null);
-                      alert(t("密碼已更新，請用新密碼登入。", "Your password has been updated. Please log in with it."));
+                      toast.success(t("密碼已更新，請用新密碼登入。", "Your password has been updated. Please log in with it."));
                       setShowLoginModal('login');
                     } else {
                       setResetError(data.error || t("重設失敗", "Reset failed"));
@@ -32438,7 +32398,7 @@ export default function App() {
                       });
                       const data = await res.json();
                       if (res.ok && data.success) {
-                        alert(t("驗證成功！請重新登入。", "Verification successful! Please log in."));
+                        toast.success(t("驗證成功！請重新登入。", "Verification successful! Please log in."));
                         setShowLoginModal('login');
                       } else {
                         setAuthError(data.error || "驗證失敗 (Verification Error)");
@@ -32490,7 +32450,7 @@ export default function App() {
                         // Registration: server sends verification email
                         setVerifyEmail(email);
                         setShowLoginModal('verify');
-                        alert(t(
+                        toast.success(t(
                           "註冊成功！請至您的信箱查看驗證碼。",
                           "Registration successful! Please check your email for the verification code."
                         ));
@@ -32553,7 +32513,7 @@ export default function App() {
                       if (data.requiresVerification) {
                         setVerifyEmail(email);
                         setShowLoginModal('verify');
-                        alert(t("請先驗證您的電子郵件", "Please verify your email first"));
+                        toast.error(t("請先驗證您的電子郵件", "Please verify your email first"));
                       }
                       setAuthError(data.error || "連線失敗 (Connection Error)");
                     }
@@ -32586,7 +32546,7 @@ export default function App() {
                       <span onClick={async () => {
                         const emailInput = document.getElementById('modalEmailInput');
                         const email = emailInput ? emailInput.value.trim() : '';
-                        if (!email) return alert(t("請先在上方的信箱欄位輸入您的信箱！", "Please enter your email first!"));
+                        if (!email) return toast.error(t("請先在上方的信箱欄位輸入您的信箱！", "Please enter your email first!"));
 
                         setAuthLoading(true);
                         setAuthError("");
@@ -32602,10 +32562,10 @@ export default function App() {
                             // cannot send the password back, because it only
                             // stores a hash of it.
                             setAuthError("");
-                            alert(t(
+                            alertDialog({ message: t(
                               "重設密碼的連結已寄到您的信箱，30 分鐘內有效。",
                               "A password reset link has been sent to your email. It is valid for 30 minutes."
-                            ));
+                            ) });
                           } else {
                             setAuthError(data.error || t("查詢失敗", "Failed to retrieve password"));
                           }
@@ -32631,7 +32591,6 @@ export default function App() {
             personalCode={personalCode}
             userEmail={userEmail}
             setMyInviterCode={setMyInviterCode}
-            setToast={setToast}
             onClose={() => setShowBindInviterModal(false)}
           />
         )}
@@ -32941,8 +32900,7 @@ export default function App() {
                   const ok = await subscribeMorningPush();
                   setShowPushPrompt(false);
                   if (ok) {
-                    setToast(t('已開啟每日經文推播 🌧️', 'Daily Verse Push is on 🌧️'));
-                    setTimeout(() => setToast(null), 4000);
+                    toast.success(t('已開啟每日經文推播 🌧️', 'Daily Verse Push is on 🌧️'));
                   } else {
                     // Denied or needs guidance — the full modal explains what to do.
                     setShowPushModal(true);
@@ -33070,10 +33028,9 @@ export default function App() {
                   onClick={async () => {
                     try {
                       await navigator.clipboard.writeText(qrShareModal.url);
-                      setToast(t("分享連結已複製到剪貼簿！", "Share link copied!"));
-                      setTimeout(() => setToast(null), 3000);
+                      toast.success(t("分享連結已複製到剪貼簿！", "Share link copied!"));
                     } catch (err) {
-                      alert(qrShareModal.url);
+                      alertDialog({ title: t('分享連結', 'Share link'), message: qrShareModal.url });
                     }
                   }}
                   style={{ flex: 1, padding: '0.75rem', background: 'rgba(59,130,246,0.15)', color: '#60a5fa', border: '1px solid rgba(59,130,246,0.3)', borderRadius: '10px', fontSize: '0.95rem', fontWeight: 'bold', cursor: 'pointer', transition: 'all 0.2s' }}
@@ -33134,7 +33091,7 @@ export default function App() {
                       onClick={async () => {
                         const opts = await gatherVerseVoiceOptions(verseViewModal.setId, verseViewModal.reference);
                         const withOwner = opts.filter(o => o.ownerId);
-                        if (withOwner.length === 0) { setToast(t('這節還沒有錄音可留言', 'No recording to comment on yet')); setTimeout(() => setToast(null), 2500); return; }
+                        if (withOwner.length === 0) { toast.info(t('這節還沒有錄音可留言', 'No recording to comment on yet')); return; }
                         if (withOwner.length === 1) {
                           openVoiceComments(verseViewModal.setId, verseViewModal.reference, withOwner[0]);
                         } else {
@@ -33679,13 +33636,8 @@ export default function App() {
           </div>
         )}
 
-        {/* Toast Notification Overlay */}
-        {toast && (
-          <div style={{ position: 'fixed', bottom: '2rem', left: '50%', transform: 'translateX(-50%)', backgroundColor: '#1e293b', color: 'white', padding: '0.8rem 1.5rem', borderRadius: '50px', boxShadow: '0 4px 12px rgba(0,0,0,0.15)', zIndex: 9999, display: 'flex', alignItems: 'center', gap: '8px', animation: 'fadeInUp 0.3s ease-out', fontWeight: 'bold' }}>
-            <Star size={18} fill="#fbbf24" stroke="#fbbf24" />
-            {toast}
-          </div>
-        )}
+        {/* Toasts and confirm dialogs (src/ui) */}
+        <UiHost t={t} />
 
         {/* Fruit Info Modal */}
         {showFruitInfo && (
