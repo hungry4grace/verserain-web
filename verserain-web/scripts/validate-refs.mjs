@@ -18,28 +18,14 @@ import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 
 const SRC_DIR = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..', 'src');
-const APP_JSX = path.join(SRC_DIR, 'App.jsx');
-
-// ── Map extraction ─────────────────────────────────────────────────────────
-// Parse the App.jsx source so we don't have to keep this script's maps in
-// sync with the App. The regex matches each `const NAME = { ... };` block
-// at top-level (no leading whitespace before `const`), grabs the body, then
-// `new Function('return {...}')` parses it as a JS literal.
-function extractObjectMap(src, name) {
-  const re = new RegExp(`^const\\s+${name}\\s*=\\s*\\{([\\s\\S]*?)^\\};`, 'm');
-  const m = src.match(re);
-  if (!m) throw new Error(`Could not find map "${name}" in App.jsx — the parser regex needs an update.`);
-  try { return (new Function(`return {${m[1]}}`))(); }
-  catch (e) { throw new Error(`Failed to parse map "${name}": ${e.message}`); }
-}
-
-const appSrc = fs.readFileSync(APP_JSX, 'utf8');
-const HEBREW_FULL_BOOK_ID = extractObjectMap(appSrc, 'HEBREW_FULL_BOOK_ID');
-const KOREAN_FULL_BOOK_ID = extractObjectMap(appSrc, 'KOREAN_FULL_BOOK_ID');
-const KOREAN_NUMERIC_VARIANTS = extractObjectMap(appSrc, 'KOREAN_NUMERIC_VARIANTS');
-const MULTILANG_FULL_BOOK_ID = extractObjectMap(appSrc, 'MULTILANG_FULL_BOOK_ID');
-const BOLLS_TRANSLATIONS = extractObjectMap(appSrc, 'BOLLS_TRANSLATIONS');
-const GETBIBLE_TRANSLATIONS = extractObjectMap(appSrc, 'GETBIBLE_TRANSLATIONS');
+// ── Maps ───────────────────────────────────────────────────────────────────
+// Imported straight from the modules the app uses, so this script can never
+// drift from them: the book-id maps live in src/lib/verseRef.js and the
+// secondary-language fetch tables in src/lib/bible.js.
+const { HEBREW_FULL_BOOK_ID, KOREAN_FULL_BOOK_ID, KOREAN_NUMERIC_VARIANTS, MULTILANG_FULL_BOOK_ID } =
+  await import(pathToFileURL(path.join(SRC_DIR, 'lib', 'verseRef.js')).href);
+const { BOLLS_TRANSLATIONS, GETBIBLE_TRANSLATIONS } =
+  await import(pathToFileURL(path.join(SRC_DIR, 'lib', 'bible.js')).href);
 
 // BIBLE_BOOKS lives in its own ESM file — import directly.
 const { BIBLE_BOOKS } = await import(pathToFileURL(path.join(SRC_DIR, 'bibleDictionary.js')).href);
