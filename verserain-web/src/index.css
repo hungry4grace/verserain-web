@@ -58,6 +58,19 @@
   --z-toast: 30000;
 }
 
+/* 長輩模式 (html.elder-mode, toggled from 設定 or the first-run screen):
+   every rem-based size grows by ~19% (16px → 19px body text), tap targets
+   and the bottom bar get taller, and secondary text gets darker. */
+html.elder-mode {
+  font-size: 118.75%;
+  --tap-min: 52px;
+  --bottom-nav-h: 68px;
+  --color-text: #0f172a;
+  --color-text-2: #334155;
+  --color-border: #cbd5e1;
+}
+html.elder-mode .app-bottom-nav__tab { font-size: var(--fs-small); }
+
 * {
   box-sizing: border-box;
   margin: 0;
@@ -1980,3 +1993,8 @@ textarea {
 @media (max-width: 520px) {
   .app-guest-name { display: none; }
 }
+
+/* 長輩模式: the set table's cell padding shrinks so the bigger text still fits
+   a phone width without scrolling sideways. */
+html.elder-mode .versesets-table-card th,
+html.elder-mode .versesets-table-card td { padding-left: 0.35rem !important; padding-right: 0.35rem !important; }

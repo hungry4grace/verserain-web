@@ -1127,6 +1127,11 @@ function isSuspectVoice(voice) {
 
 // Cancel a stuck utterance and re-speak with the default voice. Returns the
 // retry utterance so callers can re-wire their own event handlers.
+// 長輩模式 reads a little slower. Set from App (elderMode); applies to every
+// TTS utterance below (recorded human voices are untouched).
+let SPEECH_RATE_SCALE = 1;
+function setSpeechRateScale(x) { SPEECH_RATE_SCALE = x > 0 ? x : 1; }
+
 function retryWithDefaultVoice(stuckUtterance, text, rate, lang) {
   markSuspectVoice(stuckUtterance.voice);
   stuckUtterance.onend = null;
@@ -1134,7 +1139,7 @@ function retryWithDefaultVoice(stuckUtterance, text, rate, lang) {
   window.speechSynthesis.cancel();
   const retry = new SpeechSynthesisUtterance(toSpeechText(text, lang));
   retry.lang = lang;
-  retry.rate = rate;
+  retry.rate = rate * SPEECH_RATE_SCALE;
   retry.volume = 1;
   window.__speech_utterances = window.__speech_utterances || [];
   window.__speech_utterances.push(retry);
@@ -1178,7 +1183,7 @@ function speakTextTimed(text, rate = 1.0, lang = 'zh-TW', voiceOverride = null) 
     await ensureSpeechVoices();
     const utterance = new SpeechSynthesisUtterance(toSpeechText(text, lang));
     utterance.lang = lang;
-    utterance.rate = rate;
+    utterance.rate = rate * SPEECH_RATE_SCALE;
     utterance.volume = 1;
     // An explicit voiceOverride (e.g. the 朗讀第二語言 picker) wins over the
     // per-version saved default; skip a suspect (session-blacklisted) override.
@@ -1254,7 +1259,7 @@ function speakText(text, rate = 1.0, lang = 'zh-TW') {
 
       const utterance = new SpeechSynthesisUtterance(toSpeechText(text, lang));
       utterance.lang = lang;
-      utterance.rate = rate;
+      utterance.rate = rate * SPEECH_RATE_SCALE;
 
       // Use user's preferred voice if set
       // Voice key is stored as "name__lang" format (e.g. "Meijia (Enhanced)__zh-TW")
@@ -18798,6 +18803,14 @@ export default function App() {
   const [playMode, setPlayMode] = useState('square_solo');
   const [distractionLevel, setDistractionLevel] = useState(0);
   const [performanceMode, setPerformanceMode] = useState(() => localStorage.getItem('verseRainPerformanceMode') === 'true');
+  // 長輩模式: bigger text (html font-size), taller buttons, calmer screen,
+  // stronger contrast and slower reading — one switch (設定 or first run).
+  const [elderMode, setElderMode] = useState(() => localStorage.getItem('verserain_elder_mode') === 'true');
+  useEffect(() => {
+    document.documentElement.classList.toggle('elder-mode', elderMode);
+    setSpeechRateScale(elderMode ? 0.85 : 1);
+    try { localStorage.setItem('verserain_elder_mode', elderMode ? 'true' : 'false'); } catch { /* best effort */ }
+  }, [elderMode]);
   const [selectedSetId, setSelectedSetId] = useState(() => parseRoute(window.location.hash).setId);
   const [authorSetsModal, setAuthorSetsModal] = useState(null);
   // 'idle' | 'playing' | 'paused' — TTS state for the verse set description.
@@ -25575,7 +25588,7 @@ export default function App() {
           '--app-font-family': activeFontStack,
           '--control-font-family': activeFontStack
         }}
-        className={performanceMode ? 'performance-mode' : ''}
+        className={performanceMode || elderMode ? 'performance-mode' : ''}
       >
         <style>
           {`
@@ -25774,7 +25787,7 @@ export default function App() {
                     verserain
                   </div>
                   <div className="app-brand-version" style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', marginTop: '4px', marginLeft: '2px' }}>
-                    v4.0.131
+                    v4.0.132
                   </div>
                 </div>
                 <div ref={langPickerRef} className="app-lang-control" style={{ position: 'relative' }}>
@@ -26375,6 +26388,8 @@ export default function App() {
                   onVoice={saveVoiceForVersion}
                   pushOn={pushStatus === 'subscribed'}
                   onPush={() => setShowPushModal(true)}
+                  elderMode={elderMode}
+                  onElderMode={setElderMode}
                   performanceMode={performanceMode}
                   onPerformanceMode={(on) => { setPerformanceMode(on); try { localStorage.setItem('verseRainPerformanceMode', on ? 'true' : 'false'); } catch { /* best effort */ } }}
                   onAccessible={() => setMainTab('accessible')}
@@ -27304,7 +27319,7 @@ export default function App() {
                           maxLength={4}
                           inputMode="latin"
                           autoCapitalize="characters"
-                          style={{ flex: 1, padding: '0.8rem', borderRadius: '6px', border: '1px solid #cbd5e1', textTransform: 'uppercase', textAlign: 'center', fontSize: '1.1rem', fontWeight: 'bold' }}
+                          style={{ flex: 1, minWidth: 0, padding: '0.8rem', borderRadius: '6px', border: '1px solid #cbd5e1', textTransform: 'uppercase', textAlign: 'center', fontSize: '1.1rem', fontWeight: 'bold' }}
                           onChange={(e) => e.target.value = sanitizeRoomCode(e.target.value)}
                           onKeyDown={(e) => { if (e.key === 'Enter') document.getElementById('joinRoomBtn')?.click(); }}
                         />

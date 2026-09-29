@@ -1394,6 +1394,8 @@ export const he = {
   "減少背景動畫，手機比較不會發燙。": "פחות אנימציות ברקע, כך שהטלפון מתחמם פחות.",
   "開": "פועל",
   "關": "כבוי",
+  "長輩模式": "מצב טקסט גדול",
+  "字放大、按鈕變大、畫面比較安靜、朗讀慢一點。": "טקסט וכפתורים גדולים יותר, מסך רגוע יותר והקראה איטית יותר.",
 };
 
 export const fa = {
@@ -2769,6 +2771,8 @@ export const fa = {
   "減少背景動畫，手機比較不會發燙。": "انیمیشن‌های پس‌زمینه کمتر می‌شود تا گوشی کمتر داغ شود.",
   "開": "روشن",
   "關": "خاموش",
+  "長輩模式": "حالت متن درشت",
+  "字放大、按鈕變大、畫面比較安靜、朗讀慢一點。": "متن و دکمه‌ها بزرگ‌تر، صفحه آرام‌تر و خواندن کمی آهسته‌تر.",
 };
 
 export const ar = {
@@ -4561,6 +4565,8 @@ export const ar = {
   "開": "مفعّل",
   "關": "متوقف",
   "設定": "الإعدادات",
+  "長輩模式": "وضع الخط الكبير",
+  "字放大、按鈕變大、畫面比較安靜、朗讀慢一點。": "نص وأزرار أكبر، وشاشة أهدأ، وقراءة أبطأ قليلًا.",
 };
 
 export const ja = {
@@ -5924,6 +5930,8 @@ export const ja = {
   "減少背景動畫，手機比較不會發燙。": "背景のアニメーションを減らし、スマホが熱くなりにくくなります。",
   "開": "オン",
   "關": "オフ",
+  "長輩模式": "大きな文字モード",
+  "字放大、按鈕變大、畫面比較安靜、朗讀慢一點。": "文字とボタンが大きくなり、画面が落ち着き、読み上げが少しゆっくりになります。",
 };
 
 export const ko = {
@@ -7285,6 +7293,8 @@ export const ko = {
   "減少背景動畫，手機比較不會發燙。": "배경 애니메이션을 줄여서 폰이 덜 뜨거워져요.",
   "開": "켜짐",
   "關": "꺼짐",
+  "長輩模式": "큰 글씨 모드",
+  "字放大、按鈕變大、畫面比較安靜、朗讀慢一點。": "글자와 버튼이 커지고, 화면이 차분해지며, 읽어 주는 속도가 조금 느려집니다.",
 };
 
 export const es = {
@@ -8662,6 +8672,8 @@ export const es = {
   "減少背景動畫，手機比較不會發燙。": "Menos animaciones de fondo, así el teléfono se calienta menos.",
   "開": "Sí",
   "關": "No",
+  "長輩模式": "Modo de letra grande",
+  "字放大、按鈕變大、畫面比較安靜、朗讀慢一點。": "Texto y botones más grandes, pantalla más tranquila y lectura un poco más lenta.",
 };
 
 export const tr = {
@@ -10039,6 +10051,8 @@ export const tr = {
   "減少背景動畫，手機比較不會發燙。": "Arka plan animasyonları azalır, telefon daha az ısınır.",
   "開": "Açık",
   "關": "Kapalı",
+  "長輩模式": "Büyük yazı modu",
+  "字放大、按鈕變大、畫面比較安靜、朗讀慢一點。": "Daha büyük yazı ve düğmeler, daha sakin ekran ve biraz daha yavaş okuma.",
 };
 
 export const de = {
@@ -11416,6 +11430,8 @@ export const de = {
   "減少背景動畫，手機比較不會發燙。": "Weniger Hintergrundanimationen, damit das Handy kühler bleibt.",
   "開": "An",
   "關": "Aus",
+  "長輩模式": "Große Schrift",
+  "字放大、按鈕變大、畫面比較安靜、朗讀慢一點。": "Größere Schrift und Tasten, ein ruhigerer Bildschirm und etwas langsameres Vorlesen.",
 };
 
 export const my = {
@@ -12793,6 +12809,8 @@ export const my = {
   "減少背景動畫，手機比較不會發燙。": "နောက်ခံ လှုပ်ရှားပုံများကို လျှော့ပေးသဖြင့် ဖုန်း သိပ်မပူတော့ပါ။",
   "開": "ဖွင့်",
   "關": "ပိတ်",
+  "長輩模式": "စာလုံးကြီးမုဒ်",
+  "字放大、按鈕變大、畫面比較安靜、朗讀慢一點。": "စာလုံးနှင့် ခလုတ်များ ကြီးလာပြီး မျက်နှာပြင် ငြိမ်သက်ကာ ဖတ်ပြသည့်အမြန်နှုန်း အနည်းငယ် နှေးလာမည်။",
 };
 
 export const vi = {
@@ -14170,6 +14188,8 @@ export const vi = {
   "減少背景動畫，手機比較不會發燙。": "Giảm hoạt ảnh nền để điện thoại đỡ nóng.",
   "開": "Bật",
   "關": "Tắt",
+  "長輩模式": "Chế độ chữ lớn",
+  "字放大、按鈕變大、畫面比較安靜、朗讀慢一點。": "Chữ và nút to hơn, màn hình yên tĩnh hơn và đọc chậm hơn một chút.",
 };
 
 export const id = {
@@ -15775,6 +15795,8 @@ export const id = {
   "減少背景動畫，手機比較不會發燙。": "Lebih sedikit animasi latar, jadi HP tidak cepat panas.",
   "開": "Aktif",
   "關": "Nonaktif",
+  "長輩模式": "Mode huruf besar",
+  "字放大、按鈕變大、畫面比較安靜、朗讀慢一點。": "Huruf dan tombol lebih besar, layar lebih tenang, dan pembacaan sedikit lebih lambat.",
 };
 
 export const ms = {
@@ -17584,6 +17606,8 @@ export const ms = {
   "減少背景動畫，手機比較不會發燙。": "Kurang animasi latar, jadi telefon anda kurang panas.",
   "開": "Hidup",
   "關": "Mati",
+  "長輩模式": "Mod huruf besar",
+  "字放大、按鈕變大、畫面比較安靜、朗讀慢一點。": "Huruf dan butang lebih besar, skrin lebih tenang dan bacaan lebih perlahan sedikit.",
 };
 
 export const zhcn = {
@@ -19312,6 +19336,8 @@ export const zhcn = {
   "減少背景動畫，手機比較不會發燙。": "减少背景动画，手机比较不会发烫。",
   "開": "开",
   "關": "关",
+  "長輩模式": "长辈模式",
+  "字放大、按鈕變大、畫面比較安靜、朗讀慢一點。": "字放大、按钮变大、画面比较安静、朗读慢一点。",
 };
 
 export const pt = {
@@ -20412,6 +20438,8 @@ export const pt = {
   "減少背景動畫，手機比較不會發燙。": "Menos animações de fundo, para o celular esquentar menos.",
   "開": "Sim",
   "關": "Não",
+  "長輩模式": "Modo de letra grande",
+  "字放大、按鈕變大、畫面比較安靜、朗讀慢一點。": "Texto e botões maiores, tela mais tranquila e leitura um pouco mais lenta.",
 };
 
 export const fr = {
@@ -21512,6 +21540,8 @@ export const fr = {
   "減少背景動畫，手機比較不會發燙。": "Moins d'animations en arrière-plan, pour que le téléphone chauffe moins.",
   "開": "Oui",
   "關": "Non",
+  "長輩模式": "Mode grands caractères",
+  "字放大、按鈕變大、畫面比較安靜、朗讀慢一點。": "Texte et boutons plus grands, écran plus calme et lecture un peu plus lente.",
 };
 
 export const ru = {
@@ -22612,6 +22642,8 @@ export const ru = {
   "減少背景動畫，手機比較不會發燙。": "Меньше фоновой анимации — телефон меньше греется.",
   "開": "Вкл",
   "關": "Выкл",
+  "長輩模式": "Крупный шрифт",
+  "字放大、按鈕變大、畫面比較安靜、朗讀慢一點。": "Крупнее текст и кнопки, спокойнее экран и чуть медленнее чтение вслух.",
 };
 
 export const hi = {
@@ -23712,6 +23744,8 @@ export const hi = {
   "減少背景動畫，手機比較不會發燙。": "बैकग्राउंड एनिमेशन कम, ताकि फ़ोन कम गरम हो।",
   "開": "चालू",
   "關": "बंद",
+  "長輩模式": "बड़े अक्षर मोड",
+  "字放大、按鈕變大、畫面比較安靜、朗讀慢一點。": "बड़े अक्षर और बटन, शांत स्क्रीन और थोड़ा धीमा पढ़ना।",
 };
 
 // Khmer (Cambodian) — full UI coverage, machine-translated in bulk from the
@@ -25442,6 +25476,8 @@ export const km = {
   "開": "បើក",
   "關": "បិទ",
   "設定": "ការកំណត់",
+  "長輩模式": "របៀបអក្សរធំ",
+  "字放大、按鈕變大、畫面比較安靜、朗讀慢一點。": "អក្សរ និងប៊ូតុងធំជាងមុន អេក្រង់ស្ងប់ជាងមុន ហើយការអានយឺតបន្តិច។",
 };
 
 const I18N_FILLINS = { he, fa, ar, ja, ko, es, tr, de, my, vi, id, ms, zhcn, pt, fr, ru, hi, km };
