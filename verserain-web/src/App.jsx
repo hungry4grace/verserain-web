@@ -908,7 +908,11 @@ export default function App() {
       setEditorBgPreview(null);
     }
     const bm = String(editingCustomSet?.bgMusic || '');
-    if (id && bm.startsWith('custom:')) {
+    if (bm.startsWith('youtube:')) {
+      // YouTube music previews in its own player (YouTubeBgmField).
+      setEditorMusicUrl(null);
+      stopEditorMusicPreview();
+    } else if (id && bm.startsWith('custom:')) {
       getSetAssetDataUrl(id, bm.slice('custom:'.length), editingCustomSet?.bgMusicMime || 'audio/mpeg')
         .then(u => { if (!cancelled) setEditorMusicUrl(u); })
         .catch(() => {});
@@ -7232,7 +7236,7 @@ export default function App() {
                     verserain
                   </div>
                   <div className="app-brand-version" style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', marginTop: '4px', marginLeft: '2px' }}>
-                    v4.0.151
+                    v4.0.152
                   </div>
                 </div>
                 <div ref={langPickerRef} className="app-lang-control" style={{ position: 'relative' }}>

@@ -1,10 +1,11 @@
 // Moved out of App.jsx unchanged (UI/UX 第 4 階段).
-import { ArrowRightLeft, CloudRain, MessageCircle, Mic, Pause, Play, Share2, Star, XCircle, Zap } from 'lucide-react';
+import { ArrowRightLeft, CloudRain, MessageCircle, Mic, Pause, Play, Share2, Star, X, XCircle, Zap } from 'lucide-react';
 import { BIBLE_LANGUAGE_OPTIONS, DEFAULT_PLAY_FONT_CHOICE, DEFAULT_PLAY_INK_CHOICE, PLAY_INK_OPTIONS, areLikelyParallelVerseSets, fetchBibleVerseFromAPI, fetchVerseFromBolls, fetchVerseFromGetBible, fetchVerseFromTaibible, findMatchingVerse, getCachedBibleVerse, getDailyVerseImageUrls, getEnglishReferenceFromKey, getSecondaryPhrasesForIndex, getStableNumber, getVoiceLangForVersion, isTextLikelyForVersion, pickRandomVerse, setCachedBibleVerse } from '../lib/bible.js';
 import ChallengeSetupModal, { loadChallengeSetup } from '../ChallengeSetupModal';
 import { DAILY_RAIN_DROPS, RAIN_FONT_LEVELS } from './rainConstants';
 import { PERSONAL_LOOSE_SET_ID } from '../lib/sets';
 import { PRESET_BGM, initAudio, pickPresetBgmFile, startLoopingBgm } from '../lib/audio.js';
+import { startYouTubeBgm, youtubeBgmId } from '../lib/youtube.js';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import VerseVoiceRecorder from '../VerseVoiceRecorder';
 import { bakeBeautifiedBlob } from '../voiceBeautify';
@@ -807,6 +808,13 @@ export function VerseSetContinuousRainPlayer({
     }
   }, [showTopicPicker]);
   const bgmRef = useRef(null);
+  // YouTube background music plays in YouTube's own player, which has to stay
+  // visible — a small dock in a corner (see lib/youtube.js).
+  const ytBgmId = youtubeBgmId(verseSet?.bgMusic);
+  const ytHostRef = useRef(null);
+  const [ytState, setYtState] = useState(null);
+  const [ytSide, setYtSide] = useState('right');
+  const [ytClosed, setYtClosed] = useState(false);
   const runRef = useRef(0);
   const topicPickerRef = useRef(null);
   const verseSetIdRef = useRef(verseSet?.id);
@@ -869,6 +877,18 @@ export function VerseSetContinuousRainPlayer({
     let cancelled = false;
     const setup = async () => {
       const choice = String(verseSet?.bgMusic || '');
+      if (ytBgmId) {
+        bgmRef.current?.pause();
+        bgmRef.current?._bgmDisconnect?.();
+        bgmRef.current = null;
+        setYtState(null);
+        setYtClosed(false);
+        if (!ytHostRef.current) return;
+        bgmRef.current = startYouTubeBgm(ytBgmId, verseSet?.bgMusicVolume ?? 0.18, ytHostRef.current, {
+          onState: (st) => setYtState(st),
+        });
+        return;
+      }
       let src = pickPresetBgmFile(choice);
       if (choice === 'none') src = null;
       else if (choice.startsWith('custom:')) {
@@ -1860,6 +1880,29 @@ export function VerseSetContinuousRainPlayer({
         )}
         </span>
       </div>
+      {ytBgmId && !ytClosed && (
+        <div className={`yt-bgm-dock is-${ytSide}`} data-testid="yt-bgm-dock">
+          <div className="yt-bgm-dock__bar">
+            <span className="yt-bgm-dock__title">🎵 {t('YouTube 音樂', 'YouTube music')}</span>
+            <button type="button" className="yt-bgm-dock__btn" onClick={() => setYtSide(s => (s === 'right' ? 'left' : 'right'))} aria-label={t('移到另一邊', 'Move to the other side')} title={t('移到另一邊', 'Move to the other side')}>
+              <ArrowRightLeft size={16} />
+            </button>
+            <button
+              type="button"
+              className="yt-bgm-dock__btn"
+              data-testid="yt-bgm-close"
+              onClick={() => { bgmRef.current?.pause(); bgmRef.current?._bgmDisconnect?.(); bgmRef.current = null; setYtClosed(true); }}
+              aria-label={t('關閉背景音樂', 'Turn off the music')}
+              title={t('關閉背景音樂', 'Turn off the music')}
+            >
+              <X size={16} />
+            </button>
+          </div>
+          <div ref={ytHostRef} className="yt-bgm-dock__player" />
+          {ytState === 'error' && <p className="yt-bgm-dock__note">{t('這部影片不允許在其他網站播放，請換一部', 'This video can’t play outside YouTube — try another one')}</p>}
+          {(ytState === -1 || ytState === 5) && <p className="yt-bgm-dock__note is-delayed">{t('點一下影片開始播放音樂', 'Tap the video to start the music')}</p>}
+        </div>
+      )}
       {voiceRecTarget && (
         <VerseVoiceRecorder
           t={t}

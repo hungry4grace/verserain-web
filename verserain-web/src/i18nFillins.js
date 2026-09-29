@@ -1433,6 +1433,16 @@ export const he = {
   "輸入經文組名稱或作者搜尋": "חיפוש לפי שם הסט או היוצר",
   "找不到符合的經文組": "לא נמצאו סטים תואמים",
   "還有 {n} 組，請輸入更多字縮小範圍": "עוד {n} — הקלידו עוד כדי לצמצם",
+  "這部影片不允許在其他網站播放，請換一部": "לא ניתן לנגן את הסרטון הזה מחוץ ל-YouTube — נסו סרטון אחר",
+  "貼上 YouTube 連結": "הדביקו קישור YouTube",
+  "YouTube 連結": "קישור YouTube",
+  "使用": "שימוש",
+  "這不是 YouTube 影片的連結": "זה לא קישור לסרטון YouTube",
+  "播放時角落會有一個小的 YouTube 播放器（YouTube 規定影片要看得到），音樂會自動重複播放。": "בזמן הניגון נגן YouTube קטן יופיע בפינה (YouTube דורש שהסרטון יישאר גלוי), והמוזיקה תחזור על עצמה.",
+  "YouTube 音樂": "מוזיקה מ-YouTube",
+  "移到另一邊": "העבר לצד השני",
+  "關閉背景音樂": "כבו את המוזיקה",
+  "點一下影片開始播放音樂": "הקישו על הסרטון כדי להתחיל את המוזיקה",
 };
 
 export const fa = {
@@ -2847,6 +2857,16 @@ export const fa = {
   "輸入經文組名稱或作者搜尋": "جستجو بر اساس نام مجموعه یا سازنده",
   "找不到符合的經文組": "هیچ مجموعهٔ آیهٔ منطبقی پیدا نشد",
   "還有 {n} 組，請輸入更多字縮小範圍": "{n} مورد دیگر — برای محدود کردن بیشتر تایپ کنید",
+  "這部影片不允許在其他網站播放，請換一部": "این ویدیو خارج از YouTube پخش نمی‌شود — ویدیوی دیگری انتخاب کنید",
+  "貼上 YouTube 連結": "پیوند YouTube را جای‌گذاری کنید",
+  "YouTube 連結": "پیوند YouTube",
+  "使用": "استفاده",
+  "這不是 YouTube 影片的連結": "این پیوند ویدیوی YouTube نیست",
+  "播放時角落會有一個小的 YouTube 播放器（YouTube 規定影片要看得到），音樂會自動重複播放。": "هنگام پخش، یک پخش‌کنندهٔ کوچک YouTube در گوشه نمایش داده می‌شود (YouTube الزام می‌کند ویدیو دیده شود) و موسیقی تکرار می‌شود.",
+  "YouTube 音樂": "موسیقی YouTube",
+  "移到另一邊": "انتقال به سمت دیگر",
+  "關閉背景音樂": "خاموش کردن موسیقی",
+  "點一下影片開始播放音樂": "برای شروع موسیقی روی ویدیو ضربه بزنید",
 };
 
 export const ar = {
@@ -4678,6 +4698,16 @@ export const ar = {
   "輸入經文組名稱或作者搜尋": "ابحث باسم المجموعة أو المؤلف",
   "找不到符合的經文組": "لا توجد مجموعات آيات مطابقة",
   "還有 {n} 組，請輸入更多字縮小範圍": "{n} أخرى — اكتب المزيد لتضييق النتائج",
+  "這部影片不允許在其他網站播放，請換一部": "لا يمكن تشغيل هذا الفيديو خارج YouTube — جرّب فيديو آخر",
+  "貼上 YouTube 連結": "الصق رابط YouTube",
+  "YouTube 連結": "رابط YouTube",
+  "使用": "استخدام",
+  "這不是 YouTube 影片的連結": "هذا ليس رابط فيديو على YouTube",
+  "播放時角落會有一個小的 YouTube 播放器（YouTube 規定影片要看得到），音樂會自動重複播放。": "أثناء التشغيل يظهر مشغّل YouTube صغير في الزاوية (يشترط YouTube أن يبقى الفيديو ظاهرًا)، وتتكرر الموسيقى تلقائيًا.",
+  "YouTube 音樂": "موسيقى YouTube",
+  "移到另一邊": "انقل إلى الجانب الآخر",
+  "關閉背景音樂": "إيقاف الموسيقى",
+  "點一下影片開始播放音樂": "اضغط على الفيديو لبدء الموسيقى",
 };
 
 export const ja = {
@@ -6080,6 +6110,16 @@ export const ja = {
   "輸入經文組名稱或作者搜尋": "セット名または作成者で検索",
   "找不到符合的經文組": "一致する聖句セットが見つかりません",
   "還有 {n} 組，請輸入更多字縮小範圍": "ほかに {n} 件 — さらに入力して絞り込んでください",
+  "這部影片不允許在其他網站播放，請換一部": "この動画は他のサイトで再生できません。別の動画を選んでください",
+  "貼上 YouTube 連結": "YouTube のリンクを貼り付け",
+  "YouTube 連結": "YouTube リンク",
+  "使用": "使う",
+  "這不是 YouTube 影片的連結": "YouTube 動画のリンクではありません",
+  "播放時角落會有一個小的 YouTube 播放器（YouTube 規定影片要看得到），音樂會自動重複播放。": "再生中は隅に小さな YouTube プレーヤーが表示されます（YouTube の規定で動画は見える状態が必要です）。音楽は自動で繰り返し再生されます。",
+  "YouTube 音樂": "YouTube の音楽",
+  "移到另一邊": "反対側へ移動",
+  "關閉背景音樂": "BGM をオフ",
+  "點一下影片開始播放音樂": "動画をタップして音楽を再生",
 };
 
 export const ko = {
@@ -7480,6 +7520,16 @@ export const ko = {
   "輸入經文組名稱或作者搜尋": "세트 이름이나 작성자로 검색",
   "找不到符合的經文組": "일치하는 구절 세트가 없습니다",
   "還有 {n} 組，請輸入更多字縮小範圍": "{n}개 더 있음 — 더 입력해서 범위를 좁히세요",
+  "這部影片不允許在其他網站播放，請換一部": "이 영상은 다른 사이트에서 재생할 수 없습니다. 다른 영상을 선택하세요",
+  "貼上 YouTube 連結": "YouTube 링크 붙여넣기",
+  "YouTube 連結": "YouTube 링크",
+  "使用": "사용",
+  "這不是 YouTube 影片的連結": "YouTube 영상 링크가 아닙니다",
+  "播放時角落會有一個小的 YouTube 播放器（YouTube 規定影片要看得到），音樂會自動重複播放。": "재생 중에는 구석에 작은 YouTube 플레이어가 표시됩니다(YouTube 규정상 영상이 보여야 합니다). 음악은 자동으로 반복 재생됩니다.",
+  "YouTube 音樂": "YouTube 음악",
+  "移到另一邊": "반대쪽으로 이동",
+  "關閉背景音樂": "배경 음악 끄기",
+  "點一下影片開始播放音樂": "영상을 탭하면 음악이 시작됩니다",
 };
 
 export const es = {
@@ -8896,6 +8946,16 @@ export const es = {
   "輸入經文組名稱或作者搜尋": "Busca por nombre del conjunto o autor",
   "找不到符合的經文組": "No hay conjuntos de versículos que coincidan",
   "還有 {n} 組，請輸入更多字縮小範圍": "{n} más — escribe más para acotar",
+  "這部影片不允許在其他網站播放，請換一部": "Este video no se puede reproducir fuera de YouTube; prueba con otro",
+  "貼上 YouTube 連結": "Pega un enlace de YouTube",
+  "YouTube 連結": "Enlace de YouTube",
+  "使用": "Usar",
+  "這不是 YouTube 影片的連結": "Eso no es un enlace a un video de YouTube",
+  "播放時角落會有一個小的 YouTube 播放器（YouTube 規定影片要看得到），音樂會自動重複播放。": "Durante la reproducción aparece un pequeño reproductor de YouTube en una esquina (YouTube exige que el video quede visible) y la música se repite.",
+  "YouTube 音樂": "Música de YouTube",
+  "移到另一邊": "Mover al otro lado",
+  "關閉背景音樂": "Apagar la música",
+  "點一下影片開始播放音樂": "Toca el video para iniciar la música",
 };
 
 export const tr = {
@@ -10312,6 +10372,16 @@ export const tr = {
   "輸入經文組名稱或作者搜尋": "Set adı veya yazara göre ara",
   "找不到符合的經文組": "Eşleşen ayet seti bulunamadı",
   "還有 {n} 組，請輸入更多字縮小範圍": "{n} tane daha — daraltmak için daha fazla yazın",
+  "這部影片不允許在其他網站播放，請換一部": "Bu video YouTube dışında oynatılamıyor — başka bir video deneyin",
+  "貼上 YouTube 連結": "YouTube bağlantısını yapıştırın",
+  "YouTube 連結": "YouTube bağlantısı",
+  "使用": "Kullan",
+  "這不是 YouTube 影片的連結": "Bu bir YouTube video bağlantısı değil",
+  "播放時角落會有一個小的 YouTube 播放器（YouTube 規定影片要看得到），音樂會自動重複播放。": "Oynatma sırasında köşede küçük bir YouTube oynatıcısı görünür (YouTube videonun görünür kalmasını şart koşar) ve müzik tekrar eder.",
+  "YouTube 音樂": "YouTube müziği",
+  "移到另一邊": "Diğer tarafa taşı",
+  "關閉背景音樂": "Müziği kapat",
+  "點一下影片開始播放音樂": "Müziği başlatmak için videoya dokunun",
 };
 
 export const de = {
@@ -11728,6 +11798,16 @@ export const de = {
   "輸入經文組名稱或作者搜尋": "Nach Set-Name oder Autor suchen",
   "找不到符合的經文組": "Keine passenden Versgruppen",
   "還有 {n} 組，請輸入更多字縮小範圍": "{n} weitere – tippe mehr, um einzugrenzen",
+  "這部影片不允許在其他網站播放，請換一部": "Dieses Video kann nicht außerhalb von YouTube abgespielt werden – versuche ein anderes",
+  "貼上 YouTube 連結": "YouTube-Link einfügen",
+  "YouTube 連結": "YouTube-Link",
+  "使用": "Übernehmen",
+  "這不是 YouTube 影片的連結": "Das ist kein Link zu einem YouTube-Video",
+  "播放時角落會有一個小的 YouTube 播放器（YouTube 規定影片要看得到），音樂會自動重複播放。": "Beim Abspielen erscheint ein kleiner YouTube-Player in einer Ecke (YouTube verlangt, dass das Video sichtbar bleibt), und die Musik wiederholt sich.",
+  "YouTube 音樂": "YouTube-Musik",
+  "移到另一邊": "Auf die andere Seite",
+  "關閉背景音樂": "Musik ausschalten",
+  "點一下影片開始播放音樂": "Tippe auf das Video, um die Musik zu starten",
 };
 
 export const my = {
@@ -13144,6 +13224,16 @@ export const my = {
   "輸入經文組名稱或作者搜尋": "အစုအမည် သို့မဟုတ် ရေးသူဖြင့် ရှာပါ",
   "找不到符合的經文組": "ကိုက်ညီသော ကျမ်းချက်အစု မတွေ့ပါ",
   "還有 {n} 組，請輸入更多字縮小範圍": "နောက်ထပ် {n} ခု ရှိသည် — ကျဉ်းစေရန် ထပ်ရိုက်ပါ",
+  "這部影片不允許在其他網站播放，請換一部": "ဤဗီဒီယိုကို YouTube အပြင်ဘက်တွင် ဖွင့်၍မရပါ — အခြားတစ်ခု ရွေးပါ",
+  "貼上 YouTube 連結": "YouTube လင့်ခ် ထည့်ပါ",
+  "YouTube 連結": "YouTube လင့်ခ်",
+  "使用": "သုံးမည်",
+  "這不是 YouTube 影片的連結": "ဤသည်မှာ YouTube ဗီဒီယိုလင့်ခ် မဟုတ်ပါ",
+  "播放時角落會有一個小的 YouTube 播放器（YouTube 規定影片要看得到），音樂會自動重複播放。": "ဖွင့်နေစဉ် ထောင့်တွင် YouTube ဖွင့်စက်အသေး ပေါ်နေမည် (YouTube က ဗီဒီယိုကို မြင်ရရန် လိုအပ်သည်)၊ ဂီတသည် အလိုအလျောက် ထပ်ခါထပ်ခါ ဖွင့်မည်။",
+  "YouTube 音樂": "YouTube ဂီတ",
+  "移到另一邊": "အခြားဘက်သို့ ရွှေ့ရန်",
+  "關閉背景音樂": "နောက်ခံဂီတ ပိတ်ရန်",
+  "點一下影片開始播放音樂": "ဂီတစတင်ရန် ဗီဒီယိုကို နှိပ်ပါ",
 };
 
 export const vi = {
@@ -14560,6 +14650,16 @@ export const vi = {
   "輸入經文組名稱或作者搜尋": "Tìm theo tên bộ hoặc tác giả",
   "找不到符合的經文組": "Không tìm thấy bộ câu Kinh Thánh phù hợp",
   "還有 {n} 組，請輸入更多字縮小範圍": "Còn {n} bộ — gõ thêm để thu hẹp",
+  "這部影片不允許在其他網站播放，請換一部": "Video này không phát được ngoài YouTube — hãy chọn video khác",
+  "貼上 YouTube 連結": "Dán liên kết YouTube",
+  "YouTube 連結": "Liên kết YouTube",
+  "使用": "Dùng",
+  "這不是 YouTube 影片的連結": "Đây không phải liên kết video YouTube",
+  "播放時角落會有一個小的 YouTube 播放器（YouTube 規定影片要看得到），音樂會自動重複播放。": "Khi phát, một trình phát YouTube nhỏ sẽ ở góc màn hình (YouTube yêu cầu video phải hiển thị) và nhạc sẽ tự lặp lại.",
+  "YouTube 音樂": "Nhạc YouTube",
+  "移到另一邊": "Chuyển sang bên kia",
+  "關閉背景音樂": "Tắt nhạc nền",
+  "點一下影片開始播放音樂": "Chạm vào video để bắt đầu nhạc",
 };
 
 export const id = {
@@ -16204,6 +16304,16 @@ export const id = {
   "輸入經文組名稱或作者搜尋": "Cari berdasarkan nama set atau penulis",
   "找不到符合的經文組": "Tidak ada set ayat yang cocok",
   "還有 {n} 組，請輸入更多字縮小範圍": "{n} lagi — ketik lebih banyak untuk mempersempit",
+  "這部影片不允許在其他網站播放，請換一部": "Video ini tidak bisa diputar di luar YouTube — coba video lain",
+  "貼上 YouTube 連結": "Tempel tautan YouTube",
+  "YouTube 連結": "Tautan YouTube",
+  "使用": "Gunakan",
+  "這不是 YouTube 影片的連結": "Itu bukan tautan video YouTube",
+  "播放時角落會有一個小的 YouTube 播放器（YouTube 規定影片要看得到），音樂會自動重複播放。": "Saat diputar, pemutar YouTube kecil muncul di sudut (YouTube mewajibkan video tetap terlihat) dan musik diulang otomatis.",
+  "YouTube 音樂": "Musik YouTube",
+  "移到另一邊": "Pindah ke sisi lain",
+  "關閉背景音樂": "Matikan musik",
+  "點一下影片開始播放音樂": "Ketuk video untuk memulai musik",
 };
 
 export const ms = {
@@ -18052,6 +18162,16 @@ export const ms = {
   "輸入經文組名稱或作者搜尋": "Cari mengikut nama set atau pengarang",
   "找不到符合的經文組": "Tiada set ayat yang sepadan",
   "還有 {n} 組，請輸入更多字縮小範圍": "{n} lagi — taip lagi untuk mengecilkan carian",
+  "這部影片不允許在其他網站播放，請換一部": "Video ini tidak boleh dimainkan di luar YouTube — cuba video lain",
+  "貼上 YouTube 連結": "Tampal pautan YouTube",
+  "YouTube 連結": "Pautan YouTube",
+  "使用": "Guna",
+  "這不是 YouTube 影片的連結": "Itu bukan pautan video YouTube",
+  "播放時角落會有一個小的 YouTube 播放器（YouTube 規定影片要看得到），音樂會自動重複播放。": "Semasa dimainkan, pemain YouTube kecil muncul di penjuru (YouTube mensyaratkan video kekal kelihatan) dan muzik diulang secara automatik.",
+  "YouTube 音樂": "Muzik YouTube",
+  "移到另一邊": "Alih ke sebelah lain",
+  "關閉背景音樂": "Matikan muzik",
+  "點一下影片開始播放音樂": "Ketik video untuk memulakan muzik",
 };
 
 export const zhcn = {
@@ -19819,6 +19939,16 @@ export const zhcn = {
   "輸入經文組名稱或作者搜尋": "输入经文组名称或作者搜索",
   "找不到符合的經文組": "找不到符合的经文组",
   "還有 {n} 組，請輸入更多字縮小範圍": "还有 {n} 组，请输入更多字缩小范围",
+  "這部影片不允許在其他網站播放，請換一部": "这部影片不允许在其他网站播放，请换一部",
+  "貼上 YouTube 連結": "粘贴 YouTube 链接",
+  "YouTube 連結": "YouTube 链接",
+  "使用": "使用",
+  "這不是 YouTube 影片的連結": "这不是 YouTube 视频的链接",
+  "播放時角落會有一個小的 YouTube 播放器（YouTube 規定影片要看得到），音樂會自動重複播放。": "播放时角落会有一个小的 YouTube 播放器（YouTube 规定视频要看得到），音乐会自动重复播放。",
+  "YouTube 音樂": "YouTube 音乐",
+  "移到另一邊": "移到另一边",
+  "關閉背景音樂": "关闭背景音乐",
+  "點一下影片開始播放音樂": "点一下视频开始播放音乐",
 };
 
 export const pt = {
@@ -20959,6 +21089,16 @@ export const pt = {
   "找不到符合的經文組": "Nenhum conjunto de versículos encontrado",
   "還有 {n} 組，請輸入更多字縮小範圍": "Mais {n} — digite mais para filtrar",
   "更換": "Trocar",
+  "這部影片不允許在其他網站播放，請換一部": "Este vídeo não pode ser reproduzido fora do YouTube — tente outro",
+  "貼上 YouTube 連結": "Cole um link do YouTube",
+  "YouTube 連結": "Link do YouTube",
+  "使用": "Usar",
+  "這不是 YouTube 影片的連結": "Isso não é um link de vídeo do YouTube",
+  "播放時角落會有一個小的 YouTube 播放器（YouTube 規定影片要看得到），音樂會自動重複播放。": "Durante a reprodução, um pequeno player do YouTube fica num canto (o YouTube exige que o vídeo fique visível) e a música se repete.",
+  "YouTube 音樂": "Música do YouTube",
+  "移到另一邊": "Mover para o outro lado",
+  "關閉背景音樂": "Desligar a música",
+  "點一下影片開始播放音樂": "Toque no vídeo para iniciar a música",
 };
 
 export const fr = {
@@ -22099,6 +22239,16 @@ export const fr = {
   "找不到符合的經文組": "Aucune série de versets correspondante",
   "還有 {n} 組，請輸入更多字縮小範圍": "{n} de plus — tapez davantage pour affiner",
   "更換": "Changer",
+  "這部影片不允許在其他網站播放，請換一部": "Cette vidéo ne peut pas être lue hors de YouTube — essayez-en une autre",
+  "貼上 YouTube 連結": "Collez un lien YouTube",
+  "YouTube 連結": "Lien YouTube",
+  "使用": "Utiliser",
+  "這不是 YouTube 影片的連結": "Ce n’est pas un lien vers une vidéo YouTube",
+  "播放時角落會有一個小的 YouTube 播放器（YouTube 規定影片要看得到），音樂會自動重複播放。": "Pendant la lecture, un petit lecteur YouTube reste dans un coin (YouTube exige que la vidéo reste visible) et la musique se répète.",
+  "YouTube 音樂": "Musique YouTube",
+  "移到另一邊": "Déplacer de l’autre côté",
+  "關閉背景音樂": "Couper la musique",
+  "點一下影片開始播放音樂": "Touchez la vidéo pour lancer la musique",
 };
 
 export const ru = {
@@ -23239,6 +23389,16 @@ export const ru = {
   "找不到符合的經文組": "Подходящих наборов стихов не найдено",
   "還有 {n} 組，請輸入更多字縮小範圍": "Ещё {n} — введите больше, чтобы сузить поиск",
   "更換": "Сменить",
+  "這部影片不允許在其他網站播放，請換一部": "Это видео нельзя воспроизвести вне YouTube — выберите другое",
+  "貼上 YouTube 連結": "Вставьте ссылку на YouTube",
+  "YouTube 連結": "Ссылка на YouTube",
+  "使用": "Использовать",
+  "這不是 YouTube 影片的連結": "Это не ссылка на видео YouTube",
+  "播放時角落會有一個小的 YouTube 播放器（YouTube 規定影片要看得到），音樂會自動重複播放。": "Во время воспроизведения в углу будет маленький плеер YouTube (YouTube требует, чтобы видео было видно), а музыка будет повторяться.",
+  "YouTube 音樂": "Музыка с YouTube",
+  "移到另一邊": "Переместить на другую сторону",
+  "關閉背景音樂": "Выключить музыку",
+  "點一下影片開始播放音樂": "Нажмите на видео, чтобы включить музыку",
 };
 
 export const hi = {
@@ -24379,6 +24539,16 @@ export const hi = {
   "找不到符合的經文組": "कोई मेल खाता पद-सेट नहीं मिला",
   "還有 {n} 組，請輸入更多字縮小範圍": "{n} और — सीमित करने के लिए और टाइप करें",
   "更換": "बदलें",
+  "這部影片不允許在其他網站播放，請換一部": "यह वीडियो YouTube के बाहर नहीं चल सकता — कोई दूसरा चुनें",
+  "貼上 YouTube 連結": "YouTube लिंक चिपकाएँ",
+  "YouTube 連結": "YouTube लिंक",
+  "使用": "इस्तेमाल करें",
+  "這不是 YouTube 影片的連結": "यह YouTube वीडियो का लिंक नहीं है",
+  "播放時角落會有一個小的 YouTube 播放器（YouTube 規定影片要看得到），音樂會自動重複播放。": "चलाते समय कोने में एक छोटा YouTube प्लेयर दिखेगा (YouTube के नियम के अनुसार वीडियो दिखना चाहिए), और संगीत अपने-आप दोहराया जाएगा।",
+  "YouTube 音樂": "YouTube संगीत",
+  "移到另一邊": "दूसरी तरफ़ ले जाएँ",
+  "關閉背景音樂": "संगीत बंद करें",
+  "點一下影片開始播放音樂": "संगीत शुरू करने के लिए वीडियो पर टैप करें",
 };
 
 // Khmer (Cambodian) — full UI coverage, machine-translated in bulk from the
@@ -26150,6 +26320,16 @@ export const km = {
   "找不到符合的經文組": "រកមិនឃើញឈុតខគម្ពីរដែលត្រូវគ្នា",
   "還有 {n} 組，請輸入更多字縮小範圍": "នៅសល់ {n} ទៀត — វាយបន្ថែមដើម្បីបង្រួម",
   "更換": "ប្ដូរ",
+  "這部影片不允許在其他網站播放，請換一部": "វីដេអូនេះមិនអាចចាក់នៅក្រៅ YouTube បានទេ — សូមជ្រើសរើសវីដេអូផ្សេង",
+  "貼上 YouTube 連結": "បិទភ្ជាប់តំណ YouTube",
+  "YouTube 連結": "តំណ YouTube",
+  "使用": "ប្រើ",
+  "這不是 YouTube 影片的連結": "នេះមិនមែនជាតំណវីដេអូ YouTube ទេ",
+  "播放時角落會有一個小的 YouTube 播放器（YouTube 規定影片要看得到），音樂會自動重複播放。": "ពេលចាក់ នឹងមានកម្មវិធីចាក់ YouTube តូចមួយនៅជ្រុង (YouTube តម្រូវឱ្យវីដេអូត្រូវបានមើលឃើញ) ហើយតន្ត្រីនឹងចាក់ឡើងវិញដោយស្វ័យប្រវត្តិ។",
+  "YouTube 音樂": "តន្ត្រី YouTube",
+  "移到另一邊": "ផ្លាស់ទីទៅម្ខាងទៀត",
+  "關閉背景音樂": "បិទតន្ត្រី",
+  "點一下影片開始播放音樂": "ចុចលើវីដេអូដើម្បីចាប់ផ្ដើមតន្ត្រី",
 };
 
 const I18N_FILLINS = { he, fa, ar, ja, ko, es, tr, de, my, vi, id, ms, zhcn, pt, fr, ru, hi, km };
