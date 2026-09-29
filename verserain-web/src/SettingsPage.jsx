@@ -36,6 +36,7 @@ export default function SettingsPage({
   versions, version, onVersion,
   voiceOptions, voiceId, onVoice,
   pushOn, onPush,
+  elderMode, onElderMode,
   performanceMode, onPerformanceMode,
   onAccessible,
 }) {
@@ -82,6 +83,22 @@ export default function SettingsPage({
 
       <ListGroup title={t('顯示與效能', 'Display & performance')}>
         <div style={{ ...field, borderTop: 'none', flexDirection: 'row', alignItems: 'center', gap: 'var(--space-3)' }}>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontWeight: 700 }}>{t('長輩模式', 'Large-text mode')}</div>
+            <div style={hint}>{t('字放大、按鈕變大、畫面比較安靜、朗讀慢一點。', 'Bigger text and buttons, a calmer screen and slower reading.')}</div>
+          </div>
+          <Button
+            variant={elderMode ? 'primary' : 'secondary'}
+            size="sm"
+            role="switch"
+            aria-checked={elderMode}
+            data-testid="settings-elder"
+            onClick={() => onElderMode(!elderMode)}
+          >
+            {elderMode ? t('開', 'On') : t('關', 'Off')}
+          </Button>
+        </div>
+        <div style={{ ...field, flexDirection: 'row', alignItems: 'center', gap: 'var(--space-3)' }}>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontWeight: 700 }}>{t('省電模式', 'Battery saver')}</div>
             <div style={hint}>{t('減少背景動畫，手機比較不會發燙。', 'Fewer background animations, so the phone stays cooler.')}</div>
