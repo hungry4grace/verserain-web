@@ -1,7 +1,7 @@
 {
   "name": "verserain-web",
   "private": true,
-  "version": "4.0.139",
+  "version": "4.0.140",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -15,7 +15,8 @@
     "test:api": "node --test api/_lib/*.test.mjs",
     "test:lib": "node --test src/lib/*.test.mjs",
     "test:ui": "node --test src/ui/*.test.mjs",
-    "deploy:party": "partykit deploy"
+    "deploy:party": "partykit deploy",
+    "lint:clean": "node scripts/lint-clean.mjs"
   },
   "dependencies": {
     "@upstash/redis": "^1.37.0",

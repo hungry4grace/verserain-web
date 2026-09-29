@@ -94,7 +94,7 @@ export default function ManualSearch({ t, bodyRef, lang, onJump }) {
           style={{ width: '100%', minHeight: 'var(--tap-min)', padding: '0 44px', borderRadius: 'var(--radius-pill)', border: '1px solid var(--color-border)', background: 'var(--color-surface)', color: 'var(--color-text)', fontSize: 'var(--fs-body)', boxSizing: 'border-box' }}
         />
         {query && (
-          <button type="button" onClick={() => setQuery('')} aria-label={t('清除', 'Clear')} style={{ position: 'absolute', insetInlineEnd: 4, top: '50%', transform: 'translateY(-50%)', width: 40, height: 40, border: 'none', background: 'transparent', color: 'var(--color-text-2)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <button type="button" className="manual-search-clear" onClick={() => setQuery('')} aria-label={t('清除', 'Clear')}>
             <X size={20} />
           </button>
         )}
@@ -112,7 +112,7 @@ export default function ManualSearch({ t, bodyRef, lang, onJump }) {
           <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'grid', gap: 2 }}>
             {toc.map(item => (
               <li key={item.id}>
-                <button type="button" onClick={() => onJump(document.getElementById(item.id))} style={{ width: '100%', minHeight: 40, textAlign: 'start', background: 'transparent', border: 'none', padding: '0 var(--space-1)', color: 'var(--color-primary-strong)', fontWeight: 600, fontSize: 'var(--fs-body)', cursor: 'pointer', fontFamily: 'inherit' }}>
+                <button type="button" className="manual-toc-link" onClick={() => onJump(document.getElementById(item.id))}>
                   {item.title}
                 </button>
               </li>

@@ -79,7 +79,7 @@ export default function TodayPage({
           : treesPlanted > 0 && <Button variant="secondary" icon={<TreePine size={18} />} onClick={onGarden}>{t('看園子', 'See garden')}</Button>}
       </section>
 
-      <button type="button" className="ui-choice" data-testid="today-rain" onClick={onOpenRain} style={{ ...card, display: 'flex', alignItems: 'center', gap: 'var(--space-3)', textAlign: 'left', width: '100%' }}>
+      <button type="button" className="ui-choice ui-choice--card" data-testid="today-rain" onClick={onOpenRain}>
         <CloudRain size={32} color="var(--color-primary)" aria-hidden="true" style={{ flexShrink: 0 }} />
         <span style={{ flex: 1, minWidth: 0 }}>
           <h2 style={{ margin: 0, fontSize: 'var(--fs-heading)' }}>{t('話語甘霖', 'Verse Rain')}</h2>
