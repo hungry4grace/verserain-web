@@ -19834,6 +19834,12 @@ export default function App() {
   const [refereeGardenStats, setRefereeGardenStats] = useState(null);
   const [refereesPage, setRefereesPage] = useState(1);
   const [pendingRefereesPage, setPendingRefereesPage] = useState(1);
+  // Keys the 我推薦的朋友 list was fetched with (names + device codes) — the
+  // 提醒他 nudge sends the same ones so the server finds the same referees.
+  const refereeAuthorKeysRef = useRef([]);
+  // 提醒他: when each friend can be nudged again ({ name: retryAt ms }).
+  const [nudgedUntil, setNudgedUntil] = useState(() => { try { return JSON.parse(localStorage.getItem('verserain_nudged_until') || '{}') || {}; } catch { return {}; } });
+  const [nudgeBusyName, setNudgeBusyName] = useState(null);
   const [creatorHistoryPage, setCreatorHistoryPage] = useState(1);
   const HISTORY_PAGE_SIZE = 5;
 
@@ -19847,6 +19853,7 @@ export default function App() {
       let prevCodes = [];
       try { prevCodes = JSON.parse(localStorage.getItem('verserain_prev_personal_codes') || '[]'); } catch { prevCodes = []; }
       const authorKeys = buildFruitAuthorKeys(playerName, personalCode, prevCodes);
+      refereeAuthorKeysRef.current = authorKeys;
 
       // Points and referral records live under whatever code/name this person
       // had when they were written (old name, a code from another phone), so
@@ -22022,6 +22029,64 @@ export default function App() {
     } : prev);
     setToast(t('已送出鼓勵 👍', 'Cheer sent 👍'));
     setTimeout(() => setToast(null), 2500);
+  };
+
+  // ── 提醒朋友來玩 (我推薦的朋友 → 已加入，還沒開始) ─────────────────────────
+  // 分享提醒: a ready-made invite with today's-verse link, sent by the inviter
+  // over LINE / SMS (share sheet on phones, clipboard elsewhere).
+  const shareReferralReminder = async (name) => {
+    const link = buildPublicShareUrl('/', { ref: personalCode, listenDaily: remoteDailyVerse?.date || dailyVerseDate, version });
+    const text = t('{name}，今天的經文在經文雨等你 🌧️ 花 1 分鐘聽一節、玩一局，就能在園子種下第一棵樹！', "{name}, today's verse is waiting for you on VerseRain 🌧️ Take a minute to listen and play one round, and plant the first tree in your garden!").replace('{name}', name);
+    const showToast = (msg) => { setToast(msg); setTimeout(() => setToast(null), 3500); };
+    if (typeof navigator !== 'undefined' && navigator.share) {
+      try { await navigator.share({ text, url: link }); return; } catch (e) { if (e && e.name === 'AbortError') return; }
+    }
+    try {
+      await navigator.clipboard.writeText(`${text}\n${link}`);
+      showToast(t('已複製提醒訊息，貼到 LINE 或簡訊傳給他吧', 'Reminder copied — paste it into LINE or a text message'));
+    } catch {
+      showToast(`${text}\n${link}`);
+    }
+  };
+  // 提醒他: an in-app nudge (🔔 inbox + push) through /api/referral-nudge;
+  // once per friend every 3 days.
+  const nudgeReferee = async (name) => {
+    if (!userEmail || !sessionKey) { setShowLoginModal('login'); return; }
+    const showToast = (msg) => { setToast(msg); setTimeout(() => setToast(null), 4000); };
+    const markUntil = (until) => setNudgedUntil(prev => {
+      const next = { ...prev, [name]: until };
+      try { localStorage.setItem('verserain_nudged_until', JSON.stringify(next)); } catch { /* storage off */ }
+      return next;
+    });
+    setNudgeBusyName(name);
+    try {
+      const res = await fetch('/api/referral-nudge', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: userEmail, sessionKey, authors: refereeAuthorKeysRef.current, name }),
+      });
+      const d = await res.json().catch(() => ({}));
+      if (res.ok && d.success) {
+        markUntil(d.retryAt || Date.now() + 3 * 86400000);
+        showToast(d.delivered > 0
+          ? t('已提醒 {name} 👍', 'Reminder sent to {name} 👍').replace('{name}', name)
+          : t('找不到 {name} 的裝置，請改用「分享提醒」傳給他', "Couldn't reach {name}'s device — use 'Share reminder' instead").replace('{name}', name));
+      } else if (d.error === 'too_soon') {
+        if (d.retryAt) markUntil(d.retryAt);
+        showToast(t('3 天內已經提醒過 {name} 了', 'You already reminded {name} in the last 3 days').replace('{name}', name));
+      } else if (d.error === 'daily_limit') {
+        showToast(t('今天的提醒次數已用完，明天再試', "You've used today's reminders — try again tomorrow"));
+      } else if (d.error === 'already_started') {
+        showToast(t('{name} 已經開始玩了 🎉', '{name} has already started 🎉').replace('{name}', name));
+      } else if (d.error === 'session_invalid') {
+        showToast(t('請重新登入後再試', 'Please log in again and retry'));
+      } else {
+        showToast(t('提醒失敗，請稍後再試', "Couldn't send the reminder, please try again later"));
+      }
+    } catch {
+      showToast(t('提醒失敗，請稍後再試', "Couldn't send the reminder, please try again later"));
+    } finally {
+      setNudgeBusyName(null);
+    }
   };
 
   // ── 獎勵 (rewards) ─────────────────────────────────────────────────────────
@@ -25705,7 +25770,7 @@ export default function App() {
                     verserain
                   </div>
                   <div className="app-brand-version" style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', marginTop: '4px', marginLeft: '2px' }}>
-                    v4.0.113
+                    v4.0.114
                   </div>
                 </div>
                 <div ref={langPickerRef} className="app-lang-control" style={{ position: 'relative' }}>
@@ -28809,6 +28874,23 @@ export default function App() {
                                               : t('還沒通過經文，提醒他來玩吧！', 'No verse cleared yet, give them a nudge!')}
                                           </div>
                                         </div>
+                                        {(() => {
+                                          const nudged = (nudgedUntil[r.name] || 0) > Date.now();
+                                          const busy = nudgeBusyName === r.name;
+                                          const btn = { borderRadius: '8px', padding: '5px 10px', fontSize: '0.8rem', fontWeight: 'bold', cursor: 'pointer', whiteSpace: 'nowrap' };
+                                          return (
+                                            <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                                              <button type="button" data-testid="referee-share-reminder" onClick={() => shareReferralReminder(r.name)} style={{ ...btn, background: '#fff', border: '1px solid #cbd5e1', color: '#334155' }}>
+                                                📤 {t('分享提醒', 'Share reminder')}
+                                              </button>
+                                              {!(r.passedVerses > 0) && (
+                                                <button type="button" data-testid="referee-nudge" disabled={nudged || busy} onClick={() => nudgeReferee(r.name)} style={{ ...btn, background: nudged ? '#f1f5f9' : '#ecfdf5', border: `1px solid ${nudged ? '#e2e8f0' : '#a7f3d0'}`, color: nudged ? '#94a3b8' : '#047857', cursor: nudged || busy ? 'default' : 'pointer' }}>
+                                                  {nudged ? t('已提醒 ✓', 'Reminded ✓') : busy ? t('送出中…', 'Sending…') : `🔔 ${t('提醒他', 'Nudge')}`}
+                                                </button>
+                                              )}
+                                            </div>
+                                          );
+                                        })()}
                                       </div>
                                     ))}
                                   </div>
@@ -33289,6 +33371,24 @@ export default function App() {
                               <button onClick={() => sendReferralCheer(it)} style={{ background: '#10b981', color: '#fff', border: 'none', borderRadius: 8, padding: '0.35rem 0.9rem', fontSize: '0.82rem', fontWeight: 700, cursor: 'pointer' }}>{t('給他一個讚 👍', 'Send a cheer 👍')}</button>
                             ) : null}
                           </div>
+                          <div style={{ color: '#cbd5e1', fontSize: '0.72rem', marginTop: 2 }}>{new Date(it.at).toLocaleString()}</div>
+                        </div>
+                      </div>
+                    );
+                  }
+                  // Nudge received (I'm the invited friend) — my inviter asks me to start.
+                  if (it.kind === 'nudge') {
+                    return (
+                      <div key={i} data-testid="inbox-nudge" style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '0.6rem 1.3rem' }}>
+                        <span style={{ fontSize: '1.2rem', flexShrink: 0 }}>🌧️</span>
+                        <div style={{ minWidth: 0 }}>
+                          <div style={{ color: '#334155', fontSize: '0.9rem', lineHeight: 1.45 }}>
+                            <b>{it.fromName || t('邀請你的人', 'the one who invited you')}</b>{' '}
+                            {t('邀你來玩一節經文，種下第一棵樹！', 'invites you to play a verse and plant your first tree!')}
+                          </div>
+                          <button type="button" onClick={() => { setShowEncouragePanel(false); changeDailyVerseDate(formatLocalDate(new Date())); setDailySharedVoiceOwner(null); setContinuousRainSet(null); setMainTab('daily_verse'); }} style={{ marginTop: 6, background: '#10b981', color: '#fff', border: 'none', borderRadius: 8, padding: '0.35rem 0.9rem', fontSize: '0.82rem', fontWeight: 700, cursor: 'pointer' }}>
+                            ▶ {t('開始', 'Start')}
+                          </button>
                           <div style={{ color: '#cbd5e1', fontSize: '0.72rem', marginTop: 2 }}>{new Date(it.at).toLocaleString()}</div>
                         </div>
                       </div>

@@ -102,25 +102,13 @@ export default function WorldMap3D({ t, playerName, onJoinRoom, onToggleMode, cu
   }, []);
 
   // Add initial setting and set controls after mount
-  const initialFlyDone = useRef(false);
   useEffect(() => {
     if (globeEl.current && !loading) {
       globeEl.current.controls().autoRotate = false; // Stopped auto rotation per user request
-      
-      // Auto move view to current player on first load
-      if (!initialFlyDone.current && players.length > 0) {
-        const myPlayer = players.find(p => p.name === playerName);
-        if (myPlayer) {
-          setTimeout(() => {
-            if (globeEl.current) {
-              globeEl.current.pointOfView({ lat: myPlayer.lat, lng: myPlayer.lng, altitude: 1.5 }, 2000);
-            }
-          }, 500);
-        }
-        initialFlyDone.current = true;
-      }
+      // The globe opens on the whole world — no auto-zoom to my own position
+      // (the 「我的位置」 hint below still flies there on demand).
     }
-  }, [loading, players, playerName]);
+  }, [loading]);
 
   // 即時脈動:訂閱 window 事件,在對應玩家座標盪出環(react-globe.gl ringsData)。
   // 只掛一次,靠 ref 讀當前 players / 音效狀態。

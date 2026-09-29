@@ -485,6 +485,8 @@ export default function WorldMap2D({ t, playerName, userEmail, onJoinRoom, onVie
           });
         }
 
+        // The map opens on the whole world; it only moves on its own when asked
+        // to show a specific spot (coming from the 3D globe, or a place link).
         if (!initialFlyDone.current && players.length > 0) {
           if (focusLocation) {
             setTimeout(() => {
@@ -493,16 +495,6 @@ export default function WorldMap2D({ t, playerName, userEmail, onJoinRoom, onVie
                 leafletMapRef.current.setView([focusLocation.lat, focusLocation.lng], 7, { animate: false });
               }
             }, 100);
-          } else {
-            const myPlayer = players.find(p => p.name === playerName);
-            if (myPlayer) {
-              // Wait a small moment for map to settle
-              setTimeout(() => {
-                if (leafletMapRef.current) {
-                  leafletMapRef.current.flyTo([myPlayer.lat, myPlayer.lng], 10, { animate: true, duration: 1.5 });
-                }
-              }, 500);
-            }
           }
           initialFlyDone.current = true;
         }
