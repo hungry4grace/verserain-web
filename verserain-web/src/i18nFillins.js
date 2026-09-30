@@ -1444,6 +1444,7 @@ export const he = {
   "關閉背景音樂": "כבו את המוזיקה",
   "點一下影片開始播放音樂": "הקישו על הסרטון כדי להתחיל את המוזיקה",
   "按住這一列可拖曳移動": "החזיקו את הפס הזה כדי לגרור לכל מקום",
+  "按住角落拖曳可放大縮小": "גררו את הפינה כדי לשנות גודל",
 };
 
 export const fa = {
@@ -2869,6 +2870,7 @@ export const fa = {
   "關閉背景音樂": "خاموش کردن موسیقی",
   "點一下影片開始播放音樂": "برای شروع موسیقی روی ویدیو ضربه بزنید",
   "按住這一列可拖曳移動": "این نوار را نگه دارید و به هر جا بکشید",
+  "按住角落拖曳可放大縮小": "گوشه را نگه دارید و بکشید تا اندازه تغییر کند",
 };
 
 export const ar = {
@@ -4711,6 +4713,7 @@ export const ar = {
   "關閉背景音樂": "إيقاف الموسيقى",
   "點一下影片開始播放音樂": "اضغط على الفيديو لبدء الموسيقى",
   "按住這一列可拖曳移動": "اضغط مطولًا على هذا الشريط لسحبه إلى أي مكان",
+  "按住角落拖曳可放大縮小": "اسحب الزاوية لتغيير الحجم",
 };
 
 export const ja = {
@@ -6124,6 +6127,7 @@ export const ja = {
   "關閉背景音樂": "BGM をオフ",
   "點一下影片開始播放音樂": "動画をタップして音楽を再生",
   "按住這一列可拖曳移動": "このバーを押さえたままドラッグして移動",
+  "按住角落拖曳可放大縮小": "角を押さえたままドラッグして拡大・縮小",
 };
 
 export const ko = {
@@ -7535,6 +7539,7 @@ export const ko = {
   "關閉背景音樂": "배경 음악 끄기",
   "點一下影片開始播放音樂": "영상을 탭하면 음악이 시작됩니다",
   "按住這一列可拖曳移動": "이 막대를 누른 채 끌어서 이동",
+  "按住角落拖曳可放大縮小": "모서리를 누른 채 끌어서 크기 조절",
 };
 
 export const es = {
@@ -8962,6 +8967,7 @@ export const es = {
   "關閉背景音樂": "Apagar la música",
   "點一下影片開始播放音樂": "Toca el video para iniciar la música",
   "按住這一列可拖曳移動": "Mantén pulsada esta barra para moverla",
+  "按住角落拖曳可放大縮小": "Arrastra la esquina para cambiar el tamaño",
 };
 
 export const tr = {
@@ -10389,6 +10395,7 @@ export const tr = {
   "關閉背景音樂": "Müziği kapat",
   "點一下影片開始播放音樂": "Müziği başlatmak için videoya dokunun",
   "按住這一列可拖曳移動": "Taşımak için bu çubuğu basılı tutup sürükleyin",
+  "按住角落拖曳可放大縮小": "Boyutlandırmak için köşeyi sürükleyin",
 };
 
 export const de = {
@@ -11816,6 +11823,7 @@ export const de = {
   "關閉背景音樂": "Musik ausschalten",
   "點一下影片開始播放音樂": "Tippe auf das Video, um die Musik zu starten",
   "按住這一列可拖曳移動": "Leiste gedrückt halten und an eine beliebige Stelle ziehen",
+  "按住角落拖曳可放大縮小": "Ecke ziehen, um die Größe zu ändern",
 };
 
 export const my = {
@@ -13243,6 +13251,7 @@ export const my = {
   "關閉背景音樂": "နောက်ခံဂီတ ပိတ်ရန်",
   "點一下影片開始播放音樂": "ဂီတစတင်ရန် ဗီဒီယိုကို နှိပ်ပါ",
   "按住這一列可拖曳移動": "ဤဘားကို ဖိထားပြီး နေရာမည်သည့်နေရာသို့မဆို ဆွဲရွှေ့ပါ",
+  "按住角落拖曳可放大縮小": "အရွယ်အစားပြောင်းရန် ထောင့်ကို ဖိပြီး ဆွဲပါ",
 };
 
 export const vi = {
@@ -14670,6 +14679,7 @@ export const vi = {
   "關閉背景音樂": "Tắt nhạc nền",
   "點一下影片開始播放音樂": "Chạm vào video để bắt đầu nhạc",
   "按住這一列可拖曳移動": "Giữ thanh này để kéo đi bất cứ đâu",
+  "按住角落拖曳可放大縮小": "Kéo góc để phóng to thu nhỏ",
 };
 
 export const id = {
@@ -16325,6 +16335,7 @@ export const id = {
   "關閉背景音樂": "Matikan musik",
   "點一下影片開始播放音樂": "Ketuk video untuk memulai musik",
   "按住這一列可拖曳移動": "Tahan bilah ini untuk menyeretnya ke mana saja",
+  "按住角落拖曳可放大縮小": "Seret sudut untuk mengubah ukuran",
 };
 
 export const ms = {
@@ -18184,6 +18195,7 @@ export const ms = {
   "關閉背景音樂": "Matikan muzik",
   "點一下影片開始播放音樂": "Ketik video untuk memulakan muzik",
   "按住這一列可拖曳移動": "Tahan bar ini untuk menyeretnya ke mana-mana",
+  "按住角落拖曳可放大縮小": "Seret penjuru untuk mengubah saiz",
 };
 
 export const zhcn = {
@@ -19962,6 +19974,7 @@ export const zhcn = {
   "關閉背景音樂": "关闭背景音乐",
   "點一下影片開始播放音樂": "点一下视频开始播放音乐",
   "按住這一列可拖曳移動": "按住这一栏可拖动移动",
+  "按住角落拖曳可放大縮小": "按住角落拖动可放大缩小",
 };
 
 export const pt = {
@@ -21113,6 +21126,7 @@ export const pt = {
   "關閉背景音樂": "Desligar a música",
   "點一下影片開始播放音樂": "Toque no vídeo para iniciar a música",
   "按住這一列可拖曳移動": "Segure esta barra para arrastá-la para qualquer lugar",
+  "按住角落拖曳可放大縮小": "Arraste o canto para redimensionar",
 };
 
 export const fr = {
@@ -22264,6 +22278,7 @@ export const fr = {
   "關閉背景音樂": "Couper la musique",
   "點一下影片開始播放音樂": "Touchez la vidéo pour lancer la musique",
   "按住這一列可拖曳移動": "Maintenez cette barre pour la déplacer n’importe où",
+  "按住角落拖曳可放大縮小": "Faites glisser le coin pour redimensionner",
 };
 
 export const ru = {
@@ -23415,6 +23430,7 @@ export const ru = {
   "關閉背景音樂": "Выключить музыку",
   "點一下影片開始播放音樂": "Нажмите на видео, чтобы включить музыку",
   "按住這一列可拖曳移動": "Удерживайте эту полосу, чтобы перетащить окно куда угодно",
+  "按住角落拖曳可放大縮小": "Потяните за угол, чтобы изменить размер",
 };
 
 export const hi = {
@@ -24566,6 +24582,7 @@ export const hi = {
   "關閉背景音樂": "संगीत बंद करें",
   "點一下影片開始播放音樂": "संगीत शुरू करने के लिए वीडियो पर टैप करें",
   "按住這一列可拖曳移動": "इस पट्टी को दबाकर कहीं भी खींचें",
+  "按住角落拖曳可放大縮小": "आकार बदलने के लिए कोने को खींचें",
 };
 
 // Khmer (Cambodian) — full UI coverage, machine-translated in bulk from the
@@ -26348,6 +26365,7 @@ export const km = {
   "關閉背景音樂": "បិទតន្ត្រី",
   "點一下影片開始播放音樂": "ចុចលើវីដេអូដើម្បីចាប់ផ្ដើមតន្ត្រី",
   "按住這一列可拖曳移動": "ចុចឱ្យជាប់លើរបារនេះ ដើម្បីអូសទៅកន្លែងណាក៏បាន",
+  "按住角落拖曳可放大縮小": "អូសជ្រុងដើម្បីពង្រីក ឬបង្រួម",
 };
 
 const I18N_FILLINS = { he, fa, ar, ja, ko, es, tr, de, my, vi, id, ms, zhcn, pt, fr, ru, hi, km };
