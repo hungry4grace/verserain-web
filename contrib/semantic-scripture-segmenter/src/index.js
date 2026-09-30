@@ -20,6 +20,14 @@ const TRAILING_CLOSERS = new Set(Array.from('」』》〉】）)]}'));
 const LEADING_BOUNDARY_PUNCTUATION = /^[，、。；：！？，,;:!?」』》〉】）)\]}]/u;
 const DEPENDENT_FRAGMENT_START = /^的/u;
 const LITURGICAL_CONTINUATION = /^[（(]細拉[）)]/u;
+// Clause punctuation inside a fragment (its own trailing mark excluded).
+const INTERNAL_CLAUSE_MARK = /[，、,；：;:]/u;
+const PUNCTUATION_BOUNDARY_KINDS = new Set(['PHRASE', 'CLAUSE', 'SENTENCE', 'END']);
+// A reduplicated word right before an adverbial 地: 充充滿滿地, 慢慢地, 默默地.
+const REDUPLICATED_BEFORE = (text, offset) => {
+  const before = Array.from(text.slice(Math.max(0, offset - 2), offset));
+  return before.length === 2 && before[0] === before[1] && /\p{Script=Han}/u.test(before[0]);
+};
 const DANGLING_FRAGMENT_END = /(?:所以|因為|但是|然而|因此|於是|並且|若是|倘若|只是|不但|而且|或者)$/u;
 
 const SEMANTIC_CLAUSE_STARTS = Object.freeze([
@@ -232,6 +240,17 @@ function segmenterCandidates(text, boundaries) {
   }
 }
 
+// 充充滿滿地｜有恩典有真理: the adverbial 地 closes its reduplicated word, so a
+// cut may follow it. (Intl.Segmenter leaves 地 as a lone single-character
+// word, which segmenterCandidates doesn't cut after.)
+function adverbialDeCandidates(text, boundaries) {
+  let at = text.indexOf('地');
+  while (at >= 0) {
+    if (REDUPLICATED_BEFORE(text, at)) addBoundary(boundaries, at + 1, 'WORD', 40, { segment: '地' });
+    at = text.indexOf('地', at + 1);
+  }
+}
+
 function semanticClauseCandidates(text, boundaries) {
   for (const connector of SEMANTIC_CLAUSE_STARTS) {
     let start = text.indexOf(connector);
@@ -276,6 +295,7 @@ function candidateBoundaries(text, spans) {
   }
 
   segmenterCandidates(text, boundaries);
+  adverbialDeCandidates(text, boundaries);
   semanticClauseCandidates(text, boundaries);
   safeMemoryUnitCandidates(text, boundaries);
   parentheticalCandidates(text, boundaries);
@@ -329,10 +349,12 @@ function candidateBoundaries(text, spans) {
       || !DEPENDENT_FRAGMENT_START.test(visibleOptionText(text.slice(boundary.offset))))
     .filter((boundary) => boundary.kind === 'END'
       || !LITURGICAL_CONTINUATION.test(text.slice(boundary.offset).trimStart()))
+    .filter((boundary) => PUNCTUATION_BOUNDARY_KINDS.has(boundary.kind)
+      || !(text.startsWith('地', boundary.offset) && REDUPLICATED_BEFORE(text, boundary.offset)))
     .sort((left, right) => left.offset - right.offset);
 }
 
-function fragmentCost(fragment, boundary, targetLength, maximumLength, absoluteStart, isolatedSpans) {
+function fragmentCost(fragment, boundary, targetLength, maximumLength, absoluteStart, isolatedSpans, startKind = 'START') {
   const length = visibleLength(fragment);
   if (length === 0) return Number.POSITIVE_INFINITY;
   const distance = Math.abs(targetLength - length);
@@ -340,6 +362,12 @@ function fragmentCost(fragment, boundary, targetLength, maximumLength, absoluteS
   if (length < Math.ceil(targetLength / 2)) cost += (targetLength - length) * 7;
   if (/[（(〈]/u.test(fragment.slice(1))) cost += 250;
   if (length > maximumLength) cost += 1_000 + (length - maximumLength) * 100;
+  // Joining two whole clauses (「A，B」) is fine; a whole clause plus half of the
+  // next one (「住在我們中間，充充」), or the tail of one clause plus the next
+  // (「門徒，奉父、子、」), is not — it cuts a clause in two across the card edge.
+  const spansClauses = INTERNAL_CLAUSE_MARK.test(fragment.replace(/[\p{P}\s]+$/u, ''));
+  const cleanStart = startKind === 'START' || PUNCTUATION_BOUNDARY_KINDS.has(startKind);
+  if (spansClauses && (!PUNCTUATION_BOUNDARY_KINDS.has(boundary?.kind) || !cleanStart)) cost += 40;
 
   const absoluteEnd = absoluteStart + fragment.length;
   for (const span of isolatedSpans) {
@@ -377,7 +405,8 @@ function chooseBoundaries(text, candidates, decisions, targetLength, maximumLeng
         targetLength,
         maximumLength,
         start.offset,
-        isolatedSpans
+        isolatedSpans,
+        start.kind
       );
       if (!Number.isFinite(cost)) continue;
       if (decisions[end.id] === 'PREFER') cost -= 18;
