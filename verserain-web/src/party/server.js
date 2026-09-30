@@ -315,15 +315,47 @@ export async function deviceCodeTaken(srv, email, deviceCode, accountCode) {
 // email, self-asserted, on every request. That is fine for reading, but a
 // route that spends a player's points must know the caller really signed in
 // as that account. So a login now also mints a random session key, kept on
-// the user record (last 5, one per device), and money routes pass it to
-// /reward-eligibility which answers identity.sessionValid.
-export const MAX_SESSION_KEYS = 5;
+// the user record, and money routes pass it to /reward-eligibility which
+// answers identity.sessionValid.
+//
+// Every login mints a key — not every device — so someone who signs in on a
+// phone, the app, a tablet and two browsers used to push their own everyday
+// device out after five logins (its 今日得分 and 可用點數 then asked to sign
+// in again). Keep 20, and when full drop the one unused for longest: a key
+// in daily use is stamped lastUsedAt (see touchSessionKey) and survives.
+export const MAX_SESSION_KEYS = 20;
+const SESSION_TOUCH_MS = 12 * 60 * 60 * 1000;
+const sessionLastSeen = (s) => Date.parse(s.lastUsedAt || s.createdAt || '') || 0;
 export function issueSessionKey(user, now = new Date()) {
   const key = (typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2)) + Math.random().toString(36).slice(2, 10);
   const list = Array.isArray(user.sessionKeys) ? user.sessionKeys.filter(k => k && k.key) : [];
+  while (list.length >= MAX_SESSION_KEYS) {
+    let stalest = 0;
+    for (let i = 1; i < list.length; i++) if (sessionLastSeen(list[i]) < sessionLastSeen(list[stalest])) stalest = i;
+    list.splice(stalest, 1);
+  }
   list.push({ key, createdAt: now.toISOString() });
-  user.sessionKeys = list.slice(-MAX_SESSION_KEYS);
+  user.sessionKeys = list;
   return key;
+}
+// Stamp a key as in use. Returns true when the record changed and should be
+// saved — at most every 12 hours per key, so a busy device costs one write a
+// day rather than one per request.
+export function touchSessionKey(user, key, now = new Date()) {
+  const k = String(key || '').trim();
+  const s = user && k && Array.isArray(user.sessionKeys) ? user.sessionKeys.find(x => x && x.key === k) : null;
+  if (!s) return false;
+  const last = Date.parse(s.lastUsedAt || '') || 0;
+  if (now.getTime() - last < SESSION_TOUCH_MS) return false;
+  s.lastUsedAt = now.toISOString();
+  return true;
+}
+// Re-read the record just before writing so the stamp never overwrites a
+// change made while this request was awaiting other storage.
+async function touchSessionKeyStored(storage, recordKey, sessionKey) {
+  if (!recordKey || !sessionKey) return;
+  const fresh = await storage.get(recordKey);
+  if (fresh && touchSessionKey(fresh, sessionKey)) await storage.put(recordKey, fresh);
 }
 export function sessionValidFor(user, key) {
   const k = String(key || '').trim();
@@ -2959,8 +2991,9 @@ export default class Server {
       if (url.pathname.endsWith('/session-check') && request.method === 'POST') {
          if (!isCustomSetWriteAuthorized()) return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: corsHeaders });
          const body = await request.json().catch(() => ({}));
-         const { user } = await findUserRecord(this.room.storage, body.email);
+         const { key: recordKey, user } = await findUserRecord(this.room.storage, body.email);
          const valid = sessionValidFor(user, body.sessionKey);
+         if (valid) await touchSessionKeyStored(this.room.storage, recordKey, body.sessionKey);
          return new Response(JSON.stringify({ success: true, found: !!user, valid, playerName: valid ? String((user && user.name) || '') : '' }), { headers: corsHeaders });
       }
       if (url.pathname.endsWith('/reward-eligibility') && request.method === 'POST') {
@@ -2968,7 +3001,8 @@ export default class Server {
          try {
             const body = await request.json().catch(() => ({}));
             const email = String(body.email || '').trim().toLowerCase();
-            const { user } = await findUserRecord(this.room.storage, body.email);
+            const { key: recordKey, user } = await findUserRecord(this.room.storage, body.email);
+            if (sessionValidFor(user, body.sessionKey)) await touchSessionKeyStored(this.room.storage, recordKey, body.sessionKey);
             const playerName = String((user && user.name) || body.playerName || '').trim();
             const garden = playerName ? await this.room.storage.get(`garden:${playerName}`) : null;
             const now = Date.now();

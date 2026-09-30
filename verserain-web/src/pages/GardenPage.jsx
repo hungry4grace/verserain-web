@@ -42,6 +42,11 @@ export default function GardenPage({ t, challengeGardenVerse, charityContribPage
               <button type="button" data-testid="today-points-help" onClick={() => setShowTodayInfo(v => !v)} aria-expanded={showTodayInfo} title={t('今天的分數怎麼算？', 'How were today’s points earned?')} aria-label={t('今天的分數怎麼算？', 'How were today’s points earned?')} style={{ marginLeft: 6, width: 20, height: 20, borderRadius: '50%', border: '1px solid #6ee7b7', background: showTodayInfo ? '#047857' : '#fff', color: showTodayInfo ? '#fff' : '#047857', fontSize: '0.78rem', fontWeight: 800, lineHeight: '18px', padding: 0, cursor: 'pointer', verticalAlign: 'middle' }}>?</button>
             )}
           </div>
+          {userEmail && (!sessionKey || pointsBalance?.error === 'session_invalid') && (
+            <Button variant="text" size="sm" data-testid="today-points-relogin" onClick={() => setShowLoginModal('login')} style={{ marginTop: '-0.6rem', marginBottom: '0.6rem' }}>
+              {t('今日得分：重新登入後顯示', "Today's score: sign in again to show")}
+            </Button>
+          )}
           {showTodayInfo && pointsBalance && !pointsBalance.error && (() => {
             const td = pointsBalance.today;
             const b = (td && td.breakdown) || {};

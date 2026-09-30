@@ -1445,6 +1445,7 @@ export const he = {
   "點一下影片開始播放音樂": "הקישו על הסרטון כדי להתחיל את המוזיקה",
   "按住這一列可拖曳移動": "החזיקו את הפס הזה כדי לגרור לכל מקום",
   "按住角落拖曳可放大縮小": "גררו את הפינה כדי לשנות גודל",
+  "今日得分：重新登入後顯示": "הניקוד של היום: היכנסו שוב כדי להציג",
 };
 
 export const fa = {
@@ -2871,6 +2872,7 @@ export const fa = {
   "點一下影片開始播放音樂": "برای شروع موسیقی روی ویدیو ضربه بزنید",
   "按住這一列可拖曳移動": "این نوار را نگه دارید و به هر جا بکشید",
   "按住角落拖曳可放大縮小": "گوشه را نگه دارید و بکشید تا اندازه تغییر کند",
+  "今日得分：重新登入後顯示": "امتیاز امروز: برای نمایش دوباره وارد شوید",
 };
 
 export const ar = {
@@ -4714,6 +4716,7 @@ export const ar = {
   "點一下影片開始播放音樂": "اضغط على الفيديو لبدء الموسيقى",
   "按住這一列可拖曳移動": "اضغط مطولًا على هذا الشريط لسحبه إلى أي مكان",
   "按住角落拖曳可放大縮小": "اسحب الزاوية لتغيير الحجم",
+  "今日得分：重新登入後顯示": "نقاط اليوم: سجّل الدخول مجددًا لعرضها",
 };
 
 export const ja = {
@@ -6128,6 +6131,7 @@ export const ja = {
   "點一下影片開始播放音樂": "動画をタップして音楽を再生",
   "按住這一列可拖曳移動": "このバーを押さえたままドラッグして移動",
   "按住角落拖曳可放大縮小": "角を押さえたままドラッグして拡大・縮小",
+  "今日得分：重新登入後顯示": "今日の得点：再ログインすると表示されます",
 };
 
 export const ko = {
@@ -7540,6 +7544,7 @@ export const ko = {
   "點一下影片開始播放音樂": "영상을 탭하면 음악이 시작됩니다",
   "按住這一列可拖曳移動": "이 막대를 누른 채 끌어서 이동",
   "按住角落拖曳可放大縮小": "모서리를 누른 채 끌어서 크기 조절",
+  "今日得分：重新登入後顯示": "오늘의 점수: 다시 로그인하면 표시됩니다",
 };
 
 export const es = {
@@ -8968,6 +8973,7 @@ export const es = {
   "點一下影片開始播放音樂": "Toca el video para iniciar la música",
   "按住這一列可拖曳移動": "Mantén pulsada esta barra para moverla",
   "按住角落拖曳可放大縮小": "Arrastra la esquina para cambiar el tamaño",
+  "今日得分：重新登入後顯示": "Puntos de hoy: inicia sesión de nuevo para verlos",
 };
 
 export const tr = {
@@ -10396,6 +10402,7 @@ export const tr = {
   "點一下影片開始播放音樂": "Müziği başlatmak için videoya dokunun",
   "按住這一列可拖曳移動": "Taşımak için bu çubuğu basılı tutup sürükleyin",
   "按住角落拖曳可放大縮小": "Boyutlandırmak için köşeyi sürükleyin",
+  "今日得分：重新登入後顯示": "Bugünün puanı: görmek için yeniden giriş yapın",
 };
 
 export const de = {
@@ -11824,6 +11831,7 @@ export const de = {
   "點一下影片開始播放音樂": "Tippe auf das Video, um die Musik zu starten",
   "按住這一列可拖曳移動": "Leiste gedrückt halten und an eine beliebige Stelle ziehen",
   "按住角落拖曳可放大縮小": "Ecke ziehen, um die Größe zu ändern",
+  "今日得分：重新登入後顯示": "Heutige Punkte: erneut anmelden, um sie zu sehen",
 };
 
 export const my = {
@@ -13252,6 +13260,7 @@ export const my = {
   "點一下影片開始播放音樂": "ဂီတစတင်ရန် ဗီဒီယိုကို နှိပ်ပါ",
   "按住這一列可拖曳移動": "ဤဘားကို ဖိထားပြီး နေရာမည်သည့်နေရာသို့မဆို ဆွဲရွှေ့ပါ",
   "按住角落拖曳可放大縮小": "အရွယ်အစားပြောင်းရန် ထောင့်ကို ဖိပြီး ဆွဲပါ",
+  "今日得分：重新登入後顯示": "ယနေ့ရမှတ်- ပြသရန် ပြန်လည်ဝင်ရောက်ပါ",
 };
 
 export const vi = {
@@ -14680,6 +14689,7 @@ export const vi = {
   "點一下影片開始播放音樂": "Chạm vào video để bắt đầu nhạc",
   "按住這一列可拖曳移動": "Giữ thanh này để kéo đi bất cứ đâu",
   "按住角落拖曳可放大縮小": "Kéo góc để phóng to thu nhỏ",
+  "今日得分：重新登入後顯示": "Điểm hôm nay: đăng nhập lại để xem",
 };
 
 export const id = {
@@ -16336,6 +16346,7 @@ export const id = {
   "點一下影片開始播放音樂": "Ketuk video untuk memulai musik",
   "按住這一列可拖曳移動": "Tahan bilah ini untuk menyeretnya ke mana saja",
   "按住角落拖曳可放大縮小": "Seret sudut untuk mengubah ukuran",
+  "今日得分：重新登入後顯示": "Skor hari ini: masuk lagi untuk menampilkan",
 };
 
 export const ms = {
@@ -18196,6 +18207,7 @@ export const ms = {
   "點一下影片開始播放音樂": "Ketik video untuk memulakan muzik",
   "按住這一列可拖曳移動": "Tahan bar ini untuk menyeretnya ke mana-mana",
   "按住角落拖曳可放大縮小": "Seret penjuru untuk mengubah saiz",
+  "今日得分：重新登入後顯示": "Skor hari ini: log masuk semula untuk dipaparkan",
 };
 
 export const zhcn = {
@@ -19975,6 +19987,7 @@ export const zhcn = {
   "點一下影片開始播放音樂": "点一下视频开始播放音乐",
   "按住這一列可拖曳移動": "按住这一栏可拖动移动",
   "按住角落拖曳可放大縮小": "按住角落拖动可放大缩小",
+  "今日得分：重新登入後顯示": "今日得分：重新登录后显示",
 };
 
 export const pt = {
@@ -21127,6 +21140,7 @@ export const pt = {
   "點一下影片開始播放音樂": "Toque no vídeo para iniciar a música",
   "按住這一列可拖曳移動": "Segure esta barra para arrastá-la para qualquer lugar",
   "按住角落拖曳可放大縮小": "Arraste o canto para redimensionar",
+  "今日得分：重新登入後顯示": "Pontos de hoje: entre novamente para ver",
 };
 
 export const fr = {
@@ -22279,6 +22293,7 @@ export const fr = {
   "點一下影片開始播放音樂": "Touchez la vidéo pour lancer la musique",
   "按住這一列可拖曳移動": "Maintenez cette barre pour la déplacer n’importe où",
   "按住角落拖曳可放大縮小": "Faites glisser le coin pour redimensionner",
+  "今日得分：重新登入後顯示": "Score du jour : reconnectez-vous pour l’afficher",
 };
 
 export const ru = {
@@ -23431,6 +23446,7 @@ export const ru = {
   "點一下影片開始播放音樂": "Нажмите на видео, чтобы включить музыку",
   "按住這一列可拖曳移動": "Удерживайте эту полосу, чтобы перетащить окно куда угодно",
   "按住角落拖曳可放大縮小": "Потяните за угол, чтобы изменить размер",
+  "今日得分：重新登入後顯示": "Очки за сегодня: войдите снова, чтобы увидеть",
 };
 
 export const hi = {
@@ -24583,6 +24599,7 @@ export const hi = {
   "點一下影片開始播放音樂": "संगीत शुरू करने के लिए वीडियो पर टैप करें",
   "按住這一列可拖曳移動": "इस पट्टी को दबाकर कहीं भी खींचें",
   "按住角落拖曳可放大縮小": "आकार बदलने के लिए कोने को खींचें",
+  "今日得分：重新登入後顯示": "आज के अंक: देखने के लिए फिर से साइन इन करें",
 };
 
 // Khmer (Cambodian) — full UI coverage, machine-translated in bulk from the
@@ -26366,6 +26383,7 @@ export const km = {
   "點一下影片開始播放音樂": "ចុចលើវីដេអូដើម្បីចាប់ផ្ដើមតន្ត្រី",
   "按住這一列可拖曳移動": "ចុចឱ្យជាប់លើរបារនេះ ដើម្បីអូសទៅកន្លែងណាក៏បាន",
   "按住角落拖曳可放大縮小": "អូសជ្រុងដើម្បីពង្រីក ឬបង្រួម",
+  "今日得分：重新登入後顯示": "ពិន្ទុថ្ងៃនេះ៖ ចូលម្ដងទៀតដើម្បីបង្ហាញ",
 };
 
 const I18N_FILLINS = { he, fa, ar, ja, ko, es, tr, de, my, vi, id, ms, zhcn, pt, fr, ru, hi, km };
