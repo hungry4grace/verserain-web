@@ -27,3 +27,9 @@ node_modules/
 # Node (per-app)
 verserain-for-blind/node_modules/
 verserain-for-blind/dist/
+
+# Generated / per-machine files — never commit (they churn on every local run)
+node_modules/
+.partykit/
+.claude/launch.json
+.claude/settings.local.json
