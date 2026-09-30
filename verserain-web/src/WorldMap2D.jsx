@@ -947,10 +947,15 @@ export default function WorldMap2D({ t, playerName, userEmail, onJoinRoom, onVie
           filter: sepia(0.52) saturate(2.7) hue-rotate(54deg) brightness(0.42) contrast(1.34);
         }
         .verse-map-frame .leaflet-marker-pane,
-        .verse-map-frame .leaflet-popup-pane,
         .verse-map-frame .leaflet-control-container {
           position: relative;
           z-index: 500;
+        }
+        /* An open popup sits above every marker — including the 商家／教會
+           placePane (610) — so nearby icons never cover its text or buttons. */
+        .verse-map-frame .leaflet-popup-pane {
+          position: relative;
+          z-index: 700;
         }
         .verse-map-frame .leaflet-control-zoom a {
           background: rgba(236, 253, 245, 0.94);
