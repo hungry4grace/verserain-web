@@ -1,5 +1,5 @@
 // Moved out of App.jsx unchanged (UI/UX 第 4 階段).
-import { ArrowRightLeft, ArrowUpDown, CloudRain, GripHorizontal, MessageCircle, Mic, Pause, Play, Share2, Star, X, XCircle, Zap } from 'lucide-react';
+import { ArrowRightLeft, ArrowUpDown, CloudRain, GripHorizontal, MoveDiagonal, MoveDiagonal2, MessageCircle, Mic, Pause, Play, Share2, Star, X, XCircle, Zap } from 'lucide-react';
 import { BIBLE_LANGUAGE_OPTIONS, DEFAULT_PLAY_FONT_CHOICE, DEFAULT_PLAY_INK_CHOICE, PLAY_INK_OPTIONS, areLikelyParallelVerseSets, fetchBibleVerseFromAPI, fetchVerseFromBolls, fetchVerseFromGetBible, fetchVerseFromTaibible, findMatchingVerse, getCachedBibleVerse, getDailyVerseImageUrls, getEnglishReferenceFromKey, getSecondaryPhrasesForIndex, getStableNumber, getVoiceLangForVersion, isTextLikelyForVersion, pickRandomVerse, setCachedBibleVerse } from '../lib/bible.js';
 import ChallengeSetupModal, { loadChallengeSetup } from '../ChallengeSetupModal';
 import { DAILY_RAIN_DROPS, RAIN_FONT_LEVELS } from './rainConstants';
@@ -19,6 +19,13 @@ import { splitVersePhrases } from '../lib/phraseSplitter.js';
 
 // Where the YouTube music player was last dragged to (see ytPos below).
 const YT_DOCK_POS_KEY = 'verserain_yt_dock_pos';
+// …and how wide its video was made (a corner handle resizes it).
+const YT_DOCK_W_KEY = 'verserain_yt_dock_w';
+// The video keeps YouTube's 200×200 minimum and grows as 16:9 beyond it.
+const YT_MIN_W = 208;
+const ytVideoHeight = (w) => Math.max(200, Math.round(w * 9 / 16));
+// Widest video that still leaves the whole player (bar, padding) on screen.
+const ytMaxVideoWidth = () => Math.max(YT_MIN_W, Math.min(1280, window.innerWidth - 16, Math.floor((window.innerHeight - 70) * 16 / 9)));
 
 // How long playback waits for the "which verses have a recording" lists before
 // giving up and reading with TTS.
@@ -826,6 +833,8 @@ export function VerseSetContinuousRainPlayer({
   const ytFracRef = useRef(null);
   const [ytPos, setYtPos] = useState(null);
   const [ytDragging, setYtDragging] = useState(false);
+  const [ytW, setYtW] = useState(YT_MIN_W);
+  const ytResizeRef = useRef(null);
   const ytDockRoom = () => {
     const el = ytDockRef.current;
     return {
@@ -849,14 +858,25 @@ export function VerseSetContinuousRainPlayer({
   React.useLayoutEffect(() => {
     if (!ytBgmId || ytClosed) return undefined;
     try {
+      const w = Number(localStorage.getItem(YT_DOCK_W_KEY));
+      if (w > YT_MIN_W) setYtW(Math.min(w, ytMaxVideoWidth()));
       const f = JSON.parse(localStorage.getItem(YT_DOCK_POS_KEY) || 'null');
       if (f && Number.isFinite(f.fx) && Number.isFinite(f.fy)) { ytFracRef.current = f; setYtPos(ytPosFromFrac(f)); }
     } catch { /* no storage — stay in the corner */ }
-    const onResize = () => { if (ytFracRef.current) setYtPos(ytPosFromFrac(ytFracRef.current)); };
+    const onResize = () => {
+      setYtW(w => Math.min(w, ytMaxVideoWidth()));
+      if (ytFracRef.current) setYtPos(ytPosFromFrac(ytFracRef.current));
+    };
     window.addEventListener('resize', onResize);
     return () => window.removeEventListener('resize', onResize);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ytBgmId, ytClosed]);
+  // A new width (restored, or clamped after a resize of the window) moves a
+  // dragged player back inside the screen once the DOM has its new size.
+  React.useLayoutEffect(() => {
+    if (!ytResizeRef.current && ytFracRef.current) setYtPos(ytPosFromFrac(ytFracRef.current));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ytW]);
   const onYtBarPointerDown = (e) => {
     if (e.button > 0 || e.target.closest('button')) return;
     const el = ytDockRef.current;
@@ -877,13 +897,54 @@ export function VerseSetContinuousRainPlayer({
     if (!d || d.id !== e.pointerId) return;
     ytDragRef.current = null;
     setYtDragging(false);
+    if (ytPos) ytSavePos();
+  };
+  const ytSavePos = () => {
     const el = ytDockRef.current;
-    if (!el || !ytPos) return;
+    if (!el) return;
     const { maxX, maxY } = ytDockRoom();
     const r = el.getBoundingClientRect();
     const f = { fx: maxX ? r.left / maxX : 0, fy: maxY ? r.top / maxY : 0 };
     ytFracRef.current = f;
     try { localStorage.setItem(YT_DOCK_POS_KEY, JSON.stringify(f)); } catch { /* noop */ }
+  };
+  // Resize from a bottom corner: the handle sits on the side away from the
+  // edge the player is anchored to, and that opposite edge stays put.
+  const ytHandleSide = ytPos && ytPos.x + (ytW + 14) / 2 < window.innerWidth / 2 ? 'right' : 'left';
+  const onYtResizeDown = (e) => {
+    if (e.button > 0) return;
+    const el = ytDockRef.current;
+    if (!el) return;
+    const r = el.getBoundingClientRect();
+    const growsUp = !ytPos && ytSide === 'bottom';
+    const chromeW = r.width - ytW;
+    const chromeH = r.height - ytVideoHeight(ytW);
+    const roomW = (ytHandleSide === 'left' ? r.right : window.innerWidth - r.left) - chromeW;
+    const roomH = (growsUp ? r.bottom : window.innerHeight - r.top) - chromeH;
+    ytResizeRef.current = {
+      id: e.pointerId, startX: e.clientX, startW: ytW, side: ytHandleSide, rect: r, chromeW,
+      maxW: Math.max(YT_MIN_W, Math.min(ytMaxVideoWidth(), roomW, roomH >= 200 ? Math.floor(roomH * 16 / 9) : YT_MIN_W)),
+    };
+    try { e.currentTarget.setPointerCapture(e.pointerId); } catch { /* noop */ }
+    setYtDragging(true);
+    e.preventDefault();
+    e.stopPropagation();
+  };
+  const onYtResizeMove = (e) => {
+    const d = ytResizeRef.current;
+    if (!d || d.id !== e.pointerId) return;
+    const dx = e.clientX - d.startX;
+    const w = Math.round(Math.min(d.maxW, Math.max(YT_MIN_W, d.startW + (d.side === 'right' ? dx : -dx))));
+    setYtW(w);
+    if (ytPos) setYtPos({ x: d.side === 'left' ? d.rect.right - (w + d.chromeW) : d.rect.left, y: d.rect.top });
+  };
+  const onYtResizeEnd = (e) => {
+    const d = ytResizeRef.current;
+    if (!d || d.id !== e.pointerId) return;
+    ytResizeRef.current = null;
+    setYtDragging(false);
+    try { localStorage.setItem(YT_DOCK_W_KEY, String(ytW)); } catch { /* noop */ }
+    if (ytPos) ytSavePos();
   };
   const ytBackToCorner = () => {
     if (ytPos) {
@@ -1963,7 +2024,11 @@ export function VerseSetContinuousRainPlayer({
         <div
           ref={ytDockRef}
           className={`yt-bgm-dock ${ytPos ? 'is-free' : `is-${ytSide}`}${ytDragging ? ' is-dragging' : ''}`}
-          style={ytPos ? { left: ytPos.x, top: ytPos.y, right: 'auto', bottom: 'auto' } : undefined}
+          style={{
+            '--yt-w': `${ytW}px`,
+            '--yt-h': `${ytVideoHeight(ytW)}px`,
+            ...(ytPos ? { left: ytPos.x, top: ytPos.y, right: 'auto', bottom: 'auto' } : null),
+          }}
           data-testid="yt-bgm-dock"
         >
           <div
@@ -1994,6 +2059,18 @@ export function VerseSetContinuousRainPlayer({
           <div ref={ytHostRef} className="yt-bgm-dock__player" />
           {ytState === 'error' && <p className="yt-bgm-dock__note">{t('這部影片不允許在其他網站播放，請換一部', 'This video can’t play outside YouTube — try another one')}</p>}
           {(ytState === -1 || ytState === 5) && <p className="yt-bgm-dock__note is-delayed">{t('點一下影片開始播放音樂', 'Tap the video to start the music')}</p>}
+          <div
+            className={`yt-bgm-dock__resize is-${ytHandleSide}`}
+            data-testid="yt-bgm-resize"
+            role="presentation"
+            title={t('按住角落拖曳可放大縮小', 'Drag the corner to resize')}
+            onPointerDown={onYtResizeDown}
+            onPointerMove={onYtResizeMove}
+            onPointerUp={onYtResizeEnd}
+            onPointerCancel={onYtResizeEnd}
+          >
+            {ytHandleSide === 'left' ? <MoveDiagonal size={14} aria-hidden="true" /> : <MoveDiagonal2 size={14} aria-hidden="true" />}
+          </div>
         </div>
       )}
       {voiceRecTarget && (

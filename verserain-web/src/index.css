@@ -2070,11 +2070,11 @@ html.elder-mode .versesets-table-card td { padding-left: 0.35rem !important; pad
   position: fixed;
   right: 0;
   z-index: 2607;
-  width: 220px;
+  width: calc(var(--yt-w, 208px) + 14px);
   display: flex;
   flex-direction: column;
   gap: 4px;
-  padding: 6px;
+  padding: 6px 6px 22px;
   border-radius: var(--radius-md);
   background: var(--color-image-veil);
   border: 1px solid var(--color-on-image-line);
@@ -2106,6 +2106,24 @@ html.elder-mode .versesets-table-card td { padding-left: 0.35rem !important; pad
 /* The video is a cross-origin iframe: let the pointer pass over it mid-drag. */
 .yt-bgm-dock.is-dragging iframe { pointer-events: none; }
 .yt-bgm-dock__grip { flex: none; opacity: 0.7; margin-inline-start: 2px; }
+/* Corner handle in the strip under the video (never over YouTube's controls). */
+.yt-bgm-dock__resize {
+  position: absolute;
+  bottom: 0;
+  width: 34px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-on-image);
+  opacity: 0.75;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.yt-bgm-dock__resize.is-left { left: 0; cursor: nesw-resize; }
+.yt-bgm-dock__resize.is-right { right: 0; cursor: nwse-resize; }
+.yt-bgm-dock__resize:hover { opacity: 1; }
 .yt-bgm-dock__title {
   flex: 1;
   min-width: 0;
@@ -2134,8 +2152,8 @@ html.elder-mode .versesets-table-card td { padding-left: 0.35rem !important; pad
 .yt-bgm-frame,
 .yt-bgm-frame iframe {
   display: block;
-  width: 208px;
-  height: 200px;
+  width: var(--yt-w, 208px);
+  height: var(--yt-h, 200px);
   border: 0;
   border-radius: var(--radius-sm);
   overflow: hidden;
