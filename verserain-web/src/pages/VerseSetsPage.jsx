@@ -437,7 +437,7 @@ export default function VerseSetsPage({ t, canCreateCustomSets, canEditSet, copy
                 <tr style={{ backgroundColor: '#f8fafc', color: '#475569', fontSize: '0.9rem' }}>
                   <th style={{ padding: '1rem', borderBottom: '2px solid #e2e8f0' }}>{t("經文出處 (點擊觀看)", "Reference (Click to View)")}</th>
                   <th style={{ padding: '1rem', borderBottom: '2px solid #e2e8f0', textAlign: 'center', width: '100px' }}>{t("排行", "Rank")}</th>
-                  <th style={{ padding: '1rem', borderBottom: '2px solid #e2e8f0', width: '140px', textAlign: 'center' }}>{t("操作", "Action")}</th>
+                  <th style={{ padding: '1rem', borderBottom: '2px solid #e2e8f0', minWidth: '140px', whiteSpace: 'nowrap', textAlign: 'center' }}>{t("操作", "Action")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -477,7 +477,7 @@ export default function VerseSetsPage({ t, canCreateCustomSets, canEditSet, copy
                         </button>
                       </td>
                       <td style={{ padding: '0.8rem 1rem', textAlign: 'center' }} onClick={(e) => e.stopPropagation()}>
-                        <div style={{ display: 'flex', flexDirection: 'row', flexWrap: 'wrap', gap: '0.4rem', justifyContent: 'center', alignItems: 'center' }}>
+                        <div className="verse-row-actions">
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
