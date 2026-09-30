@@ -2215,3 +2215,16 @@ html.elder-mode .versesets-table-card td { padding-left: 0.35rem !important; pad
   color: var(--color-text-2);
 }
 .yt-bgm-field__error { color: var(--color-danger); font-weight: 600; }
+
+/* 經文組頁每節經文的「操作」按鈕（聆聽、我的錄音、挑戰、分享）排成一行；
+   手機直放太窄時才換行，免得經文出處那欄被擠扁。 */
+.verse-row-actions {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 0.4rem;
+  justify-content: center;
+  align-items: center;
+}
+@media (max-width: 640px) {
+  .verse-row-actions { flex-wrap: wrap; }
+}
