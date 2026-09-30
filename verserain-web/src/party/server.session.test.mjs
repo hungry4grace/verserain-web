@@ -2,7 +2,7 @@
 // map-place photo uploads require it.  node --test src/party/*.test.mjs
 import { test } from 'node:test';
 import assert from 'node:assert';
-import Server, { issueSessionKey, sessionValidFor, MAX_SESSION_KEYS } from './server.js';
+import Server, { issueSessionKey, sessionValidFor, touchSessionKey, MAX_SESSION_KEYS } from './server.js';
 
 const BASE = 'https://x.partykit.dev/parties/main/global-auth-db';
 function makeStorage(initial = {}) {
@@ -32,7 +32,25 @@ const req = (path, body, { token = '', method = 'POST' } = {}) => new Request(`$
 });
 const json = async (r) => JSON.parse(await r.text());
 
-test('issueSessionKey keeps the last five keys and sessionValidFor recognises them', () => {
+test('a key in daily use survives many logins elsewhere; the stalest key goes first', () => {
+  const user = { email: 'b@x.com' };
+  const t0 = Date.parse('2026-09-01T00:00:00Z');
+  const at = (days) => new Date(t0 + days * 86400000);
+  const everyday = issueSessionKey(user, at(0));
+  const others = [];
+  for (let i = 1; i <= MAX_SESSION_KEYS + 5; i++) {
+    assert.strictEqual(touchSessionKey(user, everyday, at(i)), true, 'used again a day later');
+    others.push(issueSessionKey(user, at(i)));
+  }
+  assert.strictEqual(user.sessionKeys.length, MAX_SESSION_KEYS);
+  assert.strictEqual(sessionValidFor(user, everyday), true, 'the everyday device is still signed in');
+  assert.strictEqual(sessionValidFor(user, others[0]), false, 'an old, unused login was dropped');
+  assert.strictEqual(sessionValidFor(user, others[others.length - 1]), true);
+  assert.strictEqual(touchSessionKey(user, everyday, at(MAX_SESSION_KEYS + 5)), false, 'no second write within 12 hours');
+  assert.strictEqual(touchSessionKey(user, 'nope', at(99)), false);
+});
+
+test('issueSessionKey keeps the last MAX_SESSION_KEYS keys and sessionValidFor recognises them', () => {
   const user = { email: 'a@x.com' };
   const keys = Array.from({ length: MAX_SESSION_KEYS + 2 }, () => issueSessionKey(user));
   assert.strictEqual(user.sessionKeys.length, MAX_SESSION_KEYS);
