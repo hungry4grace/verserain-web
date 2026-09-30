@@ -33,10 +33,19 @@ test('Chinese routes through the semantic segmenter (merges short 、-lists to c
   // instead of splitting on every 、/space. Short list items (仁義、公平、正直的)
   // merge into one readable card rather than one block each. Author-inserted
   // inter-Han spaces are stripped first, so blocks never carry a stray space.
-  // The ~8-char card target can still make a length cut mid-run (…使 | 少年人…)
-  // — an accepted tradeoff of small cards.
+  // A card that spans a 、 also ends on punctuation (仁義、公平 | 正直的訓誨,
+  // not 仁義、公平、正直的 | 訓誨…). The ~8-char card target can still make a
+  // length cut inside a long unpunctuated run (…使少年 | 人…) — an accepted
+  // tradeoff of small cards.
   const phrases = splitVersePhrases('使人處事領受智慧、仁義、公平、正直的訓誨 使愚人靈明 使少年人有知識和謀略');
-  assert.deepStrictEqual(phrases, ['使人處事領受智慧', '仁義、公平、正直的', '訓誨使愚人靈明使', '少年人有知識和謀略']);
+  assert.deepStrictEqual(phrases, ['使人處事領受智慧', '仁義、公平', '正直的訓誨', '使愚人靈明使少年', '人有知識和謀略']);
+});
+
+test('Chinese cards follow the punctuation: 住在我們中間｜充充滿滿地｜有恩典有真理 (John 1:14)', () => {
+  // A card may join two whole clauses, but never a whole clause plus half of
+  // the next one — that used to give 「住在我們中間，充充」｜「滿滿地有恩典有真理」.
+  const phrases = splitVersePhrases('道成了肉身，住在我們中間，充充滿滿地有恩典有真理。我們也見過他的榮光，正是父獨生子的榮光。');
+  assert.deepStrictEqual(phrases, ['道成了肉身', '住在我們中間', '充充滿滿地', '有恩典有真理', '我們也見過他的榮光', '正是父獨生子的榮光']);
 });
 
 test('author-inserted spaces between Han are stripped before semantic segmentation', () => {

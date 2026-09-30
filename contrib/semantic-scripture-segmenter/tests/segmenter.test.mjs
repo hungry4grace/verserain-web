@@ -153,3 +153,28 @@ test('a colon may join a short continuation across verse records', () => {
     { fragments: ['你們當回轉。', '眾人都聽見。'] }
   ]), ['有人宣告：你們當回轉。', '眾人都聽見。']);
 });
+
+test('a fragment that spans a comma must also end on punctuation (John 1:14)', () => {
+  const result = segmentScripture('道成了肉身，住在我們中間，充充滿滿地有恩典有真理。我們也見過他的榮光，正是父獨生子的榮光。');
+  assert.deepEqual(result.fragments, [
+    '道成了肉身，',
+    '住在我們中間，',
+    '充充滿滿地',
+    '有恩典有真理。',
+    '我們也見過他的榮光，',
+    '正是父獨生子的榮光。'
+  ]);
+  assert.equal(result.healthState, 'VALID');
+});
+
+test('the tail of one clause is not joined to the next clause', () => {
+  const result = segmentScripture('你們要去，使萬民作我的門徒，奉父、子、聖靈的名給他們施洗。');
+  assert.ok(!result.fragments.some((fragment) => /^門徒，/u.test(fragment)), result.fragments.join('｜'));
+});
+
+test('a reduplicated adverb keeps its 地, and a clause may still start with 地', () => {
+  assert.deepEqual(segmentScripture('外邦人要衰殘，戰戰兢兢地出他們的營寨。').fragments,
+    ['外邦人要衰殘，', '戰戰兢兢地', '出他們的營寨。']);
+  assert.deepEqual(segmentScripture('天是我的座位，地是我的腳凳。').fragments,
+    ['天是我的座位，', '地是我的腳凳。']);
+});
