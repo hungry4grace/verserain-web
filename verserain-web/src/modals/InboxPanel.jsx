@@ -14,7 +14,7 @@ export default function InboxPanel({ t, adminPending, changeDailyVerseDate, clai
         <div style={{ flex: '1 1 auto', minHeight: 0, overflowY: 'auto', padding: '0.6rem 0' }}>
           {isSuperAdmin && adminPending && (adminPending.pools > 0 || adminPending.places > 0 || adminPending.contests > 0) && (
             <div data-testid="admin-pending-banner" style={{ margin: '0 0.9rem 0.5rem', background: '#fff1f2', border: '1px solid #fecdd3', borderRadius: 10, padding: '0.6rem 0.8rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
-              <span style={{ color: '#9f1239', fontWeight: 700, fontSize: '0.88rem' }}>{t('待審核：{a} 個愛心行動、{b} 個地圖標記、{c} 個讀經比賽', 'Awaiting review: {a} Love in Action projects, {b} map markers, {c} reading contests').replace('{a}', String(adminPending.pools)).replace('{b}', String(adminPending.places)).replace('{c}', String(adminPending.contests || 0))}</span>
+              <span style={{ color: '#9f1239', fontWeight: 700, fontSize: '0.88rem' }}>{(adminPending.pools > 0 ? t('待審核：{a} 個愛心行動、{b} 個地圖標記、{c} 個讀經比賽', 'Awaiting review: {a} Love in Action projects, {b} map markers, {c} reading contests') : t('待審核：{b} 個地圖標記、{c} 個讀經比賽', 'Awaiting review: {b} map markers, {c} reading contests')).replace('{a}', String(adminPending.pools)).replace('{b}', String(adminPending.places)).replace('{c}', String(adminPending.contests || 0))}</span>
               <button onClick={() => { setShowEncouragePanel(false); setMainTab('rewards_admin'); }} style={{ background: '#be123c', color: '#fff', border: 'none', borderRadius: 8, padding: '0.3rem 0.8rem', fontSize: '0.82rem', fontWeight: 700, cursor: 'pointer' }}>{t('去審核', 'Review it')} →</button>
             </div>
           )}

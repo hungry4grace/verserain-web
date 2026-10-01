@@ -2,6 +2,7 @@
 import { Button, ListGroup, ListRow } from '../ui';
 import { CloudRain, Crown, Gift, Headphones, Heart, Info, Languages, Library, Mail, MessageCircle, Settings, Store, Ticket, TreePine, UserRound, Users } from 'lucide-react';
 import { SHOW_DONATE } from '../lib/routes.js';
+import { SHOW_CHARITY } from '../../api/_lib/features.js';
 
 export default function AdvancedPage({ t, combinedInbox, isPremium, isSuperAdmin, menuScrollRef, playerName, pushStatus, scrollMenuTo, setMainTab, setShowEncouragePanel, setShowLoginModal, setShowPushModal, userEmail }) {
   const go = (id) => { setMainTab(id); const el = menuScrollRef.current; if (el) el.scrollTop = 0; };
@@ -45,9 +46,9 @@ export default function AdvancedPage({ t, combinedInbox, isPremium, isSuperAdmin
         {row('morningPush', CloudRain, '#0ea5e9', pushStatus === 'subscribed' ? t('已開啟每日經文推播', 'Daily Verse Push: On') : t('開啟每日經文推播', 'Daily Verse Push'), t('每天上午 7 點手機推播今日經文', 'Get today\'s verse pushed at 7am'), () => setShowPushModal(true))}
       </ListGroup>
 
-      <ListGroup title={t('愛心與合作', 'Giving & partners')} testId="me-group-partners">
-        {row('charity', Heart, '#e11d48', t('愛心行動', 'Love in Action'), t('投入點數，成為教會／機構的折抵額度', 'Turn points into a discount allowance for a church or organisation'), () => go('charity'))}
-        {row('sponsor', Gift, '#7c3aed', t('贊助經文雨', 'Sponsor VerseRain'), t('企業家與教會如何加入推廣讀經', 'How businesses & churches can join'), () => go('sponsor'))}
+      <ListGroup title={SHOW_CHARITY ? t('愛心與合作', 'Giving & partners') : t('商家與合作', 'Shops & partners')} testId="me-group-partners">
+        {SHOW_CHARITY && row('charity', Heart, '#e11d48', t('愛心行動', 'Love in Action'), t('投入點數，成為教會／機構的折抵額度', 'Turn points into a discount allowance for a church or organisation'), () => go('charity'))}
+        {row('sponsor', Gift, '#7c3aed', t('贊助經文雨', 'Sponsor VerseRain'), SHOW_CHARITY ? t('企業家與教會如何加入推廣讀經', 'How businesses & churches can join') : t('商家如何用點數折扣推廣讀經', 'How shops can promote Bible reading with a points discount'), () => go('sponsor'))}
         {SHOW_DONATE && row('donate', Heart, '#ef4444', t('支持經文雨', 'Support VerseRain'), t('小額支持 App 開發與維運', 'Help fund development & hosting'), () => go('donate'))}
         {row('merchant', Store, '#d97706', t('登記商家／教會', 'Register a shop / church'), t('在「誰在玩」地圖上標記，提供點數折扣', 'Get on the map and offer a points discount'), () => go('merchant'))}
         {row('verify', Ticket, '#0d9488', t('折扣券核銷', 'Verify a coupon'), t('店家輸入代碼確認折扣', 'Shops confirm a customer’s voucher here'), () => go('verify'))}

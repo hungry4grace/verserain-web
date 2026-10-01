@@ -7,6 +7,7 @@ import { confirmDialog } from '../ui';
 import { iosAppSupportsCamera, isInIosNativeApp } from '../lib/platform.js';
 import { compactBtn } from '../lib/compactBtn.js';
 import { isValidPlaceTaxId } from '../../api/_lib/places.js';
+import { OPEN_PLACE_KINDS, SHOW_CHARITY } from '../../api/_lib/features.js';
 
 
 // The pin-drop map stays out of the initial bundle.
@@ -25,7 +26,7 @@ export default function MerchantPage({ t, cancelEditPlace, geocodeMerchant, hand
         <button type="button" onClick={() => setMainTab('advanced')} style={{ background: 'transparent', border: '1px solid #cbd5e1', color: '#64748b', borderRadius: '6px', padding: '0.35rem 0.8rem', cursor: 'pointer', fontSize: '0.85rem' }}>← {t('返回', 'Back')}</button>
       </div>
       <p style={{ color: '#475569', lineHeight: 1.7, marginTop: 0 }}>
-        {t('商家提供 5–20% 折扣，玩家用背經點數折抵（每 1,000 點折抵 NT$1；點數無現金價值、不可兌換現金），折扣由商家自行吸收，經文雨不經手款項。教會與機構可登記為贊助者標記。經管理員審核後就會出現在「誰在玩」地圖上。', 'Shops offer a 5–20% discount that players take with verse points (every 1,000 points takes NT$1 off; points have no cash value and cannot be cashed out); the shop absorbs the discount and VerseRain never handles money. Churches and organisations can register as sponsor markers. Markers appear on the map after admin review.')}
+        {t('商家提供 5–20% 折扣，玩家用背經點數折抵（每 1,000 點折抵 NT$1；點數無現金價值、不可兌換現金），折扣由商家自行吸收，經文雨不經手款項。教會也可以登記，在地圖上舉辦讀經比賽。經管理員審核後就會出現在「誰在玩」地圖上。', 'Shops offer a 5–20% discount that players take with verse points (every 1,000 points takes NT$1 off; points have no cash value and cannot be cashed out); the shop absorbs the discount and VerseRain never handles money. Churches can register too, to host reading contests on the map. Markers appear on the map after admin review.')}
       </p>
       <p data-testid="merchant-points-notice" style={{ color: '#64748b', fontSize: '0.8rem', lineHeight: 1.6, marginTop: '-0.4rem' }}>{t('點數聲明：點數是遊戲內無償取得的促銷折抵權益，無現金價值、不可兌換現金、不可轉讓或轉售，亦非儲值或電子支付；折扣由商家自行提供，經文雨不經手任何款項。', 'About points: points are a free in-game promotional discount right with no cash value; they cannot be cashed out, transferred or resold, and are not stored value or e-payment. Discounts are offered by the shops themselves; VerseRain never handles money.')}</p>
       {!userEmail ? (
@@ -54,12 +55,12 @@ export default function MerchantPage({ t, cancelEditPlace, geocodeMerchant, hand
             )}
             {!m.editing && (
               <div data-testid="place-taiwan-only" style={{ background: '#f0f9ff', border: '1px solid #bae6fd', borderRadius: 10, padding: '0.6rem 0.9rem', marginBottom: '0.6rem', color: '#075985', fontSize: '0.88rem', lineHeight: 1.5 }}>
-                🇹🇼 {t('目前只開放台灣的商家、教會與機構登記；送出後，管理員會打電話或實地確認，通過後地圖上會顯示「✓ 已驗證」。', 'Registration is open to places in Taiwan only. After you submit, an admin confirms by phone or in person; verified places show “✓ Verified” on the map.')}
+                🇹🇼 {t('目前只開放台灣的商家與教會登記；送出後，管理員會打電話或實地確認，通過後地圖上會顯示「✓ 已驗證」。', 'Registration is open to shops and churches in Taiwan only. After you submit, an admin confirms by phone or in person; verified places show “✓ Verified” on the map.')}
               </div>
             )}
             <label style={label}>{t('類型', 'Type')}</label>
             <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-              {[['merchant', `🏪 ${t('商家', 'Shop')}`], ['church', `⛪ ${t('教會', 'Church')}`], ['org', `🏢 ${t('機構', 'Organisation')}`]].map(([k, lbl]) => (
+              {[['merchant', `🏪 ${t('商家', 'Shop')}`], ['church', `⛪ ${t('教會', 'Church')}`], ['org', `🏢 ${t('機構', 'Organisation')}`]].filter(([k]) => OPEN_PLACE_KINDS.includes(k) || (m.editing && m.editing.kind === k)).map(([k, lbl]) => (
                 <button key={k} type="button" onClick={() => setMerchantDraft(d => ({ ...d, kind: k }))} style={{ padding: '0.4rem 0.9rem', borderRadius: 999, border: `2px solid ${m.kind === k ? '#d97706' : '#cbd5e1'}`, background: m.kind === k ? '#fef3c7' : '#fff', color: '#334155', cursor: 'pointer', fontWeight: 700 }}>{lbl}</button>
               ))}
             </div>
@@ -143,7 +144,7 @@ export default function MerchantPage({ t, cancelEditPlace, geocodeMerchant, hand
             )}
             <label style={{ display: 'flex', gap: 8, alignItems: 'flex-start', marginTop: '1rem', color: '#334155', fontSize: '0.88rem', lineHeight: 1.5 }}>
               <input type="checkbox" checked={!!m.agree} onChange={e => setMerchantDraft(d => ({ ...d, agree: e.target.checked }))} style={{ marginTop: 3 }} />
-              <span>{t('我是這個商家／機構的負責人，或經負責人授權的代表；以上資料屬實並同意公開顯示。折扣由商家自行提供並吸收，經文雨不經手任何款項、不保證兌現，並保留審核與下架的權利。', 'I run this shop / organisation, or am authorised by the person who does; the details are accurate and may be shown publicly. Discounts are offered and absorbed by the shop; VerseRain never handles money, does not guarantee redemption, and may review or remove listings.')}</span>
+              <span>{t('我是這個商家／教會的負責人，或經負責人授權的代表；以上資料屬實並同意公開顯示。折扣由商家自行提供並吸收，經文雨不經手任何款項、不保證兌現，並保留審核與下架的權利。', 'I run this shop / church, or am authorised by the person who does; the details are accurate and may be shown publicly. Discounts are offered and absorbed by the shop; VerseRain never handles money, does not guarantee redemption, and may review or remove listings.')}</span>
             </label>
             <button type="button" disabled={merchantBusy} onClick={submitMerchant} style={{ marginTop: '0.9rem', background: '#d97706', color: '#fff', border: 'none', borderRadius: 10, padding: '0.65rem 1.4rem', cursor: 'pointer', fontWeight: 800, fontSize: '1rem' }}>{merchantBusy ? '…' : (m.editing ? t('儲存修改', 'Save changes') : t('送出審核', 'Submit for review'))}</button>
             {merchantSubmitStatus && (
@@ -184,7 +185,7 @@ export default function MerchantPage({ t, cancelEditPlace, geocodeMerchant, hand
                       </span>
                     </div>
                     {pl.referrerCode ? <div style={{ color: '#64748b', fontSize: '0.8rem', marginTop: '0.25rem' }}>🤝 {t('推薦者', 'Referrer')}：{pl.referrerName || pl.referrerCode}</div> : null}
-                    {pl.kind === 'merchant' && pl.status === 'approved' ? renderMerchantPoolSection(pl) : null}
+                    {SHOW_CHARITY && pl.kind === 'merchant' && pl.status === 'approved' ? renderMerchantPoolSection(pl) : null}
                     {canLedger && open && (
                       <div style={{ marginTop: '0.6rem', paddingTop: '0.6rem', borderTop: '1px dashed #e2e8f0' }}>
                         {!led || led.loading ? <div style={{ color: '#94a3b8' }}>{t('載入中…', 'Loading…')}</div> : led.error ? (

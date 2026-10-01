@@ -2,6 +2,7 @@
 import { Map } from 'lucide-react';
 import React from 'react';
 import { initAudio, playPulseTone, playWelcomeFanfare } from '../lib/audio.js';
+import { SHOW_CHARITY } from '../../api/_lib/features.js';
 
 // The 3D globe (three / react-globe.gl) stays out of the initial bundle.
 const WorldMap = React.lazy(() => import('../WorldMap'));
@@ -29,7 +30,7 @@ export default function MapPage({ t, handleViewPlayerGarden, isGuestJoinRef, joi
         playWelcome={playWelcomeFanfare}
         onEnableAudio={initAudio}
         onRedeem={openRedeem}
-        onOpenPool={(poolId) => { setCharityFocus(poolId); setMainTab('charity'); }}
+        onOpenPool={SHOW_CHARITY ? (poolId) => { setCharityFocus(poolId); setMainTab('charity'); } : undefined}
         onOpenContest={(contestId) => { setContestFocus(contestId); setMainTab('contests'); }}
         onViewGarden={(name) => {
         handleViewPlayerGarden(name);

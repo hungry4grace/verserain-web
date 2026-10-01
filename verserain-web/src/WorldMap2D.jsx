@@ -549,7 +549,7 @@ export default function WorldMap2D({ t, playerName, userEmail, onJoinRoom, onVie
         <div style="font-family: system-ui, sans-serif; min-width: 180px; max-width: 240px; color:#1e293b;">
           ${photo}
           <div style="font-size:0.72rem;color:#64748b;margin-bottom:2px;">${st.emoji} ${escapeHtml(kindLabel)}</div>
-          <div style="font-weight:800;font-size:1.05rem;margin-bottom:4px;">${escapeHtml(pl.name)}${pl.verified ? ` <span class="vr-place-verified" title="${escapeHtml(t('經文雨已確認這個商家／機構的負責人', 'VerseRain has confirmed who runs this place'))}" style="display:inline-block;vertical-align:middle;background:#dcfce7;color:#166534;border:1px solid #86efac;border-radius:999px;padding:0 7px;font-size:0.72rem;font-weight:800;">✓ ${escapeHtml(t('已驗證', 'Verified'))}</span>` : ''}</div>
+          <div style="font-weight:800;font-size:1.05rem;margin-bottom:4px;">${escapeHtml(pl.name)}${pl.verified ? ` <span class="vr-place-verified" title="${escapeHtml(t('經文雨已確認這個地點的負責人', 'VerseRain has confirmed who runs this place'))}" style="display:inline-block;vertical-align:middle;background:#dcfce7;color:#166534;border:1px solid #86efac;border-radius:999px;padding:0 7px;font-size:0.72rem;font-weight:800;">✓ ${escapeHtml(t('已驗證', 'Verified'))}</span>` : ''}</div>
           ${poolLine}${contestLine}
           ${discount}
           ${text ? `<div style="font-size:0.85rem;color:#334155;line-height:1.5;margin-bottom:6px;white-space:pre-wrap;">${escapeHtml(text)}</div>` : ''}
@@ -759,7 +759,7 @@ export default function WorldMap2D({ t, playerName, userEmail, onJoinRoom, onVie
           </button>
           {onTogglePlaces && (
             <button
-              title={t('顯示贊助的商家、教會與機構', 'Show sponsoring shops, churches and organisations')}
+              title={t('顯示商家與教會', 'Show shops and churches')}
               onClick={() => onTogglePlaces()}
               style={{ background: placesMode ? '#d97706' : '#fef3c7', color: placesMode ? '#fff' : '#92400e', border: 'none', padding: '0.3rem 0.8rem', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.8rem' }}
             >
@@ -854,13 +854,10 @@ export default function WorldMap2D({ t, playerName, userEmail, onJoinRoom, onVie
                   {t('商家 = 點數折抵', 'shop = points discount')}
                 </span>
                 <span style={{ display: 'inline-flex', alignItems: 'center', gap: 7 }}>
-                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3 }}>
-                    <span style={{ width: 14, height: 14, borderRadius: '50%', background: '#7c3aed', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 9 }}>⛪</span>
-                    <span style={{ width: 14, height: 14, borderRadius: 4, background: '#0d9488', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 9 }}>🏢</span>
-                  </span>
-                  {t('教會、機構 = 贊助者', 'church / org = sponsor')}
+                  <span style={{ width: 14, height: 14, borderRadius: '50%', background: '#7c3aed', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 9 }}>⛪</span>
+                  {t('教會 = 讀經比賽主辦', 'church = hosts reading contests')}
                 </span>
-                {places.some(pl => pl && pl.poolId) && (
+                {onOpenPool && places.some(pl => pl && pl.poolId) && (
                   <span style={{ display: 'inline-flex', alignItems: 'center', gap: 7 }}>
                     <span style={{ position: 'relative', width: 14, height: 14, marginRight: 4, borderRadius: '50%', background: '#7c3aed', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 9 }}>⛪<span style={{ position: 'absolute', right: -6, top: -5, width: 10, height: 10, borderRadius: '50%', background: '#fff', border: '1px solid #fecdd3', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 6 }}>❤️</span></span>
                     {t('加 ❤️ = 有愛心行動，可投入點數', '+ ❤️ = has a Love in Action project, contribute here')}

@@ -1,4 +1,5 @@
 // UI language, deep-link routes and share URLs — moved out of App.jsx (UI/UX 第 4 階段).
+import { SHOW_CHARITY } from '../../api/_lib/features.js';
 
 export const PUBLIC_APP_ORIGIN = 'https://www.verserain.com';
 
@@ -125,7 +126,8 @@ export const FIRST_RUN = (() => {
 
 export function parseRoute(hash) {
   const seg = String(hash || '').replace(/^#\/?/, '').split('/').filter(Boolean);
-  const tab = ROUTE_TABS.includes(seg[0]) ? seg[0] : 'lobby';
+  // #charity (old push links, bookmarks) lands on the lobby while 愛心行動 is paused.
+  const tab = ROUTE_TABS.includes(seg[0]) && (SHOW_CHARITY || seg[0] !== 'charity') ? seg[0] : 'lobby';
   const r = { tab, setId: null, listen: false, edit: false, play: false, roomId: null, code: null };
   // #verify/<code> — the store-side voucher check, deep-linked from the QR.
   if (tab === 'verify') { r.code = seg[1] ? decodeURIComponent(seg[1]) : null; return r; }

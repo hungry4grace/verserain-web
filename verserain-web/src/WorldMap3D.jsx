@@ -476,7 +476,7 @@ export default function WorldMap3D({ t, playerName, onJoinRoom, onToggleMode, cu
           </button>
           {onTogglePlaces && (
             <button
-              title={t('顯示贊助的商家、教會與機構', 'Show sponsoring shops, churches and organisations')}
+              title={t('顯示商家與教會', 'Show shops and churches')}
               onClick={() => onTogglePlaces()}
               style={{ background: placesMode ? '#d97706' : '#fef3c7', color: placesMode ? '#fff' : '#92400e', border: 'none', padding: '0.3rem 0.8rem', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.8rem' }}
             >

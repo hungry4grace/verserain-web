@@ -4,6 +4,7 @@ import React from 'react';
 import { CATALOG as VOUCHER_CATALOG } from '../../api/_lib/rewardCatalog.js';
 import { confirmDialog } from '../ui';
 import { compactBtn } from '../lib/compactBtn.js';
+import { SHOW_CHARITY } from '../../api/_lib/features.js';
 
 
 // The pin-drop map stays out of the initial bundle.
@@ -225,8 +226,8 @@ export default function RewardsAdminPage({ t, adminToken, cashOrgTypeLabel, cash
               );
             })()}
 
-            {/* 愛心行動審核 */}
-            {(() => {
+            {/* 愛心行動審核 — hidden while 愛心行動 is paused (SHOW_CHARITY) */}
+            {SHOW_CHARITY && (() => {
               const all = poolsAdmin || [];
               const cashPending = (p) => p.cashAppeal?.status === 'pending';
               const shown = all.filter(p => poolsAdminFilter === 'all' ? true : poolsAdminFilter === 'pending' ? (p.status === 'pending' || cashPending(p)) : p.status === poolsAdminFilter);
