@@ -8,6 +8,7 @@ import TodayPage from './TodayPage.jsx';
 import SettingsPage from './SettingsPage.jsx';
 import Onboarding from './Onboarding.jsx';
 import { CATALOG as VOUCHER_CATALOG, DEFAULT_VALUE as VOUCHER_DEFAULTS } from '../api/_lib/rewardCatalog.js';
+import { isInTaiwan, isValidPlaceTaxId } from '../api/_lib/places.js';
 import confetti from 'canvas-confetti';
 import usePartySocket from 'partysocket/react';
 import PartySocket from 'partysocket';
@@ -3759,6 +3760,9 @@ export default function App() {
     verses_required: t('這組經文組目前沒有內容，請換一組', 'This verse set has no verses — pick another one'),
     ends_after_starts: t('結束時間必須晚於開始時間', 'The end date must be after the start date'),
     name_required: t('請輸入活動名稱', 'Please enter a name for the contest'),
+    taiwan_only: t('目前只開放台灣的商家、教會與機構登記', 'Registration is currently open to places in Taiwan only'),
+    tax_id_invalid: t('統一編號不正確（商家需 8 碼統一編號；教會／機構可填統一編號或立案字號）', 'Invalid business number (shops need an 8-digit 統一編號; churches and organisations may give a 統一編號 or registration number)'),
+    declaration_required: t('請勾選「我是負責人」的聲明', 'Please tick the declaration that you run this place'),
   })[code] || String(code || 'error');
   const fetchPointsBalance = async () => {
     if (!userEmail) return null;
@@ -3978,7 +3982,7 @@ export default function App() {
   }, [mainTab]);
 
   // ── 商家／教會／機構登記 (map place registration) ───────────────────────
-  const newPlaceDraft = () => ({ id: 'pl_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), kind: 'merchant', name: '', address: '', lat: null, lng: null, discountPct: 10, dailyPerPerson: 3, description: '', message: '', phone: '', website: '', hours: '', photoAssetId: '', photoMime: '', referrerCode: '', agree: false, editing: null });
+  const newPlaceDraft = () => ({ id: 'pl_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), kind: 'merchant', name: '', address: '', lat: null, lng: null, discountPct: 10, dailyPerPerson: 3, description: '', message: '', phone: '', website: '', hours: '', taxId: '', photoAssetId: '', photoMime: '', referrerCode: '', agree: false, editing: null });
   // The draft lives in localStorage: a first-time submit may bounce the owner
   // to re-login (new session key), and nobody should retype a listing.
   const [merchantDraft, setMerchantDraft] = useState(() => {
@@ -4028,7 +4032,7 @@ export default function App() {
   // ── Owner self-service on 「我的登記」 (edit / 下架 / 重新上架 / delete) ──
   const [myPlaceBusyId, setMyPlaceBusyId] = useState(null);
   const merchantFormRef = useRef(null);
-  const PLACE_DRAFT_FIELDS = ['kind', 'name', 'address', 'lat', 'lng', 'discountPct', 'dailyPerPerson', 'description', 'message', 'phone', 'website', 'hours', 'photoAssetId', 'photoMime'];
+  const PLACE_DRAFT_FIELDS = ['kind', 'name', 'address', 'lat', 'lng', 'discountPct', 'dailyPerPerson', 'description', 'message', 'phone', 'website', 'hours', 'photoAssetId', 'photoMime', 'taxId'];
   const cancelEditPlace = () => {
     setMerchantDraft(newPlaceDraft()); setMerchantPhotoPreview(null); setMerchantSubmitStatus(null);
     try { localStorage.removeItem('verserain_merchant_draft'); } catch { /* ignore */ }
@@ -4104,6 +4108,8 @@ export default function App() {
     setMerchantSubmitStatus(null);
     if (!m.name.trim() || !m.address.trim()) { toast.error(t('請填寫名稱與地址', 'Name and address are required')); return; }
     if (!Number.isFinite(m.lat) || !Number.isFinite(m.lng)) { toast.error(t('請先按「定位」或在地圖上點選位置', 'Locate the address or pick the spot on the map first')); return; }
+    if (!m.editing && !isInTaiwan(m.lat, m.lng)) { toast.error(redeemErrorText('taiwan_only'), 3500); return; }
+    if ((!m.editing || String(m.taxId || '').trim()) && !isValidPlaceTaxId(m.kind, m.taxId)) { toast.error(redeemErrorText('tax_id_invalid'), 4000); return; }
     if (!m.agree) { toast.error(t('請勾選同意條款', 'Please tick the agreement'), 2500); return; }
     const referrerCode = String(m.referrerCode || '').trim();
     if (!m.editing && referrerCode && !REFERRAL_CODE_RE.test(referrerCode)) { toast.error(t('推薦碼格式不正確，應為 10 個字母/數字。', 'Invalid format. Expected 10 letters/numbers.')); return; }
@@ -4118,7 +4124,9 @@ export default function App() {
     if (!sessionKey) { needLogin(); return; }
     setMerchantBusy(true);
     try {
-      const { agree, editing, ...place } = m; void agree;
+      const { agree, editing, ...place } = m;
+      place.declare = !!agree;
+      place.taxId = String(m.taxId || '').trim();
       place.referrerCode = referrerCode;
       const payload = editing
         ? { action: 'owner_update', email: userEmail, sessionKey, placeId: m.id, place }
@@ -7236,7 +7244,7 @@ export default function App() {
                     verserain
                   </div>
                   <div className="app-brand-version" style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', marginTop: '4px', marginLeft: '2px' }}>
-                    v4.0.162
+                    v4.0.163
                   </div>
                 </div>
                 <div ref={langPickerRef} className="app-lang-control" style={{ position: 'relative' }}>

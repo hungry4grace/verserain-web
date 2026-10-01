@@ -7,6 +7,7 @@ import {
   listPlaces, getPlace, savePlace, deletePlace, countSubmissionsToday, bumpSubmissions,
   PLACE_ID_RE, DEFAULT_DAILY_CAP_NTD, STATUSES, MAJOR_FIELDS, MINOR_FIELDS,
   classifyOwnerEdit, applyOwnerEdit, applyOwnerAction, canOwnerDelete, canAdminDelete, ownerView, REFERRER_CODE_RE,
+  isValidTaiwanUbn, isValidPlaceTaxId, isInTaiwan, newRegistrationError, VERIFY_METHODS,
 } from './places.js';
 
 function stubRedis() {
@@ -108,7 +109,7 @@ test('publicView returns only approved places with public fields', () => {
   const hidden = { ...base, id: 'pl_hidden0001', status: 'hidden' };
   const v = publicView([approved, pending, hidden, null]);
   assert.strictEqual(v.length, 1);
-  assert.deepStrictEqual(Object.keys(v[0]).sort(), ['address', 'contestCount', 'contestId', 'contestName', 'dailyPerPerson', 'description', 'discountPct', 'hours', 'id', 'kind', 'lat', 'lng', 'message', 'name', 'phone', 'photoAssetId', 'photoMime', 'poolCount', 'poolId', 'poolName', 'website'].sort());
+  assert.deepStrictEqual(Object.keys(v[0]).sort(), ['address', 'contestCount', 'contestId', 'contestName', 'dailyPerPerson', 'description', 'discountPct', 'hours', 'id', 'kind', 'lat', 'lng', 'message', 'name', 'phone', 'photoAssetId', 'photoMime', 'poolCount', 'poolId', 'poolName', 'verified', 'website'].sort());
   assert.strictEqual(v[0].dailyPerPerson, 3);
   assert.strictEqual(v[0].poolId, '', 'no pool table → empty poolId');
   const withPool = publicView([approved, pending], { poolByPlace: { pl_approved01: 'cp_abc12345', pl_pending001: 'cp_zzz99999' } });
@@ -253,11 +254,11 @@ test('classifyOwnerEdit: minor vs major, tolerant of number/string and legacy de
     assert.deepStrictEqual(c.major, [], `${f} is minor`);
     assert.ok(c.minor.includes(f), `${f} reported`);
   }
-  for (const [f, val] of [['name', '新名'], ['address', '台北市中正區另一條路 1 號'], ['lat', 25.1], ['lng', 121.6], ['discountPct', 15], ['dailyPerPerson', 5], ['kind', 'church']]) {
+  for (const [f, val] of [['name', '新名'], ['address', '台北市中正區另一條路 1 號'], ['lat', 25.1], ['lng', 121.6], ['discountPct', 15], ['dailyPerPerson', 5], ['kind', 'church'], ['taxId', '04595257']]) {
     const c = classifyOwnerEdit(ex, edit(ex, { [f]: val }));
     assert.ok(c.major.includes(f), `${f} is major: ${JSON.stringify(c)}`);
   }
-  assert.deepStrictEqual(MAJOR_FIELDS.length, 7);
+  assert.deepStrictEqual(MAJOR_FIELDS.length, 8);
   // same coordinates typed differently, legacy record without dailyPerPerson, church discount 0 vs undefined
   assert.deepStrictEqual(classifyOwnerEdit({ ...ex, lat: '25.04212' }, edit(ex, {})).major, []);
   const legacy = { ...ex }; delete legacy.dailyPerPerson;
@@ -323,4 +324,61 @@ test('who may delete: owner only before any voucher, admin only off-map statuses
   assert.strictEqual(canOwnerDelete(stored({ stats: { issued: '2' } })), false);
   for (const st of ['rejected', 'hidden', 'withdrawn']) assert.strictEqual(canAdminDelete(stored({ status: st })), true, st);
   for (const st of ['approved', 'pending']) assert.strictEqual(canAdminDelete(stored({ status: st })), false, st);
+});
+
+// ── 台灣限定＋驗證 ───────────────────────────────────────────────────────────
+test('isValidTaiwanUbn: 統一編號 checksum, incl. the 7th-digit-7 rule', () => {
+  for (const ok of ['22099131', '04595257', '12345675', '10458575', '10458574']) assert.strictEqual(isValidTaiwanUbn(ok), true, ok);
+  for (const bad of ['22099132', '12345678', '00000000', '1234567', '123456789', 'abcdefgh', '', null]) assert.strictEqual(isValidTaiwanUbn(bad), false, String(bad));
+});
+
+test('isValidPlaceTaxId: merchants need a 統一編號, churches may give a 立案字號', () => {
+  assert.strictEqual(isValidPlaceTaxId('merchant', '22099131'), true);
+  assert.strictEqual(isValidPlaceTaxId('merchant', '台內社字第123號'), false, 'a shop needs a real 統一編號');
+  assert.strictEqual(isValidPlaceTaxId('church', '台內社字第123號'), true);
+  assert.strictEqual(isValidPlaceTaxId('org', '22099131'), true);
+  assert.strictEqual(isValidPlaceTaxId('church', '22099132'), false, '8 digits must still pass the checksum');
+  assert.strictEqual(isValidPlaceTaxId('church', 'abc'), false, 'too short');
+  assert.strictEqual(isValidPlaceTaxId('merchant', ''), false);
+});
+
+test('isInTaiwan: Taiwan, Penghu, Kinmen, Matsu, Orchid Island — not Fujian, Texas or Africa', () => {
+  for (const [n, a, o] of [['Taipei', 25.03, 121.56], ['Kaohsiung', 22.63, 120.30], ['Penghu', 23.57, 119.58], ['Kinmen', 24.43, 118.32], ['Matsu', 26.16, 119.94], ['Lanyu', 22.05, 121.55], ['Green Island', 22.66, 121.49]]) {
+    assert.strictEqual(isInTaiwan(a, o), true, n);
+  }
+  for (const [n, a, o] of [['Xiamen', 24.48, 118.09], ['Fuzhou', 26.07, 119.30], ['Texas', 31.0, -100], ['Nairobi', -1.29, 36.82], ['NaN', NaN, 121]]) {
+    assert.strictEqual(isInTaiwan(a, o), false, n);
+  }
+});
+
+test('newRegistrationError: Taiwan, a valid number and the declaration', () => {
+  const p = (over = {}) => normalizePlaceSubmission({ ...merchant(), taxId: '22099131', ...over }, { ownerEmail: 'a@x.com', now: NOW });
+  assert.strictEqual(newRegistrationError(p(), { declare: true }), '');
+  assert.strictEqual(newRegistrationError(p({ lat: 31.0, lng: -100 }), { declare: true }), 'taiwan_only');
+  assert.strictEqual(newRegistrationError(p({ taxId: '' }), { declare: true }), 'tax_id_invalid');
+  assert.strictEqual(newRegistrationError(p(), {}), 'declaration_required');
+  assert.throws(() => p({ taxId: '22099132' }), /tax_id_invalid/, 'a bad number is refused even on edits');
+  assert.strictEqual(p().taxId, '22099131');
+});
+
+test('verify / unverify; a major owner edit clears the check; publicView shows only the flag', () => {
+  assert.deepStrictEqual(VERIFY_METHODS, ['phone', 'visit', 'known']);
+  const ex = stored({ taxId: '22099131' });
+  const v = applyAdminAction(ex, 'verify', { adminEmail: 'Admin@x.com', now: NOW, patch: { method: 'phone' } });
+  assert.strictEqual(v.verifyMethod, 'phone');
+  assert.strictEqual(v.verifiedBy, 'admin@x.com');
+  assert.ok(v.verifiedAt);
+  assert.throws(() => applyAdminAction(ex, 'verify', { patch: { method: 'guess' } }), /method/);
+  const pub = publicView([v])[0];
+  assert.strictEqual(pub.verified, true);
+  assert.strictEqual(pub.taxId, undefined, 'the 統一編號 never reaches the public map');
+  assert.strictEqual(publicView([ex])[0].verified, false);
+  // minor edit keeps the check, a major one (new address) drops it
+  assert.ok(applyOwnerEdit(v, edit(v, { phone: '02-9999' })).place.verifiedAt);
+  assert.strictEqual(applyOwnerEdit(v, edit(v, { address: '台北市大安區新地址 1 號' })).place.verifiedAt, null);
+  // admin edits and approvals keep it; unverify clears it
+  assert.ok(applyAdminAction(v, 'update', { adminEmail: 'a@x.com', patch: { note: 'n' } }).verifiedAt);
+  const u = applyAdminAction(v, 'unverify', { now: NOW });
+  assert.strictEqual(u.verifiedAt, null);
+  assert.strictEqual(u.verifyMethod, '');
 });
