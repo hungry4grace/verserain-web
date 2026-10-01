@@ -20,7 +20,7 @@ export const KINDS = ['merchant', 'church', 'org'];
 export const STATUSES = ['pending', 'approved', 'hidden', 'rejected', 'withdrawn'];
 // Owner edits: these fields change what a customer sees on the map / what a
 // voucher is worth, so changing them sends the place back through review…
-export const MAJOR_FIELDS = ['kind', 'name', 'address', 'lat', 'lng', 'discountPct', 'dailyPerPerson'];
+export const MAJOR_FIELDS = ['kind', 'name', 'address', 'lat', 'lng', 'discountPct', 'dailyPerPerson', 'taxId'];
 // …while these take effect at once and leave the status alone.
 export const MINOR_FIELDS = ['phone', 'hours', 'website', 'description', 'message', 'photoAssetId', 'photoMime'];
 export const PLACE_ID_RE = /^pl_[a-z0-9]{8,20}$/;
@@ -35,11 +35,70 @@ export const MAX_SUBMISSIONS_PER_DAY = 3;
 
 // Fields an admin may change through the `update` action (everything a
 // submitter can set, plus the admin-only note / cap / sponsor link).
-const ADMIN_PATCH_FIELDS = ['name', 'address', 'lat', 'lng', 'discountPct', 'description', 'message', 'photoAssetId', 'photoMime', 'phone', 'website', 'hours', 'dailyCapNTD', 'dailyPerPerson', 'note', 'kind', 'sponsorId', 'referrerCode'];
+const ADMIN_PATCH_FIELDS = ['name', 'address', 'lat', 'lng', 'discountPct', 'description', 'message', 'photoAssetId', 'photoMime', 'phone', 'website', 'hours', 'dailyCapNTD', 'dailyPerPerson', 'note', 'kind', 'sponsorId', 'referrerCode', 'taxId'];
 // Vouchers one person may open at this shop per day; 0 = unlimited. Mirrors
 // api/_lib/points.js (kept literal here so the validator stays dependency-free).
 export const DEFAULT_DAILY_PER_PERSON = 3;
 export const MAX_DAILY_PER_PERSON = 20;
+
+// ── Who may list (台灣限定＋驗證) ─────────────────────────────────────────
+// Self-registration is open to Taiwan only, with a business number and a
+// signed declaration, because a listing elsewhere can't be checked: anyone
+// could otherwise put "McDonald's, Texas — accepts VerseRain points" on the
+// map. Admins can still add a place anywhere by hand (action 'create').
+export const VERIFY_METHODS = ['phone', 'visit', 'known'];
+
+// 統一編號: 8 digits, weights 1,2,1,2,1,2,4,1, the digit-sums of the products
+// add up to a multiple of 5 (財政部 2023 rule; the older multiple-of-10 numbers
+// still pass). When the 7th digit is 7 its product 28 may count as 1 or 0.
+export function isValidTaiwanUbn(value) {
+  const s = String(value ?? '').trim();
+  if (!/^\d{8}$/.test(s) || s === '00000000') return false;
+  const w = [1, 2, 1, 2, 1, 2, 4, 1];
+  let sum = 0;
+  for (let i = 0; i < 8; i += 1) {
+    const p = Number(s[i]) * w[i];
+    sum += Math.floor(p / 10) + (p % 10);
+  }
+  if (sum % 5 === 0) return true;
+  return s[6] === '7' && (sum + 1) % 5 === 0;
+}
+
+// Merchants: a valid 統一編號. Churches / organisations: a 統一編號 or their
+// registration number (立案字號, free text) — an 8-digit entry must still
+// pass the checksum.
+export function isValidPlaceTaxId(kind, value) {
+  const s = String(value ?? '').trim();
+  if (!s) return false;
+  if (/^\d{8}$/.test(s)) return isValidTaiwanUbn(s);
+  if (kind === 'merchant') return false;
+  return s.length >= 4;
+}
+
+// Taiwan, Penghu, Kinmen and Matsu as boxes that stay off the Fujian coast
+// (one big rectangle would let Xiamen and Fuzhou through).
+const TAIWAN_BOXES = [
+  [21.85, 25.35, 120.0, 122.1],   // main island, Green Island, Orchid Island, Turtle Island
+  [23.15, 23.85, 119.3, 119.75],  // Penghu
+  [24.37, 24.55, 118.2, 118.5],   // Kinmen, Lieyu
+  [25.93, 26.4, 119.88, 120.52],  // Matsu (Nangan, Beigan, Juguang, Dongyin)
+];
+export function isInTaiwan(lat, lng) {
+  const a = Number(lat);
+  const o = Number(lng);
+  if (!Number.isFinite(a) || !Number.isFinite(o)) return false;
+  return TAIWAN_BOXES.some(([s, n, w, e]) => a >= s && a <= n && o >= w && o <= e);
+}
+
+// Pure: the extra rules a NEW self-registration must meet (not admin
+// 'create', not edits of places listed before these rules). Returns an error
+// code for the client, or '' when it may be submitted.
+export function newRegistrationError(place, input) {
+  if (!isInTaiwan(place.lat, place.lng)) return 'taiwan_only';
+  if (!isValidPlaceTaxId(place.kind, place.taxId)) return 'tax_id_invalid';
+  if (!input || input.declare !== true) return 'declaration_required';
+  return '';
+}
 
 function parse(s) {
   try { return typeof s === 'string' ? JSON.parse(s) : s; } catch { return null; }
@@ -95,6 +154,10 @@ export function normalizePlaceSubmission(input, { ownerEmail, ownerCode = '', no
   if (photoAssetId && !photoMime) throw new Error('photoMime required with photoAssetId');
   const website = clip(src.website, 120);
   if (website && !/^https?:\/\//i.test(website)) throw new Error('website must start with http:// or https://');
+  // 統一編號／立案字號 — private (never in publicView). Optional here so places
+  // listed before it existed still save; the register route requires it.
+  const taxId = clip(src.taxId !== undefined ? src.taxId : (ex && ex.taxId), 40).replace(/\s+/g, ' ');
+  if (taxId && !isValidPlaceTaxId(kind, taxId)) throw new Error('tax_id_invalid');
   const rawId = clip(src.id, 40);
   const id = PLACE_ID_RE.test(rawId) ? rawId : ((ex && ex.id) || newPlaceId(now.getTime()));
   let dailyCapNTD = ex && ex.dailyCapNTD !== undefined ? Number(ex.dailyCapNTD) : DEFAULT_DAILY_CAP_NTD;
@@ -115,6 +178,7 @@ export function normalizePlaceSubmission(input, { ownerEmail, ownerCode = '', no
     phone: clip(src.phone, 30),
     website,
     hours: clip(src.hours, 80),
+    taxId,
     ownerEmail: String(ownerEmail || (ex && ex.ownerEmail) || '').trim().toLowerCase(),
     ownerCode: String(ownerCode || (ex && ex.ownerCode) || '').trim(),
     // Admin-only: never taken from the submission (a player could otherwise
@@ -130,6 +194,11 @@ export function normalizePlaceSubmission(input, { ownerEmail, ownerCode = '', no
     updatedAt: now.toISOString(),
     approvedAt: (ex && ex.approvedAt) || null,
     approvedBy: (ex && ex.approvedBy) || '',
+    // The owner's 「我是負責人」 declaration, and the admin's identity check.
+    declaredAt: (ex && ex.declaredAt) || null,
+    verifiedAt: (ex && ex.verifiedAt) || null,
+    verifiedBy: (ex && ex.verifiedBy) || '',
+    verifyMethod: (ex && ex.verifyMethod) || '',
     note: (ex && ex.note) || '',
     stats: (ex && ex.stats) || { issued: 0, used: 0, usedNTD: 0 },
   };
@@ -149,6 +218,16 @@ export function applyAdminAction(place, action, { adminEmail = '', now = new Dat
       return { ...place, status: 'hidden', updatedAt: at };
     case 'unhide':
       return { ...place, status: 'approved', updatedAt: at };
+    case 'verify': {
+      // The admin confirmed who runs this place (phoned the listed number,
+      // visited, or knows them). Separate from approve: approved = on the map,
+      // verified = shows 「✓ 已驗證」.
+      const method = String((patch && patch.method) || '').trim();
+      if (!VERIFY_METHODS.includes(method)) throw new Error(`method must be ${VERIFY_METHODS.join('|')}`);
+      return { ...place, verifiedAt: at, verifiedBy: admin, verifyMethod: method, updatedAt: at };
+    }
+    case 'unverify':
+      return { ...place, verifiedAt: null, verifiedBy: '', verifyMethod: '', updatedAt: at };
     case 'update': {
       const p = patch || {};
       const merged = { ...place };
@@ -175,7 +254,7 @@ export function applyAdminAction(place, action, { adminEmail = '', now = new Dat
       return next;
     }
     default:
-      throw new Error('action must be approve|reject|hide|unhide|update');
+      throw new Error('action must be approve|reject|hide|unhide|verify|unverify|update');
   }
 }
 
@@ -211,6 +290,8 @@ export function applyOwnerEdit(existing, next, { now = new Date() } = {}) {
   else if (existing.status === 'rejected' || major) status = 'pending';
   const place = { ...next, status, updatedAt: now.toISOString() };
   if (status === 'pending' && existing.status !== 'pending') { place.approvedAt = null; place.approvedBy = ''; }
+  // A new name, address, spot or 統一編號 is a different place to vouch for.
+  if (major) { place.verifiedAt = null; place.verifiedBy = ''; place.verifyMethod = ''; }
   const reviewRequired = status === 'pending' && (major || existing.status !== 'pending');
   return { place, reviewRequired, changed };
 }
@@ -288,6 +369,7 @@ export function publicView(places, { poolByPlace = {}, contestByPlace = {} } = {
       phone: p.phone || '',
       website: p.website || '',
       hours: p.hours || '',
+      verified: !!p.verifiedAt,
     }));
 }
 

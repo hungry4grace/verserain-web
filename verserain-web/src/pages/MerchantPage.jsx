@@ -6,6 +6,7 @@ import VoucherScanner from '../VoucherScanner.jsx';
 import { confirmDialog } from '../ui';
 import { iosAppSupportsCamera, isInIosNativeApp } from '../lib/platform.js';
 import { compactBtn } from '../lib/compactBtn.js';
+import { isValidPlaceTaxId } from '../../api/_lib/places.js';
 
 
 // The pin-drop map stays out of the initial bundle.
@@ -51,6 +52,11 @@ export default function MerchantPage({ t, cancelEditPlace, geocodeMerchant, hand
                 <div style={{ marginTop: 4 }}>{t('電話、營業時間、網站、介紹、照片會立即更新；名稱、地址、位置、折扣、張數、類型改了會重新審核。', 'Phone, hours, website, description and photo update right away; changing name, address, location, discount, voucher count or type sends it back for review.')}</div>
               </div>
             )}
+            {!m.editing && (
+              <div data-testid="place-taiwan-only" style={{ background: '#f0f9ff', border: '1px solid #bae6fd', borderRadius: 10, padding: '0.6rem 0.9rem', marginBottom: '0.6rem', color: '#075985', fontSize: '0.88rem', lineHeight: 1.5 }}>
+                🇹🇼 {t('目前只開放台灣的商家、教會與機構登記；送出後，管理員會打電話或實地確認，通過後地圖上會顯示「✓ 已驗證」。', 'Registration is open to places in Taiwan only. After you submit, an admin confirms by phone or in person; verified places show “✓ Verified” on the map.')}
+              </div>
+            )}
             <label style={label}>{t('類型', 'Type')}</label>
             <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
               {[['merchant', `🏪 ${t('商家', 'Shop')}`], ['church', `⛪ ${t('教會', 'Church')}`], ['org', `🏢 ${t('機構', 'Organisation')}`]].map(([k, lbl]) => (
@@ -59,6 +65,11 @@ export default function MerchantPage({ t, cancelEditPlace, geocodeMerchant, hand
             </div>
             <label style={label}>{t('名稱', 'Name')}</label>
             <input type="text" value={m.name} onChange={e => setMerchantDraft(d => ({ ...d, name: e.target.value }))} maxLength={60} style={field} />
+            <label style={label}>{m.kind === 'merchant' ? t('統一編號（不公開，用來核對身分）', 'Business number 統一編號 (private, used to check who you are)') : t('統一編號或立案字號（不公開，用來核對身分）', '統一編號 or registration number (private, used to check who you are)')}</label>
+            <input type="text" data-testid="place-tax-id" value={m.taxId || ''} onChange={e => setMerchantDraft(d => ({ ...d, taxId: e.target.value }))} maxLength={40} inputMode={m.kind === 'merchant' ? 'numeric' : 'text'} placeholder={m.kind === 'merchant' ? '12345678' : ''} style={field} />
+            {String(m.taxId || '').trim() && !isValidPlaceTaxId(m.kind, m.taxId) && (
+              <div role="alert" data-testid="place-tax-id-error" style={{ color: '#b91c1c', fontSize: '0.8rem', marginTop: -4, marginBottom: 6 }}>{redeemErrorText('tax_id_invalid')}</div>
+            )}
             <label style={label}>{t('地址', 'Address')}</label>
             <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
               <input type="text" value={m.address} onChange={e => setMerchantDraft(d => ({ ...d, address: e.target.value }))} maxLength={160} style={{ ...field, flex: '1 1 240px' }} />
@@ -132,7 +143,7 @@ export default function MerchantPage({ t, cancelEditPlace, geocodeMerchant, hand
             )}
             <label style={{ display: 'flex', gap: 8, alignItems: 'flex-start', marginTop: '1rem', color: '#334155', fontSize: '0.88rem', lineHeight: 1.5 }}>
               <input type="checkbox" checked={!!m.agree} onChange={e => setMerchantDraft(d => ({ ...d, agree: e.target.checked }))} style={{ marginTop: 3 }} />
-              <span>{t('我確認以上資料屬實並同意公開顯示；商家折扣由商家自行吸收，經文雨不經手款項，並保留審核與下架的權利。', 'I confirm the details are accurate and may be shown publicly; the shop absorbs its own discount, VerseRain never handles money and may review or remove listings.')}</span>
+              <span>{t('我是這個商家／機構的負責人，或經負責人授權的代表；以上資料屬實並同意公開顯示。折扣由商家自行提供並吸收，經文雨不經手任何款項、不保證兌現，並保留審核與下架的權利。', 'I run this shop / organisation, or am authorised by the person who does; the details are accurate and may be shown publicly. Discounts are offered and absorbed by the shop; VerseRain never handles money, does not guarantee redemption, and may review or remove listings.')}</span>
             </label>
             <button type="button" disabled={merchantBusy} onClick={submitMerchant} style={{ marginTop: '0.9rem', background: '#d97706', color: '#fff', border: 'none', borderRadius: 10, padding: '0.65rem 1.4rem', cursor: 'pointer', fontWeight: 800, fontSize: '1rem' }}>{merchantBusy ? '…' : (m.editing ? t('儲存修改', 'Save changes') : t('送出審核', 'Submit for review'))}</button>
             {merchantSubmitStatus && (

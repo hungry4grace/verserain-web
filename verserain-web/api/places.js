@@ -9,6 +9,7 @@ import {
   listPlaces, getPlace, savePlace, deletePlace, normalizePlaceSubmission, applyAdminAction, publicView,
   countSubmissionsToday, bumpSubmissions, taipeiDay, MAX_SUBMISSIONS_PER_DAY,
   applyOwnerEdit, applyOwnerAction, canOwnerDelete, canAdminDelete, ownerView, REFERRER_CODE_RE,
+  newRegistrationError, isInTaiwan,
 } from './_lib/places.js';
 
 // Map places (地圖標記): merchants / churches / organisations on the world map.
@@ -32,7 +33,11 @@ import {
 //                                         vouchers stay redeemable) / 重新上架 (→ pending) / hard delete
 //                                         (only while stats.issued is 0, else 400 has_vouchers)
 //   Owner edits / withdraw / relist / delete never count toward the daily cap.
-//   POST { action: 'approve'|'reject'|'hide'|'unhide'|'update'|'delete', adminEmail, placeId, patch? }
+//   POST { action: 'approve'|'reject'|'hide'|'unhide'|'verify'|'unverify'|'update'|'delete', adminEmail, placeId, patch? }
+//                                         verify: patch { method: 'phone'|'visit'|'known' } → 「✓ 已驗證」 on the map
+//   New self-registrations must be in Taiwan (400 taiwan_only), carry a 統一編號
+//   (merchants) or 統一編號／立案字號 (churches, organisations) (400 tax_id_invalid)
+//   and place.declare === true, the 「我是負責人」 declaration (400 declaration_required).
 //   POST { action: 'create', adminEmail, place }   admin → approved straight away
 // A submission is only accepted when PartyKit confirms the (email, sessionKey)
 // pair is a live login, and each email may submit at most 3 places a day.
@@ -106,7 +111,7 @@ export default async function handler(req, res) {
         place.referrerName = ref.name;
       }
       await savePlace(redis, place);
-    } else if (['approve', 'reject', 'hide', 'unhide', 'update', 'delete'].includes(action)) {
+    } else if (['approve', 'reject', 'hide', 'unhide', 'verify', 'unverify', 'update', 'delete'].includes(action)) {
       const placeId = String(body.placeId || '').trim();
       place = placeId ? await getPlace(redis, placeId) : null;
       if (!place) return res.status(404).json({ error: 'Place not found' });
@@ -130,7 +135,7 @@ export default async function handler(req, res) {
         }
       }
     } else {
-      return res.status(400).json({ error: 'action must be register|create|approve|reject|hide|unhide|update|delete' });
+      return res.status(400).json({ error: 'action must be register|create|approve|reject|hide|unhide|verify|unverify|update|delete' });
     }
     res.status(200).json({ success: true, place, places: await listPlaces(redis) });
   } catch (error) {
@@ -240,6 +245,9 @@ async function register(req, res, redis, body) {
   } catch (e) {
     return res.status(400).json({ error: e.message });
   }
+  const ruleError = newRegistrationError(place, input);
+  if (ruleError) return res.status(400).json({ error: ruleError });
+  place.declaredAt = new Date().toISOString();
   // The introducer (推薦者), checked once here and locked from then on.
   const ref = await resolveReferrer(input.referrerCode);
   if (ref.error) return res.status(ref.status).json({ error: ref.error });
@@ -262,6 +270,10 @@ async function ownerUpdate(res, redis, { email, identity, place: existing }, inp
   } catch (e) {
     return res.status(400).json({ error: e.message });
   }
+  // Moving a listing is held to the Taiwan-only rule; places listed abroad
+  // earlier (by an admin) can still edit their phone, hours and so on.
+  const moved = Number(next.lat) !== Number(existing.lat) || Number(next.lng) !== Number(existing.lng);
+  if (moved && !isInTaiwan(next.lat, next.lng)) return res.status(400).json({ error: 'taiwan_only' });
   const { place, reviewRequired, changed } = applyOwnerEdit(existing, next, { now: new Date() });
   await savePlace(redis, place);
   if (reviewRequired) {

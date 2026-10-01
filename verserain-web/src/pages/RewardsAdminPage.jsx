@@ -128,6 +128,7 @@ export default function RewardsAdminPage({ t, adminToken, cashOrgTypeLabel, cash
               const inputStyle = { padding: '0.4rem 0.6rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.85rem', background: '#fff' };
               const smallBtn = compactBtn;
               const kindLabel = (k) => k === 'merchant' ? `🏪 ${t('商家', 'Shop')}` : k === 'church' ? `⛪ ${t('教會', 'Church')}` : `🏢 ${t('機構', 'Organisation')}`;
+              const verifyMethodLabel = (mth) => mth === 'phone' ? t('已電話確認', 'Confirmed by phone') : mth === 'visit' ? t('已實地確認', 'Confirmed in person') : mth === 'known' ? t('熟識', 'Known to us') : '';
               const ed = placeEdit;
               return (
                 <div style={{ border: '1px solid #ddd6fe', background: '#faf5ff', borderRadius: 10, padding: '0.9rem 1rem', marginBottom: '1rem' }}>
@@ -155,6 +156,7 @@ export default function RewardsAdminPage({ t, adminToken, cashOrgTypeLabel, cash
                       <textarea value={ed.kind === 'merchant' ? ed.description : ed.message} onChange={e => setPlaceEdit(d => ({ ...d, [ed.kind === 'merchant' ? 'description' : 'message']: e.target.value }))} placeholder={ed.kind === 'merchant' ? t('介紹', 'Description') : t('祝福語或簡介', 'Blessing or intro')} rows={2} style={{ ...inputStyle, gridColumn: '1 / -1' }} />
                       <input type="text" value={ed.hours || ''} onChange={e => setPlaceEdit(d => ({ ...d, hours: e.target.value }))} placeholder={t('營業時間', 'Hours')} style={inputStyle} />
                       <input type="text" value={ed.phone || ''} onChange={e => setPlaceEdit(d => ({ ...d, phone: e.target.value }))} placeholder={t('電話', 'Phone')} style={inputStyle} />
+                      <input type="text" value={ed.taxId || ''} onChange={e => setPlaceEdit(d => ({ ...d, taxId: e.target.value }))} placeholder={t('統一編號／立案字號', '統一編號 / registration no.')} style={inputStyle} />
                       <input type="text" value={ed.website || ''} onChange={e => setPlaceEdit(d => ({ ...d, website: e.target.value }))} placeholder="https://" style={inputStyle} />
                       <input type="text" value={ed.note || ''} onChange={e => setPlaceEdit(d => ({ ...d, note: e.target.value }))} placeholder={t('內部備註', 'Internal note')} style={{ ...inputStyle, gridColumn: '1 / -1' }} />
                       <div style={{ gridColumn: '1 / -1' }}>
@@ -171,7 +173,12 @@ export default function RewardsAdminPage({ t, adminToken, cashOrgTypeLabel, cash
                       {shown.map(pl => (
                         <div key={pl.id} style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 8, padding: '0.6rem 0.8rem', fontSize: '0.85rem', display: 'flex', justifyContent: 'space-between', gap: '0.6rem', flexWrap: 'wrap' }}>
                           <div style={{ minWidth: 0 }}>
-                            <div><b style={{ color: '#1e293b' }}>{pl.name}</b> <span style={{ color: '#64748b' }}>· {kindLabel(pl.kind)}{pl.kind === 'merchant' ? ` · -${pl.discountPct}%` : ''}</span></div>
+                            <div><b style={{ color: '#1e293b' }}>{pl.name}</b> <span style={{ color: '#64748b' }}>· {kindLabel(pl.kind)}{pl.kind === 'merchant' ? ` · -${pl.discountPct}%` : ''}</span>{pl.verifiedAt && <span data-testid="admin-place-verified" style={{ marginLeft: 6, background: '#dcfce7', color: '#166534', border: '1px solid #86efac', borderRadius: 999, padding: '0 8px', fontSize: '0.75rem', fontWeight: 700 }}>✓ {t('已驗證', 'Verified')}（{verifyMethodLabel(pl.verifyMethod)}）</span>}</div>
+                            <div style={{ color: '#475569', fontSize: '0.8rem' }}>
+                              🧾 {pl.taxId ? <>{t('統一編號／立案字號', '統一編號 / registration no.')}：<b>{pl.taxId}</b>{/^\d{8}$/.test(pl.taxId) && <> · <a href="https://findbiz.nat.gov.tw/" target="_blank" rel="noopener noreferrer" style={{ color: '#2563eb' }}>{t('到商工登記查詢', 'Look it up (findbiz)')}</a></>}</> : <span style={{ color: '#b45309' }}>{t('未提供統一編號', 'No business number given')}</span>}
+                              {pl.phone && <> · ☎️ {pl.phone}</>}
+                              {pl.declaredAt && <span style={{ color: '#94a3b8' }}> · {t('已聲明為負責人', 'Declared as the person in charge')} {new Date(pl.declaredAt).toLocaleDateString()}</span>}
+                            </div>
                             <div style={{ color: '#64748b' }}>📍 {pl.address} <span style={{ color: '#94a3b8' }}>({pl.lat}, {pl.lng})</span></div>
                             <div style={{ color: '#94a3b8', fontSize: '0.78rem' }}>{pl.ownerEmail} · {new Date(pl.createdAt).toLocaleDateString()}{pl.stats ? ` · ${t('已發 {a} 張／已用 {b} 張／NT${c}', '{a} issued / {b} used / NT${c}').replace('{a}', String(pl.stats.issued || 0)).replace('{b}', String(pl.stats.used || 0)).replace('{c}', String(pl.stats.usedNTD || 0))}` : ''}{pl.note ? ` · 🔒 ${pl.note}` : ''}{pl.referrerCode ? ` · 🤝 ${pl.referrerName || pl.referrerCode}` : ''}</div>
                             {(pl.description || pl.message) && <div style={{ color: '#475569', fontSize: '0.8rem' }}>{pl.description || pl.message}</div>}
@@ -181,6 +188,16 @@ export default function RewardsAdminPage({ t, adminToken, cashOrgTypeLabel, cash
                             {pl.status === 'approved' && <button type="button" onClick={() => placeAdminAction('hide', { placeId: pl.id })} style={smallBtn('transparent', '#64748b', '1px solid #cbd5e1')}>{t('隱藏', 'Hide')}</button>}
                             {pl.status === 'hidden' && <button type="button" onClick={() => placeAdminAction('unhide', { placeId: pl.id })} style={smallBtn('transparent', '#64748b', '1px solid #cbd5e1')}>{t('恢復', 'Restore')}</button>}
                             {pl.status === 'pending' && <button type="button" onClick={() => placeAdminAction('reject', { placeId: pl.id })} style={smallBtn('transparent', '#991b1b', '1px solid #fecaca')}>{t('退回', 'Reject')}</button>}
+                            {!pl.verifiedAt ? (
+                              <select data-testid="admin-place-verify" value="" onChange={e => { if (e.target.value) placeAdminAction('verify', { placeId: pl.id, patch: { method: e.target.value } }); }} style={{ ...smallBtn('transparent', '#166534', '1px solid #86efac'), cursor: 'pointer' }}>
+                                <option value="">✓ {t('標記已驗證…', 'Mark verified…')}</option>
+                                <option value="phone">{verifyMethodLabel('phone')}</option>
+                                <option value="visit">{verifyMethodLabel('visit')}</option>
+                                <option value="known">{verifyMethodLabel('known')}</option>
+                              </select>
+                            ) : (
+                              <button type="button" onClick={() => placeAdminAction('unverify', { placeId: pl.id })} style={smallBtn('transparent', '#64748b', '1px solid #cbd5e1')}>{t('取消驗證', 'Unverify')}</button>
+                            )}
                             <button type="button" onClick={() => setPlaceEdit({ ...pl })} style={smallBtn('transparent', '#334155', '1px solid #cbd5e1')}>{t('編輯', 'Edit')}</button>
                             {['rejected', 'hidden', 'withdrawn'].includes(pl.status) && <button type="button" onClick={async () => { if (await confirmDialog({ message: t('確定刪除？', 'Delete?'), confirmLabel: t('刪除', 'Delete'), danger: true })) placeAdminAction('delete', { placeId: pl.id }); }} style={smallBtn('transparent', '#991b1b', '1px solid #fecaca')}>{t('刪除', 'Delete')}</button>}
                           </div>

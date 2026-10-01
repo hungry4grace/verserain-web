@@ -549,7 +549,7 @@ export default function WorldMap2D({ t, playerName, userEmail, onJoinRoom, onVie
         <div style="font-family: system-ui, sans-serif; min-width: 180px; max-width: 240px; color:#1e293b;">
           ${photo}
           <div style="font-size:0.72rem;color:#64748b;margin-bottom:2px;">${st.emoji} ${escapeHtml(kindLabel)}</div>
-          <div style="font-weight:800;font-size:1.05rem;margin-bottom:4px;">${escapeHtml(pl.name)}</div>
+          <div style="font-weight:800;font-size:1.05rem;margin-bottom:4px;">${escapeHtml(pl.name)}${pl.verified ? ` <span class="vr-place-verified" title="${escapeHtml(t('經文雨已確認這個商家／機構的負責人', 'VerseRain has confirmed who runs this place'))}" style="display:inline-block;vertical-align:middle;background:#dcfce7;color:#166534;border:1px solid #86efac;border-radius:999px;padding:0 7px;font-size:0.72rem;font-weight:800;">✓ ${escapeHtml(t('已驗證', 'Verified'))}</span>` : ''}</div>
           ${poolLine}${contestLine}
           ${discount}
           ${text ? `<div style="font-size:0.85rem;color:#334155;line-height:1.5;margin-bottom:6px;white-space:pre-wrap;">${escapeHtml(text)}</div>` : ''}
@@ -558,7 +558,9 @@ export default function WorldMap2D({ t, playerName, userEmail, onJoinRoom, onVie
           ${pl.phone ? `<div style="font-size:0.8rem;color:#64748b;">☎️ ${escapeHtml(pl.phone)}</div>` : ''}
           ${pl.website ? `<div style="font-size:0.8rem;"><a href="${escapeHtml(pl.website)}" target="_blank" rel="noopener noreferrer" style="color:#2563eb;">🔗 ${escapeHtml(pl.website.replace(/^https?:\/\//, ''))}</a></div>` : ''}
           ${pl.kind === 'merchant' ? `<button class="map-redeem-btn" data-place-id="${escapeHtml(pl.id)}" style="margin-top:8px;width:100%;background:#f59e0b;color:#fff;border:none;border-radius:8px;padding:0.45rem 0.8rem;font-weight:800;cursor:pointer;">🎟️ ${escapeHtml(t('產生折扣券', 'Get a coupon'))}</button>` : ''}
+          ${pl.kind === 'merchant' ? `<div class="vr-place-fineprint" style="margin-top:6px;font-size:0.72rem;color:#94a3b8;line-height:1.4;">${escapeHtml(t('優惠由商家自行提供；點數無現金價值。', 'Discounts are offered by the shop; points have no cash value.'))}</div>` : ''}
           ${pl.poolId ? `<button class="map-pool-btn" data-pool-id="${escapeHtml(pl.poolId)}" style="margin-top:8px;width:100%;background:#e11d48;color:#fff;border:none;border-radius:8px;padding:0.45rem 0.8rem;font-weight:800;cursor:pointer;">❤️ ${escapeHtml(Number(pl.poolCount) > 1 ? t('看看這裡的愛心行動', 'See the Love in Action projects here') : t('投入愛心行動', 'Contribute to the Love in Action project'))}</button>` : ''}
+          ${pl.poolId ? `<div class="vr-place-fineprint" style="margin-top:6px;font-size:0.72rem;color:#94a3b8;line-height:1.4;">${escapeHtml(t('愛心行動由該機構自行負責。', 'This Love in Action project is run by the organisation itself.'))}</div>` : ''}
           ${pl.contestId ? `<button class="map-contest-btn" data-contest-id="${escapeHtml(pl.contestId)}" style="margin-top:8px;width:100%;background:#2563eb;color:#fff;border:none;border-radius:8px;padding:0.45rem 0.8rem;font-weight:800;cursor:pointer;">📖 ${escapeHtml(Number(pl.contestCount) > 1 ? t('看看這裡的讀經比賽', 'See the reading contests here') : t('參加讀經比賽', 'Join the reading contest'))}</button>` : ''}
         </div>`;
       marker.bindPopup(L.popup({ maxWidth: 260, className: 'verse-map-popup' }).setContent(html));
