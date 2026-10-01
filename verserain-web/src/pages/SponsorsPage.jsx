@@ -1,5 +1,6 @@
 // The 'sponsors' page — moved out of App.jsx unchanged (UI/UX 第 4 階段).
 import { Gift } from 'lucide-react';
+import { SHOW_CHARITY } from '../../api/_lib/features.js';
 
 export default function SponsorsPage({ t, fmtMoney, myVouchers, redeemErrorText, saveActiveVoucher, setMainTab, setShowLoginModal, sponsorsInfo, userEmail, voucherStatusBadge }) {
   const info = sponsorsInfo;
@@ -13,7 +14,9 @@ export default function SponsorsPage({ t, fmtMoney, myVouchers, redeemErrorText,
         <button type="button" onClick={() => setMainTab('advanced')} style={{ background: 'transparent', border: '1px solid #cbd5e1', color: '#64748b', borderRadius: '6px', padding: '0.35rem 0.8rem', cursor: 'pointer', fontSize: '0.85rem' }}>← {t('返回', 'Back')}</button>
       </div>
       <div data-testid="voucher-programme-ended" style={{ background: '#fff7ed', border: '1px solid #fed7aa', borderRadius: 10, padding: '0.8rem 1rem', marginBottom: '1rem', color: '#7c2d12', fontSize: '0.9rem', lineHeight: 1.7 }}>
-        {t('原本「通過經文換禮券」的贊助獎勵計劃已經結束，不再產生新的獎勵；已經達標、還在等待寄送的禮券，仍會照常審核寄出。贊助改為把捐款交給合法的勸募團體、依原計畫使用；大家讀經達標時，再由合作企業另外加碼。', 'The old “pass verses for a voucher” programme has ended and no new rewards are created; vouchers already earned and awaiting delivery will still be reviewed and sent. Sponsorship now means giving to a licensed charity, used as that charity planned; when readers reach a shared goal, a partner business adds an extra gift.')}{' '}
+        {SHOW_CHARITY
+          ? t('原本「通過經文換禮券」的贊助獎勵計劃已經結束，不再產生新的獎勵；已經達標、還在等待寄送的禮券，仍會照常審核寄出。贊助改為把捐款交給合法的勸募團體、依原計畫使用；大家讀經達標時，再由合作企業另外加碼。', 'The old “pass verses for a voucher” programme has ended and no new rewards are created; vouchers already earned and awaiting delivery will still be reviewed and sent. Sponsorship now means giving to a licensed charity, used as that charity planned; when readers reach a shared goal, a partner business adds an extra gift.')
+          : t('原本「通過經文換禮券」的贊助獎勵計劃已經結束，不再產生新的獎勵；已經達標、還在等待寄送的禮券，仍會照常審核寄出。現在的回饋方式是：用讀經點數在合作商家折抵。', 'The old “pass verses for a voucher” programme has ended and no new rewards are created; vouchers already earned and awaiting delivery will still be reviewed and sent. The reward now is a points discount at partner shops.')}{' '}
         <button type="button" onClick={() => setMainTab('sponsor')} style={{ background: '#c2410c', color: '#fff', border: 'none', borderRadius: 6, padding: '0.25rem 0.8rem', cursor: 'pointer', fontWeight: 700, fontSize: '0.82rem' }}>{t('了解贊助方案', 'Sponsorship options')} →</button>
       </div>
       <p data-testid="points-disclaimer" style={{ color: '#64748b', fontSize: '0.8rem', lineHeight: 1.6, marginTop: 0, marginBottom: '1rem' }}>
@@ -55,11 +58,11 @@ export default function SponsorsPage({ t, fmtMoney, myVouchers, redeemErrorText,
         )}
       </div>
 
-      <div style={{ ...card, border: '1px solid #fecdd3', background: '#fff7f8' }}>
+      {SHOW_CHARITY && <div style={{ ...card, border: '1px solid #fecdd3', background: '#fff7f8' }}>
         <h3 style={h3}>❤️ {t('愛心行動', 'Love in Action')}</h3>
         <div style={{ color: '#475569', fontSize: '0.9rem', lineHeight: 1.6 }}>{t('把點數投入教會或機構的愛心專案，成為他們在合作商家採購時的折抵額度。點數無現金價值，投入後不可撤回。', 'Put points into a church or organisation’s charity project as their discount allowance at participating shops. Points have no cash value and a contribution cannot be reversed.')}</div>
         <button type="button" onClick={() => setMainTab('charity')} style={{ marginTop: '0.6rem', background: '#e11d48', color: '#fff', border: 'none', borderRadius: 6, padding: '0.35rem 0.9rem', cursor: 'pointer', fontWeight: 700 }}>❤️ {t('看看有哪些愛心行動', 'See the Love in Action projects')}</button>
-      </div>
+      </div>}
 
       <div style={card}>
         <h3 style={h3}>💛 {t('感謝贊助者', 'Thank you, sponsors')}</h3>
@@ -81,10 +84,12 @@ export default function SponsorsPage({ t, fmtMoney, myVouchers, redeemErrorText,
           </div>
         )}
         <div style={{ marginTop: '0.9rem', padding: '0.7rem 0.9rem', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 8, fontSize: '0.88rem', color: '#166534', lineHeight: 1.6 }}>
-          {t('想成為贊助者？捐款直接交給合作的合法勸募團體，由它開立收據；經文雨只記錄點數和通知。報告只有統計數字，不會提供玩家個資。', 'Want to sponsor? Gifts go straight to a licensed partner charity, which issues the receipt; VerseRain only records points and sends notices. Reports contain statistics only — never player data.')}{' '}
+          {SHOW_CHARITY
+            ? t('想成為贊助者？捐款直接交給合作的合法勸募團體，由它開立收據；經文雨只記錄點數和通知。報告只有統計數字，不會提供玩家個資。', 'Want to sponsor? Gifts go straight to a licensed partner charity, which issues the receipt; VerseRain only records points and sends notices. Reports contain statistics only — never player data.')
+            : t('想成為合作商家？登記後就能在地圖上提供點數折扣，折扣由商家自行提供並吸收。', 'Want to be a partner shop? Register to offer a points discount on the map; the shop offers and absorbs the discount.')}{' '}
           <span style={{ display: 'inline-flex', gap: '0.5rem', flexWrap: 'wrap', marginTop: 6 }}>
             <button type="button" onClick={() => setMainTab('sponsor')} style={{ background: '#166534', color: '#fff', border: 'none', borderRadius: 6, padding: '0.3rem 0.9rem', cursor: 'pointer', fontWeight: 700, fontSize: '0.85rem' }}>{t('了解贊助方案', 'Sponsorship options')} →</button>
-            <a href={`mailto:hungry4grace@gmail.com?subject=${encodeURIComponent('經文雨 愛心方案贊助（VerseRain Charity Projects）')}`} style={{ color: '#166534', fontWeight: 700, alignSelf: 'center' }}>{t('聯絡我們', 'Contact us')} →</a>
+            <a href={`mailto:hungry4grace@gmail.com?subject=${encodeURIComponent(SHOW_CHARITY ? '經文雨 愛心方案贊助（VerseRain Charity Projects）' : '經文雨 商家合作（VerseRain Partner Shops）')}`} style={{ color: '#166534', fontWeight: 700, alignSelf: 'center' }}>{t('聯絡我們', 'Contact us')} →</a>
           </span>
         </div>
       </div>

@@ -5,6 +5,7 @@ import { pushNotify } from './_lib/rewards.js';
 import { notifyAdmins, placeSubmittedMessage, placeResubmittedMessage } from './_lib/adminNotify.js';
 import { listPools } from './_lib/pools.js';
 import { listContests, contestIsOpen } from './_lib/contests.js';
+import { OPEN_PLACE_KINDS, SHOW_CHARITY } from './_lib/features.js';
 import {
   listPlaces, getPlace, savePlace, deletePlace, normalizePlaceSubmission, applyAdminAction, publicView,
   countSubmissionsToday, bumpSubmissions, taipeiDay, MAX_SUBMISSIONS_PER_DAY,
@@ -38,6 +39,8 @@ import {
 //   New self-registrations must be in Taiwan (400 taiwan_only), carry a 統一編號
 //   (merchants) or 統一編號／立案字號 (churches, organisations) (400 tax_id_invalid)
 //   and place.declare === true, the 「我是負責人」 declaration (400 declaration_required).
+//   Only the kinds in OPEN_PLACE_KINDS (_lib/features.js) may self-register or be
+//   switched to (400 kind_unavailable); 機構 is paused for now.
 //   POST { action: 'create', adminEmail, place }   admin → approved straight away
 // A submission is only accepted when PartyKit confirms the (email, sessionKey)
 // pair is a live login, and each email may submit at most 3 places a day.
@@ -78,7 +81,7 @@ export default async function handler(req, res) {
       // the client's own cache-buster right after an admin action.
       res.setHeader('Cache-Control', q.fresh ? 'no-store' : 's-maxage=60, stale-while-revalidate=120');
       const now = new Date();
-      return res.status(200).json({ places: publicView(await listPlaces(redis), { poolByPlace: await approvedPoolsByPlace(redis), contestByPlace: await approvedContestsByPlace(redis, now) }) });
+      return res.status(200).json({ places: publicView(await listPlaces(redis), { poolByPlace: SHOW_CHARITY ? await approvedPoolsByPlace(redis) : {}, contestByPlace: await approvedContestsByPlace(redis, now) }) });
     }
 
     const body = typeof req.body === 'string' ? safeJson(req.body) : (req.body || {});
@@ -274,6 +277,8 @@ async function ownerUpdate(res, redis, { email, identity, place: existing }, inp
   // earlier (by an admin) can still edit their phone, hours and so on.
   const moved = Number(next.lat) !== Number(existing.lat) || Number(next.lng) !== Number(existing.lng);
   if (moved && !isInTaiwan(next.lat, next.lng)) return res.status(400).json({ error: 'taiwan_only' });
+  // A place keeps its own kind, but can't switch to one that is paused (機構).
+  if (next.kind !== existing.kind && !OPEN_PLACE_KINDS.includes(next.kind)) return res.status(400).json({ error: 'kind_unavailable' });
   const { place, reviewRequired, changed } = applyOwnerEdit(existing, next, { now: new Date() });
   await savePlace(redis, place);
   if (reviewRequired) {

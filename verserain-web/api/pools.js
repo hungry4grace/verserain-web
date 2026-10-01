@@ -6,6 +6,7 @@ import { sendReferralPush } from './_lib/webpush.js';
 import { sendReferralApns } from './_lib/apns.js';
 import { notifyAdmins, poolSubmittedMessage, poolCashSubmittedMessage } from './_lib/adminNotify.js';
 import { getPlace, listPlaces } from './_lib/places.js';
+import { SHOW_CHARITY } from './_lib/features.js';
 import { clientIp, ipRateLimit, readBalance, publicVoucher, maskName, LEADERBOARD_KEY, taipeiDay } from './_lib/points.js';
 import {
   PoolError, listPools, getPool, savePool, openPoolsForPlace, MAX_OPEN_POOLS_PER_PLACE, normalizePoolSubmission, applyPoolAdminAction,
@@ -66,6 +67,10 @@ export default async function handler(req, res) {
 
     const body = typeof req.body === 'string' ? safeJson(req.body) : (req.body || {});
     const action = String(body.action || '');
+    // 愛心行動 is paused (SHOW_CHARITY): nothing new goes in or comes out of a
+    // pool. Admin actions still work, and issued vouchers stay redeemable.
+    if (!SHOW_CHARITY && ['contribute', 'pool_redeem', 'merchant_join', 'merchant_update', 'cash_update'].includes(action)) return res.status(404).json({ error: 'pool_unavailable' });
+    if (!SHOW_CHARITY && action === 'create' && !body.adminEmail) return res.status(404).json({ error: 'pool_unavailable' });
     try {
       if (action === 'contribute') return await contributeAction(req, res, redis, body, now);
       if (action === 'pool_redeem') return await poolRedeem(req, res, redis, body, now);
@@ -126,6 +131,7 @@ async function get(req, res, redis, now) {
     }
     return res.status(200).json({ owned, contributed, merchantOf });
   }
+  if (!SHOW_CHARITY) return res.status(200).json({ pools: [] });
   const pools = (await listPools(redis)).filter((p) => p.status === 'approved');
   const counters = {};
   const summaries = {};

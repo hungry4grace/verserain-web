@@ -6,6 +6,7 @@ import GardenView from '../GardenView.jsx';
 import { QRCodeSVG } from 'qrcode.react';
 import { InviterCard } from '../invite/InviterCard.jsx';
 import { buildPublicShareUrl } from '../lib/routes.js';
+import { SHOW_CHARITY } from '../../api/_lib/features.js';
 import { verseRefKey } from '../lib/verseRef.js';
 
 export default function GardenPage({ t, challengeGardenVerse, charityContribPage, charityMine, clearGardenFocus, compactMyGarden, contestMine, contestProgress, creatorOnlyPoints, gardenData, gardenFocus, gardenGaps, handleViewPlayerGarden, HISTORY_PAGE_SIZE, isFirstGardenVisit, isNarrowEditor, merchantRefBonus, merchantRefBonusPage, myInviterCode, myInviterName, myReferees, nudgeBusyName, nudgedUntil, nudgeReferee, pendingRefereesPage, personalCode, personalProgress, playerName, pointsBalance, refereeGardenStats, refereesPage, referralHistory, referralKeys, referralOnlyPoints, resolveGardenVerse, scrollMenuTo, sessionKey, setCharityContribPage, setMainTab, setMerchantRefBonusPage, setPendingRefereesPage, setQrShareModal, setRefereesPage, setShowBindInviterModal, setShowFruitInfo, setShowLevelInfo, setShowLoginModal, setShowOldInviters, setShowTodayInfo, showOldInviters, showTodayInfo, skoolLevel, totalFruits, userEmail, version }) {
@@ -144,9 +145,11 @@ export default function GardenPage({ t, challengeGardenVerse, charityContribPage
               </div>
             ) : null
           )}
-          <div onClick={() => setMainTab('charity')} style={{ marginTop: '0.8rem', textAlign: 'center', fontSize: '0.82rem', color: '#9f1239', background: '#fff1f2', border: '1px solid #fecdd3', borderRadius: 8, padding: '0.4rem 0.6rem', cursor: 'pointer' }}>
-            ❤️ {t('看看有哪些愛心行動', 'See the Love in Action projects')}
-          </div>
+          {SHOW_CHARITY && (
+            <div onClick={() => setMainTab('charity')} style={{ marginTop: '0.8rem', textAlign: 'center', fontSize: '0.82rem', color: '#9f1239', background: '#fff1f2', border: '1px solid #fecdd3', borderRadius: 8, padding: '0.4rem 0.6rem', cursor: 'pointer' }}>
+              ❤️ {t('看看有哪些愛心行動', 'See the Love in Action projects')}
+            </div>
+          )}
         </div>
       </div>
 
@@ -480,7 +483,7 @@ export default function GardenPage({ t, challengeGardenVerse, charityContribPage
           })()}
 
           {/* 愛心行動投入紀錄 — points this account put into Love in Action projects (burned, never refunded) */}
-          {userEmail && charityMine && !charityMine.error && (() => {
+          {SHOW_CHARITY && userEmail && charityMine && !charityMine.error && (() => {
             const items = charityMine.contributed || [];
             const totalPts = items.reduce((a, c) => a + (Number(c.points) || 0), 0);
             const totalNTD = items.reduce((a, c) => a + (Number(c.ntd) || 0), 0);

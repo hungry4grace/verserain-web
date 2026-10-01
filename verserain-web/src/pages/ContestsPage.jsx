@@ -29,7 +29,7 @@ export default function ContestsPage({ t, acceptContestChallengeAction, claimCon
         <button type="button" onClick={() => setMainTab('advanced')} style={{ background: 'transparent', border: '1px solid #cbd5e1', color: '#64748b', borderRadius: '6px', padding: '0.35rem 0.8rem', cursor: 'pointer', fontSize: '0.85rem' }}>← {t('返回', 'Back')}</button>
       </div>
       <p style={{ color: '#475569', lineHeight: 1.7, marginTop: 0 }}>
-        {t('教會或機構選定一組經文，公告一段期間的讀經比賽。參加後可以看到自己的讀經進度；讀完整組即可申請認證，機構會另行公告獎勵方式。', 'A church or organisation picks a verse set and announces a reading contest for a set period. Join to track your progress — finish the whole set to apply for certified completion, and the organisation announces the reward separately.')}
+        {t('教會選定一組經文，公告一段期間的讀經比賽。參加後可以看到自己的讀經進度；讀完整組即可申請認證，主辦教會會另行公告獎勵方式。', 'A church picks a verse set and announces a reading contest for a set period. Join to track your progress — finish the whole set to apply for certified completion, and the church announces the reward separately.')}
       </p>
       {notice}
 
@@ -38,7 +38,7 @@ export default function ContestsPage({ t, acceptContestChallengeAction, claimCon
         {!contests ? <div style={{ color: '#94a3b8' }}>{t('載入中…', 'Loading…')}</div> : contests.error ? (
           <div style={{ color: '#b45309', fontSize: '0.9rem' }}>{String(contests.error)}</div>
         ) : list.length === 0 ? (
-          <div style={{ color: '#94a3b8', fontSize: '0.9rem' }}>{t('目前還沒有開放中的讀經比賽。已上地圖的教會或機構可以在下方建立。', 'No reading contest is open yet. A church or organisation already on the map can create one below.')}</div>
+          <div style={{ color: '#94a3b8', fontSize: '0.9rem' }}>{t('目前還沒有開放中的讀經比賽。已上地圖的教會可以在下方建立。', 'No reading contest is open yet. A church already on the map can create one below.')}</div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
             {list.map(c => {

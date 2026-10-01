@@ -11,6 +11,8 @@
 //
 // Every function takes the Upstash client so the logic is testable with a stub.
 
+import { OPEN_PLACE_KINDS } from './features.js';
+
 export const PLACES_KEY = 'map:places';
 
 export const KINDS = ['merchant', 'church', 'org'];
@@ -94,6 +96,7 @@ export function isInTaiwan(lat, lng) {
 // 'create', not edits of places listed before these rules). Returns an error
 // code for the client, or '' when it may be submitted.
 export function newRegistrationError(place, input) {
+  if (!OPEN_PLACE_KINDS.includes(place.kind)) return 'kind_unavailable';
   if (!isInTaiwan(place.lat, place.lng)) return 'taiwan_only';
   if (!isValidPlaceTaxId(place.kind, place.taxId)) return 'tax_id_invalid';
   if (!input || input.declare !== true) return 'declaration_required';

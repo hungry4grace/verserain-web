@@ -9,6 +9,7 @@ import {
   classifyOwnerEdit, applyOwnerEdit, applyOwnerAction, canOwnerDelete, canAdminDelete, ownerView, REFERRER_CODE_RE,
   isValidTaiwanUbn, isValidPlaceTaxId, isInTaiwan, newRegistrationError, VERIFY_METHODS,
 } from './places.js';
+import { OPEN_PLACE_KINDS } from './features.js';
 
 function stubRedis() {
   const hashes = new Map();
@@ -359,6 +360,14 @@ test('newRegistrationError: Taiwan, a valid number and the declaration', () => {
   assert.strictEqual(newRegistrationError(p(), {}), 'declaration_required');
   assert.throws(() => p({ taxId: '22099132' }), /tax_id_invalid/, 'a bad number is refused even on edits');
   assert.strictEqual(p().taxId, '22099131');
+});
+
+test('newRegistrationError: 機構 self-registration is paused; churches stay open; admins can still add one', () => {
+  assert.deepStrictEqual(OPEN_PLACE_KINDS, ['merchant', 'church']);
+  const p = (kind, taxId) => normalizePlaceSubmission({ ...merchant(), kind, taxId }, { ownerEmail: 'a@x.com', now: NOW });
+  assert.strictEqual(newRegistrationError(p('church', '台內社字第1234號'), { declare: true }), '');
+  assert.strictEqual(newRegistrationError(p('org', '22099131'), { declare: true }), 'kind_unavailable');
+  assert.strictEqual(p('org', '22099131').kind, 'org', 'normalizing (admin create, existing places) still accepts org');
 });
 
 test('verify / unverify; a major owner edit clears the check; publicView shows only the flag', () => {

@@ -9,6 +9,7 @@ import SettingsPage from './SettingsPage.jsx';
 import Onboarding from './Onboarding.jsx';
 import { CATALOG as VOUCHER_CATALOG, DEFAULT_VALUE as VOUCHER_DEFAULTS } from '../api/_lib/rewardCatalog.js';
 import { isInTaiwan, isValidPlaceTaxId } from '../api/_lib/places.js';
+import { OPEN_PLACE_KINDS, SHOW_CHARITY } from '../api/_lib/features.js';
 import confetti from 'canvas-confetti';
 import usePartySocket from 'partysocket/react';
 import PartySocket from 'partysocket';
@@ -3263,7 +3264,7 @@ export default function App() {
     let cancelled = false;
     const headers = { 'Content-Type': 'application/json', ...(adminToken ? { 'X-Admin-Token': adminToken } : {}) };
     Promise.all([
-      fetch(`/api/pools?all=1&adminEmail=${encodeURIComponent(userEmail)}`, { headers }).then(r => r.ok ? r.json() : { pools: [] }).catch(() => ({ pools: [] })),
+      SHOW_CHARITY ? fetch(`/api/pools?all=1&adminEmail=${encodeURIComponent(userEmail)}`, { headers }).then(r => r.ok ? r.json() : { pools: [] }).catch(() => ({ pools: [] })) : { pools: [] },
       fetch(`/api/places?all=1&adminEmail=${encodeURIComponent(userEmail)}`, { headers }).then(r => r.ok ? r.json() : { places: [] }).catch(() => ({ places: [] })),
       fetch(`/api/contests?all=1&adminEmail=${encodeURIComponent(userEmail)}`, { headers }).then(r => r.ok ? r.json() : { contests: [] }).catch(() => ({ contests: [] })),
     ]).then(([p, q, c]) => {
@@ -3760,8 +3761,9 @@ export default function App() {
     verses_required: t('這組經文組目前沒有內容，請換一組', 'This verse set has no verses — pick another one'),
     ends_after_starts: t('結束時間必須晚於開始時間', 'The end date must be after the start date'),
     name_required: t('請輸入活動名稱', 'Please enter a name for the contest'),
-    taiwan_only: t('目前只開放台灣的商家、教會與機構登記', 'Registration is currently open to places in Taiwan only'),
-    tax_id_invalid: t('統一編號不正確（商家需 8 碼統一編號；教會／機構可填統一編號或立案字號）', 'Invalid business number (shops need an 8-digit 統一編號; churches and organisations may give a 統一編號 or registration number)'),
+    taiwan_only: t('目前只開放台灣的商家與教會登記', 'Registration is currently open to shops and churches in Taiwan only'),
+    tax_id_invalid: t('統一編號不正確（商家需 8 碼統一編號；教會可填統一編號或立案字號）', 'Invalid business number (shops need an 8-digit 統一編號; churches may give a 統一編號 or registration number)'),
+    kind_unavailable: t('目前只開放商家與教會登記', 'Registration is currently open to shops and churches only'),
     declaration_required: t('請勾選「我是負責人」的聲明', 'Please tick the declaration that you run this place'),
   })[code] || String(code || 'error');
   const fetchPointsBalance = async () => {
@@ -3986,7 +3988,7 @@ export default function App() {
   // The draft lives in localStorage: a first-time submit may bounce the owner
   // to re-login (new session key), and nobody should retype a listing.
   const [merchantDraft, setMerchantDraft] = useState(() => {
-    try { const d = JSON.parse(localStorage.getItem('verserain_merchant_draft') || 'null'); if (d && d.id && d.kind) return { ...newPlaceDraft(), ...d, agree: false }; } catch { /* ignore */ }
+    try { const d = JSON.parse(localStorage.getItem('verserain_merchant_draft') || 'null'); if (d && d.id && d.kind) return { ...newPlaceDraft(), ...d, ...(!d.editing && !OPEN_PLACE_KINDS.includes(d.kind) ? { kind: 'merchant' } : {}), agree: false }; } catch { /* ignore */ }
     return newPlaceDraft();
   });
   useEffect(() => {
@@ -4048,7 +4050,7 @@ export default function App() {
       message: t('你正在填寫的登記資料會被「{name}」取代。', 'The form you are filling in will be replaced by “{name}”.').replace('{name}', pl.name || ''),
       confirmLabel: t('取代', 'Replace'),
     }))) return;
-    const next = { ...newPlaceDraft(), id: pl.id, agree: false, editing: { name: pl.name, status: pl.status, referrerCode: pl.referrerCode || '', referrerName: pl.referrerName || '' } };
+    const next = { ...newPlaceDraft(), id: pl.id, agree: false, editing: { name: pl.name, kind: pl.kind, status: pl.status, referrerCode: pl.referrerCode || '', referrerName: pl.referrerName || '' } };
     for (const f of PLACE_DRAFT_FIELDS) if (pl[f] !== undefined && pl[f] !== null) next[f] = pl[f];
     setMerchantDraft(next); setMerchantPhotoPreview(null); setMerchantSubmitStatus(null);
     setTimeout(() => scrollMenuTo(merchantFormRef.current), 0);
@@ -4108,6 +4110,7 @@ export default function App() {
     setMerchantSubmitStatus(null);
     if (!m.name.trim() || !m.address.trim()) { toast.error(t('請填寫名稱與地址', 'Name and address are required')); return; }
     if (!Number.isFinite(m.lat) || !Number.isFinite(m.lng)) { toast.error(t('請先按「定位」或在地圖上點選位置', 'Locate the address or pick the spot on the map first')); return; }
+    if (!m.editing && !OPEN_PLACE_KINDS.includes(m.kind)) { toast.error(redeemErrorText('kind_unavailable'), 3500); return; }
     if (!m.editing && !isInTaiwan(m.lat, m.lng)) { toast.error(redeemErrorText('taiwan_only'), 3500); return; }
     if ((!m.editing || String(m.taxId || '').trim()) && !isValidPlaceTaxId(m.kind, m.taxId)) { toast.error(redeemErrorText('tax_id_invalid'), 4000); return; }
     if (!m.agree) { toast.error(t('請勾選同意條款', 'Please tick the agreement'), 2500); return; }
@@ -4172,7 +4175,7 @@ export default function App() {
     let cancelled = false;
     fetch(`/api/places?all=1&adminEmail=${encodeURIComponent(userEmail)}`, { headers: adminHeaders() }).then(r => r.json()).then(d => { if (!cancelled) setPlacesAdmin(Array.isArray(d.places) ? d.places : []); }).catch(() => { if (!cancelled) setPlacesAdmin([]); });
     fetch(`/api/redeem-verify?all=1&adminEmail=${encodeURIComponent(userEmail)}`, { headers: adminHeaders() }).then(r => r.json()).then(d => { if (!cancelled) setVouchersAdmin(Array.isArray(d.vouchers) ? d.vouchers : []); }).catch(() => { if (!cancelled) setVouchersAdmin([]); });
-    fetch(`/api/pools?all=1&adminEmail=${encodeURIComponent(userEmail)}`, { headers: adminHeaders() }).then(r => r.json()).then(d => { if (!cancelled) setPoolsAdmin(Array.isArray(d.pools) ? d.pools : []); }).catch(() => { if (!cancelled) setPoolsAdmin([]); });
+    if (SHOW_CHARITY) fetch(`/api/pools?all=1&adminEmail=${encodeURIComponent(userEmail)}`, { headers: adminHeaders() }).then(r => r.json()).then(d => { if (!cancelled) setPoolsAdmin(Array.isArray(d.pools) ? d.pools : []); }).catch(() => { if (!cancelled) setPoolsAdmin([]); });
     fetch(`/api/contests?all=1&adminEmail=${encodeURIComponent(userEmail)}`, { headers: adminHeaders() }).then(r => r.json()).then(d => { if (!cancelled) setContestsAdmin(Array.isArray(d.contests) ? d.contests : []); }).catch(() => { if (!cancelled) setContestsAdmin([]); });
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -4266,6 +4269,7 @@ export default function App() {
     } catch (e) { setCharityMine({ error: String(e?.message || e) }); }
   }, [userEmail, sessionKey]);
   useEffect(() => {
+    if (!SHOW_CHARITY) return;
     if (mainTab === 'charity') { loadCharityPools(); if (userEmail) { loadCharityMine(); loadMyPlaces(); } }
     else if (mainTab === 'garden' && userEmail) loadCharityMine();
     else if (mainTab === 'merchant' && userEmail) { loadCharityPools(); loadCharityMine(); }
@@ -4463,7 +4467,7 @@ export default function App() {
     }).length;
     return { passed, total: verses.length };
   };
-  const contestNoticeText = () => t('讀完整組經文（每一節都練到「已熟練」）即可申請認證，機構會依公告方式頒發獎勵；經文雨不經手獎勵本身。額外接受「背經文挑戰」的話，活動期間內這組經文每一節只算你自己的最高分，加總成為排行榜分數——重複挑戰同一節不會增加總分，除非破了自己的紀錄。', 'Finish every verse of the set (each one practised to "mastered") to apply for certified completion — the organisation hands out the reward itself, off the app. If you also accept the memorisation challenge, only your own best score on each verse of this set during the contest window counts — the leaderboard total is the sum of those bests, so replaying the same verse won’t raise your score unless you beat your own record.');
+  const contestNoticeText = () => t('讀完整組經文（每一節都練到「已熟練」）即可申請認證，主辦單位會依公告方式頒發獎勵；經文雨不經手獎勵本身。額外接受「背經文挑戰」的話，活動期間內這組經文每一節只算你自己的最高分，加總成為排行榜分數——重複挑戰同一節不會增加總分，除非破了自己的紀錄。', 'Finish every verse of the set (each one practised to "mastered") to apply for certified completion — the organiser hands out the reward itself, off the app. If you also accept the memorisation challenge, only your own best score on each verse of this set during the contest window counts — the leaderboard total is the sum of those bests, so replaying the same verse won’t raise your score unless you beat your own record.');
   const joinContestAction = async (contest) => {
     if (!contest || !contest.id) return;
     if (!userEmail) { setShowLoginModal('login'); toast.error(t('請先登入才能參加', 'Sign in to join')); return; }
@@ -7244,7 +7248,7 @@ export default function App() {
                     verserain
                   </div>
                   <div className="app-brand-version" style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', marginTop: '4px', marginLeft: '2px' }}>
-                    v4.0.163
+                    v4.0.164
                   </div>
                 </div>
                 <div ref={langPickerRef} className="app-lang-control" style={{ position: 'relative' }}>
