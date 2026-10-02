@@ -62,7 +62,7 @@ export default function MultiplayerPage({ t, activeVerseSets, customVerseSets, f
         </div>
       ) : !multiplayerRoomId ? (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', alignItems: 'center' }}>
-          <div style={{ fontSize: '2rem', marginBottom: '-1rem' }}>{playerName.substring(0, 2)}</div>
+          <div style={{ fontSize: '2rem', marginBottom: '-1rem', color: 'var(--color-text)' }}>{playerName.substring(0, 2)}</div>
           <p style={{ color: '#64748b', fontSize: '1.1rem', maxWidth: '520px', lineHeight: 1.6 }}>{t("老師先選擇隊伍數量，再建立房間。學生加入一個聖靈果子隊伍，最後用隊伍平均分排名。", "The teacher chooses the number of teams, then hosts a room. Students join a Fruit of the Spirit team, and final standings are ranked by team average score.")}</p>
 
           <div style={{ width: '100%', maxWidth: '520px', background: '#f8fafc', border: '1px solid #dbeafe', borderRadius: '12px', padding: '1rem', textAlign: 'left' }}>
