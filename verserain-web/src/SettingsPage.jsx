@@ -2,7 +2,7 @@
 // 我的 → 設定 (#settings). The UI language and the Bible version are two
 // separate choices here; the header's version button still switches both
 // together as before.
-import { Bell, Accessibility } from 'lucide-react';
+import { Bell } from 'lucide-react';
 import { Button, ListGroup, ListRow } from './ui';
 
 // Each UI language in its own script, so people can find theirs.
@@ -38,7 +38,6 @@ export default function SettingsPage({
   pushOn, onPush,
   elderMode, onElderMode,
   performanceMode, onPerformanceMode,
-  onAccessible,
 }) {
   return (
     <div data-testid="settings-page" style={{ maxWidth: 640, margin: '0 auto', padding: 'var(--space-4)', display: 'flex', flexDirection: 'column', gap: 'var(--space-5)', color: 'var(--color-text)' }}>
@@ -114,14 +113,6 @@ export default function SettingsPage({
             {performanceMode ? t('開', 'On') : t('關', 'Off')}
           </Button>
         </div>
-        <ListRow
-          testId="settings-accessible"
-          icon={<Accessibility size={24} />}
-          iconColor="#475569"
-          title={t('無障礙模式', 'Accessible mode')}
-          desc={t('為視障朋友預備的簡化版，只靠聽和按鍵', 'A simplified version for blind and low-vision friends')}
-          onClick={onAccessible}
-        />
       </ListGroup>
     </div>
   );

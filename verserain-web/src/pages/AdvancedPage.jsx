@@ -1,6 +1,6 @@
 // The 我的 (advanced / me) tab — moved out of App.jsx unchanged (UI/UX 第 4 階段).
 import { Button, ListGroup, ListRow } from '../ui';
-import { CloudRain, Crown, Gift, Headphones, Heart, Info, Languages, Library, Mail, MessageCircle, Settings, Store, Ticket, TreePine, UserRound, Users } from 'lucide-react';
+import { CloudRain, Crown, Gift, Heart, Info, Languages, Library, Mail, MessageCircle, Settings, Store, Ticket, TreePine, UserRound, Users } from 'lucide-react';
 import { SHOW_DONATE } from '../lib/routes.js';
 import { SHOW_CHARITY } from '../../api/_lib/features.js';
 
@@ -57,7 +57,6 @@ export default function AdvancedPage({ t, combinedInbox, isPremium, isSuperAdmin
       <ListGroup title={t('學習與說明', 'Learn & help')} testId="me-group-help">
         {row('manual', Library, '#2563eb', t('使用說明', 'User guide'), t('怎麼玩、怎麼算分、常見問題', 'How to play, scoring and FAQ'), () => go('manual'))}
         {row('bilingual_rain', Languages, '#0ea5e9', t('雙語經文雨 Beta', 'Bilingual VerseRain Beta'), t('同時聽兩種語言的經文', 'Listen to verses in two languages'), () => go('bilingual_rain'))}
-        {row('accessible', Headphones, '#475569', t('無障礙模式', 'Accessible mode'), t('為視障朋友預備的簡化版，只靠聽和按鍵', 'A simplified version for blind and low-vision friends'), () => go('accessible'))}
         {row('about', Info, '#14b8a6', t('關於我們', 'About'), t('VerseRain 開發資訊', 'Info & Credits'), () => go('about'))}
         {row('feedback', MessageCircle, '#ec4899', t('意見回饋', 'Feedback'), t('聯絡與建議', 'Bugs & Suggestions'), () => window.open(`mailto:hungry4grace@gmail.com?subject=${encodeURIComponent('經文雨 意見回饋（VerseRain Feedback）')}`, '_blank'))}
       </ListGroup>

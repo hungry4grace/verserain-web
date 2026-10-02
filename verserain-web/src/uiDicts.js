@@ -7431,9 +7431,8 @@ const deDict = {
   // gloss (or, for ja/ko/cuvs, to Traditional Chinese) whenever a key is
   // missing, so a Hebrew user read "My Garden" and "Multiplayer" on an
   // otherwise-Hebrew lobby. i18nFillins.js closes every gap across the 13
-  // languages — it is the single source of truth, shared with the standalone
-  // /blind route via i18n.js. `npm run check:i18n` fails the build if a new
-  // t() key isn't covered there.
+  // languages — it is the single source of truth. `npm run check:i18n` fails
+  // the build if a new t() key isn't covered there.
   //
   // fillMissing never overwrites an existing translation — the hand-written
   // dictionaries above stay authoritative.

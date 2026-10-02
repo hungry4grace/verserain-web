@@ -17,7 +17,7 @@ export function isEnglishBibleVersion(v) {
 }
 
 // Delegates to src/lib/speechLang.js — the single source of truth shared with
-// BlindModeGame's speech recognition, so the two maps can never drift.
+// the voice-mode speech recognition (BlindModeGame), so the two maps can never drift.
 export function getVoiceLangForVersion(v) {
   return getSpeechLangForVersion(v);
 }
