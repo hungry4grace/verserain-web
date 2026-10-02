@@ -37,7 +37,6 @@ export const LEGACY_FILES = [
   'src/pages/CustomVersesPage.jsx',
   'src/pages/MultiplayerPage.jsx',
   'src/pages/AdvancedPage.jsx',
-  'src/pages/AccessiblePage.jsx',
   'src/pages/DailyVersePage.jsx',
   'src/pages/BilingualRainPage.jsx',
   'src/pages/RewardsAdminPage.jsx',

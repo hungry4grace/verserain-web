@@ -91,7 +91,7 @@ export function buildPublicShareUrl(path = '/', params = {}) {
 // push one history entry per step; popstate applies the hash back to state.
 // Only the query string carries share links (?listenSet= …) — those are
 // consumed and scrubbed as before, and every scrub must keep the hash.
-export const ROUTE_TABS = ['lobby', 'versesets', 'custom_verses', 'multiplayer', 'daily_verse', 'advanced', 'garden', 'search', 'map', 'manual', 'about', 'accessible', 'bilingual_rain', 'leaderboard', 'rewards_admin', 'sponsors', 'donate', 'sponsor', 'merchant', 'verify', 'charity', 'contests', 'settings'];
+export const ROUTE_TABS = ['lobby', 'versesets', 'custom_verses', 'multiplayer', 'daily_verse', 'advanced', 'garden', 'search', 'map', 'manual', 'about', 'bilingual_rain', 'leaderboard', 'rewards_admin', 'sponsors', 'donate', 'sponsor', 'merchant', 'verify', 'charity', 'contests', 'settings'];
 // 支持開發（Donate）頁的收款資訊。這是對開發者個人的贈與，不是公益勸募，
 // 也開不了捐贈收據 — 獎勵資金池另走教會／非營利代收（見 sponsor 頁）。
 // 空字串 → 頁面顯示「即將公布」。

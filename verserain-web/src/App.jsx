@@ -56,7 +56,6 @@ import VerseSetsPage from './pages/VerseSetsPage.jsx';
 import CustomVersesPage from './pages/CustomVersesPage.jsx';
 import MultiplayerPage from './pages/MultiplayerPage.jsx';
 import AdvancedPage from './pages/AdvancedPage.jsx';
-import AccessiblePage from './pages/AccessiblePage.jsx';
 import DailyVersePage from './pages/DailyVersePage.jsx';
 import BilingualRainPage from './pages/BilingualRainPage.jsx';
 import RewardsAdminPage from './pages/RewardsAdminPage.jsx';
@@ -2940,7 +2939,9 @@ export default function App() {
   const distractionLevelRef = useRef(distractionLevel);
   useEffect(() => { playModeRef.current = playMode; }, [playMode]);
   useEffect(() => { distractionLevelRef.current = distractionLevel; }, [distractionLevel]);
-  const [isBlindMode, setIsBlindMode] = useState(() => localStorage.getItem('verseRain_blindMode') === 'true');
+  // The old 視障版 stored a sticky flag that forced every later game into the
+  // voice screen; that page is gone, so drop the flag from older browsers.
+  useEffect(() => { try { localStorage.removeItem('verseRain_blindMode'); } catch { /* ignore */ } }, []);
   // Debug mode — persisted in localStorage, also toggleable from the ⚡ 挑戰
   // chooser so a phone user can flip on the voice-mode "expects vs heard" HUD
   // without dev tools.
@@ -3817,7 +3818,7 @@ export default function App() {
   // run…), and every single one of those routes through this one function
   // before reaching the server — it is the one place a finished, scored verse
   // is guaranteed to pass through, whichever mode got it here. `selectedSetId`
-  // (not `activeCampaignSetId`, which only accessible/voice-mode runs ever
+  // (not `activeCampaignSetId`, which only the removed 視障版 page ever
   // set) tracks the set the challenged verse belongs to in every mode. The
   // server keeps each verse's own best score and sums those, so `verseRef`
   // must go along with `score` — replaying the same verse only raises the
@@ -5727,8 +5728,6 @@ export default function App() {
   }, [combo, blocks]); // We keep blocks here because when a new block is added, we want it to inherit the Current rate instantly
 
   const spawnNextBlock = (expiredBlockId = null) => {
-    if (isBlindMode) return;
-
     setBlocks(prev => {
       let expiredBlock = null;
       let remainingBlocks = prev;
@@ -6160,7 +6159,7 @@ export default function App() {
       activePhrasesRef.current = splitVersePhrases(actualVerse.text);
     }
 
-    isGameTimerPausedRef.current = playModeRef.current?.startsWith('voice') || isBlindMode;
+    isGameTimerPausedRef.current = playModeRef.current?.startsWith('voice');
 
     if (timerRef.current) clearInterval(timerRef.current);
 
@@ -6546,7 +6545,7 @@ export default function App() {
             startGame(isAutoPlayRef.current, nextVerse);
           };
 
-          const shouldPauseBeforeNextVerse = isAutoPlayRef.current || playMode?.startsWith('voice') || isBlindMode;
+          const shouldPauseBeforeNextVerse = isAutoPlayRef.current || playMode?.startsWith('voice');
           if (shouldPauseBeforeNextVerse) {
             if (!isAutoPlayRef.current) playTada();
             setTimeout(advanceToNextVerse, AUTO_PLAY_VERSE_PAUSE_MS);
@@ -6559,7 +6558,7 @@ export default function App() {
         }
       }
     }
-  }, [currentSeqIndex, gameState, activePhrases.length, multiplayerRoomId, multiplayerState?.playMode, multiplayerState?.matchType, campaignQueue, activeVerse, playerName, distractionLevel, playMode, isBlindMode]);
+  }, [currentSeqIndex, gameState, activePhrases.length, multiplayerRoomId, multiplayerState?.playMode, multiplayerState?.matchType, campaignQueue, activeVerse, playerName, distractionLevel, playMode]);
 
   // Submit Verse Set score when campaign finishes
   useEffect(() => {
@@ -6860,35 +6859,6 @@ export default function App() {
     if (uiLang === 'cuvs') return zhcnDict[zh] || zh;
     if (uiLang !== 'zh' && uiLang !== 'cuv' && uiLang !== 'cuvs') return en || zh;
     return zh; // default: 'zh'
-  };
-
-  const startAccessibleBlindGame = (set, count = 1) => {
-    if (!set?.verses?.length) return;
-    initAudio();
-    const n = Math.min(set.verses.length, Math.max(1, parseInt(count) || 1));
-    const queue = [...set.verses].sort(() => 0.5 - Math.random()).slice(0, n);
-    setSelectedSetId(set.id);
-    setIsBlindMode(true);
-    localStorage.setItem('verseRain_blindMode', 'true');
-    setPlayMode('voice_solo');
-    setDistractionLevel(0);
-    setCampaignQueue(queue.slice(1));
-    campaignQueueRef.current = queue.slice(1);
-    setCampaignResults([]);
-    setActiveCampaignSetId(set.id);
-    setActiveCampaignSetTotal(queue.length);
-    setActiveVerse(queue[0]);
-    setSelectedVerseRefs([queue[0].reference]);
-    speakText(t('視障版開始。請允許麥克風。聽到提示音後，開口背誦經文。', 'Accessible mode starting. Please allow microphone access. After the prompt sound, recite the verse aloud.'), 0.95, isEnglishBibleVersion(version) ? 'en-US' : 'zh-TW');
-    setTimeout(() => startGame(false, queue[0]), 700);
-  };
-
-  const readAccessibleGuide = (set, count = 1) => {
-    const message = t(
-      '這是視障友善版。現在選擇的是 {title}，本次 {n} 節經文。按開始後，系統會先讀經文出處，停頓兩秒，再等你開口背誦。若一段時間沒有答對，系統會朗讀提示。遊戲中按 Escape 可以離開。',
-      'This is the accessible mode. The selected set is {title}, {n} verses. After starting, the app reads the reference, pauses for two seconds, then waits for your recitation. If you need help, the app will read a prompt. Press Escape during the game to leave.'
-    ).replace('{title}', String(set?.title || currentSet?.title)).replace('{n}', String(count));
-    speakText(message, 0.95, isEnglishBibleVersion(version) ? 'en-US' : 'zh-TW');
   };
 
   const restartTeamSoloRun = () => {
@@ -7248,7 +7218,7 @@ export default function App() {
                     verserain
                   </div>
                   <div className="app-brand-version" style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', marginTop: '4px', marginLeft: '2px' }}>
-                    v5.0.0
+                    v5.0.1
                   </div>
                 </div>
                 <div ref={langPickerRef} className="app-lang-control" style={{ position: 'relative' }}>
@@ -7524,7 +7494,6 @@ export default function App() {
                 );
               })()}
 
-              {mainTab === 'accessible' && <AccessiblePage {...{ t, currentSet, randomPickCount, readAccessibleGuide, safeActiveSets, setRandomPickCount, setSelectedSetId, startAccessibleBlindGame }} />}
 
               {mainTab === 'daily_verse' && <DailyVersePage {...{ t, allSecondaryVerses, bilingualSecondaryVersion, challengeVerseFromReader, changeDailyVerseDate, creditListen, dailySecondaryVerseSet, dailySharedVoiceOwner, dailyVerseDate, displayedDailyVerse, favoriteVerseSets, handleVersionChange, openDailyPickerOnEnter, openListeningShare, openVoiceCommentsFromPlayer, personalCode, playerName, remoteDailyVerse, saveVoiceForVersion, selectedVoiceOptionId, setBilingualSecondaryVersion, setContinuousRainSet, setDailySharedVoiceOwner, setMainTab, setOpenDailyPickerOnEnter, setSelectedSetId, setShowLoginModal, setSpeechReady, setVoiceRefreshTick, speechReady, topicVerseSets, updateGarden, userEmail, version, voiceOptionsForVersion }} />}
 
@@ -7548,7 +7517,6 @@ export default function App() {
                   onElderMode={setElderMode}
                   performanceMode={performanceMode}
                   onPerformanceMode={(on) => { setPerformanceMode(on); try { localStorage.setItem('verseRainPerformanceMode', on ? 'true' : 'false'); } catch { /* best effort */ } }}
-                  onAccessible={() => setMainTab('accessible')}
                 />
               )}
 
@@ -7784,9 +7752,9 @@ export default function App() {
           </div>
         )}
 
-        {gameState === 'playing' && !isAutoPlay && (isBlindMode || playMode?.startsWith('voice')) && <VoicePlayScreen {...{ t, activePhrases, activeVerse, combo, currentSeqIndex, currentSeqRef, health, healthRef, isDebugMode, isGameTimerPausedRef, playMode, quitGame, score, setCombo, setCurrentSeqIndex, setHealth, setScore, skipReadback, timeLeft, version }} />}
+        {gameState === 'playing' && !isAutoPlay && playMode?.startsWith('voice') && <VoicePlayScreen {...{ t, activePhrases, activeVerse, combo, currentSeqIndex, currentSeqRef, health, healthRef, isDebugMode, isGameTimerPausedRef, playMode, quitGame, score, setCombo, setCurrentSeqIndex, setHealth, setScore, skipReadback, timeLeft, version }} />}
 
-        {gameState === 'playing' && (isAutoPlay || (!isBlindMode && !playMode?.startsWith('voice'))) && <RainPlayScreen {...{ t, activePhrases, activeVerse, armDelete, bestScore, blocks, combo, currentSeqIndex, deleteArmedId, distractionLevel, flyingBlocks, gameState, getRainBlockFontSize, handleAnimationEnd, handleBlockClick, handleGlobalClick, health, hintSeq, hintTimerRef, isAutoPlay, multiplayerRoomId, multiplayerState, myClientId, playMode, quitGame, score, setCombo, setDeleteArmedId, setHintSeq, speakingTitle, squareBlockFontSize, squareGridSize, timeLeft, version }} />}
+        {gameState === 'playing' && (isAutoPlay || !playMode?.startsWith('voice')) && <RainPlayScreen {...{ t, activePhrases, activeVerse, armDelete, bestScore, blocks, combo, currentSeqIndex, deleteArmedId, distractionLevel, flyingBlocks, gameState, getRainBlockFontSize, handleAnimationEnd, handleBlockClick, handleGlobalClick, health, hintSeq, hintTimerRef, isAutoPlay, multiplayerRoomId, multiplayerState, myClientId, playMode, quitGame, score, setCombo, setDeleteArmedId, setHintSeq, speakingTitle, squareBlockFontSize, squareGridSize, timeLeft, version }} />}
 
         {gameState === 'waiting_for_others' && multiplayerState && <WaitingScreen {...{ t, localCampaignListRef, multiplayerSoloActiveRef, multiplayerState, myClientId, restartTeamSoloRun, setGameState, setMultiplayerRoomId, setMultiplayerRoomMode, setMultiplayerRoomRole, setMultiplayerState, socketRef }} />}
 

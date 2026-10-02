@@ -1,7 +1,7 @@
 // AUTO-GENERATED — do not hand-edit individual entries here.
 //
-// Backfill for the per-language dictionaries in App.jsx, plus the standalone
-// /blind route (see i18n.js). Every user-facing string goes through t(zh, en) —
+// Backfill for the per-language dictionaries in App.jsx. Every user-facing
+// string goes through t(zh, en) —
 // including in TeamsModal, BlindModeGame, VerseVoiceRecorder, SetPicker and the
 // world maps, which receive `t` as a prop and share these dictionaries.
 //

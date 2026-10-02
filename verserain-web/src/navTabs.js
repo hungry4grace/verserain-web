@@ -8,7 +8,7 @@ const TAB_OF_ROUTE = {
   multiplayer: 'play', leaderboard: 'play', contests: 'play',
   map: 'map',
   advanced: 'me', manual: 'me', about: 'me', sponsors: 'me', donate: 'me', charity: 'me',
-  sponsor: 'me', merchant: 'me', verify: 'me', rewards_admin: 'me', accessible: 'me', bilingual_rain: 'me', settings: 'me',
+  sponsor: 'me', merchant: 'me', verify: 'me', rewards_admin: 'me', bilingual_rain: 'me', settings: 'me',
 };
 
 export function navTabOf(mainTab) {
