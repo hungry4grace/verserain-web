@@ -91,11 +91,15 @@ export async function drawShopPoster(canvas, place, texts) {
   ctx.fillStyle = '#ffffff';
   ctx.textAlign = logo ? 'left' : 'center';
   ctx.textBaseline = 'alphabetic';
-  ctx.font = `900 120px ${FONT}`;
-  ctx.fillText(texts.brand, brandX, 180);
-  ctx.font = `600 52px ${FONT}`;
+  // Long brand names ("Pluie de versets") shrink to fit beside the logo.
+  const brandMax = logo ? W - brandX - 60 : W - 120;
+  const brand = fitText(ctx, texts.brand, { weight: 900, max: 120, min: 56, maxWidth: brandMax, maxLines: 1 });
+  ctx.font = `900 ${brand.size}px ${FONT}`;
+  ctx.fillText(brand.lines[0] || '', brandX, 180);
+  const sub = fitText(ctx, texts.brandSub, { weight: 600, max: 52, min: 28, maxWidth: brandMax, maxLines: 1 });
+  ctx.font = `600 ${sub.size}px ${FONT}`;
   ctx.fillStyle = 'rgba(255,255,255,0.9)';
-  ctx.fillText(texts.brandSub, brandX, 245);
+  ctx.fillText(sub.lines[0] || '', brandX, 245);
 
   // Shop name
   ctx.textAlign = 'center';
@@ -121,10 +125,12 @@ export async function drawShopPoster(canvas, place, texts) {
 
   // Bottom block first (fine print, site), then the steps above it, so the
   // QR takes whatever room a one- or two-line shop name leaves.
-  ctx.font = `500 30px ${FONT}`;
-  const fine = wrapLines(ctx, texts.fine, W - 200).slice(0, 2);
+  // Fine print: up to three lines, smaller type for longer languages.
+  const fineFit = fitText(ctx, texts.fine, { weight: 500, max: 30, min: 22, maxWidth: W - 200, maxLines: 3 });
+  const fine = fineFit.lines;
+  const fineLH = Math.round(fineFit.size * 1.4);
   const siteY = POSTER_H - 50;
-  const fineTop = siteY - 60 - fine.length * 42;
+  const fineTop = siteY - 60 - fine.length * fineLH;
   const stepGap = 76;
   const firstStepY = fineTop - 50 - (texts.steps.length - 1) * stepGap;
 
@@ -163,8 +169,8 @@ export async function drawShopPoster(canvas, place, texts) {
   // Fine print + site
   ctx.textAlign = 'center';
   ctx.fillStyle = '#64748b';
-  ctx.font = `500 30px ${FONT}`;
-  fine.forEach((line, i) => ctx.fillText(line, cx, fineTop + 30 + i * 42));
+  ctx.font = `500 ${fineFit.size}px ${FONT}`;
+  fine.forEach((line, i) => ctx.fillText(line, cx, fineTop + fineFit.size + i * fineLH));
   ctx.fillStyle = '#2563eb';
   ctx.font = `800 36px ${FONT}`;
   ctx.fillText(texts.site, cx, siteY);
