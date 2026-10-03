@@ -32,7 +32,7 @@ import { GOOGLE_CLIENT_ID, APPLE_CLIENT_ID, APPLE_REDIRECT_URI, LINE_CHANNEL_ID 
 import { VAPID_PUBLIC_KEY, urlBase64ToUint8Array, isWebPushSupported, isIOSStandalone, isIOSWithoutPWA, hasNativeDailyPush, callNativeDailyPush } from './pushConfig';
 import { setVoiceApi, uploadSetAsset, compressBackgroundImage, getSetAssetDataUrl, userVoiceApi, voiceOwnerId, voiceCommentApi, uploadVoiceComment } from './setVoiceApi';
 import VerseVoiceRecorder from './VerseVoiceRecorder';
-import { APP_TITLE_BY_LANG, FIRST_RUN, INITIAL_VERIFY_CODE, setShareUiLang, SUPPORTED_UI_LANGS, buildPublicShareUrl, initialBibleVersion, parseRoute, pathWithSharedLang, postTouch, routeFromState, uiLangForVersion } from './lib/routes.js';
+import { APP_TITLE_BY_LANG, FIRST_RUN, INITIAL_SHOP_ID, INITIAL_VERIFY_CODE, SHOP_LINK_KEY, setShareUiLang, SUPPORTED_UI_LANGS, buildPublicShareUrl, initialBibleVersion, parseRoute, pathWithSharedLang, postTouch, routeFromState, uiLangForVersion } from './lib/routes.js';
 import { AUTO_PLAY_REFERENCE_PAUSE_MS, AUTO_PLAY_VERSE_PAUSE_MS, BIBLE_LANGUAGE_OPTIONS, DEFAULT_PLAY_DURATION_CHOICE, DEFAULT_PLAY_FONT_CHOICE, DEFAULT_PLAY_INK_CHOICE, PLAY_DURATION_OPTIONS, PLAY_FONT_OPTIONS, PLAY_INK_OPTIONS, dropLegacyBibleCaches, fetchBibleVerseFromAPI, fetchEditorVerseText, fetchVerseFromBolls, fetchVerseFromGetBible, fetchVerseFromTaibible, findMatchingVerse, formatLocalDate, getCachedBibleVerse, getDailyVerseIndex, getDailyVerseRemoteVersion, getEnglishReferenceFromKey, getVoiceLangForVersion, isEnglishBibleVersion, normalizeVerseInput, parseScriptureKey, pickRandomVerse, readPlayInkChoice, setCachedBibleVerse, getDailyVerseImageUrls } from './lib/bible.js';
 import { GARDEN_LOOKUP_LANGS, TOPIC_PREFIX_REGEX, extractVerseSetTopic, fetchGardenVerseOnline, findVerseByRef, formatVerseReferenceForDisplay, formatVerseReferenceForSpeech, getFirstTopicChar, localizeOfficialTopicSetTitle, parseVerseRef, titleSortKey, topicStrokeCollator } from './lib/verseDisplay.js';
 import { PARTY_HOST, fetchRetry, isMySet, isOwnedByCurrentUser, rememberPreviousName } from './lib/partyApi.js';
@@ -82,6 +82,7 @@ import VerseVoicePickerModal from './modals/VerseVoicePickerModal.jsx';
 import VoiceCommentPanel from './modals/VoiceCommentPanel.jsx';
 import InboxPanel from './modals/InboxPanel.jsx';
 import FruitInfoModal from './modals/FruitInfoModal.jsx';
+import ShopPosterModal from './modals/ShopPosterModal.jsx';
 import LevelInfoModal from './modals/LevelInfoModal.jsx';
 import PlayerGardenModal from './modals/PlayerGardenModal.jsx';
 import AuthorSetsModal from './modals/AuthorSetsModal.jsx';
@@ -3702,6 +3703,9 @@ export default function App() {
   // Leaderboard scores are never deducted; the server keeps a separate
   // "spent" ledger and issues one-time vouchers (see api/redeem.js).
   const [redeemPlace, setRedeemPlace] = useState(null); // place object from the map popup
+  const [shopPosterPlace, setShopPosterPlace] = useState(null); // 「我的登記」 → 店面海報
+  // #shop/<placeId> from a shop poster's QR: { id, place } until the coupon opens.
+  const [shopLink, setShopLink] = useState(() => (INITIAL_SHOP_ID ? { id: INITIAL_SHOP_ID, place: null } : null));
   const [pointsBalance, setPointsBalance] = useState(null);
   const [showTodayInfo, setShowTodayInfo] = useState(false); // 今日得分 "?" breakdown in 我的園子
   const [pointsBalanceBusy, setPointsBalanceBusy] = useState(false);
@@ -3900,6 +3904,33 @@ export default function App() {
     setRedeemPlace(place); setRedeemBill(''); setPointsBalance(null);
     fetchPointsBalance();
   };
+  // Shop poster QR: find the shop, then open its coupon — straight away when
+  // signed in, otherwise after the sign-in finishes.
+  const endShopLink = () => { setShopLink(null); try { sessionStorage.removeItem(SHOP_LINK_KEY); } catch { /* ignore */ } };
+  useEffect(() => {
+    if (!shopLink || shopLink.place) return undefined;
+    let cancelled = false;
+    fetch('/api/places').then(r => (r.ok ? r.json() : { places: [] })).catch(() => ({ places: [] })).then((d) => {
+      if (cancelled) return;
+      const place = (d.places || []).find(p => p && p.id === shopLink.id && p.kind === 'merchant');
+      if (!place) { endShopLink(); toast.error(t('這家店目前沒有提供點數折抵', 'This shop is not offering a points discount right now'), 4000); return; }
+      setShopLink({ id: shopLink.id, place });
+      if (!userEmail) {
+        setShowLoginModal('login');
+        toast.info(t('登入後就能在「{name}」用點數折抵', 'Sign in to use your points at “{name}”').replace('{name}', place.name || ''), 4500);
+      }
+    });
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [shopLink]);
+  useEffect(() => {
+    if (!shopLink?.place || !userEmail) return;
+    const place = shopLink.place;
+    endShopLink();
+    setMainTab('map');
+    openRedeem(place);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [shopLink, userEmail]);
   const redeemPreview = (() => {
     const pb = pointsBalance; const place = redeemPlace;
     if (!pb || pb.error || !place) return null;
@@ -7218,7 +7249,7 @@ export default function App() {
                     verserain
                   </div>
                   <div className="app-brand-version" style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', marginTop: '4px', marginLeft: '2px' }}>
-                    v5.0.1
+                    v5.0.2
                   </div>
                 </div>
                 <div ref={langPickerRef} className="app-lang-control" style={{ position: 'relative' }}>
@@ -7737,7 +7768,7 @@ export default function App() {
 
               {mainTab === 'verify' && <VerifyPage t={t} lookupVoucher={lookupVoucher} setMainTab={setMainTab} setVerifyCodeInput={setVerifyCodeInput} setVerifyResult={setVerifyResult} setVerifyScanOpen={setVerifyScanOpen} useVoucher={useVoucher} verifyBusy={verifyBusy} verifyCodeInput={verifyCodeInput} verifyResult={verifyResult} verifyScanOpen={verifyScanOpen} />}
 
-              {mainTab === 'merchant' && <MerchantPage {...{ t, cancelEditPlace, geocodeMerchant, handleMerchantPhoto, merchantBusy, merchantDraft, merchantFormRef, merchantGeoBusy, merchantPhotoBusy, merchantPhotoInputRef, merchantPhotoPreview, merchantReferrerLookup, merchantScanOpen, merchantSubmitStatus, myPlaceBusyId, myPlaces, ownerPlaceAction, placeLedger, placeLedgerOpen, redeemErrorText, renderMerchantPoolSection, sessionKey, setMainTab, setMerchantDraft, setMerchantScanOpen, setShowLoginModal, startEditPlace, submitMerchant, togglePlaceLedger, useMyLocationForMerchant, userEmail, voucherStatusBadge }} />}
+              {mainTab === 'merchant' && <MerchantPage {...{ t, cancelEditPlace, setShopPosterPlace, geocodeMerchant, handleMerchantPhoto, merchantBusy, merchantDraft, merchantFormRef, merchantGeoBusy, merchantPhotoBusy, merchantPhotoInputRef, merchantPhotoPreview, merchantReferrerLookup, merchantScanOpen, merchantSubmitStatus, myPlaceBusyId, myPlaces, ownerPlaceAction, placeLedger, placeLedgerOpen, redeemErrorText, renderMerchantPoolSection, sessionKey, setMainTab, setMerchantDraft, setMerchantScanOpen, setShowLoginModal, startEditPlace, submitMerchant, togglePlaceLedger, useMyLocationForMerchant, userEmail, voucherStatusBadge }} />}
 
               {mainTab === 'leaderboard' && <LeaderboardPage {...{ t, activeVerseSets, cjkDataFontStack, globalFruitsMap, globalLeaderboardData, globalLeaderboardTab, globalVerseStats, isFetchingGlobalLeaderboard, loadedLangs, pageGlobalLeaderboard, pagePopularSets, pagePopularVerses, playerName, safeActiveSets, setActiveVerse, setGlobalLeaderboardTab, setIsLangsLoading, setLoadedLangs, setMainTab, setPageGlobalLeaderboard, setPagePopularSets, setPagePopularVerses, setSelectedSetId, setShowLevelInfo, setVersion, setViewCounts, setViewingPlayerGarden, startGame, userEmail, VERSES_DB, version, versionBeforeChallenge, viewCounts }} />}
               {mainTab === 'search' && <SearchPage {...{ t, activeVerseSets, searchQuery, searchSetsPage, searchVersesPage, setActiveVerse, setCampaignQueue, setCampaignResults, setEditingCustomSet, setMainTab, setSearchQuery, setSearchSetsPage, setSearchVersesPage, setSelectedSetId, setVerseViewModal, startGame, version }} />}
@@ -7935,6 +7966,7 @@ export default function App() {
 
         {/* Fruit Info Modal */}
         {showFruitInfo && <FruitInfoModal {...{ t, creatorPoints, localFruits, setShowFruitInfo, totalFruits }} />}
+        <ShopPosterModal t={t} place={shopPosterPlace} onClose={() => setShopPosterPlace(null)} />
 
         {/* Level Info Modal */}
         {showLevelInfo && <LevelInfoModal {...{ t, levelCounts, setShowLevelInfo, skoolLevel }} />}
