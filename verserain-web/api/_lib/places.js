@@ -66,15 +66,31 @@ export function isValidTaiwanUbn(value) {
   return s[6] === '7' && (sum + 1) % 5 === 0;
 }
 
-// Merchants: a valid 統一編號. Churches / organisations: a 統一編號 or their
-// registration number (立案字號, free text) — an 8-digit entry must still
-// pass the checksum.
+// What people actually type: iPhone's Chinese keyboard gives full-width digits
+// (１２３４５６７５), and numbers get copied with spaces or dashes. A number
+// becomes plain digits; a 立案字號 (text) only loses its outer spaces.
+export function normalizeTaxId(value) {
+  const s = String(value ?? '').replace(/[０-９]/g, (c) => String.fromCharCode(c.charCodeAt(0) - 0xFEE0)).trim();
+  const digits = s.replace(/[\s\-－‐–—]/g, '');
+  return /^\d+$/.test(digits) ? digits : s.replace(/\s+/g, ' ');
+}
+
+// Why a 統一編號／立案字號 is refused: '' (fine) | 'empty' | 'digits' (a shop
+// typed letters) | 'length' (digits, but not 8) | 'checksum' (8 digits that
+// are not a real 統一編號) | 'short' (a 立案字號 under 4 characters).
+// Merchants need a valid 統一編號; churches / organisations may give one or
+// their 立案字號 — an 8-digit entry must still pass the checksum.
+export function taxIdProblem(kind, value) {
+  const s = normalizeTaxId(value);
+  if (!s) return 'empty';
+  if (/^\d+$/.test(s)) {
+    if (s.length === 8) return isValidTaiwanUbn(s) ? '' : 'checksum';
+    if (kind === 'merchant') return 'length';
+  } else if (kind === 'merchant') return 'digits';
+  return s.length >= 4 ? '' : 'short';
+}
 export function isValidPlaceTaxId(kind, value) {
-  const s = String(value ?? '').trim();
-  if (!s) return false;
-  if (/^\d{8}$/.test(s)) return isValidTaiwanUbn(s);
-  if (kind === 'merchant') return false;
-  return s.length >= 4;
+  return taxIdProblem(kind, value) === '';
 }
 
 // Taiwan, Penghu, Kinmen and Matsu as boxes that stay off the Fujian coast
@@ -159,7 +175,7 @@ export function normalizePlaceSubmission(input, { ownerEmail, ownerCode = '', no
   if (website && !/^https?:\/\//i.test(website)) throw new Error('website must start with http:// or https://');
   // 統一編號／立案字號 — private (never in publicView). Optional here so places
   // listed before it existed still save; the register route requires it.
-  const taxId = clip(src.taxId !== undefined ? src.taxId : (ex && ex.taxId), 40).replace(/\s+/g, ' ');
+  const taxId = normalizeTaxId(clip(src.taxId !== undefined ? src.taxId : (ex && ex.taxId), 40));
   if (taxId && !isValidPlaceTaxId(kind, taxId)) throw new Error('tax_id_invalid');
   const rawId = clip(src.id, 40);
   const id = PLACE_ID_RE.test(rawId) ? rawId : ((ex && ex.id) || newPlaceId(now.getTime()));

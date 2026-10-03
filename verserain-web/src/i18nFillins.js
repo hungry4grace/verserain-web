@@ -1516,6 +1516,13 @@ export const he = {
   "最近 30 分鐘已確認": "אושרו ב-30 הדקות האחרונות",
   "收銀台": "קופה",
   "已確認 {name} 折抵 NT${n}": "אושרה הנחה של NT${n} עבור {name}",
+  "請填寫 8 位數的統一編號": "נא להזין את מספר העסק (統一編號) בן 8 הספרות",
+  "請填寫統一編號或立案字號": "נא להזין מספר עסק (統一編號) או מספר רישום",
+  "統一編號只能是 8 位數字": "מספר העסק חייב להיות 8 ספרות בלבד",
+  "統一編號是 8 位數字（目前 {n} 位）": "מספר העסק כולל 8 ספרות (הוזנו {n})",
+  "這組 8 位數不是有效的統一編號，請對照統編證明或發票再確認一次": "8 הספרות האלה אינן מספר עסק תקין — נא לבדוק מול תעודת הרישום או חשבונית",
+  "立案字號太短，請填寫完整": "מספר הרישום קצר מדי — נא להזין אותו במלואו",
+  "到經濟部商工登記查詢": "חיפוש במרשם החברות של משרד הכלכלה",
 };
 
 export const fa = {
@@ -3013,6 +3020,13 @@ export const fa = {
   "最近 30 分鐘已確認": "تأییدشده در 30 دقیقهٔ اخیر",
   "收銀台": "صندوق پرداخت",
   "已確認 {name} 折抵 NT${n}": "تأیید شد: NT${n} تخفیف برای {name}",
+  "請填寫 8 位數的統一編號": "لطفاً شناسه کسب‌وکار ۸ رقمی (統一編號) را وارد کنید",
+  "請填寫統一編號或立案字號": "لطفاً شناسه کسب‌وکار (統一編號) یا شماره ثبت را وارد کنید",
+  "統一編號只能是 8 位數字": "شناسه کسب‌وکار فقط باید ۸ رقم باشد",
+  "統一編號是 8 位數字（目前 {n} 位）": "شناسه کسب‌وکار ۸ رقم است (شما {n} رقم وارد کردید)",
+  "這組 8 位數不是有效的統一編號，請對照統編證明或發票再確認一次": "این ۸ رقم شناسه کسب‌وکار معتبری نیست — لطفاً با گواهی ثبت یا فاکتور دوباره بررسی کنید",
+  "立案字號太短，請填寫完整": "شماره ثبت خیلی کوتاه است — لطفاً آن را کامل وارد کنید",
+  "到經濟部商工登記查詢": "جست‌وجو در ثبت شرکت‌های وزارت اقتصاد",
 };
 
 export const ar = {
@@ -4927,6 +4941,13 @@ export const ar = {
   "最近 30 分鐘已確認": "تم تأكيدها خلال آخر 30 دقيقة",
   "收銀台": "صندوق الدفع",
   "已確認 {name} 折抵 NT${n}": "تم التأكيد: خصم NT${n} لـ {name}",
+  "請填寫 8 位數的統一編號": "يرجى إدخال رقم المنشأة (統一編號) المكوّن من 8 أرقام",
+  "請填寫統一編號或立案字號": "يرجى إدخال رقم المنشأة (統一編號) أو رقم التسجيل",
+  "統一編號只能是 8 位數字": "يجب أن يتكون رقم المنشأة من 8 أرقام فقط",
+  "統一編號是 8 位數字（目前 {n} 位）": "رقم المنشأة مكوّن من 8 أرقام (أدخلت {n})",
+  "這組 8 位數不是有效的統一編號，請對照統編證明或發票再確認一次": "هذه الأرقام الثمانية ليست رقم منشأة صالحًا — يرجى التحقق منه في شهادة التسجيل أو الفاتورة",
+  "立案字號太短，請填寫完整": "رقم التسجيل قصير جدًا — يرجى إدخاله كاملًا",
+  "到經濟部商工登記查詢": "البحث في سجل الشركات لدى وزارة الاقتصاد",
 };
 
 export const ja = {
@@ -6412,6 +6433,13 @@ export const ja = {
   "最近 30 分鐘已確認": "直近 30 分間に確定済み",
   "收銀台": "レジ",
   "已確認 {name} 折抵 NT${n}": "{name} さんの NT${n} 割引を確定しました",
+  "請填寫 8 位數的統一編號": "8桁の統一編號を入力してください",
+  "請填寫統一編號或立案字號": "統一編號または登記番号を入力してください",
+  "統一編號只能是 8 位數字": "統一編號は8桁の数字のみです",
+  "統一編號是 8 位數字（目前 {n} 位）": "統一編號は8桁の数字です（現在 {n} 桁）",
+  "這組 8 位數不是有效的統一編號，請對照統編證明或發票再確認一次": "この8桁は有効な統一編號ではありません。登記証明書や領収書でもう一度確認してください",
+  "立案字號太短，請填寫完整": "登記番号が短すぎます。すべて入力してください",
+  "到經濟部商工登記查詢": "経済部の商業登記で照会する",
 };
 
 export const ko = {
@@ -7895,6 +7923,13 @@ export const ko = {
   "最近 30 分鐘已確認": "최근 30분 내 확인됨",
   "收銀台": "계산대",
   "已確認 {name} 折抵 NT${n}": "{name} 님의 NT${n} 할인을 확인했습니다",
+  "請填寫 8 位數的統一編號": "8자리 통일번호(統一編號)를 입력하세요",
+  "請填寫統一編號或立案字號": "통일번호 또는 등록번호를 입력하세요",
+  "統一編號只能是 8 位數字": "통일번호는 8자리 숫자만 가능합니다",
+  "統一編號是 8 位數字（目前 {n} 位）": "통일번호는 8자리 숫자입니다(현재 {n}자리)",
+  "這組 8 位數不是有效的統一編號，請對照統編證明或發票再確認一次": "이 8자리는 유효한 통일번호가 아닙니다. 사업자 등록증이나 영수증으로 다시 확인해 주세요",
+  "立案字號太短，請填寫完整": "등록번호가 너무 짧습니다. 전체를 입력해 주세요",
+  "到經濟部商工登記查詢": "경제부 상공 등기에서 조회",
 };
 
 export const es = {
@@ -9394,6 +9429,13 @@ export const es = {
   "最近 30 分鐘已確認": "Confirmados en los últimos 30 min",
   "收銀台": "Caja",
   "已確認 {name} 折抵 NT${n}": "Confirmado: NT${n} de descuento para {name}",
+  "請填寫 8 位數的統一編號": "Introduce el 統一編號 de 8 dígitos",
+  "請填寫統一編號或立案字號": "Introduce el 統一編號 o el número de registro",
+  "統一編號只能是 8 位數字": "El 統一編號 debe tener solo 8 dígitos",
+  "統一編號是 8 位數字（目前 {n} 位）": "El 統一編號 tiene 8 dígitos (has introducido {n})",
+  "這組 8 位數不是有效的統一編號，請對照統編證明或發票再確認一次": "Estos 8 dígitos no son un 統一編號 válido; compruébalo con tu certificado de registro o una factura",
+  "立案字號太短，請填寫完整": "El número de registro es demasiado corto; escríbelo completo",
+  "到經濟部商工登記查詢": "Consultar en el registro de empresas",
 };
 
 export const tr = {
@@ -10893,6 +10935,13 @@ export const tr = {
   "最近 30 分鐘已確認": "Son 30 dakikada onaylananlar",
   "收銀台": "Kasa",
   "已確認 {name} 折抵 NT${n}": "Onaylandı: {name} için NT${n} indirim",
+  "請填寫 8 位數的統一編號": "Lütfen 8 haneli 統一編號 numarasını girin",
+  "請填寫統一編號或立案字號": "Lütfen 統一編號 veya kayıt numarasını girin",
+  "統一編號只能是 8 位數字": "統一編號 yalnızca 8 rakamdan oluşmalıdır",
+  "統一編號是 8 位數字（目前 {n} 位）": "統一編號 8 hanelidir ({n} hane girdiniz)",
+  "這組 8 位數不是有效的統一編號，請對照統編證明或發票再確認一次": "Bu 8 hane geçerli bir 統一編號 değil — lütfen kayıt belgeniz veya bir faturayla kontrol edin",
+  "立案字號太短，請填寫完整": "Kayıt numarası çok kısa — lütfen tamamını girin",
+  "到經濟部商工登記查詢": "Şirket sicilinde sorgula",
 };
 
 export const de = {
@@ -12392,6 +12441,13 @@ export const de = {
   "最近 30 分鐘已確認": "In den letzten 30 Min. bestätigt",
   "收銀台": "Kasse",
   "已確認 {name} 折抵 NT${n}": "Bestätigt: NT${n} Rabatt für {name}",
+  "請填寫 8 位數的統一編號": "Bitte die 8-stellige 統一編號 eingeben",
+  "請填寫統一編號或立案字號": "Bitte die 統一編號 oder die Registernummer eingeben",
+  "統一編號只能是 8 位數字": "Die 統一編號 darf nur aus 8 Ziffern bestehen",
+  "統一編號是 8 位數字（目前 {n} 位）": "Die 統一編號 hat 8 Ziffern (eingegeben: {n})",
+  "這組 8 位數不是有效的統一編號，請對照統編證明或發票再確認一次": "Diese 8 Ziffern sind keine gültige 統一編號 – bitte mit der Registrierungsbescheinigung oder einer Rechnung abgleichen",
+  "立案字號太短，請填寫完整": "Die Registernummer ist zu kurz – bitte vollständig eingeben",
+  "到經濟部商工登記查詢": "Im Unternehmensregister nachsehen",
 };
 
 export const my = {
@@ -13891,6 +13947,13 @@ export const my = {
   "最近 30 分鐘已確認": "နောက်ဆုံး 30 မိနစ်အတွင်း အတည်ပြုပြီး",
   "收銀台": "ငွေရှင်းကောင်တာ",
   "已確認 {name} 折抵 NT${n}": "အတည်ပြုပြီး — {name} အတွက် NT${n} လျှော့",
+  "請填寫 8 位數的統一編號": "ဂဏန်း ၈ လုံးပါ 統一編號 ကို ထည့်ပါ",
+  "請填寫統一編號或立案字號": "統一編號 သို့မဟုတ် မှတ်ပုံတင်နံပါတ်ကို ထည့်ပါ",
+  "統一編號只能是 8 位數字": "統一編號 သည် ဂဏန်း ၈ လုံးသာ ဖြစ်ရမည်",
+  "統一編號是 8 位數字（目前 {n} 位）": "統一編號 သည် ဂဏန်း ၈ လုံး ဖြစ်သည် (ယခု {n} လုံး)",
+  "這組 8 位數不是有效的統一編號，請對照統編證明或發票再確認一次": "ဤဂဏန်း ၈ လုံးသည် မှန်ကန်သော 統一編號 မဟုတ်ပါ — မှတ်ပုံတင်လက်မှတ် သို့မဟုတ် ပြေစာဖြင့် ပြန်စစ်ပါ",
+  "立案字號太短，請填寫完整": "မှတ်ပုံတင်နံပါတ် တိုလွန်းသည် — အပြည့်အစုံ ထည့်ပါ",
+  "到經濟部商工登記查詢": "စီးပွားရေးဝန်ကြီးဌာန ကုမ္ပဏီမှတ်ပုံတင်တွင် ရှာရန်",
 };
 
 export const vi = {
@@ -15390,6 +15453,13 @@ export const vi = {
   "最近 30 分鐘已確認": "Đã xác nhận trong 30 phút qua",
   "收銀台": "Quầy thu ngân",
   "已確認 {name} 折抵 NT${n}": "Đã xác nhận: giảm NT${n} cho {name}",
+  "請填寫 8 位數的統一編號": "Vui lòng nhập mã số 統一編號 gồm 8 chữ số",
+  "請填寫統一編號或立案字號": "Vui lòng nhập 統一編號 hoặc số đăng ký",
+  "統一編號只能是 8 位數字": "統一編號 chỉ gồm 8 chữ số",
+  "統一編號是 8 位數字（目前 {n} 位）": "統一編號 có 8 chữ số (bạn đã nhập {n})",
+  "這組 8 位數不是有效的統一編號，請對照統編證明或發票再確認一次": "8 chữ số này không phải là 統一編號 hợp lệ — vui lòng đối chiếu với giấy đăng ký hoặc hóa đơn",
+  "立案字號太短，請填寫完整": "Số đăng ký quá ngắn — vui lòng nhập đầy đủ",
+  "到經濟部商工登記查詢": "Tra cứu trong sổ đăng ký doanh nghiệp",
 };
 
 export const id = {
@@ -17117,6 +17187,13 @@ export const id = {
   "最近 30 分鐘已確認": "Dikonfirmasi dalam 30 menit terakhir",
   "收銀台": "Kasir",
   "已確認 {name} 折抵 NT${n}": "Dikonfirmasi: diskon NT${n} untuk {name}",
+  "請填寫 8 位數的統一編號": "Masukkan 統一編號 8 digit",
+  "請填寫統一編號或立案字號": "Masukkan 統一編號 atau nomor registrasi",
+  "統一編號只能是 8 位數字": "統一編號 hanya boleh 8 digit angka",
+  "統一編號是 8 位數字（目前 {n} 位）": "統一編號 terdiri dari 8 digit (Anda memasukkan {n})",
+  "這組 8 位數不是有效的統一編號，請對照統編證明或發票再確認一次": "8 digit ini bukan 統一編號 yang valid — periksa kembali dengan sertifikat registrasi atau faktur",
+  "立案字號太短，請填寫完整": "Nomor registrasi terlalu pendek — masukkan selengkapnya",
+  "到經濟部商工登記查詢": "Cari di daftar perusahaan",
 };
 
 export const ms = {
@@ -19048,6 +19125,13 @@ export const ms = {
   "最近 30 分鐘已確認": "Disahkan dalam 30 minit terakhir",
   "收銀台": "Kaunter bayaran",
   "已確認 {name} 折抵 NT${n}": "Disahkan: diskaun NT${n} untuk {name}",
+  "請填寫 8 位數的統一編號": "Sila masukkan 統一編號 8 digit",
+  "請填寫統一編號或立案字號": "Sila masukkan 統一編號 atau nombor pendaftaran",
+  "統一編號只能是 8 位數字": "統一編號 mestilah 8 digit nombor sahaja",
+  "統一編號是 8 位數字（目前 {n} 位）": "統一編號 mempunyai 8 digit (anda masukkan {n})",
+  "這組 8 位數不是有效的統一編號，請對照統編證明或發票再確認一次": "8 digit ini bukan 統一編號 yang sah — sila semak dengan sijil pendaftaran atau invois",
+  "立案字號太短，請填寫完整": "Nombor pendaftaran terlalu pendek — sila masukkan sepenuhnya",
+  "到經濟部商工登記查詢": "Semak dalam daftar syarikat",
 };
 
 export const zhcn = {
@@ -20898,6 +20982,13 @@ export const zhcn = {
   "最近 30 分鐘已確認": "最近 30 分钟已确认",
   "收銀台": "收银台",
   "已確認 {name} 折抵 NT${n}": "已确认 {name} 折抵 NT${n}",
+  "請填寫 8 位數的統一編號": "请填写 8 位数的统一编号",
+  "請填寫統一編號或立案字號": "请填写统一编号或立案字号",
+  "統一編號只能是 8 位數字": "统一编号只能是 8 位数字",
+  "統一編號是 8 位數字（目前 {n} 位）": "统一编号是 8 位数字（目前 {n} 位）",
+  "這組 8 位數不是有效的統一編號，請對照統編證明或發票再確認一次": "这组 8 位数不是有效的统一编号，请对照统编证明或发票再确认一次",
+  "立案字號太短，請填寫完整": "立案字号太短，请填写完整",
+  "到經濟部商工登記查詢": "到经济部商工登记查询",
 };
 
 export const pt = {
@@ -22121,6 +22212,13 @@ export const pt = {
   "最近 30 分鐘已確認": "Confirmados nos últimos 30 min",
   "收銀台": "Caixa",
   "已確認 {name} 折抵 NT${n}": "Confirmado: NT${n} de desconto para {name}",
+  "請填寫 8 位數的統一編號": "Digite o 統一編號 de 8 dígitos",
+  "請填寫統一編號或立案字號": "Digite o 統一編號 ou o número de registro",
+  "統一編號只能是 8 位數字": "O 統一編號 deve ter apenas 8 dígitos",
+  "統一編號是 8 位數字（目前 {n} 位）": "O 統一編號 tem 8 dígitos (você digitou {n})",
+  "這組 8 位數不是有效的統一編號，請對照統編證明或發票再確認一次": "Estes 8 dígitos não são um 統一編號 válido — confira no certificado de registro ou em uma nota fiscal",
+  "立案字號太短，請填寫完整": "O número de registro é curto demais — digite-o completo",
+  "到經濟部商工登記查詢": "Consultar no registro de empresas",
 };
 
 export const fr = {
@@ -23344,6 +23442,13 @@ export const fr = {
   "最近 30 分鐘已確認": "Confirmés au cours des 30 dernières min",
   "收銀台": "Caisse",
   "已確認 {name} 折抵 NT${n}": "Confirmé : NT${n} de remise pour {name}",
+  "請填寫 8 位數的統一編號": "Saisissez le 統一編號 à 8 chiffres",
+  "請填寫統一編號或立案字號": "Saisissez le 統一編號 ou le numéro d’enregistrement",
+  "統一編號只能是 8 位數字": "Le 統一編號 ne doit comporter que 8 chiffres",
+  "統一編號是 8 位數字（目前 {n} 位）": "Le 統一編號 comporte 8 chiffres (vous en avez saisi {n})",
+  "這組 8 位數不是有效的統一編號，請對照統編證明或發票再確認一次": "Ces 8 chiffres ne forment pas un 統一編號 valide — vérifiez avec votre certificat d’enregistrement ou une facture",
+  "立案字號太短，請填寫完整": "Le numéro d’enregistrement est trop court — saisissez-le en entier",
+  "到經濟部商工登記查詢": "Vérifier dans le registre des entreprises",
 };
 
 export const ru = {
@@ -24567,6 +24672,13 @@ export const ru = {
   "最近 30 分鐘已確認": "Подтверждены за последние 30 мин",
   "收銀台": "Касса",
   "已確認 {name} 折抵 NT${n}": "Подтверждено: скидка NT${n} для {name}",
+  "請填寫 8 位數的統一編號": "Введите 8-значный номер 統一編號",
+  "請填寫統一編號或立案字號": "Введите номер 統一編號 или регистрационный номер",
+  "統一編號只能是 8 位數字": "Номер 統一編號 должен состоять только из 8 цифр",
+  "統一編號是 8 位數字（目前 {n} 位）": "Номер 統一編號 состоит из 8 цифр (введено {n})",
+  "這組 8 位數不是有效的統一編號，請對照統編證明或發票再確認一次": "Эти 8 цифр не являются действительным номером 統一編號 — сверьте его со свидетельством о регистрации или счётом",
+  "立案字號太短，請填寫完整": "Регистрационный номер слишком короткий — введите его полностью",
+  "到經濟部商工登記查詢": "Проверить в реестре компаний",
 };
 
 export const hi = {
@@ -25790,6 +25902,13 @@ export const hi = {
   "最近 30 分鐘已確認": "पिछले 30 मिनट में पुष्टि हुए",
   "收銀台": "कैश काउंटर",
   "已確認 {name} 折抵 NT${n}": "पुष्टि हुई: {name} के लिए NT${n} की छूट",
+  "請填寫 8 位數的統一編號": "कृपया 8 अंकों का 統一編號 दर्ज करें",
+  "請填寫統一編號或立案字號": "कृपया 統一編號 या पंजीकरण संख्या दर्ज करें",
+  "統一編號只能是 8 位數字": "統一編號 में केवल 8 अंक होने चाहिए",
+  "統一編號是 8 位數字（目前 {n} 位）": "統一編號 में 8 अंक होते हैं (आपने {n} दर्ज किए)",
+  "這組 8 位數不是有效的統一編號，請對照統編證明或發票再確認一次": "ये 8 अंक मान्य 統一編號 नहीं हैं — कृपया पंजीकरण प्रमाणपत्र या बिल से दोबारा जाँचें",
+  "立案字號太短，請填寫完整": "पंजीकरण संख्या बहुत छोटी है — कृपया पूरी दर्ज करें",
+  "到經濟部商工登記查詢": "कंपनी रजिस्टर में देखें",
 };
 
 // Khmer (Cambodian) — full UI coverage, machine-translated in bulk from the
@@ -27644,6 +27763,13 @@ export const km = {
   "最近 30 分鐘已確認": "បានបញ្ជាក់ក្នុងរយៈពេល 30 នាទីចុងក្រោយ",
   "收銀台": "កន្លែងគិតលុយ",
   "已確認 {name} 折抵 NT${n}": "បានបញ្ជាក់៖ បញ្ចុះ NT${n} សម្រាប់ {name}",
+  "請填寫 8 位數的統一編號": "សូមបញ្ចូលលេខ 統一編號 ៨ ខ្ទង់",
+  "請填寫統一編號或立案字號": "សូមបញ្ចូលលេខ 統一編號 ឬលេខចុះបញ្ជី",
+  "統一編號只能是 8 位數字": "លេខ 統一編號 ត្រូវមានតែលេខ ៨ ខ្ទង់ប៉ុណ្ណោះ",
+  "統一編號是 8 位數字（目前 {n} 位）": "លេខ 統一編號 មាន ៨ ខ្ទង់ (អ្នកបានបញ្ចូល {n})",
+  "這組 8 位數不是有效的統一編號，請對照統編證明或發票再確認一次": "លេខ ៨ ខ្ទង់នេះមិនមែនជាលេខ 統一編號 ត្រឹមត្រូវទេ — សូមផ្ទៀងផ្ទាត់ជាមួយវិញ្ញាបនបត្រចុះបញ្ជី ឬវិក្កយបត្រ",
+  "立案字號太短，請填寫完整": "លេខចុះបញ្ជីខ្លីពេក — សូមបញ្ចូលឱ្យពេញលេញ",
+  "到經濟部商工登記查詢": "ស្វែងរកក្នុងបញ្ជីក្រុមហ៊ុន",
 };
 
 const I18N_FILLINS = { he, fa, ar, ja, ko, es, tr, de, my, vi, id, ms, zhcn, pt, fr, ru, hi, km };

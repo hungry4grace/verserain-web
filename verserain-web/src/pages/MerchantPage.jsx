@@ -6,7 +6,7 @@ import VoucherScanner from '../VoucherScanner.jsx';
 import { confirmDialog } from '../ui';
 import { iosAppSupportsCamera, isInIosNativeApp } from '../lib/platform.js';
 import { compactBtn } from '../lib/compactBtn.js';
-import { isValidPlaceTaxId } from '../../api/_lib/places.js';
+import { FINDBIZ_URL, halfWidthDigits, taxIdErrorText } from '../lib/taxIdText.js';
 import { OPEN_PLACE_KINDS, SHOW_CHARITY } from '../../api/_lib/features.js';
 
 
@@ -67,9 +67,12 @@ export default function MerchantPage({ t, cancelEditPlace, setShopDeskPlace, set
             <label style={label}>{t('名稱', 'Name')}</label>
             <input type="text" value={m.name} onChange={e => setMerchantDraft(d => ({ ...d, name: e.target.value }))} maxLength={60} style={field} />
             <label style={label}>{m.kind === 'merchant' ? t('統一編號（不公開，用來核對身分）', 'Business number 統一編號 (private, used to check who you are)') : t('統一編號或立案字號（不公開，用來核對身分）', '統一編號 or registration number (private, used to check who you are)')}</label>
-            <input type="text" data-testid="place-tax-id" value={m.taxId || ''} onChange={e => setMerchantDraft(d => ({ ...d, taxId: e.target.value }))} maxLength={40} inputMode={m.kind === 'merchant' ? 'numeric' : 'text'} placeholder={m.kind === 'merchant' ? '12345678' : ''} style={field} />
-            {String(m.taxId || '').trim() && !isValidPlaceTaxId(m.kind, m.taxId) && (
-              <div role="alert" data-testid="place-tax-id-error" style={{ color: '#b91c1c', fontSize: '0.8rem', marginTop: -4, marginBottom: 6 }}>{redeemErrorText('tax_id_invalid')}</div>
+            <input type="text" data-testid="place-tax-id" value={m.taxId || ''} onChange={e => setMerchantDraft(d => ({ ...d, taxId: halfWidthDigits(e.target.value) }))} maxLength={40} autoComplete="off" inputMode={m.kind === 'merchant' ? 'numeric' : 'text'} placeholder={m.kind === 'merchant' ? '12345678' : ''} style={field} />
+            {String(m.taxId || '').trim() && taxIdErrorText(t, m.kind, m.taxId) && (
+              <div role="alert" data-testid="place-tax-id-error" style={{ color: '#b91c1c', fontSize: '0.8rem', marginTop: -4, marginBottom: 6 }}>
+                {taxIdErrorText(t, m.kind, m.taxId)}
+                {/^\d{8}$/.test(String(m.taxId).replace(/[\s\-－]/g, '')) && <> · <a href={FINDBIZ_URL} target="_blank" rel="noopener noreferrer" style={{ color: '#2563eb' }}>{t('到經濟部商工登記查詢', 'Look it up in the company register')}</a></>}
+              </div>
             )}
             <label style={label}>{t('地址', 'Address')}</label>
             <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
