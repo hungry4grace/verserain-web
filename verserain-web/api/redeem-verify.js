@@ -1,15 +1,18 @@
 import { Redis } from '@upstash/redis';
 import { requireAdmin } from './_lib/admins.js';
 import { pushNotify } from './_lib/rewards.js';
-import { partyFetch } from './_lib/party.js';
+import { partyFetch, PartyError } from './_lib/party.js';
 import { sendReferralPush } from './_lib/webpush.js';
 import { sendReferralApns } from './_lib/apns.js';
-import { normalizeCode, getVoucher, expireVoucher, markUsed, voidVoucher, restoreVoucher, listVouchers, publicVoucher, voucherStatus, clientIp, ipRateLimit, getPlaceRaw, settleReferralBonus } from './_lib/points.js';
+import { normalizeCode, getVoucher, expireVoucher, markUsed, voidVoucher, restoreVoucher, listVouchers, publicVoucher, voucherStatus, clientIp, ipRateLimit, getPlaceRaw, settleReferralBonus, normEmail } from './_lib/points.js';
 
 // Voucher verification (店家核銷頁).
 //   GET  ?code=ABCD-EFGH              public → public voucher view (never the email)
 //   GET  ?all=1&adminEmail=           admin  → { vouchers }
 //   POST { code, action: 'use' }      public → { success, voucher }   404 not_found / 409 already_used|expired|void
+//   POST { code, action: 'owner_use', placeId, email, sessionKey }
+//                                     the shop owner's 收銀台 → same, but only for a
+//                                     voucher of that shop (403 not_owner / 409 wrong_place)
 //   POST { adminEmail, code, action: 'void' | 'restore' }   admin
 // The verify page is what the merchant opens at the counter, so 'use' needs no
 // login — the 8-char code from the safe alphabet is the secret, and issuing is
@@ -17,7 +20,7 @@ import { normalizeCode, getVoucher, expireVoucher, markUsed, voidVoucher, restor
 // expiry/void refund) — the one thing it pays out is the shop's referrer's
 // 2.5% bonus (settleReferralBonus), best-effort: the redemption stands even
 // when PartyKit or the push service is down.
-const USE_ERROR_STATUS = { not_found: 404, already_used: 409, expired: 409, void: 409, invalid_state: 409 };
+const USE_ERROR_STATUS = { not_found: 404, already_used: 409, expired: 409, void: 409, invalid_state: 409, wrong_place: 409 };
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Credentials', true);
@@ -59,13 +62,31 @@ export default async function handler(req, res) {
     const action = String(body.action || '');
     const code = normalizeCode(body.code);
 
-    if (action === 'use') {
+    if (action === 'use' || action === 'owner_use') {
       const ip = clientIp(req);
       if (!(await ipRateLimit(redis, `redeem:verify:ip:${ip}`, 30, 60))) return res.status(429).json({ error: 'rate_limited' });
       if (!code) return res.status(404).json({ error: 'not_found' });
+      // The shop's own 收銀台: a signed-in owner confirms a voucher of their shop
+      // from their own phone, so a customer's screenshot proves nothing.
+      let placeId = '';
+      if (action === 'owner_use') {
+        const email = normEmail(body.email);
+        if (!email) return res.status(400).json({ error: 'login_required' });
+        let elig;
+        try {
+          elig = await partyFetch('/reward-eligibility', { email, sessionKey: String(body.sessionKey || ''), inviterCodes: [] });
+        } catch (e) {
+          return res.status(e instanceof PartyError && e.status ? 502 : 503).json({ error: 'verify_unavailable' });
+        }
+        if (!elig.identity || !elig.identity.sessionValid) return res.status(401).json({ error: 'session_invalid' });
+        placeId = String(body.placeId || '');
+        const place = placeId ? await getPlaceRaw(redis, placeId) : null;
+        if (!place) return res.status(404).json({ error: 'place_not_found' });
+        if (normEmail(place.ownerEmail) !== email) return res.status(403).json({ error: 'not_owner' });
+      }
       let voucher;
       try {
-        voucher = await markUsed(redis, code, { now, via: 'verify_page' });
+        voucher = await markUsed(redis, code, { now, via: action === 'owner_use' ? 'shop_desk' : 'verify_page', placeId });
       } catch (e) {
         const status = e && e.code ? USE_ERROR_STATUS[e.code] : undefined;
         if (!status) throw e;
@@ -114,7 +135,7 @@ export default async function handler(req, res) {
       return res.status(200).json({ success: true, voucher });
     }
 
-    return res.status(400).json({ error: 'action must be use|void|restore' });
+    return res.status(400).json({ error: 'action must be use|owner_use|void|restore' });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

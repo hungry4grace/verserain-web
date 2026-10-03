@@ -83,6 +83,7 @@ import VoiceCommentPanel from './modals/VoiceCommentPanel.jsx';
 import InboxPanel from './modals/InboxPanel.jsx';
 import FruitInfoModal from './modals/FruitInfoModal.jsx';
 import ShopPosterModal from './modals/ShopPosterModal.jsx';
+import ShopDeskModal from './modals/ShopDeskModal.jsx';
 import LevelInfoModal from './modals/LevelInfoModal.jsx';
 import PlayerGardenModal from './modals/PlayerGardenModal.jsx';
 import AuthorSetsModal from './modals/AuthorSetsModal.jsx';
@@ -3704,6 +3705,7 @@ export default function App() {
   // "spent" ledger and issues one-time vouchers (see api/redeem.js).
   const [redeemPlace, setRedeemPlace] = useState(null); // place object from the map popup
   const [shopPosterPlace, setShopPosterPlace] = useState(null); // 「我的登記」 → 店面海報
+  const [shopDeskPlace, setShopDeskPlace] = useState(null); // 「我的登記」 → 收銀台
   // #shop/<placeId> from a shop poster's QR: { id, place } until the coupon opens.
   const [shopLink, setShopLink] = useState(() => (INITIAL_SHOP_ID ? { id: INITIAL_SHOP_ID, place: null } : null));
   const [pointsBalance, setPointsBalance] = useState(null);
@@ -3770,6 +3772,10 @@ export default function App() {
     tax_id_invalid: t('統一編號不正確（商家需 8 碼統一編號；教會可填統一編號或立案字號）', 'Invalid business number (shops need an 8-digit 統一編號; churches may give a 統一編號 or registration number)'),
     kind_unavailable: t('目前只開放商家與教會登記', 'Registration is currently open to shops and churches only'),
     declaration_required: t('請勾選「我是負責人」的聲明', 'Please tick the declaration that you run this place'),
+    already_used: t('這張券已經用過了', 'This voucher was already used'),
+    expired: t('這張券已過期', 'This voucher has expired'),
+    void: t('這張券已作廢', 'This voucher was voided'),
+    wrong_place: t('這張券不是這家店的', 'This voucher is for a different shop'),
   })[code] || String(code || 'error');
   const fetchPointsBalance = async () => {
     if (!userEmail) return null;
@@ -7249,7 +7255,7 @@ export default function App() {
                     verserain
                   </div>
                   <div className="app-brand-version" style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', marginTop: '4px', marginLeft: '2px' }}>
-                    v5.0.2
+                    v5.0.3
                   </div>
                 </div>
                 <div ref={langPickerRef} className="app-lang-control" style={{ position: 'relative' }}>
@@ -7768,7 +7774,7 @@ export default function App() {
 
               {mainTab === 'verify' && <VerifyPage t={t} lookupVoucher={lookupVoucher} setMainTab={setMainTab} setVerifyCodeInput={setVerifyCodeInput} setVerifyResult={setVerifyResult} setVerifyScanOpen={setVerifyScanOpen} useVoucher={useVoucher} verifyBusy={verifyBusy} verifyCodeInput={verifyCodeInput} verifyResult={verifyResult} verifyScanOpen={verifyScanOpen} />}
 
-              {mainTab === 'merchant' && <MerchantPage {...{ t, cancelEditPlace, setShopPosterPlace, geocodeMerchant, handleMerchantPhoto, merchantBusy, merchantDraft, merchantFormRef, merchantGeoBusy, merchantPhotoBusy, merchantPhotoInputRef, merchantPhotoPreview, merchantReferrerLookup, merchantScanOpen, merchantSubmitStatus, myPlaceBusyId, myPlaces, ownerPlaceAction, placeLedger, placeLedgerOpen, redeemErrorText, renderMerchantPoolSection, sessionKey, setMainTab, setMerchantDraft, setMerchantScanOpen, setShowLoginModal, startEditPlace, submitMerchant, togglePlaceLedger, useMyLocationForMerchant, userEmail, voucherStatusBadge }} />}
+              {mainTab === 'merchant' && <MerchantPage {...{ t, cancelEditPlace, setShopDeskPlace, setShopPosterPlace, geocodeMerchant, handleMerchantPhoto, merchantBusy, merchantDraft, merchantFormRef, merchantGeoBusy, merchantPhotoBusy, merchantPhotoInputRef, merchantPhotoPreview, merchantReferrerLookup, merchantScanOpen, merchantSubmitStatus, myPlaceBusyId, myPlaces, ownerPlaceAction, placeLedger, placeLedgerOpen, redeemErrorText, renderMerchantPoolSection, sessionKey, setMainTab, setMerchantDraft, setMerchantScanOpen, setShowLoginModal, startEditPlace, submitMerchant, togglePlaceLedger, useMyLocationForMerchant, userEmail, voucherStatusBadge }} />}
 
               {mainTab === 'leaderboard' && <LeaderboardPage {...{ t, activeVerseSets, cjkDataFontStack, globalFruitsMap, globalLeaderboardData, globalLeaderboardTab, globalVerseStats, isFetchingGlobalLeaderboard, loadedLangs, pageGlobalLeaderboard, pagePopularSets, pagePopularVerses, playerName, safeActiveSets, setActiveVerse, setGlobalLeaderboardTab, setIsLangsLoading, setLoadedLangs, setMainTab, setPageGlobalLeaderboard, setPagePopularSets, setPagePopularVerses, setSelectedSetId, setShowLevelInfo, setVersion, setViewCounts, setViewingPlayerGarden, startGame, userEmail, VERSES_DB, version, versionBeforeChallenge, viewCounts }} />}
               {mainTab === 'search' && <SearchPage {...{ t, activeVerseSets, searchQuery, searchSetsPage, searchVersesPage, setActiveVerse, setCampaignQueue, setCampaignResults, setEditingCustomSet, setMainTab, setSearchQuery, setSearchSetsPage, setSearchVersesPage, setSelectedSetId, setVerseViewModal, startGame, version }} />}
@@ -7967,6 +7973,7 @@ export default function App() {
         {/* Fruit Info Modal */}
         {showFruitInfo && <FruitInfoModal {...{ t, creatorPoints, localFruits, setShowFruitInfo, totalFruits }} />}
         <ShopPosterModal t={t} place={shopPosterPlace} onClose={() => setShopPosterPlace(null)} />
+        {shopDeskPlace && <ShopDeskModal {...{ t, userEmail, sessionKey, redeemErrorText, setShowLoginModal }} place={shopDeskPlace} onClose={() => setShopDeskPlace(null)} />}
 
         {/* Level Info Modal */}
         {showLevelInfo && <LevelInfoModal {...{ t, levelCounts, setShowLevelInfo, skoolLevel }} />}
