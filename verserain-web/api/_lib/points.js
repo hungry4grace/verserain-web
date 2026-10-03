@@ -665,9 +665,11 @@ export async function expireVoucher(redis, v, now) {
   return v;
 }
 
-export async function markUsed(redis, code, { now, via = 'verify_page' } = {}) {
+// placeId (the shop's own 收銀台): the voucher must be for that shop.
+export async function markUsed(redis, code, { now, via = 'verify_page', placeId = '' } = {}) {
   const v = await getVoucher(redis, code);
   if (!v) throw new PointsError('not_found');
+  if (placeId && v.placeId !== placeId) throw new PointsError('wrong_place');
   if (v.status === 'used') throw new PointsError('already_used', { voucher: v });
   if (v.status === 'void') throw new PointsError('void', { voucher: v });
   if (v.status === 'expired') throw new PointsError('expired', { voucher: v });

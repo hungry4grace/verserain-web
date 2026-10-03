@@ -569,3 +569,16 @@ test('history: per-place index, owner list, scan fallback, and summary', async (
   assert.strictEqual(old.length, 1);
   assert.deepStrictEqual(summarizeVouchers([...old, ...mine]), { issued: 2, open: 1, used: 1, usedNTD: 30, usedPoints: 30000, expired: 0, void: 0 });
 });
+
+test('markUsed with placeId (the shop 收銀台): only a voucher of that shop', async () => {
+  const r = stubRedis();
+  await seed(r);
+  const { voucher } = await issueVoucher(r, { email: 'a@x.com', identity, garden, place, billNTD: 300, now: NOW });
+  const later = new Date(NOW.getTime() + 60000);
+  await assert.rejects(markUsed(r, voucher.code, { now: later, via: 'shop_desk', placeId: 'p2' }), (e) => e.code === 'wrong_place');
+  assert.strictEqual((await getVoucher(r, voucher.code)).status, 'issued', 'a refused confirm leaves the voucher open');
+  const used = await markUsed(r, voucher.code, { now: later, via: 'shop_desk', placeId: 'p1' });
+  assert.strictEqual(used.status, 'used');
+  assert.strictEqual(used.usedVia, 'shop_desk');
+  await assert.rejects(markUsed(r, voucher.code, { now: later, placeId: 'p1' }), (e) => e.code === 'already_used');
+});

@@ -18,6 +18,7 @@ export const CLEAN_FILES = [
   'src/BottomNav.jsx',
   'src/navTabs.js',
   'src/modals/ShopPosterModal.jsx',
+  'src/modals/ShopDeskModal.jsx',
 ]
 
 // Pages moved out of App.jsx as-is: they still carry the old hand-written
