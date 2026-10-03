@@ -17,6 +17,7 @@ export const CLEAN_FILES = [
   'src/YouTubeBgmField.jsx',
   'src/BottomNav.jsx',
   'src/navTabs.js',
+  'src/modals/ShopPosterModal.jsx',
 ]
 
 // Pages moved out of App.jsx as-is: they still carry the old hand-written

@@ -222,6 +222,11 @@ export default function InboxPanel({ t, adminPending, changeDailyVerseDate, clai
                         ? t('你在 {place} 的折扣券已核銷，折抵 NT${n} 🎉', 'Your coupon at {place} was used — NT${n} off 🎉').replace('{place}', String(it.placeName || '')).replace('{n}', String(it.ntd ?? ''))
                         : t('你的地圖標記「{name}」已通過審核，現在出現在「誰在玩」地圖上了 🗺️', 'Your map marker “{name}” was approved and is now on the map 🗺️').replace('{name}', String(it.name || ''))}
                     </div>
+                    {it.kind === 'place_approved' && it.placeKind === 'merchant' && (
+                      <button type="button" data-testid="inbox-shop-poster" onClick={() => { setShowEncouragePanel(false); setMainTab('merchant'); }} style={{ marginTop: 6, background: '#2563eb', color: '#fff', border: 'none', borderRadius: 8, padding: '0.35rem 0.9rem', fontSize: '0.82rem', fontWeight: 700, cursor: 'pointer' }}>
+                        🖨️ {t('到「我的登記」下載店面海報', 'Get your shop poster in “My submissions”')} →
+                      </button>
+                    )}
                     <div style={{ color: '#cbd5e1', fontSize: '0.72rem', marginTop: 2 }}>{new Date(it.at).toLocaleString()}</div>
                   </div>
                 </div>

@@ -110,6 +110,17 @@ export const INITIAL_VERIFY_CODE = (() => {
     return code || sessionStorage.getItem('verserain_verify_code') || '';
   } catch { return ''; }
 })();
+// The shop poster's QR (#shop/<placeId>) opens that shop's 「產生折扣券」. Read
+// once at module load and kept in sessionStorage, so it survives the sign-in
+// round trip (LINE / Google leave the page and come back without the hash).
+export const SHOP_LINK_KEY = 'verserain_shop_link';
+export const INITIAL_SHOP_ID = (() => {
+  try {
+    const m = String(window.location.hash || '').match(/^#\/?shop\/(pl_[a-z0-9]{8,20})/);
+    if (m) sessionStorage.setItem(SHOP_LINK_KEY, m[1]);
+    return m ? m[1] : (sessionStorage.getItem(SHOP_LINK_KEY) || '');
+  } catch { return ''; }
+})();
 // First run: nothing saved yet and no deep link (shared set, challenge, room…)
 // → show the three-step onboarding. Read at module load, before App writes its
 // first settings. Anyone who already used the app is marked done silently.

@@ -134,7 +134,7 @@ export default async function handler(req, res) {
         }
         await savePlace(redis, place);
         if (action === 'approve' && place.ownerCode) {
-          try { await pushNotify(redis, place.ownerCode, { kind: 'place_approved', placeId: place.id, name: place.name }); } catch { /* inbox is best-effort */ }
+          try { await pushNotify(redis, place.ownerCode, { kind: 'place_approved', placeId: place.id, name: place.name, placeKind: place.kind }); } catch { /* inbox is best-effort */ }
         }
       }
     } else {

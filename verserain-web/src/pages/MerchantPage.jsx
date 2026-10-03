@@ -13,7 +13,7 @@ import { OPEN_PLACE_KINDS, SHOW_CHARITY } from '../../api/_lib/features.js';
 // The pin-drop map stays out of the initial bundle.
 const PlacePinMap = React.lazy(() => import('../PlacePinMap'));
 
-export default function MerchantPage({ t, cancelEditPlace, geocodeMerchant, handleMerchantPhoto, merchantBusy, merchantDraft, merchantFormRef, merchantGeoBusy, merchantPhotoBusy, merchantPhotoInputRef, merchantPhotoPreview, merchantReferrerLookup, merchantScanOpen, merchantSubmitStatus, myPlaceBusyId, myPlaces, ownerPlaceAction, placeLedger, placeLedgerOpen, redeemErrorText, renderMerchantPoolSection, sessionKey, setMainTab, setMerchantDraft, setMerchantScanOpen, setShowLoginModal, startEditPlace, submitMerchant, togglePlaceLedger, useMyLocationForMerchant, userEmail, voucherStatusBadge }) {
+export default function MerchantPage({ t, cancelEditPlace, setShopPosterPlace, geocodeMerchant, handleMerchantPhoto, merchantBusy, merchantDraft, merchantFormRef, merchantGeoBusy, merchantPhotoBusy, merchantPhotoInputRef, merchantPhotoPreview, merchantReferrerLookup, merchantScanOpen, merchantSubmitStatus, myPlaceBusyId, myPlaces, ownerPlaceAction, placeLedger, placeLedgerOpen, redeemErrorText, renderMerchantPoolSection, sessionKey, setMainTab, setMerchantDraft, setMerchantScanOpen, setShowLoginModal, startEditPlace, submitMerchant, togglePlaceLedger, useMyLocationForMerchant, userEmail, voucherStatusBadge }) {
   const m = merchantDraft;
   const field = { width: '100%', boxSizing: 'border-box', padding: '0.5rem 0.7rem', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: '0.95rem', background: '#fff' };
   const label = { display: 'block', color: '#475569', fontSize: '0.82rem', fontWeight: 700, margin: '0.8rem 0 0.25rem' };
@@ -180,6 +180,7 @@ export default function MerchantPage({ t, cancelEditPlace, geocodeMerchant, hand
                             🗑 {t('刪除', 'Delete')}
                           </button>
                         )}
+                        {pl.kind === 'merchant' && pl.status === 'approved' && <button type="button" data-testid="shop-poster-btn" onClick={() => setShopPosterPlace(pl)} style={ownerBtn('#2563eb', '#fff', 'none')}>🖨️ {t('店面海報', 'Shop poster')}</button>}
                         {canLedger && <button type="button" onClick={() => togglePlaceLedger(pl.id)} style={{ background: open ? '#d97706' : '#fef3c7', color: open ? '#fff' : '#92400e', border: 'none', borderRadius: 6, padding: '0.2rem 0.7rem', cursor: 'pointer', fontWeight: 700, fontSize: '0.78rem' }}>📒 {t('收到的點數', 'Points received')}{pl.stats ? ` (${pl.stats.used || 0})` : ''}</button>}
                         <span style={{ background: b.bg, color: b.fg, borderRadius: 999, padding: '0.15rem 0.6rem', fontSize: '0.78rem', fontWeight: 700, whiteSpace: 'nowrap' }}>{b.text}</span>
                       </span>
