@@ -7,7 +7,7 @@ import {
   listPlaces, getPlace, savePlace, deletePlace, countSubmissionsToday, bumpSubmissions,
   PLACE_ID_RE, DEFAULT_DAILY_CAP_NTD, STATUSES, MAJOR_FIELDS, MINOR_FIELDS,
   classifyOwnerEdit, applyOwnerEdit, applyOwnerAction, canOwnerDelete, canAdminDelete, ownerView, REFERRER_CODE_RE,
-  isValidTaiwanUbn, isValidPlaceTaxId, isInTaiwan, newRegistrationError, VERIFY_METHODS,
+  isValidTaiwanUbn, isValidPlaceTaxId, isInTaiwan, newRegistrationError, VERIFY_METHODS, normalizeTaxId, taxIdProblem,
 } from './places.js';
 import { OPEN_PLACE_KINDS } from './features.js';
 
@@ -390,4 +390,24 @@ test('verify / unverify; a major owner edit clears the check; publicView shows o
   const u = applyAdminAction(v, 'unverify', { now: NOW });
   assert.strictEqual(u.verifiedAt, null);
   assert.strictEqual(u.verifyMethod, '');
+});
+
+test('統一編號 as typed on a phone: full-width digits, spaces and dashes are tidied; the reason is specific', () => {
+  for (const typed of ['１２３４５６７５', '1234 5675', '1234-5675', ' 12345675 ', '１２３４－５６７５']) {
+    assert.strictEqual(normalizeTaxId(typed), '12345675', typed);
+    assert.strictEqual(isValidPlaceTaxId('merchant', typed), true, typed);
+  }
+  assert.strictEqual(taxIdProblem('merchant', '12345678'), 'checksum');
+  assert.strictEqual(taxIdProblem('merchant', '34772283'), 'checksum');
+  assert.strictEqual(taxIdProblem('merchant', '1234567'), 'length');
+  assert.strictEqual(taxIdProblem('merchant', 'ABCD1234'), 'digits');
+  assert.strictEqual(taxIdProblem('merchant', '  '), 'empty');
+  // A church's 立案字號 keeps its words; only the outer spaces go.
+  assert.strictEqual(normalizeTaxId('  台內社字第 1234 號 '), '台內社字第 1234 號');
+  assert.strictEqual(taxIdProblem('church', '台內社字第 1234 號'), '');
+  assert.strictEqual(taxIdProblem('church', '123'), 'short');
+  assert.strictEqual(taxIdProblem('church', '12345678'), 'checksum');
+  // Stored clean, so the admin page's lookup link and comparisons work.
+  const p = normalizePlaceSubmission({ ...merchant(), taxId: '１２３４ ５６７５' }, { ownerEmail: 'a@x.com', now: NOW });
+  assert.strictEqual(p.taxId, '12345675');
 });
